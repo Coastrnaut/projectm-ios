@@ -46,4 +46,7 @@
   choices; technology selection remains in the plan.
 - Gap fixes 2026-11-07 (from spec-review.md): all items still pass (16/16). Added FR-016–018,
   FR-054–055, FR-065, FR-070–072, SC-012, stage/phase mapping, and quantified thresholds.
+- Checklist loop 2026-11-08 (iterations 1–5): re-validated after each iteration; 16/16 pass. FR-066
+  reworded to remove an implementation term (iteration 3). Iteration 5 found no new items in any of
+  the six checklists: converged.
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`
