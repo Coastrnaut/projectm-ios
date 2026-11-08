@@ -135,7 +135,12 @@ enum MiniSchemaValidator {
 
     private static func isBool(_ v: Any) -> Bool {
         guard let n = v as? NSNumber else { return false }
+        #if canImport(Darwin)
         return CFGetTypeID(n) == CFBooleanGetTypeID()
+        #else
+        // swift-corelibs-foundation encodes Bool-backed NSNumbers with the "c" type encoding.
+        return String(cString: n.objCType) == "c"
+        #endif
     }
 
     private static func equal(_ a: Any, _ b: Any) -> Bool {
