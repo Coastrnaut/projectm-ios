@@ -11,7 +11,7 @@ with System/App Capture only where the OS provides it.
 
 ## Decision
 
-- **Deployment target**: iOS 26.0 and iPadOS 26.0, universal app.
+- **Deployment target**: iOS 26.0 and iPadOS 26.0, one app for the iPhone and iPad device family.
 - **SDK**: the iOS 27 SDK (or newer), needed to compile the System/App Capture adapter.
 - **Feature gating**: System/App Capture is availability-gated (ADR-0001); all other features work
   on iOS 26.
