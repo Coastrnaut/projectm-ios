@@ -22,9 +22,9 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
 
 ## Working with agents (owner preference, 2026-11-08)
 
-- **Parallelize aggressively.** Aim for 30–40 agents running at once, spread over two or three
-  concurrent workflows (one workflow runs at most about 16 agents at a time). Token usage is not a
-  constraint.
+- **Parallelize as much as possible.** Target at least 50 agents running at once, with a maximum of
+  150. One workflow runs at most about 16 agents at a time, so this means four or more workflows
+  running concurrently (background subagents count too). Token usage is not a constraint.
 - **Fan out every substantive task:** parallel researchers or finders, each result checked by
   several skeptics told to refute it; one auditor per document for consistency sweeps; parallel
   review angles on every diff; agents that prepare ready-to-apply patches for pending owner
