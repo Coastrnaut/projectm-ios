@@ -86,7 +86,7 @@ Starter preset set size depends on licensing (R-09).
 | III. ScreenCaptureKit preferred | PASS | ADR-0001: ScreenCaptureKit is the only System/App Capture adapter. No ReplayKit, and no broadcast extension (FR-009). In-process stream. |
 | IV. Truthful labeling | PASS | `AudioStateClassifier` contract (contracts/audio-source.md) implements FR-010/FR-011. The UI reads only classifier states. |
 | V. No universal-capture claims | PASS | Claims come only from report "Works" rows (FR-062). Store copy is reviewed in Phase E. |
-| VI. Modular boundaries | PASS | Packages: AudioCore ← CaptureKit, ProjectMBridge ← Rendering, App. The engine sees only normalized PCM frames. |
+| VI. Modular boundaries | PASS | Packages: AudioCore ← CaptureKit ← CaptureUI, ProjectMBridge ← Rendering, App. Enforced in CI by `scripts/check_compliance.py`. The engine sees only normalized PCM frames. |
 | VII. Real-time safety | PASS | Preallocated SPSC ring buffer with atomics, no allocation or locks in callbacks, conversion on a dedicated audio work queue (research R-06). |
 | VIII. Upstream fidelity | PASS | Submodule pinned. No engine patches planned (load_proc avoids resolver changes). Any patch goes in `docs/projectm-patches.md`. |
 | IX. Pinned deps and licenses | CONDITIONAL | Pins and vendored-component licenses are recorded in ADR-0004. The LGPL and App Store conclusions (RI-007, RI-010; ADR-0005) are pending; the preliminary conclusions are Stage 2 entry conditions. Preset and audio licensing is pending (R-09). |
@@ -182,6 +182,8 @@ Packages/
 ├── CaptureKit/                 # AudioSource protocol, CaptureManager, adapters:
 │   │                           # ScreenCaptureSource, MicrophoneSource, InAppPlaybackSource
 │   └── Tests/CaptureKitTests/  # with fake sources
+├── CaptureUI/                  # SwiftUI views shared by both apps: SourceChooserView,
+│   │                           # MicrophoneExplainerView, StatusBanner (ui-states strings)
 ├── Diagnostics/                # DiagnosticsSnapshot, exporter (schema-validated), signposts
 │   └── Tests/
 ├── ProjectMBridge/             # ObjC++ target: PMBridge.h/.mm; links ProjectM.xcframework
@@ -202,7 +204,7 @@ Build/                          # generated xcframeworks (gitignored)
 
 | README component | Plan location |
 |------------------|---------------|
-| App: ProjectMApp, AppCoordinator, ContentView, VisualizerScreen, CaptureControls, SourceStatusView | `Apps/ProjectMiOS` (Coordinators/, Views/) |
+| App: ProjectMApp, AppCoordinator, ContentView, VisualizerScreen, CaptureControls, SourceStatusView | `Apps/ProjectMiOS` (Coordinators/, Views/); the shared chooser, explainer, and banner are in `Packages/CaptureUI` |
 | Capture: AudioSourceProtocol, AudioCaptureManager, adapters | `Packages/CaptureKit` (`AudioSource`, `CaptureManager`, three adapters) |
 | Capture: ReplayKitAudioSource | Excluded (FR-009, ADR-0001) |
 | Audio: PCMFormat, PCMBuffer, AudioNormalizer, AudioRingBuffer | `Packages/AudioCore` |
@@ -219,10 +221,12 @@ the reason. Local Swift packages make the module boundaries (Constitution VI) co
 let pure-logic packages run `swift test` without a simulator, and let CaptureLab exclude the engine
 entirely.
 
-**Structure Decision**: Two app targets share five local Swift packages. This keeps the
+**Structure Decision**: Two app targets share six local Swift packages. This keeps the
 constitution's module boundaries enforceable by the compiler. CaptureLab depends only on AudioCore,
-CaptureKit, and Diagnostics, so Phase A cannot accidentally depend on the engine. ProjectMiOS adds
-ProjectMBridge and Rendering.
+CaptureKit, CaptureUI, and Diagnostics, so Phase A cannot accidentally depend on the engine.
+ProjectMiOS adds ProjectMBridge and Rendering. CaptureUI holds the source chooser, microphone
+explainer, and status banner so both apps show identical, contract-defined UI.
+`scripts/check_compliance.py` enforces the constitution's API and boundary rules on every merge.
 
 ## Complexity Tracking
 
