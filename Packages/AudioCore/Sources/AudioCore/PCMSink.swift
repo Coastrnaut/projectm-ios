@@ -21,6 +21,8 @@ public final class PCMSink: @unchecked Sendable {
     public let ring: SPSCRingBuffer
     private let scratch: UnsafeMutablePointer<Float>
     private let scratchCapacity: Int
+    /// Producer-owned plane-pointer scratch for planar `AudioBufferList` input.
+    let planeScratch: UnsafeMutablePointer<UnsafeRawPointer?>
 
     // Statistics (written by the producer; read by the analysis queue).
     private let framesWritten = Atomic<Int>(0)
@@ -39,11 +41,15 @@ public final class PCMSink: @unchecked Sendable {
         scratchCapacity = PCMSink.maxFramesPerWrite * PCMSink.maxChannels
         scratch = UnsafeMutablePointer<Float>.allocate(capacity: scratchCapacity)
         scratch.initialize(repeating: 0, count: scratchCapacity)
+        planeScratch = UnsafeMutablePointer<UnsafeRawPointer?>.allocate(capacity: PCMSink.maxChannels)
+        planeScratch.initialize(repeating: nil, count: PCMSink.maxChannels)
     }
 
     deinit {
         scratch.deinitialize(count: scratchCapacity)
         scratch.deallocate()
+        planeScratch.deinitialize(count: PCMSink.maxChannels)
+        planeScratch.deallocate()
     }
 
     /// Starts a new session: clears statistics and buffered audio. Call from the control side

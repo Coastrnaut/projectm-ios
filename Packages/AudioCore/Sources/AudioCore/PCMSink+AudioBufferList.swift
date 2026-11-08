@@ -4,10 +4,9 @@ import CoreAudioTypes
 
 extension PCMSink {
     /// Real-time-safe write from an `AudioBufferList` (contracts/audio-source.md §PCMSink).
-    /// `planeScratch` must hold at least `PCMSink.maxChannels` entries and is owned by the caller
-    /// (each source preallocates one), so this path never allocates.
+    /// Uses the sink's preallocated plane scratch, so this path never allocates. Single producer.
     public func write(_ list: UnsafePointer<AudioBufferList>, format: AudioFormat, frameCount: Int,
-                      hostTimeNs: UInt64, planeScratch: UnsafeMutablePointer<UnsafeRawPointer?>) {
+                      hostTimeNs: UInt64 = MonotonicClock.nowNanoseconds()) {
         let buffers = UnsafeMutableAudioBufferListPointer(UnsafeMutablePointer(mutating: list))
         guard buffers.count > 0, frameCount > 0 else { return }
         if format.isInterleaved || buffers.count == 1 {
@@ -23,14 +22,6 @@ extension PCMSink {
             writePlanar(UnsafePointer(planeScratch), planeCount: planes, frames: frameCount,
                         format: format, hostTimeNs: hostTimeNs)
         }
-    }
-
-    /// Allocates a plane-pointer scratch array for `write(_:format:frameCount:hostTimeNs:planeScratch:)`.
-    /// Call once at source setup, never in a callback.
-    public static func makePlaneScratch() -> UnsafeMutablePointer<UnsafeRawPointer?> {
-        let p = UnsafeMutablePointer<UnsafeRawPointer?>.allocate(capacity: maxChannels)
-        p.initialize(repeating: nil, count: maxChannels)
-        return p
     }
 }
 #endif

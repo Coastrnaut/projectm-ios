@@ -17,6 +17,9 @@ public struct AnalyzerUpdate: Sendable, Equatable {
     public var newTransitions: [StateTransition]
     /// Seconds since the session started.
     public var sessionSeconds: Double
+    /// Monotonic per-analyzer sequence. Consumers ignore updates older than the newest seen,
+    /// so a published update that arrives late never overwrites a newer synchronous result.
+    public var sequence: UInt64
 }
 
 public final class AudioAnalyzer: @unchecked Sendable {
@@ -35,6 +38,7 @@ public final class AudioAnalyzer: @unchecked Sendable {
     private var pending: [StateTransition] = []
     private var transitionCount = 0
     private var sessionStart: Double = 0
+    private var sequence: UInt64 = 0
     private var onUpdate: (@Sendable (AnalyzerUpdate) -> Void)?
 
     /// Maximum transitions recorded per session (export schema `maxItems`).
@@ -154,10 +158,12 @@ public final class AudioAnalyzer: @unchecked Sendable {
     }
 
     private func makeUpdate(at now: Double) -> AnalyzerUpdate {
-        AnalyzerUpdate(state: classifier.state, reason: classifier.lastReason,
+        sequence &+= 1
+        return AnalyzerUpdate(state: classifier.state, reason: classifier.lastReason,
                        prolongedSilenceHint: classifier.prolongedSilenceHint,
                        hasVerifiedActiveAudio: classifier.hasVerifiedActiveAudio,
                        levels: lastLevels, statistics: sink.statistics(),
-                       newTransitions: pending, sessionSeconds: max(0, now - sessionStart))
+                       newTransitions: pending, sessionSeconds: max(0, now - sessionStart),
+                       sequence: sequence)
     }
 }
