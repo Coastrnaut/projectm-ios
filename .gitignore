@@ -30,3 +30,6 @@
 *.exe
 *.out
 *.app
+
+# Claude Code machine-local settings (may hold personal permissions/credentials)
+.claude/settings.local.json
