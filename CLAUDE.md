@@ -66,9 +66,10 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
 
 ## Next tasks on the Mac, in order
 
-1. Done 2026-11-08: T010, T017, T035 (Gate 0 research), T037 and the Mac-verifiable Phase A tasks.
+1. Done 2026-11-08: T010, T017, T033 (previews checked in Xcode's canvas), T035 (Gate 0 research),
+   T037 and the Mac-verifiable Phase A tasks.
 2. Before each work session: `python3 scripts/verify_environment.py` must exit 0.
-3. Owner: open `Previews.swift` in Xcode's canvas to close T033; review the ADR-0001/0002 acceptances.
+3. Owner: review the ADR-0001/0002 acceptances.
 4. `xcodegen generate`, then build and run CaptureLab on D1, D2 and D3 (set the signing team by hand).
 5. Run the device tasks (T040 onward) following `specs/001-ios-projectm-visualizer/quickstart.md`
    (Scenario A rules: start playback first, stay in CaptureLab, fill the tester note).
