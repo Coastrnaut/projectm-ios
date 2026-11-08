@@ -38,6 +38,9 @@ public enum StopReason: Sendable, Equatable, Hashable, Codable {
     case audioRouteChanged
     case endedBySystem
     case unsupportedOS
+    /// System/App Capture: the user declined screen recording (SCStreamError -3801), or the OS
+    /// reports that screen recording is not allowed on this device (owner ruling 2026-11-08).
+    case screenRecordingNotAllowed
     case error(String)
 
     /// Stable code used in exports and UI-string lookup.
@@ -51,6 +54,7 @@ public enum StopReason: Sendable, Equatable, Hashable, Codable {
         case .audioRouteChanged: return "audioRouteChanged"
         case .endedBySystem: return "endedBySystem"
         case .unsupportedOS: return "unsupportedOS"
+        case .screenRecordingNotAllowed: return "screenRecordingNotAllowed"
         case .error: return "error"
         }
     }

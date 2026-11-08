@@ -129,8 +129,10 @@ source that delivers nothing.
    increasing.
 3. **Given** capture has started, **When** no audio data arrives for 5 seconds after start, **Then**
    the app shows "No audio received" and suggests choosing another source or using Microphone.
-4. **Given** the user cancels or declines the system prompt, **When** control returns to the app,
-   **Then** the app shows "Not started — cancelled" and remains usable.
+4. **Given** the user cancels the system picker, **When** control returns to the app, **Then** the
+   app shows "Not started — cancelled" and remains usable. If the user instead declines screen
+   recording, the app shows "Screen recording not allowed" and remains usable (owner ruling
+   2026-11-08).
 5. **Given** a device whose OS does not offer System/App Capture (e.g., iOS 26), **When** the user
    opens the source chooser, **Then** System/App Capture is shown as unavailable with the reason
    "Requires a newer iOS version", and Microphone and In-App Playback remain selectable.
@@ -324,7 +326,9 @@ Each edge case below maps to a functional requirement.
   attempt to bypass DRM, protected playback, app capture restrictions, or OS permissions.
 - **FR-004**: System MUST detect whether the device supports System/App Capture and, if not, show it
   as unavailable with the reason "Requires a newer iOS version" while keeping fallback modes
-  available.
+  available. On an OS that supports it, if the OS reports that screen recording is not allowed on
+  this device, the mode MUST show as unavailable with the reason "Screen recording not allowed"
+  (owner ruling 2026-11-08).
 - **FR-005**: Microphone mode MUST explain, before requesting permission, that it captures ambient
   sound in the room. If no microphone input is available, it MUST report "Microphone unavailable".
 - **FR-006**: In-App Playback MUST provide at least one bundled reference audio track with verified
@@ -362,8 +366,8 @@ Each edge case below maps to a functional requirement.
   current session. When the OS does not identify the content, the label is "System/App Capture".
 - **FR-015**: When a source stops or fails for any reason other than the user, the app MUST display
   one of these reasons: cancelled, permission denied, microphone unavailable, In-App Playback
-  failed, interrupted, audio route changed, ended by system, unsupported OS, or error (with a short
-  description).
+  failed, interrupted, audio route changed, ended by system, unsupported OS, screen recording not
+  allowed, or error (with a short description).
 - **FR-016**: Switching sources MUST fully stop the previous source before the new one starts. While
   the new source is being classified, the indicator MUST show the new mode with "Waiting".
 - **FR-017**: A mid-stream change in sample rate, channel count, or sample type MUST NOT stop the

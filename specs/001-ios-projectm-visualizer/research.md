@@ -32,7 +32,7 @@ Renderer/Platform/GLResolver.cpp).
   modes). The stream enables audio (48 kHz, 2 channels, own audio excluded), adds an `.audio`
   output into `PCMSink` and a frame-discarding 64×64 `.screen` output, and never a `.microphone`
   output; the picker hides its microphone control (FR-069). `SCContentSharingPicker.isAvailable`
-  is checked at start (FR-004 conflict noted below). Decisions taken in T035 (2026-11-08) are
+  gates availability and start (FR-004). Decisions taken in T035 (2026-11-08) are
   listed in ADR-0001; the owner may revisit them.
 - **Rationale**: Apple documents ScreenCaptureKit as the iOS 27 replacement for ReplayKit, whose
   capture APIs are deprecated in iOS 27.0. The constitution forbids ReplayKit as the default, and
@@ -45,9 +45,9 @@ Renderer/Platform/GLResolver.cpp).
   output types `.screen`/`.audio`/`.microphone`, no content identity on iOS (FR-014),
   `NSScreenCaptureUsageDescription` named by Apple's overview (FR-019). **Open until device
   testing** (T040): whose audio `.audio` carries (RI-002), whether audio-only streams work, the
-  minimum video size, usage-key enforcement, and the capture indicator (FR-089). **Open owner
-  decision**: FR-004 has no reason text for an iOS 27 device where screen recording is not allowed
-  (`isAvailable` false); today the mode stays selectable and start fails with `error`.
+  minimum video size, usage-key enforcement, and the capture indicator (FR-089). **Owner ruling
+  2026-11-08**: an iOS 27 device where screen recording is not allowed (`isAvailable` false), and a
+  declined screen-recording permission (-3801), use the new reason `screenRecordingNotAllowed`.
 
 ## R-03 Background modes and lifecycle (RI-003)
 

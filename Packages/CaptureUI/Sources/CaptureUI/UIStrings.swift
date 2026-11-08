@@ -53,6 +53,7 @@ public enum UIStrings {
         case .audioRouteChanged: return "Paused — audio route changed"
         case .endedBySystem: return "Ended by system"
         case .unsupportedOS: return "Requires a newer iOS version"
+        case .screenRecordingNotAllowed: return "Screen recording not allowed"
         case .error(let description): return "Something went wrong: \(description)"
         }
     }
@@ -92,7 +93,7 @@ public enum BannerAction: String, Sendable, CaseIterable {
         switch reason {
         case .cancelled, .microphoneUnavailable, .inAppPlaybackFailed, .unsupportedOS: return [.chooseSource]
         case .permissionDenied: return [.openSettings, .chooseSource]
-        case .interrupted, .endedBySystem, .error: return [.restart, .chooseSource]
+        case .interrupted, .endedBySystem, .screenRecordingNotAllowed, .error: return [.restart, .chooseSource]
         case .audioRouteChanged: return [.resume, .chooseSource]
         }
     }

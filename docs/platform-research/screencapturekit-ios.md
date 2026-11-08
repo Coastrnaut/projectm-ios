@@ -227,7 +227,7 @@ selection, not its owner. Private tbd names (F7) must never be used to get more.
 
 | Code | Swift case | Meaning | `Headers/SCError.h` | Project use |
 |------|------------|---------|---------------------|-------------|
-| -3801 | `userDeclined` | User did not authorize capture | :15 | Driver → `cancelled`; Apple: Screen Recording permission not granted [userdeclined]; owner decision 3 |
+| -3801 | `userDeclined` | User did not authorize capture | :15 | Driver → `screenRecordingNotAllowed` (owner decision 3); Apple: Screen Recording permission not granted [userdeclined] |
 | -3802 | `failedToStart` | Stream failed to start | :16 | → `error`, code kept |
 | -3803 | `missingEntitlements` | Missing entitlements; none named anywhere | :17 | Open item 5 |
 | -3805 | `failedApplicationConnectionInterrupted` | App connection interrupted | :19 | Record in T041 |
@@ -313,9 +313,10 @@ In `Packages/CaptureKit/Sources/CaptureKit/ScreenCapture/SCKStreamDriver.swift` 
 
 1. **Gate.** `#if os(iOS) && canImport(ScreenCaptureKit)` plus `@available(iOS 27.0, *)`;
    `makeDefault()` uses `#available(iOS 27.0, *)`. Compiled out for iOS 26 and simulators (F1, F3).
-2. **Runtime probe.** `isSupported` is true whenever the driver exists; `start` checks `isAvailable`
-   and, if it is false, fails with "Screen recording is not available or not allowed on this device"
-   (StopReason `error`). "Requires a newer iOS version" is shown on iOS 26 (FR-004) and on every
+2. **Runtime probe.** `isSupported` is true whenever the driver exists; `isAllowed` reads
+   `isAvailable` each time availability is asked and again at start. If it is false, the mode is
+   unavailable with "Screen recording not allowed" (`screenRecordingNotAllowed`, owner decision 3).
+   "Requires a newer iOS version" is shown on iOS 26 (FR-004) and on every
    simulator (no ScreenCaptureKit in the Simulator SDK, F3; `makeDefault()` then has no driver and
    returns `.unavailable(.unsupportedOS)`). The iOS 27 `isAvailable` path runs only on D1/D2 (open
    item 14).
@@ -333,8 +334,9 @@ In `Packages/CaptureKit/Sources/CaptureKit/ScreenCapture/SCKStreamDriver.swift` 
    have dropped every buffer. Host tests feed it synthetic planar and interleaved buffers. The
    audio callback sends no events (format changes are counted by `PCMSink`). `stop()` marks the
    output stopped and drains both sample-handler queues before returning. No `.microphone`.
-7. **Errors.** Picker cancel and -3801 → `cancelled`, whether -3801 arrives from `startCapture` or
-   from the picker observer's start-failure callback (owner decision 3). Delegate stop →
+7. **Errors.** Picker cancel → `cancelled`. -3801 → `screenRecordingNotAllowed`, whether it arrives
+   from `startCapture` or from the picker observer's start-failure callback (owner decision 3).
+   Delegate stop →
    `endedBySystem(detail)`, the detail keeping "(SCStreamError <code>)"; -3817 thus shows "Ended by
    system", as US6-AS3 requires. Other start errors → `error`, code kept.
 8. **Swift 6.** `SCContentFilter` crosses the picker continuation in an `@unchecked Sendable` handoff

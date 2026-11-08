@@ -24,7 +24,7 @@ final class ViewRenderTests: XCTestCase {
     /// case that has a fixture.
     private enum ReasonKind: String, CaseIterable {
         case cancelled, permissionDenied, microphoneUnavailable, inAppPlaybackFailed, interrupted,
-             audioRouteChanged, endedBySystem, unsupportedOS, error
+             audioRouteChanged, endedBySystem, unsupportedOS, screenRecordingNotAllowed, error
 
         init(_ reason: StopReason) {
             switch reason {
@@ -36,6 +36,7 @@ final class ViewRenderTests: XCTestCase {
             case .audioRouteChanged: self = .audioRouteChanged
             case .endedBySystem: self = .endedBySystem
             case .unsupportedOS: self = .unsupportedOS
+            case .screenRecordingNotAllowed: self = .screenRecordingNotAllowed
             case .error: self = .error
             }
         }

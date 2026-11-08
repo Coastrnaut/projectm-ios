@@ -11,7 +11,8 @@ enum PreviewFixtures {
     /// switch over StopReason, so a new case must be added both there and here.
     static let stopReasons: [StopReason] = [
         .cancelled, .permissionDenied, .microphoneUnavailable, .inAppPlaybackFailed, .interrupted,
-        .audioRouteChanged, .endedBySystem, .unsupportedOS, .error("Example description"),
+        .audioRouteChanged, .endedBySystem, .unsupportedOS, .screenRecordingNotAllowed,
+        .error("Example description"),
     ]
 
     /// iOS 27 or later: every mode available.
@@ -21,6 +22,12 @@ enum PreviewFixtures {
     /// iOS 26: System/App Capture unavailable, fallbacks available (FR-004).
     static let iOS26: [AudioSourceMode: SourceAvailability] = [
         .systemAppCapture: .unavailable(.unsupportedOS), .microphone: .available, .inAppPlayback: .available,
+    ]
+
+    /// iOS 27 or later with screen recording not allowed on the device (FR-004).
+    static let notAllowed: [AudioSourceMode: SourceAvailability] = [
+        .systemAppCapture: .unavailable(.screenRecordingNotAllowed), .microphone: .available,
+        .inAppPlayback: .available,
     ]
 
     static func state(for reason: StopReason) -> AudioState {
@@ -34,6 +41,10 @@ enum PreviewFixtures {
 
 #Preview("Chooser — iOS 26, capture unavailable") {
     SourceChooserView(availability: PreviewFixtures.iOS26) { _ in }
+}
+
+#Preview("Chooser — iOS 27, screen recording not allowed") {
+    SourceChooserView(availability: PreviewFixtures.notAllowed) { _ in }
 }
 
 #Preview("Banner — every StopReason") {

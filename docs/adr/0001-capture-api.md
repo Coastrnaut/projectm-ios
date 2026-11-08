@@ -61,11 +61,11 @@ RI-004). This ADR covers RI-003's configuration part; its device part is checked
    `Packages/CaptureKit/Sources/CaptureKit/ScreenCapture/SCKStreamDriver.swift`. Run time:
    `#available(iOS 27.0, *)` in `ScreenCaptureSource.makeDefault`, then the SDK's runtime probe
    `SCContentSharingPicker.shared.isAvailable` (Headers/SCContentSharingPicker.h:98-101; it reports
-   whether the device supports and allows screen recording), checked at the start of every capture
-   (Constitution III). If the probe is false, start fails with the FR-015 reason "error" and the
-   description "Screen recording is not available or not allowed on this device". "Requires a
-   newer iOS version" stays reserved, on devices, for iOS 26, where the mode is shown as unavailable
-   (FR-004). On simulators the same text appears because the Simulator SDK has no
+   whether the device supports and allows screen recording), read each time availability is asked
+   and again at start (Constitution III). If it is false, the mode is unavailable with the reason
+   `screenRecordingNotAllowed`, "Screen recording not allowed" (FR-004, owner ruling 2026-11-08).
+   "Requires a newer iOS version" stays reserved, on devices, for iOS 26, where the mode is shown
+   as unavailable (FR-004). On simulators the same text appears because the Simulator SDK has no
    ScreenCaptureKit; this is a known simulator-only inaccuracy, and only D3 (T040 scenario 5)
    checks the iOS 26 path.
 4. **No ReplayKit adapter** in this feature. `scripts/check_compliance.py` rejects any ReplayKit
@@ -184,12 +184,11 @@ follows for this project:
     Xcode 27.2's Background Modes editor has no Screen Capture checkbox, so the value goes into
     `project.yml` directly (research doc, from the Xcode 27.2 Background Modes editor: 11
     checkboxes, none for screen-capture; Apple's docs say to use Signing & Capabilities).
-- **Stop and error reasons.** A picker cancel and `SCStreamErrorUserDeclined` (`-3801`,
-  Headers/SCError.h:15) both show "Not started — cancelled": US1-AS4 covers cancel and decline,
-  and the `permissionDenied` text in contracts/ui-states.md is about the microphone. Every stop
-  reported by the stream delegate, including a user stop from system UI (`-3817`,
-  Headers/SCError.h:31), shows "Ended by system" (US6-AS3). A capture-specific reason for `-3801`
-  would be a spec and contract change for the owner to decide.
+- **Stop and error reasons.** A picker cancel shows "Not started — cancelled".
+  `SCStreamErrorUserDeclined` (`-3801`, Headers/SCError.h:15) shows "Screen recording not allowed"
+  (`screenRecordingNotAllowed`, owner ruling 2026-11-08; US1-AS4, FR-015). Every stop reported by
+  the stream delegate, including a user stop from system UI (`-3817`, Headers/SCError.h:31), shows
+  "Ended by system" (US6-AS3).
 
 Unchanged:
 

@@ -23,6 +23,9 @@ final class UIStringsTests: XCTestCase {
         XCTAssertEqual(BannerAction.actions(for: .endedBySystem), [.restart, .chooseSource])
         XCTAssertEqual(BannerAction.actions(for: .audioRouteChanged), [.resume, .chooseSource])
         XCTAssertEqual(BannerAction.actions(for: .cancelled), [.chooseSource])
+        XCTAssertEqual(BannerAction.actions(for: .screenRecordingNotAllowed), [.restart, .chooseSource])
+        XCTAssertEqual(UIStrings.message(.screenRecordingNotAllowed), "Screen recording not allowed")
+        XCTAssertNotEqual(UIStrings.message(.screenRecordingNotAllowed), UIStrings.message(.unsupportedOS))
     }
 
     func testNoThirdPartyAppNamesInStrings() {

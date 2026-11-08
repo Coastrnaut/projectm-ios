@@ -9,6 +9,7 @@ import AudioCore
 @MainActor
 final class FakeStreamDriver: StreamDriver {
     var isSupported = true
+    var isAllowed = true
     var contentIdentity: String?
     var startError: (any Error)?
     private(set) var startCount = 0
@@ -87,6 +88,35 @@ final class ScreenCaptureSourceTests: XCTestCase {
         } catch let e as SourceError {
             XCTAssertEqual(e.reason, .unsupportedOS)
         } catch { XCTFail("\(error)") }
+    }
+
+    /// FR-004 (owner ruling 2026-11-08): an iOS 27 device where screen recording is not allowed
+    /// shows "Screen recording not allowed", not the iOS 26 reason, and does not start.
+    func testNotAllowedIsUnavailableWithItsOwnReason() async {
+        let driver = FakeStreamDriver()
+        driver.isAllowed = false
+        let source = ScreenCaptureSource(driver: driver)
+        XCTAssertEqual(source.availability, .unavailable(.screenRecordingNotAllowed))
+        do {
+            _ = try await source.start(into: PCMSink())
+            XCTFail("must not start")
+        } catch let e as SourceError {
+            XCTAssertEqual(e.reason, .screenRecordingNotAllowed)
+        } catch { XCTFail("\(error)") }
+        XCTAssertEqual(driver.startCount, 0, "the picker must not be shown when not allowed")
+        driver.isAllowed = true
+        XCTAssertEqual(source.availability, .available, "availability is re-read each time")
+    }
+
+    /// US1-AS4: declining screen recording (-3801, mapped by the driver) reads "Screen recording not
+    /// allowed" in the manager.
+    func testDeclinedRecordingShowsNotAllowed() async {
+        let driver = FakeStreamDriver()
+        driver.startError = SourceError(.screenRecordingNotAllowed)
+        let manager = CaptureManager(sources: [ScreenCaptureSource(driver: driver)], runsAnalysisTimer: false)
+        await manager.select(.systemAppCapture)
+        XCTAssertEqual(manager.stopReason, .screenRecordingNotAllowed)
+        XCTAssertEqual(manager.state, .notStarted)
     }
 
     func testPickerCancelIsCancelled() async {

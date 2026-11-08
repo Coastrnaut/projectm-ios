@@ -38,11 +38,13 @@ final class SCKStreamDriver: NSObject, StreamDriver {
     private let screenQueue = DispatchQueue(label: "org.projectmios.sck-screen", qos: .utility)
 
     /// The OS-level gate is `@available(iOS 27.0, *)` plus `canImport(ScreenCaptureKit)`
-    /// (ScreenCaptureSource.makeDefault). The SDK's runtime probe,
-    /// `SCContentSharingPicker.isAvailable` ("supported and allowed on this device"), is checked
-    /// in `start`, because "not allowed" (e.g. a device restriction) must not be shown as
-    /// "Requires a newer iOS version" (FR-004, Constitution IV).
+    /// (ScreenCaptureSource.makeDefault), so a driver that exists is on a supported OS.
     var isSupported: Bool { true }
+
+    /// The SDK's runtime probe, `SCContentSharingPicker.isAvailable` ("supported and allowed on
+    /// this device"). False shows the mode as "Screen recording not allowed", never as "Requires a
+    /// newer iOS version" (FR-004, Constitution IV).
+    var isAllowed: Bool { SCContentSharingPicker.shared.isAvailable }
 
     /// Always nil on iOS: the APIs that identify selected content (SCContentFilter's
     /// includedApplications/includedWindows/includedDisplays, SCRunningApplication,
@@ -50,9 +52,8 @@ final class SCKStreamDriver: NSObject, StreamDriver {
     var contentIdentity: String? { nil }
 
     func start(sink: PCMSink, onEvent: @escaping @Sendable (SourceEvent) -> Void) async throws {
-        guard SCContentSharingPicker.shared.isAvailable else {
-            throw SourceError(.error("Screen recording is not available or not allowed on this device"))
-        }
+        // Checked again here: the probe can change between the chooser and the tap.
+        guard isAllowed else { throw SourceError(.screenRecordingNotAllowed) }
         let filter = try await presentPicker()
         // FR-069, defense in depth: the picker shows no microphone control, so the user cannot
         // enable it; if the filter still reports it, do not start.
@@ -84,9 +85,10 @@ final class SCKStreamDriver: NSObject, StreamDriver {
             try stream.addStreamOutput(output, type: .audio, sampleHandlerQueue: audioQueue)
             try await stream.startCapture()
         } catch let error as SCStreamError where error.code == .userDeclined {
+            // -3801: the user did not authorize screen recording (owner ruling 2026-11-08).
             await discard(output)
             SCContentSharingPicker.shared.isActive = false
-            throw SourceError(.cancelled)
+            throw SourceError(.screenRecordingNotAllowed)
         } catch {
             await discard(output)
             SCContentSharingPicker.shared.isActive = false
@@ -191,10 +193,10 @@ private final class SCKPickerObserver: NSObject, SCContentSharingPickerObserver,
     }
 
     func contentSharingPickerStartDidFailWithError(_ error: any Error) {
-        // A decline can arrive here or from startCapture; both must read "Not started — cancelled"
-        // (US1-AS4). Which path iOS uses is recorded in T040.
+        // A decline (-3801) can arrive here or from startCapture; both must read "Screen recording
+        // not allowed" (US1-AS4). Which path iOS uses is recorded in T040.
         if let error = error as? SCStreamError, error.code == .userDeclined {
-            completion(.failure(SourceError(.cancelled)))
+            completion(.failure(SourceError(.screenRecordingNotAllowed)))
         } else {
             completion(.failure(SourceError(.error(sckDescription(error)))))
         }

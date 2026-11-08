@@ -11,6 +11,10 @@ single source of truth. (English only, per Out of Scope.)
 | Microphone | Microphone | — |
 | In-App Playback | In-App Playback | — |
 
+On iOS 27 or later, if the OS reports that screen recording is not allowed on this device
+(`SCContentSharingPicker.isAvailable` is false), System/App Capture is unavailable with the
+`screenRecordingNotAllowed` message below instead of the iOS-version text (FR-004).
+
 The Microphone explainer, shown before the permission prompt (FR-005), reads: "Microphone mode
 listens to sound in the room through your device's microphone. It does not capture audio directly
 from other apps."
@@ -52,6 +56,7 @@ Interrupted · Stopped · Ended by system
 | audioRouteChanged | Paused — audio route changed | Resume, Choose source |
 | endedBySystem | Ended by system | Restart (re-presents the system picker for System/App Capture), Choose source |
 | unsupportedOS | Requires a newer iOS version | Choose source |
+| screenRecordingNotAllowed | Screen recording not allowed | Restart (re-presents the system picker), Choose source |
 | error | Something went wrong: ‹description› | Restart, Choose source |
 
 Hints: No audio received → "No audio received. Try another source or use Microphone." Prolonged

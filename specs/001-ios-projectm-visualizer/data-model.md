@@ -9,7 +9,7 @@ Field types are logical (Swift types noted where useful).
 
 | Mode | Display label (FR-013) | Availability rule |
 |------|------------------------|-------------------|
-| systemAppCapture | "System/App Capture" | OS ≥ first capture-capable version (FR-008) **and** runtime probe succeeds |
+| systemAppCapture | "System/App Capture" | OS ≥ first capture-capable version (FR-008) **and** runtime probe succeeds (`SCContentSharingPicker.isAvailable`; if false: `screenRecordingNotAllowed`) |
 | microphone | "Microphone" | Always listed; may fail with `microphoneUnavailable` / `permissionDenied` |
 | inAppPlayback | "In-App Playback" | Always listed; fails with `inAppPlaybackFailed` if the track cannot play |
 
@@ -18,7 +18,7 @@ Field types are logical (Swift types noted where useful).
 | Field | Type | Rules |
 |-------|------|-------|
 | mode | AudioSourceMode | immutable |
-| availability | `.available` / `.unavailable(reason)` | `unsupportedOS` for capture on iOS 26 (FR-004) |
+| availability | `.available` / `.unavailable(reason)` | `unsupportedOS` for capture on iOS 26; `screenRecordingNotAllowed` on iOS 27+ when the OS does not allow screen recording (FR-004) |
 | state | AudioState | see the state machine below |
 | stopReason | StopReason? | set when state ∈ {Stopped, Ended by system, Interrupted} or a failure occurs |
 | contentIdentity | String? | System/App Capture only. Set **only** if the OS identifies the content **and** Active audio was verified this session (FR-014); else nil |
@@ -82,7 +82,8 @@ AudioState.
 ## StopReason (enum, FR-015)
 
 `cancelled` · `permissionDenied` · `microphoneUnavailable` · `inAppPlaybackFailed` · `interrupted`
-· `audioRouteChanged` · `endedBySystem` · `unsupportedOS` · `error(description)`
+· `audioRouteChanged` · `endedBySystem` · `unsupportedOS` · `screenRecordingNotAllowed` ·
+`error(description)`
 
 ## AudioFormat
 

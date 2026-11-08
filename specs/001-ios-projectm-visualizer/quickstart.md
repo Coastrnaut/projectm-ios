@@ -95,8 +95,8 @@ unavailable there. In every System/App Capture run:
    System/App Capture → select in the system picker. Expect "Active audio" with live rate, channels,
    and levels. Pause the source without leaving CaptureLab → "Audio received — silent" within 2 s.
    Repeat with a source producing nothing → "No audio received" after 5 s. Cancel the picker → "Not
-   started — cancelled". If a permission prompt appears, decline it in one run → "Not started —
-   cancelled" (US1-AS4). If the prompt does not appear again after the first answer, write that in
+   started — cancelled". If a permission prompt appears, decline it in one run → "Screen recording
+   not allowed" (US1-AS4). If the prompt does not appear again after the first answer, write that in
    the tester note, and how (if at all) it was reset.
 3. On D3 (iPadOS 26.5; US1 scenario 5, T040): CaptureLab launches, and System/App Capture shows
    "Requires a newer iOS version" while Microphone and In-App Playback stay selectable. The Debug

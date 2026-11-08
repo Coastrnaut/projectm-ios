@@ -33,6 +33,9 @@ public final class ScreenCaptureSource: AudioSource, ContentIdentifying {
 
     public var availability: SourceAvailability {
         guard let driver, driver.isSupported else { return .unavailable(.unsupportedOS) }
+        // FR-004: an iOS 27 device where screen recording is not allowed must not read
+        // "Requires a newer iOS version".
+        guard driver.isAllowed else { return .unavailable(.screenRecordingNotAllowed) }
         return .available
     }
 
@@ -40,6 +43,7 @@ public final class ScreenCaptureSource: AudioSource, ContentIdentifying {
 
     public func start(into sink: PCMSink) async throws -> AsyncStream<SourceEvent> {
         guard let driver, driver.isSupported else { throw SourceError(.unsupportedOS) }
+        guard driver.isAllowed else { throw SourceError(.screenRecordingNotAllowed) }
         let (stream, continuation) = AsyncStream.makeStream(of: SourceEvent.self)
         do {
             try await driver.start(sink: sink) { continuation.yield($0) }
