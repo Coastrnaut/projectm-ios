@@ -26,10 +26,14 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
   renderer, or preset work: it is blocked until the Stage 1 gate (task T056) records "go".
 - Verified: 84 Swift package tests pass on Linux (AudioCore 40, CaptureKit 33, Diagnostics 7,
   CaptureUI 4) and 15 Python script tests pass.
-- Written but not yet compiled for iOS: `Packages/CaptureKit/Sources/CaptureKit/ScreenCapture/SCKStreamDriver.swift`
-  (written against the **macOS** ScreenCaptureKit API — iOS symbols unverified), the AVFAudio
-  microphone and playback backends, `LifecycleObserver`, the CaptureUI SwiftUI views, the
-  CaptureLab app, and `project.yml`.
+- CI is green (GitHub Actions): macOS-host and iOS-Simulator package tests; all packages and
+  CaptureLab build for generic iOS with Xcode 26.6 / iOS SDK 26.5. That SDK has **no**
+  ScreenCaptureKit, so the capture driver is compiled out on CI (see
+  `docs/platform-research/screencapturekit-ios.md`).
+- Compiled on CI but never run on a device: the AVFAudio backends, `LifecycleObserver`, the
+  CaptureUI views, and the CaptureLab app.
+- Never compiled yet (needs the iOS 27 SDK): `Packages/CaptureKit/Sources/CaptureKit/ScreenCapture/SCKStreamDriver.swift`
+  (written against the **macOS** ScreenCaptureKit API — iOS symbols unverified).
 - Test devices (final; `docs/test-reports/devices.md`): D1 iPhone 15 iOS 27.0.1 (reference),
   D2 iPad Pro M5 iPadOS 27.2, D3 iPad A16 iPadOS 26.5.
 
@@ -56,7 +60,9 @@ swift test --package-path Packages/AudioCore
 xcodegen generate && open ProjectM-iOS.xcodeproj
 ```
 
-CI: `.github/workflows/ios-ci.yml` (docs and compliance, Linux package tests, macOS build).
+CI: `.github/workflows/ios-ci.yml` (docs and compliance → Linux package tests and macOS build/test).
+The repo is private, so macOS minutes cost 10× quota (about 4 min per run). Add `[skip ci]` to
+docs-only commit messages.
 
 ## Conventions
 
