@@ -20,6 +20,26 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
 - Never modify `Vendor/projectM` (pinned submodule). Patches, if ever needed, go in
   `docs/projectm-patches.md`.
 
+## Working with agents (owner preference, 2026-11-08)
+
+- **Parallelize aggressively.** Aim for 30–40 agents running at once, spread over two or three
+  concurrent workflows (one workflow runs at most about 16 agents at a time). Token usage is not a
+  constraint.
+- **Fan out every substantive task:** parallel researchers or finders, each result checked by
+  several skeptics told to refute it; one auditor per document for consistency sweeps; parallel
+  review angles on every diff; agents that prepare ready-to-apply patches for pending owner
+  decisions. Start independent workflows at the same time, not one after another.
+- **Limits that still apply:**
+  - One writer per repo file. Agents write to scratch files, copies, or worktrees; the main session
+    applies their output (especially tasks.md, spec.md, project.yml, and the contracts).
+  - An agent's report is not evidence. Verify it (build, test, read the diff) before marking a task
+    `[X]`.
+  - Builds and simulator runs share one Mac: agents read, review, and type-check; only a few lanes
+    build or run tests.
+  - macOS CI minutes cost 10× quota; parallel agents are no reason to push more often.
+  - Agents cannot do device tasks or owner decisions, and no agent may start work that the Stage 1
+    gate blocks.
+
 ## Where things stand (2026-11-08)
 
 - **Stage 1 / Plan Phase A** (capture feasibility) is in progress. Do not start ProjectM engine,
