@@ -49,15 +49,15 @@ names. Otherwise apply a minimal iOS-only patch that skips it, logged in `docs/p
 
 ## Measurement devices
 
-The reference device (spec SC-005) and the oldest obtainable iOS 26 iPhone and iPad (spec FR-032),
-as recorded in `docs/test-reports/devices.md`.
+The project device set (spec FR-032): D1 iPhone 15 (reference device), D2 iPad Pro M5, and D3 iPad
+A16 (the "oldest" tier), as recorded in `docs/test-reports/devices.md`.
 
 ## Exit thresholds (to accept; per option)
 
 - [ ] All upstream test presets (`presets/tests/*.milk`) render, and at least 95% of the starter
       presets compile and render without shader errors, on every measurement device.
 - [ ] Sustained frame rate over a 10-minute session: at least 55 fps for 95% of the session on the
-      reference device (SC-005); at least 30 fps throughout on the oldest devices (FR-049 floor).
+      reference device (SC-005); at least 30 fps throughout on D2 and D3 (FR-049 floor).
 - [ ] App size increase over the Phase C baseline: 30 MB or less (download size).
 - [ ] The "Reduce flashing" post-pass (FR-072) is feasible with under 2 ms added per frame on the
       reference device.

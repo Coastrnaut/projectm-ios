@@ -34,10 +34,21 @@ approved."
   requirements, including split-screen/resizable windows on iPad.
 - Q: What is the oldest hardware that must be supported? → A: Any device that runs iOS 26. The
   oldest iOS 26-capable iPhone and iPad obtainable are the minimum test devices; their performance
-  is measured and published, not promised in advance.
+  is measured and published, not promised in advance. *(Test-device part superseded by Session
+  2026-11-08: the project device set D1–D3.)*
 - Q: Must the first release be distributed through the public App Store? → A: Yes. A license and
   App Store compliance review of all bundled components (including the LGPL-2.1 visualization
   engine) is a release-blocking requirement.
+
+### Session 2026-11-08
+
+- Q: Which physical devices does the project test on? → A: Only the three devices the project
+  owner has: **D1** iPhone 15 on iOS 27.0.1 (reference device), **D2** iPad Pro 13-inch (M5) on
+  iPadOS 27.2, and **D3** iPad (A16) on iPadOS 26.5 (see `docs/test-reports/devices.md`). No other
+  devices will be bought. The roles "second capture-capable iPhone", "iPhone on iOS 26", and
+  "current-generation iPhone" are **not applicable**. Their absence does not block any phase or
+  gate. The consequence is a limit on claims, not on development: compatibility and performance
+  claims cover only the device classes and OS versions actually tested (FR-062).
 
 ## Delivery Gating *(mandatory for this feature)*
 
@@ -394,10 +405,11 @@ Each edge case below maps to a functional requirement.
   - **Does not work**: No audio received, or silent only, throughout the run.
   Evidence for any rating is the diagnostics export(s) of the run. Screenshots of the picker or the
   app's UI are not evidence.
-- **FR-032**: Testing MUST cover at minimum: the oldest obtainable iOS 26-capable iPhone on
-  iOS 26 (fallback modes), one iPhone on the earliest OS with System/App Capture, one
-  current-generation iPhone, and at least one iPad (oldest obtainable iPadOS 26-capable model
-  preferred).
+- **FR-032**: Testing MUST cover the project device set (Clarifications 2026-11-08): **D1** iPhone 15
+  on iOS 27 (System/App Capture and fallbacks; reference device), **D2** iPad Pro (M5) on iPadOS 27
+  (System/App Capture and fallbacks), and **D3** iPad (A16) on iPadOS 26 (the iOS 26 fallback-only
+  path). An iOS 26 iPhone, a second capture-capable iPhone, and a current-generation iPhone are not
+  applicable.
 - **FR-033**: The report MUST record each stage decision (go/no-go), the approver, the date, the
   evidence used, and the list of claimable sources.
 - **FR-034**: The report MUST live at `docs/test-reports/compatibility-report.md`, with one row per
@@ -557,9 +569,9 @@ Each edge case below maps to a functional requirement.
 **Stage 1 (blocking)**
 
 - **SC-001**: For every System/App Capture source in the test matrix, the compatibility report
-  records a reproducible result on at least two capture-capable iPhone models and one iPad. For
-  Microphone and In-App Playback, it records a result on every FR-032 device. Zero entries rated
-  "Works" lack an export showing non-silent audio.
+  records a reproducible result on D1 (iPhone) and D2 (iPad). For Microphone and In-App Playback,
+  it records a result on D1, D2, and D3. Zero entries rated "Works" lack an export showing non-silent
+  audio.
 - **SC-002**: The feasibility app classifies playing, paused, and absent audio correctly in 100% of
   20 scripted trials per available source mode.
 - **SC-003**: Status changes from silent to active (and back) are shown to the user within 2 seconds
@@ -582,7 +594,7 @@ Each edge case below maps to a functional requirement.
   within 1 second of the request. Any blend transition into it lasts no more than 2 seconds.
 - **SC-008**: In a 30-minute session with an active source, the app's memory use at minute 30 is
   within 10% of its memory use at minute 5, peak memory stays under 300 MB on the reference device
-  (oldest devices measured and published), and the app does not crash.
+  (D2 and D3 measured and published), and the app does not crash.
 - **SC-009**: 50 consecutive start/stop/switch cycles at 200 ms intervals, and a scripted
   background/foreground/lock/interruption/route-change sequence per source mode, complete with zero
   crashes and a correct final state.
@@ -594,14 +606,14 @@ Each edge case below maps to a functional requirement.
 - **SC-012**: Every control and status element passes a screen-reader audit (labeled, reachable,
   announced) on iPhone and iPad.
 - **SC-013**: In a 30-minute session at 20–25 °C room temperature, unplugged, at 50% screen
-  brightness, on the reference device and the oldest iOS 26 iPhone: the device never reaches the
+  brightness, on the reference device (D1) and on D3: the device never reaches the
   critical thermal state, frame rate never drops below the FR-049 floor of 30 fps, and the app is
   never terminated for thermal reasons. Thermal states observed are recorded.
 - **SC-014**: A 60-minute visualization session on the reference device at 50% brightness, unplugged,
   uses no more than 20% of battery (initial target; finalized at Gate 4 per the threshold
   assumption).
 - **SC-015**: Cold launch to an interactive source chooser takes under 2 seconds on the reference
-  device and under 4 seconds on the oldest iOS 26 iPhone.
+  device (D1) and under 4 seconds on D3.
 
 ## Assumptions
 
@@ -610,8 +622,9 @@ Each edge case below maps to a functional requirement.
 - Minimum OS is iOS/iPadOS 26 (clarified). System/App Capture is presumed to need iOS 27+; until
   RI-001/RI-004 confirm this against the SDK, it is an assumption, not a fact.
 - iPhone and iPad are both launch requirements (clarified).
-- Supported hardware is any iOS 26-capable device; performance on the oldest devices is measured
-  and published, not guaranteed (clarified).
+- Supported hardware is any iOS 26-capable device; performance is measured and published only for
+  the project device set D1–D3, and is not guaranteed for other devices (clarified 2026-11-07 and
+  2026-11-08).
 - If no external-app source passes Stage 1, the first release ships with Microphone and In-App
   Playback only, honestly described (clarified; see Delivery Gating).
 - Distribution target is the public App Store (clarified); FR-064 makes the license review a

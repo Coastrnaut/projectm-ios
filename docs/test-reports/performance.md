@@ -23,7 +23,7 @@ measurements yet.**
 
 ## Stage 2 success criteria (Gate 4)
 
-| Criterion | Target | Reference device | Oldest iPhone | Oldest iPad | Pass? |
+| Criterion | Target | D1 iPhone 15 (reference) | D2 iPad Pro M5 | D3 iPad A16 | Pass? |
 |-----------|--------|------------------|---------------|-------------|-------|
 | SC-005 frame rate | ≥ 55 fps for 95% of 10 min (60 fps cap on 120 Hz) | | | | |
 | SC-006 audio→visual delay | median < 150 ms (20 clicks) | | n/a | n/a | |
@@ -32,7 +32,7 @@ measurements yet.**
 | SC-009 cycles + lifecycle | 0 crashes | | | | |
 | SC-013 thermal | never critical; ≥ 30 fps; no termination | | | | |
 | SC-014 battery | ≤ 20% per 60 min | | | | |
-| SC-015 cold launch | < 2 s ref / < 4 s oldest | | | | |
+| SC-015 cold launch | < 2 s D1 / < 4 s D3 | | | | |
 
 ## Stage 2 thresholds (finalized at Gate 4)
 

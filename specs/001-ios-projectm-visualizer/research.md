@@ -151,12 +151,12 @@ Renderer/Platform/GLResolver.cpp).
   supplied. Preferred outcome: it is not reached. Fallback: a minimal patch disabling it for iOS,
   recorded in `docs/projectm-patches.md`.
 - **Quality tiers**: Phase C sets engine settings (per-point mesh size, render scale, texture size)
-  for two tiers, "current" (reference device) and "oldest" (oldest iOS 26 devices), following
+  for two tiers, "current" (reference device D1, and D2) and "oldest" (D3, the iPadOS 26 device), following
   upstream's advice to keep the mesh low on mobile (e.g., 48×32). The tiers and the device-to-tier
   rule are recorded in ADR-0003.
 - **Rationale**: Gets an early, measurable Gate 3 while keeping a non-deprecated route.
 - **Exit criteria (ADR-0003)**: the test presets in `Vendor/projectM/presets/tests` plus 20 starter
-  presets render on the reference device and the oldest iOS 26 device; fps is measured; shader
+  presets render on D1, D2, and D3; fps is measured; shader
   compile failures are counted; binary size is measured.
 
 ## R-09 Presets and reference audio (RI-008)
@@ -202,7 +202,7 @@ Renderer/Platform/GLResolver.cpp).
   `scripts/build_projectm_xcframework.py` (cached by submodule SHA) → `xcodebuild build` and `test`
   on simulator destinations discovered at runtime. CI tests on both an iOS 26 and an iOS 27+
   simulator runtime when the runner image provides them. If the iOS 26 runtime is missing, the job
-  logs that, and iOS 26 coverage comes from the physical iOS 26 device run (FR-032). No signing
+  logs that, and iOS 26 coverage comes from the physical D3 (iPadOS 26) run (FR-032). No signing
   secrets in CI.
 - **Rationale**: Text-only project definition supports Windows editing; CI matches the README §15
   template.

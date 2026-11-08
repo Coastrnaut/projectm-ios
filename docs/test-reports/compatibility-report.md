@@ -28,8 +28,9 @@ In-App reference audio, Microphone.
 | | | | | In-App reference audio | n/a | In-App Playback | n/a | | | | | | | *untested* | | | |
 | | | | | Microphone (room sound) | n/a | Microphone | n/a | | | | | | | *untested* | | | |
 
-Copy the six rows for each device in devices.md (SC-001: System/App Capture sources on at least two
-capture-capable iPhones and one iPad; fallback sources on every device).
+Copy the six rows for each device in devices.md (SC-001: System/App Capture sources on D1 and D2;
+fallback sources on D1, D2, and D3. On D3, iPadOS 26, System/App Capture rows are expected to read
+"unavailable — Requires a newer iOS version").
 
 ## Gate 2 — sustained capture (spec Delivery Gating)
 

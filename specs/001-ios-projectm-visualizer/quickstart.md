@@ -12,7 +12,7 @@ Entities and states: [data-model.md](data-model.md).
 | Git, Python 3.11+, Spec Kit, Claude Code | Windows or macOS (specs, docs, scripts) |
 | Xcode with the iOS 27+ SDK (pinned in ADR-0002), XcodeGen, CMake | macOS only |
 | Apple Developer signing | macOS, human only |
-| Devices per FR-032: oldest iOS 26 iPhone, iPhone on the first capture-capable OS, current-gen iPhone, an iPad | physical |
+| Devices per FR-032: D1 iPhone 15 (iOS 27), D2 iPad Pro M5 (iPadOS 27), D3 iPad A16 (iPadOS 26) | physical |
 | Source apps for the FR-030 matrix, signed in by the tester | on each device |
 
 Windows can run only the documentation checks (`py scripts/validate_docs.py`). Every build or test
@@ -100,7 +100,7 @@ starter presets. Record shader failures, fps, and app size per ADR-0003 option.
 | SC-012 | Screen-reader audit iPhone + iPad | all controls pass |
 | SC-013 | 30-min thermal session per SC-013 conditions | never critical, ≥ 30 fps, no termination |
 | SC-014 | 60-min session, 50% brightness, unplugged | ≤ 20% battery |
-| SC-015 | Cold launch × 10, reference and oldest iPhone | median < 2 s / < 4 s |
+| SC-015 | Cold launch × 10, D1 (reference) and D3 | median < 2 s / < 4 s |
 | FR-084 | Visualize for longer than the auto-lock interval | device does not lock |
 | FR-041 | Rotate; iPad split view and resize | re-layout ≤ 1 s, capture uninterrupted |
 

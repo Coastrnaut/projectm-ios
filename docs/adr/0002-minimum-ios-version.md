@@ -23,7 +23,8 @@ with System/App Capture only where the OS provides it.
 
 - iOS 26 support adds an availability-gated code path. CI must test both an iOS 26 and an iOS 27+
   simulator runtime where available.
-- The minimum test devices are the oldest obtainable iOS 26-capable iPhone and iPad (FR-032).
+- Test devices are the project device set (FR-032, Clarifications 2026-11-08): D1 iPhone 15
+  (iOS 27), D2 iPad Pro M5 (iPadOS 27), D3 iPad A16 (iPadOS 26). The iOS 26 path is covered by D3.
   Their performance is measured, not promised.
 
 ## Verification
