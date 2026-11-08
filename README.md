@@ -773,7 +773,7 @@ Recommended production workflow:
 2. `/speckit-specify`
 3. `/speckit-clarify`
 4. `/speckit-plan`
-5. `/speckit-checklist`
+5. `/speckit-checklist` — requirements quality gate after the plan (an optional early pass may also run right after step 3; see 13.5)
 6. `/speckit-tasks`
 7. `/speckit-analyze`
 8. `/speckit-implement`
@@ -912,11 +912,65 @@ Make Phase A a hard dependency for full external-audio implementation. Include A
 /speckit-checklist
 ```
 
-Prompt:
+(Some Spec Kit integrations spell this `/speckit.checklist`; use the name installed in `.claude/skills/`, which is `speckit-checklist` for this repository.)
+
+### When to run it
+
+Run the checklist **after the functional requirements are defined and the technical architecture is planned**, which means after `/speckit-plan`. It is the quality gate before `/speckit-tasks` and `/speckit-implement`. It confirms that every requirement is clear, complete, consistent, measurable, and free of gaps before any work is decomposed or built.
+
+An optional **early pass** can also run right after `/speckit-specify` and `/speckit-clarify`, before planning. It catches vague or missing product requirements while they are cheap to fix. The post-plan pass is still required, because the plan adds architecture, API, and dependency decisions that the early pass cannot cover.
 
 ```text
-Create a requirements quality checklist focused on iOS capture feasibility, public API compliance, source compatibility claims, privacy, lifecycle, real-time audio safety, ProjectM licensing/build support, renderer feasibility, and physical-device verification. Flag every requirement that cannot be proven by simulator-only tests.
+/speckit-specify → /speckit-clarify → [optional early /speckit-checklist]
+→ /speckit-plan → /speckit-checklist (required gate) → /speckit-tasks → ...
 ```
+
+A checklist is a "unit test for the requirements", not a test of the implementation. Items should ask whether something is specified (for example, "Is the behavior defined when the selected source delivers no audio samples?"), not whether the code works. Do not mark items `[x]` automatically. A reviewer checks each one off only after confirming the spec or plan satisfies it.
+
+### Prompt: optional early pass (after specify/clarify)
+
+```text
+Create a requirements quality checklist for the ProjectM-iOS feature spec only (spec.md). The technical plan does not exist yet, so do not evaluate implementation choices.
+
+Test the requirements writing for:
+- Completeness: every user story has measurable acceptance criteria; every capture mode (system/app capture, microphone, in-app playback) has defined start, stop, failure, and labeling requirements.
+- Clarity: no unquantified terms such as "real-time", "smooth", "low latency", "fast", or "supported apps" without a number, threshold, or explicit "to be measured" exit criterion.
+- Truthfulness: no requirement promises universal system-audio capture or guaranteed Spotify/Apple Music/YouTube Music compatibility; "Receiving audio" is tied to verified non-silent samples.
+- Edge cases: unsupported OS version, permission denial, no samples vs silent samples, interruption, source change, capture termination by the OS, app backgrounding, device lock.
+- Privacy: no recording, persistence, or upload of audio by default is stated explicitly.
+- Scope: Phase 0 capture feasibility is a blocking requirement before the full visualizer is approved; non-goals are explicit.
+- Open questions: every unresolved item from /speckit-clarify is either answered or recorded as an assumption with an owner and exit criterion.
+
+Reference the spec section for each item, mark gaps as [Gap], and group items by category. Do not check any items off.
+```
+
+### Prompt: required gate (after plan)
+
+```text
+Create a requirements quality checklist for ProjectM-iOS covering spec.md, plan.md, and any research or ADR documents produced by /speckit-plan. Focus on whether the requirements and plan are clear, complete, consistent, and free of gaps. Do not test whether code works.
+
+Cover these areas:
+1. iOS capture feasibility: Are the minimum iOS version, ScreenCaptureKit APIs (SCContentSharingPicker, SCStream, SCStreamConfiguration, audio outputs), picker modes, usage descriptions, and background modes specified, or recorded as research tasks with exit criteria? Is the ReplayKit legacy path explicitly included or excluded with a reason?
+2. Public API compliance: Is there an explicit requirement banning private APIs, undocumented entitlements, DRM circumvention, and capture-restriction bypasses, and does nothing in the plan contradict it?
+3. Source compatibility claims: Are claims limited to sources verified on physical devices? Does the plan define the source matrix (Spotify, Apple Music, YouTube Music, Safari, in-app, microphone) and what counts as proof (non-silent PCM, not a picker screenshot)?
+4. Privacy: Are data handling, on-device-only processing, no default recording/upload, source labeling, and privacy policy requirements defined?
+5. Lifecycle: Are start, stop, restart idempotence, interruption, route change, OS-ended capture, backgrounding, and device lock behaviors specified for every source adapter?
+6. Real-time audio safety: Are bounded buffers, overflow/underrun policy, no allocation/locking/blocking in callbacks, off-main-thread processing, and format/sample-rate conversion requirements quantified?
+7. ProjectM build and licensing: Is the upstream version pinned (Vendor/projectM submodule commit)? Are the license, attribution, preset redistribution rights, iOS CMake support, and local patch policy documented?
+8. Renderer feasibility: Is the renderer choice (existing backend vs Metal) tied to an ADR and a measurable decision gate? Are frame-rate, thermal, and device targets defined?
+9. Architecture consistency: Do the AudioSource abstraction, capture manager, PCM pipeline, Objective-C++ bridge, and renderer abstraction in plan.md match the README architecture and the constitution? Are the ADRs for capture API, minimum OS, renderer, and dependency pinning present?
+10. Physical-device verification: Flag every requirement that cannot be proven by simulator-only or Windows-hosted tests, and confirm each one has a named physical-device test, device model, and OS version in the plan.
+11. Phase gating: Is Phase 0 (capture POC) a hard dependency for Phases 1–4, with Gates 0–4 and their go/no-go criteria stated?
+
+For each item, reference the spec/plan section it tests, mark missing coverage as [Gap], ambiguity as [Ambiguity], and contradictions as [Conflict]. Group items by area. Do not check any items off. Finish with a short summary of the highest-risk gaps to resolve before /speckit-tasks.
+```
+
+### After the checklist
+
+1. Review every item. Fix each `[Gap]`, `[Ambiguity]`, and `[Conflict]` by updating `spec.md` (rerun `/speckit-clarify` if a product decision is needed) or `plan.md`/ADRs (rerun `/speckit-plan` if the architecture changes).
+2. Rerun `/speckit-checklist` until no critical gaps remain.
+3. Commit the checklist and the resulting spec/plan changes.
+4. Only then proceed to `/speckit-tasks`.
 
 ## 13.6 Generate tasks
 
