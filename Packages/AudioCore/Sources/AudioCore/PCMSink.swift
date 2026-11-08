@@ -3,6 +3,16 @@
 //
 // Real-time safety (Constitution VII): `write…` never allocates, locks, logs, or calls async
 // code. All storage is preallocated in `init`; statistics are lock-free atomics.
+// Loops on the producer path are index `while` loops, not `for … in 0..<n`: at -Onone (Debug,
+// which is what Xcode's Run and Test actions build) iterating a Range goes through the
+// unspecialized IndexingIterator, whose call to Range's subscript read coroutine heap-allocates
+// its frame on every iteration. Optimized builds do not, but evidence runs use Debug.
+//
+// Session time (FR-022): `firstSampleSeconds`, `lastSampleSeconds` and `startToFirstAudioMs` are
+// measured from the session start, which is the moment the source has actually started
+// (`markSessionStart()`, called by the manager right after the source's `start` returned), not
+// from before the system picker or permission prompt. A buffer that arrived before that mark
+// counts as time 0.
 //
 // Storage: interleaved Float32 for up to `maxChannels` channels at the native rate. Integer
 // samples are converted to Float32; planar input is interleaved. Streams with more channels
@@ -53,7 +63,8 @@ public final class PCMSink: @unchecked Sendable {
     }
 
     /// Starts a new session: clears statistics and buffered audio. Call from the control side
-    /// while no producer is writing (before `start`, after `stop`).
+    /// while no producer is writing (before `start`, after `stop`). `markSessionStart()` later
+    /// moves the session start to when the source actually started.
     public func reset(sessionStartNs start: UInt64 = MonotonicClock.nowNanoseconds()) {
         ring.drain()
         framesWritten.store(0, ordering: .relaxed)
@@ -68,6 +79,14 @@ public final class PCMSink: @unchecked Sendable {
         sessionStartNs.store(start, ordering: .releasing)
     }
 
+    /// Sets the session start (time 0 for sample timestamps and start-to-first-audio) to `start`,
+    /// normally the moment the source's `start` returned. Without it, the time of `reset` is used.
+    /// A single lock-free atomic store; safe while a producer is writing, and buffers written
+    /// before the mark are reported at 0 rather than negative.
+    public func markSessionStart(atNanoseconds start: UInt64 = MonotonicClock.nowNanoseconds()) {
+        sessionStartNs.store(start, ordering: .releasing)
+    }
+
     // MARK: - Producer API (real-time safe)
 
     /// Interleaved samples (`format.isInterleaved` must be true).
@@ -79,11 +98,16 @@ public final class PCMSink: @unchecked Sendable {
         var offset = 0
         while offset < frames {
             let n = min(frames - offset, PCMSink.maxFramesPerWrite)
-            for f in 0..<n {
+            // Index loops, not `for in 0..<n`: see the header (Range iteration allocates at -Onone).
+            var f = 0
+            while f < n {
                 let base = (offset + f) * inChannels
-                for c in 0..<outChannels {
+                var c = 0
+                while c < outChannels {
                     scratch[f * outChannels + c] = PCMSink.sample(samples, index: base + c, type: format.sampleType)
+                    c += 1
                 }
+                f += 1
             }
             ring.write(scratch, count: n * outChannels)
             offset += n
@@ -99,11 +123,17 @@ public final class PCMSink: @unchecked Sendable {
         var offset = 0
         while offset < frames {
             let n = min(frames - offset, PCMSink.maxFramesPerWrite)
-            for c in 0..<outChannels {
-                guard let plane = planes[c] else { continue }
-                for f in 0..<n {
-                    scratch[f * outChannels + c] = PCMSink.sample(plane, index: offset + f, type: format.sampleType)
+            // Index loops, not `for in 0..<n`: see the header (Range iteration allocates at -Onone).
+            var c = 0
+            while c < outChannels {
+                if let plane = planes[c] {
+                    var f = 0
+                    while f < n {
+                        scratch[f * outChannels + c] = PCMSink.sample(plane, index: offset + f, type: format.sampleType)
+                        f += 1
+                    }
                 }
+                c += 1
             }
             ring.write(scratch, count: n * outChannels)
             offset += n

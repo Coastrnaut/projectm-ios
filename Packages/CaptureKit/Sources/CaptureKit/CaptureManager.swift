@@ -5,7 +5,18 @@
 // * `state` is exactly the classifier's output (Constitution IV); the UI reads nothing else.
 // * Operations are serialized, so rapid start/stop/switch sequences (FR-052) end in the state of
 //   the last action with no duplicate sessions.
-// * Analysis runs on AudioAnalyzer's work queue; this class only receives published updates.
+// * Analysis runs on AudioAnalyzer's work queue; this class receives its published updates and
+//   applies lifecycle events synchronously.
+// * Every start attempt begins from a clean slate (FR-011, FR-013, FR-031): the previous session's
+//   state, reason, statistics, levels, verified-audio flag and logs are cleared before the source's
+//   `start` (which may show the system picker or a permission prompt), and analyzer updates
+//   published before the attempt are ignored.
+// * `transitions` is read from the analyzer's ordered per-attempt log after every published update
+//   and every lifecycle event, so final transitions (stopped, endedBySystem, a failed start) reach
+//   the export even though the analysis timer is already stopped.
+// * Session time 0 is when the source's `start` returned (FR-022): the sink and the analyzer are
+//   both marked then. Lifecycle and source-event log entries are stamped with the session clock
+//   when this class handles them; entries handled while a start is pending are stamped 0.
 import AudioCore
 import Observation
 
@@ -140,7 +151,7 @@ public final class CaptureManager {
     private func startInner(_ mode: AudioSourceMode) async {
         await stopCurrent()
         activeMode = mode
-        pauseReason = nil
+        beginAttempt()
         guard let source = sources[mode] else {
             apply(.startFailed(.unsupportedOS))
             return
@@ -149,17 +160,11 @@ public final class CaptureManager {
             apply(.startFailed(reason))
             return
         }
-        sink.reset()
-        lastFormatChangeCount = 0
-        transitions.removeAll()
-        lifecycleLog.removeAll()
-        formatsSeen.removeAll()
-        sessionPeakMaxDBFS = LevelMeter.floorDBFS
-        sessionRMSMeanDBFS = LevelMeter.floorDBFS
-        rmsSum = 0
-        rmsCount = 0
         do {
             let events = try await source.start(into: sink)
+            // Session time 0 is now, when the source has actually started; the picker or
+            // permission prompt shown inside `start` does not count (FR-022, Gate 2).
+            sink.markSessionStart()
             current = source
             apply(.started)
             listen(to: events, from: source)
@@ -171,7 +176,35 @@ public final class CaptureManager {
         }
     }
 
+    /// Resets every per-session field for a new start attempt. The source is stopped and the
+    /// analysis timer is off, so nothing writes the sink and nothing new is published.
+    private func beginAttempt() {
+        sink.reset()
+        let update = analyzer.beginAttempt()
+        // Updates published before this point belong to the previous session; `receive` drops them.
+        lastSequence = update.sequence
+        pauseReason = nil
+        state = update.state
+        stopReason = nil
+        levels = .silent
+        statistics = update.statistics
+        prolongedSilenceHint = false
+        hasVerifiedActiveAudio = false
+        sessionSeconds = 0
+        transitions.removeAll()
+        lifecycleLog.removeAll()
+        formatsSeen.removeAll()
+        lastFormatChangeCount = 0
+        sessionPeakMaxDBFS = LevelMeter.floorDBFS
+        sessionRMSMeanDBFS = LevelMeter.floorDBFS
+        rmsSum = 0
+        rmsCount = 0
+    }
+
     private func stopCurrent() async {
+        // A pause reason describes the running session only; it must not outlive a stop, a
+        // failure or an end by the system (FR-015).
+        pauseReason = nil
         eventTask?.cancel()
         eventTask = nil
         if let source = current {
@@ -242,17 +275,30 @@ public final class CaptureManager {
     private func apply(_ event: LifecycleEvent) {
         let update = analyzer.apply(event)
         lastSequence = max(lastSequence, update.sequence)
+        syncTransitions()
         state = update.state
         stopReason = pauseReason ?? update.reason
         hasVerifiedActiveAudio = update.hasVerifiedActiveAudio
         prolongedSilenceHint = update.prolongedSilenceHint
+        statistics = update.statistics
+        // A failed start has no session, so its duration stays 0.
+        if case .startFailed = event { return }
+        sessionSeconds = update.sessionSeconds
+    }
+
+    /// Appends the analyzer's transitions not yet copied. The analyzer's log and `transitions` are
+    /// both emptied in `beginAttempt`, so the copy is always in order and never duplicates.
+    private func syncTransitions() {
+        let new = analyzer.transitions(from: transitions.count)
+        if !new.isEmpty { transitions.append(contentsOf: new) }
     }
 
     private func receive(_ update: AnalyzerUpdate) {
-        // Transitions are delivered exactly once, by published updates.
-        transitions.append(contentsOf: update.newTransitions)
-        guard update.sequence >= lastSequence else { return }
+        // Each update is applied at most once, and never after a newer synchronous result. This
+        // also drops every update published before the current attempt began.
+        guard update.sequence > lastSequence else { return }
         lastSequence = update.sequence
+        syncTransitions()
         state = update.state
         stopReason = pauseReason ?? update.reason
         levels = update.levels
@@ -275,25 +321,24 @@ public final class CaptureManager {
         }
     }
 
+    /// Stamped with the session clock now, when the event is handled; not the last published
+    /// time, which lags by up to 250 ms and stops advancing when the session ends.
     private func log(_ event: String) {
         guard lifecycleLog.count < 1000 else { return }
-        lifecycleLog.append(LifecycleLogEntry(atSeconds: sessionSeconds, event: event))
+        lifecycleLog.append(LifecycleLogEntry(atSeconds: analyzer.currentSessionSeconds(), event: event))
     }
 
     // MARK: - Testing
 
-    /// Drives one analysis pass and applies it immediately (tests only).
+    /// Drives one analysis pass and applies it immediately (tests only). `step` also publishes
+    /// the same update asynchronously; `receive` then drops it as already applied.
     func stepAnalysisForTesting() {
-        let update = analyzer.step()
-        // `step` also publishes asynchronously; apply synchronously here so tests are deterministic.
-        guard update.sequence >= lastSequence else { return }
-        lastSequence = update.sequence
-        state = update.state
-        stopReason = pauseReason ?? update.reason
-        levels = update.levels
-        statistics = update.statistics
-        hasVerifiedActiveAudio = update.hasVerifiedActiveAudio
-        prolongedSilenceHint = update.prolongedSilenceHint
+        receive(analyzer.step())
+    }
+
+    /// Delivers an update as the analyzer's update handler would (tests only), e.g. a stale one.
+    func receiveForTesting(_ update: AnalyzerUpdate) {
+        receive(update)
     }
 
     /// The sink, for test sources (tests only).

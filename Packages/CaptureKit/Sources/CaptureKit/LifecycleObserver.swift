@@ -6,6 +6,10 @@ import UIKit
 
 @MainActor
 public final class LifecycleObserver {
+    /// Single-consumer stream; events are buffered until read. Iterate it once, from a task that
+    /// lives as long as this observer: cancelling the consuming task finishes the stream for good,
+    /// so a later `for await` returns at once. In particular, do not consume it from a SwiftUI
+    /// view `.task`, which is cancelled when its window scene goes away.
     public let events: AsyncStream<AppLifecycleEvent>
     private let continuation: AsyncStream<AppLifecycleEvent>.Continuation
     private var observers: [any NSObjectProtocol] = []

@@ -52,9 +52,10 @@ jobs:
 
   build-and-test-apple:
     needs: docs-and-compliance
-    # ADR-0002 pins Xcode 27.2 / iOS SDK 27.2 (T010), but as of 2026-11-08 macos-latest is
-    # macos-26-arm64 with Xcode up to 26.6 (iOS 26.5 SDK). Switch to the first image that ships
-    # Xcode 27; until then the iOS 27 path is built and tested only on the build Mac.
+    # ADR-0002 pins Xcode 27.2 / iOS SDK 27.2 (T010). macos-latest (macos-26-arm64) has Xcode up to
+    # 26.6 (iOS 26.5 SDK) and covers the iOS 26 path. GitHub's `xcode-27` image (preview) has the
+    # iOS 27 SDKs; a compile-only job there for the capture path is an owner decision (ADR-0002).
+    # Until then the iOS 27 path is built and tested only on the build Mac.
     runs-on: macos-latest
     timeout-minutes: 45
     steps:
@@ -80,10 +81,10 @@ jobs:
           echo "$XCODEGEN_SHA256  $RUNNER_TEMP/xcodegen.zip" | shasum -a 256 -c -
           unzip -q "$RUNNER_TEMP/xcodegen.zip" -d "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/xcodegen/bin" >> "$GITHUB_PATH"
-      - name: Toolchain pins (warning while no runner image ships the pinned Xcode)
+      - name: Toolchain pins (warning, because macos-latest has no Xcode 27)
         run: |
           python3 scripts/verify_environment.py || \
-            echo "::warning::Runner toolchain differs from the ADR-0002 pin (Xcode 27.2 / iOS SDK 27.2); expected until GitHub ships Xcode 27."
+            echo "::warning::Runner toolchain differs from the ADR-0002 pin (Xcode 27.2 / iOS SDK 27.2); expected on macos-latest, which has no Xcode 27 (ADR-0002)."
       - name: Probe the iOS SDK for ScreenCaptureKit (input to T035; not a substitute for it)
         run: |
           SDK=$(xcrun --sdk iphoneos --show-sdk-path)
@@ -125,17 +126,20 @@ jobs:
         id: sim
         run: |
           UDID=$(xcrun simctl list -j devices available | python3 -c '
-          import json, sys
+          import json, re, sys
           data = json.load(sys.stdin)["devices"]
           best = None
           for runtime, devices in data.items():
-              if "iOS" not in runtime:
+              m = re.search(r"iOS-(\d+)-(\d+)", runtime)
+              if not m:
                   continue
+              version = (int(m.group(1)), int(m.group(2)))   # numeric, so 26.10 > 26.5
               for d in devices:
-                  if "iPhone" in d["name"]:
-                      key = runtime
-                      if best is None or key > best[0]:
-                          best = (key, d["udid"], d["name"])
+                  if "iPhone" in d["name"] and (best is None or version > best[0]):
+                      best = (version, d["udid"], d["name"], runtime)
+          if best:
+              # Logged so the run shows which iOS version the simulator tests cover (ADR-0002).
+              print(f"Selected simulator: {best[2]} on iOS {best[0][0]}.{best[0][1]} ({best[3]})", file=sys.stderr)
           print(best[1] if best else "")
           ')
           echo "udid=$UDID" >> "$GITHUB_OUTPUT"

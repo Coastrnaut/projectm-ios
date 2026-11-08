@@ -31,8 +31,16 @@ public final class AVMicrophoneBackend: MicrophoneBackend {
     public func start(sink: PCMSink, onEvent: @escaping @Sendable (SourceEvent) -> Void) throws {
         self.sink = sink
         self.onEvent = onEvent
-        try activateSession()
-        try startEngine()
+        do {
+            try activateSession()
+            try startEngine()
+        } catch {
+            // MicrophoneSource never calls stop() after a failed start, so undo everything here
+            // the way stop() does. Otherwise the non-mixable .record session stays active and
+            // keeps other apps' audio interrupted.
+            stop()
+            throw error
+        }
         observe()
     }
 
@@ -76,7 +84,13 @@ public final class AVMicrophoneBackend: MicrophoneBackend {
               let format = AudioFormat(asbd: avFormat.streamDescription.pointee) else {
             throw SourceError(.microphoneUnavailable)
         }
-        input.installTap(onBus: 0, bufferSize: 1024, format: avFormat) { buffer, _ in
+        // @Sendable makes the tap nonisolated. Without it the closure inherits this class's
+        // @MainActor isolation, and Swift 6's runtime isolation check would trap when AVFAudio
+        // calls it on its real-time messenger queue. This is the same pattern as the In-App
+        // Playback tap crash that CaptureLabUITests found on the iOS Simulator; it was fixed here
+        // preemptively. No test has yet run this tap (Microphone Active audio is checked on
+        // device in T049).
+        input.installTap(onBus: 0, bufferSize: 1024, format: avFormat) { @Sendable buffer, _ in
             sink.write(buffer.audioBufferList, format: format, frameCount: Int(buffer.frameLength))
         }
         engine.prepare()

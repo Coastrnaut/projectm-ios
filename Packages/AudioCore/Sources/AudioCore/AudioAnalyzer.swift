@@ -4,6 +4,15 @@
 // levels, runs the AudioStateClassifier, and publishes an `AnalyzerUpdate` at most 4 times
 // per second (and at least once per second, FR-020). Nothing here runs on the audio thread
 // or the main thread. All classifier access is confined to `queue`.
+//
+// Session time: 0 is the moment `apply(.started)` runs, which the manager does right after the
+// source's `start` returned (so time spent in the system picker or a permission prompt is not
+// session time; the sink's sample timestamps use the same zero, see `PCMSink.markSessionStart`).
+// Between `beginAttempt()` and `.started`/`.startFailed` session time reads 0.
+//
+// Transitions: every transition of the current attempt is kept, in order, in a log that callers
+// read synchronously with `transitions(from:)`. That log does not depend on the timer, so final
+// transitions (stopped, endedBySystem, startFailed) applied after `stopTimer()` are not lost.
 import Dispatch
 
 public struct AnalyzerUpdate: Sendable, Equatable {
@@ -13,7 +22,8 @@ public struct AnalyzerUpdate: Sendable, Equatable {
     public var hasVerifiedActiveAudio: Bool
     public var levels: LevelMeter.Levels
     public var statistics: PCMSinkStatistics
-    /// Transitions since the previous update.
+    /// Transitions since the previous update (published or returned by `apply`). Each transition
+    /// appears in exactly one update. `AudioAnalyzer.transitions(from:)` is the ordered record.
     public var newTransitions: [StateTransition]
     /// Seconds since the session started.
     public var sessionSeconds: Double
@@ -36,8 +46,11 @@ public final class AudioAnalyzer: @unchecked Sendable {
     private var lastPublish: Double = -.infinity
     private var lastLevels = LevelMeter.Levels.silent
     private var pending: [StateTransition] = []
-    private var transitionCount = 0
-    private var sessionStart: Double = 0
+    /// Every transition of the current attempt, in order (at most `maxTransitions`).
+    private var log: [StateTransition] = []
+    private var sessionStart: Double
+    /// True between `beginAttempt()` and the `.started`/`.startFailed` that ends it.
+    private var attemptPending = false
     private var sequence: UInt64 = 0
     private var onUpdate: (@Sendable (AnalyzerUpdate) -> Void)?
 
@@ -48,10 +61,12 @@ public final class AudioAnalyzer: @unchecked Sendable {
                 clock: @escaping @Sendable () -> Double = { MonotonicClock.nowSeconds() }) {
         self.sink = sink
         self.clock = clock
+        sessionStart = clock()
         classifier = AudioStateClassifier(thresholds: thresholds)
         scratchCount = PCMSink.maxSampleRate * PCMSink.maxChannels / 10   // up to 100 ms per drain
         scratch = UnsafeMutablePointer<Float>.allocate(capacity: scratchCount)
         scratch.initialize(repeating: 0, count: scratchCount)
+        log.reserveCapacity(AudioAnalyzer.maxTransitions)
     }
 
     deinit {
@@ -83,24 +98,64 @@ public final class AudioAnalyzer: @unchecked Sendable {
         }
     }
 
-    /// Applies a lifecycle event synchronously and returns the resulting update. The returned
-    /// update's `newTransitions` are delivered again by the next published update, so callers
-    /// should take transitions only from the update handler.
+    /// Begins a new start attempt, before the source's `start` (which may show the system picker
+    /// or a permission prompt). Forgets everything about the previous session: the classifier
+    /// returns to Not started with no verified audio and no reason, the transition log is
+    /// emptied, and levels are silent. Stop the timer and reset the sink first. Every update
+    /// published before this one belongs to the previous session; callers drop updates whose
+    /// `sequence` is not greater than the returned update's.
+    @discardableResult
+    public func beginAttempt() -> AnalyzerUpdate {
+        queue.sync {
+            let now = clock()
+            classifier = AudioStateClassifier(thresholds: classifier.thresholds)
+            resetSession(at: now)
+            attemptPending = true
+            return makeUpdate(at: now)
+        }
+    }
+
+    /// Applies a lifecycle event synchronously and returns the resulting update. Its
+    /// `newTransitions` hold every transition not yet delivered (including this event's), and
+    /// they are not delivered again; `transitions(from:)` also has them immediately.
+    ///
+    /// `.startFailed` always records a transition (to Not started, with its reason), even when
+    /// the state does not change, so a failed attempt shows in the export.
     @discardableResult
     public func apply(_ event: LifecycleEvent) -> AnalyzerUpdate {
         queue.sync {
             let now = clock()
-            if event == .started {
+            var forceRecord = false
+            switch event {
+            case .started:
+                if !attemptPending { resetSession(at: now) }
                 sessionStart = now
-                transitionCount = 0
-                pending.removeAll(keepingCapacity: true)
-                lastLevels = .silent
+                attemptPending = false
+            case .startFailed:
+                attemptPending = false
+                forceRecord = true
+            default:
+                break
             }
             let before = classifier.state
             classifier.lifecycle(event, at: now)
-            recordIfChanged(from: before, at: now)
-            return makeUpdate(at: now)
+            if forceRecord { record(at: now) } else { recordIfChanged(from: before, at: now) }
+            let update = makeUpdate(at: now)
+            pending.removeAll(keepingCapacity: true)
+            return update
         }
+    }
+
+    /// The current attempt's transitions from index `start` on, in order. Safe from any thread.
+    public func transitions(from start: Int) -> [StateTransition] {
+        queue.sync { start < log.count ? Array(log[max(0, start)...]) : [] }
+    }
+
+    /// Session time now (see the header), for stamping events handled outside the analyzer such as
+    /// app lifecycle notifications. Keeps advancing after the source stops; 0 while a start
+    /// attempt is pending.
+    public func currentSessionSeconds() -> Double {
+        queue.sync { attemptPending ? 0 : max(0, clock() - sessionStart) }
     }
 
     /// One synchronous drain/classify pass, publishing immediately (tests and manual drive).
@@ -150,11 +205,29 @@ public final class AudioAnalyzer: @unchecked Sendable {
         return update
     }
 
+    private func resetSession(at now: Double) {
+        sessionStart = now
+        log.removeAll(keepingCapacity: true)
+        pending.removeAll(keepingCapacity: true)
+        lastLevels = .silent
+        lastPublish = -.infinity
+    }
+
     private func recordIfChanged(from before: AudioState, at now: Double) {
-        guard classifier.state != before, transitionCount < AudioAnalyzer.maxTransitions else { return }
-        transitionCount += 1
-        pending.append(StateTransition(atSeconds: max(0, now - sessionStart), state: classifier.state,
-                                       reason: classifier.lastReason?.code))
+        guard classifier.state != before else { return }
+        record(at: now)
+    }
+
+    private func record(at now: Double) {
+        guard log.count < AudioAnalyzer.maxTransitions else { return }
+        let transition = StateTransition(atSeconds: sessionSeconds(at: now), state: classifier.state,
+                                         reason: classifier.lastReason?.code)
+        log.append(transition)
+        pending.append(transition)
+    }
+
+    private func sessionSeconds(at now: Double) -> Double {
+        attemptPending ? 0 : max(0, now - sessionStart)
     }
 
     private func makeUpdate(at now: Double) -> AnalyzerUpdate {
@@ -163,7 +236,7 @@ public final class AudioAnalyzer: @unchecked Sendable {
                        prolongedSilenceHint: classifier.prolongedSilenceHint,
                        hasVerifiedActiveAudio: classifier.hasVerifiedActiveAudio,
                        levels: lastLevels, statistics: sink.statistics(),
-                       newTransitions: pending, sessionSeconds: max(0, now - sessionStart),
+                       newTransitions: pending, sessionSeconds: sessionSeconds(at: now),
                        sequence: sequence)
     }
 }

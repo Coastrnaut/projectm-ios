@@ -13,7 +13,6 @@ struct CaptureLabApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView(model: model)
-                .task { await model.observeLifecycle() }
         }
     }
 }
@@ -25,15 +24,24 @@ final class CaptureLabModel {
     let manager: CaptureManager
     let microphone: MicrophoneSource
     var showMicrophoneExplainer = false
-    private let lifecycle = LifecycleObserver()
+    private let lifecycle: LifecycleObserver
+    private let lifecycleForwarding: Task<Void, Never>
 
     init() {
         microphone = MicrophoneSource(backend: AVMicrophoneBackend())
-        manager = CaptureManager(sources: [
+        let manager = CaptureManager(sources: [
             ScreenCaptureSource.makeDefault(),
             microphone,
             InAppPlaybackSource(backend: AVInAppPlaybackBackend()),
         ])
+        self.manager = manager
+        let lifecycle = LifecycleObserver()
+        self.lifecycle = lifecycle
+        lifecycleForwarding = Self.forwardLifecycle(from: lifecycle, to: manager)
+    }
+
+    deinit {
+        lifecycleForwarding.cancel()
     }
 
     /// Source selection from the chooser (a user action, FR-002).
@@ -52,9 +60,18 @@ final class CaptureLabModel {
     }
 
     /// Forwards app background/foreground and lock/unlock to the manager (T039, FR-050–FR-054).
-    func observeLifecycle() async {
-        for await event in lifecycle.events {
-            await manager.handle(event)
+    ///
+    /// The model owns this task, so forwarding lasts as long as the app and does not depend on
+    /// any window scene. A view `.task` would not do: when iPadOS closes and later recreates the
+    /// scene, SwiftUI cancels that task, cancelling the consumer finishes `lifecycle.events` for
+    /// good, and the new scene's task would find the stream already finished. Events posted
+    /// before the task first runs are buffered by the stream, not lost.
+    private static func forwardLifecycle(from lifecycle: LifecycleObserver,
+                                         to manager: CaptureManager) -> Task<Void, Never> {
+        Task { @MainActor in
+            for await event in lifecycle.events {
+                await manager.handle(event)
+            }
         }
     }
 }

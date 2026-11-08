@@ -20,8 +20,12 @@ extension PCMSink {
             writeInterleaved(UnsafeRawPointer(data), frames: frameCount, format: f, hostTimeNs: hostTimeNs)
         } else {
             let planes = min(count, PCMSink.maxChannels)
-            for i in 0..<planes {
+            // An index loop, not `for in 0..<planes`: Range iteration heap-allocates at -Onone
+            // (Debug), see PCMSink.swift.
+            var i = 0
+            while i < planes {
                 planeScratch[i] = buffers[i].mData.map { UnsafeRawPointer($0) }
+                i += 1
             }
             writePlanar(UnsafePointer(planeScratch), planeCount: planes, frames: frameCount,
                         format: format, hostTimeNs: hostTimeNs)

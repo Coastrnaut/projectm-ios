@@ -95,6 +95,61 @@ final class PCMSinkTests: XCTestCase {
         XCTAssertEqual(sink.ring.availableToRead, 0)
     }
 
+    // Review F8: session time starts when the source has started, not before the picker.
+    func testMarkSessionStartMovesTimeZero() {
+        let sink = PCMSink()
+        sink.reset(sessionStartNs: 1_000)
+        sink.markSessionStart(atNanoseconds: 4_000_001_000)   // 4 s later, e.g. after the picker
+        let one: [Float] = [0.5, 0.5]
+        one.withUnsafeBytes {
+            sink.writeInterleaved($0.baseAddress!, frames: 1, format: stereoFloat, hostTimeNs: 4_150_001_000)
+        }
+        let stats = sink.statistics()
+        XCTAssertEqual(stats.startToFirstAudioMs ?? -1, 150, accuracy: 1e-6)
+        XCTAssertEqual(stats.firstSampleSeconds ?? -1, 0.15, accuracy: 1e-9)
+    }
+
+    func testBufferBeforeMarkIsTimeZero() {
+        let sink = PCMSink()
+        sink.reset(sessionStartNs: 1_000)
+        let one: [Float] = [0.5, 0.5]
+        one.withUnsafeBytes { sink.writeInterleaved($0.baseAddress!, frames: 1, format: stereoFloat, hostTimeNs: 2_000) }
+        sink.markSessionStart(atNanoseconds: 10_000)   // a buffer raced ahead of the mark
+        XCTAssertEqual(sink.statistics().startToFirstAudioMs, 0)
+        XCTAssertEqual(sink.statistics().firstSampleSeconds, 0)
+        XCTAssertEqual(sink.statistics().sampleCount, 1, "the mark does not clear statistics")
+    }
+
+    // Review F9: the producer loops are index loops; check they still cover every frame and
+    // channel, including more than maxFramesPerWrite frames and more than maxChannels channels.
+    func testLargeWritesCoverEveryFrameAndChannel() {
+        let sink = PCMSink()
+        let frames = PCMSink.maxFramesPerWrite + 3
+        let channels = PCMSink.maxChannels + 2
+        let wide = AudioFormat(sampleRate: 96_000, channelCount: channels, isInterleaved: true, sampleType: .float32)
+        let input = (0..<(frames * channels)).map { Float($0 % 977) / 977 }
+        input.withUnsafeBytes { sink.writeInterleaved($0.baseAddress!, frames: frames, format: wide, hostTimeNs: 1) }
+        var expected: [Float] = []
+        for f in 0..<frames { for c in 0..<PCMSink.maxChannels { expected.append(input[f * channels + c]) } }
+        XCTAssertEqual(drainAll(sink), expected)
+
+        let planar = AudioFormat(sampleRate: 96_000, channelCount: channels, isInterleaved: false, sampleType: .float32)
+        let planeData = (0..<channels).map { c in (0..<frames).map { Float(c * 10_000 + $0 % 5_000) } }
+        let pointers = planeData.map { plane -> UnsafeMutableRawPointer in
+            let p = UnsafeMutableRawPointer.allocate(byteCount: frames * 4, alignment: 4)
+            plane.withUnsafeBytes { p.copyMemory(from: $0.baseAddress!, byteCount: frames * 4) }
+            return p
+        }
+        defer { pointers.forEach { $0.deallocate() } }
+        var planes: [UnsafeRawPointer?] = pointers.map { UnsafeRawPointer($0) }
+        planes.withUnsafeMutableBufferPointer {
+            sink.writePlanar($0.baseAddress!, planeCount: channels, frames: frames, format: planar, hostTimeNs: 2)
+        }
+        expected.removeAll()
+        for f in 0..<frames { for c in 0..<PCMSink.maxChannels { expected.append(planeData[c][f]) } }
+        XCTAssertEqual(drainAll(sink), expected)
+    }
+
     func testFormatPackRoundTrip() {
         for f in [stereoFloat,
                   AudioFormat(sampleRate: 44_100, channelCount: 6, isInterleaved: false, sampleType: .int32),

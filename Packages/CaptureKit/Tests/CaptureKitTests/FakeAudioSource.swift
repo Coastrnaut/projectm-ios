@@ -9,6 +9,9 @@ final class FakeAudioSource: AudioSource, ContentIdentifying {
     var startError: SourceError?
     var resumeError: SourceError?
     var contentIdentity: String?
+    /// Runs inside `start` before it returns or throws, standing in for the time the system
+    /// picker or the permission prompt is on screen.
+    var onStart: (@MainActor () async -> Void)?
     private(set) var startCount = 0
     private(set) var stopCount = 0
     private(set) var suspendCount = 0
@@ -26,6 +29,7 @@ final class FakeAudioSource: AudioSource, ContentIdentifying {
     func start(into sink: PCMSink) async throws -> AsyncStream<SourceEvent> {
         startCount += 1
         log.append("start \(mode)")
+        if let onStart { await onStart() }
         if let startError { throw startError }
         precondition(!isRunning, "duplicate session")
         isRunning = true

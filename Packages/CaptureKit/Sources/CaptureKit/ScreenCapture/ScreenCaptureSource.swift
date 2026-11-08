@@ -2,8 +2,9 @@
 // FR-009, FR-014, FR-051, FR-069).
 //
 // ScreenCaptureKit only, in-process: no ReplayKit, no broadcast extension. On OS versions
-// without the system capture flow (presumed iOS 26), the mode is unavailable with
-// "Requires a newer iOS version" and fallbacks remain (FR-004).
+// without the system capture flow (iOS 26: no ScreenCaptureKit framework in the SDK), the mode is
+// unavailable with "Requires a newer iOS version" and fallbacks remain (FR-004). The iOS
+// Simulator SDK has no ScreenCaptureKit either, so the mode is also unavailable on simulators.
 import AudioCore
 
 @MainActor
@@ -19,8 +20,8 @@ public final class ScreenCaptureSource: AudioSource, ContentIdentifying {
 
     /// The production source: the ScreenCaptureKit driver where available, else unavailable.
     ///
-    /// TODO(T035, RI-004): replace `27.0` with the first iOS version that provides the required
-    /// ScreenCaptureKit audio APIs, as recorded in docs/platform-research/screencapturekit-ios.md.
+    /// iOS 27.0 is the first version (RI-004): every ScreenCaptureKit API the driver uses is
+    /// annotated ios(27.0) in the iOS 27.2 SDK (docs/platform-research/screencapturekit-ios.md).
     public static func makeDefault() -> ScreenCaptureSource {
         #if os(iOS) && canImport(ScreenCaptureKit)
         if #available(iOS 27.0, *) {

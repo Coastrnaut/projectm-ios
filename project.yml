@@ -36,6 +36,7 @@ targets:
       - path: Apps/CaptureLab
         excludes:
           - "**/.gitkeep"
+          - "UITests/**"
     dependencies:
       - package: AudioCore
       - package: CaptureKit
@@ -64,7 +65,21 @@ targets:
           - UIInterfaceOrientationLandscapeRight
         # FR-019: identical to the Microphone explainer in contracts/ui-states.md
         NSMicrophoneUsageDescription: "Microphone mode listens to sound in the room through your device's microphone. It does not capture audio directly from other apps."
-        # A capture usage-description key is added here only if RI-001 (task T035) shows one is required.
+        # FR-019: the capture key named by Apple's ScreenCaptureKit overview (RI-001, T035). It is
+        # absent from Xcode 27.2's Info.plist definitions; whether iOS 27 shows it is recorded in T040.
+        NSScreenCaptureUsageDescription: "Only the audio of the content you choose to share is used, and only on this device. It is not recorded or sent anywhere."
+  CaptureLabUITests:
+    # Simulator UI-flow tests (T034, T039, T048). Never capture evidence (Constitution X).
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: Apps/CaptureLab/UITests
+    dependencies:
+      - target: CaptureLab
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.CaptureLabUITests
+        GENERATE_INFOPLIST_FILE: YES
 schemes:
   CaptureLab:
     build:
@@ -75,6 +90,8 @@ schemes:
     test:
       config: Debug
       gatherCoverageData: true
+      targets:
+        - CaptureLabUITests
     # Archive is used for TestFlight internal/external testing only. CaptureLab is never
     # submitted for App Store review (FR-090; docs/release/capturelab-distribution.md).
     archive:
