@@ -34,18 +34,20 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
   CaptureUI views, and the CaptureLab app.
 - Never compiled yet (needs the iOS 27 SDK): `Packages/CaptureKit/Sources/CaptureKit/ScreenCapture/SCKStreamDriver.swift`
   (written against the **macOS** ScreenCaptureKit API — iOS symbols unverified).
-- Project Mac set up (2026-11-08): Xcode 27.2 / iOS SDK 27.2 / Swift 6.4.2, XcodeGen 2.46.0,
-  CMake 4.4.5. Locally: 86 package tests pass on the macOS host (AudioCore 42, incl. 2 Apple-only),
-  15 script tests pass, `xcodegen generate` works. No iOS 26 simulator runtime installed yet.
+- Project Mac = build machine of record (2026-11-08): Xcode 27.2 / iOS SDK 27.2 / Swift 6.4.2,
+  XcodeGen 2.46.0, CMake 4.4.5, pinned in ADR-0002 (T010; `verify_environment.py` exits 0).
+  Simulator runtimes iOS 27.2 and iOS 26.5. Locally: 86 package tests pass on the macOS host
+  (AudioCore 42, incl. 2 Apple-only), 15 script tests pass, `xcodegen generate` works.
+- CI's runner has only Xcode 26.x, so it cannot match the pin; the iOS 27 path is built and tested
+  only on the project Mac until GitHub ships Xcode 27 (ADR-0002).
 - Test devices (final, recorded by T017 in `docs/test-reports/devices.md`; all paired, Developer
   Mode on): D1 iPhone 15 `iPhone15,4` iOS 27.0.1 (reference), D2 iPad Pro M5 `iPad17,3`
   iPadOS 27.2, D3 iPad A16 `iPad15,7` iPadOS 26.5.
 
 ## Next tasks on the Mac, in order
 
-1. **T010** — record the Xcode, iOS SDK, Swift, XcodeGen, and CMake versions in
-   `docs/adr/0002-minimum-ios-version.md`; `python3 scripts/verify_environment.py` must exit 0.
-2. `swift test --package-path Packages/<pkg>` for AudioCore, CaptureKit, Diagnostics, CaptureUI.
+1. Done 2026-11-08: T010 (toolchain pin), package tests on macOS, T017 (devices).
+2. Before each work session: `python3 scripts/verify_environment.py` must exit 0.
 3. **T035 (Gate 0)** — from the iOS SDK headers, write
    `docs/platform-research/screencapturekit-ios.md` (RI-001/RI-004), fix `SCKStreamDriver`, and
    replace the placeholder `@available(iOS 27.0, *)` with the verified first version.

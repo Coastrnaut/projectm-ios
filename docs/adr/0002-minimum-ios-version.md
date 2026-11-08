@@ -15,9 +15,19 @@ with System/App Capture only where the OS provides it.
 - **SDK**: the iOS 27 SDK (or newer), needed to compile the System/App Capture adapter.
 - **Feature gating**: System/App Capture is availability-gated (ADR-0001); all other features work
   on iOS 26.
-- **Toolchain pin** (filled at Gate 0): Xcode `TBD`, SDK `TBD`, Swift `TBD`, XcodeGen `TBD`,
-  CMake `TBD`. The same versions go in `.github/workflows/ios-ci.yml` and
-  `scripts/verify_environment.py`.
+- **Toolchain pin** (recorded 2026-11-08, task T010): Xcode `27.2` (build 27B52), SDK `27.2`
+  (iOS), Swift `6.4.2`, XcodeGen `2.46.0`, CMake `4.4.5`. `scripts/verify_environment.py` reads
+  these values and must exit 0 on the build Mac.
+
+- **Build machine of record**: the project Mac (macOS 27.2, Apple silicon), which has Python 3.15
+  (scripts need 3.10+) and simulator runtimes for iOS 27.2 and iOS 26.5 (23F77, the same build
+  as D3). Every `{mac}` build or test result is reported against this pin.
+- **CI**: GitHub's `macos-latest` image (`macos-26-arm64`, image 20261102.0473.1) offers Xcode
+  26.0–26.6 only, with the iOS 26.5 SDK and iOS 26.x simulator runtimes. CI therefore cannot
+  match the Xcode/SDK/Swift pin yet: it installs the pinned XcodeGen, runs
+  `verify_environment.py` as a warning, and covers the iOS 26 path. The iOS 27 SDK path
+  (System/App Capture) is compiled and tested only on the build Mac until a runner image ships
+  Xcode 27. Re-pin CI to that image when it exists.
 
 ## Consequences
 
@@ -29,5 +39,7 @@ with System/App Capture only where the OS provides it.
 
 ## Verification
 
-- [ ] Toolchain versions recorded above and in CI.
-- [ ] Both simulator runtimes are available on the CI image, or the gap is documented.
+- [x] Toolchain versions recorded above (2026-11-08); `verify_environment.py` exits 0 on the
+      build Mac. CI pins XcodeGen; its Xcode/SDK/Swift gap is documented above.
+- [x] Simulator runtimes: CI has iOS 26.x only (gap documented above); the build Mac has
+      iOS 27.2 and iOS 26.5.

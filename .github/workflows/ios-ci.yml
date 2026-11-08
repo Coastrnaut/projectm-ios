@@ -52,8 +52,9 @@ jobs:
 
   build-and-test-apple:
     needs: docs-and-compliance
-    # TODO(T010): pin to the image that ships the Xcode recorded in ADR-0002. As of 2026-11-08,
-    # macos-latest is macos-26-arm64 with Xcode up to 26.6 (iOS 26.6 SDK) — no iOS 27 SDK yet.
+    # ADR-0002 pins Xcode 27.2 / iOS SDK 27.2 (T010), but as of 2026-11-08 macos-latest is
+    # macos-26-arm64 with Xcode up to 26.6 (iOS 26.5 SDK). Switch to the first image that ships
+    # Xcode 27; until then the iOS 27 path is built and tested only on the build Mac.
     runs-on: macos-latest
     timeout-minutes: 45
     steps:
@@ -69,10 +70,20 @@ jobs:
           xcodebuild -version
           xcrun --sdk iphoneos --show-sdk-version
           swift --version
-      - name: Toolchain pins (warning until T010 records them)
+      - name: Install XcodeGen (pinned in ADR-0002)
+        env:
+          XCODEGEN_VERSION: 2.46.0
+          XCODEGEN_SHA256: 4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/xcodegen.zip" \
+            "https://github.com/yonaskolb/XcodeGen/releases/download/$XCODEGEN_VERSION/xcodegen.zip"
+          echo "$XCODEGEN_SHA256  $RUNNER_TEMP/xcodegen.zip" | shasum -a 256 -c -
+          unzip -q "$RUNNER_TEMP/xcodegen.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/xcodegen/bin" >> "$GITHUB_PATH"
+      - name: Toolchain pins (warning while no runner image ships the pinned Xcode)
         run: |
           python3 scripts/verify_environment.py || \
-            echo "::warning::Toolchain not yet pinned in ADR-0002 (task T010); verify_environment.py reported mismatches."
+            echo "::warning::Runner toolchain differs from the ADR-0002 pin (Xcode 27.2 / iOS SDK 27.2); expected until GitHub ships Xcode 27."
       - name: Probe the iOS SDK for ScreenCaptureKit (input to T035; not a substitute for it)
         run: |
           SDK=$(xcrun --sdk iphoneos --show-sdk-path)
@@ -85,10 +96,8 @@ jobs:
               grep -rhn "$sym" "$FW/Headers" 2>/dev/null | head -4 || true
             done
           else
-            echo "::warning::ScreenCaptureKit.framework is ABSENT from iOS SDK $(xcrun --sdk iphoneos --show-sdk-version); SCKStreamDriver.swift is compiled out. The capture path needs the iOS 27 SDK (Xcode 27, task T010) to compile."
+            echo "::warning::ScreenCaptureKit.framework is ABSENT from iOS SDK $(xcrun --sdk iphoneos --show-sdk-version); SCKStreamDriver.swift is compiled out. The capture path needs the iOS 27 SDK (Xcode 27); it is compiled on the build Mac (ADR-0002)."
           fi
-      - name: Install XcodeGen
-        run: brew install xcodegen   # TODO(T010): install the exact pinned version
       - name: Package tests (macOS host)
         run: |
           for pkg in AudioCore CaptureKit Diagnostics CaptureUI; do
