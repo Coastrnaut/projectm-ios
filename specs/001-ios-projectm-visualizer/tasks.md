@@ -37,7 +37,7 @@ Constitution Phase 4 = task Phase 11. Gates 0–4 are named where they occur.
   compiled anywhere yet (needs the iOS 27 SDK on the MacBook).
 - Verified on Windows: `python scripts/test_scripts.py` (15 tests: validate_docs, check_compliance,
   verify_environment, reference-audio determinism and segments, UI strings vs contract, schema copy).
-- Not started (need the project owner, a Mac, or devices): T010, T017, T035, T040, T041, T049–T054, T056.
+- Not started (need the project owner, a Mac, or devices): T010, T035, T040, T041, T049–T054, T056.
 - **No source has been tested on a device. No source is claimed to work.**
 
 ## Format: `[ID] [P?] [Story] Description`
@@ -81,7 +81,7 @@ Per plan.md §Project Structure: `Apps/CaptureLab/`, `Apps/ProjectMiOS/`, `Packa
 - [X] T014 {A}{win} Create `scripts/check_compliance.py` enforcing the constitution on every merge (FR-003, FR-009, FR-068, Constitution I/III/VI): fail on any `import ReplayKit`, any `dlsym`/`dlopen`/`NSClassFromString`/`performSelector` with string literals in `Apps/` or `Packages/`, private framework paths (`/System/Library/PrivateFrameworks`), `import ScreenCaptureKit` outside `Packages/CaptureKit/Sources/CaptureKit/ScreenCapture/`, networking APIs (`URLSession`, `Network`, `NWConnection`, `CFNetwork`, `WKWebView`) anywhere, and entitlements beyond research R-16 in `project.yml`; also add `.github/pull_request_template.md` with a checkbox per constitution principle — AC: exits 0 on the clean tree; exits 1 on a fixture file containing `import ReplayKit`
 - [X] T015 {A}{mac} Add `scripts/check_compliance.py` as a required step in `.github/workflows/ios-ci.yml` before the build steps — AC: CI fails when a compliance fixture is introduced on a test branch — ✅ verified 2026-11-08: negative test run 42491957245 (branch with `import ReplayKit`) failed at the compliance step and skipped the later jobs
 - [X] T016 {A}{win} Configure CaptureLab for tester-only distribution (FR-090): `project.yml` scheme `CaptureLab` with no App Store archive action, and `docs/release/capturelab-distribution.md` describing TestFlight-only use — AC: the document exists and the ProjectMiOS release checklist (T112) checks that CaptureLab is never submitted
-- [ ] T017 {A}{win} Record the concrete model, model identifier, and OS build for every FR-032 role, and choose the reference device (newest capture-capable iPhone), in `docs/test-reports/devices.md` (FR-034: before any device testing) — AC: every role filled before the first `{device}` task — ⏳ device set final 2026-11-08 (D1 iPhone 15 iOS 27.0.1 = reference; D2 iPad Pro M5 iPadOS 27.2; D3 iPad A16 iPadOS 26.5; other FR-032 roles N/A by owner decision, non-blocking); only OS builds and model identifiers remain, read them at first device connection
+- [X] T017 {A}{win} Record the concrete model, model identifier, and OS build for every FR-032 role, and choose the reference device (newest capture-capable iPhone), in `docs/test-reports/devices.md` (FR-034: before any device testing) — AC: every role filled before the first `{device}` task — ✅ verified 2026-11-08: D1 iPhone15,4 iOS 27.0.1 (24A446) = reference; D2 iPad17,3 iPadOS 27.2 (24B119); D3 iPad15,7 iPadOS 26.5 (23F77), read with `xcrun devicectl list devices` (Xcode 27.2) on the paired devices before any device task; other FR-032 roles N/A by owner decision
 
 **Checkpoint**: Skeleton builds in CI (pending macOS on Windows hosts).
 

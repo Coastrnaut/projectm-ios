@@ -34,8 +34,12 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
   CaptureUI views, and the CaptureLab app.
 - Never compiled yet (needs the iOS 27 SDK): `Packages/CaptureKit/Sources/CaptureKit/ScreenCapture/SCKStreamDriver.swift`
   (written against the **macOS** ScreenCaptureKit API — iOS symbols unverified).
-- Test devices (final; `docs/test-reports/devices.md`): D1 iPhone 15 iOS 27.0.1 (reference),
-  D2 iPad Pro M5 iPadOS 27.2, D3 iPad A16 iPadOS 26.5.
+- Project Mac set up (2026-11-08): Xcode 27.2 / iOS SDK 27.2 / Swift 6.4.2, XcodeGen 2.46.0,
+  CMake 4.4.5. Locally: 86 package tests pass on the macOS host (AudioCore 42, incl. 2 Apple-only),
+  15 script tests pass, `xcodegen generate` works. No iOS 26 simulator runtime installed yet.
+- Test devices (final, recorded by T017 in `docs/test-reports/devices.md`; all paired, Developer
+  Mode on): D1 iPhone 15 `iPhone15,4` iOS 27.0.1 (reference), D2 iPad Pro M5 `iPad17,3`
+  iPadOS 27.2, D3 iPad A16 `iPad15,7` iPadOS 26.5.
 
 ## Next tasks on the Mac, in order
 
@@ -46,7 +50,7 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
    `docs/platform-research/screencapturekit-ios.md` (RI-001/RI-004), fix `SCKStreamDriver`, and
    replace the placeholder `@available(iOS 27.0, *)` with the verified first version.
 4. `xcodegen generate`, then build and run CaptureLab on the devices (set the signing team by hand).
-5. Record each device's OS build and model identifier in devices.md, then run the device tasks
+5. Re-check devices.md if any device OS changed (T017 done), then run the device tasks
    (T040 onward) following `specs/001-ios-projectm-visualizer/quickstart.md`.
 
 ## Commands
