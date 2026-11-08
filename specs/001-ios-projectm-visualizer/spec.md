@@ -478,7 +478,7 @@ Each edge case below maps to a functional requirement.
   settings (FR-048, FR-072), and whether the photosensitivity notice was acknowledged (FR-071). No
   audio, listening history, or source-app history is stored.
 - **FR-066**: The app MUST include a privacy manifest that declares every required-reason API it
-  uses (including UserDefaults) with an approved reason, and its App Privacy disclosure MUST state
+  uses (including on-device settings storage) with an approved reason, and its App Privacy disclosure MUST state
   that no data is collected. Both are checked in the release review.
 - **FR-067**: Settings MUST include a Licenses screen listing every bundled third-party component,
   preset pack, and asset with its license text and attribution, and, for LGPL-2.1 components, how to
@@ -596,7 +596,7 @@ Each edge case below maps to a functional requirement.
   critical thermal state, frame rate never drops below the FR-049 floor of 30 fps, and the app is
   never terminated for thermal reasons. Thermal states observed are recorded.
 - **SC-014**: A 60-minute visualization session on the reference device at 50% brightness, unplugged,
-  uses no more than 20% of battery (initial target; tuned with Stage 2 measurements per the threshold
+  uses no more than 20% of battery (initial target; finalized at Gate 4 per the threshold
   assumption).
 - **SC-015**: Cold launch to an interactive source chooser takes under 2 seconds on the reference
   device and under 4 seconds on the oldest iOS 26 iPhone.
@@ -619,9 +619,12 @@ Each edge case below maps to a functional requirement.
 - Users have no accounts; all persisted data stays on the device (FR-065).
 - **Tunable thresholds**: silence −60 dBFS / 2 s, active −50 dBFS / 250 ms, no-audio 5 s,
   prolonged-silence hint 60 s, controls auto-hide 5 s, 55 fps, 30 fps floor, 150 ms, 200 ms
-  cycle interval, 300 MB peak memory, 20% battery per hour, 2 s / 4 s launch. These are initial defaults. *Owner*: project owner. *Exit*: the final values
-  are recorded in the Stage 1 compatibility report, and the affected FR/SC lines are updated
-  before Stage 2 starts.
+  cycle interval, 300 MB peak memory, 20% battery per hour, 2 s / 4 s launch. These are initial
+  defaults. *Owner*: project owner. *Exit*: capture and classification thresholds (dBFS levels,
+  timeouts, 200 ms cycle) are finalized in the Stage 1 compatibility report before Stage 2 starts;
+  rendering and device thresholds (fps, 30 fps floor, 150 ms, memory, battery, launch, auto-hide)
+  are finalized in `docs/test-reports/performance.md` at Gate 4. The affected FR/SC lines are
+  updated at each exit.
 - The "Works" thresholds (95% of windows, <1% dropped) in FR-031 follow the same owner and exit
   criterion as the tunable thresholds.
 - The ProjectM engine (MilkDrop-compatible) is a fixed product dependency named by the stakeholder;

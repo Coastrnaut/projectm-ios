@@ -86,6 +86,11 @@ success criterion, or research item IDs; `§Gating` = Delivery Gating; `§Edge` 
 - [x] CHK048 - Is the dependency on the visualization engine's rendering feasibility (RI-005) reflected in Stage 2 approval, so Stage 2 cannot be approved on capture evidence alone? [Gap, Spec §Gating, §RI-005]
 - [x] CHK049 - Is the release-blocking license review (FR-064, RI-007) placed in the delivery timeline, so it is not first discovered at submission? [Gap, Spec §FR-064, §RI-007, §Gating]
 
+## Iteration 3 Additions
+
+- [x] CHK050 - Does FR-066 avoid naming an implementation API (it named UserDefaults), consistent with the spec's technology-agnostic rule? [Clarity, Spec §FR-066] (iteration 3)
+- [x] CHK051 - Is the exit timing for tunable thresholds consistent with when each can be measured (rendering/device thresholds cannot be finalized in Stage 1)? [Conflict, Spec §Assumptions, §SC-014] (iteration 3)
+
 ## Notes
 
 - Mark items `[x]` only after review confirms the requirement-quality criterion is satisfied
@@ -94,3 +99,5 @@ success criterion, or research item IDs; `§Gating` = Delivery Gating; `§Edge` 
 - 2026-11-07: spec.md revised to address CHK001–CHK049. All items confirmed by the reviewer (project owner)
   on 2026-11-07.
 - `/speckit-implement` reads checklist state but does not modify markers.
+
+- Iteration 3 (2026-11-08): re-scan found CHK050–CHK051; both resolved in spec.md, verified, and checked.
