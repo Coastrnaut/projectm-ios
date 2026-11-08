@@ -19,8 +19,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Script tests
@@ -39,7 +39,7 @@ jobs:
     timeout-minutes: 30
     container: swift:6.4.2-noble
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Swift version
         run: swift --version
       - name: Package tests (Linux host)
@@ -57,7 +57,7 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         # The ProjectM submodule is not needed until Plan Phase C (engine build); skip it to
         # save macOS minutes.
       - name: Select newest Xcode
@@ -142,3 +142,10 @@ jobs:
               | grep -E "error:|warning:|Executed [0-9]+ tests|TEST (SUCCEEDED|FAILED)|failed \(")
             echo "::endgroup::"
           done
+      - name: Build leaves the tree clean (gitignore check, T002)
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git status --porcelain
+            echo "::error::The build left untracked or modified files; extend .gitignore."
+            exit 1
+          fi
