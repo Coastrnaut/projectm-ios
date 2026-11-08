@@ -22,14 +22,9 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
 
 ## Working with agents (owner preference, 2026-11-08)
 
-- **Parallelize as much as possible.** Target at least 50 agents running at once, with a maximum of
-  150. One workflow runs at most about 16 agents at a time, so this means four or more workflows
-  running concurrently (background subagents count too). Token usage is not a constraint.
-- **Fan out every substantive task:** parallel researchers or finders, each result checked by
-  several skeptics told to refute it; one auditor per document for consistency sweeps; parallel
-  review angles on every diff; agents that prepare ready-to-apply patches for pending owner
-  decisions. Start independent workflows at the same time, not one after another.
-- **Limits that still apply:**
+- **No multi-agent requirement.** Use agents only when they clearly help, and run **at most 10
+  agents at once** in total (all workflows and background subagents together).
+- **Limits:**
   - One writer per repo file. Agents write to scratch files, copies, or worktrees; the main session
     applies their output (especially tasks.md, spec.md, project.yml, and the contracts).
   - An agent's report is not evidence. Verify it (build, test, read the diff) before marking a task
