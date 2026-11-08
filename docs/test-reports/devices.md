@@ -4,15 +4,46 @@ Fill this in **before any device testing** (task T017). Record the exact values;
 The reference device is the newest capture-capable iPhone available to the project (spec Delivery
 Gating) and is used for Gate 2, SC-005–SC-009, SC-013–SC-015, and ADR-0003.
 
-| Role (FR-032) | Model | Model identifier | OS build | Owner | Notes |
-|---------------|-------|------------------|----------|-------|-------|
-| Oldest obtainable iOS 26-capable iPhone, on iOS 26 (fallback modes) | | | | | |
-| iPhone on the earliest OS with System/App Capture | | | | | |
-| Current-generation iPhone | | | | | |
-| iPad (oldest obtainable iPadOS 26-capable preferred) | | | | | |
-| **Reference device** (newest capture-capable iPhone) | | | | | |
+## Inventory (recorded 2026-11-08 from the project owner)
 
-Model identifier: the hardware identifier, e.g. `iPhone17,1` (Settings › General › About shows the
-model; Xcode › Devices and Simulators shows the identifier).
+| ID | Device (as reported) | Part number | OS version | OS build | Model identifier | Owner |
+|----|----------------------|-------------|------------|----------|------------------|-------|
+| D1 | iPhone 15 (reported as "iPhone 15m") | MTLV3LL/A | iOS 27.0.1 | *TBD* | *TBD* | project owner |
+| D2 | iPad Pro 13-inch (M5) | MDYJ4LL/A | iPadOS 26.5 | *TBD* | *TBD* | project owner |
+| D3 | iPad (A16) | MD4A4LL/A | iPadOS 26.5 | *TBD* | *TBD* | project owner |
 
-Status: **not yet filled.** No device results exist.
+Still to record from each device before its first test run (do not infer them from the part number):
+- **OS build**: Settings › General › About › iOS/iPadOS Version (tap the version to show the build).
+- **Model identifier**: Xcode › Window › Devices and Simulators (e.g. `iPhone15,4`). Also confirm
+  D1's exact model name there (iPhone 15 / 15 Plus / 15 Pro / 15 Pro Max).
+
+## Role assignment (FR-032)
+
+| Role (FR-032) | Device | Status |
+|---------------|--------|--------|
+| Oldest obtainable iOS 26-capable iPhone, on iOS 26 (fallback modes) | — | **Gap**: no iPhone on iOS 26 is available. D3 (iPad A16 on iPadOS 26.5) covers the iOS 26 fallback-only path in the meantime, but it is an iPad, not the iPhone FR-032 requires |
+| iPhone on the earliest OS with System/App Capture | D1 (iOS 27.0.1) | Assigned, assuming capture first appears in iOS 27 (RI-004, task T035). If capture first appears in a later 27.x, D1 must be on that version |
+| Current-generation iPhone | — | **Gap**: iPhone 15 is not the current generation |
+| iPad (oldest obtainable iPadOS 26-capable preferred) | D3 (iPad A16) | Assigned (fallback modes on iPadOS 26.5) |
+| **Reference device** (newest capture-capable iPhone) | D1 (iPhone 15) | Assigned: it is the only capture-capable iPhone available |
+
+Additional device: D2 (iPad Pro M5, iPadOS 26.5). This is the best candidate for the
+**capture-capable iPad** that SC-001 requires, once it is updated to iPadOS 27 (keep D3 on 26.5 as
+the iOS 26 device).
+
+## Coverage against SC-001 and FR-032
+
+| Requirement | Needed | Available now | Gap |
+|-------------|--------|---------------|-----|
+| SC-001: capture sources on ≥ 2 capture-capable iPhones | 2 | 1 (D1) | 1 more iPhone on iOS 27 |
+| SC-001: capture sources on ≥ 1 iPad | 1 capture-capable iPad | 0 (both iPads on 26.5) | update D2 to iPadOS 27 |
+| SC-001: fallback sources on every FR-032 device | all roles | D1, D2, D3 | — |
+| FR-032: iPhone on iOS 26 | 1 | 0 | an iPhone kept on iOS 26, or an owner-approved substitution of D3 |
+| FR-032: current-generation iPhone | 1 | 0 | a current-generation iPhone |
+
+Until the gaps are closed, Stage 1 runs can proceed on D1–D3, but SC-001 and FR-032 cannot be marked
+met. The project owner either obtains the missing devices or records an approved waiver or spec
+change in the compatibility report's Stage Decision (FR-033).
+
+Status: **inventory recorded; OS builds and model identifiers pending; 3 coverage gaps open.** No
+device results exist.
