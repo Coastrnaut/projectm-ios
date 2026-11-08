@@ -135,7 +135,7 @@ iPhone.
 - [ ] T046 [US2] {A}{win} Implement `Packages/CaptureKit/Sources/CaptureKit/InAppPlayback/InAppPlaybackSource.swift` (`.playback` category, AVAudioPlayerNode looping the bundled track, mixer tap → PCMSink, route-loss pause) (FR-006) — AC: T043 passes {mac}
 - [ ] T047 [US2] {A}{win} Implement `Packages/CaptureKit/Sources/CaptureKit/LifecycleObserver.swift` (app background/foreground and protected-data/lock notifications → `LifecycleEvent`; permission re-check on foreground) — AC: T042/T043 lifecycle cases pass {mac}
 - [ ] T048 [US2] {A}{win} Add `Packages/CaptureUI/Sources/CaptureUI/MicrophoneExplainerView.swift` and the "Open Settings" banner action, using the exact ui-states strings, and use them from CaptureLab — AC: UI test shows the explainer before the system prompt {mac}
-- [ ] T049 [US2] {A}{device} Run US2 acceptance scenarios 1–7 on every FR-032 device; record them in the compatibility report — AC: all 7 scenarios pass on every device, and SC-004 (Active audio within 2 s) holds
+- [ ] T049 [US2] {A}{device} Run US2 acceptance scenarios 1–7 on every FR-032 device; record them in `docs/test-reports/compatibility-report.md` — AC: all 7 scenarios pass on every device, and SC-004 (Active audio within 2 s) holds
 - [ ] T050 [US2] {A}{device} Phase A real-time check (Constitution VII): run an allocation trace for 60 s on each Phase A adapter callback (System/App Capture, Microphone, In-App Playback) on the reference device before any Gate 1/2 run; record the results in `docs/test-reports/performance.md` — AC: zero heap allocations and zero lock acquisitions on each audio callback thread
 
 **Checkpoint**: US1 and US2 both work independently.
@@ -149,11 +149,11 @@ iPhone.
 **Independent Test**: quickstart.md Scenario A steps 5–9; the report is complete and reproducible.
 
 - [ ] T051 [US3] {A}{device} For each FR-030 source on each applicable device, run 10 minutes in the foreground and export diagnostics into `docs/test-reports/exports/<device>/<source>/` — AC: SC-001 coverage (≥ 2 capture-capable iPhones + 1 iPad for capture sources; all devices for fallbacks)
-- [ ] T052 [US3] {A}{win} Rate every report row Works / Partial / Does not work using the FR-031 thresholds, citing the exports; write the limitation for each Partial row — AC: zero "Works" rows without an export showing non-silent audio (SC-001)
-- [ ] T053 [US3] {A}{device} Gate 2: for each source rated "Works", run a 30-minute foreground capture on the reference device and record unrecovered failures, dropped audio, start-to-first-audio, CPU, and memory against the Gate 2 thresholds in spec Delivery Gating — AC: each Works source passes or is downgraded to Partial with its reason
+- [ ] T052 [US3] {A}{win} Rate every row of `docs/test-reports/compatibility-report.md` Works / Partial / Does not work using the FR-031 thresholds, citing the exports; write the limitation for each Partial row — AC: zero "Works" rows without an export showing non-silent audio (SC-001)
+- [ ] T053 [US3] {A}{device} Gate 2: for each source rated "Works", run a 30-minute foreground capture (results in `docs/test-reports/compatibility-report.md`) on the reference device and record unrecovered failures, dropped audio, start-to-first-audio, CPU, and memory against the Gate 2 thresholds in spec Delivery Gating — AC: each Works source passes or is downgraded to Partial with its reason
 - [ ] T054 [US3] {A}{win} Finalize the Stage 1 thresholds (dBFS levels, timeouts, 200 ms cycle, Works thresholds) in the report; update FR-011/FR-012/FR-018/FR-031/FR-052 and the `ClassifierThresholds` defaults to match — AC: spec and code defaults are identical; `validate_docs.py` passes
 - [ ] T055 [US3] {A}{win} Write the preliminary conclusions for RI-007 and RI-010 in `docs/adr/0005-lgpl-compliance.md` (relinking approach, upstream's App Store warning, vendored obligations) (FR-064) — AC: the conclusion section states go / no-go / conditional, with reasons
-- [ ] T056 [US3] {A}{win} The project owner records the Stage 2 go/no-go decision, approver, date, evidence, and claimable sources in the report's Stage Decision section (FR-033) — AC: the decision is recorded; if "no external source works", the product description is updated to fallbacks only
+- [ ] T056 [US3] {A}{win} The project owner records the Stage 2 go/no-go decision, approver, date, evidence, and claimable sources in the Stage Decision section of `docs/test-reports/compatibility-report.md` (FR-033) — AC: the decision is recorded; if "no external source works", the product description is updated to fallbacks only
 
 **🚧 STAGE 1 GATE**: Nothing below this line may start until T056 records "go" and T055 is not
 "no-go" (spec Stage 2 approval rule). This blocks all ProjectM engine, renderer, preset, and
@@ -194,8 +194,8 @@ US4–US7.
 - [ ] T075 {C}{device} Measure Option A against the ADR-0003 thresholds on every measurement device; record in `docs/test-reports/performance.md` — AC: all threshold rows filled with numbers
 - [ ] T076 {C}{mac} Pin and build ANGLE (Metal backend) reproducibly into `Build/ANGLE.xcframework`; add its row to ADR-0004 with the license verified from the pinned source's LICENSE file (Constitution IX) — AC: CI builds it from the pinned source; the license row says "Recorded"
 - [ ] T077 {C}{win} Implement `Packages/Rendering/Sources/Rendering/ANGLERenderer.swift` (Option B; EGL context; load_proc = `eglGetProcAddress`) — AC: renders the upstream test preset in the simulator {mac}
-- [ ] T078 {C}{device} Measure Option B against the ADR-0003 thresholds on every measurement device — AC: all threshold rows filled
-- [ ] T079 {C}{win} Accept ADR-0003: choose the option, record the quality tiers (mesh size, render scale, device-to-tier rule), and select the engine tag or commit per RI-006 in ADR-0004 — AC: ADR-0003 status "Accepted"; **Gate 3 passed**
+- [ ] T078 {C}{device} Measure Option B against the ADR-0003 thresholds on every measurement device; record in `docs/test-reports/performance.md` — AC: all threshold rows filled
+- [ ] T079 {C}{win} Accept `docs/adr/0003-renderer.md`: choose the option, record the quality tiers (mesh size, render scale, device-to-tier rule), and select the engine tag or commit per RI-006 in ADR-0004 — AC: ADR-0003 status "Accepted"; **Gate 3 passed**
 
 **Checkpoint (Gate 3)**: The engine renders on devices. US4–US7 may start.
 
@@ -228,7 +228,7 @@ US4–US7.
 - [ ] T089 [US5] {D}{win} Implement `Apps/ProjectMiOS/Coordinators/FavoritesStore.swift` (only the FR-065 keys) — AC: T088 persistence cases pass {mac}
 - [ ] T090 [US5] {D}{win} Implement `Apps/ProjectMiOS/Views/PresetBrowserView.swift` (FR-043/FR-044/FR-088; closes on selection; favorites filter and empty state) — AC: T088 UI cases pass {mac}
 - [ ] T091 [US5] {D}{win} Wire Next/Previous/Random and the preset-failure banner ("Preset could not be loaded") in `Apps/ProjectMiOS/Coordinators/PresetCoordinator.swift`; blend ≤ 2 s — AC: T088 passes {mac}
-- [ ] T092 [US5] {D}{device} Run US5 acceptance 1–4 and SC-007 (Next × 50: 95% of first frames within 1 s) on the reference device — AC: pass; recorded in performance.md
+- [ ] T092 [US5] {D}{device} Run US5 acceptance 1–4 and SC-007 (Next × 50: 95% of first frames within 1 s) on the reference device — AC: pass; recorded in `docs/test-reports/performance.md`
 
 ---
 
@@ -242,7 +242,7 @@ US4–US7.
 - [ ] T094 [US6] {D}{win} Implement `Apps/ProjectMiOS/Views/SourceStatusIndicator.swift` (FR-013) and wire CaptureUI's `StatusBanner` for FR-015/FR-083 messages from the ui-states tables — AC: T093 string cases pass {mac}
 - [ ] T095 [US6] {D}{win} Implement Stop / Pause / Resume and `VisualizationState` (running, paused, suspended) in `Apps/ProjectMiOS/Coordinators/AppCoordinator.swift` (FR-007, FR-046, FR-085) — AC: T093 passes {mac}
 - [ ] T096 [US6] {D}{win} Implement one-tap restart per the data-model lifecycle matrix (System/App Capture re-presents the picker; mic/in-app restart directly) in `Coordinators/AppCoordinator.swift` (FR-055) — AC: T093 restart cases pass {mac}
-- [ ] T097 [US6] {D}{device} Run US6 acceptance 1–4 on the reference device and an iPad; run SC-010 usability with ≥ 8 participants not involved in development (≥ 3 on iPad) — AC: all pass; ≥ 90% correct identification
+- [ ] T097 [US6] {D}{device} Run US6 acceptance 1–4 on the reference device and an iPad, recorded in `docs/test-reports/release-report.md`; run SC-010 usability with ≥ 8 participants not involved in development (≥ 3 on iPad) — AC: all pass; ≥ 90% correct identification
 
 ---
 
@@ -255,7 +255,7 @@ US4–US7.
 - [ ] T098 [P] [US7] {D}{mac} Write `Apps/ProjectMiOS/Tests/LifecycleCoordinatorTests.swift`: for each adapter, every row of the data-model lifecycle matrix (background/lock = FR-054, foreground auto-resume ≤ 2 s, interruption, route change) — AC: tests fail against a stub
 - [ ] T099 [US7] {D}{win} Implement `Apps/ProjectMiOS/Coordinators/LifecycleCoordinator.swift` (suspend the visualization on background/lock; apply the per-adapter matrix; banners via ui-states) — AC: T098 passes {mac}
 - [ ] T100 [US7] {D}{win} Implement thermal and low-power adaptation in `Packages/Rendering/Sources/Rendering/QualityGovernor.swift` (lower fps or render scale, never below 30 fps; labels and audio state unaffected, FR-049) — AC: unit test of each thermal state → settings {mac}
-- [ ] T101 [US7] {D}{device} Run the US7 scripted sequence per source mode and SC-009 (50 cycles at 200 ms plus the lifecycle script) on the reference device and the oldest iPhone — AC: zero crashes, correct final states
+- [ ] T101 [US7] {D}{device} Run the US7 scripted sequence per source mode and SC-009 (50 cycles at 200 ms plus the lifecycle script) on the reference device and the oldest iPhone; record in `docs/test-reports/performance.md` — AC: zero crashes, correct final states
 - [ ] T102 [US7] {D}{device} Gate 4: run SC-005, SC-008, SC-013, SC-014, and SC-015 on the reference device and the oldest iOS 26 iPhone/iPad; finalize the Stage 2 thresholds in `docs/test-reports/performance.md` and update the affected FR/SC lines — AC: all targets met or thresholds formally revised by the project owner; **Gate 4 passed**
 
 ---
@@ -264,11 +264,11 @@ US4–US7.
 
 - [ ] T103 [P] {E}{win} Implement `Apps/ProjectMiOS/Views/SettingsView.swift`: performance overlay toggle (default off, FR-048), "Reduce flashing" (nil → follow Reduce Motion, FR-072), and the Licenses screen listing ADR-0004 components and LICENSES.md presets with license texts and the LGPL source/replacement note (FR-067) — AC: UI test covers all three {mac}
 - [ ] T104 {E}{win} Implement the Reduce-flashing post-pass in the chosen renderer (`Packages/Rendering/Sources/Rendering/FlashLimiter.swift`) — AC: ≤ 2 ms per frame on the reference device {device}
-- [ ] T105 [P] {E}{win} Add accessibility labels, state announcements, and Dynamic Type to all controls and the indicator (FR-070) — AC: SC-012 screen-reader audit passes on iPhone and iPad {device}
+- [ ] T105 [P] {E}{win} Add accessibility labels, state announcements, and Dynamic Type to all controls and the indicator in `Packages/CaptureUI/` and `Apps/ProjectMiOS/Views/` (FR-070) — AC: SC-012 screen-reader audit passes on iPhone and iPad {device}
 - [ ] T106 [P] {E}{win} Fill `Apps/ProjectMiOS/PrivacyInfo.xcprivacy` with every required-reason API used and its approved reason (FR-066); draft the App Privacy answers as "Data Not Collected" in `docs/release/app-privacy.md` — AC: Xcode privacy report shows no undeclared APIs {mac}
 - [ ] T107 [P] {E}{win} Write `docs/privacy-policy.md` covering every FR-063 point — AC: each FR-063 clause maps to a paragraph
 - [ ] T108 {E}{device} SC-011 privacy review: inspect the app container after sessions (only FR-065 keys, no audio files) and run a proxy capture showing zero network connections (FR-068) (FR-060, FR-061) — AC: findings recorded in `docs/test-reports/privacy-review.md`, with zero violations
-- [ ] T109 {E}{win} Write the final ADR-0005 conclusion for RI-007 and RI-010 (FR-064) — AC: status "go"; otherwise the release is blocked
+- [ ] T109 {E}{win} Write the final conclusion in `docs/adr/0005-lgpl-compliance.md` for RI-007 and RI-010 (FR-064) — AC: status "go"; otherwise the release is blocked
 - [ ] T110 [P] {E}{win} Review the store listing and in-app help against the report's "Works" rows (FR-062: scoped by OS/device class/app version; no Partial claims; iPad only with an iPad "Works" row) in `docs/release/store-copy.md` — AC: every claim cites a report row
 - [ ] T111 [P] {E}{win} Entitlements and Info.plist review against R-16 in `docs/release/entitlements-review.md` — AC: no capability beyond R-16
 - [ ] T112 {E}{device} Full quickstart.md run (Scenarios A–D) on the release build; write `docs/test-reports/release-report.md`, including a check that only ProjectMiOS is submitted and CaptureLab is not (FR-090) — AC: every quickstart row passes or has an owner-approved waiver
