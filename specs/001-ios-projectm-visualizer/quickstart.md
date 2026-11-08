@@ -30,7 +30,7 @@ Before Scenario A, record the concrete device model and OS build for each FR-032
 | RI-003, FR-050–FR-055 (capture evidence) | A.5 |
 | Gate 2 thresholds | A.9 |
 | Gate 3, ADR-0003, RI-009, RI-011 | B |
-| SC-005–SC-010, SC-012, SC-013, FR-041 | C |
+| SC-005–SC-010, SC-012–SC-015, FR-041, FR-084, FR-089 | C |
 | SC-011, FR-063, FR-066, FR-067, FR-064 | D |
 
 Simulator and Windows results never satisfy any row above.
@@ -97,6 +97,9 @@ starter presets. Record shader failures, fps, and app size per ADR-0003 option.
 | SC-010 | Usability sessions | ≥ 90% identify mode + audio state |
 | SC-012 | Screen-reader audit iPhone + iPad | all controls pass |
 | SC-013 | 30-min thermal session per SC-013 conditions | never critical, ≥ 30 fps, no termination |
+| SC-014 | 60-min session, 50% brightness, unplugged | ≤ 20% battery |
+| SC-015 | Cold launch × 10, reference and oldest iPhone | median < 2 s / < 4 s |
+| FR-084 | Visualize for longer than the auto-lock interval | device does not lock |
 | FR-041 | Rotate; iPad split view and resize | re-layout ≤ 1 s, capture uninterrupted |
 
 ## Scenario D — Release checks

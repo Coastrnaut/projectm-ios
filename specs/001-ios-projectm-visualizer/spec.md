@@ -59,7 +59,7 @@ earlier phase.
 |------|--------------|-------------------|
 | Gate 0 — API availability | RI-001 and RI-004 exit criteria met; ADR-0001 and ADR-0002 accepted | `docs/platform-research/screencapturekit-ios.md`, ADRs |
 | Gate 1 — External samples | Every FR-030 source has an FR-031 entry from at least the devices in SC-001 | compatibility report + diagnostics exports |
-| Gate 2 — Sustained capture | For each source rated "Works": a 30-minute foreground capture with zero unrecovered stream failures, dropped audio under 1%, median start-to-first-audio under 2 s, capture-plus-pipeline CPU under 15% of one core on the reference device, and memory growth of 10% or less (minute 5 vs minute 30) | report rows + exports |
+| Gate 2 — Sustained capture | For each source rated "Works": a 30-minute foreground capture on the reference device with zero unrecovered stream failures, dropped audio under 1%, median start-to-first-audio under 2 s, capture-plus-pipeline CPU under 15% of one core, and memory growth of 10% or less (minute 5 vs minute 30) | report rows + exports |
 | Gate 3 — Engine build/render | ADR-0003 exit thresholds met and ADR-0003 accepted | ADR-0003 measurements |
 | Gate 4 — End-to-end | SC-005 to SC-010 and SC-013 met with each available source mode | test report |
 
@@ -80,8 +80,13 @@ Playback only, and that limitation is stated in the product description and stor
 **Stage 2 acceptance rule**: User Stories 4 and 5 cannot be accepted until Gate 3 passes (RI-005:
 a known preset renders on a physical device). Capture evidence alone is not sufficient.
 
-**Release rule**: The release cannot be submitted until RI-007 has a final go conclusion (FR-064)
-and the privacy review (SC-011) has passed.
+**Release rule**: The release cannot be submitted until RI-007 and RI-010 have final go conclusions
+(FR-064, ADR-0005), the privacy review (SC-011) has passed, the privacy manifest and App Privacy
+disclosure are complete (FR-066), and the Licenses screen is complete (FR-067).
+
+**Reference device**: The newest capture-capable iPhone available to the project, chosen and
+recorded in `docs/test-reports/devices.md` before Phase A testing starts (FR-034). The same device
+is used for Gate 2, SC-005 to SC-009, SC-013 to SC-015, and ADR-0003.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -406,7 +411,8 @@ Each edge case below maps to a functional requirement.
 - **FR-041**: System MUST support portrait and landscape on iPhone and iPad, and resizable/split
   windows on iPad.
 - **FR-042**: Tapping the visualization MUST toggle controls; controls MUST auto-hide after 5 seconds
-  without interaction.
+  without interaction. A compact source-and-state indicator (mode label plus audio state) MUST stay
+  visible when the controls are hidden, so the active source can be seen at any time (US6).
 - **FR-043**: Users MUST be able to choose a preset from a browser (which closes on selection), go to
   next/previous/random, and see the current preset's name.
 - **FR-044**: Users MUST be able to mark and unmark favorites, filter the browser to favorites, and
@@ -477,6 +483,11 @@ Each edge case below maps to a functional requirement.
 - **FR-067**: Settings MUST include a Licenses screen listing every bundled third-party component,
   preset pack, and asset with its license text and attribution, and, for LGPL-2.1 components, how to
   obtain the corresponding source and replace the library (per ADR-0005).
+- **FR-068**: The app MUST make no network connections and MUST NOT include networking code paths,
+  analytics, advertising, or third-party SDKs. The only way data leaves the device is the
+  user-initiated diagnostics export (FR-021).
+- **FR-069**: The microphone MUST be activated only in Microphone mode. System/App Capture MUST be
+  configured to exclude microphone audio, and In-App Playback MUST NOT open any input.
 
 **Accessibility**
 
@@ -487,6 +498,38 @@ Each edge case below maps to a functional requirement.
   photosensitivity notice about flashing visuals. The user must acknowledge it.
 - **FR-072**: The app MUST provide a "Reduce flashing" setting that limits rapid full-screen
   brightness changes. It MUST be on by default when the system Reduce Motion setting is on.
+
+**User experience**
+
+- **FR-080**: The source chooser MUST list all three modes. Each shows its label, a one-line
+  description of what it captures (contracts/ui-states.md), and its availability, with the reason
+  if unavailable.
+- **FR-081**: On first launch the app MUST show the photosensitivity notice (FR-071), then the source
+  chooser. On later launches it opens on the source chooser. No source starts until the user picks
+  one (FR-002).
+- **FR-082**: The controls overlay MUST contain: the source-and-state indicator, Stop, Pause/Resume
+  visualization, Previous, Next, Random, the preset browser, the current preset name, and Settings.
+- **FR-083**: Status and failure messages MUST appear as a non-modal banner with the actions listed
+  in contracts/ui-states.md. Modal dialogs are used only by the system (picker and permission
+  prompts).
+- **FR-084**: While the visualization is running in the foreground, device auto-lock MUST be
+  suppressed. It MUST be restored when the visualization is paused or stopped, or the app leaves the
+  foreground.
+- **FR-085**: While the visualization is paused, the last frame MUST stay on screen, dimmed, with a
+  "Paused" label.
+- **FR-086**: In the visualizer, the status bar and home indicator MUST hide while controls are
+  hidden, except where hiding would hide the system's capture or microphone-in-use indicator
+  (FR-089).
+- **FR-087**: In compact width (including the smallest iPad split-view size), the overlay MUST use a
+  single-row compact layout with the preset browser as a sheet; every FR-082 control stays
+  reachable.
+- **FR-088**: The preset browser MUST list presets alphabetically by display name. Random MUST never
+  pick the current preset. When the favorites filter is on and there are none, it shows "No
+  favorites yet — tap the star on a preset to add one."
+- **FR-089**: The app MUST NOT obscure or suppress the system's screen-capture or microphone-in-use
+  indicator. Whether full-screen presentation affects that indicator is recorded under RI-001.
+- **FR-090**: CaptureLab is an internal test tool. It is distributed only to testers (e.g., via
+  TestFlight) and is never submitted to the App Store.
 
 ### Key Entities
 
@@ -524,17 +567,20 @@ Each edge case below maps to a functional requirement.
 
 **Stage 2**
 
-- **SC-005**: On the reference device, the visualization sustains at least 55 frames per second for
-  95% of a 10-minute session with the visualizer in the foreground. The minimum-supported devices'
-  sustained rates are measured and published. *Reference device*: the newest iPhone model available
-  to the project when Stage 2 starts, recorded by model and OS build in the report.
+- **SC-005**: On the reference device (see Delivery Gating), the visualization sustains at least 55
+  frames per second for 95% of a 10-minute session with the visualizer in the foreground. Frame rate
+  is computed from the renderer's frame-presentation timestamps over 1-second windows. On 120 Hz
+  displays the visualization is capped at 60 fps. The minimum-supported devices' sustained rates are
+  measured and published in `docs/test-reports/performance.md` and in the app's support notes.
 - **SC-006**: Measured audio-to-visual delay is under 150 ms on the reference device. Method: play a
   sharp audible click through In-App Playback, film the device screen and speaker with a camera at
   240 frames per second or more, and measure the time from the click to the first visible change.
   Take the median of 20 clicks. (The target is confirmed against Stage 1 latency measurements.)
-- **SC-007**: Preset switches complete within 1 second in 95% of switches across the bundled set.
+- **SC-007**: In 95% of switches across the bundled set, the new preset's first frame is presented
+  within 1 second of the request. Any blend transition into it lasts no more than 2 seconds.
 - **SC-008**: In a 30-minute session with an active source, the app's memory use at minute 30 is
-  within 10% of its memory use at minute 5, and the app does not crash.
+  within 10% of its memory use at minute 5, peak memory stays under 300 MB on the reference device
+  (oldest devices measured and published), and the app does not crash.
 - **SC-009**: 50 consecutive start/stop/switch cycles at 200 ms intervals, and a scripted
   background/foreground/lock/interruption/route-change sequence per source mode, complete with zero
   crashes and a correct final state.
@@ -549,6 +595,11 @@ Each edge case below maps to a functional requirement.
   brightness, on the reference device and the oldest iOS 26 iPhone: the device never reaches the
   critical thermal state, frame rate never drops below the FR-049 floor of 30 fps, and the app is
   never terminated for thermal reasons. Thermal states observed are recorded.
+- **SC-014**: A 60-minute visualization session on the reference device at 50% brightness, unplugged,
+  uses no more than 20% of battery (initial target; tuned with Stage 2 measurements per the threshold
+  assumption).
+- **SC-015**: Cold launch to an interactive source chooser takes under 2 seconds on the reference
+  device and under 4 seconds on the oldest iOS 26 iPhone.
 
 ## Assumptions
 
@@ -568,7 +619,7 @@ Each edge case below maps to a functional requirement.
 - Users have no accounts; all persisted data stays on the device (FR-065).
 - **Tunable thresholds**: silence −60 dBFS / 2 s, active −50 dBFS / 250 ms, no-audio 5 s,
   prolonged-silence hint 60 s, controls auto-hide 5 s, 55 fps, 30 fps floor, 150 ms, 200 ms
-  cycle interval. These are initial defaults. *Owner*: project owner. *Exit*: the final values
+  cycle interval, 300 MB peak memory, 20% battery per hour, 2 s / 4 s launch. These are initial defaults. *Owner*: project owner. *Exit*: the final values
   are recorded in the Stage 1 compatibility report, and the affected FR/SC lines are updated
   before Stage 2 starts.
 - The "Works" thresholds (95% of windows, <1% dropped) in FR-031 follow the same owner and exit
@@ -588,7 +639,9 @@ stated as fact in the plan until its exit criterion is met.
   FR-008, FR-014, FR-019): Which content-sharing picker modes and selection scopes (single app,
   window, or whole display) exist, which stream configuration options and audio output types exist
   on iOS/iPadOS in the selected SDK, which usage-description keys are required, whether app audio
-  (not only microphone) is delivered, and whether the OS identifies the selected content. *Exit*: inventory written from the SDK headers and current Apple docs, saved in
+  (not only microphone) is delivered, whether microphone audio can be excluded (FR-069), whether
+  the OS identifies the selected content, and how the system capture indicator behaves when the app
+  hides the status bar (FR-089). *Exit*: inventory written from the SDK headers and current Apple docs, saved in
   `docs/platform-research/`, with availability annotations.
 - **RI-002 — External app audio while this app is foregrounded** (blocks Gate 1; updates FR-062
   claimable sources): Whether audio from the selected source arrives, non-silent, while the

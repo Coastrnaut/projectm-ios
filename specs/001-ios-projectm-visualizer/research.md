@@ -150,6 +150,10 @@ Renderer/Platform/GLResolver.cpp).
   (`DynamicLibrary_posix.cpp`). Phase C determines whether it runs on iOS when a load_proc is
   supplied. Preferred outcome: it is not reached. Fallback: a minimal patch disabling it for iOS,
   recorded in `docs/projectm-patches.md`.
+- **Quality tiers**: Phase C sets engine settings (per-point mesh size, render scale, texture size)
+  for two tiers, "current" (reference device) and "oldest" (oldest iOS 26 devices), following
+  upstream's advice to keep the mesh low on mobile (e.g., 48×32). The tiers and the device-to-tier
+  rule are recorded in ADR-0003.
 - **Rationale**: Gets an early, measurable Gate 3 while keeping a non-deprecated route.
 - **Exit criteria (ADR-0003)**: the test presets in `Vendor/projectM/presets/tests` plus 20 starter
   presets render on the reference device and the oldest iOS 26 device; fps is measured; shader
@@ -211,7 +215,27 @@ Renderer/Platform/GLResolver.cpp).
   intervals for Instruments, and the tester-initiated export (FR-021) validated against
   [contracts/diagnostics-export.schema.json](contracts/diagnostics-export.schema.json). Logs never
   include sample data and never run on the audio thread (the work queue posts counters).
-- **Rationale**: FR-060/FR-061; Constitution privacy section.
+- **Logging rules**: `Logger` messages mark every dynamic string as private; they never include the
+  tester note, content identity, or sample data. There are no file logs. Export files are named
+  `CaptureLab-<UTC yyyyMMdd-HHmmss>.json` / `.txt`, with no device or user identifiers.
+- **Rationale**: FR-060/FR-061/FR-068; Constitution privacy section.
+
+## R-15 Threat model (summary)
+
+| Asset | Entry point / threat | Mitigation (requirement) |
+|-------|----------------------|--------------------------|
+| Captured audio (in memory) | Persisted or exfiltrated | No storage, no network (FR-060, FR-068); SC-011 proxy check |
+| Ambient sound | Microphone opened unexpectedly | Mic only in Microphone mode (FR-069); usage text (FR-019) |
+| Device/tester metadata | Diagnostics export shared | Tester-initiated only; schema excludes identifiers; private log strings (FR-021, R-13) |
+| Preset files | Malformed or hostile preset code evaluated by the engine | Bundled, license-reviewed presets only; no import/download (Out of Scope); load failures isolated (FR-045) |
+| Supply chain | Tampered engine or ANGLE binaries | Submodule SHA pin, CI builds from source, cache keyed by SHA (ADR-0004) |
+| Capture indicators | User unaware of capture | Never obscure system indicators (FR-089); explicit system picker (FR-002) |
+
+## R-16 Entitlements and capabilities
+
+No App Groups, no background modes (R-03 change rule), no network, no push, no iCloud. Info.plist
+contains only `NSMicrophoneUsageDescription` and any capture key that RI-001 shows is required. The
+set is listed in `project.yml` and reviewed in Phase E.
 
 ## R-14 Accessibility and photosensitivity
 

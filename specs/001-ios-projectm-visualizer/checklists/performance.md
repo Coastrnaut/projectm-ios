@@ -11,24 +11,31 @@ are quantified, measurable, consistent, and complete.
 
 ## Consistency
 
-- [ ] CHK001 - Gate 2 (Stage 1) uses "the reference device", but SC-005 defines the reference device only when Stage 2 starts. Is that a conflict? [Conflict, Spec §Gating Gate 2, §SC-005]
-- [ ] CHK002 - Is "preset switch completes" in SC-007 defined (first frame of the new preset vs end of a blend transition), with any blend duration stated? [Ambiguity, Spec §SC-007, §FR-043]
+- [x] CHK001 - Gate 2 (Stage 1) uses "the reference device", but SC-005 defines the reference device only when Stage 2 starts. Is that a conflict? [Conflict, Spec §Gating Gate 2, §SC-005]
+- [x] CHK002 - Is "preset switch completes" in SC-007 defined (first frame of the new preset vs end of a blend transition), with any blend duration stated? [Ambiguity, Spec §SC-007, §FR-043]
 
 ## Measurability
 
-- [ ] CHK003 - Is the fps measurement method for SC-005 and ADR-0003 defined (source of frame timestamps, sampling window)? [Measurability, Spec §SC-005, ADR-0003]
-- [ ] CHK004 - Is it defined where the oldest devices' "measured and published" performance numbers are published? [Clarity, Spec §SC-005, §Clarifications]
+- [x] CHK003 - Is the fps measurement method for SC-005 and ADR-0003 defined (source of frame timestamps, sampling window)? [Measurability, Spec §SC-005, ADR-0003]
+- [x] CHK004 - Is it defined where the oldest devices' "measured and published" performance numbers are published? [Clarity, Spec §SC-005, §Clarifications]
 
 ## Missing Targets
 
-- [ ] CHK005 - Is a battery-consumption target defined for a visualization session? [Gap]
-- [ ] CHK006 - Is a launch-time target defined (cold launch to the source chooser)? [Gap]
-- [ ] CHK007 - Is an absolute peak-memory ceiling defined, not only relative drift (SC-008)? [Gap, Spec §SC-008]
-- [ ] CHK008 - Is the frame-rate policy on 120 Hz (ProMotion) displays defined (cap or target)? [Gap, Spec §SC-005]
-- [ ] CHK009 - Are engine quality settings per device tier (mesh size, render scale) required to be decided and recorded, given upstream's advice to keep them low on mobile? [Gap, R-08, ADR-0003]
+- [x] CHK005 - Is a battery-consumption target defined for a visualization session? [Gap]
+- [x] CHK006 - Is a launch-time target defined (cold launch to the source chooser)? [Gap]
+- [x] CHK007 - Is an absolute peak-memory ceiling defined, not only relative drift (SC-008)? [Gap, Spec §SC-008]
+- [x] CHK008 - Is the frame-rate policy on 120 Hz (ProMotion) displays defined (cap or target)? [Gap, Spec §SC-005]
+- [x] CHK009 - Are engine quality settings per device tier (mesh size, render scale) required to be decided and recorded, given upstream's advice to keep them low on mobile? [Gap, R-08, ADR-0003]
 
 ## Notes
 
 - Mark items `[x]` only after review confirms the requirement-quality criterion is satisfied
 - Leave items unchecked when they still require clarification, correction, or reviewer evaluation
 - `/speckit-implement` reads checklist state but does not modify markers.
+
+### Iteration log
+
+- Iteration 2 (2026-11-08): all items resolved in spec.md (FR-042, FR-068, FR-069, FR-080 to FR-090,
+  SC-005, SC-007, SC-008, SC-014, SC-015, Delivery Gating), research.md (R-08, R-13, R-15, R-16),
+  plan.md, contracts/ui-states.md, quickstart.md, and ADR-0003 under the project owner's standing
+  approval; each item verified against the updated text and checked.

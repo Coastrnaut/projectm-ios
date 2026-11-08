@@ -55,9 +55,10 @@ first OS that provides it (presumed 27.0, confirmed by R-02/RI-004).
 **Project Type**: Mobile app: two app targets (CaptureLab, ProjectMiOS) sharing local Swift
 packages.
 
-**Performance Goals**: ≥55 fps on the reference device for 95% of a 10-minute session (SC-005).
-Audio-to-visual delay under 150 ms (SC-006). Preset switch under 1 s (SC-007). State
-classification latency of 2 s or less (SC-003).
+**Performance Goals**: ≥55 fps on the reference device for 95% of a 10-minute session, capped at
+60 fps on 120 Hz displays (SC-005). Audio-to-visual delay under 150 ms (SC-006). Preset first frame
+within 1 s (SC-007). Peak memory under 300 MB (SC-008). Battery at most 20% per hour (SC-014). Cold
+launch under 2 s / 4 s (SC-015). State classification latency of 2 s or less (SC-003).
 
 **Constraints**: Real-time callbacks are allocation-free and lock-free (Constitution VII). Two
 bounded ring buffers with drop-oldest overflow (R-06). No audio leaves memory (FR-060). Public APIs
@@ -66,6 +67,9 @@ only. Memory drift at most 10% between minutes 5 and 30 (SC-008).
 **Latency budget** (sums to the SC-006 150 ms target; research R-06): capture delivery ≤ 30 ms →
 source ring and conversion ≤ 20 ms → normalized ring residency ≤ 50 ms → engine frame and display ≤
 50 ms (about 3 frames at 60 Hz).
+
+**Entitlements**: Minimal, per research R-16: no App Groups, background modes, network, push, or
+iCloud.
 
 **Scale/Scope**: Single user, on device. About 8 screens/sheets (source chooser, visualizer,
 controls overlay, preset browser, settings, diagnostics, photosensitivity notice, error states).

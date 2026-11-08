@@ -62,3 +62,8 @@ as recorded in `docs/test-reports/devices.md`.
 - [ ] The "Reduce flashing" post-pass (FR-072) is feasible with under 2 ms added per frame on the
       reference device.
 - [ ] RI-009 resolved as above.
+- [ ] Quality tiers ("current", "oldest") recorded with mesh size, render scale, and the
+      device-to-tier rule (research R-08).
+
+Frame rate is computed from frame-presentation timestamps in 1-second windows, capped at 60 fps on
+120 Hz displays (spec SC-005).

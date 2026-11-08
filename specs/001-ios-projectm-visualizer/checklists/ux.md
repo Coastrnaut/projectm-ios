@@ -11,30 +11,37 @@ plan.md are complete, clear, and consistent.
 
 ## Flows and Screens
 
-- [ ] CHK001 - Does the spec define what the source chooser shows for each mode (label, one-line description, availability), as the README's capture flow step 2 requires ("app explains the available modes")? [Gap, Spec §US1, README §7.2]
-- [ ] CHK002 - Is the launch flow defined: first launch (photosensitivity notice → source chooser) versus later launches, and that no source starts automatically? [Gap, Spec §FR-071, §FR-002]
-- [ ] CHK003 - Is CaptureLab's audience and distribution defined (internal test tool vs App Store app)? [Gap, Plan §Summary, Spec §US1]
-- [ ] CHK004 - Are the contents of the controls overlay enumerated (source indicator, stop, pause, next/previous/random, preset browser, settings)? [Gap, Spec §FR-042, §FR-043, §FR-046]
+- [x] CHK001 - Does the spec define what the source chooser shows for each mode (label, one-line description, availability), as the README's capture flow step 2 requires ("app explains the available modes")? [Gap, Spec §US1, README §7.2]
+- [x] CHK002 - Is the launch flow defined: first launch (photosensitivity notice → source chooser) versus later launches, and that no source starts automatically? [Gap, Spec §FR-071, §FR-002]
+- [x] CHK003 - Is CaptureLab's audience and distribution defined (internal test tool vs App Store app)? [Gap, Plan §Summary, Spec §US1]
+- [x] CHK004 - Are the contents of the controls overlay enumerated (source indicator, stop, pause, next/previous/random, preset browser, settings)? [Gap, Spec §FR-042, §FR-043, §FR-046]
 
 ## Consistency
 
-- [ ] CHK005 - Does "at any time the user can see which source is active" (US6) conflict with controls auto-hiding after 5 s (FR-042)? [Conflict, Spec §US6, §FR-042]
-- [ ] CHK006 - Is the presentation of status and failure messages defined (non-modal banner vs modal alert), consistently across all StopReasons? [Gap, Spec §FR-015, C:ui]
-- [ ] CHK007 - Is what the screen shows while the visualization is paused defined (frozen last frame, "Paused" label)? [Ambiguity, Spec §FR-046]
+- [x] CHK005 - Does "at any time the user can see which source is active" (US6) conflict with controls auto-hiding after 5 s (FR-042)? [Conflict, Spec §US6, §FR-042]
+- [x] CHK006 - Is the presentation of status and failure messages defined (non-modal banner vs modal alert), consistently across all StopReasons? [Gap, Spec §FR-015, C:ui]
+- [x] CHK007 - Is what the screen shows while the visualization is paused defined (frozen last frame, "Paused" label)? [Ambiguity, Spec §FR-046]
 
 ## Device Behavior
 
-- [ ] CHK008 - Does the spec define whether the device's auto-lock is suppressed while visualizing, given that auto-lock triggers FR-054 and would pause the visualizer during normal use? [Gap, Spec §FR-054, §US4]
-- [ ] CHK009 - Are status bar and home indicator visibility defined for the full-screen visualizer, including any interaction with the system capture indicator? [Gap, Spec §FR-040]
-- [ ] CHK010 - Is compact-width behavior defined for iPad split view (controls layout at the smallest split size)? [Clarity, Spec §FR-041, §US4-AS4]
+- [x] CHK008 - Does the spec define whether the device's auto-lock is suppressed while visualizing, given that auto-lock triggers FR-054 and would pause the visualizer during normal use? [Gap, Spec §FR-054, §US4]
+- [x] CHK009 - Are status bar and home indicator visibility defined for the full-screen visualizer, including any interaction with the system capture indicator? [Gap, Spec §FR-040]
+- [x] CHK010 - Is compact-width behavior defined for iPad split view (controls layout at the smallest split size)? [Clarity, Spec §FR-041, §US4-AS4]
 
 ## Presets
 
-- [ ] CHK011 - Is the preset browser's ordering defined, and does "random" exclude the current preset? [Ambiguity, Spec §FR-043]
-- [ ] CHK012 - Is the empty state defined when the browser is filtered to favorites and none exist? [Gap, Spec §FR-044]
+- [x] CHK011 - Is the preset browser's ordering defined, and does "random" exclude the current preset? [Ambiguity, Spec §FR-043]
+- [x] CHK012 - Is the empty state defined when the browser is filtered to favorites and none exist? [Gap, Spec §FR-044]
 
 ## Notes
 
 - Mark items `[x]` only after review confirms the requirement-quality criterion is satisfied
 - Leave items unchecked when they still require clarification, correction, or reviewer evaluation
 - `/speckit-implement` reads checklist state but does not modify markers.
+
+### Iteration log
+
+- Iteration 2 (2026-11-08): all items resolved in spec.md (FR-042, FR-068, FR-069, FR-080 to FR-090,
+  SC-005, SC-007, SC-008, SC-014, SC-015, Delivery Gating), research.md (R-08, R-13, R-15, R-16),
+  plan.md, contracts/ui-states.md, quickstart.md, and ADR-0003 under the project owner's standing
+  approval; each item verified against the updated text and checked.

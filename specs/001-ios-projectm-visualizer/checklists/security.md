@@ -11,26 +11,33 @@ constitution are complete, explicit, and consistent.
 
 ## Threat Model and Scope
 
-- [ ] CHK001 - Is a threat model documented (assets, entry points, threats, mitigations) that the security requirements trace to? [Gap, Plan, R-13]
-- [ ] CHK002 - Is "the app makes no network connections" stated as a spec requirement, not only implied by FR-060 and the constitution? [Gap, Spec §FR-060, Const Security]
+- [x] CHK001 - Is a threat model documented (assets, entry points, threats, mitigations) that the security requirements trace to? [Gap, Plan, R-13]
+- [x] CHK002 - Is "the app makes no network connections" stated as a spec requirement, not only implied by FR-060 and the constitution? [Gap, Spec §FR-060, Const Security]
 
 ## Capture and Permissions
 
-- [ ] CHK003 - Is it required that the microphone is never activated outside Microphone mode, including excluding microphone audio from System/App Capture? [Gap, Spec §FR-001, §FR-013]
-- [ ] CHK004 - Is the app's entitlement and capability set enumerated and minimal (no App Groups, no background modes unless ADR-0001 amends)? [Gap, Plan §Technical Context, R-03]
-- [ ] CHK005 - Is it required that the full-screen visualizer never hides the system's capture or microphone-in-use indicator? [Gap, Spec §FR-040, §RI-001]
+- [x] CHK003 - Is it required that the microphone is never activated outside Microphone mode, including excluding microphone audio from System/App Capture? [Gap, Spec §FR-001, §FR-013]
+- [x] CHK004 - Is the app's entitlement and capability set enumerated and minimal (no App Groups, no background modes unless ADR-0001 amends)? [Gap, Plan §Technical Context, R-03]
+- [x] CHK005 - Is it required that the full-screen visualizer never hides the system's capture or microphone-in-use indicator? [Gap, Spec §FR-040, §RI-001]
 
 ## Data Handling
 
-- [ ] CHK006 - Are logging rules defined so that unified-logging output never includes the tester note, content identity, or other personal data? [Gap, R-13, Spec §FR-061]
-- [ ] CHK007 - Is the export file naming defined so that names carry no device or user identifiers? [Gap, Spec §FR-021]
+- [x] CHK006 - Are logging rules defined so that unified-logging output never includes the tester note, content identity, or other personal data? [Gap, R-13, Spec §FR-061]
+- [x] CHK007 - Is the export file naming defined so that names carry no device or user identifiers? [Gap, Spec §FR-021]
 
 ## Release Consistency
 
-- [ ] CHK008 - Does the spec's Release rule include every release blocker (RI-007 and RI-010 final, privacy review, FR-066 privacy manifest, FR-067 Licenses screen)? [Consistency, Spec §Gating Release rule, §FR-064, §FR-066, §FR-067]
+- [x] CHK008 - Does the spec's Release rule include every release blocker (RI-007 and RI-010 final, privacy review, FR-066 privacy manifest, FR-067 Licenses screen)? [Consistency, Spec §Gating Release rule, §FR-064, §FR-066, §FR-067]
 
 ## Notes
 
 - Mark items `[x]` only after review confirms the requirement-quality criterion is satisfied
 - Leave items unchecked when they still require clarification, correction, or reviewer evaluation
 - `/speckit-implement` reads checklist state but does not modify markers.
+
+### Iteration log
+
+- Iteration 2 (2026-11-08): all items resolved in spec.md (FR-042, FR-068, FR-069, FR-080 to FR-090,
+  SC-005, SC-007, SC-008, SC-014, SC-015, Delivery Gating), research.md (R-08, R-13, R-15, R-16),
+  plan.md, contracts/ui-states.md, quickstart.md, and ADR-0003 under the project owner's standing
+  approval; each item verified against the updated text and checked.

@@ -22,6 +22,14 @@ from other apps."
 | `NSMicrophoneUsageDescription` | Same text as the Microphone explainer above |
 | Capture key (identified by RI-001) | To be written when RI-001 names the key; it must say that only audio from the content you choose is used, on this device only |
 
+## Source chooser descriptions (FR-080)
+
+| Mode | One-line description |
+|------|----------------------|
+| System/App Capture | Visualize audio from content you choose to share, where iOS allows it. |
+| Microphone | Visualize sound in the room through the microphone. |
+| In-App Playback | Visualize the built-in reference track. |
+
 ## Audio states (FR-010)
 
 Not started · Waiting · No audio received · Audio received — silent · Active audio · Paused ·
@@ -46,7 +54,9 @@ silence (FR-018) → "No sound detected — is playback paused?"
 
 ## Visualizer (Stage 2)
 
-Controls auto-hide after 5 s (FR-042). Preset failure: "Preset could not be loaded" (FR-045).
+Controls auto-hide after 5 s (FR-042); the compact source-and-state indicator stays visible.
+Messages appear as non-modal banners (FR-083). Paused: last frame dimmed with "Paused" (FR-085).
+Empty favorites: "No favorites yet — tap the star on a preset to add one." (FR-088). Preset failure: "Preset could not be loaded" (FR-045).
 Photosensitivity notice (FR-071) must be acknowledged before the first visualization.
 
 ## Diagnostics export (FR-021)
