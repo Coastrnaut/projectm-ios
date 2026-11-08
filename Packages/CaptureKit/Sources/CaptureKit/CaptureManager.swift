@@ -22,6 +22,11 @@ public final class CaptureManager {
     public private(set) var transitions: [StateTransition] = []
     public private(set) var lifecycleLog: [LifecycleLogEntry] = []
     public private(set) var sessionSeconds: Double = 0
+    /// Session summary for the export (FR-021): loudest peak and mean RMS while running.
+    public private(set) var sessionPeakMaxDBFS: Float = LevelMeter.floorDBFS
+    public private(set) var sessionRMSMeanDBFS: Float = LevelMeter.floorDBFS
+    /// Every distinct format seen this session, with when it first appeared (FR-017, FR-020).
+    public private(set) var formatsSeen: [FormatObservation] = []
 
     private let sources: [AudioSourceMode: any AudioSource]
     private let sink = PCMSink()
@@ -33,6 +38,8 @@ public final class CaptureManager {
     @ObservationIgnored private var lastSequence: UInt64 = 0
     @ObservationIgnored private var pauseReason: StopReason?
     @ObservationIgnored private var lastFormatChangeCount = 0
+    @ObservationIgnored private var rmsSum: Double = 0
+    @ObservationIgnored private var rmsCount = 0
 
     /// - Parameters:
     ///   - sources: one source per mode.
@@ -146,6 +153,11 @@ public final class CaptureManager {
         lastFormatChangeCount = 0
         transitions.removeAll()
         lifecycleLog.removeAll()
+        formatsSeen.removeAll()
+        sessionPeakMaxDBFS = LevelMeter.floorDBFS
+        sessionRMSMeanDBFS = LevelMeter.floorDBFS
+        rmsSum = 0
+        rmsCount = 0
         do {
             let events = try await source.start(into: sink)
             current = source
@@ -251,6 +263,15 @@ public final class CaptureManager {
         if update.statistics.formatChangeCount > lastFormatChangeCount {
             lastFormatChangeCount = update.statistics.formatChangeCount
             log("formatChange")
+        }
+        if let format = update.statistics.format, formatsSeen.last?.format != format, formatsSeen.count < 100 {
+            formatsSeen.append(FormatObservation(format: format, firstSeenSeconds: update.sessionSeconds))
+        }
+        if update.state.isRunning, update.statistics.sampleCount > 0 {
+            sessionPeakMaxDBFS = max(sessionPeakMaxDBFS, update.levels.peakDBFS)
+            rmsSum += Double(update.levels.rmsDBFS)
+            rmsCount += 1
+            sessionRMSMeanDBFS = Float(rmsSum / Double(rmsCount))
         }
     }
 

@@ -108,5 +108,61 @@ class ReferenceAudioTests(unittest.TestCase):
         self.assertEqual(data["clickTimesSeconds"][0], 40.0)
 
 
+class UIStringsContractTests(unittest.TestCase):
+    """CaptureUI's UIStrings.swift must contain every user-visible string in the ui-states contract."""
+
+    ROOT = Path(__file__).resolve().parent.parent
+    CONTRACT = ROOT / "specs" / "001-ios-projectm-visualizer" / "contracts" / "ui-states.md"
+    SWIFT = ROOT / "Packages" / "CaptureUI" / "Sources" / "CaptureUI" / "UIStrings.swift"
+
+    def contract_strings(self) -> list[str]:
+        import re
+        text = self.CONTRACT.read_text(encoding="utf-8")
+        found: list[str] = []
+        section = None
+        for line in text.splitlines():
+            if line.startswith("## "):
+                section = line[3:].strip()
+                continue
+            cells = [c.strip() for c in line.strip().strip("|").split("|")] if line.startswith("|") else []
+            if not cells or set(cells[0]) <= set("-: "):
+                continue
+            if section and section.startswith("Source labels") and cells[0] != "Mode":
+                found += [cells[1]] + ([cells[2]] if cells[2] not in ("—", "Unavailable text") else [])
+            elif section and section.startswith("Source chooser") and cells[0] != "Mode":
+                found.append(cells[1])
+            elif section and section.startswith("Stop/failure") and cells[0] != "StopReason":
+                msg = cells[1]
+                if "‹description›" in msg:
+                    msg = msg.split("‹")[0]
+                found.append(msg)
+        states = re.search(r"## Audio states \(FR-010\)\s+(.+?)\n\n", text, re.S).group(1)
+        found += [s.strip() for s in states.replace("\n", " ").split("·")]
+        found += re.findall(r'→ "([^"]+)"', text)                       # hints
+        found.append(re.search(r'reads: "(.+?)"', text, re.S).group(1).replace("\n", " "))  # mic explainer
+        found.append(re.search(r'Note field placeholder: "(.+?)"', text, re.S).group(1).replace("\n", " "))
+        return [s for s in found if s]
+
+    def test_every_contract_string_is_in_swift(self):
+        swift = self.SWIFT.read_text(encoding="utf-8")
+        missing = [s for s in self.contract_strings() if s not in swift]
+        self.assertEqual(missing, [])
+
+    def test_info_plist_mic_text_matches_explainer(self):
+        import re
+        yml = (self.ROOT / "project.yml").read_text(encoding="utf-8")
+        plist_text = re.search(r'NSMicrophoneUsageDescription: "(.+?)"', yml).group(1)
+        swift = self.SWIFT.read_text(encoding="utf-8")
+        self.assertIn(f'"{plist_text}"', swift)   # FR-019
+
+
+class SchemaCopyTests(unittest.TestCase):
+    def test_diagnostics_schema_copy_matches_contract(self):
+        root = Path(__file__).resolve().parent.parent
+        contract = root / "specs" / "001-ios-projectm-visualizer" / "contracts" / "diagnostics-export.schema.json"
+        copy = root / "Packages" / "Diagnostics" / "Tests" / "DiagnosticsTests" / "Resources" / "diagnostics-export.schema.json"
+        self.assertEqual(json.loads(contract.read_text(encoding="utf-8")), json.loads(copy.read_text(encoding="utf-8")))
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

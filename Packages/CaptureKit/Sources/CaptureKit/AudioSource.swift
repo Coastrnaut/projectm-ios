@@ -59,6 +59,12 @@ public enum AppLifecycleEvent: String, Sendable {
     case unlock
 }
 
+/// A format observed during a session (export `formats`).
+public struct FormatObservation: Sendable, Equatable {
+    public var format: AudioFormat
+    public var firstSeenSeconds: Double
+}
+
 /// Entry for the export's `lifecycleEvents` (schema enum names).
 public struct LifecycleLogEntry: Sendable, Equatable {
     public var atSeconds: Double
