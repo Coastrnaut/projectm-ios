@@ -16,96 +16,96 @@ Reference key: `Spec §` = spec.md IDs/sections; `Plan §` = plan.md sections; `
 
 ## 1. iOS Capture Feasibility
 
-- [ ] CHK001 - Is the minimum iOS version stated identically in Spec §FR-008, Plan §Technical Context, and ADR-0002 (26.0 deployment target, capture gated to the first capable OS)? [Consistency, Spec §FR-008, ADR-0002]
-- [ ] CHK002 - Are the ScreenCaptureKit elements the plan relies on (content-sharing picker, stream, stream configuration, audio output types, delegate) each listed with "verification pending" and a single exit artifact? [Completeness, R-02, ADR-0001]
-- [ ] CHK003 - Are picker modes and the selection scope (whole display vs single app) recorded as unknowns with exit criteria, rather than assumed? [Gap, R-02, Spec §RI-001]
-- [ ] CHK004 - Are the required Info.plist usage descriptions (capture and microphone) named, with their user-facing text specified or assigned to a research task? [Gap, R-02, R-04, C:ui]
-- [ ] CHK005 - Is the background-mode decision ("no background mode") consistent with RI-003 still being open, and is there a rule for what changes if RI-003 shows one is required? [Ambiguity, R-03, Spec §RI-003]
-- [ ] CHK006 - Is the ReplayKit exclusion stated with its reason in both the spec and the ADR? [Completeness, Spec §FR-009, ADR-0001]
-- [ ] CHK007 - Is the fallback defined if iOS ScreenCaptureKit delivers only microphone audio or no app audio (System/App Capture disabled, release proceeds with fallbacks)? [Coverage, ADR-0001 Consequences, Spec §Gating]
-- [ ] CHK008 - Is the "ADR-0001 is superseded if an extension is required" path consistent with the constitution's rule that extensions need demonstrated need, and does it name who decides? [Clarity, ADR-0001, Const III]
+- [x] CHK001 - Is the minimum iOS version stated identically in Spec §FR-008, Plan §Technical Context, and ADR-0002 (26.0 deployment target, capture gated to the first capable OS)? [Consistency, Spec §FR-008, ADR-0002]
+- [x] CHK002 - Are the ScreenCaptureKit elements the plan relies on (content-sharing picker, stream, stream configuration, audio output types, delegate) each listed with "verification pending" and a single exit artifact? [Completeness, R-02, ADR-0001]
+- [x] CHK003 - Are picker modes and the selection scope (whole display vs single app) recorded as unknowns with exit criteria, rather than assumed? [Gap, R-02, Spec §RI-001]
+- [x] CHK004 - Are the required Info.plist usage descriptions (capture and microphone) named, with their user-facing text specified or assigned to a research task? [Gap, R-02, R-04, C:ui]
+- [x] CHK005 - Is the background-mode decision ("no background mode") consistent with RI-003 still being open, and is there a rule for what changes if RI-003 shows one is required? [Ambiguity, R-03, Spec §RI-003]
+- [x] CHK006 - Is the ReplayKit exclusion stated with its reason in both the spec and the ADR? [Completeness, Spec §FR-009, ADR-0001]
+- [x] CHK007 - Is the fallback defined if iOS ScreenCaptureKit delivers only microphone audio or no app audio (System/App Capture disabled, release proceeds with fallbacks)? [Coverage, ADR-0001 Consequences, Spec §Gating]
+- [x] CHK008 - Is the "ADR-0001 is superseded if an extension is required" path consistent with the constitution's rule that extensions need demonstrated need, and does it name who decides? [Clarity, ADR-0001, Const III]
 
 ## 2. Public API Compliance
 
-- [ ] CHK009 - Is there an explicit, testable ban on private APIs, undocumented entitlements, DRM circumvention, and capture-restriction bypasses, traceable from the constitution to the spec? [Completeness, Const I, Spec §FR-003]
-- [ ] CHK010 - Is the R-08 Option A step "load_proc via dlsym on OpenGLES framework symbols" clearly limited to public, documented symbols, so it does not conflict with Const I's ban on dynamic symbol lookup of non-public selectors? [Ambiguity, R-08, Const I]
-- [ ] CHK011 - Do the plan or ADRs address the engine's own runtime `dlopen` of GL libraries (DynamicLibrary_posix.cpp), including whether it runs on iOS when a load_proc is supplied and whether that raises App Review concerns? [Gap, ADR-0003, C:bridge]
-- [ ] CHK012 - Is the reason behind upstream's warning that "Apple's TOS may prevent its use in Store apps" identified (e.g., licensing vs runtime-interpreted preset code), and tracked by a research item other than LGPL alone? [Gap, ADR-0003 Context, Spec §RI-007]
+- [x] CHK009 - Is there an explicit, testable ban on private APIs, undocumented entitlements, DRM circumvention, and capture-restriction bypasses, traceable from the constitution to the spec? [Completeness, Const I, Spec §FR-003]
+- [x] CHK010 - Is the R-08 Option A step "load_proc via dlsym on OpenGLES framework symbols" clearly limited to public, documented symbols, so it does not conflict with Const I's ban on dynamic symbol lookup of non-public selectors? [Ambiguity, R-08, Const I]
+- [x] CHK011 - Do the plan or ADRs address the engine's own runtime `dlopen` of GL libraries (DynamicLibrary_posix.cpp), including whether it runs on iOS when a load_proc is supplied and whether that raises App Review concerns? [Gap, ADR-0003, C:bridge]
+- [x] CHK012 - Is the reason behind upstream's warning that "Apple's TOS may prevent its use in Store apps" identified (e.g., licensing vs runtime-interpreted preset code), and tracked by a research item other than LGPL alone? [Gap, ADR-0003 Context, Spec §RI-007]
 
 ## 3. Source Compatibility Claims
 
-- [ ] CHK013 - Is the source matrix (Spotify, Apple Music, YouTube Music, Safari video, in-app, microphone) defined once and referenced consistently by the spec, quickstart, and report template? [Consistency, Spec §FR-030, QS Scenario A]
-- [ ] CHK014 - Is "proof" defined as non-silent audio in diagnostics exports, with picker screenshots explicitly excluded, in the spec itself and not only in the constitution? [Gap, Spec §FR-031, Const II]
-- [ ] CHK015 - Is SC-001 ("at least two physical iPhone models") consistent with FR-032, given that the iOS 26 iPhone cannot run System/App Capture and the iPad is not counted? [Consistency, Spec §SC-001, §FR-032]
-- [ ] CHK016 - Does FR-062's "device class tested" define whether an iPhone-only "Works" result may be claimed for iPad? [Ambiguity, Spec §FR-062]
-- [ ] CHK017 - Is the report template location and format (`docs/test-reports/compatibility-report.md`) specified as a deliverable with required columns matching FR-031? [Completeness, Plan §Phase A scope, QS Scenario A]
+- [x] CHK013 - Is the source matrix (Spotify, Apple Music, YouTube Music, Safari video, in-app, microphone) defined once and referenced consistently by the spec, quickstart, and report template? [Consistency, Spec §FR-030, QS Scenario A]
+- [x] CHK014 - Is "proof" defined as non-silent audio in diagnostics exports, with picker screenshots explicitly excluded, in the spec itself and not only in the constitution? [Gap, Spec §FR-031, Const II]
+- [x] CHK015 - Is SC-001 ("at least two physical iPhone models") consistent with FR-032, given that the iOS 26 iPhone cannot run System/App Capture and the iPad is not counted? [Consistency, Spec §SC-001, §FR-032]
+- [x] CHK016 - Does FR-062's "device class tested" define whether an iPhone-only "Works" result may be claimed for iPad? [Ambiguity, Spec §FR-062]
+- [x] CHK017 - Is the report template location and format (`docs/test-reports/compatibility-report.md`) specified as a deliverable with required columns matching FR-031? [Completeness, Plan §Phase A scope, QS Scenario A]
 
 ## 4. Privacy
 
-- [ ] CHK018 - Are on-device-only processing, no recording or upload, and the persisted-data list stated consistently across Spec §FR-060/FR-065, DM §Persisted, and R-13? [Consistency, Spec §FR-060, §FR-065, DM]
-- [ ] CHK019 - Does the export schema enforce the FR-021 exclusions (no samples, no device identifiers), and is the `testerNote` free-text field's privacy risk addressed? [Clarity, C:schema, Spec §FR-021]
-- [ ] CHK020 - Are App Store privacy obligations specified: the privacy manifest (including required-reason APIs such as UserDefaults) and App Privacy disclosures? [Gap, Spec §FR-063, §FR-064]
-- [ ] CHK021 - Is the content of the privacy policy (FR-063) specified enough to review (capture modes, permissions, no collection, diagnostics export)? [Clarity, Spec §FR-063]
+- [x] CHK018 - Are on-device-only processing, no recording or upload, and the persisted-data list stated consistently across Spec §FR-060/FR-065, DM §Persisted, and R-13? [Consistency, Spec §FR-060, §FR-065, DM]
+- [x] CHK019 - Does the export schema enforce the FR-021 exclusions (no samples, no device identifiers), and is the `testerNote` free-text field's privacy risk addressed? [Clarity, C:schema, Spec §FR-021]
+- [x] CHK020 - Are App Store privacy obligations specified: the privacy manifest (including required-reason APIs such as UserDefaults) and App Privacy disclosures? [Gap, Spec §FR-063, §FR-064]
+- [x] CHK021 - Is the content of the privacy policy (FR-063) specified enough to review (capture modes, permissions, no collection, diagnostics export)? [Clarity, Spec §FR-063]
 
 ## 5. Lifecycle (per source adapter)
 
-- [ ] CHK022 - Are start, stop (≤ 1 s), and idempotent repeated start/stop requirements defined for all three adapters in both the spec and the AudioSource contract? [Completeness, Spec §FR-007, §FR-052, C:audio]
-- [ ] CHK023 - Is interruption behavior (e.g., phone call) defined for System/App Capture, not only for Microphone and In-App Playback? [Gap, Spec §FR-051, DM Transitions]
-- [ ] CHK024 - Does the data model's use of `paused` for a backgrounded Microphone conflict with FR-050's "Microphone capture MUST stop"? [Conflict, DM Transitions, Spec §FR-050]
-- [ ] CHK025 - Does the data model's "user pause → paused" audio-state transition conflict with FR-046, which makes visualization pause independent of capture? [Conflict, DM Transitions, Spec §FR-046]
-- [ ] CHK026 - Is "one-tap restart" (FR-055) defined for System/App Capture, where restarting must re-present the system picker? [Ambiguity, Spec §FR-055, C:ui]
-- [ ] CHK027 - Are OS-ended capture, device lock, and route-change behaviors each mapped to a defined state and message for every adapter (including "not applicable" where relevant)? [Coverage, Spec §FR-050–§FR-054, C:ui]
+- [x] CHK022 - Are start, stop (≤ 1 s), and idempotent repeated start/stop requirements defined for all three adapters in both the spec and the AudioSource contract? [Completeness, Spec §FR-007, §FR-052, C:audio]
+- [x] CHK023 - Is interruption behavior (e.g., phone call) defined for System/App Capture, not only for Microphone and In-App Playback? [Gap, Spec §FR-051, DM Transitions]
+- [x] CHK024 - Does the data model's use of `paused` for a backgrounded Microphone conflict with FR-050's "Microphone capture MUST stop"? [Conflict, DM Transitions, Spec §FR-050]
+- [x] CHK025 - Does the data model's "user pause → paused" audio-state transition conflict with FR-046, which makes visualization pause independent of capture? [Conflict, DM Transitions, Spec §FR-046]
+- [x] CHK026 - Is "one-tap restart" (FR-055) defined for System/App Capture, where restarting must re-present the system picker? [Ambiguity, Spec §FR-055, C:ui]
+- [x] CHK027 - Are OS-ended capture, device lock, and route-change behaviors each mapped to a defined state and message for every adapter (including "not applicable" where relevant)? [Coverage, Spec §FR-050–§FR-054, C:ui]
 
 ## 6. Real-Time Audio Safety
 
-- [ ] CHK028 - Are both ring buffers' capacities specified (the source ring is 1 s; the second, normalized ring is unspecified)? [Gap, R-06]
-- [ ] CHK029 - Is the underrun policy defined: what the renderer feeds the engine when the normalized ring is empty (nothing, silence, or hold), and how that affects visuals? [Gap, R-06, C:bridge]
-- [ ] CHK030 - Is the requirement "no allocation or locks in callbacks" given a measurable acceptance method (e.g., an allocation-trace test with zero allocations on the audio thread)? [Measurability, R-06, Const VII]
-- [ ] CHK031 - Is the 150 ms audio-to-visual budget allocated across stages (capture, ring, conversion, render), so the pipeline design can be checked against SC-006? [Gap, Spec §SC-006, R-05, R-06]
-- [ ] CHK032 - Is the downmix rule for more than 2 channels ("left-side channels") defined precisely by channel layout? [Ambiguity, R-05]
-- [ ] CHK033 - Does DM's "1…8 channels supported; others → error" conflict with FR-017's rule that a format change must not stop the source? [Conflict, DM AudioFormat, Spec §FR-017]
-- [ ] CHK034 - Is off-main-thread processing stated for every stage, including the classifier and the diagnostics publication cadence? [Completeness, R-06, C:audio CaptureManager]
+- [x] CHK028 - Are both ring buffers' capacities specified (the source ring is 1 s; the second, normalized ring is unspecified)? [Gap, R-06]
+- [x] CHK029 - Is the underrun policy defined: what the renderer feeds the engine when the normalized ring is empty (nothing, silence, or hold), and how that affects visuals? [Gap, R-06, C:bridge]
+- [x] CHK030 - Is the requirement "no allocation or locks in callbacks" given a measurable acceptance method (e.g., an allocation-trace test with zero allocations on the audio thread)? [Measurability, R-06, Const VII]
+- [x] CHK031 - Is the 150 ms audio-to-visual budget allocated across stages (capture, ring, conversion, render), so the pipeline design can be checked against SC-006? [Gap, Spec §SC-006, R-05, R-06]
+- [x] CHK032 - Is the downmix rule for more than 2 channels ("left-side channels") defined precisely by channel layout? [Ambiguity, R-05]
+- [x] CHK033 - Does DM's "1…8 channels supported; others → error" conflict with FR-017's rule that a format change must not stop the source? [Conflict, DM AudioFormat, Spec §FR-017]
+- [x] CHK034 - Is off-main-thread processing stated for every stage, including the classifier and the diagnostics publication cadence? [Completeness, R-06, C:audio CaptureManager]
 
 ## 7. ProjectM Build and Licensing
 
-- [ ] CHK035 - Is the upstream pin recorded with its full commit SHA, and is the tag-or-commit decision rule stated with an owner and gate? [Clarity, ADR-0004, Spec §RI-006]
-- [ ] CHK036 - Is the engine's iOS CMake configuration (iOS system name/toolchain, GLES option, dynamic framework output, simulator slices) documented or assigned to a research task, given that upstream lists iOS support only in passing? [Gap, R-10, Plan §Project Structure]
-- [ ] CHK037 - Are the licenses of the engine's vendored components (glad, glm, hlslparser, projectm-eval, stb_image) reviewed and recorded, not only the LGPL-2.1 core? [Gap, ADR-0004, Const IX]
-- [ ] CHK038 - Is an in-app licenses/attribution screen a stated requirement in the spec (R-10 mentions Settings → Licenses, but no FR does)? [Gap, R-10, Spec §FR-064]
-- [ ] CHK039 - Is ADR-0005 (LGPL/App Store) scheduled with its preliminary-conclusion deadline before Stage 2 entry? [Completeness, ADR README, Spec §Gating]
-- [ ] CHK040 - Is the local patch policy (avoid; log in docs/projectm-patches.md with upstream status) stated consistently in the constitution, plan, and ADR-0004? [Consistency, Const VIII, ADR-0004, Plan §Constitution Check]
-- [ ] CHK041 - Are preset redistribution rights tied to a named deliverable (`Presets/LICENSES.md`) with a required field set per preset? [Completeness, R-09, DM Preset]
+- [x] CHK035 - Is the upstream pin recorded with its full commit SHA, and is the tag-or-commit decision rule stated with an owner and gate? [Clarity, ADR-0004, Spec §RI-006]
+- [x] CHK036 - Is the engine's iOS CMake configuration (iOS system name/toolchain, GLES option, dynamic framework output, simulator slices) documented or assigned to a research task, given that upstream lists iOS support only in passing? [Gap, R-10, Plan §Project Structure]
+- [x] CHK037 - Are the licenses of the engine's vendored components (glad, glm, hlslparser, projectm-eval, stb_image) reviewed and recorded, not only the LGPL-2.1 core? [Gap, ADR-0004, Const IX]
+- [x] CHK038 - Is an in-app licenses/attribution screen a stated requirement in the spec (R-10 mentions Settings → Licenses, but no FR does)? [Gap, R-10, Spec §FR-064]
+- [x] CHK039 - Is ADR-0005 (LGPL/App Store) scheduled with its preliminary-conclusion deadline before Stage 2 entry? [Completeness, ADR README, Spec §Gating]
+- [x] CHK040 - Is the local patch policy (avoid; log in docs/projectm-patches.md with upstream status) stated consistently in the constitution, plan, and ADR-0004? [Consistency, Const VIII, ADR-0004, Plan §Constitution Check]
+- [x] CHK041 - Are preset redistribution rights tied to a named deliverable (`Presets/LICENSES.md`) with a required field set per preset? [Completeness, R-09, DM Preset]
 
 ## 8. Renderer Feasibility
 
-- [ ] CHK042 - Do ADR-0003's exit criteria include numeric pass thresholds (maximum shader-failure rate, minimum fps per option, app-size budget), rather than "measured"? [Ambiguity, ADR-0003]
-- [ ] CHK043 - Is the relationship between ANGLE (Metal backend) and the README's "evaluate Metal for production" stated explicitly, including why a native Metal port is out of scope? [Consistency, ADR-0003, R-08]
-- [ ] CHK044 - Is a thermal requirement defined (session length, ambient conditions, thermal states to observe, acceptable throttling) beyond the 30 fps floor in FR-049? [Gap, Spec §FR-049, §SC-005]
-- [ ] CHK045 - Are the device targets for renderer measurement (reference device, oldest iOS 26 iPhone and iPad) the same in ADR-0003, SC-005, and FR-032? [Consistency, ADR-0003, Spec §SC-005, §FR-032]
+- [x] CHK042 - Do ADR-0003's exit criteria include numeric pass thresholds (maximum shader-failure rate, minimum fps per option, app-size budget), rather than "measured"? [Ambiguity, ADR-0003]
+- [x] CHK043 - Is the relationship between ANGLE (Metal backend) and the README's "evaluate Metal for production" stated explicitly, including why a native Metal port is out of scope? [Consistency, ADR-0003, R-08]
+- [x] CHK044 - Is a thermal requirement defined (session length, ambient conditions, thermal states to observe, acceptable throttling) beyond the 30 fps floor in FR-049? [Gap, Spec §FR-049, §SC-005]
+- [x] CHK045 - Are the device targets for renderer measurement (reference device, oldest iOS 26 iPhone and iPad) the same in ADR-0003, SC-005, and FR-032? [Consistency, ADR-0003, Spec §SC-005, §FR-032]
 
 ## 9. Architecture Consistency
 
-- [ ] CHK046 - Does every README architecture component map to a plan package or an explicit exclusion: PresetRepository, AudioAnalyzer/FFT/BeatDetector, Permissions, AppConfiguration, Logging? [Gap, Plan §Project Structure, README §4]
-- [ ] CHK047 - Is the decision not to build custom FFT/beat analysis (README §5.1: avoid duplicating engine analysis) recorded in the plan or research? [Ambiguity, R-05, Const VIII]
-- [ ] CHK048 - Is the plan's `Apps/` + `Packages/` layout justified against the README's `Sources/` layout, as the README requires? [Completeness, Plan §Structure Decision, README §11]
-- [ ] CHK049 - Are the four constitution-required ADRs (capture API, minimum OS, renderer, dependency strategy) present, each with a status and acceptance gate? [Completeness, ADR README, Const X]
-- [ ] CHK050 - Do the contracts keep capture types out of the bridge and the UI, consistent with Const VI and C:audio guarantee 5? [Consistency, C:audio, C:bridge]
+- [x] CHK046 - Does every README architecture component map to a plan package or an explicit exclusion: PresetRepository, AudioAnalyzer/FFT/BeatDetector, Permissions, AppConfiguration, Logging? [Gap, Plan §Project Structure, README §4]
+- [x] CHK047 - Is the decision not to build custom FFT/beat analysis (README §5.1: avoid duplicating engine analysis) recorded in the plan or research? [Ambiguity, R-05, Const VIII]
+- [x] CHK048 - Is the plan's `Apps/` + `Packages/` layout justified against the README's `Sources/` layout, as the README requires? [Completeness, Plan §Structure Decision, README §11]
+- [x] CHK049 - Are the four constitution-required ADRs (capture API, minimum OS, renderer, dependency strategy) present, each with a status and acceptance gate? [Completeness, ADR README, Const X]
+- [x] CHK050 - Do the contracts keep capture types out of the bridge and the UI, consistent with Const VI and C:audio guarantee 5? [Consistency, C:audio, C:bridge]
 
 ## 10. Physical-Device Verification
 
-- [ ] CHK051 - Is every device-only requirement flagged as such (SC-001–SC-006, SC-008, SC-009, FR-032, FR-041 split view, FR-050–FR-054, RI-002, RI-003, Gate 3)? [Coverage, QS, Const X]
-- [ ] CHK052 - Does the plan name concrete device models and OS versions for each FR-032 role, or define when and where they are recorded? [Gap, Spec §FR-032, QS Prerequisites]
-- [ ] CHK053 - Does each device-only requirement map to a named quickstart scenario step? [Traceability, QS Scenarios A–D]
-- [ ] CHK054 - Is the SC-010 usability test specified with participant count and recruitment criteria? [Gap, Spec §SC-010, QS Scenario C]
-- [ ] CHK055 - Is CI's coverage of both iOS 26 and iOS 27+ simulator runtimes stated, with a documented fallback if a runtime is unavailable? [Completeness, ADR-0002, R-12]
+- [x] CHK051 - Is every device-only requirement flagged as such (SC-001–SC-006, SC-008, SC-009, FR-032, FR-041 split view, FR-050–FR-054, RI-002, RI-003, Gate 3)? [Coverage, QS, Const X]
+- [x] CHK052 - Does the plan name concrete device models and OS versions for each FR-032 role, or define when and where they are recorded? [Gap, Spec §FR-032, QS Prerequisites]
+- [x] CHK053 - Does each device-only requirement map to a named quickstart scenario step? [Traceability, QS Scenarios A–D]
+- [x] CHK054 - Is the SC-010 usability test specified with participant count and recruitment criteria? [Gap, Spec §SC-010, QS Scenario C]
+- [x] CHK055 - Is CI's coverage of both iOS 26 and iOS 27+ simulator runtimes stated, with a documented fallback if a runtime is unavailable? [Completeness, ADR-0002, R-12]
 
 ## 11. Phase Gating
 
-- [ ] CHK056 - Is Phase A (Phase 0) a hard dependency for Phases B–E in the plan table and the spec's gating rules? [Completeness, Plan §Delivery Phases, Spec §Gating]
-- [ ] CHK057 - Does the plan's allowance for source-agnostic Phase B work in parallel with late Phase A conflict with the constitution's rule that a phase MUST NOT start until the previous phase's evidence is reviewed? [Conflict, Plan §Delivery Phases, Const Workflow]
-- [ ] CHK058 - Are numeric go/no-go thresholds defined for Gate 2 (sustained capture: maximum interruptions, buffer loss, latency, CPU, memory)? [Gap, Spec §Gating, Const Quality Gates]
-- [ ] CHK059 - Are the go/no-go criteria for Gates 0, 1, 3, and 4 each stated in one place, with the evidence artifact named? [Clarity, Plan §Delivery Phases, Spec §Gating]
-- [ ] CHK060 - Is the order of Gate 3 (render proof) relative to Phase B stated, given that Phase C requires only "A approved, RI-007 preliminary"? [Clarity, Plan §Delivery Phases]
+- [x] CHK056 - Is Phase A (Phase 0) a hard dependency for Phases B–E in the plan table and the spec's gating rules? [Completeness, Plan §Delivery Phases, Spec §Gating]
+- [x] CHK057 - Does the plan's allowance for source-agnostic Phase B work in parallel with late Phase A conflict with the constitution's rule that a phase MUST NOT start until the previous phase's evidence is reviewed? [Conflict, Plan §Delivery Phases, Const Workflow]
+- [x] CHK058 - Are numeric go/no-go thresholds defined for Gate 2 (sustained capture: maximum interruptions, buffer loss, latency, CPU, memory)? [Gap, Spec §Gating, Const Quality Gates]
+- [x] CHK059 - Are the go/no-go criteria for Gates 0, 1, 3, and 4 each stated in one place, with the evidence artifact named? [Clarity, Plan §Delivery Phases, Spec §Gating]
+- [x] CHK060 - Is the order of Gate 3 (render proof) relative to Phase B stated, given that Phase C requires only "A approved, RI-007 preliminary"? [Clarity, Plan §Delivery Phases]
 
 ## Notes
 
@@ -127,3 +127,10 @@ Reference key: `Spec §` = spec.md IDs/sections; `Plan §` = plan.md sections; `
 5. **Renderer decision is not measurable yet (CHK042, CHK044)**: ADR-0003 and thermal criteria lack
    numeric thresholds.
 6. **System/App Capture interruption and restart (CHK023, CHK026)** are unspecified.
+
+### Iteration log
+
+- Iteration 1 (2026-11-07): all 60 items resolved in spec.md, plan.md, research.md, data-model.md,
+  contracts, quickstart.md, and docs/adr (commit a41d903), under the project owner's standing
+  approval of all suggested resolutions. Each item was verified against the updated text and
+  checked.
