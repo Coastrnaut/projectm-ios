@@ -1,2 +1,9 @@
+# Normalize line endings: LF in the repository and in every checkout (Windows and macOS),
+# so Swift sources, shell steps, and YAML are byte-identical across machines.
+* text=auto eol=lf
+
+# Binary assets
 *.wav binary
-*.wav -text
+*.png binary
+*.jpg binary
+*.pdf binary

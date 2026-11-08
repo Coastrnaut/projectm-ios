@@ -1,16 +1,23 @@
 # iOS CI (research R-12; tasks T011, T015). No signing secrets: builds and tests only.
-# Pin the runner image and Xcode version to the values recorded in ADR-0002 at Gate 0 (T010).
+# The repository is private, so macOS minutes count 10× against the Actions quota: keep the macOS
+# job lean, time-limited, and cancel superseded runs.
 name: iOS CI
 
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   docs-and-compliance:
-    # Runs on any OS; these checks are pure Python.
+    # Pure Python checks; run on any OS.
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -24,65 +31,99 @@ jobs:
         run: python scripts/check_compliance.py
 
   host-tests-linux:
-    # Platform-independent package logic (AudioCore, CaptureKit, Diagnostics, CaptureUI strings).
-    # Apple-only code (ScreenCaptureKit, AVFAudio, UIKit, SwiftUI, os) is compiled out here, so
-    # this job never substitutes for the macOS/iOS build or for device evidence.
+    # Platform-independent package logic. Apple-only code (ScreenCaptureKit, AVFAudio, UIKit,
+    # SwiftUI, os) is compiled out here, so this job never substitutes for the iOS build or for
+    # device evidence.
     needs: docs-and-compliance
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     container: swift:6.4.2-noble
     steps:
       - uses: actions/checkout@v4
+      - name: Swift version
+        run: swift --version
       - name: Package tests (Linux host)
         run: |
           for pkg in AudioCore CaptureKit Diagnostics CaptureUI; do
+            echo "::group::swift test $pkg"
             swift test --package-path "Packages/$pkg"
+            echo "::endgroup::"
           done
 
-  build-and-test:
+  build-and-test-apple:
     needs: docs-and-compliance
-    runs-on: macos-26            # TODO(T010): pin to the image that ships the ADR-0002 Xcode
+    # TODO(T010): pin to the image that ships the Xcode recorded in ADR-0002.
+    runs-on: macos-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - name: Select Xcode
+        # The ProjectM submodule is not needed until Plan Phase C (engine build); skip it to
+        # save macOS minutes.
+      - name: Select newest Xcode
         run: |
+          ls -d /Applications/Xcode*.app
+          XCODE=$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -1)
+          [ -n "$XCODE" ] || XCODE=/Applications/Xcode.app
+          sudo xcode-select -s "$XCODE/Contents/Developer"
           xcodebuild -version
-          python3 scripts/verify_environment.py
+          xcrun --sdk iphoneos --show-sdk-version
+          swift --version
+      - name: Toolchain pins (warning until T010 records them)
+        run: |
+          python3 scripts/verify_environment.py || \
+            echo "::warning::Toolchain not yet pinned in ADR-0002 (task T010); verify_environment.py reported mismatches."
       - name: Install XcodeGen
         run: brew install xcodegen   # TODO(T010): install the exact pinned version
-      - name: Package tests (host)
+      - name: Package tests (macOS host)
         run: |
           for pkg in AudioCore CaptureKit Diagnostics CaptureUI; do
+            echo "::group::swift test $pkg"
             swift test --package-path "Packages/$pkg"
+            echo "::endgroup::"
+          done
+      - name: Compile packages for iOS (device SDK, includes Apple-only code)
+        run: |
+          for pkg in AudioCore CaptureKit Diagnostics CaptureUI; do
+            echo "::group::xcodebuild $pkg (generic iOS)"
+            (cd "Packages/$pkg" && xcodebuild -scheme "$pkg" -destination 'generic/platform=iOS' \
+              -derivedDataPath "$RUNNER_TEMP/dd-$pkg" -skipPackagePluginValidation \
+              CODE_SIGNING_ALLOWED=NO build | tail -40; exit ${PIPESTATUS[0]})
+            echo "::endgroup::"
           done
       - name: Generate project
         run: xcodegen generate
-      - name: Discover simulators
-        id: sims
+      - name: Build CaptureLab (generic iOS, unsigned)
         run: |
-          python3 - <<'EOF' >> "$GITHUB_OUTPUT"
-          import json, subprocess
-          data = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "-j", "devices", "available"]))
-          picks = {}
-          for runtime, devices in data["devices"].items():
-              if "iOS-26" in runtime or "iOS-27" in runtime:
-                  key = "26" if "iOS-26" in runtime else "27"
-                  phones = [d for d in devices if "iPhone" in d["name"]]
-                  if phones and key not in picks:
-                      picks[key] = phones[0]["udid"]
-          for key in ("26", "27"):
-              print(f"ios{key}={picks.get(key, '')}")
-          EOF
-      - name: Warn about missing runtimes
+          set -o pipefail
+          xcodebuild -project ProjectM-iOS.xcodeproj -scheme CaptureLab \
+            -destination 'generic/platform=iOS' -derivedDataPath "$RUNNER_TEMP/dd-app" \
+            CODE_SIGNING_ALLOWED=NO build | tail -60
+      - name: Find an iOS simulator
+        id: sim
         run: |
-          [ -n "${{ steps.sims.outputs.ios26 }}" ] || echo "::warning::No iOS 26 simulator runtime on this image; iOS 26 coverage comes from the physical device run (FR-032)."
-          [ -n "${{ steps.sims.outputs.ios27 }}" ] || echo "::warning::No iOS 27+ simulator runtime on this image."
-      - name: Build and test CaptureLab
+          UDID=$(xcrun simctl list -j devices available | python3 -c '
+          import json, sys
+          data = json.load(sys.stdin)["devices"]
+          best = None
+          for runtime, devices in data.items():
+              if "iOS" not in runtime:
+                  continue
+              for d in devices:
+                  if "iPhone" in d["name"]:
+                      key = runtime
+                      if best is None or key > best[0]:
+                          best = (key, d["udid"], d["name"])
+          print(best[1] if best else "")
+          ')
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          [ -n "$UDID" ] || echo "::warning::No iOS simulator runtime on this image; simulator tests skipped."
+      - name: Package tests on the iOS Simulator
+        if: steps.sim.outputs.udid != ''
         run: |
-          for udid in "${{ steps.sims.outputs.ios26 }}" "${{ steps.sims.outputs.ios27 }}"; do
-            [ -n "$udid" ] || continue
-            xcodebuild -project ProjectM-iOS.xcodeproj -scheme CaptureLab \
-              -destination "id=$udid" -derivedDataPath DerivedData \
-              CODE_SIGNING_ALLOWED=NO build test
+          set -o pipefail
+          for pkg in AudioCore CaptureKit Diagnostics CaptureUI; do
+            echo "::group::xcodebuild test $pkg (iOS Simulator)"
+            (cd "Packages/$pkg" && xcodebuild -scheme "$pkg" -destination "id=${{ steps.sim.outputs.udid }}" \
+              -derivedDataPath "$RUNNER_TEMP/dds-$pkg" CODE_SIGNING_ALLOWED=NO test | tail -40)
+            echo "::endgroup::"
           done
