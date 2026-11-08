@@ -53,9 +53,8 @@ jobs:
   build-and-test-apple:
     needs: docs-and-compliance
     # ADR-0002 pins Xcode 27.2 / iOS SDK 27.2 (T010). macos-latest (macos-26-arm64) has Xcode up to
-    # 26.6 (iOS 26.5 SDK) and covers the iOS 26 path. GitHub's `xcode-27` image (preview) has the
-    # iOS 27 SDKs; a compile-only job there for the capture path is an owner decision (ADR-0002).
-    # Until then the iOS 27 path is built and tested only on the build Mac.
+    # 26.6 (iOS 26.5 SDK) and covers the iOS 26 path. The iOS 27 capture path is compiled by the
+    # build-ios27 job below; it is tested only on the build Mac and on devices.
     runs-on: macos-latest
     timeout-minutes: 45
     steps:
@@ -162,3 +161,49 @@ jobs:
             echo "::error::The build left untracked or modified files; extend .gitignore."
             exit 1
           fi
+
+  build-ios27:
+    # Owner ruling 2026-11-08 (ADR-0002): compile the System/App Capture driver against the iOS 27
+    # SDK on every run, because macos-latest (iOS 26.5 SDK) compiles it out. GitHub's `xcode-27`
+    # image is a public preview, and its Xcode 27.2 is the release candidate 27B48, not the
+    # pinned 27B52. Compile only: no tests, no simulators, no signing.
+    needs: docs-and-compliance
+    runs-on: xcode-27
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - name: Select Xcode 27.2
+        run: |
+          sudo xcode-select -s /Applications/Xcode_27.2.app/Contents/Developer
+          xcodebuild -version
+          echo "iOS SDK: $(xcrun --sdk iphoneos --show-sdk-version)"
+      - name: Require ScreenCaptureKit in the iOS SDK
+        run: |
+          FW="$(xcrun --sdk iphoneos --show-sdk-path)/System/Library/Frameworks/ScreenCaptureKit.framework"
+          [ -d "$FW" ] || { echo "::error::ScreenCaptureKit.framework is missing from the iOS SDK"; exit 1; }
+      - name: Install XcodeGen (pinned in ADR-0002)
+        env:
+          XCODEGEN_VERSION: 2.46.0
+          XCODEGEN_SHA256: 4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/xcodegen.zip" \
+            "https://github.com/yonaskolb/XcodeGen/releases/download/$XCODEGEN_VERSION/xcodegen.zip"
+          echo "$XCODEGEN_SHA256  $RUNNER_TEMP/xcodegen.zip" | shasum -a 256 -c -
+          unzip -q "$RUNNER_TEMP/xcodegen.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/xcodegen/bin" >> "$GITHUB_PATH"
+      - name: Build CaptureKit for iOS devices (compiles SCKStreamDriver)
+        run: |
+          cd Packages/CaptureKit
+          xcodebuild -quiet -scheme CaptureKit -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/dd27" CODE_SIGNING_ALLOWED=NO build
+      - name: Confirm the capture driver was compiled
+        run: |
+          find "$RUNNER_TEMP/dd27" -name 'SCKStreamDriver.o' | grep -q . \
+            || { echo "::error::SCKStreamDriver.swift was not compiled"; exit 1; }
+          echo "SCKStreamDriver.swift compiled against iOS SDK $(xcrun --sdk iphoneos --show-sdk-version)"
+      - name: Build CaptureLab for iOS devices
+        run: |
+          xcodegen generate
+          xcodebuild -quiet -project ProjectM-iOS.xcodeproj -scheme CaptureLab \
+            -destination 'generic/platform=iOS' -derivedDataPath "$RUNNER_TEMP/dd27-app" \
+            CODE_SIGNING_ALLOWED=NO build

@@ -34,9 +34,10 @@ with System/App Capture only where the OS provides it.
   because the Xcode/SDK/Swift pin cannot match there. GitHub also offers an `xcode-27` image
   (`runs-on: xcode-27`, a public preview announced 2026-07-16 in actions/runner-images#14404;
   image 20261026.0314.1 has Xcode 27.2 as release candidate 27B48, not the pinned 27B52, and the
-  iOS 27.0–27.2 SDKs). CI does not use it yet, so the iOS 27 SDK path (System/App Capture) is
-  compiled and tested only on the build Mac. A compile-only CI job on `xcode-27` for that path is
-  an owner decision, because macOS minutes cost 10× quota on this private repository.
+  iOS 27.0–27.2 SDKs). Owner ruling 2026-11-08: the CI job `build-ios27` runs there on every run
+  and compiles CaptureKit (including the System/App Capture driver) and CaptureLab for iOS
+  devices, at the cost of extra macOS minutes (10× quota on this private repository). It only
+  compiles; the iOS 27 path is tested on the build Mac and on devices.
 
 ## Consequences
 
