@@ -12,16 +12,16 @@ public enum DiagnosticsLog {
     public static let app = Logger(subsystem: subsystem, category: "app")
     public static let signposter = OSSignposter(subsystem: subsystem, category: .pointsOfInterest)
 
-    /// Logs a state change. The state name is a fixed enum value, so it may be public.
+    /// Logs a state change. Every dynamic value is private (R-13), even fixed enum names.
     public static func state(_ state: String, mode: String) {
         assertNotRealtime()
-        capture.info("state=\(state, privacy: .public) mode=\(mode, privacy: .public)")
+        capture.info("state=\(state, privacy: .private) mode=\(mode, privacy: .private)")
     }
 
     /// Logs a failure. The description may contain arbitrary text, so it is private.
     public static func failure(_ reasonCode: String, detail: String?) {
         assertNotRealtime()
-        capture.error("failure=\(reasonCode, privacy: .public) detail=\(detail ?? "", privacy: .private)")
+        capture.error("failure=\(reasonCode, privacy: .private) detail=\(detail ?? "", privacy: .private)")
     }
 
     /// Latency-stage signposts (research R-06), used from the analysis queue only.

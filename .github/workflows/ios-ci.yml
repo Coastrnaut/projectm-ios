@@ -23,6 +23,21 @@ jobs:
       - name: Constitution compliance (required on every merge)
         run: python scripts/check_compliance.py
 
+  host-tests-linux:
+    # Platform-independent package logic (AudioCore, CaptureKit, Diagnostics, CaptureUI strings).
+    # Apple-only code (ScreenCaptureKit, AVFAudio, UIKit, SwiftUI, os) is compiled out here, so
+    # this job never substitutes for the macOS/iOS build or for device evidence.
+    needs: docs-and-compliance
+    runs-on: ubuntu-24.04
+    container: swift:6.4.2-noble
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package tests (Linux host)
+        run: |
+          for pkg in AudioCore CaptureKit Diagnostics CaptureUI; do
+            swift test --package-path "Packages/$pkg"
+          done
+
   build-and-test:
     needs: docs-and-compliance
     runs-on: macos-26            # TODO(T010): pin to the image that ships the ADR-0002 Xcode

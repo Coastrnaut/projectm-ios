@@ -97,9 +97,10 @@ final class CaptureManagerTests: XCTestCase {
     }
 
     func testConcurrentCommandsAreSerialized() async {
-        async let a: Void = manager.select(.microphone)
-        async let b: Void = manager.select(.inAppPlayback)
-        async let c: Void = manager.stop()
+        let m = manager   // capture the main-actor manager, not the non-Sendable test case
+        async let a: Void = m.select(.microphone)
+        async let b: Void = m.select(.inAppPlayback)
+        async let c: Void = m.stop()
         _ = await (a, b, c)
         XCTAssertLessThanOrEqual(fixture.runningCount, 1)
     }
