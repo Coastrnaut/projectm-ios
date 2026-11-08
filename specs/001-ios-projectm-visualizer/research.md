@@ -26,22 +26,28 @@ Renderer/Platform/GLResolver.cpp).
 
 ## R-02 System/App Capture API (RI-001, RI-004)
 
-- **Decision**: ScreenCaptureKit only, in-process. Picker modes and selection scope (single app,
-  window, whole display) are unknowns to be recorded, not assumed.
-  Detail: `SCContentSharingPicker` presents the
-  system UI. `SCStream` runs with an `SCStreamConfiguration` that enables audio capture, and an
-  `SCStreamOutput` receives the audio-type outputs. `SCStreamDelegate` reports stop and error. All
-  code sits behind `@available(iOS 27, *)` (the version is updated by RI-004) plus a runtime
-  capability check. No broadcast upload extension and no App Group IPC.
-- **Rationale**: The README cites Apple docs describing ScreenCaptureKit as the iOS replacement
-  for ReplayKit, with an iOS 27+ sample. The constitution forbids ReplayKit as the default, and
+- **Decision**: ScreenCaptureKit only, in-process, on iOS/iPadOS 27.0 and later (RI-004). No
+  broadcast upload extension, no App Group IPC, no ReplayKit, no entitlement. The app calls the
+  system picker's `present()` from `start` and does not steer the selection (iOS has no picker
+  modes). The stream enables audio (48 kHz, 2 channels, own audio excluded), adds an `.audio`
+  output into `PCMSink` and a frame-discarding 64×64 `.screen` output, and never a `.microphone`
+  output; the picker hides its microphone control (FR-069). `SCContentSharingPicker.isAvailable`
+  is checked at start (FR-004 conflict noted below). Decisions taken in T035 (2026-11-08) are
+  listed in ADR-0001; the owner may revisit them.
+- **Rationale**: Apple documents ScreenCaptureKit as the iOS 27 replacement for ReplayKit, whose
+  capture APIs are deprecated in iOS 27.0. The constitution forbids ReplayKit as the default, and
   the spec (FR-009) forbids a legacy path.
 - **Alternatives**: ReplayKit `RPScreenRecorder.startCapture` or a broadcast extension. Rejected:
-  deprecated, and out of scope per the clarification.
-- **Verification pending**: The exact iOS symbol names, picker modes, audio output types, whether
-  app audio (not just microphone) is delivered, whether the OS reveals the selected app's identity
-  (FR-014), and Info.plist keys. Exit: `docs/platform-research/screencapturekit-ios.md` written
-  from the SDK headers. macOS ScreenCaptureKit behavior is not assumed.
+  deprecated, and out of scope per the clarification. `present(using:)` with a window or display
+  style: not used, so the user decides in system UI.
+- **Verified 2026-11-08** (from the iOS 27.2 SDK headers and Apple's docs;
+  `docs/platform-research/screencapturekit-ios.md`): iOS symbols and availability, no picker modes,
+  output types `.screen`/`.audio`/`.microphone`, no content identity on iOS (FR-014),
+  `NSScreenCaptureUsageDescription` named by Apple's overview (FR-019). **Open until device
+  testing** (T040): whose audio `.audio` carries (RI-002), whether audio-only streams work, the
+  minimum video size, usage-key enforcement, and the capture indicator (FR-089). **Open owner
+  decision**: FR-004 has no reason text for an iOS 27 device where screen recording is not allowed
+  (`isAvailable` false); today the mode stays selectable and start fails with `error`.
 
 ## R-03 Background modes and lifecycle (RI-003)
 
@@ -56,8 +62,17 @@ Renderer/Platform/GLResolver.cpp).
   project owner. No other modes are added.
 - **Alternatives**: Audio background mode to keep the microphone alive. Rejected: no user value
   without visuals.
-- **Verification pending**: Whether ScreenCaptureKit requires or offers any background mode on
-  iOS (Gate 0/2).
+- **What the sources say (2026-11-08)**: Apple documents the `UIBackgroundModes` value
+  `screen-capture` for capturing in the background, and the SDK has `SCStreamError`
+  `missingBackgroundMode` (-3824, iOS/visionOS/tvOS only) without naming the mode or trigger. No
+  Apple source covers device lock. The Change rule therefore has a concrete candidate,
+  `screen-capture`; whether background capture falls under the rule is an owner decision after
+  T041. Until then the test procedure is: start playback in the source app first, then stay in
+  CaptureLab (quickstart Scenario A). The current decision (no background mode) stands, and
+  `scripts/check_compliance.py` still rejects any `UIBackgroundModes` key.
+- **Open until device testing** (T041): behavior on background, lock, unlock and switching to the
+  source app, with the stop code recorded. The export does not carry the `SCStreamError` code yet
+  (owner decision, `docs/platform-research/screencapturekit-ios.md`), so T041 needs that first.
 
 ## R-04 Microphone and In-App Playback
 

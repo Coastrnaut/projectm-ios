@@ -41,34 +41,33 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
   renderer, or preset work: it is blocked until the Stage 1 gate (task T056) records "go".
 - Verified: 84 Swift package tests pass on Linux (AudioCore 40, CaptureKit 33, Diagnostics 7,
   CaptureUI 4) and 15 Python script tests pass.
-- CI is green (GitHub Actions): macOS-host and iOS-Simulator package tests; all packages and
-  CaptureLab build for generic iOS with Xcode 26.6 / iOS SDK 26.5. That SDK has **no**
-  ScreenCaptureKit, so the capture driver is compiled out on CI (see
-  `docs/platform-research/screencapturekit-ios.md`).
-- Compiled on CI but never run on a device: the AVFAudio backends, `LifecycleObserver`, the
-  CaptureUI views, and the CaptureLab app.
-- Never compiled yet (needs the iOS 27 SDK): `Packages/CaptureKit/Sources/CaptureKit/ScreenCapture/SCKStreamDriver.swift`
-  (written against the **macOS** ScreenCaptureKit API — iOS symbols unverified).
-- Project Mac = build machine of record (2026-11-08): Xcode 27.2 / iOS SDK 27.2 / Swift 6.4.2,
-  XcodeGen 2.46.0, CMake 4.4.5, pinned in ADR-0002 (T010; `verify_environment.py` exits 0).
-  Simulator runtimes iOS 27.2 and iOS 26.5. Locally: 86 package tests pass on the macOS host
-  (AudioCore 42, incl. 2 Apple-only), 15 script tests pass, `xcodegen generate` works.
-- CI's runner has only Xcode 26.x, so it cannot match the pin; the iOS 27 path is built and tested
-  only on the project Mac until GitHub ships Xcode 27 (ADR-0002).
+- CI is green (GitHub Actions) on `macos-latest` (Xcode 26.6 / iOS SDK 26.5, no ScreenCaptureKit):
+  package tests on the macOS host and iOS 26 simulator, generic-iOS builds with the capture driver
+  compiled out. GitHub's `xcode-27` image (preview) could compile the driver; using it is an owner
+  decision (ADR-0002). CI does not run the CaptureLab UI tests.
+- Project Mac = build machine of record: Xcode 27.2 / iOS SDK 27.2 / Swift 6.4.2, XcodeGen 2.46.0,
+  CMake 4.4.5 (ADR-0002, T010). Simulators iOS 27.2 and 26.5. Verified here 2026-11-08: package
+  tests (AudioCore 50, CaptureKit 59, Diagnostics 7, CaptureUI 9) on the host and both simulators;
+  CaptureLab UI tests (3) on both simulators; 28 script tests; device builds of everything,
+  including `SCKStreamDriver`, with 0 warnings.
+- Gate 0 research done (T035): `docs/platform-research/screencapturekit-ios.md`. ADR-0001 and
+  ADR-0002 accepted by T035, pending owner review. Nothing has run on a device yet. The iOS
+  Simulator SDK has no ScreenCaptureKit, so System/App Capture can only be tested on D1/D2.
+- Owner decisions open (research doc, "Owner decisions needed"): the `screen-capture` background
+  mode; exporting the SCStreamError stop code (needed before T041); a capture-specific reason for
+  -3801 and for `isAvailable` false (FR-004); whether RI-003 is part of Gate 0; an `xcode-27` CI job.
 - Test devices (final, recorded by T017 in `docs/test-reports/devices.md`; all paired, Developer
   Mode on): D1 iPhone 15 `iPhone15,4` iOS 27.0.1 (reference), D2 iPad Pro M5 `iPad17,3`
   iPadOS 27.2, D3 iPad A16 `iPad15,7` iPadOS 26.5.
 
 ## Next tasks on the Mac, in order
 
-1. Done 2026-11-08: T010 (toolchain pin), package tests on macOS, T017 (devices).
+1. Done 2026-11-08: T010, T017, T035 (Gate 0 research), T037 and the Mac-verifiable Phase A tasks.
 2. Before each work session: `python3 scripts/verify_environment.py` must exit 0.
-3. **T035 (Gate 0)** — from the iOS SDK headers, write
-   `docs/platform-research/screencapturekit-ios.md` (RI-001/RI-004), fix `SCKStreamDriver`, and
-   replace the placeholder `@available(iOS 27.0, *)` with the verified first version.
-4. `xcodegen generate`, then build and run CaptureLab on the devices (set the signing team by hand).
-5. Re-check devices.md if any device OS changed (T017 done), then run the device tasks
-   (T040 onward) following `specs/001-ios-projectm-visualizer/quickstart.md`.
+3. Owner: rule on the open decisions above; open `Previews.swift` in Xcode's canvas to close T033.
+4. `xcodegen generate`, then build and run CaptureLab on D1, D2 and D3 (set the signing team by hand).
+5. Run the device tasks (T040 onward) following `specs/001-ios-projectm-visualizer/quickstart.md`
+   (Scenario A rules: start playback first, stay in CaptureLab, fill the tester note).
 
 ## Commands
 

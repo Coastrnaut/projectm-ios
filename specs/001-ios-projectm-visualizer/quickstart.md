@@ -26,6 +26,7 @@ Before Scenario A, record the concrete device model and OS build for each FR-032
 | Requirement | Scenario step |
 |-------------|---------------|
 | SC-001–SC-004, FR-030–FR-034, RI-002 | A.2–A.8 |
+| FR-019 on iOS 27 (capture permission prompt) | A.2 |
 | FR-004/FR-008 on iOS 26 | A.3 |
 | RI-003, FR-050–FR-055 (capture evidence) | A.5 |
 | Gate 2 thresholds | A.9 |
@@ -62,16 +63,62 @@ evidence.
 
 ## Scenario A — Stage 1 capture feasibility (physical device, CaptureLab)
 
-1. Install CaptureLab on each FR-032 device.
-2. **US1**: Play audio in a source app → CaptureLab → Choose Audio Source → System/App Capture →
-   select in the system picker. Expect "Active audio" with live rate, channels, and levels. Pause the
-   source → "Audio received — silent" within 2 s. Repeat with a source producing nothing → "No
-   audio received" after 5 s. Cancel the picker → "Not started — cancelled".
-3. On the iOS 26 device: System/App Capture shows "Requires a newer iOS version".
+System/App Capture can be tested only on D1 and D2 (iOS/iPadOS 27.0 or later, FR-008), never on a
+simulator: the iOS Simulator SDK (Xcode 27.2) has no ScreenCaptureKit, so the mode always shows as
+unavailable there. In every System/App Capture run:
+
+- Start playback in the source app first, then switch to CaptureLab, start capture, and stay in
+  CaptureLab. CaptureLab declares no background mode (research R-16), so leaving it may end the
+  stream with "Ended by system" (possibly code -3824, "missing background mode", ScreenCaptureKit
+  `Headers/SCError.h:38`). Pause and resume the source without leaving CaptureLab, for example from
+  the Now Playing controls in Control Center, and note it if that ends the stream. Set Auto-Lock to
+  Never: CaptureLab does not keep the screen on, and a lock may end the stream too. Leave CaptureLab
+  on purpose only in step 5.
+- In steps 2, 6, and 9, change what is shared only by stopping and starting again in CaptureLab.
+  CaptureLab does not use a new choice made from system UI while a stream runs; step 5 tests that
+  case once.
+- Before each export, write in the tester note: the source app; the picker options offered and the
+  one chosen, as labeled on screen; whether a permission prompt appeared, whether it showed the
+  `NSScreenCaptureUsageDescription` text in [ui-states](contracts/ui-states.md) (FR-019), and, if
+  you declined it, the message and any code shown; whether the system screen-recording and
+  microphone-in-use indicators were visible, and where (FR-089; the microphone indicator should
+  not appear, FR-069); and any SCStreamError code shown, or "none shown". Keep the note under 500
+  characters (the export refuses longer notes); use short answers such as "prompt: no;
+  indicators: <where seen>; code: none shown". Until the export carries that code (owner decision 2
+  in `docs/platform-research/screencapturekit-ios.md`), the note is the only record of it: the
+  export does not carry it, and "Ended by system" does not show it.
+
+1. Install CaptureLab on each FR-032 device, built with the iOS 27.2 SDK pinned in ADR-0002. A
+   build from an SDK without ScreenCaptureKit (such as the iOS 26.5 SDK on CI) has no capture
+   driver and shows System/App Capture as "Requires a newer iOS version" even on D1 and D2.
+2. **US1** (D1, D2; T040): Play audio in a source app → CaptureLab → Choose Audio Source →
+   System/App Capture → select in the system picker. Expect "Active audio" with live rate, channels,
+   and levels. Pause the source without leaving CaptureLab → "Audio received — silent" within 2 s.
+   Repeat with a source producing nothing → "No audio received" after 5 s. Cancel the picker → "Not
+   started — cancelled". If a permission prompt appears, decline it in one run → "Not started —
+   cancelled" (US1-AS4). If the prompt does not appear again after the first answer, write that in
+   the tester note, and how (if at all) it was reset.
+3. On D3 (iPadOS 26.5; US1 scenario 5, T040): CaptureLab launches, and System/App Capture shows
+   "Requires a newer iOS version" while Microphone and In-App Playback stay selectable. The Debug
+   device build weak-links ScreenCaptureKit (deployment target 26.0; checked with `otool -L`).
+   Install that build, or check the build you install the same way, and record which configuration
+   was installed on D3. Only a run on D3 shows that it launches on iOS 26: the simulator build does
+   not link ScreenCaptureKit at all.
 4. **US2**: Microphone (explainer → permission), deny → message; In-App Playback → audible
    reference track, "Active audio" within 1 s; Stop → "Stopped" within 1 s.
 5. **Lifecycle evidence (RI-003)**: during each mode, background, foreground, lock, unlock, and
-   trigger an interruption and a headphone change. Export after each run.
+   trigger an interruption and a headphone change. Export after each run. For System/App Capture
+   (D1, D2; T041), also switch to the source app and back, and record for each event whether the
+   stream survives. Leaving for the source app may end it ("Ended by system", possibly code -3824).
+   Whether a lock ends it, and with which code, is unknown. On each of D1 and D2, also do one run
+   that changes the shared content from system UI (for example Control Center) during capture,
+   and record what happens in the tester note; CaptureLab does not apply the new choice, by
+   design. CaptureLab declares no background mode. Adding `screen-capture` is allowed only under
+   R-03's change rule (a mode needed to keep a foreground session alive), through an ADR-0001
+   amendment approved by the project owner and a narrow `check_compliance.py` exception; whether
+   capture that survives leaving CaptureLab falls under that rule is an owner decision. Run T041
+   only after the export carries the SCStreamError code (owner decision 2 in
+   `docs/platform-research/screencapturekit-ios.md`).
 6. For each FR-030 source, run 10 minutes in the foreground and export (FR-021).
 7. Fill `docs/test-reports/compatibility-report.md` rows (FR-031) and rate each Works / Partial /
    Does not work.

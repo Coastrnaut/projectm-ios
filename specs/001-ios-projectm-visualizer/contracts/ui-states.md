@@ -20,7 +20,12 @@ from other apps."
 | Info.plist key | Text |
 |----------------|------|
 | `NSMicrophoneUsageDescription` | Same text as the Microphone explainer above |
-| Capture key (identified by RI-001) | To be written when RI-001 names the key; it must say that only audio from the content you choose is used, on this device only |
+| `NSScreenCaptureUsageDescription` | Only the audio of the content you choose to share is used, and only on this device. It is not recorded or sent anywhere. |
+
+The capture key was identified by RI-001 (2026-11-08): Apple's ScreenCaptureKit overview tells apps
+to add `NSScreenCaptureUsageDescription`. The key is not in the iOS 27.2 SDK or Xcode 27.2's
+Info.plist definitions, and Apple's iOS sample does not declare it, so whether iOS 27 shows or
+requires it is recorded on device in T040 (`docs/platform-research/screencapturekit-ios.md`).
 
 ## Source chooser descriptions (FR-080)
 

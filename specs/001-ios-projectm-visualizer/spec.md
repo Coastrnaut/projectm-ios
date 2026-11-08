@@ -26,7 +26,8 @@ approved."
 - Q: What is the minimum iOS version the app must support? → A: iOS 26 and later. System/App
   Capture is offered only on OS versions that provide the required system capture flow (presumed
   iOS 27+, pending RI-001/RI-004); iOS 26 devices get Microphone and In-App Playback only. No
-  legacy (ReplayKit) capture adapter.
+  legacy (ReplayKit) capture adapter. *(Note added 2026-11-08: the "presumed iOS 27+" part is
+  superseded by FR-008; RI-004 confirmed iOS/iPadOS 27.0.)*
 - Q: If Stage 1 shows that no other app's audio can be captured, may the first release ship with
   only microphone and in-app playback? → A: Yes. The release proceeds with the fallback modes,
   honestly described.
@@ -332,8 +333,10 @@ Each edge case below maps to a functional requirement.
 - **FR-007**: Users MUST be able to stop the active source, in every mode, at any time; the source
   MUST stop within 1 second.
 - **FR-008**: The app MUST run on iOS/iPadOS 26 and later. System/App Capture MUST be offered only
-  on OS versions where the required system capture flow is available (presumed 27+, an assumption
-  until RI-001/RI-004 are resolved); on iOS 26 it MUST appear as unavailable per FR-004.
+  on OS versions where the required system capture flow is available: iOS/iPadOS 27.0 and later
+  (RI-004, resolved 2026-11-08 from the iOS 27.2 SDK availability annotations; the iOS 26.5 SDK has no
+  ScreenCaptureKit; see `docs/platform-research/screencapturekit-ios.md`). On iOS 26 it MUST appear
+  as unavailable per FR-004.
 - **FR-009**: The app MUST NOT include a legacy/deprecated capture path to provide System/App
   Capture on OS versions that lack the current system capture flow.
 
@@ -372,8 +375,10 @@ Each edge case below maps to a functional requirement.
   a non-blocking hint (e.g., "No sound detected — is playback paused?") and MUST keep the source
   running.
 - **FR-019**: Every permission prompt the app triggers MUST carry a usage description string that
-  matches the in-app explainer for that mode (microphone text in contracts/ui-states.md; capture
-  text set once RI-001 identifies the required key).
+  matches the in-app explainer for that mode (microphone text in contracts/ui-states.md). For
+  System/App Capture the key is `NSScreenCaptureUsageDescription`, named by Apple's ScreenCaptureKit
+  overview (RI-001, resolved 2026-11-08), with the text in contracts/ui-states.md; whether iOS 27
+  shows or enforces it is recorded on device in T040.
 
 **Feasibility diagnostics (Stage 1)**
 
@@ -619,8 +624,10 @@ Each edge case below maps to a functional requirement.
 
 - Target users are iPhone and iPad owners who want visuals for music playing on their device or in
   the room.
-- Minimum OS is iOS/iPadOS 26 (clarified). System/App Capture is presumed to need iOS 27+; until
-  RI-001/RI-004 confirm this against the SDK, it is an assumption, not a fact.
+- Minimum OS is iOS/iPadOS 26 (clarified). System/App Capture needs iOS/iPadOS 27.0 or later: RI-004
+  confirmed this on 2026-11-08 from the iOS 27.2 SDK availability annotations (FR-008). Whether it
+  delivers other apps' audio, and how it behaves across app lifecycle events, are still open until
+  device testing (RI-002, RI-003).
 - iPhone and iPad are both launch requirements (clarified).
 - Supported hardware is any iOS 26-capable device; performance is measured and published only for
   the project device set D1–D3, and is not guaranteed for other devices (clarified 2026-11-07 and

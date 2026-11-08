@@ -35,7 +35,7 @@ engine and portable DSP. Objective-C++ only in the bridge. The exact Xcode/SDK v
 Gate 0 (R-01).
 
 **Primary Dependencies**: Apple frameworks: SwiftUI, ScreenCaptureKit (System/App Capture, iOS
-27+ presumed), AVFAudio/AVAudioEngine (Microphone, In-App Playback), Accelerate/vDSP (conversion,
+27.0+, device SDK only: the Simulator SDK has no ScreenCaptureKit), AVFAudio/AVAudioEngine (Microphone, In-App Playback), Accelerate/vDSP (conversion,
 levels), Synchronization (atomics). Third-party: libprojectM (LGPL-2.1, pinned submodule) and the
 renderer GL ES provider chosen in ADR-0003 (Apple OpenGL ES 3.0 for the Stage A prototype; ANGLE
 Metal backend evaluated for production). Build tools: CMake (engine), XcodeGen (project
@@ -50,7 +50,7 @@ FR-032 and the [quickstart](quickstart.md). Capture, lifecycle, and rendering ac
 devices only (Constitution X).
 
 **Target Platform**: iOS/iPadOS 26.0+ (iPhone and iPad device family). System/App Capture is availability-gated to the
-first OS that provides it (presumed 27.0, confirmed by R-02/RI-004).
+first OS that provides it: iOS 27.0 (RI-004, confirmed 2026-11-08 from the iOS 27.2 SDK annotations).
 
 **Project Type**: Mobile app: two app targets (CaptureLab, ProjectMiOS) sharing local Swift
 packages.
