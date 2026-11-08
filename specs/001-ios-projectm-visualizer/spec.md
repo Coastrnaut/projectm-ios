@@ -19,6 +19,26 @@ source compatibility report before full implementation; iPhone/iPad responsive l
 lifecycle handling. Capture feasibility is a blocking requirement before the full application is
 approved."
 
+## Clarifications
+
+### Session 2026-11-07
+
+- Q: What is the minimum iOS version the app must support? → A: iOS 26 and later. System/App
+  Capture is offered only on OS versions that provide the required system capture flow (presumed
+  iOS 27+, pending RI-001/RI-004); iOS 26 devices get Microphone and In-App Playback only. No
+  legacy (ReplayKit) capture adapter.
+- Q: If Stage 1 shows that no other app's audio can be captured, may the first release ship with
+  only microphone and in-app playback? → A: Yes. The release proceeds with the fallback modes,
+  honestly described.
+- Q: Is iPad support required for the first release? → A: Yes. iPhone and iPad are both launch
+  requirements, including split-screen/resizable windows on iPad.
+- Q: What is the oldest hardware that must be supported? → A: Any device that runs iOS 26. The
+  oldest iOS 26-capable iPhone and iPad obtainable are the minimum test devices; their performance
+  is measured and published, not promised in advance.
+- Q: Must the first release be distributed through the public App Store? → A: Yes. A license and
+  App Store compliance review of all bundled components (including the LGPL-2.1 visualization
+  engine) is a release-blocking requirement.
+
 ## Delivery Gating *(mandatory for this feature)*
 
 This feature is delivered in two stages. Stage 2 MUST NOT be approved until Stage 1's evidence is
@@ -32,8 +52,8 @@ reviewed.
 
 **Approval rule**: Stage 2 is approved when the compatibility report (FR-030–FR-033) exists, has
 been reviewed, and records at least one source mode with verified non-silent audio on a physical
-device. If no external-app source passes, Stage 2 proceeds with microphone and in-app playback only,
-and that limitation is stated in the product description.
+device. If no external-app source passes, Stage 2 and the first release proceed with microphone and
+in-app playback only, and that limitation is stated in the product description and store listing.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -249,6 +269,11 @@ and audio-route changes during each source mode and confirm the documented behav
 - **FR-006**: In-App Playback MUST provide at least one bundled reference audio track with legally
   redistributable rights.
 - **FR-007**: Users MUST be able to switch sources and stop capture at any time.
+- **FR-008**: The app MUST run on iOS/iPadOS 26 and later. System/App Capture MUST be offered only
+  on OS versions where the required system capture flow is available (presumed 27+, confirmed by
+  RI-001/RI-004); on iOS 26 it MUST appear as unavailable per FR-004.
+- **FR-009**: The app MUST NOT include a legacy/deprecated capture path to provide System/App
+  Capture on OS versions that lack the current system capture flow.
 
 **Audio state truthfulness**
 
@@ -282,8 +307,10 @@ and audio-route changes during each source mode and confirm the documented behav
   source app version, capture mode and selection made, whether audio arrived, whether it was
   non-silent, sample rate, channel count, average and worst observed latency, interruption/end
   behavior, result (works / partial / does not work), and reproduction steps.
-- **FR-032**: At least one supported iPhone at the minimum OS and one current-generation iPhone MUST
-  be tested; an iPad MUST be tested if iPad is a launch requirement.
+- **FR-032**: Testing MUST cover at minimum: the oldest obtainable iOS 26-capable iPhone on
+  iOS 26 (fallback modes), one iPhone on the earliest OS with System/App Capture, one
+  current-generation iPhone, and at least one iPad (oldest obtainable iPadOS 26-capable model
+  preferred).
 - **FR-033**: The report MUST record the Stage 2 go/no-go decision and the list of claimable sources.
 
 **Visualization and presets (Stage 2)**
@@ -327,6 +354,10 @@ and audio-route changes during each source mode and confirm the documented behav
   sources marked "works" in the compatibility report.
 - **FR-063**: A privacy policy accurately describing capture, permissions, and data handling MUST be
   available before release.
+- **FR-064**: The first release targets the public App Store. Before release, a recorded license
+  and App Store compliance review MUST confirm that every bundled component (including the
+  LGPL-2.1 visualization engine, presets, and reference audio) can be distributed there and how
+  each license's obligations are met. A failed review blocks release.
 
 ### Key Entities
 
@@ -380,15 +411,15 @@ and audio-route changes during each source mode and confirm the documented behav
 
 - Target users are iPhone and iPad owners who want visuals for music playing on their device or in
   the room.
-- System/App Capture availability depends on the OS version; the presumed primary path requires a
-  recent iOS release (iOS 27 or later). The exact minimum OS, whether earlier versions get only
-  fallback modes, and whether a legacy capture path is needed are left to `/speckit-clarify` and
-  planning.
-- iPad is assumed to be a launch requirement (responsive layout is in scope); if clarified
-  otherwise, FR-032's iPad test and FR-041's split-window behavior become non-blocking.
+- Minimum OS is iOS/iPadOS 26 (clarified). System/App Capture is presumed to need iOS 27+; until
+  RI-001/RI-004 confirm this against the SDK, it is an assumption, not a fact.
+- iPhone and iPad are both launch requirements (clarified).
+- Supported hardware is any iOS 26-capable device; performance on the oldest devices is measured
+  and published, not guaranteed (clarified).
 - If no external-app source passes Stage 1, the first release ships with Microphone and In-App
-  Playback only, honestly described (see Delivery Gating). This default should be confirmed during
-  `/speckit-clarify`.
+  Playback only, honestly described (clarified; see Delivery Gating).
+- Distribution target is the public App Store (clarified); FR-064 makes the license review a
+  release blocker.
 - Capture and visualization run while the app is in the foreground; background visualization is
   out of scope. Background capture continuation is investigated in Stage 1 but not promised.
 - The app does not draw over other apps.
@@ -400,6 +431,42 @@ and audio-route changes during each source mode and confirm the documented behav
   its version, license, and rendering approach are decided in planning.
 - Building and testing on Apple hardware is required for all device and performance criteria;
   results from other environments are not accepted as evidence.
+
+**Open Research Items**
+
+These cannot be settled by stakeholder decision; each needs documentation review or a
+physical-device experiment. Owner for all items: project owner (until delegated). None may be
+stated as fact in the plan until its exit criterion is met.
+
+- **RI-001 — System capture capabilities in the chosen SDK** (Gate 0): Which content-sharing
+  picker modes, stream configuration options, and audio output types exist on iOS/iPadOS in the
+  selected SDK. *Exit*: inventory written from the SDK headers and current Apple docs, saved in
+  `docs/platform-research/`, with availability annotations.
+- **RI-002 — External app audio while this app is foregrounded** (Gate 1): Whether audio from the
+  selected source arrives, non-silent, while the visualizer stays in the foreground, per source in
+  the FR-030 matrix. *Exit*: compatibility report entries (FR-031) with diagnostics exports from
+  physical devices.
+- **RI-003 — Background modes and picker behavior** (Gate 0/2): Required usage descriptions and
+  background modes; what the system picker allows; whether capture survives backgrounding, device
+  lock, and the source app changing. *Exit*: documented configuration plus device test results for
+  each lifecycle event in User Story 7.
+- **RI-004 — iOS 26 capture availability** (Gate 0): Confirm that the required system capture flow
+  is unavailable on iOS 26 (so iOS 26 = fallbacks only), and identify the exact first OS version
+  that provides it. *Exit*: SDK availability annotations recorded; FR-008 updated with the exact
+  version.
+- **RI-005 — Visualization engine rendering on iOS** (Gate 3): The pinned engine documents a need
+  for OpenGL Core 3.3 or OpenGL ES 3.2; iOS provides only deprecated OpenGL ES 3.0. Determine the
+  viable rendering path (e.g., a translation layer or a Metal-based renderer) and its preset
+  compatibility. *Exit*: renderer ADR plus a known preset rendering on a physical device.
+- **RI-006 — Engine version pin** (Gate 3): The engine submodule currently points at an untagged
+  upstream commit (`eae22de`, after v4.1.0; in-development 4.2.0). Decide whether to pin to a
+  tagged release or keep the commit. *Exit*: dependency-pinning ADR naming the exact tag/commit.
+- **RI-007 — LGPL-2.1 and App Store compliance** (release blocker, FR-064): How the engine's
+  LGPL-2.1 obligations (for example, relinking provisions) can be met in an App Store app.
+  *Exit*: written license review / ADR with a go/no-go conclusion.
+- **RI-008 — Bundled preset and reference-audio sources** (Gate 3): The engine repository ships
+  only test presets. Identify a starter preset set and reference audio track with verified
+  redistribution rights. *Exit*: license record for each bundled asset (FR-006, FR-047).
 
 ### Out of Scope (non-goals)
 

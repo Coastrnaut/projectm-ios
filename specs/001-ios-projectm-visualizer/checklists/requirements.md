@@ -41,4 +41,7 @@
 - Defaults chosen instead of [NEEDS CLARIFICATION] markers, to confirm in `/speckit-clarify`:
   minimum iOS version / iOS 26-and-earlier support, iPad as launch requirement, and shipping with
   fallbacks only if no external source passes Stage 1.
+- Clarify session 2026-11-07: 5 questions answered; all items still pass (16/16 → 16/16). The
+  Open Research Items name rendering/licensing constraints as research questions, not design
+  choices; technology selection remains in the plan.
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`
