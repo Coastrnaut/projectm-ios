@@ -44,4 +44,6 @@
 - Clarify session 2026-11-07: 5 questions answered; all items still pass (16/16 → 16/16). The
   Open Research Items name rendering/licensing constraints as research questions, not design
   choices; technology selection remains in the plan.
+- Gap fixes 2026-11-07 (from spec-review.md): all items still pass (16/16). Added FR-016–018,
+  FR-054–055, FR-065, FR-070–072, SC-012, stage/phase mapping, and quantified thresholds.
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`

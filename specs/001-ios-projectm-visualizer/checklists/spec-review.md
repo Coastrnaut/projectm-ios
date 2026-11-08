@@ -91,4 +91,6 @@ success criterion, or research item IDs; `§Gating` = Delivery Gating; `§Edge` 
 - Mark items `[x]` only after review confirms the requirement-quality criterion is satisfied
 - Leave items unchecked when they still require clarification, correction, or reviewer evaluation
 - Early pass only: the required post-plan `/speckit-checklist` gate will cover plan.md and ADRs.
+- 2026-11-07: spec.md revised to address CHK001–CHK049. Items remain unchecked pending reviewer
+  confirmation.
 - `/speckit-implement` reads checklist state but does not modify markers.
