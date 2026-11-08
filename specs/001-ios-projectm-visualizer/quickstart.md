@@ -50,6 +50,8 @@ xcodegen generate                              # ProjectM-iOS.xcodeproj
 swift test --package-path Packages/AudioCore      # classifier, ring buffer, normalizer
 swift test --package-path Packages/CaptureKit     # manager with fake sources
 swift test --package-path Packages/Diagnostics    # export validates against schema; no identifiers
+swift test --package-path Packages/CaptureUI      # shared chooser, explainer, banner strings
+python3 scripts/check_compliance.py               # constitution API/boundary rules (also runs on Windows)
 xcodebuild -scheme CaptureLab -destination 'platform=iOS Simulator,name=<discovered>' test
 ```
 
