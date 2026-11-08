@@ -8,7 +8,7 @@
 
 ## Summary
 
-ProjectM-iOS is a universal iPhone/iPad app that visualizes audio with the ProjectM engine. Audio
+ProjectM-iOS is an iPhone and iPad app that visualizes audio with the ProjectM engine. Audio
 comes from three explicitly labeled sources: System/App Capture (ScreenCaptureKit, only on OS
 versions that provide it), Microphone, and In-App Playback. Delivery is gated. Phase A builds a
 standalone **CaptureLab** feasibility app and the physical-device compatibility report. Phases B–E
@@ -49,7 +49,7 @@ app targets are tested with `xcodebuild test` on the iOS Simulator. Physical-dev
 FR-032 and the [quickstart](quickstart.md). Capture, lifecycle, and rendering acceptance happen on
 devices only (Constitution X).
 
-**Target Platform**: iOS/iPadOS 26.0+ (universal). System/App Capture is availability-gated to the
+**Target Platform**: iOS/iPadOS 26.0+ (iPhone and iPad device family). System/App Capture is availability-gated to the
 first OS that provides it (presumed 27.0, confirmed by R-02/RI-004).
 
 **Project Type**: Mobile app: two app targets (CaptureLab, ProjectMiOS) sharing local Swift
