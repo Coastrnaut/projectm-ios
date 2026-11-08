@@ -1,0 +1,1189 @@
+# ProjectM for iOS
+## Technical Architecture, Audio-Capture Feasibility Plan, and Autonomous Spec-Kit / Claude Code Implementation Guide
+
+**Document status:** Proposed engineering baseline  
+**Prepared:** 2026-11-07  
+**Target project:** `ProjectM-iOS`  
+**Recommended repository path (Windows development):** `C:\GIT\ProjectM-iOS`  
+**Primary objective:** Visualize audio originating from other iOS applications, where iOS permits capture, using the ProjectM / MilkDrop visualization engine.  
+**Development workflow:** GitHub Spec Kit + Claude Code, with Python-based setup scripts.
+
+---
+
+## 1. Executive summary
+
+The proposed application is an iPhone/iPad music visualizer built around the ProjectM C++ engine and MilkDrop-compatible presets. The intended user experience is:
+
+1. The user starts audio in another application, such as Spotify, Apple Music, YouTube Music, or Safari.
+2. The user explicitly starts a system-authorized screen/content capture session and selects an eligible source.
+3. ProjectM receives permitted audio sample buffers.
+4. The application analyzes the audio and feeds the visualization engine.
+5. The application renders a full-screen, real-time visualization with preset selection and controls.
+
+**The product must not promise capture of every app or every protected audio stream.** iOS controls what can be selected and captured. DRM, application policy, OS version, user selection, background execution rules, and audio-session behavior can all limit the result. The first engineering milestone is therefore a physical-device capture proof of concept—not a ProjectM port.
+
+### Critical update: prefer ScreenCaptureKit on current iOS
+
+Apple's current ScreenCaptureKit documentation describes screen and audio streaming across iOS-family platforms and says ScreenCaptureKit replaces ReplayKit for screen streaming and mirroring. Current Apple documentation marks important ReplayKit capture APIs such as `RPBroadcastSampleHandler` and `RPScreenRecorder.startCapture` as deprecated.
+
+For a current-generation implementation, investigate **ScreenCaptureKit (`SCStream`, `SCContentSharingPicker`, and audio stream outputs) on supported OS versions first**. The iOS ScreenCaptureKit sample currently requires iOS 27 or later. Keep any older-OS ReplayKit path isolated behind an availability-gated adapter and only retain it if the required deployment range and App Store policy support it.
+
+This is a moving platform area. Confirm availability, entitlements, picker behavior, audio output types, background modes, and capture restrictions against the exact Xcode SDK and physical devices used for release.
+
+---
+
+## 2. Product scope and non-goals
+
+### 2.1 In scope
+
+- iPhone and iPad application.
+- User-initiated capture of an eligible external app/display source, subject to the OS capture API and source restrictions.
+- Microphone input as a fallback source, with explicit permission and a clear indication that it captures ambient sound.
+- In-app audio playback as a deterministic development and fallback source.
+- ProjectM C++ engine integration.
+- MilkDrop-compatible preset loading, selection, favorites, and preset switching.
+- Full-screen visualization, orientation handling, pause/resume, and basic performance diagnostics.
+- A modular audio-source interface so capture APIs can be replaced without changing ProjectM integration.
+- Automated unit tests and macOS-based iOS build/test automation.
+
+### 2.2 Explicit non-goals for the first release
+
+- Bypassing DRM, FairPlay, application restrictions, or iOS privacy controls.
+- Capturing arbitrary audio without a user-visible system permission/selection flow.
+- Private APIs, jailbreak-only techniques, undocumented entitlements, or audio-session exploits.
+- Guaranteed compatibility with Spotify, Apple Music, YouTube Music, or every other third-party app.
+- Building a full music streaming service or reproducing Spotify's playback UI.
+- A complete Metal rewrite before the audio-capture feasibility gate passes.
+- Rendering an overlay above another app without an Apple-supported mechanism.
+
+### 2.3 Product truthfulness requirement
+
+The UI must distinguish:
+- **System/app capture:** audio actually delivered by the selected system capture stream.
+- **Microphone:** sound acoustically captured from the environment.
+- **In-app audio:** audio the application itself owns and can tap/process.
+
+Never label microphone audio as system audio. Never show “Spotify connected” or “Apple Music captured” unless the application has verified incoming audio samples from that source during the current session.
+
+---
+
+## 3. Platform constraints and capture strategy
+
+### 3.1 Capture API decision
+
+Use a capability-based capture strategy:
+
+| OS / capability | Preferred implementation | Notes |
+|---|---|---|
+| iOS/iPadOS 27+ with required ScreenCaptureKit APIs available | ScreenCaptureKit adapter | Preferred path. Present Apple's system content-sharing picker and receive only the sample types the OS makes available. |
+| Earlier supported iOS versions | Evaluate ReplayKit adapter only if required | Legacy ReplayKit capture APIs are deprecated in current Apple documentation. Do not assume future availability or App Store acceptance. |
+| Any supported iOS version | Microphone adapter | Requires microphone permission; ambient audio, not digital system loopback. |
+| Any supported iOS version | In-app playback adapter | Most deterministic source for development and fallback. |
+
+The app should use `@available` checks and runtime capability detection rather than assuming that a framework available in the SDK is available on every device.
+
+### 3.2 ScreenCaptureKit design
+
+Investigate the following Apple APIs and concepts:
+
+- `SCContentSharingPicker`: system UI for the user to select shareable content.
+- `SCStream`: represents the selected content stream.
+- `SCStreamConfiguration`: configures capture, including audio capture where supported.
+- `SCStreamOutput`: receives sample buffers for the configured output type.
+- `SCStreamDelegate`: reports stream lifecycle and errors.
+- Audio stream output / output types: inspect the exact SDK declarations for the target OS; do not copy macOS-only assumptions into iOS code.
+- Screen-capture permission and required usage-description/background-mode configuration for the exact iOS release.
+
+The implementation must confirm whether the chosen iOS version and picker mode can provide the desired **application audio** for the selected source. The existence of an audio-capture property does not prove that every app's protected playback is available. Treat protected and excluded content as unavailable.
+
+### 3.3 ReplayKit legacy path
+
+If older iOS support is required, create a separate `ReplayKitAudioSource` adapter only after confirming the exact current SDK support and distribution constraints.
+
+Legacy concepts include:
+- `RPBroadcastSampleHandler`
+- `processSampleBuffer(_:with:)`
+- `RPSampleBufferType`
+- `audioApp` and `audioMic` sample categories where provided by the relevant API/version
+- Broadcast Upload Extension
+- App Group shared storage for extension-to-app communication
+
+Do not make ReplayKit the foundational architecture. On OS versions where ScreenCaptureKit is the supported replacement, use ScreenCaptureKit. Do not assume ReplayKit and ScreenCaptureKit have identical extension, lifecycle, or sample-delivery models.
+
+### 3.4 Microphone fallback
+
+Use `AVAudioEngine` input or the appropriate supported audio capture API for microphone input:
+- Request permission at the point the user selects microphone mode.
+- Explain that the microphone captures sound in the room.
+- Display an unmistakable “Microphone” source label.
+- Handle route changes, interruptions, permission revocation, and input unavailability.
+- Do not combine microphone and system capture by default.
+
+### 3.5 In-app audio fallback
+
+For audio owned by the application:
+- Use `AVAudioEngine` or the selected playback engine.
+- Tap the app-owned playback/mix node where appropriate.
+- Normalize the PCM format before handing data to the shared DSP pipeline.
+- This is the deterministic source for development, CI-independent DSP tests, and a fallback mode.
+
+### 3.6 Foreground/background behavior
+
+The desired user flow is to keep ProjectM visible while an eligible source app continues audio in the background. Validate this with actual source apps and the current iOS version.
+
+Do not assume:
+- ProjectM can draw a normal overlay on top of Spotify or another app.
+- ProjectM can keep rendering at 60 FPS while backgrounded.
+- PiP can be used as a generic arbitrary SwiftUI overlay.
+- The capture stream necessarily continues when the app backgrounds or the device locks.
+
+Investigate supported background execution modes and system picker behavior. The app must gracefully stop, pause, or show a clear state when iOS ends capture or suspends rendering.
+
+---
+
+## 4. Recommended application architecture
+
+Keep the system modular. The visualization engine must not know which capture technology produced the audio.
+
+```text
+ProjectM-iOS
+│
+├── App (Swift / SwiftUI)
+│   ├── ProjectMApp
+│   ├── AppCoordinator
+│   ├── ContentView
+│   ├── VisualizerScreen
+│   ├── CaptureControls
+│   └── SourceStatusView
+│
+├── Capture
+│   ├── AudioSourceProtocol
+│   ├── AudioCaptureManager
+│   ├── ScreenCaptureKitAudioSource
+│   ├── ReplayKitAudioSource       # optional, availability-gated legacy adapter
+│   ├── MicrophoneAudioSource
+│   └── InAppAudioSource
+│
+├── Audio
+│   ├── PCMFormat
+│   ├── PCMBuffer
+│   ├── AudioNormalizer
+│   ├── AudioRingBuffer
+│   ├── AudioAnalyzer
+│   ├── FFTProcessor
+│   ├── FrequencyBandAnalyzer
+│   └── BeatDetector
+│
+├── ProjectM
+│   ├── ProjectMBridge.h
+│   ├── ProjectMBridge.mm
+│   ├── ProjectMEngine
+│   ├── PresetRepository
+│   └── PresetMetadata
+│
+├── Rendering
+│   ├── VisualizerRenderer
+│   ├── OpenGLESPrototypeRenderer  # only if technically viable and policy-compliant
+│   ├── MetalRenderer              # preferred production evaluation
+│   └── Shaders
+│
+├── Shared
+│   ├── Diagnostics
+│   ├── Logging
+│   ├── AppConfiguration
+│   └── Permissions
+│
+└── Tests
+    ├── AudioUnitTests
+    ├── CaptureAdapterTests
+    ├── ProjectMIntegrationTests
+    └── PerformanceTests
+```
+
+### 4.1 Core interfaces
+
+Define stable interfaces before implementing capture backends.
+
+Illustrative Swift contract (adapt names and concurrency annotations after compiling against the selected SDK):
+
+```swift
+protocol AudioSource: AnyObject {
+    var sourceKind: AudioSourceKind { get }
+    var state: AudioSourceState { get }
+
+    func requestAuthorization() async throws
+    func start() async throws
+    func stop() async
+}
+
+enum AudioSourceKind {
+    case screenOrApplication
+    case microphone
+    case inAppPlayback
+}
+
+struct AudioFrame {
+    let timestamp: CMTime
+    let sampleRate: Double
+    let channelCount: Int
+    let samples: [Float]
+}
+```
+
+Production implementation should avoid allocating a new `[Float]` for every real-time callback. Use preallocated buffers, ownership-aware buffer wrappers, or a bounded ring buffer. The illustrative contract communicates the boundary; it is not a final real-time memory-management implementation.
+
+### 4.2 Capture-to-render data flow
+
+```text
+User selects source
+       │
+       ▼
+AudioCaptureManager
+       │
+       ├── ScreenCaptureKit (preferred on supported OS)
+       ├── ReplayKit (optional legacy adapter)
+       ├── Microphone
+       └── In-app playback
+       │
+       ▼
+CMSampleBuffer / PCM extraction
+       │
+       ▼
+PCM normalization
+       │
+       ▼
+Bounded audio ring buffer
+       │
+       ▼
+Audio analysis / ProjectM PCM feed
+       │
+       ▼
+ProjectM frame update
+       │
+       ▼
+Renderer / display
+```
+
+### 4.3 Interprocess communication
+
+For the preferred ScreenCaptureKit in-app stream path, keep capture and rendering in the main app process unless the API/OS lifecycle requires otherwise. Do not add an extension or App Group transport without a demonstrated need.
+
+For a legacy ReplayKit Broadcast Upload Extension, the extension is a separate process. Use an App Group container and a carefully designed bounded IPC/shared-memory mechanism only if the selected API path requires it. App Group file access is not automatically a zero-copy shared-memory transport; benchmark the actual implementation. Do not assume a normal file write/read loop is suitable for real-time audio.
+
+---
+
+## 5. Audio processing specification
+
+### 5.1 Initial target format
+
+Use the following as an initial internal target, not as an assumption about the capture API's native output:
+
+| Parameter | Initial target |
+|---|---|
+| Sample representation | Float32 PCM |
+| Channels | Mono for first implementation; preserve stereo option |
+| Sample rate | 44,100 Hz internal target; resample as needed |
+| FFT size | 2,048 initially; benchmark 4,096 |
+| Analysis hop | 1,024 samples (50% overlap for 2,048 FFT) |
+| Window | Hann |
+| Visualizer update | Display-synchronized, target 60 FPS |
+| Audio queue | Bounded, non-blocking producer/consumer |
+| Timestamp | Preserve source sample timestamps where available |
+
+ProjectM may have its own audio-analysis expectations and API requirements. Inspect the exact ProjectM version and use its documented PCM ingestion interface. Avoid duplicating ProjectM's FFT/beat analysis until there is a measured need.
+
+### 5.2 DSP pipeline
+
+1. Extract PCM from the captured sample buffer.
+2. Validate format, channel layout, timestamps, and sample count.
+3. Convert to the internal sample format.
+4. Downmix only when required; document the downmix coefficients.
+5. Resample only when required.
+6. Apply bounded buffering and detect overflow/underrun.
+7. Feed PCM to ProjectM using its documented API.
+8. Add custom FFT/band/beat analysis only for UI meters or additional controls that ProjectM does not expose.
+9. Keep audio processing off the main UI thread.
+10. Never block the capture callback on rendering, disk I/O, logging, or network activity.
+
+### 5.3 Performance and robustness
+
+- Preallocate real-time buffers.
+- Avoid locks with unbounded wait in audio callbacks.
+- Use a bounded queue with explicit drop/overflow policy.
+- Track sample timestamps and queue depth.
+- Detect silence separately from capture failure.
+- Handle format changes and stream restarts.
+- Make stop/restart idempotent.
+- Ensure callbacks cannot access deallocated engine objects.
+- Record diagnostics without recording or persisting raw user audio by default.
+
+---
+
+## 6. ProjectM integration and rendering
+
+### 6.1 Preserve the C++ core
+
+Use the official ProjectM repository as the upstream source. Pin a specific tag or commit in the build manifest; do not track an unpinned `main` branch in production.
+
+Integrate the C++ engine through a narrow Objective-C++ bridge:
+- Swift-facing API in `ProjectMBridge.h`.
+- Objective-C++ implementation in `ProjectMBridge.mm`.
+- C++ engine wrapper owns the ProjectM instance.
+- Swift controls lifecycle and UI.
+- The bridge accepts PCM and frame timing using ProjectM's documented API.
+- Preset loading and errors are surfaced as typed results.
+
+Before implementation, inspect the selected ProjectM release's:
+- iOS build support and CMake options.
+- Renderer requirements.
+- OpenGL ES usage and any deprecated platform dependencies.
+- MilkDrop preset compatibility.
+- Licensing and attribution obligations.
+- App Store distribution implications.
+
+### 6.2 Renderer strategy
+
+Use a staged renderer plan:
+
+**Stage A — build feasibility:** Compile and render the existing supported backend on a physical device if the selected ProjectM release supports it and distribution policy permits it.
+
+**Stage B — production renderer assessment:** Evaluate a Metal backend or a maintained Metal-compatible ProjectM renderer. A graphics API migration is not a trivial symbol substitution: MilkDrop presets may contain shader behavior and rendering assumptions that must be preserved.
+
+**Stage C — performance qualification:** Benchmark representative presets on minimum-supported and current devices, including thermal behavior and sustained frame rate.
+
+Do not commit to a full Metal rewrite until:
+- The audio capture gate passes.
+- ProjectM can be built and rendered on target hardware.
+- The renderer migration scope is estimated.
+- Preset compatibility has a measurable test corpus.
+
+### 6.3 Preset management
+
+- Bundle a legally redistributable starter preset set only after reviewing preset licensing.
+- Support user-imported presets only with safe file handling.
+- Keep preset metadata separate from engine state.
+- Handle missing, malformed, or unsupported presets gracefully.
+- Provide next/previous/random/favorite controls.
+- Do not download community presets without a deliberate source, license, and security review.
+
+---
+
+## 7. User experience requirements
+
+### 7.1 Primary screen
+
+- Full-screen visualization.
+- Tap to reveal/hide controls.
+- Clear audio-source indicator.
+- Capture start/stop control.
+- Preset name and next/previous controls.
+- Audio activity indicator.
+- Capture status and failure reason.
+- Orientation-aware layout.
+
+### 7.2 Capture flow
+
+1. User taps **Choose Audio Source**.
+2. App explains the available modes.
+3. For system/app capture, app presents the Apple system picker.
+4. User selects an available shareable source and confirms the system prompt.
+5. App waits for actual audio samples.
+6. UI shows **Receiving audio** only after samples are verified.
+7. If the source yields no audio, show **No audio samples received** and suggest another source or microphone mode.
+8. User can stop capture at any time.
+
+### 7.3 Privacy
+
+- Capture only after explicit user action and system authorization.
+- Do not upload, persist, or analyze audio remotely in the first release.
+- Do not record audio to disk unless a separately specified feature explicitly requires it.
+- Provide clear source labels and capture status.
+- Stop capture when the user stops it or the OS revokes/ends the session.
+- Include a privacy policy that accurately describes capture and data handling.
+
+---
+
+## 8. Risks, feasibility, and decision gates
+
+| Feature | Feasibility assessment | Required proof |
+|---|---|---|
+| Compile C++ ProjectM core | Likely feasible, release/build dependent | Build on supported Xcode toolchain |
+| Render existing presets | Feasible if renderer backend is supported | Physical-device preset test |
+| Microphone visualization | Feasible | Permission + PCM test |
+| In-app audio visualization | Feasible | App-owned playback tap test |
+| ScreenCaptureKit audio from selected app | OS/API/source dependent | Real-device source matrix |
+| Spotify audio | Unverified; may be restricted | Explicit device test |
+| Apple Music audio | Protected content may be excluded | Explicit device test; do not assume |
+| YouTube Music/Safari audio | Source/content dependent | Explicit device test |
+| Capture while visualizer foregrounded | Must be tested | End-to-end test |
+| Background capture/rendering | OS-policy dependent | Lifecycle and background-mode test |
+| Universal system-audio capture | Not a supported product promise | Do not claim |
+| App Store acceptance | Requires policy and API review | Current SDK/API review |
+
+### Go/no-go gates
+
+**Gate 0 — API availability:** Identify exact iOS minimum version, ScreenCaptureKit availability, supported picker modes, audio outputs, required usage descriptions, and background modes.
+
+**Gate 1 — external audio samples:** On physical devices, demonstrate whether selected external apps produce audio buffers. Document exclusions. A screenshot of the picker is not proof; inspect actual sample buffers and non-silent PCM.
+
+**Gate 2 — sustained capture:** Run a sustained capture test while ProjectM is foregrounded. Measure interruptions, buffer loss, latency, CPU, and memory.
+
+**Gate 3 — ProjectM build/render:** Build and render a known preset on target hardware.
+
+**Gate 4 — end-to-end:** Feed captured PCM to ProjectM and demonstrate stable visualization.
+
+If Gate 1 fails for a target source, do not try to bypass the OS. Keep the supported microphone and in-app modes and document the limitation.
+
+---
+
+## 9. Development phases and deliverables
+
+### Phase 0 — Platform research and capture POC (highest priority)
+
+Deliverables:
+- iOS deployment target decision.
+- ScreenCaptureKit API availability report.
+- Minimal iOS test application.
+- System content-sharing picker integration.
+- Audio sample-buffer diagnostics.
+- Physical-device source compatibility matrix.
+- Microphone fallback.
+- In-app playback reference source.
+- Latency and dropped-buffer measurements.
+- Written go/no-go decision.
+
+Acceptance criteria:
+- The app requests capture only through the supported user/system flow.
+- It identifies audio output buffers correctly.
+- It can distinguish no samples, silent samples, and active samples.
+- It records sample rate, channel count, timestamps, and buffer cadence.
+- It does not claim unsupported source compatibility.
+- It handles start, stop, interruption, and stream failure.
+
+### Phase 1 — Audio pipeline
+
+Deliverables:
+- AudioSource abstraction.
+- PCM extractor and normalizer.
+- Bounded ring buffer.
+- Format conversion/resampling as required.
+- Audio diagnostics and tests.
+
+Acceptance criteria:
+- No unbounded queue growth.
+- No main-thread audio processing.
+- No use-after-free during stop/restart.
+- Unit tests for format conversion, silence, overflow, underrun, and timestamps.
+
+### Phase 2 — ProjectM build and bridge
+
+Deliverables:
+- Pinned upstream ProjectM source.
+- Reproducible iOS build configuration.
+- Objective-C++ bridge.
+- Preset loading and error handling.
+- Physical-device renderer proof.
+
+Acceptance criteria:
+- A known test preset renders on a supported device.
+- PCM can be delivered through the bridge.
+- Engine lifecycle is safe across view/app lifecycle changes.
+
+### Phase 3 — Integrated visualizer
+
+Deliverables:
+- Capture-to-ProjectM integration.
+- SwiftUI controls.
+- Preset browser/favorites.
+- Full-screen/orientation behavior.
+- Performance overlay.
+
+Acceptance criteria:
+- End-to-end visualization with each supported source mode.
+- Target frame rate measured on defined devices.
+- Audio capture failures are visible and recoverable.
+
+### Phase 4 — Production hardening
+
+Deliverables:
+- Privacy and permission UX.
+- Interruption and route-change handling.
+- Thermal/performance testing.
+- Accessibility and UI polish.
+- App Store API/policy review.
+- Release documentation and supported-device matrix.
+
+Acceptance criteria:
+- No private APIs or undocumented entitlements.
+- No false claims of universal capture.
+- All capture modes are clearly labeled.
+- Tests and release checks pass on physical devices.
+
+---
+
+## 10. Testing strategy
+
+### 10.1 Automated tests
+
+- PCM format conversion.
+- Mono/stereo conversion.
+- Resampling correctness.
+- FFT sanity checks using generated sine waves.
+- Ring-buffer wraparound.
+- Ring-buffer overflow and underrun behavior.
+- Timestamp monotonicity.
+- Start/stop idempotence.
+- ProjectM bridge lifecycle.
+- Preset load failure handling.
+- UI state transitions.
+
+### 10.2 Physical-device tests
+
+Test at minimum:
+- One supported iPhone model at the minimum OS version.
+- One current-generation iPhone.
+- One iPad if iPad support is a release requirement.
+
+Test source matrix:
+- Spotify.
+- Apple Music.
+- YouTube Music.
+- Safari video.
+- In-app reference audio.
+- Microphone.
+
+For every test record:
+- Device model.
+- Exact iOS build.
+- Xcode/SDK version.
+- Source application version.
+- Capture API and picker selection.
+- Whether audio buffers arrive.
+- Whether PCM is non-silent.
+- Sample rate and channel count.
+- Average and worst observed latency.
+- Interruption/termination behavior.
+- Result and reproducible steps.
+
+### 10.3 Performance targets (initial, subject to measurement)
+
+- 60 FPS target when foregrounded and thermally sustainable.
+- No unbounded audio-buffer queue.
+- No blocking disk/network operations in capture or audio callbacks.
+- Bounded memory use during a 30-minute session.
+- Recovery from capture interruption without app crash.
+- Measure latency rather than inventing a fixed promise before device tests.
+
+---
+
+## 11. Repository layout and engineering conventions
+
+Recommended repository:
+
+```text
+ProjectM-iOS/
+├── .claude/
+├── .specify/
+├── specs/
+│   └── 001-ios-projectm-visualizer/
+├── docs/
+│   ├── architecture/
+│   ├── adr/
+│   ├── platform-research/
+│   └── test-reports/
+├── scripts/
+│   ├── bootstrap.py
+│   ├── verify_environment.py
+│   └── validate_docs.py
+├── Sources/
+│   ├── App/
+│   ├── Capture/
+│   ├── Audio/
+│   ├── ProjectM/
+│   ├── Rendering/
+│   └── Shared/
+├── Tests/
+├── Vendor/
+│   └── projectM/              # pinned submodule or reproducible dependency
+├── .gitignore
+├── README.md
+└── SECURITY.md
+```
+
+The actual Xcode project layout may differ based on whether Swift Package Manager, CMake, or an Xcode project generator is selected. Let the plan phase decide and document the reason.
+
+### Engineering rules
+
+- Swift for application/UI and platform APIs.
+- C++ for ProjectM and portable DSP code where useful.
+- Objective-C++ only at the Swift/C++ boundary.
+- No private APIs or undocumented entitlements.
+- Pin all third-party dependencies.
+- Keep upstream ProjectM changes isolated and documented.
+- Use an Architecture Decision Record (ADR) for capture API, minimum OS, renderer, and dependency strategy.
+- Build and sign iOS apps on macOS with Xcode. Windows can host documentation/specification work and source editing, but it cannot run Xcode or produce a native iOS device build locally.
+- Use a macOS machine or macOS CI runner (for example, GitHub Actions `macos-*`) for build, simulator, signing, and device-test workflows.
+
+---
+
+# 12. Windows 11 setup: Python + GitHub Spec Kit + Claude Code
+
+This workflow uses Python scripts rather than PowerShell automation. It assumes Windows 11 and a new repository at `C:\GIT\ProjectM-iOS`.
+
+## 12.1 Prerequisites
+
+Install and verify:
+- Python 3.11 or newer.
+- Git for Windows.
+- `uv` (recommended Python tool installer).
+- Claude Code CLI.
+- An Anthropic account/API configuration supported by Claude Code.
+- Xcode on a Mac for actual iOS compilation and signing.
+
+Windows setup checks:
+
+```text
+py --version
+git --version
+uv --version
+claude --version
+```
+
+If `uv` is not installed, install it using the official `uv` Windows installation instructions. Avoid copying an unverified install command from an unofficial source.
+
+Install Spec Kit:
+
+```text
+uv tool install specify-cli
+specify version
+specify self check
+```
+
+If `specify` was previously installed using pipx or pip, upgrade it using that same installer rather than installing a second copy through `uv`.
+
+Official Spec Kit:
+- https://github.com/github/spec-kit
+- https://github.com/github/spec-kit/blob/main/docs/installation.md
+
+## 12.2 Create and initialize the repository
+
+The current Spec Kit initialization syntax supports Claude integration and Python scripts:
+
+```text
+specify init --help
+specify init ProjectM-iOS --integration claude --script py
+```
+
+If you want to create the folder yourself first, then initialize from inside it:
+
+```text
+mkdir C:\GIT\ProjectM-iOS
+cd C:\GIT\ProjectM-iOS
+git init
+specify init --here --force --non-interactive --integration claude --script py
+```
+
+For a new project, use one of these approaches—not both. If the directory already contains work, commit or back it up before using `--force`.
+
+Verify:
+
+```text
+specify version
+specify integration list
+git status
+```
+
+Spec Kit installs Claude Code skills. Current Claude integration documentation shows the skill-style invocation, such as `/speckit-specify`. Use the exact skill names installed in `.claude/skills/` and surfaced by Claude Code. Do not assume every integration uses the dotted `/speckit.specify` spelling.
+
+## 12.3 Optional Python bootstrap script
+
+Save the following as `bootstrap_project.py` outside the target directory, then run it with `py bootstrap_project.py`. It creates the target folder and invokes Spec Kit without PowerShell.
+
+```python
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+
+PROJECT = Path(r"C:\GIT\ProjectM-iOS")
+
+def require(command: str) -> str:
+    path = shutil.which(command)
+    if not path:
+        raise SystemExit(f"Required command not found on PATH: {command}")
+    return path
+
+def run(args: list[str], cwd: Path | None = None) -> None:
+    print("+", " ".join(args))
+    subprocess.run(args, cwd=str(cwd) if cwd else None, check=True)
+
+def main() -> None:
+    require("git")
+    require("specify")
+    require("claude")
+
+    if PROJECT.exists() and any(PROJECT.iterdir()):
+        raise SystemExit(
+            f"{PROJECT} already exists and is not empty. "
+            "Review/back up it first; this script will not overwrite it."
+        )
+
+    PROJECT.mkdir(parents=True, exist_ok=True)
+    run(["git", "init"], cwd=PROJECT)
+    run([
+        "specify", "init", "--here", "--force", "--non-interactive",
+        "--integration", "claude", "--script", "py"
+    ], cwd=PROJECT)
+
+    print("\nInitialized:", PROJECT)
+    print("Next: open a terminal in this directory and run `claude`.")
+
+if __name__ == "__main__":
+    main()
+```
+
+If the repository already exists, do not run this script as-is. Back up and inspect the repository, then use the explicit `specify init --here ...` command after confirming the merge is safe.
+
+## 12.4 Launch Claude Code
+
+From the repository:
+
+```text
+cd C:\GIT\ProjectM-iOS
+claude
+```
+
+For a long-running task, use Claude Code's safer automatic permission mode if supported by the installed version:
+
+```text
+claude --permission-mode auto
+```
+
+Do **not** use `--dangerously-skip-permissions` on your everyday Windows workstation. It removes important approval barriers. Autonomous execution should still stop for destructive operations, dependency/license decisions, signing credentials, Apple Developer account actions, and any action that could disclose secrets or overwrite user data.
+
+---
+
+# 13. Spec-Kit workflow: exact command sequence
+
+Spec Kit's workflow commands are invoked **inside Claude Code**, not as terminal commands. The current Claude integration uses skill names such as `/speckit-constitution`, `/speckit-specify`, and `/speckit-plan`. Confirm installed names in `.claude/skills/`.
+
+Recommended production workflow:
+
+1. `/speckit-constitution`
+2. `/speckit-specify`
+3. `/speckit-clarify`
+4. `/speckit-plan`
+5. `/speckit-checklist`
+6. `/speckit-tasks`
+7. `/speckit-analyze`
+8. `/speckit-implement`
+9. `/speckit-converge`
+
+Use each command in sequence and review its generated artifacts before proceeding. The goal is autonomous implementation within explicit technical and safety gates—not blind acceptance of an unverified architecture.
+
+## 13.1 Constitution
+
+In Claude Code:
+
+```text
+/speckit-constitution
+```
+
+Prompt content:
+
+```text
+Create the project constitution for ProjectM-iOS.
+
+The product is an iPhone/iPad audio visualizer using the ProjectM C++ engine and MilkDrop-compatible presets. Its primary goal is user-authorized visualization of audio from other iOS applications where the current public Apple APIs and the selected source permit it.
+
+Establish mandatory principles:
+1. Public Apple APIs only. No private APIs, jailbreak assumptions, undocumented entitlements, DRM circumvention, or attempts to bypass app/system capture restrictions.
+2. Prove audio capture on physical devices before implementing the full visualizer.
+3. Prefer ScreenCaptureKit on OS versions where the required iOS APIs are available. Treat ReplayKit as a separately evaluated legacy adapter, not the default architecture.
+4. Microphone and in-app playback are explicit fallback sources and must be labeled accurately.
+5. Never claim universal system-audio capture or guaranteed Spotify/Apple Music compatibility.
+6. Keep capture, PCM processing, ProjectM, and rendering behind modular interfaces.
+7. Real-time callbacks must be bounded, non-blocking, allocation-conscious, and safe under interruption.
+8. Preserve ProjectM upstream compatibility and document all local patches.
+9. Pin dependencies and review licenses, preset redistribution rights, and App Store implications.
+10. Require unit tests, physical-device validation, performance measurement, privacy review, and architecture decision records.
+
+Define quality gates, coding conventions, security/privacy principles, test expectations, and rules for handling unknown Apple API behavior. Record that iOS builds require macOS/Xcode; Windows is for source/specification work only.
+```
+
+## 13.2 Product specification
+
+```text
+/speckit-specify
+```
+
+Prompt content:
+
+```text
+Specify ProjectM-iOS: a native iPhone/iPad application that visualizes eligible audio from other iOS applications using the ProjectM C++ engine and MilkDrop-compatible presets.
+
+User experience:
+- User opens ProjectM-iOS.
+- User chooses system/app capture and selects a source using Apple's supported system UI when available.
+- The app receives only the audio sample buffers permitted by the OS and selected source.
+- The app displays a full-screen real-time ProjectM visualization.
+- The user can select presets, favorite presets, switch presets, pause/stop capture, and see the active audio source and capture state.
+- Microphone and in-app playback are explicit fallback sources.
+- The UI must distinguish system/app capture, microphone, and in-app playback.
+
+Requirements:
+- Do not promise capture from every app.
+- Do not bypass DRM, private APIs, permissions, or protected playback restrictions.
+- Handle unsupported OS versions, no audio samples, silent samples, interruption, source changes, capture termination, and permission denial.
+- Do not record or upload audio by default.
+- Include a Phase 0 feasibility application and a physical-device source compatibility report before full ProjectM implementation.
+- Include iPhone/iPad responsive layouts and foreground lifecycle handling.
+
+Create measurable user stories and acceptance criteria. Keep implementation technology details for the plan. Make capture feasibility a blocking requirement before the full application is approved.
+```
+
+## 13.3 Clarify ambiguities
+
+```text
+/speckit-clarify
+```
+
+Instruct Claude to resolve, not guess:
+- Minimum iOS deployment version and whether iOS 27+ is the initial target.
+- Whether iOS 26 and earlier must be supported.
+- Exact ScreenCaptureKit iOS APIs and output types available in the chosen SDK.
+- Whether selected app audio can be received while ProjectM remains foregrounded.
+- Required background modes and picker behavior.
+- Whether a legacy ReplayKit adapter is necessary.
+- ProjectM upstream version, license, renderer backend, and iOS build support.
+- Whether the first release may ship with microphone and in-app audio only if external app capture is unavailable.
+- Minimum supported iPhone/iPad hardware.
+- Whether iPad is a launch requirement.
+
+If an answer requires Apple documentation or a physical-device experiment, create a research task or explicit assumption with an owner and exit criterion. Do not fabricate certainty.
+
+## 13.4 Technical plan
+
+```text
+/speckit-plan
+```
+
+Prompt content:
+
+```text
+Create the implementation plan for ProjectM-iOS.
+
+Proposed stack:
+- Swift and SwiftUI for the native application.
+- C++ for ProjectM and portable DSP.
+- Objective-C++ bridge between Swift and C++.
+- ScreenCaptureKit adapter on supported iOS versions, after API availability is verified.
+- Optional, isolated ReplayKit legacy adapter only if required and supported.
+- AVAudioEngine or the appropriate public capture API for microphone and app-owned audio.
+- Accelerate/vDSP for optional custom analysis and conversion.
+- ProjectM official C++ engine, pinned to a tag/commit.
+- Renderer backend selected only after inspecting upstream iOS support; prototype the supported backend and evaluate Metal for production.
+- CMake/Xcode build integration.
+- XCTest and physical-device test matrix.
+- GitHub Actions macOS runner for Xcode builds and tests.
+
+Architecture:
+1. AudioSource abstraction.
+2. Capture manager and source-specific adapters.
+3. PCM extractor/normalizer and bounded ring buffer.
+4. ProjectM Objective-C++ bridge.
+5. Renderer abstraction.
+6. SwiftUI UI and lifecycle coordinator.
+7. Diagnostics and privacy-safe telemetry.
+
+Plan in phases:
+A. Platform/API research and capture POC.
+B. Audio pipeline.
+C. ProjectM build and rendering proof.
+D. Integrated visualizer.
+E. Production hardening.
+
+Make Phase A a hard dependency for full external-audio implementation. Include ADRs for capture API, minimum iOS version, renderer, and dependency pinning. Include Windows/macOS division of responsibilities. Do not assume a broadcast extension is needed for ScreenCaptureKit on supported iOS versions.
+```
+
+## 13.5 Generate quality checklist
+
+```text
+/speckit-checklist
+```
+
+Prompt:
+
+```text
+Create a requirements quality checklist focused on iOS capture feasibility, public API compliance, source compatibility claims, privacy, lifecycle, real-time audio safety, ProjectM licensing/build support, renderer feasibility, and physical-device verification. Flag every requirement that cannot be proven by simulator-only tests.
+```
+
+## 13.6 Generate tasks
+
+```text
+/speckit-tasks
+```
+
+Require tasks to be:
+- Ordered by dependency.
+- Small enough to implement and test independently.
+- Tagged with phase and acceptance criteria.
+- Explicit about which tasks require a physical iPhone/iPad.
+- Explicit about which tasks require macOS/Xcode.
+- Blocked from full ProjectM work until the audio-capture gate is passed.
+
+## 13.7 Analyze consistency
+
+```text
+/speckit-analyze
+```
+
+Ask Claude to resolve all critical inconsistencies between specification, plan, tasks, and constitution before implementation. No task should claim universal capture or depend on an unverified private API.
+
+## 13.8 Implement Phase 0 first
+
+```text
+/speckit-implement
+```
+
+Before invoking implementation, tell Claude:
+
+```text
+Implement only Phase 0 tasks first. Do not implement the complete ProjectM engine, preset system, or Metal renderer yet.
+
+Build the smallest native iOS proof of concept that:
+1. Checks OS/API availability.
+2. Presents the supported ScreenCaptureKit system content-sharing picker on supported OS versions.
+3. Receives and inspects permitted audio sample buffers.
+4. Displays sample count, sample rate, channel count, timestamps, and RMS/peak level.
+5. Distinguishes no samples from silent samples.
+6. Includes a clearly labeled microphone fallback.
+7. Includes a deterministic in-app audio test source.
+8. Handles start, stop, interruption, permission denial, and stream errors.
+9. Produces a physical-device test report template and source compatibility matrix.
+
+Do not claim Spotify, Apple Music, or any other source works until non-silent audio samples have been observed on a physical device. Use only public APIs. Run all available tests and report tests that could not run because a Mac/device is unavailable.
+```
+
+## 13.9 Converge and continue phase by phase
+
+```text
+/speckit-converge
+```
+
+After Phase 0, review the remaining tasks and the capture report. Only then proceed to Phase 1.
+
+For each subsequent phase:
+1. `/speckit-tasks` if task decomposition needs updating.
+2. `/speckit-analyze`.
+3. `/speckit-implement` with a phase-limited instruction.
+4. `/speckit-converge`.
+5. Review code, tests, build logs, and acceptance evidence before moving to the next phase.
+
+---
+
+# 14. Autonomous Claude Code execution strategy
+
+## 14.1 Recommended autonomy level
+
+Use Claude Code's `auto` permission mode where available:
+
+```text
+claude --permission-mode auto
+```
+
+This is preferable to bypassing every permission check. Do not use:
+
+```text
+claude --dangerously-skip-permissions
+```
+
+on a normal workstation. Do not let an agent:
+- Delete or overwrite unreviewed user work.
+- Change signing certificates, provisioning profiles, or Apple account settings.
+- Read or print secrets, API keys, keychains, or credentials.
+- Add private APIs or undocumented entitlements.
+- Disable security checks to make tests pass.
+- Change the product promise from “eligible sources” to “all system audio.”
+- Commit or push changes without the configured review policy.
+
+## 14.2 Single orchestration prompt for Claude
+
+After initialization, open Claude Code and provide this orchestration prompt. It directs Claude to use the installed Spec Kit skills in sequence while respecting the phase gates.
+
+```text
+You are the implementation agent for ProjectM-iOS.
+
+Work autonomously within the repository and follow the installed GitHub Spec Kit workflow. Use the installed Spec Kit skills, not improvised replacement documents.
+
+First inspect:
+- repository status and existing files,
+- .specify configuration and installed skills,
+- current Xcode/SDK availability (if running on macOS),
+- available tests and build tools.
+
+Then execute the workflow in this order:
+1. Project constitution.
+2. Product specification.
+3. Clarification of unresolved platform and product assumptions.
+4. Technical plan and architecture decision records.
+5. Requirements quality checklist.
+6. Task generation.
+7. Cross-artifact analysis.
+
+Do not begin implementation until the specification, plan, and tasks agree.
+
+Implementation policy:
+- Implement Phase 0 only.
+- Prefer current public ScreenCaptureKit APIs on supported iOS versions.
+- Treat ReplayKit as deprecated/legacy and use it only if a documented target-OS requirement justifies it.
+- Include microphone and in-app audio fallback modes.
+- Never assume protected or third-party app audio is capturable.
+- Never use private APIs, undocumented entitlements, DRM circumvention, or jailbreak assumptions.
+- Do not implement the full ProjectM renderer until the physical-device capture feasibility gate has evidence.
+- Build and run tests where the host platform permits.
+- If the host is Windows, do not claim an iOS build succeeded; prepare the project and document that macOS/Xcode validation is pending.
+- Do not fabricate physical-device results.
+
+At the end of each phase:
+- run available tests,
+- inspect git diff,
+- update task status and implementation notes,
+- write a concise report listing completed work, test evidence, unresolved risks, and the next gate.
+
+Stop and request human input only for decisions that require Apple account credentials, signing secrets, destructive changes, unclear product decisions, or physical-device evidence that is unavailable. Otherwise continue through the authorized Phase 0 tasks.
+```
+
+**Important:** Claude may not invoke every skill automatically in every configuration. If it does not, invoke the listed `/speckit-*` skills manually in order. Spec Kit commands are the workflow controls; a free-form prompt alone is not a substitute for generated and reviewed `spec.md`, `plan.md`, `tasks.md`, and analysis artifacts.
+
+## 14.3 Phase-specific implementation prompts
+
+Do not ask Claude to implement all phases in one unrestricted run. Use one phase at a time:
+
+- Phase 0: capture API feasibility.
+- Phase 1: audio transport and DSP.
+- Phase 2: ProjectM build and bridge.
+- Phase 3: integrated visualizer.
+- Phase 4: hardening and release.
+
+This limits the chance that the agent builds a large renderer on top of a capture mechanism that cannot meet the product requirement.
+
+---
+
+# 15. macOS / Xcode build and CI requirements
+
+A Windows 11 workstation can host the repository, Python, Git, Spec Kit, and Claude Code. It cannot run Xcode or produce a native iOS device build locally.
+
+Use one of:
+- A local Mac with the required Xcode version.
+- A dedicated macOS build machine.
+- A GitHub Actions macOS runner.
+
+Example GitHub Actions workflow outline (Claude/Spec Kit should create and validate the exact project-specific scheme and destinations):
+
+```yaml
+name: iOS CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: xcodebuild -version
+
+      - name: Show available schemes
+        run: xcodebuild -list
+
+      - name: Build for simulator
+        run: |
+          xcodebuild \
+            -scheme ProjectM-iOS \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath DerivedData \
+            build
+
+      - name: Run tests
+        run: |
+          xcodebuild \
+            -scheme ProjectM-iOS \
+            -destination 'platform=iOS Simulator,name=iPhone 17' \
+            -derivedDataPath DerivedData \
+            test
+```
+
+This is a template, not a guaranteed working workflow. The agent must discover the actual scheme, deployment target, available simulator names, dependency setup, and Xcode version. Do not commit signing secrets. Device capture behavior still requires physical-device testing; simulator success is not proof of ScreenCaptureKit source compatibility.
+
+---
+
+# 16. Definition of done
+
+The project is not ready for release until all applicable items are true:
+
+- [ ] Product claims are limited to audio sources verified on supported devices.
+- [ ] ScreenCaptureKit availability and capture flow are documented for each supported OS.
+- [ ] Any ReplayKit fallback is isolated, justified, and validated against current Apple guidance.
+- [ ] Microphone and in-app playback are clearly labeled fallback modes.
+- [ ] No private APIs, undocumented entitlements, or DRM bypasses are present.
+- [ ] ProjectM upstream version and license are recorded.
+- [ ] Preset licensing and redistribution rights are reviewed.
+- [ ] Audio callbacks use bounded, safe, real-time-conscious processing.
+- [ ] Capture interruptions and failures are handled.
+- [ ] Physical-device source compatibility matrix is complete.
+- [ ] ProjectM renders known presets on supported hardware.
+- [ ] Performance and thermal behavior are measured.
+- [ ] Privacy behavior and policy are documented.
+- [ ] macOS/Xcode CI build and tests pass.
+- [ ] App Store API and policy review is complete.
+
+---
+
+# 17. Primary references
+
+Use Apple's current documentation and the official ProjectM/Spec Kit repositories. Re-check these sources when choosing the deployment target and SDK.
+
+### Apple
+
+- [ScreenCaptureKit framework](https://developer.apple.com/documentation/screencapturekit)
+- [SCStream](https://developer.apple.com/documentation/screencapturekit/scstream)
+- [SCStreamConfiguration](https://developer.apple.com/documentation/screencapturekit/scstreamconfiguration)
+- [Capturing screen content on iOS (Apple sample)](https://developer.apple.com/documentation/screencapturekit/capturing-screen-content-in-ios)
+- [ReplayKit RPBroadcastSampleHandler — deprecated](https://developer.apple.com/documentation/replaykit/rpbroadcastsamplehandler)
+- [ReplayKit startCapture — deprecated in favor of ScreenCaptureKit](https://developer.apple.com/documentation/replaykit/rpscreenrecorder/startcapture(handler:completionhandler:))
+- [AVAudioEngine](https://developer.apple.com/documentation/avfaudio/avaudioengine)
+- [Accelerate](https://developer.apple.com/documentation/accelerate)
+
+### ProjectM
+
+- [Official ProjectM GitHub repository](https://github.com/projectM-visualizer/projectm)
+- [ProjectM documentation](https://github.com/projectM-visualizer/projectm/tree/master/docs)
+
+### GitHub Spec Kit
+
+- [Official GitHub repository](https://github.com/github/spec-kit)
+- [Installation guide](https://github.com/github/spec-kit/blob/main/docs/installation.md)
+- [Spec-Driven Development quickstart](https://github.com/github/spec-kit/blob/main/docs/quickstart.md)
+- [Claude Code integration](https://github.github.com/spec-kit/integrations/claude.html)
+- [Core command reference](https://github.github.com/spec-kit/reference/core.html)
+
+### Claude Code
+
+- [Claude Code documentation](https://docs.anthropic.com/en/docs/claude-code/overview)
+- [Claude Code permission modes](https://docs.anthropic.com/en/docs/claude-code/iam)
+
+---
+
+## Final engineering recommendation
+
+Treat this as two linked projects:
+
+1. **Capture feasibility:** prove which selected external sources deliver usable audio samples through current public iOS APIs.
+2. **ProjectM visualizer:** build the portable audio pipeline, ProjectM bridge, renderer, and user experience around the proven capture contract.
+
+The first release should support only the sources demonstrated by physical-device evidence. This avoids spending substantial engineering effort on a technically attractive visualizer whose central system-audio capture requirement cannot be met for the intended apps.
