@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "projectm-ios/diagnostics-export/1",
+  "title": "CaptureLab diagnostics export (FR-021)",
+  "description": "Metadata only. MUST NOT contain audio samples, device identifiers, or account information.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "exportedAt", "device", "app", "session"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "exportedAt": { "type": "string", "format": "date-time" },
+    "testerNote": { "type": "string", "maxLength": 500 },
+    "device": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model", "osBuild"],
+      "properties": {
+        "model": { "type": "string", "description": "Hardware model identifier, e.g. iPhone17,1" },
+        "osVersion": { "type": "string" },
+        "osBuild": { "type": "string" }
+      }
+    },
+    "app": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["build"],
+      "properties": {
+        "version": { "type": "string" },
+        "build": { "type": "string" },
+        "toolchain": { "type": "string" }
+      }
+    },
+    "session": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceMode", "finalState", "audioArrived", "nonSilent", "sampleCount"],
+      "properties": {
+        "sourceMode": { "enum": ["systemAppCapture", "microphone", "inAppPlayback"] },
+        "finalState": {
+          "enum": ["notStarted", "waiting", "noAudioReceived", "silent", "active", "paused",
+                   "interrupted", "stopped", "endedBySystem"]
+        },
+        "stopReason": { "type": ["string", "null"] },
+        "audioArrived": { "type": "boolean" },
+        "nonSilent": { "type": "boolean" },
+        "sampleCount": { "type": "integer", "minimum": 0 },
+        "durationSeconds": { "type": "number", "minimum": 0 },
+        "formats": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["sampleRate", "channelCount"],
+            "properties": {
+              "sampleRate": { "type": "number", "exclusiveMinimum": 0 },
+              "channelCount": { "type": "integer", "minimum": 1 },
+              "sampleType": { "enum": ["float32", "int16", "int32"] },
+              "firstSeenSeconds": { "type": "number", "minimum": 0 }
+            }
+          }
+        },
+        "timing": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "startToFirstAudioMs": { "type": ["number", "null"], "minimum": 0 },
+            "bufferCadenceMeanMs": { "type": "number", "minimum": 0 },
+            "bufferCadenceMaxMs": { "type": "number", "minimum": 0 },
+            "droppedFrames": { "type": "integer", "minimum": 0 },
+            "lateBuffers": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "levels": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "peakDBFSMax": { "type": "number", "maximum": 0 },
+            "rmsDBFSMean": { "type": "number", "maximum": 0 }
+          }
+        },
+        "stateTransitions": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["atSeconds", "state"],
+            "properties": {
+              "atSeconds": { "type": "number", "minimum": 0 },
+              "state": { "type": "string" },
+              "reason": { "type": ["string", "null"] }
+            }
+          }
+        },
+        "lifecycleEvents": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["atSeconds", "event"],
+            "properties": {
+              "atSeconds": { "type": "number", "minimum": 0 },
+              "event": { "enum": ["background", "foreground", "lock", "unlock", "interruptionBegan",
+                                  "interruptionEnded", "routeChange", "streamStopped", "formatChange"] }
+            }
+          }
+        }
+      }
+    }
+  }
+}
