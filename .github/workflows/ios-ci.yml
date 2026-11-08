@@ -1,0 +1,73 @@
+# iOS CI (research R-12; tasks T011, T015). No signing secrets: builds and tests only.
+# Pin the runner image and Xcode version to the values recorded in ADR-0002 at Gate 0 (T010).
+name: iOS CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  docs-and-compliance:
+    # Runs on any OS; these checks are pure Python.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Script tests
+        run: python scripts/test_scripts.py
+      - name: Validate docs
+        run: python scripts/validate_docs.py
+      - name: Constitution compliance (required on every merge)
+        run: python scripts/check_compliance.py
+
+  build-and-test:
+    needs: docs-and-compliance
+    runs-on: macos-26            # TODO(T010): pin to the image that ships the ADR-0002 Xcode
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Select Xcode
+        run: |
+          xcodebuild -version
+          python3 scripts/verify_environment.py
+      - name: Install XcodeGen
+        run: brew install xcodegen   # TODO(T010): install the exact pinned version
+      - name: Package tests (host)
+        run: |
+          for pkg in AudioCore CaptureKit Diagnostics CaptureUI; do
+            swift test --package-path "Packages/$pkg"
+          done
+      - name: Generate project
+        run: xcodegen generate
+      - name: Discover simulators
+        id: sims
+        run: |
+          python3 - <<'EOF' >> "$GITHUB_OUTPUT"
+          import json, subprocess
+          data = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "-j", "devices", "available"]))
+          picks = {}
+          for runtime, devices in data["devices"].items():
+              if "iOS-26" in runtime or "iOS-27" in runtime:
+                  key = "26" if "iOS-26" in runtime else "27"
+                  phones = [d for d in devices if "iPhone" in d["name"]]
+                  if phones and key not in picks:
+                      picks[key] = phones[0]["udid"]
+          for key in ("26", "27"):
+              print(f"ios{key}={picks.get(key, '')}")
+          EOF
+      - name: Warn about missing runtimes
+        run: |
+          [ -n "${{ steps.sims.outputs.ios26 }}" ] || echo "::warning::No iOS 26 simulator runtime on this image; iOS 26 coverage comes from the physical device run (FR-032)."
+          [ -n "${{ steps.sims.outputs.ios27 }}" ] || echo "::warning::No iOS 27+ simulator runtime on this image."
+      - name: Build and test CaptureLab
+        run: |
+          for udid in "${{ steps.sims.outputs.ios26 }}" "${{ steps.sims.outputs.ios27 }}"; do
+            [ -n "$udid" ] || continue
+            xcodebuild -project ProjectM-iOS.xcodeproj -scheme CaptureLab \
+              -destination "id=$udid" -derivedDataPath DerivedData \
+              CODE_SIGNING_ALLOWED=NO build test
+          done

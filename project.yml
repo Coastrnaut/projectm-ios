@@ -1,0 +1,81 @@
+# XcodeGen project definition (research R-12). Generate on macOS with:  xcodegen generate
+# The generated ProjectM-iOS.xcodeproj is gitignored. Edit this file, not the project.
+#
+# Signing: DEVELOPMENT_TEAM and provisioning are set by a human in Xcode or via a local,
+# uncommitted xcconfig. Never by automation (Constitution: Security).
+# Entitlements / background modes: none (research R-16). scripts/check_compliance.py fails
+# the build if any are added here.
+name: ProjectM-iOS
+options:
+  bundleIdPrefix: org.projectmios
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: false
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    TARGETED_DEVICE_FAMILY: "1,2"          # iPhone and iPad device family (FR-041)
+    IPHONEOS_DEPLOYMENT_TARGET: "26.0"
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+packages:
+  AudioCore:
+    path: Packages/AudioCore
+  CaptureKit:
+    path: Packages/CaptureKit
+  CaptureUI:
+    path: Packages/CaptureUI
+  Diagnostics:
+    path: Packages/Diagnostics
+targets:
+  CaptureLab:
+    type: application
+    platform: iOS
+    sources:
+      - path: Apps/CaptureLab
+        excludes:
+          - "**/.gitkeep"
+    dependencies:
+      - package: AudioCore
+      - package: CaptureKit
+      - package: CaptureUI
+      - package: Diagnostics
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.CaptureLab   # separate app; tester-only (FR-090)
+        PRODUCT_NAME: CaptureLab
+        INFOPLIST_KEY_CFBundleDisplayName: CaptureLab
+        GENERATE_INFOPLIST_FILE: NO
+    info:
+      path: Apps/CaptureLab/Info.plist
+      properties:
+        CFBundleDisplayName: CaptureLab
+        UILaunchScreen: {}
+        UIApplicationSupportsIndirectInputEvents: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        # FR-019: identical to the Microphone explainer in contracts/ui-states.md
+        NSMicrophoneUsageDescription: "Microphone mode listens to sound in the room through your device's microphone. It does not capture audio directly from other apps."
+        # A capture usage-description key is added here only if RI-001 (task T035) shows one is required.
+schemes:
+  CaptureLab:
+    build:
+      targets:
+        CaptureLab: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      gatherCoverageData: true
+    # Archive is used for TestFlight internal/external testing only. CaptureLab is never
+    # submitted for App Store review (FR-090; docs/release/capturelab-distribution.md).
+    archive:
+      config: Release
