@@ -1,5 +1,6 @@
 // DiagnosticsSnapshot.swift — metadata-only export model (task T030; FR-020–FR-022;
-// contracts/diagnostics-export.schema.json, schemaVersion 1).
+// contracts/diagnostics-export.schema.json, schemaVersion 2: version 2 added session.stopDetail,
+// owner ruling 2026-11-08).
 //
 // Property names mirror the schema exactly (the schema sets additionalProperties: false).
 // Never contains audio samples, device identifiers (serial, vendor or advertising IDs), or
@@ -9,8 +10,10 @@ import Foundation
 
 public struct DiagnosticsSnapshot: Codable, Sendable, Equatable {
     public static let maxNoteLength = 500
+    /// Longest `session.stopDetail` kept (the schema's maxLength); longer details are cut.
+    public static let maxStopDetailLength = 300
 
-    public var schemaVersion: Int = 1
+    public var schemaVersion: Int = 2
     public var exportedAt: String
     public var testerNote: String?
     public var device: Device
@@ -34,6 +37,8 @@ public struct DiagnosticsSnapshot: Codable, Sendable, Equatable {
         public var sourceMode: String
         public var finalState: String
         public var stopReason: String?
+        /// Detail of the stop or failure, e.g. "… (SCStreamError -3824)"; nil when none.
+        public var stopDetail: String?
         public var audioArrived: Bool
         public var nonSilent: Bool
         public var sampleCount: Int
@@ -82,6 +87,7 @@ public struct DiagnosticsInput: Sendable {
     public var sourceMode: AudioSourceMode
     public var finalState: AudioState
     public var stopReason: StopReason?
+    public var stopDetail: String?
     public var hasVerifiedActiveAudio: Bool
     public var statistics: PCMSinkStatistics
     public var durationSeconds: Double
@@ -94,10 +100,12 @@ public struct DiagnosticsInput: Sendable {
     public init(sourceMode: AudioSourceMode, finalState: AudioState, stopReason: StopReason?,
                 hasVerifiedActiveAudio: Bool, statistics: PCMSinkStatistics, durationSeconds: Double,
                 formats: [(format: AudioFormat, firstSeenSeconds: Double)], peakDBFSMax: Float,
-                rmsDBFSMean: Float, transitions: [StateTransition], lifecycle: [(atSeconds: Double, event: String)]) {
+                rmsDBFSMean: Float, transitions: [StateTransition], lifecycle: [(atSeconds: Double, event: String)],
+                stopDetail: String? = nil) {
         self.sourceMode = sourceMode
         self.finalState = finalState
         self.stopReason = stopReason
+        self.stopDetail = stopDetail
         self.hasVerifiedActiveAudio = hasVerifiedActiveAudio
         self.statistics = statistics
         self.durationSeconds = durationSeconds
@@ -138,6 +146,8 @@ extension DiagnosticsSnapshot {
                 sourceMode: input.sourceMode.rawValue,
                 finalState: input.finalState.rawValue,
                 stopReason: input.stopReason?.code,
+                // Cut by Unicode scalars: JSON Schema's maxLength counts code points, not characters.
+                stopDetail: input.stopDetail.map { String(String.UnicodeScalarView($0.unicodeScalars.prefix(maxStopDetailLength))) },
                 audioArrived: stats.sampleCount > 0,
                 nonSilent: input.hasVerifiedActiveAudio,
                 sampleCount: stats.sampleCount,

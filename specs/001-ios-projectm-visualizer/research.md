@@ -67,12 +67,12 @@ Renderer/Platform/GLResolver.cpp).
   `missingBackgroundMode` (-3824, iOS/visionOS/tvOS only) without naming the mode or trigger. No
   Apple source covers device lock. The Change rule therefore has a concrete candidate,
   `screen-capture`. Owner ruling 2026-11-08: decide after T041, once its runs (without the mode)
-  show which stop codes leaving CaptureLab produces. Until then the test procedure is: start playback in the source app first, then stay in
-  CaptureLab (quickstart Scenario A). The current decision (no background mode) stands, and
+  show which stop codes leaving CaptureLab produces. Until then the test procedure is: start
+  playback in the source app first, then stay in CaptureLab (quickstart Scenario A). The current decision (no background mode) stands, and
   `scripts/check_compliance.py` still rejects any `UIBackgroundModes` key.
 - **Open until device testing** (T041): behavior on background, lock, unlock and switching to the
-  source app, with the stop code recorded. The export does not carry the `SCStreamError` code yet
-  (owner decision, `docs/platform-research/screencapturekit-ios.md`), so T041 needs that first.
+  source app, with the stop code recorded; the export carries it in `session.stopDetail`
+  (schemaVersion 2, owner ruling 2026-11-08).
 
 ## R-04 Microphone and In-App Playback
 

@@ -50,7 +50,8 @@ struct ExportView: View {
             formats: manager.formatsSeen.map { ($0.format, $0.firstSeenSeconds) },
             peakDBFSMax: manager.sessionPeakMaxDBFS, rmsDBFSMean: manager.sessionRMSMeanDBFS,
             transitions: manager.transitions,
-            lifecycle: manager.lifecycleLog.map { ($0.atSeconds, $0.event) })
+            lifecycle: manager.lifecycleLog.map { ($0.atSeconds, $0.event) },
+            stopDetail: manager.stopDetail)
         do {
             let snapshot = try DiagnosticsSnapshot.build(from: input, note: note,
                                                          device: DiagnosticsEnvironment.device(),

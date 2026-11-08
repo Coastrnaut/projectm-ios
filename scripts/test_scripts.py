@@ -176,7 +176,7 @@ class CaptureLabExportCheckTests(unittest.TestCase):
         self.root = Path(self.tmp.name) / "Devices"
 
     @staticmethod
-    def export(events, schema_version=1):
+    def export(events, schema_version=2):
         return {
             "schemaVersion": schema_version,
             "session": {"sourceMode": "inAppPlayback", "finalState": "active",
@@ -233,9 +233,9 @@ class CaptureLabExportCheckTests(unittest.TestCase):
             self.assertTrue(check_capturelab_export.check_export(data), bad)
 
     def test_wrong_schema_version_fails(self):
-        data = self.export([("background", 1.0), ("foreground", 2.0)], schema_version=2)
+        data = self.export([("background", 1.0), ("foreground", 2.0)], schema_version=1)
         self.assertTrue(check_capturelab_export.check_export(data))
-        self.assertTrue(check_capturelab_export.check_export({"schemaVersion": 1}))
+        self.assertTrue(check_capturelab_export.check_export({"schemaVersion": 2}))
 
     def test_custom_expect(self):
         data = self.export([("interruptionBegan", 1.0), ("interruptionEnded", 2.0)])

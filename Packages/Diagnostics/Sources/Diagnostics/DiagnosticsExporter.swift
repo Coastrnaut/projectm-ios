@@ -29,6 +29,7 @@ public enum DiagnosticsExporter {
             "App build: \(s.app.build)",
             "Source mode: \(s.session.sourceMode)",
             "Final state: \(s.session.finalState)" + (s.session.stopReason.map { " (\($0))" } ?? ""),
+            "Stop detail: \(s.session.stopDetail ?? "none")",
             "Audio arrived: \(s.session.audioArrived ? "yes" : "no")",
             "Non-silent audio verified: \(s.session.nonSilent ? "yes" : "no")",
             "Samples: \(s.session.sampleCount) over \(String(format: "%.1f", s.session.durationSeconds)) s",

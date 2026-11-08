@@ -84,9 +84,9 @@ unavailable there. In every System/App Capture run:
   microphone-in-use indicators were visible, and where (FR-089; the microphone indicator should
   not appear, FR-069); and any SCStreamError code shown, or "none shown". Keep the note under 500
   characters (the export refuses longer notes); use short answers such as "prompt: no;
-  indicators: <where seen>; code: none shown". Until the export carries that code (owner decision 2
-  in `docs/platform-research/screencapturekit-ios.md`), the note is the only record of it: the
-  export does not carry it, and "Ended by system" does not show it.
+  indicators: <where seen>; code: none shown". The export also records the stop or failure detail,
+  with any SCStreamError code, in `session.stopDetail` (DiagnosticsView shows it as "Stop
+  detail"); the "Ended by system" banner itself does not show the code.
 
 1. Install CaptureLab on each FR-032 device, built with the iOS 27.2 SDK pinned in ADR-0002. A
    build from an SDK without ScreenCaptureKit (such as the iOS 26.5 SDK on CI) has no capture
@@ -116,9 +116,8 @@ unavailable there. In every System/App Capture run:
    design. CaptureLab declares no background mode. Adding `screen-capture` is allowed only under
    R-03's change rule (a mode needed to keep a foreground session alive), through an ADR-0001
    amendment approved by the project owner and a narrow `check_compliance.py` exception; whether
-   capture that survives leaving CaptureLab falls under that rule is an owner decision. Run T041
-   only after the export carries the SCStreamError code (owner decision 2 in
-   `docs/platform-research/screencapturekit-ios.md`).
+   capture that survives leaving CaptureLab falls under that rule is an owner decision (ruled
+   2026-11-08: decide after T041). The export records each stop code in `session.stopDetail`.
 6. For each FR-030 source, run 10 minutes in the foreground and export (FR-021).
 7. Fill `docs/test-reports/compatibility-report.md` rows (FR-031) and rate each Works / Partial /
    Does not work.

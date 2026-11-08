@@ -132,6 +132,23 @@ final class CaptureManagerTests: XCTestCase {
         XCTAssertEqual(manager.state, .waiting)
     }
 
+    /// Owner ruling 2026-11-08: the detail of a system stop (with its SCStreamError code) is kept
+    /// for the export, and a new attempt clears it.
+    func testStopDetailIsKeptForTheExportAndClearedOnNewAttempt() async {
+        await manager.select(.systemAppCapture)
+        capture.emit(.endedBySystem("The stream was stopped (SCStreamError -3824)"))
+        await settle()
+        XCTAssertEqual(manager.state, .endedBySystem)
+        XCTAssertEqual(manager.stopDetail, "The stream was stopped (SCStreamError -3824)")
+
+        await manager.select(.microphone)
+        XCTAssertNil(manager.stopDetail, "a new start attempt clears the previous detail")
+
+        mic.startError = SourceError(.error("engine failed (code 42)"))
+        await manager.restart()
+        XCTAssertEqual(manager.stopDetail, "engine failed (code 42)", "start failures keep their detail")
+    }
+
     func testInterruptionIgnoredForSystemCaptureButNotForMicrophone() async {
         await manager.select(.systemAppCapture)
         capture.emit(.interruptionBegan)

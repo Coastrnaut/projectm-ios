@@ -117,13 +117,14 @@ Internal normalized format (research R-05): Float32, interleaved stereo, 44,100 
 | peakDBFS, rmsDBFS | Float (last 1 s window) |
 | droppedFrames, lateBuffers | UInt64 (ring overflow, cadence > 2× mean) |
 | startToFirstAudio | ms, nil until the first data |
+| stopDetail | String? (≤ 300 code points): detail of the last stop or failure, e.g. "… (SCStreamError -3824)"; exported as `session.stopDetail` (schemaVersion 2) |
 
 Never contains samples or device identifiers.
 
 ## DiagnosticsExport (FR-021)
 
 Serialized snapshot plus run metadata (device model, OS build, app build, timestamps, optional tester
-note). Schema: [contracts/diagnostics-export.schema.json](contracts/diagnostics-export.schema.json).
+note). schemaVersion 2 (2026-11-08) added the optional `session.stopDetail`. Schema: [contracts/diagnostics-export.schema.json](contracts/diagnostics-export.schema.json).
 
 ## CompatibilityTestRecord (FR-031) — lives in `docs/test-reports/`, not in the app
 

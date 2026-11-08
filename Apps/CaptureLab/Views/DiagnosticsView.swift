@@ -20,6 +20,9 @@ struct DiagnosticsView: View {
                 }
                 row("State", UIStrings.state(manager.state))
                 row("Non-silent audio verified", manager.hasVerifiedActiveAudio ? "Yes" : "No")
+                if let detail = manager.stopDetail {
+                    row("Stop detail", detail)   // also exported as session.stopDetail
+                }
             }
             Section("Samples") {
                 row("Sample count", "\(s.sampleCount)")

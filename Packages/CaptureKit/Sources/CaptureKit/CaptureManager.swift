@@ -26,6 +26,10 @@ public final class CaptureManager {
     public private(set) var activeMode: AudioSourceMode?
     public private(set) var state: AudioState = .notStarted
     public private(set) var stopReason: StopReason?
+    /// Detail of the last stop or failure in this session, e.g. a ScreenCaptureKit error with
+    /// "(SCStreamError -3824)". Exported as `session.stopDetail` (owner ruling 2026-11-08) so
+    /// RI-003 evidence can tell stop causes apart; nil when the source gave no detail.
+    public private(set) var stopDetail: String?
     public private(set) var levels = LevelMeter.Levels.silent
     public private(set) var statistics = PCMSinkStatistics()
     public private(set) var prolongedSilenceHint = false
@@ -186,6 +190,7 @@ public final class CaptureManager {
         pauseReason = nil
         state = update.state
         stopReason = nil
+        stopDetail = nil
         levels = .silent
         statistics = update.statistics
         prolongedSilenceHint = false
@@ -263,8 +268,9 @@ public final class CaptureManager {
             case .failed(let reason):
                 await self.stopCurrent()
                 self.apply(.failed(reason))
-            case .endedBySystem:
+            case .endedBySystem(let detail):
                 await self.stopCurrent()
+                self.stopDetail = detail
                 self.apply(.endedBySystem)
             case .formatChanged:
                 break
@@ -273,6 +279,10 @@ public final class CaptureManager {
     }
 
     private func apply(_ event: LifecycleEvent) {
+        switch event {
+        case .failed(.error(let detail)), .startFailed(.error(let detail)): stopDetail = detail
+        default: break
+        }
         let update = analyzer.apply(event)
         lastSequence = max(lastSequence, update.sequence)
         syncTransitions()

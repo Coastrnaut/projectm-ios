@@ -7,7 +7,7 @@
   "additionalProperties": false,
   "required": ["schemaVersion", "exportedAt", "device", "app", "session"],
   "properties": {
-    "schemaVersion": { "const": 1 },
+    "schemaVersion": { "const": 2 },
     "exportedAt": { "type": "string", "format": "date-time" },
     "testerNote": { "type": "string", "maxLength": 500 },
     "device": {
@@ -41,6 +41,7 @@
                    "interrupted", "stopped", "endedBySystem"]
         },
         "stopReason": { "type": ["string", "null"] },
+        "stopDetail": { "type": ["string", "null"], "maxLength": 300 },
         "audioArrived": { "type": "boolean" },
         "nonSilent": { "type": "boolean" },
         "sampleCount": { "type": "integer", "minimum": 0 },

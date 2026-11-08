@@ -38,6 +38,28 @@ final class DiagnosticsTests: XCTestCase {
         XCTAssertEqual(errors, [])
     }
 
+    func testStopDetailIsExportedValidAndTruncated() throws {
+        var withDetail = input()
+        withDetail.stopReason = .endedBySystem
+        withDetail.stopDetail = "The stream was stopped (SCStreamError -3824)"
+        let snap = try DiagnosticsSnapshot.build(from: withDetail, note: nil, device: device, app: app)
+        XCTAssertEqual(snap.schemaVersion, 2)
+        XCTAssertEqual(snap.session.stopDetail, "The stream was stopped (SCStreamError -3824)")
+
+        let data = try DiagnosticsExporter.encode(snap)
+        let json = try JSONSerialization.jsonObject(with: data)
+        let url = try XCTUnwrap(Bundle.module.url(forResource: "diagnostics-export.schema", withExtension: "json"))
+        let schema = try JSONSerialization.jsonObject(with: Data(contentsOf: url))
+        var errors: [String] = []
+        MiniSchemaValidator.validate(json, against: schema as! [String: Any], path: "$", errors: &errors)
+        XCTAssertEqual(errors, [])
+        XCTAssertTrue(DiagnosticsExporter.text(snap).contains("Stop detail: The stream was stopped (SCStreamError -3824)"))
+
+        withDetail.stopDetail = String(repeating: "x", count: 1000)
+        let long = try DiagnosticsSnapshot.build(from: withDetail, note: nil, device: device, app: app)
+        XCTAssertEqual(long.session.stopDetail?.count, DiagnosticsSnapshot.maxStopDetailLength)
+    }
+
     func testNoIdentifiersInExport() throws {
         let text = String(decoding: try DiagnosticsExporter.encode(try snapshot()), as: UTF8.self)
         for forbidden in ["identifierForVendor", "advertisingIdentifier", "serial", "udid", "UDID", "IDFA", "IDFV"] {

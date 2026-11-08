@@ -392,8 +392,9 @@ Each edge case below maps to a functional requirement.
 - **FR-021**: The feasibility app MUST let the tester export a diagnostics summary, only when the
   tester taps Export, as a human-readable file and a structured machine-readable file shared through
   the system share sheet. Contents: device model, OS build, app build, source mode, buffer arrival,
-  non-silence result, sample rate, channel count, timing statistics (FR-022), and an optional
-  free-text note the tester types (e.g., the source app's name; limited to 500 characters, with an
+  non-silence result, sample rate, channel count, timing statistics (FR-022), the stop reason and
+  stop detail (for System/App Capture including the OS's stop code; owner ruling 2026-11-08), and an
+  optional free-text note the tester types (e.g., the source app's name; limited to 500 characters, with an
   on-screen reminder not to enter personal information). It MUST NOT contain raw audio,
   device identifiers (serial number, advertising or vendor identifiers), or account information.
 - **FR-022**: The feasibility app MUST record dropped or late buffers and start-to-first-audio time.

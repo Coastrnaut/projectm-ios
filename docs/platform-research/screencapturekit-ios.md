@@ -341,9 +341,9 @@ In `Packages/CaptureKit/Sources/CaptureKit/ScreenCapture/SCKStreamDriver.swift` 
    system", as US6-AS3 requires. Other start errors → `error`, code kept.
 8. **Swift 6.** `SCContentFilter` crosses the picker continuation in an `@unchecked Sendable` handoff
    struct; picker callbacks hop to the main actor because their queue is undocumented.
-9. **Known gap.** `Packages/CaptureKit/Sources/CaptureKit/CaptureManager.swift:213` drops the
-   `endedBySystem` detail. The export records only the event `streamStopped` and the StopReason
-   `endedBySystem`, so the SCStreamError code never reaches it (owner decision 2).
+9. **Stop detail.** `CaptureManager` keeps the `endedBySystem` detail and start-failure
+   descriptions as `stopDetail`, and the export carries it as `session.stopDetail` (schemaVersion
+   2, owner decision 2), so -3817, -3821 and -3824 can be told apart.
 
 Configuration decisions (owner may revisit): FR-008 names iOS/iPadOS 27.0. CaptureLab's Info.plist
 has `NSScreenCaptureUsageDescription` with the `contracts/ui-states.md` text (FR-019), no background
@@ -373,7 +373,8 @@ as FR-031 compatibility evidence.
    archive's `.entitlements`. A non-Apple post claims one is needed [f856067]. **T040 session, extra check.**
 6. **Background, lock and -3824.** Test on D1 and D2 during capture: background, lock, unlock and a
    switch to the source app. Record the stop code and audio-timestamp gaps without `screen-capture`,
-   then with it only if the owner approves (decision 1). Needs decision 2 first. Lifecycle events
+   then with it only if the owner approves (decision 1); the export's `session.stopDetail` records
+   the code. Lifecycle events
    are timestamped when the main actor handles them (on the iPadOS 26.5 simulator, `background`
    carried the resume time), so check ordering. A non-Apple report saw -3824 [f840821]. **T041.**
 7. **Capture indicator with a hidden status bar (FR-089).** Test: during capture on D1 (Dynamic

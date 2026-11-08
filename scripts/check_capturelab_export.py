@@ -5,7 +5,7 @@ CaptureLabUITests.testBackgroundForegroundAreExported drives In-App Playback thr
 foreground and Export on a simulator, but XCUITest cannot read the app's files. This script reads
 the export the test wrote and checks the lifecycle events in it:
 
-  * the file is a CaptureLab export with schemaVersion 1;
+  * the file is a CaptureLab export with schemaVersion 2;
   * it prints sourceMode, finalState and lifecycleEvents;
   * every lifecycleEvents[].atSeconds is a non-negative number and the times never decrease;
   * the expected events (default: background, foreground) appear in that order, possibly with
@@ -41,6 +41,7 @@ DEVICES_ROOT = Path.home() / "Library" / "Developer" / "CoreSimulator" / "Device
 METADATA_PLIST = ".com.apple.mobile_container_manager.metadata.plist"
 EXPORT_GLOB = "CaptureLab-*.json"
 DEFAULT_EXPECT = ("background", "foreground")
+SCHEMA_VERSION = 2  # contracts/diagnostics-export.schema.json (2 added session.stopDetail)
 UDID_RE = re.compile(r"^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$")
 
 
@@ -90,8 +91,8 @@ def load_export(path: Path) -> dict:
 def check_export(data: dict, expect: tuple[str, ...] = DEFAULT_EXPECT) -> list[str]:
     """Returns a list of problems; empty when the export passes."""
     problems: list[str] = []
-    if data.get("schemaVersion") != 1:
-        problems.append(f"schemaVersion is {data.get('schemaVersion')!r}, expected 1")
+    if data.get("schemaVersion") != SCHEMA_VERSION:
+        problems.append(f"schemaVersion is {data.get('schemaVersion')!r}, expected {SCHEMA_VERSION}")
     session = data.get("session")
     if not isinstance(session, dict):
         return problems + ["missing session object"]
@@ -130,6 +131,7 @@ def describe(data: dict) -> list[str]:
         f"schemaVersion: {data.get('schemaVersion')!r}",
         f"sourceMode: {session.get('sourceMode')!r}",
         f"finalState: {session.get('finalState')!r}",
+        f"stopReason: {session.get('stopReason')!r}, stopDetail: {session.get('stopDetail')!r}",
         "lifecycleEvents:",
     ]
     events = session.get("lifecycleEvents")
