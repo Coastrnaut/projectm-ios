@@ -66,8 +66,8 @@ Renderer/Platform/GLResolver.cpp).
   `screen-capture` for capturing in the background, and the SDK has `SCStreamError`
   `missingBackgroundMode` (-3824, iOS/visionOS/tvOS only) without naming the mode or trigger. No
   Apple source covers device lock. The Change rule therefore has a concrete candidate,
-  `screen-capture`; whether background capture falls under the rule is an owner decision after
-  T041. Until then the test procedure is: start playback in the source app first, then stay in
+  `screen-capture`. Owner ruling 2026-11-08: decide after T041, once its runs (without the mode)
+  show which stop codes leaving CaptureLab produces. Until then the test procedure is: start playback in the source app first, then stay in
   CaptureLab (quickstart Scenario A). The current decision (no background mode) stands, and
   `scripts/check_compliance.py` still rejects any `UIBackgroundModes` key.
 - **Open until device testing** (T041): behavior on background, lock, unlock and switching to the
@@ -269,7 +269,7 @@ set is listed in `project.yml` and reviewed in Phase E.
 |------|---------|--------|---------------|
 | R-01 exact toolchain | — | Gate 0 | ADR-0002 updated |
 | R-02 ScreenCaptureKit iOS surface | RI-001, RI-004 | Gate 0 | docs/platform-research/screencapturekit-ios.md |
-| R-03 background behavior | RI-003 | Gates 0, 2 | platform research + report rows |
+| R-03 background behavior | RI-003 | Gate 2 (owner ruling 2026-11-08) | platform research + report rows |
 | R-08 renderer | RI-005 | Gate 3 | ADR-0003 accepted |
 | R-09 preset licenses | RI-008 | Gate 3 | Presets/LICENSES.md |
 | R-10 LGPL review | RI-007 | Stage 2 entry / release | docs/adr/0005-lgpl-compliance.md |

@@ -672,8 +672,8 @@ stated as fact in the plan until its exit criterion is met.
   claimable sources): Whether audio from the selected source arrives, non-silent, while the
   visualizer stays in the foreground, per source in the FR-030 matrix. *Exit*: compatibility report
   entries (FR-031) with diagnostics exports from physical devices.
-- **RI-003 — Background modes and picker behavior** (blocks Gates 0 and 2; updates FR-050,
-  FR-054): Required usage descriptions and background modes; what the system picker allows; whether
+- **RI-003 — Background modes and picker behavior** (blocks Gate 2; updates FR-050, FR-054;
+  owner ruling 2026-11-08: not part of Gate 0, whose criteria are RI-001, RI-004 and the two ADRs): Required usage descriptions and background modes; what the system picker allows; whether
   capture survives backgrounding, device lock, and the source app changing. *Exit*: documented
   configuration plus device test results for each lifecycle event in User Story 7.
 - **RI-004 — iOS 26 capture availability** (blocks Gate 0; updates FR-008, FR-004): Confirm that

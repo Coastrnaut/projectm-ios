@@ -53,9 +53,10 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
 - Gate 0 research done (T035): `docs/platform-research/screencapturekit-ios.md`. ADR-0001 and
   ADR-0002 accepted by T035, pending owner review. Nothing has run on a device yet. The iOS
   Simulator SDK has no ScreenCaptureKit, so System/App Capture can only be tested on D1/D2.
-- Owner decisions open (research doc, "Owner decisions needed"): the `screen-capture` background
-  mode; exporting the SCStreamError stop code (needed before T041); a capture-specific reason for
-  -3801 and for `isAvailable` false (FR-004); whether RI-003 is part of Gate 0; an `xcode-27` CI job.
+- Owner rulings 2026-11-08 (research doc, "Owner decisions"): `screen-capture` background mode
+  decided after T041; the export carries `session.stopDetail`; new StopReason
+  `screenRecordingNotAllowed` for -3801 and `isAvailable` false; RI-003 is checked at Gate 2, not
+  Gate 0; a compile-only CI job runs on the `xcode-27` image.
 - Test devices (final, recorded by T017 in `docs/test-reports/devices.md`; all paired, Developer
   Mode on): D1 iPhone 15 `iPhone15,4` iOS 27.0.1 (reference), D2 iPad Pro M5 `iPad17,3`
   iPadOS 27.2, D3 iPad A16 `iPad15,7` iPadOS 26.5.
@@ -64,7 +65,7 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
 
 1. Done 2026-11-08: T010, T017, T035 (Gate 0 research), T037 and the Mac-verifiable Phase A tasks.
 2. Before each work session: `python3 scripts/verify_environment.py` must exit 0.
-3. Owner: rule on the open decisions above; open `Previews.swift` in Xcode's canvas to close T033.
+3. Owner: open `Previews.swift` in Xcode's canvas to close T033; review the ADR-0001/0002 acceptances.
 4. `xcodegen generate`, then build and run CaptureLab on D1, D2 and D3 (set the signing team by hand).
 5. Run the device tasks (T040 onward) following `specs/001-ios-projectm-visualizer/quickstart.md`
    (Scenario A rules: start playback first, stay in CaptureLab, fill the tester note).

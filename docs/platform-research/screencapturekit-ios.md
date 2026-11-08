@@ -1,12 +1,12 @@
 # ScreenCaptureKit on iOS — platform research (RI-001, RI-003 configuration, RI-004; task T035)
 
 **Status: RI-001 and RI-004 inventory written 2026-11-08** from the iOS 27.2 SDK and current Apple
-documentation. Gate 0's documentary criteria (`spec.md` Gate 0 row: RI-001 and RI-004 exit criteria,
-ADR-0001 and ADR-0002 accepted) are met by task T035, **pending the project owner's review of those
-acceptances**. The owner also rules whether RI-003 is part of Gate 0: `spec.md` lists RI-003 as
-blocking Gates 0 and 2, but the Gate 0 row does not name it. RI-003 is answered here only for
-configuration; its device half waits for T041. Behavior questions the sources cannot settle are
-listed with the device task that settles them. Nothing here shows any source works.
+documentation. Gate 0's criteria (`spec.md` Gate 0 row: RI-001 and RI-004 exit criteria, ADR-0001
+and ADR-0002 accepted) are met by task T035, **pending the project owner's review of those
+acceptances**. By owner ruling (2026-11-08), RI-003 is not part of Gate 0: its configuration part
+is answered here and its device part is checked at Gate 2 (T041). Behavior questions the sources
+cannot settle are listed with the device task that settles them. Nothing here shows any source
+works.
 
 Device tasks: **T040** US1 device scenarios, including RI-002; **T041** RI-003 lifecycle evidence;
 **T049** US2 device scenarios; **T050** allocation trace. Devices (`docs/test-reports/devices.md`):
@@ -404,31 +404,29 @@ as FR-031 compatibility evidence.
 
 T041 records its results in this file.
 
-## Owner decisions needed
+## Owner decisions (ruled 2026-11-08)
 
-1. **Background mode `screen-capture` (ADR-0001 amendment).** Apple documents it for capture in the
-   background [bgmodes], and -3824 exists (`Headers/SCError.h:38`). Research R-03 allows only a mode
-   ScreenCaptureKit needs to keep a foreground session alive, through an owner-approved ADR-0001
-   amendment. R-16 allows background modes only under R-03's change rule, and
-   `scripts/check_compliance.py:40` currently rejects any `UIBackgroundModes` key. Decide
-   after T041's first run: (a) amend ADR-0001, stating whether capture while the tester is in the
-   source app counts under R-03, add only `screen-capture` to CaptureLab's Info.plist (Xcode's
-   capability editor cannot add it) and a narrow `check_compliance.py` exception; or (b) add nothing
-   and accept that leaving CaptureLab ends capture ("Ended by system", FR-050). An Apple DTS reply (Aug 2026)
-   said "This should now be resolved"; the developer (non-Apple) then reported that the upload error
-   for `screen-capture` no longer appeared [staff], [f840821]. Only that poster confirmed it, and it
-   concerns upload validation only, not -3824. It is unverified for CaptureLab until a TestFlight
-   upload (FR-090; CaptureLab is TestFlight-only).
-2. **Export the SCStreamError code.** Today -3817, -3821 and -3824 look the same in an export (driver
-   decision 9), which makes T041 evidence ambiguous. Options: put the code in
-   `stateTransitions[].reason`, which today holds the StopReason code (a change of meaning), or add a
-   field to `contracts/diagnostics-export.schema.json` (`lifecycleEvents[].event` is a closed enum).
-   Needed before T041.
-3. **Capture-specific StopReason for -3801 (`userDeclined`).** Apple describes -3801 as Screen
-   Recording permission not granted [userdeclined]. The driver shows it as "Not started — cancelled"
-   because the `permissionDenied` message in `contracts/ui-states.md` is about the microphone. The
-   current mapping follows US1-AS4 ("cancels or declines the system prompt" → "Not started —
-   cancelled", `spec.md` US1 scenario 4). A capture-specific reason would change US1-AS4, FR-015,
-   `contracts/ui-states.md` and `StopReason`. Related:
-   -3817 shows "Ended by system", as US6-AS3 requires, although Apple's docs treat it as an
-   intentional user action [didstop]; confirm or change.
+1. **Background mode `screen-capture`: decide after T041.** Apple documents it for capture in the
+   background [bgmodes], and -3824 exists (`Headers/SCError.h:38`); research R-03 allows a mode only
+   through an owner-approved ADR-0001 amendment, and `scripts/check_compliance.py:40` rejects any
+   `UIBackgroundModes` key. T041 first runs without the mode and records the stop codes; then the
+   owner either amends ADR-0001 (adding only `screen-capture` and a narrow compliance exception) or
+   accepts that leaving CaptureLab ends capture ("Ended by system", FR-050). Until then testers start
+   playback first and stay in CaptureLab (quickstart Scenario A). Upload note: an Apple DTS reply (Aug
+   2026) said "This should now be resolved", and the non-Apple poster then reported that the upload
+   error for `screen-capture` no longer appeared [staff], [f840821]; that concerns upload validation
+   only, not -3824, and is unverified for CaptureLab until a TestFlight upload (FR-090).
+2. **Export the stop detail: new export field.** The export gets an optional `session.stopDetail`
+   that carries the stop or failure description, including "(SCStreamError <code>)", so -3817, -3821
+   and -3824 can be told apart in T041 evidence (driver decision 9).
+3. **Capture-specific reason: added.** A declined screen-recording permission (-3801) and an iOS 27
+   device where screen recording is not allowed (`isAvailable` false) use a new StopReason,
+   `screenRecordingNotAllowed` ("Screen recording not allowed"), instead of "Not started — cancelled"
+   and a generic error; the chooser shows the mode unavailable with that text when `isAvailable` is
+   false. FR-004, FR-015, US1-AS4, `contracts/ui-states.md` and `data-model.md` change with it. Not
+   ruled, unchanged: -3817 shows "Ended by system", as US6-AS3 requires, although Apple's docs treat
+   it as an intentional user action [didstop].
+4. **RI-003 and Gate 0: Gate 2 only.** Gate 0 needs RI-001, RI-004 and the two ADRs; RI-003's device
+   part is checked at Gate 2 (T041).
+5. **CI on Xcode 27: added.** A compile-only CI job on GitHub's `xcode-27` image builds the capture
+   driver and CaptureLab for iOS devices on every push (ADR-0002).

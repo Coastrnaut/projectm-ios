@@ -1,9 +1,9 @@
 # ADR-0001: System/App Capture API
 
-- **Status**: Accepted by task T035 (Gate 0, 2026-11-08); pending project-owner review. The owner
-  may revisit the T035 choices: no background mode, the usage key, no entitlement, 64 × 64, and
-  `-3801` shown as cancelled. Gate 0 is not presented as passed for RI-003 until the owner rules
-  on it (see Context).
+- **Status**: Accepted by task T035 (Gate 0, 2026-11-08); pending project-owner review. Owner
+  rulings 2026-11-08: the background mode is decided after T041; -3801 and a device where screen
+  recording is not allowed use the new reason `screenRecordingNotAllowed`; RI-003 is not part of
+  Gate 0. The owner may still revisit the usage key, no entitlement, and 64 × 64.
 - **Date**: 2026-11-07 (accepted 2026-11-08)
 - **Spec**: FR-002, FR-003, FR-004, FR-008, FR-009, FR-013, FR-014, FR-015, FR-019, FR-050, FR-054,
   FR-055, FR-062, FR-069, FR-089 · **Research**: R-02, R-03, R-16 · **RI**: RI-004 resolved
@@ -31,10 +31,8 @@ full inventory is in `docs/platform-research/screencapturekit-ios.md` (T035 vers
 CaptureLab has not run
 on a device yet. Nothing here shows that any app's audio can be captured (Constitution V, FR-062).
 
-The spec lists RI-003 as blocking Gate 0 (spec RI-003; research.md traceability: R-03 → Gates 0,
-2), while the Gate 0 row of the gate table names only RI-001 and RI-004. This ADR covers only
-RI-003's configuration part; the device part (T041) is open. Whether Gate 0 can pass with T041
-pending is for the project owner to confirm.
+RI-003 is not part of Gate 0 (owner ruling 2026-11-08; the Gate 0 row names only RI-001 and
+RI-004). This ADR covers RI-003's configuration part; its device part is checked at Gate 2 (T041).
 
 ## Decision
 
