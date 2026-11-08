@@ -52,7 +52,8 @@ jobs:
 
   build-and-test-apple:
     needs: docs-and-compliance
-    # TODO(T010): pin to the image that ships the Xcode recorded in ADR-0002.
+    # TODO(T010): pin to the image that ships the Xcode recorded in ADR-0002. As of 2026-11-08,
+    # macos-latest is macos-26-arm64 with Xcode up to 26.6 (iOS 26.6 SDK) — no iOS 27 SDK yet.
     runs-on: macos-latest
     timeout-minutes: 45
     steps:
@@ -72,6 +73,20 @@ jobs:
         run: |
           python3 scripts/verify_environment.py || \
             echo "::warning::Toolchain not yet pinned in ADR-0002 (task T010); verify_environment.py reported mismatches."
+      - name: Probe the iOS SDK for ScreenCaptureKit (input to T035; not a substitute for it)
+        run: |
+          SDK=$(xcrun --sdk iphoneos --show-sdk-path)
+          echo "iOS SDK: $(xcrun --sdk iphoneos --show-sdk-version) at $SDK"
+          FW="$SDK/System/Library/Frameworks/ScreenCaptureKit.framework"
+          if [ -d "$FW" ]; then
+            echo "ScreenCaptureKit.framework: PRESENT in the iOS SDK — SCKStreamDriver.swift is compiled for iOS"
+            for sym in SCContentSharingPicker SCStreamConfiguration SCStreamOutputTypeAudio capturesAudio captureMicrophone excludesCurrentProcessAudio; do
+              echo "--- $sym"
+              grep -rhn "$sym" "$FW/Headers" 2>/dev/null | head -4 || true
+            done
+          else
+            echo "::warning::ScreenCaptureKit.framework is ABSENT from iOS SDK $(xcrun --sdk iphoneos --show-sdk-version); SCKStreamDriver.swift is compiled out. The capture path needs the iOS 27 SDK (Xcode 27, task T010) to compile."
+          fi
       - name: Install XcodeGen
         run: brew install xcodegen   # TODO(T010): install the exact pinned version
       - name: Package tests (macOS host)
@@ -85,19 +100,18 @@ jobs:
         run: |
           for pkg in AudioCore CaptureKit Diagnostics CaptureUI; do
             echo "::group::xcodebuild $pkg (generic iOS)"
-            (cd "Packages/$pkg" && xcodebuild -scheme "$pkg" -destination 'generic/platform=iOS' \
+            (cd "Packages/$pkg" && xcodebuild -quiet -scheme "$pkg" -destination 'generic/platform=iOS' \
               -derivedDataPath "$RUNNER_TEMP/dd-$pkg" -skipPackagePluginValidation \
-              CODE_SIGNING_ALLOWED=NO build | tail -40; exit ${PIPESTATUS[0]})
+              CODE_SIGNING_ALLOWED=NO build)
             echo "::endgroup::"
           done
       - name: Generate project
         run: xcodegen generate
       - name: Build CaptureLab (generic iOS, unsigned)
         run: |
-          set -o pipefail
-          xcodebuild -project ProjectM-iOS.xcodeproj -scheme CaptureLab \
+          xcodebuild -quiet -project ProjectM-iOS.xcodeproj -scheme CaptureLab \
             -destination 'generic/platform=iOS' -derivedDataPath "$RUNNER_TEMP/dd-app" \
-            CODE_SIGNING_ALLOWED=NO build | tail -60
+            CODE_SIGNING_ALLOWED=NO build
       - name: Find an iOS simulator
         id: sim
         run: |
@@ -124,6 +138,7 @@ jobs:
           for pkg in AudioCore CaptureKit Diagnostics CaptureUI; do
             echo "::group::xcodebuild test $pkg (iOS Simulator)"
             (cd "Packages/$pkg" && xcodebuild -scheme "$pkg" -destination "id=${{ steps.sim.outputs.udid }}" \
-              -derivedDataPath "$RUNNER_TEMP/dds-$pkg" CODE_SIGNING_ALLOWED=NO test | tail -40)
+              -derivedDataPath "$RUNNER_TEMP/dds-$pkg" CODE_SIGNING_ALLOWED=NO test 2>&1 \
+              | grep -E "error:|warning:|Executed [0-9]+ tests|TEST (SUCCEEDED|FAILED)|failed \(")
             echo "::endgroup::"
           done
