@@ -18,6 +18,23 @@ Entities and states: [data-model.md](data-model.md).
 Windows can run only the documentation checks (`py scripts/validate_docs.py`). Every build or test
 result below requires macOS. On Windows, report it as "pending macOS".
 
+Before Scenario A, record the concrete device model and OS build for each FR-032 role in
+`docs/test-reports/devices.md` (FR-034).
+
+## Device-only requirements and where they are proven
+
+| Requirement | Scenario step |
+|-------------|---------------|
+| SC-001–SC-004, FR-030–FR-034, RI-002 | A.2–A.8 |
+| FR-004/FR-008 on iOS 26 | A.3 |
+| RI-003, FR-050–FR-055 (capture evidence) | A.5 |
+| Gate 2 thresholds | A.9 |
+| Gate 3, ADR-0003, RI-009, RI-011 | B |
+| SC-005–SC-010, SC-012, SC-013, FR-041 | C |
+| SC-011, FR-063, FR-066, FR-067, FR-064 | D |
+
+Simulator and Windows results never satisfy any row above.
+
 ## Setup (macOS)
 
 ```bash
@@ -57,6 +74,8 @@ evidence.
 7. Fill `docs/test-reports/compatibility-report.md` rows (FR-031) and rate each Works / Partial /
    Does not work.
 8. The project owner records the Stage 2 decision (FR-033).
+9. **Gate 2**: for each source rated "Works", run a 30-minute foreground capture on the reference
+   device and check the Gate 2 thresholds in spec Delivery Gating.
 
 **Pass**: SC-001–SC-004 met; report complete; decision recorded.
 
@@ -77,6 +96,7 @@ starter presets. Record shader failures, fps, and app size per ADR-0003 option.
 | SC-009 | 50 start/stop/switch at 200 ms; lifecycle script per mode | 0 crashes, final state correct |
 | SC-010 | Usability sessions | ≥ 90% identify mode + audio state |
 | SC-012 | Screen-reader audit iPhone + iPad | all controls pass |
+| SC-013 | 30-min thermal session per SC-013 conditions | never critical, ≥ 30 fps, no termination |
 | FR-041 | Rotate; iPad split view and resize | re-layout ≤ 1 s, capture uninterrupted |
 
 ## Scenario D — Release checks
@@ -84,4 +104,6 @@ starter presets. Record shader failures, fps, and app size per ADR-0003 option.
 - SC-011 privacy review: inspect the app container after sessions. Only the FR-065 keys exist; no
   audio files; no network traffic in a proxy capture.
 - FR-064: ADR-0005 final conclusion is "go".
+- FR-066: privacy manifest declares all required-reason APIs; App Privacy says "Data Not Collected".
+- FR-067: the Licenses screen lists every component in ADR-0004 and every preset in LICENSES.md.
 - FR-062: store copy and in-app help reviewed against report rows.

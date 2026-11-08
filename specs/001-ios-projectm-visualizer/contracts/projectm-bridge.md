@@ -9,7 +9,8 @@ Packages: **ProjectMBridge** (Objective-C++ over the libprojectM C API) and **Re
 ```objc
 NS_SWIFT_NAME(ProjectMEngine)
 @interface PMEngine : NSObject
-/// `loadProc` resolves GL ES entry points for the current context (EAGL dlsym or ANGLE eglGetProcAddress).
+/// `loadProc` resolves GL ES entry points: a static table of linked ES 3.0 functions (Apple GL ES)
+/// or `eglGetProcAddress` (ANGLE). No `dlsym` (Constitution I).
 - (nullable instancetype)initWithGLLoader:(PMGLLoadProc)loadProc
                                  userData:(nullable void *)userData
                                     error:(NSError **)error;

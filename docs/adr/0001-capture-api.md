@@ -17,7 +17,9 @@ replacement for ReplayKit screen streaming. Key ReplayKit capture APIs
 1. System/App Capture uses **ScreenCaptureKit only**: the system content-sharing picker, a stream
    configured for audio, and stream outputs for the audio output types.
 2. Capture runs **in the main app process**. No broadcast upload extension and no App Group IPC
-   are built unless RI-001 shows the iOS API requires them, in which case this ADR is superseded.
+   are built unless RI-001 shows the iOS API requires them. In that case the project owner decides
+   whether to supersede this ADR, based on the recorded RI-001 evidence (Constitution III:
+   extensions only with demonstrated need).
 3. The adapter is compiled and invoked only behind an availability check for the first OS that
    provides the API (presumed iOS 27; set by RI-004), plus a runtime capability probe. On iOS 26
    the mode is shown as unavailable (FR-004).
@@ -28,8 +30,10 @@ replacement for ReplayKit screen streaming. Key ReplayKit capture APIs
 ## Consequences
 
 - iOS 26 users get Microphone and In-App Playback only.
-- If RI-001 finds that iOS ScreenCaptureKit does not deliver app audio, System/App Capture is
-  disabled and the release proceeds with fallbacks (spec Delivery Gating).
+- If RI-001 finds that iOS ScreenCaptureKit does not deliver app audio (for example, only
+  microphone audio, or no audio output type at all), System/App Capture is disabled and the release
+  proceeds with fallbacks (spec Delivery Gating). Microphone audio arriving through ScreenCaptureKit
+  is never presented as System/App Capture (FR-013).
 - No extension target simplifies signing and review.
 
 ## Verification before acceptance

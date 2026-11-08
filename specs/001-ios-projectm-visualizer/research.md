@@ -26,7 +26,9 @@ Renderer/Platform/GLResolver.cpp).
 
 ## R-02 System/App Capture API (RI-001, RI-004)
 
-- **Decision**: ScreenCaptureKit only, in-process. `SCContentSharingPicker` presents the
+- **Decision**: ScreenCaptureKit only, in-process. Picker modes and selection scope (single app,
+  window, whole display) are unknowns to be recorded, not assumed.
+  Detail: `SCContentSharingPicker` presents the
   system UI. `SCStream` runs with an `SCStreamConfiguration` that enables audio capture, and an
   `SCStreamOutput` receives the audio-type outputs. `SCStreamDelegate` reports stop and error. All
   code sits behind `@available(iOS 27, *)` (the version is updated by RI-004) plus a runtime
@@ -49,6 +51,9 @@ Renderer/Platform/GLResolver.cpp).
   continues only if the stream is still delivering (FR-050).
 - **Rationale**: Background visualization is out of scope. Adding a background mode without need
   invites App Review questions.
+- **Change rule**: If RI-003 shows that ScreenCaptureKit on iOS needs a specific background mode to
+  keep a foreground session alive, add only that mode, through an ADR-0001 amendment approved by the
+  project owner. No other modes are added.
 - **Alternatives**: Audio background mode to keep the microphone alive. Rejected: no user value
   without visuals.
 - **Verification pending**: Whether ScreenCaptureKit requires or offers any background mode on
@@ -59,7 +64,8 @@ Renderer/Platform/GLResolver.cpp).
 - **Decision**: Use one `AVAudioEngine` per source session. Microphone: an input-node tap, with
   an `AVAudioSession` category `.playAndRecord` or `.record` (chosen during implementation and
   documented), requesting `AVAudioApplication.requestRecordPermission` at the point of use (after
-  the FR-005 explanation). In-App Playback: `AVAudioPlayerNode` → main mixer, a tap on the mixer
+  the FR-005 explanation). `NSMicrophoneUsageDescription` uses the explainer text in
+  contracts/ui-states.md (FR-019). In-App Playback: `AVAudioPlayerNode` → main mixer, a tap on the mixer
   output, category `.playback` (so the silent switch does not mute user-started media), with the
   bundled track looped. Interruption and route-change notifications drive FR-051.
 - **Rationale**: These are public and stable APIs, and both modes produce `AVAudioPCMBuffer`, which
@@ -69,9 +75,12 @@ Renderer/Platform/GLResolver.cpp).
 ## R-05 Internal audio format
 
 - **Decision**: Normalize every source to **Float32, interleaved stereo, 44,100 Hz**. Mono is
-  duplicated to L=R. More than 2 channels are downmixed: L = mean of left-side channels, R = mean
-  of right-side channels, otherwise channel 0/1. The coefficients are documented in AudioCore.
-  Resampling uses `AVAudioConverter` on the work queue (not in the callback).
+  duplicated to L=R. Streams with more than 2 channels and a known channel layout are downmixed to
+  stereo by `AVAudioConverter` using the platform's standard layout downmix. Streams with an unknown
+  layout use channels 1 and 2 (FR-017). Int16 and Int32 samples are converted to Float32.
+  Resampling uses `AVAudioConverter` on the work queue (not in the callback). No custom FFT, band,
+  or beat analysis is built: the engine performs its own (README §5.1). AudioCore computes only
+  peak and RMS levels for the classifier and diagnostics.
 - **Rationale**: `projectm_pcm_add_float` takes interleaved LR floats with no rate parameter; the
   engine is tuned for about 44.1 kHz. Stereo is kept for presets that use channel separation.
 - **Alternatives**: Feeding the native 48 kHz. Rejected: it skews the engine's beat/spectrum
@@ -81,10 +90,25 @@ Renderer/Platform/GLResolver.cpp).
 
 - **Decision**: Each source callback copies raw samples into a preallocated per-source **SPSC ring
   buffer** (capacity 1 s at the native rate, atomics from the `Synchronization` module). Overflow
-  drops the oldest data and increments a counter. A dedicated serial work queue drains the ring,
-  converts and resamples (R-05), updates the `LevelMeter` and `AudioStateClassifier`, and writes
-  into a second SPSC ring that the render loop reads with `projectm_pcm_add_float` up to
-  `projectm_pcm_get_max_samples()` per frame.
+  drops the oldest data and increments a counter. A dedicated serial work queue (user-interactive
+  QoS) drains the ring every 10 ms or less, converts and resamples (R-05), updates the `LevelMeter`
+  and `AudioStateClassifier`, and writes into a second **normalized SPSC ring** (capacity 0.5 s =
+  22,050 stereo frames at 44.1 kHz, drop-oldest). The work queue posts classifier state and
+  diagnostics to the main actor at most 4 times per second. The render loop reads the normalized
+  ring once per frame, up to `projectm_pcm_get_max_samples()` frames, and passes them to
+  `projectm_pcm_add_float`.
+- **Freshness rule**: If the normalized ring holds more than 50 ms of audio when a frame starts, the
+  reader skips ahead to the newest 50 ms (counted as dropped). This caps the ring residency in the
+  latency budget.
+- **Underrun policy**: If the normalized ring is empty at frame time, the renderer adds no samples
+  that frame; the engine keeps animating from its existing audio history. No synthetic silence is
+  injected. Sustained emptiness is already reported by the classifier ("No audio received" or
+  "Audio received — silent").
+- **Latency budget** (SC-006, 150 ms): capture delivery ≤ 30 ms; source ring and conversion ≤ 20
+  ms; normalized ring residency ≤ 50 ms (freshness rule); engine frame and display ≤ 50 ms. Each
+  stage is measured with signposts in Phase B/D.
+- **Acceptance**: A Phase B allocation-trace test runs each adapter for 60 s and must record zero
+  heap allocations and zero lock acquisitions on the audio callback thread.
 - **Rationale**: Satisfies Constitution VII: no allocation, locks, or logging in callbacks, and
   bounded memory.
 - **Alternatives**: `AsyncStream` per buffer (allocates, unbounded). Locks with a deque (priority
@@ -110,13 +134,22 @@ Renderer/Platform/GLResolver.cpp).
   `projectm_create_with_opengl_load_proc` accepts a host loader, which avoids the resolver's
   CGL/EGL/WGL detection (it has no iOS EAGL path).
 - **Decision**: Prototype on two candidates in Phase C and decide in ADR-0003:
-  1. **Apple OpenGL ES 3.0** (EAGL + `GLKView`/`CAEAGLLayer`, load_proc via `dlsym` on the
-     public OpenGLES framework symbols). Fastest path to Gate 3. Deprecated since iOS 12.
+  1. **Apple OpenGL ES 3.0** (EAGL + `CAEAGLLayer`). The load_proc is a static lookup table of
+     directly linked, documented OpenGL ES 3.0 C functions, so there is no `dlsym` and no dynamic
+     symbol lookup (Constitution I). Fastest path to Gate 3. Deprecated since iOS 12.
   2. **ANGLE (Metal backend) as a pinned dependency**, providing GLES 3.0 via EGL on Metal. It
      avoids the deprecated API and is the production candidate. It adds a third-party dependency
      with its own license (BSD-3) and binary size.
   A full Metal port of the engine is **not** planned. It is a large rewrite that risks preset
   fidelity (Constitution VIII), and is reconsidered only if both candidates fail.
+- **Relation to "evaluate Metal"**: Option 2 *is* the Metal evaluation. It runs the unmodified
+  engine on Metal through ANGLE, which keeps preset fidelity and upstream compatibility. A native
+  Metal renderer would replace the engine's whole GL renderer and shader translation, so it is
+  out of scope unless both options fail.
+- **Engine runtime loading (RI-009)**: The engine's resolver uses `dlopen` on POSIX platforms
+  (`DynamicLibrary_posix.cpp`). Phase C determines whether it runs on iOS when a load_proc is
+  supplied. Preferred outcome: it is not reached. Fallback: a minimal patch disabling it for iOS,
+  recorded in `docs/projectm-patches.md`.
 - **Rationale**: Gets an early, measurable Gate 3 while keeping a non-deprecated route.
 - **Exit criteria (ADR-0003)**: the test presets in `Vendor/projectM/presets/tests` plus 20 starter
   presets render on the reference device and the oldest iOS 26 device; fps is measured; shader
@@ -125,8 +158,9 @@ Renderer/Platform/GLResolver.cpp).
 ## R-09 Presets and reference audio (RI-008)
 
 - **Decision**: Bundle only presets with explicit redistribution licenses, starting from upstream
-  ProjectM-maintained preset packs if their licenses permit. Each preset's source and license is
-  recorded in `Apps/ProjectMiOS/Resources/Presets/LICENSES.md`. Reference audio is a short track
+  ProjectM-maintained preset packs if their licenses permit. `Apps/ProjectMiOS/Resources/Presets/LICENSES.md`
+  records, per preset: file path, display name, pack, author, license identifier, source URL, and
+  source commit/version. A preset with any field missing is not bundled. Reference audio is a short track
   synthesized in-house (generated tones, clicks, and beat pattern), giving full rights and a
   deterministic signal for SC-006.
 - **Rationale**: FR-006/FR-047. An in-house track also gives the click impulses SC-006 needs.
@@ -143,7 +177,12 @@ Renderer/Platform/GLResolver.cpp).
 - **Alternatives**: Static linking plus distributing object files for relinking. Seeking a license
   exception from upstream.
 - **Verification pending**: RI-007 preliminary conclusion (blocks Stage 2 entry) and final
-  conclusion (blocks release).
+  conclusion (blocks release). RI-010 (the reason behind upstream's App Store warning) is analyzed in
+  the same ADR-0005. Attribution and the source offer appear on the Licenses screen (FR-067).
+- **iOS build configuration (RI-011)**: `scripts/build_projectm_xcframework.py` configures CMake
+  for each slice (`CMAKE_SYSTEM_NAME=iOS`, device and simulator SDKs, `ENABLE_GLES=ON`, shared
+  library as a framework) and combines the slices with `xcodebuild -create-xcframework`. These
+  flags are planned, not yet verified against upstream; the exit is a CI-produced xcframework.
 
 ## R-11 Engine version pin (RI-006)
 
@@ -157,7 +196,10 @@ Renderer/Platform/GLResolver.cpp).
 - **Decision**: XcodeGen (`project.yml`, version pinned in `scripts/verify_environment.py`)
   generates the project on macOS. GitHub Actions `macos-*` runs: `swift test` per package →
   `scripts/build_projectm_xcframework.py` (cached by submodule SHA) → `xcodebuild build` and `test`
-  on a simulator destination discovered at runtime. No signing secrets in CI.
+  on simulator destinations discovered at runtime. CI tests on both an iOS 26 and an iOS 27+
+  simulator runtime when the runner image provides them. If the iOS 26 runtime is missing, the job
+  logs that, and iOS 26 coverage comes from the physical iOS 26 device run (FR-032). No signing
+  secrets in CI.
 - **Rationale**: Text-only project definition supports Windows editing; CI matches the README §15
   template.
 - **Alternatives**: A committed `.xcodeproj` (merge conflicts, not editable on Windows). Tuist
@@ -193,5 +235,8 @@ Renderer/Platform/GLResolver.cpp).
 | R-09 preset licenses | RI-008 | Gate 3 | Presets/LICENSES.md |
 | R-10 LGPL review | RI-007 | Stage 2 entry / release | docs/adr/0005-lgpl-compliance.md |
 | R-11 engine tag | RI-006 | Gate 3 | ADR-0004 updated |
+| R-08 engine dlopen | RI-009 | Gate 3 | ADR-0003 analysis |
+| R-10 upstream App Store warning | RI-010 | Stage 2 entry | docs/adr/0005-lgpl-compliance.md |
+| R-10 iOS CMake config | RI-011 | Gate 3 | CI-built xcframework + ADR-0004 |
 
 Owner for all: project owner.

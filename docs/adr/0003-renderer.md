@@ -23,24 +23,42 @@ GLES 3.0 on a Metal backend.
 
 | Option | Pros | Cons |
 |--------|------|------|
-| A. Apple OpenGL ES 3.0 (EAGL) via load_proc | No new dependency; quickest Gate 3 | Deprecated API; future removal risk; App Review perception |
+| A. Apple OpenGL ES 3.0 (EAGL) via load_proc (static table of linked ES 3.0 functions, no `dlsym`) | No new dependency; quickest Gate 3 | Deprecated API; future removal risk; App Review perception |
 | B. ANGLE Metal backend (EGL, GLES 3.0) via load_proc | Non-deprecated underlying API; engine unchanged | New pinned dependency (BSD-3); binary size; build complexity |
 | C. Port the engine renderer to Metal | Native, long-term | Large rewrite; preset shader fidelity risk; upstream divergence (Constitution VIII) |
 
 ## Proposed decision
 
 Prototype **A** first to reach Gate 3 quickly. Prototype **B** right after. Choose B for
-production if it meets the exit criteria; otherwise A with a documented deprecation risk.
+production if it meets the exit thresholds; otherwise A with a documented deprecation risk.
 **C** is out of scope unless both A and B fail.
+
+Option B is the project's "evaluate Metal for production" step: it runs the unmodified engine on
+Metal through ANGLE. A native Metal port (C) would replace the engine's GL renderer and shader
+translation, which risks preset fidelity and upstream compatibility (Constitution VIII).
 
 The renderer sits behind a `VisualizerRenderer` protocol (contracts/projectm-bridge.md), so the
 choice does not affect capture or UI code.
 
-## Exit criteria (to accept)
+## Engine runtime library loading (RI-009)
 
-- [ ] Upstream test presets (`presets/tests/*.milk`) plus 20 starter presets render on the
-      reference device and the oldest iOS 26 device.
-- [ ] Shader compile failure count recorded per option.
-- [ ] Sustained fps measured over a 10-minute session per option (input to SC-005).
-- [ ] App size delta measured per option.
-- [ ] Feasibility of the "Reduce flashing" post-pass (FR-072) confirmed for the chosen option.
+The engine's POSIX resolver calls `dlopen` (`Renderer/Platform/DynamicLibrary_posix.cpp`). Phase C
+must record whether that code runs on iOS when a load_proc is supplied, and which library names it
+tries. Accept only if it is not reached, or reaches only public system frameworks by documented
+names. Otherwise apply a minimal iOS-only patch that skips it, logged in `docs/projectm-patches.md`.
+
+## Measurement devices
+
+The reference device (spec SC-005) and the oldest obtainable iOS 26 iPhone and iPad (spec FR-032),
+as recorded in `docs/test-reports/devices.md`.
+
+## Exit thresholds (to accept; per option)
+
+- [ ] All upstream test presets (`presets/tests/*.milk`) render, and at least 95% of the starter
+      presets compile and render without shader errors, on every measurement device.
+- [ ] Sustained frame rate over a 10-minute session: at least 55 fps for 95% of the session on the
+      reference device (SC-005); at least 30 fps throughout on the oldest devices (FR-049 floor).
+- [ ] App size increase over the Phase C baseline: 30 MB or less (download size).
+- [ ] The "Reduce flashing" post-pass (FR-072) is feasible with under 2 ms added per frame on the
+      reference device.
+- [ ] RI-009 resolved as above.

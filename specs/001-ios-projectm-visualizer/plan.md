@@ -59,9 +59,13 @@ packages.
 Audio-to-visual delay under 150 ms (SC-006). Preset switch under 1 s (SC-007). State
 classification latency of 2 s or less (SC-003).
 
-**Constraints**: Real-time callbacks are allocation-free and lock-free (Constitution VII).
-Bounded ring buffer with drop-oldest overflow. No audio leaves memory (FR-060). Public APIs only.
-Memory drift at most 10% between minutes 5 and 30 (SC-008).
+**Constraints**: Real-time callbacks are allocation-free and lock-free (Constitution VII). Two
+bounded ring buffers with drop-oldest overflow (R-06). No audio leaves memory (FR-060). Public APIs
+only. Memory drift at most 10% between minutes 5 and 30 (SC-008).
+
+**Latency budget** (sums to the SC-006 150 ms target; research R-06): capture delivery ≤ 30 ms →
+source ring and conversion ≤ 20 ms → normalized ring residency ≤ 50 ms → engine frame and display ≤
+50 ms (about 3 frames at 60 Hz).
 
 **Scale/Scope**: Single user, on device. About 8 screens/sheets (source chooser, visualizer,
 controls overlay, preset browser, settings, diagnostics, photosensitivity notice, error states).
@@ -81,7 +85,7 @@ Starter preset set size depends on licensing (R-09).
 | VI. Modular boundaries | PASS | Packages: AudioCore ← CaptureKit, ProjectMBridge ← Rendering, App. The engine sees only normalized PCM frames. |
 | VII. Real-time safety | PASS | Preallocated SPSC ring buffer with atomics, no allocation or locks in callbacks, conversion on a dedicated audio work queue (research R-06). |
 | VIII. Upstream fidelity | PASS | Submodule pinned. No engine patches planned (load_proc avoids resolver changes). Any patch goes in `docs/projectm-patches.md`. |
-| IX. Pinned deps and licenses | CONDITIONAL | Pins are recorded in ADR-0004. The LGPL App Store conclusion (RI-007) is pending; the preliminary conclusion is a Stage 2 entry condition. Preset and audio licensing is pending (R-09). |
+| IX. Pinned deps and licenses | CONDITIONAL | Pins and vendored-component licenses are recorded in ADR-0004. The LGPL and App Store conclusions (RI-007, RI-010; ADR-0005) are pending; the preliminary conclusions are Stage 2 entry conditions. Preset and audio licensing is pending (R-09). |
 | X. Evidence-based quality | PASS | ADR-0001–0004 drafted. Device matrix, performance, and privacy reviews are scheduled per phase. |
 | Platform: macOS required | PASS | Windows/macOS split below. Agents on Windows report builds as "pending macOS". |
 
@@ -97,13 +101,15 @@ remains conditional. **PASS.**
 | Plan phase | Spec stage / constitution phase | Exit gate | Hard dependency |
 |------------|---------------------------------|-----------|-----------------|
 | **A. Platform research and capture POC** | Stage 1 / Phase 0 | Gates 0–2; compatibility report; Stage 2 decision | none |
-| **B. Audio pipeline** | Stage 2 / Phase 1 | Unit tests for FR-011, FR-016, FR-017, ring buffer; no allocations in callbacks | A approved |
-| **C. ProjectM build and render proof** | Stage 2 / Phase 2 | Gate 3: known preset renders on device; ADR-0003 accepted | A approved, RI-007 preliminary |
-| **D. Integrated visualizer** | Stage 2 / Phase 3 | Gate 4: end-to-end per source; SC-005–SC-010 | B and C |
-| **E. Production hardening** | Release / Phase 4 | FR-064 final, SC-011, SC-012, store review | D |
+| **B. Audio pipeline** | Stage 2 / Phase 1 | Unit tests for FR-011, FR-016, FR-017, ring buffers; zero heap allocations on the audio thread in a 60 s allocation-trace run | A approved, RI-007 and RI-010 preliminary |
+| **C. ProjectM build and render proof** | Stage 2 / Phase 2 | Gate 3: ADR-0003 thresholds met; ADR-0003 accepted; RI-009 and RI-011 closed | B accepted |
+| **D. Integrated visualizer** | Stage 2 / Phase 3 | Gate 4: end-to-end per source; SC-005–SC-010, SC-013 | C accepted |
+| **E. Production hardening** | Release / Phase 4 | FR-064 final, FR-066, FR-067, SC-011, SC-012, store review | D accepted |
 
-Phase B *may* start in parallel with late Phase A work for source-agnostic code (ring buffer,
-normalizer). Nothing that assumes external audio is available may merge before the A decision.
+Phases run strictly in sequence, A → B → C → D → E. Each phase starts only after the previous
+phase's exit evidence is reviewed and approved by the project owner (constitution workflow; spec
+Gate criteria table). Gate 3 (render proof) is therefore reached in Phase C, after Phase B's audio
+pipeline is accepted.
 
 **Phase A scope (CaptureLab)**: source chooser (US1/US2), ScreenCaptureKit adapter, Microphone
 adapter, In-App Playback adapter, live diagnostics (FR-020), audio-state classifier, export
@@ -187,6 +193,27 @@ scripts/
 Build/                          # generated xcframeworks (gitignored)
 .github/workflows/ios-ci.yml    # macOS runner: swift test, engine build, simulator build/test
 ```
+
+**Mapping to the README architecture (§4)**:
+
+| README component | Plan location |
+|------------------|---------------|
+| App: ProjectMApp, AppCoordinator, ContentView, VisualizerScreen, CaptureControls, SourceStatusView | `Apps/ProjectMiOS` (Coordinators/, Views/) |
+| Capture: AudioSourceProtocol, AudioCaptureManager, adapters | `Packages/CaptureKit` (`AudioSource`, `CaptureManager`, three adapters) |
+| Capture: ReplayKitAudioSource | Excluded (FR-009, ADR-0001) |
+| Audio: PCMFormat, PCMBuffer, AudioNormalizer, AudioRingBuffer | `Packages/AudioCore` |
+| Audio: AudioAnalyzer, FFTProcessor, FrequencyBandAnalyzer, BeatDetector | Excluded: the engine does its own spectrum and beat analysis (README §5.1). AudioCore keeps only peak/RMS for the classifier. Revisit only with a measured need. |
+| ProjectM: ProjectMBridge.h/.mm, ProjectMEngine | `Packages/ProjectMBridge` (`PMEngine`) |
+| ProjectM: PresetRepository, PresetMetadata | `Packages/Rendering` (`PresetRepository`: enumerates bundled presets and joins them with `Presets/LICENSES.md`) |
+| Rendering: VisualizerRenderer, OpenGLESPrototypeRenderer, MetalRenderer, Shaders | `Packages/Rendering` (`VisualizerRenderer`, `GLESRenderer`, `ANGLERenderer` per ADR-0003) |
+| Shared: Diagnostics, Logging | `Packages/Diagnostics` (snapshots, exporter, `os_signpost`/`Logger` wrappers) |
+| Shared: AppConfiguration, Permissions | `Packages/CaptureKit` (permission requests live with the adapter that needs them) and `Apps/*/` (settings) |
+| Tests | Each package's `Tests/` plus app UI tests |
+
+**Why not the README's `Sources/` layout**: the README lets the plan choose the layout and asks for
+the reason. Local Swift packages make the module boundaries (Constitution VI) compiler-enforced,
+let pure-logic packages run `swift test` without a simulator, and let CaptureLab exclude the engine
+entirely.
 
 **Structure Decision**: Two app targets share five local Swift packages. This keeps the
 constitution's module boundaries enforceable by the compiler. CaptureLab depends only on AudioCore,

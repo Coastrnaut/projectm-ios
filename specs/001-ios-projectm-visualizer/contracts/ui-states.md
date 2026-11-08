@@ -15,6 +15,13 @@ The Microphone explainer, shown before the permission prompt (FR-005), reads: "M
 listens to sound in the room through your device's microphone. It does not capture audio directly
 from other apps."
 
+## Usage descriptions (FR-019)
+
+| Info.plist key | Text |
+|----------------|------|
+| `NSMicrophoneUsageDescription` | Same text as the Microphone explainer above |
+| Capture key (identified by RI-001) | To be written when RI-001 names the key; it must say that only audio from the content you choose is used, on this device only |
+
 ## Audio states (FR-010)
 
 Not started · Waiting · No audio received · Audio received — silent · Active audio · Paused ·
@@ -30,7 +37,7 @@ Interrupted · Stopped · Ended by system
 | inAppPlaybackFailed | In-App Playback failed | Choose source |
 | interrupted | Interrupted | Restart, Choose source |
 | audioRouteChanged | Paused — audio route changed | Resume, Choose source |
-| endedBySystem | Ended by system | Restart, Choose source |
+| endedBySystem | Ended by system | Restart (re-presents the system picker for System/App Capture), Choose source |
 | unsupportedOS | Requires a newer iOS version | Choose source |
 | error | Something went wrong: ‹description› | Restart, Choose source |
 
@@ -41,6 +48,16 @@ silence (FR-018) → "No sound detected — is playback paused?"
 
 Controls auto-hide after 5 s (FR-042). Preset failure: "Preset could not be loaded" (FR-045).
 Photosensitivity notice (FR-071) must be acknowledged before the first visualization.
+
+## Diagnostics export (FR-021)
+
+Note field placeholder: "Optional note, e.g. which app was playing. Do not enter personal
+information." Limit: 500 characters.
+
+## Licenses (FR-067)
+
+Settings › Licenses lists each component, preset pack, and asset with its license text. LGPL entries
+include the source link and replacement instructions from ADR-0005.
 
 ## Accessibility (FR-070)
 

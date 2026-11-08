@@ -49,6 +49,20 @@ This feature is delivered in stages. Each stage maps to the constitution's phase
 | Stage 2 — Full Visualizer | Phases 1–3 | Gate 3 (engine build/render), Gate 4 (end-to-end) | US4–US7 |
 | Release | Phase 4 | FR-064 license/App Store review, privacy review (SC-011) | — |
 
+Stages and phases run strictly in sequence: a phase starts only after the previous phase's exit
+evidence is reviewed and approved (constitution workflow). No phase work runs in parallel with an
+earlier phase.
+
+**Gate criteria** (each gate's go/no-go rule and evidence artifact):
+
+| Gate | Go criterion | Evidence artifact |
+|------|--------------|-------------------|
+| Gate 0 — API availability | RI-001 and RI-004 exit criteria met; ADR-0001 and ADR-0002 accepted | `docs/platform-research/screencapturekit-ios.md`, ADRs |
+| Gate 1 — External samples | Every FR-030 source has an FR-031 entry from at least the devices in SC-001 | compatibility report + diagnostics exports |
+| Gate 2 — Sustained capture | For each source rated "Works": a 30-minute foreground capture with zero unrecovered stream failures, dropped audio under 1%, median start-to-first-audio under 2 s, capture-plus-pipeline CPU under 15% of one core on the reference device, and memory growth of 10% or less (minute 5 vs minute 30) | report rows + exports |
+| Gate 3 — Engine build/render | ADR-0003 exit thresholds met and ADR-0003 accepted | ADR-0003 measurements |
+| Gate 4 — End-to-end | SC-005 to SC-010 and SC-013 met with each available source mode | test report |
+
 **Approver**: The project owner approves every stage transition and records the decision, date, and
 evidence in the compatibility report (FR-033).
 
@@ -56,8 +70,9 @@ evidence in the compatibility report (FR-033).
 
 1. The compatibility report (FR-030–FR-033) exists, has been reviewed, and records at least one
    source mode with verified non-silent audio on a physical device.
-2. RI-007 (engine license / App Store compliance) has a preliminary written conclusion that App
-   Store distribution is achievable, so Stage 2 is not built on a component that cannot ship.
+2. RI-007 (engine license / App Store compliance) and RI-010 (upstream's App Store warning) have
+   preliminary written conclusions that App Store distribution is achievable, so Stage 2 is not
+   built on a component that cannot ship.
 
 If no external-app source passes, Stage 2 and the first release proceed with Microphone and In-App
 Playback only, and that limitation is stated in the product description and store listing.
@@ -276,7 +291,7 @@ Each edge case below maps to a functional requirement.
 - Microphone permission revoked in Settings while backgrounded → FR-053.
 - Bundled preset missing or malformed → FR-045.
 - Very long session (30+ minutes) → SC-008.
-- Low-power mode or thermal pressure → FR-049.
+- Low-power mode or thermal pressure → FR-049, SC-013.
 
 ## Requirements *(mandatory)*
 
@@ -311,7 +326,10 @@ Each edge case below maps to a functional requirement.
 - **FR-010**: System MUST classify the active source as exactly one of: Not started, Waiting, No
   audio received, Audio received — silent, Active audio, Paused, Interrupted, Stopped, or Ended by
   system. "Active audio" is the canonical name for the state the README calls "Receiving audio";
-  only "Active audio" is used in the UI.
+  only "Active audio" is used in the UI. **Paused** means the app suspended the source itself
+  (backgrounding, device lock, or lost output route) and will resume it automatically or on one
+  tap; the source delivers no audio while Paused. Pausing the *visualization* (FR-046) never changes
+  the audio state.
 - **FR-011**: "Active audio" MUST be shown only after non-silent audio is verified during the
   current session: peak level at or above −50 dBFS for at least 250 ms. The state returns to "Audio
   received — silent" when peak level stays below −60 dBFS for at least 2 seconds. (Initial values;
@@ -329,11 +347,17 @@ Each edge case below maps to a functional requirement.
   description).
 - **FR-016**: Switching sources MUST fully stop the previous source before the new one starts. While
   the new source is being classified, the indicator MUST show the new mode with "Waiting".
-- **FR-017**: A mid-stream change in sample rate or channel count MUST NOT stop the source or crash
-  the app; diagnostics MUST reflect the new format within 1 second.
+- **FR-017**: A mid-stream change in sample rate, channel count, or sample type MUST NOT stop the
+  source or crash the app as long as the format can be converted; diagnostics MUST reflect the new
+  format within 1 second. Streams with more than 2 channels are downmixed to stereo; unknown
+  layouts use channels 1 and 2. Only a format that cannot be converted at all stops the source,
+  with reason "error".
 - **FR-018**: If the active source stays "Audio received — silent" for 60 seconds, the app MUST show
   a non-blocking hint (e.g., "No sound detected — is playback paused?") and MUST keep the source
   running.
+- **FR-019**: Every permission prompt the app triggers MUST carry a usage description string that
+  matches the in-app explainer for that mode (microphone text in contracts/ui-states.md; capture
+  text set once RI-001 identifies the required key).
 
 **Feasibility diagnostics (Stage 1)**
 
@@ -344,7 +368,8 @@ Each edge case below maps to a functional requirement.
   tester taps Export, as a human-readable file and a structured machine-readable file shared through
   the system share sheet. Contents: device model, OS build, app build, source mode, buffer arrival,
   non-silence result, sample rate, channel count, timing statistics (FR-022), and an optional
-  free-text note the tester types (e.g., the source app's name). It MUST NOT contain raw audio,
+  free-text note the tester types (e.g., the source app's name; limited to 500 characters, with an
+  on-screen reminder not to enter personal information). It MUST NOT contain raw audio,
   device identifiers (serial number, advertising or vendor identifiers), or account information.
 - **FR-022**: The feasibility app MUST record dropped or late buffers and start-to-first-audio time.
 
@@ -362,12 +387,17 @@ Each edge case below maps to a functional requirement.
     only for some content, or only until a lifecycle event (e.g., lock). The limitation MUST be
     written in the entry.
   - **Does not work**: No audio received, or silent only, throughout the run.
+  Evidence for any rating is the diagnostics export(s) of the run. Screenshots of the picker or the
+  app's UI are not evidence.
 - **FR-032**: Testing MUST cover at minimum: the oldest obtainable iOS 26-capable iPhone on
   iOS 26 (fallback modes), one iPhone on the earliest OS with System/App Capture, one
   current-generation iPhone, and at least one iPad (oldest obtainable iPadOS 26-capable model
   preferred).
 - **FR-033**: The report MUST record each stage decision (go/no-go), the approver, the date, the
   evidence used, and the list of claimable sources.
+- **FR-034**: The report MUST live at `docs/test-reports/compatibility-report.md`, with one row per
+  device × source with the FR-031 columns, and the concrete device models and OS builds for each
+  FR-032 role recorded in `docs/test-reports/devices.md` before testing starts.
 
 **Visualization and presets (Stage 2)**
 
@@ -404,14 +434,17 @@ Each edge case below maps to a functional requirement.
 - **FR-051**: The app MUST handle audio interruptions and route changes without crashing. Microphone
   and In-App Playback MUST resume automatically when the OS indicates audio may resume; otherwise
   they show "Interrupted" with a one-tap restart. In-App Playback MUST pause when the output route
-  is lost (e.g., headphones disconnected).
+  is lost (e.g., headphones disconnected). For System/App Capture, an audio interruption does not by
+  itself change the state: if the stream keeps delivering, the source continues; if the stream
+  stops, the state is "Ended by system". The observed behavior is recorded under RI-003.
 - **FR-052**: Starting, stopping, and switching sources MUST be safe when repeated at intervals as
   short as 200 ms (no crash, no duplicate sessions, final state matches the last action).
 - **FR-053**: The app MUST detect permission changes (e.g., microphone revoked in Settings) when it
   returns to the foreground and show the "permission denied" reason.
 - **FR-054**: Device lock MUST be handled exactly like backgrounding (FR-050).
 - **FR-055**: After any non-user stop, the app MUST offer a one-tap way to restart the same source
-  or choose another.
+  or choose another. For System/App Capture, that tap re-presents the system picker; the app never
+  restarts capture without it (FR-002).
 
 **Privacy and claims**
 
@@ -424,9 +457,13 @@ Each edge case below maps to a functional requirement.
   - be limited to sources rated "Works" in the compatibility report;
   - be scoped to the OS version range and device class tested, as of the source-app version tested;
   - not present "Partial" sources as supported. They MAY be described only in in-app help, together
-    with their recorded limitation.
-- **FR-063**: A privacy policy accurately describing capture, permissions, and data handling MUST be
-  available before release.
+    with their recorded limitation;
+  - cover iPad only if an iPad entry is rated "Works" for that source.
+- **FR-063**: A privacy policy MUST be available before release. It MUST state: the three source
+  modes and what each captures; the permissions requested and why; that audio is processed only in
+  memory on the device and never recorded, stored, or transmitted; what is stored on the device
+  (FR-065); that diagnostics leave the device only through a user-initiated export; and that no
+  analytics or tracking are used.
 - **FR-064**: The first release targets the public App Store. Before release, a recorded license
   and App Store compliance review MUST confirm that every bundled component (including the
   LGPL-2.1 visualization engine, presets, and reference audio) can be distributed there and how
@@ -434,6 +471,12 @@ Each edge case below maps to a functional requirement.
 - **FR-065**: On-device persistence MUST be limited to: favorites, the last-selected preset, user
   settings (FR-048, FR-072), and whether the photosensitivity notice was acknowledged (FR-071). No
   audio, listening history, or source-app history is stored.
+- **FR-066**: The app MUST include a privacy manifest that declares every required-reason API it
+  uses (including UserDefaults) with an approved reason, and its App Privacy disclosure MUST state
+  that no data is collected. Both are checked in the release review.
+- **FR-067**: Settings MUST include a Licenses screen listing every bundled third-party component,
+  preset pack, and asset with its license text and attribution, and, for LGPL-2.1 components, how to
+  obtain the corresponding source and replace the library (per ADR-0005).
 
 **Accessibility**
 
@@ -468,9 +511,10 @@ Each edge case below maps to a functional requirement.
 
 **Stage 1 (blocking)**
 
-- **SC-001**: For every source in the test matrix, the compatibility report records a reproducible
-  result on at least two physical iPhone models, with zero entries rated "Works" lacking evidence
-  of non-silent audio.
+- **SC-001**: For every System/App Capture source in the test matrix, the compatibility report
+  records a reproducible result on at least two capture-capable iPhone models and one iPad. For
+  Microphone and In-App Playback, it records a result on every FR-032 device. Zero entries rated
+  "Works" lack an export showing non-silent audio.
 - **SC-002**: The feasibility app classifies playing, paused, and absent audio correctly in 100% of
   20 scripted trials per available source mode.
 - **SC-003**: Status changes from silent to active (and back) are shown to the user within 2 seconds
@@ -494,12 +538,17 @@ Each edge case below maps to a functional requirement.
 - **SC-009**: 50 consecutive start/stop/switch cycles at 200 ms intervals, and a scripted
   background/foreground/lock/interruption/route-change sequence per source mode, complete with zero
   crashes and a correct final state.
-- **SC-010**: In usability testing, at least 90% of participants correctly identify which source
+- **SC-010**: In usability testing with at least 8 participants who were not involved in development
+  (at least 3 using an iPad), at least 90% of participants correctly identify which source
   mode is active and whether audio is being received, on first attempt.
 - **SC-011**: A privacy review confirms zero instances of raw audio written to storage or sent
   off-device, and that persisted data matches FR-065 exactly.
 - **SC-012**: Every control and status element passes a screen-reader audit (labeled, reachable,
   announced) on iPhone and iPad.
+- **SC-013**: In a 30-minute session at 20–25 °C room temperature, unplugged, at 50% screen
+  brightness, on the reference device and the oldest iOS 26 iPhone: the device never reaches the
+  critical thermal state, frame rate never drops below the FR-049 floor of 30 fps, and the app is
+  never terminated for thermal reasons. Thermal states observed are recorded.
 
 ## Assumptions
 
@@ -536,9 +585,10 @@ physical-device experiment. Owner for all items: project owner (until delegated)
 stated as fact in the plan until its exit criterion is met.
 
 - **RI-001 — System capture capabilities in the chosen SDK** (blocks Gate 0; updates FR-002,
-  FR-008, FR-014): Which content-sharing picker modes, stream configuration options, and audio
-  output types exist on iOS/iPadOS in the selected SDK, and whether the OS identifies the selected
-  content. *Exit*: inventory written from the SDK headers and current Apple docs, saved in
+  FR-008, FR-014, FR-019): Which content-sharing picker modes and selection scopes (single app,
+  window, or whole display) exist, which stream configuration options and audio output types exist
+  on iOS/iPadOS in the selected SDK, which usage-description keys are required, whether app audio
+  (not only microphone) is delivered, and whether the OS identifies the selected content. *Exit*: inventory written from the SDK headers and current Apple docs, saved in
   `docs/platform-research/`, with availability annotations.
 - **RI-002 — External app audio while this app is foregrounded** (blocks Gate 1; updates FR-062
   claimable sources): Whether audio from the selected source arrives, non-silent, while the
@@ -565,6 +615,20 @@ stated as fact in the plan until its exit criterion is met.
   final conclusion blocks release; updates FR-064): How the engine's LGPL-2.1 obligations (for
   example, relinking provisions) can be met in an App Store app. *Exit*: written license review /
   ADR with a go/no-go conclusion.
+- **RI-009 — Engine runtime library loading on iOS** (blocks Gate 3; updates ADR-0003): Whether the
+  engine's GL resolver calls `dlopen` on iOS when the host supplies a load_proc, which libraries it
+  tries, and whether that is acceptable for App Review. *Exit*: source-and-device analysis in
+  ADR-0003. If loading cannot be avoided, a minimal documented patch disabling it on iOS (patch log)
+  is the fallback.
+- **RI-010 — Upstream's App Store warning** (preliminary conclusion blocks Stage 2 start; updates
+  FR-064): Identify why the engine's build docs warn that Apple's terms may prevent Store use (for
+  example, the license, or presets being runtime-interpreted code). Bundled, reviewed presets with
+  no user import or download are the planned mitigation for the latter. *Exit*: written analysis in
+  ADR-0005.
+- **RI-011 — Engine iOS build configuration** (blocks Gate 3): The CMake configuration for iOS
+  (system name and toolchain, GLES option, dynamic framework output, device and simulator slices).
+  *Exit*: `scripts/build_projectm_xcframework.py` produces the xcframework on CI, with the
+  configuration documented in ADR-0004.
 - **RI-008 — Bundled preset and reference-audio sources** (blocks Gate 3 and Stage 1 In-App
   Playback; updates FR-006, FR-047): The engine repository ships only test presets. Identify a
   starter preset set and reference audio track with verified redistribution rights. *Exit*: license

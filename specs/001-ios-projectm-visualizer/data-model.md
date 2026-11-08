@@ -46,7 +46,8 @@ waiting|noAudioReceived|silent ──peak ≥ −50 dBFS for ≥ 250 ms──▶
 waiting|noAudioReceived ──data arrives, below active threshold──▶ silent
 active ──peak < −60 dBFS for ≥ 2 s──▶ silent                       (FR-011)
 silent for 60 s ──▶ silent + prolongedSilenceHint = true           (FR-018, no state change)
-any running ──user pause / app background (mic, in-app)──▶ paused  (FR-050, FR-054)
+any running ──app background / device lock (mic, in-app)──▶ paused (source suspended; FR-050, FR-054)
+paused ──foreground, permission + route OK──▶ waiting (auto-resume ≤ 2 s)
 any running ──OS interruption──▶ interrupted                       (FR-051)
 interrupted ──OS says may resume──▶ waiting (auto-resume, mic/in-app)
 any running ──OS ends capture session──▶ endedBySystem             (US6-AS3)
@@ -55,6 +56,26 @@ any ──user stop──▶ stopped (≤ 1 s, FR-007)
 ```
 
 Format changes (FR-017) do not cause a transition; they update `AudioFormat` only.
+User pause of the **visualization** (FR-046) is not an AudioState transition; it changes
+`VisualizationState` only.
+
+### Lifecycle matrix (per adapter)
+
+| Event | System/App Capture | Microphone | In-App Playback |
+|-------|--------------------|------------|-----------------|
+| Start | system picker → waiting | explainer → permission → waiting | waiting |
+| User stop | stopped (≤ 1 s) | stopped (≤ 1 s) | stopped (≤ 1 s) |
+| Background / lock | continues if the stream delivers, else endedBySystem (RI-003) | paused (engine stopped) | paused (playback paused) |
+| Foreground | as above | auto-resume ≤ 2 s or reason | auto-resume ≤ 2 s or reason |
+| Interruption | no change while the stream delivers; endedBySystem if it stops | interrupted → auto-resume or one-tap restart | interrupted → auto-resume or one-tap restart |
+| Route change | not applicable (no app output) | continue on new input, or stopReason microphoneUnavailable | output lost → paused (audioRouteChanged) |
+| OS ends session | endedBySystem | not applicable | not applicable |
+| One-tap restart | re-presents system picker (FR-055) | restarts engine | restarts playback |
+
+## VisualizationState (enum)
+
+`running` · `paused` (user, FR-046) · `suspended` (app backgrounded, FR-050). Independent of
+AudioState.
 
 ## StopReason (enum, FR-015)
 
@@ -66,9 +87,9 @@ Format changes (FR-017) do not cause a transition; they update `AudioFormat` onl
 | Field | Type | Rules |
 |-------|------|-------|
 | sampleRate | Double (Hz) | > 0 |
-| channelCount | Int | 1…8 supported; others → `error` |
+| channelCount | Int | ≥ 1. More than 2 is downmixed (known layout) or uses channels 1–2 (unknown layout), per FR-017 |
 | isInterleaved | Bool | — |
-| sampleType | float32 / int16 / int32 | other types → `error` |
+| sampleType | float32 / int16 / int32 | converted to Float32. Only an unconvertible format → `error` (FR-017) |
 
 Internal normalized format (research R-05): Float32, interleaved stereo, 44,100 Hz.
 
@@ -118,7 +139,7 @@ stage, decision (go/no-go), approver, date, evidence links, claimable sources.
 |-------|------|-------|
 | id | String | stable: relative bundle path |
 | name | String | display name from the file name |
-| packID, license | String | must exist in `Presets/LICENSES.md` (FR-047) |
+| packID, author, license, sourceURL, sourceVersion | String | all required; joined from `Presets/LICENSES.md` (FR-047, R-09) |
 | loadStatus | unknown / ok / failed(reason) | failed presets are skipped (FR-045) |
 
 ## Persisted (FR-065) — UserDefaults
