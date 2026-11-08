@@ -42,6 +42,13 @@ public enum UIStrings {
         }
     }
 
+    /// Accessibility hint for a chooser row: the actual reason when unavailable (e.g. the iOS version
+    /// or "Screen recording not allowed", FR-004), otherwise the mode's description.
+    public static func chooserHint(_ availability: SourceAvailability, mode: AudioSourceMode) -> String {
+        if case .unavailable(let reason) = availability { return message(reason) }
+        return description(mode)
+    }
+
     // MARK: Stop/failure reasons (FR-015)
     public static func message(_ reason: StopReason) -> String {
         switch reason {

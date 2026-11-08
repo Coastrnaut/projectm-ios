@@ -149,6 +149,47 @@ final class CaptureManagerTests: XCTestCase {
         XCTAssertEqual(manager.stopDetail, "engine failed (code 42)", "start failures keep their detail")
     }
 
+    /// A declined screen-recording prompt keeps its SCStreamError code in the stop detail, and a start
+    /// blocked by availability says so, so the two exports differ (review 2026-11-08).
+    func testScreenRecordingNotAllowedKeepsItsDetail() async {
+        capture.startError = SourceError(.screenRecordingNotAllowed, detail: "Declined (SCStreamError -3801) [picker]")
+        await manager.select(.systemAppCapture)
+        XCTAssertEqual(manager.stopReason, .screenRecordingNotAllowed)
+        XCTAssertEqual(manager.stopDetail, "Declined (SCStreamError -3801) [picker]")
+
+        capture.startError = nil
+        capture.availability = .unavailable(.screenRecordingNotAllowed)
+        await manager.select(.systemAppCapture)
+        XCTAssertEqual(manager.stopReason, .screenRecordingNotAllowed)
+        XCTAssertEqual(manager.stopDetail, "Not started: the source was unavailable (screenRecordingNotAllowed) before start")
+    }
+
+    func testRuntimeAndResumeFailuresKeepTheirDetail() async {
+        await manager.select(.microphone)
+        mic.emit(.failed(.error("Audio services were reset")))
+        await settle()
+        XCTAssertEqual(manager.stopReason, .error("Audio services were reset"))
+        XCTAssertEqual(manager.stopDetail, "Audio services were reset", "the failed(.error) path keeps its detail")
+
+        await manager.select(.microphone)
+        await manager.handle(.background)
+        mic.resumeError = SourceError(.permissionDenied, detail: "permission revoked in Settings")
+        await manager.handle(.foreground)
+        XCTAssertEqual(manager.stopReason, .permissionDenied)
+        XCTAssertEqual(manager.stopDetail, "permission revoked in Settings", "a resume failure keeps its detail")
+    }
+
+    func testFailedNewAttemptWithoutDetailClearsTheOldDetail() async {
+        await manager.select(.systemAppCapture)
+        capture.emit(.endedBySystem("stopped (SCStreamError -3821)"))
+        await settle()
+        XCTAssertEqual(manager.stopDetail, "stopped (SCStreamError -3821)")
+        capture.startError = SourceError(.cancelled)
+        await manager.restart()
+        XCTAssertEqual(manager.stopReason, .cancelled)
+        XCTAssertNil(manager.stopDetail, "a cancelled attempt must not inherit the previous session's detail")
+    }
+
     func testInterruptionIgnoredForSystemCaptureButNotForMicrophone() async {
         await manager.select(.systemAppCapture)
         capture.emit(.interruptionBegan)

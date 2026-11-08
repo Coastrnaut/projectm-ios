@@ -102,6 +102,7 @@ final class ScreenCaptureSourceTests: XCTestCase {
             XCTFail("must not start")
         } catch let e as SourceError {
             XCTAssertEqual(e.reason, .screenRecordingNotAllowed)
+            XCTAssertEqual(e.detail, "SCContentSharingPicker.isAvailable is false at start")
         } catch { XCTFail("\(error)") }
         XCTAssertEqual(driver.startCount, 0, "the picker must not be shown when not allowed")
         driver.isAllowed = true

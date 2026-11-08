@@ -172,9 +172,8 @@ follows for this project:
     capture and then switches apps or locks the device may get "Ended by system", which FR-050 and FR-054
     allow.
   - T041 records what happens on background, lock and unlock without the mode, with the
-    `SCStreamError` code. The driver keeps the code in the stop detail, but `CaptureManager` drops
-    that detail today, so the export shows only `streamStopped` and `endedBySystem`. Carrying the
-    code changes or adds an export field: an owner decision, needed before T041.
+    `SCStreamError` code: `CaptureManager` keeps the driver's stop detail and the export carries it
+    as `session.stopDetail` (schemaVersion 2, owner ruling 2026-11-08).
   - If T041 shows the mode is needed, adding it requires an amendment to this ADR under research
     R-03's change rule, approved by the project owner. The planned amendment adds only
     `screen-capture`, provided T041 shows that `audio` (or an active audio session) is not also

@@ -14,10 +14,15 @@ public enum SourceEvent: Sendable, Equatable {
     case formatChanged
 }
 
-/// Error thrown by `start`/`resume`, carrying the user-visible reason (FR-015).
+/// Error thrown by `start`/`resume`, carrying the user-visible reason (FR-015) and, optionally, a
+/// detail for diagnostics (exported as `session.stopDetail`), e.g. the SCStreamError code.
 public struct SourceError: Error, Equatable, Sendable {
     public let reason: StopReason
-    public init(_ reason: StopReason) { self.reason = reason }
+    public let detail: String?
+    public init(_ reason: StopReason, detail: String? = nil) {
+        self.reason = reason
+        self.detail = detail
+    }
 }
 
 /// A selectable origin of audio.

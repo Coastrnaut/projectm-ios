@@ -56,7 +56,7 @@ Interrupted · Stopped · Ended by system
 | audioRouteChanged | Paused — audio route changed | Resume, Choose source |
 | endedBySystem | Ended by system | Restart (re-presents the system picker for System/App Capture), Choose source |
 | unsupportedOS | Requires a newer iOS version | Choose source |
-| screenRecordingNotAllowed | Screen recording not allowed | Restart (re-presents the system picker), Choose source |
+| screenRecordingNotAllowed | Screen recording not allowed | Restart (re-presents the system picker if screen recording is allowed; otherwise the same message returns), Choose source |
 | error | Something went wrong: ‹description› | Restart, Choose source |
 
 Hints: No audio received → "No audio received. Try another source or use Microphone." Prolonged

@@ -40,7 +40,8 @@ be described as receiving audio.
 ```text
 notStarted ──start ok──▶ waiting
 notStarted ──start fails──▶ notStarted (+ StopReason: cancelled / permissionDenied /
-                                         microphoneUnavailable / inAppPlaybackFailed / error)
+                                         microphoneUnavailable / inAppPlaybackFailed /
+                                         unsupportedOS / screenRecordingNotAllowed / error)
 waiting ──no data for 5 s──▶ noAudioReceived                       (FR-012)
 active|silent ──no data for 5 s──▶ noAudioReceived                 (a source that stops delivering
                                                                     is never left showing Active)

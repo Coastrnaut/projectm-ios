@@ -9,6 +9,10 @@ struct ContentView: View {
     @Bindable var model: CaptureLabModel
     @State private var showExport = false
     @State private var showChooser = true
+    /// Bumped to re-read source availability: System/App Capture's "not allowed" probe can change
+    /// while the app is in the background (e.g. a Screen Time restriction is lifted).
+    @State private var availabilityRevision = 0
+    @Environment(\.scenePhase) private var scenePhase
 
     private var manager: CaptureManager { model.manager }
 
@@ -26,14 +30,18 @@ struct ContentView: View {
                         showChooser = false
                         model.select(mode)
                     }
+                    .id(availabilityRevision)
                 } else {
                     DiagnosticsView(manager: manager)
                 }
             }
             .navigationTitle("CaptureLab")
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active { availabilityRevision += 1 }
+            }
             .toolbar {
                 ToolbarItemGroup(placement: .bottomBar) {
-                    Button(UIStrings.chooseSource) { showChooser = true }
+                    Button(UIStrings.chooseSource) { showChooser = true; availabilityRevision += 1 }
                     Spacer()
                     Button(UIStrings.stop) { Task { await manager.stop() } }
                         .disabled(!(manager.state.isRunning || manager.state == .paused || manager.state == .interrupted))
@@ -55,7 +63,7 @@ struct ContentView: View {
 
     private func handle(_ action: BannerAction) {
         switch action {
-        case .chooseSource: showChooser = true
+        case .chooseSource: showChooser = true; availabilityRevision += 1
         case .restart: Task { await manager.restart() }       // re-presents the picker for capture (FR-055)
         case .resume: Task { await manager.resume() }
         case .openSettings:

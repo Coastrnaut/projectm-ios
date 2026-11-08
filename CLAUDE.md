@@ -43,11 +43,13 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
   CaptureUI 4) and 15 Python script tests pass.
 - CI is green (GitHub Actions) on `macos-latest` (Xcode 26.6 / iOS SDK 26.5, no ScreenCaptureKit):
   package tests on the macOS host and iOS 26 simulator, generic-iOS builds with the capture driver
-  compiled out. The `build-ios27` job on GitHub's `xcode-27` image (preview, Xcode 27.2 RC) compiles
-  the driver and CaptureLab for iOS devices (ADR-0002). CI does not run the CaptureLab UI tests.
+  compiled out. The `build-ios27` job (added 2026-11-08; first run pending) uses the newest Xcode 27
+  on GitHub's `xcode-27` preview image to compile the driver and CaptureLab for iOS devices
+  (ADR-0002). CI does not run the CaptureLab UI tests.
 - Project Mac = build machine of record: Xcode 27.2 / iOS SDK 27.2 / Swift 6.4.2, XcodeGen 2.46.0,
-  CMake 4.4.5 (ADR-0002, T010). Simulators iOS 27.2 and 26.5. Verified here 2026-11-08: package
-  tests (AudioCore 50, CaptureKit 59, Diagnostics 7, CaptureUI 9) on the host and both simulators;
+  CMake 4.4.5 (ADR-0002, T010). Simulators iOS 27.2 and 26.5. Verified here 2026-11-08 (after the
+  owner rulings): package tests (AudioCore 50, CaptureKit 65, Diagnostics 8, CaptureUI 10) on the
+  host and both simulators;
   CaptureLab UI tests (3) on both simulators; 28 script tests; device builds of everything,
   including `SCKStreamDriver`, with 0 warnings.
 - Gate 0 research done (T035): `docs/platform-research/screencapturekit-ios.md`. ADR-0001 and

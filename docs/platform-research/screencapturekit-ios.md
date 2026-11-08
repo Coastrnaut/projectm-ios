@@ -60,7 +60,7 @@ Apple pages, fetched 2026-11-08 (mostly as DocC JSON). The keys in brackets are 
 | # | Finding | Source | Date |
 |---|---------|--------|------|
 | F1 | `ScreenCaptureKit.framework` is **absent** from the iOS 26.5 SDK (Xcode 26.6). On iOS 26, `#if canImport(ScreenCaptureKit)` is false, so `SCKStreamDriver.swift` is compiled out and System/App Capture shows as unavailable, which is consistent with FR-004/FR-008. | CI probe step, run 42491477885 (`macos-26-arm64`, Xcode_26.6, `iPhoneOS26.5.sdk`) | 2026-11-08 |
-| F2 | The newest Xcode on GitHub's `macos-latest` image (`macos-26-arm64`, image 20261028.624) is 26.6. No iOS 27 SDK is installed there, so CI, which runs there, cannot compile the iOS 27 capture path. GitHub's separate `xcode-27` image (public preview; image 20261026.0314.1: Xcode 27.2 release candidate 27B48, iOS 27.0–27.2 SDKs) can; since 2026-11-08 the CI job `build-ios27` compiles the driver there (ADR-0002). | Same run, "Select newest Xcode" step; actions/runner-images `images/macos/xcode-27-arm64-Readme.md` and issue #14404 | 2026-11-08 |
+| F2 | The newest Xcode on GitHub's `macos-latest` image (`macos-26-arm64`, image 20261028.624) is 26.6. No iOS 27 SDK is installed there, so CI, which runs there, cannot compile the iOS 27 capture path. GitHub's separate `xcode-27` image (public preview; image 20261026.0314.1: Xcode 27.2 release candidate 27B48, iOS 27.0–27.2 SDKs) can; the CI job `build-ios27` (added 2026-11-08, first run pending) compiles the driver there (ADR-0002). | Same run, "Select newest Xcode" step; actions/runner-images `images/macos/xcode-27-arm64-Readme.md` and issue #14404 | 2026-11-08 |
 | F3 | `ScreenCaptureKit.framework` is in `iPhoneOS27.2.sdk` but **not** in `iPhoneSimulator27.2.sdk`. The driver is compiled out on every simulator, where System/App Capture shows as unavailable with "Requires a newer iOS version", even on the iOS 27.2 simulator. Simulator UI tests therefore never exercise the iOS 27 path. | Listing of both SDKs, project Mac, Xcode 27.2 | 2026-11-08 |
 | F4 | Every `ios(...)` annotation in the ScreenCaptureKit headers reads `ios(27.0)`: 93 occurrences, none earlier or later. The Swift overlay also says iOS 27.0 (`.swiftinterface:11`, `:45`). | `grep` over `Headers/*.h` | 2026-11-08 |
 | F5 | The CaptureLab device build (Debug) links ScreenCaptureKit **weakly**: `otool -L` on `CaptureLab.debug.dylib` shows `weak`, with minos 26.0 and sdk 27.2, because the deployment target is 26.0. This supports, but does not prove, launch on iOS 26; D3 settles it (T040, scenario 5). | Local `xcodebuild` and `otool`, project Mac | 2026-11-08 |
@@ -335,8 +335,9 @@ In `Packages/CaptureKit/Sources/CaptureKit/ScreenCapture/SCKStreamDriver.swift` 
    audio callback sends no events (format changes are counted by `PCMSink`). `stop()` marks the
    output stopped and drains both sample-handler queues before returning. No `.microphone`.
 7. **Errors.** Picker cancel → `cancelled`. -3801 → `screenRecordingNotAllowed`, whether it arrives
-   from `startCapture` or from the picker observer's start-failure callback (owner decision 3).
-   Delegate stop →
+   from `startCapture` or from the picker observer's start-failure callback (owner decision 3); the
+   stop detail keeps the code and the path ("… (SCStreamError -3801) [startCapture]" or
+   "[picker]"), and a start blocked because `isAvailable` is false says so. Delegate stop →
    `endedBySystem(detail)`, the detail keeping "(SCStreamError <code>)"; -3817 thus shows "Ended by
    system", as US6-AS3 requires. Other start errors → `error`, code kept.
 8. **Swift 6.** `SCContentFilter` crosses the picker continuation in an `@unchecked Sendable` handoff

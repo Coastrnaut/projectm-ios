@@ -28,6 +28,7 @@ Before Scenario A, record the concrete device model and OS build for each FR-032
 | SC-001–SC-004, FR-030–FR-034, RI-002 | A.2–A.8 |
 | FR-019 on iOS 27 (capture permission prompt) | A.2 |
 | FR-004/FR-008 on iOS 26 | A.3 |
+| FR-004 "Screen recording not allowed" on iOS 27 | host-tested only; on a device only if a restriction makes `isAvailable` false (T040 session, extra check) |
 | RI-003, FR-050–FR-055 (capture evidence) | A.5 |
 | Gate 2 thresholds | A.9 |
 | Gate 3, ADR-0003, RI-009, RI-011 | B |

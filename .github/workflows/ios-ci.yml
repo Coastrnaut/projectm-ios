@@ -165,16 +165,30 @@ jobs:
   build-ios27:
     # Owner ruling 2026-11-08 (ADR-0002): compile the System/App Capture driver against the iOS 27
     # SDK on every run, because macos-latest (iOS 26.5 SDK) compiles it out. GitHub's `xcode-27`
-    # image is a public preview, and its Xcode 27.2 is the release candidate 27B48, not the
-    # pinned 27B52. Compile only: no tests, no simulators, no signing.
+    # image is a public preview; which Xcode 27 builds it carries changes between image versions
+    # (20261026.0314.1: 27.2 RC 27B48 and 27.1 default), so the job picks the newest Xcode 27 that
+    # can build for iOS devices and logs it. The pin (27.2, 27B52) is verified on the build Mac.
+    # Compile only: no tests, no simulators, no signing.
     needs: docs-and-compliance
     runs-on: xcode-27
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
-      - name: Select Xcode 27.2
+      - name: Select the newest Xcode 27 that can build for iOS devices
         run: |
-          sudo xcode-select -s /Applications/Xcode_27.2.app/Contents/Developer
+          SELECTED=""
+          for X in /Applications/Xcode_27.2.app /Applications/Xcode_27.1.app /Applications/Xcode_27.app; do
+            [ -d "$X" ] || continue
+            sudo xcode-select -s "$X/Contents/Developer"
+            # A usable generic iOS destination is listed without an "error:" (platform installed).
+            if (cd Packages/CaptureKit && xcodebuild -scheme CaptureKit -showdestinations 2>/dev/null) \
+                | grep 'name:Any iOS Device' | grep -vq 'error:'; then
+              SELECTED="$X"; break
+            fi
+            echo "::warning::$X cannot build for iOS devices on this image; trying the next Xcode 27"
+          done
+          [ -n "$SELECTED" ] || { echo "::error::No Xcode 27 on this image can build for iOS devices"; exit 1; }
+          echo "Selected $SELECTED"
           xcodebuild -version
           echo "iOS SDK: $(xcrun --sdk iphoneos --show-sdk-version)"
       - name: Require ScreenCaptureKit in the iOS SDK
@@ -198,8 +212,11 @@ jobs:
             -derivedDataPath "$RUNNER_TEMP/dd27" CODE_SIGNING_ALLOWED=NO build
       - name: Confirm the capture driver was compiled
         run: |
-          find "$RUNNER_TEMP/dd27" -name 'SCKStreamDriver.o' | grep -q . \
-            || { echo "::error::SCKStreamDriver.swift was not compiled"; exit 1; }
+          # The object file exists even when `#if ... canImport(ScreenCaptureKit)` compiles the whole
+          # file out, so check its symbols: the driver class and a ScreenCaptureKit reference.
+          OBJ=$(find "$RUNNER_TEMP/dd27" -path '*Debug-iphoneos*' -name 'SCKStreamDriver.o' | head -1)
+          [ -n "$OBJ" ] && nm -U "$OBJ" | grep -q SCKStreamDriver && nm -u "$OBJ" | grep -q SCContentSharingPicker \
+            || { echo "::error::SCKStreamDriver.swift was compiled out or not built"; exit 1; }
           echo "SCKStreamDriver.swift compiled against iOS SDK $(xcrun --sdk iphoneos --show-sdk-version)"
       - name: Build CaptureLab for iOS devices
         run: |

@@ -162,6 +162,8 @@ public final class CaptureManager {
         }
         if case .unavailable(let reason) = source.availability {
             apply(.startFailed(reason))
+            // Tells "blocked before start" apart from a failure inside `start` with the same reason.
+            stopDetail = "Not started: the source was unavailable (\(reason.code)) before start"
             return
         }
         do {
@@ -175,6 +177,7 @@ public final class CaptureManager {
             if runsAnalysisTimer { analyzer.startTimer() }
         } catch let error as SourceError {
             apply(.startFailed(error.reason))
+            if let detail = error.detail { stopDetail = detail }
         } catch {
             apply(.startFailed(.error(String(describing: error))))
         }
@@ -228,6 +231,7 @@ public final class CaptureManager {
         } catch let error as SourceError {
             await stopCurrent()
             apply(.failed(error.reason))
+            if let detail = error.detail { stopDetail = detail }
         } catch {
             await stopCurrent()
             apply(.failed(.error(String(describing: error))))

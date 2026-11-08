@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "projectm-ios/diagnostics-export/1",
+  "$id": "projectm-ios/diagnostics-export/2",
   "title": "CaptureLab diagnostics export (FR-021)",
   "description": "Metadata only. MUST NOT contain audio samples, device identifiers, or account information.",
   "type": "object",

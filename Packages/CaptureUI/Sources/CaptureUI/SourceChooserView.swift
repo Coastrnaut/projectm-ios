@@ -40,13 +40,7 @@ public struct SourceChooserView: View {
         }
         .disabled(!isAvailable)
         .accessibilityLabel(Text(UIStrings.label(mode)))
-        .accessibilityHint(Text(hint(for: available, mode: mode)))
-    }
-
-    /// The hint names the actual reason a mode is unavailable (e.g. iOS version or not allowed).
-    private func hint(for availability: SourceAvailability, mode: AudioSourceMode) -> String {
-        if case .unavailable(let reason) = availability { return UIStrings.message(reason) }
-        return UIStrings.description(mode)
+        .accessibilityHint(Text(UIStrings.chooserHint(available, mode: mode)))
     }
 }
 #endif

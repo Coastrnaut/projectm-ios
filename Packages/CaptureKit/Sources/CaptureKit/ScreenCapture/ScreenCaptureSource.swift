@@ -43,7 +43,9 @@ public final class ScreenCaptureSource: AudioSource, ContentIdentifying {
 
     public func start(into sink: PCMSink) async throws -> AsyncStream<SourceEvent> {
         guard let driver, driver.isSupported else { throw SourceError(.unsupportedOS) }
-        guard driver.isAllowed else { throw SourceError(.screenRecordingNotAllowed) }
+        guard driver.isAllowed else {
+            throw SourceError(.screenRecordingNotAllowed, detail: "SCContentSharingPicker.isAvailable is false at start")
+        }
         let (stream, continuation) = AsyncStream.makeStream(of: SourceEvent.self)
         do {
             try await driver.start(sink: sink) { continuation.yield($0) }

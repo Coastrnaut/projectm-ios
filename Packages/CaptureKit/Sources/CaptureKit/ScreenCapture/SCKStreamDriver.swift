@@ -53,7 +53,9 @@ final class SCKStreamDriver: NSObject, StreamDriver {
 
     func start(sink: PCMSink, onEvent: @escaping @Sendable (SourceEvent) -> Void) async throws {
         // Checked again here: the probe can change between the chooser and the tap.
-        guard isAllowed else { throw SourceError(.screenRecordingNotAllowed) }
+        guard isAllowed else {
+            throw SourceError(.screenRecordingNotAllowed, detail: "SCContentSharingPicker.isAvailable is false at start")
+        }
         let filter = try await presentPicker()
         // FR-069, defense in depth: the picker shows no microphone control, so the user cannot
         // enable it; if the filter still reports it, do not start.
@@ -88,7 +90,7 @@ final class SCKStreamDriver: NSObject, StreamDriver {
             // -3801: the user did not authorize screen recording (owner ruling 2026-11-08).
             await discard(output)
             SCContentSharingPicker.shared.isActive = false
-            throw SourceError(.screenRecordingNotAllowed)
+            throw SourceError(.screenRecordingNotAllowed, detail: sckDescription(error) + " [startCapture]")
         } catch {
             await discard(output)
             SCContentSharingPicker.shared.isActive = false
@@ -196,7 +198,7 @@ private final class SCKPickerObserver: NSObject, SCContentSharingPickerObserver,
         // A decline (-3801) can arrive here or from startCapture; both must read "Screen recording
         // not allowed" (US1-AS4). Which path iOS uses is recorded in T040.
         if let error = error as? SCStreamError, error.code == .userDeclined {
-            completion(.failure(SourceError(.screenRecordingNotAllowed)))
+            completion(.failure(SourceError(.screenRecordingNotAllowed, detail: sckDescription(error) + " [picker]")))
         } else {
             completion(.failure(SourceError(.error(sckDescription(error)))))
         }

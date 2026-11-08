@@ -28,6 +28,15 @@ final class UIStringsTests: XCTestCase {
         XCTAssertNotEqual(UIStrings.message(.screenRecordingNotAllowed), UIStrings.message(.unsupportedOS))
     }
 
+    /// FR-004: VoiceOver hears the actual reason a mode is unavailable.
+    func testChooserHintNamesTheActualReason() {
+        XCTAssertEqual(UIStrings.chooserHint(.unavailable(.screenRecordingNotAllowed), mode: .systemAppCapture),
+                       "Screen recording not allowed")
+        XCTAssertEqual(UIStrings.chooserHint(.unavailable(.unsupportedOS), mode: .systemAppCapture),
+                       "Requires a newer iOS version")
+        XCTAssertEqual(UIStrings.chooserHint(.available, mode: .microphone), UIStrings.description(.microphone))
+    }
+
     func testNoThirdPartyAppNamesInStrings() {
         let all = AudioSourceMode.allCases.flatMap { [UIStrings.label($0), UIStrings.description($0)] }
             + AudioState.allCases.map(UIStrings.state)

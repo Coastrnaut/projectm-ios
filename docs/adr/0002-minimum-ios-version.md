@@ -29,15 +29,16 @@ with System/App Capture only where the OS provides it.
   (scripts need 3.10+) and simulator runtimes for iOS 27.2 and iOS 26.5 (23F77, the same build
   as D3). Every `{mac}` build or test result is reported against this pin.
 - **CI**: the main job runs on GitHub's `macos-latest` image (`macos-26-arm64`, image
-  20261102.0473.1): Xcode 26.0–26.6, the iOS 26.5 SDK and iOS 26.x simulator runtimes. It covers
-  the iOS 26 path, installs the pinned XcodeGen, and runs `verify_environment.py` as a warning,
-  because the Xcode/SDK/Swift pin cannot match there. GitHub also offers an `xcode-27` image
-  (`runs-on: xcode-27`, a public preview announced 2026-07-16 in actions/runner-images#14404;
-  image 20261026.0314.1 has Xcode 27.2 as release candidate 27B48, not the pinned 27B52, and the
-  iOS 27.0–27.2 SDKs). Owner ruling 2026-11-08: the CI job `build-ios27` runs there on every run
-  and compiles CaptureKit (including the System/App Capture driver) and CaptureLab for iOS
-  devices, at the cost of extra macOS minutes (10× quota on this private repository). It only
-  compiles; the iOS 27 path is tested on the build Mac and on devices.
+  20261102.0473.1): Xcode 26.0–26.6, the iOS 26.5 SDK and iOS 26.x simulator runtimes. It covers the
+  iOS 26 path, installs the pinned XcodeGen, and runs `verify_environment.py` as a warning, because
+  the Xcode/SDK/Swift pin cannot match there. GitHub also offers an `xcode-27` image (`runs-on:
+  xcode-27`, a public preview announced 2026-07-16 in actions/runner-images#14404; image
+  20261026.0314.1 has Xcode 27.2 as release candidate 27B48, not the pinned 27B52, and the iOS
+  27.0–27.2 SDKs). Owner ruling 2026-11-08: the CI job `build-ios27` (first run pending) runs there
+  on every run, picks the newest Xcode 27 that can build for iOS devices, and compiles CaptureKit
+  (including the System/App Capture driver) and CaptureLab for iOS devices, at the cost of extra
+  macOS minutes (10× quota on this private repository). It only compiles; the iOS 27 path is tested
+  on the build Mac and on devices.
 
 ## Consequences
 
