@@ -537,6 +537,8 @@ Each edge case below maps to a functional requirement.
   In-App Playback), display label, availability on this device, current audio state, stop reason.
 - **Audio State**: The truthfulness status of the active source (FR-010), with timestamps of the
   last transition and last non-silent sample.
+- **Visualization State**: Running, paused by the user (FR-046, FR-085), or suspended because the
+  app left the foreground (FR-050). Independent of Audio State.
 - **Audio Diagnostics Snapshot**: Metadata about a capture session — sample count, sample rate,
   channel count, timestamps, cadence, peak/RMS, dropped buffers, start-to-first-audio time. Never
   contains raw audio or device identifiers.

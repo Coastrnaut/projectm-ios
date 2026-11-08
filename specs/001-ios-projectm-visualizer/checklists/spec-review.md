@@ -90,6 +90,7 @@ success criterion, or research item IDs; `§Gating` = Delivery Gating; `§Edge` 
 
 - [x] CHK050 - Does FR-066 avoid naming an implementation API (it named UserDefaults), consistent with the spec's technology-agnostic rule? [Clarity, Spec §FR-066] (iteration 3)
 - [x] CHK051 - Is the exit timing for tunable thresholds consistent with when each can be measured (rendering/device thresholds cannot be finalized in Stage 1)? [Conflict, Spec §Assumptions, §SC-014] (iteration 3)
+- [x] CHK052 - Does spec §Key Entities include every entity the data model defines (Visualization State was missing)? [Consistency, Spec §Key Entities, DM] (iteration 4)
 
 ## Notes
 
@@ -101,3 +102,4 @@ success criterion, or research item IDs; `§Gating` = Delivery Gating; `§Edge` 
 - `/speckit-implement` reads checklist state but does not modify markers.
 
 - Iteration 3 (2026-11-08): re-scan found CHK050–CHK051; both resolved in spec.md, verified, and checked.
+- Iteration 4 (2026-11-08): reference/marker scan clean; semantic re-read found CHK052, resolved, verified, and checked.
