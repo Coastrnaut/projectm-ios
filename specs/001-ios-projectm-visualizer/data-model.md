@@ -42,6 +42,8 @@ notStarted ──start ok──▶ waiting
 notStarted ──start fails──▶ notStarted (+ StopReason: cancelled / permissionDenied /
                                          microphoneUnavailable / inAppPlaybackFailed / error)
 waiting ──no data for 5 s──▶ noAudioReceived                       (FR-012)
+active|silent ──no data for 5 s──▶ noAudioReceived                 (a source that stops delivering
+                                                                    is never left showing Active)
 waiting|noAudioReceived|silent ──peak ≥ −50 dBFS for ≥ 250 ms──▶ active   (FR-011)
 waiting|noAudioReceived ──data arrives, below active threshold──▶ silent
 active ──peak < −60 dBFS for ≥ 2 s──▶ silent                       (FR-011)
