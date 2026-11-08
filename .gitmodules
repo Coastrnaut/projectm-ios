@@ -1,0 +1,3 @@
+[submodule "Vendor/projectM"]
+	path = Vendor/projectM
+	url = https://github.com/projectM-visualizer/projectm.git
