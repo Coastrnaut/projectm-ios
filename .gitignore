@@ -33,3 +33,22 @@
 
 # Claude Code machine-local settings (may hold personal permissions/credentials)
 .claude/settings.local.json
+
+# Apple / Swift build output (plan.md: generated, never committed)
+Build/
+*.xcodeproj/
+*.xcworkspace/
+DerivedData/
+.build/
+.swiftpm/
+xcuserdata/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+
+# Python
+__pycache__/
+*.pyc
+.venv/

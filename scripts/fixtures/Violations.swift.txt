@@ -1,0 +1,7 @@
+// Fixture for scripts/test_scripts.py: every line below must be flagged by check_compliance.py.
+// Stored with a .txt suffix so the normal scan (Apps/, Packages/) never sees it.
+import ReplayKit
+import ScreenCaptureKit
+let session = URLSession.shared
+let handle = dlopen("libfoo.dylib", 0)
+let cls = NSClassFromString("PrivateThing")
