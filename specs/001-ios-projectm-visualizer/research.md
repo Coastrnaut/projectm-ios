@@ -27,13 +27,15 @@ Renderer/Platform/GLResolver.cpp).
 ## R-02 System/App Capture API (RI-001, RI-004)
 
 - **Decision**: ScreenCaptureKit only, in-process, on iOS/iPadOS 27.0 and later (RI-004). No
-  broadcast upload extension, no App Group IPC, no ReplayKit, no entitlement. The app calls the
+  broadcast upload extension, no App Group IPC, no ReplayKit. The only entitlement is the Screen
+  Recording entitlement, `com.apple.developer.screen-recording`, as in Apple's iOS sample (owner
+  review 2026-11-08; ADR-0001 Decision 6). The app calls the
   system picker's `present()` from `start` and does not steer the selection (iOS has no picker
   modes). The stream enables audio (48 kHz, 2 channels, own audio excluded), adds an `.audio`
   output into `PCMSink` and a frame-discarding 64×64 `.screen` output, and never a `.microphone`
   output; the picker hides its microphone control (FR-069). `SCContentSharingPicker.isAvailable`
   gates availability and start (FR-004). Decisions taken in T035 (2026-11-08) are
-  listed in ADR-0001; the owner may revisit them.
+  listed in ADR-0001, which the project owner accepted on 2026-11-08 with the rulings listed there.
 - **Rationale**: Apple documents ScreenCaptureKit as the iOS 27 replacement for ReplayKit, whose
   capture APIs are deprecated in iOS 27.0. The constitution forbids ReplayKit as the default, and
   the spec (FR-009) forbids a legacy path.
@@ -44,8 +46,10 @@ Renderer/Platform/GLResolver.cpp).
   `docs/platform-research/screencapturekit-ios.md`): iOS symbols and availability, no picker modes,
   output types `.screen`/`.audio`/`.microphone`, no content identity on iOS (FR-014),
   `NSScreenCaptureUsageDescription` named by Apple's overview (FR-019). **Open until device
-  testing** (T040): whose audio `.audio` carries (RI-002), whether audio-only streams work, the
-  minimum video size, usage-key enforcement, and the capture indicator (FR-089). **Owner ruling
+  testing**: whose audio `.audio` carries (RI-002; a first answer in T040, per source T051 and
+  T052), usage-key enforcement (T040), and, in the device checks of T113, whether audio-only
+  streams work (approved temporary build), the minimum video size, and the capture indicator
+  (FR-089). **Owner ruling
   2026-11-08**: an iOS 27 device where screen recording is not allowed (`isAvailable` false), and a
   declined screen-recording permission (-3801), use the new reason `screenRecordingNotAllowed`.
 
@@ -59,7 +63,8 @@ Renderer/Platform/GLResolver.cpp).
   invites App Review questions.
 - **Change rule**: If RI-003 shows that ScreenCaptureKit on iOS needs a specific background mode to
   keep a foreground session alive, add only that mode, through an ADR-0001 amendment approved by the
-  project owner. No other modes are added.
+  project owner. No other modes are added. Owner review 2026-11-08: the only mode this rule can add
+  is `screen-capture`; `audio` is never added, and capture in the background stays out of scope.
 - **Alternatives**: Audio background mode to keep the microphone alive. Rejected: no user value
   without visuals.
 - **What the sources say (2026-11-08)**: Apple documents the `UIBackgroundModes` value
@@ -69,7 +74,8 @@ Renderer/Platform/GLResolver.cpp).
   `screen-capture`. Owner ruling 2026-11-08: decide after T041, once its runs (without the mode)
   show which stop codes leaving CaptureLab produces. Until then the test procedure is: start
   playback in the source app first, then stay in CaptureLab (quickstart Scenario A). The current decision (no background mode) stands, and
-  `scripts/check_compliance.py` still rejects any `UIBackgroundModes` key.
+  `scripts/check_compliance.py` rejects a `UIBackgroundModes` key in `project.yml`, whether written
+  plain, quoted or in flow style.
 - **Open until device testing** (T041): behavior on background, lock, unlock and switching to the
   source app, with the stop code recorded; the export carries it in `session.stopDetail`
   (schemaVersion 2, owner ruling 2026-11-08).
@@ -248,9 +254,12 @@ Renderer/Platform/GLResolver.cpp).
 
 ## R-16 Entitlements and capabilities
 
-No App Groups, no background modes (R-03 change rule), no network, no push, no iCloud. Info.plist
-contains only `NSMicrophoneUsageDescription` and any capture key that RI-001 shows is required. The
-set is listed in `project.yml` and reviewed in Phase E.
+No App Groups, no background modes (R-03 change rule), no network, no push, no iCloud. The only
+entitlement is the Screen Recording entitlement (`Apps/CaptureLab/CaptureLab.entitlements`; ADR-0001
+Decision 6). Info.plist contains only `NSMicrophoneUsageDescription` and the capture usage keys
+Apple's documentation tells apps to add: `NSScreenCaptureUsageDescription`, kept whether or not
+iOS 27 requires it (owner review 2026-11-08). The set is listed in `project.yml`, enforced by
+`scripts/check_compliance.py`, and reviewed in Phase E.
 
 ## R-14 Accessibility and photosensitivity
 

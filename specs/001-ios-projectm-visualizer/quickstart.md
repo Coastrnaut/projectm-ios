@@ -28,7 +28,7 @@ Before Scenario A, record the concrete device model and OS build for each FR-032
 | SC-001–SC-004, FR-030–FR-034, RI-002 | A.2–A.8 |
 | FR-019 on iOS 27 (capture permission prompt) | A.2 |
 | FR-004/FR-008 on iOS 26 | A.3 |
-| FR-004 "Screen recording not allowed" on iOS 27 | host-tested only; on a device only if a restriction makes `isAvailable` false (T040 session, extra check) |
+| FR-004 "Screen recording not allowed" on iOS 27 | host-tested only; on a device only if a restriction makes `isAvailable` false (T113) |
 | RI-003, FR-050–FR-055 (capture evidence) | A.5 |
 | Gate 2 thresholds | A.9 |
 | Gate 3, ADR-0003, RI-009, RI-011 | B |
@@ -100,10 +100,10 @@ unavailable there. In every System/App Capture run:
    not allowed" (US1-AS4). If the prompt does not appear again after the first answer, write that in
    the tester note, and how (if at all) it was reset.
 3. On D3 (iPadOS 26.5; US1 scenario 5, T040): CaptureLab launches, and System/App Capture shows
-   "Requires a newer iOS version" while Microphone and In-App Playback stay selectable. The Debug
-   device build weak-links ScreenCaptureKit (deployment target 26.0; checked with `otool -L`).
-   Install that build, or check the build you install the same way, and record which configuration
-   was installed on D3. Only a run on D3 shows that it launches on iOS 26: the simulator build does
+   "Requires a newer iOS version" while Microphone and In-App Playback stay selectable. Device
+   builds weak-link ScreenCaptureKit explicitly (`-weak_framework`, ADR-0002; Debug and Release
+   checked with `otool -l` on 2026-11-08). Record which configuration was installed on D3; before a
+   TestFlight upload, follow `docs/release/capturelab-distribution.md`. Only a run on D3 shows that it launches on iOS 26: the simulator build does
    not link ScreenCaptureKit at all.
 4. **US2**: Microphone (explainer → permission), deny → message; In-App Playback → audible
    reference track, "Active audio" within 1 s; Stop → "Stopped" within 1 s.
@@ -113,12 +113,12 @@ unavailable there. In every System/App Capture run:
    stream survives. Leaving for the source app may end it ("Ended by system", possibly code -3824).
    Whether a lock ends it, and with which code, is unknown. On each of D1 and D2, also do one run
    that changes the shared content from system UI (for example Control Center) during capture,
-   and record what happens in the tester note; CaptureLab does not apply the new choice, by
-   design. CaptureLab declares no background mode. Adding `screen-capture` is allowed only under
-   R-03's change rule (a mode needed to keep a foreground session alive), through an ADR-0001
-   amendment approved by the project owner and a narrow `check_compliance.py` exception; whether
-   capture that survives leaving CaptureLab falls under that rule is an owner decision (ruled
-   2026-11-08: decide after T041). The export records each stop code in `session.stopDetail`.
+   and record what happens in the tester note (T113); CaptureLab does not apply the new choice, by
+   design. CaptureLab declares no background mode. If T041 shows one is needed to keep a foreground
+   session alive, only `screen-capture` may be added, through an owner-approved ADR-0001 amendment
+   and a narrow `check_compliance.py` exception; `audio` is never added, and capture in the
+   background stays out of scope (owner review 2026-11-08). Repeat the background and lock runs on
+   D1 and D2 with the approved temporary build that declares only `screen-capture`. The export records each stop code in `session.stopDetail`.
 6. For each FR-030 source, run 10 minutes in the foreground and export (FR-021).
 7. Fill `docs/test-reports/compatibility-report.md` rows (FR-031) and rate each Works / Partial /
    Does not work.
@@ -150,6 +150,7 @@ starter presets. Record shader failures, fps, and app size per ADR-0003 option.
 | SC-015 | Cold launch × 10, D1 (reference) and D3 | median < 2 s / < 4 s |
 | FR-084 | Visualize for longer than the auto-lock interval | device does not lock |
 | FR-041 | Rotate; iPad split view and resize | re-layout ≤ 1 s, capture uninterrupted |
+| FR-089 | Hide the controls during System/App Capture and during Microphone, on D1 and D2 (T084) | the screen-recording and microphone indicators stay visible |
 
 ## Scenario D — Release checks
 

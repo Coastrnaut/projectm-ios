@@ -65,7 +65,7 @@ Apple pages, fetched 2026-11-08 (mostly as DocC JSON). The keys in brackets are 
 | F2 | The newest Xcode on GitHub's `macos-latest` image (`macos-26-arm64`, image 20261102.0473.1; 20261028.624 in the same log is the runner provisioner's version) is 26.6. No iOS 27 SDK is installed there, so CI, which runs there, cannot compile the iOS 27 capture path. GitHub's separate `xcode-27` image (public preview; image 20261026.0314.1: Xcode 27.2 release candidate 27B48, iOS 27.0–27.2 SDKs) can; the CI job `build-ios27` compiles the driver there (ADR-0002). Its first run, 42529663444, used image 20261104.0337.1 with Xcode 27.2 build 27B52 (the pinned build) and confirmed the driver's symbols. | Same run, "Select newest Xcode" step; actions/runner-images `images/macos/xcode-27-arm64-Readme.md` and issue #14404 | 2026-11-08 |
 | F3 | `ScreenCaptureKit.framework` is in `iPhoneOS27.2.sdk` but **not** in `iPhoneSimulator27.2.sdk`. The driver is compiled out on every simulator, where System/App Capture shows as unavailable with "Requires a newer iOS version", even on the iOS 27.2 simulator. Simulator UI tests therefore never exercise the iOS 27 path. | Listing of both SDKs, project Mac, Xcode 27.2 | 2026-11-08 |
 | F4 | Every `ios(...)` annotation in the ScreenCaptureKit headers reads `ios(27.0)`: 93 occurrences, none earlier or later. The Swift overlay also says iOS 27.0 (`.swiftinterface:11`, `:45`). | `grep` over `Headers/*.h` | 2026-11-08 |
-| F5 | The CaptureLab device build (Debug) links ScreenCaptureKit **weakly**: `otool -L` on `CaptureLab.debug.dylib` shows `weak`, with minos 26.0 and sdk 27.2, because the deployment target is 26.0. This supports, but does not prove, launch on iOS 26; D3 settles it (T040, scenario 5). | Local `xcodebuild` and `otool`, project Mac | 2026-11-08 |
+| F5 | The CaptureLab device build (Debug) links ScreenCaptureKit **weakly**: `otool -L` on `CaptureLab.debug.dylib` shows `weak`, with minos 26.0 and sdk 27.2, because the deployment target is 26.0. Since the owner review, device builds also pass `-weak_framework ScreenCaptureKit` (iOS 27 SDKs), and on 2026-11-08 the Debug and the Release device build both load it as `LC_LOAD_WEAK_DYLIB` (`otool -l`). This supports, but does not prove, launch on iOS 26; D3 settles it (T040, scenario 5). | Local `xcodebuild` and `otool`, project Mac | 2026-11-08 |
 | F6 | The driver as committed at 0f1b563 failed the iOS 27.2 device build with exactly two errors: `captureMicrophone` and `minimumFrameInterval` are unavailable in iOS. With both removed, Swift 6 region isolation rejected sending the non-`Sendable` `SCContentFilter` through the picker continuation; an `@unchecked Sendable` handoff struct fixed it. CaptureKit, AudioCore, Diagnostics, CaptureUI and CaptureLab now build for `generic/platform=iOS` with 0 errors and 0 compiler warnings. | Local `xcodebuild`, project Mac | 2026-11-08 |
 | F7 | `ScreenCaptureKit.tbd` targets `arm64e-ios` and `arm64e.x1-ios` (line 3) and exports every class the driver uses (lines 84-96) and `_SCStreamErrorDomain` (line 75). It also exports names that no public header declares, such as `_SCContentFilterCreateiOSDisplayFilterDictionary` (line 69), `SCControlCenterManager` (line 89) and `SCStatusItem` (line 96). They are private and never used (Constitution I). | `ScreenCaptureKit.tbd` | 2026-11-08 |
 | F8 | Apple's web pages agree with the SDK on iOS availability for every symbol checked; the only differences concern Mac Catalyst. Apple's iOS-specific sources are the framework and symbol pages, the iOS sample article and staff forum replies. ScreenCaptureKit on iOS is not mentioned in the iOS/iPadOS 27, 27.2 or 27.3 beta release notes, the ScreenCaptureKit updates page (newest section June 2024) or the WWDC26 session index. | [symbols], [silent] | 2026-11-08 |
@@ -151,7 +151,7 @@ resolution) and a cap at native resolution (:228); no minimum. `updateConfigurat
 (:533), so a running stream cannot be reconfigured. Apple lists 8000, 16000, 24000 and 48000 Hz as
 supported sample rates [samplerate]. That page is not iOS-specific. Which rates iOS honors is
 unknown; the driver uses the documented defaults (48 000 Hz, 2 channels) and records the delivered
-format from every buffer (T040 session, extra check).
+format from every buffer (T113, T040 session).
 
 ### Output types
 
@@ -231,7 +231,7 @@ selection, not its owner. Private tbd names (F7) must never be used to get more.
 |------|------------|---------|---------------------|-------------|
 | -3801 | `userDeclined` | User did not authorize capture | :15 | Driver → `screenRecordingNotAllowed` (owner decision 3); Apple: Screen Recording permission not granted [userdeclined] |
 | -3802 | `failedToStart` | Stream failed to start | :16 | → `error`, code kept |
-| -3803 | `missingEntitlements` | Missing entitlements; the SDK names none | :17 | Open item 5; Apple's sample declares `com.apple.developer.screen-recording`, which CaptureLab is to declare (ADR-0001 Decision 6) |
+| -3803 | `missingEntitlements` | Missing entitlements; the SDK names none | :17 | Open item 5; Apple's sample declares `com.apple.developer.screen-recording`, which CaptureLab declares too (ADR-0001 Decision 6) |
 | -3805 | `failedApplicationConnectionInterrupted` | App connection interrupted | :19 | Record in T041 |
 | -3811 | `internalError` | Start failed: video or audio capture failure | :25 | Record in T040 |
 | -3812 | `invalidParameter` | Invalid parameter | :26 | Would point at the 64 × 64 assumption; retry at a mid size, then with no size set (open item 3) |
@@ -254,8 +254,8 @@ usage-description key or an entitlement.
 | Item | What the sources say | Project decision | Settled by |
 |------|----------------------|------------------|------------|
 | Usage description | Apple's framework page tells apps to request screen-recording permission and add `NSScreenCaptureUsageDescription` [overview]. Nothing else knows the key: no reference page [usage404]; not in the iOS 27.2 SDK; not in Xcode 27.2's Info.plist catalog or its 96 `INFOPLIST_KEY_*` settings. Apple's sample article lists only camera and photo-library usage keys [sample], and the sample project's Info.plist has no `NSScreenCaptureUsageDescription`. | Added to CaptureLab (`project.yml`) with the `contracts/ui-states.md` text (FR-019); kept whether or not iOS requires it (owner review 2026-11-08) | T040 (open item 4) |
-| Entitlement | No reference page. `persistent-content-capture` is for macOS VNC apps and `protected-content` is visionOS only; `com.apple.developer.screen-recording` has no page [entitlements]. Xcode 27.2's cached capability list has no iOS screen-capture entitlement: its only capture entries are `persistent-content-capture` (macOS only) and `screen-capture.include-passthrough` (described as the Apple Vision Pro composite feed). Yet -3803 exists (`Headers/SCError.h:17`). Apple's iOS sample declares `com.apple.developer.screen-recording`, and its README calls it the Screen Recording entitlement, provisioned through the developer team (read 2026-11-08). | Owner review 2026-11-08: CaptureLab declares `com.apple.developer.screen-recording` (ADR-0001 Decision 6; not implemented yet) | T040 (open item 5) |
-| Background mode | Apple documents the `UIBackgroundModes` value `screen-capture` for capturing in the background [bgmodes]; the framework page says to add background modes for background capture [overview]. Apple's sample declares it so full-display capture survives backgrounding, and `audio` only for its microphone tap [sample]; the sample project's Info.plist confirms both. The SDK names no mode, but -3824 exists (`Headers/SCError.h:38`). Xcode 27.2's Info.plist catalog lists `screen-capture`; its Background Modes editor has no checkbox for it. | Not added: R-03 allows a mode only through an owner-approved ADR-0001 amendment, R-16 allows background modes only under R-03's change rule, and `scripts/check_compliance.py:40` currently rejects a plain `UIBackgroundModes` key (owner decision 1). Owner review 2026-11-08: only `screen-capture` may ever be added, never `audio` | T041 (open item 6) |
+| Entitlement | No reference page. `persistent-content-capture` is for macOS VNC apps and `protected-content` is visionOS only; `com.apple.developer.screen-recording` has no page [entitlements]. Xcode 27.2's cached capability list has no iOS screen-capture entitlement: its only capture entries are `persistent-content-capture` (macOS only) and `screen-capture.include-passthrough` (described as the Apple Vision Pro composite feed). Yet -3803 exists (`Headers/SCError.h:17`). Apple's iOS sample declares `com.apple.developer.screen-recording`, and its README calls it the Screen Recording entitlement, provisioned through the developer team (read 2026-11-08). | Owner review 2026-11-08: CaptureLab declares `com.apple.developer.screen-recording` (ADR-0001 Decision 6; `Apps/CaptureLab/CaptureLab.entitlements`) | T040 (open item 5) |
+| Background mode | Apple documents the `UIBackgroundModes` value `screen-capture` for capturing in the background [bgmodes]; the framework page says to add background modes for background capture [overview]. Apple's sample declares it so full-display capture survives backgrounding, and `audio` only for its microphone tap [sample]; the sample project's Info.plist confirms both. The SDK names no mode, but -3824 exists (`Headers/SCError.h:38`). Xcode 27.2's Info.plist catalog lists `screen-capture`; its Background Modes editor has no checkbox for it. | Not added: R-03 allows a mode only through an owner-approved ADR-0001 amendment, R-16 allows background modes only under R-03's change rule, and `scripts/check_compliance.py` rejects a `UIBackgroundModes` key in `project.yml` written plain, quoted or in flow style (owner decision 1). Owner review 2026-11-08: only `screen-capture` may ever be added, never `audio` | T041 (open item 6) |
 | Extension, App Group | None needed. `RPScreenRecorder` and `RPSystemBroadcastPickerView` are deprecated in iOS 27.0 in favor of ScreenCaptureKit (`ReplayKit.framework/Headers/RPScreenRecorder.h:40`, `RPBroadcast.h:182`), and Apple says a broadcast extension is no longer needed [overview]. | None (ADR-0001) | Answered |
 | Device lock | No Apple source covers it. A non-Apple forum question asks exactly this and has no answer [f853061]. | — | T041 (open item 6) |
 
@@ -276,7 +276,7 @@ audible indication while an app records [guidance]. `UITraitCollection.sceneCapt
 source says whether ScreenCaptureKit sets it [uikit].
 
 **Answer.** Not documented. Whether an indicator appears for CaptureLab's stream needs observation
-on D1 and D2 in the device-check task (quickstart A.2 tester note); if iOS shows none, the owner
+on D1 and D2 in T113 (quickstart A.2 tester note); if iOS shows none, the owner
 decides from that note whether the app needs its own (owner review 2026-11-08). Whether hiding the
 status bar and home indicator hides it is open item 7 (T084, Stage 2). FR-086 waits for that
 result.
@@ -298,16 +298,16 @@ protection (Constitution I, FR-003).
 |----------|--------|--------|--------|
 | RI-004: first OS version with the system capture flow | iOS/iPadOS 27.0 | Answered | F4; [overview] |
 | RI-004: unavailable on iOS/iPadOS 26? | Yes: no framework in the 26.5 SDK; every API is 27.0 | Answered; D3 launch needs device (T040) | F1, F4, F5 |
-| RI-001: picker modes and selection scopes | No modes; `present()`, `present(using: .window/.display)`, `presentForCurrentApplication()` (own app only) | API answered; picker contents need device (T040 session, extra check) | `SCContentSharingPicker.h:25`, `:129`, `:136`, `:157` |
-| RI-001: stream configuration options | 7 properties and one HDR preset; no frame-rate control; no documented minimum size | Answered; minimum size needs device (T040 session, extra check) | `SCStream.h:230-398` |
+| RI-001: picker modes and selection scopes | No modes; `present()`, `present(using: .window/.display)`, `presentForCurrentApplication()` (own app only) | API answered; picker contents need device (T113, T040 session) | `SCContentSharingPicker.h:25`, `:129`, `:136`, `:157` |
+| RI-001: stream configuration options | 7 properties and one HDR preset; no frame-rate control; no documented minimum size | Answered; minimum size needs device (T113, T040 session) | `SCStream.h:230-398` |
 | RI-001: audio output types | `.audio` and `.microphone` (plus `.screen` for video) | Answered | `SCStream.h:34-38` |
 | RI-001: is app audio (not only microphone) delivered? | Not stated by any Apple source; Apple's sample never adds an `.audio` output | Needs device: first answer T040; per FR-030 source T051/T052 (RI-002) | `SCStream.h:31`; [sample] |
-| RI-001: can microphone audio be excluded (FR-069)? | Yes: picker control off (default) and no `.microphone` output | Mechanism answered; runtime check in the T040 session (extra check) | `SCContentSharingPicker.h:59`; `SCStream.h:37`, `:380` |
+| RI-001: can microphone audio be excluded (FR-069)? | Yes: picker control off (default) and no `.microphone` output | Mechanism answered; runtime check in T113 (T040 session) | `SCContentSharingPicker.h:59`; `SCStream.h:37`, `:380` |
 | RI-001: required usage-description keys | `NSScreenCaptureUsageDescription`, named only by Apple's framework page | Key answered; enforcement needs device (T040) | [overview], [usage404] |
 | RI-001: does the OS identify the selected content? | No | Answered | `SCStream.h:135-145`; `SCShareableContent.h:33` |
-| RI-001: capture indicator, and with a hidden status bar (FR-089) | Not documented | Needs device: the indicator during capture in the device-check task (quickstart A.2 tester note); with a hidden status bar in T084, Stage 2 (not yet in T084's text) | [support], [guidance] |
+| RI-001: capture indicator, and with a hidden status bar (FR-089) | Not documented | Needs device: the indicator during capture in T113 (quickstart A.2 tester note); with a hidden status bar in T084, Stage 2 | [support], [guidance] |
 | RI-003 configuration: background mode | `screen-capture` documented for background capture; not added | Configuration answered; behavior needs device (T041) | [bgmodes]; `SCError.h:38` |
-| RI-003 configuration: entitlements | No reference page; Apple's sample declares `com.apple.developer.screen-recording` | To be declared by CaptureLab (owner review, ADR-0001 Decision 6; not implemented yet); T040 shows whether -3803 remains | `SCError.h:17`; [entitlements]; sample project |
+| RI-003 configuration: entitlements | No reference page; Apple's sample declares `com.apple.developer.screen-recording` | Declared by CaptureLab (owner review, ADR-0001 Decision 6); T040 shows whether -3803 remains | `SCError.h:17`; [entitlements]; sample project |
 | RI-003 configuration: extension or App Group | None | Answered | `RPScreenRecorder.h:40`; [overview] |
 
 ## Driver decisions taken under T035/T037
@@ -353,18 +353,17 @@ In `Packages/CaptureKit/Sources/CaptureKit/ScreenCapture/SCKStreamDriver.swift` 
 Configuration decisions: FR-008 names iOS/iPadOS 27.0. CaptureLab's Info.plist has
 `NSScreenCaptureUsageDescription` with the `contracts/ui-states.md` text (FR-019; kept either way,
 owner review 2026-11-08) and no background mode. The owner review added the Screen Recording
-entitlement (ADR-0001 Decision 6; not implemented yet). RI-001 supports ADR-0001's decision
+entitlement (ADR-0001 Decision 6; `Apps/CaptureLab/CaptureLab.entitlements`). RI-001 supports ADR-0001's decision
 (ScreenCaptureKit only, in-process, no extension); the project owner accepted ADR-0001 on
 2026-11-08.
 
 ## Open until device testing
 
 Items 1 (RI-002's first answer), 4 (FR-019: whether iOS shows or enforces the key, which `spec.md`
-assigns to T040), 5 (-3803) and the D3 part of 14 (US1 scenario 5) belong to T040. Items marked "T040 session, extra check" are extra RI-001/RI-003
-checks run in the same device session. They are not part of T040's acceptance criterion (US1
-scenarios 1-5 and SC-003, `tasks.md` T040); the owner review (2026-11-08) puts them in a new
-device-check task, run in the T040 and T041 sessions and required before Gate 1 (not yet in
-`tasks.md`). Runs with temporary builds (no `.screen` output, no usage key, tone hook,
+assigns to T040), 5 (-3803) and the D3 part of 14 (US1 scenario 5) belong to T040. Items marked **T113** are extra RI-001/RI-003
+checks run in the T040 and T041 device sessions. They are not part of T040's acceptance criterion
+(US1 scenarios 1-5 and SC-003, `tasks.md` T040); the owner review (2026-11-08) made them task
+T113, the device-check task, required before Gate 1. Runs with temporary builds (no `.screen` output, no usage key, tone hook,
 `screen-capture` only) are approved by the owner review; they are diagnostic only and never count
 as FR-031 compatibility evidence.
 
@@ -375,10 +374,10 @@ as FR-031 compatibility evidence.
    `present()`, a diagnostic run tries `present(using: .display)` before T056's go/no-go (owner
    review 2026-11-08).
 2. **Audio-only stream versus `.screen`.** Test: the same source with and without the `.screen`
-   output (temporary build); compare buffer counts and errors (-3812, -3818). **T040 session, extra check.**
+   output (temporary build); compare buffer counts and errors (-3812, -3818). **T113** (T040 session).
 3. **Minimum width and height.** Test: at 64 × 64, `startCapture` succeeds (no -3812) and audio
    arrives; if not, retry at a mid size (for example 320 × 320), then with no size set (native
-   default; owner review 2026-11-08). **T040 session, extra check.**
+   default; owner review 2026-11-08). **T113** (T040 session).
 4. **`NSScreenCaptureUsageDescription` enforcement.** Test: with the key, does iOS show the string?
    With a temporary build without it, does capture start or is the app terminated? **T040.**
 5. **Entitlement (-3803).** The sample archive (read 2026-11-08 with owner approval) declares
@@ -394,32 +393,32 @@ as FR-031 compatibility evidence.
 7. **Capture indicator with a hidden status bar (FR-089).** Test: during capture on D1 (Dynamic
    Island) and D2, hide the status bar and home indicator; record with a photo and a note whether an
    indicator appears and stays visible; optionally log `sceneCaptureState`. **T084 (Stage 2)**, by
-   owner review 2026-11-08, because CaptureLab never hides the status bar (not yet in T084's text).
-   Whether an indicator appears at all is checked in the device-check task (quickstart A.2 tester
-   note). The
+   owner review 2026-11-08, because CaptureLab never hides the status bar. Whether an indicator
+   appears at all is checked in T113 (quickstart A.2 tester note). The
    microphone-in-use indicator in Microphone mode is observed the same way in **T049**.
 8. **`excludesCurrentProcessAudio` on iOS 27.0.1.** Documented for iOS 27.0 [excludes]; a non-Apple
    post says it did nothing on 27.0 until 27.2 beta 2 [f842854], and D1 runs 27.0.1. Low impact while
    CaptureLab plays nothing during capture (FR-001). Test: a temporary hook plays a tone during
-   capture on D1 and D2; the tone must be absent from `.audio`. **T040 session, extra check.**
+   capture on D1 and D2; the tone must be absent from `.audio`. **T113** (T040 session).
 9. **Re-picking or stopping from system UI.** Undocumented whether iOS sends another
    `didUpdateWith`, or stops the stream, when the user changes or stops sharing from Control Center.
    Test: during capture, change the content, then stop sharing from system UI; record callbacks,
    stop code and whether audio continues. Also covers RI-003's "source app changing".
-   **Device-check task, T041 session** (owner review 2026-11-08; quickstart A.5).
+   **T113, T041 session** (owner review 2026-11-08; quickstart A.5).
 10. **Picker callbacks.** Undocumented: the callback queue, whether every `present()` ends in exactly
     one callback (the driver has no timeout, so a missing one leaves start waiting), and when -3801
     occurs instead of a cancel. Test: log `Thread.isMainThread` per callback; dismiss the picker in
-    each available way and confirm start always returns. **T040 session, extra check.** Owner review
+    each available way and confirm start always returns. **T113** (T040 session). Owner review
     2026-11-08: Stop, or choosing another source, cancels a waiting start and returns to "Not
-    started" (no timeout; a small CaptureKit change with unit tests; not implemented yet).
+    started", with the reason "cancelled" (implemented 2026-11-08 with unit tests; there is still
+    no timeout).
 11. **FairPlay audio and source-app behavior.** Test: a FairPlay-protected Apple Music track and an
-    unprotected source: silent or not, and does the source app pause or mute? **T040 session, extra check**, then T051.
+    unprotected source: silent or not, and does the source app pause or mute? **T113** (T040 session), then T051.
 12. **Picker contents on iPhone and iPad.** Test: record what `present()` offers on D1 and D2; a
-    screenshot documents the UI only, never capture (Constitution II). **T040 session, extra check.**
+    screenshot documents the UI only, never capture (Constitution II). **T113** (T040 session).
 13. **Microphone stays out (FR-069).** Test: during capture with nothing playing, speak near the
-    device; `.audio` stays silent and the microphone indicator stays off. **T040 session, extra check.**
-14. **`isAvailable` and D3.** Test: record `isAvailable` on D1 and D2 (T040 session, extra check); on
+    device; `.audio` stays silent and the microphone indicator stays off. **T113** (T040 session).
+14. **`isAvailable` and D3.** Test: record `isAvailable` on D1 and D2 (T113, T040 session); on
     D3, CaptureLab launches and System/App Capture shows "Requires a newer iOS version" (**T040**,
     scenario 5).
 15. **Real-time safety.** Test: a 60 s allocation trace of the System/App Capture audio callback on
@@ -431,8 +430,8 @@ T041 records its results in this file.
 
 1. **Background mode `screen-capture`: decide after T041.** Apple documents it for capture in the
    background [bgmodes], and -3824 exists (`Headers/SCError.h:38`); research R-03 allows a mode only
-   through an owner-approved ADR-0001 amendment, and `scripts/check_compliance.py:40` rejects a plain
-   `UIBackgroundModes` key (quoted or flow-style keys are not caught yet). T041 first runs without
+   through an owner-approved ADR-0001 amendment, and `scripts/check_compliance.py` rejects a
+   `UIBackgroundModes` key in `project.yml`, written plain, quoted or in flow style. T041 first runs without
    the mode and records the stop codes; then the
    owner either amends ADR-0001 (adding only `screen-capture` and a narrow compliance exception) or
    accepts that leaving CaptureLab ends capture ("Ended by system", FR-050). Until then testers start
@@ -458,7 +457,7 @@ T041 records its results in this file.
    runs (ADR-0002).
 6. **Owner review of ADR-0001 and ADR-0002: both accepted.** The review re-checked both ADRs'
    claims and read Apple's iOS sample project (Sources). ADR-0001 is amended so that CaptureLab
-   declares the Screen Recording entitlement (Decision 6; not implemented yet). The rulings and
+   declares the Screen Recording entitlement (Decision 6). The rulings and
    their implementation status are listed in each ADR's "Owner review (2026-11-08)" section; the
    ones that change this file's plan are folded in above (open items 1, 3, 5, 6, 7, 9 and 10, the
-   capture-indicator answer, and the device-check task).
+   capture-indicator answer, and T113).
