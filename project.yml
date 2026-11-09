@@ -3,8 +3,9 @@
 #
 # Signing: DEVELOPMENT_TEAM and provisioning are set by a human in Xcode or via a local,
 # uncommitted xcconfig. Never by automation (Constitution: Security).
-# Entitlements / background modes: none (research R-16). scripts/check_compliance.py fails
-# the build if any are added here.
+# Entitlements: only the Screen Recording entitlement, from Apps/CaptureLab/CaptureLab.entitlements
+# through CODE_SIGN_ENTITLEMENTS (ADR-0001 Decision 6). Background modes: none (research R-03,
+# R-16). scripts/check_compliance.py fails the build on any other entitlement or background mode.
 name: ProjectM-iOS
 options:
   bundleIdPrefix: org.projectmios
@@ -48,6 +49,14 @@ targets:
         PRODUCT_NAME: CaptureLab
         INFOPLIST_KEY_CFBundleDisplayName: CaptureLab
         GENERATE_INFOPLIST_FILE: NO
+        # ADR-0001 Decision 6 (owner review 2026-11-08): the Screen Recording entitlement, as in
+        # Apple's iOS ScreenCaptureKit sample. The owner confirms provisioning in Xcode.
+        CODE_SIGN_ENTITLEMENTS: Apps/CaptureLab/CaptureLab.entitlements
+        # ADR-0002 owner review: weak-link ScreenCaptureKit explicitly, so CaptureLab launches on
+        # iOS 26, which has no such framework. Only an SDK that ships the framework accepts the
+        # flag (the iOS 26.5 SDK in CI has none), hence the iOS 27 SDK condition; extend it when
+        # the toolchain pin moves to a newer SDK.
+        "OTHER_LDFLAGS[sdk=iphoneos27*]": "$(inherited) -weak_framework ScreenCaptureKit"
     info:
       path: Apps/CaptureLab/Info.plist
       properties:
