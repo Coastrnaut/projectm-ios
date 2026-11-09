@@ -59,9 +59,9 @@ run 42552713447. New device task: T113.
 - Verified on Windows: `python scripts/test_scripts.py` (15 tests: validate_docs, check_compliance,
   verify_environment, reference-audio determinism and segments, UI strings vs contract, schema copy).
 - Not started (need the project owner or devices): T040, T041, T049–T054, T056, T113.
-- **No source is rated yet; no source is claimed to work.** First device run 2026-11-09: D1,
-  System/App Capture with Spotify, non-silent audio in a 20.8 s run (export in
-  `docs/test-reports/exports/D1/spotify/`); T040 stays open (D2, D3, scenarios 2-5, SC-003).
+- **No source is rated yet; no source is claimed to work.** First device run 2026-11-09: D1 and
+  D2, System/App Capture with Spotify, non-silent audio in short runs (exports in
+  `docs/test-reports/exports/`); T040 stays open (D3, scenarios 2-5, SC-003).
 
 ## Format: `[ID] [P?] [Story] Description`
 

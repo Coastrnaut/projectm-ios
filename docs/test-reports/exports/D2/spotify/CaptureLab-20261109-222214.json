@@ -1,0 +1,54 @@
+{
+  "app" : {
+    "build" : "1",
+    "version" : "1.0"
+  },
+  "device" : {
+    "model" : "iPad17,3",
+    "osBuild" : "24B119",
+    "osVersion" : "27.2.0"
+  },
+  "exportedAt" : "2026-11-09T22:22:14Z",
+  "schemaVersion" : 2,
+  "session" : {
+    "audioArrived" : true,
+    "durationSeconds" : 22.40222937499948,
+    "finalState" : "active",
+    "formats" : [
+      {
+        "channelCount" : 2,
+        "firstSeenSeconds" : 1.7521445829997901,
+        "sampleRate" : 48000,
+        "sampleType" : "float32"
+      }
+    ],
+    "levels" : {
+      "peakDBFSMax" : -4.774990558624268,
+      "rmsDBFSMean" : -17.29330062866211
+    },
+    "lifecycleEvents" : [
+
+    ],
+    "nonSilent" : true,
+    "sampleCount" : 1061760,
+    "sourceMode" : "systemAppCapture",
+    "stateTransitions" : [
+      {
+        "atSeconds" : 0,
+        "state" : "waiting"
+      },
+      {
+        "atSeconds" : 1.5121565829995234,
+        "state" : "active"
+      }
+    ],
+    "timing" : {
+      "bufferCadenceMaxMs" : 1057.403,
+      "bufferCadenceMeanMs" : 18.899350791855206,
+      "droppedFrames" : 0,
+      "lateBuffers" : 68,
+      "startToFirstAudioMs" : 1505.384375
+    }
+  },
+  "testerNote" : "Spotify"
+}
