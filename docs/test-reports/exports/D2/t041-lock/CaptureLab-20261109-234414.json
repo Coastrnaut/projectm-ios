@@ -1,0 +1,80 @@
+{
+  "app" : {
+    "build" : "2",
+    "version" : "1.0"
+  },
+  "device" : {
+    "model" : "iPad17,3",
+    "osBuild" : "24B119",
+    "osVersion" : "27.2.0"
+  },
+  "exportedAt" : "2026-11-09T23:44:14Z",
+  "schemaVersion" : 2,
+  "session" : {
+    "audioArrived" : true,
+    "durationSeconds" : 8.862024125000062,
+    "finalState" : "endedBySystem",
+    "formats" : [
+      {
+        "channelCount" : 2,
+        "firstSeenSeconds" : 0.2517961250005101,
+        "sampleRate" : 48000,
+        "sampleType" : "float32"
+      }
+    ],
+    "levels" : {
+      "peakDBFSMax" : -3.5919528007507324,
+      "rmsDBFSMean" : -14.545012474060059
+    },
+    "lifecycleEvents" : [
+      {
+        "atSeconds" : 8.861036040999352,
+        "event" : "streamStopped"
+      },
+      {
+        "atSeconds" : 9.105516874999921,
+        "event" : "lock"
+      },
+      {
+        "atSeconds" : 9.262809165999897,
+        "event" : "background"
+      },
+      {
+        "atSeconds" : 11.058799666000596,
+        "event" : "foreground"
+      },
+      {
+        "atSeconds" : 11.061438290999831,
+        "event" : "unlock"
+      }
+    ],
+    "nonSilent" : true,
+    "sampleCount" : 425280,
+    "sourceMode" : "systemAppCapture",
+    "stateTransitions" : [
+      {
+        "atSeconds" : 0,
+        "state" : "waiting"
+      },
+      {
+        "atSeconds" : 0.2722033750005721,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 8.862024125000062,
+        "reason" : "endedBySystem",
+        "state" : "endedBySystem"
+      }
+    ],
+    "stopDetail" : "The user stopped the stream (SCStreamError -3817)",
+    "stopReason" : "endedBySystem",
+    "timing" : {
+      "bufferCadenceMaxMs" : 21.858292,
+      "bufferCadenceMeanMs" : 19.972049115384618,
+      "droppedFrames" : 0,
+      "lateBuffers" : 0,
+      "startToFirstAudioMs" : 10.26125
+    }
+  },
+  "testerNote" : "Lock"
+}

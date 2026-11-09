@@ -1,0 +1,17 @@
+CaptureLab diagnostics (metadata only — no audio)
+Exported: 2026-11-09T23:44:14Z
+Device: iPad17,3, OS 27.2.0 (24B119)
+App build: 2
+Source mode: systemAppCapture
+Final state: endedBySystem (endedBySystem)
+Stop detail: The user stopped the stream (SCStreamError -3817)
+Audio arrived: yes
+Non-silent audio verified: yes
+Samples: 425280 over 8.9 s
+Format at 0.25 s: 48000 Hz, 2 ch, float32
+Start to first audio: 10 ms
+Buffer cadence: mean 20.0 ms, max 21.9 ms; late buffers 0; dropped frames 0
+Levels: peak max -3.6 dBFS, RMS mean -14.5 dBFS
+Tester note: Lock
+
+A source counts as working only if 'Non-silent audio verified' is yes (FR-031).
