@@ -87,7 +87,8 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
    first System/App Capture start fails with -3803, the entitlement is needed: enroll as an
    organization or ask Apple (`docs/platform-research/apple-question-screen-recording-entitlement.md`),
    then restore ADR-0001 Decision 6.
-5. Run the device tasks (T040 onward, including the device checks of T113) following
+5. Run the remaining device tasks (T051 onward; T049, T050 and T113 are not required, ADR-0001
+   ruling 18) following
    `specs/001-ios-projectm-visualizer/quickstart.md` (Scenario A rules: start playback first, stay
    in CaptureLab, fill the tester note).
 

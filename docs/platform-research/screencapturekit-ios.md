@@ -362,7 +362,8 @@ Items 1 (RI-002's first answer), 4 (FR-019: whether iOS shows or enforces the ke
 assigns to T040), 5 (-3803) and the D3 part of 14 (US1 scenario 5) belong to T040. Items marked **T113** are extra RI-001/RI-003
 checks run in the T040 and T041 device sessions. They are not part of T040's acceptance criterion
 (US1 scenarios 1-5 and SC-003, `tasks.md` T040); the owner review (2026-11-08) made them task
-T113, the device-check task, required before Gate 1. Runs with temporary builds (no `.screen` output, no usage key, tone hook,
+T113, the device-check task. **Since ADR-0001 ruling 18 (2026-11-09) T113, T049 and T050 are not
+required**, so the items marked T113 or T050 below stay open. Runs with temporary builds (no `.screen` output, no usage key, tone hook,
 `screen-capture` only) are approved by the owner review; they are diagnostic only and never count
 as FR-031 compatibility evidence.
 

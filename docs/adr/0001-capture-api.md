@@ -271,8 +271,9 @@ Other consequences:
 - No extension target simplifies signing and review.
 
 Open until a physical-device run. Gate 0 rests on the SDK, Apple's docs and Apple's sample; these
-questions need a device, and no simulator result settles them. T113 is the device-check task the owner
-review ordered: it runs in the T040 and T041 sessions and is required before Gate 1.
+questions need a device, and no simulator result settles them. T113 was the device-check task the owner
+review ordered; since ruling 18 it, T049 and T050 are not required, so the rows naming them stay
+unanswered.
 
 | Question | Settled by |
 |----------|------------|
@@ -341,10 +342,11 @@ Rulings:
 | 8 | Microphone sound in the capture (FR-069 failing): the owner decides when it happens. | No change |
 | 9 | Background mode: only `screen-capture` may be added, to keep a foreground session alive, never `audio`; capture in the background stays out of scope. | Applies after T041 |
 | 10 | If iOS shows no capture indicator, an in-app indicator is added only if needed, decided from the T040 tester note (App Review guideline 2.5.14). | Applies after T040 |
-| 11 | A new device-check task (T113), run in the T040 and T041 sessions and required before Gate 1, covers the device checks no task required; the hidden-status-bar check moves to T084 (Stage 2). Whether the usage text appears stays in T040, which FR-019 already names; the review's question had listed it as unassigned. | Done: T113 in tasks.md; the status-bar check is in T084 and quickstart Scenario C |
+| 11 | A new device-check task (T113), run in the T040 and T041 sessions and required before Gate 1, covers the device checks no task required; the hidden-status-bar check moves to T084 (Stage 2). Whether the usage text appears stays in T040, which FR-019 already names; the review's question had listed it as unassigned. | Withdrawn by ruling 18 (T113 not required) |
 | 12 | Temporary diagnostic builds (no `.screen` output, no usage key, a test-tone hook, `screen-capture` only) are approved alongside T040 and T041. They never count as compatibility evidence. | Approved |
 | 13 | Close two gaps in `scripts/check_compliance.py`: kind-qualified imports, and quoted or flow-style YAML keys. Its other known gaps (Decisions 4 to 6) were not part of the ruling. | Done, with tests in `scripts/test_scripts.py` |
 | 14 | Explicit `-weak_framework ScreenCaptureKit` for device builds; before any TestFlight upload, a Release build is checked with `otool` and launched on D3 (also in ADR-0002). | Done: weak link, checked in Debug and Release on 2026-11-08; the D3 launch is part of the TestFlight procedure |
 | 15 | (2026-11-09) Xcode cannot provision `com.apple.developer.screen-recording` for the owner's team. Ask Apple how to obtain it before any device run. | Superseded by ruling 16 |
 | 16 | (2026-11-09) Remove the entitlement for now (offered only to organization accounts) and test capture without it in T040. If `-3803` follows, enroll as an organization or ask Apple, then restore Decision 6. | Done: file and setting removed. On D1 and D2 (2026-11-09) capture started without it, no -3803 |
 | 17 | (2026-11-09) Add only the `screen-capture` background mode to CaptureLab: T041 on D1, 2026-11-09 (`docs/test-reports/t041-lifecycle.md`): without the mode, background and an app switch end capture 1 ms later with -3824; with it (diagnostic build 9001), capture ran unbroken for 53 s in the background. A lock ends capture either way (-3817). | Done: `project.yml`, narrow exception in `scripts/check_compliance.py` (59 script tests) |
+| 18 | (2026-11-09) Skip to T051: T049 (US2 on devices), T050 (allocation trace) and T113 (device checks) are not required. Constitution VII still applies; it is verified by design, review and unit tests, not on a device. The questions they would answer stay open. | Recorded in tasks.md; rulings 10 and 11 no longer have a task |

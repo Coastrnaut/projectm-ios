@@ -5,6 +5,10 @@ measurements yet.**
 
 ## Phase A real-time check (Constitution VII; task T050)
 
+> T050 is not required (owner ruling 2026-11-09, ADR-0001 ruling 18). Constitution VII still
+> applies; the audio callbacks are allocation-free by design and covered by unit tests, but no device
+> allocation trace was recorded.
+
 | Adapter | Device | Run length | Heap allocations on audio thread (0) | Lock acquisitions (0) | Pass? |
 |---------|--------|------------|--------------------------------------|-----------------------|-------|
 | System/App Capture | | 60 s | | | |
