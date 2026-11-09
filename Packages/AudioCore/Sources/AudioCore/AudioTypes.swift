@@ -115,7 +115,8 @@ public struct ClassifierThresholds: Sendable, Equatable {
     /// "peak ≥ −50 dBFS for ≥ 250 ms" → Active audio (FR-011).
     public var activePeakDBFS: Float
     public var activeMinDuration: Double
-    /// "peak < −60 dBFS for ≥ 2 s" → Audio received — silent (FR-011).
+    /// "peak < −60 dBFS for ≥ 1.5 s" → Audio received — silent (FR-011; 1.5 s since the owner ruling
+    /// of 2026-11-09, so the change shows within SC-003's 2 s).
     public var silentPeakDBFS: Float
     public var silentMinDuration: Double
     /// No audio data for this long → No audio received (FR-012).
@@ -124,7 +125,7 @@ public struct ClassifierThresholds: Sendable, Equatable {
     public var prolongedSilenceHint: Double
 
     public init(activePeakDBFS: Float = -50, activeMinDuration: Double = 0.25,
-                silentPeakDBFS: Float = -60, silentMinDuration: Double = 2,
+                silentPeakDBFS: Float = -60, silentMinDuration: Double = 1.5,
                 noAudioTimeout: Double = 5, prolongedSilenceHint: Double = 60) {
         self.activePeakDBFS = activePeakDBFS
         self.activeMinDuration = activeMinDuration

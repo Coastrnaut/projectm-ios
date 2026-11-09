@@ -48,7 +48,7 @@ For each source rated "Works", on the reference device, 30-minute foreground cap
 | Threshold | Initial | Final | Evidence |
 |-----------|---------|-------|----------|
 | Active: peak / duration | −50 dBFS / 250 ms | | |
-| Silent: peak / duration | −60 dBFS / 2 s | | |
+| Silent: peak / duration | −60 dBFS / 1.5 s (2 s before 2026-11-09) | | |
 | No-audio timeout | 5 s | | |
 | Prolonged-silence hint | 60 s | | |
 | Start/stop cycle interval | 200 ms | | |

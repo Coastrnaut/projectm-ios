@@ -47,7 +47,7 @@ active|silent ──no data for 5 s──▶ noAudioReceived                 (a 
                                                                     is never left showing Active)
 waiting|noAudioReceived|silent ──peak ≥ −50 dBFS for ≥ 250 ms──▶ active   (FR-011)
 waiting|noAudioReceived ──data arrives, below active threshold──▶ silent
-active ──peak < −60 dBFS for ≥ 2 s──▶ silent                       (FR-011)
+active ──peak < −60 dBFS for ≥ 1.5 s──▶ silent                      (FR-011)
 silent for 60 s ──▶ silent + prolongedSilenceHint = true           (FR-018, no state change)
 any running ──app background / device lock (mic, in-app)──▶ paused (source suspended; FR-050, FR-054)
 paused ──foreground, permission + route OK──▶ waiting (auto-resume ≤ 2 s)
@@ -102,7 +102,7 @@ Internal normalized format (research R-05): Float32, interleaved stereo, 44,100 
 | Field | Default |
 |-------|---------|
 | activePeakDBFS / activeMinDuration | −50 dBFS / 250 ms |
-| silentPeakDBFS / silentMinDuration | −60 dBFS / 2 s |
+| silentPeakDBFS / silentMinDuration | −60 dBFS / 1.5 s (owner ruling 2026-11-09) |
 | noAudioTimeout | 5 s |
 | prolongedSilenceHint | 60 s |
 

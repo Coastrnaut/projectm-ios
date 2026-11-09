@@ -82,12 +82,13 @@ final class AudioStateClassifierTests: XCTestCase {
         XCTAssertEqual(c.state, .silent)
     }
 
-    func testActiveToSilentAfterTwoSecondsBelowMinus60() {
+    /// FR-011: 1.5 s below -60 dBFS (owner ruling 2026-11-09; was 2 s).
+    func testActiveToSilentAfterOneAndAHalfSecondsBelowMinus60() {
         var c = started()
         feed(&c, loud, from: 0, to: 1)
-        feed(&c, quiet, from: 1, to: 2.99)
-        XCTAssertEqual(c.state, .active, "under 2 s of quiet")
-        feed(&c, quiet, from: 2.99, to: 3.0)
+        feed(&c, quiet, from: 1, to: 2.49)
+        XCTAssertEqual(c.state, .active, "under 1.5 s of quiet")
+        feed(&c, quiet, from: 2.49, to: 2.5)
         XCTAssertEqual(c.state, .silent)
     }
 
@@ -215,7 +216,9 @@ final class AudioStateClassifierTests: XCTestCase {
         feed(&c, quiet, from: 0, to: 1)
         feed(&c, loud, from: 1, to: 1.3)
         XCTAssertEqual(c.state, .active)            // 0.25 s after the change
-        feed(&c, quiet, from: 1.3, to: 3.3)
-        XCTAssertEqual(c.state, .silent)            // 2.0 s after the change
+        feed(&c, quiet, from: 1.3, to: 2.7)
+        XCTAssertEqual(c.state, .active, "not silent before 1.5 s of quiet")
+        feed(&c, quiet, from: 2.7, to: 2.8)
+        XCTAssertEqual(c.state, .silent)            // 1.5 s after the change, inside SC-003's 2 s
     }
 }

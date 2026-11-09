@@ -355,8 +355,9 @@ Each edge case below maps to a functional requirement.
   the audio state.
 - **FR-011**: "Active audio" MUST be shown only after non-silent audio is verified during the
   current session: peak level at or above −50 dBFS for at least 250 ms. The state returns to "Audio
-  received — silent" when peak level stays below −60 dBFS for at least 2 seconds. (Initial values;
-  tuned per the threshold assumption.)
+  received — silent" when peak level stays below −60 dBFS for at least 1.5 seconds (owner ruling
+  2026-11-09: 2 seconds left no margin for SC-003). (Initial values; tuned per the threshold
+  assumption.)
 - **FR-012**: "No audio received" MUST be shown when no audio data arrives within 5 seconds of a
   successful capture start.
 - **FR-013**: The source indicator MUST always show the active mode label, and Microphone or In-App
