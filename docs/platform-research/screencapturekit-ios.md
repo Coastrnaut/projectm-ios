@@ -396,6 +396,13 @@ as FR-031 compatibility evidence.
    `audio` is never added); the export's `session.stopDetail` records the code. Lifecycle events
    are timestamped when the main actor handles them (on the iPadOS 26.5 simulator, `background`
    carried the resume time), so check ordering. A non-Apple report saw -3824 [f840821]. **T041.**
+   **Results (T041, 2026-11-09, `docs/test-reports/t041-lifecycle.md`):** on D1 and D2, without the
+   `screen-capture` mode, background and an app switch end the stream about 1 ms later with -3824;
+   with the mode (CaptureLab build 2 since ADR-0001 ruling 17) capture continued for 31-53 s in the
+   background with no lost audio (on D2 after a gap of up to 0.8 s and a catch-up burst). A lock
+   ends the stream either way with -3817, before the app's lock notification arrives. Siri does
+   not interrupt capture (FR-051). FR-050 and FR-054 already allow both outcomes, so the spec is
+   unchanged.
 7. **Capture indicator with a hidden status bar (FR-089).** Test: during capture on D1 (Dynamic
    Island) and D2, hide the status bar and home indicator; record with a photo and a note whether an
    indicator appears and stays visible; optionally log `sceneCaptureState`. **T084 (Stage 2)**, by

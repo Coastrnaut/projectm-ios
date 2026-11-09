@@ -1,0 +1,58 @@
+{
+  "app" : {
+    "build" : "2",
+    "version" : "1.0"
+  },
+  "device" : {
+    "model" : "iPad17,3",
+    "osBuild" : "24B119",
+    "osVersion" : "27.2.0"
+  },
+  "exportedAt" : "2026-11-09T23:45:13Z",
+  "schemaVersion" : 2,
+  "session" : {
+    "audioArrived" : true,
+    "durationSeconds" : 15.66141137500017,
+    "finalState" : "stopped",
+    "formats" : [
+      {
+        "channelCount" : 2,
+        "firstSeenSeconds" : 0.2522346249988914,
+        "sampleRate" : 48000,
+        "sampleType" : "float32"
+      }
+    ],
+    "levels" : {
+      "peakDBFSMax" : -7.444219589233398,
+      "rmsDBFSMean" : -35.934513092041016
+    },
+    "lifecycleEvents" : [
+
+    ],
+    "nonSilent" : true,
+    "sampleCount" : 750720,
+    "sourceMode" : "systemAppCapture",
+    "stateTransitions" : [
+      {
+        "atSeconds" : 0,
+        "state" : "waiting"
+      },
+      {
+        "atSeconds" : 0.2422674579993327,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 15.66141137500017,
+        "state" : "stopped"
+      }
+    ],
+    "timing" : {
+      "bufferCadenceMaxMs" : 64.01775,
+      "bufferCadenceMeanMs" : 20.017061459667094,
+      "droppedFrames" : 0,
+      "lateBuffers" : 4,
+      "startToFirstAudioMs" : 10.609499999999999
+    }
+  },
+  "testerNote" : "Siri activated"
+}
