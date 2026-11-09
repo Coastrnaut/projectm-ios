@@ -16,6 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import check_capturelab_export  # noqa: E402
+import make_diagnostic_project  # noqa: E402
 import check_compliance  # noqa: E402
 import generate_reference_audio as gra  # noqa: E402
 import validate_docs  # noqa: E402
@@ -477,6 +478,9 @@ class CaptureLabExportCheckTests(unittest.TestCase):
 
     def test_missing_events_fail(self):
         self.assertTrue(check_capturelab_export.check_export(self.export([])))
+        # Device runs without lifecycle events: `--expect none` skips the order check.
+        self.assertEqual(check_capturelab_export.check_export(self.export([]), ()), [])
+        self.assertEqual(check_capturelab_export.parse_expect("none"), ())
         self.assertTrue(check_capturelab_export.check_export(self.export([("background", 1.0)])))
 
     def test_decreasing_times_fail(self):
@@ -535,6 +539,31 @@ class SchemaCopyTests(unittest.TestCase):
         copy = root / "Packages" / "Diagnostics" / "Tests" / "DiagnosticsTests" / "Resources" / "diagnostics-export.schema.json"
         self.assertEqual(json.loads(contract.read_text(encoding="utf-8")), json.loads(copy.read_text(encoding="utf-8")))
 
+
+
+class DiagnosticProjectTests(unittest.TestCase):
+    """scripts/make_diagnostic_project.py (ADR-0001 ruling 12): variants never touch project.yml."""
+
+    SPEC = (check_compliance.ROOT / "project.yml").read_text(encoding="utf-8")
+
+    def test_screen_capture_mode_adds_only_the_mode(self):
+        out = make_diagnostic_project.variant_spec(self.SPEC, "screen-capture-mode")
+        self.assertIn("UIBackgroundModes: [screen-capture]", out)
+        self.assertIn('CFBundleVersion: "9001"', out)
+        self.assertIn("Build/diagnostic/screen-capture-mode/Info.plist", out)
+        self.assertIn("NSScreenCaptureUsageDescription", out)
+        self.assertNotIn("UIBackgroundModes", self.SPEC, "the committed spec has no background mode")
+
+    def test_no_usage_key_removes_only_the_key(self):
+        out = make_diagnostic_project.variant_spec(self.SPEC, "no-usage-key")
+        self.assertNotIn("NSScreenCaptureUsageDescription:", out)
+        self.assertIn("NSMicrophoneUsageDescription", out)
+        self.assertIn('CFBundleVersion: "9002"', out)
+        self.assertNotIn("UIBackgroundModes", out)
+
+    def test_changed_spec_fails_loudly(self):
+        with self.assertRaises(ValueError):
+            make_diagnostic_project.variant_spec("name: Other\n", "screen-capture-mode")
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

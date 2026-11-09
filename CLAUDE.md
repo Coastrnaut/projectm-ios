@@ -98,6 +98,8 @@ python3 scripts/test_scripts.py          # script tests (any OS)
 python3 scripts/validate_docs.py         # spec cross-references
 python3 scripts/check_compliance.py      # constitution rules
 python3 scripts/verify_environment.py    # toolchain pins (macOS)
+python3 scripts/check_capturelab_export.py --json <export> --expect none   # check a device export
+python3 scripts/make_diagnostic_project.py screen-capture-mode   # temporary diagnostic build (9001)
 swift test --package-path Packages/AudioCore
 xcodegen generate && open ProjectM-iOS.xcodeproj
 ```

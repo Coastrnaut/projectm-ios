@@ -9,12 +9,14 @@ the export the test wrote and checks the lifecycle events in it:
   * it prints sourceMode, finalState and lifecycleEvents;
   * every lifecycleEvents[].atSeconds is a non-negative number and the times never decrease;
   * the expected events (default: background, foreground) appear in that order, possibly with
-    other events in between.
+    other events in between; `--expect none` skips this for device runs without lifecycle events
+    (for example a foreground capture run for T040 or T051).
 
 Usage:
   python3 scripts/check_capturelab_export.py --udid <simulator UDID>
   python3 scripts/check_capturelab_export.py --json path/to/CaptureLab-20261108-184934.json
   python3 scripts/check_capturelab_export.py --udid <UDID> --expect background,foreground
+  python3 scripts/check_capturelab_export.py --json <device export> --expect none
 
 With --udid the newest CaptureLab-*.json is taken from the tmp folder of CaptureLab's data
 container, found under ~/Library/Developer/CoreSimulator/Devices/<udid>/data/Containers/Data/
@@ -127,11 +129,17 @@ def check_export(data: dict, expect: tuple[str, ...] = DEFAULT_EXPECT) -> list[s
 
 def describe(data: dict) -> list[str]:
     session = data.get("session") if isinstance(data.get("session"), dict) else {}
+    device = data.get("device") if isinstance(data.get("device"), dict) else {}
+    app = data.get("app") if isinstance(data.get("app"), dict) else {}
     lines = [
         f"schemaVersion: {data.get('schemaVersion')!r}",
         f"sourceMode: {session.get('sourceMode')!r}",
         f"finalState: {session.get('finalState')!r}",
         f"stopReason: {session.get('stopReason')!r}, stopDetail: {session.get('stopDetail')!r}",
+        f"device: {device.get('model')!r}, OS {device.get('osVersion')!r} ({device.get('osBuild')!r}); "
+        f"app build {app.get('build')!r}",
+        f"audio: arrived {session.get('audioArrived')!r}, nonSilent {session.get('nonSilent')!r}, "
+        f"samples {session.get('sampleCount')!r} over {session.get('durationSeconds')!r} s",
         "lifecycleEvents:",
     ]
     events = session.get("lifecycleEvents")
@@ -147,6 +155,8 @@ def describe(data: dict) -> list[str]:
 
 
 def parse_expect(value: str) -> tuple[str, ...]:
+    if value.strip().lower() == "none":
+        return ()
     events = tuple(e.strip() for e in value.split(",") if e.strip())
     if not events:
         raise argparse.ArgumentTypeError("--expect needs at least one event name")
@@ -160,7 +170,7 @@ def main(argv: list[str] | None = None, devices_root: Path = DEVICES_ROOT) -> in
     source.add_argument("--json", type=Path, help="path to a CaptureLab-*.json export")
     parser.add_argument("--expect", type=parse_expect, default=DEFAULT_EXPECT,
                         help="comma-separated lifecycle events that must appear in this order "
-                             "(default: background,foreground)")
+                             "(default: background,foreground), or 'none' to skip the order check")
     args = parser.parse_args(argv)
 
     try:
@@ -178,7 +188,10 @@ def main(argv: list[str] | None = None, devices_root: Path = DEVICES_ROOT) -> in
         for p in problems:
             print(f"FAIL: {p}", file=sys.stderr)
         return 1
-    print(f"OK: {', '.join(args.expect)} in order with non-decreasing times (lifecycle check only)")
+    if args.expect:
+        print(f"OK: {', '.join(args.expect)} in order with non-decreasing times (lifecycle check only)")
+    else:
+        print("OK: valid export; event times non-decreasing (no lifecycle order required)")
     return 0
 
 

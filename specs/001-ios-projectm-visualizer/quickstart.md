@@ -118,7 +118,12 @@ unavailable there. In every System/App Capture run:
    session alive, only `screen-capture` may be added, through an owner-approved ADR-0001 amendment
    and a narrow `check_compliance.py` exception; `audio` is never added, and capture in the
    background stays out of scope (owner review 2026-11-08). Repeat the background and lock runs on
-   D1 and D2 with the approved temporary build that declares only `screen-capture`. The export records each stop code in `session.stopDetail`.
+   D1 and D2 with the approved temporary build that declares only `screen-capture`: run
+   `python3 scripts/make_diagnostic_project.py screen-capture-mode`, open
+   `CaptureLab-screen-capture-mode.xcodeproj`, set the team, and run it ("CaptureLab SC mode",
+   app build 9001 in its exports). The export records each stop code in `session.stopDetail`.
+   Check device exports with `python3 scripts/check_capturelab_export.py --json <file> --expect
+   none` (or with the expected lifecycle events).
 6. For each FR-030 source, run 10 minutes in the foreground and export (FR-021).
 7. Fill `docs/test-reports/compatibility-report.md` rows (FR-031) and rate each Works / Partial /
    Does not work.
