@@ -1,0 +1,46 @@
+{
+  "app" : {
+    "build" : "1",
+    "version" : "1.0"
+  },
+  "device" : {
+    "model" : "iPad17,3",
+    "osBuild" : "24B119",
+    "osVersion" : "27.2.0"
+  },
+  "exportedAt" : "2026-11-09T23:04:11Z",
+  "schemaVersion" : 2,
+  "session" : {
+    "audioArrived" : false,
+    "durationSeconds" : 0,
+    "finalState" : "notStarted",
+    "formats" : [
+
+    ],
+    "levels" : {
+      "peakDBFSMax" : -120,
+      "rmsDBFSMean" : -120
+    },
+    "lifecycleEvents" : [
+
+    ],
+    "nonSilent" : false,
+    "sampleCount" : 0,
+    "sourceMode" : "systemAppCapture",
+    "stateTransitions" : [
+      {
+        "atSeconds" : 1.9031165419992249,
+        "reason" : "cancelled",
+        "state" : "notStarted"
+      }
+    ],
+    "stopReason" : "cancelled",
+    "timing" : {
+      "bufferCadenceMaxMs" : 0,
+      "bufferCadenceMeanMs" : 0,
+      "droppedFrames" : 0,
+      "lateBuffers" : 0
+    }
+  },
+  "testerNote" : "Shows cancelled"
+}

@@ -64,7 +64,7 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
   non-silent Spotify audio (20.8 s), and so did D2 (22.4 s; first audio after 1.5 s, one ~1 s gap);
   exports in `docs/test-reports/exports/`. D3 (iPadOS 26.5): the Debug build launches (weak link
   works), System/App Capture shows "Requires a newer iOS version", In-App Playback is non-silent.
-  Not rated yet (FR-031 needs 10 min); T040 scenarios 1-4 in full and SC-003 are open. The iOS Simulator SDK has no
+  Not rated yet (FR-031 needs 10 min). T040 complete 2026-11-09 (`docs/test-reports/t040-us1.md`). The iOS Simulator SDK has no
   ScreenCaptureKit, so System/App Capture can only be tested on D1/D2.
 - Owner rulings 2026-11-08 (research doc, "Owner decisions"): `screen-capture` background mode
   decided after T041; the export carries `session.stopDetail`; new StopReason
