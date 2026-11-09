@@ -104,4 +104,7 @@ docs-only commit messages.
 ## Conventions
 
 - Commit after each task or skill; no co-author trailers in commit messages.
+- Standing owner approval (2026-11-08): push to `origin/main` and let CI run without asking first,
+  then check the run's result. Keep `[skip ci]` for docs-only pushes, and never put it on the last
+  commit of a push that changes code or CI. Signing changes still need the owner.
 - LF line endings everywhere (`.gitattributes`).
