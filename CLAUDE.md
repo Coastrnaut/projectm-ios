@@ -53,9 +53,13 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
   host and both simulators;
   CaptureLab UI tests (3) on both simulators; 28 script tests; device builds of everything,
   including `SCKStreamDriver`, with 0 warnings.
-- Gate 0 research done (T035): `docs/platform-research/screencapturekit-ios.md`. ADR-0001 and
-  ADR-0002 accepted by T035, pending owner review. Nothing has run on a device yet. The iOS
-  Simulator SDK has no ScreenCaptureKit, so System/App Capture can only be tested on D1/D2.
+- Gate 0 met: research done (T035, `docs/platform-research/screencapturekit-ios.md`), and the
+  owner accepted ADR-0001 and ADR-0002 on 2026-11-08 (owner review). ADR-0001 is amended so that
+  CaptureLab declares the Screen Recording entitlement, as Apple's iOS sample does (read
+  2026-11-08); not implemented yet. The review's rulings and their status are in each ADR's "Owner
+  review" section.
+  Nothing has run on a device yet. The iOS Simulator SDK has no ScreenCaptureKit, so System/App
+  Capture can only be tested on D1/D2.
 - Owner rulings 2026-11-08 (research doc, "Owner decisions"): `screen-capture` background mode
   decided after T041; the export carries `session.stopDetail`; new StopReason
   `screenRecordingNotAllowed` for -3801 and `isAvailable` false; RI-003 is checked at Gate 2, not
@@ -69,8 +73,12 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
 1. Done 2026-11-08: T010, T017, T033 (previews checked in Xcode's canvas), T035 (Gate 0 research),
    T037 and the Mac-verifiable Phase A tasks.
 2. Before each work session: `python3 scripts/verify_environment.py` must exit 0.
-3. Owner: review the ADR-0001/0002 acceptances.
-4. `xcodegen generate`, then build and run CaptureLab on D1, D2 and D3 (set the signing team by hand).
+3. Before the device runs, implement the owner-review rulings still open in ADR-0001 and ADR-0002:
+   the Screen Recording entitlement, Stop cancelling a waiting picker, the device-check task in
+   tasks.md, the R-16 rewording, the explicit weak link, the CI and script changes, and removing the
+   iOS 26.5 runtime 23F73. The Release-build check and D3 launch come before any TestFlight upload.
+4. `xcodegen generate`, then build and run CaptureLab on D1, D2 and D3 (set the signing team by
+   hand, and confirm in Xcode that the Screen Recording entitlement is provisioned).
 5. Run the device tasks (T040 onward) following `specs/001-ios-projectm-visualizer/quickstart.md`
    (Scenario A rules: start playback first, stay in CaptureLab, fill the tester note).
 

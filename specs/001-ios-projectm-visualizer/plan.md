@@ -90,7 +90,7 @@ Starter preset set size depends on licensing (R-09).
 | VII. Real-time safety | PASS | Preallocated SPSC ring buffer with atomics, no allocation or locks in callbacks, conversion on a dedicated audio work queue (research R-06). |
 | VIII. Upstream fidelity | PASS | Submodule pinned. No engine patches planned (load_proc avoids resolver changes). Any patch goes in `docs/projectm-patches.md`. |
 | IX. Pinned deps and licenses | CONDITIONAL | Pins and vendored-component licenses are recorded in ADR-0004. The LGPL and App Store conclusions (RI-007, RI-010; ADR-0005) are pending; the preliminary conclusions are Stage 2 entry conditions. Preset and audio licensing is pending (R-09). |
-| X. Evidence-based quality | PASS | ADR-0001–0004 drafted. Device matrix, performance, and privacy reviews are scheduled per phase. |
+| X. Evidence-based quality | PASS | ADR-0001 and ADR-0002 accepted (owner review 2026-11-08); ADR-0003 to ADR-0005 status in `docs/adr/README.md`. Device matrix, performance, and privacy reviews are scheduled per phase. |
 | Platform: macOS required | PASS | Windows/macOS split below. Agents on Windows report builds as "pending macOS". |
 
 **Result**: Gate passes. Principle IX is conditional: it does not block Phase A, but it blocks
