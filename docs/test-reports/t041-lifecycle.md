@@ -21,3 +21,5 @@ Notes:
 
 - 2026-11-09: owner ruling (ADR-0001 ruling 17) adds `screen-capture` to the normal build based on
   these D1 runs; the D2 runs use the normal build.
+- From 2026-11-09 CaptureLab is app build 2 (with the mode); build 1 exports after ruling 17 are
+  identified by the run date and behavior.

@@ -60,6 +60,9 @@ targets:
       path: Apps/CaptureLab/Info.plist
       properties:
         CFBundleDisplayName: CaptureLab
+        # Shown as "app build" in every export. Raise it whenever Info.plist or capture behavior
+        # changes: 1 = before ruling 17, 2 = screen-capture background mode (2026-11-09).
+        CFBundleVersion: "2"
         UILaunchScreen: {}
         # ADR-0001 ruling 17 (T041 on D1): keeps System/App Capture running while CaptureLab is in
         # the background. Visualization stays foreground-only. The only background mode allowed.
