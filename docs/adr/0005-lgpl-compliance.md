@@ -1,6 +1,6 @@
 # ADR-0005: LGPL-2.1 and App Store Compliance
 
-- **Status**: Open; app code licensed MIT (owner decision 2026-11-09)
+- **Status**: Preliminary conclusion approved 2026-11-09 (conditional go); app code MIT; final conclusion before release (T109)
 - **Date**: 2026-11-07
 - **Spec**: FR-064, FR-067, Delivery Gating · **Research**: R-10 · **RI**: RI-007, RI-010
 
@@ -90,5 +90,7 @@ on the Licenses screen (FR-067). Still open before release: whether App Store te
 LGPL-2.1 §10 for the engine's own code, and upstream's App Store warning (RI-010); a legal opinion
 is recommended for the final conclusion (T109).
 
-*Preliminary conclusion: pending the owner's approval of the conditional go above (T055). Final
-conclusion: T109.*
+**Preliminary conclusion (T055): conditional go, approved by the project owner on 2026-11-09.**
+Stage 2 engineering may proceed once T056 records "go", on the conditions in "Proposed preliminary
+conclusion" above. Condition 1 is met by the MIT decision (option A); conditions 2 (RI-010) and 3
+(legal opinion) remain for the final conclusion (T109).
