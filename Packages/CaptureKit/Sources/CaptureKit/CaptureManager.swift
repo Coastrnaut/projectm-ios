@@ -5,6 +5,11 @@
 // * `state` is exactly the classifier's output (Constitution IV); the UI reads nothing else.
 // * Operations are serialized, so rapid start/stop/switch sequences (FR-052) end in the state of
 //   the last action with no duplicate sessions.
+// * Stop, Restart and selecting a source cancel a start that is still in flight (for example
+//   waiting on the system picker, which may never answer) instead of queuing behind it (FR-007;
+//   owner review 2026-11-08, ADR-0001 ruling 7). They call the source's `stop()`, which the
+//   contract allows during `start` (guarantee 3); the start then ends as a cancelled start,
+//   "Not started — cancelled", the same result as cancelling the picker itself.
 // * Analysis runs on AudioAnalyzer's work queue; this class receives its published updates and
 //   applies lifecycle events synchronously.
 // * Every start attempt begins from a clean slate (FR-011, FR-013, FR-031): the previous session's
@@ -42,6 +47,9 @@ public final class CaptureManager {
     public private(set) var sessionRMSMeanDBFS: Float = LevelMeter.floorDBFS
     /// Every distinct format seen this session, with when it first appeared (FR-017, FR-020).
     public private(set) var formatsSeen: [FormatObservation] = []
+    /// True while a source's `start` is in flight: the system picker or a permission prompt may be
+    /// on screen. The UI keeps Stop enabled then, because Stop cancels the start (ADR-0001 ruling 7).
+    public private(set) var isStarting = false
 
     private let sources: [AudioSourceMode: any AudioSource]
     private let sink = PCMSink()
@@ -50,6 +58,12 @@ public final class CaptureManager {
     @ObservationIgnored private var current: (any AudioSource)?
     @ObservationIgnored private var eventTask: Task<Void, Never>?
     @ObservationIgnored private var operationTail: Task<Void, Never>?
+    /// The source whose `start` is in flight, so a command can cancel it instead of waiting.
+    @ObservationIgnored private var startingSource: (any AudioSource)?
+    /// Bumped by every Stop, Restart and select. An attempt remembers the value it was queued
+    /// with; if a later command bumped it, the attempt is cancelled, whether it is queued, stopping
+    /// the previous source, or waiting inside `start` (ADR-0001 ruling 7).
+    @ObservationIgnored private var cancelGeneration = 0
     @ObservationIgnored private var lastSequence: UInt64 = 0
     @ObservationIgnored private var pauseReason: StopReason?
     @ObservationIgnored private var lastFormatChangeCount = 0
@@ -89,13 +103,17 @@ public final class CaptureManager {
 
     // MARK: - Commands (serialized)
 
-    /// Selects and starts a source, stopping any current source first (FR-016).
+    /// Selects and starts a source, stopping any current source first (FR-016). A start still in
+    /// flight is cancelled first, so choosing another source never waits on an open picker.
     public func select(_ mode: AudioSourceMode) async {
-        await serialized { await self.startInner(mode) }
+        let generation = await cancelPendingStart()
+        await serialized { await self.startInner(mode, generation: generation) }
     }
 
-    /// Stops the active source within 1 s (FR-007). Idempotent.
+    /// Stops the active source within 1 s (FR-007). Idempotent. A start still in flight (for
+    /// example waiting on the system picker) is cancelled and ends as "Not started — cancelled".
     public func stop() async {
+        _ = await cancelPendingStart()
         await serialized {
             guard self.current != nil else { return }
             await self.stopCurrent()
@@ -104,12 +122,14 @@ public final class CaptureManager {
     }
 
     /// One-tap restart of the last mode (FR-055). For System/App Capture this re-presents the
-    /// system picker, because `start` always does (FR-002).
+    /// system picker, because `start` always does (FR-002). A start still in flight is cancelled
+    /// first.
     public func restart() async {
+        let generation = await cancelPendingStart()
         await serialized {
             guard let mode = self.activeMode else { return }
             await self.stopCurrent()
-            await self.startInner(mode)
+            await self.startInner(mode, generation: generation)
         }
     }
 
@@ -152,7 +172,19 @@ public final class CaptureManager {
         await task.value
     }
 
-    private func startInner(_ mode: AudioSourceMode) async {
+    /// Cancels every earlier attempt (queued or in flight) without waiting for the serialized
+    /// queue, and returns this command's generation. A start waiting inside `start` is ended by the
+    /// source's `stop()`, which is safe during `start` (contract guarantee 3). The bump happens
+    /// before the first await, so the order of commands decides (ADR-0001 ruling 7, FR-052).
+    private func cancelPendingStart() async -> Int {
+        cancelGeneration += 1
+        let generation = cancelGeneration
+        if let source = startingSource { await source.stop() }
+        return generation
+    }
+
+    private func startInner(_ mode: AudioSourceMode, generation: Int) async {
+        let cancelled = { generation != self.cancelGeneration }
         await stopCurrent()
         activeMode = mode
         beginAttempt()
@@ -166,8 +198,24 @@ public final class CaptureManager {
             stopDetail = "Not started: the source was unavailable (\(reason.code)) before start"
             return
         }
+        // A command after this attempt was queued (for example Stop during Restart's stop of the
+        // previous source) cancels it before the picker is ever shown.
+        if cancelled() { applyCancelledStart(); return }
+        startingSource = source
+        isStarting = true
+        defer {
+            startingSource = nil
+            isStarting = false
+        }
         do {
             let events = try await source.start(into: sink)
+            if cancelled() {
+                // A command cancelled this start, but the source started before it saw the cancel.
+                // Stop it again; the attempt still ends as cancelled, never as a running session.
+                await source.stop()
+                applyCancelledStart()
+                return
+            }
             // Session time 0 is now, when the source has actually started; the picker or
             // permission prompt shown inside `start` does not count (FR-022, Gate 2).
             sink.markSessionStart()
@@ -176,11 +224,20 @@ public final class CaptureManager {
             listen(to: events, from: source)
             if runsAnalysisTimer { analyzer.startTimer() }
         } catch let error as SourceError {
+            if cancelled() { applyCancelledStart(); return }
             apply(.startFailed(error.reason))
             if let detail = error.detail { stopDetail = detail }
         } catch {
+            if cancelled() { applyCancelledStart(); return }
             apply(.startFailed(.error(String(describing: error))))
         }
+    }
+
+    /// A start cancelled by Stop, Restart or another source ends like a cancelled picker:
+    /// "Not started — cancelled" (US1-AS4), with a detail that tells the two apart in the export.
+    private func applyCancelledStart() {
+        apply(.startFailed(.cancelled))
+        stopDetail = "Start cancelled from the app before the source started"
     }
 
     /// Resets every per-session field for a new start attempt. The source is stopped and the

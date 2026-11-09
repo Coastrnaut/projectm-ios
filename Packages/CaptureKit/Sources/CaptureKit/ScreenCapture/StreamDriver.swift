@@ -17,6 +17,7 @@ public protocol StreamDriver: AnyObject {
     /// picker and `SourceError(.screenRecordingNotAllowed)` if screen recording is declined or not
     /// allowed.
     func start(sink: PCMSink, onEvent: @escaping @Sendable (SourceEvent) -> Void) async throws
-    /// Stops the stream within 1 s. Idempotent.
+    /// Stops the stream within 1 s. Idempotent. Safe while `start` is in flight: a `start` still
+    /// waiting on the system picker then throws `SourceError(.cancelled)` (ADR-0001 ruling 7).
     func stop() async
 }

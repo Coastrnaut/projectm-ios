@@ -43,8 +43,11 @@ struct ContentView: View {
                 ToolbarItemGroup(placement: .bottomBar) {
                     Button(UIStrings.chooseSource) { showChooser = true; availabilityRevision += 1 }
                     Spacer()
+                    // Also enabled while a start is in flight: Stop cancels a start waiting on the
+                    // system picker (owner review 2026-11-08, ADR-0001 ruling 7).
                     Button(UIStrings.stop) { Task { await manager.stop() } }
-                        .disabled(!(manager.state.isRunning || manager.state == .paused || manager.state == .interrupted))
+                        .disabled(!(manager.isStarting || manager.state.isRunning
+                                    || manager.state == .paused || manager.state == .interrupted))
                     Spacer()
                     Button("Export") { showExport = true }
                         .disabled(manager.activeMode == nil)

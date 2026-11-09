@@ -26,6 +26,9 @@ Guarantees:
 2. Real-time callbacks write only to `PCMSink.write(_:)`, which is allocation-free and lock-free.
    They never call `async` code, log, or touch the main actor.
 3. `stop()` is idempotent and safe to call concurrently with an in-flight `start` (FR-052).
+   `CaptureManager` relies on this: Stop, Restart or choosing another source cancels a start that
+   is still in flight (for example waiting on the system picker), and the attempt ends as
+   "Not started — cancelled" (owner review 2026-11-08, ADR-0001 ruling 7).
 4. After `stop()` returns, the source holds no reference to `sink`.
 5. Source-specific types (`SCStream`, `CMSampleBuffer`, `AVAudioPCMBuffer`) never cross this
    boundary.

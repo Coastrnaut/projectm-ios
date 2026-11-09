@@ -471,6 +471,116 @@ final class CaptureManagerTests: XCTestCase {
         XCTAssertLessThan(manager.statistics.firstSampleSeconds ?? .infinity, 0.15)
     }
 
+    // MARK: - Commands cancel a start in flight (owner review 2026-11-08, ADR-0001 ruling 7)
+
+    func testIsStartingOnlyWhileStartIsInFlight() async {
+        XCTAssertFalse(manager.isStarting)
+        let m = manager
+        var during: Bool?
+        capture.onStart = { during = m.isStarting }
+        await manager.select(.systemAppCapture)
+        XCTAssertEqual(during, true)
+        XCTAssertFalse(manager.isStarting)
+    }
+
+    func testStopCancelsAStartThatNeverAnswers() async {
+        capture.holdsStart = true
+        let m = manager
+        let select = Task { @MainActor in await m.select(.systemAppCapture) }
+        await waitUntil { self.capture.isHoldingStart }
+        let begin = Date()
+        await manager.stop()
+        await select.value
+        XCTAssertLessThan(Date().timeIntervalSince(begin), 1.0, "FR-007: stop within 1 s")
+        XCTAssertEqual(manager.state, .notStarted)
+        XCTAssertEqual(manager.stopReason, .cancelled)
+        XCTAssertEqual(manager.stopDetail, "Start cancelled from the app before the source started")
+        XCTAssertFalse(manager.isStarting)
+        XCTAssertFalse(capture.isRunning)
+        XCTAssertEqual(manager.transitions.last?.state, .notStarted)
+    }
+
+    func testChoosingAnotherSourceCancelsAWaitingStart() async {
+        capture.holdsStart = true
+        let m = manager
+        let select = Task { @MainActor in await m.select(.systemAppCapture) }
+        await waitUntil { self.capture.isHoldingStart }
+        await manager.select(.microphone)
+        await select.value
+        XCTAssertEqual(manager.activeMode, .microphone)
+        XCTAssertEqual(manager.state, .waiting)
+        XCTAssertNil(manager.stopReason, "the cancelled attempt does not leak into the new session")
+        XCTAssertNil(manager.stopDetail)
+        XCTAssertTrue(mic.isRunning)
+        XCTAssertFalse(capture.isRunning)
+        XCTAssertEqual(fixture.runningCount, 1)
+    }
+
+    func testRestartCancelsAWaitingStartAndStartsAgain() async {
+        capture.holdsStart = true
+        let m = manager
+        let select = Task { @MainActor in await m.select(.systemAppCapture) }
+        await waitUntil { self.capture.isHoldingStart }
+        capture.holdsStart = false   // the re-presented picker answers this time
+        await manager.restart()
+        await select.value
+        XCTAssertEqual(capture.startCount, 2, "restart re-runs start, which re-presents the picker")
+        XCTAssertEqual(manager.state, .waiting)
+        XCTAssertTrue(capture.isRunning)
+        XCTAssertEqual(fixture.runningCount, 1)
+    }
+
+    func testSourceThatStartsDespiteTheCancelIsStoppedAgain() async {
+        capture.holdsStart = true
+        capture.startsAnywayAfterStop = true
+        let m = manager
+        let select = Task { @MainActor in await m.select(.systemAppCapture) }
+        await waitUntil { self.capture.isHoldingStart }
+        await manager.stop()
+        await select.value
+        XCTAssertEqual(manager.state, .notStarted)
+        XCTAssertEqual(manager.stopReason, .cancelled)
+        XCTAssertFalse(capture.isRunning, "a start that slipped past the cancel is stopped again")
+        XCTAssertEqual(capture.stopCount, 2)
+        XCTAssertEqual(fixture.runningCount, 0)
+    }
+
+    /// Review finding: Stop while Restart is still stopping the old source must cancel the
+    /// restart before it presents the picker again.
+    func testStopDuringRestartsStopCancelsTheRestart() async {
+        await manager.select(.systemAppCapture)
+        capture.stopDelayNanoseconds = 200_000_000
+        let m = manager
+        let restart = Task { @MainActor in await m.restart() }
+        await waitUntil { self.capture.stopCount == 1 }
+        let begin = Date()
+        await manager.stop()
+        await restart.value
+        XCTAssertLessThan(Date().timeIntervalSince(begin), 1.0, "FR-007: stop within 1 s")
+        XCTAssertEqual(capture.startCount, 1, "the restart never presents the picker")
+        XCTAssertEqual(manager.state, .notStarted)
+        XCTAssertEqual(manager.stopReason, .cancelled)
+        XCTAssertFalse(manager.isStarting)
+        XCTAssertEqual(fixture.runningCount, 0)
+    }
+
+    /// Review finding: Restart then Stop, back to back, while a start waits on the picker.
+    func testRestartThenStopWhileWaitingEndsCancelled() async {
+        capture.holdsStart = true
+        let m = manager
+        let select = Task { @MainActor in await m.select(.systemAppCapture) }
+        await waitUntil { self.capture.isHoldingStart }
+        let restart = Task { @MainActor in await m.restart() }
+        let stop = Task { @MainActor in await m.stop() }
+        await select.value; await restart.value; await stop.value
+        XCTAssertEqual(capture.startCount, 1, "the queued restart never presents the picker")
+        XCTAssertFalse(capture.isHoldingStart)
+        XCTAssertEqual(manager.state, .notStarted)
+        XCTAssertEqual(manager.stopReason, .cancelled)
+        XCTAssertFalse(manager.isStarting)
+        XCTAssertEqual(fixture.runningCount, 0)
+    }
+
     // MARK: - Pause reasons end with the session (review F10)
 
     func testRouteLostThenStopHasNoStopReason() async {

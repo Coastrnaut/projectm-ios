@@ -12,6 +12,14 @@ final class FakeAudioSource: AudioSource, ContentIdentifying {
     /// Runs inside `start` before it returns or throws, standing in for the time the system
     /// picker or the permission prompt is on screen.
     var onStart: (@MainActor () async -> Void)?
+    /// When true, `start` waits like a picker that never answers, until `stop()` is called. It
+    /// then throws `.cancelled`, or returns normally if `startsAnywayAfterStop` is set (a source
+    /// that misses the cancel).
+    var holdsStart = false
+    var startsAnywayAfterStop = false
+    /// Makes `stop()` take this long, like a stream that takes time to stop.
+    var stopDelayNanoseconds: UInt64 = 0
+    private var heldStart: CheckedContinuation<Void, Never>?
     private(set) var startCount = 0
     private(set) var stopCount = 0
     private(set) var suspendCount = 0
@@ -30,6 +38,10 @@ final class FakeAudioSource: AudioSource, ContentIdentifying {
         startCount += 1
         log.append("start \(mode)")
         if let onStart { await onStart() }
+        if holdsStart {
+            await withCheckedContinuation { heldStart = $0 }
+            if !startsAnywayAfterStop { throw SourceError(.cancelled, detail: "stopped while the picker was open") }
+        }
         if let startError { throw startError }
         precondition(!isRunning, "duplicate session")
         isRunning = true
@@ -39,9 +51,17 @@ final class FakeAudioSource: AudioSource, ContentIdentifying {
         return stream
     }
 
+    /// True while `start` is held (see `holdsStart`).
+    var isHoldingStart: Bool { heldStart != nil }
+
     func stop() async {
         stopCount += 1
         log.append("stop \(mode)")
+        if stopDelayNanoseconds > 0 { try? await Task.sleep(nanoseconds: stopDelayNanoseconds) }
+        if let heldStart {
+            self.heldStart = nil
+            heldStart.resume()
+        }
         isRunning = false
         sink = nil
         continuation?.finish()

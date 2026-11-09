@@ -12,17 +12,33 @@ final class FakeStreamDriver: StreamDriver {
     var isAllowed = true
     var contentIdentity: String?
     var startError: (any Error)?
+    /// When true, `start` waits like a system picker that has not answered, until `stop()` ends
+    /// it with `.cancelled`, as SCKStreamDriver does (ADR-0001 ruling 7).
+    var holdsStart = false
     private(set) var startCount = 0
     private(set) var stopCount = 0
     private var onEvent: (@Sendable (SourceEvent) -> Void)?
+    private var picker: CheckedContinuation<Void, any Error>?
+
+    var isWaitingOnPicker: Bool { picker != nil }
 
     func start(sink: PCMSink, onEvent: @escaping @Sendable (SourceEvent) -> Void) async throws {
         startCount += 1
         if let startError { throw startError }
+        if holdsStart {
+            try await withCheckedThrowingContinuation { picker = $0 }
+        }
         self.onEvent = onEvent
     }
 
-    func stop() async { stopCount += 1; onEvent = nil }
+    func stop() async {
+        stopCount += 1
+        onEvent = nil
+        if let picker {
+            self.picker = nil
+            picker.resume(throwing: SourceError(.cancelled, detail: "Stopped from the app while the system picker was open"))
+        }
+    }
 
     /// Simulates SCStreamDelegate.stream(_:didStopWithError:).
     func simulateSystemStop() { onEvent?(.endedBySystem("user stopped sharing")) }
@@ -172,6 +188,51 @@ final class ScreenCaptureSourceTests: XCTestCase {
         await source.stop()
         await source.stop()
         XCTAssertEqual(driver.stopCount, 2, "driver.stop itself must tolerate repeats")
+    }
+
+    /// ADR-0001 ruling 7: a start waiting on a picker that never answers ends when the source is
+    /// stopped, as cancelled, instead of waiting forever.
+    func testStopEndsAStartWaitingOnThePicker() async {
+        let driver = FakeStreamDriver()
+        driver.holdsStart = true
+        let source = ScreenCaptureSource(driver: driver)
+        let start = Task { @MainActor in try await source.start(into: PCMSink()) }
+        await waitUntil { driver.isWaitingOnPicker }
+        await source.stop()
+        do {
+            _ = try await start.value
+            XCTFail("the waiting start must end with an error")
+        } catch let e as SourceError {
+            XCTAssertEqual(e.reason, .cancelled)
+        } catch { XCTFail("\(error)") }
+        XCTAssertFalse(driver.isWaitingOnPicker)
+    }
+
+    /// Stop in CaptureLab while the picker has not answered: the manager does not wait behind the
+    /// start, and the attempt ends as "Not started — cancelled" (ADR-0001 ruling 7).
+    func testManagerStopCancelsAStartWaitingOnThePicker() async {
+        let driver = FakeStreamDriver()
+        driver.holdsStart = true
+        let manager = CaptureManager(sources: [ScreenCaptureSource(driver: driver)], runsAnalysisTimer: false)
+        let select = Task { @MainActor in await manager.select(.systemAppCapture) }
+        await waitUntil { driver.isWaitingOnPicker }
+        XCTAssertTrue(manager.isStarting)
+        let begin = Date()
+        await manager.stop()
+        await select.value
+        XCTAssertLessThan(Date().timeIntervalSince(begin), 1.0, "FR-007: stop within 1 s")
+        XCTAssertFalse(manager.isStarting)
+        XCTAssertEqual(manager.state, .notStarted)
+        XCTAssertEqual(manager.stopReason, .cancelled)
+        XCTAssertEqual(manager.stopDetail, "Start cancelled from the app before the source started")
+    }
+}
+
+/// Polls `condition` on the main actor for up to 2 s.
+@MainActor
+func waitUntil(_ condition: () -> Bool) async {
+    for _ in 0..<200 where !condition() {
+        try? await Task.sleep(nanoseconds: 10_000_000)
     }
 }
 

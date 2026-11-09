@@ -108,6 +108,13 @@ final class SCKStreamDriver: NSObject, StreamDriver {
     /// callbacks return at once) and both serial sample-handler queues are then drained (a
     /// callback already running finishes before this returns).
     func stop() async {
+        // A start still waiting for the picker's answer ends now, as cancelled. The SDK does not
+        // document that every present() ends in a callback, so without this a start could wait
+        // forever (owner review 2026-11-08, ADR-0001 ruling 7). A late picker callback finds no
+        // continuation and is ignored.
+        if pickerContinuation != nil {
+            finishPicker(.failure(SourceError(.cancelled, detail: "Stopped from the app while the system picker was open")))
+        }
         guard let stream else { return }
         self.stream = nil
         output?.stop()

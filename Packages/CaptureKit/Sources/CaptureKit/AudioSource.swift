@@ -32,7 +32,9 @@ public struct SourceError: Error, Equatable, Sendable {
 ///    when called from a user action; a source never starts silently (FR-002).
 /// 2. Real-time callbacks write only to `PCMSink`, which is allocation-free and lock-free. They
 ///    never call async code, log, or touch the main actor.
-/// 3. `stop()` is idempotent and safe to call while a `start` is in flight (FR-052).
+/// 3. `stop()` is idempotent and safe to call while a `start` is in flight (FR-052). CaptureManager
+///    relies on this to cancel a start that is still waiting (Stop, Restart or another source);
+///    such a start throws, or its result is stopped again and reported as cancelled.
 /// 4. After `stop()` returns, the source holds no reference to the sink and delivers no audio.
 /// 5. Platform types (ScreenCaptureKit, CMSampleBuffer, AVAudioPCMBuffer) never cross this boundary.
 @MainActor
