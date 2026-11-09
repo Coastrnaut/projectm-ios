@@ -1,0 +1,62 @@
+{
+  "app" : {
+    "build" : "1",
+    "version" : "1.0"
+  },
+  "device" : {
+    "model" : "iPhone15,4",
+    "osBuild" : "24A446",
+    "osVersion" : "27.0.1"
+  },
+  "exportedAt" : "2026-11-09T22:42:56Z",
+  "schemaVersion" : 2,
+  "session" : {
+    "audioArrived" : true,
+    "durationSeconds" : 32.475909999997384,
+    "finalState" : "stopped",
+    "formats" : [
+      {
+        "channelCount" : 2,
+        "firstSeenSeconds" : 0.251748916998622,
+        "sampleRate" : 48000,
+        "sampleType" : "float32"
+      }
+    ],
+    "levels" : {
+      "peakDBFSMax" : -4.859440803527832,
+      "rmsDBFSMean" : -47.4258918762207
+    },
+    "lifecycleEvents" : [
+
+    ],
+    "nonSilent" : true,
+    "sampleCount" : 1556160,
+    "sourceMode" : "systemAppCapture",
+    "stateTransitions" : [
+      {
+        "atSeconds" : 0,
+        "state" : "waiting"
+      },
+      {
+        "atSeconds" : 0.2628423339992878,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 25.562550874998124,
+        "state" : "silent"
+      },
+      {
+        "atSeconds" : 32.475909999997384,
+        "state" : "stopped"
+      }
+    ],
+    "timing" : {
+      "bufferCadenceMaxMs" : 42.8815,
+      "bufferCadenceMeanMs" : 20.011680350000002,
+      "droppedFrames" : 0,
+      "lateBuffers" : 1,
+      "startToFirstAudioMs" : 8.376208
+    }
+  },
+  "testerNote" : "Paused spotify, within 2 seconds showed audio recieved - silent"
+}
