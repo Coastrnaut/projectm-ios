@@ -1,0 +1,76 @@
+{
+  "app" : {
+    "build" : "1",
+    "version" : "1.0"
+  },
+  "device" : {
+    "model" : "iPhone15,4",
+    "osBuild" : "24A446",
+    "osVersion" : "27.0.1"
+  },
+  "exportedAt" : "2026-11-09T23:17:56Z",
+  "schemaVersion" : 2,
+  "session" : {
+    "audioArrived" : true,
+    "durationSeconds" : 7.398310792003031,
+    "finalState" : "endedBySystem",
+    "formats" : [
+      {
+        "channelCount" : 2,
+        "firstSeenSeconds" : 1.4216205420016195,
+        "sampleRate" : 48000,
+        "sampleType" : "float32"
+      }
+    ],
+    "levels" : {
+      "peakDBFSMax" : -6.055295467376709,
+      "rmsDBFSMean" : -57.08281326293945
+    },
+    "lifecycleEvents" : [
+      {
+        "atSeconds" : 7.391575083001953,
+        "event" : "background"
+      },
+      {
+        "atSeconds" : 7.392436750000343,
+        "event" : "streamStopped"
+      },
+      {
+        "atSeconds" : 9.47029004200158,
+        "event" : "foreground"
+      }
+    ],
+    "nonSilent" : true,
+    "sampleCount" : 350400,
+    "sourceMode" : "systemAppCapture",
+    "stateTransitions" : [
+      {
+        "atSeconds" : 0,
+        "state" : "waiting"
+      },
+      {
+        "atSeconds" : 1.1925457079996704,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 6.5118260420022125,
+        "state" : "silent"
+      },
+      {
+        "atSeconds" : 7.398310792003031,
+        "reason" : "endedBySystem",
+        "state" : "endedBySystem"
+      }
+    ],
+    "stopDetail" : "Stream was stopped due to the app going into background state while missing the Screen Capture Background Mode (SCStreamError -3824)",
+    "stopReason" : "endedBySystem",
+    "timing" : {
+      "bufferCadenceMaxMs" : 23.148875,
+      "bufferCadenceMeanMs" : 16.785618934065933,
+      "droppedFrames" : 0,
+      "lateBuffers" : 61,
+      "startToFirstAudioMs" : 1188.197833
+    }
+  },
+  "testerNote" : "Audio ended"
+}
