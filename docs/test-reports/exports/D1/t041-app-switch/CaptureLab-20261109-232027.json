@@ -1,0 +1,72 @@
+{
+  "app" : {
+    "build" : "1",
+    "version" : "1.0"
+  },
+  "device" : {
+    "model" : "iPhone15,4",
+    "osBuild" : "24A446",
+    "osVersion" : "27.0.1"
+  },
+  "exportedAt" : "2026-11-09T23:20:27Z",
+  "schemaVersion" : 2,
+  "session" : {
+    "audioArrived" : true,
+    "durationSeconds" : 5.655443708998064,
+    "finalState" : "endedBySystem",
+    "formats" : [
+      {
+        "channelCount" : 2,
+        "firstSeenSeconds" : 0.2519892499985872,
+        "sampleRate" : 48000,
+        "sampleType" : "float32"
+      }
+    ],
+    "levels" : {
+      "peakDBFSMax" : -4.944407939910889,
+      "rmsDBFSMean" : -17.23724365234375
+    },
+    "lifecycleEvents" : [
+      {
+        "atSeconds" : 5.6484672499973385,
+        "event" : "background"
+      },
+      {
+        "atSeconds" : 5.6493781249992026,
+        "event" : "streamStopped"
+      },
+      {
+        "atSeconds" : 10.489990666999802,
+        "event" : "foreground"
+      }
+    ],
+    "nonSilent" : true,
+    "sampleCount" : 267840,
+    "sourceMode" : "systemAppCapture",
+    "stateTransitions" : [
+      {
+        "atSeconds" : 0,
+        "state" : "waiting"
+      },
+      {
+        "atSeconds" : 0.2621925839994219,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 5.655443708998064,
+        "reason" : "endedBySystem",
+        "state" : "endedBySystem"
+      }
+    ],
+    "stopDetail" : "Stream was stopped due to the app going into background state while missing the Screen Capture Background Mode (SCStreamError -3824)",
+    "stopReason" : "endedBySystem",
+    "timing" : {
+      "bufferCadenceMaxMs" : 42.511542,
+      "bufferCadenceMeanMs" : 19.990576136690645,
+      "droppedFrames" : 0,
+      "lateBuffers" : 1,
+      "startToFirstAudioMs" : 13.603209
+    }
+  },
+  "testerNote" : "Switch to spotify, audio ended"
+}

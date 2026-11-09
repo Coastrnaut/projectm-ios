@@ -10,7 +10,7 @@ ruling 12). Exports: `exports/<device>/t041-*/`.
 |-------|---------------------|-------------------|---------------------|-------------------|
 | Background, then foreground | Stopped 1 ms after background: SCStreamError -3824, "Stream was stopped due to the app going into background state while missing the Screen Capture Background Mode"; app showed "Ended by system" (`D1/t041-background/CaptureLab-20261109-231756.json`) | open | open | open |
 | Lock, then unlock | Stopped 5 ms after lock: SCStreamError -3817, "The user stopped the stream" (iOS treats a lock as ending the share); app showed "Ended by system" (`D1/t041-lock/CaptureLab-20261109-231910.json`) | open | open | open |
-| Switch to the source app, then back | open | open | open | open |
+| Switch to the source app, then back | Stopped 1 ms after leaving: SCStreamError -3824, same as background; "Ended by system" (`D1/t041-app-switch/CaptureLab-20261109-232027.json`) | open | open | open |
 | Interruption (for example a call or Siri) | open | open | open | open |
 
 Notes:
