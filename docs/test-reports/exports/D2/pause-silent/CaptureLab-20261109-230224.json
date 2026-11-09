@@ -1,0 +1,62 @@
+{
+  "app" : {
+    "build" : "1",
+    "version" : "1.0"
+  },
+  "device" : {
+    "model" : "iPad17,3",
+    "osBuild" : "24B119",
+    "osVersion" : "27.2.0"
+  },
+  "exportedAt" : "2026-11-09T23:02:24Z",
+  "schemaVersion" : 2,
+  "session" : {
+    "audioArrived" : true,
+    "durationSeconds" : 12.73362966700006,
+    "finalState" : "stopped",
+    "formats" : [
+      {
+        "channelCount" : 2,
+        "firstSeenSeconds" : 1.7310401249997085,
+        "sampleRate" : 48000,
+        "sampleType" : "float32"
+      }
+    ],
+    "levels" : {
+      "peakDBFSMax" : -4.353782653808594,
+      "rmsDBFSMean" : -60.54977035522461
+    },
+    "lifecycleEvents" : [
+
+    ],
+    "nonSilent" : true,
+    "sampleCount" : 599040,
+    "sourceMode" : "systemAppCapture",
+    "stateTransitions" : [
+      {
+        "atSeconds" : 0,
+        "state" : "waiting"
+      },
+      {
+        "atSeconds" : 1.6107131670005401,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 9.802254875000472,
+        "state" : "silent"
+      },
+      {
+        "atSeconds" : 12.73362966700006,
+        "state" : "stopped"
+      }
+    ],
+    "timing" : {
+      "bufferCadenceMaxMs" : 21.729042,
+      "bufferCadenceMeanMs" : 18.027043672552168,
+      "droppedFrames" : 0,
+      "lateBuffers" : 66,
+      "startToFirstAudioMs" : 1491.37675
+    }
+  },
+  "testerNote" : "Changed to silent after pause"
+}
