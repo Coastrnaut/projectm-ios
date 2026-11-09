@@ -351,7 +351,7 @@ In `Packages/CaptureKit/Sources/CaptureKit/ScreenCapture/SCKStreamDriver.swift` 
 
 Configuration decisions: FR-008 names iOS/iPadOS 27.0. CaptureLab's Info.plist has
 `NSScreenCaptureUsageDescription` with the `contracts/ui-states.md` text (FR-019; kept either way,
-owner review 2026-11-08) and no background mode. The Screen Recording entitlement the owner review
+owner review 2026-11-08) and the `screen-capture` background mode (ADR-0001 ruling 17, 2026-11-09). The Screen Recording entitlement the owner review
 added (ADR-0001 Decision 6) was removed 2026-11-09 (ADR-0001 ruling 16); CaptureLab declares none. RI-001 supports ADR-0001's decision
 (ScreenCaptureKit only, in-process, no extension); the project owner accepted ADR-0001 on
 2026-11-08.
@@ -434,7 +434,7 @@ T041 records its results in this file.
 
 ## Owner decisions (ruled 2026-11-08)
 
-1. **Background mode `screen-capture`: decide after T041.** Apple documents it for capture in the
+1. **Background mode `screen-capture`: decided after T041 — added (2026-11-09, ADR-0001 ruling 17).** T041 on D1, 2026-11-09 (`docs/test-reports/t041-lifecycle.md`): without the mode, background and an app switch end capture 1 ms later with -3824; with it (diagnostic build 9001), capture ran unbroken for 53 s in the background. A lock ends capture either way (-3817). Apple documents it for capture in the
    background [bgmodes], and -3824 exists (`Headers/SCError.h:38`); research R-03 allows a mode only
    through an owner-approved ADR-0001 amendment, and `scripts/check_compliance.py` rejects a
    `UIBackgroundModes` key in `project.yml`, written plain, quoted or in flow style. T041 first runs without

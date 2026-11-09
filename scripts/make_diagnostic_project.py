@@ -2,13 +2,11 @@
 """Generate a temporary diagnostic CaptureLab project (owner review 2026-11-08, ADR-0001 ruling 12).
 
 The owner approved temporary diagnostic builds for T041 and T113. They must never enter the
-committed `project.yml`, which `scripts/check_compliance.py` keeps free of background modes. This
-script copies `project.yml` with one change into `Build/diagnostic/<variant>/` (gitignored) and generates
+committed `project.yml`. This script copies `project.yml` with one change into `Build/diagnostic/<variant>/` (gitignored) and generates
 `CaptureLab-<variant>.xcodeproj` (gitignored) next to the normal project, which stays untouched.
 
-Variants:
-  screen-capture-mode  CaptureLab declares UIBackgroundModes = [screen-capture] (T041: does the
-                       mode keep capture running in the background or on lock?). Build 9001.
+Variants (the screen-capture-mode variant, build 9001, was retired on 2026-11-09 when ADR-0001
+ruling 17 put that background mode into the normal build):
   no-usage-key         CaptureLab has no NSScreenCaptureUsageDescription (T040/T113: does iOS 27
                        require the key?). Build 9002.
 
@@ -17,8 +15,8 @@ its exports are never mistaken for the normal build. Diagnostic exports are neve
 compatibility evidence.
 
 Usage:
-  python3 scripts/make_diagnostic_project.py screen-capture-mode
-  open CaptureLab-screen-capture-mode.xcodeproj
+  python3 scripts/make_diagnostic_project.py no-usage-key
+  open CaptureLab-no-usage-key.xcodeproj
 Standard library only; needs XcodeGen (macOS).
 """
 from __future__ import annotations
@@ -35,7 +33,6 @@ OUT_ROOT = ROOT / "Build" / "diagnostic"
 
 # variant -> (build number, display-name suffix)
 VARIANTS: dict[str, tuple[str, str]] = {
-    "screen-capture-mode": ("9001", "SC mode"),
     "no-usage-key": ("9002", "no key"),
 }
 
@@ -53,11 +50,7 @@ def variant_spec(text: str, variant: str) -> str:
     out = out.replace("        CFBundleDisplayName: CaptureLab\n",
                       f"        CFBundleDisplayName: \"CaptureLab {suffix}\"\n"
                       f"        CFBundleVersion: \"{build}\"\n", 1)
-    if variant == "screen-capture-mode":
-        out = out.replace("        UILaunchScreen: {}\n",
-                          "        UILaunchScreen: {}\n"
-                          "        UIBackgroundModes: [screen-capture]   # diagnostic build only (ruling 12)\n", 1)
-    elif variant == "no-usage-key":
+    if variant == "no-usage-key":
         lines = out.split("\n")
         keep = [l for l in lines if not l.startswith(USAGE_KEY_LINE)]
         if len(keep) != len(lines) - 1:
@@ -67,8 +60,6 @@ def variant_spec(text: str, variant: str) -> str:
                    f"Build/diagnostic/{variant}/Info.plist", f"CaptureLab {suffix}"):
         if marker not in out:
             raise ValueError(f"project.yml changed; could not apply {marker!r}")
-    if variant == "screen-capture-mode" and "UIBackgroundModes: [screen-capture]" not in out:
-        raise ValueError("project.yml changed; could not add UIBackgroundModes")
     return out
 
 

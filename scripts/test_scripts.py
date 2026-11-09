@@ -546,24 +546,48 @@ class DiagnosticProjectTests(unittest.TestCase):
 
     SPEC = (check_compliance.ROOT / "project.yml").read_text(encoding="utf-8")
 
-    def test_screen_capture_mode_adds_only_the_mode(self):
-        out = make_diagnostic_project.variant_spec(self.SPEC, "screen-capture-mode")
-        self.assertIn("UIBackgroundModes: [screen-capture]", out)
-        self.assertIn('CFBundleVersion: "9001"', out)
-        self.assertIn("Build/diagnostic/screen-capture-mode/Info.plist", out)
-        self.assertIn("NSScreenCaptureUsageDescription", out)
-        self.assertNotIn("UIBackgroundModes", self.SPEC, "the committed spec has no background mode")
-
     def test_no_usage_key_removes_only_the_key(self):
         out = make_diagnostic_project.variant_spec(self.SPEC, "no-usage-key")
         self.assertNotIn("NSScreenCaptureUsageDescription:", out)
         self.assertIn("NSMicrophoneUsageDescription", out)
         self.assertIn('CFBundleVersion: "9002"', out)
-        self.assertNotIn("UIBackgroundModes", out)
+        self.assertIn("UIBackgroundModes: [screen-capture]", out, "keeps the normal build's mode")
+
+    def test_screen_capture_variant_retired(self):
+        # ADR-0001 ruling 17 put the mode into the normal build, so the variant is gone.
+        self.assertNotIn("screen-capture-mode", make_diagnostic_project.VARIANTS)
 
     def test_changed_spec_fails_loudly(self):
         with self.assertRaises(ValueError):
-            make_diagnostic_project.variant_spec("name: Other\n", "screen-capture-mode")
+            make_diagnostic_project.variant_spec("name: Other\n", "no-usage-key")
+
+
+class BackgroundModeExceptionTests(unittest.TestCase):
+    """ADR-0001 ruling 17: project.yml may declare exactly UIBackgroundModes: [screen-capture]."""
+
+    def check(self, yml: str) -> list[str]:
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "project.yml"
+            p.write_text(yml, encoding="utf-8")
+            return check_compliance.check_project_yml(p)
+
+    def test_allowed_forms_pass(self):
+        for line in ("UIBackgroundModes: [screen-capture]", 'UIBackgroundModes: ["screen-capture"]',
+                     "'UIBackgroundModes': [ 'screen-capture' ]  # ruling 17"):
+            self.assertEqual(self.check(f"info:\n  properties:\n    {line}\n"), [], line)
+
+    def test_other_values_and_forms_flagged(self):
+        for body in ("    UIBackgroundModes: [audio]\n",
+                     "    UIBackgroundModes: [screen-capture, audio]\n",
+                     "    UIBackgroundModes:\n      - screen-capture\n",
+                     "    UIBackgroundModes: screen-capture\n"):
+            found = self.check("info:\n  properties:\n" + body)
+            self.assertTrue(any("UIBackgroundModes" in v for v in found), body)
+
+    def test_project_yml_declares_the_mode(self):
+        text = (check_compliance.ROOT / "project.yml").read_text(encoding="utf-8")
+        self.assertIn("UIBackgroundModes: [screen-capture]", text)
+        self.assertEqual(check_compliance.check_project_yml(check_compliance.ROOT / "project.yml"), [])
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

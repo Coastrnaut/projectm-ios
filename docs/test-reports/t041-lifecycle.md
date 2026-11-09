@@ -18,3 +18,6 @@ Notes:
 - Background and lock end the stream with different codes on D1: -3824 (missing
   `screen-capture` mode) and -3817 ("user stopped"). A lock reporting -3817 supports showing
   "Ended by system" for -3817 (ADR-0001 ruling 5).
+
+- 2026-11-09: owner ruling (ADR-0001 ruling 17) adds `screen-capture` to the normal build based on
+  these D1 runs; the D2 runs use the normal build.

@@ -201,7 +201,7 @@ follows for this project:
   although the cause there is the missing framework, not the OS version. Simulator runs cover only
   that path and the UI flows and are never capture evidence (Constitution X). System/App Capture
   is tested on D1 and D2 only.
-- **No background mode.** Apple documents the `UIBackgroundModes` value `screen-capture` for
+- **Background mode `screen-capture` (ruling 17).** Apple documents the `UIBackgroundModes` value `screen-capture` for
   capturing while the app is in the background
   (https://developer.apple.com/documentation/xcode/configuring-background-execution-modes; listed
   without a description at
@@ -212,9 +212,13 @@ follows for this project:
   (iOSSCKSample/CaptureManager.swift:120-126, :308-314). Whether `.audio` capture needs either mode
   in the background is unknown; T041 records it. The SDK has `SCStreamErrorMissingBackgroundMode`
   (`-3824`, Headers/SCError.h:38; annotated for iOS, visionOS and tvOS only, with no macOS entry),
-  which names no mode. This ADR adds no background mode (research R-03, R-16).
+  which names no mode. **Amended 2026-11-09 (ruling 17):** CaptureLab declares
+  `UIBackgroundModes: [screen-capture]` and no other mode. T041 on D1, 2026-11-09 (`docs/test-reports/t041-lifecycle.md`): without the mode, background and an app switch end capture 1 ms later with -3824; with it (diagnostic build 9001), capture ran unbroken for 53 s in the background. A lock ends capture either way (-3817).
+  The mode keeps a running capture alive while CaptureLab is in the background; visualization
+  stays foreground-only. The text below describes the state before the amendment.
   `scripts/check_compliance.py` rejects a `UIBackgroundModes` key in `project.yml` whether it is
-  written plain, quoted or in flow style (ruling 13); a mode set outside `project.yml`'s keys, for
+  written plain, quoted or in flow style (ruling 13), except exactly
+  `UIBackgroundModes: [screen-capture]` (ruling 17); a mode set outside `project.yml`'s keys, for
   example through an `INFOPLIST_KEY_` build setting or an `.xcconfig` file, is not checked. As a
   result:
   - The stream may stop when CaptureLab leaves the foreground. Testers start playback in the
@@ -343,3 +347,4 @@ Rulings:
 | 14 | Explicit `-weak_framework ScreenCaptureKit` for device builds; before any TestFlight upload, a Release build is checked with `otool` and launched on D3 (also in ADR-0002). | Done: weak link, checked in Debug and Release on 2026-11-08; the D3 launch is part of the TestFlight procedure |
 | 15 | (2026-11-09) Xcode cannot provision `com.apple.developer.screen-recording` for the owner's team. Ask Apple how to obtain it before any device run. | Superseded by ruling 16 |
 | 16 | (2026-11-09) Remove the entitlement for now (offered only to organization accounts) and test capture without it in T040. If `-3803` follows, enroll as an organization or ask Apple, then restore Decision 6. | Done: file and setting removed. On D1 and D2 (2026-11-09) capture started without it, no -3803 |
+| 17 | (2026-11-09) Add only the `screen-capture` background mode to CaptureLab: T041 on D1, 2026-11-09 (`docs/test-reports/t041-lifecycle.md`): without the mode, background and an app switch end capture 1 ms later with -3824; with it (diagnostic build 9001), capture ran unbroken for 53 s in the background. A lock ends capture either way (-3817). | Done: `project.yml`, narrow exception in `scripts/check_compliance.py` (59 script tests) |

@@ -73,9 +73,10 @@ Renderer/Platform/GLResolver.cpp).
   Apple source covers device lock. The Change rule therefore has a concrete candidate,
   `screen-capture`. Owner ruling 2026-11-08: decide after T041, once its runs (without the mode)
   show which stop codes leaving CaptureLab produces. Until then the test procedure is: start
-  playback in the source app first, then stay in CaptureLab (quickstart Scenario A). The current decision (no background mode) stands, and
-  `scripts/check_compliance.py` rejects a `UIBackgroundModes` key in `project.yml`, whether written
-  plain, quoted or in flow style.
+  playback in the source app first, then stay in CaptureLab (quickstart Scenario A).
+  **Applied 2026-11-09 (ADR-0001 ruling 17):** CaptureLab declares only `screen-capture`. T041 on D1, 2026-11-09 (`docs/test-reports/t041-lifecycle.md`): without the mode, background and an app switch end capture 1 ms later with -3824; with it (diagnostic build 9001), capture ran unbroken for 53 s in the background. A lock ends capture either way (-3817).
+  `scripts/check_compliance.py` allows exactly `UIBackgroundModes: [screen-capture]` and rejects any
+  other background mode in `project.yml`.
 - **Open until device testing** (T041): behavior on background, lock, unlock and switching to the
   source app, with the stop code recorded; the export carries it in `session.stopDetail`
   (schemaVersion 2, owner ruling 2026-11-08).
@@ -254,7 +255,7 @@ Renderer/Platform/GLResolver.cpp).
 
 ## R-16 Entitlements and capabilities
 
-No App Groups, no background modes (R-03 change rule), no network, no push, no iCloud. No entitlement:
+No App Groups, no background mode except `screen-capture` (R-03 change rule, ADR-0001 ruling 17), no network, no push, no iCloud. No entitlement:
 the Screen Recording entitlement (ADR-0001 Decision 6) was removed on 2026-11-09 because it is
 offered only to organization accounts (ruling 16); T040 shows whether capture needs it. Info.plist contains only `NSMicrophoneUsageDescription` and the capture usage keys
 Apple's documentation tells apps to add: `NSScreenCaptureUsageDescription`, kept whether or not

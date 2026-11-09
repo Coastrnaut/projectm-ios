@@ -69,7 +69,8 @@ source ring and conversion ≤ 20 ms → normalized ring residency ≤ 50 ms →
 50 ms (about 3 frames at 60 Hz).
 
 **Entitlements**: Minimal, per research R-16: none (the Screen Recording entitlement of ADR-0001
-Decision 6 was removed on 2026-11-09, ruling 16); no App Groups, background modes, network, push, or iCloud.
+Decision 6 was removed on 2026-11-09, ruling 16); no App Groups, network, push, or iCloud; the only background
+mode is `screen-capture` (ADR-0001 ruling 17).
 
 **Scale/Scope**: Single user, on device. About 8 screens/sheets (source chooser, visualizer,
 controls overlay, preset browser, settings, diagnostics, photosensitivity notice, error states).

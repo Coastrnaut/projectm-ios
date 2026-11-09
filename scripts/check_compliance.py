@@ -130,12 +130,25 @@ def yaml_scalar(rest: str) -> str:
     return re.split(r"[,}\]]", rest, maxsplit=1)[0].strip()
 
 
+# ADR-0001 ruling 17 (2026-11-09): the one background-mode exception, written exactly in flow style.
+ALLOWED_BACKGROUND_MODES = re.compile(r"""[ \t]*\[[ \t]*(["']?)screen-capture\1[ \t]*\][ \t]*""")
+
+
+def allowed_background_modes(m: re.Match[str], text: str) -> bool:
+    """True only for `UIBackgroundModes: [screen-capture]` (quoted or not), nothing else."""
+    if m.group(2) != "UIBackgroundModes":
+        return False
+    rest = text[m.end():].split("\n", 1)[0]
+    return ALLOWED_BACKGROUND_MODES.fullmatch(rest) is not None
+
+
 def check_project_yml(path: Path) -> list[str]:
     if not path.exists():
         return []
     text = strip_yaml_comments(path.read_text(encoding="utf-8"))
     found = [f"{path}: '{m.group(2)}' not allowed by research R-16"
-             for m in FORBIDDEN_YML_KEYS.finditer(text)]
+             for m in FORBIDDEN_YML_KEYS.finditer(text)
+             if not allowed_background_modes(m, text)]
     keys = list(CODE_SIGN_KEY.finditer(text))
     for m in keys:
         value = yaml_scalar(text[m.end():].split("\n", 1)[0])

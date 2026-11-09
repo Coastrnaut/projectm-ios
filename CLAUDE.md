@@ -67,7 +67,7 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
   Not rated yet (FR-031 needs 10 min). T040 complete 2026-11-09 (`docs/test-reports/t040-us1.md`). The iOS Simulator SDK has no
   ScreenCaptureKit, so System/App Capture can only be tested on D1/D2.
 - Owner rulings 2026-11-08 (research doc, "Owner decisions"): `screen-capture` background mode
-  decided after T041; the export carries `session.stopDetail`; new StopReason
+  added on 2026-11-09 after T041 on D1 (ADR-0001 ruling 17; a lock still ends capture, -3817); the export carries `session.stopDetail`; new StopReason
   `screenRecordingNotAllowed` for -3801 and `isAvailable` false; RI-003 is checked at Gate 2, not
   Gate 0; a compile-only CI job runs on the `xcode-27` image.
 - Test devices (final, recorded by T017 in `docs/test-reports/devices.md`; all paired, Developer
@@ -99,7 +99,7 @@ python3 scripts/validate_docs.py         # spec cross-references
 python3 scripts/check_compliance.py      # constitution rules
 python3 scripts/verify_environment.py    # toolchain pins (macOS)
 python3 scripts/check_capturelab_export.py --json <export> --expect none   # check a device export
-python3 scripts/make_diagnostic_project.py screen-capture-mode   # temporary diagnostic build (9001)
+python3 scripts/make_diagnostic_project.py no-usage-key   # temporary diagnostic build (9002)
 swift test --package-path Packages/AudioCore
 xcodegen generate && open ProjectM-iOS.xcodeproj
 ```

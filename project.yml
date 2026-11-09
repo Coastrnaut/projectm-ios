@@ -6,7 +6,8 @@
 # Entitlements: none. The Screen Recording entitlement (ADR-0001 Decision 6) was removed on
 # 2026-11-09 because it is offered only to organization accounts (ruling 16); if it returns, it
 # goes in through CODE_SIGN_ENTITLEMENTS, the only form scripts/check_compliance.py allows.
-# Background modes: none (research R-03, R-16).
+# Background modes: only screen-capture (ADR-0001 ruling 17, 2026-11-09: without it, leaving
+# CaptureLab ends capture with SCStreamError -3824). check_compliance.py allows exactly this value.
 name: ProjectM-iOS
 options:
   bundleIdPrefix: org.projectmios
@@ -60,6 +61,9 @@ targets:
       properties:
         CFBundleDisplayName: CaptureLab
         UILaunchScreen: {}
+        # ADR-0001 ruling 17 (T041 on D1): keeps System/App Capture running while CaptureLab is in
+        # the background. Visualization stays foreground-only. The only background mode allowed.
+        UIBackgroundModes: [screen-capture]
         UIApplicationSupportsIndirectInputEvents: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait

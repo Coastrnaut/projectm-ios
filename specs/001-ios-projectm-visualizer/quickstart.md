@@ -68,10 +68,9 @@ System/App Capture can be tested only on D1 and D2 (iOS/iPadOS 27.0 or later, FR
 simulator: the iOS Simulator SDK (Xcode 27.2) has no ScreenCaptureKit, so the mode always shows as
 unavailable there. In every System/App Capture run:
 
-- Start playback in the source app first, then switch to CaptureLab, start capture, and stay in
-  CaptureLab. CaptureLab declares no background mode (research R-16), so leaving it may end the
-  stream with "Ended by system" (possibly code -3824, "missing background mode", ScreenCaptureKit
-  `Headers/SCError.h:38`). Pause and resume the source without leaving CaptureLab, for example from
+- Start playback in the source app first, then switch to CaptureLab and start capture. Since
+  2026-11-09 CaptureLab declares the `screen-capture` background mode (ADR-0001 ruling 17), so
+  leaving it no longer ends the stream; a lock still does (-3817). Pause and resume the source without leaving CaptureLab, for example from
   the Now Playing controls in Control Center, and note it if that ends the stream. Set Auto-Lock to
   Never: CaptureLab does not keep the screen on, and a lock may end the stream too. Leave CaptureLab
   on purpose only in step 5.
@@ -114,14 +113,9 @@ unavailable there. In every System/App Capture run:
    Whether a lock ends it, and with which code, is unknown. On each of D1 and D2, also do one run
    that changes the shared content from system UI (for example Control Center) during capture,
    and record what happens in the tester note (T113); CaptureLab does not apply the new choice, by
-   design. CaptureLab declares no background mode. If T041 shows one is needed to keep a foreground
-   session alive, only `screen-capture` may be added, through an owner-approved ADR-0001 amendment
-   and a narrow `check_compliance.py` exception; `audio` is never added, and capture in the
-   background stays out of scope (owner review 2026-11-08). Repeat the background and lock runs on
-   D1 and D2 with the approved temporary build that declares only `screen-capture`: run
-   `python3 scripts/make_diagnostic_project.py screen-capture-mode`, open
-   `CaptureLab-screen-capture-mode.xcodeproj`, set the team, and run it ("CaptureLab SC mode",
-   app build 9001 in its exports). The export records each stop code in `session.stopDetail`.
+   design. Since 2026-11-09 CaptureLab declares only the `screen-capture` background mode
+   (ADR-0001 ruling 17, from the D1 runs of T041); `audio` is never added. Run the background, lock
+   and app-switch runs with the normal build. The export records each stop code in `session.stopDetail`.
    Check device exports with `python3 scripts/check_capturelab_export.py --json <file> --expect
    none` (or with the expected lifecycle events).
 6. For each FR-030 source, run 10 minutes in the foreground and export (FR-021).
