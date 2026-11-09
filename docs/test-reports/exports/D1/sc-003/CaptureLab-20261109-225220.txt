@@ -1,0 +1,17 @@
+CaptureLab diagnostics (metadata only — no audio)
+Exported: 2026-11-09T22:52:20Z
+Device: iPhone15,4, OS 27.0.1 (24A446)
+App build: 1
+Source mode: systemAppCapture
+Final state: stopped
+Stop detail: none
+Audio arrived: yes
+Non-silent audio verified: yes
+Samples: 9392640 over 195.7 s
+Format at 1.22 s: 48000 Hz, 2 ch, float32
+Start to first audio: 984 ms
+Buffer cadence: mean 19.9 ms, max 42.8 ms; late buffers 52; dropped frames 0
+Levels: peak max -3.3 dBFS, RMS mean -57.4 dBFS
+Tester note: All tests show silent after pause within 2 seconds
+
+A source counts as working only if 'Non-silent audio verified' is yes (FR-031).

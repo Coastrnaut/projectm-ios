@@ -1,0 +1,242 @@
+{
+  "app" : {
+    "build" : "1",
+    "version" : "1.0"
+  },
+  "device" : {
+    "model" : "iPhone15,4",
+    "osBuild" : "24A446",
+    "osVersion" : "27.0.1"
+  },
+  "exportedAt" : "2026-11-09T22:52:20Z",
+  "schemaVersion" : 2,
+  "session" : {
+    "audioArrived" : true,
+    "durationSeconds" : 195.72125358300036,
+    "finalState" : "stopped",
+    "formats" : [
+      {
+        "channelCount" : 2,
+        "firstSeenSeconds" : 1.2223896670002432,
+        "sampleRate" : 48000,
+        "sampleType" : "float32"
+      }
+    ],
+    "levels" : {
+      "peakDBFSMax" : -3.2601654529571533,
+      "rmsDBFSMean" : -57.39645767211914
+    },
+    "lifecycleEvents" : [
+
+    ],
+    "nonSilent" : true,
+    "sampleCount" : 9392640,
+    "sourceMode" : "systemAppCapture",
+    "stateTransitions" : [
+      {
+        "atSeconds" : 0,
+        "state" : "waiting"
+      },
+      {
+        "atSeconds" : 0.9913892500007933,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 15.980928582997876,
+        "state" : "silent"
+      },
+      {
+        "atSeconds" : 18.901415083000757,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 28.870871041999635,
+        "state" : "silent"
+      },
+      {
+        "atSeconds" : 30.852449874997546,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 37.08084887500081,
+        "state" : "silent"
+      },
+      {
+        "atSeconds" : 38.78199908299939,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 46.04087379200064,
+        "state" : "silent"
+      },
+      {
+        "atSeconds" : 48.21240599999874,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 55.17240704199867,
+        "state" : "silent"
+      },
+      {
+        "atSeconds" : 58.41247929199744,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 65.2608532919985,
+        "state" : "silent"
+      },
+      {
+        "atSeconds" : 67.41145483299988,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 73.79246358299861,
+        "state" : "silent"
+      },
+      {
+        "atSeconds" : 75.84240762499758,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 81.69088645800002,
+        "state" : "silent"
+      },
+      {
+        "atSeconds" : 83.3319645829979,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 88.62090183299733,
+        "state" : "silent"
+      },
+      {
+        "atSeconds" : 90.03087633299947,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 95.79242145799799,
+        "state" : "silent"
+      },
+      {
+        "atSeconds" : 97.13253566699859,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 102.6409272919991,
+        "state" : "silent"
+      },
+      {
+        "atSeconds" : 104.15145741699962,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 110.57084924999799,
+        "state" : "silent"
+      },
+      {
+        "atSeconds" : 112.00247441700049,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 117.3609957080007,
+        "state" : "silent"
+      },
+      {
+        "atSeconds" : 118.74241145799897,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 124.44237729199813,
+        "state" : "silent"
+      },
+      {
+        "atSeconds" : 125.7824174999987,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 131.030884374999,
+        "state" : "silent"
+      },
+      {
+        "atSeconds" : 132.86248987499857,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 137.90097595800034,
+        "state" : "silent"
+      },
+      {
+        "atSeconds" : 139.39242691699837,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 145.26129149999906,
+        "state" : "silent"
+      },
+      {
+        "atSeconds" : 146.90249100000074,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 151.94084066700088,
+        "state" : "silent"
+      },
+      {
+        "atSeconds" : 155.97236570799942,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 162.45243562500036,
+        "state" : "silent"
+      },
+      {
+        "atSeconds" : 163.74240791699776,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 170.03239374999976,
+        "state" : "silent"
+      },
+      {
+        "atSeconds" : 171.3524820829989,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 176.53084616699925,
+        "state" : "silent"
+      },
+      {
+        "atSeconds" : 177.94241187499938,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 183.66074129199842,
+        "state" : "silent"
+      },
+      {
+        "atSeconds" : 185.49156533299902,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 191.15087016699908,
+        "state" : "silent"
+      },
+      {
+        "atSeconds" : 192.71240629199747,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 195.72125358300036,
+        "state" : "stopped"
+      }
+    ],
+    "timing" : {
+      "bufferCadenceMaxMs" : 42.827125,
+      "bufferCadenceMeanMs" : 19.902277735255034,
+      "droppedFrames" : 0,
+      "lateBuffers" : 52,
+      "startToFirstAudioMs" : 983.934375
+    }
+  },
+  "testerNote" : "All tests show silent after pause within 2 seconds"
+}
