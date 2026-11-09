@@ -8,7 +8,7 @@ ruling 12). Exports: `exports/<device>/t041-*/`.
 
 | Event | D1 normal (build 1) | D1 SC mode (9001) | D2 normal (build 1) | D2 SC mode (9001) |
 |-------|---------------------|-------------------|---------------------|-------------------|
-| Background, then foreground | Stopped 1 ms after background: SCStreamError -3824, "Stream was stopped due to the app going into background state while missing the Screen Capture Background Mode"; app showed "Ended by system" (`D1/t041-background/CaptureLab-20261109-231756.json`) | open | open | open |
+| Background, then foreground | Stopped 1 ms after background: SCStreamError -3824, "Stream was stopped due to the app going into background state while missing the Screen Capture Background Mode"; app showed "Ended by system" (`D1/t041-background/CaptureLab-20261109-231756.json`) | Survived two background trips (0.7 s and 0.1 s): no stop, audio continuous (max gap 28.8 ms, 0 dropped) (`D1/t041-sc-background/CaptureLab-20261109-232644.json`); a ~30 s background run is still to do | open | open |
 | Lock, then unlock | Stopped 5 ms after lock: SCStreamError -3817, "The user stopped the stream" (iOS treats a lock as ending the share); app showed "Ended by system" (`D1/t041-lock/CaptureLab-20261109-231910.json`) | open | open | open |
 | Switch to the source app, then back | Stopped 1 ms after leaving: SCStreamError -3824, same as background; "Ended by system" (`D1/t041-app-switch/CaptureLab-20261109-232027.json`) | open | open | open |
 | Interruption (for example a call or Siri) | Siri: capture kept running, "Active audio" until the user's Stop at 38 s; no stop code, 0 dropped, one gap up to 99.5 ms (FR-051) (`D1/t041-siri/CaptureLab-20261109-232212.json`) | not needed (no stop to fix) | open | not needed |
