@@ -1,0 +1,46 @@
+{
+  "app" : {
+    "build" : "1",
+    "version" : "1.0"
+  },
+  "device" : {
+    "model" : "iPhone15,4",
+    "osBuild" : "24A446",
+    "osVersion" : "27.0.1"
+  },
+  "exportedAt" : "2026-11-09T22:35:36Z",
+  "schemaVersion" : 2,
+  "session" : {
+    "audioArrived" : false,
+    "durationSeconds" : 0,
+    "finalState" : "notStarted",
+    "formats" : [
+
+    ],
+    "levels" : {
+      "peakDBFSMax" : -120,
+      "rmsDBFSMean" : -120
+    },
+    "lifecycleEvents" : [
+
+    ],
+    "nonSilent" : false,
+    "sampleCount" : 0,
+    "sourceMode" : "systemAppCapture",
+    "stateTransitions" : [
+      {
+        "atSeconds" : 2.5656975000019884,
+        "reason" : "cancelled",
+        "state" : "notStarted"
+      }
+    ],
+    "stopReason" : "cancelled",
+    "timing" : {
+      "bufferCadenceMaxMs" : 0,
+      "bufferCadenceMeanMs" : 0,
+      "droppedFrames" : 0,
+      "lateBuffers" : 0
+    }
+  },
+  "testerNote" : "Cancel the picker showed not started - cancel"
+}
