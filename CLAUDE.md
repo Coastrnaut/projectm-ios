@@ -31,7 +31,8 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
     `[X]`.
   - Builds and simulator runs share one Mac: agents read, review, and type-check; only a few lanes
     build or run tests.
-  - macOS CI minutes cost 10× quota; parallel agents are no reason to push more often.
+  - CI minutes on GitHub's standard runners are free since the repo went public (2026-11-09); still
+    push finished work, not every step.
   - Agents cannot do device tasks or owner decisions, and no agent may start work that the Stage 1
     gate blocks.
 
@@ -98,8 +99,9 @@ xcodegen generate && open ProjectM-iOS.xcodeproj
 ```
 
 CI: `.github/workflows/ios-ci.yml` (docs and compliance → Linux package tests and macOS build/test).
-The repo is private, so macOS minutes cost 10× quota (about 4 min per run). Add `[skip ci]` to
-docs-only commit messages.
+The repo is public since 2026-11-09 (owner decision), so standard GitHub-hosted runners are free.
+Add `[skip ci]` to docs-only commit messages. Commits use the GitHub noreply address
+(repo-local `user.email`); commits before 2026-11-09 show the owner's email.
 
 ## Conventions
 

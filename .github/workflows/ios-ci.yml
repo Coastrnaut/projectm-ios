@@ -1,6 +1,6 @@
 # iOS CI (research R-12; tasks T011, T015). No signing secrets: builds and tests only.
-# The repository is private, so macOS minutes count 10× against the Actions quota: keep the macOS
-# job lean, time-limited, and cancel superseded runs.
+# The repository is public (2026-11-09), so standard runners are free; still keep the macOS jobs
+# lean, time-limited, and cancel superseded runs.
 name: iOS CI
 
 on:

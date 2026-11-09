@@ -48,7 +48,7 @@ with System/App Capture only where the OS provides it.
   20261026.0314.1 has Xcode 27.2 as release candidate 27B48, not the pinned 27B52, and the iOS
   27.0–27.2 SDKs). Owner ruling 2026-11-08: the CI job `build-ios27` runs there on every run and
   compiles CaptureKit (including the System/App Capture driver) and CaptureLab for iOS devices, at
-  the cost of extra macOS minutes (10× quota on this private repository). Because the image's
+  the cost of extra macOS minutes (free on standard runners since the repository went public on 2026-11-09). Because the image's
   Xcode 27 builds change, the job uses the newest Xcode 27 that can build for iOS devices; that
   selection is an implementation choice, not part of the ruling. Capture itself is tested only on
   devices. First green run: 42529663444 (2026-11-08) on
