@@ -100,8 +100,8 @@ xcodegen generate && open ProjectM-iOS.xcodeproj
 
 CI: `.github/workflows/ios-ci.yml` (docs and compliance → Linux package tests and macOS build/test).
 The repo is public since 2026-11-09 (owner decision), so standard GitHub-hosted runners are free.
-Add `[skip ci]` to docs-only commit messages. Commits use the GitHub noreply address
-(repo-local `user.email`); commits before 2026-11-09 show the owner's email.
+Add `[skip ci]` to docs-only commit messages. Commits use the owner's normal git email (owner
+decision 2026-11-09: no noreply address).
 
 ## Conventions
 
