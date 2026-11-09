@@ -1,0 +1,65 @@
+{
+  "app" : {
+    "build" : "9001",
+    "version" : "1.0"
+  },
+  "device" : {
+    "model" : "iPhone15,4",
+    "osBuild" : "24A446",
+    "osVersion" : "27.0.1"
+  },
+  "exportedAt" : "2026-11-09T23:28:52Z",
+  "schemaVersion" : 2,
+  "session" : {
+    "audioArrived" : true,
+    "durationSeconds" : 58.8341342499989,
+    "finalState" : "stopped",
+    "formats" : [
+      {
+        "channelCount" : 2,
+        "firstSeenSeconds" : 0.25229837499864516,
+        "sampleRate" : 48000,
+        "sampleType" : "float32"
+      }
+    ],
+    "levels" : {
+      "peakDBFSMax" : -6.9064764976501465,
+      "rmsDBFSMean" : -32.650970458984375
+    },
+    "lifecycleEvents" : [
+      {
+        "atSeconds" : 3.419135791998997,
+        "event" : "background"
+      },
+      {
+        "atSeconds" : 56.397901084001205,
+        "event" : "foreground"
+      }
+    ],
+    "nonSilent" : true,
+    "sampleCount" : 2822400,
+    "sourceMode" : "systemAppCapture",
+    "stateTransitions" : [
+      {
+        "atSeconds" : 0,
+        "state" : "waiting"
+      },
+      {
+        "atSeconds" : 0.2613895840004261,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 58.8341342499989,
+        "state" : "stopped"
+      }
+    ],
+    "timing" : {
+      "bufferCadenceMaxMs" : 77.302166,
+      "bufferCadenceMeanMs" : 20.00240790506975,
+      "droppedFrames" : 0,
+      "lateBuffers" : 1,
+      "startToFirstAudioMs" : 8.135917
+    }
+  },
+  "testerNote" : "Long background, audio survived"
+}
