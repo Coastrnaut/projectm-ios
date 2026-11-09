@@ -60,8 +60,10 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
   2026-11-09: it is offered only to organization accounts (ruling 16). CaptureLab declares no
   entitlement; T040 shows whether capture works without it (-3803 would mean it does not).
   The review's rulings and their status are in each ADR's "Owner review" section.
-  Nothing has run on a device yet. The iOS Simulator SDK has no ScreenCaptureKit, so System/App
-  Capture can only be tested on D1/D2.
+  First device run (2026-11-09): on D1, System/App Capture without the entitlement received
+  non-silent Spotify audio (20.8 s; export in `docs/test-reports/exports/D1/spotify/`). Not rated
+  yet (FR-031 needs 10 min); D2, D3 and the rest of T040 are open. The iOS Simulator SDK has no
+  ScreenCaptureKit, so System/App Capture can only be tested on D1/D2.
 - Owner rulings 2026-11-08 (research doc, "Owner decisions"): `screen-capture` background mode
   decided after T041; the export carries `session.stopDetail`; new StopReason
   `screenRecordingNotAllowed` for -3801 and `isAvailable` false; RI-003 is checked at Gate 2, not

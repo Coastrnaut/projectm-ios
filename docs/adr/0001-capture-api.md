@@ -39,8 +39,8 @@ Apple's docs, and Apple's iOS sample project was read with the owner's approval:
 `d6d3f4068458490d9ddb5771636c135bcff98025d1ae38fa4a1b0fbb37a229a1`), the download offered by
 https://developer.apple.com/documentation/screencapturekit/capturing-screen-content-on-ios. It was
 read, never built or run. Sample paths below (`iOSSCKSample/…`, `README.md`) are relative to that
-project. CaptureLab has not run on a device yet. Nothing here shows that any app's audio can be
-captured (Constitution V, FR-062).
+project. First device run (2026-11-09, export `docs/test-reports/exports/D1/spotify/CaptureLab-20261109-221348.json`): on D1 (iOS 27.0.1, 24A446), System/App Capture with no entitlement started without -3803 and received non-silent audio while Spotify played (20.8 s; 48 kHz, 2 ch, float32; peak -2.9 dBFS; start to first audio 13 ms; 0 dropped frames). One short run: no FR-031 rating yet (T051 needs 10 minutes), and D2, D3 and the other T040 scenarios are still open. No source is claimed to work until it is rated under FR-031 (Constitution V,
+FR-062).
 
 RI-003 is not part of Gate 0 (owner ruling 2026-11-08; the Gate 0 row names only RI-001 and
 RI-004). This ADR covers RI-003's configuration part; its device part is checked at Gate 2 (T041).
@@ -342,4 +342,4 @@ Rulings:
 | 13 | Close two gaps in `scripts/check_compliance.py`: kind-qualified imports, and quoted or flow-style YAML keys. Its other known gaps (Decisions 4 to 6) were not part of the ruling. | Done, with tests in `scripts/test_scripts.py` |
 | 14 | Explicit `-weak_framework ScreenCaptureKit` for device builds; before any TestFlight upload, a Release build is checked with `otool` and launched on D3 (also in ADR-0002). | Done: weak link, checked in Debug and Release on 2026-11-08; the D3 launch is part of the TestFlight procedure |
 | 15 | (2026-11-09) Xcode cannot provision `com.apple.developer.screen-recording` for the owner's team. Ask Apple how to obtain it before any device run. | Superseded by ruling 16 |
-| 16 | (2026-11-09) Remove the entitlement for now (offered only to organization accounts) and test capture without it in T040. If `-3803` follows, enroll as an organization or ask Apple, then restore Decision 6. | Done: file and setting removed; capture without it untested until T040 |
+| 16 | (2026-11-09) Remove the entitlement for now (offered only to organization accounts) and test capture without it in T040. If `-3803` follows, enroll as an organization or ask Apple, then restore Decision 6. | Done: file and setting removed. On D1 (2026-11-09) capture started without it, no -3803; D2 still to check |

@@ -13,8 +13,7 @@ Device tasks: **T040** US1 device scenarios, including a first answer to RI-002;
 lifecycle evidence;
 **T049** US2 device scenarios; **T050** allocation trace. Devices (`docs/test-reports/devices.md`):
 D1 iPhone 15 `iPhone15,4`, iOS 27.0.1 (24A446), reference; D2 iPad Pro 13-inch (M5) `iPad17,3`,
-iPadOS 27.2 (24B119); D3 iPad (A16) `iPad15,7`, iPadOS 26.5 (23F77). CaptureLab has not run on any
-device yet.
+iPadOS 27.2 (24B119); D3 iPad (A16) `iPad15,7`, iPadOS 26.5 (23F77). First device run (2026-11-09, export `docs/test-reports/exports/D1/spotify/CaptureLab-20261109-221348.json`): on D1 (iOS 27.0.1, 24A446), System/App Capture with no entitlement started without -3803 and received non-silent audio while Spotify played (20.8 s; 48 kHz, 2 ch, float32; peak -2.9 dBFS; start to first audio 13 ms; 0 dropped frames). One short run: no FR-031 rating yet (T051 needs 10 minutes), and D2, D3 and the other T040 scenarios are still open.
 
 ## Sources and method
 
@@ -372,7 +371,8 @@ as FR-031 compatibility evidence.
    call (non-Apple report of all-zero call audio [f848245]). **T040** gives a first answer; T051
    exports and T052 FR-031 rows answer RI-002 for each FR-030 source. If audio is silent with
    `present()`, a diagnostic run tries `present(using: .display)` before T056's go/no-go (owner
-   review 2026-11-08).
+   review 2026-11-08). First answer, D1 only: Spotify audio arrived non-silent (see the status at
+   the top).
 2. **Audio-only stream versus `.screen`.** Test: the same source with and without the `.screen`
    output (temporary build); compare buffer counts and errors (-3812, -3818). **T113** (T040 session).
 3. **Minimum width and height.** Test: at 64 × 64, `startCapture` succeeds (no -3812) and audio
@@ -386,7 +386,8 @@ as FR-031 compatibility evidence.
    provision it for the owner's team ("not found and could not be included in profile"); the owner
    found it is offered only to organization accounts, so it was removed (ADR-0001 rulings 15,
    16). Test: the first start on D1 and D2, with no entitlement, succeeds or fails with -3803.
-   **T040.**
+   **T040.** Result on D1 (2026-11-09): no -3803; capture started and delivered audio without the
+   entitlement. D2 is still to be checked.
 6. **Background, lock and -3824.** Test on D1 and D2 during capture: background, lock, unlock and a
    switch to the source app. Record the stop code and audio-timestamp gaps without `screen-capture`,
    then with a temporary build that declares only `screen-capture` (approved by the owner review;

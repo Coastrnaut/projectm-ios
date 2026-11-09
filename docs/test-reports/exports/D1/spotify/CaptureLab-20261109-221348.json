@@ -1,0 +1,54 @@
+{
+  "app" : {
+    "build" : "1",
+    "version" : "1.0"
+  },
+  "device" : {
+    "model" : "iPhone15,4",
+    "osBuild" : "24A446",
+    "osVersion" : "27.0.1"
+  },
+  "exportedAt" : "2026-11-09T22:13:48Z",
+  "schemaVersion" : 2,
+  "session" : {
+    "audioArrived" : true,
+    "durationSeconds" : 20.752394167000602,
+    "finalState" : "active",
+    "formats" : [
+      {
+        "channelCount" : 2,
+        "firstSeenSeconds" : 0.2516910830017878,
+        "sampleRate" : 48000,
+        "sampleType" : "float32"
+      }
+    ],
+    "levels" : {
+      "peakDBFSMax" : -2.8736090660095215,
+      "rmsDBFSMean" : -17.132734298706055
+    },
+    "lifecycleEvents" : [
+
+    ],
+    "nonSilent" : true,
+    "sampleCount" : 995520,
+    "sourceMode" : "systemAppCapture",
+    "stateTransitions" : [
+      {
+        "atSeconds" : 0,
+        "state" : "waiting"
+      },
+      {
+        "atSeconds" : 0.26239750000240747,
+        "state" : "active"
+      }
+    ],
+    "timing" : {
+      "bufferCadenceMaxMs" : 36.77675,
+      "bufferCadenceMeanMs" : 20.004888513513514,
+      "droppedFrames" : 0,
+      "lateBuffers" : 0,
+      "startToFirstAudioMs" : 12.908
+    }
+  },
+  "testerNote" : "Tested with spotify"
+}

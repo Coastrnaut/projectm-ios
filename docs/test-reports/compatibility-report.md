@@ -1,6 +1,7 @@
 # Source Compatibility Report (FR-030–FR-034)
 
-> **No source has been tested yet. No source is claimed to work.** A row may be rated "Works" only
+> **No source is rated yet. No source is claimed to work.** One preliminary System/App Capture run
+> with Spotify on D1 (2026-11-09) is recorded below but not rated. A row may be rated "Works" only
 > with a CaptureLab diagnostics export from a physical device showing non-silent audio (FR-031).
 > Screenshots of the picker or UI are not evidence. Simulator results are never evidence.
 
@@ -21,6 +22,7 @@ In-App reference audio, Microphone.
 
 | Device role | Device model | OS build | Toolchain | Source | Source app version | Capture mode | Picker selection | Audio arrived | Non-silent | Sample rate | Channels | Latency avg / worst (ms) | Interruption / end behavior | Result | Limitation (required if Partial) | Repro steps | Export file(s) |
 |-------------|--------------|----------|-----------|--------|--------------------|--------------|------------------|---------------|------------|-------------|----------|--------------------------|-----------------------------|--------|----------------------------------|-------------|----------------|
+| D1 | iPhone 15 `iPhone15,4` | iOS 27.0.1 (24A446) | Xcode 27.2 (27B52) | Spotify | not recorded | System/App Capture | not recorded | yes | yes | 48000 | 2 | n/a (buffer cadence 20.0 / 36.8) | none in this run | *not rated: one 20.8 s run; FR-031 needs 10 min (T051)* | | Start Spotify playback, open CaptureLab, System/App Capture, pick in the system picker, stay in CaptureLab | `exports/D1/spotify/CaptureLab-20261109-221348.json` |
 | | | | | Spotify | | System/App Capture | | | | | | | | *untested* | | | |
 | | | | | Apple Music | | System/App Capture | | | | | | | | *untested* | | | |
 | | | | | YouTube Music | | System/App Capture | | | | | | | | *untested* | | | |
