@@ -1241,3 +1241,9 @@ Treat this as two linked projects:
 2. **ProjectM visualizer:** build the portable audio pipeline, ProjectM bridge, renderer, and user experience around the proven capture contract.
 
 The first release should support only the sources demonstrated by physical-device evidence. This avoids spending substantial engineering effort on a technically attractive visualizer whose central system-audio capture requirement cannot be met for the intended apps.
+
+## License
+
+This project's code is licensed under the MIT License; see [LICENSE](LICENSE). The ProjectM
+engine in `Vendor/projectM` keeps its own license (LGPL-2.1). Distribution questions are tracked
+in [ADR-0005](docs/adr/0005-lgpl-compliance.md).

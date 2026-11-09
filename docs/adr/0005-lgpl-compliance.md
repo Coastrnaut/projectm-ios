@@ -1,6 +1,6 @@
 # ADR-0005: LGPL-2.1 and App Store Compliance
 
-- **Status**: Open
+- **Status**: Open; app code licensed MIT (owner decision 2026-11-09)
 - **Date**: 2026-11-07
 - **Spec**: FR-064, FR-067, Delivery Gating · **Research**: R-10 · **RI**: RI-007, RI-010
 
@@ -81,4 +81,14 @@ Engineering does not depend on the choice: the dynamic framework (ADR-0004) supp
 
 ## Conclusion
 
-*Preliminary conclusion pending project-owner approval of the draft above. Final conclusion: not yet written (T109).*
+**Owner decision (2026-11-09): this project's own code is licensed under the MIT License**
+(`LICENSE`). With the repository public, users can rebuild the whole app against a modified
+ProjectM engine, which is the simplest way to meet LGPL-2.1 §6 (RI-007), and MIT adds no
+restrictions that conflict with App Store terms. The engine stays LGPL-2.1: it ships as a separate
+dynamic framework (ADR-0004), its source and any local changes are offered, and its notice appears
+on the Licenses screen (FR-067). Still open before release: whether App Store terms conflict with
+LGPL-2.1 §10 for the engine's own code, and upstream's App Store warning (RI-010); a legal opinion
+is recommended for the final conclusion (T109).
+
+*Preliminary conclusion: pending the owner's approval of the conditional go above (T055). Final
+conclusion: T109.*
