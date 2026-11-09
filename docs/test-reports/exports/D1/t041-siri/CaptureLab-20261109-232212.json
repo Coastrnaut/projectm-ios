@@ -1,0 +1,58 @@
+{
+  "app" : {
+    "build" : "1",
+    "version" : "1.0"
+  },
+  "device" : {
+    "model" : "iPhone15,4",
+    "osBuild" : "24A446",
+    "osVersion" : "27.0.1"
+  },
+  "exportedAt" : "2026-11-09T23:22:12Z",
+  "schemaVersion" : 2,
+  "session" : {
+    "audioArrived" : true,
+    "durationSeconds" : 37.95886083299774,
+    "finalState" : "stopped",
+    "formats" : [
+      {
+        "channelCount" : 2,
+        "firstSeenSeconds" : 0.251941499998793,
+        "sampleRate" : 48000,
+        "sampleType" : "float32"
+      }
+    ],
+    "levels" : {
+      "peakDBFSMax" : -5.070991516113281,
+      "rmsDBFSMean" : -27.330249786376953
+    },
+    "lifecycleEvents" : [
+
+    ],
+    "nonSilent" : true,
+    "sampleCount" : 1819200,
+    "sourceMode" : "systemAppCapture",
+    "stateTransitions" : [
+      {
+        "atSeconds" : 0,
+        "state" : "waiting"
+      },
+      {
+        "atSeconds" : 0.24189033299990115,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 37.95886083299774,
+        "state" : "stopped"
+      }
+    ],
+    "timing" : {
+      "bufferCadenceMaxMs" : 99.520417,
+      "bufferCadenceMeanMs" : 20.011197003695884,
+      "droppedFrames" : 0,
+      "lateBuffers" : 10,
+      "startToFirstAudioMs" : 10.626
+    }
+  },
+  "testerNote" : "Triggered siri"
+}
