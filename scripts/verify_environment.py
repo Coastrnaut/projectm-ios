@@ -7,6 +7,8 @@ Windows is used only for specification, documentation, and source authoring.
 On macOS it exits 1 when a pinned tool is missing or its version does not match. While the
 ADR still lists a pin as `TBD` (before Gate 0 / task T010), that tool is reported as
 "unpinned" and the script exits 1, so CI cannot pass on an unpinned toolchain.
+The Xcode build, written in the ADR as Xcode `27.2` (build 27B52), must also match the
+"Build version" line of `xcodebuild -version` exactly (ADR-0002 owner ruling 5).
 """
 from __future__ import annotations
 
@@ -31,12 +33,39 @@ TOOLS: dict[str, tuple[list[str], str]] = {
 }
 
 
-def read_pins() -> dict[str, str]:
-    text = ADR.read_text(encoding="utf-8")
+XCODE_BUILD_CMD = ["xcodebuild", "-version"]
+XCODE_BUILD_PATTERN = r"Build version\s+(\S+)"
+
+
+def pin_block(text: str | None = None) -> str:
+    """The ADR-0002 "Toolchain pin" paragraph ("" when the ADR has none)."""
+    if text is None:
+        text = ADR.read_text(encoding="utf-8")
     line = next((l for l in text.splitlines() if "Toolchain pin" in l), "")
-    block = line + "\n" + text.split(line, 1)[1].split("\n\n", 1)[0] if line else ""
+    return line + "\n" + text.split(line, 1)[1].split("\n\n", 1)[0] if line else ""
+
+
+def read_pins(text: str | None = None) -> dict[str, str]:
+    block = pin_block(text)
     return {name: m.group(1) for name in TOOLS
             if (m := re.search(rf"{name}\s+`([^`]+)`", block))}
+
+
+def read_build_pin(text: str | None = None) -> str | None:
+    """The Xcode build pinned as Xcode `27.2` (build 27B52) (ADR-0002 owner ruling 5), or None."""
+    m = re.search(r"Xcode\s+`[^`]+`\s*\(build\s+([0-9A-Za-z]+)\)", pin_block(text))
+    return m.group(1) if m else None
+
+
+def check_build(pin: str | None, found: str | None) -> tuple[bool, str]:
+    """Compare the pinned Xcode build with the one `xcodebuild -version` reports."""
+    if pin is None:
+        return False, f"Xcode build: unpinned in ADR-0002 (found {found or 'missing'})"
+    if found is None:
+        return False, f"Xcode build: missing (pinned {pin})"
+    if found != pin:
+        return False, f"Xcode build: {found} does not match pin {pin} (ADR-0002 Toolchain pin)"
+    return True, f"Xcode build: {found} OK"
 
 
 def tool_version(cmd: list[str], pattern: str) -> str | None:
@@ -75,6 +104,10 @@ def main() -> int:
             failures += 1
         else:
             print(f"{name}: {found} OK")
+    ok, message = check_build(read_build_pin(), tool_version(XCODE_BUILD_CMD, XCODE_BUILD_PATTERN))
+    print(message)
+    if not ok:
+        failures += 1
     return 1 if failures else 0
 
 
