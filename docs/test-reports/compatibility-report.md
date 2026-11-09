@@ -28,6 +28,7 @@ In-App reference audio, Microphone.
 | | | | | Apple Music | | System/App Capture | | | | | | | | *untested* | | | |
 | | | | | YouTube Music | | System/App Capture | | | | | | | | *untested* | | | |
 | | | | | Safari video | | System/App Capture | | | | | | | | *untested* | | | |
+| D3 | iPad (A16) `iPad15,7` | iPadOS 26.5 (23F77) | Xcode 27.2 (27B52), Debug | In-App reference audio | n/a | In-App Playback | n/a | yes | yes | 44100 | 2 | n/a (buffer cadence 99.9 / 116.7) | stopped by the user | *not rated: one 7.2 s run; FR-031 needs 10 min (T051)* | | Launch CaptureLab on D3, In-App Playback, Stop. System/App Capture showed "Requires a newer iOS version" (tester note) | `exports/D3/in-app/CaptureLab-20261109-222812.json` |
 | | | | | In-App reference audio | n/a | In-App Playback | n/a | | | | | | | *untested* | | | |
 | | | | | Microphone (room sound) | n/a | Microphone | n/a | | | | | | | *untested* | | | |
 

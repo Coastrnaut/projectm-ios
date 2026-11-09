@@ -1,0 +1,58 @@
+{
+  "app" : {
+    "build" : "1",
+    "version" : "1.0"
+  },
+  "device" : {
+    "model" : "iPad15,7",
+    "osBuild" : "23F77",
+    "osVersion" : "26.5.0"
+  },
+  "exportedAt" : "2026-11-09T22:28:12Z",
+  "schemaVersion" : 2,
+  "session" : {
+    "audioArrived" : true,
+    "durationSeconds" : 7.219308042000193,
+    "finalState" : "stopped",
+    "formats" : [
+      {
+        "channelCount" : 2,
+        "firstSeenSeconds" : 0.2514071250006964,
+        "sampleRate" : 44100,
+        "sampleType" : "float32"
+      }
+    ],
+    "levels" : {
+      "peakDBFSMax" : -11.999982833862305,
+      "rmsDBFSMean" : -15.010560989379883
+    },
+    "lifecycleEvents" : [
+
+    ],
+    "nonSilent" : true,
+    "sampleCount" : 345600,
+    "sourceMode" : "inAppPlayback",
+    "stateTransitions" : [
+      {
+        "atSeconds" : 0,
+        "state" : "waiting"
+      },
+      {
+        "atSeconds" : 0.28078383400134044,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 7.219308042000193,
+        "state" : "stopped"
+      }
+    ],
+    "timing" : {
+      "bufferCadenceMaxMs" : 116.732375,
+      "bufferCadenceMeanMs" : 99.90458509859155,
+      "droppedFrames" : 0,
+      "lateBuffers" : 0,
+      "startToFirstAudioMs" : 93.35499999999999
+    }
+  },
+  "testerNote" : "System/app capture says requires new iOS version"
+}

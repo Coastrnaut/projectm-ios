@@ -252,7 +252,7 @@ Other consequences:
 - iOS 26 users get Microphone and In-App Playback only. Device builds weak-link ScreenCaptureKit
   explicitly (`-weak_framework ScreenCaptureKit` for iOS 27 SDKs in `project.yml`; ruling 14). On
   2026-11-08 the Debug and the Release device builds both load it as `LC_LOAD_WEAK_DYLIB`
-  (`otool -l`), so CaptureLab should launch on iPadOS 26.5; only D3 can confirm it. Before any
+  (`otool -l`), so CaptureLab should launch on iPadOS 26.5. On D3 (iPadOS 26.5, 23F77) on 2026-11-09, a Debug build run from Xcode launched and played In-App Playback (export `docs/test-reports/exports/D3/in-app/CaptureLab-20261109-222812.json`), and System/App Capture showed "Requires a newer iOS version" (tester note): the weak link works on iOS 26 for the Debug build. The Release build is still checked before any TestFlight upload. Before any
   TestFlight upload, the uploaded Release build is checked the same way and launched on D3
   (`docs/release/capturelab-distribution.md`; ADR-0002).
 - RI-001 found an iOS `.audio` output type (Headers/SCStream.h:36), but no Apple source says whose

@@ -61,7 +61,9 @@ run 42552713447. New device task: T113.
 - Not started (need the project owner or devices): T040, T041, T049–T054, T056, T113.
 - **No source is rated yet; no source is claimed to work.** First device run 2026-11-09: D1 and
   D2, System/App Capture with Spotify, non-silent audio in short runs (exports in
-  `docs/test-reports/exports/`); T040 stays open (D3, scenarios 2-5, SC-003).
+  `docs/test-reports/exports/`); on D3 the
+  Debug build launches and System/App Capture shows "Requires a newer iOS version" (scenario 5);
+  T040 stays open (scenarios 1-4 in full, SC-003).
 
 ## Format: `[ID] [P?] [Story] Description`
 

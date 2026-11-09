@@ -24,7 +24,7 @@ with System/App Capture only where the OS provides it.
   SDKs (owner review 2026-11-08; the iOS 26.5 SDK has no such framework, so the flag cannot apply
   there). On 2026-11-08 the Debug and the Release device builds both load it as
   `LC_LOAD_WEAK_DYLIB` (`otool -l`), so CaptureLab should load on iOS 26, where the framework is
-  absent; confirmed only when CaptureLab runs on D3. Before any TestFlight upload, the uploaded
+  absent. On D3 (iPadOS 26.5, 23F77) on 2026-11-09, a Debug build run from Xcode launched and played In-App Playback (export `docs/test-reports/exports/D3/in-app/CaptureLab-20261109-222812.json`), and System/App Capture showed "Requires a newer iOS version" (tester note): the weak link works on iOS 26 for the Debug build. The Release build is still checked before any TestFlight upload. Before any TestFlight upload, the uploaded
   Release build is checked with `otool` and launched on D3
   (`docs/release/capturelab-distribution.md`). All
   other features are meant to work on iOS 26; Microphone and In-App Playback are checked on D3 in
