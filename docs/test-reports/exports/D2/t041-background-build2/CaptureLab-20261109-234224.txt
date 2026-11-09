@@ -1,0 +1,17 @@
+CaptureLab diagnostics (metadata only — no audio)
+Exported: 2026-11-09T23:42:24Z
+Device: iPad17,3, OS 27.2.0 (24B119)
+App build: 2
+Source mode: systemAppCapture
+Final state: stopped
+Stop detail: none
+Audio arrived: yes
+Non-silent audio verified: yes
+Samples: 2030400 over 42.6 s
+Format at 1.72 s: 48000 Hz, 2 ch, float32
+Start to first audio: 1480 ms
+Buffer cadence: mean 19.4 ms, max 816.1 ms; late buffers 67; dropped frames 0
+Levels: peak max -2.9 dBFS, RMS mean -20.0 dBFS
+Tester note: Long background
+
+A source counts as working only if 'Non-silent audio verified' is yes (FR-031).
