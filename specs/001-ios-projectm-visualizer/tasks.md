@@ -42,8 +42,8 @@ Recording entitlement (`Apps/CaptureLab/CaptureLab.entitlements`; provisioning s
 in Xcode); the explicit ScreenCaptureKit weak link (Debug and Release device builds load it as
 `LC_LOAD_WEAK_DYLIB`); the compliance hardening, the entitlement allowlist and the Xcode build check
 (54 script tests); CaptureLab UI tests (3) on both simulators; the iOS 26.5 runtime 23F73 removed.
-The CI changes (main job on `macos-26`, iOS 27 simulator tests in `build-ios27`) have not run on
-GitHub yet. New device task: T113.
+The CI changes (main job on `macos-26`, iOS 27 simulator tests in `build-ios27`) are green in
+run 42552713447. New device task: T113.
 
 - `[X]` = acceptance criterion verified. ⏳ = written but not yet verifiable here.
 - Host: Windows 11 plus WSL Ubuntu 24.04 with Swift 6.4.2 (user-local swiftly install). The

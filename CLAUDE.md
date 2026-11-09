@@ -41,13 +41,12 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
   renderer, or preset work: it is blocked until the Stage 1 gate (task T056) records "go".
 - Verified: 84 Swift package tests pass on Linux (AudioCore 40, CaptureKit 33, Diagnostics 7,
   CaptureUI 4) and 15 Python script tests pass.
-- CI was last green (run 42529663444) with the main job on `macos-latest` (Xcode 26.6 / iOS SDK
-  26.5, no ScreenCaptureKit): package tests on the macOS host and iOS 26 simulator, generic-iOS
-  builds with the capture driver compiled out; `build-ios27` compiled the driver and CaptureLab on
-  GitHub's `xcode-27` preview image with Xcode 27.2 (27B52). Since the owner review (not yet run on
-  GitHub): the main job is pinned to `macos-26` with the image's newest Xcode 26, and `build-ios27` warns on an
-  Xcode other than the ADR-0002 pin and also runs the package tests on an iOS 27 simulator. CI
-  does not run the CaptureLab UI tests.
+- CI is green (run 42552713447, 2026-11-09). The main job runs on `macos-26` with the image's
+  newest Xcode 26 (iOS SDK 26.5, no ScreenCaptureKit): package tests on the macOS host and an iOS 26
+  simulator, generic-iOS builds with the capture driver compiled out. `build-ios27` runs on GitHub's
+  `xcode-27` preview image with Xcode 27.2 (27B52; it warns on any other build): it compiles the
+  driver and CaptureLab for devices and runs the package tests on an iOS 27.2 simulator (about
+  4.5 min). CI does not run the CaptureLab UI tests.
 - Project Mac = build machine of record: Xcode 27.2 / iOS SDK 27.2 / Swift 6.4.2, XcodeGen 2.46.0,
   CMake 4.4.5 (ADR-0002, T010). Simulators iOS 27.2 and 26.5 (23F77 only). Verified here
   2026-11-08 (after the owner review): package tests (AudioCore 50, CaptureKit 74, Diagnostics 8,
@@ -76,10 +75,8 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
    the ADRs' "Owner review" sections).
 2. Before each work session: `python3 scripts/verify_environment.py` must exit 0 (it also checks
    the Xcode build, 27B52).
-3. Push and confirm the first CI run with the owner-review CI changes (`macos-26`, iOS 27
-   simulator tests in `build-ios27`); then record the result in ADR-0002's rulings table. Before
-   any TestFlight upload, follow `docs/release/capturelab-distribution.md` (Release `otool` check,
-   D3 launch).
+3. Before any TestFlight upload, follow `docs/release/capturelab-distribution.md` (Release
+   `otool` check, D3 launch).
 4. `xcodegen generate`, then build and run CaptureLab on D1, D2 and D3 (set the signing team by
    hand, and confirm in Xcode that the Screen Recording entitlement is provisioned).
 5. Run the device tasks (T040 onward, including the device checks of T113) following

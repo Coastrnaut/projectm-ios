@@ -54,12 +54,11 @@ with System/App Capture only where the OS provides it.
   devices. First green run: 42529663444 (2026-11-08) on
   image 20261104.0337.1, which ships Xcode 27.2 build 27B52 (the pinned build) and the iOS 27.2
   SDK; the job confirmed the driver's symbols in `SCKStreamDriver.o`. CI runs on pushes to `main`,
-  on pull requests and on manual runs. Owner review 2026-11-08, in the workflow since then but not
-  yet run on GitHub: the main job runs on `macos-26` instead of `macos-latest` and selects the
+  on pull requests and on manual runs. Owner review 2026-11-08, first green in run 42552713447: the main job runs on `macos-26` instead of `macos-latest` and selects the
   newest Xcode 26 on that image, so it keeps testing the iOS 26 SDK path when GitHub moves
   `macos-latest` to Xcode 27; `build-ios27` warns when its Xcode is not the build pinned below, and
-  also runs the package tests on the newest iOS 27 simulator of its image (about 3–4 more macOS
-  minutes per run, an estimate until the first run).
+  also runs the package tests on the newest iOS 27 simulator of its image (about 4 more macOS
+  minutes per run in run 42552713447).
 
 ## Consequences
 
@@ -78,7 +77,7 @@ with System/App Capture only where the OS provides it.
       Xcode/SDK/Swift gap is documented above.
 - [x] Simulator runtimes: up to run 42529663444, CI ran simulator tests on iOS 26.x only
       (`macos-latest`, iOS 26.5). Since the owner review, `build-ios27` also runs them on an iOS 27
-      simulator of the `xcode-27` image (not yet run on GitHub). The build Mac has iOS 27.2 and
+      simulator of the `xcode-27` image (first green in run 42552713447). The build Mac has iOS 27.2 and
       iOS 26.5 (23F77 only, since 23F73 was removed on 2026-11-08).
 
 ## Owner review (2026-11-08)
@@ -94,8 +93,8 @@ Rulings:
 | # | Ruling | Status |
 |---|--------|--------|
 | 1 | Explicit `-weak_framework ScreenCaptureKit` for device builds; before any TestFlight upload, a Release build is checked with `otool` and launched on D3. | Done: weak link in `project.yml`, checked in Debug and Release on 2026-11-08; the D3 launch is part of the TestFlight procedure (`docs/release/capturelab-distribution.md`) |
-| 2 | Pin the main CI job to `macos-26` instead of `macos-latest`. | In the workflow; not yet run on GitHub |
-| 3 | `build-ios27` warns, without failing, when its Xcode is not build 27B52. | In the workflow (the pin is read from this ADR); not yet run on GitHub |
-| 4 | `build-ios27` also runs the package tests on an iOS 27 simulator (about 3–4 more macOS minutes per run). | In the workflow; not yet run on GitHub |
+| 2 | Pin the main CI job to `macos-26` instead of `macos-latest`. | Done: green in run 42552713447 (2026-11-09) |
+| 3 | `build-ios27` warns, without failing, when its Xcode is not build 27B52. | In the workflow (the pin is read from this ADR); run 42552713447 used 27B52, so no warning |
+| 4 | `build-ios27` also runs the package tests on an iOS 27 simulator (about 3–4 more macOS minutes per run). | Done: run 42552713447 ran them on iOS 27.2 (iPhone 18 Pro); the job took 4 min 37 s, up from 41 s |
 | 5 | `scripts/verify_environment.py` also requires Xcode build 27B52. | Done: exits 0 on the build Mac, with tests |
 | 6 | Remove the older iOS 26.5 simulator runtime (23F73) from the build Mac, so simulators use 23F77, D3's build. | Done 2026-11-08 (`xcrun simctl runtime delete`; only 23F77 is listed) |
