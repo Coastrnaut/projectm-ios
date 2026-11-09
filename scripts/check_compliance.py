@@ -63,7 +63,10 @@ FORBIDDEN_YML_KEYS = re.compile(
     + r"""(["']?)(entitlements|UIBackgroundModes|com\.apple\.security\.application-groups)\1[ \t]*:""",
     re.M)
 CODE_SIGN_KEY = re.compile(
-    YAML_KEY_START + r"""(["']?)(CODE_SIGN_ENTITLEMENTS(?:\[[^\]\n]*\])?)\1[ \t]*:[ \t]*""", re.M)
+    YAML_KEY_START + r"""(["']?)(CODE_SIGN_ENTITLEMENTS(?:\[[^\]\n]*\])*)\1[ \t]*:[ \t]*""", re.M)
+# Every mention of the setting must be a key CODE_SIGN_KEY can check; any other form (an
+# unrecognized key shape, or a reference in a value) is flagged, so Decision 6 cannot be bypassed.
+CODE_SIGN_TOKEN = re.compile(r"CODE_SIGN_ENTITLEMENTS")
 # ADR-0001 Decision 6: CaptureLab's Screen Recording entitlement file, the only one allowed.
 ALLOWED_CODE_SIGN_ENTITLEMENTS = "Apps/CaptureLab/CaptureLab.entitlements"
 # ADR-0001 Decision 6: the only entitlement keys, each with the only value, that any
@@ -133,11 +136,15 @@ def check_project_yml(path: Path) -> list[str]:
     text = strip_yaml_comments(path.read_text(encoding="utf-8"))
     found = [f"{path}: '{m.group(2)}' not allowed by research R-16"
              for m in FORBIDDEN_YML_KEYS.finditer(text)]
-    for m in CODE_SIGN_KEY.finditer(text):
+    keys = list(CODE_SIGN_KEY.finditer(text))
+    for m in keys:
         value = yaml_scalar(text[m.end():].split("\n", 1)[0])
         if value != ALLOWED_CODE_SIGN_ENTITLEMENTS:
             found.append(f"{path}: '{m.group(2)}' must be {ALLOWED_CODE_SIGN_ENTITLEMENTS} "
                          f"(found '{value}'; ADR-0001 Decision 6)")
+    if len(CODE_SIGN_TOKEN.findall(text)) > len(keys):
+        found.append(f"{path}: CODE_SIGN_ENTITLEMENTS in a form this check cannot verify "
+                     f"(ADR-0001 Decision 6)")
     return found
 
 

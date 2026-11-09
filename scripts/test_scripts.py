@@ -158,12 +158,23 @@ class ComplianceProjectYmlTests(unittest.TestCase):
             self.assertTrue(any("CODE_SIGN_ENTITLEMENTS" in v for v in self.check(yml)), yml)
         self.assertTrue(self.check("settings: {base: {X: y, CODE_SIGN_ENTITLEMENTS: Other.entitlements}}\n"))
 
-    def test_main_session_target_state_passes(self):
-        # The state the main session will create: the setting in CaptureLab's base settings.
-        yml = (check_compliance.ROOT / "project.yml").read_text(encoding="utf-8").replace(
-            "        GENERATE_INFOPLIST_FILE: NO\n",
-            f"        GENERATE_INFOPLIST_FILE: NO\n        CODE_SIGN_ENTITLEMENTS: {self.ALLOWED}\n", 1)
-        self.assertIn("CODE_SIGN_ENTITLEMENTS", yml)
+    def test_code_sign_entitlements_stacked_conditions(self):
+        base = "targets:\n  CaptureLab:\n    settings:\n      base:\n        "
+        self.assertEqual(self.check(base + f"CODE_SIGN_ENTITLEMENTS[config=Debug][sdk=iphoneos*]: {self.ALLOWED}\n"), [])
+        found = self.check(base + "CODE_SIGN_ENTITLEMENTS[config=Debug][sdk=iphoneos*]: Other.entitlements\n")
+        self.assertTrue(any("must be" in v for v in found), found)
+
+    def test_code_sign_entitlements_unrecognized_form_flagged(self):
+        for yml in ("settings:\n  base:\n    OTHER_SETTING: $(CODE_SIGN_ENTITLEMENTS)\n",
+                    "settings: [CODE_SIGN_ENTITLEMENTS]\n",
+                    "settings:\n  base:\n    ? CODE_SIGN_ENTITLEMENTS\n    : Other.entitlements\n"):
+            found = self.check(yml)
+            self.assertTrue(any("cannot verify" in v for v in found), yml)
+
+    def test_project_yml_declares_the_allowed_setting(self):
+        # ADR-0001 Decision 6 as implemented: the setting is in project.yml and passes.
+        yml = (check_compliance.ROOT / "project.yml").read_text(encoding="utf-8")
+        self.assertIn(f"CODE_SIGN_ENTITLEMENTS: {self.ALLOWED}", yml)
         self.assertEqual(self.check(yml), [])
 
     def test_xcodegen_entitlements_key_still_forbidden_with_setting(self):
