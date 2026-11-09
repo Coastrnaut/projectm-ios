@@ -58,8 +58,7 @@ run 42552713447. New device task: T113.
   compiled anywhere yet (needs the iOS 27 SDK on the MacBook).
 - Verified on Windows: `python scripts/test_scripts.py` (15 tests: validate_docs, check_compliance,
   verify_environment, reference-audio determinism and segments, UI strings vs contract, schema copy).
-- Not started (need the project owner or devices): T051–T054, T056. Not required (ADR-0001
-  ruling 18): T049, T050, T113.
+- Open: T054, T055, T056. Not required (ADR-0001 rulings 18 and 19): T049–T053, T113.
 - **No source is rated yet; no source is claimed to work.** First device run 2026-11-09: D1 and
   D2, System/App Capture with Spotify, non-silent audio in short runs (exports in
   `docs/test-reports/exports/`); on D3 the
@@ -193,9 +192,9 @@ iPhone.
 
 **Independent Test**: quickstart.md Scenario A steps 5–9; the report is complete and reproducible.
 
-- [ ] T051 [US3] {A}{device} For each FR-030 source on each applicable device, run 10 minutes in the foreground and export diagnostics into `docs/test-reports/exports/<device>/<source>/` — AC: SC-001 coverage (≥ 2 capture-capable iPhones + 1 iPad for capture sources; all devices for fallbacks)
-- [ ] T052 [US3] {A}{win} Rate every row of `docs/test-reports/compatibility-report.md` Works / Partial / Does not work using the FR-031 thresholds, citing the exports; write the limitation for each Partial row — AC: zero "Works" rows without an export showing non-silent audio (SC-001)
-- [ ] T053 [US3] {A}{device} Gate 2: for each source rated "Works", run a 30-minute foreground capture (results in `docs/test-reports/compatibility-report.md`) on the reference device and record unrecovered failures, dropped audio, start-to-first-audio, CPU, and memory against the Gate 2 thresholds in spec Delivery Gating — AC: each Works source passes or is downgraded to Partial with its reason
+- [ ] T051 [US3] {A}{device} For each FR-030 source on each applicable device, run 10 minutes in the foreground and export diagnostics into `docs/test-reports/exports/<device>/<source>/` — AC: SC-001 coverage (≥ 2 capture-capable iPhones + 1 iPad for capture sources; all devices for fallbacks) — ⛔ not required (owner ruling 2026-11-09, ADR-0001 ruling 19; Gates 1 and 2 waived): no 10-minute runs, so no source gets an FR-031 rating
+- [ ] T052 [US3] {A}{win} Rate every row of `docs/test-reports/compatibility-report.md` Works / Partial / Does not work using the FR-031 thresholds, citing the exports; write the limitation for each Partial row — AC: zero "Works" rows without an export showing non-silent audio (SC-001) — ⛔ not required (owner ruling 2026-11-09, ADR-0001 ruling 19; Gates 1 and 2 waived): there are no 10-minute exports to rate; every row stays unrated
+- [ ] T053 [US3] {A}{device} Gate 2: for each source rated "Works", run a 30-minute foreground capture (results in `docs/test-reports/compatibility-report.md`) on the reference device and record unrecovered failures, dropped audio, start-to-first-audio, CPU, and memory against the Gate 2 thresholds in spec Delivery Gating — AC: each Works source passes or is downgraded to Partial with its reason — ⛔ not required (owner ruling 2026-11-09, ADR-0001 ruling 19; Gates 1 and 2 waived): no source is rated "Works", so there is nothing to run
 - [ ] T054 [US3] {A}{win} Finalize the Stage 1 thresholds (dBFS levels, timeouts, 200 ms cycle, Works thresholds) in the report; update FR-011/FR-012/FR-018/FR-031/FR-052 and the `ClassifierThresholds` defaults to match — AC: spec and code defaults are identical; `validate_docs.py` passes
 - [ ] T055 [US3] {A}{win} Write the preliminary conclusions for RI-007 and RI-010 in `docs/adr/0005-lgpl-compliance.md` (relinking approach, upstream's App Store warning, vendored obligations) (FR-064) — AC: the conclusion section states go / no-go / conditional, with reasons — ⏳ draft analysis written in ADR-0005; preliminary conclusion awaits project-owner approval
 - [ ] T056 [US3] {A}{win} The project owner records the Stage 2 go/no-go decision, approver, date, evidence, and claimable sources in the Stage Decision section of `docs/test-reports/compatibility-report.md` (FR-033) — AC: the decision is recorded; if "no external source works", the product description is updated to fallbacks only

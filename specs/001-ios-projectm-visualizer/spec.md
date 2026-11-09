@@ -70,8 +70,8 @@ earlier phase.
 | Gate | Go criterion | Evidence artifact |
 |------|--------------|-------------------|
 | Gate 0 — API availability | RI-001 and RI-004 exit criteria met; ADR-0001 and ADR-0002 accepted | `docs/platform-research/screencapturekit-ios.md`, ADRs |
-| Gate 1 — External samples | Every FR-030 source has an FR-031 entry from at least the devices in SC-001 | compatibility report + diagnostics exports |
-| Gate 2 — Sustained capture | For each source rated "Works": a 30-minute foreground capture on the reference device with zero unrecovered stream failures, dropped audio under 1%, median start-to-first-audio under 2 s, capture-plus-classifier CPU under 15% of one core (the normalizer pipeline is built and measured in Plan Phase B), and memory growth of 10% or less (minute 5 vs minute 30); RI-003 device evidence recorded for each lifecycle event on D1 and D2 (T041; owner ruling 2026-11-08) | report rows + exports |
+| Gate 1 — External samples | Every FR-030 source has an FR-031 entry from at least the devices in SC-001. **Waived for Stage 1 by owner ruling 2026-11-09** (ADR-0001 ruling 19): no source is rated, so none is claimed to work | compatibility report + diagnostics exports |
+| Gate 2 — Sustained capture | **Waived for Stage 1 by owner ruling 2026-11-09** (ADR-0001 ruling 19). For each source rated "Works": a 30-minute foreground capture on the reference device with zero unrecovered stream failures, dropped audio under 1%, median start-to-first-audio under 2 s, capture-plus-classifier CPU under 15% of one core (the normalizer pipeline is built and measured in Plan Phase B), and memory growth of 10% or less (minute 5 vs minute 30); RI-003 device evidence recorded for each lifecycle event on D1 and D2 (T041; owner ruling 2026-11-08) | report rows + exports |
 | Gate 3 — Engine build/render | ADR-0003 exit thresholds met and ADR-0003 accepted | ADR-0003 measurements |
 | Gate 4 — End-to-end | SC-005 to SC-010 and SC-013 met with each available source mode | test report |
 

@@ -1,6 +1,7 @@
 # Source Compatibility Report (FR-030–FR-034)
 
-> **No source is rated yet. No source is claimed to work.** Preliminary System/App Capture runs
+> **No source is rated, and none will be in Stage 1: T051-T053 are not required and Gates 1 and 2
+> are waived (owner ruling 2026-11-09, ADR-0001 ruling 19). No source is claimed to work.** Preliminary System/App Capture runs
 > with Spotify on D1 and D2 (2026-11-09) are recorded below but not rated. A row may be rated "Works" only
 > with a CaptureLab diagnostics export from a physical device showing non-silent audio (FR-031).
 > Screenshots of the picker or UI are not evidence. Simulator results are never evidence.
