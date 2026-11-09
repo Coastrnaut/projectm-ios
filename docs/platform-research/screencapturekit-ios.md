@@ -382,8 +382,10 @@ as FR-031 compatibility evidence.
    With a temporary build without it, does capture start or is the app terminated? **T040.**
 5. **Entitlement (-3803).** The sample archive (read 2026-11-08 with owner approval) declares
    `com.apple.developer.screen-recording`, as a non-Apple post had claimed [f856067]; the owner
-   review has CaptureLab declare it too (ADR-0001 Decision 6). Test: the first start on D1 and D2
-   succeeds or fails with -3803. **T040.**
+   review has CaptureLab declare it too (ADR-0001 Decision 6). On 2026-11-09 Xcode 27.2 could not
+   provision it for the owner's team ("not found and could not be included in profile"); the owner
+   is asking Apple how to obtain it, and device runs wait (ADR-0001 ruling 15). Test, once signing
+   works: the first start on D1 and D2 succeeds or fails with -3803. **T040.**
 6. **Background, lock and -3824.** Test on D1 and D2 during capture: background, lock, unlock and a
    switch to the source app. Record the stop code and audio-timestamp gaps without `screen-capture`,
    then with a temporary build that declares only `screen-capture` (approved by the owner review;

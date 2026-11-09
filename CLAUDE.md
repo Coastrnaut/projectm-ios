@@ -56,7 +56,8 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
 - Gate 0 met: research done (T035, `docs/platform-research/screencapturekit-ios.md`), and the
   owner accepted ADR-0001 and ADR-0002 on 2026-11-08 (owner review). ADR-0001 is amended:
   CaptureLab declares the Screen Recording entitlement (`Apps/CaptureLab/CaptureLab.entitlements`),
-  as Apple's iOS sample does (read 2026-11-08); provisioning is still to be confirmed in Xcode.
+  as Apple's iOS sample does (read 2026-11-08). **Blocked (2026-11-09):** Xcode cannot provision
+  it for the owner's team; the owner is asking Apple, and device runs wait (ADR-0001 ruling 15).
   The review's rulings and their status are in each ADR's "Owner review" section.
   Nothing has run on a device yet. The iOS Simulator SDK has no ScreenCaptureKit, so System/App
   Capture can only be tested on D1/D2.
@@ -77,8 +78,9 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
    the Xcode build, 27B52).
 3. Before any TestFlight upload, follow `docs/release/capturelab-distribution.md` (Release
    `otool` check, D3 launch).
-4. `xcodegen generate`, then build and run CaptureLab on D1, D2 and D3 (set the signing team by
-   hand, and confirm in Xcode that the Screen Recording entitlement is provisioned).
+4. Waiting on Apple: how a third-party app gets `com.apple.developer.screen-recording` (ADR-0001
+   ruling 15). Then `xcodegen generate`, set the signing team by hand, confirm the entitlement is
+   in the profile, and run CaptureLab on D1, D2 and D3.
 5. Run the device tasks (T040 onward, including the device checks of T113) following
    `specs/001-ios-projectm-visualizer/quickstart.md` (Scenario A rules: start playback first, stay
    in CaptureLab, fill the tester note).
