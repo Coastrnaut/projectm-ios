@@ -371,7 +371,9 @@ as FR-031 compatibility evidence.
    call (non-Apple report of all-zero call audio [f848245]). **T040** gives a first answer; T051
    exports and T052 FR-031 rows answer RI-002 for each FR-030 source. If audio is silent with
    `present()`, a diagnostic run tries `present(using: .display)` before T056's go/no-go (owner
-   review 2026-11-08). First answer, D1 and D2: Spotify audio arrived non-silent (see the status at
+   review 2026-11-08). With nothing playing, D1 still received silent buffers every 20 ms (2026-11-09,
+   `docs/test-reports/exports/D1/nothing-playing/`), so the no-data case of FR-012 does not occur
+   that way. First answer, D1 and D2: Spotify audio arrived non-silent (see the status at
    the top).
 2. **Audio-only stream versus `.screen`.** Test: the same source with and without the `.screen`
    output (temporary build); compare buffer counts and errors (-3812, -3818). **T113** (T040 session).

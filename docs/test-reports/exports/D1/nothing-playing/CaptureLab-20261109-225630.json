@@ -1,0 +1,58 @@
+{
+  "app" : {
+    "build" : "1",
+    "version" : "1.0"
+  },
+  "device" : {
+    "model" : "iPhone15,4",
+    "osBuild" : "24A446",
+    "osVersion" : "27.0.1"
+  },
+  "exportedAt" : "2026-11-09T22:56:30Z",
+  "schemaVersion" : 2,
+  "session" : {
+    "audioArrived" : true,
+    "durationSeconds" : 63.80893762499909,
+    "finalState" : "stopped",
+    "formats" : [
+      {
+        "channelCount" : 2,
+        "firstSeenSeconds" : 0.2524224169974332,
+        "sampleRate" : 48000,
+        "sampleType" : "float32"
+      }
+    ],
+    "levels" : {
+      "peakDBFSMax" : -120,
+      "rmsDBFSMean" : -120
+    },
+    "lifecycleEvents" : [
+
+    ],
+    "nonSilent" : false,
+    "sampleCount" : 3061440,
+    "sourceMode" : "systemAppCapture",
+    "stateTransitions" : [
+      {
+        "atSeconds" : 0,
+        "state" : "waiting"
+      },
+      {
+        "atSeconds" : 0.012511124998127343,
+        "state" : "silent"
+      },
+      {
+        "atSeconds" : 63.80893762499909,
+        "state" : "stopped"
+      }
+    ],
+    "timing" : {
+      "bufferCadenceMaxMs" : 22.272709,
+      "bufferCadenceMeanMs" : 20.00412305269762,
+      "droppedFrames" : 0,
+      "lateBuffers" : 0,
+      "startToFirstAudioMs" : 2.700208
+    }
+  },
+  "testerNote" : "Didnt show hint after 5 seconds. Took about 50 seconds"
+}
