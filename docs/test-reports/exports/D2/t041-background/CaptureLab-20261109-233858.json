@@ -1,0 +1,65 @@
+{
+  "app" : {
+    "build" : "1",
+    "version" : "1.0"
+  },
+  "device" : {
+    "model" : "iPad17,3",
+    "osBuild" : "24B119",
+    "osVersion" : "27.2.0"
+  },
+  "exportedAt" : "2026-11-09T23:38:58Z",
+  "schemaVersion" : 2,
+  "session" : {
+    "audioArrived" : true,
+    "durationSeconds" : 48.95723129199996,
+    "finalState" : "stopped",
+    "formats" : [
+      {
+        "channelCount" : 2,
+        "firstSeenSeconds" : 1.7110924580001665,
+        "sampleRate" : 48000,
+        "sampleType" : "float32"
+      }
+    ],
+    "levels" : {
+      "peakDBFSMax" : -4.794404029846191,
+      "rmsDBFSMean" : -24.279682159423828
+    },
+    "lifecycleEvents" : [
+      {
+        "atSeconds" : 4.56694433300072,
+        "event" : "background"
+      },
+      {
+        "atSeconds" : 45.78825733300073,
+        "event" : "foreground"
+      }
+    ],
+    "nonSilent" : true,
+    "sampleCount" : 2339520,
+    "sourceMode" : "systemAppCapture",
+    "stateTransitions" : [
+      {
+        "atSeconds" : 0,
+        "state" : "waiting"
+      },
+      {
+        "atSeconds" : 1.652235292000114,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 48.95723129199996,
+        "state" : "stopped"
+      }
+    ],
+    "timing" : {
+      "bufferCadenceMaxMs" : 22.628875,
+      "bufferCadenceMeanMs" : 19.49320338998358,
+      "droppedFrames" : 0,
+      "lateBuffers" : 66,
+      "startToFirstAudioMs" : 1460.584334
+    }
+  },
+  "testerNote" : "Long background"
+}
