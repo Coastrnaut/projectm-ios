@@ -9,6 +9,12 @@ ruling 12). Exports: `exports/<device>/t041-*/`.
 | Event | D1 normal (build 1) | D1 SC mode (9001) | D2 normal (build 1) | D2 SC mode (9001) |
 |-------|---------------------|-------------------|---------------------|-------------------|
 | Background, then foreground | Stopped 1 ms after background: SCStreamError -3824, "Stream was stopped due to the app going into background state while missing the Screen Capture Background Mode"; app showed "Ended by system" (`D1/t041-background/CaptureLab-20261109-231756.json`) | open | open | open |
-| Lock, then unlock | open | open | open | open |
+| Lock, then unlock | Stopped 5 ms after lock: SCStreamError -3817, "The user stopped the stream" (iOS treats a lock as ending the share); app showed "Ended by system" (`D1/t041-lock/CaptureLab-20261109-231910.json`) | open | open | open |
 | Switch to the source app, then back | open | open | open | open |
 | Interruption (for example a call or Siri) | open | open | open | open |
+
+Notes:
+
+- Background and lock end the stream with different codes on D1: -3824 (missing
+  `screen-capture` mode) and -3817 ("user stopped"). A lock reporting -3817 supports showing
+  "Ended by system" for -3817 (ADR-0001 ruling 5).
