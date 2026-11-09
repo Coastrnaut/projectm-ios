@@ -48,12 +48,12 @@ For each source rated "Works", on the reference device, 30-minute foreground cap
 
 | Threshold | Initial | Final | Evidence |
 |-----------|---------|-------|----------|
-| Active: peak / duration | −50 dBFS / 250 ms | | |
-| Silent: peak / duration | −60 dBFS / 1.5 s (2 s before 2026-11-09) | | |
-| No-audio timeout | 5 s | | |
-| Prolonged-silence hint | 60 s | | |
-| Start/stop cycle interval | 200 ms | | |
-| Works: windows / dropped | 95% / < 1% | | |
+| Active: peak / duration | −50 dBFS / 250 ms | −50 dBFS / 250 ms | T040 scenario 1 on D1, D2 ("Active audio" within 0.26 s on D1) |
+| Silent: peak / duration | −60 dBFS / 2 s | −60 dBFS / 1.5 s (owner ruling 2026-11-09) | SC-003 on D1: 23 cycles, all within 2 s |
+| No-audio timeout | 5 s | 5 s | Unit tests only: on device, iOS sends silent buffers instead of no data (T040 scenario 3) |
+| Prolonged-silence hint | 60 s | 60 s | D1 nothing-playing run: hint shown (about 50-60 s, tester estimate) |
+| Start/stop cycle interval | 200 ms | 200 ms | CaptureKit unit tests (50 rapid cycles); no device measurement |
+| Works: windows / dropped | 95% / < 1% | 95% / < 1% (unused in Stage 1) | No ratings: Gates 1 and 2 waived (ADR-0001 ruling 19) |
 
 ## Stage Decision (FR-033)
 
