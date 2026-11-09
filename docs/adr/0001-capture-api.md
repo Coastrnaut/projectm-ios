@@ -107,8 +107,15 @@ RI-004). This ADR covers RI-003's configuration part; its device part is checked
    **Provisioning failed (2026-11-09).** With the owner's team and automatic signing, Xcode 27.2
    reported "Entitlement com.apple.developer.screen-recording not found and could not be included
    in profile", so CaptureLab cannot be signed for a device while the entitlement is declared.
-   Owner ruling 2026-11-09: ask Apple (Developer Forums or DTS) how a third-party app obtains the
-   entitlement before any device run; the device tasks (T040 onward) wait for that answer.
+   Owner ruling 2026-11-09 (ruling 15): ask Apple how a third-party app obtains it. **Removed
+   (2026-11-09, ruling 16).** The owner found that the capability is offered only to organization
+   developer accounts, not to the owner's personal account (owner's report from the developer
+   portal, not checked by this project). The entitlements file and its `CODE_SIGN_ENTITLEMENTS`
+   setting were removed, so CaptureLab declares no entitlement and the device runs can start. T040
+   shows whether capture works without it or fails with `-3803`. If it fails, the owner either
+   enrolls as an organization or asks Apple to enable it, and this decision returns. The
+   compliance exception stays in `scripts/check_compliance.py`, unused, so re-adding the setting
+   needs no script change.
 
 ## Consequences
 
@@ -269,7 +276,7 @@ review ordered: it runs in the T040 and T041 sessions and is required before Gat
 | What does `present()` offer on iPhone and iPad: the whole screen, one app, a window? Apple's sample calls it full-display capture. | T113 |
 | Is `isAvailable` true on D1 and D2? | T113 (T040 session) |
 | Does iOS 27 show `NSScreenCaptureUsageDescription`, and does it require it? | T040 (FR-019): shown, in the tester note; required, with the approved temporary build without the key. The key stays either way |
-| Does CaptureLab with the Screen Recording entitlement start capture, or fail with `-3803`? | T040 |
+| Does CaptureLab, with no entitlement since ruling 16, start capture, or fail with `-3803`? | T040 |
 | Is 64 × 64 accepted, and do `.audio` buffers arrive with the `.screen` output attached? | T113 (T040 session; if refused: mid size, then native size; the audio-only comparison uses the approved build without the `.screen` output) |
 | Is `excludesCurrentProcessAudio` honored on D1 (27.0.1) and D2 (27.2)? A forum report says it had no effect on iOS 27.0 (non-Apple, not evidence). | T113, with the approved test-tone build |
 | Does a capture that stays in the foreground need the `screen-capture` background mode? | T040/T041 |
@@ -321,7 +328,7 @@ Rulings:
 | # | Ruling | Status |
 |---|--------|--------|
 | 1 | Keep `NSScreenCaptureUsageDescription` whether or not iOS 27 requires it; reword research R-16 to allow keys Apple's documentation tells apps to add. | Done: key in place; research R-16 reworded |
-| 2 | Declare the Screen Recording entitlement before T040 (Decision 6). This replaces the owner's first answer, "decide when `-3803` happens", which came before the sample showed the entitlement. | Done in the repository; provisioning failed on 2026-11-09 (ruling 15) |
+| 2 | Declare the Screen Recording entitlement before T040 (Decision 6). This replaces the owner's first answer, "decide when `-3803` happens", which came before the sample showed the entitlement. | Implemented 2026-11-08; provisioning failed and the entitlement was removed on 2026-11-09 (rulings 15, 16) |
 | 3 | If iOS refuses 64 × 64 (`-3812`), the next device run uses a mid size (for example 320 × 320), then the native size. | Applies at T040, if needed |
 | 4 | Read Apple's iOS sample project before any device run. | Done (Context) |
 | 5 | A Control Center stop (`-3817`) keeps "Ended by system" for Stage 1; revisit with the Stage 2 UI. | No change |
@@ -334,4 +341,5 @@ Rulings:
 | 12 | Temporary diagnostic builds (no `.screen` output, no usage key, a test-tone hook, `screen-capture` only) are approved alongside T040 and T041. They never count as compatibility evidence. | Approved |
 | 13 | Close two gaps in `scripts/check_compliance.py`: kind-qualified imports, and quoted or flow-style YAML keys. Its other known gaps (Decisions 4 to 6) were not part of the ruling. | Done, with tests in `scripts/test_scripts.py` |
 | 14 | Explicit `-weak_framework ScreenCaptureKit` for device builds; before any TestFlight upload, a Release build is checked with `otool` and launched on D3 (also in ADR-0002). | Done: weak link, checked in Debug and Release on 2026-11-08; the D3 launch is part of the TestFlight procedure |
-| 15 | (2026-11-09) Xcode cannot provision `com.apple.developer.screen-recording` for the owner's team. Ask Apple how to obtain it before any device run. | Waiting for Apple's answer; device tasks blocked |
+| 15 | (2026-11-09) Xcode cannot provision `com.apple.developer.screen-recording` for the owner's team. Ask Apple how to obtain it before any device run. | Superseded by ruling 16 |
+| 16 | (2026-11-09) Remove the entitlement for now (offered only to organization accounts) and test capture without it in T040. If `-3803` follows, enroll as an organization or ask Apple, then restore Decision 6. | Done: file and setting removed; capture without it untested until T040 |

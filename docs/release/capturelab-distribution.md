@@ -8,9 +8,8 @@ CaptureLab is an **internal test tool** for Stage 1 capture feasibility. It is n
   TestFlight builds.
 - The ProjectMiOS release check (task T112) confirms that only ProjectMiOS is submitted.
 - Signing is configured by a human (Constitution: Security). No signing material is committed.
-- Entitlement: CaptureLab declares only the Screen Recording entitlement
-  (`Apps/CaptureLab/CaptureLab.entitlements`, ADR-0001 Decision 6). The owner confirms in Xcode
-  that the signing team's profile provisions it.
+- Entitlements: none. The Screen Recording entitlement (ADR-0001 Decision 6) was removed on
+  2026-11-09 because it is offered only to organization accounts (ruling 16).
 
 ## Before any TestFlight upload (ADR-0002 owner review, 2026-11-08)
 

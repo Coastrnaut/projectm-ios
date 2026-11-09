@@ -27,9 +27,9 @@ Renderer/Platform/GLResolver.cpp).
 ## R-02 System/App Capture API (RI-001, RI-004)
 
 - **Decision**: ScreenCaptureKit only, in-process, on iOS/iPadOS 27.0 and later (RI-004). No
-  broadcast upload extension, no App Group IPC, no ReplayKit. The only entitlement is the Screen
-  Recording entitlement, `com.apple.developer.screen-recording`, as in Apple's iOS sample (owner
-  review 2026-11-08; ADR-0001 Decision 6). The app calls the
+  broadcast upload extension, no App Group IPC, no ReplayKit. No entitlement: the Screen Recording
+  entitlement Apple's iOS sample declares was added by the owner review (ADR-0001 Decision 6) and
+  removed on 2026-11-09, because it is offered only to organization accounts (ruling 16). The app calls the
   system picker's `present()` from `start` and does not steer the selection (iOS has no picker
   modes). The stream enables audio (48 kHz, 2 channels, own audio excluded), adds an `.audio`
   output into `PCMSink` and a frame-discarding 64×64 `.screen` output, and never a `.microphone`
@@ -254,9 +254,9 @@ Renderer/Platform/GLResolver.cpp).
 
 ## R-16 Entitlements and capabilities
 
-No App Groups, no background modes (R-03 change rule), no network, no push, no iCloud. The only
-entitlement is the Screen Recording entitlement (`Apps/CaptureLab/CaptureLab.entitlements`; ADR-0001
-Decision 6). Info.plist contains only `NSMicrophoneUsageDescription` and the capture usage keys
+No App Groups, no background modes (R-03 change rule), no network, no push, no iCloud. No entitlement:
+the Screen Recording entitlement (ADR-0001 Decision 6) was removed on 2026-11-09 because it is
+offered only to organization accounts (ruling 16); T040 shows whether capture needs it. Info.plist contains only `NSMicrophoneUsageDescription` and the capture usage keys
 Apple's documentation tells apps to add: `NSScreenCaptureUsageDescription`, kept whether or not
 iOS 27 requires it (owner review 2026-11-08). The set is listed in `project.yml`, enforced by
 `scripts/check_compliance.py`, and reviewed in Phase E.

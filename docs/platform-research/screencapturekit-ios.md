@@ -254,7 +254,7 @@ usage-description key or an entitlement.
 | Item | What the sources say | Project decision | Settled by |
 |------|----------------------|------------------|------------|
 | Usage description | Apple's framework page tells apps to request screen-recording permission and add `NSScreenCaptureUsageDescription` [overview]. Nothing else knows the key: no reference page [usage404]; not in the iOS 27.2 SDK; not in Xcode 27.2's Info.plist catalog or its 96 `INFOPLIST_KEY_*` settings. Apple's sample article lists only camera and photo-library usage keys [sample], and the sample project's Info.plist has no `NSScreenCaptureUsageDescription`. | Added to CaptureLab (`project.yml`) with the `contracts/ui-states.md` text (FR-019); kept whether or not iOS requires it (owner review 2026-11-08) | T040 (open item 4) |
-| Entitlement | No reference page. `persistent-content-capture` is for macOS VNC apps and `protected-content` is visionOS only; `com.apple.developer.screen-recording` has no page [entitlements]. Xcode 27.2's cached capability list has no iOS screen-capture entitlement: its only capture entries are `persistent-content-capture` (macOS only) and `screen-capture.include-passthrough` (described as the Apple Vision Pro composite feed). Yet -3803 exists (`Headers/SCError.h:17`). Apple's iOS sample declares `com.apple.developer.screen-recording`, and its README calls it the Screen Recording entitlement, provisioned through the developer team (read 2026-11-08). | Owner review 2026-11-08: CaptureLab declares `com.apple.developer.screen-recording` (ADR-0001 Decision 6; `Apps/CaptureLab/CaptureLab.entitlements`) | T040 (open item 5) |
+| Entitlement | No reference page. `persistent-content-capture` is for macOS VNC apps and `protected-content` is visionOS only; `com.apple.developer.screen-recording` has no page [entitlements]. Xcode 27.2's cached capability list has no iOS screen-capture entitlement: its only capture entries are `persistent-content-capture` (macOS only) and `screen-capture.include-passthrough` (described as the Apple Vision Pro composite feed). Yet -3803 exists (`Headers/SCError.h:17`). Apple's iOS sample declares `com.apple.developer.screen-recording`, and its README calls it the Screen Recording entitlement, provisioned through the developer team (read 2026-11-08). | Added by the owner review 2026-11-08 (ADR-0001 Decision 6), then removed 2026-11-09 (ADR-0001 ruling 16): offered only to organization accounts. None declared now | T040 (open item 5) |
 | Background mode | Apple documents the `UIBackgroundModes` value `screen-capture` for capturing in the background [bgmodes]; the framework page says to add background modes for background capture [overview]. Apple's sample declares it so full-display capture survives backgrounding, and `audio` only for its microphone tap [sample]; the sample project's Info.plist confirms both. The SDK names no mode, but -3824 exists (`Headers/SCError.h:38`). Xcode 27.2's Info.plist catalog lists `screen-capture`; its Background Modes editor has no checkbox for it. | Not added: R-03 allows a mode only through an owner-approved ADR-0001 amendment, R-16 allows background modes only under R-03's change rule, and `scripts/check_compliance.py` rejects a `UIBackgroundModes` key in `project.yml` written plain, quoted or in flow style (owner decision 1). Owner review 2026-11-08: only `screen-capture` may ever be added, never `audio` | T041 (open item 6) |
 | Extension, App Group | None needed. `RPScreenRecorder` and `RPSystemBroadcastPickerView` are deprecated in iOS 27.0 in favor of ScreenCaptureKit (`ReplayKit.framework/Headers/RPScreenRecorder.h:40`, `RPBroadcast.h:182`), and Apple says a broadcast extension is no longer needed [overview]. | None (ADR-0001) | Answered |
 | Device lock | No Apple source covers it. A non-Apple forum question asks exactly this and has no answer [f853061]. | — | T041 (open item 6) |
@@ -352,8 +352,8 @@ In `Packages/CaptureKit/Sources/CaptureKit/ScreenCapture/SCKStreamDriver.swift` 
 
 Configuration decisions: FR-008 names iOS/iPadOS 27.0. CaptureLab's Info.plist has
 `NSScreenCaptureUsageDescription` with the `contracts/ui-states.md` text (FR-019; kept either way,
-owner review 2026-11-08) and no background mode. The owner review added the Screen Recording
-entitlement (ADR-0001 Decision 6; `Apps/CaptureLab/CaptureLab.entitlements`). RI-001 supports ADR-0001's decision
+owner review 2026-11-08) and no background mode. The Screen Recording entitlement the owner review
+added (ADR-0001 Decision 6) was removed 2026-11-09 (ADR-0001 ruling 16); CaptureLab declares none. RI-001 supports ADR-0001's decision
 (ScreenCaptureKit only, in-process, no extension); the project owner accepted ADR-0001 on
 2026-11-08.
 
@@ -384,8 +384,9 @@ as FR-031 compatibility evidence.
    `com.apple.developer.screen-recording`, as a non-Apple post had claimed [f856067]; the owner
    review has CaptureLab declare it too (ADR-0001 Decision 6). On 2026-11-09 Xcode 27.2 could not
    provision it for the owner's team ("not found and could not be included in profile"); the owner
-   is asking Apple how to obtain it, and device runs wait (ADR-0001 ruling 15). Test, once signing
-   works: the first start on D1 and D2 succeeds or fails with -3803. **T040.**
+   found it is offered only to organization accounts, so it was removed (ADR-0001 rulings 15,
+   16). Test: the first start on D1 and D2, with no entitlement, succeeds or fails with -3803.
+   **T040.**
 6. **Background, lock and -3824.** Test on D1 and D2 during capture: background, lock, unlock and a
    switch to the source app. Record the stop code and audio-timestamp gaps without `screen-capture`,
    then with a temporary build that declares only `screen-capture` (approved by the owner review;
@@ -458,8 +459,8 @@ T041 records its results in this file.
    driver and CaptureLab for iOS devices on every CI run: pushes to `main`, pull requests and manual
    runs (ADR-0002).
 6. **Owner review of ADR-0001 and ADR-0002: both accepted.** The review re-checked both ADRs'
-   claims and read Apple's iOS sample project (Sources). ADR-0001 is amended so that CaptureLab
-   declares the Screen Recording entitlement (Decision 6). The rulings and
+   claims and read Apple's iOS sample project (Sources). ADR-0001's Screen Recording entitlement
+   (Decision 6) was later removed 2026-11-09 (ADR-0001 ruling 16). The rulings and
    their implementation status are listed in each ADR's "Owner review (2026-11-08)" section; the
    ones that change this file's plan are folded in above (open items 1, 3, 5, 6, 7, 9 and 10, the
    capture-indicator answer, and T113).

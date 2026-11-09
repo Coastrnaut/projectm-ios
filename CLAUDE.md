@@ -54,10 +54,10 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
   script tests; device builds of everything, including `SCKStreamDriver`, with no compiler
   warnings; Debug and Release device builds load ScreenCaptureKit as `LC_LOAD_WEAK_DYLIB`.
 - Gate 0 met: research done (T035, `docs/platform-research/screencapturekit-ios.md`), and the
-  owner accepted ADR-0001 and ADR-0002 on 2026-11-08 (owner review). ADR-0001 is amended:
-  CaptureLab declares the Screen Recording entitlement (`Apps/CaptureLab/CaptureLab.entitlements`),
-  as Apple's iOS sample does (read 2026-11-08). **Blocked (2026-11-09):** Xcode cannot provision
-  it for the owner's team; the owner is asking Apple, and device runs wait (ADR-0001 ruling 15).
+  owner accepted ADR-0001 and ADR-0002 on 2026-11-08 (owner review). The Screen Recording
+  entitlement that Apple's iOS sample declares was added (ADR-0001 Decision 6), then removed on
+  2026-11-09: it is offered only to organization accounts (ruling 16). CaptureLab declares no
+  entitlement; T040 shows whether capture works without it (-3803 would mean it does not).
   The review's rulings and their status are in each ADR's "Owner review" section.
   Nothing has run on a device yet. The iOS Simulator SDK has no ScreenCaptureKit, so System/App
   Capture can only be tested on D1/D2.
@@ -78,9 +78,10 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
    the Xcode build, 27B52).
 3. Before any TestFlight upload, follow `docs/release/capturelab-distribution.md` (Release
    `otool` check, D3 launch).
-4. Waiting on Apple: how a third-party app gets `com.apple.developer.screen-recording` (ADR-0001
-   ruling 15). Then `xcodegen generate`, set the signing team by hand, confirm the entitlement is
-   in the profile, and run CaptureLab on D1, D2 and D3.
+4. `xcodegen generate`, set the signing team by hand, and run CaptureLab on D1, D2 and D3. If the
+   first System/App Capture start fails with -3803, the entitlement is needed: enroll as an
+   organization or ask Apple (`docs/platform-research/apple-question-screen-recording-entitlement.md`),
+   then restore ADR-0001 Decision 6.
 5. Run the device tasks (T040 onward, including the device checks of T113) following
    `specs/001-ios-projectm-visualizer/quickstart.md` (Scenario A rules: start playback first, stay
    in CaptureLab, fill the tester note).

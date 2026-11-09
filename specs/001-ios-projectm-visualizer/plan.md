@@ -68,8 +68,8 @@ only. Memory drift at most 10% between minutes 5 and 30 (SC-008).
 source ring and conversion ≤ 20 ms → normalized ring residency ≤ 50 ms → engine frame and display ≤
 50 ms (about 3 frames at 60 Hz).
 
-**Entitlements**: Minimal, per research R-16: only the Screen Recording entitlement for System/App
-Capture (ADR-0001 Decision 6); no App Groups, background modes, network, push, or iCloud.
+**Entitlements**: Minimal, per research R-16: none (the Screen Recording entitlement of ADR-0001
+Decision 6 was removed on 2026-11-09, ruling 16); no App Groups, background modes, network, push, or iCloud.
 
 **Scale/Scope**: Single user, on device. About 8 screens/sheets (source chooser, visualizer,
 controls overlay, preset browser, settings, diagnostics, photosensitivity notice, error states).

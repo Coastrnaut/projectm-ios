@@ -38,8 +38,8 @@ session/timing errors in exports. No device run yet; the earlier notes below are
 met). Implemented and verified on the project Mac: Stop, Restart or another source cancels a start
 that is queued or waiting on the system picker (CaptureKit 74 tests on the host and on the iOS
 27.2 and 26.5 simulators; CaptureLab keeps Stop enabled while a start is in flight); the Screen
-Recording entitlement (`Apps/CaptureLab/CaptureLab.entitlements`; provisioning still to be confirmed
-in Xcode); the explicit ScreenCaptureKit weak link (Debug and Release device builds load it as
+Recording entitlement (added, then removed on 2026-11-09 because only organization accounts can
+provision it; ADR-0001 ruling 16); the explicit ScreenCaptureKit weak link (Debug and Release device builds load it as
 `LC_LOAD_WEAK_DYLIB`); the compliance hardening, the entitlement allowlist and the Xcode build check
 (54 script tests); CaptureLab UI tests (3) on both simulators; the iOS 26.5 runtime 23F73 removed.
 The CI changes (main job on `macos-26`, iOS 27 simulator tests in `build-ios27`) are green in

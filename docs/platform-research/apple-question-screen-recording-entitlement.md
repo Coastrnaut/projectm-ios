@@ -3,6 +3,9 @@
 For the Apple Developer Forums (tags: ScreenCaptureKit, Entitlements) or a DTS request. Written
 2026-11-09 (ADR-0001 ruling 15). The owner sends it; record the answer in ADR-0001.
 
+**Status (2026-11-09, ruling 16):** on hold. The owner found the capability is offered only to
+organization accounts and removed the entitlement; send this only if T040 fails with `-3803`.
+
 ---
 
 **Title:** How does a third-party iOS 27 app get com.apple.developer.screen-recording for ScreenCaptureKit?

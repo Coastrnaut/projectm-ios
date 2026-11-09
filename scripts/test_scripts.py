@@ -171,11 +171,6 @@ class ComplianceProjectYmlTests(unittest.TestCase):
             found = self.check(yml)
             self.assertTrue(any("cannot verify" in v for v in found), yml)
 
-    def test_project_yml_declares_the_allowed_setting(self):
-        # ADR-0001 Decision 6 as implemented: the setting is in project.yml and passes.
-        yml = (check_compliance.ROOT / "project.yml").read_text(encoding="utf-8")
-        self.assertIn(f"CODE_SIGN_ENTITLEMENTS: {self.ALLOWED}", yml)
-        self.assertEqual(self.check(yml), [])
 
     def test_xcodegen_entitlements_key_still_forbidden_with_setting(self):
         yml = (f"targets:\n  CaptureLab:\n    settings:\n      base:\n        CODE_SIGN_ENTITLEMENTS: {self.ALLOWED}\n"
