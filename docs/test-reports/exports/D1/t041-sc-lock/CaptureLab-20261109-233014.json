@@ -1,0 +1,80 @@
+{
+  "app" : {
+    "build" : "9001",
+    "version" : "1.0"
+  },
+  "device" : {
+    "model" : "iPhone15,4",
+    "osBuild" : "24A446",
+    "osVersion" : "27.0.1"
+  },
+  "exportedAt" : "2026-11-09T23:30:14Z",
+  "schemaVersion" : 2,
+  "session" : {
+    "audioArrived" : true,
+    "durationSeconds" : 5.458819999999832,
+    "finalState" : "endedBySystem",
+    "formats" : [
+      {
+        "channelCount" : 2,
+        "firstSeenSeconds" : 0.2509842090003076,
+        "sampleRate" : 48000,
+        "sampleType" : "float32"
+      }
+    ],
+    "levels" : {
+      "peakDBFSMax" : -7.464478015899658,
+      "rmsDBFSMean" : -17.22531509399414
+    },
+    "lifecycleEvents" : [
+      {
+        "atSeconds" : 5.420049833999656,
+        "event" : "streamStopped"
+      },
+      {
+        "atSeconds" : 5.428452208998351,
+        "event" : "lock"
+      },
+      {
+        "atSeconds" : 5.581248916998447,
+        "event" : "background"
+      },
+      {
+        "atSeconds" : 7.606794708997768,
+        "event" : "foreground"
+      },
+      {
+        "atSeconds" : 7.612213542000973,
+        "event" : "unlock"
+      }
+    ],
+    "nonSilent" : true,
+    "sampleCount" : 260160,
+    "sourceMode" : "systemAppCapture",
+    "stateTransitions" : [
+      {
+        "atSeconds" : 0,
+        "state" : "waiting"
+      },
+      {
+        "atSeconds" : 0.24247112499870127,
+        "state" : "active"
+      },
+      {
+        "atSeconds" : 5.458819999999832,
+        "reason" : "endedBySystem",
+        "state" : "endedBySystem"
+      }
+    ],
+    "stopDetail" : "The user stopped the stream (SCStreamError -3817)",
+    "stopReason" : "endedBySystem",
+    "timing" : {
+      "bufferCadenceMaxMs" : 42.799792,
+      "bufferCadenceMeanMs" : 20.03340663703704,
+      "droppedFrames" : 0,
+      "lateBuffers" : 1,
+      "startToFirstAudioMs" : 6.003917
+    }
+  },
+  "testerNote" : "Lock, then unlock"
+}
