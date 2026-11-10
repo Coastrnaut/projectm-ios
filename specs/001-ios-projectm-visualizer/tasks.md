@@ -224,7 +224,7 @@ US4–US7.
 
 ### Plan Phase C — Engine build and render proof (Gate 3)
 
-- [ ] T064 {C}{win} Verify the glm license text in `Vendor/projectM/vendor/glm` (or upstream at the pinned version) and update the ADR-0004 vendored table — AC: every vendored row says "Recorded"
+- [X] T064 {C}{win} Verify the glm license text in `Vendor/projectM/vendor/glm` (or upstream at the pinned version) and update the ADR-0004 vendored table — AC: every vendored row says "Recorded" — ✅ verified 2026-11-09: glm 1.0.3 (version macros in `detail/setup.hpp`, which is byte-identical to upstream tag 1.0.3); license text from upstream `copying.txt` at 1.0.3 (Happy Bunny OR MIT), saved as `docs/licenses/glm-1.0.3-copying.txt`; every vendored row in ADR-0004 now says "Recorded"
 - [ ] T065 {C}{mac} Implement `scripts/build_projectm_xcframework.py` (RI-011): CMake per slice (`CMAKE_SYSTEM_NAME=iOS`; iphoneos arm64; iphonesimulator arm64 + x86_64; `ENABLE_GLES=ON`; shared framework), `xcodebuild -create-xcframework` → `Build/ProjectM.xcframework`; record the final flags in ADR-0004 — AC: the script succeeds from a clean checkout
 - [ ] T066 {C}{mac} Add the engine build to `.github/workflows/ios-ci.yml`, cached by submodule SHA — AC: CI produces the xcframework; a cache hit on rerun
 - [ ] T067 {C}{win} Create `Packages/ProjectMBridge/Package.swift` (binary target `Build/ProjectM.xcframework`, ObjC++ target `ProjectMBridge`) — AC: package resolves {mac}
