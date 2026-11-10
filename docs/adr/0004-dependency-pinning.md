@@ -19,6 +19,7 @@ LGPL-2.1. The App Store is the release target (FR-064).
 | CMake | Exact minimum version | BSD-3-Clause | Build-time tool only |
 | Presets | Per-pack commit/version in `Presets/LICENSES.md` | Per pack (reviewed) | Bundled resources |
 | Reference audio | Generated in-house | Owned | Bundled resource |
+| App icon | The projectM logo, `src/projectM-UWP/projectM-UWP.WindowsUniversal.Application/Assets/SplashScreen.png` in the owner's fork `Coastrnaut/frontend-uwp` at `82c468ee11a535c8fb4e864cd556fc8a59bdbaf3` (owner decision 2026-11-10); placed on a white square by `scripts/make_app_icon.swift` | LGPL-2.1 (that repository's license; reviewed 2026-11-10, attribution on the Licenses screen, entry `app-icon`) | Asset catalog `AppIcon` (T117) |
 
 ### Engine's vendored components (`Vendor/projectM/vendor/`)
 

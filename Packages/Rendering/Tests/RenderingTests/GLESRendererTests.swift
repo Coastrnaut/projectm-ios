@@ -30,6 +30,11 @@ final class GLESRendererTests: XCTestCase {
         stride(from: 0, to: pixels.count, by: 4).filter { pixels[$0] > 8 || pixels[$0 + 1] > 8 || pixels[$0 + 2] > 8 }.count
     }
 
+    /// T116: the fallback has no Reduce-flashing pass, and says so (Settings shows it as unavailable).
+    func testTheFallbackReportsNoReduceFlashing() throws {
+        XCTAssertFalse(try makeLaidOut().supportsReduceFlashing)
+    }
+
     func testDrawableFollowsTheViewSizeAtDisplayScale() throws {
         let renderer = try makeLaidOut(width: 80, height: 40)
         let scale = renderer.view.contentScaleFactor

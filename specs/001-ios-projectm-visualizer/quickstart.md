@@ -151,6 +151,25 @@ starter presets. Record shader failures, fps, and app size per ADR-0003 option.
 | FR-041 | Rotate; iPad split view and resize | re-layout ≤ 1 s, capture uninterrupted |
 | FR-089 | Hide the controls during System/App Capture and during Microphone, on D1 and D2 (T084) | the screen-recording and microphone indicators stay visible |
 
+### Scenario C measurement tooling (T118)
+
+Device runs that need no person at the device use two tools. Neither is in the shipping build.
+
+- **Measurement build of ProjectMiOS**: Release plus `SWIFT_ACTIVE_COMPILATION_CONDITIONS=PROJECTM_AUTOMATION`
+  (Debug builds include it too). `Apps/ProjectMiOS/Automation/AutomationRunner.swift` starts when the
+  environment variable `PROJECTM_AUTORUN` is set, for example
+  `xcrun devicectl device process launch --device <udid> --environment-variables '{"PROJECTM_AUTORUN":"sc007"}' org.projectmios.ProjectMiOS`:
+  - `sc015`: cold launch to the source chooser, appended to `Documents/sc015.json`; launch repeatedly.
+  - `sc007`: 50 x Next with In-App Playback, request to first presented frame.
+  - `sc009`: 50 start/switch/stop cycles at 200 ms, then the lifecycle script per mode (Microphone
+    needs its permission granted once by hand; System/App Capture needs a person at the picker).
+  Reports go to the app's `Documents` (`automation-<mode>-<time>.json`); copy them with
+  `devicectl device copy from`. Confirm the shipping Release build has no `AutomationRunner`
+  symbols (`nm`).
+- **RendererLab** (`RendererLab.yml`): `RL_BACKEND=gles|angle`, `RL_MODE=sweep|session|flashcost`,
+  `RL_DURATION`, `RL_PRESET_SECONDS`, passed as environment variables. `flashcost` (ANGLE only, T104)
+  times GPU-synchronized frames with Reduce flashing off and on for each starter preset.
+
 ## Scenario D — Release checks
 
 - SC-011 privacy review: inspect the app container after sessions. Only the FR-065 keys exist; no

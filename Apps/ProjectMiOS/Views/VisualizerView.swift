@@ -69,7 +69,8 @@ struct VisualizerView: View {
             PresetBrowserView(presets: coordinator.presets) { coordinator.choose($0) }
         }
         .sheet(isPresented: $coordinator.showSettings) {
-            SettingsView(settings: coordinator.settings)
+            SettingsView(settings: coordinator.settings,
+                         reduceFlashingAvailable: coordinator.renderer?.supportsReduceFlashing ?? true)
         }
         .onChange(of: coordinator.settings.reduceFlashing) { coordinator.applyReduceFlashing() }
         .onChange(of: coordinator.manager.state) { _, state in

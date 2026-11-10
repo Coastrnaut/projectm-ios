@@ -29,8 +29,10 @@ public final class GLESRenderer: NSObject, VisualizerRenderer {
     public private(set) var metrics = RenderMetrics.zero
     public private(set) var presentedFrameCount = 0
     /// FR-072. Stored only: the Reduce-flashing post-pass (T104) is in ANGLERenderer, the renderer
-    /// ADR-0003 chose. This renderer is the fallback when no EGL context can be created.
+    /// ADR-0003 chose. This renderer is the fallback when no EGL context can be created, and
+    /// Settings tells the user that Reduce flashing is unavailable with it (T116).
     public var reduceFlashing = false
+    public let supportsReduceFlashing = false
 
     private let layerView: GLESLayerView
     private let context: EAGLContext

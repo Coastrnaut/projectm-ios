@@ -40,6 +40,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer {
     /// at most this much per second: a 10% full-screen change takes at least 1/3 s, so opposing
     /// changes of that size stay well under 3 per second.
     public static let flashLimitPerSecond: Float = 0.3
+    public let supportsReduceFlashing = true
     private var flashLimiter: OpaquePointer?
 
     private let layerView: MetalLayerView

@@ -108,6 +108,7 @@ final class FlashLimiterTests: XCTestCase {
         try await renderer.setPreset(preset)
         renderer.renderFrame(present: false)
         XCTAssertNil(renderer.flashLimiterAdaptedLuminance, "off by default: the limiter is not created")
+        XCTAssertTrue(renderer.supportsReduceFlashing)
         renderer.reduceFlashing = true
         for _ in 0..<5 { XCTAssertTrue(renderer.renderFrame(present: false)) }
         let adapted = try XCTUnwrap(renderer.flashLimiterAdaptedLuminance)
