@@ -146,10 +146,10 @@ attempt at all (see ADR-0003).
 | SC-006 audio→visual delay | median < 150 ms (20 clicks) | | n/a | n/a | |
 | SC-007 preset switch | 95% first frame < 1 s; blend ≤ 2 s | 50/50 < 1 s; median 32 ms, p95 223 ms; blend 2 s | | | |
 | SC-008 memory | drift ≤ 10% (min 5→30); peak < 300 MB | | | | |
-| SC-009 cycles + lifecycle | 0 crashes | 0 crashes; final states correct (In-App, Microphone) | | | |
+| SC-009 cycles + lifecycle | 0 crashes | 0 crashes; final states correct (In-App, Microphone) | | 0 crashes; final states correct (In-App, Microphone) | |
 | SC-013 thermal | never critical; ≥ 30 fps; no termination | | | | |
 | SC-014 battery | ≤ 20% per 60 min | | | | |
-| SC-015 cold launch | < 2 s D1 / < 4 s D3 | 10/10 < 2 s; median 80 ms, max 83 ms | | | |
+| SC-015 cold launch | < 2 s D1 / < 4 s D3 | 10/10 < 2 s; median 80 ms, max 83 ms | | 10/10 < 4 s; median 111 ms, max 113 ms | |
 
 ### Gate 4 automated runs (tasks T092, T101, T102; 2026-11-10)
 
@@ -175,6 +175,15 @@ Measurement build: Release with `SWIFT_ACTIVE_COMPILATION_CONDITIONS=PROJECTM_AU
   built-in microphone is still available, so the backend continues on it (lifecycle matrix;
   `microphoneUnavailable` applies only when no input remains). System/App Capture is not
   automated: every start shows the system picker.
+
+**D3 iPad A16, iPadOS 26.5**
+- SC-015: 11 launches in a row, all recorded; the table uses the last 10. Process start to the
+  chooser's `onAppear`: 104-113 ms (same limits as D1: warm file cache, `onAppear`).
+- SC-009: same sequence as D1; the run finished and wrote its report (no crash). After the cycles:
+  chooser, stopped. In-App Playback: identical to D1. Microphone: the room was quiet, so the
+  receiving state reads "silent" (audio received) instead of "active"; otherwise the same as D1
+  (paused on background and lock, back on return, interrupted then resumed, continues after the
+  route change, stopped).
 
 ## Stage 2 thresholds (finalized at Gate 4)
 
