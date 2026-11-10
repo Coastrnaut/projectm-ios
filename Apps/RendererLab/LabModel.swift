@@ -1,6 +1,7 @@
 // LabModel.swift — RendererLab's runs (ADR-0003 device measurements; tasks T072, T075, T078).
 //
-// Launch arguments (all optional; with -mode the run starts by itself, so devicectl can drive it):
+// Launch arguments, or the environment variables RL_BACKEND, RL_MODE, RL_DURATION, RL_PRESET_SECONDS
+// (all optional; with a mode the run starts by itself, so devicectl can drive it):
 //   -backend gles|angle      renderer under test (default gles)
 //   -mode sweep|session      sweep: every upstream test preset and every starter preset, each
 //                            loaded and rendered for 2 s; session: render for -duration seconds,
@@ -31,13 +32,18 @@ final class LabModel {
         var duration: Double = 600
         var presetSeconds: Double = 20
 
+        /// Environment variables RL_BACKEND, RL_MODE, RL_DURATION, RL_PRESET_SECONDS win over the
+        /// -key value launch arguments (devicectl passes environment variables untouched, while it
+        /// may take a launch argument such as -duration for one of its own options).
         static func fromLaunchArguments() -> Config {
             let defaults = UserDefaults.standard   // -key value launch arguments land here
+            let env = ProcessInfo.processInfo.environment
+            func value(_ key: String, _ envKey: String) -> String? { env[envKey] ?? defaults.string(forKey: key) }
             var config = Config()
-            if let b = defaults.string(forKey: "backend"), let backend = Backend(rawValue: b) { config.backend = backend }
-            if let m = defaults.string(forKey: "mode") { config.mode = Mode(rawValue: m) }
-            if defaults.object(forKey: "duration") != nil { config.duration = max(10, defaults.double(forKey: "duration")) }
-            if defaults.object(forKey: "presetSeconds") != nil { config.presetSeconds = max(2, defaults.double(forKey: "presetSeconds")) }
+            if let b = value("backend", "RL_BACKEND"), let backend = Backend(rawValue: b) { config.backend = backend }
+            if let m = value("mode", "RL_MODE") { config.mode = Mode(rawValue: m) }
+            if let d = value("duration", "RL_DURATION").flatMap(Double.init) { config.duration = max(10, d) }
+            if let s = value("presetSeconds", "RL_PRESET_SECONDS").flatMap(Double.init) { config.presetSeconds = max(2, s) }
             return config
         }
     }

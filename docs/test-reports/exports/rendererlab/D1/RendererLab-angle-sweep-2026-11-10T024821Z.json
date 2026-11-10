@@ -1,0 +1,511 @@
+{
+  "appBuild" : "1",
+  "backend" : "angle",
+  "device" : "iPhone15,4",
+  "drawableScale" : 3,
+  "engineLog" : [
+    "[3] [DynLibrary] Try     lib=\"@rpath\/libEGL.dylib\"",
+    "[3] [DynLibrary] Try     lib=\"@rpath\/libEGL.1.dylib\"",
+    "[3] [DynLibrary] Try     lib=\"libEGL.dylib\"",
+    "[3] [DynLibrary] Try     lib=\"libEGL.1.dylib\"",
+    "[3] [DynLibrary] Try     lib=\"EGL\"",
+    "[3] [DynLibrary] Failed  dlopen failed for EGL: dlopen(EGL, 0x0006): tried: 'EGL' (no such file), '\/private\/preboot\/Cryptexes\/OSEGL' (no such file), '\/private\/var\/containers\/Bundle\/Application\/1852F323-FB52-4F8F-8647-36399B0FAB10\/RendererLab.app\/Frameworks\/EGL' (no such file), '\/usr\/lib\/EGL' (no such file, not in dyld cache), 'EGL' (no such file)",
+    "[3] [GLResolver] Failed to open EGL library: dlopen failed for EGL: dlopen(EGL, 0x0006): tried: 'EGL' (no such file), '\/private\/preboot\/Cryptexes\/OSEGL' (no such file), '\/private\/var\/containers\/Bundle\/Application\/1852F323-FB52-4F8F-8647-36399B0FAB10\/RendererLab.app\/Frameworks\/EGL' (no such file), '\/usr\/lib\/EGL' (no such file, not in dyld cache), 'EGL' (no such file)",
+    "[3] [DynLibrary] Try     lib=\"@rpath\/libGLESv3.dylib\"",
+    "[3] [DynLibrary] Try     lib=\"@rpath\/libGLESv2.dylib\"",
+    "[3] [DynLibrary] Try     lib=\"@rpath\/libGLESv2_with_capture.dylib\"",
+    "[3] [DynLibrary] Try     lib=\"libGLESv3.dylib\"",
+    "[3] [DynLibrary] Try     lib=\"libGLESv2.dylib\"",
+    "[3] [DynLibrary] Try     lib=\"libGLESv2_with_capture.dylib\"",
+    "[3] [DynLibrary] Failed  dlopen failed for libGLESv2_with_capture.dylib: dlopen(libGLESv2_with_capture.dylib, 0x0006): tried: 'libGLESv2_with_capture.dylib' (no such file), '\/private\/preboot\/Cryptexes\/OSlibGLESv2_with_capture.dylib' (no such file), '\/private\/var\/containers\/Bundle\/Application\/1852F323-FB52-4F8F-8647-36399B0FAB10\/RendererLab.app\/Frameworks\/libGLESv2_with_capture.dylib' (no such file), '\/usr\/lib\/libGLESv2_with_capture.dylib' (no such file, not in dyld cache), 'libGLESv2_with_capture.dylib' (no such file)",
+    "[3] [GLResolver] Failed to open GL library: dlopen failed for libGLESv2_with_capture.dylib: dlopen(libGLESv2_with_capture.dylib, 0x0006): tried: 'libGLESv2_with_capture.dylib' (no such file), '\/private\/preboot\/Cryptexes\/OSlibGLESv2_with_capture.dylib' (no such file), '\/private\/var\/containers\/Bundle\/Application\/1852F323-FB52-4F8F-8647-36399B0FAB10\/RendererLab.app\/Frameworks\/libGLESv2_with_capture.dylib' (no such file), '\/usr\/lib\/libGLESv2_with_capture.dylib' (no such file, not in dyld cache), 'libGLESv2_with_capture.dylib' (no such file)",
+    "[3] [GLResolver] EGL     get_all_proc_addresses=\"yes\"",
+    "[3] [GLResolver] CGLGetCurrentContext not found (no library loaded and not in global scope)",
+    "[3] [GLResolver] EGL     handle=0 lib=\"\"",
+    "[3] [GLResolver] GL      handle=0 lib=\"\"",
+    "[3] [GLResolver] GLX     handle=0 lib=\"\"",
+    "[3] [GLResolver] Probe   egl_current=\"yes\" glx_current=\"no\" wgl_current=\"no\" cgl_current=\"no\" webgl_current=\"no\" egl_available=\"yes\" glx_available=\"no\" wgl_available=\"no\" cgl_available=\"no\" webgl_available=\"no\"",
+    "[3] [GLResolver] Policy  backend=\"EGL\" egl=\"\" gl=\"\" glx=\"\" egl_get_proc=\"yes\" egl_policy=\"all\" user_resolver=\"yes\"",
+    "[3] [GladLoader] GLInfo  api=\"GLES\" ver=\"3.0\" profile=\"n\/a\" flags=\"n\/a\" glsl=\"OpenGL ES GLSL ES 3.00 (ANGLE 2.1.1 git hash: 29d18232e803)\" vendor=\"Google Inc. (Apple)\" renderer=\"ANGLE (Apple, ANGLE Metal Renderer: Apple A16 GPU, Version 27.0.1 (Build 24A446))\" backend=\"EGL\" user_resolver=\"yes\"",
+    "[3] [GladLoader] GLAD    GLES2 API was loaded successfully",
+    "[4] [TextureManager] Failed to find requested texture \"cells\""
+  ],
+  "finishedAt" : "2026-11-10T02:50:53Z",
+  "lowPowerMode" : false,
+  "mode" : "sweep",
+  "presets" : [
+    {
+      "framesPerSecond" : 60.09630432734572,
+      "group" : "tests",
+      "id" : "tests\/000-empty.milk",
+      "loadMs" : 1.4640092849731445,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.094649072412174,
+      "group" : "tests",
+      "id" : "tests\/001-line.milk",
+      "loadMs" : 6.576061248779297,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.093144373931715,
+      "group" : "tests",
+      "id" : "tests\/100-square.milk",
+      "loadMs" : 6.521940231323242,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.09163975080108,
+      "group" : "tests",
+      "id" : "tests\/101-per_frame.milk",
+      "loadMs" : 6.730079650878906,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.08832984468653,
+      "group" : "tests",
+      "id" : "tests\/102-per_frame3.milk",
+      "loadMs" : 6.548047065734863,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.08682546263734,
+      "group" : "tests",
+      "id" : "tests\/103-multiple-eqn.milk",
+      "loadMs" : 6.733059883117676,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.077958537908295,
+      "group" : "tests",
+      "id" : "tests\/104-continued-eqn.milk",
+      "loadMs" : 6.4640045166015625,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.08532115591422,
+      "group" : "tests",
+      "id" : "tests\/105-per_frame_init.milk",
+      "loadMs" : 6.780028343200684,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.083967344262526,
+      "group" : "tests",
+      "id" : "tests\/110-per_pixel.milk",
+      "loadMs" : 5.157947540283203,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.083967344262526,
+      "group" : "tests",
+      "id" : "tests\/200-wave.milk",
+      "loadMs" : 6.595969200134277,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.083967344262526,
+      "group" : "tests",
+      "id" : "tests\/201-wave.milk",
+      "loadMs" : 6.318926811218262,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.083967344262526,
+      "group" : "tests",
+      "id" : "tests\/202-wave.milk",
+      "loadMs" : 6.227016448974609,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.083967344262526,
+      "group" : "tests",
+      "id" : "tests\/203-wave.milk",
+      "loadMs" : 6.556034088134766,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.09273491139611,
+      "group" : "tests",
+      "id" : "tests\/204-wave.milk",
+      "loadMs" : 5.588054656982422,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.0938868466603,
+      "group" : "tests",
+      "id" : "tests\/205-wave.milk",
+      "loadMs" : 5.568027496337891,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.0869758974525,
+      "group" : "tests",
+      "id" : "tests\/206-wave.milk",
+      "loadMs" : 5.943059921264648,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.0869758974525,
+      "group" : "tests",
+      "id" : "tests\/207-wave.milk",
+      "loadMs" : 6.675958633422852,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.09575914403943,
+      "group" : "tests",
+      "id" : "tests\/208-wave.milk",
+      "loadMs" : 5.7849884033203125,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.088329845117194,
+      "group" : "tests",
+      "id" : "tests\/209-wave.milk",
+      "loadMs" : 6.420016288757324,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.08832984468653,
+      "group" : "tests",
+      "id" : "tests\/210-wave.milk",
+      "loadMs" : 6.316900253295898,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.09013520301461,
+      "group" : "tests",
+      "id" : "tests\/211-wave.milk",
+      "loadMs" : 5.679011344909668,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.09013520301461,
+      "group" : "tests",
+      "id" : "tests\/212-wave.milk",
+      "loadMs" : 5.329012870788574,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.09013520301461,
+      "group" : "tests",
+      "id" : "tests\/213-wave.milk",
+      "loadMs" : 5.676031112670898,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.09013520301461,
+      "group" : "tests",
+      "id" : "tests\/214-wave.milk",
+      "loadMs" : 3.6220550537109375,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.09013520301461,
+      "group" : "tests",
+      "id" : "tests\/215-wave.milk",
+      "loadMs" : 6.308078765869141,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.09013520258392,
+      "group" : "tests",
+      "id" : "tests\/240-wave-smooth-00.milk",
+      "loadMs" : 6.812095642089844,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.09013520258392,
+      "group" : "tests",
+      "id" : "tests\/241-wave-smooth-01.milk",
+      "loadMs" : 6.459951400756836,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.09013520301461,
+      "group" : "tests",
+      "id" : "tests\/242-wave-smooth-80.milk",
+      "loadMs" : 6.199002265930176,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.09163975037036,
+      "group" : "tests",
+      "id" : "tests\/243-wave-smooth-90.milk",
+      "loadMs" : 5.793094635009766,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.09163975080108,
+      "group" : "tests",
+      "id" : "tests\/244-wave-smooth-99.milk",
+      "loadMs" : 5.6819915771484375,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.09163975080108,
+      "group" : "tests",
+      "id" : "tests\/245-wave-smooth-100.milk",
+      "loadMs" : 6.515979766845703,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.09163975080108,
+      "group" : "tests",
+      "id" : "tests\/250-wavecode.milk",
+      "loadMs" : 5.138993263244629,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.09163975080108,
+      "group" : "tests",
+      "id" : "tests\/251-wavecode-spectrum.milk",
+      "loadMs" : 6.155967712402344,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.09224159058099,
+      "group" : "tests",
+      "id" : "tests\/252-wavecode-spectrum2.milk",
+      "loadMs" : 6.621956825256348,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.08391802642604,
+      "group" : "tests",
+      "id" : "tests\/260-compshader-noise_lq.milk",
+      "loadMs" : 5.146980285644531,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.09073701308826,
+      "group" : "tests",
+      "id" : "tests\/261-compshader-noisevol_lq.milk",
+      "loadMs" : 5.416989326477051,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.10022944819191,
+      "group" : "tests",
+      "id" : "tests\/300-beatdetect-bassmidtreb.milk",
+      "loadMs" : 6.729006767272949,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.08331142090367,
+      "group" : "starter",
+      "id" : "frontend-uwp\/EoS - dark side of the moon (plus a few more hits and a pill).milk",
+      "loadMs" : 7.74693489074707,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.090887467059474,
+      "group" : "starter",
+      "id" : "frontend-uwp\/EoS - pointfield 04 arcs demon_phat edit_v3.milk",
+      "loadMs" : 8.842945098876953,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 37.37520033321233,
+      "group" : "starter",
+      "id" : "frontend-uwp\/EoS+Phat - Arm_upgrades - transformer.milk",
+      "loadMs" : 6.508946418762207,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 54.94028448878912,
+      "group" : "starter",
+      "id" : "frontend-uwp\/fed - slowfast 1.1 (geiss composite remix).milk",
+      "loadMs" : 180.5640459060669,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.08441860803451,
+      "group" : "starter",
+      "id" : "frontend-uwp\/fiShbRaiN - toffee cream and icing sugar.milk",
+      "loadMs" : 8.81803035736084,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.08441860846512,
+      "group" : "starter",
+      "id" : "frontend-uwp\/Fvese - Snowflake Like 2.milk",
+      "loadMs" : 4.652976989746094,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.0878785221622,
+      "group" : "starter",
+      "id" : "frontend-uwp\/Fvese - The Tunnel (Final Stage Mix).milk",
+      "loadMs" : 5.935072898864746,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.0878785221622,
+      "group" : "starter",
+      "id" : "frontend-uwp\/Geiss - Luz.milk",
+      "loadMs" : 6.962060928344727,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.08787852259286,
+      "group" : "starter",
+      "id" : "frontend-uwp\/Geiss - Mega Swirl 3.milk",
+      "loadMs" : 7.01296329498291,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.099770545234485,
+      "group" : "starter",
+      "id" : "frontend-uwp\/Goody - Vertigo.milk",
+      "loadMs" : 176.41901969909668,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.09404718397765,
+      "group" : "starter",
+      "id" : "frontend-uwp\/hexcollie - Alex2.milk",
+      "loadMs" : 8.411049842834473,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.09404718397765,
+      "group" : "starter",
+      "id" : "frontend-uwp\/Krash - Interwoven (Nightmare Weft Mix).milk",
+      "loadMs" : 8.18490982055664,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.0940471835469,
+      "group" : "starter",
+      "id" : "frontend-uwp\/martin - soma in pink.milk",
+      "loadMs" : 211.33100986480713,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 38.76611807365238,
+      "group" : "starter",
+      "id" : "frontend-uwp\/Martin N AdamFX Infusion = Phat+Yin+EoS_Mandala Chaser Ft AdamFX n Martin - The Beast Mandala Chaser FX H.milk",
+      "loadMs" : 121.3771104812622,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 26.02368251491632,
+      "group" : "starter",
+      "id" : "frontend-uwp\/NeW Adam Master Mashup FX 2 Geiss and Zylot - Reaction Diffusion 3 (Overload Mix 2) AMAZING MASUP .milk",
+      "loadMs" : 173.72500896453857,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 34.48393922832453,
+      "group" : "starter",
+      "id" : "frontend-uwp\/New Creation Sensation -  AdamFx,Flexi,Amandio c n Martin - Star to Another World ft Hexocollie  n Shadow Harlequin n Geiss B.milk",
+      "loadMs" : 196.59900665283203,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 46.99000874955441,
+      "group" : "starter",
+      "id" : "frontend-uwp\/ORB - Mega Spectrum.milk",
+      "loadMs" : 9.272098541259766,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.09716529378526,
+      "group" : "starter",
+      "id" : "frontend-uwp\/ORB - Nova Sunrise.milk",
+      "loadMs" : 171.48101329803467,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.0923920525173,
+      "group" : "starter",
+      "id" : "frontend-uwp\/ORB - Saturns Rings.milk",
+      "loadMs" : 4.841089248657227,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.0923920525173,
+      "group" : "starter",
+      "id" : "frontend-uwp\/Rovastar & StudioMusic - More Cherished Desires.milk",
+      "loadMs" : 3.5619735717773438,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.088028962250334,
+      "group" : "starter",
+      "id" : "frontend-uwp\/Stahlregen & fiSHbRaiN + flexi + Geiss + shifter - Stonecraft (Beetle Relief mix).milk",
+      "loadMs" : 181.91397190093994,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.088028962250334,
+      "group" : "starter",
+      "id" : "frontend-uwp\/Stahlregen & flexi + Geiss + martin + Rovastar - Tides (martin's metallics).milk",
+      "loadMs" : 178.2519817352295,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.088028962250334,
+      "group" : "starter",
+      "id" : "frontend-uwp\/Stahlregen & Geiss + TobiasWolfBoi - Space Gelatin (Color Xplosion).milk",
+      "loadMs" : 189.38100337982178,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.08199468620086,
+      "group" : "starter",
+      "id" : "frontend-uwp\/Stahlregen + Geiss + Martin - Ouboros (Metal Finish 2).milk",
+      "loadMs" : 125.45406818389893,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.09083567123203,
+      "group" : "starter",
+      "id" : "frontend-uwp\/TEcHNO and SandStorm - Psychodelic Highway.milk",
+      "loadMs" : 6.199002265930176,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.08532115591422,
+      "group" : "starter",
+      "id" : "frontend-uwp\/UWP.milk",
+      "loadMs" : 26.867032051086426,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.08532115634485,
+      "group" : "starter",
+      "id" : "frontend-uwp\/Zylot - Inside The Planar Portal.milk",
+      "loadMs" : 4.714012145996094,
+      "loaded" : true
+    },
+    {
+      "framesPerSecond" : 60.08532115591422,
+      "group" : "starter",
+      "id" : "frontend-uwp\/Zylot - The Deeper.milk",
+      "loadMs" : 4.973053932189941,
+      "loaded" : true
+    }
+  ],
+  "startedAt" : "2026-11-10T02:48:21Z",
+  "summary" : {
+    "starterLoadMsMax" : 211.33100986480713,
+    "starterLoaded" : 28,
+    "starterTotal" : 28,
+    "testsLoadMsMax" : 6.812095642089844,
+    "testsLoaded" : 37,
+    "testsTotal" : 37
+  },
+  "systemVersion" : "27.0.1",
+  "thermalStates" : [
+    "nominal"
+  ],
+  "tool" : "RendererLab",
+  "viewPoints" : [
+    393,
+    852
+  ]
+}

@@ -86,8 +86,43 @@ Traces stay on the project Mac (several hundred MB each); the analysis scripts a
 
 ## ADR-0003 renderer measurements (Gate 3)
 
-| Option | Device | Test presets OK | Starter presets OK (≥ 95%) | fps ≥ 55 for 95% (ref) / ≥ 30 (oldest) | App size Δ (≤ 30 MB) | Flash limiter cost (< 2 ms) | Pass? |
-|--------|--------|-----------------|----------------------------|-----------------------------------------|----------------------|-----------------------------|-------|
+Measured 2026-11-09 with RendererLab (Release build; `RendererLab.yml`, `Apps/RendererLab`), driven
+by `devicectl`. Reports: `docs/test-reports/exports/rendererlab/D1|D2|D3/*.json`. Each sweep loads
+every upstream test preset (37) and every starter preset (28), renders each for 2.2 s with the
+reference track as audio, and records the load result, load time and the frame rate of the last
+complete 1-second window. Full display resolution (D1 1179 × 2556, D2 2064 × 2752, D3 at its
+native scale); default engine mesh size; no quality tier applied yet.
+
+**Owner ruling 2026-11-09: the 10-minute sessions are not required.** The frame-rate column
+therefore uses the sweeps' per-preset frame rates (starter presets at or above the threshold), not
+a sustained session. Thermal state stayed "nominal" in every run.
+
+| Option | Device | Test presets OK | Starter presets OK (≥ 95%) | Starter presets ≥ 55 fps (D1) / ≥ 30 fps (D2, D3) | Slowest preset | App size Δ (≤ 30 MB) | Flash limiter cost (< 2 ms) | Pass? |
+|--------|--------|-----------------|----------------------------|----------------------------------------------------|----------------|----------------------|-----------------------------|-------|
+| A (OpenGL ES) | D1 iPhone 15, iOS 27.0.1 | 37/37 | 28/28 | 15/28 ≥ 55 | 13.9 fps | +1.4 MB (0.45 MB zipped) | not measured | No (frame rate) |
+| A (OpenGL ES) | D2 iPad Pro M5, iPadOS 27.2 | 37/37 | 28/28 | 25/28 ≥ 30 | 13.8 fps | same | not measured | No (frame rate) |
+| A (OpenGL ES) | D3 iPad A16, iPadOS 26.5 | 37/37 | 28/28 | 15/28 ≥ 30 | 13.0 fps | same | not measured | No (frame rate) |
+| B (ANGLE/Metal) | D1 iPhone 15, iOS 27.0.1 | 37/37 | 28/28 | 22/28 ≥ 55 | 26.0 fps | +7.3 MB (2.3 MB zipped) | not measured | No (frame rate) |
+| B (ANGLE/Metal) | D2 iPad Pro M5, iPadOS 27.2 | 37/37 | 28/28 | 28/28 ≥ 30 (all at 60 fps) | 60.0 fps | same | not measured | Yes, except the limiter row |
+| B (ANGLE/Metal) | D3 iPad A16, iPadOS 26.5 | 37/37 | 28/28 | 26/28 ≥ 30 | 15.9 fps | same | not measured | No (frame rate) |
+
+App size: the frameworks each option adds to a Release app (`projectM-4.framework`, plus
+`libEGL.framework` and `libGLESv2.framework` for B), uncompressed and as a zip, standing in for
+the download size. Load times: slowest 39 ms (A) and 385 ms (B, Metal shader compilation on D3),
+all under SC-007's 1 s. No engine errors in any run.
+
+Findings:
+- Option B is faster than Option A on every device at the same resolution: on D2 it holds 60 fps on
+  every preset, where A drops to 14 fps on the three heaviest starter presets.
+- Neither option meets the frame-rate threshold on D1 or D3 at full resolution with the default
+  mesh. The quality tiers (render scale, mesh size; research R-08) are the lever the ADR provides;
+  they are not measured yet.
+- The heaviest presets are the same on every device ("Reaction Diffusion 3 (Overload Mix 2)",
+  "Star to Another World", "The Beast Mandala Chaser").
+
+RI-009 on devices: with an unpatched engine, the GL resolver tried to `dlopen` eleven EGL/GLES
+names on D1, D2 and D3 (none opened); with fork patch 3 (`ca1fc0d`), D3 (A) and D2 (B) logged no
+attempt at all (see ADR-0003).
 
 ## Stage 2 success criteria (Gate 4)
 

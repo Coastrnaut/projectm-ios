@@ -47,6 +47,18 @@ must record whether that code runs on iOS when a load_proc is supplied, and whic
 tries. Accept only if it is not reached, or reaches only public system frameworks by documented
 names. Otherwise apply a minimal iOS-only patch that skips it, logged in `docs/projectm-patches.md`.
 
+**Device results, 2026-11-09 (T072; RendererLab, `docs/test-reports/exports/rendererlab/`):** with
+the engine at `49c5005`, the resolver ran on every device and tried to `dlopen` eleven names,
+`@rpath/libEGL.dylib`, `@rpath/libEGL.1.dylib`, `libEGL.dylib`, `libEGL.1.dylib`, `EGL`,
+`@rpath/libGLESv3.dylib`, `@rpath/libGLESv2.dylib`, `@rpath/libGLESv2_with_capture.dylib`,
+`libGLESv3.dylib`, `libGLESv2.dylib` and `libGLESv2_with_capture.dylib`; none opened (D1 iOS
+27.0.1, D2 iPadOS 27.2, D3 iPadOS 26.5; both renderers). The source also showed a fallback to
+`dlsym(RTLD_DEFAULT, …)` whenever the load proc returned null. These are not public system
+frameworks, so the minimal iOS patch applies: fork patch 3 (`docs/projectm-patches.md`) makes the
+application's load proc authoritative on Apple's embedded platforms. With it, D3 (Option A) and D2
+(Option B) logged no library attempt, and every preset still loaded and rendered. **RI-009 is
+resolved.**
+
 Simulator finding, 2026-11-09 (T068/T069; not the device evidence T072 needs): with a load_proc
 supplied, engine creation first failed in the GL resolver, which assumed an EGL context and refused
 EAGL. Fork patch 2 (`docs/projectm-patches.md`) makes the resolver trust an application-managed
@@ -79,14 +91,16 @@ A16 (the "oldest" tier), as recorded in `docs/test-reports/devices.md`.
 
 ## Exit thresholds (to accept; per option)
 
-- [ ] All upstream test presets (`presets/tests/*.milk`) render, and at least 95% of the starter
+- [x] (Both options, D1-D3, 2026-11-09: 37/37 and 28/28.) All upstream test presets (`presets/tests/*.milk`) render, and at least 95% of the starter
       presets compile and render without shader errors, on every measurement device.
-- [ ] Sustained frame rate over a 10-minute session: at least 55 fps for 95% of the session on the
+- [ ] (Owner ruling 2026-11-09: the 10-minute sessions are not required; judged from the sweeps'
+      per-preset frame rates, `docs/test-reports/performance.md`.) Sustained frame rate over a 10-minute session: at least 55 fps for 95% of the session on the
       reference device (SC-005); at least 30 fps throughout on D2 and D3 (FR-049 floor).
-- [ ] App size increase over the Phase C baseline: 30 MB or less (download size).
+- [x] App size increase over the Phase C baseline: 30 MB or less (download size). Option A +1.4 MB,
+      Option B +7.3 MB uncompressed (2026-11-09).
 - [ ] The "Reduce flashing" post-pass (FR-072) is feasible with under 2 ms added per frame on the
       reference device.
-- [ ] RI-009 resolved as above.
+- [x] RI-009 resolved as above (2026-11-09, T072: fork patch 3; see the RI-009 device results below).
 - [ ] Quality tiers ("current", "oldest") recorded with mesh size, render scale, and the
       device-to-tier rule (research R-08).
 
