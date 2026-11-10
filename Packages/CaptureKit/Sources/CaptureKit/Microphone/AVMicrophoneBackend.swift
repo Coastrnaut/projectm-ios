@@ -91,8 +91,12 @@ public final class AVMicrophoneBackend: MicrophoneBackend {
         // preemptively. No test has yet run this tap (Microphone Active audio is checked on
         // device in T049).
         let layout = ChannelLayoutTag(rawValue: avFormat.channelLayout?.layoutTag ?? 0)
-        input.installTap(onBus: 0, bufferSize: 1024, format: avFormat) { @Sendable buffer, _ in
-            sink.write(buffer.audioBufferList, format: format, frameCount: Int(buffer.frameLength), layout: layout)
+        input.installTap(onBus: 0, bufferSize: 1024, format: avFormat) { @Sendable buffer, when in
+            // Capture delivery (task T062): the buffer's host time, in ns on the uptime clock.
+            let captureNs: UInt64 = when.isHostTimeValid
+                ? UInt64(AVAudioTime.seconds(forHostTime: when.hostTime) * 1_000_000_000) : 0
+            sink.write(buffer.audioBufferList, format: format, frameCount: Int(buffer.frameLength),
+                       layout: layout, captureTimeNs: captureNs)
         }
         engine.prepare()
         do {

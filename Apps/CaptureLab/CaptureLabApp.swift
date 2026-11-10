@@ -4,6 +4,7 @@
 // It claims nothing about any app: the screen shows only what the classifier verified.
 import AudioCore
 import CaptureKit
+import Diagnostics
 import SwiftUI
 
 @main
@@ -33,7 +34,7 @@ final class CaptureLabModel {
             ScreenCaptureSource.makeDefault(),
             microphone,
             InAppPlaybackSource(backend: AVInAppPlaybackBackend()),
-        ])
+        ], signposts: DiagnosticsLog.pipeline)
         self.manager = manager
         let lifecycle = LifecycleObserver()
         self.lifecycle = lifecycle

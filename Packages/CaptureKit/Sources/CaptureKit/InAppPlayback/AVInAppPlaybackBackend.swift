@@ -67,9 +67,12 @@ public final class AVInAppPlaybackBackend: InAppPlaybackBackend {
         // iOS Simulator (crash reports fault in this closure); AVMicrophoneBackend's input tap
         // had the same pattern and got the same fix.
         let layout = ChannelLayoutTag(rawValue: tapFormat.channelLayout?.layoutTag ?? 0)
-        mixer.installTap(onBus: 0, bufferSize: 1024, format: tapFormat) { @Sendable tapBuffer, _ in
+        mixer.installTap(onBus: 0, bufferSize: 1024, format: tapFormat) { @Sendable tapBuffer, when in
+            // Capture delivery (task T062): the buffer's host time, in ns on the uptime clock.
+            let captureNs: UInt64 = when.isHostTimeValid
+                ? UInt64(AVAudioTime.seconds(forHostTime: when.hostTime) * 1_000_000_000) : 0
             sink.write(tapBuffer.audioBufferList, format: format, frameCount: Int(tapBuffer.frameLength),
-                       layout: layout)
+                       layout: layout, captureTimeNs: captureNs)
         }
         engine.prepare()
         do {

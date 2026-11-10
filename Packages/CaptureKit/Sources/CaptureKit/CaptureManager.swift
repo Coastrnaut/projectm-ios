@@ -74,14 +74,17 @@ public final class CaptureManager {
     ///   - sources: one source per mode.
     ///   - runsAnalysisTimer: false in tests, which drive `analyzer.step()` directly.
     ///   - clock: injected for tests.
+    ///   - signposts: latency-stage signposts (task T062), e.g. Diagnostics' `PipelineSignposts`.
     public init(sources: [any AudioSource], thresholds: ClassifierThresholds = .default,
                 runsAnalysisTimer: Bool = true,
-                clock: @escaping @Sendable () -> Double = { MonotonicClock.nowSeconds() }) {
+                clock: @escaping @Sendable () -> Double = { MonotonicClock.nowSeconds() },
+                signposts: (any AudioPipelineSignposts)? = nil) {
         var map: [AudioSourceMode: any AudioSource] = [:]
         for s in sources { map[s.mode] = s }
         self.sources = map
         self.runsAnalysisTimer = runsAnalysisTimer
         analyzer = AudioAnalyzer(sink: sink, thresholds: thresholds, clock: clock)
+        analyzer.setSignposts(signposts)
         analyzer.setUpdateHandler { [weak self] update in
             Task { @MainActor in self?.receive(update) }
         }

@@ -39,8 +39,15 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
 ## Where things stand (2026-11-08)
 
 - **Stage 1 is complete: T056 recorded "go" on 2026-11-09** (`docs/test-reports/compatibility-report.md`,
-  Stage Decision). No source is claimed to work (none rated; Gates 1-2 waived). Next is Stage 2,
-  Plan Phase B (audio pipeline, T057-T063); Plan Phase C (engine) only after the Plan B exit.
+  Stage Decision). No source is claimed to work (none rated; Gates 1-2 waived). Stage 2, Plan
+  Phase B (audio pipeline): T057-T061 done 2026-11-09 (Normalizer, normalized ring,
+  `CaptureManager.normalizedOutput`); T062 signposts implemented, AC open (Normalized residency
+  needs the Phase C renderer); T063 (allocation trace + 30-min CPU) needs D1. Plan Phase C
+  (engine) only after the owner accepts the Plan B exit.
+- Phase B verified on the project Mac 2026-11-09: AudioCore 76, CaptureKit 80, Diagnostics 8 tests
+  on the host and the iOS 27.2 and 26.5 simulators; CaptureLab UI tests (3) on iOS 27.2; device
+  builds with no warnings. The Linux path (no AVFAudio: linear resampler fallback) is tested on
+  the Mac with `swift test -Xswiftc -DAUDIOCORE_NO_AVFAUDIO`.
 - Verified: 84 Swift package tests pass on Linux (AudioCore 40, CaptureKit 33, Diagnostics 7,
   CaptureUI 4) and 15 Python script tests pass.
 - CI is green (run 42552713447, 2026-11-09). The main job runs on `macos-26` with the image's

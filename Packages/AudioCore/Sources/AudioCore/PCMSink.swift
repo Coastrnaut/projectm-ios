@@ -47,6 +47,10 @@ public final class PCMSink: @unchecked Sendable {
     private let sessionStartNs = Atomic<UInt64>(0)
     /// The source's channel layout tag (`ChannelLayoutTag.rawValue`), 0 when unknown.
     private let layoutTag = Atomic<UInt32>(0)
+    /// Longest capture delivery (arrival − capture timestamp) since the last take, in ns.
+    private let deliveryMaxNs = Atomic<UInt64>(0)
+    /// Deliveries longer than this are treated as a clock mismatch and ignored.
+    static let maxPlausibleDeliveryNs: UInt64 = 10_000_000_000
 
     public init() {
         ring = SPSCRingBuffer(capacity: PCMSink.maxSampleRate * PCMSink.maxChannels)
@@ -79,6 +83,7 @@ public final class PCMSink: @unchecked Sendable {
         formatChanges.store(0, ordering: .relaxed)
         packedFormat.store(0, ordering: .relaxed)
         layoutTag.store(0, ordering: .relaxed)
+        deliveryMaxNs.store(0, ordering: .relaxed)
         sessionStartNs.store(start, ordering: .releasing)
     }
 
@@ -95,7 +100,7 @@ public final class PCMSink: @unchecked Sendable {
     /// Interleaved samples (`format.isInterleaved` must be true). `layout` is the source's channel
     /// layout, if it reports one; the Normalizer uses it to downmix more than 2 channels (R-05).
     public func writeInterleaved(_ samples: UnsafeRawPointer, frames: Int, format: AudioFormat,
-                                 layout: ChannelLayoutTag = .unknown,
+                                 layout: ChannelLayoutTag = .unknown, captureTimeNs: UInt64 = 0,
                                  hostTimeNs: UInt64 = MonotonicClock.nowNanoseconds()) {
         guard frames > 0, format.isValid else { return }
         let inChannels = format.channelCount
@@ -117,12 +122,12 @@ public final class PCMSink: @unchecked Sendable {
             ring.write(scratch, count: n * outChannels)
             offset += n
         }
-        record(frames: frames, format: format, layout: layout, hostTimeNs: hostTimeNs)
+        record(frames: frames, format: format, layout: layout, captureTimeNs: captureTimeNs, hostTimeNs: hostTimeNs)
     }
 
     /// Planar samples: `planes[c]` points at channel c's samples (`format.isInterleaved` false).
     public func writePlanar(_ planes: UnsafePointer<UnsafeRawPointer?>, planeCount: Int, frames: Int,
-                            format: AudioFormat, layout: ChannelLayoutTag = .unknown,
+                            format: AudioFormat, layout: ChannelLayoutTag = .unknown, captureTimeNs: UInt64 = 0,
                             hostTimeNs: UInt64 = MonotonicClock.nowNanoseconds()) {
         guard frames > 0, format.isValid, planeCount > 0 else { return }
         let outChannels = min(planeCount, PCMSink.maxChannels)
@@ -144,7 +149,7 @@ public final class PCMSink: @unchecked Sendable {
             ring.write(scratch, count: n * outChannels)
             offset += n
         }
-        record(frames: frames, format: format, layout: layout, hostTimeNs: hostTimeNs)
+        record(frames: frames, format: format, layout: layout, captureTimeNs: captureTimeNs, hostTimeNs: hostTimeNs)
     }
 
     // MARK: - Consumer API
@@ -168,6 +173,12 @@ public final class PCMSink: @unchecked Sendable {
             formatChangeCount: formatChanges.load(ordering: .relaxed),
             startToFirstAudioMs: first == 0 ? nil : PCMSink.seconds(first, since: start) * 1000
         )
+    }
+
+    /// Returns the longest capture delivery since the previous call, in nanoseconds (0 if no
+    /// write carried a capture timestamp), and starts a new measurement. Consumer side.
+    public func takeCaptureDeliveryMaxNs() -> UInt64 {
+        deliveryMaxNs.exchange(0, ordering: .relaxed)
     }
 
     /// Channel layout of the latest write (`.unknown` if the source reported none).
@@ -194,8 +205,19 @@ public final class PCMSink: @unchecked Sendable {
         }
     }
 
-    private func record(frames: Int, format: AudioFormat, layout: ChannelLayoutTag, hostTimeNs: UInt64) {
+    private func record(frames: Int, format: AudioFormat, layout: ChannelLayoutTag, captureTimeNs: UInt64,
+                        hostTimeNs: UInt64) {
         layoutTag.store(layout.rawValue, ordering: .releasing)
+        if captureTimeNs > 0, hostTimeNs >= captureTimeNs, hostTimeNs - captureTimeNs < PCMSink.maxPlausibleDeliveryNs {
+            let delivery = hostTimeNs - captureTimeNs
+            var currentMax = deliveryMaxNs.load(ordering: .relaxed)
+            while delivery > currentMax {
+                let (exchanged, original) = deliveryMaxNs.compareExchange(
+                    expected: currentMax, desired: delivery, ordering: .relaxed)
+                if exchanged { break }
+                currentMax = original
+            }
+        }
         let packed = PCMSink.pack(format)
         let previous = packedFormat.exchange(packed, ordering: .acquiringAndReleasing)
         if previous != 0 && previous != packed {

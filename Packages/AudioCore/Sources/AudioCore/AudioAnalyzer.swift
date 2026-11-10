@@ -60,6 +60,7 @@ public final class AudioAnalyzer: @unchecked Sendable {
     public let normalizedOutput = NormalizedPCMRing()
     private let normalizer: Normalizer
     private var conversionFailure: StopReason?
+    private var signposts: (any AudioPipelineSignposts)?
 
     /// Maximum transitions recorded per session (export schema `maxItems`).
     public static let maxTransitions = 1000
@@ -85,6 +86,11 @@ public final class AudioAnalyzer: @unchecked Sendable {
 
     public func setUpdateHandler(_ handler: @escaping @Sendable (AnalyzerUpdate) -> Void) {
         queue.sync { onUpdate = handler }
+    }
+
+    /// Latency-stage signposts (task T062); nil turns them off.
+    public func setSignposts(_ signposts: (any AudioPipelineSignposts)?) {
+        queue.sync { self.signposts = signposts }
     }
 
     /// Starts periodic draining (production). Tests call `step()` instead.
@@ -191,19 +197,27 @@ public final class AudioAnalyzer: @unchecked Sendable {
         var total = 0
         var peak: Float = LevelMeter.floorDBFS
         var rms: Float = LevelMeter.floorDBFS
-        while true {
-            let n = sink.ring.read(into: scratch, maxCount: scratchCount)
-            if n == 0 { break }
-            let levels = LevelMeter.measure(scratch, count: n)
-            peak = max(peak, levels.peakDBFS)
-            rms = max(rms, levels.rmsDBFS)
-            if conversionFailure == nil, let normalizedInput,
-               case .failed(let reason) = normalizer.process(scratch, frames: n / channels,
-                                                             format: normalizedInput, layout: layout) {
-                conversionFailure = reason
+        func drainRing() {
+            while true {
+                let n = sink.ring.read(into: scratch, maxCount: scratchCount)
+                if n == 0 { break }
+                let levels = LevelMeter.measure(scratch, count: n)
+                peak = max(peak, levels.peakDBFS)
+                rms = max(rms, levels.rmsDBFS)
+                if conversionFailure == nil, let normalizedInput,
+                   case .failed(let reason) = normalizer.process(scratch, frames: n / channels,
+                                                                 format: normalizedInput, layout: layout) {
+                    conversionFailure = reason
+                }
+                total += n
+                if n < scratchCount { break }
             }
-            total += n
-            if n < scratchCount { break }
+        }
+        // Signposted only when there is audio, so idle 10 ms ticks add no intervals.
+        if let signposts, sink.ring.availableToRead > 0 {
+            signposts.ringAndConversion(drainRing)
+        } else {
+            drainRing()
         }
         if total > 0 {
             let duration = Double(total / channels) / sampleRate
@@ -217,11 +231,24 @@ public final class AudioAnalyzer: @unchecked Sendable {
         // At most 4 publishes per second (R-06); a state change is visible within 250 ms.
         if force || now - lastPublish >= AudioAnalyzer.publishInterval {
             lastPublish = now
+            reportLatencies()
             let toSend = update
             pending.removeAll(keepingCapacity: true)
             onUpdate?(toSend)
         }
         return update
+    }
+
+    /// Capture delivery and normalized residency, at most 4 times per second (task T062).
+    private func reportLatencies() {
+        guard let signposts else { return }
+        let deliveryNs = sink.takeCaptureDeliveryMaxNs()
+        if deliveryNs > 0 { signposts.captureDelivery(milliseconds: Double(deliveryNs) / 1_000_000) }
+        let backlog = normalizedOutput.lastReadBacklogFrames
+        if backlog > 0 {
+            let waited = min(backlog, NormalizedPCMRing.freshnessFrames)   // older frames were skipped
+            signposts.normalizedResidency(milliseconds: Double(waited) * 1000 / NormalizedPCMRing.sampleRate)
+        }
     }
 
     private func resetSession(at now: Double) {

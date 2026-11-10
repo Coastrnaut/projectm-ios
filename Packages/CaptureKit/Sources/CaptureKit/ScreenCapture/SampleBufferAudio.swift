@@ -119,8 +119,13 @@ final class SampleBufferAudioWriter: @unchecked Sendable {
             // The layout tag lets the Normalizer downmix more than 2 channels (R-05); a CoreMedia
             // getter that returns a pointer into the format description, so nothing is allocated.
             let layout = CMAudioFormatDescriptionGetChannelLayout(description, sizeOut: nil)?.pointee.mChannelLayoutTag ?? 0
+            // Capture delivery (task T062): the presentation time on the host clock, if valid.
+            // Implausible values (another clock) are ignored by the sink.
+            let pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
+            let seconds = pts.isValid ? CMTimeGetSeconds(pts) : 0
+            let captureNs: UInt64 = seconds > 0 && seconds.isFinite ? UInt64(seconds * 1_000_000_000) : 0
             sink.write(UnsafePointer(list), format: format, frameCount: frames,
-                       layout: ChannelLayoutTag(rawValue: layout))
+                       layout: ChannelLayoutTag(rawValue: layout), captureTimeNs: captureNs)
             outcome = .written(frames: frames)
         } else {
             outcome = .bufferTooShort

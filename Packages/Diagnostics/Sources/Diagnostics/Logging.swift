@@ -3,6 +3,7 @@
 // Rules: every dynamic value is logged as private; never log the tester note, content
 // identity, or sample data; no file logs. Never call these from a real-time audio callback.
 #if canImport(os)
+import AudioCore
 import Foundation
 import os
 
@@ -33,6 +34,9 @@ public enum DiagnosticsLog {
         signposter.endInterval(name, state)
     }
 
+    /// The analyzer's latency-stage signposts (research R-06), for CaptureManager.
+    public static let pipeline = PipelineSignposts()
+
     /// Debug-only guard: real-time audio threads run at elevated priority with a
     /// "real-time" thread name in our sources; logging there is a bug (Constitution VII).
     static func assertNotRealtime() {
@@ -40,6 +44,29 @@ public enum DiagnosticsLog {
         let name = Thread.current.name ?? ""
         assert(!name.contains("realtime") && !name.contains("AudioIO"), "logging on an audio thread")
         #endif
+    }
+}
+
+/// Latency stages of the audio pipeline (task T062; research R-06; SC-006 budget), recorded in the
+/// Points of Interest track: "Ring + conversion" is an interval around each work-queue drain that
+/// has audio; "Capture delivery" and "Normalized residency" are measured afterwards, so they are
+/// points carrying the measured milliseconds (private, per R-13). Called on the analysis work
+/// queue only.
+public struct PipelineSignposts: AudioPipelineSignposts {
+    public init() {}
+
+    public func ringAndConversion(_ body: () -> Void) {
+        let state = DiagnosticsLog.signposter.beginInterval("Ring + conversion")
+        body()
+        DiagnosticsLog.signposter.endInterval("Ring + conversion", state)
+    }
+
+    public func captureDelivery(milliseconds: Double) {
+        DiagnosticsLog.signposter.emitEvent("Capture delivery", "\(milliseconds, format: .fixed(precision: 1), privacy: .private) ms")
+    }
+
+    public func normalizedResidency(milliseconds: Double) {
+        DiagnosticsLog.signposter.emitEvent("Normalized residency", "\(milliseconds, format: .fixed(precision: 1), privacy: .private) ms")
     }
 }
 #endif
