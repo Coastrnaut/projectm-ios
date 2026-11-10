@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import check_capturelab_export  # noqa: E402
 import make_diagnostic_project  # noqa: E402
+import build_projectm_xcframework as bpx  # noqa: E402
 import check_compliance  # noqa: E402
 import generate_reference_audio as gra  # noqa: E402
 import validate_docs  # noqa: E402
@@ -588,6 +589,38 @@ class BackgroundModeExceptionTests(unittest.TestCase):
         text = (check_compliance.ROOT / "project.yml").read_text(encoding="utf-8")
         self.assertIn("UIBackgroundModes: [screen-capture]", text)
         self.assertEqual(check_compliance.check_project_yml(check_compliance.ROOT / "project.yml"), [])
+
+class ProjectMXCFrameworkTests(unittest.TestCase):
+    """T065: the engine build flags (ADR-0004) and the pinned engine version."""
+
+    def args(self, name):
+        s = next(s for s in bpx.SLICES if s["name"] == name)
+        return bpx.cmake_args(s, Path("src"), Path("b"))
+
+    def test_device_and_simulator_slices(self):
+        self.assertEqual({s["name"]: s["archs"] for s in bpx.SLICES},
+                         {"iphoneos": ("arm64",), "iphonesimulator": ("arm64", "x86_64")})
+        self.assertIn("-DCMAKE_OSX_SYSROOT=iphoneos", self.args("iphoneos"))
+        self.assertIn("-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64", self.args("iphonesimulator"))
+
+    def test_flags_build_a_shared_gles_framework_from_vendored_sources(self):
+        a = self.args("iphoneos")
+        for flag in ("-DCMAKE_SYSTEM_NAME=iOS", "-DBUILD_SHARED_LIBS=ON", "-DENABLE_MACOS_FRAMEWORK=ON",
+                     "-DENABLE_GLES=ON", "-DENABLE_SYSTEM_PROJECTM_EVAL=OFF", "-DENABLE_SYSTEM_GLM=OFF",
+                     "-DENABLE_PLAYLIST=OFF", "-DCMAKE_OSX_DEPLOYMENT_TARGET=26.0", "-DCMAKE_BUILD_TYPE=Release"):
+            self.assertIn(flag, a)
+
+    def test_engine_version_is_read_from_cmake(self):
+        with tempfile.TemporaryDirectory() as d:
+            Path(d, "CMakeLists.txt").write_text("project(libprojectM\n    LANGUAGES C CXX\n    VERSION 4.2.0\n)\n",
+                                                 encoding="utf-8")
+            self.assertEqual(bpx.engine_version(Path(d)), "4.2.0")
+
+    def test_submodule_tracks_the_fork_ios_branch(self):
+        text = (Path(__file__).resolve().parent.parent / ".gitmodules").read_text(encoding="utf-8")
+        self.assertIn("url = https://github.com/Coastrnaut/projectm.git", text)
+        self.assertIn("branch = ios", text)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

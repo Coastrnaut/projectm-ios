@@ -17,8 +17,9 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
 - **Report honestly.** If a build or test could not run on this host, say so ("pending macOS",
   "pending device"). Mark a task `[X]` in tasks.md only when its acceptance criterion was verified,
   and say how.
-- Never modify `Vendor/projectM` (pinned submodule). Patches, if ever needed, go in
-  `docs/projectm-patches.md`.
+- `Vendor/projectM` is pinned to the owner's fork (`Coastrnaut/projectm`, branch `ios`; Constitution
+  VIII v1.1.0). Engine changes are made on that branch only as upstream-ready commits, each logged
+  in `docs/projectm-patches.md` and meant for an upstream PR; then the pin moves (ADR-0004).
 
 ## Working with agents (owner preference, 2026-11-08)
 

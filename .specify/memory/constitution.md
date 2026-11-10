@@ -1,3 +1,17 @@
+<!--
+Sync Impact Report (2026-11-09)
+- Version: 1.0.0 → 1.1.0 (MINOR: Principle VIII expanded to allow the owner's fork).
+- Modified principle: VIII. Upstream ProjectM Fidelity. ProjectM may come from the owner's fork when
+  the pinned commit is an upstream commit plus patches that are each logged in
+  docs/projectm-patches.md and proposed upstream.
+- Proposal and rationale: the iOS build needs the engine's CMake to produce iOS framework bundles
+  (task T065). The owner chose to carry that change on the fork's `ios` branch and offer it upstream
+  as a pull request, instead of rewriting headers in the build script.
+- Approved by the owner: 2026-11-09.
+- Dependent artifacts updated: plan.md (Constitution Check VIII, docs tree), research.md (patch
+  log note), ADR-0004 (pin and build flags), docs/projectm-patches.md (created), CLAUDE.md.
+- Templates: no change needed.
+-->
 # ProjectM-iOS Constitution
 
 ## Core Principles
@@ -103,8 +117,10 @@ that are hard to reproduce and diagnose.
 
 ### VIII. Upstream ProjectM Fidelity
 
-- ProjectM MUST be consumed from the official upstream repository, pinned to a specific tag or
-  commit (currently the `Vendor/projectM` submodule).
+- ProjectM MUST be consumed from the official upstream repository, or from the project owner's
+  fork of it, pinned to a specific tag or commit (currently the `Vendor/projectM` submodule).
+  A fork pin MUST be an upstream commit plus patches that are each logged in
+  `docs/projectm-patches.md` and proposed upstream; the fork carries nothing else.
 - Local modifications to ProjectM MUST be minimized, isolated, and each documented (what,
   why, upstream status) in a patch log under `docs/`.
 - Upstream fixes SHOULD be proposed upstream where appropriate.
@@ -253,4 +269,4 @@ evidence.
   waived by deviation; changing them requires a MAJOR amendment.
 - Runtime development guidance for agents lives in `README.md` and `CLAUDE.md` (when present).
 
-**Version**: 1.0.0 | **Ratified**: 2026-11-07 | **Last Amended**: 2026-11-07
+**Version**: 1.1.0 | **Ratified**: 2026-11-07 | **Last Amended**: 2026-11-09

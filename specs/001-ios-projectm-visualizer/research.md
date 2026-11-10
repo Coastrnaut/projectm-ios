@@ -173,7 +173,8 @@ Renderer/Platform/GLResolver.cpp).
 - **Engine runtime loading (RI-009)**: The engine's resolver uses `dlopen` on POSIX platforms
   (`DynamicLibrary_posix.cpp`). Phase C determines whether it runs on iOS when a load_proc is
   supplied. Preferred outcome: it is not reached. Fallback: a minimal patch disabling it for iOS,
-  recorded in `docs/projectm-patches.md`.
+  recorded in `docs/projectm-patches.md` (the engine is pinned to the owner's fork, branch `ios`,
+  which already carries the iOS framework patch; Constitution VIII v1.1.0).
 - **Quality tiers**: Phase C sets engine settings (per-point mesh size, render scale, texture size)
   for two tiers, "current" (reference device D1, and D2) and "oldest" (D3, the iPadOS 26 device), following
   upstream's advice to keep the mesh low on mobile (e.g., 48×32). The tiers and the device-to-tier
