@@ -504,7 +504,9 @@ def verdicts_for(d: Path) -> dict[str, tuple[bool, str]]:
         out["SC-101"] = (bool(samples) and worst <= 0.15, f"{len(samples)} launches, max {worst * 1000:.0f} ms (target 150 ms)")
     if (r := latest(d, "automation-sc102")) and "maxMs" in r:
         out["SC-102"] = (r["maxMs"] <= 50, f"{r['keystrokes']} keystrokes, median {r['medianMs']:.1f} ms, max {r['maxMs']:.1f} ms (target 50 ms; search only)")
-    if (r := latest(d, "automation-sc104")) and "fractionUnder1s" in r:
+    sc104 = [json.loads(f.read_text()) for f in sorted(d.glob("automation-sc104*.json"))]
+    shipping = [r for r in sc104 if r.get("prewarm", True)]   # warm-up off runs are comparisons only
+    if (r := (shipping or sc104 or [None])[-1]) and "fractionUnder1s" in r:
         warm = "" if "prewarm" not in r else f", warm-up {'on' if r['prewarm'] else 'off'}"
         out["SC-104"] = (r["fractionUnder1s"] >= 0.95, f"{r['fractionUnder1s']:.0%} under 1 s, p95 {r['p95Ms']:.0f} ms{warm}, packs {r['picksByPack']}")
     if (d / "sc103.json").exists():
