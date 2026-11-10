@@ -20,3 +20,11 @@ deliberate silence). Simulator footage is marketing material only, never test ev
 ORB - Mega Spectrum, recorded with `xcrun simctl io <udid> recordVideo --codec=h264` from 19 s into
 the reference track, then cut to 25.0 s at 30 fps, H.264, video track only (owner decision: no
 audio), by `swift scripts/make_app_preview.swift <raw.mov> <out.mp4> <width> <height> 1 25`.
+
+## Uploaded to App Store Connect (2026-11-10)
+
+App Store Connect's iPhone slot is "iPhone with Dynamic Island (medium display)" (6.1"/6.3"), which
+takes 1206 x 2622 screenshots; the iPhone PNGs here were scaled to that size for upload
+(`sips -z 2622 1206 <file>`; the aspect ratios differ by less than 0.1%). iPad PNGs went up as is
+(2064 x 2752). Order as numbered. The previews are added by the owner (over the 10 MB upload limit
+of the browser tool).
