@@ -71,9 +71,10 @@ Rules:
 
 ## Open
 
-- [ ] Engine tag selected (RI-006). Owner: project owner. Decided at Gate 3: use the latest release
-      tag that passes ADR-0003; keep the commit only if a needed fix is untagged, with the reason
-      recorded.
+- [x] Engine tag selected (RI-006), owner decision at Gate 3, 2026-11-09: keep the fork commit
+      `ca1fc0ddc` (branch `ios` of `Coastrnaut/projectm`). Reason: the three iOS patches it needs
+      (`docs/projectm-patches.md`) are untagged and not upstream yet; rebase onto the latest upstream
+      release tag once the planned PR lands, and move the pin through this ADR.
 - [x] glm license text verified (T064, 2026-11-09).
 - [x] iOS CMake flags confirmed by a CI build (RI-011): CI run 42737711089 (2026-11-09, job
       `engine-xcframework`, Xcode 26 build 17F113) built the engine at `49c5005` from a fresh checkout;

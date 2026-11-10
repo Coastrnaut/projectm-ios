@@ -49,6 +49,14 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
   accepted for delivery and residency, residency trace moved to T114), T063 on D1 (no allocations
   or lock-wait syscalls in any audio callback; CPU 7.4%, 3-minute run by owner ruling). Next is
   Plan Phase C (engine build and render proof, T064-T079 plus T114).
+- **Plan Phase C is complete and Gate 3 passed on 2026-11-09** (T079): ADR-0003 accepts Option B,
+  the engine on ANGLE's Metal backend (`Packages/ANGLERendering`, `Vendor/angle` = the owner's
+  ANGLE fork). Engine: `Vendor/projectM` at the owner's fork commit `ca1fc0ddc` (three iOS patches,
+  `docs/projectm-patches.md`). Device evidence from RendererLab sweeps on D1-D3
+  (`docs/test-reports/performance.md`, `docs/test-reports/exports/rendererlab/`); owner rulings: no
+  10-minute sessions, no quality tiers or flash-limiter measurement for Gate 3. Next: Phase D (US4,
+  T080 onward); T114 runs once the app has a renderer. Build the binaries first:
+  `python3 scripts/build_projectm_xcframework.py` and `python3 scripts/build_angle_xcframework.py`.
 - Phase B verified on the project Mac 2026-11-09: AudioCore 76, CaptureKit 80, Diagnostics 8 tests
   on the host and the iOS 27.2 and 26.5 simulators; CaptureLab UI tests (3) on iOS 27.2; device
   builds with no warnings. The Linux path (no AVFAudio: linear resampler fallback) is tested on

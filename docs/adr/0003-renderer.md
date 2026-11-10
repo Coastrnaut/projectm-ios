@@ -1,8 +1,22 @@
 # ADR-0003: Renderer Backend
 
-- **Status**: Proposed. Decision at Gate 3 (Phase C)
+- **Status**: Accepted 2026-11-09 by the project owner (T079; Gate 3 passed): **Option B, ANGLE on Metal**
 - **Date**: 2026-11-07
 - **Spec**: FR-040, FR-049, FR-072, SC-005, SC-006 · **Research**: R-08 · **RI**: RI-005
+
+## Decision (accepted 2026-11-09)
+
+The project owner chose **Option B: the unmodified engine on ANGLE's Metal backend through EGL**
+(`ANGLERenderer`, `Packages/ANGLERendering`; ANGLE from `Vendor/angle`, the owner's fork, pinned in
+ADR-0004). Reasons, from the device sweeps on D1, D2 and D3 (`docs/test-reports/performance.md`):
+both options rendered every upstream test preset and every starter preset, but ANGLE was faster on
+every device (D2: 60 fps on all 28 starter presets, where OpenGL ES dropped to 14 fps), and it avoids
+Apple's OpenGL ES, deprecated since iOS 12. Its cost is +7.3 MB (about 2.3 MB zipped) against +1.4 MB.
+
+Quality tiers: not required (owner ruling 2026-11-09). One tier for now: full display resolution
+and the engine's default mesh size on every device; the frame-rate shortfall on D1 and D3 with the
+heaviest presets is accepted as measured. Option A (`GLESRenderer`, `Packages/Rendering`) stays in
+the code as a test reference until the visualizer app (Phase D) no longer needs it.
 
 ## Context
 
