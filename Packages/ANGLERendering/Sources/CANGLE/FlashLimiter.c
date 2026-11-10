@@ -2,7 +2,9 @@
 //
 // While Reduce flashing is on, the engine renders into this limiter's offscreen texture instead of
 // the window surface. Each frame:
-//   1. glGenerateMipmap: the smallest mip level is the frame's mean color.
+//   1. glBlitFramebuffer (linear) copies the frame into a 64 x 64 texture, and glGenerateMipmap on
+//      that small texture gives its mean color: about 4000 samples of the frame, enough for a mean,
+//      without building a full-resolution mip chain (that cost up to 2.5 ms per frame on D1).
 //   2. Adapt pass (1 x 1): the adapted mean luminance moves toward the frame's mean luminance by at
 //      most `maxStep` (the caller passes rate x frame time). Two 1 x 1 textures ping-pong; the value
 //      is packed into two 8-bit channels (about 1/65000 precision).
@@ -12,6 +14,9 @@
 //      detail and motion stay.
 // Luminance is Rec. 709 weights on squared (approximately linear) color; the mean comes from the
 // mip chain of the encoded color, an approximation that is good enough for a rate limit.
+
+#define MEAN_SIZE 64
+#define MEAN_LOD 6   // log2(MEAN_SIZE): the 1 x 1 level
 // Entry points come from eglGetProcAddress; nothing here calls dlsym.
 #include "CANGLE.h"
 #include <stdlib.h>
@@ -19,6 +24,7 @@
 #define GL_TEXTURE_2D 0x0DE1
 #define GL_TEXTURE0 0x84C0
 #define GL_TEXTURE1 0x84C1
+#define GL_TEXTURE2 0x84C2
 #define GL_TEXTURE_MIN_FILTER 0x2801
 #define GL_TEXTURE_MAG_FILTER 0x2800
 #define GL_TEXTURE_WRAP_S 0x2802
@@ -31,6 +37,9 @@
 #define GL_RGBA8 0x8058
 #define GL_UNSIGNED_BYTE 0x1401
 #define GL_FRAMEBUFFER 0x8D40
+#define GL_READ_FRAMEBUFFER 0x8CA8
+#define GL_DRAW_FRAMEBUFFER 0x8CA9
+#define GL_COLOR_BUFFER_BIT 0x00004000
 #define GL_COLOR_ATTACHMENT0 0x8CE0
 #define GL_FRAMEBUFFER_COMPLETE 0x8CD5
 #define GL_VERTEX_SHADER 0x8B31
@@ -87,6 +96,7 @@ static struct {
     void (*colorMask)(GLboolean, GLboolean, GLboolean, GLboolean);
     void (*drawArrays)(GLenum, GLint, GLsizei);
     void (*readPixels)(GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, void *);
+    void (*blitFramebuffer)(GLint, GLint, GLint, GLint, GLint, GLint, GLint, GLint, unsigned int, GLenum);
 } gl;
 
 #define LOAD(field, name) if ((*(void **)&gl.field = (void *)eglGetProcAddress(name)) == 0) return 0;
@@ -109,7 +119,7 @@ static int loadGL(void) {
     LOAD(genVertexArrays, "glGenVertexArrays") LOAD(deleteVertexArrays, "glDeleteVertexArrays")
     LOAD(bindVertexArray, "glBindVertexArray") LOAD(viewport, "glViewport")
     LOAD(disable, "glDisable") LOAD(colorMask, "glColorMask") LOAD(drawArrays, "glDrawArrays")
-    LOAD(readPixels, "glReadPixels")
+    LOAD(readPixels, "glReadPixels") LOAD(blitFramebuffer, "glBlitFramebuffer")
     gl.loaded = 1;
     return 1;
 }
@@ -127,11 +137,10 @@ static const char *vertexSource =
 #define COMMON \
     "#version 300 es\n" \
     "precision highp float;\n" \
-    "uniform sampler2D scene;\n" \
-    "uniform float sceneLod;\n" \
+    "uniform sampler2D meanSource;\n" \
     "float luminance(vec3 c) { return dot(c * c, vec3(0.2126, 0.7152, 0.0722)); }\n" \
     "float decode(vec4 c) { return c.r + c.g / 255.0; }\n" \
-    "float sceneMean() { return luminance(textureLod(scene, vec2(0.5), sceneLod).rgb); }\n"
+    "float sceneMean() { return luminance(textureLod(meanSource, vec2(0.5), 6.0).rgb); }\n"
 
 static const char *adaptSource =
     COMMON
@@ -150,6 +159,7 @@ static const char *adaptSource =
 
 static const char *outputSource =
     COMMON
+    "uniform sampler2D scene;\n"
     "uniform sampler2D adaptedTexture;\n"
     "in vec2 uv;\n"
     "out vec4 color;\n"
@@ -166,12 +176,13 @@ static const char *outputSource =
 struct PMFlashLimiter {
     GLuint adaptProgram, outputProgram, vertexArray;
     GLuint sceneTexture, sceneFramebuffer;
+    GLuint meanTexture, meanFramebuffer;
     GLuint adaptTextures[2], adaptFramebuffers[2];
     int current;            // index of the latest adapted value
-    int width, height, lod;
+    int width, height;
     int needsReset;
-    GLint adaptScene, adaptLod, adaptPrevious, adaptMaxStep, adaptReset;
-    GLint outputScene, outputLod, outputAdapted;
+    GLint adaptMean, adaptPrevious, adaptMaxStep, adaptReset;
+    GLint outputScene, outputMean, outputAdapted;
 };
 
 static GLuint compile(GLenum type, const char *source) {
@@ -217,13 +228,12 @@ PMFlashLimiter *PMFlashLimiterCreate(void) {
         PMFlashLimiterDestroy(limiter);
         return 0;
     }
-    limiter->adaptScene = gl.getUniformLocation(limiter->adaptProgram, "scene");
-    limiter->adaptLod = gl.getUniformLocation(limiter->adaptProgram, "sceneLod");
+    limiter->adaptMean = gl.getUniformLocation(limiter->adaptProgram, "meanSource");
     limiter->adaptPrevious = gl.getUniformLocation(limiter->adaptProgram, "previous");
     limiter->adaptMaxStep = gl.getUniformLocation(limiter->adaptProgram, "maxStep");
     limiter->adaptReset = gl.getUniformLocation(limiter->adaptProgram, "resetAdaptation");
     limiter->outputScene = gl.getUniformLocation(limiter->outputProgram, "scene");
-    limiter->outputLod = gl.getUniformLocation(limiter->outputProgram, "sceneLod");
+    limiter->outputMean = gl.getUniformLocation(limiter->outputProgram, "meanSource");
     limiter->outputAdapted = gl.getUniformLocation(limiter->outputProgram, "adaptedTexture");
     gl.genVertexArrays(1, &limiter->vertexArray);
     gl.genTextures(2, limiter->adaptTextures);
@@ -235,6 +245,15 @@ PMFlashLimiter *PMFlashLimiterCreate(void) {
         gl.bindFramebuffer(GL_FRAMEBUFFER, limiter->adaptFramebuffers[i]);
         gl.framebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, limiter->adaptTextures[i], 0);
     }
+    gl.genTextures(1, &limiter->meanTexture);
+    gl.genFramebuffers(1, &limiter->meanFramebuffer);
+    gl.bindTexture(GL_TEXTURE_2D, limiter->meanTexture);
+    for (int level = 0, size = MEAN_SIZE; size >= 1; level++, size >>= 1) {
+        gl.texImage2D(GL_TEXTURE_2D, level, GL_RGBA8, size, size, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+    }
+    textureParameters(GL_LINEAR_MIPMAP_LINEAR);
+    gl.bindFramebuffer(GL_FRAMEBUFFER, limiter->meanFramebuffer);
+    gl.framebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, limiter->meanTexture, 0);
     gl.bindTexture(GL_TEXTURE_2D, 0);
     gl.bindFramebuffer(GL_FRAMEBUFFER, 0);
     limiter->needsReset = 1;
@@ -245,6 +264,8 @@ void PMFlashLimiterDestroy(PMFlashLimiter *limiter) {
     if (!limiter) return;
     if (limiter->sceneFramebuffer) gl.deleteFramebuffers(1, &limiter->sceneFramebuffer);
     if (limiter->sceneTexture) gl.deleteTextures(1, &limiter->sceneTexture);
+    if (limiter->meanFramebuffer) gl.deleteFramebuffers(1, &limiter->meanFramebuffer);
+    if (limiter->meanTexture) gl.deleteTextures(1, &limiter->meanTexture);
     if (limiter->adaptFramebuffers[0]) gl.deleteFramebuffers(2, limiter->adaptFramebuffers);
     if (limiter->adaptTextures[0]) gl.deleteTextures(2, limiter->adaptTextures);
     if (limiter->vertexArray) gl.deleteVertexArrays(1, &limiter->vertexArray);
@@ -264,18 +285,15 @@ unsigned int PMFlashLimiterBegin(PMFlashLimiter *limiter, int width, int height)
         if (!limiter->sceneFramebuffer) gl.genFramebuffers(1, &limiter->sceneFramebuffer);
         gl.bindTexture(GL_TEXTURE_2D, limiter->sceneTexture);
         gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-        textureParameters(GL_LINEAR_MIPMAP_LINEAR);
+        textureParameters(GL_LINEAR);
         gl.bindTexture(GL_TEXTURE_2D, 0);
         gl.bindFramebuffer(GL_FRAMEBUFFER, limiter->sceneFramebuffer);
         gl.framebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, limiter->sceneTexture, 0);
         GLenum status = gl.checkFramebufferStatus(GL_FRAMEBUFFER);
         gl.bindFramebuffer(GL_FRAMEBUFFER, 0);
         if (status != GL_FRAMEBUFFER_COMPLETE) return 0;
-        int lod = 0;
-        for (int size = width > height ? width : height; size > 1; size >>= 1) lod++;
         limiter->width = width;
         limiter->height = height;
-        limiter->lod = lod;
         limiter->needsReset = 1;
     }
     return limiter->sceneFramebuffer;
@@ -293,17 +311,23 @@ static void prepareState(void) {
 void PMFlashLimiterFinish(PMFlashLimiter *limiter, unsigned int targetFramebuffer, float maxStep) {
     prepareState();
     gl.bindVertexArray(limiter->vertexArray);
+    // Mean: scene → 64 x 64 (linear blit) → mip chain of the small texture.
+    gl.bindFramebuffer(GL_READ_FRAMEBUFFER, limiter->sceneFramebuffer);
+    gl.bindFramebuffer(GL_DRAW_FRAMEBUFFER, limiter->meanFramebuffer);
+    gl.blitFramebuffer(0, 0, limiter->width, limiter->height, 0, 0, MEAN_SIZE, MEAN_SIZE,
+                       GL_COLOR_BUFFER_BIT, GL_LINEAR);
+    gl.activeTexture(GL_TEXTURE2);
+    gl.bindTexture(GL_TEXTURE_2D, limiter->meanTexture);
+    gl.generateMipmap(GL_TEXTURE_2D);
     gl.activeTexture(GL_TEXTURE0);
     gl.bindTexture(GL_TEXTURE_2D, limiter->sceneTexture);
-    gl.generateMipmap(GL_TEXTURE_2D);
 
     // Adapt: previous → next.
     int next = 1 - limiter->current;
     gl.bindFramebuffer(GL_FRAMEBUFFER, limiter->adaptFramebuffers[next]);
     gl.viewport(0, 0, 1, 1);
     gl.useProgram(limiter->adaptProgram);
-    gl.uniform1i(limiter->adaptScene, 0);
-    gl.uniform1f(limiter->adaptLod, (GLfloat)limiter->lod);
+    gl.uniform1i(limiter->adaptMean, 2);
     gl.activeTexture(GL_TEXTURE1);
     gl.bindTexture(GL_TEXTURE_2D, limiter->adaptTextures[limiter->current]);
     gl.uniform1i(limiter->adaptPrevious, 1);
@@ -318,12 +342,14 @@ void PMFlashLimiterFinish(PMFlashLimiter *limiter, unsigned int targetFramebuffe
     gl.viewport(0, 0, limiter->width, limiter->height);
     gl.useProgram(limiter->outputProgram);
     gl.uniform1i(limiter->outputScene, 0);
-    gl.uniform1f(limiter->outputLod, (GLfloat)limiter->lod);
+    gl.uniform1i(limiter->outputMean, 2);
     gl.bindTexture(GL_TEXTURE_2D, limiter->adaptTextures[next]);   // unit 1
     gl.uniform1i(limiter->outputAdapted, 1);
     gl.drawArrays(GL_TRIANGLES, 0, 3);
 
     // Leave neutral bindings for the engine's next frame.
+    gl.bindTexture(GL_TEXTURE_2D, 0);
+    gl.activeTexture(GL_TEXTURE2);
     gl.bindTexture(GL_TEXTURE_2D, 0);
     gl.activeTexture(GL_TEXTURE0);
     gl.bindTexture(GL_TEXTURE_2D, 0);

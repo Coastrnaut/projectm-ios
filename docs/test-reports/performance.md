@@ -138,6 +138,23 @@ RI-009 on devices: with an unpatched engine, the GL resolver tried to `dlopen` e
 names on D1, D2 and D3 (none opened); with fork patch 3 (`ca1fc0d`), D3 (A) and D2 (B) logged no
 attempt at all (see ADR-0003).
 
+## Reduce-flashing post-pass cost (task T104; FR-072)
+
+RendererLab `RL_BACKEND=angle RL_MODE=flashcost` on D1 (iPhone 15, iOS 27.0.1, 1179 x 2556 surface,
+thermal nominal, Low Power Mode off), 2026-11-10. Per starter preset (28): 30 warm-up frames,
+then 5 rounds of 40 frames with Reduce flashing off and 40 on, each frame rendered without
+presenting and followed by `glFinish`, so the time includes the GPU work. Cost = median frame time
+on minus off. Target: at most 2 ms per frame.
+
+| Version | Mean source | Median cost | Max cost | Presets over 2 ms | Report |
+|---------|-------------|-------------|----------|-------------------|--------|
+| First | full-resolution mip chain | 1.75 ms | 2.55 ms | 5 of 28 | `exports/rendererlab/D1/RendererLab-angle-flashcost-2026-11-10T141917Z.json` |
+| **Final** | linear blit to 64 x 64, then its mip chain | **1.21 ms** | **1.55 ms** | **0 of 28** | `exports/rendererlab/D1/RendererLab-angle-flashcost-2026-11-10T142354Z.json` |
+
+The heaviest preset (`Martin - The Beast Mandala Chaser FX H`, 24 ms per frame without the pass)
+costs 1.55 ms more with it. The limit: mean luminance changes at most 0.3 per second
+(`ANGLERenderer.flashLimitPerSecond`). The GLES fallback renderer has no post-pass.
+
 ## Stage 2 success criteria (Gate 4)
 
 **Gate 4 waived by the owner on 2026-11-10 (T102 not required).** SC-005, SC-008, SC-013 and
