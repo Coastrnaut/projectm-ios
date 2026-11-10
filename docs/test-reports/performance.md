@@ -140,6 +140,10 @@ attempt at all (see ADR-0003).
 
 ## Stage 2 success criteria (Gate 4)
 
+**Gate 4 waived by the owner on 2026-11-10 (T102 not required).** SC-005, SC-008, SC-013 and
+SC-014 were not run; the cells below hold only what was measured. The Stage 2 thresholds keep
+their initial values and are not finalized.
+
 | Criterion | Target | D1 iPhone 15 (reference) | D2 iPad Pro M5 | D3 iPad A16 | Pass? |
 |-----------|--------|------------------|---------------|-------------|-------|
 | SC-005 frame rate | ≥ 55 fps for 95% of 10 min (60 fps cap on 120 Hz) | | | | |

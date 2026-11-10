@@ -59,7 +59,9 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
 - Phase D started 2026-11-09: `ProjectMiOS` (project.yml) runs notice → chooser → full-screen ANGLE
   visualizer with controls; T080, T082, T083, T085, T086, US5 T088-T091, US6 T094-T096 and US7 T098-T100 done (T081, T093: red run not recorded); T081 (red run not recorded) and T084
   (FR-089 on D1/D2) open; T087 needs the devices and a 240 fps camera. The app's signing team is set
-  by hand in Xcode. Build the binaries first:
+  by hand in Xcode (or in the gitignored `Configs/Signing.local.xcconfig`). 2026-11-10: T101 done
+  (SC-009 on D1 and D3), SC-007 and SC-015 measured; T102 not required, Gate 4 waived (owner
+  ruling). Build the binaries first:
   `python3 scripts/build_projectm_xcframework.py` and `python3 scripts/build_angle_xcframework.py`.
 - Phase B verified on the project Mac 2026-11-09: AudioCore 76, CaptureKit 80, Diagnostics 8 tests
   on the host and the iOS 27.2 and 26.5 simulators; CaptureLab UI tests (3) on iOS 27.2; device
