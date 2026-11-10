@@ -51,7 +51,7 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
   Plan Phase C (engine build and render proof, T064-T079 plus T114).
 - **Plan Phase C is complete and Gate 3 passed on 2026-11-09** (T079): ADR-0003 accepts Option B,
   the engine on ANGLE's Metal backend (`Packages/ANGLERendering`, `Vendor/angle` = the owner's
-  ANGLE fork). Engine: `Vendor/projectM` at the owner's fork commit `ca1fc0ddc` (three iOS patches,
+  ANGLE fork). Engine: `Vendor/projectM` at the owner's fork commit `c88894e` (four iOS patches,
   `docs/projectm-patches.md`). Device evidence from RendererLab sweeps on D1-D3
   (`docs/test-reports/performance.md`, `docs/test-reports/exports/rendererlab/`); owner rulings: no
   10-minute sessions, no quality tiers or flash-limiter measurement for Gate 3. Next: Phase D (US4,

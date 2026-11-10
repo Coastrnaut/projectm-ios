@@ -13,7 +13,7 @@ LGPL-2.1. The App Store is the release target (FR-064).
 
 | Dependency | Pin | License | Packaging |
 |------------|-----|---------|-----------|
-| libprojectM | Git submodule from the owner's fork `Coastrnaut/projectm`, branch `ios` (Constitution VIII v1.1.0, owner decision 2026-11-09). Currently `ca1fc0ddc` (patches 1-3 in `docs/projectm-patches.md`): upstream `eae22de40144ee8ded92f3c04b93a4c2f82adcc0` (untagged, after v4.1.0; CMake version 4.2.0) plus the patches in `docs/projectm-patches.md`. At Gate 3, rebase the branch onto the latest upstream release tag that passes Phase C, or keep the commit with a recorded reason. | LGPL-2.1 | Dynamic `ProjectM.xcframework` built by `scripts/build_projectm_xcframework.py`, embedded and signed. Source and build scripts published. |
+| libprojectM | Git submodule from the owner's fork `Coastrnaut/projectm`, branch `ios` (Constitution VIII v1.1.0, owner decision 2026-11-09). Currently `c88894e966b3a862be148466b5d5c6e68d8bb9f1` (patches 1-4 in `docs/projectm-patches.md`): upstream `eae22de40144ee8ded92f3c04b93a4c2f82adcc0` (untagged, after v4.1.0; CMake version 4.2.0) plus the patches in `docs/projectm-patches.md`. At Gate 3, rebase the branch onto the latest upstream release tag that passes Phase C, or keep the commit with a recorded reason. | LGPL-2.1 | Dynamic `ProjectM.xcframework` built by `scripts/build_projectm_xcframework.py`, embedded and signed. Source and build scripts published. |
 | ANGLE (only if ADR-0003 selects it) | Git submodule `Vendor/angle` from the owner's fork `Coastrnaut/angle` (a fork of the `google/angle` mirror of https://chromium.googlesource.com/angle/angle), branch `ios`, at `29d18232e8031430f1257b7509ceca20d195114d` (head of `chromium/8153`; owner decision 2026-11-09). Dependencies from `gclient sync` with depot_tools `c4cdaeebba9b9ed92d041997317ffdbd042158ac`. No patches. | BSD-3-Clause (ANGLE `LICENSE`, verified 2026-11-09, T076) | `Build/ANGLEFrameworks/libEGL.xcframework` and `libGLESv2.xcframework` (dynamic frameworks), built by `scripts/build_angle_xcframework.py` and in CI (`angle-xcframeworks`); embedded and signed |
 | XcodeGen | Exact version in `scripts/verify_environment.py` | MIT | Build-time tool only |
 | CMake | Exact minimum version | BSD-3-Clause | Build-time tool only |
@@ -72,7 +72,8 @@ Rules:
 ## Open
 
 - [x] Engine tag selected (RI-006), owner decision at Gate 3, 2026-11-09: keep the fork commit
-      `ca1fc0ddc` (branch `ios` of `Coastrnaut/projectm`). Reason: the three iOS patches it needs
+      on branch `ios` of `Coastrnaut/projectm` (`ca1fc0ddc` at Gate 3; moved to `c88894e` on
+      2026-11-09, the owner's fix commit, with every build and test re-run). Reason: the iOS patches it needs
       (`docs/projectm-patches.md`) are untagged and not upstream yet; rebase onto the latest upstream
       release tag once the planned PR lands, and move the pin through this ADR.
 - [x] glm license text verified (T064, 2026-11-09).
