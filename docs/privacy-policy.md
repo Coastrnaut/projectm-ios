@@ -1,10 +1,12 @@
 # Privacy Policy — projectM for iOS
 
-Effective: before the first App Store release (task T107; FR-063). Applies to the projectM app for
+Effective: before the first App Store release (task T107; FR-063). Updated for the full preset
+library purchase (feature 002 T240; FR-122, FR-123). Applies to the projectM app for
 iPhone and iPad published by Robert Pancoast.
 
 **Summary: the app collects no data. Audio is processed only in memory on your device, and nothing
-is recorded, stored or sent anywhere.**
+is recorded, stored or sent anywhere. The only network traffic is Apple's own App Store traffic
+when you buy or restore the full preset library.**
 
 ## The three audio sources and what each captures
 
@@ -40,11 +42,20 @@ Only these, in the app's own settings storage on your device:
 
 - your favorite presets;
 - the last preset you selected;
-- your settings: the performance overlay and Reduce flashing;
+- your settings: the performance overlay, Reduce flashing, and which preset list Next and Random
+  step through (a search is remembered as "All presets", never the search text);
 - whether you acknowledged the photosensitivity notice.
 
 No audio, listening history or record of which apps you listened to is stored. Deleting the app
 deletes all of this.
+
+## The full preset library purchase
+
+The app includes 28 presets. A one-time in-app purchase unlocks the projectM team's full preset
+library, which is already inside the app. The purchase, its restore and the check of whether you
+own it are handled entirely by Apple's App Store through iOS: the app sends nothing of its own and
+sees no payment or account details. The app does not store its own record of the purchase; it asks
+iOS each time it starts.
 
 ## Diagnostics
 
@@ -54,8 +65,10 @@ by hand; they contain audio levels, formats and timing, never audio.
 
 ## No analytics, tracking or network use
 
-The app makes no network connections. It contains no analytics, advertising, tracking or
-third-party SDKs, and it does not track you across apps or websites.
+The app makes no network connections of its own. The only network traffic is the App Store's,
+through iOS, when you buy the full preset library, restore it, or when iOS checks your purchases.
+The app contains no analytics, advertising, accounts, servers, tracking or third-party SDKs, and it
+does not track you across apps or websites.
 
 ## Children
 
@@ -79,3 +92,5 @@ issue in that repository.
 | What is stored on the device (FR-065) | What is stored on your device |
 | Diagnostics leave the device only through a user-initiated export | Diagnostics |
 | No analytics or tracking | No analytics, tracking or network use |
+| Feature 002 FR-122: only the platform's purchase and restore traffic | The full preset library purchase; No analytics, tracking or network use |
+| Feature 002 FR-123: the preset scope setting | What is stored on your device |

@@ -3,12 +3,17 @@
 // Launch arguments, or the environment variables RL_BACKEND, RL_MODE, RL_DURATION, RL_PRESET_SECONDS
 // (all optional; with a mode the run starts by itself, so devicectl can drive it):
 //   -backend gles|angle      renderer under test (default gles)
-//   -mode sweep|session|flashcost
+//   -mode sweep|session|flashcost|loadsweep
 //                            sweep: every upstream test preset and every starter preset, each
 //                            loaded and rendered for 2 s; session: render for -duration seconds,
 //                            changing starter preset every -presetSeconds; flashcost (ANGLE
 //                            only, T104): GPU-synchronized frame times with Reduce flashing off
 //                            and on, alternating, on each starter preset
+//                            loadsweep (feature 002 T236): every preset of the library index
+//                            (PresetIndex.json and PresetArchive.bin, exclusions ignored) loaded
+//                            once, no render wait; the report lists the ids that failed, for
+//                            Resources/PresetExclusions.txt. RL_SHARD (or -shard) i/n runs the
+//                            i-th of n equal parts (1-based), e.g. 2/4
 //   -duration 600            session length in seconds
 //   -presetSeconds 20        session preset interval
 // Results go to Documents/RendererLab-<backend>-<mode>-<timestamp>.json (UIFileSharingEnabled), with
@@ -19,6 +24,7 @@ import ANGLERendering
 import AudioCore
 import Foundation
 import Observation
+import PresetLibrary
 import ProjectMBridge
 import Rendering
 import UIKit
@@ -27,13 +33,17 @@ import UIKit
 @Observable
 final class LabModel {
     enum Backend: String, CaseIterable, Codable { case gles, angle }
-    enum Mode: String, Codable { case sweep, session, flashcost }
+    enum Mode: String, Codable { case sweep, session, flashcost, loadsweep }
 
     struct Config: Codable {
         var backend: Backend = .gles
         var mode: Mode?
         var duration: Double = 600
         var presetSeconds: Double = 20
+        /// loadsweep part (1-based index, count).
+        var shard: (index: Int, count: Int) = (1, 1)
+
+        private enum CodingKeys: String, CodingKey { case backend, mode, duration, presetSeconds }
 
         /// Environment variables RL_BACKEND, RL_MODE, RL_DURATION, RL_PRESET_SECONDS win over the
         /// -key value launch arguments (devicectl passes environment variables untouched, while it
@@ -47,6 +57,10 @@ final class LabModel {
             if let m = value("mode", "RL_MODE") { config.mode = Mode(rawValue: m) }
             if let d = value("duration", "RL_DURATION").flatMap(Double.init) { config.duration = max(10, d) }
             if let s = value("presetSeconds", "RL_PRESET_SECONDS").flatMap(Double.init) { config.presetSeconds = max(2, s) }
+            if let parts = value("shard", "RL_SHARD")?.split(separator: "/").compactMap({ Int($0) }), parts.count == 2,
+               parts[1] >= 1, (1...parts[1]).contains(parts[0]) {
+                config.shard = (parts[0], parts[1])
+            }
             return config
         }
     }
@@ -77,6 +91,7 @@ final class LabModel {
         var presets: [PresetResult]?
         var framesPerSecond: [Double]?
         var flashCost: [FlashCostResult]?
+        var loadFailures: [String]?
         var summary: [String: Double]
     }
 
@@ -141,6 +156,7 @@ final class LabModel {
         var presets: [PresetResult]?
         var fps: [Double]?
         var flashCost: [FlashCostResult]?
+        var loadFailures: [String]?
         var summary: [String: Double] = [:]
         switch mode {
         case .sweep:
@@ -162,6 +178,17 @@ final class LabModel {
             summary["fpsP5"] = sorted.isEmpty ? 0 : sorted[Int(Double(sorted.count) * 0.05)]
             summary["fractionAtLeast55"] = windows.isEmpty ? 0 : Double(windows.filter { $0 >= 55 }.count) / Double(windows.count)
             summary["fractionAtLeast30"] = windows.isEmpty ? 0 : Double(windows.filter { $0 >= 30 }.count) / Double(windows.count)
+        case .loadsweep:
+            let (results, failed) = await loadSweep(renderer)
+            presets = results.filter { !$0.loaded }
+            loadFailures = failed
+            let times = results.map(\.loadMs).sorted()
+            summary["presets"] = Double(results.count)
+            summary["failed"] = Double(failed.count)
+            summary["shardIndex"] = Double(config.shard.index)
+            summary["shardCount"] = Double(config.shard.count)
+            summary["loadMsMedian"] = times.isEmpty ? 0 : times[times.count / 2]
+            summary["loadMsMax"] = times.last ?? 0
         case .flashcost:
             guard let angle = renderer as? ANGLERenderer else {
                 status = "flashcost needs -backend angle"
@@ -184,7 +211,8 @@ final class LabModel {
                             thermalStates: thermalStates.sorted(), lowPowerMode: ProcessInfo.processInfo.isLowPowerModeEnabled,
                             drawableScale: view.contentScaleFactor,
                             viewPoints: [view.bounds.width, view.bounds.height],
-                            presets: presets, framesPerSecond: fps, flashCost: flashCost, summary: summary)
+                            presets: presets, framesPerSecond: fps, flashCost: flashCost,
+                            loadFailures: loadFailures, summary: summary)
         save(report)
     }
 
@@ -209,6 +237,45 @@ final class LabModel {
         }
         status = "Sweep done: \(results.filter(\.loaded).count)/\(results.count) loaded"
         return results
+    }
+
+    /// Feature 002 T236: every indexed preset in this shard, loaded once without a render wait. Only
+    /// failures are kept in the report (12,941 rows would be noise); the count and timings are in
+    /// the summary.
+    private func loadSweep(_ renderer: any VisualizerRenderer) async -> ([PresetResult], [String]) {
+        guard let library = try? await PresetLibrary.load(from: .main),
+              let resources = Bundle.main.resourceURL,
+              let archive = try? PresetArchive(url: resources.appendingPathComponent("PresetArchive.bin"),
+                                               packIds: library.archiveOrder) else {
+            status = "loadsweep: PresetIndex.json or PresetArchive.bin missing (build phase)"
+            return ([], [])
+        }
+        renderer.setTextureSearchPaths([resources.appendingPathComponent("PresetTextures")])
+        let all = library.presets
+        let size = (all.count + config.shard.count - 1) / config.shard.count
+        let part = all.dropFirst((config.shard.index - 1) * size).prefix(size)
+        var results: [PresetResult] = []
+        var failed: [String] = []
+        for (n, item) in part.enumerated() {
+            if n % 25 == 0 { status = "Load sweep \(n + 1)/\(part.count) (shard \(config.shard.index)/\(config.shard.count))" }
+            var preset = Preset(id: item.id, name: item.name, fileURL: resources.appendingPathComponent(item.path),
+                                packID: item.source, author: item.author)
+            let start = Date()
+            var failure: String?
+            do {
+                if !item.isIncluded { preset.data = try archive.contents(of: item.id) }
+                try await renderer.setPreset(preset)
+            } catch {
+                failure = (error as NSError).localizedDescription
+                failed.append(item.id)
+            }
+            results.append(PresetResult(group: item.source, id: item.id, loaded: failure == nil, error: failure,
+                                        loadMs: Date().timeIntervalSince(start) * 1000, framesPerSecond: 0))
+            if n % 200 == 0 { thermalStates.insert(Self.thermalName()) }
+            await Task.yield()
+        }
+        status = "Load sweep done: \(failed.count) of \(results.count) failed"
+        return (results, failed)
     }
 
     private func session(_ renderer: any VisualizerRenderer) async -> [Double] {

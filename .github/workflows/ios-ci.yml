@@ -65,6 +65,22 @@ jobs:
       - uses: actions/checkout@v5
         # The ProjectM submodule is not needed until Plan Phase C (engine build); skip it to
         # save macOS minutes.
+      - name: Preset pack submodules (feature 002 T243; ProjectMiOS's build phase indexes them)
+        run: |
+          git submodule update --init --depth 1 Vendor/presets/cream-of-the-crop Vendor/presets/projectm-classic \
+            Vendor/presets/milkdrop-original Vendor/presets/en-d Vendor/presets/milkdrop-texture-pack
+      - name: Preset index builds from the pinned packs (feature 002, R-30)
+        run: |
+          python3 scripts/build_preset_index.py --out "$RUNNER_TEMP/preset-index" --force
+          python3 - "$RUNNER_TEMP/preset-index" <<'PY'
+          import json, sys
+          from pathlib import Path
+          out = Path(sys.argv[1])
+          presets = json.loads((out / "PresetIndex.json").read_text())["presets"]
+          included = sum(p["source"] == "included" for p in presets)
+          print(f"{len(presets)} presets, {included} Included, archive {(out / 'PresetArchive.bin').stat().st_size} bytes")
+          assert included == 28 and len(presets) > 12_000, "unexpected index contents"
+          PY
       - name: Select newest Xcode 26 (iOS 26 SDK path)
         run: |
           ls -d /Applications/Xcode*.app

@@ -111,7 +111,7 @@ accounts or signing; untagged tasks are completable on the project Mac.
 - [ ] T237 Run the load sweep on the simulator, commit the exclusions file, regenerate the index with `--exclusions`, and record the counts in `docs/test-reports/preset-library.md`
 - [ ] T238 {device} Measure SC-101 (library ready after the chooser appears), SC-102 (search per keystroke), SC-103 (frames on time while scrolling All A-Z and the largest folder), SC-104 (preset switches across packs) and SC-108 (installed size versus 1.0) on D1-D3; record in `docs/test-reports/performance.md`
 - [ ] T239 {device} StoreKit sandbox purchase, restore and offline relaunch on a device
-- [ ] T240 Update `docs/privacy-policy.md` (purchase traffic through iOS only, FR-122), `docs/release/app-privacy.md`, `docs/release/store-copy.md` (in-app purchase, library size; no capture claims) and the privacy manifest scan
+- [X] T240 Update `docs/privacy-policy.md` (purchase traffic through iOS only, FR-122), `docs/release/app-privacy.md`, `docs/release/store-copy.md` (in-app purchase, library size; no capture claims) and the privacy manifest scan — Verified 2026-11-10: policy (purchase section, network, stored scope), App Privacy (answers unchanged, basis updated), store copy (1.1 additions and claim table); `check_privacy_manifest.py` OK on a Release device build.
 - [ ] T241 {device} Re-run the privacy review (feature 001 T108) with the new key and a purchase
 - [ ] T242 {owner} Create the in-app purchase in App Store Connect (`org.projectmios.ProjectMiOS.fullLibrary`, $1.99, review screenshot); accept the Paid Apps agreement and set up banking and tax
 - [ ] T243 CI: fetch `Vendor/presets/*` where needed, run `PresetLibrary` tests on Linux and macOS, run the index `--check`

@@ -225,11 +225,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--packs-dir", type=Path, default=PACKS_DIR)
     parser.add_argument("--stamp", type=Path, help="stamp file (default: <out>/.preset-index-stamp)")
     parser.add_argument("--force", action="store_true", help="ignore the stamp")
+    parser.add_argument("--no-exclusions", action="store_true",
+                        help="ignore PresetExclusions.txt (RendererLab's load sweep tests every preset, T236)")
     args = parser.parse_args(argv)
 
     blocklist_file = args.config / "PresetBlocklist.json"
     exclusions_file = args.config / "PresetExclusions.txt"
     blocklist = {e["hash"] for e in json.loads(blocklist_file.read_text())["hashes"]} if blocklist_file.exists() else set()
+    if args.no_exclusions:
+        exclusions_file = args.config / "-no-exclusions"   # also changes the stamp
     exclusions = ({l.strip() for l in exclusions_file.read_text().splitlines() if l.strip() and not l.startswith("#")}
                   if exclusions_file.exists() else set())
     missing = [p for p, _ in PACKS + [TEXTURE_PACK] if not (args.packs_dir / p).is_dir()]

@@ -29,12 +29,15 @@ packages:
     path: Packages/Rendering
   ANGLERendering:
     path: Packages/ANGLERendering
+  PresetLibrary:
+    path: Packages/PresetLibrary
 targets:
   RendererLab:
     type: application
     platform: iOS
     sources:
       - path: Apps/RendererLab
+      - path: Apps/ProjectMiOS/Coordinators/PresetArchive.swift   # loadsweep (feature 002 T236)
       - path: Apps/ProjectMiOS/Resources/Presets
         type: folder
         buildPhase: resources
@@ -43,16 +46,27 @@ targets:
         buildPhase: resources
       - path: Apps/CaptureLab/Resources/reference.wav
         buildPhase: resources
+    preBuildScripts:
+      # Feature 002 T236: the full library for -mode loadsweep, every preset (exclusions ignored).
+      - name: Preset library (feature 002)
+        script: |
+          python3 "$SRCROOT/scripts/build_preset_index.py" --no-exclusions --out "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH" --stamp "$DERIVED_FILE_DIR/preset-index-stamp"
+        basedOnDependencyAnalysis: false
+        outputFiles:
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/PresetIndex.json
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/PresetArchive.bin
     dependencies:
       - package: AudioCore
       - package: ProjectMBridge
       - package: Rendering
       - package: ANGLERendering
+      - package: PresetLibrary
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.RendererLab   # tester-only harness
         PRODUCT_NAME: RendererLab
         GENERATE_INFOPLIST_FILE: YES
+        ENABLE_USER_SCRIPT_SANDBOXING: NO   # the preset library build phase reads Vendor/presets
         INFOPLIST_KEY_CFBundleDisplayName: RendererLab
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIStatusBarHidden: YES
