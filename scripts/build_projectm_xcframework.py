@@ -2,7 +2,7 @@
 """Build the projectM engine as a dynamic `Build/ProjectM.xcframework` (task T065; RI-011; ADR-0004).
 
 The engine is the `Vendor/projectM` submodule, pinned to the owner's fork on the `ios` branch
-(ADR-0004). That branch lets the engine's own CMake build Apple framework bundles on iOS
+(ADR-0004). Its patches (docs/projectm-patches.md) let the engine's own CMake build Apple framework bundles on iOS
 (`ENABLE_MACOS_FRAMEWORK=ON` gives a shallow `projectM-4.framework` with flat headers, the iOS
 Info.plist keys and the install name `@rpath/projectM-4.framework/projectM-4`); it is meant to go
 upstream as a pull request (`docs/projectm-patches.md`). This script only configures, builds and

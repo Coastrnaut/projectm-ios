@@ -13,7 +13,7 @@ LGPL-2.1. The App Store is the release target (FR-064).
 
 | Dependency | Pin | License | Packaging |
 |------------|-----|---------|-----------|
-| libprojectM | Git submodule from the owner's fork `Coastrnaut/projectm`, branch `ios` (Constitution VIII v1.1.0, owner decision 2026-11-09). Currently `9f3cc735be87754eb012fdee03f08a1f27dc316e`: upstream `eae22de40144ee8ded92f3c04b93a4c2f82adcc0` (untagged, after v4.1.0; CMake version 4.2.0) plus the patches in `docs/projectm-patches.md`. At Gate 3, rebase the branch onto the latest upstream release tag that passes Phase C, or keep the commit with a recorded reason. | LGPL-2.1 | Dynamic `ProjectM.xcframework` built by `scripts/build_projectm_xcframework.py`, embedded and signed. Source and build scripts published. |
+| libprojectM | Git submodule from the owner's fork `Coastrnaut/projectm`, branch `ios` (Constitution VIII v1.1.0, owner decision 2026-11-09). Currently `49c500579effbb4a536143b1629b25c5399d3762`: upstream `eae22de40144ee8ded92f3c04b93a4c2f82adcc0` (untagged, after v4.1.0; CMake version 4.2.0) plus the patches in `docs/projectm-patches.md`. At Gate 3, rebase the branch onto the latest upstream release tag that passes Phase C, or keep the commit with a recorded reason. | LGPL-2.1 | Dynamic `ProjectM.xcframework` built by `scripts/build_projectm_xcframework.py`, embedded and signed. Source and build scripts published. |
 | ANGLE (only if ADR-0003 selects it) | Exact commit or release, recorded here | BSD-3-Clause | Prebuilt xcframework, built reproducibly from the pinned source |
 | XcodeGen | Exact version in `scripts/verify_environment.py` | MIT | Build-time tool only |
 | CMake | Exact minimum version | BSD-3-Clause | Build-time tool only |

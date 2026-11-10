@@ -222,6 +222,28 @@ jobs:
           otool -D $DEV/projectM-4 | grep -q "@rpath/projectM-4.framework/projectM-4"
           test -f $DEV/Headers/projectM.h
           grep -q "${{ steps.key.outputs.engine }}" Build/ProjectM.xcframework.json
+      - name: OpenGL ES load-proc table matches the SDK
+        run: python3 scripts/generate_gles_loader.py --check
+      - name: ProjectMBridge tests on an iOS Simulator (T068)
+        run: |
+          set -o pipefail
+          UDID=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          devs = json.load(sys.stdin)["devices"]
+          best = None
+          for runtime, items in devs.items():
+              if "iOS" not in runtime:
+                  continue
+              for d in items:
+                  if "iPhone" in d["name"] and (best is None or runtime > best[0]):
+                      best = (runtime, d["udid"], d["name"])
+          print(best[1] if best else "")
+          print(f"Selected simulator: {best[2]} ({best[0]})" if best else "no iPhone simulator", file=sys.stderr)
+          ')
+          [ -n "$UDID" ] || { echo "::error::No iPhone simulator available"; exit 1; }
+          (cd Packages/ProjectMBridge && xcodebuild -scheme ProjectMBridge -destination "id=$UDID" \
+            -derivedDataPath "$RUNNER_TEMP/dd-pmb" CODE_SIGNING_ALLOWED=NO test 2>&1 \
+            | grep -E "error:|warning:|Executed [0-9]+ tests|TEST (SUCCEEDED|FAILED)|failed \(")
       - name: Upload the xcframework
         uses: actions/upload-artifact@v4
         with:

@@ -19,6 +19,7 @@ import check_capturelab_export  # noqa: E402
 import make_diagnostic_project  # noqa: E402
 import build_projectm_xcframework as bpx  # noqa: E402
 import check_compliance  # noqa: E402
+import generate_gles_loader as ggl  # noqa: E402
 import generate_reference_audio as gra  # noqa: E402
 import validate_docs  # noqa: E402
 import verify_environment  # noqa: E402
@@ -620,6 +621,33 @@ class ProjectMXCFrameworkTests(unittest.TestCase):
         text = (Path(__file__).resolve().parent.parent / ".gitmodules").read_text(encoding="utf-8")
         self.assertIn("url = https://github.com/Coastrnaut/projectm.git", text)
         self.assertIn("branch = ios", text)
+
+
+class GLESLoaderTests(unittest.TestCase):
+    """T068/T069: the static OpenGL ES load-proc table (no dlsym, Constitution I)."""
+
+    HEADER = """
+GL_API void           GL_APIENTRY glActiveTexture (GLenum texture) OPENGLES_DEPRECATED(ios(3.0, 12.0));
+GL_API const GLubyte* GL_APIENTRY glGetString (GLenum name)  OPENGLES_DEPRECATED(ios(3.0, 12.0));
+GL_API void           GL_APIENTRY glActiveTexture (GLenum texture);
+#define GL_APIENTRY_NOT_A_FUNCTION 1
+/* GL_API void GL_APIENTRY glCommentedOut (void); */
+"""
+
+    def test_parses_declarations_sorted_and_unique(self):
+        names = ggl.function_names(self.HEADER)
+        self.assertEqual(names, ["glActiveTexture", "glGetString"])
+
+    def test_rendered_table_is_sorted_and_has_no_dlsym(self):
+        text = ggl.render(["glActiveTexture", "glGetString"], "27.2")
+        self.assertLess(text.index('"glActiveTexture"'), text.index('"glGetString"'))
+        self.assertIn("bsearch", text)
+        self.assertNotRegex(text, r"\b(dlsym|dlopen)\s*\(")
+
+    def test_committed_table_has_no_dynamic_lookup(self):
+        text = ggl.OUTPUT.read_text(encoding="utf-8")
+        self.assertNotRegex(text, r"\b(dlsym|dlopen)\s*\(")
+        self.assertGreaterEqual(text.count('{"gl'), 200)
 
 
 if __name__ == "__main__":

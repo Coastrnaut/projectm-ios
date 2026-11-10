@@ -47,6 +47,13 @@ must record whether that code runs on iOS when a load_proc is supplied, and whic
 tries. Accept only if it is not reached, or reaches only public system frameworks by documented
 names. Otherwise apply a minimal iOS-only patch that skips it, logged in `docs/projectm-patches.md`.
 
+Simulator finding, 2026-11-09 (T068/T069; not the device evidence T072 needs): with a load_proc
+supplied, engine creation first failed in the GL resolver, which assumed an EGL context and refused
+EAGL. Fork patch 2 (`docs/projectm-patches.md`) makes the resolver trust an application-managed
+context when a load_proc is supplied; creation, rendering and preset loads then work on the iOS
+27.2 and 26.5 simulators. Whether the resolver still calls `dlopen`, and for which names, is still
+open for T072 on a device.
+
 ## Measurement devices
 
 The project device set (spec FR-032): D1 iPhone 15 (reference device), D2 iPad Pro M5, and D3 iPad
