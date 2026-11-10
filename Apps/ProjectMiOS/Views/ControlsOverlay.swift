@@ -10,11 +10,14 @@ import SwiftUI
 struct ControlsOverlay: View {
     let coordinator: AppCoordinator
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         // A real container, not a Group: a Group would pass the identifiers below to every button.
         VStack {
-            if sizeClass == .compact {
+            // Accessibility text sizes use the one-row icon layout too: seven labeled buttons in a
+            // row cannot fit (FR-070).
+            if sizeClass == .compact || typeSize.isAccessibilitySize {
                 compact
                     .accessibilityElement(children: .contain)
                     .accessibilityIdentifier("controlsCompact")

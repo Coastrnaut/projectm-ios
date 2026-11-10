@@ -72,6 +72,9 @@ struct VisualizerView: View {
             SettingsView(settings: coordinator.settings)
         }
         .onChange(of: coordinator.settings.reduceFlashing) { coordinator.applyReduceFlashing() }
+        .onChange(of: coordinator.manager.state) { _, state in
+            SourceStatusIndicator.announce(mode: coordinator.manager.activeMode, state: state)   // FR-070
+        }
         .onReceive(NotificationCenter.default.publisher(for: UIAccessibility.reduceMotionStatusDidChangeNotification)) { _ in
             coordinator.systemReduceMotionChanged(UIAccessibility.isReduceMotionEnabled)
         }
