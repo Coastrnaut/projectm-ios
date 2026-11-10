@@ -9,6 +9,8 @@ struct PresetFolderView: View {
     @Bindable var presets: PresetCoordinator
     let node: PresetNode
     let onChoose: (IndexedPreset, PresetScope) -> Void
+    /// Closes the whole browser (Done is on every level, not only the home).
+    let onDone: () -> Void
 
     var body: some View {
         List {
@@ -43,6 +45,7 @@ struct PresetFolderView: View {
         }
         .listSectionIndexVisibility(node.scope == .all ? .visible : .automatic)
         .navigationTitle(node.title)
+        .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done", action: onDone) } }
     }
 
     private var unlockCount: Int {

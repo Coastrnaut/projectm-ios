@@ -215,8 +215,11 @@ targets:
     platform: iOS
     sources:
       - path: Apps/ProjectMiOS/UITests
+      - path: Apps/ProjectMiOS/Store/ProjectMiOS.storekit   # SKTestSession in PurchaseUITests (T229)
+        buildPhase: resources
     dependencies:
       - target: ProjectMiOS
+      - sdk: StoreKitTest.framework
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.ProjectMiOSUITests

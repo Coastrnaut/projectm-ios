@@ -35,3 +35,23 @@ The SC-108 limit is 40 MB over release 1.0. The installed-size comparison on a d
 The host app does not touch StoreKit while it is hosting unit tests (`XCTestConfigurationFilePath`
 is set). Otherwise its launch-time product request runs before the test's `SKTestSession` exists,
 and every product request then returns nothing.
+
+## UI tests on the simulator, 2026-11-10
+
+`ProjectMiOSUITests` on the iOS 27.2 simulator: 25 tests pass.
+
+- `PresetLibraryUITests` (5):
+  - the home shows its rows and counts, with locks before purchase;
+  - drill-down works, and a locked tap opens the purchase sheet;
+  - search results are grouped by pack and capped;
+  - before purchase, Next and Random play only Included presets;
+  - unlocked: Fractal › Nested Spiral (179) wraps with Next and Previous, and Random stays inside it.
+- `PurchaseUITests` (3, SKTestSession):
+  - the sheet shows the price and the packs;
+  - Buy unlocks the library and switches the scope to "Cream of the Crop · 9795";
+  - a failed purchase shows "Purchase failed" and unlocks nothing.
+- Feature 001's `testPresetBrowser` was updated for the library home.
+
+`testFirstAndSecondLaunchAndTheMicrophoneExplainer` first failed because this simulator had
+already granted the microphone permission. It passed after
+`simctl privacy <device> reset microphone`.

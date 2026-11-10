@@ -34,7 +34,7 @@ struct PresetBrowserView: View {
             }
             .navigationTitle("Presets")
             .navigationDestination(for: PresetNode.self) { node in
-                PresetFolderView(presets: presets, node: node, onChoose: onChoose)
+                PresetFolderView(presets: presets, node: node, onChoose: onChoose) { dismiss() }
             }
             .searchable(text: $query, prompt: "Presets and authors")
             .task(id: query) {
@@ -73,17 +73,18 @@ struct PresetBrowserView: View {
     }
 
     @ViewBuilder private var searchResults: some View {
+        // First, so it is seen without scrolling past the capped list.
+        if results.truncated {
+            Text("Showing the first \(PresetLibrary.searchLimit) matches. Refine your search to see more.")
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("refineSearch")
+        }
         ForEach(results.groups, id: \.source) { group in
             Section(presets.library?.pack(id: group.source)?.title ?? group.source) {
                 ForEach(group.presets) { preset in
                     PresetRow(presets: presets, preset: preset, showsPack: false) { onChoose(preset, .search(query)) }
                 }
             }
-        }
-        if results.truncated {
-            Text("Showing the first \(PresetLibrary.searchLimit) matches. Refine your search to see more.")
-                .foregroundStyle(.secondary)
-                .accessibilityIdentifier("refineSearch")
         }
         if results.groups.isEmpty {
             Text("No presets match").foregroundStyle(.secondary)
