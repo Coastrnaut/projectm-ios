@@ -96,3 +96,22 @@ The index is now **12,847 presets: the 28 Included plus 12,819 in packs.**
 | En D | 35 |
 
 The store copy, the StoreKit description, the license entries and the UI tests use these counts.
+
+## Update, 2026-11-10 (version 1.1 (2), device automation)
+
+`projectM-iOSTests` now has 44 tests and `projectM-iOSUITests` 27, all passing on an erased iOS 27.2
+simulator, with each test limited to 3 minutes.
+
+- **StoreKit tests:** `LibraryStoreTests` now has 8 tests. A real Ask to Buy purchase in StoreKit's
+  local test environment asks for an Apple Account sign-in, which hung unattended runs. The pending
+  outcome is now tested through `LibraryStore.handle(.pending)`, with the approval delivered later
+  by `SKTestSession.buyProduct`. A cancelled purchase has its own test. The real Ask to Buy sheet is
+  part of the device sandbox run (T239).
+- **New UI tests:** `PresetScrollPerformanceUITests` (SC-103). On the simulator, which is not
+  evidence: All A-Z had 98.1% of frames on time and the largest folder 98.6%.
+- **Device automation:** `scripts/run_device_tests.py` (quickstart Scenarios D and E). A rehearsal
+  on the simulator, also not evidence:
+  - SC-102: max 10.6 ms (search only);
+  - SC-104: 100% of switches under 1 s;
+  - SC-101: 212 ms, over the 150 ms target, so the device result matters;
+  - privacy: zero violations, plus one key that StoreKit writes itself.

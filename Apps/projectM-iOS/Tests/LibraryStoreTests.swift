@@ -56,16 +56,30 @@ final class LibraryStoreTests: XCTestCase {
         if case .failed = store.state {} else { XCTFail("state \(store.state)") }
     }
 
-    func testAskToBuyIsPendingThenApprovalUnlocks() async throws {
-        session.askToBuyEnabled = true
+    /// Ask to Buy: a pending result unlocks nothing; the approval arrives later as a transaction
+    /// outside the purchase call and unlocks while the app runs (FR-108). A real Ask to Buy purchase
+    /// is not used: in StoreKit's local test environment it asks for an Apple Account sign-in,
+    /// which hangs an unattended run. The device sandbox run (T239) covers the real sheet.
+    func testPendingUnlocksNothingThenALaterApprovalUnlocks() async throws {
         let store = await startedStore()
-        await store.purchase()
+        var changes: [Bool] = []
+        store.onEntitlementChange = { changes.append($0) }
+        await store.handle(.pending)
         XCTAssertEqual(store.state, .pending)
+        XCTAssertEqual(store.state.message, "Waiting for approval")
         XCTAssertFalse(store.isUnlocked)
-        let pending = try XCTUnwrap(session.allTransactions().first)
-        try session.approveAskToBuyTransaction(identifier: pending.identifier)
+        _ = try await session.buyProduct(identifier: LibraryStore.productID)   // the approval
         for _ in 0..<50 where !store.isUnlocked { try await Task.sleep(for: .milliseconds(100)) }
         XCTAssertTrue(store.isUnlocked, "approval arriving while the app runs unlocks (FR-108)")
+        XCTAssertEqual(changes, [true])
+    }
+
+    func testCancelUnlocksNothing() async {
+        let store = await startedStore()
+        await store.handle(.userCancelled)
+        XCTAssertEqual(store.state, .cancelled)
+        XCTAssertEqual(store.state.message, "Purchase cancelled")
+        XCTAssertFalse(store.isUnlocked)
     }
 
     func testRefundLocksAgain() async throws {

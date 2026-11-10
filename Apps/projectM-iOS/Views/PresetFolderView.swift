@@ -46,6 +46,9 @@ struct PresetFolderView: View {
         .listSectionIndexVisibility(node.scope == .all ? .visible : .automatic)
         .navigationTitle(node.title)
         .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done", action: onDone) } }
+        #if DEBUG || PROJECTM_AUTOMATION
+        .overlay(alignment: .bottomLeading) { if FrameMeter.isEnabled { FrameMeterLabel() } }   // SC-103 (T238)
+        #endif
     }
 
     private var unlockCount: Int {

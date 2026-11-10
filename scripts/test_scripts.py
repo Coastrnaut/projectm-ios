@@ -22,6 +22,7 @@ import build_projectm_xcframework as bpx  # noqa: E402
 import check_compliance  # noqa: E402
 import generate_gles_loader as ggl  # noqa: E402
 import generate_reference_audio as gra  # noqa: E402
+import run_device_tests as rdt  # noqa: E402
 import validate_docs  # noqa: E402
 import verify_environment  # noqa: E402
 
@@ -705,6 +706,54 @@ class BackgroundModeExceptionTests(unittest.TestCase):
         text = (check_compliance.ROOT / "project.yml").read_text(encoding="utf-8")
         self.assertIn("UIBackgroundModes: [screen-capture]", text)
         self.assertEqual(check_compliance.check_project_yml(check_compliance.ROOT / "project.yml"), [])
+
+class DeviceTestRunnerTests(unittest.TestCase):
+    """run_device_tests.py (feature 002 T238, T239, T241): device mapping, privacy check, size
+    report parsing, SC-103 log lines and verdicts. The device steps themselves need devices."""
+
+    def test_devices_from_listing_maps_models_to_labels(self):
+        listing = {"result": {"devices": [
+            {"identifier": "A", "hardwareProperties": {"productType": "iPhone15,4", "reality": "physical"}},
+            {"identifier": "B", "hardwareProperties": {"productType": "iPad15,7", "reality": "physical"}},
+            {"identifier": "C", "hardwareProperties": {"productType": "iPhone18,3", "reality": "physical"}},
+        ]}}
+        self.assertEqual(rdt.devices_from_listing(listing), {"D1": "A", "D3": "B"})
+
+    def test_privacy_allows_fr065_keys_reports_others(self):
+        keys = ["favorites", "settings.presetScope", "SKTransactionUpdatesLastChecked", "unlocked"]
+        files = ["Documents/automation-privacy-2026.json", "Documents/recording.wav", "tmp/x.bin",
+                 "Library/Caches/org.projectmios.ProjectMiOS/com.apple.metalfe/A/monolithic_metal.pcm"]
+        self.assertEqual(rdt.privacy_problems(files, keys),
+                         ["key not allowed: unlocked", "unexpected file: Documents/recording.wav",
+                          "audio file: Documents/recording.wav", "unexpected file: tmp/x.bin"])
+
+    def test_thinning_report_and_growth(self):
+        old = rdt.parse_thinning_report(
+            "App Thinning Size Report for All Variants of projectM\n\n"
+            "Variant: projectM-1.ipa\nSupported variant descriptors: [device: iPhone15,4, os-version: 26.0]\n"
+            "App + On Demand Resources size: 20 MB compressed, 60 MB uncompressed\n"
+            "App size: 20 MB compressed, 60 MB uncompressed\n\n"
+            "Variant: projectM-2.ipa\nSupported variant descriptors: [device: iPad15,7, os-version: 26.0], "
+            "[device: iPad17,3, os-version: 26.0]\nApp size: 21 MB compressed, 61,5 MB uncompressed\n")
+        self.assertEqual(old, {"iPhone15,4": 60.0})   # an unparseable size is skipped, not guessed
+        new = rdt.parse_thinning_report("Variant: v\n[device: iPhone15,4, os-version: 26.0]\n"
+                                        "App size: 30 MB compressed, 86.5 MB uncompressed\n")
+        self.assertEqual(rdt.size_growth(old, new), {"D1 iPhone15,4": {"oldMB": 60.0, "newMB": 86.5, "growthMB": 26.5}})
+
+    def test_sc103_lines_and_verdicts(self):
+        log = "noise\nSC103 all frames=600 missed=12 onTime=0.9804\nSC103 largest-folder frames=500 missed=40 onTime=0.9259\n"
+        lines = rdt.sc103_lines(log)
+        self.assertEqual(lines["all"], {"frames": 600, "missed": 12, "onTime": 0.9804})
+        with tempfile.TemporaryDirectory() as tmp:
+            d = Path(tmp)
+            (d / "sc103.json").write_text(json.dumps(lines))
+            (d / "sc101.json").write_text(json.dumps([0.02, 0.09]))
+            (d / "automation-sc102-1.json").write_text(json.dumps({"keystrokes": 9, "medianMs": 2.0, "maxMs": 51.0}))
+            (d / "automation-sc104-1.json").write_text(json.dumps({"fractionUnder1s": 0.96, "p95Ms": 800, "picksByPack": {}}))
+            verdicts = {k: ok for k, (ok, _) in rdt.verdicts_for(d).items()}
+        self.assertEqual(verdicts, {"SC-101": True, "SC-102": False, "SC-104": True,
+                                    "SC-103 all": True, "SC-103 largest-folder": False})
+
 
 class ProjectMXCFrameworkTests(unittest.TestCase):
     """T065: the engine build flags (ADR-0004) and the pinned engine version."""

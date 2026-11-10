@@ -76,24 +76,31 @@ final class LibraryStore: EntitlementProviding {
         guard let product else { state = .unavailable; return }
         state = .purchasing
         do {
-            switch try await product.purchase() {
-            case .success(let verification):
-                guard case .verified(let transaction) = verification else {
-                    state = .failed("the purchase could not be verified")
-                    return
-                }
-                await transaction.finish()
-                await refreshEntitlement()
-                state = isUnlocked ? .purchased : .failed("not unlocked")
-            case .userCancelled:
-                state = .cancelled
-            case .pending:
-                state = .pending
-            @unknown default:
-                state = .failed("unknown result")
-            }
+            await handle(try await product.purchase())
         } catch {
             state = .failed(error.localizedDescription)
+        }
+    }
+
+    /// The outcome of a purchase call (FR-107, FR-108). Separate so tests can give it each result:
+    /// StoreKit's local test environment asks for an Apple Account sign-in for a real Ask to Buy
+    /// purchase, which an unattended test cannot answer.
+    func handle(_ result: Product.PurchaseResult) async {
+        switch result {
+        case .success(let verification):
+            guard case .verified(let transaction) = verification else {
+                state = .failed("the purchase could not be verified")
+                return
+            }
+            await transaction.finish()
+            await refreshEntitlement()
+            state = isUnlocked ? .purchased : .failed("not unlocked")
+        case .userCancelled:
+            state = .cancelled
+        case .pending:
+            state = .pending
+        @unknown default:
+            state = .failed("unknown result")
         }
     }
 
@@ -124,8 +131,8 @@ final class LibraryStore: EntitlementProviding {
     }
 }
 
-#if DEBUG
-/// UI tests (`-uitestUnlocked YES|NO`): a fixed entitlement without StoreKit.
+#if DEBUG || PROJECTM_AUTOMATION
+/// UI tests (`-uitestUnlocked YES|NO`) and device automation (AutomationRunner): a fixed entitlement without StoreKit.
 @MainActor
 @Observable
 final class FakeEntitlements: EntitlementProviding {

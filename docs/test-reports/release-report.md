@@ -101,8 +101,7 @@ Before a 1.1 upload:
 
 - The owner creates the in-app purchase (T242).
 - The device tasks run: T238, T239 and T241.
-- `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in `project.yml` are raised; they are still
-  1.0 (1).
+- Version raised to 1.1 (2) on 2026-11-10 (`project.yml`, `Apps/projectM-iOS/Info.plist`).
 - The Release build needs the preset submodules checked out.
 
 The app target was renamed `projectM-iOS`. Later archives are named `projectM-iOS`; the bundle ID

@@ -77,8 +77,7 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
   - The `PresetLibrary` package and StoreKit 2 `LibraryStore` are tested with `SKTestSession`.
   - The app target, scheme and product were renamed `projectM-iOS` (Swift module `projectM_iOS`);
     the bundle ID stays `org.projectmios.ProjectMiOS`.
-  - Open: device tasks T238, T239 and T241; owner task T242; T232 (VoiceOver check of the scope
-    announcement).
+  - Open: device tasks T238, T239 and T241 (automated by `scripts/run_device_tests.py`); owner task T242. Version 1.1 (2); T232's VoiceOver check is not required.
 - Phase B verified on the project Mac 2026-11-09: AudioCore 76, CaptureKit 80, Diagnostics 8 tests
   on the host and the iOS 27.2 and 26.5 simulators; CaptureLab UI tests (3) on iOS 27.2; device
   builds with no warnings. The Linux path (no AVFAudio: linear resampler fallback) is tested on
@@ -145,6 +144,7 @@ python3 scripts/check_compliance.py      # constitution rules
 python3 scripts/verify_environment.py    # toolchain pins (macOS)
 python3 scripts/check_capturelab_export.py --json <export> --expect none   # check a device export
 python3 scripts/make_diagnostic_project.py no-usage-key   # temporary diagnostic build (9002)
+python3 scripts/run_device_tests.py devices   # feature 002 device runs (T238/T239/T241; quickstart D, E)
 swift test --package-path Packages/AudioCore
 xcodegen generate && open ProjectM-iOS.xcodeproj
 ```

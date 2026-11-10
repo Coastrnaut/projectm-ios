@@ -1528,7 +1528,6 @@ Still open:
   (privacy review).
 - The owner: T242 (the in-app purchase in App Store Connect, the Paid Apps agreement, banking and
   tax).
-- A VoiceOver check of the scope announcement (T232).
 
 ---
 

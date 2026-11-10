@@ -91,8 +91,8 @@ final class AppCoordinator: VisualizationControlling {
         self.lifecycle = lifecycle
         // Feature 002: the library (12,941 presets) loads off the main thread (SC-101).
         presets = PresetCoordinator(store: FavoritesStore(defaults: defaults), settings: settings, loader: presetLoader)
-        #if DEBUG
-        entitlements = FakeEntitlements.fromLaunchArguments() ?? LibraryStore()
+        #if DEBUG || PROJECTM_AUTOMATION
+        entitlements = AutomationRunner.entitlementsOverride() ?? FakeEntitlements.fromLaunchArguments() ?? LibraryStore()
         #else
         entitlements = LibraryStore()
         #endif
@@ -225,6 +225,9 @@ final class AppCoordinator: VisualizationControlling {
                 await entitlements.start()
                 await presets.setUnlocked(entitlements.isUnlocked)
                 libraryReady = true
+                #if DEBUG || PROJECTM_AUTOMATION
+                AutomationRunner.libraryReady(self)   // SC-101 (feature 002 T238)
+                #endif
                 selectInitialPresetIfReady()
             } catch {
                 rendererError = "Preset library: \(error)"

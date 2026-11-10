@@ -58,3 +58,6 @@ Apps/*/Info.plist
 
 # Local signing settings (Configs/Signing.xcconfig includes it if present); never committed.
 Configs/Signing.local.xcconfig
+
+# Simulator rehearsals of scripts/run_device_tests.py: never evidence (Constitution X)
+docs/test-reports/exports/feature002/sim/

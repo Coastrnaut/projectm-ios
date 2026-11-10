@@ -171,8 +171,8 @@ targets:
       path: Apps/projectM-iOS/Info.plist
       properties:
         CFBundleDisplayName: projectM
-        CFBundleShortVersionString: "1.0"
-        CFBundleVersion: "1"
+        CFBundleShortVersionString: "1.1"   # feature 002 (full preset library)
+        CFBundleVersion: "2"
         UILaunchScreen: {}
         # R-16 / ADR-0001 ruling 17: the only background mode allowed (capture keeps running while
         # the visualization is paused in the background, FR-050).
