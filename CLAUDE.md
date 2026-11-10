@@ -55,7 +55,7 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
   `docs/projectm-patches.md`). Device evidence from RendererLab sweeps on D1-D3
   (`docs/test-reports/performance.md`, `docs/test-reports/exports/rendererlab/`); owner rulings: no
   10-minute sessions, no quality tiers or flash-limiter measurement for Gate 3. Next: Phase D (US4,
-  T080 onward); T114 runs once the app has a renderer.
+  T080 onward); T114 done with ProjectMiOS.
 - Phase D started 2026-11-09: `ProjectMiOS` (project.yml) runs notice → chooser → full-screen ANGLE
   visualizer with controls; T080, T082, T083, T085, T086 done; T081 (red run not recorded) and T084
   (FR-089 on D1/D2) open; T087 needs the devices and a 240 fps camera. The app's signing team is set

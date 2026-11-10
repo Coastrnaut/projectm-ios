@@ -14,6 +14,7 @@ import ANGLERendering
 import AudioCore
 import CaptureKit
 import CaptureUI
+import Diagnostics
 import Foundation
 import Observation
 import Rendering
@@ -61,7 +62,7 @@ final class AppCoordinator {
             ScreenCaptureSource.makeDefault(),
             microphone,
             InAppPlaybackSource(backend: AVInAppPlaybackBackend()),
-        ])
+        ], signposts: DiagnosticsLog.pipeline)   // latency stages (T062, T114)
         self.manager = manager
         let lifecycle = LifecycleObserver()
         self.lifecycle = lifecycle
@@ -69,6 +70,14 @@ final class AppCoordinator {
             for await event in lifecycle.events { await manager.handle(event) }
         }
         loadPresets()
+        #if DEBUG
+        // Debug builds only, for traces and test runs: `-autostart inAppPlayback` (or another
+        // AudioSourceMode raw value) skips the notice and starts that source.
+        if let raw = defaults.string(forKey: "autostart"), let mode = AudioSourceMode(rawValue: raw) {
+            screen = .chooser
+            Task { @MainActor in self.start(mode) }
+        }
+        #endif
     }
 
     deinit {

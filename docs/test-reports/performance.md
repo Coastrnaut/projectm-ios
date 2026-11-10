@@ -40,6 +40,18 @@ delivery figures need a device trace before anyone draws a conclusion from them.
 **Owner rulings 2026-11-09:** T062 is closed on these two stages; points carrying the measured
 ms are accepted for delivery and residency; the residency trace is T114 in Phase C.
 
+### All three stages with the visualizer (task T114)
+
+2026-11-09, iOS 27.2 simulator (not device evidence): ProjectMiOS (Debug, `-autostart inAppPlayback`)
+with `CaptureManager` passing `DiagnosticsLog.pipeline`, recorded with `xctrace record --template
+Logging` for 25 s while the ANGLE renderer drained `normalizedOutput`:
+
+| Stage | Signpost | Count | Value |
+|-------|----------|-------|-------|
+| Ring + conversion | interval | 226 | — |
+| Capture delivery | point | 88 | median 85.8 ms, max 87.3 ms (simulator In-App Playback tap; see T062 note) |
+| Normalized residency | point | 61 | median 36.9 ms, **max 50.0 ms** (freshness rule cap) |
+
 ## Plan Phase B exit (task T063)
 
 Run 2026-11-09 on D1 (iPhone 15, `iPhone15,4`, iOS 27.0.1), CaptureLab build 2, Debug
