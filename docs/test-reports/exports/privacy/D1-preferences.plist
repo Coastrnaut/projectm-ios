@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>favorites</key>
+	<array>
+		<string>frontend-uwp/EoS - pointfield 04 arcs demon_phat edit_v3.milk</string>
+	</array>
+	<key>lastPresetID</key>
+	<string>frontend-uwp/Fvese - Snowflake Like 2.milk</string>
+	<key>notice.photosensitivityAcknowledged</key>
+	<true/>
+	<key>settings.performanceOverlay</key>
+	<true/>
+	<key>settings.reduceFlashing</key>
+	<true/>
+</dict>
+</plist>

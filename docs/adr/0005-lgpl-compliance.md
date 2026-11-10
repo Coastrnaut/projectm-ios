@@ -94,3 +94,61 @@ is recommended for the final conclusion (T109).
 Stage 2 engineering may proceed once T056 records "go", on the conditions in "Proposed preliminary
 conclusion" above. Condition 1 is met by the MIT decision (option A); conditions 2 (RI-010) and 3
 (legal opinion) remain for the final conclusion (T109).
+
+## Proposed final conclusion (T109) — awaiting owner approval
+
+> Draft 2026-11-10 for the project owner (owner chose "draft go, owner approves"). Engineering
+> analysis, not legal advice; the owner did not require a legal opinion. It becomes the final
+> conclusion only when the owner records approval here.
+
+**Proposed status: go** for App Store release of ProjectMiOS, on the measures below.
+
+### RI-007: LGPL-2.1 obligations in an App Store app
+
+| LGPL-2.1 obligation | How the release meets it |
+|---------------------|--------------------------|
+| §6: users can modify the library and relink the app against it | Option A: the whole app is public under MIT (`LICENSE`, https://github.com/Coastrnaut/projectm-ios). Anyone can change the engine (`Vendor/projectM`), run `scripts/build_projectm_xcframework.py`, and build and install the app with their own signing. The engine also ships as a separate dynamic framework (`projectM-4.framework`, ADR-0004) |
+| §6: corresponding source of the library, including changes | The engine source is the owner's fork, branch `ios`, at the pinned commit; every iOS change is an upstream-ready commit listed in `docs/projectm-patches.md`. The Licenses screen names the repository and commit (`lgplNote`, `scripts/collect_licenses.py`) |
+| §6: prominent notice and the license text | The Licenses screen (FR-067, T103) lists libprojectM with the full LGPL-2.1 text and the projectM copyright notice |
+| §10: no further restrictions on recipients | See below |
+
+**§10 and the App Store terms.** Apple's standard EULA limits copying and use of the app as
+distributed. The concern is that this restricts rights the LGPL grants. Measures:
+
+1. **Custom EULA** in App Store Connect (App Information › License Agreement) that keeps Apple's
+   required terms and adds: "Open-source components are licensed to you under their own licenses
+   (shown in the app under Settings › Licenses). Nothing in this agreement limits your rights under
+   those licenses, including the GNU Lesser General Public License v2.1 for libprojectM." Draft:
+   `docs/release/eula.md` (to be written in T112 if this is approved).
+2. **Nothing is withheld**: the complete source of the app and the engine is public, so users do
+   not depend on the App Store copy to exercise any LGPL right.
+3. **Precedent**: LGPL-licensed libraries ship in App Store apps; VideoLAN relicensed libVLC from
+   GPL to LGPL in 2012 so VLC for iOS could return to the App Store. This is context, not a ruling.
+
+### RI-010: upstream's App Store warning
+
+The upstream projectM team was not asked (owner choice). Both candidate reasons are addressed:
+
+- **Licensing**: as above.
+- **Executing code** (App Review Guideline 2.5.2): presets contain expressions that projectm-eval
+  evaluates. Only bundled, reviewed presets ship (FR-047, `Presets/LICENSES.md`); there is no
+  download, import or network access (FR-068), so the app's behavior cannot change after review.
+  App Review note for submission: "Visual presets are data files bundled with the app and reviewed
+  for licensing. The visualization engine interprets their math expressions to draw graphics; the
+  app downloads no code or presets and has no network access."
+
+### Other components
+
+All other bundled components (ADR-0004 tables: glad, glm, hlslparser, projectm-eval, stb_image,
+ANGLE and its compiled-in code, presets, reference audio) need attribution only; their texts are
+on the Licenses screen.
+
+### Residual risk
+
+- Apple or a copyright holder could still take a different view of §10. Mitigation: the custom
+  EULA, full public source, and the presets policy (remove on request). If a holder objects, the
+  release is withdrawn until resolved.
+- A legal opinion was recommended (preliminary conclusion, condition 3) and is waived by this
+  draft; the owner's approval records that choice.
+
+**Owner approval**: _pending_.
