@@ -60,4 +60,6 @@ Rules:
 - [ ] iOS CMake flags confirmed by a CI build (RI-011). Built on the project Mac 2026-11-09 (T065); CI is T066.
 - [ ] LGPL-2.1 / App Store review written as ADR-0005 (RI-007). Preliminary conclusion before Stage
       2; final before release.
-- [ ] Preset pack licenses reviewed (RI-008).
+- [x] Preset pack licenses reviewed (RI-008): 28 presets from the owner's `frontend-uwp` fork at
+      `82c468e`, license basis `LicenseRef-Milkdrop-PublicDomain-Assumed` (owner decision
+      2026-11-09; `Apps/ProjectMiOS/Resources/Presets/LICENSES.md`).

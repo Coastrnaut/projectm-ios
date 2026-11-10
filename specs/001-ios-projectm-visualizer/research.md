@@ -195,7 +195,11 @@ Renderer/Platform/GLResolver.cpp).
   synthesized in-house (generated tones, clicks, and beat pattern), giving full rights and a
   deterministic signal for SC-006.
 - **Rationale**: FR-006/FR-047. An in-house track also gives the click impulses SC-006 needs.
-- **Verification pending**: License review of the candidate preset packs.
+- **Owner decisions 2026-11-09 (T073)**: the starter presets come from the owner's fork
+  `Coastrnaut/frontend-uwp` (commit `82c468e`); their license is recorded as
+  `LicenseRef-Milkdrop-PublicDomain-Assumed`, projectM's own basis for Milkdrop presets (released
+  freely, assumed public domain, removed if an author objects). Details in
+  `Apps/ProjectMiOS/Resources/Presets/LICENSES.md`.
 
 ## R-10 Engine packaging and LGPL-2.1 (RI-007)
 
