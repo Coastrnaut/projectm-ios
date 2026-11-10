@@ -66,6 +66,7 @@ public final class GLESRenderer: NSObject, VisualizerRenderer {
         guard let context = EAGLContext(api: .openGLES3) else { throw RendererError.contextUnavailable }
         guard EAGLContext.setCurrent(context) else { throw RendererError.contextUnavailable }
         let engine = try ProjectMEngine(glLoader: PMAppleGLESLoadProc, userData: nil)
+        engine.softCutDuration = presetBlendSeconds   // FR-043 / T091: blend at most 2 s
         return GLESRenderer(context: context, engine: engine)
     }
 

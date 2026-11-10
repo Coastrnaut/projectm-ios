@@ -55,7 +55,7 @@ struct VisualizerView: View {
         .statusBarHidden(coordinator.hidesSystemOverlays)
         .persistentSystemOverlays(coordinator.hidesSystemOverlays ? .hidden : .automatic)
         .sheet(isPresented: $coordinator.showPresetBrowser) {
-            PresetListSheet(coordinator: coordinator)
+            PresetBrowserView(presets: coordinator.presets) { coordinator.choose($0) }
         }
         .sheet(isPresented: $coordinator.showSettings) {
             SettingsSheet()
@@ -70,8 +70,8 @@ struct VisualizerView: View {
                 .padding(12)
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
         }
-        if coordinator.presetFailed {
-            Text("Preset could not be loaded")
+        if let failure = coordinator.presets.failureMessage {
+            Text(failure)
                 .padding(10)
                 .background(.regularMaterial, in: Capsule())
                 .accessibilityIdentifier("presetFailedBanner")
@@ -105,33 +105,6 @@ struct RendererHost: UIViewRepresentable {
     let renderer: any VisualizerRenderer
     func makeUIView(context: Context) -> UIView { renderer.view }
     func updateUIView(_ uiView: UIView, context: Context) {}
-}
-
-/// A minimal preset list until the full browser (T090): alphabetical, closes on selection.
-struct PresetListSheet: View {
-    let coordinator: AppCoordinator
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            List(coordinator.presets) { preset in
-                Button {
-                    coordinator.choose(preset)
-                } label: {
-                    HStack {
-                        Text(preset.name).foregroundStyle(.primary)
-                        Spacer()
-                        if preset == coordinator.currentPreset {
-                            Image(systemName: "checkmark").accessibilityLabel("Current preset")
-                        }
-                    }
-                }
-            }
-            .navigationTitle("Presets")
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
-        }
-        .accessibilityIdentifier("presetBrowser")
-    }
 }
 
 /// Settings until T103 adds its contents (performance overlay, Reduce flashing, Licenses).

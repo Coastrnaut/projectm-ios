@@ -55,6 +55,9 @@ NS_SWIFT_NAME(ProjectMEngine)
 /// preset keeps running (FR-045).
 - (BOOL)loadPresetAtPath:(NSString *)path smooth:(BOOL)smooth error:(NSError **)error;
 
+/// Length of the blend into a newly loaded preset, in seconds (projectm_set/get_soft_cut_duration).
+@property (nonatomic) double softCutDuration;
+
 /// Renders one frame into the framebuffer object `fbo` (projectm_opengl_render_frame_fbo).
 - (void)renderFrameToFramebuffer:(uint32_t)fbo;
 

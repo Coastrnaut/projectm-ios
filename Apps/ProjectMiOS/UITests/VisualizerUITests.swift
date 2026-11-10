@@ -104,6 +104,33 @@ final class VisualizerUITests: XCTestCase {
         XCTAssertTrue(explainer.waitForExistence(timeout: 5), "explainer before the permission prompt (FR-005)")
     }
 
+    /// T090 (FR-043, FR-044, FR-088): alphabetical browser, favorites filter and empty state, a star
+    /// adds a favorite, and choosing a preset closes the browser and shows its name.
+    func testPresetBrowser() {
+        startInAppPlayback()
+        app.buttons["presets"].tap()
+        let browser = app.navigationBars["Presets"]
+        XCTAssertTrue(browser.waitForExistence(timeout: 5))
+        let names = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'preset:'")).allElementsBoundByIndex
+            .map { String($0.identifier.dropFirst("preset:".count)) }
+        XCTAssertGreaterThanOrEqual(names.count, 2)
+        XCTAssertEqual(names, names.sorted { $0.localizedStandardCompare($1) == .orderedAscending }, "alphabetical")
+
+        app.segmentedControls.buttons["Favorites"].tap()
+        XCTAssertTrue(app.staticTexts["No favorites yet — tap the star on a preset to add one."].waitForExistence(timeout: 3))
+        app.segmentedControls.buttons["All"].tap()
+        let pick = names[1]
+        app.buttons["star:\(pick)"].tap()
+        app.segmentedControls.buttons["Favorites"].tap()
+        XCTAssertTrue(app.buttons["preset:\(pick)"].waitForExistence(timeout: 3), "the starred preset is a favorite")
+        app.buttons["preset:\(pick)"].tap()
+        XCTAssertTrue(browser.waitForNonExistence(timeout: 3), "the browser closes on selection")
+        let current = app.staticTexts["currentPreset"]
+        XCTAssertTrue(current.waitForExistence(timeout: 5))
+        let shown = NSPredicate(format: "label == %@", pick)
+        XCTAssertEqual(XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: shown, object: current)], timeout: 5), .completed)
+    }
+
     func testPauseDimsAndLabels() {
         startInAppPlayback()
         app.buttons["pauseResume"].tap()

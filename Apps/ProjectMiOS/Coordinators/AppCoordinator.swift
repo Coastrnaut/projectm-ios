@@ -26,7 +26,6 @@ final class AppCoordinator {
     enum Screen: Equatable { case notice, chooser, visualizer }
 
     static let noticeKey = "notice.photosensitivityAcknowledged"
-    static let lastPresetKey = "lastPresetID"
     static let controlsAutoHide: Duration = .seconds(5)
 
     private(set) var screen: Screen
@@ -35,9 +34,9 @@ final class AppCoordinator {
     var showMicrophoneExplainer = false
     private(set) var renderer: (any VisualizerRenderer)?
     private(set) var rendererError: String?
-    private(set) var presets: [Preset] = []
-    private(set) var currentPreset: Preset?
-    private(set) var presetFailed = false
+    /// Preset browsing and switching (T090, T091).
+    let presets: PresetCoordinator
+    @ObservationIgnored private let presetLoader = RendererPresetLoader()
     private(set) var controlsVisible = true
     private(set) var userPaused = false
     private(set) var appIsActive = true
@@ -55,6 +54,8 @@ final class AppCoordinator {
         self.defaults = defaults
         if ProcessInfo.processInfo.arguments.contains("-uitestResetNotice") {
             defaults.removeObject(forKey: Self.noticeKey)
+            defaults.removeObject(forKey: FavoritesStore.favoritesKey)
+            defaults.removeObject(forKey: FavoritesStore.lastPresetKey)
         }
         screen = defaults.bool(forKey: Self.noticeKey) ? .chooser : .notice
         microphone = MicrophoneSource(backend: AVMicrophoneBackend())
@@ -69,7 +70,12 @@ final class AppCoordinator {
         lifecycleForwarding = Task { @MainActor in
             for await event in lifecycle.events { await manager.handle(event) }
         }
-        loadPresets()
+        var bundled: [Preset] = []
+        if let folder = Bundle.main.resourceURL?.appendingPathComponent("Presets"),
+           let catalog = try? PresetRepository(presetsFolder: folder).load() {
+            bundled = catalog.presets
+        }
+        presets = PresetCoordinator(presets: bundled, store: FavoritesStore(defaults: defaults), loader: presetLoader)
         #if DEBUG
         // Debug builds only, for traces and test runs: `-autostart inAppPlayback` (or another
         // AudioSourceMode raw value) skips the notice and starts that source.
@@ -154,7 +160,10 @@ final class AppCoordinator {
             renderer = try? GLESRenderer.make()
         }
         renderer?.attach(pcm: manager.normalizedOutput)
-        if let preset = currentPreset ?? presets.first { load(preset) }
+        presetLoader.renderer = renderer
+        if let preset = presets.current ?? presets.initialPreset {
+            Task { await presets.select(preset) }
+        }
     }
 
     func togglePause() {
@@ -164,54 +173,14 @@ final class AppCoordinator {
         showControls()
     }
 
-    func next() { step(by: 1) }
-    func previous() { step(by: -1) }
-
-    func random() {
-        guard presets.count > 1 else { return }
-        var candidate = presets.randomElement()
-        while candidate == currentPreset { candidate = presets.randomElement() }
-        if let candidate { load(candidate) }
-        showControls()
-    }
+    func next() { showControls(); Task { await presets.next() } }
+    func previous() { showControls(); Task { await presets.previous() } }
+    func random() { showControls(); Task { await presets.random() } }
 
     func choose(_ preset: Preset) {
         showPresetBrowser = false
-        load(preset)
         showControls()
-    }
-
-    private func step(by delta: Int) {
-        guard !presets.isEmpty else { return }
-        let index = currentPreset.flatMap { presets.firstIndex(of: $0) } ?? 0
-        load(presets[(index + delta + presets.count) % presets.count])
-        showControls()
-    }
-
-    /// FR-045: a failed load keeps the previous preset and shows "Preset could not be loaded".
-    private func load(_ preset: Preset) {
-        guard let renderer else {
-            currentPreset = preset
-            return
-        }
-        Task {
-            do {
-                try await renderer.setPreset(preset)
-                currentPreset = preset
-                presetFailed = false
-                defaults.set(preset.id, forKey: Self.lastPresetKey)
-            } catch {
-                presetFailed = true
-            }
-        }
-    }
-
-    private func loadPresets() {
-        guard let folder = Bundle.main.resourceURL?.appendingPathComponent("Presets"),
-              let catalog = try? PresetRepository(presetsFolder: folder).load() else { return }
-        presets = catalog.presets
-        let last = defaults.string(forKey: Self.lastPresetKey)
-        currentPreset = presets.first { $0.id == last } ?? presets.first
+        Task { await presets.select(preset) }
     }
 
     // MARK: - Controls and lifecycle
@@ -261,5 +230,16 @@ final class AppCoordinator {
     var hidesSystemOverlays: Bool {
         guard screen == .visualizer, !controlsVisible else { return false }
         return manager.activeMode == .inAppPlayback
+    }
+}
+
+/// Loads presets into whichever renderer the app created (PresetLoading for PresetCoordinator).
+@MainActor
+final class RendererPresetLoader: PresetLoading {
+    var renderer: (any VisualizerRenderer)?
+
+    func load(_ preset: Preset) async throws {
+        guard let renderer else { throw CocoaError(.featureUnsupported) }
+        try await renderer.setPreset(preset)
     }
 }

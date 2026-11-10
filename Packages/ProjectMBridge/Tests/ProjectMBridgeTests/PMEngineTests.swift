@@ -69,6 +69,12 @@ final class PMEngineTests: XCTestCase {
 
     // MARK: - Engine
 
+    func testSoftCutDurationIsSettable() throws {
+        let engine = try makeEngine()
+        engine.softCutDuration = 2
+        XCTAssertEqual(engine.softCutDuration, 2, accuracy: 0.001)
+    }
+
     func testMaxSamplesPerFrameIsPositive() {
         XCTAssertGreaterThan(ProjectMEngine.maxSamplesPerFrame, 0)
     }

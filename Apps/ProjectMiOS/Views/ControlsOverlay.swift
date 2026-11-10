@@ -31,7 +31,7 @@ struct ControlsOverlay: View {
     }
 
     private var presetName: some View {
-        Text(coordinator.currentPreset?.name ?? "No preset")
+        Text(coordinator.presets.current?.name ?? "No preset")
             .font(.subheadline)
             .lineLimit(1)
             .truncationMode(.middle)

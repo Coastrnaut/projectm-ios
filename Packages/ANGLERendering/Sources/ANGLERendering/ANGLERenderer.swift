@@ -93,6 +93,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer {
             throw ANGLERendererError.surfaceUnavailable(eglGetError())
         }
         let engine = try ProjectMEngine(glLoader: PMANGLELoadProc, userData: nil)
+        engine.softCutDuration = presetBlendSeconds   // FR-043 / T091: blend at most 2 s
         return ANGLERenderer(display: display, config: config, context: context, placeholder: placeholder, engine: engine)
     }
 

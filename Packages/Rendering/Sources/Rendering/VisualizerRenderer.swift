@@ -6,6 +6,9 @@
 import AudioCore
 import UIKit
 
+/// The blend into a newly selected preset (T091: at most 2 s).
+public let presetBlendSeconds: Double = 2
+
 @MainActor
 public protocol VisualizerRenderer: AnyObject {
     /// Hosted by SwiftUI through UIViewRepresentable.
