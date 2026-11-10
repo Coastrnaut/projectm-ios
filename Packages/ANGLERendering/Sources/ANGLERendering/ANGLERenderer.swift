@@ -10,7 +10,8 @@
 //   surface's default framebuffer (0), then eglSwapBuffers.
 // * Reduce flashing (FR-072, T104): the engine renders into FlashLimiter's offscreen texture and the
 //   limiter draws the frame with its mean luminance changing at most `flashLimitPerSecond`.
-// * Everything runs on the main thread, the engine's render thread.
+// * Everything runs on the main thread, the engine's render thread, except PresetPrewarmer
+//   (feature 002 SC-104), which warms upcoming presets on its own thread and context.
 import AudioCore
 import CANGLE
 import CFlashLimiter
@@ -59,6 +60,11 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer {
     private var meter = FrameRateMeter()
     private var paused = false
     private var observers: [NSObjectProtocol] = []
+    /// Feature 002 SC-104: upcoming presets' pipelines are built in the background (PresetPrewarmer).
+    public var prewarmEnabled = true
+    private var texturePaths: [String] = []
+    private lazy var prewarmer = PresetPrewarmer(display: display, config: config)
+    private var prewarmerStarted = false
 
     private init(display: EGLDisplay, config: EGLConfig, context: EGLContext, placeholder: EGLSurface,
                  engine: ProjectMEngine) {
@@ -111,6 +117,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer {
     }
 
     isolated deinit {
+        if prewarmerStarted { prewarmer.stop() }
         displayLink?.invalidate()
         for observer in observers { NotificationCenter.default.removeObserver(observer) }
         eglMakeCurrent(display, placeholder, placeholder, context)
@@ -143,8 +150,18 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer {
     public func setTextureSearchPaths(_ paths: [URL]) {
         guard let engine else { return }
         makeCurrent()
-        engine.setTextureSearchPaths(paths.map(\.path))
+        texturePaths = paths.map(\.path)
+        engine.setTextureSearchPaths(texturePaths)
     }
+
+    public func prewarm(_ presets: [Preset]) {
+        guard prewarmEnabled, !presets.isEmpty else { return }
+        prewarmerStarted = true
+        prewarmer.request(presets, texturePaths: texturePaths)
+    }
+
+    /// Presets whose pipelines were built in the background (tests and automation reports).
+    public var prewarmedCount: Int { prewarmerStarted ? prewarmer.warmedCount : 0 }
 
     public func pause() {
         paused = true

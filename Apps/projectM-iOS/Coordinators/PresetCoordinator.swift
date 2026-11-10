@@ -22,6 +22,12 @@ import PresetLibrary
 @MainActor
 protocol PresetLoading: AnyObject {
     func load(_ preset: IndexedPreset) async throws
+    /// Presets likely to be chosen next, for the renderer to warm up (SC-104). Optional.
+    func prewarm(_ presets: [IndexedPreset])
+}
+
+extension PresetLoading {
+    func prewarm(_ presets: [IndexedPreset]) {}
 }
 
 @MainActor
@@ -44,6 +50,9 @@ final class PresetCoordinator {
     /// Bumped on every favorite change so views refresh.
     private(set) var favoritesVersion = 0
     private(set) var excludedThisSession: Set<String> = []
+    /// The next Random pick, chosen in advance so the renderer can warm it up (SC-104). Chosen
+    /// uniformly from the scope, never the current preset (FR-117, SC-106).
+    private(set) var plannedRandom: IndexedPreset?
 
     @ObservationIgnored private let store: FavoritesStore
     @ObservationIgnored private let settings: AppSettings
@@ -163,6 +172,7 @@ final class PresetCoordinator {
             current = preset
             failureMessage = nil
             store.lastPresetID = preset.id
+            planUpcoming()
         } catch {
             failureMessage = Self.failureText
             excludedThisSession.insert(preset.id)
@@ -173,9 +183,28 @@ final class PresetCoordinator {
     func previous() async { await step(-1) }
 
     func random() async {
-        var generator = SystemRandomNumberGenerator()
-        guard let pick = ScopeStepper.random(members, excluding: current, using: &generator), pick != current else { return }
+        let scopeMembers = members
+        var pick = plannedRandom
+        if pick == nil || pick == current || !scopeMembers.contains(pick!) {
+            var generator = SystemRandomNumberGenerator()
+            pick = ScopeStepper.random(scopeMembers, excluding: current, using: &generator)
+        }
+        guard let pick, pick != current else { return }
         await select(pick)
+    }
+
+    /// After each switch: choose the next Random pick and ask the renderer to warm it and the next
+    /// and previous presets in the scope (SC-104). Random first, then Next, then Previous.
+    private func planUpcoming() {
+        let scopeMembers = members
+        var generator = SystemRandomNumberGenerator()
+        plannedRandom = ScopeStepper.random(scopeMembers, excluding: current, using: &generator)
+        var upcoming: [IndexedPreset] = []
+        for candidate in [plannedRandom, ScopeStepper.step(scopeMembers, from: current, by: 1),
+                          ScopeStepper.step(scopeMembers, from: current, by: -1)] {
+            if let candidate, candidate != current, !upcoming.contains(candidate) { upcoming.append(candidate) }
+        }
+        loader.prewarm(upcoming)
     }
 
     private func step(_ delta: Int) async {
@@ -191,6 +220,7 @@ final class PresetCoordinator {
     private func setScope(_ newScope: PresetScope) {
         guard newScope != scope else { return }
         scope = newScope
+        plannedRandom = nil   // planned for the old scope
         settings.presetScope = newScope.storageValue
         if let library { scopeAnnouncer?("\(library.title(of: newScope)), \(members.count) presets") }
     }

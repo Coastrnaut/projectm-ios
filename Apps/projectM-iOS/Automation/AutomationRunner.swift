@@ -22,8 +22,10 @@
 //   sc102   times PresetLibrary.search for every prefix of typed words, 3 rounds (the in-memory
 //           search per keystroke; the list redraw is not included). Report: automation-sc102-*.json.
 //   sc104   with the library unlocked (fixed entitlement, no StoreKit): In-App Playback, scope All,
-//           200 × Random across all packs: request to the new preset's first presented frame, and
-//           each pick's pack; then exits. Report: automation-sc104-*.json.
+//           200 × Random across all packs, 3 s apart (a person stays on a preset for seconds;
+//           the renderer warms upcoming presets meanwhile): request to the new preset's first
+//           presented frame, the load time, and each pick; then exits. PROJECTM_PREWARM=0 turns
+//           the warm-up off for comparison. Report: automation-sc104-*.json.
 //   entitlement
 //           the real StoreKit store: waits for the library, then records the entitlement, purchase
 //           state, price, scope and whether a pack preset plays. Run after a sandbox
@@ -32,6 +34,7 @@
 //           settings, a scope), then records the app's own UserDefaults keys and exits; the Mac
 //           script then lists the app container (T241).
 #if DEBUG || PROJECTM_AUTOMATION
+import ANGLERendering
 import AudioCore
 import AVFAudio
 import CaptureKit
@@ -160,6 +163,8 @@ enum AutomationRunner {
         coordinator.select(.inAppPlayback)
         try? await Task.sleep(for: .seconds(3))
         guard let renderer = coordinator.renderer else { return write("sc104", ["error": "no renderer"]) }
+        let prewarm = ProcessInfo.processInfo.environment["PROJECTM_PREWARM"] != "0"
+        (renderer as? ANGLERenderer)?.prewarmEnabled = prewarm
         let presets = coordinator.presets
         await presets.select(first, in: .all)
         try? await Task.sleep(for: .seconds(1))
@@ -181,11 +186,12 @@ enum AutomationRunner {
             samples.append(Date().timeIntervalSince(start) * 1000)
             picks.append(presets.current?.id ?? "none")
             packs[presets.current?.source ?? "none", default: 0] += 1
-            try? await Task.sleep(for: .milliseconds(300))
+            try? await Task.sleep(for: .seconds(3))
         }
         let sorted = samples.sorted()
         write("sc104", [
-            "scope": presets.scopeLine, "samplesMs": samples, "loadMs": loadMs, "picks": picks, "picksByPack": packs,
+            "scope": presets.scopeLine, "prewarm": prewarm, "dwellSeconds": 3,
+            "prewarmedCount": (renderer as? ANGLERenderer)?.prewarmedCount ?? 0, "samplesMs": samples, "loadMs": loadMs, "picks": picks, "picksByPack": packs,
             "medianMs": sorted[sorted.count / 2], "p95Ms": sorted[Int(Double(sorted.count) * 0.95) - 1],
             "fractionUnder1s": Double(samples.filter { $0 < 1000 }.count) / Double(samples.count),
             "loadFailures": failures, "blendSeconds": 2,

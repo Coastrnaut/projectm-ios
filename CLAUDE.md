@@ -79,8 +79,8 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
     the bundle ID stays `org.projectmios.ProjectMiOS`.
   - T238 measured on D1-D3 2026-11-10 (`docs/test-reports/performance.md`):
     - all criteria pass;
-    - SC-104 is borderline on D1: 96%, after 92% in an earlier run, against the 95% target. Shader
-      compiles on a preset's first frame cause it.
+    - SC-104 was borderline because shader compiles delayed a preset's first frame. Warming upcoming
+      presets in the background (`PresetPrewarmer`) brought it to 99% on D1 (median 109 ms).
   - Open: T239 and T241 (automated by `scripts/run_device_tests.py`; T239 needs T242 first); owner
     task T242. Version 1.1 (2); T232's VoiceOver check is not required.
 - Phase B verified on the project Mac 2026-11-09: AudioCore 76, CaptureKit 80, Diagnostics 8 tests
@@ -378,4 +378,12 @@ agent-driven. Copy this section into a new repository's CLAUDE.md and adjust the
 - Write build-time data already in display order: Swift's sort is a timsort, so already-sorted
   input costs about one comparison per item. Index load on D1 went from 157 ms to 106 ms.
 - Engine-heavy work (shader compiles on a preset's first frame) dominates preset switch times.
-  Measure the load and the first frame separately.
+  Measure the load and the first frame separately, with realistic gaps between switches.
+- ANGLE on Metal creates pipelines synchronously on first draw. To hide that:
+  1. Choose the next picks in advance (keep Random uniform and never a repeat).
+  2. Render them once on a background thread with its own unshared EGL context and engine, into
+     a target of the window's pixel format.
+  3. Metal's caches then make the visible switch cheap: 99% of switches under 1 s instead of 97%,
+     and the median fell from 191 ms to 109 ms.
+- Script device runs to survive locks: devicectl reports "Locked" only in its `--json-output`, so
+  retry launches for a while and tell the owner to set Auto-Lock to Never.

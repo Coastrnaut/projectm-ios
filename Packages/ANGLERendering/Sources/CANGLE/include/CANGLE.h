@@ -79,3 +79,11 @@ void PMANGLEFinish(void);
 
 
 #endif
+
+/// Feature 002 SC-104 (preset warm-up): a framebuffer with one BGRA8 color texture, the window
+/// surface's format, so pipelines built while warming match the visible ones. Returns the
+/// framebuffer (0 on failure) and writes the texture to `textureOut`. Needs a current context.
+unsigned int PMANGLECreateBGRAFramebuffer(int width, int height, unsigned int *_Nonnull textureOut);
+
+/// Deletes a framebuffer and texture from PMANGLECreateBGRAFramebuffer.
+void PMANGLEDeleteFramebuffer(unsigned int framebuffer, unsigned int texture);

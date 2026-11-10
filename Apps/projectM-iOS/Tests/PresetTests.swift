@@ -27,10 +27,12 @@ final class PresetTests: XCTestCase {
     final class FakeLoader: PresetLoading {
         var failing: Set<String> = []
         var loaded: [String] = []
+        var prewarmed: [[String]] = []
         func load(_ preset: IndexedPreset) async throws {
             if failing.contains(preset.id) { throw CocoaError(.fileReadCorruptFile) }
             loaded.append(preset.id)
         }
+        func prewarm(_ presets: [IndexedPreset]) { prewarmed.append(presets.map(\.name)) }
     }
 
     private static func record(_ id: String, _ name: String, _ source: String, _ folder: [String] = []) -> [String: Any] {
@@ -127,6 +129,28 @@ final class PresetTests: XCTestCase {
             await coordinator.random()
             XCTAssertNotEqual(coordinator.current, before)
             XCTAssertTrue(coordinator.current?.isIncluded == true, "never a locked preset")
+        }
+    }
+
+    /// SC-104: after each switch the planned Random pick, then Next and Previous, are warmed; Random
+    /// then plays the planned pick, which is never the current preset (SC-106).
+    func testUpcomingPresetsAreWarmedAndRandomPlaysThePlannedPick() async throws {
+        let loader = FakeLoader()
+        let coordinator = makeCoordinator(try library(included: ["a", "b", "c", "d", "e"]), loader: loader)
+        await coordinator.select(coordinator.members[2])   // "c"
+        let planned = try XCTUnwrap(coordinator.plannedRandom)
+        XCTAssertNotEqual(planned.name, "c")
+        let warmed = try XCTUnwrap(loader.prewarmed.last)
+        XCTAssertEqual(warmed.first, planned.name, "the planned Random pick first")
+        XCTAssertTrue(warmed.contains("d") && warmed.contains("b"), "Next and Previous")
+        XCTAssertEqual(Set(warmed).count, warmed.count, "no duplicates")
+        XCTAssertFalse(warmed.contains("c"), "never the current preset")
+        await coordinator.random()
+        XCTAssertEqual(coordinator.current, planned)
+        for _ in 0..<200 {
+            let before = coordinator.current
+            await coordinator.random()
+            XCTAssertNotEqual(coordinator.current, before)
         }
     }
 

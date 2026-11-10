@@ -259,3 +259,38 @@ Automated with `scripts/run_device_tests.py` (quickstart Scenario D). Reports:
 - **SC-108** compares Xcode's App Thinning Size Reports (`-exportArchive`,
   `<thin-for-all-variants>`) of the 1.0 (1) archive and a 1.1 (2) archive: the uncompressed app
   size per device model.
+
+### SC-104 fix: warming up upcoming presets (2026-11-10)
+
+**Cause.** On ANGLE's Metal backend, Metal render pipelines are created synchronously on the first
+draw that needs them. For heavy presets that blocked the render thread for about a second after
+the load.
+
+**Fix.** `PresetPrewarmer` (`Packages/ANGLERendering`) warms presets before they are chosen:
+- After each switch, `PresetCoordinator` chooses the next Random pick in advance. It is uniform
+  over the scope and never the current preset (SC-106).
+- The renderer warms that pick, then Next and Previous. Warming means rendering each preset twice
+  on a background thread at utility priority. That thread has its own unshared EGL context, its own
+  engine instance and a 256 × 256 BGRA8 target, the window surface's format.
+- ANGLE's Metal library cache and Metal's pipeline cache then hold the compiled shaders, so the
+  visible switch no longer waits for them.
+
+**Run.** D1, measurement build 1.1 (2). 200 Random picks across all packs, 3 s apart; a person
+stays on a preset for seconds, and the warm-up needs that time.
+
+| | Warm-up on | Warm-up off (`PROJECTM_PREWARM=0`) |
+|---|---|---|
+| First frame under 1 s | **99%** (2 of 200 over) | 97% (6 over) |
+| Median | 109 ms | 191 ms |
+| p95 | 630 ms | 942 ms |
+| Max | 1,525 ms | 1,223 ms |
+
+**Result: SC-104 now passes with headroom: 99% against the 95% target.**
+
+- **Remaining slow picks:** the two picks over 1 s came when the planned pick was not warmed yet.
+  An earlier switch or a long warm-up queue causes that.
+- **Earlier runs:** the 92% and 96% runs above used picks 300 ms apart, which left no time to warm
+  up.
+- **Not yet measured:** D3 with the warm-up (SC-104 names D1 only), and the frame-rate cost of
+  warming while visuals play. The warm-up thread runs at utility priority. On the simulator, the
+  ANGLE tests keep the visible engine drawing during a warm-up.

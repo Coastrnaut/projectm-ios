@@ -52,3 +52,58 @@ void PMANGLEFinish(void) {
         finish();
     }
 }
+
+#define GL_TEXTURE_2D 0x0DE1
+#define GL_BGRA_EXT 0x80E1
+#define GL_COLOR_ATTACHMENT0 0x8CE0
+#define GL_FRAMEBUFFER_COMPLETE 0x8CD5
+#define GL_TEXTURE_MIN_FILTER 0x2801
+#define GL_LINEAR 0x2601
+
+unsigned int PMANGLECreateBGRAFramebuffer(int width, int height, unsigned int *textureOut) {
+    typedef void (*Gen)(int, unsigned int *);
+    typedef void (*Bind)(unsigned int, unsigned int);
+    typedef void (*TexImage2D)(unsigned int, int, int, int, int, int, unsigned int, unsigned int, const void *);
+    typedef void (*TexParameteri)(unsigned int, unsigned int, int);
+    typedef void (*FramebufferTexture2D)(unsigned int, unsigned int, unsigned int, unsigned int, int);
+    typedef unsigned int (*CheckStatus)(unsigned int);
+    Gen genTextures = (Gen)eglGetProcAddress("glGenTextures");
+    Gen genFramebuffers = (Gen)eglGetProcAddress("glGenFramebuffers");
+    Bind bindTexture = (Bind)eglGetProcAddress("glBindTexture");
+    Bind bindFramebuffer = (Bind)eglGetProcAddress("glBindFramebuffer");
+    TexImage2D texImage2D = (TexImage2D)eglGetProcAddress("glTexImage2D");
+    TexParameteri texParameteri = (TexParameteri)eglGetProcAddress("glTexParameteri");
+    FramebufferTexture2D framebufferTexture2D = (FramebufferTexture2D)eglGetProcAddress("glFramebufferTexture2D");
+    CheckStatus checkStatus = (CheckStatus)eglGetProcAddress("glCheckFramebufferStatus");
+    *textureOut = 0;
+    if (!genTextures || !genFramebuffers || !bindTexture || !bindFramebuffer || !texImage2D || !texParameteri ||
+        !framebufferTexture2D || !checkStatus) {
+        return 0;
+    }
+    unsigned int texture = 0, framebuffer = 0;
+    genTextures(1, &texture);
+    bindTexture(GL_TEXTURE_2D, texture);
+    texImage2D(GL_TEXTURE_2D, 0, GL_BGRA_EXT, width, height, 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, 0);
+    texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    genFramebuffers(1, &framebuffer);
+    bindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    framebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
+    if (checkStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        PMANGLEDeleteFramebuffer(framebuffer, texture);
+        return 0;
+    }
+    *textureOut = texture;
+    return framebuffer;
+}
+
+void PMANGLEDeleteFramebuffer(unsigned int framebuffer, unsigned int texture) {
+    typedef void (*Delete)(int, const unsigned int *);
+    Delete deleteFramebuffers = (Delete)eglGetProcAddress("glDeleteFramebuffers");
+    Delete deleteTextures = (Delete)eglGetProcAddress("glDeleteTextures");
+    if (deleteFramebuffers && framebuffer) {
+        deleteFramebuffers(1, &framebuffer);
+    }
+    if (deleteTextures && texture) {
+        deleteTextures(1, &texture);
+    }
+}

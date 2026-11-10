@@ -66,6 +66,7 @@ SYSTEM_KEYS = {"SKTransactionUpdatesLastChecked": "StoreKit (iOS): when it last 
                                                   "updates; a timestamp, no purchase data"}
 
 DRY_RUN = False
+LOCKED_WAIT = 30 * 60   # a locked device gets this long to be unlocked before a launch gives up
 
 
 def run(cmd: list[str], *, env: dict | None = None, check: bool = True, capture: bool = False,
@@ -110,13 +111,28 @@ class Target:
         else:
             run(["xcrun", "devicectl", "device", "uninstall", "app", "--device", self.identifier, BUNDLE], check=False)
 
-    def launch(self, mode: str) -> None:
+    def launch(self, mode: str, extra: dict[str, str] | None = None) -> None:
+        variables = {"PROJECTM_AUTORUN": mode, **(extra or {})}
         if self.simulator:
             run(["xcrun", "simctl", "launch", "--terminate-running-process", self.identifier, BUNDLE],
-                env={"SIMCTL_CHILD_PROJECTM_AUTORUN": mode})
+                env={f"SIMCTL_CHILD_{k}": v for k, v in variables.items()})
         else:
-            run(["xcrun", "devicectl", "device", "process", "launch", "--device", self.identifier,
-                 "--terminate-existing", "--environment-variables", json.dumps({"PROJECTM_AUTORUN": mode}), BUNDLE])
+            cmd = ["xcrun", "devicectl", "device", "process", "launch", "--device", self.identifier,
+                   "--terminate-existing", "--environment-variables", json.dumps(variables), BUNDLE]
+            deadline = time.time() + LOCKED_WAIT
+            while True:
+                with tempfile.TemporaryDirectory() as tmp:
+                    out = Path(tmp) / "launch.json"
+                    result = run(cmd + ["--json-output", str(out)], check=False, capture=True)
+                    if result.returncode == 0 or DRY_RUN:
+                        return
+                    # devicectl reports the reason in its JSON output, not on stdout or stderr.
+                    reason = out.read_text() if out.exists() else result.stdout + result.stderr
+                if time.time() > deadline:
+                    sys.exit(f"launch failed on {self.label}: {reason[-600:]}")
+                why = "is locked: unlock it (and set Auto-Lock to Never)" if "Locked" in reason else "launch failed"
+                print(f"!! {self.label} {why}; retrying in 15 s", flush=True)
+                time.sleep(15)
 
     def terminate(self) -> None:
         """Stops the app if a mode left it running."""
@@ -237,9 +253,10 @@ def install(args, target: Target) -> None:
     target.install(app_path(args, target))
 
 
-def run_mode(target: Target, mode: str, prefix: str, timeout: float) -> Path | None:
+def run_mode(target: Target, mode: str, prefix: str, timeout: float,
+             extra: dict[str, str] | None = None) -> Path | None:
     before = set(target.container_files("Documents"))
-    target.launch(mode)
+    target.launch(mode, extra)
     name = target.wait_for_report(prefix, before, timeout)
     target.terminate()
     if not name:
@@ -267,9 +284,14 @@ def cmd_perf(args) -> None:
     target = target_from_args(args)
     if not args.no_install:
         install(args, target)
-    launches(target, "sc101", args.repeat)
-    run_mode(target, "sc102", "automation-sc102", 120)
-    run_mode(target, "sc104", "automation-sc104", 600)
+    only = set(args.only.split(",")) if args.only else {"sc101", "sc102", "sc104"}
+    if "sc101" in only:
+        launches(target, "sc101", args.repeat)
+    if "sc102" in only:
+        run_mode(target, "sc102", "automation-sc102", 120)
+    if "sc104" in only:   # 200 picks, 3 s apart: about 15 minutes
+        run_mode(target, "sc104", "automation-sc104", 1800,
+                 {"PROJECTM_PREWARM": "0"} if args.no_prewarm else None)
     summarize(target.out_dir)
 
 
@@ -483,7 +505,8 @@ def verdicts_for(d: Path) -> dict[str, tuple[bool, str]]:
     if (r := latest(d, "automation-sc102")) and "maxMs" in r:
         out["SC-102"] = (r["maxMs"] <= 50, f"{r['keystrokes']} keystrokes, median {r['medianMs']:.1f} ms, max {r['maxMs']:.1f} ms (target 50 ms; search only)")
     if (r := latest(d, "automation-sc104")) and "fractionUnder1s" in r:
-        out["SC-104"] = (r["fractionUnder1s"] >= 0.95, f"{r['fractionUnder1s']:.0%} under 1 s, p95 {r['p95Ms']:.0f} ms, packs {r['picksByPack']}")
+        warm = "" if "prewarm" not in r else f", warm-up {'on' if r['prewarm'] else 'off'}"
+        out["SC-104"] = (r["fractionUnder1s"] >= 0.95, f"{r['fractionUnder1s']:.0%} under 1 s, p95 {r['p95Ms']:.0f} ms{warm}, packs {r['picksByPack']}")
     if (d / "sc103.json").exists():
         for name, row in json.loads((d / "sc103.json").read_text()).items():
             out[f"SC-103 {name}"] = (row["onTime"] >= 0.95, f"{row['onTime']:.1%} on time ({row['frames']} frames, {row['missed']} missed)")
@@ -506,6 +529,8 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--reinstall", action="store_true", help="remove the app first (an empty container)")
         p.add_argument("--no-install", action="store_true")
         p.add_argument("--repeat", type=int, default=10, help="recorded launches for SC-101")
+        p.add_argument("--only", help="perf: a comma-separated subset of sc101,sc102,sc104")
+        p.add_argument("--no-prewarm", action="store_true", help="perf: SC-104 with the preset warm-up off (comparison)")
         p.add_argument("--step", choices=["purchase", "relaunch", "offline", "restore"], help="entitlement: one step only")
     size = sub.add_parser("size")
     size.add_argument("--old-archive", default="~/Library/Developer/Xcode/Archives/2026-11-10/ProjectMiOS 1.0 (1).xcarchive")

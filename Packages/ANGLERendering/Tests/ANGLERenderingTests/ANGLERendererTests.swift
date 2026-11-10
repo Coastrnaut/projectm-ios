@@ -56,6 +56,32 @@ final class ANGLERendererTests: XCTestCase {
         XCTAssertEqual(ring.availableFrames, max(0, 1_000 - Int(ProjectMEngine.maxSamplesPerFrame)))
     }
 
+    /// Feature 002 SC-104: upcoming presets are warmed on a background thread with its own context;
+    /// the visible engine then switches to one and still draws, and a newer request replaces the queue.
+    func testPrewarmRunsInTheBackgroundAndTheSwitchStillDraws() async throws {
+        let renderer = try makeLaidOut()
+        try await renderer.setPreset(preset("100-square.milk"))
+        renderer.prewarm([preset("110-per_pixel.milk"), preset("200-wave.milk")])
+        for _ in 0..<200 where renderer.prewarmedCount < 2 {
+            renderer.renderFrame(present: false)   // the visible engine keeps drawing meanwhile
+            try await Task.sleep(for: .milliseconds(25))
+        }
+        XCTAssertEqual(renderer.prewarmedCount, 2)
+        renderer.prewarm([preset("200-wave.milk")])   // already warmed: skipped
+        try await renderer.setPreset(preset("110-per_pixel.milk"))
+        for _ in 0..<30 { XCTAssertTrue(renderer.renderFrame(present: false)) }
+        XCTAssertGreaterThan(litPixels(renderer.readPixels()), 0, "the warmed preset draws")
+        XCTAssertEqual(renderer.prewarmedCount, 2)
+    }
+
+    func testPrewarmCanBeTurnedOff() async throws {
+        let renderer = try makeLaidOut()
+        renderer.prewarmEnabled = false
+        renderer.prewarm([preset("110-per_pixel.milk")])
+        try await Task.sleep(for: .milliseconds(300))
+        XCTAssertEqual(renderer.prewarmedCount, 0)
+    }
+
     func testFailedPresetKeepsThePreviousOne() async throws {
         let renderer = try makeLaidOut()
         try await renderer.setPreset(preset("100-square.milk"))

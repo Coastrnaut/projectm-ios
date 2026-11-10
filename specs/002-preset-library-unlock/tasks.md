@@ -114,7 +114,7 @@ accounts or signing; untagged tasks are completable on the project Mac.
   - SC-102: max 38.5 ms.
   - SC-103: 96.1-97.4%.
   - SC-108: +26.4 MB.
-  - SC-104: 96% on D1 (borderline: an earlier run gave 92%). Slow switches wait on the engine compiling shaders for the first frame; this is a follow-up.
+  - SC-104: borderline at first (96% on D1, an earlier run 92%), because slow switches waited on shader compiles for the first frame. Fixed 2026-11-10 by warming upcoming presets in the background (`PresetPrewarmer`): 99% on D1, median 109 ms; the same run with the warm-up off gave 97%, median 191 ms.
 - [ ] T239 {device} StoreKit sandbox purchase, restore and offline relaunch on a device — Automation ready (2026-11-10): `scripts/run_device_tests.py entitlement --device D1` walks through purchase, relaunch, offline and restore; a person does Buy, Airplane Mode and Restore. Blocked on T242 (the product in App Store Connect).
 - [X] T240 Update `docs/privacy-policy.md` (purchase traffic through iOS only, FR-122), `docs/release/app-privacy.md`, `docs/release/store-copy.md` (in-app purchase, library size; no capture claims) and the privacy manifest scan — Verified 2026-11-10: policy (purchase section, network, stored scope), App Privacy (answers unchanged, basis updated), store copy (1.1 additions and claim table); `check_privacy_manifest.py` OK on a Release device build.
 - [ ] T241 {device} Re-run the privacy review (feature 001 T108) with the new key and a purchase — Automation ready (2026-11-10): `scripts/run_device_tests.py privacy --device D1` (fresh install, scripted session, container listing, key check). The simulator rehearsal had zero violations; StoreKit writes `SKTransactionUpdatesLastChecked` itself (a timestamp).

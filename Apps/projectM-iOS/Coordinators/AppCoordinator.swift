@@ -358,6 +358,21 @@ final class RendererPresetLoader: PresetLoading {
         try await renderer.setPreset(playable)
     }
 
+    /// SC-104: hands upcoming presets (with their archive data) to the renderer's warm-up.
+    func prewarm(_ presets: [IndexedPreset]) {
+        guard let renderer, let resources = Bundle.main.resourceURL else { return }
+        let playable: [Preset] = presets.compactMap { preset in
+            var item = Preset(id: preset.id, name: preset.name, fileURL: resources.appendingPathComponent(preset.path),
+                              packID: preset.source, author: preset.author)
+            if !preset.isIncluded {
+                guard let data = try? packArchive(resources).contents(of: preset.id) else { return nil }
+                item.data = data
+            }
+            return item
+        }
+        renderer.prewarm(playable)
+    }
+
     private func packArchive(_ resources: URL) throws -> PresetArchive {
         if let archive { return archive }
         guard let library else { throw CocoaError(.featureUnsupported) }

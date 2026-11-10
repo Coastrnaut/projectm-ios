@@ -32,6 +32,14 @@ public protocol VisualizerRenderer: AnyObject {
     var metrics: RenderMetrics { get }
     /// Frames presented so far (SC-007 timing: the first frame after a preset switch).
     var presentedFrameCount: Int { get }
+    /// Feature 002 SC-104: presets likely to be chosen next. A renderer may build their GPU
+    /// pipelines in the background so the switch does not wait for shader compiles. Replaces any
+    /// earlier request; does nothing by default.
+    func prewarm(_ presets: [Preset])
+}
+
+public extension VisualizerRenderer {
+    func prewarm(_ presets: [Preset]) {}
 }
 
 /// A preset the renderer can load (data-model.md §Preset). PresetRepository (T074) builds these from
