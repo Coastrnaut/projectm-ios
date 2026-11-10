@@ -380,3 +380,12 @@ then: T047 LifecycleObserver.swift → T048 explainer UI → T049 {device} accep
   `{mac}` verification as pending.
 - macOS: every `{mac}` task and the CI.
 - Device owner: every `{device}` task, with exports and reports committed as evidence.
+
+---
+
+## Phase 12: Convergence
+
+- [ ] T115 CRITICAL: record the owner's waivers of device validation (Gate 4 and T102; the SC-012 audit in T105; the device rows waived in T112: T084's device part, T087, T092, T097) in an ADR, as ADR-0001 rulings 18 and 19 do for Gates 1 and 2, per Constitution X (partial)
+- [ ] T116 Make "Reduce flashing" take effect on the GLES fallback renderer (`Packages/Rendering/Sources/Rendering/GLESRenderer.swift` only stores the flag), or tell the user in Settings that it is unavailable on that renderer, per FR-072 (partial)
+- [ ] T117 Add the app icon (projectM logo from the owner's `frontend-uwp` fork at `82c468e`, LGPL-2.1; `scripts/make_app_icon.swift`) to the pinned-asset table in `docs/adr/0004-dependency-pinning.md`, per Constitution IX (partial)
+- [ ] T118 Document the Gate 4 measurement tooling (`Apps/ProjectMiOS/Automation/AutomationRunner.swift` with `PROJECTM_AUTOMATION`, RendererLab `RL_MODE=flashcost`) in `quickstart.md`, or remove it, per plan: test tooling (unrequested)
