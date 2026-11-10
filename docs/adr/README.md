@@ -8,5 +8,6 @@
 | [0004](0004-dependency-pinning.md) | Dependency pinning and packaging | Accepted; projectM and ANGLE pinned to the owner's forks |
 | [0005](0005-lgpl-compliance.md) | LGPL-2.1 and App Store compliance | Final: go (owner, 2026-11-10, T109); app code MIT |
 | [0006](0006-stage2-validation-waivers.md) | Stage 2 device-validation waivers | Accepted 2026-11-10 (owner rulings, T115) |
+| [0007](0007-preset-library-licensing.md) | Preset library licensing and the paid unlock | Accepted 2026-11-10 (feature 002) |
 
 Required by Constitution X: capture API, minimum OS, renderer, dependency strategy.

@@ -7,3 +7,23 @@
 	url = https://github.com/Coastrnaut/angle.git
 	branch = ios
 	shallow = true
+[submodule "Vendor/presets/cream-of-the-crop"]
+	path = Vendor/presets/cream-of-the-crop
+	url = https://github.com/projectM-visualizer/presets-cream-of-the-crop.git
+	shallow = true
+[submodule "Vendor/presets/projectm-classic"]
+	path = Vendor/presets/projectm-classic
+	url = https://github.com/projectM-visualizer/presets-projectm-classic.git
+	shallow = true
+[submodule "Vendor/presets/milkdrop-original"]
+	path = Vendor/presets/milkdrop-original
+	url = https://github.com/projectM-visualizer/presets-milkdrop-original.git
+	shallow = true
+[submodule "Vendor/presets/en-d"]
+	path = Vendor/presets/en-d
+	url = https://github.com/projectM-visualizer/presets-en-d.git
+	shallow = true
+[submodule "Vendor/presets/milkdrop-texture-pack"]
+	path = Vendor/presets/milkdrop-texture-pack
+	url = https://github.com/projectM-visualizer/presets-milkdrop-texture-pack.git
+	shallow = true

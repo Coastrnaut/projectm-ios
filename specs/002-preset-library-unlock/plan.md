@@ -102,7 +102,7 @@ Packages/PresetLibrary/                 # NEW: Foundation only, Linux-testable
 │   └── PresetSearch.swift              # name/author search, grouping, cap
 └── Tests/PresetLibraryTests/
 
-Packages/ProjectMBridge/                # + setTextureSearchPaths: (PMBridge.h/.mm)
+Packages/ProjectMBridge/                # + setTextureSearchPaths:, loadPresetData: (PMBridge.h/.mm)
 Packages/Rendering/                     # VisualizerRenderer gains texture paths; Preset stays the playable unit
 
 Apps/ProjectMiOS/
@@ -114,11 +114,12 @@ Apps/ProjectMiOS/
 ├── Views/PurchaseSheet.swift               # NEW
 ├── Views/ControlsOverlay.swift             # scope line under the preset name
 └── Resources/
-    ├── PresetIndex.json                    # generated, committed (scripts/build_preset_index.py)
-    ├── PresetPacks.json                    # generated, committed
-    └── PresetBlocklist.json                # author-request removals (hashes)
+    ├── PresetBlocklist.json                # author-request removals (hashes), committed
+    └── PresetExclusions.txt                # load-sweep failures (ids), committed
+    (PresetIndex.json, PresetPacks.json, PresetArchive.bin and PresetTextures/ are generated into
+    the app bundle at build time by scripts/build_preset_index.py; research R-30)
 
-scripts/build_preset_index.py               # NEW: index + packs + licenses; --check in CI
+scripts/build_preset_index.py               # NEW: build phase: index, packs, archive, textures
 Apps/RendererLab/LabModel.swift             # + RL_MODE=loadsweep (load-only, shardable)
 docs/adr/0007-preset-library-licensing.md   # NEW
 ```

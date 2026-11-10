@@ -94,3 +94,21 @@ Numbering starts at R-21 so it never collides with feature 001's R-01 to R-16.
 - **Alternatives considered**: keep the full library free (no revenue, simplest); sell only
   explicitly licensed presets (almost none exist); per-pack purchases (more store products and UI
   for little benefit).
+
+## R-30 Bundling: a compressed archive generated at build time
+
+- **Decision** (2026-11-10, during implementation): the packs' 12,913 additional presets are
+  138.5 MB as plain files (cream-of-the-crop alone is 130 MB checked out; GitHub's size figure is
+  compressed history). `scripts/build_preset_index.py --out <bundle resources>` runs as a build
+  phase and writes `PresetIndex.json`, `PresetPacks.json`, `PresetArchive.bin` (the pack presets in
+  raw-deflate chunks of 64; 13 MB) and `PresetTextures/<pack>/...` (the 108 texture images, 7.6 MB,
+  relative paths kept; the engine scans texture paths recursively). A stamp skips the step when
+  inputs are unchanged (3.9 s full, 0.07 s skipped). Nothing generated is committed (owner's
+  repository-size concern); the committed inputs are the submodules, `PresetBlocklist.json` and
+  `PresetExclusions.txt`. Pack presets reach the engine through the documented
+  `projectm_load_preset_data` (a new bridge call); the 28 Included presets stay files.
+- **Rationale**: SC-108 (≤ 40 MB growth): about 25 MB total; chunked compression keeps any single
+  preset a ~1 ms decompression away; the repository stays small.
+- **Alternatives considered**: folder references (138 MB, fails SC-108); per-file compression
+  (34.6 MB, close to the limit); one stream (12.4 MB but a 138 MB decompression per preset);
+  committing the index and archive (repository growth on every pin change).

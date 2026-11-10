@@ -36,6 +36,98 @@ class ValidateDocsTests(unittest.TestCase):
         self.assertEqual(validate_docs.main(["--include-fixtures"]), 1)
 
 
+class PresetIndexTests(unittest.TestCase):
+    """build_preset_index.py (feature 002, T204): priority, .milk only, blocklist, exclusions,
+    Included ids and names, author parsing, --check, archive round trip."""
+
+    def setUp(self):
+        import build_preset_index as bpi
+        self.bpi = bpi
+        self.tmp = Path(tempfile.mkdtemp())
+        inc = self.tmp / "Presets"
+        (inc / "frontend-uwp").mkdir(parents=True)
+        (inc / "frontend-uwp" / "Geiss - Dancer.milk").write_text("A")
+        (inc / "LICENSES.md").write_text(
+            "| File | Display name | Pack | Author | License | Source URL | Source version |\n"
+            "|------|------|------|------|------|------|------|\n"
+            "| frontend-uwp/Geiss - Dancer.milk | Geiss - Dancer | frontend-uwp | Geiss | X | u | v |\n")
+        packs = self.tmp / "packs"
+        for pack in ("cream-of-the-crop", "projectm-classic", "milkdrop-original", "en-d", "milkdrop-texture-pack"):
+            (packs / pack).mkdir(parents=True)
+        cream = packs / "cream-of-the-crop" / "Fractal" / "Nested"
+        cream.mkdir(parents=True)
+        (cream / "Martin - Spiral.milk").write_text("B")
+        (cream / "Copy of included.milk").write_text("A")          # same content as Included
+        (cream / "notes.txt").write_text("not a preset")
+        classic = packs / "projectm-classic" / "tryptonaut"
+        classic.mkdir(parents=True)
+        (classic / "dup.MILK").write_text("B")                       # duplicate of cream
+        (classic / "NoAuthor.milk").write_text("C")
+        (classic / "Blocked - One.milk").write_text("D")
+        orig = packs / "milkdrop-original" / "Milkdrop-Original"
+        orig.mkdir(parents=True)
+        (orig / "Krash - Flat.milk").write_text("E")
+        (packs / "en-d" / "Excluded - Me.milk").write_text("F")
+        res = self.tmp / "Resources"
+        res.mkdir()
+        (res / "PresetBlocklist.json").write_text(json.dumps({"hashes": [{"hash": bpi.blob_hash(b"D"), "reason": "t"}]}))
+        (res / "PresetExclusions.txt").write_text("en-d/Excluded - Me.milk\n")
+        self.out = self.tmp / "out"
+        self.args = ["--included-dir", str(inc), "--packs-dir", str(packs), "--config", str(res), "--out", str(self.out)]
+        self.res = res
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self.tmp)
+
+    def run_main(self, *extra):
+        with mock.patch("builtins.print"), mock.patch("sys.stderr"):
+            return self.bpi.main(self.args + list(extra))
+
+    def index(self):
+        return json.loads((self.out / "PresetIndex.json").read_text())["presets"]
+
+    def test_priority_milk_only_blocklist_exclusions(self):
+        self.assertEqual(self.run_main(), 0)
+        ids = [r["id"] for r in self.index()]
+        self.assertEqual(ids, ["frontend-uwp/Geiss - Dancer.milk",
+                               "cream-of-the-crop/Fractal/Nested/Martin - Spiral.milk",
+                               "projectm-classic/tryptonaut/NoAuthor.milk",
+                               "milkdrop-original/Milkdrop-Original/Krash - Flat.milk"])
+
+    def test_names_authors_folders(self):
+        self.run_main()
+        by_id = {r["id"]: r for r in self.index()}
+        inc = by_id["frontend-uwp/Geiss - Dancer.milk"]
+        self.assertEqual((inc["name"], inc["author"], inc["source"], inc["path"]),
+                         ("Geiss - Dancer", "Geiss", "included", "Presets/frontend-uwp/Geiss - Dancer.milk"))
+        spiral = by_id["cream-of-the-crop/Fractal/Nested/Martin - Spiral.milk"]
+        self.assertEqual((spiral["name"], spiral["author"], spiral["folder"]), ("Spiral", "Martin", ["Fractal", "Nested"]))
+        self.assertEqual(by_id["projectm-classic/tryptonaut/NoAuthor.milk"]["author"], "Unknown")
+        self.assertEqual(by_id["milkdrop-original/Milkdrop-Original/Krash - Flat.milk"]["folder"], [])
+
+    def test_stamp_skips_and_inputs_invalidate(self):
+        self.run_main()
+        (self.out / "PresetIndex.json").write_text("{}")
+        self.run_main()                                           # unchanged inputs: skipped
+        self.assertEqual((self.out / "PresetIndex.json").read_text(), "{}")
+        (self.res / "PresetExclusions.txt").write_text("")         # inputs changed: rebuilt
+        self.run_main()
+        self.assertEqual(len(self.index()), 5)
+
+    def test_archive_round_trip(self):
+        import struct, zlib
+        self.assertEqual(self.run_main(), 0)
+        blob = (self.out / "PresetArchive.bin").read_bytes()
+        magic, version, count, chunk_size, chunks = struct.unpack_from("<4sIIII", blob, 0)
+        self.assertEqual((magic, version, count), (b"PMPA", 1, 3))
+        off, clen, rlen = struct.unpack_from("<QII", blob, 20)
+        raw = zlib.decompress(blob[off:off + clen], -15)
+        self.assertEqual(len(raw), rlen)
+        chunk, start, length = struct.unpack_from("<III", blob, 20 + 16 * chunks)   # first pack preset
+        self.assertEqual(raw[start:start + length], b"B")
+
+
 class LicensesManifestTests(unittest.TestCase):
     def test_committed_manifest_is_complete(self):
         import collect_licenses

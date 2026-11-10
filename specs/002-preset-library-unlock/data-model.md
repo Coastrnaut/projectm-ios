@@ -9,7 +9,7 @@
 | `author` | string | Text before the first ` - ` in the file name; `Unknown` if none |
 | `source` | string | `included`, `cream-of-the-crop`, `projectm-classic`, `milkdrop-original`, `en-d` |
 | `folder` | [string] | Path components inside the source, without the file name (cream: [category, subcategory]; classic: [collection]; en-d: [episode]; original: []) |
-| `path` | string | Bundle-relative path of the file (`Presets/<file>` or `PresetPacks/<pack>/<path>`) |
+| `path` | string | Included: bundle-relative file path `Presets/<file>`; packs: the archive key, equal to `id` (research R-30) |
 | `hash` | string | Git blob hash (40 hex) of the file content |
 
 Validation: ids and hashes unique; every `path` exists in the bundle; `source` is one of the five
