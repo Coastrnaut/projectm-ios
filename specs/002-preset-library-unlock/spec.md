@@ -19,6 +19,17 @@ Requirement and criterion numbers start at 101 so they never collide with featur
 (`specs/001-ios-projectm-visualizer/spec.md`), whose requirements stay in force unless a line below
 amends one explicitly.
 
+## Clarifications
+
+### Session 2026-11-10
+
+Answered by Claude under the owner's standing approval (all decisions delegated, no human interaction).
+
+- Q: What does the purchase grant, and on what license basis are the four packs sold? → A: Access to the app's full bundled library, under the projectM team's own redistribution basis for these packs (assumed public domain, removed on the author's request), with an author-request blocklist honored in every release; the risk is recorded in an ADR at planning.
+- Q: Should a search-result scope survive a relaunch? → A: No; storing search text would be listening/browsing history (feature 001 FR-065), so after a relaunch a search scope falls back to All.
+- Q: What happens to the preset that is playing when a refund or revocation locks the packs? → A: It keeps playing until the user changes preset; the scope falls back to Included, so Next/Previous/Random continue in Included.
+- Q: What count does a locked pack show before purchase? → A: Its total preset count, with a lock; after purchase, the playable count.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Browse and play a large library without paying (Priority: P1)
@@ -168,14 +179,16 @@ statement and authors.
   message naming the outcome; a pending purchase approved later MUST unlock when the app learns of
   it.
 - **FR-109**: A refunded or revoked purchase MUST lock the packs again at the next entitlement
-  check; favorites remain listed with a lock.
+  check; favorites remain listed with a lock. A locked preset that is playing keeps playing until
+  the user changes preset, and the scope falls back to Included.
 - **FR-110**: The app MUST determine the unlock from the platform's purchase records at launch and
   while running; it MUST NOT store its own "unlocked" flag.
 
 **Browsing**
 
 - **FR-111**: The preset browser MUST open on a library home listing Included, each pack with its
-  playable count (and a lock before purchase), and All presets A-Z.
+  preset count (the total with a lock before purchase, the playable count after), and All presets
+  A-Z.
 - **FR-112**: Packs MUST be browsable by their own structure: cream-of-the-crop by category then
   subcategory, projectm-classic by original collection, en-d by episode, milkdrop-original as one
   list; every folder shows its count.
@@ -198,7 +211,8 @@ statement and authors.
 - **FR-118**: Scopes MUST contain only playable presets: unlocked, not excluded, and not failed in
   this session.
 - **FR-119**: The default scope MUST be Included before purchase, and Cream of the Crop right after
-  a purchase or restore; the user's chosen scope MUST persist across launches.
+  a purchase or restore; the user's chosen scope MUST persist across launches, except a search
+  scope, which falls back to All (no search text is stored).
 - **FR-120**: The controls overlay MUST show the current scope's name and playable count under the
   preset name.
 
@@ -250,8 +264,7 @@ statement and authors.
 
 ## Assumptions
 
-- **License basis (decided by the owner's delegate under standing approval, 2026-11-10; recorded in
-  a new ADR at planning):** the purchase sells access to the app's full library, bundled under the
+- **License basis (Clarifications, 2026-11-10; recorded in a new ADR at planning):** the purchase sells access to the app's full library, bundled under the
   projectM team's own redistribution basis for these packs ("assumed public domain; removed on the
   author's request"), with an author-request blocklist honored in every release. Packs without a
   license file are treated under the same basis, the risk is recorded, and any pack can be dropped
