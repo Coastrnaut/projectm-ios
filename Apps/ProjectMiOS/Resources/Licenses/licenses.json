@@ -164,6 +164,15 @@
     },
     {
       "version": "",
+      "id": "app-icon",
+      "name": "App icon (projectM logo)",
+      "group": "Assets",
+      "license": "LGPL-2.1",
+      "attribution": "projectM Team; from Coastrnaut/frontend-uwp at 82c468e (Assets/SplashScreen.png)",
+      "file": "app-icon.txt"
+    },
+    {
+      "version": "",
       "id": "reference-audio",
       "name": "In-App Playback track",
       "group": "Assets",

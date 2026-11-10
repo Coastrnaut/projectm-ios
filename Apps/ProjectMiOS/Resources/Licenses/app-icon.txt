@@ -1,0 +1,4 @@
+The app icon is the projectM logo from the projectM UWP frontend (the owner's fork,
+https://github.com/Coastrnaut/frontend-uwp, commit 82c468e), placed on a white square by
+scripts/make_app_icon.swift. That repository is licensed under the GNU Lesser General Public
+License, version 2.1; the full text is under "libprojectM".

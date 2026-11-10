@@ -67,6 +67,21 @@ Pass: Gate 3 passed 2026-11-09 (T079, ADR-0003 Option B, `performance.md`).
 - Entitlements in the archive: development signing (`get-task-allow`); distribution signing at
   upload replaces it (T111).
 
+## Upload (2026-11-10)
+
+Done from Xcode's Organizer (owner authorized computer use for the remaining release steps).
+App Store Connect record: app ID 6833037520, bundle ID `org.projectmios.ProjectMiOS`, created by
+Xcode; its name is changed to "projectM" on App Store Connect (owner decision).
+
+1. First upload: rejected by App Store Connect validation: no app icon (90022, 90023, 90713) and no
+   `CFBundleShortVersionString` in the ANGLE frameworks (90057).
+2. Fixes: app icon from the projectM logo in the owner's UWP frontend fork
+   (`scripts/make_app_icon.swift`, asset catalog `AppIcon`, credited on the Licenses screen);
+   `scripts/build_angle_xcframework.py` adds `CFBundleShortVersionString` and `MinimumOSVersion` to
+   both ANGLE frameworks.
+3. Second upload of the rebuilt 1.0 (1) archive: **completed**, with warnings only that the three
+   prebuilt frameworks have no dSYMs (crash reports in them are not symbolicated).
+
 ## Owner steps at upload (signing is manual)
 
 1. Xcode › Organizer › the 1.0 (1) archive › **Generate Privacy Report**: expect the three API

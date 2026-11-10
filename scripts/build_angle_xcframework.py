@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import plistlib
 import os
 import shutil
 import subprocess
@@ -46,6 +47,8 @@ ANGLE_COMMIT = "29d18232e8031430f1257b7509ceca20d195114d"   # chromium/8153
 DEPOT_TOOLS_URL = "https://chromium.googlesource.com/chromium/tools/depot_tools.git"
 DEPOT_TOOLS_COMMIT = "c4cdaeebba9b9ed92d041997317ffdbd042158ac"
 DEPLOYMENT_TARGET = "26.0"
+# CFBundleShortVersionString for the ANGLE frameworks (App Store Connect requires one).
+BUNDLE_SHORT_VERSION = "1.0"
 LIBRARIES = ("libEGL", "libGLESv2")
 
 SLICES = (
@@ -164,6 +167,16 @@ def check_framework(fw: Path, library: str, archs: set[str]) -> None:
         raise SystemExit(f"{binary}: install name {install_name}")
 
 
+def complete_info_plist(fw: Path) -> None:
+    """GN's framework Info.plist lacks keys App Store Connect requires of every embedded framework
+    (error 90057: CFBundleShortVersionString); add them, plus MinimumOSVersion."""
+    path = fw / "Info.plist"
+    info = plistlib.loads(path.read_bytes())
+    info.setdefault("CFBundleShortVersionString", BUNDLE_SHORT_VERSION)
+    info.setdefault("MinimumOSVersion", DEPLOYMENT_TARGET)
+    path.write_bytes(plistlib.dumps(info, fmt=plistlib.FMT_XML))
+
+
 def tool_version(cmd: list[str]) -> str:
     try:
         return subprocess.run(cmd, check=True, text=True, capture_output=True).stdout.strip().splitlines()[0]
@@ -187,8 +200,10 @@ def main(argv: list[str] | None = None) -> int:
     remove_tree(STAGING)
     staging = STAGING
     for library in LIBRARIES:
-        device = outs["ios-arm64"] / f"{library}.framework"
+        device = staging / "device" / f"{library}.framework"
+        shutil.copytree(outs["ios-arm64"] / f"{library}.framework", device, symlinks=True)
         check_framework(device, library, {"arm64"})
+        complete_info_plist(device)
         # One simulator framework with both architectures.
         sim = staging / "simulator" / f"{library}.framework"
         shutil.copytree(outs["ios-sim-arm64"] / f"{library}.framework", sim, symlinks=True)
@@ -197,6 +212,7 @@ def main(argv: list[str] | None = None) -> int:
              str(outs["ios-sim-x64"] / f"{library}.framework" / library),
              "-output", str(sim / library)])
         check_framework(sim, library, {"arm64", "x86_64"})
+        complete_info_plist(sim)
         run(["xcodebuild", "-create-xcframework", "-framework", str(device), "-framework", str(sim),
              "-output", str(OUTPUT / f"{library}.xcframework")])
 
