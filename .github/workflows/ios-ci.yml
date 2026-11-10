@@ -180,8 +180,8 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
-        with:
-          submodules: recursive
+      - name: Engine submodule (recursive; Vendor/angle is not needed here)
+        run: git submodule update --init --recursive Vendor/projectM
       - name: Select newest Xcode 26
         run: |
           XCODE=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
@@ -256,6 +256,85 @@ jobs:
             Build/ProjectM.xcframework
             Build/ProjectM.xcframework.json
           retention-days: 14
+
+  angle-xcframeworks:
+    # Task T076 (ADR-0003 Option B, ADR-0004): build ANGLE's Metal backend as
+    # Build/ANGLEFrameworks/libEGL.xcframework and libGLESv2.xcframework with
+    # scripts/build_angle_xcframework.py from the Vendor/angle submodule (the owner's fork, branch
+    # `ios`, pinned) and its gclient dependencies (about 12 GB on a cache miss). Cached by ANGLE
+    # commit, build-script hash and Xcode build. Then runs the ANGLERendering tests (T077) with the
+    # engine xcframework from engine-xcframework.
+    needs: engine-xcframework
+    runs-on: macos-26
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+      - name: Select newest Xcode 26
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          [ -n "$XCODE" ] || XCODE=/Applications/Xcode.app
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          xcodebuild -version
+      - name: Cache key
+        id: key
+        run: |
+          ANGLE=$(git rev-parse HEAD:Vendor/angle)
+          XCODE_BUILD=$(xcodebuild -version | sed -nE 's/^Build version (.+)$/\1/p')
+          SCRIPT=$(shasum -a 256 scripts/build_angle_xcframework.py | cut -c1-16)
+          echo "angle=$ANGLE" >> "$GITHUB_OUTPUT"
+          echo "key=angle-xcframeworks-$ANGLE-$SCRIPT-$XCODE_BUILD" >> "$GITHUB_OUTPUT"
+          echo "ANGLE commit: $ANGLE (Xcode $XCODE_BUILD)"
+      - name: Restore the cached xcframeworks
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: Build/ANGLEFrameworks
+          key: ${{ steps.key.outputs.key }}
+      - name: Build ANGLE
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          git submodule update --init --depth 1 Vendor/angle
+          df -h . | tail -1
+          python3 scripts/build_angle_xcframework.py
+      - name: Check the xcframeworks
+        run: |
+          set -e
+          echo "cache hit: ${{ steps.cache.outputs.cache-hit == 'true' }}"
+          cat Build/ANGLEFrameworks/ANGLE.json
+          grep -q "${{ steps.key.outputs.angle }}" Build/ANGLEFrameworks/ANGLE.json
+          for lib in libEGL libGLESv2; do
+            DEV=Build/ANGLEFrameworks/$lib.xcframework/ios-arm64/$lib.framework/$lib
+            SIM=Build/ANGLEFrameworks/$lib.xcframework/ios-arm64_x86_64-simulator/$lib.framework/$lib
+            [ "$(lipo -archs $DEV)" = "arm64" ]
+            lipo -archs $SIM | tr ' ' '\n' | sort | tr '\n' ' ' | grep -q "arm64 x86_64"
+            otool -D $DEV | grep -q "@rpath/$lib.framework/$lib"
+          done
+          ls Build/ANGLEFrameworks/licenses
+      - name: Download the engine xcframework
+        uses: actions/download-artifact@v4
+        with:
+          name: ProjectM.xcframework
+          path: Build
+      - name: ANGLERendering tests on an iOS Simulator (T077)
+        run: |
+          set -o pipefail
+          git submodule update --init Vendor/projectM   # the tests load the engine's test presets
+          UDID=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          devs = json.load(sys.stdin)["devices"]
+          best = None
+          for runtime, items in devs.items():
+              if "iOS" not in runtime:
+                  continue
+              for d in items:
+                  if "iPhone" in d["name"] and (best is None or runtime > best[0]):
+                      best = (runtime, d["udid"], d["name"])
+          print(best[1] if best else "")
+          ')
+          [ -n "$UDID" ] || { echo "::error::No iPhone simulator available"; exit 1; }
+          (cd Packages/ANGLERendering && xcodebuild -scheme ANGLERendering -destination "id=$UDID" \
+            -derivedDataPath "$RUNNER_TEMP/dd-angle" CODE_SIGNING_ALLOWED=NO test 2>&1 \
+            | grep -E "error:|warning:|Executed [0-9]+ tests|TEST (SUCCEEDED|FAILED)|failed \(")
 
   build-ios27:
     # Owner ruling 2026-11-08 (ADR-0002): compile the System/App Capture driver against the iOS 27

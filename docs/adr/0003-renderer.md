@@ -54,6 +54,24 @@ context when a load_proc is supplied; creation, rendering and preset loads then 
 27.2 and 26.5 simulators. Whether the resolver still calls `dlopen`, and for which names, is still
 open for T072 on a device.
 
+## ANGLE runtime library loading (Option B, T076)
+
+Checked 2026-11-09 on the pinned ANGLE build (Metal backend only; `nm -u`, `strings`, source):
+
+- `libEGL` calls `dlopen`/`dlsym` on ANGLE's own `libGLESv2` (its dispatch library,
+  `src/libEGL/libEGL_autogen.cpp`), which ships beside it in the app. No Apple framework is involved.
+- `libGLESv2` imports `dlopen`/`dlsym` through ANGLE's soft-linking macro
+  (`src/common/apple/SoftLinking.h`), used only by the macOS desktop-GL backend
+  (`src/common/gl/cgl/FunctionsCGL.cpp`), which this build leaves out (`angle_enable_gl=false`);
+  the binary contains no `/System/Library/Frameworks` path. Its one library path,
+  `/usr/lib/libstdc++.6.dylib`, comes from libc++'s `refstring.h`, which only asks with
+  `RTLD_NOLOAD` whether that library is already loaded, and never loads it.
+- Linked system frameworks: Metal, Foundation, CoreFoundation, CoreGraphics, IOSurface, QuartzCore,
+  and libobjc, all public.
+
+So ANGLE reaches only its own library and public frameworks by documented names, which meets the
+acceptance rule above. A device run still has to confirm nothing else loads (T078).
+
 ## Measurement devices
 
 The project device set (spec FR-032): D1 iPhone 15 (reference device), D2 iPad Pro M5, and D3 iPad

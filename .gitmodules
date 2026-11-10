@@ -2,3 +2,8 @@
 	path = Vendor/projectM
 	url = https://github.com/Coastrnaut/projectm.git
 	branch = ios
+[submodule "Vendor/angle"]
+	path = Vendor/angle
+	url = https://github.com/Coastrnaut/angle.git
+	branch = ios
+	shallow = true

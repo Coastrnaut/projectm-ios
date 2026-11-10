@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import check_capturelab_export  # noqa: E402
 import make_diagnostic_project  # noqa: E402
+import build_angle_xcframework as bax  # noqa: E402
 import build_projectm_xcframework as bpx  # noqa: E402
 import check_compliance  # noqa: E402
 import generate_gles_loader as ggl  # noqa: E402
@@ -648,6 +649,53 @@ GL_API void           GL_APIENTRY glActiveTexture (GLenum texture);
         text = ggl.OUTPUT.read_text(encoding="utf-8")
         self.assertNotRegex(text, r"\b(dlsym|dlopen)\s*\(")
         self.assertGreaterEqual(text.count('{"gl'), 200)
+
+
+class ANGLEXCFrameworkTests(unittest.TestCase):
+    """T076: ANGLE build arguments, output location and the deletion guard."""
+
+    def test_metal_only_release_build_for_ios(self):
+        for s in bax.SLICES:
+            a = bax.gn_args(s)
+            for arg in ('target_os="ios"', "is_debug=false", "angle_enable_metal=true", "angle_enable_gl=false",
+                        "angle_enable_vulkan=false", "angle_enable_swiftshader=false", "angle_build_tests=false",
+                        "ios_enable_code_signing=false", 'ios_deployment_target="26.0"'):
+                self.assertIn(arg, a)
+        self.assertEqual({(s["environment"], s["cpu"]) for s in bax.SLICES},
+                         {("device", "arm64"), ("simulator", "arm64"), ("simulator", "x64")})
+
+    def test_output_never_shares_a_case_insensitive_name_with_the_source(self):
+        names = {p.resolve().as_posix().lower() for p in (bax.SOURCE, bax.DEPOT_TOOLS)}
+        for out in (bax.OUTPUT, bax.STAGING):
+            low = out.resolve().as_posix().lower()
+            self.assertFalse(any(n == low or n.startswith(low + "/") for n in names), out)
+
+    def test_remove_tree_refuses_folders_holding_the_source(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            source = root / "Build" / "angle"
+            source.mkdir(parents=True)
+            with mock.patch.object(bax, "SOURCE", source), mock.patch.object(bax, "DEPOT_TOOLS", root / "none"):
+                with self.assertRaises(SystemExit):
+                    bax.remove_tree(root / "Build")
+                with self.assertRaises(SystemExit):
+                    bax.remove_tree(source)
+                # A differently-cased spelling of the same folder (case-insensitive volumes).
+                spelled = root / "Build" / "ANGLE"
+                if spelled.exists():
+                    with self.assertRaises(SystemExit):
+                        bax.remove_tree(spelled)
+                other = root / "Build" / "ANGLEFrameworks"
+                other.mkdir()
+                bax.remove_tree(other)
+                self.assertFalse(other.exists())
+                self.assertTrue(source.exists())
+
+    def test_pins_are_full_commits_and_submodule_tracks_the_fork(self):
+        self.assertRegex(bax.ANGLE_COMMIT, r"^[0-9a-f]{40}$")
+        self.assertRegex(bax.DEPOT_TOOLS_COMMIT, r"^[0-9a-f]{40}$")
+        text = (Path(__file__).resolve().parent.parent / ".gitmodules").read_text(encoding="utf-8")
+        self.assertIn("url = https://github.com/Coastrnaut/angle.git", text)
 
 
 if __name__ == "__main__":

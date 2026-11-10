@@ -14,7 +14,7 @@ LGPL-2.1. The App Store is the release target (FR-064).
 | Dependency | Pin | License | Packaging |
 |------------|-----|---------|-----------|
 | libprojectM | Git submodule from the owner's fork `Coastrnaut/projectm`, branch `ios` (Constitution VIII v1.1.0, owner decision 2026-11-09). Currently `49c500579effbb4a536143b1629b25c5399d3762`: upstream `eae22de40144ee8ded92f3c04b93a4c2f82adcc0` (untagged, after v4.1.0; CMake version 4.2.0) plus the patches in `docs/projectm-patches.md`. At Gate 3, rebase the branch onto the latest upstream release tag that passes Phase C, or keep the commit with a recorded reason. | LGPL-2.1 | Dynamic `ProjectM.xcframework` built by `scripts/build_projectm_xcframework.py`, embedded and signed. Source and build scripts published. |
-| ANGLE (only if ADR-0003 selects it) | Exact commit or release, recorded here | BSD-3-Clause | Prebuilt xcframework, built reproducibly from the pinned source |
+| ANGLE (only if ADR-0003 selects it) | Git submodule `Vendor/angle` from the owner's fork `Coastrnaut/angle` (a fork of the `google/angle` mirror of https://chromium.googlesource.com/angle/angle), branch `ios`, at `29d18232e8031430f1257b7509ceca20d195114d` (head of `chromium/8153`; owner decision 2026-11-09). Dependencies from `gclient sync` with depot_tools `c4cdaeebba9b9ed92d041997317ffdbd042158ac`. No patches. | BSD-3-Clause (ANGLE `LICENSE`, verified 2026-11-09, T076) | `Build/ANGLEFrameworks/libEGL.xcframework` and `libGLESv2.xcframework` (dynamic frameworks), built by `scripts/build_angle_xcframework.py` and in CI (`angle-xcframeworks`); embedded and signed |
 | XcodeGen | Exact version in `scripts/verify_environment.py` | MIT | Build-time tool only |
 | CMake | Exact minimum version | BSD-3-Clause | Build-time tool only |
 | Presets | Per-pack commit/version in `Presets/LICENSES.md` | Per pack (reviewed) | Bundled resources |
@@ -31,6 +31,24 @@ LGPL-2.1. The App Store is the release target (FR-064).
 | stb_image | Public domain / MIT dual (`stb_image.h` header) | Recorded |
 
 All of these appear on the Licenses screen (FR-067).
+
+### ANGLE's compiled-in components (`Vendor/angle`, T076)
+
+The Metal-only build (`gn desc ... deps --all`) compiles this third-party code into the ANGLE
+frameworks. Licenses are from each component's `README.chromium` and license file at the pinned
+commit; the script copies the files to `Build/ANGLEFrameworks/licenses/` for the Licenses screen.
+
+| Component | License | Status |
+|-----------|---------|--------|
+| ANGLE | BSD-3-Clause ("Copyright 2018 The ANGLE Project Authors") | Recorded |
+| libc++, libc++abi | Apache-2.0 WITH LLVM-exception | Recorded |
+| abseil-cpp | Apache-2.0 | Recorded |
+| astc-encoder | Apache-2.0 | Recorded |
+| llvm-libc | MIT, NCSA | Recorded |
+| perfetto | blessing, BSD-3-Clause, Apache-2.0 | Recorded |
+| protobuf (36.0) | BSD-3-Clause | Recorded |
+| vulkan-headers (1.2.140) | Apache-2.0 | Recorded |
+| zlib (1.3.2) | Zlib | Recorded |
 
 ### Engine iOS build configuration (RI-011)
 

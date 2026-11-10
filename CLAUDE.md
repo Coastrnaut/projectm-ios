@@ -20,6 +20,9 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
 - `Vendor/projectM` is pinned to the owner's fork (`Coastrnaut/projectm`, branch `ios`; Constitution
   VIII v1.1.0). Engine changes are made on that branch only as upstream-ready commits, each logged
   in `docs/projectm-patches.md` and meant for an upstream PR; then the pin moves (ADR-0004).
+- `Vendor/angle` is the owner's fork of ANGLE (`Coastrnaut/angle`, branch `ios`, shallow; ADR-0004).
+  `gclient sync` puts about 12 GB of dependencies inside it (gitignored). Never delete or move it;
+  scripts write only to `Build/ANGLEFrameworks` (macOS volumes are case-insensitive).
 
 ## Working with agents (owner preference, 2026-11-08)
 
