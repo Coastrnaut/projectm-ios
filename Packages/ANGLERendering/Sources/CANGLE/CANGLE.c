@@ -30,3 +30,25 @@ void PMANGLEBindDefaultFramebuffer(void) {
         bind(GL_FRAMEBUFFER, 0);
     }
 }
+
+void PMANGLEClearFramebuffer(unsigned int framebuffer, float red, float green, float blue) {
+    typedef void (*BindFramebuffer)(unsigned int, unsigned int);
+    typedef void (*ClearColor)(float, float, float, float);
+    typedef void (*Clear)(unsigned int);
+    BindFramebuffer bind = (BindFramebuffer)eglGetProcAddress("glBindFramebuffer");
+    ClearColor clearColor = (ClearColor)eglGetProcAddress("glClearColor");
+    Clear clear = (Clear)eglGetProcAddress("glClear");
+    if (bind && clearColor && clear) {
+        bind(GL_FRAMEBUFFER, framebuffer);
+        clearColor(red, green, blue, 1.0f);
+        clear(0x00004000); // GL_COLOR_BUFFER_BIT
+    }
+}
+
+void PMANGLEFinish(void) {
+    typedef void (*Finish)(void);
+    Finish finish = (Finish)eglGetProcAddress("glFinish");
+    if (finish) {
+        finish();
+    }
+}

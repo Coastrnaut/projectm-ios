@@ -44,6 +44,11 @@ struct VisualizerView: View {
             }
             .padding()
             .animation(.easeInOut(duration: 0.2), value: coordinator.controlsVisible)
+            if coordinator.settings.showsPerformanceOverlay, let renderer = coordinator.renderer {
+                VStack { HStack { Spacer(); PerformanceOverlay(renderer: renderer, manager: coordinator.manager) }; Spacer() }
+                    .padding(.top, 2)
+                    .padding(.trailing, 8)
+            }
             #if DEBUG
             if let fake = coordinator.fakeSource {
                 VStack { HStack { FakeSourcePanel(fake: fake); Spacer() }; Spacer() }
@@ -64,7 +69,11 @@ struct VisualizerView: View {
             PresetBrowserView(presets: coordinator.presets) { coordinator.choose($0) }
         }
         .sheet(isPresented: $coordinator.showSettings) {
-            SettingsSheet()
+            SettingsView(settings: coordinator.settings)
+        }
+        .onChange(of: coordinator.settings.reduceFlashing) { coordinator.applyReduceFlashing() }
+        .onReceive(NotificationCenter.default.publisher(for: UIAccessibility.reduceMotionStatusDidChangeNotification)) { _ in
+            coordinator.systemReduceMotionChanged(UIAccessibility.isReduceMotionEnabled)
         }
     }
 
@@ -90,21 +99,4 @@ struct RendererHost: UIViewRepresentable {
     let renderer: any VisualizerRenderer
     func makeUIView(context: Context) -> UIView { renderer.view }
     func updateUIView(_ uiView: UIView, context: Context) {}
-}
-
-/// Settings until T103 adds its contents (performance overlay, Reduce flashing, Licenses).
-struct SettingsSheet: View {
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            List {
-                LabeledContent("Version",
-                               value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")
-            }
-            .navigationTitle("Settings")
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
-        }
-        .accessibilityIdentifier("settings")
-    }
 }

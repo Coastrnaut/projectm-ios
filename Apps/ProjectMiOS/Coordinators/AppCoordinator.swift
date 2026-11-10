@@ -44,6 +44,8 @@ final class AppCoordinator: VisualizationControlling {
     private(set) var sourceStarts = 0
     var showPresetBrowser = false
     var showSettings = false
+    /// Performance overlay and Reduce flashing (T103).
+    let settings: AppSettings
 
     private let defaults: UserDefaults
     #if DEBUG
@@ -60,7 +62,9 @@ final class AppCoordinator: VisualizationControlling {
             defaults.removeObject(forKey: Self.noticeKey)
             defaults.removeObject(forKey: FavoritesStore.favoritesKey)
             defaults.removeObject(forKey: FavoritesStore.lastPresetKey)
+            AppSettings.allKeys.forEach(defaults.removeObject(forKey:))
         }
+        settings = AppSettings(defaults: defaults, systemReduceMotion: UIAccessibility.isReduceMotionEnabled)
         screen = defaults.bool(forKey: Self.noticeKey) ? .chooser : .notice
         microphone = MicrophoneSource(backend: AVMicrophoneBackend())
         var sources: [any AudioSource] = [
@@ -185,10 +189,22 @@ final class AppCoordinator: VisualizationControlling {
             renderer = try? GLESRenderer.make()
         }
         renderer?.attach(pcm: manager.normalizedOutput)
+        applyReduceFlashing()
         presetLoader.renderer = renderer
         if let preset = presets.current ?? presets.initialPreset {
             Task { await presets.select(preset) }
         }
+    }
+
+    /// FR-072: the renderer follows the setting (and Reduce Motion while the user has not chosen).
+    func applyReduceFlashing() {
+        renderer?.reduceFlashing = settings.reduceFlashing
+    }
+
+    /// The system Reduce Motion setting changed.
+    func systemReduceMotionChanged(_ enabled: Bool) {
+        settings.systemReduceMotion = enabled
+        applyReduceFlashing()
     }
 
     func togglePause() {

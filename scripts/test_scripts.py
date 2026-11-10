@@ -36,6 +36,13 @@ class ValidateDocsTests(unittest.TestCase):
         self.assertEqual(validate_docs.main(["--include-fixtures"]), 1)
 
 
+class LicensesManifestTests(unittest.TestCase):
+    def test_committed_manifest_is_complete(self):
+        import collect_licenses
+        with mock.patch("builtins.print"):
+            self.assertEqual(collect_licenses.check(), 0)
+
+
 class ComplianceTests(unittest.TestCase):
     def test_clean_tree_passes(self):
         self.assertEqual(check_compliance.main([]), 0)

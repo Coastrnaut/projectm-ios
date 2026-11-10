@@ -118,7 +118,12 @@ targets:
           - "UITests/**"
           - "Tests/**"
           - "Resources/Presets"
+          - "Resources/Licenses"
       - path: Apps/ProjectMiOS/Resources/Presets
+        type: folder
+        buildPhase: resources
+      # Licenses screen texts (T103, scripts/collect_licenses.py).
+      - path: Apps/ProjectMiOS/Resources/Licenses
         type: folder
         buildPhase: resources
       # In-App Playback track and the SC-006 click timings (T044).

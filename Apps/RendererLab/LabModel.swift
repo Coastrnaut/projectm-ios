@@ -3,9 +3,12 @@
 // Launch arguments, or the environment variables RL_BACKEND, RL_MODE, RL_DURATION, RL_PRESET_SECONDS
 // (all optional; with a mode the run starts by itself, so devicectl can drive it):
 //   -backend gles|angle      renderer under test (default gles)
-//   -mode sweep|session      sweep: every upstream test preset and every starter preset, each
+//   -mode sweep|session|flashcost
+//                            sweep: every upstream test preset and every starter preset, each
 //                            loaded and rendered for 2 s; session: render for -duration seconds,
-//                            changing starter preset every -presetSeconds
+//                            changing starter preset every -presetSeconds; flashcost (ANGLE
+//                            only, T104): GPU-synchronized frame times with Reduce flashing off
+//                            and on, alternating, on each starter preset
 //   -duration 600            session length in seconds
 //   -presetSeconds 20        session preset interval
 // Results go to Documents/RendererLab-<backend>-<mode>-<timestamp>.json (UIFileSharingEnabled), with
@@ -24,7 +27,7 @@ import UIKit
 @Observable
 final class LabModel {
     enum Backend: String, CaseIterable, Codable { case gles, angle }
-    enum Mode: String, Codable { case sweep, session }
+    enum Mode: String, Codable { case sweep, session, flashcost }
 
     struct Config: Codable {
         var backend: Backend = .gles
@@ -73,7 +76,16 @@ final class LabModel {
         var viewPoints: [Double]
         var presets: [PresetResult]?
         var framesPerSecond: [Double]?
+        var flashCost: [FlashCostResult]?
         var summary: [String: Double]
+    }
+
+    /// Reduce-flashing cost on one preset (T104): median frame time with the post-pass off and on.
+    struct FlashCostResult: Codable {
+        var id: String
+        var medianOffMs: Double
+        var medianOnMs: Double
+        var costMs: Double
     }
 
     var config = Config.fromLaunchArguments()
@@ -128,6 +140,7 @@ final class LabModel {
         try? await Task.sleep(for: .seconds(2))
         var presets: [PresetResult]?
         var fps: [Double]?
+        var flashCost: [FlashCostResult]?
         var summary: [String: Double] = [:]
         switch mode {
         case .sweep:
@@ -149,6 +162,19 @@ final class LabModel {
             summary["fpsP5"] = sorted.isEmpty ? 0 : sorted[Int(Double(sorted.count) * 0.05)]
             summary["fractionAtLeast55"] = windows.isEmpty ? 0 : Double(windows.filter { $0 >= 55 }.count) / Double(windows.count)
             summary["fractionAtLeast30"] = windows.isEmpty ? 0 : Double(windows.filter { $0 >= 30 }.count) / Double(windows.count)
+        case .flashcost:
+            guard let angle = renderer as? ANGLERenderer else {
+                status = "flashcost needs -backend angle"
+                return
+            }
+            let results = await measureFlashCost(angle)
+            flashCost = results
+            let costs = results.map(\.costMs).sorted()
+            summary["presets"] = Double(results.count)
+            summary["costMsMedian"] = costs.isEmpty ? 0 : costs[costs.count / 2]
+            summary["costMsMax"] = costs.last ?? 0
+            summary["surfaceWidth"] = Double(angle.currentSurfaceSizeForLab.width)
+            summary["surfaceHeight"] = Double(angle.currentSurfaceSizeForLab.height)
         }
         let view = renderer.view
         let report = Report(backend: config.backend, mode: mode, device: Self.modelIdentifier(),
@@ -158,7 +184,7 @@ final class LabModel {
                             thermalStates: thermalStates.sorted(), lowPowerMode: ProcessInfo.processInfo.isLowPowerModeEnabled,
                             drawableScale: view.contentScaleFactor,
                             viewPoints: [view.bounds.width, view.bounds.height],
-                            presets: presets, framesPerSecond: fps, summary: summary)
+                            presets: presets, framesPerSecond: fps, flashCost: flashCost, summary: summary)
         save(report)
     }
 
@@ -210,6 +236,36 @@ final class LabModel {
         }
         status = "Session done: \(windows.count) windows"
         return windows
+    }
+
+    /// Per starter preset: 30 warm-up frames, then 5 rounds of 40 frames off and 40 on.
+    private func measureFlashCost(_ renderer: ANGLERenderer) async -> [FlashCostResult] {
+        let presets = (try? PresetRepository(presetsFolder: Self.resource("Presets")).load().presets) ?? []
+        renderer.pause()
+        defer { renderer.resume() }
+        var results: [FlashCostResult] = []
+        for (index, preset) in presets.enumerated() {
+            status = "Flash cost \(index + 1)/\(presets.count): \(preset.name)"
+            guard (try? await renderer.setPreset(preset)) != nil else { continue }
+            _ = renderer.timedFrames(30, reduceFlashing: false)
+            var off: [Double] = [], on: [Double] = []
+            for _ in 0..<5 {
+                off += renderer.timedFrames(40, reduceFlashing: false)
+                on += renderer.timedFrames(40, reduceFlashing: true)
+                await Task.yield()
+            }
+            thermalStates.insert(Self.thermalName())
+            let medianOff = Self.median(off), medianOn = Self.median(on)
+            results.append(FlashCostResult(id: preset.id, medianOffMs: medianOff, medianOnMs: medianOn,
+                                           costMs: medianOn - medianOff))
+        }
+        status = "Flash cost done: \(results.count) presets"
+        return results
+    }
+
+    private static func median(_ values: [Double]) -> Double {
+        let sorted = values.sorted()
+        return sorted.isEmpty ? 0 : sorted[sorted.count / 2]
     }
 
     // MARK: - Helpers

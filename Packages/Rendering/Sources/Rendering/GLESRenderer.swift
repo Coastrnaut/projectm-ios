@@ -28,8 +28,8 @@ public final class GLESRenderer: NSObject, VisualizerRenderer {
     public var view: UIView { layerView }
     public private(set) var metrics = RenderMetrics.zero
     public private(set) var presentedFrameCount = 0
-    /// FR-072. Stored for the settings flow; how it limits brightness changes is decided with the
-    /// photosensitivity work (US7), since the engine has no single switch for it.
+    /// FR-072. Stored only: the Reduce-flashing post-pass (T104) is in ANGLERenderer, the renderer
+    /// ADR-0003 chose. This renderer is the fallback when no EGL context can be created.
     public var reduceFlashing = false
 
     private let layerView: GLESLayerView

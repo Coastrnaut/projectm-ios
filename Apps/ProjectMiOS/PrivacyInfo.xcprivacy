@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<!-- Privacy manifest placeholder (T080): no tracking, no collected data. Required-reason API
-     entries are added when an audit (Phase E) finds any. -->
+<!-- Privacy manifest (task T106; FR-066). No tracking and no collected data. Required-reason APIs,
+     found by scripts/check_privacy_manifest.py in the app and its embedded frameworks:
+     * UserDefaults (CA92.1): settings, favorites, last preset and the notice flag, read only by
+       the app (FR-065).
+     * System boot time, mach_absolute_time (35F9.1): audio timestamps in CaptureKit and frame
+       timing in ANGLE (libGLESv2), elapsed time between events inside the app.
+     * File timestamp, stat (C617.1): ANGLE (libEGL) checks its own framework files inside the app
+       bundle when it loads libGLESv2. -->
 <plist version="1.0">
 <dict>
 	<key>NSPrivacyTracking</key>
@@ -11,6 +17,31 @@
 	<key>NSPrivacyCollectedDataTypes</key>
 	<array/>
 	<key>NSPrivacyAccessedAPITypes</key>
-	<array/>
+	<array>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategorySystemBootTime</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>35F9.1</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>C617.1</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

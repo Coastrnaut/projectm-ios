@@ -8,6 +8,8 @@
 // * Same frame loop as GLESRenderer: a CADisplayLink at up to 60 fps (30 under Low Power Mode or
 //   serious thermal state, FR-049), one NormalizedPCMReader read per frame, render to the window
 //   surface's default framebuffer (0), then eglSwapBuffers.
+// * Reduce flashing (FR-072, T104): the engine renders into FlashLimiter's offscreen texture and the
+//   limiter draws the frame with its mean luminance changing at most `flashLimitPerSecond`.
 // * Everything runs on the main thread, the engine's render thread.
 import AudioCore
 import CANGLE
@@ -29,8 +31,16 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer {
     public var view: UIView { layerView }
     public private(set) var metrics = RenderMetrics.zero
     public private(set) var presentedFrameCount = 0
-    /// FR-072; see GLESRenderer.reduceFlashing.
-    public var reduceFlashing = false
+    /// FR-072: limit rapid full-screen brightness changes (FlashLimiter.c). Turning it on starts from
+    /// the current brightness.
+    public var reduceFlashing = false {
+        didSet { if reduceFlashing != oldValue, let flashLimiter { PMFlashLimiterReset(flashLimiter) } }
+    }
+    /// While Reduce flashing is on, the frame's mean luminance (0-1, approximately linear) changes by
+    /// at most this much per second: a 10% full-screen change takes at least 1/3 s, so opposing
+    /// changes of that size stay well under 3 per second.
+    public static let flashLimitPerSecond: Float = 0.3
+    private var flashLimiter: OpaquePointer?
 
     private let layerView: MetalLayerView
     private let display: EGLDisplay
@@ -102,6 +112,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer {
         displayLink?.invalidate()
         for observer in observers { NotificationCenter.default.removeObserver(observer) }
         eglMakeCurrent(display, placeholder, placeholder, context)
+        PMFlashLimiterDestroy(flashLimiter)
         engine = nil   // destroyed while its context is current (bridge guarantee 3)
         eglMakeCurrent(display, nil, nil, nil)
         if let surface { eglDestroySurface(display, surface) }
@@ -137,8 +148,9 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer {
     // MARK: - Frames
 
     /// Renders one frame; with `present`, swaps it onto the layer. Returns false with no surface.
+    /// `frameTime` (seconds since the previous frame) sets the Reduce-flashing step.
     @discardableResult
-    func renderFrame(present: Bool = true) -> Bool {
+    func renderFrame(present: Bool = true, frameTime: Double = 1.0 / 60) -> Bool {
         guard let engine, let surface else { return false }
         eglMakeCurrent(display, surface, surface, context)
         if let reader {
@@ -147,7 +159,18 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer {
                 engine.addPCMInterleavedStereo(pcm, frames: UInt(frames))
             }
         }
-        engine.renderFrame(toFramebuffer: 0)
+        if reduceFlashing, let limiter = flashLimiterForFrame() {
+            let framebuffer = PMFlashLimiterBegin(limiter, Int32(surfaceSize.width), Int32(surfaceSize.height))
+            if framebuffer != 0 {
+                engine.renderFrame(toFramebuffer: framebuffer)
+                let step = Self.flashLimitPerSecond * Float(min(max(frameTime, 0), 0.1))
+                PMFlashLimiterFinish(limiter, 0, step)
+            } else {
+                engine.renderFrame(toFramebuffer: 0)
+            }
+        } else {
+            engine.renderFrame(toFramebuffer: 0)
+        }
         if present {
             eglSwapBuffers(display, surface)
             presentedFrameCount += 1
@@ -155,8 +178,14 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer {
         return true
     }
 
+    /// Created on first use, with the context current.
+    private func flashLimiterForFrame() -> OpaquePointer? {
+        if flashLimiter == nil { flashLimiter = PMFlashLimiterCreate() }
+        return flashLimiter
+    }
+
     @objc fileprivate func displayLinkFired(_ link: CADisplayLink) {
-        guard renderFrame() else { return }
+        guard renderFrame(frameTime: link.targetTimestamp - link.timestamp) else { return }
         if meter.record(presentedAt: link.timestamp) {
             metrics = meter.metrics
         }
@@ -233,11 +262,47 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer {
         engine?.setViewportWidth(Int(w), height: Int(h))
     }
 
+    // MARK: - Measurement (RendererLab)
+
+    /// Renders `frames` frames back to back without presenting, waiting for the GPU after each
+    /// (glFinish), and returns each frame's wall time in milliseconds. RendererLab compares runs with
+    /// Reduce flashing on and off to measure the post-pass cost (T104). Pause the display link first.
+    public func timedFrames(_ frames: Int, reduceFlashing: Bool) -> [Double] {
+        let saved = self.reduceFlashing
+        self.reduceFlashing = reduceFlashing
+        defer { self.reduceFlashing = saved }
+        var times: [Double] = []
+        times.reserveCapacity(frames)
+        for _ in 0..<frames {
+            let start = CACurrentMediaTime()
+            guard renderFrame(present: false) else { break }
+            PMANGLEFinish()
+            times.append((CACurrentMediaTime() - start) * 1000)
+        }
+        return times
+    }
+
+    /// The window surface size in pixels (RendererLab reports).
+    public var currentSurfaceSizeForLab: (width: Int, height: Int) { surfaceSize }
+
     // MARK: - Test support
 
     var isDisplayLinkPaused: Bool? { displayLink?.isPaused }
     var currentSurfaceSize: (width: Int, height: Int) { surfaceSize }
     var hasWindowSurface: Bool { surface != nil }
+
+    /// Makes the window surface current (tests that issue GL calls directly).
+    func makeSurfaceCurrent() {
+        guard let surface else { return }
+        eglMakeCurrent(display, surface, surface, context)
+    }
+
+    /// The limiter's adapted mean luminance after the last frame, or nil while it is unused (tests).
+    var flashLimiterAdaptedLuminance: Float? {
+        guard let flashLimiter, let surface else { return nil }
+        eglMakeCurrent(display, surface, surface, context)
+        return PMFlashLimiterAdaptedLuminance(flashLimiter)
+    }
 
     /// Reads back the default framebuffer of the current surface as RGBA bytes (tests).
     func readPixels() -> [UInt8] {
