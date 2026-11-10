@@ -11,6 +11,10 @@ final class PCMSinkAudioBufferListTests: XCTestCase {
         return Array(out.prefix(n))
     }
 
+    func testBuffersOffsetMatchesTheKeyPathOffset() {
+        XCTAssertEqual(PCMSink.audioBuffersOffset, MemoryLayout<AudioBufferList>.offset(of: \AudioBufferList.mBuffers))
+    }
+
     func testInterleavedSingleBuffer() {
         let sink = PCMSink()
         var samples: [Float] = [0.1, -0.1, 0.2, -0.2]

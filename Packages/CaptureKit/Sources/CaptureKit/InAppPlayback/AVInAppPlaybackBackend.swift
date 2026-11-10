@@ -67,6 +67,7 @@ public final class AVInAppPlaybackBackend: InAppPlaybackBackend {
         // iOS Simulator (crash reports fault in this closure); AVMicrophoneBackend's input tap
         // had the same pattern and got the same fix.
         let layout = ChannelLayoutTag(rawValue: tapFormat.channelLayout?.layoutTag ?? 0)
+        AVAudioTapWarmUp.run(format: tapFormat)   // no first-call method-cache allocation in the tap (T063)
         mixer.installTap(onBus: 0, bufferSize: 1024, format: tapFormat) { @Sendable tapBuffer, when in
             // Capture delivery (task T062): the buffer's host time, in ns on the uptime clock.
             let captureNs: UInt64 = when.isHostTimeValid
@@ -84,6 +85,7 @@ public final class AVInAppPlaybackBackend: InAppPlaybackBackend {
         }
         player.scheduleBuffer(buffer, at: nil, options: .loops)
         player.play()
+        AVAudioTapWarmUp.run(format: tapFormat)   // again: starting the engine can reset the caches
         self.engine = engine
         self.player = player
         self.onEvent = onEvent

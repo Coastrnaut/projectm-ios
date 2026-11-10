@@ -140,8 +140,8 @@ final class SampleBufferAudioWriter: @unchecked Sendable {
     private static func buffersHold(frames: Int, format: AudioFormat,
                                     list: UnsafePointer<AudioBufferList>) -> Bool {
         let count = Int(list.pointee.mNumberBuffers)
-        guard count > 0,
-              let offset = MemoryLayout<AudioBufferList>.offset(of: \AudioBufferList.mBuffers) else { return false }
+        guard count > 0 else { return false }
+        let offset = PCMSink.audioBuffersOffset   // not a key path, which allocates in Debug (T063)
         let buffers = UnsafeRawPointer(list).advanced(by: offset).assumingMemoryBound(to: AudioBuffer.self)
         let bytesPerSample = format.sampleType == .int16 ? 2 : 4
         if format.isInterleaved || count == 1 {

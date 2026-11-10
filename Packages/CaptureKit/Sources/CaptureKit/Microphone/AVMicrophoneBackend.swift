@@ -91,6 +91,7 @@ public final class AVMicrophoneBackend: MicrophoneBackend {
         // preemptively. No test has yet run this tap (Microphone Active audio is checked on
         // device in T049).
         let layout = ChannelLayoutTag(rawValue: avFormat.channelLayout?.layoutTag ?? 0)
+        AVAudioTapWarmUp.run(format: avFormat)   // no first-call method-cache allocation in the tap (T063)
         input.installTap(onBus: 0, bufferSize: 1024, format: avFormat) { @Sendable buffer, when in
             // Capture delivery (task T062): the buffer's host time, in ns on the uptime clock.
             let captureNs: UInt64 = when.isHostTimeValid
@@ -105,6 +106,7 @@ public final class AVMicrophoneBackend: MicrophoneBackend {
             input.removeTap(onBus: 0)
             throw SourceError(.microphoneUnavailable)
         }
+        AVAudioTapWarmUp.run(format: avFormat)   // again: starting the engine can reset the caches
         self.engine = engine
     }
 

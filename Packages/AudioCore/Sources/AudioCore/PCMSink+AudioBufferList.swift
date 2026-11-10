@@ -5,14 +5,24 @@
 import CoreAudioTypes
 
 extension PCMSink {
+    /// Byte offset of `AudioBufferList.mBuffers`. `mBuffers` is the last field (a one-element
+    /// array), so it starts one `AudioBuffer` before the end of the struct. Computed without a key
+    /// path: `MemoryLayout.offset(of: \.mBuffers)` creates a KeyPath object at run time in Debug
+    /// builds, which heap-allocated on the first audio callback (T063 trace on D1, 2026-11-09).
+    /// `PCMSinkAudioBufferListTests` checks it equals the key-path offset.
+    @inline(__always)
+    public static var audioBuffersOffset: Int {
+        MemoryLayout<AudioBufferList>.size - MemoryLayout<AudioBuffer>.stride
+    }
+
     /// Real-time-safe write from an `AudioBufferList` (contracts/audio-source.md §PCMSink).
     /// Uses the sink's preallocated plane scratch, so this path never allocates. Single producer.
     public func write(_ list: UnsafePointer<AudioBufferList>, format: AudioFormat, frameCount: Int,
                       layout: ChannelLayoutTag = .unknown, captureTimeNs: UInt64 = 0,
                       hostTimeNs: UInt64 = MonotonicClock.nowNanoseconds()) {
         let count = Int(list.pointee.mNumberBuffers)
-        guard count > 0, frameCount > 0,
-              let offset = MemoryLayout<AudioBufferList>.offset(of: \AudioBufferList.mBuffers) else { return }
+        guard count > 0, frameCount > 0 else { return }
+        let offset = PCMSink.audioBuffersOffset
         let buffers = UnsafeRawPointer(list).advanced(by: offset).assumingMemoryBound(to: AudioBuffer.self)
         if format.isInterleaved || count == 1 {
             guard let data = buffers[0].mData else { return }
