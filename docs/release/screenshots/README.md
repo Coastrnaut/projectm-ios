@@ -26,5 +26,5 @@ audio), by `swift scripts/make_app_preview.swift <raw.mov> <out.mp4> <width> <he
 App Store Connect's iPhone slot is "iPhone with Dynamic Island (medium display)" (6.1"/6.3"), which
 takes 1206 x 2622 screenshots; the iPhone PNGs here were scaled to that size for upload
 (`sips -z 2622 1206 <file>`; the aspect ratios differ by less than 0.1%). iPad PNGs went up as is
-(2064 x 2752). Order as numbered. The previews are added by the owner (over the 10 MB upload limit
-of the browser tool).
+(2064 x 2752). Order as numbered. The two previews were uploaded by the owner (over the browser tool's 10 MB
+limit); App Store Connect then showed 1 preview and 4 screenshots for each device.
