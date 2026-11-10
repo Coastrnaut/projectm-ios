@@ -169,6 +169,68 @@ jobs:
             exit 1
           fi
 
+  engine-xcframework:
+    # Task T066 (RI-011, ADR-0004): build the projectM engine as Build/ProjectM.xcframework with
+    # scripts/build_projectm_xcframework.py from a fresh checkout. Vendor/projectM is the owner's
+    # fork, branch `ios` (Constitution VIII v1.1.0); its own submodule vendor/projectm-eval is
+    # needed too. The result is cached by engine commit, build-script hash and Xcode build, and
+    # uploaded for later jobs (ProjectMBridge, Phase C).
+    needs: docs-and-compliance
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+      - name: Select newest Xcode 26
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          [ -n "$XCODE" ] || XCODE=/Applications/Xcode.app
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          xcodebuild -version
+          command -v cmake >/dev/null || brew install cmake
+          cmake --version | head -1
+      - name: Cache key
+        id: key
+        run: |
+          ENGINE=$(git rev-parse HEAD:Vendor/projectM)
+          XCODE_BUILD=$(xcodebuild -version | sed -nE 's/^Build version (.+)$/\1/p')
+          SCRIPT=$(shasum -a 256 scripts/build_projectm_xcframework.py | cut -c1-16)
+          echo "engine=$ENGINE" >> "$GITHUB_OUTPUT"
+          echo "key=projectm-xcframework-$ENGINE-$SCRIPT-$XCODE_BUILD" >> "$GITHUB_OUTPUT"
+          echo "Engine commit: $ENGINE (Xcode $XCODE_BUILD)"
+      - name: Restore the cached xcframework
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            Build/ProjectM.xcframework
+            Build/ProjectM.xcframework.json
+          key: ${{ steps.key.outputs.key }}
+      - name: Build the engine xcframework
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: python3 scripts/build_projectm_xcframework.py
+      - name: Check the xcframework
+        run: |
+          echo "cache hit: ${{ steps.cache.outputs.cache-hit == 'true' }}"
+          cat Build/ProjectM.xcframework.json
+          set -e
+          DEV=Build/ProjectM.xcframework/ios-arm64/projectM-4.framework
+          SIM=Build/ProjectM.xcframework/ios-arm64_x86_64-simulator/projectM-4.framework
+          [ "$(lipo -archs $DEV/projectM-4)" = "arm64" ]
+          lipo -archs $SIM/projectM-4 | tr ' ' '\n' | sort | tr '\n' ' ' | grep -q "arm64 x86_64"
+          otool -D $DEV/projectM-4 | grep -q "@rpath/projectM-4.framework/projectM-4"
+          test -f $DEV/Headers/projectM.h
+          grep -q "${{ steps.key.outputs.engine }}" Build/ProjectM.xcframework.json
+      - name: Upload the xcframework
+        uses: actions/upload-artifact@v4
+        with:
+          name: ProjectM.xcframework
+          path: |
+            Build/ProjectM.xcframework
+            Build/ProjectM.xcframework.json
+          retention-days: 14
+
   build-ios27:
     # Owner ruling 2026-11-08 (ADR-0002): compile the System/App Capture driver against the iOS 27
     # SDK on every run, because the main job (macos-26, iOS 26.5 SDK) compiles it out. GitHub's
