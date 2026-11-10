@@ -231,10 +231,12 @@ final class AppCoordinator: VisualizationControlling {
         controlsVisible ? hideControls() : showControls()
     }
 
-    /// Shows the controls and restarts the 5 s auto-hide.
+    /// Shows the controls and restarts the 5 s auto-hide. While VoiceOver runs they stay until the
+    /// user hides them, so swiping through them never races the timer (FR-070, SC-012).
     func showControls() {
         controlsVisible = true
         hideTask?.cancel()
+        guard !UIAccessibility.isVoiceOverRunning else { return }
         hideTask = Task { [weak self] in
             try? await Task.sleep(for: Self.controlsAutoHide)
             guard !Task.isCancelled else { return }
