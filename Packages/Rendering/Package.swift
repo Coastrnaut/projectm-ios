@@ -8,18 +8,23 @@ import PackageDescription
 let package = Package(
     name: "Rendering",
     platforms: [.iOS("26.0")],
-    products: [.library(name: "Rendering", targets: ["Rendering"])],
+    products: [
+        .library(name: "Rendering", targets: ["Rendering"]),
+        // The Reduce-flashing post-pass, shared with ANGLERendering (T119).
+        .library(name: "CFlashLimiter", targets: ["CFlashLimiter"]),
+    ],
     dependencies: [
         .package(path: "../AudioCore"),
         .package(path: "../ProjectMBridge"),
     ],
     targets: [
-        .target(name: "Rendering", dependencies: ["AudioCore", "ProjectMBridge"],
+        .target(name: "CFlashLimiter"),
+        .target(name: "Rendering", dependencies: ["AudioCore", "ProjectMBridge", "CFlashLimiter"],
                 // OpenGL ES is deprecated on iOS but is ADR-0003 Option A; the define must reach the
                 // Clang importer, so it is passed with -Xcc (a local path package may use unsafeFlags).
                 swiftSettings: [.unsafeFlags(["-Xcc", "-DGLES_SILENCE_DEPRECATION"])],
                 linkerSettings: [.linkedFramework("OpenGLES"), .linkedFramework("QuartzCore")]),
-        .testTarget(name: "RenderingTests", dependencies: ["Rendering", "AudioCore", "ProjectMBridge"],
+        .testTarget(name: "RenderingTests", dependencies: ["Rendering", "AudioCore", "ProjectMBridge", "CFlashLimiter"],
                     swiftSettings: [.unsafeFlags(["-Xcc", "-DGLES_SILENCE_DEPRECATION"])]),
     ]
 )

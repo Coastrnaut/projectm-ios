@@ -77,19 +77,5 @@ void PMANGLEClearFramebuffer(unsigned int framebuffer, float red, float green, f
 /// glFinish through eglGetProcAddress: waits for the GPU (RendererLab timing).
 void PMANGLEFinish(void);
 
-/// The "Reduce flashing" post-pass (task T104, FlashLimiter.c). All calls need the renderer's
-/// context current. Create returns NULL if the GL entry points or shaders are unavailable.
-typedef struct PMFlashLimiter PMFlashLimiter;
-PMFlashLimiter *_Nullable PMFlashLimiterCreate(void);
-void PMFlashLimiterDestroy(PMFlashLimiter *_Nullable limiter);
-/// Starts over from the next frame's brightness (no ramp from a stale value).
-void PMFlashLimiterReset(PMFlashLimiter *_Nonnull limiter);
-/// The framebuffer the engine renders into this frame (sized width x height); 0 on failure.
-unsigned int PMFlashLimiterBegin(PMFlashLimiter *_Nonnull limiter, int width, int height);
-/// Draws the limited frame into `targetFramebuffer`; the mean luminance moves at most `maxStep`.
-void PMFlashLimiterFinish(PMFlashLimiter *_Nonnull limiter, unsigned int targetFramebuffer, float maxStep);
-/// The adapted mean luminance after the last Finish (tests; reads back one pixel).
-float PMFlashLimiterAdaptedLuminance(PMFlashLimiter *_Nonnull limiter);
-unsigned int PMFlashLimiterSceneFramebuffer(PMFlashLimiter *_Nonnull limiter);
 
 #endif

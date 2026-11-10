@@ -5,6 +5,7 @@
 // evidence.
 import XCTest
 import CANGLE
+import CFlashLimiter
 import Rendering
 @testable import ANGLERendering
 
@@ -24,7 +25,7 @@ final class FlashLimiterTests: XCTestCase {
         renderer.view.frame = CGRect(x: 0, y: 0, width: 32, height: 32)
         renderer.view.layoutIfNeeded()
         renderer.makeSurfaceCurrent()
-        limiter = try XCTUnwrap(PMFlashLimiterCreate(), "shaders compile and link")
+        limiter = try XCTUnwrap(PMFlashLimiterCreate(PMANGLELoadProc, nil), "shaders compile and link")
         size = (Int32(renderer.currentSurfaceSize.width), Int32(renderer.currentSurfaceSize.height))
     }
 

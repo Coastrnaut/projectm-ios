@@ -44,12 +44,15 @@ Guarantees:
     func setPreset(_ preset: Preset) async throws    // ≤ 1 s (SC-007)
     func pause(); func resume()                      // FR-046, FR-050
     var reduceFlashing: Bool { get set }             // FR-072
+    var supportsReduceFlashing: Bool { get }         // FR-072: false makes Settings disable the switch (T116)
     var metrics: RenderMetrics { get }               // fps, frame time; feeds the FR-048 overlay
+    var presentedFrameCount: Int { get }             // frames presented; SC-007 first-frame timing
 }
 ```
 
-Backends: `GLESRenderer` (Apple OpenGL ES 3.0, Phase C prototype). `ANGLERenderer` (if ADR-0003
-selects it). The display link drives frames. Each frame drains up to `maxSamplesPerFrame` from
+Backends: `ANGLERenderer` (ANGLE on Metal; selected by ADR-0003) and `GLESRenderer` (Apple OpenGL
+ES 3.0; the fallback when no EGL context can be created). Both run the Reduce-flashing post-pass
+from the shared C target `CFlashLimiter` (Rendering package), each through its own GL loader. The display link drives frames. Each frame drains up to `maxSamplesPerFrame` from
 `NormalizedPCMReader` into the engine, then renders.
 
 Guarantees: lower frame rate or resolution under thermal/low-power pressure, never below 30 fps

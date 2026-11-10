@@ -4,7 +4,8 @@ import SwiftUI
 
 struct SettingsView: View {
     @Bindable var settings: AppSettings
-    /// False when the active renderer cannot limit flashing (the GLES fallback; FR-072, T116).
+    /// False when the active renderer cannot limit flashing (FR-072, T116). Both current renderers
+    /// can (T119); this keeps Settings honest for any renderer that cannot.
     var reduceFlashingAvailable = true
     @Environment(\.dismiss) private var dismiss
 

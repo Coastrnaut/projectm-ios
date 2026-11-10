@@ -30,9 +30,20 @@ final class GLESRendererTests: XCTestCase {
         stride(from: 0, to: pixels.count, by: 4).filter { pixels[$0] > 8 || pixels[$0 + 1] > 8 || pixels[$0 + 2] > 8 }.count
     }
 
-    /// T116: the fallback has no Reduce-flashing pass, and says so (Settings shows it as unavailable).
-    func testTheFallbackReportsNoReduceFlashing() throws {
-        XCTAssertFalse(try makeLaidOut().supportsReduceFlashing)
+    /// T119: the fallback runs the same Reduce-flashing post-pass as ANGLERenderer (CFlashLimiter
+    /// through PMAppleGLESLoadProc). Off by default, the limiter is not created; on, frames go through it.
+    func testTheFallbackLimitsFlashingWhenOn() async throws {
+        let renderer = try makeLaidOut()
+        XCTAssertTrue(renderer.supportsReduceFlashing)
+        try await renderer.setPreset(preset("001-line.milk"))
+        XCTAssertTrue(renderer.renderFrame())
+        XCTAssertNil(renderer.flashLimiterAdaptedLuminance, "off by default")
+        renderer.reduceFlashing = true
+        for _ in 0..<5 { XCTAssertTrue(renderer.renderFrame()) }
+        let adapted = try XCTUnwrap(renderer.flashLimiterAdaptedLuminance, "the limiter ran")
+        XCTAssertGreaterThanOrEqual(adapted, 0)
+        XCTAssertLessThanOrEqual(adapted, 1)
+        XCTAssertFalse(renderer.readPixels().isEmpty)
     }
 
     func testDrawableFollowsTheViewSizeAtDisplayScale() throws {

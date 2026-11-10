@@ -23,7 +23,8 @@ public protocol VisualizerRenderer: AnyObject {
     func resume()
     /// Limit rapid full-screen brightness changes (FR-072).
     var reduceFlashing: Bool { get set }
-    /// Whether `reduceFlashing` has any effect with this renderer (Settings says so when not; T116).
+    /// Whether `reduceFlashing` has any effect with this renderer (both current renderers: yes, T119;
+    /// Settings says so when not, T116).
     var supportsReduceFlashing: Bool { get }
     /// Frame rate and frame time, for the FR-048 overlay.
     var metrics: RenderMetrics { get }

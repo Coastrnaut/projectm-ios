@@ -13,6 +13,7 @@
 // * Everything runs on the main thread, the engine's render thread.
 import AudioCore
 import CANGLE
+import CFlashLimiter
 import Foundation
 import ProjectMBridge
 import QuartzCore
@@ -181,7 +182,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer {
 
     /// Created on first use, with the context current.
     private func flashLimiterForFrame() -> OpaquePointer? {
-        if flashLimiter == nil { flashLimiter = PMFlashLimiterCreate() }
+        if flashLimiter == nil { flashLimiter = PMFlashLimiterCreate(PMANGLELoadProc, nil) }
         return flashLimiter
     }
 

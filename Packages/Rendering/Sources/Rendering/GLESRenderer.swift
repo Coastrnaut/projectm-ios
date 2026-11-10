@@ -12,6 +12,7 @@
 //   asserts that its creating thread is used). Moving rendering to its own thread is an ADR-0003
 //   decision once the device measurements (T075) are in.
 import AudioCore
+import CFlashLimiter
 import Foundation
 import OpenGLES
 import ProjectMBridge
@@ -28,11 +29,15 @@ public final class GLESRenderer: NSObject, VisualizerRenderer {
     public var view: UIView { layerView }
     public private(set) var metrics = RenderMetrics.zero
     public private(set) var presentedFrameCount = 0
-    /// FR-072. Stored only: the Reduce-flashing post-pass (T104) is in ANGLERenderer, the renderer
-    /// ADR-0003 chose. This renderer is the fallback when no EGL context can be created, and
-    /// Settings tells the user that Reduce flashing is unavailable with it (T116).
-    public var reduceFlashing = false
-    public let supportsReduceFlashing = false
+    /// FR-072: limit rapid full-screen brightness changes with the same post-pass as ANGLERenderer
+    /// (CFlashLimiter, T119; this renderer is the fallback when no EGL context can be created).
+    public var reduceFlashing = false {
+        didSet { if reduceFlashing != oldValue, let flashLimiter { PMFlashLimiterReset(flashLimiter) } }
+    }
+    public let supportsReduceFlashing = true
+    /// Mean-luminance rate limit while Reduce flashing is on (the same value as ANGLERenderer).
+    public static let flashLimitPerSecond: Float = 0.3
+    private var flashLimiter: OpaquePointer?
 
     private let layerView: GLESLayerView
     private let context: EAGLContext
@@ -77,6 +82,7 @@ public final class GLESRenderer: NSObject, VisualizerRenderer {
         displayLink?.invalidate()
         for observer in observers { NotificationCenter.default.removeObserver(observer) }
         EAGLContext.setCurrent(context)
+        PMFlashLimiterDestroy(flashLimiter)
         engine = nil   // destroyed while its context is current (bridge guarantee 3)
         deleteFramebuffer()
         EAGLContext.setCurrent(nil)
@@ -110,8 +116,9 @@ public final class GLESRenderer: NSObject, VisualizerRenderer {
     // MARK: - Frames
 
     /// Renders and presents one frame. Returns false when there is no drawable yet.
+    /// `frameTime` (seconds since the previous frame) sets the Reduce-flashing step.
     @discardableResult
-    func renderFrame() -> Bool {
+    func renderFrame(frameTime: Double = 1.0 / 60) -> Bool {
         guard let engine, framebuffer != 0 else { return false }
         EAGLContext.setCurrent(context)
         if let reader {
@@ -120,15 +127,27 @@ public final class GLESRenderer: NSObject, VisualizerRenderer {
                 engine.addPCMInterleavedStereo(pcm, frames: UInt(frames))
             }
         }
-        engine.renderFrame(toFramebuffer: UInt32(framebuffer))
+        if reduceFlashing, let limiter = flashLimiterForFrame(),
+           case let scene = PMFlashLimiterBegin(limiter, drawableSize.width, drawableSize.height), scene != 0 {
+            engine.renderFrame(toFramebuffer: scene)
+            PMFlashLimiterFinish(limiter, UInt32(framebuffer), Self.flashLimitPerSecond * Float(min(max(frameTime, 0), 0.1)))
+        } else {
+            engine.renderFrame(toFramebuffer: UInt32(framebuffer))
+        }
         glBindRenderbuffer(GLenum(GL_RENDERBUFFER), colorRenderbuffer)
         context.presentRenderbuffer(Int(GL_RENDERBUFFER))
         presentedFrameCount += 1
         return true
     }
 
+    /// Created on first use, with the context current.
+    private func flashLimiterForFrame() -> OpaquePointer? {
+        if flashLimiter == nil { flashLimiter = PMFlashLimiterCreate(PMAppleGLESLoadProc, nil) }
+        return flashLimiter
+    }
+
     @objc fileprivate func displayLinkFired(_ link: CADisplayLink) {
-        guard renderFrame() else { return }
+        guard renderFrame(frameTime: link.targetTimestamp - link.timestamp) else { return }
         if meter.record(presentedAt: link.timestamp) {
             metrics = meter.metrics
         }
@@ -223,6 +242,13 @@ public final class GLESRenderer: NSObject, VisualizerRenderer {
 
     var isDisplayLinkPaused: Bool? { displayLink?.isPaused }
     var currentDrawableSize: (width: Int, height: Int) { (Int(drawableSize.width), Int(drawableSize.height)) }
+
+    /// The limiter's adapted mean luminance after the last frame, or nil while it is unused (tests).
+    var flashLimiterAdaptedLuminance: Float? {
+        guard let flashLimiter else { return nil }
+        EAGLContext.setCurrent(context)
+        return PMFlashLimiterAdaptedLuminance(flashLimiter)
+    }
 
     /// Reads back the framebuffer as RGBA bytes (tests).
     func readPixels() -> [UInt8] {

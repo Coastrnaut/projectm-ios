@@ -21,9 +21,11 @@ let package = Package(
         .binaryTarget(name: "libGLESv2", path: "../../Build/ANGLEFrameworks/libGLESv2.xcframework"),
         .target(name: "CANGLE", dependencies: ["libEGL", "libGLESv2"]),
         .target(name: "ANGLERendering",
-                dependencies: ["CANGLE", "AudioCore", "ProjectMBridge", "Rendering"],
+                dependencies: ["CANGLE", "AudioCore", "ProjectMBridge", "Rendering",
+                               .product(name: "CFlashLimiter", package: "Rendering")],
                 linkerSettings: [.linkedFramework("QuartzCore"), .linkedFramework("Metal")]),
         .testTarget(name: "ANGLERenderingTests",
-                    dependencies: ["ANGLERendering", "CANGLE", "Rendering", "AudioCore", "ProjectMBridge"]),
+                    dependencies: ["ANGLERendering", "CANGLE", "Rendering", "AudioCore", "ProjectMBridge",
+                                   .product(name: "CFlashLimiter", package: "Rendering")]),
     ]
 )

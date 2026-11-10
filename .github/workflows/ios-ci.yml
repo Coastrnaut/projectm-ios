@@ -257,9 +257,12 @@ jobs:
           print(f"Selected simulator: {best[2]} ({best[0]})" if best else "no iPhone simulator", file=sys.stderr)
           ')
           [ -n "$UDID" ] || { echo "::error::No iPhone simulator available"; exit 1; }
-          for pkg in ProjectMBridge Rendering; do
+          # Rendering has two products (Rendering, CFlashLimiter; T119), so its test scheme is
+          # SwiftPM's Rendering-Package.
+          for entry in ProjectMBridge:ProjectMBridge Rendering:Rendering-Package; do
+            pkg=${entry%%:*}; scheme=${entry#*:}
             echo "::group::xcodebuild test $pkg (iOS Simulator)"
-            (cd "Packages/$pkg" && xcodebuild -scheme "$pkg" -destination "id=$UDID" \
+            (cd "Packages/$pkg" && xcodebuild -scheme "$scheme" -destination "id=$UDID" \
               -derivedDataPath "$RUNNER_TEMP/dd-$pkg" CODE_SIGNING_ALLOWED=NO test 2>&1 \
               | grep -E "error:|warning:|Executed [0-9]+ tests|TEST (SUCCEEDED|FAILED)|failed \(")
             echo "::endgroup::"
