@@ -42,8 +42,9 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
   Stage Decision). No source is claimed to work (none rated; Gates 1-2 waived). Stage 2, Plan
   Phase B (audio pipeline): T057-T061 done 2026-11-09 (Normalizer, normalized ring,
   `CaptureManager.normalizedOutput`); T062 signposts implemented, AC open (Normalized residency
-  needs the Phase C renderer); T063 (allocation trace + 30-min CPU) needs D1. Plan Phase C
-  (engine) only after the owner accepts the Plan B exit.
+  needs the Phase C renderer); T063 measured on D1 2026-11-09: no allocations or lock-wait
+  syscalls in any audio callback, CPU 7.4% (3-minute run, owner ruling), awaiting the owner's
+  acceptance. Plan Phase C (engine) only after the owner accepts the Plan B exit.
 - Phase B verified on the project Mac 2026-11-09: AudioCore 76, CaptureKit 80, Diagnostics 8 tests
   on the host and the iOS 27.2 and 26.5 simulators; CaptureLab UI tests (3) on iOS 27.2; device
   builds with no warnings. The Linux path (no AVFAudio: linear resampler fallback) is tested on

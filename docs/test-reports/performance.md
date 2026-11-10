@@ -39,8 +39,45 @@ delivery figures need a device trace before anyone draws a conclusion from them.
 
 ## Plan Phase B exit (task T063)
 
-| Adapter | Allocations (0) | Locks (0) | Capture + pipeline CPU, 30 min (< 15% of one core) | Pass? |
-|---------|-----------------|-----------|----------------------------------------------------|-------|
+Run 2026-11-09 on D1 (iPhone 15, `iPhone15,4`, iOS 27.0.1), CaptureLab build 2, Debug
+configuration, commit `bc606fc`, Xcode 27.2 (27B52). **Owner ruling 2026-11-09: the CPU run is
+3 minutes instead of 30.**
+
+| Adapter | Allocations in the callback (0) | Lock waits in the callback (0) | CPU, 3 min (< 15% of one core) | Pass? |
+|---------|---------------------------------|--------------------------------|--------------------------------|-------|
+| System/App Capture (Spotify) | 0 in 61 s | 0 syscalls in 61 s | 7.36% mean, 8.09% p95, 8.37% max | Yes |
+| Microphone | 0 in 61 s | 0 syscalls in 61 s | not measured (ruling: one CPU run) | Yes |
+| In-App Playback | 0 in 61 s (after the two fixes below) | 0 syscalls in 61 s | not measured (ruling: one CPU run) | Yes |
+
+**Method.** `xctrace record --template Allocations --instrument "System Call Trace"` launched
+CaptureLab on D1; the tester started each source by hand. The window is 61 s, from 1 s before the
+first `Ring + conversion` signpost (so the first callbacks count). An allocation or syscall counts
+as "in the callback" when its call stack passes through `PCMSink.write`,
+`SampleBufferAudioWriter.write`, the SCStreamOutput `didOutputSampleBuffer` handler, or a tap closure
+of `AVMicrophoneBackend`/`AVInAppPlaybackBackend`. Stacks were symbolicated: each trace shows the
+start-up allocations and syscalls of these types, so a callback allocation would have been seen
+(the first In-App Playback run did see them). The CPU run used the Activity Monitor template plus
+Points of Interest: cumulative CPU time of the whole CaptureLab process (UI included, so an upper
+bound for capture + pipeline) over 3 minutes from the first signpost; audio flowed throughout
+(longest gap between drains 0.03 s). The trace's threads match System/App Capture (CoreMedia
+queue, no AURemoteIO thread).
+
+**Limit of the lock check.** A blocking or contended lock shows up as a syscall
+(`psynch_mutexwait`, `ulock_wait`, ...); none occurred inside a callback. An uncontended
+`os_unfair_lock` taken by system code makes no syscall, so no trace can show it. Our callback code
+takes no locks (atomics only, by design and review).
+
+**Fixes made during T063** (commit `bc606fc`):
+1. The first In-App Playback run found 22 allocations on the first callback:
+   `MemoryLayout<AudioBufferList>.offset(of: \.mBuffers)` in `PCMSink.write(_:format:frameCount:)`
+   (and in `SampleBufferAudio.buffersHold`) builds a KeyPath object at run time in Debug. Replaced
+   by a layout constant, `PCMSink.audioBuffersOffset`, tested against the key-path value.
+2. The next run found 1 allocation: the Objective-C method cache filled by the tap closure's first
+   message sends. `AVAudioTapWarmUp` now sends those messages before installing the tap and again
+   after engine start (a warm-up only before the tap still left it, since engine start can reset
+   the caches). The following run had none.
+
+Traces stay on the project Mac (several hundred MB each); the analysis scripts are not committed.
 
 ## ADR-0003 renderer measurements (Gate 3)
 
