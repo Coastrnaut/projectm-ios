@@ -1304,12 +1304,124 @@ ADR-0004's table, like `Vendor/projectM`. Why this layout:
    an "unlocked" flag; if a flag is stored, add it to FR-065.
 4. **App Store Connect:** Paid Apps Agreement, banking and tax; the in-app purchase product with
    its review screenshot; a Restore Purchases button (App Review requirement).
-5. **Library size in the UI:** the preset browser was built for 28 presets; 12,943 need search,
-   per-pack sections and fast loading. Random and Next/Previous stay within the unlocked set.
+5. **Library size in the UI:** the preset browser was built for 28 presets; 18.4 is the strategy
+   for 12,943. Confirm its open choices (default scope after purchase, whether locked presets get
+   a short preview, whether the selected scope is stored as a setting under FR-065).
 6. **Preset textures:** many presets reference textures from the texture pack; the engine's
    texture search path must include it.
 
-## 18.4 Spec Kit command sequence
+## 18.4 Managing 12,943 presets with the current UI
+
+### Where the current design stops working
+
+| Today (28 presets) | What breaks at 12,943 |
+|--------------------|-----------------------|
+| `PresetRepository` enumerates the presets folder and parses one `LICENSES.md` row per preset at every launch | 13,000 file-system entries and a 13,000-row Markdown table to parse before the first frame; per-preset license rows that the packs do not provide (their license statements are per pack) |
+| `PresetBrowserView`: one alphabetical `List` with an All/Favorites picker | A flat list of 12,943 names is unbrowsable; no search, no grouping, no way to tell packs apart or see what is locked |
+| `PresetCoordinator.next/previous/random` walk the whole array | Next/Previous through 12,943 alphabetical names is meaningless; Random over everything mixes curated presets with unvetted ones, and must never land on a locked preset |
+| Preset ids are `frontend-uwp/<file>.milk` (favorites and `lastPresetID`) | Ids must stay stable for the 28 free presets so existing favorites keep working |
+
+The overall shape stays: the Presets button opens a sheet, Next/Previous/Random sit in the
+controls, favorites and the last preset persist (FR-043, FR-044, FR-088). What changes is what
+backs them: a precomputed index, a browsable hierarchy with search, and a *scope* that defines
+what Next/Previous/Random walk.
+
+### 1. Data: a build-time preset index, not a launch-time folder scan
+
+- `scripts/build_preset_index.py` (new; same pattern as `collect_licenses.py`: generated output
+  committed, `--check` in CI) reads the pinned submodules and writes
+  `Apps/ProjectMiOS/Resources/PresetIndex.json` (about 2 MB; one entry per unique preset):
+  `id`, `name`, `author` (from the Milkdrop "Author - Title" file name), `pack`, `category`,
+  `subcategory`, `path` in the bundle, `hash` (git blob hash), `free` (true for the 28).
+- **De-duplication by content hash** with a fixed priority: the 28 free presets first (so their
+  existing ids, favorites and `lastPresetID` keep working), then cream-of-the-crop,
+  projectm-classic, milkdrop-original, en-d. Duplicates inside projectm-classic (4,193 files,
+  2,624 unique) collapse the same way.
+- **Licensing per pack, not per preset:** a small `PresetPacks.json` holds each pack's source
+  repository, pinned commit and license statement; FR-047's "reviewed redistribution rights" is
+  recorded per pack (the licensing ADR from 18.3 item 1) and the Licenses screen gets one entry per
+  pack plus a generated author list. The 28 free presets keep their `LICENSES.md` rows.
+- **Takedowns without forking:** `Resources/PresetBlocklist.json` lists hashes an author asked to
+  remove (the packs' own policy); the index skips them.
+- **Broken presets found before shipping:** at each pin change, a sharded simulator sweep
+  (RendererLab `RL_MODE=sweep` extended to load-only, about 0.3 s per preset) records presets the
+  engine cannot load; the index marks them hidden. FR-045 still covers failures at run time.
+- `PresetRepository` loads the index off the main thread at launch (decode about 13,000 small
+  records; target under 150 ms on D3) and keeps it in memory; nothing enumerates the folders.
+
+### 2. Browsing: a hierarchy that follows the packs
+
+The Presets sheet becomes a `NavigationStack` with a library home and drill-down lists; every list
+row is lightweight (name, author, star, lock), so SwiftUI's lazy `List` scrolls at full frame rate.
+
+```
+Presets  [ Search presets and authors ]          [ All | Favorites ]
+├─ Included (28)                        free, the 1.0 set
+├─ Cream of the Crop (9,795)            🔒 until purchase
+│   ├─ Reaction (1,791)  → Liquid Ripples (470), Liquid Blobby (196), Rorschach (191), …
+│   ├─ Fractal (1,354)   → Nested Circle (216), Nested Spiral (179), …
+│   └─ … 10 categories, 183 subcategories
+├─ projectM Classic (2,624 unique)      by original collection: tryptonaut, milkdrop, stock, …
+├─ Milkdrop Original (552)
+├─ En D (37)                            by episode
+└─ All presets A-Z (12,943)             sectioned A-Z with a section index
+```
+
+- Each folder row shows its count and, before purchase, a lock; the counts come from the index.
+- **Search** (`.searchable`, diacritic- and case-insensitive substring match on name and author,
+  run on the in-memory index; target under 50 ms per keystroke on D3) shows results grouped by
+  pack, capped at 200 with "Refine your search" beyond that. Searching an author lists all their
+  presets.
+- **Favorites** work across packs (the existing `favorites` key, ids unchanged). A favorite that
+  later becomes locked (refund) stays listed with a lock.
+- **No "recently played" list:** FR-065 forbids listening history, so history-based browsing is
+  out of scope.
+
+### 3. Playback: Next / Previous / Random walk a scope
+
+- A **scope** is any node of the hierarchy: Included, a pack, a category, a subcategory,
+  Favorites, a search result, or All. Opening a folder in the browser and choosing a preset sets
+  the scope to that folder; the controls overlay shows it under the preset name
+  (for example "Fractal › Nested Spiral · 179").
+- **Next/Previous** step alphabetically within the scope and wrap at the ends. **Random** picks
+  uniformly within the scope and never repeats the current preset (FR-088).
+- Every scope contains **only playable presets**: unlocked, not hidden, not failed this session.
+  Locked presets never play from Next/Previous/Random.
+- **Defaults:** before purchase the scope is Included (behavior identical to 1.0). Right after
+  purchase it becomes Cream of the Crop, the curated pack, so Random stays high quality;
+  projectm-classic contains many near-duplicates and older presets, so it is opt-in by choosing
+  it.
+- Storing the scope across launches is a user setting (`settings.presetScope`); it needs FR-065's
+  user-settings clause to name it.
+
+### 4. Locked presets and the purchase
+
+- Locked presets are **visible but marked** (lock icon, "Unlock all 12,915 presets" banner at
+  the top of each locked pack). Tapping a locked preset opens the purchase sheet: the price from
+  StoreKit (`Product.displayPrice`), what is included (pack names and counts), Buy, and
+  **Restore Purchases**.
+- The entitlement is read from StoreKit (`Transaction.currentEntitlements` at launch,
+  `Transaction.updates` while running); unlocking takes effect immediately, offline included.
+- No preview of locked presets in the first version (it adds a timer and an edge case at every
+  scope boundary); revisit after release if conversion needs it.
+
+### 5. Performance, size and accessibility
+
+- **App size:** about +30 MB of preset text and textures before compression; measure the
+  installed size on D1 and record it in `docs/test-reports/performance.md`.
+- **Targets to measure on D1-D3:** index load under 150 ms, search under 50 ms per keystroke,
+  browser scrolling at the display rate, preset switch still within SC-007 (1 s).
+- **Textures:** the engine's texture search path includes `milkdrop-texture-pack`; presets that
+  name a missing texture are caught by the sweep.
+- **VoiceOver:** rows read "Name, by Author, locked" where applicable; folders read their count;
+  the scope is announced when it changes (FR-070).
+- **Tests:** unit tests for de-duplication priority, id stability of the 28, scope stepping and
+  wrap, Random never repeating and never picking a locked preset, search ranking and the cap;
+  UI tests with a StoreKit test configuration (`.storekit`) for buy, restore and locked taps;
+  a 13,000-entry synthetic index for performance tests on the simulator (device numbers recorded
+  separately, Constitution X).
+
+## 18.5 Spec Kit command sequence
 
 In Claude Code, in order, reviewing each artifact before the next step:
 
@@ -1330,10 +1442,18 @@ Specify the full preset library unlock for ProjectM-iOS (feature 002).
 - The packs are included as pinned git submodules of the projectM-visualizer repositories under
   Vendor/presets/ and bundled in the app; no preset is copied into this repository and the app
   downloads no presets or code.
-- Locked presets are visible but marked; selecting one offers the purchase. Purchases can be
-  restored. The unlock works offline after purchase.
-- The preset browser handles about 13,000 presets: search, per-pack sections, favorites, random
-  within the unlocked set.
+- Locked presets are visible but marked; selecting one offers the purchase (price, contents, Buy,
+  Restore Purchases). The unlock works offline after purchase.
+- Large-library browsing per README 18.4: a library home with Included, one entry per pack
+  (cream-of-the-crop by its 10 categories and 183 subcategories, projectm-classic by original
+  collection, en-d by episode) and All A-Z; search over name and author with grouped, capped
+  results; favorites across packs with the 28 free presets keeping their ids.
+- Next/Previous/Random walk the current scope (a pack, category, subcategory, Favorites, a search
+  result or All), contain only playable unlocked presets, and Random never repeats the current
+  preset. Default scope: Included before purchase, cream-of-the-crop after. No history-based
+  browsing (FR-065).
+- Measurable targets: index load under 150 ms, search under 50 ms per keystroke, smooth scrolling,
+  and preset switches within SC-007, on D1-D3.
 - Settings and the Licenses screen credit each pack with its source, commit and license statement.
 - Keep FR-060 to FR-068 intact except for an explicit allowance for StoreKit's purchase traffic
   through iOS; no analytics, accounts or tracking.
@@ -1343,7 +1463,8 @@ Specify the full preset library unlock for ProjectM-iOS (feature 002).
 /speckit-clarify
 ```
 
-Answer the questions in 18.3 here; the license decision (item 1) must be settled before planning.
+Answer the questions in 18.3 here (including the open choices in 18.4); the license decision
+(item 1) must be settled before planning.
 
 ```text
 /speckit-plan
@@ -1357,8 +1478,15 @@ FavoritesStore). Use StoreKit 2 for the non-consumable purchase and entitlement 
 .currentEntitlements at launch, Transaction.updates while running); no server. Add the five preset
 submodules under Vendor/presets/ pinned in ADR-0004; a build-time script indexes them by content
 hash, skips duplicates, writes the pack index and LICENSES entries, and the app bundles the packs
-as folder references. Extend PresetRepository with pack metadata and lock state; the engine's
-texture search path includes the texture pack. Record the license decision for selling preset
+as folder references. Replace the launch-time folder scan with a
+build-time index (scripts/build_preset_index.py writes Resources/PresetIndex.json and
+PresetPacks.json, de-duplicates by git blob hash with the 28 free presets first, honors
+Resources/PresetBlocklist.json, committed with a --check in CI); PresetRepository loads it off the
+main thread. Model the browser as a NavigationStack over the pack hierarchy with .searchable over
+the in-memory index, and add a PresetScope type that PresetCoordinator's next/previous/random walk
+(playable presets only). Extend RendererLab's sweep with a load-only mode to mark broken presets
+hidden at each pin change. The engine's texture search path includes the texture pack. Follow
+README 18.4 for scopes, defaults and the purchase sheet. Record the license decision for selling preset
 access in a new ADR. Measure app size, preset-index load time and browser scrolling on D1-D3.
 ```
 
