@@ -1233,6 +1233,150 @@ Use Apple's current documentation and the official ProjectM/Spec Kit repositorie
 
 ---
 
+# 18. Next feature: full preset library unlock (low-cost paywall)
+
+Release 1.0 ships 28 presets free. The next feature keeps those 28 as the default library and
+adds a one-time, low-cost in-app purchase (non-consumable, $1.99 price point) that unlocks every
+preset the projectM team publishes. It is a new Spec Kit feature (`specs/002-...`), not a change
+to feature 001.
+
+## 18.1 Preset scan (2026-11-10)
+
+All 29 repositories in the [projectM-visualizer](https://github.com/projectM-visualizer)
+organization were scanned through the GitHub API (full git trees, none truncated). Presets were
+de-duplicated by git blob hash, so identical files in several repositories count once.
+
+| Repository | Pinned commit | Preset files | Unique (by content) | Only in this pack | License statement |
+|------------|---------------|--------------|---------------------|-------------------|-------------------|
+| `presets-cream-of-the-crop` | `0180df21f5e0` | 9,795 | 9,795 | (base) | `LICENSE.md`: assumed public domain, removed on author request |
+| `presets-projectm-classic` | `14a6244a7d32` | 4,193 (4 `.prjm`) | 2,624 | 2,573 | none in the repository |
+| `presets-milkdrop-original` | `e03b83e3338d` | 552 | 552 | 497 | none in the repository |
+| `presets-en-d` | `fff71ea81223` | 40 | 37 | 37 | `LICENSE.md`: assumed public domain, removed on author request |
+| `presets-milkdrop-texture-pack` | `6368812f27bc` | 68 texture files (no presets) | | | none in the repository |
+| `presets-community` | (empty) | 0 | | | |
+| Examples, tests and frontends (`projectm`, `gst-projectm`, `projectm-rs`, `examples-android`, `frontend-*`) | | | 46 not in any pack | | test and sample presets |
+
+**Result: 12,942 unique presets in the four preset packs; 12,915 of them are additional to the 28
+in release 1.0** (27 of those 28 are byte-identical to presets in the packs). The 46 example and
+test presets are not part of the library.
+
+## 18.2 How the presets enter this repository: pinned submodules
+
+No preset file is copied into this repository. Each pack is a git submodule of the projectM
+team's own repository, pinned to an exact commit (Constitution IX), under `Vendor/presets/`:
+
+```bash
+git submodule add --depth 1 https://github.com/projectM-visualizer/presets-cream-of-the-crop.git Vendor/presets/cream-of-the-crop
+git submodule add --depth 1 https://github.com/projectM-visualizer/presets-projectm-classic.git Vendor/presets/projectm-classic
+git submodule add --depth 1 https://github.com/projectM-visualizer/presets-milkdrop-original.git Vendor/presets/milkdrop-original
+git submodule add --depth 1 https://github.com/projectM-visualizer/presets-en-d.git Vendor/presets/en-d
+git submodule add --depth 1 https://github.com/projectM-visualizer/presets-milkdrop-texture-pack.git Vendor/presets/milkdrop-texture-pack
+```
+
+Each entry gets `shallow = true` in `.gitmodules`, and each pin moves only by a commit that updates
+ADR-0004's table, like `Vendor/projectM`. Why this layout:
+
+- **Upstream repositories, not forks:** nothing in them needs patching; a fork would add upkeep
+  without changing what ships. Fork a pack only if a preset must be removed or fixed before the
+  projectM team does it.
+- **One submodule per pack:** packs carry different license statements and update on their own
+  schedules, and Settings can show and credit each one separately.
+- **Shallow:** the packs total about 34 MB of history (cream of the crop is 23 MB); only the
+  pinned tree is needed.
+- **Bundled, not downloaded:** the build copies the packs into the app as folder references,
+  like `Resources/Presets` today. The purchase unlocks what is already on the device, so the app
+  still downloads no code or presets (FR-068, ADR-0005 RI-010, App Review Guideline 2.5.2). The
+  cost is app size (about +30 MB before compression).
+- **De-duplication at build time:** a build script indexes the packs by content hash and skips
+  duplicates, so the 12,942 unique presets ship once, and records the index for the Licenses
+  screen.
+
+## 18.3 Decisions to settle before or during `/speckit-clarify`
+
+1. **License basis for selling presets.** 1.0 relies on the projectM team's "assumed public
+   domain, removed on request" basis for free redistribution. Charging for access to other
+   authors' presets is a different use; three packs have no license file at all. Decide whether
+   to sell access, keep the full library free, or sell only presets with an explicit license, and
+   record it in an ADR (and ADR-0005).
+2. **FR-068 (no network connections).** StoreKit contacts Apple through iOS; amend FR-068 and the
+   privacy policy so App Store purchase traffic is allowed and nothing else is.
+3. **FR-065 (persistence).** Prefer reading the entitlement from StoreKit at launch over storing
+   an "unlocked" flag; if a flag is stored, add it to FR-065.
+4. **App Store Connect:** Paid Apps Agreement, banking and tax; the in-app purchase product with
+   its review screenshot; a Restore Purchases button (App Review requirement).
+5. **Library size in the UI:** the preset browser was built for 28 presets; 12,943 need search,
+   per-pack sections and fast loading. Random and Next/Previous stay within the unlocked set.
+6. **Preset textures:** many presets reference textures from the texture pack; the engine's
+   texture search path must include it.
+
+## 18.4 Spec Kit command sequence
+
+In Claude Code, in order, reviewing each artifact before the next step:
+
+```text
+/speckit-specify
+```
+
+Prompt content:
+
+```text
+Specify the full preset library unlock for ProjectM-iOS (feature 002).
+
+- The 28 presets bundled in release 1.0 stay the free default library and work without any purchase.
+- A one-time, low-cost in-app purchase (non-consumable, $1.99 price point) unlocks every preset
+  published by the projectM team: the cream-of-the-crop, projectm-classic, milkdrop-original and
+  en-d packs (12,915 presets beyond the 28; 12,942 unique in total), plus the milkdrop texture pack
+  the presets reference.
+- The packs are included as pinned git submodules of the projectM-visualizer repositories under
+  Vendor/presets/ and bundled in the app; no preset is copied into this repository and the app
+  downloads no presets or code.
+- Locked presets are visible but marked; selecting one offers the purchase. Purchases can be
+  restored. The unlock works offline after purchase.
+- The preset browser handles about 13,000 presets: search, per-pack sections, favorites, random
+  within the unlocked set.
+- Settings and the Licenses screen credit each pack with its source, commit and license statement.
+- Keep FR-060 to FR-068 intact except for an explicit allowance for StoreKit's purchase traffic
+  through iOS; no analytics, accounts or tracking.
+```
+
+```text
+/speckit-clarify
+```
+
+Answer the questions in 18.3 here; the license decision (item 1) must be settled before planning.
+
+```text
+/speckit-plan
+```
+
+Prompt content:
+
+```text
+Plan feature 002 on the existing architecture (ANGLE renderer, PresetRepository, PresetCoordinator,
+FavoritesStore). Use StoreKit 2 for the non-consumable purchase and entitlement checks (Transaction
+.currentEntitlements at launch, Transaction.updates while running); no server. Add the five preset
+submodules under Vendor/presets/ pinned in ADR-0004; a build-time script indexes them by content
+hash, skips duplicates, writes the pack index and LICENSES entries, and the app bundles the packs
+as folder references. Extend PresetRepository with pack metadata and lock state; the engine's
+texture search path includes the texture pack. Record the license decision for selling preset
+access in a new ADR. Measure app size, preset-index load time and browser scrolling on D1-D3.
+```
+
+```text
+/speckit-checklist
+/speckit-tasks
+/speckit-analyze
+/speckit-implement
+/speckit-converge
+```
+
+Before release: run the StoreKit purchase, restore and offline-unlock flows on devices with a
+sandbox account; re-run the privacy review (T108) and update `docs/release/app-privacy.md`,
+`docs/privacy-policy.md` and `docs/release/store-copy.md` (the in-app purchase appears on the
+product page).
+
+---
+
 ## Final engineering recommendation
 
 Treat this as two linked projects:
