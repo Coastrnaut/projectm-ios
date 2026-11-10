@@ -96,6 +96,9 @@ final class AppCoordinator: VisualizationControlling {
         lifecycleForwarding = Task { @MainActor in
             for await event in lifecycle.events { await lifecycleCoordinator.handle(event) }
         }
+        #if DEBUG || PROJECTM_AUTOMATION
+        AutomationRunner.startIfRequested(self)   // Gate 4 device runs (PROJECTM_AUTORUN)
+        #endif
         #if DEBUG
         // Debug builds only, for traces and test runs: `-autostart inAppPlayback` (or another
         // AudioSourceMode raw value) skips the notice and starts that source.

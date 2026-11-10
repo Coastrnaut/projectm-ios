@@ -23,11 +23,13 @@ struct RootView: View {
         switch coordinator.screen {
         case .notice:
             PhotosensitivityNoticeView { coordinator.acknowledgeNotice() }
+                .onAppear { automationNoticeAppeared() }
         case .chooser:
             NavigationStack {
                 SourceChooserView(availability: coordinator.availability) { coordinator.select($0) }
                     .navigationTitle("Choose source")
             }
+            .onAppear { automationChooserAppeared() }
             .sheet(isPresented: $coordinator.showMicrophoneExplainer) {
                 MicrophoneExplainerView(onContinue: { coordinator.microphoneExplainerContinue() },
                                         onCancel: { coordinator.showMicrophoneExplainer = false })
@@ -35,5 +37,17 @@ struct RootView: View {
         case .visualizer:
             VisualizerView(coordinator: coordinator)
         }
+    }
+
+    private func automationChooserAppeared() {
+        #if DEBUG || PROJECTM_AUTOMATION
+        AutomationRunner.chooserAppeared(coordinator)   // SC-015 cold-launch timing
+        #endif
+    }
+
+    private func automationNoticeAppeared() {
+        #if DEBUG || PROJECTM_AUTOMATION
+        AutomationRunner.noticeAppeared(coordinator)
+        #endif
     }
 }

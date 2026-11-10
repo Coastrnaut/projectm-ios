@@ -27,6 +27,7 @@ public enum RendererError: Error, Equatable {
 public final class GLESRenderer: NSObject, VisualizerRenderer {
     public var view: UIView { layerView }
     public private(set) var metrics = RenderMetrics.zero
+    public private(set) var presentedFrameCount = 0
     /// FR-072. Stored for the settings flow; how it limits brightness changes is decided with the
     /// photosensitivity work (US7), since the engine has no single switch for it.
     public var reduceFlashing = false
@@ -120,6 +121,7 @@ public final class GLESRenderer: NSObject, VisualizerRenderer {
         engine.renderFrame(toFramebuffer: UInt32(framebuffer))
         glBindRenderbuffer(GLenum(GL_RENDERBUFFER), colorRenderbuffer)
         context.presentRenderbuffer(Int(GL_RENDERBUFFER))
+        presentedFrameCount += 1
         return true
     }
 

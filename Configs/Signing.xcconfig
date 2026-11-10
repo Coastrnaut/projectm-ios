@@ -1,0 +1,8 @@
+// Signing.xcconfig — committed hook for local signing (owner decision 2026-11-10).
+//
+// Signing is set by a human, never by automation (Constitution: Security). Create
+// Configs/Signing.local.xcconfig yourself (gitignored), for example:
+//     DEVELOPMENT_TEAM = <your team ID>
+// so the team survives `xcodegen generate`. Without that file this include is skipped and the
+// projects build unsigned for CI and simulators as before.
+#include? "Signing.local.xcconfig"

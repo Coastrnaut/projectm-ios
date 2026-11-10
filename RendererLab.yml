@@ -10,6 +10,10 @@ options:
   deploymentTarget:
     iOS: "26.0"
   createIntermediateGroups: true
+configFiles:
+  # Optional local signing (gitignored Configs/Signing.local.xcconfig); see Configs/Signing.xcconfig.
+  Debug: Configs/Signing.xcconfig
+  Release: Configs/Signing.xcconfig
 settings:
   base:
     SWIFT_VERSION: "6.0"

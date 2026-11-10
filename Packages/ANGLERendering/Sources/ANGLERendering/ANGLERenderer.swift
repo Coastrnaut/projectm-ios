@@ -28,6 +28,7 @@ public enum ANGLERendererError: Error, Equatable {
 public final class ANGLERenderer: NSObject, VisualizerRenderer {
     public var view: UIView { layerView }
     public private(set) var metrics = RenderMetrics.zero
+    public private(set) var presentedFrameCount = 0
     /// FR-072; see GLESRenderer.reduceFlashing.
     public var reduceFlashing = false
 
@@ -147,7 +148,10 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer {
             }
         }
         engine.renderFrame(toFramebuffer: 0)
-        if present { eglSwapBuffers(display, surface) }
+        if present {
+            eglSwapBuffers(display, surface)
+            presentedFrameCount += 1
+        }
         return true
     }
 

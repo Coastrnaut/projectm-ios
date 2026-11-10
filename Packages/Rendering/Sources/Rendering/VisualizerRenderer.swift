@@ -25,6 +25,8 @@ public protocol VisualizerRenderer: AnyObject {
     var reduceFlashing: Bool { get set }
     /// Frame rate and frame time, for the FR-048 overlay.
     var metrics: RenderMetrics { get }
+    /// Frames presented so far (SC-007 timing: the first frame after a preset switch).
+    var presentedFrameCount: Int { get }
 }
 
 /// A preset the renderer can load (data-model.md §Preset). PresetRepository (T074) builds these from
