@@ -71,7 +71,7 @@ Pass: Gate 3 passed 2026-11-09 (T079, ADR-0003 Option B, `performance.md`).
 
 Done from Xcode's Organizer (owner authorized computer use for the remaining release steps).
 App Store Connect record: app ID 6833037520, bundle ID `org.projectmios.ProjectMiOS`, created by
-Xcode; its name is changed to "projectM" on App Store Connect (owner decision).
+Xcode; store name set to "projectM-iOS" on App Store Connect ("projectM" and "projectM Visualizer" are taken; owner choice). Custom EULA (`docs/release/eula.md`), privacy policy URL and App Privacy "Data Not Collected" (published, owner-approved attestation) entered 2026-11-10.
 
 1. First upload: rejected by App Store Connect validation: no app icon (90022, 90023, 90713) and no
    `CFBundleShortVersionString` in the ANGLE frameworks (90057).

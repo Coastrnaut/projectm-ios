@@ -8,9 +8,11 @@ wording for System/App Capture is the Stage Decision's: "where iOS allows it".
 
 ## App Store listing (draft)
 
-**Name**: projectM
+**Name**: projectM-iOS (store name; "projectM" and "projectM Visualizer" were taken on the App Store, owner choice 2026-11-10). The home-screen name stays "projectM".
 
 **Subtitle**: Music visualizer
+
+**Category**: Music; secondary Entertainment
 
 **Promotional text**: Turn sound into motion with the projectM visualization engine.
 

@@ -8,7 +8,7 @@ conclusion it implements on 2026-11-10.
 
 ---
 
-**projectM — License Agreement**
+**projectM-iOS — License Agreement**
 
 1. **Parties.** This agreement is between you and Robert Pancoast ("Developer"), not Apple Inc.
    ("Apple"). Developer, not Apple, is solely responsible for the app and its content.
