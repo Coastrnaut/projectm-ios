@@ -4,6 +4,20 @@ import XCTest
 @testable import PresetLibrary
 
 final class PresetLibraryTests: XCTestCase {
+    /// SC-101: the index arrives in display order and names the archive's order separately.
+    func testArchiveTableGivesTheArchiveOrder() throws {
+        let records = Fixtures.records
+        let packs = try JSONSerialization.data(withJSONObject: ["version": 1, "packs": Fixtures.packs()])
+        let positions = [8, 2, 3]   // en-d, then two cream presets: any order the archive was written in
+        let index = try JSONSerialization.data(withJSONObject: ["version": 1, "presets": records, "archive": positions])
+        let library = try PresetLibrary(index: index, packs: packs)
+        XCTAssertEqual(library.archiveOrder, positions.map { records[$0]["id"] as! String })
+        let bad = try JSONSerialization.data(withJSONObject: ["version": 1, "presets": records, "archive": [99]])
+        XCTAssertThrowsError(try PresetLibrary(index: bad, packs: packs)) {
+            XCTAssertEqual($0 as? PresetLibraryError, .badArchiveTable)
+        }
+    }
+
     func testHomeOrderAndCounts() throws {
         let library = try Fixtures.library()
         XCTAssertEqual(library.home.map(\.title), ["Included", "Cream of the Crop", "projectM Classic", "Milkdrop Original", "En D", "All presets A-Z"])

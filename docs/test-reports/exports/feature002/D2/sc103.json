@@ -1,0 +1,12 @@
+{
+  "all": {
+    "frames": 1245,
+    "missed": 38,
+    "onTime": 0.9704
+  },
+  "largest-folder": {
+    "frames": 1245,
+    "missed": 33,
+    "onTime": 0.9742
+  }
+}

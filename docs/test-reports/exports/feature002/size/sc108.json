@@ -1,0 +1,17 @@
+{
+  "D1 iPhone15,4": {
+    "oldMB": 19.6,
+    "newMB": 46.0,
+    "growthMB": 26.4
+  },
+  "D2 iPad17,3": {
+    "oldMB": 19.6,
+    "newMB": 46.0,
+    "growthMB": 26.4
+  },
+  "D3 iPad15,7": {
+    "oldMB": 19.6,
+    "newMB": 46.0,
+    "growthMB": 26.4
+  }
+}

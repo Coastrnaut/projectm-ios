@@ -32,7 +32,11 @@ protocol EntitlementProviding: AnyObject {
     var state: PurchaseState { get }
     /// Called on every entitlement change (unlock, Ask to Buy approval, refund).
     var onEntitlementChange: ((Bool) -> Void)? { get set }
+    /// The entitlement from StoreKit's local records, and the updates listener. Fast and offline;
+    /// the library is ready to browse after this (SC-101).
     func start() async
+    /// The product and its localized price (an App Store request); not needed to browse.
+    func loadProduct() async
     func purchase() async
     func restore() async
 }
@@ -61,6 +65,11 @@ final class LibraryStore: EntitlementProviding {
             }
         }
         await refreshEntitlement()
+        state = .idle
+    }
+
+    func loadProduct() async {
+        guard product == nil else { return }
         do {
             product = try await Product.products(for: [Self.productID]).first
             displayPrice = product?.displayPrice
@@ -151,6 +160,7 @@ final class FakeEntitlements: EntitlementProviding {
     }
 
     func start() async {}
+    func loadProduct() async {}
     func purchase() async {
         isUnlocked = true
         state = .purchased

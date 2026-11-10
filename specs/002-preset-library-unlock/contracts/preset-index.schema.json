@@ -4,26 +4,76 @@
   "title": "PresetIndex",
   "description": "Apps/projectM-iOS/Resources/PresetIndex.json, written by scripts/build_preset_index.py (feature 002 data-model.md).",
   "type": "object",
-  "required": ["version", "presets"],
+  "required": [
+    "version",
+    "presets"
+  ],
   "additionalProperties": false,
   "properties": {
-    "version": { "const": 1 },
+    "version": {
+      "const": 1
+    },
     "presets": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "name", "author", "source", "folder", "path", "hash"],
+        "required": [
+          "id",
+          "name",
+          "author",
+          "source",
+          "folder",
+          "path",
+          "hash"
+        ],
         "additionalProperties": false,
         "properties": {
-          "id": { "type": "string", "minLength": 3 },
-          "name": { "type": "string", "minLength": 1 },
-          "author": { "type": "string", "minLength": 1 },
-          "source": { "enum": ["included", "cream-of-the-crop", "projectm-classic", "milkdrop-original", "en-d"] },
-          "folder": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-          "path": { "type": "string", "minLength": 3 },
-          "hash": { "type": "string", "pattern": "^[0-9a-f]{40}$" }
+          "id": {
+            "type": "string",
+            "minLength": 3
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "author": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source": {
+            "enum": [
+              "included",
+              "cream-of-the-crop",
+              "projectm-classic",
+              "milkdrop-original",
+              "en-d"
+            ]
+          },
+          "folder": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "path": {
+            "type": "string",
+            "minLength": 3
+          },
+          "hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          }
         }
       }
+    },
+    "archive": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "description": "PresetArchive.bin's table order: for each archived (non-Included) preset, its position in presets. presets itself is in display order (pack priority, then name) so the app's sort is one pass (SC-101, 2026-11-10). Absent: presets is in archive order."
     }
   }
 }

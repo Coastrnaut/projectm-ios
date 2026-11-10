@@ -118,6 +118,24 @@ class Target:
             run(["xcrun", "devicectl", "device", "process", "launch", "--device", self.identifier,
                  "--terminate-existing", "--environment-variables", json.dumps({"PROJECTM_AUTORUN": mode}), BUNDLE])
 
+    def terminate(self) -> None:
+        """Stops the app if a mode left it running."""
+        if self.simulator:
+            run(["xcrun", "simctl", "terminate", self.identifier, BUNDLE], check=False, quiet=True)
+            return
+        if DRY_RUN:
+            return
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "processes.json"
+            run(["xcrun", "devicectl", "device", "info", "processes", "--device", self.identifier,
+                 "--json-output", str(out)], capture=True, quiet=True, check=False)
+            if not out.exists():
+                return
+            for process in json.loads(out.read_text())["result"].get("runningProcesses", []):
+                if f"/{SCHEME}.app/" in process.get("executable", ""):
+                    run(["xcrun", "devicectl", "device", "process", "terminate", "--device", self.identifier,
+                         "--pid", str(process["processIdentifier"])], check=False, capture=True)
+
     def container_files(self, subdirectory: str | None = None) -> list[str]:
         """Relative paths in the app's data container (or one folder of it)."""
         if DRY_RUN:
@@ -223,6 +241,7 @@ def run_mode(target: Target, mode: str, prefix: str, timeout: float) -> Path | N
     before = set(target.container_files("Documents"))
     target.launch(mode)
     name = target.wait_for_report(prefix, before, timeout)
+    target.terminate()
     if not name:
         print(f"!! no {prefix} report within {timeout:.0f} s" + (" (dry run)" if DRY_RUN else ""))
         return None
@@ -250,7 +269,7 @@ def cmd_perf(args) -> None:
         install(args, target)
     launches(target, "sc101", args.repeat)
     run_mode(target, "sc102", "automation-sc102", 120)
-    run_mode(target, "sc104", "automation-sc104", 240)
+    run_mode(target, "sc104", "automation-sc104", 600)
     summarize(target.out_dir)
 
 
@@ -258,7 +277,7 @@ def cmd_scroll(args) -> None:
     """SC-103: the UI test on the device (Debug build signed with your team)."""
     target = target_from_args(args)
     destination = f"id={target.identifier}" if target.simulator else f"platform=iOS,id={udid_for(target)}"
-    log = target.out_dir / "sc103-uitest.log"
+    log = BUILD / "uitest" / f"{target.label}-sc103.log"   # large; the summary goes to sc103.json
     log.parent.mkdir(parents=True, exist_ok=True)
     result = run(["xcodebuild", "test", "-project", str(PROJECT), "-scheme", SCHEME, "-destination", destination,
                   "-derivedDataPath", str(BUILD / "uitest"), "-allowProvisioningUpdates",
@@ -380,11 +399,13 @@ def cmd_size(args) -> None:
     options.write_text(EXPORT_OPTIONS)
     reports = {}
     for name, archive in (("1.0", old_archive), ("new", new_archive)):
-        dest = out / name
+        dest = BUILD / "size" / name   # the exported .ipa files stay out of the repository
         run(["xcodebuild", "-exportArchive", "-archivePath", str(archive), "-exportPath", str(dest),
              "-exportOptionsPlist", str(options), "-allowProvisioningUpdates"])
         if not DRY_RUN:
-            reports[name] = parse_thinning_report((dest / "App Thinning Size Report.txt").read_text())
+            report = dest / "App Thinning Size Report.txt"
+            shutil.copy2(report, out / f"thinning-{name}.txt")
+            reports[name] = parse_thinning_report(report.read_text())
     if DRY_RUN:
         return
     result = size_growth(reports["1.0"], reports["new"])

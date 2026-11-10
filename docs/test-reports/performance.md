@@ -213,3 +213,49 @@ system picker for every start).
 
 | Threshold | Initial | Final | Evidence |
 |-----------|---------|-------|----------|
+
+## Feature 002: the full preset library (T238, 2026-11-10)
+
+Automated with `scripts/run_device_tests.py` (quickstart Scenario D). Reports:
+`docs/test-reports/exports/feature002/<D1|D2|D3|size>/`.
+
+- **Builds:** the measurement build is projectM-iOS 1.1 (2), Release with `PROJECTM_AUTOMATION`,
+  Xcode 27.2. The SC-103 scroll test runs the Debug build that UI tests use.
+- **Library:** 12,847 presets.
+- **Devices:** D1 iPhone 15 (iOS 27.0.1), D2 iPad Pro M5 (iPadOS 27.2), D3 iPad A16 (iPadOS 26.5).
+
+| Criterion | Target | D1 | D2 | D3 |
+|-----------|--------|----|----|----|
+| SC-101 library ready after the chooser appears | ≤ 150 ms (D1, D3) | **pass**: 10/10, 101-106 ms | — | **pass**: 10/10, 107-112 ms |
+| SC-102 search per keystroke (177 keystrokes) | ≤ 50 ms (D1, D3) | **pass**: median 5.0 ms, max 33.4 ms | — | **pass**: median 6.3 ms, max 38.5 ms |
+| SC-103 frames on time, 10 s of scrolling | ≥ 95% | **pass**: All A-Z 96.4%, largest folder 96.7% | **pass**: 97.0%, 97.4% (120 Hz) | **pass**: 96.4%, 96.1% |
+| SC-104 preset switches across packs, first frame < 1 s | ≥ 95% (D1) | **pass, borderline**: 96% of 200 (p95 970 ms) | — | 92% of 200 (not a D3 target) |
+| SC-108 installed size growth over 1.0 (App Thinning) | ≤ 40 MB | +26.4 MB (19.6 → 46.0 MB) | +26.4 MB | +26.4 MB |
+
+### Notes
+
+- **SC-101.** The first D1 run missed narrowly: 145-157 ms. Two changes fixed it:
+  - "Ready" no longer waits for StoreKit's network product request. Only the local entitlement is
+    needed to browse; the price loads afterwards.
+  - The index is parsed while StoreKit's local records are read. It is now written in display
+    order, so the app's sort is a single pass. On the Mac the library build went from 65 ms to
+    44 ms.
+
+  The table shows the result after both changes. The limits are as for SC-015: back-to-back
+  launches, so the file cache was warm.
+- **SC-102** times the in-memory search only; the list redraw is not included.
+- **SC-103.** A `CADisplayLink` frame meter counts frames on time and refresh slots missed while
+  the UI test swipes for 10 s. The scrolled lists are All presets A-Z and projectM Classic ›
+  milkdrop (608 presets).
+- **SC-104** is borderline on D1.
+  - Two 200-pick runs: 92% (build before the SC-101 changes) and 96%. A 50-pick run gave 98% and
+    94%.
+  - In every slow switch the preset loads in about 300 ms (archive read plus engine parse), then
+    the first frame waits about another second while the engine compiles that preset's shaders.
+  - The slowest presets are mostly in Cream of the Crop's Drawing folder (Explosions, Growth,
+    Trails).
+  - Reliable headroom needs an engine-side change: compiling shaders before the switch, or
+    caching them. This is a follow-up.
+- **SC-108** compares Xcode's App Thinning Size Reports (`-exportArchive`,
+  `<thin-for-all-variants>`) of the 1.0 (1) archive and a 1.1 (2) archive: the uncompressed app
+  size per device model.

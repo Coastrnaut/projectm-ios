@@ -45,7 +45,12 @@ public final class PresetLibrary: Sendable {
             }
         }
         presets = sorted
-        archiveOrder = file.presets.filter { !$0.isIncluded }.map(\.id)
+        if let positions = file.archive {
+            guard positions.allSatisfy(file.presets.indices.contains) else { throw PresetLibraryError.badArchiveTable }
+            archiveOrder = positions.map { file.presets[$0].id }
+        } else {
+            archiveOrder = file.presets.filter { !$0.isIncluded }.map(\.id)
+        }
         packs = packsFile.packs
         byId = Dictionary(sorted.enumerated().map { ($1.id, $0) }, uniquingKeysWith: { first, _ in first })
         searchKeys = sorted.map { Self.fold($0.name + " " + $0.author) }

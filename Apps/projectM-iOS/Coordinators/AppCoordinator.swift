@@ -215,16 +215,20 @@ final class AppCoordinator: VisualizationControlling {
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                let library = try await PresetLibrary.load(from: .main)
-                presetLoader.library = library
-                presets.attach(library)
-                presets.onScopeChange { UIAccessibility.post(notification: .announcement, argument: $0) }   // FR-124
                 entitlements.onEntitlementChange = { [weak self] unlocked in
                     Task { @MainActor in await self?.presets.setUnlocked(unlocked) }
                 }
+                // The index is parsed off the main thread while StoreKit's local records are read
+                // (SC-101); the price loads afterwards, since browsing does not need it.
+                async let loaded = PresetLibrary.load(from: .main)
                 await entitlements.start()
+                let library = try await loaded
+                presetLoader.library = library
+                presets.attach(library)
+                presets.onScopeChange { UIAccessibility.post(notification: .announcement, argument: $0) }   // FR-124
                 await presets.setUnlocked(entitlements.isUnlocked)
                 libraryReady = true
+                Task { [weak self] in await self?.entitlements.loadProduct() }
                 #if DEBUG || PROJECTM_AUTOMATION
                 AutomationRunner.libraryReady(self)   // SC-101 (feature 002 T238)
                 #endif

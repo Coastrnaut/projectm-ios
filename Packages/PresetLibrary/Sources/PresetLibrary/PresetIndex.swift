@@ -38,7 +38,11 @@ public struct PresetPackInfo: Sendable, Hashable, Identifiable, Codable {
 
 struct IndexFile: Decodable {
     let version: Int
+    /// In display order (pack priority, then name), so the app's sort is one pass (SC-101).
     let presets: [IndexedPreset]
+    /// PresetArchive.bin's table order: for each archived preset, its position in `presets`.
+    /// Absent in older indexes, where `presets` itself was in archive order.
+    let archive: [Int]?
 }
 
 struct PacksFile: Decodable {
@@ -49,4 +53,6 @@ struct PacksFile: Decodable {
 public enum PresetLibraryError: Error, Equatable {
     case unsupportedVersion(Int)
     case missingResource(String)
+    /// `archive` names a position outside `presets`.
+    case badArchiveTable
 }

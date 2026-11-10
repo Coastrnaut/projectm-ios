@@ -26,6 +26,7 @@ final class LibraryStoreTests: XCTestCase {
     private func startedStore() async -> LibraryStore {
         let store = LibraryStore()
         await store.start()
+        await store.loadProduct()
         return store
     }
 

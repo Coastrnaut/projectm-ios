@@ -22,8 +22,8 @@
 //   sc102   times PresetLibrary.search for every prefix of typed words, 3 rounds (the in-memory
 //           search per keystroke; the list redraw is not included). Report: automation-sc102-*.json.
 //   sc104   with the library unlocked (fixed entitlement, no StoreKit): In-App Playback, scope All,
-//           50 × Random across all packs: request to the new preset's first presented frame, and
-//           each pick's pack. Report: automation-sc104-*.json.
+//           200 × Random across all packs: request to the new preset's first presented frame, and
+//           each pick's pack; then exits. Report: automation-sc104-*.json.
 //   entitlement
 //           the real StoreKit store: waits for the library, then records the entitlement, purchase
 //           state, price, scope and whether a pack preset plays. Run after a sandbox
@@ -164,28 +164,33 @@ enum AutomationRunner {
         await presets.select(first, in: .all)
         try? await Task.sleep(for: .seconds(1))
         var samples: [Double] = []
+        var loadMs: [Double] = []
+        var picks: [String] = []
         var packs: [String: Int] = [:]
         var failures = 0
-        for _ in 0..<50 {
+        for _ in 0..<200 {   // 50 picks swung between 94% and 98% across two D1 runs
             let before = renderer.presentedFrameCount
             let start = Date()
             await presets.random()
+            loadMs.append(Date().timeIntervalSince(start) * 1000)   // archive read + engine load returned
             if presets.failureMessage != nil { failures += 1 }
             let loaded = renderer.presentedFrameCount
             while renderer.presentedFrameCount <= max(before, loaded), Date().timeIntervalSince(start) < 5 {
                 try? await Task.sleep(for: .milliseconds(2))
             }
             samples.append(Date().timeIntervalSince(start) * 1000)
+            picks.append(presets.current?.id ?? "none")
             packs[presets.current?.source ?? "none", default: 0] += 1
             try? await Task.sleep(for: .milliseconds(300))
         }
         let sorted = samples.sorted()
         write("sc104", [
-            "scope": presets.scopeLine, "samplesMs": samples, "picksByPack": packs,
+            "scope": presets.scopeLine, "samplesMs": samples, "loadMs": loadMs, "picks": picks, "picksByPack": packs,
             "medianMs": sorted[sorted.count / 2], "p95Ms": sorted[Int(Double(sorted.count) * 0.95) - 1],
             "fractionUnder1s": Double(samples.filter { $0 < 1000 }.count) / Double(samples.count),
             "loadFailures": failures, "blendSeconds": 2,
         ])
+        exitSoon()
     }
 
     private static func entitlement(_ coordinator: AppCoordinator) async {

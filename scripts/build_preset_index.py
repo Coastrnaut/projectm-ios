@@ -28,10 +28,12 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import shutil
 import struct
 import subprocess
 import sys
+import unicodedata
 import zlib
 from pathlib import Path
 
@@ -152,6 +154,33 @@ def build(included_dir: Path, packs_dir: Path, blocklist: set[str], exclusions: 
     return records, pack_records, archive
 
 
+def display_key(name: str) -> list:
+    """Close to Foundation's localizedStandardCompare (case and diacritics ignored, digit runs by
+    value, spaces < punctuation < digits < letters). The app sorts again with the real comparator;
+    input already in (nearly) this order makes that sort a single pass (SC-101)."""
+    folded = "".join(c for c in unicodedata.normalize("NFKD", name) if not unicodedata.combining(c)).casefold()
+    key = []
+    for token in re.findall(r"\d+|\D", folded):
+        if token.isdigit():
+            key.append((2, int(token), ""))
+        elif token.isspace():
+            key.append((0, 0, ""))
+        elif token.isalpha():
+            key.append((3, 0, token))
+        else:
+            key.append((1, 0, token))
+    return key
+
+
+def display_order(records: list[dict]) -> tuple[list[dict], list[int]]:
+    """The index in display order (pack priority, then name), and for each archive entry (records
+    in archive order, Included skipped) its position in that list."""
+    order = {"included": 0, **{p: i + 1 for i, (p, _) in enumerate(PACKS)}}
+    display = sorted(records, key=lambda r: (order[r["source"]], display_key(r["name"]), r["id"]))
+    position = {r["id"]: i for i, r in enumerate(display)}
+    return display, [position[r["id"]] for r in records if r["source"] != "included"]
+
+
 def dumps(obj) -> str:
     """Compact JSON with one list item per line (small, deterministic, readable diffs)."""
     if isinstance(obj, dict):
@@ -250,7 +279,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     records, packs, archive = build(args.included_dir, args.packs_dir, blocklist, exclusions)
     args.out.mkdir(parents=True, exist_ok=True)
-    (args.out / "PresetIndex.json").write_text(dumps({"version": 1, "presets": records}), encoding="utf-8")
+    display, archive_positions = display_order(records)
+    (args.out / "PresetIndex.json").write_text(
+        dumps({"version": 1, "presets": display, "archive": archive_positions}), encoding="utf-8")
     (args.out / "PresetPacks.json").write_text(dumps({"version": 1, "packs": packs}), encoding="utf-8")
     write_archive(archive, args.out / "PresetArchive.bin")
     images = copy_textures(args.packs_dir, args.out / "PresetTextures")

@@ -108,6 +108,18 @@ class PresetIndexTests(unittest.TestCase):
         self.assertIn("cream-of-the-crop/Fractal/Nested/Martin - Spiral.milk", ids)
         self.assertIn("en-d/Excluded - Me.milk", ids)
 
+    def test_display_order_and_archive_positions(self):
+        # SC-101: the index lists presets by pack, then name; "archive" maps the archive's order back.
+        self.run_main("--force")
+        data = json.loads((self.out / "PresetIndex.json").read_text())
+        names = [r["name"] for r in data["presets"]]
+        self.assertEqual(len(data["archive"]), len([r for r in data["presets"] if r["source"] != "included"]))
+        self.assertEqual(sorted(data["archive"]), list(range(1, len(names))))
+        key = self.bpi.display_key
+        self.assertLess(key("Preset 2"), key("Preset 10"))
+        self.assertLess(key("cafe b"), key("Café C"))
+        self.assertLess(key("_x"), key("1"))
+
     def test_names_authors_folders(self):
         self.run_main()
         by_id = {r["id"]: r for r in self.index()}
