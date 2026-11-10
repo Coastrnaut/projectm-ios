@@ -1,6 +1,6 @@
 # ADR-0005: LGPL-2.1 and App Store Compliance
 
-- **Status**: Preliminary conclusion approved 2026-11-09 (conditional go); app code MIT; final conclusion before release (T109)
+- **Status**: Final conclusion: go, approved by the owner 2026-11-10 (T109); app code MIT; custom EULA at submission (T112)
 - **Date**: 2026-11-07
 - **Spec**: FR-064, FR-067, Delivery Gating · **Research**: R-10 · **RI**: RI-007, RI-010
 
@@ -95,13 +95,13 @@ Stage 2 engineering may proceed once T056 records "go", on the conditions in "Pr
 conclusion" above. Condition 1 is met by the MIT decision (option A); conditions 2 (RI-010) and 3
 (legal opinion) remain for the final conclusion (T109).
 
-## Proposed final conclusion (T109) — awaiting owner approval
+## Final conclusion (T109) — approved by the owner 2026-11-10
 
 > Draft 2026-11-10 for the project owner (owner chose "draft go, owner approves"). Engineering
 > analysis, not legal advice; the owner did not require a legal opinion. It becomes the final
 > conclusion only when the owner records approval here.
 
-**Proposed status: go** for App Store release of ProjectMiOS, on the measures below.
+**Status: go** for App Store release of ProjectMiOS, on the measures below.
 
 ### RI-007: LGPL-2.1 obligations in an App Store app
 
@@ -151,4 +151,4 @@ on the Licenses screen.
 - A legal opinion was recommended (preliminary conclusion, condition 3) and is waived by this
   draft; the owner's approval records that choice.
 
-**Owner approval**: _pending_.
+**Owner approval**: approved by the project owner on 2026-11-10, including waiving the legal opinion.
