@@ -37,6 +37,9 @@ include tap buffering). No `Normalized residency` points: nothing reads the norm
 the Phase C renderer exists. T062 stays open until a trace shows all three stages; the Capture
 delivery figures need a device trace before anyone draws a conclusion from them.
 
+**Owner rulings 2026-11-09:** T062 is closed on these two stages; points carrying the measured
+ms are accepted for delivery and residency; the residency trace is T114 in Phase C.
+
 ## Plan Phase B exit (task T063)
 
 Run 2026-11-09 on D1 (iPhone 15, `iPhone15,4`, iOS 27.0.1), CaptureLab build 2, Debug

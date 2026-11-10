@@ -128,7 +128,9 @@ Renderer/Platform/GLResolver.cpp).
   "Audio received — silent").
 - **Latency budget** (SC-006, 150 ms): capture delivery ≤ 30 ms; source ring and conversion ≤ 20
   ms; normalized ring residency ≤ 50 ms (freshness rule); engine frame and display ≤ 50 ms. Each
-  stage is measured with signposts in Phase B/D.
+  stage is measured with signposts in Phase B/D. Owner ruling 2026-11-09 (T062): ring + conversion
+  is a signpost interval; capture delivery and normalized residency are measured after the fact
+  and recorded as signpost points carrying the milliseconds. The residency trace is T114 (Phase C).
 - **Acceptance**: A Phase B allocation-trace test runs each adapter for 60 s and must record zero
   heap allocations and zero lock acquisitions on the audio callback thread.
 - **Rationale**: Satisfies Constitution VII: no allocation, locks, or logging in callbacks, and
