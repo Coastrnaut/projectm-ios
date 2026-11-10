@@ -32,7 +32,7 @@ accounts or signing; untagged tasks are completable on the project Mac.
 
 ## Phase 2: Foundational (blocks all stories)
 
-- [ ] T204 [P] Add tests for the index script to `scripts/test_scripts.py` with a fixture tree under `scripts/fixtures/preset-packs/`: priority Included → cream-of-the-crop → projectm-classic → milkdrop-original → en-d keeps the first occurrence of a hash; only `.milk` files; blocklisted hashes and `--exclusions` ids skipped; Included ids keep the form `frontend-uwp/<file>.milk`; author is the text before the first " - " ("Unknown" if none); `--check` fails on a stale file
+- [ ] T204 [P] Add tests for the index script to `scripts/test_scripts.py` with a fixture tree under `scripts/fixtures/preset-packs/`: priority Included → cream-of-the-crop → projectm-classic → milkdrop-original → en-d keeps the first occurrence of a hash; only `.milk` files; blocklisted hashes and `--exclusions` ids skipped; Included ids keep the form `frontend-uwp/<file>.milk` and Included names come from `Resources/Presets/LICENSES.md`'s "Display name" column (U1); author is the text before the first " - " ("Unknown" if none); `--check` fails on a stale file
 - [ ] T205 Implement `scripts/build_preset_index.py` writing `Apps/ProjectMiOS/Resources/PresetIndex.json` (contracts/preset-index.schema.json: `version` 1; `source` one of `included`, `cream-of-the-crop`, `projectm-classic`, `milkdrop-original`, `en-d`; `hash` matching `^[0-9a-f]{40}$`) and `PresetPacks.json` (data-model.md: `commit` must equal the submodule's), reading `Apps/ProjectMiOS/Resources/PresetBlocklist.json` (`{"hashes": []}`), with `--check` and `--exclusions <file>`
 - [ ] T206 Generate and commit `PresetIndex.json`, `PresetPacks.json` and an empty `PresetBlocklist.json`; add `python3 scripts/build_preset_index.py --check` (with submodules checked out) to the docs-and-compliance CI job
 - [ ] T207 [P] Write `Packages/PresetLibrary/Tests/PresetLibraryTests/PresetLibraryTests.swift`: decoding, `home` order (Included, the four packs, All), node counts, folder trees per pack (cream category/subcategory, classic collection, en-d episode, original flat), lock state before and after unlock, `members` excludes locked and excluded presets, alphabetical order (localized standard compare)
@@ -55,11 +55,12 @@ accounts or signing; untagged tasks are completable on the project Mac.
 
 - [ ] T216 [P] [US1] Extend `Apps/ProjectMiOS/Tests/PresetTests.swift`: with the library and no unlock, the Included scope's Next/Previous order equals release 1.0's 28-preset order (SC-107); a 1.0 favorite id still resolves (FR-104); favorites of ids missing from the index are dropped at launch
 - [ ] T217 [US1] Rework `Apps/ProjectMiOS/Coordinators/PresetCoordinator.swift` to use `PresetLibrary`, the current `PresetScope` (default `included`) and an entitlement flag; `AppCoordinator` loads the library off the main thread instead of `PresetRepository`; `RendererPresetLoader` resolves `path` in the bundle
-- [ ] T218 [US1] Add `settings.presetScope` to `Apps/ProjectMiOS/Coordinators/FavoritesStore.swift` (or `AppSettings`) with FR-123's rule (a search scope stores `all`); update `AppSettings.allKeys`, `SettingsTests` and the FR-065 key list in `docs/test-reports/privacy-review.md`
+- [ ] T218 [US1] Add `settings.presetScope` to `Apps/ProjectMiOS/Coordinators/AppSettings.swift` (with the other `settings.*` keys) with FR-123's rule (a search scope stores `all`); update `AppSettings.allKeys`, `SettingsTests` and the FR-065 key list in `docs/test-reports/privacy-review.md`
 - [ ] T219 [US1] Rebuild `Apps/ProjectMiOS/Views/PresetBrowserView.swift` as a `NavigationStack`: library home (Included 28, each pack with its total and a lock before purchase, All A-Z), keeping the All/Favorites picker and FR-088's empty-state text
 - [ ] T220 [US1] Add folder lists per pack structure (FR-112) and All A-Z with letter sections and a section index in `Apps/ProjectMiOS/Views/PresetFolderView.swift`
 - [ ] T221 [US1] Add `.searchable` over the library with grouped, capped results and a "Refine your search" row (FR-113) in `PresetBrowserView.swift`
 - [ ] T222 [US1] Mark locked rows (lock icon, "locked" in the accessibility label) and route a locked tap to the purchase entry point (stub until T227)
+- [ ] T245 [US1] Favorites view across packs (FR-114): alphabetical, each row showing its pack, locked favorites marked, in `PresetBrowserView.swift`, with a case in `PresetTests.swift`
 - [ ] T223 [US1] Write `Apps/ProjectMiOS/UITests/PresetLibraryUITests.swift`: home rows and counts, folder drill-down, search grouping and cap, Included-only playback with Next/Random, a locked tap opens the purchase entry point
 
 ---
@@ -86,6 +87,7 @@ accounts or signing; untagged tasks are completable on the project Mac.
 **Independent Test**: quickstart.md Scenario C.
 
 - [ ] T230 [P] [US3] Extend `PresetTests.swift`: choosing a preset from a folder, Favorites or a search sets that scope; Next wraps inside it; Random stays inside; a stored scope that no longer resolves falls back (Included before purchase, All after)
+- [ ] T246 [P] [US3] Exclude presets that fail to load from every scope for the rest of the session (FR-118, feature 001 FR-045) in `PresetCoordinator`, with a test in `PresetTests.swift`
 - [ ] T231 [US3] Set the scope on selection in `PresetCoordinator` and show "<scope> · <count>" under the preset name in `Apps/ProjectMiOS/Views/ControlsOverlay.swift` (FR-120)
 - [ ] T232 [US3] Accessibility (FR-124): row labels "Name, by Author[, locked]", folder counts, purchase sheet controls, and an announcement when the scope changes
 - [ ] T233 [US3] Extend `PresetLibraryUITests.swift` (unlocked via `-uitestUnlocked YES`): Fractal › Nested Spiral scope, Next wrap, Random stays inside, scope line text

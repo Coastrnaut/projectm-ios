@@ -161,7 +161,8 @@ statement and authors.
 - **FR-101**: The app MUST bundle the 28 presets of release 1.0 as the free "Included" library and
   the four projectM preset packs (cream-of-the-crop, projectm-classic, milkdrop-original, en-d) plus
   the milkdrop texture pack, each taken from a pinned version of the projectM team's repository.
-  No preset file is copied into this project's own source; the app downloads no presets or code.
+  Beyond the 28 Included presets already in this project, no preset file is copied into this
+  project's own source; the app downloads no presets or code.
 - **FR-102**: Each preset MUST appear once: identical presets are merged, keeping the Included
   identity first, then cream-of-the-crop, projectm-classic, milkdrop-original, en-d. Only
   Milkdrop-format presets (`.milk`) are included.

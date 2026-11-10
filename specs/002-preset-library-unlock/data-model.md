@@ -5,7 +5,7 @@
 | Field | Type | Rule |
 |-------|------|------|
 | `id` | string | `<source>/<path in source>`; unique; Included ids unchanged from 1.0 (FR-104) |
-| `name` | string | Display name: file name without `.milk`, author prefix removed when it matches `Author - Title` |
+| `name` | string | Included: the "Display name" column of `Resources/Presets/LICENSES.md` (unchanged from 1.0, SC-107); packs: file name without `.milk`, author prefix removed when it matches `Author - Title` |
 | `author` | string | Text before the first ` - ` in the file name; `Unknown` if none |
 | `source` | string | `included`, `cream-of-the-crop`, `projectm-classic`, `milkdrop-original`, `en-d` |
 | `folder` | [string] | Path components inside the source, without the file name (cream: [category, subcategory]; classic: [collection]; en-d: [episode]; original: []) |
