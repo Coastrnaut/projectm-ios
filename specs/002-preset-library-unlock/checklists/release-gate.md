@@ -64,6 +64,5 @@
 - Spec edits made while generating this checklist (owner delegated decisions, 2026-11-10): SC-101
   measured from the source chooser's first appearance; SC-103 quantified (95% of frames on time over
   10 s on the longest lists); FR-113 group order and one-character search; restricted purchases
-  edge case; Family Sharing off assumption. CHK023 is covered by data-model.md's scope transitions;
-  the spec has no line for it yet.
+  edge case; Family Sharing off assumption. CHK023's gap was closed by a new spec edge case (stored scope that no longer resolves).
 - `/speckit-implement` reads checklist state but does not modify markers.

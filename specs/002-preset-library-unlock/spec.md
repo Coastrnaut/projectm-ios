@@ -149,6 +149,8 @@ statement and authors.
   allowed on this device and offers Restore and Close.
 - The app is updated with a new pinned pack version: favorites of presets that no longer exist are
   dropped silently at launch; the rest keep working.
+- The stored scope no longer exists after an update (pack removed, folder renamed): the scope falls
+  back to Included before purchase and to All after.
 
 ## Requirements *(mandatory)*
 
