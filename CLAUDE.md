@@ -163,7 +163,12 @@ decision 2026-11-09: no noreply address).
 
 ## Conventions
 
-- Commit after each task or skill; no co-author trailers in commit messages.
+- **Commit often (owner rule, 2026-11-10):** commit after every task, after every Spec Kit skill,
+  and after every complete change to a set of files (a fix plus its tests, a doc update). Never
+  let unrelated finished work pile up in one commit. No co-author trailers in commit messages.
+- **Push often:** push right after each commit, or each small group of commits, once the change
+  builds and its tests pass. Don't hold finished work back to wait for CI or a long test run;
+  CI cancels superseded runs.
 - Standing owner approval (2026-11-08): push to `origin/main` and let CI run without asking first,
   then check the run's result. Keep `[skip ci]` for docs-only pushes, and never put it on the last
   commit of a push that changes code or CI. Signing changes still need the owner.
@@ -176,7 +181,8 @@ agent-driven. Copy this section into a new repository's CLAUDE.md and adjust the
 
 ### Owner rules and standing approvals (ask once, record here)
 
-- **Commits:** commit after every task or Spec Kit skill.
+- **Commits:** commit after every task, every Spec Kit skill and every complete change to a set
+  of files (owner rule, 2026-11-10: commit and push more often). Push right after; don't batch.
   - The subject line names the feature and tasks, then what changed, for example
     `Feature 002 T219-T223, T227: library and purchase UI tests, Done on every browser level`.
     Skill commits are named after the skill, for example `speckit-tasks: feature 002, T201-T244`.
