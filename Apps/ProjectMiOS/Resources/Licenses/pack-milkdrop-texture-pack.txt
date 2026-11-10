@@ -1,0 +1,10 @@
+Milkdrop Texture Pack
+https://github.com/projectM-visualizer/presets-milkdrop-texture-pack at commit 6368812f27bc747b517218fbf89d21d59afce4d9
+Textures used by presets in the other packs
+
+License statement
+
+No license file in the repository; distributed under the projectM team's basis for these packs (assumed public domain; removed on the author's request). See ADR-0007.
+
+Basis for distribution in this app: docs/adr/0007-preset-library-licensing.md (assumed public
+domain as the projectM team distributes these packs; a preset is removed on its author's request).

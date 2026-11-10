@@ -1,0 +1,147 @@
+Milkdrop Original
+https://github.com/projectM-visualizer/presets-milkdrop-original at commit e03b83e3338d8f1ed6cbcf908c719f249ef24288
+497 presets, 134 authors
+
+License statement
+
+No license file in the repository; distributed under the projectM team's basis for these packs (assumed public domain; removed on the author's request). See ADR-0007.
+
+Basis for distribution in this app: docs/adr/0007-preset-library-licensing.md (assumed public
+domain as the projectM team distributes these packs; a preset is removed on its author's request).
+
+Authors
+
+Aderrasi
+Aderrasi + Flexi
+Aderrasi + Geiss
+baked
+bdrv
+Benski
+Bmelgren
+Bmelgren & Krash
+Che
+cope
+EMPR
+Eo.S.
+Eo.S. + Geiss
+Eo.S. + Phat
+Eo.S.+Phat
+Esotic & Rozzer
+Esotic & Rozzor
+fed
+fiShbRaiN
+fiShbRaiN + Eo.S. + Phat
+fiShbRaiN + Flexi
+fiShbRaiN + geiss
+fiShbRaiN, geiss + flexi
+Flexi
+flexi
+Flexi + bdrv
+Flexi + fiShbRaiN
+Flexi + Geiss
+Flexi + Martin
+Flexi + Rovastar
+Flexi, fishbrain + Martin
+Flexi, fishbrain, Geiss + Martin
+Flexi, martin + geiss
+Flexi, Phat, Zylot + Eo.S
+Flexi, Rovastar + Geiss
+Flexi, Stahlregen, Nitorami + Shifter
+Forum collaboration thread
+Fvese
+Geiss
+Geiss + Flexi + Martin
+Geiss + Stahlregen
+Geiss and Zylot
+Geiss, Flexi + Stahlregen
+Goody
+Goody + martin
+Hexcollie
+Hexcollie + Flexi
+Hexcollie, Aderassi, BDRV, AdamFX n Flexi
+Hexcollie, Flexi + Adam
+Hexcollie, Flexi, ORB, Eo.S. n DaNOnE
+Idiot
+Idiot24-7
+Illusion
+Illusion & Boz
+Illusion & Rovastar
+Illusion & Unchained
+Krash
+Krash & Rovastar
+Krash + Geiss + martin
+Martin
+martin
+martin + suksma + fed + goody and others
+Mstress
+Mstress & Juppy
+Mstress & Zylot
+nil
+ORB
+orb
+phat + Eo.S.
+Phat_Eo.S.
+Phat_remix_Eo.S.
+PieturP
+raron
+raron + flexi
+Redi Jedi
+Reenen
+Reenen Geiss
+Rocke
+Rovastar
+Rovastar & Aderrasi
+Rovastar & Che
+Rovastar & Idiot24-7
+Rovastar & Krash
+Rovastar & Loadus
+Rovastar & Loadus + Zylot
+Rovastar & Rocke
+Rovastar & Unchained
+Rovastar & Zylot
+Rovastar + Flexi
+Rovastar + Flexi + Loadus + Geiss
+Rovastar + Geiss
+Rovastar + Loadus + Geiss
+Rozzor
+Rozzor & Aderrasi
+Rozzor & Che
+Rozzor & Esotic
+Rozzor & Neuro
+Rozzor & Rovastar
+Rozzor & StudioMusic
+Rozzor & Unchained
+shifter
+Shifter & Eo.S+Phat
+shifter & fiShbRaiN
+Shreyas
+Stahlregen & Aderrasi + Flexi + Rovastar
+Stahlregen & aderrasi + martin + rocke + rovastar
+Stahlregen & baked + Geiss + Krash
+Stahlregen & bdrv + fiSHbRAiN + flexi + Geiss + shifter
+Stahlregen & Boz + Eo.S + Geiss + Phat + Rovastar + Zylot
+Stahlregen & Eo.S + Geiss + ORB + Phat
+Stahlregen & fishbrain + flexi + geiss
+Stahlregen & fishbrain + geiss + martin
+Stahlregen & Flexi + Geiss
+Stahlregen & flexi + Geiss + Rovastar + Shifter
+Stahlregen & Flexi + Geiss + Rovastar + Unchained
+Stahlregen & Geiss + Rovastar + Illusion + Krash + Rozzor
+Stahlregen + Flexi
+stahlregen + flexi
+Stahlregen + Geiss + Martin
+stahlregen + geiss + shifter
+Stahlregen + martin + others
+Stahlregen + Unchained
+Studio Music and Unchained
+TEcHNO & SandStorm
+Unchained
+Unchained & Rovastar
+Unchained vs Rovastar vs Zylot
+Unknown
+yin
+Zylot
+Zylot & Idiot
+Zylot & Idiot24-7
+Zylot & Krash
+Zylot & Rovastar

@@ -179,6 +179,51 @@
       "license": "MIT",
       "attribution": "Generated for this project (scripts/generate_reference_audio.py)",
       "file": "reference-audio.txt"
+    },
+    {
+      "version": "https://github.com/projectM-visualizer/presets-cream-of-the-crop at 0180df2",
+      "id": "pack-cream-of-the-crop",
+      "name": "Cream of the Crop",
+      "group": "Preset packs",
+      "license": "LicenseRef-Milkdrop-PublicDomain-Assumed",
+      "attribution": "9,795 presets, 754 authors",
+      "file": "pack-cream-of-the-crop.txt"
+    },
+    {
+      "version": "https://github.com/projectM-visualizer/presets-projectm-classic at 14a6244",
+      "id": "pack-projectm-classic",
+      "name": "projectM Classic",
+      "group": "Preset packs",
+      "license": "LicenseRef-Milkdrop-PublicDomain-Assumed",
+      "attribution": "2,584 presets, 370 authors",
+      "file": "pack-projectm-classic.txt"
+    },
+    {
+      "version": "https://github.com/projectM-visualizer/presets-milkdrop-original at e03b83e",
+      "id": "pack-milkdrop-original",
+      "name": "Milkdrop Original",
+      "group": "Preset packs",
+      "license": "LicenseRef-Milkdrop-PublicDomain-Assumed",
+      "attribution": "497 presets, 134 authors",
+      "file": "pack-milkdrop-original.txt"
+    },
+    {
+      "version": "https://github.com/projectM-visualizer/presets-en-d at fff71ea",
+      "id": "pack-en-d",
+      "name": "En D",
+      "group": "Preset packs",
+      "license": "LicenseRef-Milkdrop-PublicDomain-Assumed",
+      "attribution": "37 presets, 6 authors",
+      "file": "pack-en-d.txt"
+    },
+    {
+      "version": "https://github.com/projectM-visualizer/presets-milkdrop-texture-pack at 6368812",
+      "id": "pack-milkdrop-texture-pack",
+      "name": "Milkdrop Texture Pack",
+      "group": "Preset packs",
+      "license": "LicenseRef-Milkdrop-PublicDomain-Assumed",
+      "attribution": "Textures used by presets in the other packs",
+      "file": "pack-milkdrop-texture-pack.txt"
     }
   ],
   "lgplNote": {

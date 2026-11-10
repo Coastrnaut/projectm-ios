@@ -100,8 +100,8 @@ accounts or signing; untagged tasks are completable on the project Mac.
 
 **Independent Test**: Settings › Licenses shows all five pack entries.
 
-- [ ] T234 [P] [US4] Extend `scripts/collect_licenses.py` (and its `--check`) to add one entry per pack from `PresetPacks.json` with the license statement, source, commit and author list
-- [ ] T235 [US4] Show pack entries in `Apps/ProjectMiOS/Views/LicensesView.swift` under a "Preset packs" group; extend `SettingsUITests` to open one
+- [X] T234 [P] [US4] Extend `scripts/collect_licenses.py` (and its `--check`) to add one entry per pack from `PresetPacks.json` with the license statement, source, commit and author list — Verified 2026-11-10: 25 components written, `--check` passes and requires the five pack entries.
+- [X] T235 [US4] Show pack entries in `Apps/ProjectMiOS/Views/LicensesView.swift` under a "Preset packs" group; extend `SettingsUITests` to open one — Verified 2026-11-10: SettingsUITests.testLicensesScreen on the iOS 27.2 simulator opens Cream of the Crop (source, commit 0180df2, authors). The view needed no change: it lists the manifest's "Preset packs" group.
 
 ---
 

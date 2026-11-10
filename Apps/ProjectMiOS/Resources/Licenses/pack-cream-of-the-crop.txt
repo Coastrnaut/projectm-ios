@@ -1,0 +1,772 @@
+Cream of the Crop
+https://github.com/projectM-visualizer/presets-cream-of-the-crop at commit 0180df21f5e0bd39b9060cc5de420ed2f1f9e509
+9,795 presets, 754 authors
+
+License statement
+
+Milkdrop presets were, in almost all cases, not released under any specific license. Theoretically, each preset author
+holds the full copyright on any released presets. Since the presets were freely released and have been used in so many
+packages and applications in the past two decades, it is safe to assume them to be in the public domain.
+
+If any preset author doesn't want their own creation in this repository, please contact the projectM team and we will
+remove the preset(s) from future releases.
+
+Basis for distribution in this app: docs/adr/0007-preset-library-licensing.md (assumed public
+domain as the projectM team distributes these packs; a preset is removed on its author's request).
+
+Authors
+
+$$$ Royal
+2009 4th of July with AdamFX n Martin
+3dRaGoNs & Rovastar
+8 -2nd coll- shader mash
+A Bit Storm Effected by AdamFX 2 shadowharlequin
+A Bitstorm Explosion 2 ShadowHarlequin
+A Brilliant AdamFX Hd Remake  ORB
+A Feature Preset Master Exclusive ORB
+A Milk Art Detail 2 flexi
+A MilkKing Recreation FT Martin
+A Remixed  Digital Echasketch  Again 2 martin
+A Remixed Digital Echasketch  Again 2 martin
+A Tribute to Martin
+A Ultimate AdamFX 2 Martin
+AAdamFX Infection 2 martin
+adam eatit fx 2 martin
+Adam Eatit Mashup FX 2 martin
+adam eatit mashup fx 2 martin
+Adam Favorite Milkdrop Master Mashup FX 2 martin
+Adam Fx 2 Zylot
+Adam Shark
+AdamFx 2 Aderrasi
+AdamFX 2 Geiss
+AdamFx 2 Geiss and Zylot
+AdamFx 2 Geiss, Zylot and Flexi
+AdamFX CollaborationFX of the best Remake
+AdamFX Edit 2 martin
+AdamFX Enterz Tha Mash With Martin + stahlregen
+AdamFX Remixed Again 2 martin
+AdamFX to Geiss
+Aderrasi
+AFX Remix Rock me Torment 2 Stahlregen & Aderrasi + EoS + Geiss + Unchained + Zylot
+AkashaDude & Geiss
+akish
+aKo
+AllStarz In Milk
+Amandio C
+amandio c
+amandio c, flexi
+amandio c, flexi, martin
+An AdamFX Mashup 2 martin
+An AdamFX n Martin Infusion 2 flexi
+An AdamFX Ultimate Twist inFX 2  flexi
+An Digital FX Edit 2 martin
+anglican't americouldn't
+ASick Recreation Preset Pack by  AdamFX Twisted 2 martin
+BADAZJust a TwistFX
+baked
+bdrv
+bdrv + al
+bdrv + al EoS
+bdrv + al Rovastar
+bdrv + al shifter
+bdrv + al Telek
+BDRV Aderrasi
+Bdrv Aderrasi
+Bdrv bdrv et  AL  rmx
+bdrv celebration
+Bdrv EoS
+Bdrv et AL Aderrasi
+BDRV et AL shifter
+bdrv etAL Aderrasi
+bdrv etAL Krash & Yin + Phat
+bdrv etAL Nighthawk
+bdrv geiss zylot
+Bdrv Krash & yin + Phat + EoS
+Bdrv Rozzor & Shreyas
+Bdrv shifter
+Bdrv yin
+Beat it Adam FX 2  flexi + fishbrain
+Beat it Adam FX 2 suksma + Future light show
+Beat it up AdamFX REMIX 2 Zylot
+Benjam
+Benjam & Zylot
+Benjam and Zylot
+Benski
+BEST OF ADAMFX 2 Flexi + Geiss
+BEST REXIXz G AdamFX 2 EoS + Phat
+beta106i
+beta106Random
+beta106S
+beta106S + Phat
+BlastOffTek
+Blastofftek
+blastofftek
+BlastOffTek + Flexi + Geiss +fiShbRain
+Blendin to myself AdamFX Twist 2 martin
+blood red raw holy
+Bmelgren
+bmelgren
+Bmelgren & Krash
+Bmelgren & Rovastar
+boobs
+Boz
+BrainStain-114 outside
+BrainStain-projection room
+BrainStain-radioactive
+By Adam FX  EoS + Zylot
+By Adam FX 2 shifter + geiss
+CantStop AdamFX 2 Stahlregen & Bmelgren + EoS + Geiss + Krash + Rocke + Rovastar
+CatalystTheElder
+Che
+Chemlock
+clig
+Collaboration Milk Celebration AdamFX  ExtreemFX FT flexi
+Color Torment AdamFX 2 flexi
+cool blue toast
+Cope
+cope
+Cope + flexi
+cope + flexi
+cope + geiss + stahlregen
+cope + martin
+Cope-WIP
+cortex meat
+cpe domains flacc
+craving 'spinach man' action figures suppositoric nutrition
+Dark One
+Dbleja
+Demon Lord + Flexi
+DemonLD_-_Future_domination
+Did It Again-  Stahlregen & Aderrasi + EoS + Geiss + Unchained + Zylot
+drugsincombat
+dumpling antler melon sage
+dylan
+ech0
+Ed
+empty flow
+EoS
+EoS & gastly
+EoS + flexi
+EoS + flexi + geiss
+EoS + Geiss
+EoS + martin + stahlregen
+EoS + others
+EoS + Phat
+EoS + phat
+EoS + Phat + Geiss
+EoS + Phat and Zylot
+EoS + Redi Jedi
+EoS + Zylot
+EoS and PieturP
+EoS and Zylot
+EoS planetfunk-07
+EoS planetfunk-08
+EoS planetfunk-09
+EoS planetfunk-10
+EoS+ Phat
+EoS+Phat
+EoS+Phat Emergent factors
+EoS+Phat Fractical_dancer
+EoS+Phat Warping_vidio_echo
+EoS_phat
+EoS_Phat technicolor E breather B
+Esotic & Rozzer
+Esotic & Rozzor
+Esotic vs Rozzor
+EVET
+EVET + EoS
+EVET + Esotic & Krash
+EVET + fiShbRaiN + Geiss
+EVET + Flexi
+EVET + flexi
+EVET + martin
+EVET + martin + stahlregen
+EVET + ORB
+EVET + Stahlregen & flexi + Geiss + Rovastar + Shifter
+EVET + suksma
+EVET- Esotic & Rozzer
+Evil02
+EvilJim
+extreme paranoia and fear unleash in spontaneous suicide flails
+f wen blew my wallet
+Fast transition to black
+Fed
+fed
+fed + Flexi
+fed + flexi
+fed + Flexi + EoS + Phat
+fed + flexi + geiss
+Fed + Geiss
+fed + Goody + Flexi
+fed + Rovastar
+fed + Rovastar + Unchained
+fed _ [WHO]
+fiShbRaiN
+fiShbRaiN + Flexi
+fiShbRaiN + flexi
+fiShbRaiN + Geiss
+fiShbRaiN + geiss
+fishbrain + geiss
+fiShbRaiN + geiss + goody + stahlregen + martin + others
+fiShbRaiN + geiss + goody + stahlregen + others
+fishbrain + Geiss + Stahlregen + Orb
+Fishbrain + Krash
+fishbrain and flexi
+fiShbRaiN, flexi + martin
+fleekus flokus
+flexci + rovastar + martin + others
+Flexi
+flexi
+flexi +  suksma + goody + fed + other artists
+Flexi + amandio c
+flexi + amandio c
+Flexi + bdrv
+flexi + bdrv
+flexi + fishbrain + geiss + unchained + others
+Flexi + Geiss
+Flexi + geiss
+flexi + Geiss
+flexi + geiss
+Flexi + Geiss + Demon Lord
+flexi + geiss + redi jedi + Stahlregen
+flexi + goody
+Flexi + Martin
+flexi + nitorami
+Flexi + orb + geiss
+Flexi + Rovastar
+Flexi + Rovastar + suksma
+flexi + shifter + stahlregen
+Flexi + stahlregen
+flexi + stahlregen
+flexi + suksma
+flexi + tschoey + geiss
+Flexi and AdamFX
+Flexi and AdamFx
+Flexi bdrv
+Flexi, AdamFx, Geiss and Rovastar
+flexi, bdrv + geiss
+Flexi, BDRV, Aderrasi et al
+Flexi, fishbrain, Geiss + Martin
+flexi, geiss + stahlregen
+Flexi, Geiss and Rovastar
+flexi, geiss, shifter + stahlregen
+flexi, martin, stahlregan n hexcollie
+flexi, stahlregen, geiss + tobias wolfboi
+Flexi, suksma + Martin
+Flexi, suksma + martin
+flying hamster
+Forum collaboration thread
+Ft AdamFX Preset Pack
+Fumbling_Foo
+Fumbling_Foo & Cope, Flexi, Martin, Orb
+Fumbling_Foo & Flexi, Martin, Orb
+Fumbling_Foo & Flexi, Martin, Orb, Unchained
+Fumbling_Foo + En D & Martin
+Fumbling_Foo + Flexi, Martin, Orb
+Fumbling_Foo, Martin, Orb, Flexi
+Fumbling_Foo, ORB, Flexi
+Future Ligh Show AdamFX 2 martin
+Fvese
+Fvese and Zylot
+FX New Trendz
+FXSetting
+gaping h
+Geiss
+geiss
+Geiss & TobiasWolfBoi
+geiss + flexi + orb + others
+Geiss + Stahlregen
+Geiss and Rovastar
+Geiss and Zylot
+Geiss, Flexi + Stahlregen
+geiss_experimental__Spiral Artifact (Filament Mix)
+geite'
+Gentlekid
+gjlasd bleefed ngaeme
+goddamn nice
+Goody
+goody
+goody + amandio c
+goody + EoS + martin
+Goody + flexi
+goody + flexi
+goody + geiss
+Goody + martin
+goody + martin
+goody + shadowharlequin
+goody + stahlregen + flexi
+Goody + Suksma
+goody and martin
+Goody on mushrooms + Hexcollie n Fyornulis
+Goody's Fatal Color Attraction PS2-0
+Goody's Lightning
+Goody's Portfolio
+Goody's Unstable Sonic Reactor (Inside of it all remix
+goody(2), stahlregen (2)
+goody(2), stahlregen (3), fed (1)
+goody(2), stahlregen (3-5), fed (1)
+goody(2),stahlregen (2),fed
+goody(3), hexcollie(2), fed(2), flexi(2)
+goody(3), hexcollie(2), fed(2), flexi(3)
+goody(3), hexcollie(3), fed(2), flexi(3)
+goody(3), hexcollie, fed(2), flexi(2)
+goody(3), stahlregen (3), fed (1)
+goody(4), hexcollie(3), fed(2), flexi(3)
+goody(4), hexcollie(3), fed(2), flexi(3), stahlregen (1)
+goody(5), hexcollie(3), fed(2), flexi(3)
+goody, stahlregen
+GreatWho
+GreatWho + Flexi
+GreatWho + goodie
+GreatWho + Hexcollie
+GreatWho + Martin + Flexi
+greazed up humility
+gunthry is out back bloodying up the pine trees
+gwadeloag
+Hakan + Cope + Flexi
+Hakan + Flexi
+HALFBREAK
+HalfBREaK
+Halfbreak
+halfbreak
+Halfbreak + Cope + GreatWho
+Halfbreak + Flexi
+Halfbreak + Flexi and bdrv
+Halfbreak + Flexi and goody + geiss + benski
+Halfbreak + Martin
+Halfbreak + martin
+Halfbreak + Phat
+Halfbreak + RediJedi + RceOrdinary
+Halfbreak + TonyMilkdrop
+HDFX New Creation Sensation
+HDFX Trend NDropFX with  AdamFX
+HDFX with Flexi
+heat seeking solace
+Hell_Candidate
+Hexcollie
+hexcollie
+hexcollie + tian + geiss + orb + phat + mstress + martin + others
+Hexcollie n EoS
+Hexcollie n Fvese
+Hexcollie, Aderassi, BDRV, AdamFX n Flexi
+Hexcollie, Aderassi, ORB, baked n 3dragons
+Hexcollie, Aderassi, Telek, vovon n 3dRaGoNs
+Hexcollie, Bdrv, Geiss n Aderrasi
+Hexcollie, Bdrv, Geiss, Flexi n Aderrasi
+Hexcollie, Bdrv, Goody, Esotic, EoS n Phat
+Hexcollie, Dbleja, EoSn Phat
+Hexcollie, EoS n Phat
+hexcollie, Eos, Goody n Flexi
+Hexcollie, EoS, Phat, bdrv n Aderrasi
+Hexcollie, Flexi n adamfx
+Hexcollie, Flexi n Aderrasi
+Hexcollie, Flexi n Geiss
+Hexcollie, Flexi n Suksma
+Hexcollie, Flexi, Aderrasi, shifter n fishbrain
+Hexcollie, Flexi, Bdrv, Telec n Aderrasi
+Hexcollie, Flexi, Rova n Phat
+Hexcollie, Flexi, Suksma n Martin
+Hexcollie, Geiss n Flexi
+Hexcollie, Idiot n Inventive Software
+Hexcollie, infinitely symbolic + Martin
+Hexcollie, Krash, bdrv, EoS n aderassi
+Hexcollie, Krash, Inventive software n Pithlit
+Hexcollie, Krash, Inventive software, Geiss n Pithlit
+Hexcollie, Krash, Inventive software, Goody, Geiss n Pithlit
+Hexcollie, Martin, Flexi n AdamFX
+Hexcollie, ORB n Redi
+Hexcollie, Pieturp, Orb, Flexi, Geiss n Demon Lord
+Hexcollie, Rova n EOS
+Hexcollie, Shifter, idiot n Tobias wolf boi
+Hexcollie, shifter, martin
+Hexcollie, Suksma n AdamFX
+Hexcollie, Suksma n Flexi
+Hexcollie, suksma n TEcHNO
+Hexcollie, TI@N, Suksma n Zylot
+hexcollie, ti@n, suksma, zylot n orb
+hexcollie, ti@n, suksma, zylot, orb n flexi
+hexcollie, ti@n, suksma, zylot, orb, martin n flexi
+Hexcollie, Zylot n Phat
+high-altitude basket unraveling
+i poison my plants with my piss
+i'm about to puke(remix)
+i'm sorry, but this is just fucked up
+Idiot
+idiot
+Illusion & Krash
+Illusion & Rovastar
+Illusion & Unchained
+Including Adam FX 2 flexi + fishbrain
+InCUbuS
+infinitely symbolic
+Infused by Flexi with AdamFX 2 Stahlregen & Aderrasi
+Infused by Flexi with AdamFX 2 Stahlregen & Aderrasi + EoS + Geiss + Unchained + Zylot
+Inside A Black Whole AdamFX 2 martin
+Jc
+Jim & Geiss
+King in MDrop HdFX Ft Artist Geiss
+Krash
+Krash & Rovastar
+Krash & yin
+Krash & yin + Phat
+Krash + Rovastar
+Krash and Fvese
+Krash and Rovastar
+Krash and Zylot
+kuntrie mbomnre
+lemuel
+lice
+Liquid Glowsticks
+lit claw (explorers grid)
+Loadus & Geiss
+loin bowel
+LuX
+LuX_-_Geiss
+LuX_exi, Redi Jedi + Geiss
+LuXXX
+LuxXx
+MackTuesday
+marijuana
+Martin
+martin
+martin & geiss
+martin + flexi
+martin + flexi + rlp
+martin + RLP
+martin + stahlregen
+Martin n AdamFX
+Martin N AdamFX Infusion = Phat+Yin+EoS_Mandala Chaser Ft AdamFX n Martin
+Martin n FriendzFX
+Mashup ADAMFX 2 Flexi + Geiss
+mbrane i'mplaenth
+mddb-rar bdrv
+MegalomaGreg
+MegalomaGreg + ShadowHarlequin
+mess n777
+mess n777 prt
+mic h
+midgitstraights of majillaen
+Mig_304
+Milk Artist At our Best
+Milk King to the ExtreemFX flexi
+MilkArtist Geiss n AdamFX Remake 2 cope
+MilkArtist Krash n AdamFX Remake 2 cope
+Milkdrop Mashup Masters ADAMFX 2 raron + flexi  +  ORB 2
+MilkTop HDFX Presets  Ft Aderrasi,AdamFX,RovaStar,ShadowHarlequin,Martin n Flexi
+MilkTop HDFX Presets  Ft Aderrasi,AdamFX,RovaStar,ShadowHarlequin,Martin n Flexi ft Baked
+MisterJingo
+Mr_Zoolook
+Mstress
+Mstress and Zylot
+Mxyzptlk
+Neon n HdFX Ft Artist Geiss
+NeW Adam Master Mashup FX 2 Geiss
+New Adam Master Mashup FX 2 Geiss
+NeW Adam Master Mashup FX 2 Geiss and Zylot
+New Creation Sensation
+New Creation Sensation Ft AdamFx Amandio c n Martin
+New Creations From Favorite
+New MilkTrend Trend Setters
+nicklepenultim
+NiGHtHawK
+niko radiative bunchess
+Nivush
+obtain cash, dig a pit for your neighbor, disconnect
+Ondras
+one-sided infinite-dimensional shape
+only glimpses of the reality you once knew
+Ootje
+ORB
+orb
+oslo
+ougiel
+Phat & Emale
+Phat + EoS
+phat + EoS
+PHAT HD FX 2 FiShbRaiN
+Phat+fiShbRaiN_Mandala_Bare_No_Border_mix_v2
+Phat+Yin+EoS_Mandala_Chasers_SOULar_Named_Red_Pulse_b
+Phat_Aderrasi
+phat_CloseIncouneters_update EoS tweak
+Phat_EoS
+phat_RippleNebula99h-EoS mod_mod6
+Phat_Rovastar
+Phat_shifter
+Phat_Zylot
+Phat_Zylot_EoS square_faces_v2_alt_colours
+Phmall
+PieturP
+Pinbi7 & Fvese
+Pinbi7 & Idiot
+Pinbi7 & Rocke
+pins for buttons
+Pithlit
+PyroCybin
+Rarian Rakista
+rarian rakista
+raron
+rationalizing insanity using only mainstream religion
+rce-ordinary
+rce-ordinary + flexi
+Reaching New HighFX
+Redi Jedi
+redi jedi
+Reenen
+Reenen & Telek
+Reflecto FX
+repressed americans
+Rism
+RLP + Geiss
+RLP + martin
+Rocke
+Roosta
+Rovastar
+rovastar
+Rovastar & Geiss
+Rovastar & Idiot24-7
+Rovastar & Illusion
+Rovastar & Krash
+Rovastar & Loadus
+Rovastar & Loadus + Zylot
+Rovastar & Malte
+Rovastar & Rocke
+Rovastar & StudioMusic
+Rovastar & Unchained
+Rovastar & Zylot
+Rovastar + Che
+Rovastar + Geiss
+Rovastar + Loadus
+Rovastar + Loadus + Geiss
+rovastar + loadus + geiss
+Rovastar + Loadus + Geiss flx,cpe
+Rovastar + shifter + Geiss + martin
+Rovastar + Stahlregen
+Rovastar + Unchained
+Rovastar and Fvese
+Rovastar and idiot24-7
+Rovastar and Krash
+Rovastar Geiss
+Rozzor & Def Tech
+Rozzor & Esotic
+Rozzor & Neuro
+Rozzor & Rovastar
+Rozzor and Shreyas
+Rozzor vs Esotic
+salvia with chip harris
+schglasmia
+schwank
+segment (inner centipede
+Serge + cope
+Serge + Jc
+Serge + martin
+ShadowHarlequin
+shadowharlequin
+shadowharlequin + flexi
+ShadowHarlequin, Flexi, Unchained + Rovastar
+shadowharlequin, goody
+shadowharlequin, martin
+ShadowHarlequin, Unchained, Rovaster + Flexi
+shell robot
+Shifter
+shifter
+Shifter & EoS+Phat
+shifter & EoS+phat
+Shifter & EoS+Phat + flexi
+shifter & fiShbRaiN
+shifter + Aderrasi
+shifter + amandio c
+shifter + EoS + phat
+shifter + Flexi
+shifter + flexi
+shifter + Geiss
+shifter + geiss
+shifter+fishbrain+malalol
+Shiroijin
+Shreyas
+Shreyas & Unchained
+Sjadoh
+skipper skipper kiss me hard
+Slow transition to black
+Stahlregen
+stahlregen
+Stahlregen & AdamFx + EoS + Flexi + Geiss + Phat + Rovastar + Zylot
+Stahlregen & AdamFX + flexi + Geiss
+Stahlregen & Aderrasi + bdrv + EoS + flexi + Geiss + krash + shifter + TEcHNO
+Stahlregen & Aderrasi + EoS + fiShBRaiN + Geiss + Krash
+Stahlregen & Aderrasi + EoS + Geiss + fiShbRaiN
+Stahlregen & Aderrasi + EoS + Geiss + Rovastar + Unchained + Zylot
+Stahlregen & Aderrasi + EoS + Geiss + Unchained + Zylot
+stahlregen & aderrasi + EoS + krash + shifter + techno
+Stahlregen & Aderrasi + Flexi + Rovastar
+Stahlregen & Aderrasi + Geiss + Loadus + Rovastar
+Stahlregen & Aderrasi + Geiss + Rovastar
+Stahlregen & Aderrasi + Geiss + Vovan
+Stahlregen & Aderrasi + Geiss + Zylot
+Stahlregen & aderrasi + martin + rocke + rovastar
+Stahlregen & baked + Geiss + Tschoey + Rovastar
+Stahlregen & bdrv + fiSHbRAiN + flexi + Geiss + shifter
+stahlregen & bdrv + fishbrain + flexi + geiss + shifter
+Stahlregen & bdrv + flexi + Geiss + shifter
+stahlregen & bdrv + geiss + shifter
+Stahlregen & Benski + Flexi + Geiss + ORB
+Stahlregen & Bmelgren + EoS + Geiss + Krash + Rocke + Rovastar
+Stahlregen & Bmelgren + Geiss + Krash + PieturP + TEcHno + Zylot
+Stahlregen & Bmelgren + Geiss + Rovastar + Shifter
+Stahlregen & Boz
+Stahlregen & Boz + EoS + Geiss + martin + Phat + Rovastar + Zylot
+Stahlregen & Boz + EoS + Geiss + Phat + Rovastar + Zylot
+Stahlregen & Boz + EoS + Phat + Rovastar + Zylot
+Stahlregen & Che + Geiss + Illusion + Unchained
+Stahlregen & DemonLD + Geiss + martin + Rovastar
+Stahlregen & EoS + bdrv + flexi + Geiss + vovan
+Stahlregen & EoS + fiShbRaiN + flexi + fvese + Geiss + Rovastar + shifter
+Stahlregen & EoS + flexi + Geiss + vovan
+Stahlregen & EoS + Geiss + Krash + PieturP + Zylot
+stahlregen & EoS + geiss + krash + pieturp + zylot
+Stahlregen & EoS + Geiss + ORB + Phat
+Stahlregen & EoS + Geiss + Phat + Pithlit + Unchained
+Stahlregen & EoS + Geiss + Phat + yin
+Stahlregen & EoS + Geiss + Rovastar + Illusion + Krash + Rozzor
+Stahlregen & EoS + Phat + Pithlit + Unchained
+Stahlregen & Esotic + Idiot24-7 + Rozzer + Zylot
+Stahlregen & Fed + Geiss + Krash + Techno + StudioMusic
+Stahlregen & fiSHbRaiN + flexi + Geiss + martin + shifter
+Stahlregen & fiSHbRaiN + flexi + Geiss + shifter
+Stahlregen & fiShbRaiN + flexi + Geiss + shifter
+stahlregen & fishbrain + flexi + geiss + shifter
+Stahlregen & fishbrain + Geiss
+Stahlregen & fishbrain + geiss + martin
+Stahlregen & fiShbRaiN + Geiss + martin + Optics
+Stahlregen & fiShbRaiN + Geiss + Optics
+Stahlregen & fiShbRaiN + Geiss + spookytay
+Stahlregen & fishbrain + Geiss + Zylot
+Stahlregen & Flexi + Geiss
+stahlregen & flexi + geiss
+Stahlregen & flexi + Geiss + Goody + Rovastar + Unchained
+Stahlregen & flexi + Geiss + martin
+Stahlregen & flexi + Geiss + martin + Rovastar
+Stahlregen & Flexi + Geiss + Martin + Rovastar + Telek
+Stahlregen & Flexi + Geiss + ORB
+Stahlregen & Flexi + Geiss + Rovastar
+Stahlregen & flexi + Geiss + Rovastar
+stahlregen & flexi + geiss + rovastar
+Stahlregen & Flexi + Geiss + Rovastar + Unchained
+Stahlregen & Flexi + Geiss + Rovastar + Zylot
+Stahlregen & flexi + Geiss + shifter
+Stahlregen & Geiss
+Stahlregen & Geiss + EoS + Martin + Rovastar
+Stahlregen & Geiss + Flexi + Fishbrain
+Stahlregen & Geiss + Idiot24-7 + Illusion + Zylot
+Stahlregen & Geiss + Illusion + Krash + Rovastar
+Stahlregen & Geiss + martin
+Stahlregen & Geiss + ORB
+Stahlregen & Geiss + Phat + StudioMusic + Rovastar
+Stahlregen & Geiss + Pithlit + PieturP
+Stahlregen & Geiss + Rovastar
+stahlregen & geiss + rovastar
+Stahlregen & geiss + rovastar + flexi
+Stahlregen & Geiss + suskma
+Stahlregen & Geiss + TobiasWolfBoi
+Stahlregen & Geiss + Zylot
+stahlregen & geiss + zylot
+Stahlregen + Amandio C
+Stahlregen + Flexi
+stahlregen + flexi
+Stahlregen + Flexi + Geiss
+stahlregen + flexi + goody + martin + others
+stahlregen + flexi + martin
+Stahlregen + flexi + Phat
+Stahlregen + Geiss
+stahlregen + geiss + martin
+Stahlregen + Geiss + Unchained
+Stahlregen + martin
+Stahlregen + martin + others
+stahlregen + shifter
+Stahlregen + Shifter + Flexi
+stahlregen + shifter + flexi
+Stahlregen + Unchained
+Starz in MilkHDFX
+stbenge
+stupid mash5
+Stuttler
+sukma
+suksma
+suksma + aderassi geiss
+suksma + aderassi orb hexcollie
+suksma + fishbrain hexcollie martin
+suksma + flexi geiss rovastar roosta demonld shifter
+suksma + rovastar eos phat rediJedi adamfx
+suksma + rovastar goody geiss rism
+suksma + rovastar zylot eos phat gastly geiss
+suksma + rovaster eos phat gastly geiss martin
+suksma + rovaster eos phat gastly geiss stahlgren
+suksma + var eos geiss goody
+supernetworks
+swim in sweat
+Syst3mFailur
+Tag
+technothrob holotorics
+Telek
+Telek & EMPR
+Telek EMPR
+The Begining AdamFX 2 Geiss
+The NG
+The NG + amandio c
+The NG + Amandio C + Many Others
+The NG + EoS
+The NG + fiShbRaiN + Flexi + martin
+The NG + Flexi + AdamFX + shifter + LuxXx + Many Others
+The NG + Flexi + BDRV
+The NG + flexi + bdrv
+The NG + LuxXx
+The NG + martin + Flexi
+The NG + MindJourney
+The NG + MindJourney + Rovastar
+The NG + MindJourney + shifter
+The NG + Stahlregen & Boz + EoS + Geiss + Phat + Rovastar + Zylot + Flexi + martin + Fishbrain
+the point of life is scintillations and shinies and flashies dumb followed by as little rest as possible
+the ultimate preset
+to know the reason i am trapped is my own weakness and fear
+TobiasWolfBoi
+TonyMilkdrop
+TonyMilkdrop + BankNASA
+TonyMilkdrop + MonGatac
+transparent skin my walls are filled with magiqal symbols of my will
+Tripgnosis
+Unchained vs Rovastar
+Unchained vs Rovastar vs Zylot
+undulate harque
+Unknown
+va ultramix
+va ultramix2
+Valhala
+Various
+various
+Various artists
+various artists
+vashon island
+Vovan
+Vovan + Geiss
+Waltra
+when i first mixed this, i loved it, now, because of your existence, i fucking hate it
+white lace curtains drenched in biohazard of tiger
+whoraeckle'
+With AdamFX Presentation
+X-pand
+xmuzack + cope + Zylot
+xmuzack + martin + Mig + EoS
+xmuzack + mic h
+Xpand, FiShbRraiN and suksma
+Yin
+yin
+you are now leaving the materialistic sector
+you're right, i would rather be alive
+zhugulore
+zip lock badge
+Zylot
+Zylot & Idiot24-7
+Zylot & Rovastar
+Zylot & Shifter
+Zylot and FishBrain
+Zylot and Geiss
+Zylot and idiot

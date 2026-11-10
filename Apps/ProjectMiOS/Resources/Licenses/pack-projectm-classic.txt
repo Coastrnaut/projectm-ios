@@ -1,0 +1,383 @@
+projectM Classic
+https://github.com/projectM-visualizer/presets-projectm-classic at commit 14a6244a7d32eb7e114e1a92d1cb93358cdcc54a
+2,584 presets, 370 authors
+
+License statement
+
+No license file in the repository; distributed under the projectM team's basis for these packs (assumed public domain; removed on the author's request). See ADR-0007.
+
+Basis for distribution in this app: docs/adr/0007-preset-library-licensing.md (assumed public
+domain as the projectM team distributes these packs; a preset is removed on its author's request).
+
+Authors
+
+27_super_goats
+3dRaGoNs & Unchained
+[dylan] cube in a room -no effects
+[Ishan]
+_Aderrasi
+_Geiss
+_Mig_304
+A Milk Art Detail 2 flexi
+A New Definition for Milk
+A New Wave Trend in Milk
+A Tribute to Martin
+A Twistin Infusion
+adam eatit fx 2 martin
+Adam Eatit Mashup FX 2 martin
+Adam Fx 2 Zylot
+AdamFx 2 Aderrasi
+AdamFX 2 Geiss
+AdamFX Mashup 2 Martin
+Aderrasi
+Aderrasi + Flexi
+Aderrasi + Geiss
+amandio c
+An AdamFX n Martin Infusion 2 flexi
+baked
+bdrv
+bdrv + al EoS
+bdrv + al shifter
+Bdrv EoS
+Bdrv EoS + Redi Jedi
+Bdrv et AL Aderrasi
+bdrv et.AL EoS + Phat
+Benjam & Zylot
+Benjam and Zylot
+Benski
+beta106i
+beta106S + Phat
+Bmelgren
+Bmelgren & Krash
+Bmelgren & Unchained
+Bmelgren + Geiss
+Bmelgren + Krash
+BrainStain-projection room
+By Adam FX 2 shifter + geiss
+CatalystTheElder
+Che
+che
+Cope
+cope
+cope + 27_super_goats
+cope + flexi
+cope, flexi + martin
+CrystalHigh
+DaNOnE
+drugsincombat
+ech0
+EMPR
+EoS
+EoS + flexi
+EoS + Geiss
+EoS + Phat
+EoS + Phat + fiShbRaiN + Redi Jedi
+EoS + Phat + Geiss
+EoS + Zylot
+EoS and PieturP
+EoS and Zylot
+EoS and Zylot and Phat
+EoS planetfunk-04
+EoS planetfunk-10
+EoS+Phat
+EoS+Phat Emergent factors
+EoS+Phat Fractical_dancer
+EoS+Phat Warping_vidio_echo
+EoS_Phat Whale_soul-monitor danger
+Esotic & Rozzer
+Esotic & Rozzor
+EvilJim
+fed
+fiShbRaiN
+fiShbRaiN + EoS + Phat
+fiShbRaiN + EoS_Phat
+fiShbRaiN + Flexi
+fiShbRaiN + Geiss
+fiShbRaiN + geiss
+Flexi
+flexi
+Flexi + amandio c
+Flexi + bdrv
+flexi + cope
+Flexi + fiShbRaiN
+flexi + fishbrain + geiss + unchained + others
+Flexi + Geiss
+Flexi + geiss
+flexi + geiss
+Flexi + Geiss + Demon Lord
+Flexi + Martin
+Flexi + Rovastar
+Flexi + Rovastar + suksma
+flexi + stahlregen
+flexi, adamfx + hexcollie
+Flexi, BDRV, Aderrasi et al
+Flexi, fishbrain + Martin
+Flexi, fishbrain, Geiss + Martin
+Flexi, Geiss and Rovastar
+Flexi, martin + geiss
+Flexi, Martin, Phat, Zylot + EoS
+Flexi, Redi Jedi + Geiss
+Flexi, Rovastar + Geiss
+flexi, stahlregen + martin
+flexi, stahlregen, geiss + tobias wolfboi
+Flexi, Stahlregen, Nitorami + Shifter
+Forum collaboration thread
+Fumbling_Foo & Flexi, Martin, Orb, Unchained
+Fvese
+Fvese & Idiot24-7
+Geiss
+geiss
+Geiss & Rovastar
+Geiss & TobiasWolfBoi
+Geiss + Flexi + Martin
+Geiss + Rovastar
+Geiss + Stahlregen
+Geiss and Rovastar
+Geiss and Zylot
+Geiss, Flexi + Stahlregen
+Geiss, Nitorami + MackTuesday
+Goody
+Goody + martin
+had to cum that
+Hexcollie
+hexcollie
+hexcollie(1), goody(3), stahlregen(3), fed(1)
+Hexcollie, Aderassi, BDRV, AdamFX n Flexi
+Hexcollie, bdrv n unchained
+Hexcollie, Fishbrain, Flexi n EoS
+Hexcollie, Flexi, ORB, EoS n DaNOnE
+Hexcollie, geiss, Flexi, yin n Phat
+high-altitude basket unraveling
+Idiot
+idiot
+Idiot & Che
+Idiot & Rovastar
+Idiot & Zylot
+Idiot24-7
+Illusion
+Illusion & Boz
+Illusion & Che
+Illusion & Rovastar
+illusion & studio music
+illusion & techno
+Illusion & Unchained
+iMuS and  Rovastar
+Inside A Black Whole AdamFX 2 martin
+Ishan
+Jc
+Jess
+Krash
+Krash & Fvese
+Krash & Idiot
+Krash & Illusion
+Krash & Rovastar
+Krash & TEcHNO
+Krash & Telek
+Krash & Zylot
+Krash + EoS
+Krash + Illusion + Geiss
+Krash + Rovastar
+Krash + TEcHNO
+Krash and Fvese
+Krash and Rovastar
+Krash and Telek
+lit claw (explorers grid)
+LuX
+LuxXx
+Martin
+martin
+martin + flexi
+martin + suksma + fed + goody and others
+MegalomaGreg
+Milk Artist At our Best
+Milk King to the ExtreemFX flexi
+Mstress
+mstress
+Mstress & Darius
+Mstress & Juppy
+Mstress & Zylot
+Mstress + Zylot
+mstress and rovastar
+neuro
+NeW Adam Master Mashup FX 2 Geiss and Zylot
+NeW Adam Master Mashup FX 2 Zylot
+New Creation Sensation
+New MilkTrend Trend Setters
+NiGHtHawK
+niko radiative bunchess
+nil
+nil & Aderassi & EMPR
+nil & EMPR
+nil + EMPR
+ORB
+Phat + EoS
+phat + EoS
+Phat + Zylot + EoS
+Phat+fiShbRaiN+EoS_Mandala_Chasers_remix
+phat_CloseIncounetersV5 plus some fucking shaders somebody worked hard on
+Phat_EoS
+Phat_remix_EoS
+Phat_Rovastar
+Phat_Zylot_EoS rainbow bubble_mid3-starpoints_spirals_VE
+PieturP
+Pithlit & Illusion
+procreate with anti-leather
+raron, martin + flexi
+rce-ordinary + flexi
+Redi Jedi
+Redi Jedi + Studio Music
+Reenen
+Reenen & Telek
+Reenen Geiss
+Rocke
+Rovastar
+Rovastar & Aderrasi
+Rovastar & Che
+Rovastar & EvilJim
+Rovastar & Fvese
+Rovastar & Geiss
+Rovastar & Idiot24-7
+Rovastar & Illusion
+Rovastar & Krash
+Rovastar & Loadus
+Rovastar & Loadus + Zylot
+Rovastar & Rocke
+Rovastar & StudioMusic
+Rovastar & Telek
+Rovastar & Unchained
+Rovastar & Zylot
+Rovastar + Che
+Rovastar + Flexi
+Rovastar + Fvese
+Rovastar + Geiss
+Rovastar + Idiot24-7
+Rovastar + Krash
+Rovastar + Loadus
+Rovastar + Loadus + Geiss
+Rovastar + Rocke
+Rovastar + Telek
+Rovastar + Unchained
+Rovastar + Zylot
+Rovastar and Krash
+Rovastar and Unchained
+Rozzer & Neuro
+Rozzer & Zylot
+Rozzor
+Rozzor & Aderrasi
+Rozzor & Che
+Rozzor & Esotic
+Rozzor & Illusion
+Rozzor & Krash
+Rozzor & Neuro
+Rozzor & Rovastar
+Rozzor & Shreyas
+Rozzor & StudioMusic
+Rozzor & Unchained
+Rozzor & Zylot
+Rozzor + Idiot
+Rozzor and che
+Rozzor and Idiot
+Rozzor and Rovastar
+Rozzor and StudioMusic
+Rozzor and Zylot
+schglasmia
+sexually repressed americans
+shadow harlequin
+ShadowHarlequin
+shifter
+Shifter & EoS+Phat
+shifter & fiShbRaiN
+shifter + Aderrasi
+shifter + EoS + Phat
+shifter + Geiss
+shifter + geiss
+Shreyas
+skipper skipper kiss me hard
+Stahlregen
+stahlregen
+Stahlregen & AdamFx + EoS + Flexi + Geiss + Phat + Rovastar + Zylot
+Stahlregen & Aderrasi + EoS + Geiss + fiShbRaiN
+Stahlregen & Aderrasi + Flexi + Rovastar
+Stahlregen & aderrasi + martin + rocke + rovastar
+Stahlregen & bdrv + fiSHbRAiN + flexi + Geiss + shifter
+Stahlregen & Benski + Fvese + Geiss + Rovastar
+Stahlregen & Bmelgren + Geiss + Krash + PieturP + TEcHno + Zylot
+Stahlregen & DemonLD + Geiss + martin + Rovastar
+Stahlregen & EoS + Flexi + Phat + Rovastar + Zylot
+Stahlregen & EoS + Geiss + ORB + Phat
+Stahlregen & fishbrain + flexi + geiss
+Stahlregen & fiSHbRaiN + flexi + Geiss + shifter
+Stahlregen & fishbrain + geiss + martin
+Stahlregen & flexi
+Stahlregen & Flexi + Geiss
+stahlregen & flexi + geiss
+Stahlregen & flexi + Geiss + martin + Rovastar
+Stahlregen & flexi + Geiss + Rovastar + Shifter
+Stahlregen & Geiss
+Stahlregen & Geiss + EoS + Martin + Rovastar
+Stahlregen & Geiss + Rovastar
+Stahlregen & Geiss + Rovastar + Illusion + Krash + Rozzor
+Stahlregen & Geiss + TobiasWolfBoi
+Stahlregen & Geiss + Zylot
+Stahlregen + Flexi
+Stahlregen + Geiss
+Stahlregen + Geiss + Martin
+stahlregen + geiss + shifter
+Stahlregen + martin + others
+Stahlregen + Unchained
+Studio Music
+Studio Music & Unchained
+Studio Music & Unchained + Phat and E-oS
+Studio Music and Redi Jedi
+Studio Music and Unchained
+StudioMusic
+StudioMusic & Unchained
+StudioMusic Aderrasi & nil
+Stuttler
+suksma
+suksma + aderassi geiss
+suksma + rovaster eos phat gastly geiss martin
+Tag
+TEcHNO & SandStorm
+TEcHNO + SandStorm
+TEcHNO and SandStorm
+Telek
+Telek EMPR
+The NG + fiShbRaiN + Flexi + martin
+The NG + Geiss + Flexi
+The NG + MindJourney
+TobiasWolfBoi
+Tripgnosis
+Tschoey
+Unchained
+Unchained & Che
+Unchained & CTho
+Unchained & Illusion
+Unchained & Rovastar
+Unchained + Geiss
+Unchained vs Rovastar
+Unchained vs Rovastar vs Zylot
+undulate harque
+Unknown
+Valhala
+Various
+Various artists
+Vovan
+Vovan + Geiss
+Wulfson
+xmuzack + martin + Mig + EoS
+yin
+yin + Geiss
+yin + Phat + EoS
+Zylot
+Zylot & Aderrasi
+Zylot & Boz
+Zylot & Idiot
+Zylot & Idiot24-7
+Zylot & Krash
+Zylot & Mstress
+Zylot & Pinbi7
+Zylot & Rovastar
+Zylot & Wulfson
+Zylot + Geiss
+Zylot and Rovastar

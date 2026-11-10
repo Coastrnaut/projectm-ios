@@ -7,7 +7,9 @@ checkouts; rerun this after any pin change in ADR-0004.
 
 Sources: the engine submodule (Vendor/projectM), docs/licenses/, the ANGLE license files that
 scripts/build_angle_xcframework.py copies to Build/ANGLEFrameworks/licenses/, this repository's
-LICENSE, and the preset LICENSES.md.
+LICENSE, and the preset LICENSES.md. Feature 002 (T234): one entry per preset pack (Vendor/presets/*, ADR-0007) from the
+PresetPacks.json that scripts/build_preset_index.py writes (run into a temporary folder), with the
+pack's license statement, source, pinned commit and authors (FR-121).
 
     python3 scripts/collect_licenses.py           # regenerate
     python3 scripts/collect_licenses.py --check   # verify the committed output is complete
@@ -17,7 +19,9 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -109,6 +113,37 @@ def components() -> list[dict]:
     ]
 
 
+PACK_IDS = ("cream-of-the-crop", "projectm-classic", "milkdrop-original", "en-d", "milkdrop-texture-pack")
+
+
+def pack_manifest() -> list[dict]:
+    """PresetPacks.json's packs, built from the checked-out preset submodules."""
+    with tempfile.TemporaryDirectory() as tmp:
+        subprocess.run([sys.executable, str(ROOT / "scripts/build_preset_index.py"), "--out", tmp, "--force"],
+                       check=True, stdout=subprocess.DEVNULL)
+        return json.loads((Path(tmp) / "PresetPacks.json").read_text(encoding="utf-8"))["packs"]
+
+
+def pack_components(packs: list[dict]) -> list[dict]:
+    """One Licenses entry per preset pack (the 28 Included presets are the "presets" entry)."""
+    items = []
+    for pack in packs:
+        if pack["id"] not in PACK_IDS:
+            continue
+        count = (f"{pack['presetCount']:,} presets, {len(pack['authors']):,} authors" if pack["presetCount"]
+                 else "Textures used by presets in the other packs")
+        text = (f"{pack['title']}\n{pack['sourceURL']} at commit {pack['commit']}\n{count}\n\n"
+                f"License statement\n\n{pack['license'].strip()}\n\n"
+                "Basis for distribution in this app: docs/adr/0007-preset-library-licensing.md (assumed public\n"
+                "domain as the projectM team distributes these packs; a preset is removed on its author's request).\n")
+        if pack["authors"]:
+            text += "\nAuthors\n\n" + "\n".join(pack["authors"]) + "\n"
+        items.append({"id": f"pack-{pack['id']}", "name": pack["title"], "group": "Preset packs",
+                      "license": "LicenseRef-Milkdrop-PublicDomain-Assumed", "attribution": count,
+                      "version": f"{pack['sourceURL']} at {pack['commit'][:7]}", "text": text})
+    return items
+
+
 LGPL_NOTE = """\
 libprojectM is licensed under the GNU Lesser General Public License, version 2.1. This app uses it
 as a separate dynamic framework (projectM-4.framework) and does not restrict your rights under that
@@ -129,7 +164,7 @@ request the source by opening an issue in that repository.
 def generate() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     manifest = []
-    for item in components():
+    for item in components() + pack_components(pack_manifest()):
         text = item.pop("text", None)
         source = item.pop("source", None)
         if text is None:
@@ -162,7 +197,7 @@ def check() -> int:
             problems.append(f"{item['id']}: missing or empty {item['file']}")
     ids = {item["id"] for item in data["components"]}
     for required in ("app", "projectm", "glad", "glm", "hlslparser", "projectm-eval", "stb_image",
-                     "angle-ANGLE", "presets"):
+                     "angle-ANGLE", "presets", *(f"pack-{pack}" for pack in PACK_IDS)):
         if required not in ids:
             problems.append(f"no entry for {required}")
     commit = engine_commit()

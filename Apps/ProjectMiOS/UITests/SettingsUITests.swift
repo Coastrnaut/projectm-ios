@@ -109,6 +109,20 @@ final class SettingsUITests: XCTestCase {
         note.tap()
         XCTAssertTrue(app.staticTexts["licenseText"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["licenseText"].label.contains("Corresponding source"))
+
+        // Feature 002 T235 (FR-121): each preset pack has an entry with its source, commit and authors.
+        app.navigationBars.buttons["Licenses"].tap()
+        XCTAssertTrue(app.navigationBars["Licenses"].waitForExistence(timeout: 5))
+        for pack in ["cream-of-the-crop", "projectm-classic", "milkdrop-original", "en-d", "milkdrop-texture-pack"] {
+            XCTAssertTrue(scrollTo(app.buttons["license:pack-\(pack)"]), pack)
+        }
+        let cream = app.buttons["license:pack-cream-of-the-crop"]
+        for _ in 0..<8 where !cream.isHittable { app.swipeDown() }
+        cream.tap()
+        let packText = app.staticTexts["licenseText"]
+        XCTAssertTrue(packText.waitForExistence(timeout: 5))
+        XCTAssertTrue(packText.label.contains("presets-cream-of-the-crop at commit 0180df2"), "source and pinned commit")
+        XCTAssertTrue(packText.label.contains("Authors"), "author list")
     }
 
     private func scrollTo(_ element: XCUIElement) -> Bool {
