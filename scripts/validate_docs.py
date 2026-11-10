@@ -2,8 +2,9 @@
 """Validate cross-references in the specification documents (task T003).
 
 Fails (exit 1) when:
-  * a FR-/SC-/RI- identifier cited anywhere under specs/ or docs/ is not defined in the
-    feature spec, or an R-xx identifier is not defined in research.md;
+  * a FR-/SC-/RI- identifier cited anywhere under specs/ or docs/ is not defined in any feature
+    spec (specs/*/spec.md; feature 002 numbers its ids from 101 so they never collide with 001),
+    or an R-xx identifier is not defined in any feature's research.md;
   * contracts/diagnostics-export.schema.json is not valid JSON.
 
 Files under scripts/fixtures/ are excluded from the normal scan. Pass --include-fixtures
@@ -28,14 +29,15 @@ FIXTURES = ROOT / "scripts" / "fixtures"
 
 
 def defined_ids() -> dict[str, set[str]]:
-    spec = SPEC.read_text(encoding="utf-8")
-    research = RESEARCH.read_text(encoding="utf-8")
-    return {
-        "FR": set(re.findall(r"^- \*\*FR-(\d{3})\*\*", spec, re.M)),
-        "SC": set(re.findall(r"^- \*\*SC-(\d{3})\*\*", spec, re.M)),
-        "RI": set(re.findall(r"\*\*RI-(\d{3}) —", spec)),
-        "R": set(re.findall(r"^## R-(\d{2})\b", research, re.M)),
-    }
+    ids: dict[str, set[str]] = {"FR": set(), "SC": set(), "RI": set(), "R": set()}
+    for spec_path in sorted((ROOT / "specs").glob("*/spec.md")):
+        spec = spec_path.read_text(encoding="utf-8")
+        ids["FR"] |= set(re.findall(r"^- \*\*FR-(\d{3})\*\*", spec, re.M))
+        ids["SC"] |= set(re.findall(r"^- \*\*SC-(\d{3})\*\*", spec, re.M))
+        ids["RI"] |= set(re.findall(r"\*\*RI-(\d{3}) —", spec))
+    for research_path in sorted((ROOT / "specs").glob("*/research.md")):
+        ids["R"] |= set(re.findall(r"^## R-(\d{2})\b", research_path.read_text(encoding="utf-8"), re.M))
+    return ids
 
 
 def scan(files: list[Path], ids: dict[str, set[str]]) -> list[str]:
