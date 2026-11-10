@@ -78,15 +78,17 @@ final class GLESRendererTests: XCTestCase {
 
     func testPauseAndResumeTheDisplayLink() throws {
         let renderer = try makeLaidOut()
-        let window = UIWindow()   // no scene in an app-less test bundle
-        window.frame = CGRect(x: 0, y: 0, width: 64, height: 64)
-        window.addSubview(renderer.view)
+        // What the view reports when it joins and leaves a window (an app-less test has no scene
+        // to create a window in).
+        let layerView = try XCTUnwrap(renderer.view as? GLESLayerView)
+        layerView.onWindowChange?(true)
         XCTAssertEqual(renderer.isDisplayLinkPaused, false)
         renderer.pause()
         XCTAssertEqual(renderer.isDisplayLinkPaused, true)
         renderer.resume()
         XCTAssertEqual(renderer.isDisplayLinkPaused, false)
-        renderer.view.removeFromSuperview()
+        layerView.onWindowChange?(false)
         XCTAssertNil(renderer.isDisplayLinkPaused, "leaving the window stops the display link")
     }
+
 }

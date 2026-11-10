@@ -189,7 +189,9 @@ Renderer/Platform/GLResolver.cpp).
 - **Decision**: Bundle only presets with explicit redistribution licenses, starting from upstream
   ProjectM-maintained preset packs if their licenses permit. `Apps/ProjectMiOS/Resources/Presets/LICENSES.md`
   records, per preset: file path, display name, pack, author, license identifier, source URL, and
-  source commit/version. A preset with any field missing is not bundled. Reference audio is a short track
+  source commit/version, as a Markdown table with the columns File, Display name, Pack, Author,
+  License, Source URL, Source version (T074, `PresetRepository.swift`). A preset with any field
+  missing is not bundled. Reference audio is a short track
   synthesized in-house (generated tones, clicks, and beat pattern), giving full rights and a
   deterministic signal for SC-006.
 - **Rationale**: FR-006/FR-047. An in-house track also gives the click impulses SC-006 needs.
