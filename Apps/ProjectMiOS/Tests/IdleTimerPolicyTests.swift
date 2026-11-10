@@ -16,8 +16,12 @@ final class IdleTimerPolicyTests: XCTestCase {
         XCTAssertFalse(IdleTimerPolicy.suppressAutoLock(visualization: .notVisualizing, appIsActive: true))
     }
 
+    func testRestoredWhenSuspended() {
+        XCTAssertFalse(IdleTimerPolicy.suppressAutoLock(visualization: .suspended, appIsActive: true))
+    }
+
     func testRestoredWhenTheAppLeavesTheForeground() {
-        for state in [VisualizationState.running, .paused, .notVisualizing] {
+        for state in [VisualizationState.running, .paused, .suspended, .notVisualizing] {
             XCTAssertFalse(IdleTimerPolicy.suppressAutoLock(visualization: state, appIsActive: false), "\(state)")
         }
     }

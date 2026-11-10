@@ -42,7 +42,7 @@ struct ControlsOverlay: View {
     private var compact: some View {
         VStack(spacing: 8) {
             HStack {
-                SourceIndicator(coordinator: coordinator)
+                SourceStatusIndicator(coordinator: coordinator)
                 Spacer(minLength: 0)
             }
             presetName.frame(maxWidth: .infinity, alignment: .leading)
@@ -62,7 +62,7 @@ struct ControlsOverlay: View {
     private var regular: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                SourceIndicator(coordinator: coordinator)
+                SourceStatusIndicator(coordinator: coordinator)
                 Spacer()
                 presetName
             }

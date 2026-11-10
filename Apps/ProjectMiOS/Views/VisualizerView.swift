@@ -39,11 +39,17 @@ struct VisualizerView: View {
                     ControlsOverlay(coordinator: coordinator)
                         .transition(.opacity)
                 } else {
-                    SourceIndicator(coordinator: coordinator)
+                    SourceStatusIndicator(coordinator: coordinator)
                 }
             }
             .padding()
             .animation(.easeInOut(duration: 0.2), value: coordinator.controlsVisible)
+            #if DEBUG
+            if let fake = coordinator.fakeSource {
+                VStack { HStack { FakeSourcePanel(fake: fake); Spacer() }; Spacer() }
+                    .padding(.top, 2)
+            }
+            #endif
             if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {
                 Text("\(coordinator.sourceStarts)")
                     .font(.caption2)
@@ -76,27 +82,6 @@ struct VisualizerView: View {
                 .background(.regularMaterial, in: Capsule())
                 .accessibilityIdentifier("presetFailedBanner")
         }
-    }
-}
-
-/// The compact source-and-state indicator (FR-042), e.g. "In-App Playback · Active audio".
-struct SourceIndicator: View {
-    let coordinator: AppCoordinator
-
-    var text: String {
-        let manager = coordinator.manager
-        let mode = manager.activeMode.map(UIStrings.label) ?? "No source"
-        return "\(mode) · \(UIStrings.state(manager.state))"
-    }
-
-    var body: some View {
-        Text(text)
-            .font(.footnote.weight(.semibold))
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(.ultraThinMaterial, in: Capsule())
-            .accessibilityIdentifier("sourceIndicator")
-            .accessibilityLabel(text)
     }
 }
 

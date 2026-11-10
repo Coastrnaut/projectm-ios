@@ -46,6 +46,9 @@ final class AppCoordinator {
     var showSettings = false
 
     private let defaults: UserDefaults
+    #if DEBUG
+    private(set) var fakeSource: UITestFakeSource?
+    #endif
     private var hideTask: Task<Void, Never>?
     private let lifecycle: LifecycleObserver
     private let lifecycleForwarding: Task<Void, Never>
@@ -59,11 +62,20 @@ final class AppCoordinator {
         }
         screen = defaults.bool(forKey: Self.noticeKey) ? .chooser : .notice
         microphone = MicrophoneSource(backend: AVMicrophoneBackend())
-        let manager = CaptureManager(sources: [
+        var sources: [any AudioSource] = [
             ScreenCaptureSource.makeDefault(),
             microphone,
             InAppPlaybackSource(backend: AVInAppPlaybackBackend()),
-        ], signposts: DiagnosticsLog.pipeline)   // latency stages (T062, T114)
+        ]
+        #if DEBUG
+        // StatusUITests (T093): a scriptable fake replaces one mode's real source.
+        let fake = UITestFakeSource.fromLaunchArguments()
+        if let fake {
+            sources.removeAll { $0.mode == fake.mode }
+            sources.append(fake)
+        }
+        #endif
+        let manager = CaptureManager(sources: sources, signposts: DiagnosticsLog.pipeline)   // latency stages (T062, T114)
         self.manager = manager
         let lifecycle = LifecycleObserver()
         self.lifecycle = lifecycle
@@ -76,6 +88,9 @@ final class AppCoordinator {
             bundled = catalog.presets
         }
         presets = PresetCoordinator(presets: bundled, store: FavoritesStore(defaults: defaults), loader: presetLoader)
+        #if DEBUG
+        fakeSource = fake
+        #endif
         #if DEBUG
         // Debug builds only, for traces and test runs: `-autostart inAppPlayback` (or another
         // AudioSourceMode raw value) skips the notice and starts that source.
@@ -215,9 +230,11 @@ final class AppCoordinator {
         updateIdleTimer()
     }
 
+    /// VisualizationState (data-model): independent of the audio state.
     var visualizationState: VisualizationState {
         guard screen == .visualizer else { return .notVisualizing }
-        return userPaused ? .paused : .running
+        if userPaused { return .paused }
+        return appIsActive ? .running : .suspended
     }
 
     private func updateIdleTimer() {

@@ -11,6 +11,8 @@ enum VisualizationState: Equatable, Sendable {
     case running
     /// Paused by the user (FR-046).
     case paused
+    /// The app left the foreground (FR-050); rendering stops until it returns.
+    case suspended
 }
 
 enum IdleTimerPolicy {
