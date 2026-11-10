@@ -1,0 +1,16 @@
+{
+  "keys": [
+    "SKTransactionUpdatesLastChecked",
+    "favorites",
+    "lastPresetID",
+    "notice.photosensitivityAcknowledged",
+    "settings.performanceOverlay",
+    "settings.presetScope",
+    "settings.reduceFlashing"
+  ],
+  "systemKeys": {
+    "SKTransactionUpdatesLastChecked": "StoreKit (iOS): when it last checked for transaction updates; a timestamp, no purchase data"
+  },
+  "problems": [],
+  "files": 34
+}

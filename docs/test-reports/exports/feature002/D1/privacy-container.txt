@@ -1,0 +1,34 @@
+Documents
+Documents/automation-privacy-2026-11-10T222437Z.json
+Library
+Library/Caches
+Library/Caches/com.apple.dyld
+Library/Caches/com.apple.dyld/projectM-iOS.dyld4
+Library/Caches/org.projectmios.ProjectMiOS
+Library/Caches/org.projectmios.ProjectMiOS/com.apple.gpuarchiver
+Library/Caches/org.projectmios.ProjectMiOS/com.apple.metal
+Library/Caches/org.projectmios.ProjectMiOS/com.apple.metal/32024
+Library/Caches/org.projectmios.ProjectMiOS/com.apple.metal/32024/libraries.data
+Library/Caches/org.projectmios.ProjectMiOS/com.apple.metal/32024/libraries.list
+Library/Caches/org.projectmios.ProjectMiOS/com.apple.metal/functions.data
+Library/Caches/org.projectmios.ProjectMiOS/com.apple.metal/functions.list
+Library/Caches/org.projectmios.ProjectMiOS/com.apple.metalfe
+Library/Caches/org.projectmios.ProjectMiOS/com.apple.metalfe/modules.timestamp
+Library/Preferences
+Library/Preferences/org.projectmios.ProjectMiOS.plist
+Library/Saved Application State
+Library/Saved Application State/org.projectmios.ProjectMiOS.savedState
+Library/Saved Application State/org.projectmios.ProjectMiOS.savedState/CF99241F-223A-450D-8A00-CF2E5AF4065F
+Library/Saved Application State/org.projectmios.ProjectMiOS.savedState/CF99241F-223A-450D-8A00-CF2E5AF4065F/data.data
+Library/Saved Application State/org.projectmios.ProjectMiOS.savedState/CF99241F-223A-450D-8A00-CF2E5AF4065F/userInfo.data
+Library/Saved Application State/org.projectmios.ProjectMiOS.savedState/KnownSceneSessions
+Library/Saved Application State/org.projectmios.ProjectMiOS.savedState/KnownSceneSessions/data.data
+Library/SplashBoard
+Library/SplashBoard/Snapshots
+Library/SplashBoard/Snapshots/org.projectmios.ProjectMiOS - {DEFAULT GROUP}
+Library/SplashBoard/Snapshots/org.projectmios.ProjectMiOS - {DEFAULT GROUP}/49D07322-D0A8-4A39-BB92-29B0871F2F96@3x.ktx
+Library/SplashBoard/Snapshots/org.projectmios.ProjectMiOS - {DEFAULT GROUP}/635F6861-A041-4DBE-89A7-A4E94FBE1F61@3x.ktx
+Library/SplashBoard/Snapshots/org.projectmios.ProjectMiOS - {DEFAULT GROUP}/879FF752-D4DF-498C-A219-B48213812351@3x.ktx
+Library/SplashBoard/Snapshots/org.projectmios.ProjectMiOS - {DEFAULT GROUP}/C3171ECB-A1E9-46BC-8335-660354CC2250@3x.ktx
+SystemData
+tmp

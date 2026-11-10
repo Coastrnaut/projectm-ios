@@ -62,3 +62,36 @@ not submitted (FR-090, T112).
 - One device (D1) and one session; the result follows from the code (no networking code, a fixed
   key list), so D2 and D3 are not expected to differ.
 - iOS's own caches and snapshots are outside the app's control and hold no audio.
+
+## Feature 002 re-run on D1 (T241, 2026-11-10)
+
+`python3 scripts/run_device_tests.py privacy --device D1`. Exports are in
+`docs/test-reports/exports/feature002/D1/`: `privacy-container.txt`, `privacy-preferences.plist`
+and `privacy-verdict.json`.
+
+**Setup.**
+- Build: projectM-iOS 1.1 (2), the measurement build (Release plus `PROJECTM_AUTOMATION`). The
+  shipping build differs only by the automation code, which is not linked into it.
+- The app was installed fresh, so the container started empty.
+- Scripted session: In-App Playback, Next three times, a favorite starred, the favorites list chosen
+  as the scope, the performance overlay and Reduce flashing toggled, then Stop.
+
+**Result: zero violations.**
+
+- **Stored keys:**
+  - The app wrote the FR-065 keys plus `settings.presetScope` (FR-123; stored value `favorites`).
+  - StoreKit itself wrote `SKTransactionUpdatesLastChecked`, a timestamp of its last
+    transaction-update check. It holds no purchase data.
+  - There is no unlock or purchase flag (FR-110).
+- **Container (34 entries), the same kinds as the 1.0 review:**
+  - the app's preferences;
+  - iOS launch and Metal shader caches (`com.apple.metal`, `com.apple.metalfe`,
+    `com.apple.gpuarchiver`);
+  - saved scene state;
+  - app-switcher snapshots;
+  - in Documents, only this run's automation report. The shipping build writes nothing there.
+- **No audio:** no audio files anywhere.
+
+**Still open:** "with a purchase" needs a sandbox purchase on the same install (T239), and that
+waits for the in-app purchase in App Store Connect (T242). Then run `entitlement` and
+`privacy --no-install` on D1.
