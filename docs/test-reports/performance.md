@@ -185,6 +185,9 @@ Measurement build: Release with `SWIFT_ACTIVE_COMPILATION_CONDITIONS=PROJECTM_AU
   (paused on background and lock, back on return, interrupted then resumed, continues after the
   route change, stopped).
 
+T101 accepted by the owner on 2026-11-10 with System/App Capture not run (it needs a person at the
+system picker for every start).
+
 ## Stage 2 thresholds (finalized at Gate 4)
 
 | Threshold | Initial | Final | Evidence |
