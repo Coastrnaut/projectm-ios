@@ -145,6 +145,8 @@ statement and authors.
   while the app runs unlocks immediately.
 - The store is unavailable or the price cannot be loaded: the sheet says so and offers Restore and
   Close; nothing crashes.
+- In-app purchases are restricted on the device (Screen Time): the sheet says purchases aren't
+  allowed on this device and offers Restore and Close.
 - The app is updated with a new pinned pack version: favorites of presets that no longer exist are
   dropped silently at launch; the rest keep working.
 
@@ -193,8 +195,9 @@ statement and authors.
   subcategory, projectm-classic by original collection, en-d by episode, milkdrop-original as one
   list; every folder shows its count.
 - **FR-113**: Search MUST match preset names and author names, case- and diacritic-insensitively,
-  across the whole library, show results grouped by pack, mark locked results, and show at most
-  200 results with a prompt to refine beyond that.
+  across the whole library, show results grouped by pack (Included first, then the pack order of
+  FR-102, alphabetical within a group), mark locked results, and show at most 200 results with a
+  prompt to refine beyond that. Search starts at one character.
 - **FR-114**: Favorites MUST work across all packs with the existing favorites list; the
   Favorites view lists them alphabetically with their pack.
 - **FR-115**: Every list MUST be alphabetical by display name within its folder (feature 001
@@ -246,12 +249,12 @@ statement and authors.
 
 ### Measurable Outcomes
 
-- **SC-101**: The library opens with all 12,943 presets available to browse within 0.15 seconds of
-  app launch completing, on the reference device and D3.
+- **SC-101**: The full library (12,943 presets) is ready to browse within 0.15 seconds of the
+  source chooser first appearing, on the reference device and D3.
 - **SC-102**: Search results update within 0.05 seconds of each keystroke on the reference device
   and D3.
-- **SC-103**: Scrolling any preset list stays at the display's frame rate (no visible stutter) on
-  D1-D3.
+- **SC-103**: While scrolling the longest lists (All A-Z and the largest folder) for 10 seconds,
+  at least 95% of frames are delivered on time at the display's refresh rate, on D1-D3.
 - **SC-104**: Preset switches from any pack meet feature 001 SC-007 (95% of first frames within
   1 second) on the reference device.
 - **SC-105**: After a successful purchase or restore, every pack is playable within 1 second, and
@@ -272,6 +275,8 @@ statement and authors.
 - Price point $1.99 (the App Store tier nearest to "$2"); the product is created in App Store
   Connect by the owner (signing and store accounts stay manual).
 - No preview of locked presets in this feature.
+- Family Sharing is off for the product (the owner can turn it on in App Store Connect later; the
+  app needs no change because it reads entitlements from the platform).
 - The milkdrop texture pack is bundled whole; it is not a preset pack and is not locked.
 - projectm-classic's four `.prjm` files (an older projectM format) are excluded (FR-102).
 - Device measurements follow feature 001's rules: simulator results are never device evidence.
