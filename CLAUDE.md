@@ -63,7 +63,11 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
   (SC-009 on D1 and D3), SC-007 and SC-015 measured; T102 not required, Gate 4 waived (owner
   ruling). Phase E (2026-11-10): T103, T104 (Reduce flashing on D1: median 1.21 ms, max 1.55 ms),
   T106, T107, T108 (privacy review on D1, zero violations), T109 (ADR-0005 final "go", owner
-  approved), T110, T111 done; T105 code done, its SC-012 audit not required (owner ruling); T112 done: 1.0 (1) archived, open device rows waived, upload by the owner (`docs/test-reports/release-report.md`). Build the binaries first:
+  approved), T110, T111 done; T105 code done, its SC-012 audit not required (owner ruling); T112 done: 1.0 (1) uploaded (app ID 6833037520, store name
+  "projectM-iOS"; "projectM" and "projectM Visualizer" were taken), listing complete with
+  screenshots and silent previews (`docs/release/screenshots/`); not yet submitted to App Review
+  (waiting on Apple's media processing; automatic release after approval chosen). Mac and Vision Pro
+  availability unchecked. Release log: `docs/test-reports/release-report.md`. Build the binaries first:
   `python3 scripts/build_projectm_xcframework.py` and `python3 scripts/build_angle_xcframework.py`.
 - Phase B verified on the project Mac 2026-11-09: AudioCore 76, CaptureKit 80, Diagnostics 8 tests
   on the host and the iOS 27.2 and 26.5 simulators; CaptureLab UI tests (3) on iOS 27.2; device
