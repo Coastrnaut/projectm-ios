@@ -555,6 +555,9 @@ class DiagnosticProjectTests(unittest.TestCase):
         self.assertIn("NSMicrophoneUsageDescription", out)
         self.assertIn('CFBundleVersion: "9002"', out)
         self.assertIn("UIBackgroundModes: [screen-capture]", out, "keeps the normal build's mode")
+        self.assertNotIn("ProjectMiOS", out, "the diagnostic project is CaptureLab only")
+        self.assertNotIn("ANGLERendering", out)
+        self.assertIn("CaptureLabUITests:", out)
 
     def test_screen_capture_variant_retired(self):
         # ADR-0001 ruling 17 put the mode into the normal build, so the variant is gone.

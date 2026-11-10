@@ -39,10 +39,48 @@ VARIANTS: dict[str, tuple[str, str]] = {
 USAGE_KEY_LINE = "        NSScreenCaptureUsageDescription:"
 
 
+# Stage 2 entries a CaptureLab diagnostic project leaves out: they need the engine and ANGLE
+# binaries and have nothing to do with the capture question a variant answers.
+STAGE2_PACKAGES = ("ProjectMBridge", "Rendering", "ANGLERendering")
+STAGE2_TARGETS = ("ProjectMiOS", "ProjectMiOSTests", "ProjectMiOSUITests")
+
+
+def remove_block(text: str, section: str, name: str) -> str:
+    """Removes `  name:` and its indented body from the top-level `section:` of the spec."""
+    lines = text.split("\n")
+    try:
+        sec = lines.index(f"{section}:")
+    except ValueError:
+        return text
+    out, i = lines[:sec + 1], sec + 1
+    while i < len(lines):
+        line = lines[i]
+        if line and not line.startswith(" ") and not line.startswith("#"):
+            out.extend(lines[i:])   # next top-level section
+            break
+        if line == f"  {name}:":
+            i += 1
+            while i < len(lines) and (lines[i].startswith("   ") or lines[i] == ""
+                                      or (lines[i].startswith("  #") and not lines[i].startswith("  # "))):
+                i += 1
+            continue
+        out.append(line)
+        i += 1
+    return "\n".join(out)
+
+
 def variant_spec(text: str, variant: str) -> str:
     """The committed spec with the variant's change; raises if the spec no longer matches."""
     build, suffix = VARIANTS[variant]
     out = text.replace("name: ProjectM-iOS\n", f"name: CaptureLab-{variant}\n", 1)
+    for name in STAGE2_PACKAGES:
+        out = remove_block(out, "packages", name)
+    for name in STAGE2_TARGETS:
+        out = remove_block(out, "targets", name)
+    out = remove_block(out, "schemes", "ProjectMiOS")
+    out = "\n".join(l for l in out.split("\n")
+                    if not (l.startswith("  # ") and ("ProjectMiOS" in l or "Build/ANGLEFrameworks" in l
+                                                       or "engine-xcframework" in l)))
     # The normal Info.plist sits in the source folder; keep it out of this variant's resources.
     out = out.replace('          - "UITests/**"\n', '          - "UITests/**"\n          - "Info.plist"\n', 1)
     out = out.replace("      path: Apps/CaptureLab/Info.plist\n",
@@ -51,11 +89,19 @@ def variant_spec(text: str, variant: str) -> str:
                       f"        CFBundleDisplayName: \"CaptureLab {suffix}\"\n"
                       f"        CFBundleVersion: \"{build}\"\n", 1)
     if variant == "no-usage-key":
+        # Only CaptureLab's own key: other app targets (ProjectMiOS) declare it too.
         lines = out.split("\n")
-        keep = [l for l in lines if not l.startswith(USAGE_KEY_LINE)]
-        if len(keep) != len(lines) - 1:
-            raise ValueError("NSScreenCaptureUsageDescription line not found exactly once")
-        out = "\n".join(keep)
+        try:
+            start = lines.index("  CaptureLab:")
+        except ValueError:
+            raise ValueError("CaptureLab target not found") from None
+        end = next((i for i in range(start + 1, len(lines))
+                    if lines[i].startswith("  ") and not lines[i].startswith("   ") and lines[i].endswith(":")), len(lines))
+        hits = [i for i in range(start, end) if lines[i].startswith(USAGE_KEY_LINE)]
+        if len(hits) != 1:
+            raise ValueError("NSScreenCaptureUsageDescription line not found exactly once in the CaptureLab target")
+        del lines[hits[0]]
+        out = "\n".join(lines)
     for marker in ('- "Info.plist"', f"CaptureLab-{variant}", f"CFBundleVersion: \"{build}\"",
                    f"Build/diagnostic/{variant}/Info.plist", f"CaptureLab {suffix}"):
         if marker not in out:

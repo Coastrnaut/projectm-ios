@@ -51,7 +51,7 @@ jobs:
           done
 
   build-and-test-apple:
-    needs: docs-and-compliance
+    needs: [docs-and-compliance, angle-xcframeworks]
     # ADR-0002 pins Xcode 27.2 / iOS SDK 27.2 (T010). This job covers the iOS 26 path: it runs on
     # the macos-26 label (image macos-26-arm64: Xcode up to 26.6, iOS 26.5 SDK), pinned by the owner
     # review 2026-11-08 (ADR-0002 ruling 2) so it keeps the iOS 26 SDK when GitHub moves
@@ -116,11 +116,25 @@ jobs:
               CODE_SIGNING_ALLOWED=NO build)
             echo "::endgroup::"
           done
+      - name: Download the engine and ANGLE xcframeworks (ProjectMiOS needs them)
+        uses: actions/download-artifact@v4
+        with:
+          name: ProjectM.xcframework
+          path: Build
+      - uses: actions/download-artifact@v4
+        with:
+          name: ANGLEFrameworks
+          path: Build/ANGLEFrameworks
       - name: Generate project
         run: xcodegen generate
       - name: Build CaptureLab (generic iOS, unsigned)
         run: |
           xcodebuild -quiet -project ProjectM-iOS.xcodeproj -scheme CaptureLab \
+            -destination 'generic/platform=iOS' -derivedDataPath "$RUNNER_TEMP/dd-app" \
+            CODE_SIGNING_ALLOWED=NO build
+      - name: Build ProjectMiOS (generic iOS, unsigned; T080)
+        run: |
+          xcodebuild -quiet -project ProjectM-iOS.xcodeproj -scheme ProjectMiOS \
             -destination 'generic/platform=iOS' -derivedDataPath "$RUNNER_TEMP/dd-app" \
             CODE_SIGNING_ALLOWED=NO build
       - name: Find an iOS simulator
@@ -310,6 +324,12 @@ jobs:
             otool -D $DEV | grep -q "@rpath/$lib.framework/$lib"
           done
           ls Build/ANGLEFrameworks/licenses
+      - name: Upload the ANGLE xcframeworks
+        uses: actions/upload-artifact@v4
+        with:
+          name: ANGLEFrameworks
+          path: Build/ANGLEFrameworks
+          retention-days: 14
       - name: Download the engine xcframework
         uses: actions/download-artifact@v4
         with:
@@ -345,7 +365,7 @@ jobs:
     # is not the one pinned in ADR-0002 (owner review ruling 3). Owner review ruling 4: it also
     # runs the package tests on an iOS 27 simulator. No signing; System/App Capture itself cannot
     # run on any simulator and is tested only on devices.
-    needs: docs-and-compliance
+    needs: [docs-and-compliance, angle-xcframeworks]
     runs-on: xcode-27
     timeout-minutes: 40
     steps:
@@ -411,6 +431,15 @@ jobs:
           [ -n "$OBJ" ] && nm -U "$OBJ" | grep -q SCKStreamDriver && nm -u "$OBJ" | grep -q SCContentSharingPicker \
             || { echo "::error::SCKStreamDriver.swift was compiled out or not built"; exit 1; }
           echo "SCKStreamDriver.swift compiled against iOS SDK $(xcrun --sdk iphoneos --show-sdk-version)"
+      - name: Download the engine and ANGLE xcframeworks (ProjectMiOS needs them)
+        uses: actions/download-artifact@v4
+        with:
+          name: ProjectM.xcframework
+          path: Build
+      - uses: actions/download-artifact@v4
+        with:
+          name: ANGLEFrameworks
+          path: Build/ANGLEFrameworks
       - name: Build CaptureLab for iOS devices
         run: |
           xcodegen generate

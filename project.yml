@@ -31,6 +31,15 @@ packages:
     path: Packages/CaptureUI
   Diagnostics:
     path: Packages/Diagnostics
+  # ProjectMiOS only (Stage 2). These need Build/ProjectM.xcframework and Build/ANGLEFrameworks
+  # (scripts/build_projectm_xcframework.py, scripts/build_angle_xcframework.py); CI downloads them
+  # from its engine-xcframework and angle-xcframeworks jobs before generating the project.
+  ProjectMBridge:
+    path: Packages/ProjectMBridge
+  Rendering:
+    path: Packages/Rendering
+  ANGLERendering:
+    path: Packages/ANGLERendering
 targets:
   CaptureLab:
     type: application
@@ -94,7 +103,102 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.CaptureLabUITests
         GENERATE_INFOPLIST_FILE: YES
+  ProjectMiOS:
+    # The visualizer app (Stage 2, Plan Phase D; task T080). Renderer: ANGLE on Metal (ADR-0003).
+    type: application
+    platform: iOS
+    sources:
+      - path: Apps/ProjectMiOS
+        excludes:
+          - "**/.gitkeep"
+          - "UITests/**"
+          - "Tests/**"
+          - "Resources/Presets"
+      - path: Apps/ProjectMiOS/Resources/Presets
+        type: folder
+        buildPhase: resources
+      # In-App Playback track and the SC-006 click timings (T044).
+      - path: Apps/CaptureLab/Resources/reference.wav
+        buildPhase: resources
+      - path: Apps/CaptureLab/Resources/reference-clicks.json
+        buildPhase: resources
+    dependencies:
+      - package: AudioCore
+      - package: CaptureKit
+      - package: CaptureUI
+      - package: Diagnostics
+      - package: ProjectMBridge
+      - package: Rendering
+      - package: ANGLERendering
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.ProjectMiOS
+        PRODUCT_NAME: ProjectMiOS
+        GENERATE_INFOPLIST_FILE: NO
+        "OTHER_LDFLAGS[sdk=iphoneos27*]": "$(inherited) -weak_framework ScreenCaptureKit"
+    info:
+      path: Apps/ProjectMiOS/Info.plist
+      properties:
+        CFBundleDisplayName: projectM
+        CFBundleShortVersionString: "0.1"
+        CFBundleVersion: "1"
+        UILaunchScreen: {}
+        # R-16 / ADR-0001 ruling 17: the only background mode allowed (capture keeps running while
+        # the visualization is paused in the background, FR-050).
+        UIBackgroundModes: [screen-capture]
+        UIApplicationSupportsIndirectInputEvents: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        # FR-019: identical to the Microphone explainer in contracts/ui-states.md
+        NSMicrophoneUsageDescription: "Microphone mode listens to sound in the room through your device's microphone. It does not capture audio directly from other apps."
+        NSScreenCaptureUsageDescription: "Only the audio of the content you choose to share is used, and only on this device. It is not recorded or sent anywhere."
+  ProjectMiOSTests:
+    # Unit tests hosted in the app (T086 idle-timer policy; later T088 presets).
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Apps/ProjectMiOS/Tests
+    dependencies:
+      - target: ProjectMiOS
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.ProjectMiOSTests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/ProjectMiOS.app/ProjectMiOS"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+  ProjectMiOSUITests:
+    # Simulator UI tests (T081): controls, auto-hide, rotation, compact layout. Never device evidence.
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: Apps/ProjectMiOS/UITests
+    dependencies:
+      - target: ProjectMiOS
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.ProjectMiOSUITests
+        GENERATE_INFOPLIST_FILE: YES
 schemes:
+  ProjectMiOS:
+    build:
+      targets:
+        ProjectMiOS: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - ProjectMiOSTests
+        - ProjectMiOSUITests
+    archive:
+      config: Release
   CaptureLab:
     build:
       targets:
