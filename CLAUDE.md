@@ -55,8 +55,8 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
   `docs/projectm-patches.md`). Device evidence from RendererLab sweeps on D1-D3
   (`docs/test-reports/performance.md`, `docs/test-reports/exports/rendererlab/`); owner rulings: no
   10-minute sessions, no quality tiers or flash-limiter measurement for Gate 3. Next: Phase D (US4,
-  T080 onward); T114 done with ProjectMiOS.
-- Phase D started 2026-11-09: `ProjectMiOS` (project.yml) runs notice → chooser → full-screen ANGLE
+  T080 onward); T114 done with projectM-iOS.
+- Phase D started 2026-11-09: `projectM-iOS` (project.yml) runs notice → chooser → full-screen ANGLE
   visualizer with controls; T080, T082, T083, T085, T086, US5 T088-T091, US6 T094-T096 and US7 T098-T100 done (T081, T093: red run not recorded); T081 (red run not recorded) and T084
   (FR-089 on D1/D2) open; T087 needs the devices and a 240 fps camera. The app's signing team is set
   by hand in Xcode (or in the gitignored `Configs/Signing.local.xcconfig`). 2026-11-10: T101 done
@@ -69,6 +69,16 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
   (waiting on Apple's media processing; automatic release after approval chosen). Mac and Vision Pro
   availability unchecked. Release log: `docs/test-reports/release-report.md`. Build the binaries first:
   `python3 scripts/build_projectm_xcframework.py` and `python3 scripts/build_angle_xcframework.py`.
+- **Feature 002 (full preset library, $1.99 unlock) implemented 2026-11-10**:
+  `specs/002-preset-library-unlock/`, ADR-0007, report `docs/test-reports/preset-library.md`.
+  - The packs are submodules under `Vendor/presets/`. A build phase indexes and archives them into
+    the app (12,847 presets after 94 load-sweep exclusions), so run
+    `git submodule update --init --depth 1 Vendor/presets/*` before building the app.
+  - The `PresetLibrary` package and StoreKit 2 `LibraryStore` are tested with `SKTestSession`.
+  - The app target, scheme and product were renamed `projectM-iOS` (Swift module `projectM_iOS`);
+    the bundle ID stays `org.projectmios.ProjectMiOS`.
+  - Open: device tasks T238, T239 and T241; owner task T242; T232 (VoiceOver check of the scope
+    announcement).
 - Phase B verified on the project Mac 2026-11-09: AudioCore 76, CaptureKit 80, Diagnostics 8 tests
   on the host and the iOS 27.2 and 26.5 simulators; CaptureLab UI tests (3) on iOS 27.2; device
   builds with no warnings. The Linux path (no AVFAudio: linear resampler fallback) is tested on

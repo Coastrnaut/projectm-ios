@@ -34,7 +34,7 @@ measurements on D1-D3 per feature 001's rules.
 
 **Target Platform**: iOS/iPadOS 26.0+ (unchanged).
 
-**Project Type**: Mobile app (existing ProjectMiOS target) plus Swift packages.
+**Project Type**: Mobile app (existing projectM-iOS target) plus Swift packages.
 
 **Performance Goals**: index decode and library build under 150 ms on D3 (SC-101); search under
 50 ms per keystroke (SC-102); lists at display rate (SC-103); preset switch within feature 001
@@ -105,11 +105,11 @@ Packages/PresetLibrary/                 # NEW: Foundation only, Linux-testable
 Packages/ProjectMBridge/                # + setTextureSearchPaths:, loadPresetData: (PMBridge.h/.mm)
 Packages/Rendering/                     # VisualizerRenderer gains texture paths; Preset stays the playable unit
 
-Apps/ProjectMiOS/
+Apps/projectM-iOS/
 ├── Coordinators/PresetCoordinator.swift    # scopes, entitlement-aware playback
 ├── Coordinators/FavoritesStore.swift       # + settings.presetScope
 ├── Store/LibraryStore.swift                # NEW: StoreKit 2 entitlement + purchase (EntitlementProviding)
-├── Store/ProjectMiOS.storekit              # NEW: StoreKit test configuration
+├── Store/projectM-iOS.storekit              # NEW: StoreKit test configuration
 ├── Views/PresetBrowserView.swift           # library home, folders, search
 ├── Views/PurchaseSheet.swift               # NEW
 ├── Views/ControlsOverlay.swift             # scope line under the preset name

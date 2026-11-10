@@ -1330,7 +1330,7 @@ what Next/Previous/Random walk.
 
 - `scripts/build_preset_index.py` (new; same pattern as `collect_licenses.py`: generated output
   committed, `--check` in CI) reads the pinned submodules and writes
-  `Apps/ProjectMiOS/Resources/PresetIndex.json` (about 2 MB; one entry per unique preset):
+  `Apps/projectM-iOS/Resources/PresetIndex.json` (about 2 MB; one entry per unique preset):
   `id`, `name`, `author` (from the Milkdrop "Author - Title" file name), `pack`, `category`,
   `subcategory`, `path` in the bundle, `hash` (git blob hash), `free` (true for the 28).
 - **De-duplication by content hash** with a fixed priority: the 28 free presets first (so their
@@ -1502,6 +1502,33 @@ Before release: run the StoreKit purchase, restore and offline-unlock flows on d
 sandbox account; re-run the privacy review (T108) and update `docs/release/app-privacy.md`,
 `docs/privacy-policy.md` and `docs/release/store-copy.md` (the in-app purchase appears on the
 product page).
+
+## 18.6 Status (2026-11-10)
+
+Feature 002 is implemented in `specs/002-preset-library-unlock/` (tasks T201-T246). What changed
+from the plan above:
+
+- **Counts**: after the load sweep excluded 94 presets that the engine cannot compile, the library
+  has 12,847 presets: the 28 Included plus 12,819 in packs (Cream of the Crop 9,728, projectM
+  Classic 2,569, Milkdrop Original 487, En D 35).
+- **Bundling** (research R-30): the packs are not copied into the app as folders. A build phase
+  (`scripts/build_preset_index.py`) writes `PresetIndex.json`, `PresetPacks.json`, a compressed
+  `PresetArchive.bin` and `PresetTextures/` into the app bundle, adding about 26 MB. Nothing
+  generated is committed.
+- **Names**: the app target, scheme and product are now `projectM-iOS` (Swift module
+  `projectM_iOS`). The bundle ID `org.projectmios.ProjectMiOS` and the product ID
+  `org.projectmios.ProjectMiOS.fullLibrary` are unchanged.
+
+Verified on the Mac and the simulator: package, script, app unit and UI tests pass, including
+StoreKit purchase flows with `SKTestSession`. Results are in `docs/test-reports/preset-library.md`.
+
+Still open:
+
+- On devices: T238 (performance and size), T239 (sandbox purchase, restore, offline), T241
+  (privacy review).
+- The owner: T242 (the in-app purchase in App Store Connect, the Paid Apps agreement, banking and
+  tax).
+- A VoiceOver check of the scope announcement (T232).
 
 ---
 

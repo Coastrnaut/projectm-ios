@@ -42,7 +42,7 @@ ms are accepted for delivery and residency; the residency trace is T114 in Phase
 
 ### All three stages with the visualizer (task T114)
 
-2026-11-09, iOS 27.2 simulator (not device evidence): ProjectMiOS (Debug, `-autostart inAppPlayback`)
+2026-11-09, iOS 27.2 simulator (not device evidence): projectM-iOS (Debug, `-autostart inAppPlayback`)
 with `CaptureManager` passing `DiagnosticsLog.pipeline`, recorded with `xctrace record --template
 Logging` for 25 s while the ANGLE renderer drained `normalizedOutput`:
 
@@ -175,7 +175,7 @@ their initial values and are not finalized.
 ### Gate 4 automated runs (tasks T092, T101, T102; 2026-11-10)
 
 Measurement build: Release with `SWIFT_ACTIVE_COMPILATION_CONDITIONS=PROJECTM_AUTOMATION`
-(`Apps/ProjectMiOS/Automation/AutomationRunner.swift`), started by devicectl with
+(`Apps/projectM-iOS/Automation/AutomationRunner.swift`), started by devicectl with
 `PROJECTM_AUTORUN`. Reports: `docs/test-reports/exports/gate4/`.
 
 **D1 iPhone 15, iOS 27.0.1**

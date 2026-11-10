@@ -187,7 +187,7 @@ Renderer/Platform/GLResolver.cpp).
 ## R-09 Presets and reference audio (RI-008)
 
 - **Decision**: Bundle only presets with explicit redistribution licenses, starting from upstream
-  ProjectM-maintained preset packs if their licenses permit. `Apps/ProjectMiOS/Resources/Presets/LICENSES.md`
+  ProjectM-maintained preset packs if their licenses permit. `Apps/projectM-iOS/Resources/Presets/LICENSES.md`
   records, per preset: file path, display name, pack, author, license identifier, source URL, and
   source commit/version, as a Markdown table with the columns File, Display name, Pack, Author,
   License, Source URL, Source version (T074, `PresetRepository.swift`). A preset with any field
@@ -199,7 +199,7 @@ Renderer/Platform/GLResolver.cpp).
   `Coastrnaut/frontend-uwp` (commit `82c468e`); their license is recorded as
   `LicenseRef-Milkdrop-PublicDomain-Assumed`, projectM's own basis for Milkdrop presets (released
   freely, assumed public domain, removed if an author objects). Details in
-  `Apps/ProjectMiOS/Resources/Presets/LICENSES.md`.
+  `Apps/projectM-iOS/Resources/Presets/LICENSES.md`.
 
 ## R-10 Engine packaging and LGPL-2.1 (RI-007)
 

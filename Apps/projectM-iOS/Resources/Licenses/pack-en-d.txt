@@ -1,6 +1,6 @@
 En D
 https://github.com/projectM-visualizer/presets-en-d at commit fff71ea81223109f3558351667eef851f2781c96
-37 presets, 6 authors
+35 presets, 6 authors
 
 License statement
 

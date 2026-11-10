@@ -7,7 +7,7 @@
 import PresetLibrary
 import Rendering
 import XCTest
-@testable import ProjectMiOS
+@testable import projectM_iOS
 
 @MainActor
 final class PresetTests: XCTestCase {

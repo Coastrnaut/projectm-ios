@@ -52,7 +52,7 @@ devices only (Constitution X).
 **Target Platform**: iOS/iPadOS 26.0+ (iPhone and iPad device family). System/App Capture is availability-gated to the
 first OS that provides it: iOS 27.0 (RI-004, confirmed 2026-11-08 from the iOS 27.2 SDK annotations).
 
-**Project Type**: Mobile app: two app targets (CaptureLab, ProjectMiOS) sharing local Swift
+**Project Type**: Mobile app: two app targets (CaptureLab, projectM-iOS) sharing local Swift
 packages.
 
 **Performance Goals**: ≥55 fps on the reference device for 95% of a 10-minute session, capped at
@@ -171,7 +171,7 @@ Apps/
 │   ├── CaptureLabApp.swift
 │   ├── Views/                  # SourceChooser, DiagnosticsView, ExportView
 │   └── Resources/              # Info.plist keys, reference audio
-└── ProjectMiOS/                # Stage 2 app
+└── projectM-iOS/                # Stage 2 app
     ├── ProjectMApp.swift
     ├── Coordinators/           # AppCoordinator, LifecycleCoordinator
     ├── Views/                  # Visualizer, Controls, PresetBrowser, Settings, Notice
@@ -205,7 +205,7 @@ Build/                          # generated xcframeworks (gitignored)
 
 | README component | Plan location |
 |------------------|---------------|
-| App: ProjectMApp, AppCoordinator, ContentView, VisualizerScreen, CaptureControls, SourceStatusView | `Apps/ProjectMiOS` (Coordinators/, Views/); the shared chooser, explainer, and banner are in `Packages/CaptureUI` |
+| App: ProjectMApp, AppCoordinator, ContentView, VisualizerScreen, CaptureControls, SourceStatusView | `Apps/projectM-iOS` (Coordinators/, Views/); the shared chooser, explainer, and banner are in `Packages/CaptureUI` |
 | Capture: AudioSourceProtocol, AudioCaptureManager, adapters | `Packages/CaptureKit` (`AudioSource`, `CaptureManager`, three adapters) |
 | Capture: ReplayKitAudioSource | Excluded (FR-009, ADR-0001) |
 | Audio: PCMFormat, PCMBuffer, AudioNormalizer, AudioRingBuffer | `Packages/AudioCore` |
@@ -225,7 +225,7 @@ entirely.
 **Structure Decision**: Two app targets share six local Swift packages. This keeps the
 constitution's module boundaries enforceable by the compiler. CaptureLab depends only on AudioCore,
 CaptureKit, CaptureUI, and Diagnostics, so Phase A cannot accidentally depend on the engine.
-ProjectMiOS adds ProjectMBridge and Rendering. CaptureUI holds the source chooser, microphone
+projectM-iOS adds ProjectMBridge and Rendering. CaptureUI holds the source chooser, microphone
 explainer, and status banner so both apps show identical, contract-defined UI.
 `scripts/check_compliance.py` enforces the constitution's API and boundary rules on every merge.
 
@@ -233,5 +233,5 @@ explainer, and status banner so both apps show identical, contract-defined UI.
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
-| Two app targets (CaptureLab + ProjectMiOS) | Phase A must ship and be tested before the visualizer exists; it also stays useful as the diagnostics tool for the report. | One app with a debug screen would couple Stage 1 evidence to Stage 2 code and the engine. |
+| Two app targets (CaptureLab + projectM-iOS) | Phase A must ship and be tested before the visualizer exists; it also stays useful as the diagnostics tool for the report. | One app with a debug screen would couple Stage 1 evidence to Stage 2 code and the engine. |
 | Engine as a dynamic framework | LGPL-2.1 relinking obligations (RI-007) are easier to meet with a separately replaceable library. | Static linking requires shipping relinkable object files; it is still an option if ADR-0004/RI-007 conclude it is acceptable. |

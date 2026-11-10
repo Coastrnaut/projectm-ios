@@ -48,11 +48,11 @@ Reviewed 2026-11-10. Still no compatibility claim.
 
 **In-App Purchase** (App Store Connect, T242): "Full Preset Library",
 `org.projectmios.ProjectMiOS.fullLibrary`, non-consumable, $1.99. Description: "Unlocks the projectM
-team's full preset library: 12,913 more presets."
+team's full preset library: 12,819 more presets."
 
 **Description**: add this paragraph after the "Browse presets" one:
 
-> Includes 28 presets. A one-time purchase unlocks the projectM team's full preset library: 12,913
+> Includes 28 presets. A one-time purchase unlocks the projectM team's full preset library: 12,819
 > more presets from the Cream of the Crop, projectM Classic, Milkdrop Original and En D packs.
 > Browse them by pack and folder, search by name or author, and keep favorites across packs. The
 > library is already in the app, so it works offline.
@@ -63,13 +63,13 @@ data; the only network use is the App Store's own purchase and restore."
 
 **Keywords**: add "presets".
 
-**What's New (1.1)**: The full projectM preset library (12,913 more presets) as a one-time
+**What's New (1.1)**: The full projectM preset library (12,819 more presets) as a one-time
 purchase, with a new browser: packs, folders, search and favorites across packs.
 
 | Statement | Kind | Basis |
 |-----------|------|-------|
 | "Includes 28 presets" | Feature | Index: 28 Included (`docs/test-reports/preset-library.md`) |
-| "12,913 more presets" and the four pack names | Feature | Index counts, ADR-0007, README 18.1 |
+| "12,819 more presets" and the four pack names | Feature | Index counts, ADR-0007, README 18.1 |
 | "works offline" | Feature | Archive bundled (R-30); entitlement from StoreKit's local records (FR-110); device check T239 |
 | Browse by pack and folder, search, favorites across packs | Feature | FR-111-FR-114; PresetLibraryUITests |
 | Only network use is the App Store's | Privacy | FR-122; `docs/privacy-policy.md` |
@@ -78,7 +78,7 @@ purchase, with a new browser: packs, folders, search and favorites across packs.
 
 The app has no help screen; its user-facing descriptions are the chooser's FR-080 lines and the
 usage descriptions, all verbatim from `contracts/ui-states.md` (`Packages/CaptureUI/.../UIStrings.swift`,
-`Apps/ProjectMiOS/Info.plist`). None names an app or promises capture.
+`Apps/projectM-iOS/Info.plist`). None names an app or promises capture.
 
 ## Claim check
 

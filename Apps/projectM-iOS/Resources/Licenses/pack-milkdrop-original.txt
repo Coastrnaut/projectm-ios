@@ -1,6 +1,6 @@
 Milkdrop Original
 https://github.com/projectM-visualizer/presets-milkdrop-original at commit e03b83e3338d8f1ed6cbcf908c719f249ef24288
-497 presets, 134 authors
+487 presets, 132 authors
 
 License statement
 
@@ -107,7 +107,6 @@ Rozzor
 Rozzor & Aderrasi
 Rozzor & Che
 Rozzor & Esotic
-Rozzor & Neuro
 Rozzor & Rovastar
 Rozzor & StudioMusic
 Rozzor & Unchained
@@ -142,6 +141,5 @@ Unknown
 yin
 Zylot
 Zylot & Idiot
-Zylot & Idiot24-7
 Zylot & Krash
 Zylot & Rovastar

@@ -35,7 +35,7 @@ packages:
     path: Packages/CaptureUI
   Diagnostics:
     path: Packages/Diagnostics
-  # ProjectMiOS only (Stage 2). These need Build/ProjectM.xcframework and Build/ANGLEFrameworks
+  # projectM-iOS only (Stage 2). These need Build/ProjectM.xcframework and Build/ANGLEFrameworks
   # (scripts/build_projectm_xcframework.py, scripts/build_angle_xcframework.py); CI downloads them
   # from its engine-xcframework and angle-xcframeworks jobs before generating the project.
   ProjectMBridge:
@@ -110,12 +110,12 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.CaptureLabUITests
         GENERATE_INFOPLIST_FILE: YES
-  ProjectMiOS:
+  projectM-iOS:
     # The visualizer app (Stage 2, Plan Phase D; task T080). Renderer: ANGLE on Metal (ADR-0003).
     type: application
     platform: iOS
     sources:
-      - path: Apps/ProjectMiOS
+      - path: Apps/projectM-iOS
         excludes:
           - "**/.gitkeep"
           - "UITests/**"
@@ -125,11 +125,11 @@ targets:
           - "Resources/PresetBlocklist.json"   # build inputs only (research R-30)
           - "Resources/PresetExclusions.txt"
           - "Store/*.storekit"   # StoreKit test configuration: scheme and tests only
-      - path: Apps/ProjectMiOS/Resources/Presets
+      - path: Apps/projectM-iOS/Resources/Presets
         type: folder
         buildPhase: resources
       # Licenses screen texts (T103, scripts/collect_licenses.py).
-      - path: Apps/ProjectMiOS/Resources/Licenses
+      - path: Apps/projectM-iOS/Resources/Licenses
         type: folder
         buildPhase: resources
       # In-App Playback track and the SC-006 click timings (T044).
@@ -163,11 +163,12 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.ProjectMiOS
         ENABLE_USER_SCRIPT_SANDBOXING: NO   # the preset library build phase reads Vendor/presets (research R-30)
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon   # the UWP frontend's projectM logo (scripts/make_app_icon.swift)
-        PRODUCT_NAME: ProjectMiOS
+        PRODUCT_NAME: projectM-iOS
+        PRODUCT_MODULE_NAME: projectM_iOS   # Swift module (the hyphen is not allowed)
         GENERATE_INFOPLIST_FILE: NO
         "OTHER_LDFLAGS[sdk=iphoneos27*]": "$(inherited) -weak_framework ScreenCaptureKit"
     info:
-      path: Apps/ProjectMiOS/Info.plist
+      path: Apps/projectM-iOS/Info.plist
       properties:
         CFBundleDisplayName: projectM
         CFBundleShortVersionString: "1.0"
@@ -191,52 +192,52 @@ targets:
         # FR-019: identical to the Microphone explainer in contracts/ui-states.md
         NSMicrophoneUsageDescription: "Microphone mode listens to sound in the room through your device's microphone. It does not capture audio directly from other apps."
         NSScreenCaptureUsageDescription: "Only the audio of the content you choose to share is used, and only on this device. It is not recorded or sent anywhere."
-  ProjectMiOSTests:
+  projectM-iOSTests:
     # Unit tests hosted in the app (T086 idle-timer policy; later T088 presets).
     type: bundle.unit-test
     platform: iOS
     sources:
-      - path: Apps/ProjectMiOS/Tests
-      - path: Apps/ProjectMiOS/Store/ProjectMiOS.storekit   # SKTestSession (feature 002 T225)
+      - path: Apps/projectM-iOS/Tests
+      - path: Apps/projectM-iOS/Store/projectM-iOS.storekit   # SKTestSession (feature 002 T225)
         buildPhase: resources
     dependencies:
-      - target: ProjectMiOS
+      - target: projectM-iOS
       - package: PresetLibrary
       - sdk: StoreKitTest.framework
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.ProjectMiOSTests
         GENERATE_INFOPLIST_FILE: YES
-        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/ProjectMiOS.app/ProjectMiOS"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/projectM-iOS.app/projectM-iOS"
         BUNDLE_LOADER: "$(TEST_HOST)"
-  ProjectMiOSUITests:
+  projectM-iOSUITests:
     # Simulator UI tests (T081): controls, auto-hide, rotation, compact layout. Never device evidence.
     type: bundle.ui-testing
     platform: iOS
     sources:
-      - path: Apps/ProjectMiOS/UITests
-      - path: Apps/ProjectMiOS/Store/ProjectMiOS.storekit   # SKTestSession in PurchaseUITests (T229)
+      - path: Apps/projectM-iOS/UITests
+      - path: Apps/projectM-iOS/Store/projectM-iOS.storekit   # SKTestSession in PurchaseUITests (T229)
         buildPhase: resources
     dependencies:
-      - target: ProjectMiOS
+      - target: projectM-iOS
       - sdk: StoreKitTest.framework
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.ProjectMiOSUITests
         GENERATE_INFOPLIST_FILE: YES
 schemes:
-  ProjectMiOS:
+  projectM-iOS:
     build:
       targets:
-        ProjectMiOS: all
+        projectM-iOS: all
     run:
-      storeKitConfiguration: Apps/ProjectMiOS/Store/ProjectMiOS.storekit   # feature 002 T224
+      storeKitConfiguration: Apps/projectM-iOS/Store/projectM-iOS.storekit   # feature 002 T224
       config: Debug
     test:
       config: Debug
       targets:
-        - ProjectMiOSTests
-        - ProjectMiOSUITests
+        - projectM-iOSTests
+        - projectM-iOSUITests
     archive:
       config: Release
   CaptureLab:

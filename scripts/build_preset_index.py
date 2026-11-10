@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Build the preset library index and archive (feature 002; tasks T204, T205, T214).
 
-Inputs: the 28 Included presets (Apps/ProjectMiOS/Resources/Presets, joined with its LICENSES.md),
+Inputs: the 28 Included presets (Apps/projectM-iOS/Resources/Presets, joined with its LICENSES.md),
 the pinned preset-pack submodules under Vendor/presets/ (research R-21), and the committed
-PresetBlocklist.json and PresetExclusions.txt in Apps/ProjectMiOS/Resources. Outputs, all written
+PresetBlocklist.json and PresetExclusions.txt in Apps/projectM-iOS/Resources. Outputs, all written
 to --out by the app's build (research R-30: generated, never committed, to keep the repository
 small):
 
@@ -36,7 +36,7 @@ import zlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-RESOURCES = ROOT / "Apps/ProjectMiOS/Resources"
+RESOURCES = ROOT / "Apps/projectM-iOS/Resources"
 INCLUDED_DIR = RESOURCES / "Presets"
 PACKS_DIR = ROOT / "Vendor/presets"
 
@@ -124,9 +124,11 @@ def build(included_dir: Path, packs_dir: Path, blocklist: set[str], exclusions: 
             h = blob_hash(data)
             rel = f.relative_to(pack_dir).as_posix()
             rid = f"{pack}/{rel}"
-            if h in seen or h in blocklist or rid in exclusions:
+            if h in seen or h in blocklist:
                 continue
-            seen.add(h)
+            seen.add(h)   # an excluded preset's content stays out under every pack's id too
+            if rid in exclusions:
+                continue
             folder = list(f.relative_to(pack_dir).parent.parts)
             if pack == "milkdrop-original" and folder == ["Milkdrop-Original"]:
                 folder = []

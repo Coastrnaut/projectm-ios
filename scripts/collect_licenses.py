@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Collect the license texts for the Licenses screen (task T103; FR-067, ADR-0004, ADR-0005).
 
-Writes Apps/ProjectMiOS/Resources/Licenses/: one text file per component plus licenses.json, the
+Writes Apps/projectM-iOS/Resources/Licenses/: one text file per component plus licenses.json, the
 manifest LicensesView reads. The output is committed, so building the app never needs the vendored
 checkouts; rerun this after any pin change in ADR-0004.
 
@@ -25,7 +25,7 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-OUT = ROOT / "Apps/ProjectMiOS/Resources/Licenses"
+OUT = ROOT / "Apps/projectM-iOS/Resources/Licenses"
 ENGINE = ROOT / "Vendor/projectM"
 ANGLE_LICENSES = ROOT / "Build/ANGLEFrameworks/licenses"
 
@@ -99,7 +99,7 @@ def components() -> list[dict]:
         {"id": "presets", "name": "Milkdrop presets", "group": "Presets",
          "license": "LicenseRef-Milkdrop-PublicDomain-Assumed",
          "attribution": "Per-preset authors; from Coastrnaut/frontend-uwp",
-         "source": ROOT / "Apps/ProjectMiOS/Resources/Presets/LICENSES.md"},
+         "source": ROOT / "Apps/projectM-iOS/Resources/Presets/LICENSES.md"},
         {"id": "app-icon", "name": "App icon (projectM logo)", "group": "Assets", "license": "LGPL-2.1",
          "attribution": "projectM Team; from Coastrnaut/frontend-uwp at 82c468e (Assets/SplashScreen.png)",
          "text": "The app icon is the projectM logo from the projectM UWP frontend (the owner's fork,\n"

@@ -37,8 +37,8 @@ targets:
     platform: iOS
     sources:
       - path: Apps/RendererLab
-      - path: Apps/ProjectMiOS/Coordinators/PresetArchive.swift   # loadsweep (feature 002 T236)
-      - path: Apps/ProjectMiOS/Resources/Presets
+      - path: Apps/projectM-iOS/Coordinators/PresetArchive.swift   # loadsweep (feature 002 T236)
+      - path: Apps/projectM-iOS/Resources/Presets
         type: folder
         buildPhase: resources
       - path: Vendor/projectM/presets/tests

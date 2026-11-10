@@ -47,7 +47,7 @@ Numbering starts at R-21 so it never collides with feature 001's R-01 to R-16.
   lifetime; `isUnlocked` is true only for a verified, unrevoked transaction of that product.
   `AppStore.sync()` backs Restore Purchases. No unlock flag is stored (FR-110); StoreKit caches
   entitlements on the device, so the unlock works offline (FR-107).
-- **Testing**: a StoreKit configuration file (`ProjectMiOS.storekit`) for local runs and
+- **Testing**: a StoreKit configuration file (`projectM-iOS.storekit`) for local runs and
   `SKTestSession` in tests (purchase, failure, Ask to Buy, refund).
 - **Alternatives considered**: original StoreKit (deprecated patterns); receipt validation on a
   server (violates FR-122).

@@ -42,7 +42,7 @@ USAGE_KEY_LINE = "        NSScreenCaptureUsageDescription:"
 # Stage 2 entries a CaptureLab diagnostic project leaves out: they need the engine and ANGLE
 # binaries and have nothing to do with the capture question a variant answers.
 STAGE2_PACKAGES = ("ProjectMBridge", "Rendering", "ANGLERendering")
-STAGE2_TARGETS = ("ProjectMiOS", "ProjectMiOSTests", "ProjectMiOSUITests")
+STAGE2_TARGETS = ("projectM-iOS", "projectM-iOSTests", "projectM-iOSUITests")
 
 
 def remove_block(text: str, section: str, name: str) -> str:
@@ -77,9 +77,9 @@ def variant_spec(text: str, variant: str) -> str:
         out = remove_block(out, "packages", name)
     for name in STAGE2_TARGETS:
         out = remove_block(out, "targets", name)
-    out = remove_block(out, "schemes", "ProjectMiOS")
+    out = remove_block(out, "schemes", "projectM-iOS")
     out = "\n".join(l for l in out.split("\n")
-                    if not (l.startswith("  # ") and ("ProjectMiOS" in l or "Build/ANGLEFrameworks" in l
+                    if not (l.startswith("  # ") and ("projectM-iOS" in l or "Build/ANGLEFrameworks" in l
                                                        or "engine-xcframework" in l)))
     # The normal Info.plist sits in the source folder; keep it out of this variant's resources.
     out = out.replace('          - "UITests/**"\n', '          - "UITests/**"\n          - "Info.plist"\n', 1)
@@ -89,7 +89,7 @@ def variant_spec(text: str, variant: str) -> str:
                       f"        CFBundleDisplayName: \"CaptureLab {suffix}\"\n"
                       f"        CFBundleVersion: \"{build}\"\n", 1)
     if variant == "no-usage-key":
-        # Only CaptureLab's own key: other app targets (ProjectMiOS) declare it too.
+        # Only CaptureLab's own key: other app targets (projectM-iOS) declare it too.
         lines = out.split("\n")
         try:
             start = lines.index("  CaptureLab:")

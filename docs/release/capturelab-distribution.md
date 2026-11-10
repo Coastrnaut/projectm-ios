@@ -2,11 +2,11 @@
 
 CaptureLab is an **internal test tool** for Stage 1 capture feasibility. It is not a product.
 
-- Bundle ID: `org.projectmios.CaptureLab` (separate from ProjectMiOS).
+- Bundle ID: `org.projectmios.CaptureLab` (separate from projectM-iOS).
 - Distribution: Xcode direct install to test devices, or TestFlight (internal or external testing).
 - **Never** submitted for App Store review. Archives are uploaded to App Store Connect only for
   TestFlight builds.
-- The ProjectMiOS release check (task T112) confirms that only ProjectMiOS is submitted.
+- The projectM-iOS release check (task T112) confirms that only projectM-iOS is submitted.
 - Signing is configured by a human (Constitution: Security). No signing material is committed.
 - Entitlements: none. The Screen Recording entitlement (ADR-0001 Decision 6) was removed on
   2026-11-09 because it is offered only to organization accounts (ruling 16).

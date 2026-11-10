@@ -1,6 +1,6 @@
 # SC-011 privacy review (task T108; FR-060, FR-061, FR-065, FR-068)
 
-Date: 2026-11-10. Device: D1 iPhone 15 `iPhone15,4`, iOS 27.0.1. Build: ProjectMiOS Release
+Date: 2026-11-10. Device: D1 iPhone 15 `iPhone15,4`, iOS 27.0.1. Build: projectM-iOS Release
 (Xcode 27.2), installed fresh (the previous install was removed first, so the container started
 empty).
 
@@ -54,7 +54,7 @@ Feature 002 (2026-11-10) adds one key to the FR-065 list: `settings.presetScope`
 
 ## Diagnostics (FR-061)
 
-ProjectMiOS has no diagnostics export; diagnostics exist only in CaptureLab, a tester build that is
+projectM-iOS has no diagnostics export; diagnostics exist only in CaptureLab, a tester build that is
 not submitted (FR-090, T112).
 
 ## Limits

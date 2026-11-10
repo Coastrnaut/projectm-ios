@@ -25,7 +25,7 @@ the label stays **Data Not Collected**. The owner confirms this when the in-app 
 in App Store Connect (T242). Apple counts data as "collected" only when it leaves the device, and
 nothing does.
 
-## Privacy manifest (`Apps/ProjectMiOS/PrivacyInfo.xcprivacy`)
+## Privacy manifest (`Apps/projectM-iOS/PrivacyInfo.xcprivacy`)
 
 - `NSPrivacyTracking`: false; `NSPrivacyTrackingDomains`: empty; `NSPrivacyCollectedDataTypes`: empty.
 - Required-reason APIs, found by scanning the built app and its embedded frameworks:
@@ -41,7 +41,7 @@ The engine framework (`projectM-4`) imports none of these APIs.
 ## Check
 
 ```bash
-python3 scripts/check_privacy_manifest.py <path to ProjectMiOS.app>
+python3 scripts/check_privacy_manifest.py <path to projectM-iOS.app>
 ```
 
 It runs `nm -u` on the app executable and every embedded framework, maps the imported symbols to

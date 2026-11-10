@@ -1,0 +1,96 @@
+# Preset ids the pre-release load sweep found broken (feature 002 FR-103, T237). One id per line.
+# Load sweep 2026-11-10: RendererLab -mode loadsweep, ANGLE, iOS 27.2 simulator, 4 shards (T237).
+cream-of-the-crop/Dancer/Blobby Mirror/LuxXx - Beat Machina III.milk
+cream-of-the-crop/Dancer/Blobby Mirror/martin - purple pulsator - mom - ns2w nz.milk
+cream-of-the-crop/Dancer/Blobby Mirror/martin - purple pulsator - mom - ns2w.milk
+cream-of-the-crop/Dancer/Blobby/suksma - dicked.milk
+cream-of-the-crop/Dancer/Comet Mirror/EoS_Phat_PeterP_Sentinel_Aware_6 EoS edit C.milk
+cream-of-the-crop/Dancer/Comet Mirror/EoS_Phat_PeterP_Sentinel_Aware_6 EoS edit C_b.milk
+cream-of-the-crop/Dancer/Comet/EoS_Phat_PeterP_Sentinel_Aware_6 EoS edit slice into your beautiful love.milk
+cream-of-the-crop/Dancer/Glowsticks Mirror/EoS + Redi Jedi - frequency analysis + glowsticks -  glow - o - scope female (Milkdrop beta ver).milk
+cream-of-the-crop/Dancer/Glowsticks Mirror/EoS + Redi Jedi - frequency analysis + glowsticks -  glow - o - scope male (Milkdrop beta ver).milk
+cream-of-the-crop/Dancer/Glowsticks Mirror/EoS + Redi Jedi - frequency analysis + glowsticks -  glow - o - scope pat (Milkdrop beta ver).milk
+cream-of-the-crop/Dancer/Glowsticks Mirror/EoS + Redi Jedi - frequency analysis + glowsticks - demon's dream (Milkdrop beta ver).milk
+cream-of-the-crop/Dancer/Glowsticks Mirror/EoS + Redi Jedi - frequency analysis + glowsticks - long armed raver (Milkdrop beta ver).milk
+cream-of-the-crop/Dancer/Shapes/Milk Artist At our Best - FED - SlowFast Ft AdamFX n Martin - HD CosmoFX Also Ft Mstress n Armandio  - Thought About YouFX.milk
+cream-of-the-crop/Dancer/Tree Branch/martin + stahlregen - martin in da mash 12b.milk
+cream-of-the-crop/Dancer/Whirl/Liquid Glowsticks - ATwisted Pre Set Mix By AdamFX 2 martin - disco mix Ft Hexocollie 27.milk
+cream-of-the-crop/Fractal/Core Mirror/LuxXx - Burnwheel I.milk
+cream-of-the-crop/Fractal/Core Tunnel/A Tribute to Martin - bombyx mori - Ft Flexi - AdamFX - StahlRegen - Hd In Milk Ailen FX P.milk
+cream-of-the-crop/Fractal/Core/LuxXx - Fuck ur Fractal Muscles II.milk
+cream-of-the-crop/Fractal/Lattice/Rozzor & Neuro - Starover (Semicolon Mix).milk
+cream-of-the-crop/Fractal/Lattice/va ultramix - 290_3.milk
+cream-of-the-crop/Fractal/Lattice/va ultramix2 - 532_2.milk
+cream-of-the-crop/Fractal/Lattice/va ultramix2 - 533_1.milk
+cream-of-the-crop/Fractal/Lattice/va ultramix2 - 534.milk
+cream-of-the-crop/Fractal/Loops/martin - purple pulsator nz+.milk
+cream-of-the-crop/Fractal/Loops/martin - purple pulsator.milk
+cream-of-the-crop/Fractal/Nested Circle/AdamFX Enterz Tha Mash With Martin + stahlregen - AdamFX - In Tha Mash Effectz .milk
+cream-of-the-crop/Fractal/Nested Circle/AdamFX Enterz Tha Mash With Martin + stahlregen - AdamFX - In Tha Mash Effectz A.milk
+cream-of-the-crop/Fractal/Nested Circle/AdamFX Enterz Tha Mash With Martin + stahlregen - AdamFX - In Tha Mash Effectz B.milk
+cream-of-the-crop/Fractal/Nested Circle/Halfbreak - EFFECTAMT 4PORT (Seizure Techno).milk
+cream-of-the-crop/Fractal/Nested Circle/martin + stahlregen - martin in da mash 13.milk
+cream-of-the-crop/Fractal/Nested Dancer/ORB - Toy Snakes Starry Night.milk
+cream-of-the-crop/Fractal/Nested Spiral/more breedre presets.milk
+cream-of-the-crop/Fractal/Nested Square/Goody's Datura Bloom.milk
+cream-of-the-crop/Fractal/Nested Square/Hexcollie - Ultra daze.milk
+cream-of-the-crop/Fractal/Nested Square/Idiot24-7-mindbender7(superbendmix1).milk
+cream-of-the-crop/Fractal/Pointy/Bdrv Aderrasi - Chromatic Voyage bdrv etAL.milk
+cream-of-the-crop/Fractal/Pointy/LuxXx - All That I Am.milk
+cream-of-the-crop/Fractal/Pointy/Zylot & Idiot24-7 - Unknown Power Source.milk
+cream-of-the-crop/Geometric/Sphere Wild/AdamFX Enterz Tha Mash With Martin + stahlregen - AdamFX - In Tha Mash Effectz nz splatter bare.milk
+cream-of-the-crop/Geometric/Stripes Dance/martin - beamer code 22h - lines - rhythmic and fast.milk
+cream-of-the-crop/Geometric/Symbols/amandio c - codex 4 - cabasal dandelioness nz+wp2.milk
+cream-of-the-crop/Geometric/Symbols/amandio c - codex 4 - cabasal dandelioness nz+wp3.milk
+cream-of-the-crop/Geometric/Symbols/amandio c - codex 4 - plot wag nz+ necrophors gadget lard.milk
+cream-of-the-crop/Geometric/Wire Spiral Flower/Stahlregen - funky Blur (lotus mix) the genius in me lies right at the heart of the flacc nz+.milk
+cream-of-the-crop/Geometric/Wire Spiral Flower/Stahlregen - funky Blur (lotus mix) the genius in me lies right at the heart of the flacc.milk
+cream-of-the-crop/Geometric/Wire Trace Mirror/martin + stahlregen - martin in da mash 12a.milk
+cream-of-the-crop/Geometric/Wire Trace/161.milk
+cream-of-the-crop/Reaction/Automata/suksma - Hexcollie - Julian Carnival - shimmy dumb grid dogmaklyasm nz+5.milk
+cream-of-the-crop/Reaction/Automata/suksma - Hexcollie - Julian Carnival - shimmy dumb grid dogmaklyasm nz+6.milk
+cream-of-the-crop/Reaction/Feedback/AdamFX Enterz Tha Mash With Martin + stahlregen - AdamFX - In Tha Mash Effectz nz splatter.milk
+cream-of-the-crop/Reaction/Liquid Blobby/pheremones is spelled pheromones asshole.milk
+cream-of-the-crop/Reaction/Liquid Blobby/there is gum stuck to my hate.milk
+cream-of-the-crop/Reaction/Liquid Ripples/LuxXx - electric cell park a.milk
+cream-of-the-crop/Reaction/Liquid Ripples/LuxXx - electric cell park b nz+.milk
+cream-of-the-crop/Reaction/Liquid Ripples/LuxXx - electric cell park b.milk
+cream-of-the-crop/Reaction/Liquid Simmering/sonar cow.milk
+cream-of-the-crop/Reaction/Liquid Windy/all death angel watch Erd 3y3 mBetraeqx.milk
+cream-of-the-crop/Sparkle/Explosions/2009 4th of July with AdamFX n Martin - into the fireworks E.milk
+cream-of-the-crop/Sparkle/Explosions/LuxXx - Brain Grind i.milk
+cream-of-the-crop/Sparkle/Glimmer Mirror/430.milk
+cream-of-the-crop/Sparkle/Glimmer Mirror/Adam Eatit Mashup FX 2 martin - disco mix + Lodus + Geiss + Fruits Machine .milk
+cream-of-the-crop/Sparkle/Glimmer Mirror/EoS - sectorLoc B_phat_ugly remix 01 EoS7p nz+ crab lardvae.milk
+cream-of-the-crop/Sparkle/Glimmer Mirror/Starz in MilkHDFX - Stahlregen & Aderrasi + EoS + Geiss + Unchained + Zylot + Flexi + Martin + AdamFX A.milk
+cream-of-the-crop/Sparkle/Mass Squares/LuxXx - A Sober Life (wasted).milk
+cream-of-the-crop/Supernova/Burst/Rarian Rakista - On the Water.milk
+cream-of-the-crop/Supernova/Radiate/EVET - Hypraxis.milk
+cream-of-the-crop/Supernova/Radiate/martin - sparky caleidoscope.milk
+en-d/Fumbling Foo/Fumbling_Foo__En_D_Martin_-_The_Lifeforce_of_the_music_v6b.milk
+en-d/Remixes And Remakes/Presets/martin - night in the forest - En D - if hakan says that i can scam code i  basically could go Madame Chao on your ass!!!.milk
+milkdrop-original/Milkdrop-Original/Rozzor & Neuro - Starover (Semicolon Mix).milk
+milkdrop-original/Milkdrop-Original/Zylot & Idiot24-7 - Unknown Power Source.milk
+milkdrop-original/Milkdrop-Original/martin - Thinking about you.milk
+milkdrop-original/Milkdrop-Original/martin - disco mix 1.milk
+milkdrop-original/Milkdrop-Original/martin - fruit machine.milk
+milkdrop-original/Milkdrop-Original/martin - liquid gold.milk
+milkdrop-original/Milkdrop-Original/martin - purple pulsator.milk
+milkdrop-original/Milkdrop-Original/martin - the Dome ps2.milk
+milkdrop-original/Milkdrop-Original/martin - the Dome ps3.milk
+milkdrop-original/Milkdrop-Original/martin - the forge of Isengard.milk
+projectm-classic/bltc201/Rozzer & Neuro - Starover (Semicolon Mix).milk
+projectm-classic/bltc201/Zylot & Idiot24-7 - Unknown Power Source.milk
+projectm-classic/eyetune/martin - sparky caleidoscope.milk
+projectm-classic/milkdrop/Illusion & Unchained - Invade My Mind.milk
+projectm-classic/milkdrop/Zylot - String.milk
+projectm-classic/milkdrop/neuro - blackhole bass.milk
+projectm-classic/milkdrop_104/Studio Music and Redi Jedi - Passionate Behavior.milk
+projectm-classic/milkdrop_104/Studio Music and Redi Jedi - Shimmering Love (remix).milk
+projectm-classic/tryptonaut/Bdrv EoS + Redi Jedi - frequency analysis + glowsticks -  glow - o - scope male left handed complement BDRV et  AL  rmx2.milk
+projectm-classic/tryptonaut/EOE125~1.MILk
+projectm-classic/tryptonaut/Redi Jedi + Studio Music - Shimmering Love.milk
+projectm-classic/tryptonaut/Rozzor & Neuro - Starover (Semicolon Mix).milk
+projectm-classic/tryptonaut/Zylot & Idiot24-7 - Unknown Power Source.milk
+projectm-classic/tryptonaut/martin - liquid gold.milk
+projectm-classic/tryptonaut/martin - sparky caleidoscope.milk

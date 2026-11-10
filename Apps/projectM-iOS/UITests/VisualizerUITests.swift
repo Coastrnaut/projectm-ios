@@ -15,7 +15,7 @@ final class VisualizerUITests: XCTestCase {
     /// Fresh launch in portrait with the notice reset, then notice → chooser → In-App Playback.
     private func startInAppPlayback() {
         XCUIDevice.shared.orientation = .portrait
-        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics"]
+        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics"] + Self.noStore
         app.launch()
         let acknowledge = app.buttons["acknowledgeNotice"]
         XCTAssertTrue(acknowledge.waitForExistence(timeout: 10), "photosensitivity notice first (FR-071)")
@@ -85,7 +85,7 @@ final class VisualizerUITests: XCTestCase {
     /// T082 (FR-081, FR-071, FR-005): first launch shows the notice, a second launch opens on the
     /// chooser, and Microphone shows its explainer before anything starts.
     func testFirstAndSecondLaunchAndTheMicrophoneExplainer() {
-        app.launchArguments = ["-uitestResetNotice"]
+        app.launchArguments = ["-uitestResetNotice"] + Self.noStore
         app.launch()
         XCTAssertTrue(app.buttons["acknowledgeNotice"].waitForExistence(timeout: 10), "notice on first launch")
         XCTAssertFalse(app.buttons["In-App Playback"].exists, "nothing else before the notice")
@@ -93,7 +93,7 @@ final class VisualizerUITests: XCTestCase {
         XCTAssertTrue(app.buttons["In-App Playback"].waitForExistence(timeout: 10))
         app.terminate()
 
-        app.launchArguments = []
+        app.launchArguments = Self.noStore
         app.launch()
         XCTAssertTrue(app.buttons["Microphone"].waitForExistence(timeout: 10), "second launch opens on the chooser")
         XCTAssertFalse(app.buttons["acknowledgeNotice"].exists, "the notice is shown once")

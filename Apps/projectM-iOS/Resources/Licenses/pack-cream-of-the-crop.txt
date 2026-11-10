@@ -1,6 +1,6 @@
 Cream of the Crop
 https://github.com/projectM-visualizer/presets-cream-of-the-crop at commit 0180df21f5e0bd39b9060cc5de420ed2f1f9e509
-9,795 presets, 754 authors
+9,728 presets, 751 authors
 
 License statement
 
@@ -155,7 +155,6 @@ EoS + Phat
 EoS + phat
 EoS + Phat + Geiss
 EoS + Phat and Zylot
-EoS + Redi Jedi
 EoS + Zylot
 EoS and PieturP
 EoS and Zylot
@@ -548,7 +547,6 @@ Rovastar and Krash
 Rovastar Geiss
 Rozzor & Def Tech
 Rozzor & Esotic
-Rozzor & Neuro
 Rozzor & Rovastar
 Rozzor and Shreyas
 Rozzor vs Esotic
@@ -764,7 +762,6 @@ you're right, i would rather be alive
 zhugulore
 zip lock badge
 Zylot
-Zylot & Idiot24-7
 Zylot & Rovastar
 Zylot & Shifter
 Zylot and FishBrain

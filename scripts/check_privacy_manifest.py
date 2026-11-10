@@ -6,7 +6,7 @@ API categories, then checks that the bundled PrivacyInfo.xcprivacy declares each
 with at least one reason, and declares no tracking and no collected data. Xcode's privacy report only
 adds up manifests; this scan is what finds an undeclared API.
 
-    python3 scripts/check_privacy_manifest.py <path to ProjectMiOS.app>
+    python3 scripts/check_privacy_manifest.py <path to projectM-iOS.app>
 """
 from __future__ import annotations
 

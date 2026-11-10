@@ -90,4 +90,4 @@ Rules:
       2; final before release.
 - [x] Preset pack licenses reviewed (RI-008): 28 presets from the owner's `frontend-uwp` fork at
       `82c468e`, license basis `LicenseRef-Milkdrop-PublicDomain-Assumed` (owner decision
-      2026-11-09; `Apps/ProjectMiOS/Resources/Presets/LICENSES.md`).
+      2026-11-09; `Apps/projectM-iOS/Resources/Presets/LICENSES.md`).

@@ -6,7 +6,7 @@ Reviewed 2026-11-10 against research R-16 ("no App Groups, no background mode ex
 
 ## Entitlements
 
-Signed Release device build of ProjectMiOS (`codesign -d --entitlements -`), Apple Development
+Signed Release device build of projectM-iOS (`codesign -d --entitlements -`), Apple Development
 signing:
 
 | Entitlement | Value | Assessment |
@@ -19,7 +19,7 @@ The project declares no entitlements file and no capability: no App Groups, iClo
 extensions, keychain sharing, or the Screen Recording entitlement (removed 2026-11-09, ADR-0001
 ruling 16). `scripts/check_compliance.py` rejects entitlement keys in `project.yml` on every push.
 
-## Info.plist (`Apps/ProjectMiOS/Info.plist`)
+## Info.plist (`Apps/projectM-iOS/Info.plist`)
 
 | Key | Value | R-16 |
 |-----|-------|------|

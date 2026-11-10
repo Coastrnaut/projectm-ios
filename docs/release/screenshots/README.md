@@ -7,7 +7,7 @@ simulator's 1320 x 2868, see below), iPad 2064 x 2752. Debug build launched with
 reference track (its 20-40 s beat section, so the indicator reads "Active audio"; 10-20 s is
 deliberate silence). Simulator footage is marketing material only, never test evidence.
 
-| File | Preset (`Apps/ProjectMiOS/Resources/Presets/frontend-uwp/`) |
+| File | Preset (`Apps/projectM-iOS/Resources/Presets/frontend-uwp/`) |
 |------|--------|
 | `iphone-1-mega-spectrum.png`, `ipad-1-mega-spectrum.png` | ORB - Mega Spectrum |
 | `iphone-2-reaction-diffusion.png` | NeW Adam Master Mashup FX 2 Geiss and Zylot - Reaction Diffusion 3 (Overload Mix 2) AMAZING MASUP |

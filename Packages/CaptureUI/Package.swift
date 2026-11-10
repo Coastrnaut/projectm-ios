@@ -1,5 +1,5 @@
 // swift-tools-version: 6.0
-// CaptureUI: SwiftUI views shared by CaptureLab and ProjectMiOS — the source chooser,
+// CaptureUI: SwiftUI views shared by CaptureLab and projectM-iOS — the source chooser,
 // microphone explainer, and status banner — using the exact strings in
 // specs/001-ios-projectm-visualizer/contracts/ui-states.md.
 import PackageDescription

@@ -1,17 +1,17 @@
 // Feature 002 T225: the full-library purchase with StoreKit's local test environment
-// (`ProjectMiOS.storekit`, SKTestSession): purchase unlocks; cancel, failure and Ask to Buy unlock
+// (`projectM-iOS.storekit`, SKTestSession): purchase unlocks; cancel, failure and Ask to Buy unlock
 // nothing; a later approval unlocks; a refund locks; restore unlocks; no UserDefaults key is written
 // (FR-105-FR-110). Simulator results are not device evidence (T239 covers a device).
 import StoreKitTest
 import XCTest
-@testable import ProjectMiOS
+@testable import projectM_iOS
 
 @MainActor
 final class LibraryStoreTests: XCTestCase {
     private var session: SKTestSession!
 
     override func setUp() async throws {
-        session = try SKTestSession(configurationFileNamed: "ProjectMiOS")
+        session = try SKTestSession(configurationFileNamed: "projectM-iOS")
         session.resetToDefaultState()
         session.clearTransactions()
         session.disableDialogs = true

@@ -101,7 +101,7 @@ conclusion" above. Condition 1 is met by the MIT decision (option A); conditions
 > analysis, not legal advice; the owner did not require a legal opinion. It becomes the final
 > conclusion only when the owner records approval here.
 
-**Status: go** for App Store release of ProjectMiOS, on the measures below.
+**Status: go** for App Store release of projectM-iOS, on the measures below.
 
 ### RI-007: LGPL-2.1 obligations in an App Store app
 

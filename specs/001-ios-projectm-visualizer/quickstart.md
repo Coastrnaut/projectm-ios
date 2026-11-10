@@ -129,7 +129,7 @@ unavailable there. In every System/App Capture run:
 
 ## Scenario B — Gate 3 render proof (physical device)
 
-Run the ProjectMiOS render-proof build with In-App Playback. Load `presets/tests/*.milk` and 20
+Run the projectM-iOS render-proof build with In-App Playback. Load `presets/tests/*.milk` and 20
 starter presets. Record shader failures, fps, and app size per ADR-0003 option.
 **Pass**: ADR-0003 exit criteria met and accepted.
 
@@ -155,8 +155,8 @@ starter presets. Record shader failures, fps, and app size per ADR-0003 option.
 
 Device runs that need no person at the device use two tools. Neither is in the shipping build.
 
-- **Measurement build of ProjectMiOS**: Release plus `SWIFT_ACTIVE_COMPILATION_CONDITIONS=PROJECTM_AUTOMATION`
-  (Debug builds include it too). `Apps/ProjectMiOS/Automation/AutomationRunner.swift` starts when the
+- **Measurement build of projectM-iOS**: Release plus `SWIFT_ACTIVE_COMPILATION_CONDITIONS=PROJECTM_AUTOMATION`
+  (Debug builds include it too). `Apps/projectM-iOS/Automation/AutomationRunner.swift` starts when the
   environment variable `PROJECTM_AUTORUN` is set, for example
   `xcrun devicectl device process launch --device <udid> --environment-variables '{"PROJECTM_AUTORUN":"sc007"}' org.projectmios.ProjectMiOS`:
   - `sc015`: cold launch to the source chooser, appended to `Documents/sc015.json`; launch repeatedly.

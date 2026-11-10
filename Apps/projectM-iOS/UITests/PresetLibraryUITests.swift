@@ -61,10 +61,10 @@ final class PresetLibraryUITests: XCTestCase {
         waitForScopeLine("Included · 28")
         openBrowser()
         XCTAssertEqual(app.buttons["node:included"].label, "Included, 28 presets")
-        XCTAssertEqual(app.buttons["node:cream-of-the-crop"].label, "Cream of the Crop, 9,795 presets, locked")
-        XCTAssertEqual(app.buttons["node:projectm-classic"].label, "projectM Classic, 2,584 presets, locked")
-        XCTAssertEqual(app.buttons["node:milkdrop-original"].label, "Milkdrop Original, 497 presets, locked")
-        XCTAssertEqual(app.buttons["node:en-d"].label, "En D, 37 presets, locked")
+        XCTAssertEqual(app.buttons["node:cream-of-the-crop"].label, "Cream of the Crop, 9,728 presets, locked")
+        XCTAssertEqual(app.buttons["node:projectm-classic"].label, "projectM Classic, 2,569 presets, locked")
+        XCTAssertEqual(app.buttons["node:milkdrop-original"].label, "Milkdrop Original, 487 presets, locked")
+        XCTAssertEqual(app.buttons["node:en-d"].label, "En D, 35 presets, locked")
         XCTAssertTrue(app.buttons["node:all"].exists)
     }
 
@@ -120,7 +120,7 @@ final class PresetLibraryUITests: XCTestCase {
 
     func testFolderScopeNextWrapsAndRandomStaysInside() {
         start(unlocked: true)
-        waitForScopeLine("Cream of the Crop · 9795")
+        waitForScopeLine("Cream of the Crop · 9728")
         openBrowser()
         app.buttons["node:cream-of-the-crop"].tap()
         let fractal = app.buttons["node:cream-of-the-crop/Fractal"]
@@ -129,13 +129,13 @@ final class PresetLibraryUITests: XCTestCase {
         let spiral = app.buttons["node:cream-of-the-crop/Fractal/Nested Spiral"]
         XCTAssertTrue(app.buttons["node:cream-of-the-crop/Fractal/Blobby"].waitForExistence(timeout: 5))
         scrollTo(spiral)
-        XCTAssertEqual(spiral.label, "Nested Spiral, 179 presets")
+        XCTAssertEqual(spiral.label, "Nested Spiral, 178 presets")
         spiral.tap()
         let rows = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'preset:'"))
         XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 5))
         let first = String(rows.firstMatch.identifier.dropFirst("preset:".count))
         rows.firstMatch.tap()   // choosing a preset closes the browser
-        waitForScopeLine("Fractal › Nested Spiral · 179")
+        waitForScopeLine("Fractal › Nested Spiral · 178")
         XCTAssertEqual(current.label, first)
         tapControl("previous")
         XCTAssertNotEqual(current.label, first, "Previous from the first wraps to the last")
@@ -143,7 +143,7 @@ final class PresetLibraryUITests: XCTestCase {
         XCTAssertEqual(current.label, first, "and Next wraps back")
         for _ in 0..<5 {
             tapControl("random")
-            XCTAssertEqual(scopeLine.label, "Fractal › Nested Spiral · 179", "Random stays in the scope")
+            XCTAssertEqual(scopeLine.label, "Fractal › Nested Spiral · 178", "Random stays in the scope")
         }
     }
 }

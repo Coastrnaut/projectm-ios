@@ -2,7 +2,7 @@
 
 Date: 2026-11-10. Build machine: the project Mac (Xcode 27.2 / iOS SDK 27.2, `verify_environment.py`
 exit 0). Archive: `~/Library/Developer/Xcode/Archives/2026-11-10/ProjectMiOS 1.0 (1).xcarchive`
-(Release, ProjectMiOS only). Upload to App Store Connect: by the owner (owner choice 2026-11-10).
+(Release, projectM-iOS only). Upload to App Store Connect: by the owner (owner choice 2026-11-10).
 
 **Result: every quickstart row passes or has an owner-approved waiver.** Owner ruling 2026-11-10
 (T112): all rows still open from earlier device tasks are waived.
@@ -16,7 +16,7 @@ exit 0). Archive: `~/Library/Developer/Xcode/Archives/2026-11-10/ProjectMiOS 1.0
 | `check_compliance.py` | OK |
 | `test_scripts.py` | 71 tests OK (1 skipped) |
 | CaptureLab UI tests (iOS 27.2 simulator) | 3 tests, 0 failures |
-| ProjectMiOS unit and UI tests (iOS 27.2 simulator, 2026-11-10) | 30 unit, 17 UI, 0 failures |
+| projectM-iOS unit and UI tests (iOS 27.2 simulator, 2026-11-10) | 30 unit, 17 UI, 0 failures |
 | ANGLERendering tests (iOS 27.2 simulator) | 11 tests, 0 failures |
 
 ## Scenario A — Stage 1 capture feasibility
@@ -58,7 +58,7 @@ Pass: Gate 3 passed 2026-11-09 (T079, ADR-0003 Option B, `performance.md`).
 | FR-066 privacy manifest / App Privacy | Pass | T106; `check_privacy_manifest.py` OK on the 1.0 archive; "Data Not Collected" (`docs/release/app-privacy.md`) |
 | FR-067 Licenses screen | Pass | Every ADR-0004 component (19 entries, `collect_licenses.py --check` in CI) and all 28 bundled presets (in the LICENSES.md text) |
 | FR-062 claims | Pass | T110, no compatibility claims (`docs/release/store-copy.md`) |
-| **FR-090** only ProjectMiOS submitted | Pass (archive) | The archive holds one app, `ProjectMiOS.app` (`org.projectmios.ProjectMiOS` 1.0 (1)); no nested app, no CaptureLab file or string; CaptureLab is never archived for the App Store (`docs/release/capturelab-distribution.md`). Owner to confirm the App Store Connect record is ProjectMiOS |
+| **FR-090** only projectM-iOS submitted | Pass (archive) | The archive holds one app, `projectM-iOS.app` (`org.projectmios.ProjectMiOS` 1.0 (1)); no nested app, no CaptureLab file or string; CaptureLab is never archived for the App Store (`docs/release/capturelab-distribution.md`). Owner to confirm the App Store Connect record is projectM-iOS |
 
 ## The 1.0 archive
 
@@ -91,3 +91,19 @@ Xcode; store name set to "projectM-iOS" on App Store Connect ("projectM" and "pr
    https://github.com/Coastrnaut/projectm-ios/blob/main/docs/privacy-policy.md; custom License
    Agreement from `docs/release/eula.md`; review notes from `docs/release/app-review-notes.md`;
    listing text from `docs/release/store-copy.md`.
+
+## Feature 002 (full preset library), 2026-11-10
+
+Implemented and verified on the Mac and the simulator (`docs/test-reports/preset-library.md`). Not
+yet released.
+
+Before a 1.1 upload:
+
+- The owner creates the in-app purchase (T242).
+- The device tasks run: T238, T239 and T241.
+- `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in `project.yml` are raised; they are still
+  1.0 (1).
+- The Release build needs the preset submodules checked out.
+
+The app target was renamed `projectM-iOS`. Later archives are named `projectM-iOS`; the bundle ID
+is unchanged, so the App Store Connect record (app ID 6833037520) still applies.

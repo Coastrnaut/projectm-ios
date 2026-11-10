@@ -1,5 +1,5 @@
 // Feature 002 T229: the purchase sheet with StoreKit's local test environment
-// (`ProjectMiOS.storekit`, SKTestSession, dialogs off). Sheet contents and price; Buy unlocks and
+// (`projectM-iOS.storekit`, SKTestSession, dialogs off). Sheet contents and price; Buy unlocks and
 // switches the scope to Cream of the Crop (FR-107, FR-119); a failed purchase shows its message and
 // unlocks nothing (FR-108). Simulator results are never device evidence; a sandbox run is T239.
 import StoreKitTest
@@ -12,7 +12,7 @@ final class PurchaseUITests: XCTestCase {
 
     override func setUp() async throws {
         continueAfterFailure = false
-        session = try SKTestSession(configurationFileNamed: "ProjectMiOS")
+        session = try SKTestSession(configurationFileNamed: "projectM-iOS")
         session.resetToDefaultState()
         session.clearTransactions()
         session.disableDialogs = true
@@ -48,7 +48,7 @@ final class PurchaseUITests: XCTestCase {
         pack.tap()
         let banner = app.buttons["unlockBanner"]
         XCTAssertTrue(banner.waitForExistence(timeout: 5))
-        XCTAssertEqual(banner.label, "Unlock all 12,913 presets")
+        XCTAssertEqual(banner.label, "Unlock all 12,819 presets")
         banner.tap()
         XCTAssertTrue(app.buttons["buyLibrary"].waitForExistence(timeout: 5))
     }
@@ -59,7 +59,7 @@ final class PurchaseUITests: XCTestCase {
         let priced = NSPredicate(format: "label == %@", "Unlock for $1.99")
         expectation(for: priced, evaluatedWith: buy)
         waitForExpectations(timeout: 10)
-        XCTAssertTrue(app.staticTexts["purchaseSummary"].label.contains("12,913"))
+        XCTAssertTrue(app.staticTexts["purchaseSummary"].label.contains("12,819"))
         for pack in ["Cream of the Crop", "projectM Classic", "Milkdrop Original", "En D"] {
             XCTAssertTrue(app.staticTexts[pack].exists, pack)
         }
@@ -78,7 +78,7 @@ final class PurchaseUITests: XCTestCase {
         if unlocked.waitForExistence(timeout: 2) == false { app.navigationBars.buttons.firstMatch.tap() }
         XCTAssertFalse(app.buttons["unlockBanner"].exists, "the pack is unlocked")
         app.buttons["Done"].firstMatch.tap()
-        waitForScopeLine("Cream of the Crop · 9795")
+        waitForScopeLine("Cream of the Crop · 9728")
     }
 
     func testFailedPurchaseShowsTheMessageAndUnlocksNothing() {

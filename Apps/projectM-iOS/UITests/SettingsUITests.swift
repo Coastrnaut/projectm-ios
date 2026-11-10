@@ -15,7 +15,7 @@ final class SettingsUITests: XCTestCase {
 
     private func launch(reset: Bool) {
         XCUIDevice.shared.orientation = .portrait
-        app.launchArguments = reset ? ["-uitestResetNotice"] : []
+        app.launchArguments = (reset ? ["-uitestResetNotice"] : []) + Self.noStore
         app.launch()
         if reset {
             let acknowledge = app.buttons["acknowledgeNotice"]

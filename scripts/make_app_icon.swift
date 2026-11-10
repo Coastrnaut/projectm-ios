@@ -1,6 +1,6 @@
 // make_app_icon.swift <input.png> <output.png>: the opaque bounding box of the input, centered on a
 // 1024 x 1024 white square with a 10% margin, no alpha (App Store icons cannot be transparent).
-// The app icon (Apps/ProjectMiOS/Resources/Assets.xcassets/AppIcon.appiconset) was made from the
+// The app icon (Apps/projectM-iOS/Resources/Assets.xcassets/AppIcon.appiconset) was made from the
 // projectM logo in the owner's fork of the UWP frontend, Coastrnaut/frontend-uwp at 82c468e,
 // src/projectM-UWP/projectM-UWP.WindowsUniversal.Application/Assets/SplashScreen.png (owner decision
 // 2026-11-10):  swift scripts/make_app_icon.swift SplashScreen.png AppIcon-1024.png

@@ -3,7 +3,7 @@
 import AudioCore
 import CaptureUI
 import XCTest
-@testable import ProjectMiOS
+@testable import projectM_iOS
 
 final class AccessibilityTests: XCTestCase {
     @MainActor

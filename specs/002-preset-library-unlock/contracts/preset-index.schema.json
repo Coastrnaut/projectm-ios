@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/Coastrnaut/projectm-ios/specs/002-preset-library-unlock/contracts/preset-index.schema.json",
   "title": "PresetIndex",
-  "description": "Apps/ProjectMiOS/Resources/PresetIndex.json, written by scripts/build_preset_index.py (feature 002 data-model.md).",
+  "description": "Apps/projectM-iOS/Resources/PresetIndex.json, written by scripts/build_preset_index.py (feature 002 data-model.md).",
   "type": "object",
   "required": ["version", "presets"],
   "additionalProperties": false,

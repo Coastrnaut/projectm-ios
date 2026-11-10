@@ -1,7 +1,7 @@
 // Task T086: device auto-lock is suppressed only while the visualization runs in the foreground
 // (FR-084), and restored when it is paused, stopped, or the app leaves the foreground.
 import XCTest
-@testable import ProjectMiOS
+@testable import projectM_iOS
 
 final class IdleTimerPolicyTests: XCTestCase {
     func testSuppressedOnlyWhileRunningInTheForeground() {

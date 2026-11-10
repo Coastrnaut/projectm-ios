@@ -95,6 +95,18 @@ class PresetIndexTests(unittest.TestCase):
                                "projectm-classic/tryptonaut/NoAuthor.milk",
                                "milkdrop-original/Milkdrop-Original/Krash - Flat.milk"])
 
+    def test_exclusion_also_drops_identical_copies_in_later_packs(self):
+        # T237: excluding the cream copy must not let the identical classic file back in.
+        (self.res / "PresetExclusions.txt").write_text("cream-of-the-crop/Fractal/Nested/Martin - Spiral.milk\n")
+        self.assertEqual(self.run_main("--force"), 0)
+        ids = [r["id"] for r in self.index()]
+        self.assertNotIn("cream-of-the-crop/Fractal/Nested/Martin - Spiral.milk", ids)
+        self.assertNotIn("projectm-classic/tryptonaut/dup.MILK", ids)
+        self.assertEqual(self.run_main("--force", "--no-exclusions"), 0)   # RendererLab's sweep (T236)
+        ids = [r["id"] for r in self.index()]
+        self.assertIn("cream-of-the-crop/Fractal/Nested/Martin - Spiral.milk", ids)
+        self.assertIn("en-d/Excluded - Me.milk", ids)
+
     def test_names_authors_folders(self):
         self.run_main()
         by_id = {r["id"]: r for r in self.index()}
@@ -654,7 +666,7 @@ class DiagnosticProjectTests(unittest.TestCase):
         self.assertIn("NSMicrophoneUsageDescription", out)
         self.assertIn('CFBundleVersion: "9002"', out)
         self.assertIn("UIBackgroundModes: [screen-capture]", out, "keeps the normal build's mode")
-        self.assertNotIn("ProjectMiOS", out, "the diagnostic project is CaptureLab only")
+        self.assertNotIn("projectM-iOS", out, "the diagnostic project is CaptureLab only")
         self.assertNotIn("ANGLERendering", out)
         self.assertIn("CaptureLabUITests:", out)
 

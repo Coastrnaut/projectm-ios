@@ -1,6 +1,6 @@
 projectM Classic
 https://github.com/projectM-visualizer/presets-projectm-classic at commit 14a6244a7d32eb7e114e1a92d1cb93358cdcc54a
-2,584 presets, 370 authors
+2,569 presets, 363 authors
 
 License statement
 
@@ -39,7 +39,6 @@ bdrv
 bdrv + al EoS
 bdrv + al shifter
 Bdrv EoS
-Bdrv EoS + Redi Jedi
 Bdrv et AL Aderrasi
 bdrv et.AL EoS + Phat
 Benjam & Zylot
@@ -198,7 +197,6 @@ Mstress & Juppy
 Mstress & Zylot
 Mstress + Zylot
 mstress and rovastar
-neuro
 NeW Adam Master Mashup FX 2 Geiss and Zylot
 NeW Adam Master Mashup FX 2 Zylot
 New Creation Sensation
@@ -225,7 +223,6 @@ procreate with anti-leather
 raron, martin + flexi
 rce-ordinary + flexi
 Redi Jedi
-Redi Jedi + Studio Music
 Reenen
 Reenen & Telek
 Reenen Geiss
@@ -260,7 +257,6 @@ Rovastar + Unchained
 Rovastar + Zylot
 Rovastar and Krash
 Rovastar and Unchained
-Rozzer & Neuro
 Rozzer & Zylot
 Rozzor
 Rozzor & Aderrasi
@@ -268,7 +264,6 @@ Rozzor & Che
 Rozzor & Esotic
 Rozzor & Illusion
 Rozzor & Krash
-Rozzor & Neuro
 Rozzor & Rovastar
 Rozzor & Shreyas
 Rozzor & StudioMusic
@@ -328,7 +323,6 @@ Stahlregen + Unchained
 Studio Music
 Studio Music & Unchained
 Studio Music & Unchained + Phat and E-oS
-Studio Music and Redi Jedi
 Studio Music and Unchained
 StudioMusic
 StudioMusic & Unchained
@@ -373,7 +367,6 @@ Zylot
 Zylot & Aderrasi
 Zylot & Boz
 Zylot & Idiot
-Zylot & Idiot24-7
 Zylot & Krash
 Zylot & Mstress
 Zylot & Pinbi7

@@ -19,7 +19,7 @@ final class StatusUITests: XCTestCase {
     /// Launches with the fake replacing `mode`, acknowledges the notice and picks that mode.
     private func start(_ mode: String = "inAppPlayback", startError: String? = nil) {
         XCUIDevice.shared.orientation = .portrait
-        app.launchArguments = ["-uitestResetNotice", "-uitestFake", mode]
+        app.launchArguments = ["-uitestResetNotice", "-uitestFake", mode] + Self.noStore
         if let startError { app.launchArguments += ["-uitestFakeStartError", startError] }
         app.launch()
         app.buttons["acknowledgeNotice"].tap()

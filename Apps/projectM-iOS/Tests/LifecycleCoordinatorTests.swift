@@ -12,7 +12,7 @@
 import AudioCore
 import CaptureKit
 import XCTest
-@testable import ProjectMiOS
+@testable import projectM_iOS
 
 @MainActor
 final class LifecycleCoordinatorTests: XCTestCase {

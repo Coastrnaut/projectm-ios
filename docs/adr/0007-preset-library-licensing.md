@@ -21,7 +21,7 @@ milkdrop-original, milkdrop-texture-pack) have no license file.
 2. **Basis**: every pack is bundled under the projectM team's own redistribution basis (assumed
    public domain; removal on the author's request). The three packs without a license file are
    treated the same way; this is a recorded risk, not a verified license.
-3. **Takedowns**: `Apps/ProjectMiOS/Resources/PresetBlocklist.json` lists content hashes removed at
+3. **Takedowns**: `Apps/projectM-iOS/Resources/PresetBlocklist.json` lists content hashes removed at
    an author's request; every build honors it, in every pack. Requests are accepted through the
    repository's issues (support URL).
 4. **Attribution**: Settings › Licenses shows every pack with its source, pinned commit, license

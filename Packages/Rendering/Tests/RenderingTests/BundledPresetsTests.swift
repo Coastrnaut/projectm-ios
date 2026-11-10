@@ -1,4 +1,4 @@
-// Task T073: the bundled starter presets (Apps/ProjectMiOS/Resources/Presets). Every file has a
+// Task T073: the bundled starter presets (Apps/projectM-iOS/Resources/Presets). Every file has a
 // complete LICENSES.md row (FR-047), there are at least 20, and each one loads in the engine within
 // 1 s (SC-007) and renders on the iOS Simulator.
 import XCTest
@@ -10,7 +10,7 @@ final class BundledPresetsTests: XCTestCase {
     private static let presetsFolder = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         .deletingLastPathComponent().deletingLastPathComponent()
-        .appendingPathComponent("Apps/ProjectMiOS/Resources/Presets")
+        .appendingPathComponent("Apps/projectM-iOS/Resources/Presets")
 
     func testEveryBundledPresetIsLicensed() throws {
         let catalog = try PresetRepository(presetsFolder: Self.presetsFolder).load()

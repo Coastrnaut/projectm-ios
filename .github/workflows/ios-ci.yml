@@ -65,7 +65,7 @@ jobs:
       - uses: actions/checkout@v5
         # The ProjectM submodule is not needed until Plan Phase C (engine build); skip it to
         # save macOS minutes.
-      - name: Preset pack submodules (feature 002 T243; ProjectMiOS's build phase indexes them)
+      - name: Preset pack submodules (feature 002 T243; projectM-iOS's build phase indexes them)
         run: |
           git submodule update --init --depth 1 Vendor/presets/cream-of-the-crop Vendor/presets/projectm-classic \
             Vendor/presets/milkdrop-original Vendor/presets/en-d Vendor/presets/milkdrop-texture-pack
@@ -134,7 +134,7 @@ jobs:
               CODE_SIGNING_ALLOWED=NO build)
             echo "::endgroup::"
           done
-      - name: Download the engine and ANGLE xcframeworks (ProjectMiOS needs them)
+      - name: Download the engine and ANGLE xcframeworks (projectM-iOS needs them)
         uses: actions/download-artifact@v4
         with:
           name: ProjectM.xcframework
@@ -150,9 +150,9 @@ jobs:
           xcodebuild -quiet -project ProjectM-iOS.xcodeproj -scheme CaptureLab \
             -destination 'generic/platform=iOS' -derivedDataPath "$RUNNER_TEMP/dd-app" \
             CODE_SIGNING_ALLOWED=NO build
-      - name: Build ProjectMiOS (generic iOS, unsigned; T080)
+      - name: Build projectM-iOS (generic iOS, unsigned; T080)
         run: |
-          xcodebuild -quiet -project ProjectM-iOS.xcodeproj -scheme ProjectMiOS \
+          xcodebuild -quiet -project ProjectM-iOS.xcodeproj -scheme projectM-iOS \
             -destination 'generic/platform=iOS' -derivedDataPath "$RUNNER_TEMP/dd-app" \
             CODE_SIGNING_ALLOWED=NO build
       - name: Find an iOS simulator
@@ -452,7 +452,7 @@ jobs:
           [ -n "$OBJ" ] && nm -U "$OBJ" | grep -q SCKStreamDriver && nm -u "$OBJ" | grep -q SCContentSharingPicker \
             || { echo "::error::SCKStreamDriver.swift was compiled out or not built"; exit 1; }
           echo "SCKStreamDriver.swift compiled against iOS SDK $(xcrun --sdk iphoneos --show-sdk-version)"
-      - name: Download the engine and ANGLE xcframeworks (ProjectMiOS needs them)
+      - name: Download the engine and ANGLE xcframeworks (projectM-iOS needs them)
         uses: actions/download-artifact@v4
         with:
           name: ProjectM.xcframework

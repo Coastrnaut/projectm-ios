@@ -1,7 +1,7 @@
 // Task T103: settings defaults and persistence (FR-048, FR-072, FR-065) and the bundled license
 // manifest (FR-067).
 import XCTest
-@testable import ProjectMiOS
+@testable import projectM_iOS
 
 @MainActor
 final class SettingsTests: XCTestCase {

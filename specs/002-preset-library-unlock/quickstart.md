@@ -13,10 +13,10 @@ xcodegen generate
 ```bash
 swift test --package-path Packages/PresetLibrary     # index, tree, scopes, stepping, random, search (also on Linux)
 python3 scripts/test_scripts.py                      # includes build_preset_index tests
-xcodebuild test -project ProjectM-iOS.xcodeproj -scheme ProjectMiOS -destination '<iOS 27.2 simulator>'
+xcodebuild test -project ProjectM-iOS.xcodeproj -scheme projectM-iOS -destination '<iOS 27.2 simulator>'
 ```
 
-Expected: all pass. UI tests use the StoreKit test configuration (`Apps/ProjectMiOS/Store/ProjectMiOS.storekit`).
+Expected: all pass. UI tests use the StoreKit test configuration (`Apps/projectM-iOS/Store/projectM-iOS.storekit`).
 
 ## Scenario A — Free library (US1)
 
