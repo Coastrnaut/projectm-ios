@@ -99,6 +99,22 @@ public final class SPSCRingBuffer: @unchecked Sendable {
         }
     }
 
+    /// Discards the oldest readable samples so that at most `keep` remain, and returns how many
+    /// were discarded (0 if no more than `keep` were readable). Consumer side; never blocks.
+    @discardableResult
+    public func discard(keepingNewest keep: Int) -> Int {
+        let keep = max(0, keep)
+        while true {
+            let r = readIndex.load(ordering: .acquiring)
+            let w = writeIndex.load(ordering: .acquiring)
+            let excess = (w - r) - keep
+            if excess <= 0 { return 0 }
+            if readIndex.compareExchange(expected: r, desired: r + excess,
+                                         successOrdering: .acquiringAndReleasing,
+                                         failureOrdering: .acquiring).exchanged { return excess }
+        }
+    }
+
     /// Discards everything currently readable. Consumer side.
     public func drain() {
         while true {

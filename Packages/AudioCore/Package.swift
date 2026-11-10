@@ -1,7 +1,8 @@
 // swift-tools-version: 6.0
-// AudioCore: pure-Swift audio types, real-time ring buffer, level meter, and the audio-state
-// classifier. No UIKit/AVFoundation, so its tests run with `swift test` on a macOS host
-// (and on Linux toolchains; Accelerate is optional — see LevelMeter.swift).
+// AudioCore: pure-Swift audio types, real-time ring buffers, level meter, the audio-state
+// classifier and the Normalizer. No UIKit. AVFAudio (AVAudioConverter) is used only by the
+// Normalizer, behind `canImport`, so the tests also run on Linux toolchains (a fallback resampler
+// stands in there; Accelerate is optional — see LevelMeter.swift).
 import PackageDescription
 
 let package = Package(
