@@ -224,7 +224,7 @@ jobs:
           grep -q "${{ steps.key.outputs.engine }}" Build/ProjectM.xcframework.json
       - name: OpenGL ES load-proc table matches the SDK
         run: python3 scripts/generate_gles_loader.py --check
-      - name: ProjectMBridge tests on an iOS Simulator (T068)
+      - name: ProjectMBridge and Rendering tests on an iOS Simulator (T068, T071)
         run: |
           set -o pipefail
           UDID=$(xcrun simctl list devices available -j | python3 -c '
@@ -241,9 +241,13 @@ jobs:
           print(f"Selected simulator: {best[2]} ({best[0]})" if best else "no iPhone simulator", file=sys.stderr)
           ')
           [ -n "$UDID" ] || { echo "::error::No iPhone simulator available"; exit 1; }
-          (cd Packages/ProjectMBridge && xcodebuild -scheme ProjectMBridge -destination "id=$UDID" \
-            -derivedDataPath "$RUNNER_TEMP/dd-pmb" CODE_SIGNING_ALLOWED=NO test 2>&1 \
-            | grep -E "error:|warning:|Executed [0-9]+ tests|TEST (SUCCEEDED|FAILED)|failed \(")
+          for pkg in ProjectMBridge Rendering; do
+            echo "::group::xcodebuild test $pkg (iOS Simulator)"
+            (cd "Packages/$pkg" && xcodebuild -scheme "$pkg" -destination "id=$UDID" \
+              -derivedDataPath "$RUNNER_TEMP/dd-$pkg" CODE_SIGNING_ALLOWED=NO test 2>&1 \
+              | grep -E "error:|warning:|Executed [0-9]+ tests|TEST (SUCCEEDED|FAILED)|failed \(")
+            echo "::endgroup::"
+          done
       - name: Upload the xcframework
         uses: actions/upload-artifact@v4
         with:
