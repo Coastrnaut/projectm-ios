@@ -93,15 +93,16 @@ A16 (the "oldest" tier), as recorded in `docs/test-reports/devices.md`.
 
 - [x] (Both options, D1-D3, 2026-11-09: 37/37 and 28/28.) All upstream test presets (`presets/tests/*.milk`) render, and at least 95% of the starter
       presets compile and render without shader errors, on every measurement device.
-- [ ] (Owner ruling 2026-11-09: the 10-minute sessions are not required; judged from the sweeps'
+- [x] (Owner rulings 2026-11-09: the 10-minute sessions are not required, and the owner accepts the
+      frame rates as measured, including the shortfall on D1 and D3 at full resolution; judged from the sweeps'
       per-preset frame rates, `docs/test-reports/performance.md`.) Sustained frame rate over a 10-minute session: at least 55 fps for 95% of the session on the
       reference device (SC-005); at least 30 fps throughout on D2 and D3 (FR-049 floor).
 - [x] App size increase over the Phase C baseline: 30 MB or less (download size). Option A +1.4 MB,
       Option B +7.3 MB uncompressed (2026-11-09).
-- [ ] The "Reduce flashing" post-pass (FR-072) is feasible with under 2 ms added per frame on the
+- [x] Not required (owner ruling 2026-11-09). The "Reduce flashing" post-pass (FR-072) is feasible with under 2 ms added per frame on the
       reference device.
 - [x] RI-009 resolved as above (2026-11-09, T072: fork patch 3; see the RI-009 device results below).
-- [ ] Quality tiers ("current", "oldest") recorded with mesh size, render scale, and the
+- [x] Not required (owner ruling 2026-11-09). Quality tiers ("current", "oldest") recorded with mesh size, render scale, and the
       device-to-tier rule (research R-08).
 
 Frame rate is computed from frame-presentation timestamps in 1-second windows, capped at 60 fps on

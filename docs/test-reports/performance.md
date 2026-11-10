@@ -120,6 +120,8 @@ Findings:
 - The heaviest presets are the same on every device ("Reaction Diffusion 3 (Overload Mix 2)",
   "Star to Another World", "The Beast Mandala Chaser").
 
+**Owner ruling 2026-11-09: the Reduce-flashing cost and the quality tiers are not required for Gate 3, and the owner accepts the rendering as measured ("everything rendered fine and looks ready").** The frame-rate shortfall on D1 and D3 and the unmeasured limiter column are accepted as they stand.
+
 RI-009 on devices: with an unpatched engine, the GL resolver tried to `dlopen` eleven EGL/GLES
 names on D1, D2 and D3 (none opened); with fork patch 3 (`ca1fc0d`), D3 (A) and D2 (B) logged no
 attempt at all (see ADR-0003).
