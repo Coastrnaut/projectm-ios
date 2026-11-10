@@ -65,6 +65,10 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer {
     private var texturePaths: [String] = []
     private lazy var prewarmer = PresetPrewarmer(display: display, config: config)
     private var prewarmerStarted = false
+    /// The warm-up starts this long after a request, once the switch's blend is over. Warming during
+    /// the blend cost D1 a third of its frame rate (2026-11-10: 29 vs 43 fps in the 3 s after a switch).
+    public var prewarmDelay: Duration = .milliseconds(Int(presetBlendSeconds * 1000) + 500)
+    private var prewarmTask: Task<Void, Never>?
 
     private init(display: EGLDisplay, config: EGLConfig, context: EGLContext, placeholder: EGLSurface,
                  engine: ProjectMEngine) {
@@ -117,6 +121,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer {
     }
 
     isolated deinit {
+        prewarmTask?.cancel()
         if prewarmerStarted { prewarmer.stop() }
         displayLink?.invalidate()
         for observer in observers { NotificationCenter.default.removeObserver(observer) }
@@ -155,9 +160,15 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer {
     }
 
     public func prewarm(_ presets: [Preset]) {
+        prewarmTask?.cancel()
         guard prewarmEnabled, !presets.isEmpty else { return }
-        prewarmerStarted = true
-        prewarmer.request(presets, texturePaths: texturePaths)
+        let delay = prewarmDelay
+        prewarmTask = Task { [weak self] in
+            try? await Task.sleep(for: delay)
+            guard !Task.isCancelled, let self else { return }
+            prewarmerStarted = true
+            prewarmer.request(presets, texturePaths: texturePaths)
+        }
     }
 
     /// Presets whose pipelines were built in the background (tests and automation reports).

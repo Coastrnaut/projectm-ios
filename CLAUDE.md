@@ -79,8 +79,9 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
     the bundle ID stays `org.projectmios.ProjectMiOS`.
   - T238 measured on D1-D3 2026-11-10 (`docs/test-reports/performance.md`):
     - all criteria pass;
-    - SC-104 was borderline because shader compiles delayed a preset's first frame. Warming upcoming
-      presets in the background (`PresetPrewarmer`) brought it to 99% on D1 (median 109 ms).
+    - SC-104 looked borderline because the test switched too fast, and shader compiles delayed a
+      preset's first frame. Now it passes on D1 at an 8 s dwell: 96-98%, median 103 ms with the
+      background warm-up (`PresetPrewarmer`, started 2.5 s after a switch; no frame-rate cost).
   - T241 on D1 2026-11-10: zero violations; the purchase part waits for T239.
   - Open: T239 (needs T242 first), the purchase part of T241, and owner task T242. Both device
     tasks are automated by `scripts/run_device_tests.py`. Version 1.1 (2); T232's VoiceOver check is not required.
@@ -384,7 +385,12 @@ agent-driven. Copy this section into a new repository's CLAUDE.md and adjust the
   1. Choose the next picks in advance (keep Random uniform and never a repeat).
   2. Render them once on a background thread with its own unshared EGL context and engine, into
      a target of the window's pixel format.
-  3. Metal's caches then make the visible switch cheap: 99% of switches under 1 s instead of 97%,
-     and the median fell from 191 ms to 109 ms.
+  3. Metal's caches then make the visible switch cheap: the median switch fell from 191 ms to
+     about 105 ms.
+  4. Start the warm-up only after the switch's blend (2.5 s later). Warming immediately cut D1's
+     frame rate from 43 to 29 fps in the 3 s after each switch. Delayed, it costs nothing:
+     53.5 fps with it, 51.1 without.
+  5. Always measure the frame-rate cost of background GPU work, and use a realistic gap between
+     switches: 0.3 s gaps made SC-104 look like a failure.
 - Script device runs to survive locks: devicectl reports "Locked" only in its `--json-output`, so
   retry launches for a while and tell the owner to set Auto-Lock to Never.

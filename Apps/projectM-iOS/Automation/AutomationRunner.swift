@@ -164,16 +164,19 @@ enum AutomationRunner {
         try? await Task.sleep(for: .seconds(3))
         guard let renderer = coordinator.renderer else { return write("sc104", ["error": "no renderer"]) }
         let prewarm = ProcessInfo.processInfo.environment["PROJECTM_PREWARM"] != "0"
+        let dwell = max(1, Int(ProcessInfo.processInfo.environment["PROJECTM_DWELL"] ?? "") ?? 3)
+        let pickCount = Int(ProcessInfo.processInfo.environment["PROJECTM_PICKS"] ?? "") ?? 200
         (renderer as? ANGLERenderer)?.prewarmEnabled = prewarm
         let presets = coordinator.presets
         await presets.select(first, in: .all)
         try? await Task.sleep(for: .seconds(1))
         var samples: [Double] = []
         var loadMs: [Double] = []
+        var fps: [Double] = []
         var picks: [String] = []
         var packs: [String: Int] = [:]
         var failures = 0
-        for _ in 0..<200 {   // 50 picks swung between 94% and 98% across two D1 runs
+        for _ in 0..<pickCount {   // 50 picks swung between 94% and 98% across two D1 runs
             let before = renderer.presentedFrameCount
             let start = Date()
             await presets.random()
@@ -186,14 +189,23 @@ enum AutomationRunner {
             samples.append(Date().timeIntervalSince(start) * 1000)
             picks.append(presets.current?.id ?? "none")
             packs[presets.current?.source ?? "none", default: 0] += 1
-            try? await Task.sleep(for: .seconds(3))
+            // The dwell: the warm-up runs now, so record the visible frame rate (1 s windows).
+            var last = renderer.metrics
+            for _ in 0..<(dwell * 4) {
+                try? await Task.sleep(for: .milliseconds(250))
+                let now = renderer.metrics
+                if now != last, now.framesPerSecond > 0 { fps.append(now.framesPerSecond); last = now }
+            }
         }
         let sorted = samples.sorted()
         write("sc104", [
-            "scope": presets.scopeLine, "prewarm": prewarm, "dwellSeconds": 3,
+            "scope": presets.scopeLine, "prewarm": prewarm, "dwellSeconds": dwell,
             "prewarmedCount": (renderer as? ANGLERenderer)?.prewarmedCount ?? 0, "samplesMs": samples, "loadMs": loadMs, "picks": picks, "picksByPack": packs,
             "medianMs": sorted[sorted.count / 2], "p95Ms": sorted[Int(Double(sorted.count) * 0.95) - 1],
             "fractionUnder1s": Double(samples.filter { $0 < 1000 }.count) / Double(samples.count),
+            "dwellFps": fps, "dwellFpsMean": fps.isEmpty ? 0 : fps.reduce(0, +) / Double(fps.count),
+            "dwellFpsMin": fps.min() ?? 0,
+            "dwellFractionAtLeast55": fps.isEmpty ? 0 : Double(fps.filter { $0 >= 55 }.count) / Double(fps.count),
             "loadFailures": failures, "blendSeconds": 2,
         ])
         exitSoon()

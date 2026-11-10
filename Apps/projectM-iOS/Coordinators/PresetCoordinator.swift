@@ -194,14 +194,14 @@ final class PresetCoordinator {
     }
 
     /// After each switch: choose the next Random pick and ask the renderer to warm it and the next
-    /// and previous presets in the scope (SC-104). Random first, then Next, then Previous.
+    /// preset in the scope (SC-104). Previous is left out: warming costs frame rate, and Previous is
+    /// the least used.
     private func planUpcoming() {
         let scopeMembers = members
         var generator = SystemRandomNumberGenerator()
         plannedRandom = ScopeStepper.random(scopeMembers, excluding: current, using: &generator)
         var upcoming: [IndexedPreset] = []
-        for candidate in [plannedRandom, ScopeStepper.step(scopeMembers, from: current, by: 1),
-                          ScopeStepper.step(scopeMembers, from: current, by: -1)] {
+        for candidate in [plannedRandom, ScopeStepper.step(scopeMembers, from: current, by: 1)] {
             if let candidate, candidate != current, !upcoming.contains(candidate) { upcoming.append(candidate) }
         }
         loader.prewarm(upcoming)

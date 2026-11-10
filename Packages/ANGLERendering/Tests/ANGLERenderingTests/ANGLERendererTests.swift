@@ -60,6 +60,7 @@ final class ANGLERendererTests: XCTestCase {
     /// the visible engine then switches to one and still draws, and a newer request replaces the queue.
     func testPrewarmRunsInTheBackgroundAndTheSwitchStillDraws() async throws {
         let renderer = try makeLaidOut()
+        renderer.prewarmDelay = .zero
         try await renderer.setPreset(preset("100-square.milk"))
         renderer.prewarm([preset("110-per_pixel.milk"), preset("200-wave.milk")])
         for _ in 0..<200 where renderer.prewarmedCount < 2 {
@@ -72,6 +73,20 @@ final class ANGLERendererTests: XCTestCase {
         for _ in 0..<30 { XCTAssertTrue(renderer.renderFrame(present: false)) }
         XCTAssertGreaterThan(litPixels(renderer.readPixels()), 0, "the warmed preset draws")
         XCTAssertEqual(renderer.prewarmedCount, 2)
+    }
+
+    /// A newer request before the delay ends replaces the older one, so a fast run of switches warms
+    /// only the latest candidates.
+    func testPrewarmWaitsForTheDelayAndANewerRequestWins() async throws {
+        let renderer = try makeLaidOut()
+        renderer.prewarmDelay = .milliseconds(300)
+        renderer.prewarm([preset("110-per_pixel.milk")])
+        renderer.prewarm([preset("200-wave.milk")])
+        try await Task.sleep(for: .milliseconds(150))
+        XCTAssertEqual(renderer.prewarmedCount, 0, "nothing before the delay")
+        for _ in 0..<100 where renderer.prewarmedCount < 1 { try await Task.sleep(for: .milliseconds(30)) }
+        try await Task.sleep(for: .milliseconds(300))
+        XCTAssertEqual(renderer.prewarmedCount, 1, "only the newer request")
     }
 
     func testPrewarmCanBeTurnedOff() async throws {

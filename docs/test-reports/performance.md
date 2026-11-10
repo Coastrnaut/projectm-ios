@@ -294,3 +294,41 @@ stays on a preset for seconds, and the warm-up needs that time.
 - **Not yet measured:** D3 with the warm-up (SC-104 names D1 only), and the frame-rate cost of
   warming while visuals play. The warm-up thread runs at utility priority. On the simulator, the
   ANGLE tests keep the visible engine drawing during a warm-up.
+
+### SC-104 warm-up: frame-rate cost and the delayed warm-up (2026-11-10)
+
+A later D1 run also recorded the visible frame rate during the dwell (1 s windows). It showed that
+warming right after each switch cost frame rate. It overlapped the 2 s blend and added
+background pipeline compiles while the visible renderer drew; ANGLE serializes GL work across
+contexts, the likely reason.
+
+| D1, 200 picks, 3 s apart | Immediate warm-up (3 candidates) | Warm-up off |
+|---|---|---|
+| Switches under 1 s | 96.5% | 94.5% |
+| Median, p95 | 106 ms, 875 ms | 177 ms, 1,031 ms |
+| Dwell frame rate, mean | **29.0 fps** | 42.7 fps |
+| 1 s windows ≥ 55 fps | 6% | 43% |
+
+**Change.**
+- The renderer starts warming 2.5 s after a request (`prewarmDelay`), once the blend is over.
+- A newer request replaces a pending one.
+- Only two candidates are warmed: the planned Random pick and Next. Previous is left out.
+
+**Re-measured with a realistic dwell.** D1, 100 picks, 8 s on each preset:
+
+| D1, 100 picks, 8 s apart | Delayed warm-up (2 candidates) | Warm-up off |
+|---|---|---|
+| Switches under 1 s | 96% | 98% |
+| Median, p95 | **103 ms**, 898 ms | 130 ms, 657 ms |
+| Dwell frame rate, mean | **53.5 fps** | 51.1 fps |
+| 1 s windows ≥ 55 fps | **81%** | 76.5% |
+
+**Conclusions.**
+- **The delayed warm-up has no frame-rate cost.** It is slightly better, because the visible
+  renderer compiles less. It keeps typical switches faster.
+- **SC-104 passes at a realistic pace with or without it.** With 100 picks, a 2-point difference is
+  within run-to-run noise. The earlier SC-104 misses (92%, 94.5%) came with switches 0.3-3 s apart.
+- **Shipping choice:** the delayed warm-up stays.
+- **Cache caveat:** Metal also keeps compiled shaders on disk between launches, so presets picked
+  in an earlier run are faster later. The runs pick randomly from 12,819 pack presets, so the
+  overlap between runs is small.

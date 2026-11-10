@@ -290,8 +290,10 @@ def cmd_perf(args) -> None:
     if "sc102" in only:
         run_mode(target, "sc102", "automation-sc102", 120)
     if "sc104" in only:   # 200 picks, 3 s apart: about 15 minutes
-        run_mode(target, "sc104", "automation-sc104", 1800,
-                 {"PROJECTM_PREWARM": "0"} if args.no_prewarm else None)
+        extra = {"PROJECTM_DWELL": str(args.dwell), "PROJECTM_PICKS": str(args.picks)}
+        if args.no_prewarm:
+            extra["PROJECTM_PREWARM"] = "0"
+        run_mode(target, "sc104", "automation-sc104", 600 + args.picks * (args.dwell + 2), extra)
     summarize(target.out_dir)
 
 
@@ -508,6 +510,8 @@ def verdicts_for(d: Path) -> dict[str, tuple[bool, str]]:
     shipping = [r for r in sc104 if r.get("prewarm", True)]   # warm-up off runs are comparisons only
     if (r := (shipping or sc104 or [None])[-1]) and "fractionUnder1s" in r:
         warm = "" if "prewarm" not in r else f", warm-up {'on' if r['prewarm'] else 'off'}"
+        if "dwellFpsMean" in r:
+            warm += f", dwell {r['dwellFpsMean']:.1f} fps mean, {r['dwellFractionAtLeast55']:.0%} of 1 s windows ≥ 55 fps"
         out["SC-104"] = (r["fractionUnder1s"] >= 0.95, f"{r['fractionUnder1s']:.0%} under 1 s, p95 {r['p95Ms']:.0f} ms{warm}, packs {r['picksByPack']}")
     if (d / "sc103.json").exists():
         for name, row in json.loads((d / "sc103.json").read_text()).items():
@@ -533,6 +537,8 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--repeat", type=int, default=10, help="recorded launches for SC-101")
         p.add_argument("--only", help="perf: a comma-separated subset of sc101,sc102,sc104")
         p.add_argument("--no-prewarm", action="store_true", help="perf: SC-104 with the preset warm-up off (comparison)")
+        p.add_argument("--dwell", type=int, default=3, help="perf: seconds on each preset in SC-104")
+        p.add_argument("--picks", type=int, default=200, help="perf: Random picks in SC-104")
         p.add_argument("--step", choices=["purchase", "relaunch", "offline", "restore"], help="entitlement: one step only")
     size = sub.add_parser("size")
     size.add_argument("--old-archive", default="~/Library/Developer/Xcode/Archives/2026-11-10/ProjectMiOS 1.0 (1).xcarchive")
