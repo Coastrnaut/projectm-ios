@@ -30,6 +30,9 @@ public struct AnalyzerUpdate: Sendable, Equatable {
     /// Monotonic per-analyzer sequence. Consumers ignore updates older than the newest seen,
     /// so a published update that arrives late never overwrites a newer synchronous result.
     public var sequence: UInt64
+    /// Set once the Normalizer met an unconvertible format in this session (FR-017); the manager
+    /// then stops the source with this reason. Normalization stays off until the next attempt.
+    public var conversionFailure: StopReason? = nil
 }
 
 public final class AudioAnalyzer: @unchecked Sendable {
@@ -53,6 +56,10 @@ public final class AudioAnalyzer: @unchecked Sendable {
     private var attemptPending = false
     private var sequence: UInt64 = 0
     private var onUpdate: (@Sendable (AnalyzerUpdate) -> Void)?
+    /// Normalized audio for the renderer (research R-05/R-06), filled on this queue.
+    public let normalizedOutput = NormalizedPCMRing()
+    private let normalizer: Normalizer
+    private var conversionFailure: StopReason?
 
     /// Maximum transitions recorded per session (export schema `maxItems`).
     public static let maxTransitions = 1000
@@ -63,6 +70,7 @@ public final class AudioAnalyzer: @unchecked Sendable {
         self.clock = clock
         sessionStart = clock()
         classifier = AudioStateClassifier(thresholds: thresholds)
+        normalizer = Normalizer(output: normalizedOutput)
         scratchCount = PCMSink.maxSampleRate * PCMSink.maxChannels / 10   // up to 100 ms per drain
         scratch = UnsafeMutablePointer<Float>.allocate(capacity: scratchCount)
         scratch.initialize(repeating: 0, count: scratchCount)
@@ -173,7 +181,13 @@ public final class AudioAnalyzer: @unchecked Sendable {
         let now = clock()
         let before = classifier.state
         let channels = max(1, sink.currentChannelCount)
-        let sampleRate = sink.statistics().format?.sampleRate ?? 48_000
+        let format = sink.statistics().format
+        let sampleRate = format?.sampleRate ?? 48_000
+        // The ring holds interleaved Float32 with `channels` channels (PCMSink keeps at most 8).
+        let normalizedInput = format.map {
+            AudioFormat(sampleRate: $0.sampleRate, channelCount: channels, isInterleaved: true, sampleType: .float32)
+        }
+        let layout = sink.currentLayout
         var total = 0
         var peak: Float = LevelMeter.floorDBFS
         var rms: Float = LevelMeter.floorDBFS
@@ -183,6 +197,11 @@ public final class AudioAnalyzer: @unchecked Sendable {
             let levels = LevelMeter.measure(scratch, count: n)
             peak = max(peak, levels.peakDBFS)
             rms = max(rms, levels.rmsDBFS)
+            if conversionFailure == nil, let normalizedInput,
+               case .failed(let reason) = normalizer.process(scratch, frames: n / channels,
+                                                             format: normalizedInput, layout: layout) {
+                conversionFailure = reason
+            }
             total += n
             if n < scratchCount { break }
         }
@@ -211,6 +230,9 @@ public final class AudioAnalyzer: @unchecked Sendable {
         pending.removeAll(keepingCapacity: true)
         lastLevels = .silent
         lastPublish = -.infinity
+        normalizer.reset()
+        normalizedOutput.reset()
+        conversionFailure = nil
     }
 
     private func recordIfChanged(from before: AudioState, at now: Double) {
@@ -237,6 +259,6 @@ public final class AudioAnalyzer: @unchecked Sendable {
                        hasVerifiedActiveAudio: classifier.hasVerifiedActiveAudio,
                        levels: lastLevels, statistics: sink.statistics(),
                        newTransitions: pending, sessionSeconds: sessionSeconds(at: now),
-                       sequence: sequence)
+                       sequence: sequence, conversionFailure: conversionFailure)
     }
 }

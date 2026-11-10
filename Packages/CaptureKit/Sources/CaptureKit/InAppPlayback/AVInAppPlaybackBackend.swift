@@ -66,8 +66,10 @@ public final class AVInAppPlaybackBackend: InAppPlaybackBackend {
         // it on its real-time messenger queue. CaptureLabUITests hit this trap in this tap on the
         // iOS Simulator (crash reports fault in this closure); AVMicrophoneBackend's input tap
         // had the same pattern and got the same fix.
+        let layout = ChannelLayoutTag(rawValue: tapFormat.channelLayout?.layoutTag ?? 0)
         mixer.installTap(onBus: 0, bufferSize: 1024, format: tapFormat) { @Sendable tapBuffer, _ in
-            sink.write(tapBuffer.audioBufferList, format: format, frameCount: Int(tapBuffer.frameLength))
+            sink.write(tapBuffer.audioBufferList, format: format, frameCount: Int(tapBuffer.frameLength),
+                       layout: layout)
         }
         engine.prepare()
         do {

@@ -116,7 +116,11 @@ final class SampleBufferAudioWriter: @unchecked Sendable {
 
         let outcome: SampleBufferAudioOutcome
         if Self.buffersHold(frames: frames, format: format, list: UnsafePointer(list)) {
-            sink.write(UnsafePointer(list), format: format, frameCount: frames)
+            // The layout tag lets the Normalizer downmix more than 2 channels (R-05); a CoreMedia
+            // getter that returns a pointer into the format description, so nothing is allocated.
+            let layout = CMAudioFormatDescriptionGetChannelLayout(description, sizeOut: nil)?.pointee.mChannelLayoutTag ?? 0
+            sink.write(UnsafePointer(list), format: format, frameCount: frames,
+                       layout: ChannelLayoutTag(rawValue: layout))
             outcome = .written(frames: frames)
         } else {
             outcome = .bufferTooShort

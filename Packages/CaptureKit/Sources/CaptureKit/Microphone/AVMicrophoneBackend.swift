@@ -90,8 +90,9 @@ public final class AVMicrophoneBackend: MicrophoneBackend {
         // Playback tap crash that CaptureLabUITests found on the iOS Simulator; it was fixed here
         // preemptively. No test has yet run this tap (Microphone Active audio is checked on
         // device in T049).
+        let layout = ChannelLayoutTag(rawValue: avFormat.channelLayout?.layoutTag ?? 0)
         input.installTap(onBus: 0, bufferSize: 1024, format: avFormat) { @Sendable buffer, _ in
-            sink.write(buffer.audioBufferList, format: format, frameCount: Int(buffer.frameLength))
+            sink.write(buffer.audioBufferList, format: format, frameCount: Int(buffer.frameLength), layout: layout)
         }
         engine.prepare()
         do {

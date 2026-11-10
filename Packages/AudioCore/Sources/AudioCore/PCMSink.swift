@@ -16,7 +16,7 @@
 //
 // Storage: interleaved Float32 for up to `maxChannels` channels at the native rate. Integer
 // samples are converted to Float32; planar input is interleaved. Streams with more channels
-// keep the first `maxChannels` (proper downmixing is Plan Phase B, FR-017). The ring holds
+// keep the first `maxChannels` (the Normalizer downmixes, FR-017; research R-05). The ring holds
 // 1 s of audio at up to `maxSampleRate` (capacity = maxSampleRate × maxChannels samples).
 //
 // Phase A consumers (level metering, classification) are channel-agnostic, so a format change
@@ -45,6 +45,8 @@ public final class PCMSink: @unchecked Sendable {
     private let formatChanges = Atomic<Int>(0)
     private let packedFormat = Atomic<UInt64>(0)
     private let sessionStartNs = Atomic<UInt64>(0)
+    /// The source's channel layout tag (`ChannelLayoutTag.rawValue`), 0 when unknown.
+    private let layoutTag = Atomic<UInt32>(0)
 
     public init() {
         ring = SPSCRingBuffer(capacity: PCMSink.maxSampleRate * PCMSink.maxChannels)
@@ -76,6 +78,7 @@ public final class PCMSink: @unchecked Sendable {
         lateBuffers.store(0, ordering: .relaxed)
         formatChanges.store(0, ordering: .relaxed)
         packedFormat.store(0, ordering: .relaxed)
+        layoutTag.store(0, ordering: .relaxed)
         sessionStartNs.store(start, ordering: .releasing)
     }
 
@@ -89,8 +92,10 @@ public final class PCMSink: @unchecked Sendable {
 
     // MARK: - Producer API (real-time safe)
 
-    /// Interleaved samples (`format.isInterleaved` must be true).
+    /// Interleaved samples (`format.isInterleaved` must be true). `layout` is the source's channel
+    /// layout, if it reports one; the Normalizer uses it to downmix more than 2 channels (R-05).
     public func writeInterleaved(_ samples: UnsafeRawPointer, frames: Int, format: AudioFormat,
+                                 layout: ChannelLayoutTag = .unknown,
                                  hostTimeNs: UInt64 = MonotonicClock.nowNanoseconds()) {
         guard frames > 0, format.isValid else { return }
         let inChannels = format.channelCount
@@ -112,12 +117,13 @@ public final class PCMSink: @unchecked Sendable {
             ring.write(scratch, count: n * outChannels)
             offset += n
         }
-        record(frames: frames, format: format, hostTimeNs: hostTimeNs)
+        record(frames: frames, format: format, layout: layout, hostTimeNs: hostTimeNs)
     }
 
     /// Planar samples: `planes[c]` points at channel c's samples (`format.isInterleaved` false).
     public func writePlanar(_ planes: UnsafePointer<UnsafeRawPointer?>, planeCount: Int, frames: Int,
-                            format: AudioFormat, hostTimeNs: UInt64 = MonotonicClock.nowNanoseconds()) {
+                            format: AudioFormat, layout: ChannelLayoutTag = .unknown,
+                            hostTimeNs: UInt64 = MonotonicClock.nowNanoseconds()) {
         guard frames > 0, format.isValid, planeCount > 0 else { return }
         let outChannels = min(planeCount, PCMSink.maxChannels)
         var offset = 0
@@ -138,7 +144,7 @@ public final class PCMSink: @unchecked Sendable {
             ring.write(scratch, count: n * outChannels)
             offset += n
         }
-        record(frames: frames, format: format, hostTimeNs: hostTimeNs)
+        record(frames: frames, format: format, layout: layout, hostTimeNs: hostTimeNs)
     }
 
     // MARK: - Consumer API
@@ -164,6 +170,11 @@ public final class PCMSink: @unchecked Sendable {
         )
     }
 
+    /// Channel layout of the latest write (`.unknown` if the source reported none).
+    public var currentLayout: ChannelLayoutTag {
+        ChannelLayoutTag(rawValue: layoutTag.load(ordering: .acquiring))
+    }
+
     /// Current channel count of the buffered audio (0 before the first write).
     public var currentChannelCount: Int {
         min(PCMSink.unpack(packedFormat.load(ordering: .acquiring))?.channelCount ?? 0, PCMSink.maxChannels)
@@ -183,7 +194,8 @@ public final class PCMSink: @unchecked Sendable {
         }
     }
 
-    private func record(frames: Int, format: AudioFormat, hostTimeNs: UInt64) {
+    private func record(frames: Int, format: AudioFormat, layout: ChannelLayoutTag, hostTimeNs: UInt64) {
+        layoutTag.store(layout.rawValue, ordering: .releasing)
         let packed = PCMSink.pack(format)
         let previous = packedFormat.exchange(packed, ordering: .acquiringAndReleasing)
         if previous != 0 && previous != packed {

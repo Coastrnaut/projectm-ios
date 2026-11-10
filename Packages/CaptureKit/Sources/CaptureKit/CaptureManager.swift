@@ -95,6 +95,11 @@ public final class CaptureManager {
 
     /// FR-014: a third-party content name is shown only if the OS identified it and Active audio
     /// was verified for it in this session. Otherwise nil, and the UI shows "System/App Capture".
+    /// Normalized audio (Float32 interleaved stereo, 44.1 kHz) for the renderer, filled by the
+    /// analysis work queue: source → PCMSink → work queue → Normalizer → normalized ring
+    /// (research R-05/R-06). The same reader serves every session; each attempt empties it.
+    public nonisolated var normalizedOutput: any NormalizedPCMReader { analyzer.normalizedOutput }
+
     public var displayedContentIdentity: String? {
         guard activeMode == .systemAppCapture, hasVerifiedActiveAudio,
               let identifying = current as? ContentIdentifying else { return nil }
@@ -377,6 +382,10 @@ public final class CaptureManager {
         prolongedSilenceHint = update.prolongedSilenceHint
         hasVerifiedActiveAudio = update.hasVerifiedActiveAudio
         sessionSeconds = update.sessionSeconds
+        if let reason = update.conversionFailure, update.state.isRunning, let source = current {
+            // FR-017: an unconvertible format stops the source with an error, like a source failure.
+            Task { await self.failForConversion(reason, source: source) }
+        }
         if update.statistics.formatChangeCount > lastFormatChangeCount {
             lastFormatChangeCount = update.statistics.formatChangeCount
             log("formatChange")
@@ -403,6 +412,15 @@ public final class CaptureManager {
 
     /// Drives one analysis pass and applies it immediately (tests only). `step` also publishes
     /// the same update asynchronously; `receive` then drops it as already applied.
+    private func failForConversion(_ reason: StopReason, source: any AudioSource) async {
+        await serialized {
+            guard self.current === source, self.state.isRunning else { return }
+            // The export records it as the failure reason and stop detail (no schema event exists).
+            await self.stopCurrent()
+            self.apply(.failed(reason))
+        }
+    }
+
     func stepAnalysisForTesting() {
         receive(analyzer.step())
     }

@@ -77,6 +77,19 @@ final class FakeAudioSource: AudioSource, ContentIdentifying {
 
     func emit(_ event: SourceEvent) { continuation?.yield(event) }
 
+    /// Writes `frames` frames of constant-amplitude interleaved Float32 audio in `format`.
+    func pushAudio(amplitude: Float, frames: Int, format: AudioFormat, layout: ChannelLayoutTag = .unknown) {
+        guard let sink else { return }
+        let samples = [Float](repeating: amplitude, count: frames * format.channelCount)
+        samples.withUnsafeBytes { sink.writeInterleaved($0.baseAddress!, frames: frames, format: format, layout: layout) }
+    }
+
+    /// Writes the given interleaved Float32 samples.
+    func pushInterleaved(_ samples: [Float], frames: Int, format: AudioFormat, layout: ChannelLayoutTag = .unknown) {
+        guard let sink else { return }
+        samples.withUnsafeBytes { sink.writeInterleaved($0.baseAddress!, frames: frames, format: format, layout: layout) }
+    }
+
     /// Writes `seconds` of constant-amplitude stereo audio at 48 kHz.
     func pushAudio(amplitude: Float, seconds: Double) {
         guard let sink else { return }

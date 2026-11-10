@@ -8,6 +8,7 @@ extension PCMSink {
     /// Real-time-safe write from an `AudioBufferList` (contracts/audio-source.md §PCMSink).
     /// Uses the sink's preallocated plane scratch, so this path never allocates. Single producer.
     public func write(_ list: UnsafePointer<AudioBufferList>, format: AudioFormat, frameCount: Int,
+                      layout: ChannelLayoutTag = .unknown,
                       hostTimeNs: UInt64 = MonotonicClock.nowNanoseconds()) {
         let count = Int(list.pointee.mNumberBuffers)
         guard count > 0, frameCount > 0,
@@ -17,7 +18,7 @@ extension PCMSink {
             guard let data = buffers[0].mData else { return }
             var f = format
             f.isInterleaved = true
-            writeInterleaved(UnsafeRawPointer(data), frames: frameCount, format: f, hostTimeNs: hostTimeNs)
+            writeInterleaved(UnsafeRawPointer(data), frames: frameCount, format: f, layout: layout, hostTimeNs: hostTimeNs)
         } else {
             let planes = min(count, PCMSink.maxChannels)
             // An index loop, not `for in 0..<planes`: Range iteration heap-allocates at -Onone
@@ -28,7 +29,7 @@ extension PCMSink {
                 i += 1
             }
             writePlanar(UnsafePointer(planeScratch), planeCount: planes, frames: frameCount,
-                        format: format, hostTimeNs: hostTimeNs)
+                        format: format, layout: layout, hostTimeNs: hostTimeNs)
         }
     }
 }
