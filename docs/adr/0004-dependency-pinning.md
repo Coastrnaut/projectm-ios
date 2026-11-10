@@ -42,7 +42,7 @@ slice; clients include `<projectM-4/projectM.h>`). Flags, all slices: `CMAKE_SYS
 `ENABLE_GLES=ON`, `ENABLE_PLAYLIST=OFF`, `ENABLE_SYSTEM_GLM=OFF`, `ENABLE_SYSTEM_PROJECTM_EVAL=OFF`
 (default ON would use a host copy), `ENABLE_SDL_UI=OFF`, `BUILD_TESTING=OFF`, `BUILD_DOCS=OFF`,
 `ENABLE_INSTALL=ON`, Unix Makefiles generator. Slices: `iphoneos` arm64; `iphonesimulator` arm64 +
-x86_64. Built on the project Mac 2026-11-09 (Xcode 27.2, CMake 4.4.5); the CI build is T066.
+x86_64. Built on the project Mac 2026-11-09 (Xcode 27.2, CMake 4.4.5) and in CI (T066, Xcode 26).
 
 Rules:
 
@@ -57,7 +57,9 @@ Rules:
       tag that passes ADR-0003; keep the commit only if a needed fix is untagged, with the reason
       recorded.
 - [x] glm license text verified (T064, 2026-11-09).
-- [ ] iOS CMake flags confirmed by a CI build (RI-011). Built on the project Mac 2026-11-09 (T065); CI is T066.
+- [x] iOS CMake flags confirmed by a CI build (RI-011): CI run 42737711089 (2026-11-09, job
+      `engine-xcframework`, Xcode 26 build 17F113) built the engine at `49c5005` from a fresh checkout;
+      its rerun restored it from cache (T066).
 - [ ] LGPL-2.1 / App Store review written as ADR-0005 (RI-007). Preliminary conclusion before Stage
       2; final before release.
 - [x] Preset pack licenses reviewed (RI-008): 28 presets from the owner's `frontend-uwp` fork at
