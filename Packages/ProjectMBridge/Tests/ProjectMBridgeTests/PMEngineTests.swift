@@ -123,6 +123,22 @@ final class PMEngineTests: XCTestCase {
         engine.renderFrame(toFramebuffer: UInt32(framebuffer))
     }
 
+    func testLogHandlerReceivesEngineMessages() throws {
+        final class Box: @unchecked Sendable { var lines: [String] = [] }
+        let box = Box()
+        ProjectMEngine.setLogHandler({ message, _ in box.lines.append(message) }, minimumLevel: 3)
+        defer { ProjectMEngine.setLogHandler(nil, minimumLevel: 4) }
+        let engine = try makeEngine()
+        let duringCreate = box.lines.count
+        _ = try? engine.loadPreset(atPath: preset("does-not-exist.milk"), smooth: false)
+        XCTAssertGreaterThan(box.lines.count, duringCreate, "the engine logged while loading a missing preset")
+        // Creating an engine must not leave this thread filtering out INFO messages.
+        let before = box.lines.count
+        _ = try makeEngine()
+        _ = try? engine.loadPreset(atPath: preset("does-not-exist.milk"), smooth: false)
+        XCTAssertGreaterThan(box.lines.count, before)
+    }
+
     func testHundredCreateDestroyCyclesDoNotLeak() throws {
         // Warm up once (engine statics, shader caches), then measure the footprint across 100 cycles.
         try autoreleasepool { _ = try makeEngine() }

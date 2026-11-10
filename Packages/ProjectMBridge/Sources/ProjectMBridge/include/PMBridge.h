@@ -25,8 +25,15 @@ typedef NS_ERROR_ENUM(PMEngineErrorDomain, PMEngineError) {
     PMEngineErrorEngineCreateFailed = 3,
 };
 
+/// Receives the engine's log messages: projectm_log_level values (1 trace … 6 fatal).
+typedef void (^PMEngineLogHandler)(NSString *message, NSInteger level);
+
 NS_SWIFT_NAME(ProjectMEngine)
 @interface PMEngine : NSObject
+
+/// Forwards every engine log message at `minimumLevel` or above, from any thread, to `handler`
+/// (nil removes it). For diagnostics, e.g. RendererLab's library-loading record (T072).
++ (void)setLogHandler:(nullable PMEngineLogHandler)handler minimumLevel:(NSInteger)minimumLevel;
 
 /// Creates the engine on the calling thread, which must have a current GL context. `loadProc`
 /// resolves GL entry points (PMAppleGLESLoadProc for Apple's OpenGL ES, eglGetProcAddress for ANGLE).

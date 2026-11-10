@@ -1,0 +1,59 @@
+# XcodeGen spec for RendererLab, the Phase C device harness for ADR-0003 (tasks T072, T075, T078).
+# Generate on macOS with:  xcodegen generate --spec RendererLab.yml
+# Kept apart from project.yml so the main project and CI never need the ANGLE binaries. Needs
+# Build/ProjectM.xcframework (scripts/build_projectm_xcframework.py) and Build/ANGLEFrameworks
+# (scripts/build_angle_xcframework.py). The generated RendererLab.xcodeproj is gitignored.
+# Signing: set by a human in Xcode (Constitution: Security); never by automation.
+name: RendererLab
+options:
+  bundleIdPrefix: org.projectmios
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    TARGETED_DEVICE_FAMILY: "1,2"
+    IPHONEOS_DEPLOYMENT_TARGET: "26.0"
+packages:
+  AudioCore:
+    path: Packages/AudioCore
+  ProjectMBridge:
+    path: Packages/ProjectMBridge
+  Rendering:
+    path: Packages/Rendering
+  ANGLERendering:
+    path: Packages/ANGLERendering
+targets:
+  RendererLab:
+    type: application
+    platform: iOS
+    sources:
+      - path: Apps/RendererLab
+      - path: Apps/ProjectMiOS/Resources/Presets
+        type: folder
+        buildPhase: resources
+      - path: Vendor/projectM/presets/tests
+        type: folder
+        buildPhase: resources
+      - path: Apps/CaptureLab/Resources/reference.wav
+        buildPhase: resources
+    dependencies:
+      - package: AudioCore
+      - package: ProjectMBridge
+      - package: Rendering
+      - package: ANGLERendering
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.RendererLab   # tester-only harness
+        PRODUCT_NAME: RendererLab
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: RendererLab
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIStatusBarHidden: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_UIFileSharingEnabled: YES
+        CURRENT_PROJECT_VERSION: "1"
+        MARKETING_VERSION: "1.0"

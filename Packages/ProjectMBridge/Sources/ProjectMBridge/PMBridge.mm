@@ -32,6 +32,17 @@ typedef const unsigned char *(*PMGLGetStringFn)(unsigned int);
 - (void)presetFailedWithMessage:(nullable const char *)message;
 @end
 
+static PMEngineLogHandler PMGlobalLogHandler = nil;
+static NSLock *PMGlobalLogLock = nil;
+static NSInteger PMGlobalLogLevel = 4;
+
+static PMEngineLogHandler PMCurrentGlobalLogHandler(void) {
+    [PMGlobalLogLock lock];
+    PMEngineLogHandler handler = PMGlobalLogHandler;
+    [PMGlobalLogLock unlock];
+    return handler;
+}
+
 /// Collects the engine's warning and error messages on this thread while a call runs, so a
 /// failure's NSError can say why. Set per thread, only around engine creation and preset loads.
 static void PMCollectLog(const char *message, projectm_log_level level, void *userData) {
@@ -41,13 +52,36 @@ static void PMCollectLog(const char *message, projectm_log_level level, void *us
     }
     NSMutableArray<NSString *> *lines = (__bridge NSMutableArray<NSString *> *)userData;
     NSString *line = [NSString stringWithUTF8String:message];
-    if (line) {
+    if (line == nil) {
+        return;
+    }
+    if (level >= PROJECTM_LOG_LEVEL_WARN) {
         [lines addObject:line];
+    }
+    // This thread-only collector takes precedence over the global callback, so pass messages on.
+    PMEngineLogHandler handler = PMCurrentGlobalLogHandler();
+    if (handler && level >= PMGlobalLogLevel) {
+        handler(line, (NSInteger)level);
     }
 }
 
 static NSString *PMJoin(NSArray<NSString *> *lines, NSString *fallback) {
     return lines.count > 0 ? [lines componentsJoinedByString:@" | "] : fallback;
+}
+
+
+static void PMForwardLog(const char *message, projectm_log_level level, void *userData) {
+    (void)userData;
+    if (message == NULL) {
+        return;
+    }
+    [PMGlobalLogLock lock];
+    PMEngineLogHandler handler = PMGlobalLogHandler;
+    [PMGlobalLogLock unlock];
+    NSString *line = [NSString stringWithUTF8String:message];
+    if (handler && line) {
+        handler(line, (NSInteger)level);
+    }
 }
 
 static void PMPresetSwitchFailed(const char *presetFilename, const char *message, void *userData) {
@@ -83,7 +117,8 @@ static void PMPresetSwitchFailed(const char *presetFilename, const char *message
     NSString *failure = nil;
     NSMutableArray<NSString *> *log = [NSMutableArray array];
     projectm_set_log_callback(PMCollectLog, true, (__bridge void *)log);
-    projectm_set_log_level(PROJECTM_LOG_LEVEL_WARN, true);
+    NSInteger threadLevel = PMCurrentGlobalLogHandler() ? MIN(PMGlobalLogLevel, PROJECTM_LOG_LEVEL_WARN) : PROJECTM_LOG_LEVEL_WARN;
+    projectm_set_log_level((projectm_log_level)threadLevel, true);
     try {
         _handle = projectm_create_with_opengl_load_proc(loadProc, userData);
     } catch (const std::exception &e) {
@@ -92,6 +127,7 @@ static void PMPresetSwitchFailed(const char *presetFilename, const char *message
         failure = @"unknown engine exception";
     }
     projectm_set_log_callback(NULL, true, NULL);
+    projectm_set_log_level(PROJECTM_LOG_LEVEL_NOTSET, true);   // back to the global level
     if (_handle == NULL) {
         if (error) {
             *error = PMMakeError(PMEngineErrorEngineCreateFailed,
@@ -139,6 +175,19 @@ static void PMPresetSwitchFailed(const char *presetFilename, const char *message
         projectm_pcm_add_float(_handle, samples, (unsigned int)count, PROJECTM_STEREO);
     } catch (...) {
     }
+}
+
++ (void)setLogHandler:(nullable PMEngineLogHandler)handler minimumLevel:(NSInteger)minimumLevel {
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        PMGlobalLogLock = [[NSLock alloc] init];
+    });
+    [PMGlobalLogLock lock];
+    PMGlobalLogHandler = [handler copy];
+    PMGlobalLogLevel = MAX(1, MIN(6, minimumLevel));
+    [PMGlobalLogLock unlock];
+    projectm_set_log_level((projectm_log_level)MAX(1, MIN(6, minimumLevel)), false);
+    projectm_set_log_callback(handler ? PMForwardLog : NULL, false, NULL);
 }
 
 + (NSUInteger)maxSamplesPerFrame {
