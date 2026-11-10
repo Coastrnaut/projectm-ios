@@ -46,6 +46,7 @@ final class SettingsTests: XCTestCase {
         let settings = AppSettings(defaults: defaults, systemReduceMotion: false)
         settings.showsPerformanceOverlay = true
         settings.reduceFlashing = true
+        settings.presetScope = "all"
         let keys = Set(defaults.persistentDomain(forName: suite)?.keys ?? [:].keys)
         XCTAssertEqual(keys, Set(AppSettings.allKeys), "FR-065")
     }

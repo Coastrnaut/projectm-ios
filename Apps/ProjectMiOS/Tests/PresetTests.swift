@@ -1,7 +1,10 @@
-// Task T088: presets and favorites (FR-043, FR-044, FR-045, FR-065, FR-088). Favorites and the last
-// preset persist under `favorites` and `lastPresetID` only; the list is alphabetical by display
-// name; Random never returns the current preset; the favorites filter has its empty-state text; a
-// failed load keeps the previous preset and reports "Preset could not be loaded".
+// Feature 001 T088 and feature 002 T216, T230, T245, T246: presets, favorites and scopes over the
+// library (FR-043-FR-045, FR-065, FR-088; feature 002 FR-104, FR-106-FR-109, FR-114-FR-119,
+// FR-123). Favorites and the last preset persist under `favorites` and `lastPresetID`; the scope
+// under `settings.presetScope`; lists are alphabetical; Next/Previous wrap within the scope; Random
+// never repeats; locked presets never play; a failed load keeps the previous preset, reports it and
+// is excluded for the session.
+import PresetLibrary
 import Rendering
 import XCTest
 @testable import ProjectMiOS
@@ -20,22 +23,41 @@ final class PresetTests: XCTestCase {
         defaults.removePersistentDomain(forName: suite)
     }
 
-    private func preset(_ name: String) -> Preset {
-        Preset(id: "pack/\(name).milk", name: name, fileURL: URL(fileURLWithPath: "/tmp/\(name).milk"))
-    }
-
     /// Records loads; fails for the ids in `failing`.
     final class FakeLoader: PresetLoading {
         var failing: Set<String> = []
         var loaded: [String] = []
-        func load(_ preset: Preset) async throws {
+        func load(_ preset: IndexedPreset) async throws {
             if failing.contains(preset.id) { throw CocoaError(.fileReadCorruptFile) }
             loaded.append(preset.id)
         }
     }
 
-    private func makeCoordinator(_ names: [String], loader: FakeLoader = FakeLoader()) -> PresetCoordinator {
-        PresetCoordinator(presets: names.map(preset), store: FavoritesStore(defaults: defaults), loader: loader)
+    private static func record(_ id: String, _ name: String, _ source: String, _ folder: [String] = []) -> [String: Any] {
+        ["id": id, "name": name, "author": "A", "source": source, "folder": folder, "path": id,
+         "hash": String(repeating: "0", count: 40)]
+    }
+
+    /// Included presets named `included`, plus a small cream-of-the-crop pack with two folders.
+    private func library(included: [String] = ["Zeta", "alpha", "Beta 10", "Beta 2"]) throws -> PresetLibrary {
+        var records = included.map { Self.record("frontend-uwp/\($0).milk", $0, "included") }
+        records += [Self.record("cream-of-the-crop/F/S/c1.milk", "C1", "cream-of-the-crop", ["F", "S"]),
+                    Self.record("cream-of-the-crop/F/S/c2.milk", "C2", "cream-of-the-crop", ["F", "S"]),
+                    Self.record("cream-of-the-crop/F/S/c3.milk", "C3", "cream-of-the-crop", ["F", "S"]),
+                    Self.record("cream-of-the-crop/G/g1.milk", "G1", "cream-of-the-crop", ["G"])]
+        let packs: [[String: Any]] = [
+            ["id": "included", "title": "Included", "sourceURL": "u", "commit": "c", "license": "l", "presetCount": included.count, "authors": [], "locked": false],
+            ["id": "cream-of-the-crop", "title": "Cream of the Crop", "sourceURL": "u", "commit": "c", "license": "l", "presetCount": 4, "authors": [], "locked": true],
+        ]
+        return try PresetLibrary(index: JSONSerialization.data(withJSONObject: ["version": 1, "presets": records]),
+                                 packs: JSONSerialization.data(withJSONObject: ["version": 1, "packs": packs]))
+    }
+
+    private func makeCoordinator(_ library: PresetLibrary, loader: FakeLoader = FakeLoader()) -> PresetCoordinator {
+        let coordinator = PresetCoordinator(store: FavoritesStore(defaults: defaults),
+                                            settings: AppSettings(defaults: defaults, systemReduceMotion: false), loader: loader)
+        coordinator.attach(library)
+        return coordinator
     }
 
     // MARK: - FavoritesStore (FR-044, FR-065)
@@ -59,82 +81,164 @@ final class PresetTests: XCTestCase {
         XCTAssertEqual(FavoritesStore(defaults: defaults).lastPresetID, "pack/x.milk")
     }
 
-    func testOnlyTheFR065KeysAreWritten() {
-        let store = FavoritesStore(defaults: defaults)
-        store.toggle("pack/a.milk")
-        store.lastPresetID = "pack/a.milk"
+    func testOnlyTheFR065KeysAreWritten() async throws {
+        let coordinator = makeCoordinator(try library())
+        coordinator.toggleFavorite(coordinator.members[0])
+        await coordinator.select(coordinator.members[1], in: .favorites)
         let written = Set(defaults.persistentDomain(forName: suite)?.keys.map { $0 } ?? [])
-        XCTAssertEqual(written, ["favorites", "lastPresetID"])
+        XCTAssertEqual(written, ["favorites", "lastPresetID", "settings.presetScope"], "feature 002 FR-123")
     }
 
-    // MARK: - Order, navigation, random (FR-043, FR-088)
+    // MARK: - Included behaves as release 1.0 (SC-107, FR-104)
 
-    func testPresetsAreAlphabeticalByDisplayName() {
-        let coordinator = makeCoordinator(["Zeta", "alpha", "Beta 10", "Beta 2"])
-        XCTAssertEqual(coordinator.browserItems.map(\.name), ["alpha", "Beta 2", "Beta 10", "Zeta"])
+    func testIncludedOrderIsAlphabeticalAsIn1_0() throws {
+        let coordinator = makeCoordinator(try library())
+        XCTAssertEqual(coordinator.scope, .included)
+        XCTAssertEqual(coordinator.members.map(\.name), ["alpha", "Beta 2", "Beta 10", "Zeta"])
     }
 
-    func testNextAndPreviousWrapAround() async {
-        let coordinator = makeCoordinator(["a", "b", "c"])
-        await coordinator.select(coordinator.presets[2])
+    /// SC-107 against the real bundled index: before purchase the scope is exactly the 28 Included
+    /// presets, in the order release 1.0's PresetRepository gives.
+    func testBundledIncludedScopeMatchesRelease1_0() async throws {
+        let lib = try await PresetLibrary.load(from: .main)
+        let coordinator = makeCoordinator(lib)
+        let names = coordinator.members.map(\.name)
+        XCTAssertEqual(names.count, 28)
+        XCTAssertTrue(coordinator.members.allSatisfy(\.isIncluded))
+        let release1_0 = try PresetRepository(presetsFolder: XCTUnwrap(Bundle.main.url(forResource: "Presets", withExtension: nil))).load()
+        XCTAssertEqual(names, release1_0.presets.map(\.name), "release 1.0's catalog order")
+        XCTAssertGreaterThan(lib.presets.count, 12_000, "the whole library is indexed")
+    }
+
+    func testNextAndPreviousWrapAround() async throws {
+        let coordinator = makeCoordinator(try library(included: ["a", "b", "c"]))
+        await coordinator.select(coordinator.members[2])
         await coordinator.next()
         XCTAssertEqual(coordinator.current?.name, "a")
         await coordinator.previous()
         XCTAssertEqual(coordinator.current?.name, "c")
     }
 
-    func testRandomNeverReturnsTheCurrentPreset() async {
-        let coordinator = makeCoordinator(["a", "b", "c", "d"])
-        await coordinator.select(coordinator.presets[0])
+    func testRandomNeverReturnsTheCurrentPreset() async throws {
+        let coordinator = makeCoordinator(try library(included: ["a", "b", "c", "d"]))
+        await coordinator.select(coordinator.members[0])
         for _ in 0..<200 {
             let before = coordinator.current
             await coordinator.random()
             XCTAssertNotEqual(coordinator.current, before)
+            XCTAssertTrue(coordinator.current?.isIncluded == true, "never a locked preset")
         }
     }
 
-    func testRandomWithOnePresetKeepsIt() async {
-        let coordinator = makeCoordinator(["only"])
-        await coordinator.select(coordinator.presets[0])
+    func testRandomWithOnePresetKeepsIt() async throws {
+        let coordinator = makeCoordinator(try library(included: ["only"]))
+        await coordinator.select(coordinator.members[0])
         await coordinator.random()
         XCTAssertEqual(coordinator.current?.name, "only")
     }
 
-    func testSelectionIsRememberedAsTheLastPreset() async {
-        let coordinator = makeCoordinator(["a", "b"])
-        await coordinator.select(coordinator.presets[1])
-        XCTAssertEqual(FavoritesStore(defaults: defaults).lastPresetID, "pack/b.milk")
-        let reopened = makeCoordinator(["a", "b"])
-        XCTAssertEqual(reopened.initialPreset?.name, "b")
+    func testSelectionIsRememberedAndA1_0FavoriteStillResolves() async throws {
+        let store = FavoritesStore(defaults: defaults)
+        store.toggle("frontend-uwp/b.milk")                          // saved by release 1.0
+        store.toggle("frontend-uwp/gone.milk")                       // no longer in the library
+        let coordinator = makeCoordinator(try library(included: ["a", "b"]))
+        XCTAssertEqual(coordinator.favoritesListing.map(\.name), ["b"])
+        XCTAssertEqual(FavoritesStore(defaults: defaults).favorites, ["frontend-uwp/b.milk"], "missing favorites dropped at launch")
+        await coordinator.select(coordinator.members[1])
+        XCTAssertEqual(FavoritesStore(defaults: defaults).lastPresetID, "frontend-uwp/b.milk")
+        XCTAssertEqual(makeCoordinator(try library(included: ["a", "b"])).initialPreset?.name, "b")
     }
 
-    // MARK: - Favorites filter (FR-044, FR-088)
+    // MARK: - Favorites (FR-044, FR-088, FR-114)
 
-    func testFavoritesFilterAndEmptyState() {
-        let coordinator = makeCoordinator(["a", "b", "c"])
+    func testFavoritesFilterAcrossPacksAndEmptyState() throws {
+        let lib = try library(included: ["a", "b"])
+        let coordinator = makeCoordinator(lib)
         coordinator.favoritesOnly = true
-        XCTAssertEqual(coordinator.browserItems, [])
         XCTAssertEqual(coordinator.emptyStateText, "No favorites yet — tap the star on a preset to add one.")
-        coordinator.toggleFavorite(coordinator.presets[2])
-        XCTAssertEqual(coordinator.browserItems.map(\.name), ["c"])
+        coordinator.toggleFavorite(try XCTUnwrap(lib.preset(id: "cream-of-the-crop/G/g1.milk")))
+        coordinator.toggleFavorite(coordinator.members[0])
+        XCTAssertEqual(coordinator.favoritesListing.map(\.name), ["a", "G1"], "alphabetical across packs, locked listed")
         XCTAssertNil(coordinator.emptyStateText)
-        coordinator.favoritesOnly = false
-        XCTAssertEqual(coordinator.browserItems.count, 3)
     }
 
-    // MARK: - Failures (FR-045)
+    // MARK: - Failures (FR-045, FR-118)
 
-    func testFailedLoadKeepsThePreviousPresetAndReports() async {
+    func testFailedLoadKeepsThePreviousPresetReportsAndExcludesIt() async throws {
         let loader = FakeLoader()
-        let coordinator = makeCoordinator(["a", "b"], loader: loader)
-        await coordinator.select(coordinator.presets[0])
-        loader.failing = ["pack/b.milk"]
+        let coordinator = makeCoordinator(try library(included: ["a", "b", "c"]), loader: loader)
+        await coordinator.select(coordinator.members[0])
+        loader.failing = ["frontend-uwp/b.milk"]
         await coordinator.next()
         XCTAssertEqual(coordinator.current?.name, "a", "the running preset stays")
         XCTAssertEqual(coordinator.failureMessage, "Preset could not be loaded")
-        XCTAssertEqual(FavoritesStore(defaults: defaults).lastPresetID, "pack/a.milk")
-        loader.failing = []
+        XCTAssertEqual(coordinator.members.map(\.name), ["a", "c"], "excluded for the session")
         await coordinator.next()
+        XCTAssertEqual(coordinator.current?.name, "c")
         XCTAssertNil(coordinator.failureMessage, "a successful load clears the banner")
+    }
+
+    // MARK: - Scopes, locks, purchase transitions (FR-106-FR-109, FR-116-FR-119)
+
+    func testChoosingFromAFolderSetsTheScopeAndNextWrapsInside() async throws {
+        let lib = try library()
+        let coordinator = makeCoordinator(lib)
+        await coordinator.setUnlocked(true)
+        let folder = PresetScope.folder("cream-of-the-crop", ["F", "S"])
+        await coordinator.choose(try XCTUnwrap(lib.preset(id: "cream-of-the-crop/F/S/c3.milk")), from: folder)
+        XCTAssertEqual(coordinator.scope, folder)
+        XCTAssertEqual(coordinator.scopeLine, "F › S · 3")
+        await coordinator.next()
+        XCTAssertEqual(coordinator.current?.name, "C1", "wraps inside the folder")
+        for _ in 0..<50 {
+            await coordinator.random()
+            XCTAssertTrue(coordinator.current?.folder == ["F", "S"], "Random stays in the scope")
+        }
+        XCTAssertEqual(defaults.string(forKey: AppSettings.presetScopeKey), "folder:cream-of-the-crop/F/S")
+    }
+
+    func testLockedPresetAsksForThePurchaseAndPlaysAfterUnlock() async throws {
+        let lib = try library()
+        let loader = FakeLoader()
+        let coordinator = makeCoordinator(lib, loader: loader)
+        let locked = try XCTUnwrap(lib.preset(id: "cream-of-the-crop/G/g1.milk"))
+        await coordinator.choose(locked, from: .pack("cream-of-the-crop"))
+        XCTAssertTrue(coordinator.purchaseRequested)
+        XCTAssertTrue(loader.loaded.isEmpty, "nothing locked plays")
+        await coordinator.setUnlocked(true)
+        XCTAssertEqual(coordinator.scope, .pack("cream-of-the-crop"), "FR-119")
+        XCTAssertEqual(coordinator.current, locked, "the tapped preset plays (FR-107)")
+    }
+
+    func testRefundFallsBackToIncludedAndTheCurrentPresetKeepsPlaying() async throws {
+        let lib = try library()
+        let coordinator = makeCoordinator(lib)
+        await coordinator.setUnlocked(true)
+        await coordinator.select(try XCTUnwrap(lib.preset(id: "cream-of-the-crop/G/g1.milk")))
+        await coordinator.setUnlocked(false)
+        XCTAssertEqual(coordinator.scope, .included)
+        XCTAssertEqual(coordinator.current?.name, "G1", "keeps playing (FR-109)")
+        await coordinator.next()
+        XCTAssertTrue(coordinator.current?.isIncluded == true)
+    }
+
+    func testSearchScopeIsStoredAsAllAndAStaleScopeFallsBack() async throws {
+        let lib = try library()
+        let coordinator = makeCoordinator(lib)
+        await coordinator.setUnlocked(true)
+        await coordinator.choose(try XCTUnwrap(lib.preset(id: "cream-of-the-crop/G/g1.milk")), from: .search("g1"))
+        XCTAssertEqual(defaults.string(forKey: AppSettings.presetScopeKey), "all", "no search text stored")
+        defaults.set("pack:removed-pack", forKey: AppSettings.presetScopeKey)
+        XCTAssertEqual(makeCoordinator(lib).scope, .included, "unresolvable stored scope falls back before purchase")
+    }
+
+    func testNextInALockedPackRequestsThePurchase() async throws {
+        let coordinator = makeCoordinator(try library())
+        defaults.set("pack:cream-of-the-crop", forKey: AppSettings.presetScopeKey)
+        let locked = makeCoordinator(try library())
+        XCTAssertTrue(locked.members.isEmpty)
+        await locked.next()
+        XCTAssertTrue(locked.purchaseRequested)
+        _ = coordinator
     }
 }

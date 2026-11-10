@@ -2,6 +2,7 @@
 // FR-085, FR-086, FR-089). The renderer's view fills the window in portrait, landscape and iPad
 // split view; a tap toggles the controls; the source-and-state indicator is always visible.
 import CaptureUI
+import PresetLibrary
 import Rendering
 import SwiftUI
 
@@ -66,8 +67,13 @@ struct VisualizerView: View {
         .statusBarHidden(coordinator.hidesSystemOverlays)
         .persistentSystemOverlays(coordinator.hidesSystemOverlays ? .hidden : .automatic)
         .sheet(isPresented: $coordinator.showPresetBrowser) {
-            PresetBrowserView(presets: coordinator.presets) { coordinator.choose($0) }
+            PresetBrowserView(presets: coordinator.presets) { coordinator.choose($0, from: $1) }
+                .sheet(isPresented: Binding(get: { coordinator.presets.purchaseRequested },
+                                            set: { coordinator.presets.purchaseRequested = $0 })) { purchaseSheet }
         }
+        // A locked pack reached from the controls (Next/Random with no playable preset).
+        .sheet(isPresented: Binding(get: { coordinator.presets.purchaseRequested && !coordinator.showPresetBrowser },
+                                    set: { coordinator.presets.purchaseRequested = $0 })) { purchaseSheet }
         .sheet(isPresented: $coordinator.showSettings) {
             SettingsView(settings: coordinator.settings,
                          reduceFlashingAvailable: coordinator.renderer?.supportsReduceFlashing ?? true)
@@ -79,6 +85,12 @@ struct VisualizerView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIAccessibility.reduceMotionStatusDidChangeNotification)) { _ in
             coordinator.systemReduceMotionChanged(UIAccessibility.isReduceMotionEnabled)
         }
+    }
+
+    private var purchaseSheet: some View {
+        PurchaseSheet(packs: coordinator.presets.library?.packs ?? [], price: coordinator.entitlements.displayPrice,
+                      state: coordinator.entitlements.state, onBuy: coordinator.buyLibrary,
+                      onRestore: coordinator.restorePurchases)
     }
 
     @ViewBuilder private var banners: some View {

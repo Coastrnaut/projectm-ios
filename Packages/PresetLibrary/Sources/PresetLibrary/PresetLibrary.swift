@@ -22,6 +22,8 @@ public final class PresetLibrary: Sendable {
     public let presets: [IndexedPreset]
     public let packs: [PresetPackInfo]
     public let home: [PresetNode]
+    /// Ids of the pack presets in PresetIndex.json order: the order of PresetArchive.bin's table.
+    public let archiveOrder: [String]
     private let byId: [String: Int]
     private let searchKeys: [String]
     private let lockedSources: Set<String>
@@ -43,6 +45,7 @@ public final class PresetLibrary: Sendable {
             }
         }
         presets = sorted
+        archiveOrder = file.presets.filter { !$0.isIncluded }.map(\.id)
         packs = packsFile.packs
         byId = Dictionary(sorted.enumerated().map { ($1.id, $0) }, uniquingKeysWith: { first, _ in first })
         searchKeys = sorted.map { Self.fold($0.name + " " + $0.author) }

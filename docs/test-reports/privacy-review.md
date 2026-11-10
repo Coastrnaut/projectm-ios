@@ -38,6 +38,8 @@ Preferences (copy: `exports/privacy/D1-preferences.plist`):
 
 No audio, listening history, source-app history or source-mode history is stored.
 
+Feature 002 (2026-11-10) adds one key to the FR-065 list: `settings.presetScope` (user setting, FR-123; a search scope is stored as `all`, never the search text). It is not in the D1 export above; the device re-check is feature 002 T241.
+
 ## Network (FR-068)
 
 - **On device**: iOS App Privacy Report (Settings › Privacy & Security), on during the session:

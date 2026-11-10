@@ -34,11 +34,19 @@ struct ControlsOverlay: View {
     }
 
     private var presetName: some View {
-        Text(coordinator.presets.current?.name ?? "No preset")
-            .font(.subheadline)
-            .lineLimit(1)
-            .truncationMode(.middle)
-            .accessibilityIdentifier("currentPreset")
+        VStack(alignment: .leading, spacing: 1) {
+            Text(coordinator.presets.current?.name ?? "No preset")
+                .font(.subheadline)
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .accessibilityIdentifier("currentPreset")
+            // Feature 002 FR-120: the scope Next/Previous/Random walk, and its playable count.
+            Text(coordinator.presets.scopeLine)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .accessibilityIdentifier("scopeLine")
+        }
     }
 
     /// One row of icon buttons (FR-087).

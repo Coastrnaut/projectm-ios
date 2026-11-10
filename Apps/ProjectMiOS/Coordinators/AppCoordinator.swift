@@ -17,6 +17,7 @@ import CaptureUI
 import Diagnostics
 import Foundation
 import Observation
+import PresetLibrary
 import Rendering
 import UIKit
 
@@ -43,6 +44,10 @@ final class AppCoordinator: VisualizationControlling {
     /// Number of source starts (UI tests check that rotation does not restart capture).
     private(set) var sourceStarts = 0
     var showPresetBrowser = false
+    /// The preset library finished loading (feature 002).
+    private(set) var libraryReady = false
+    /// The full-library purchase (feature 002 US2): StoreKit, or a fixed fake in UI tests.
+    let entitlements: any EntitlementProviding
     var showSettings = false
     /// Performance overlay and Reduce flashing (T103).
     let settings: AppSettings
@@ -84,12 +89,13 @@ final class AppCoordinator: VisualizationControlling {
         self.manager = manager
         let lifecycle = LifecycleObserver()
         self.lifecycle = lifecycle
-        var bundled: [Preset] = []
-        if let folder = Bundle.main.resourceURL?.appendingPathComponent("Presets"),
-           let catalog = try? PresetRepository(presetsFolder: folder).load() {
-            bundled = catalog.presets
-        }
-        presets = PresetCoordinator(presets: bundled, store: FavoritesStore(defaults: defaults), loader: presetLoader)
+        // Feature 002: the library (12,941 presets) loads off the main thread (SC-101).
+        presets = PresetCoordinator(store: FavoritesStore(defaults: defaults), settings: settings, loader: presetLoader)
+        #if DEBUG
+        entitlements = FakeEntitlements.fromLaunchArguments() ?? LibraryStore()
+        #else
+        entitlements = LibraryStore()
+        #endif
         #if DEBUG
         fakeSource = fake
         #endif
@@ -100,6 +106,7 @@ final class AppCoordinator: VisualizationControlling {
         lifecycleForwarding = Task { @MainActor in
             for await event in lifecycle.events { await lifecycleCoordinator.handle(event) }
         }
+        loadLibrary()
         #if DEBUG || PROJECTM_AUTOMATION
         AutomationRunner.startIfRequested(self)   // Gate 4 device runs (PROJECTM_AUTORUN)
         #endif
@@ -190,9 +197,38 @@ final class AppCoordinator: VisualizationControlling {
         }
         renderer?.attach(pcm: manager.normalizedOutput)
         applyReduceFlashing()
+        if let textures = Bundle.main.resourceURL?.appendingPathComponent("PresetTextures") {
+            renderer?.setTextureSearchPaths([textures])   // feature 002 T215
+        }
         presetLoader.renderer = renderer
-        if let preset = presets.current ?? presets.initialPreset {
-            Task { await presets.select(preset) }
+        selectInitialPresetIfReady()
+    }
+
+    /// Plays the last or first preset once both the renderer and the library are ready.
+    private func selectInitialPresetIfReady() {
+        guard renderer != nil, presets.current == nil, let preset = presets.initialPreset else { return }
+        Task { await presets.select(preset) }
+    }
+
+    /// Loads the preset library off the main thread (feature 002 T217).
+    private func loadLibrary() {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let library = try await PresetLibrary.load(from: .main)
+                presetLoader.library = library
+                presets.attach(library)
+                presets.onScopeChange { UIAccessibility.post(notification: .announcement, argument: $0) }   // FR-124
+                entitlements.onEntitlementChange = { [weak self] unlocked in
+                    Task { @MainActor in await self?.presets.setUnlocked(unlocked) }
+                }
+                await entitlements.start()
+                await presets.setUnlocked(entitlements.isUnlocked)
+                libraryReady = true
+                selectInitialPresetIfReady()
+            } catch {
+                rendererError = "Preset library: \(error)"
+            }
         }
     }
 
@@ -218,11 +254,19 @@ final class AppCoordinator: VisualizationControlling {
     func previous() { showControls(); Task { await presets.previous() } }
     func random() { showControls(); Task { await presets.random() } }
 
-    func choose(_ preset: Preset) {
-        showPresetBrowser = false
+    /// A preset chosen in the browser, from the list that becomes the scope (FR-116).
+    func choose(_ preset: IndexedPreset, from scope: PresetScope) {
         showControls()
-        Task { await presets.select(preset) }
+        Task {
+            await presets.choose(preset, from: scope)
+            if !presets.purchaseRequested { showPresetBrowser = false }
+        }
     }
+
+    // MARK: - Purchase (feature 002 US2)
+
+    func buyLibrary() { Task { await entitlements.purchase() } }
+    func restorePurchases() { Task { await entitlements.restore() } }
 
     // MARK: - Controls and lifecycle
 
@@ -292,9 +336,26 @@ final class AppCoordinator: VisualizationControlling {
 @MainActor
 final class RendererPresetLoader: PresetLoading {
     var renderer: (any VisualizerRenderer)?
+    var library: PresetLibrary?
+    private var archive: PresetArchive?
 
-    func load(_ preset: Preset) async throws {
-        guard let renderer else { throw CocoaError(.featureUnsupported) }
-        try await renderer.setPreset(preset)
+    /// Included presets load from their bundled file; pack presets from PresetArchive.bin
+    /// (feature 002 research R-30).
+    func load(_ preset: IndexedPreset) async throws {
+        guard let renderer, let resources = Bundle.main.resourceURL else { throw CocoaError(.featureUnsupported) }
+        let fileURL = resources.appendingPathComponent(preset.path)
+        var playable = Preset(id: preset.id, name: preset.name, fileURL: fileURL, packID: preset.source, author: preset.author)
+        if !preset.isIncluded {
+            playable.data = try packArchive(resources).contents(of: preset.id)
+        }
+        try await renderer.setPreset(playable)
+    }
+
+    private func packArchive(_ resources: URL) throws -> PresetArchive {
+        if let archive { return archive }
+        guard let library else { throw CocoaError(.featureUnsupported) }
+        let opened = try PresetArchive(url: resources.appendingPathComponent("PresetArchive.bin"), packIds: library.archiveOrder)
+        archive = opened
+        return opened
     }
 }

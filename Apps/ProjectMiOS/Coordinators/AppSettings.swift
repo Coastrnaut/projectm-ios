@@ -3,7 +3,9 @@
 // * Performance overlay: off by default (FR-048). Key `settings.performanceOverlay`.
 // * Reduce flashing: until the user sets it, it follows the system Reduce Motion setting (FR-072:
 //   on by default when Reduce Motion is on). Key `settings.reduceFlashing`; absent = follow.
-// Both keys are "user settings" in the FR-065 list of what may be stored.
+// * Preset scope (feature 002 FR-119, FR-123): what Next/Previous/Random walk, as
+//   PresetScope.storageValue (a search scope is stored as `all`). Key `settings.presetScope`.
+// All three keys are "user settings" in the FR-065 list of what may be stored (FR-123 adds the scope).
 import Foundation
 import Observation
 
@@ -12,12 +14,19 @@ import Observation
 final class AppSettings {
     static let performanceOverlayKey = "settings.performanceOverlay"
     static let reduceFlashingKey = "settings.reduceFlashing"
-    static let allKeys = [performanceOverlayKey, reduceFlashingKey]
+    static let presetScopeKey = "settings.presetScope"
+    static let allKeys = [performanceOverlayKey, reduceFlashingKey, presetScopeKey]
 
     @ObservationIgnored private let defaults: UserDefaults
 
     var showsPerformanceOverlay: Bool {
         didSet { defaults.set(showsPerformanceOverlay, forKey: Self.performanceOverlayKey) }
+    }
+
+    /// PresetScope.storageValue of the chosen scope; nil before any choice (FR-119).
+    var presetScope: String? {
+        get { defaults.string(forKey: Self.presetScopeKey) }
+        set { defaults.set(newValue, forKey: Self.presetScopeKey) }
     }
 
     /// The user's choice; nil follows Reduce Motion.

@@ -42,7 +42,7 @@ accounts or signing; untagged tasks are completable on the project Mac.
 - [X] T211 [P] Write `PresetSearchTests.swift`: matches name and author, case- and diacritic-insensitive, from one character; groups ordered Included then FR-102 pack order, alphabetical within; at most 200 with `truncated` — Done 2026-11-10: `PresetSearchTests` (3) pass
 - [X] T212 Implement search with precomputed folded keys in `Packages/PresetLibrary/Sources/PresetLibrary/PresetSearch.swift` — Done 2026-11-10
 - [X] T213 [P] Add a 13,000-entry synthetic-index performance test (decode and build, and one search) to `PresetLibraryTests` as a regression guard (host numbers only; device numbers in T238) — Done 2026-11-10: 13,000-entry guard; host debug build 124 ms, search 7 ms (device numbers: T238)
-- [ ] T214 Add the build phase to ProjectMiOS in `project.yml` running `scripts/build_preset_index.py --out` into the app's resources folder; confirm the built app contains the index, archive and textures and measure the bundle growth
+- [X] T214 Add the build phase to ProjectMiOS in `project.yml` running `scripts/build_preset_index.py --out` into the app's resources folder; confirm the built app contains the index, archive and textures and measure the bundle growth — Verified 2026-11-10: the built app contains the index, archive and 108 textures; growth about 26.6 MB (`docs/test-reports/preset-library.md`).
 - [X] T215 Add `-[PMBridge setTextureSearchPaths:]` (documented `projectm_set_texture_search_paths`) and `-[PMBridge loadPresetData:smooth:error:]` (`projectm_load_preset_data`) in `Packages/ProjectMBridge/Sources/ProjectMBridge/include/PMBridge.h` and `PMBridge.mm`, a test in `PMEngineTests`, and set `PresetTextures` as the search path and load pack presets from data in `ANGLERenderer` and `GLESRenderer` — Done 2026-11-10: `loadPresetData:` and `setTextureSearchPaths:`; `PMEngineTests` `testPresetLoadsFromData`, `testTextureSearchPathsAreAccepted` pass on the iOS 27.2 simulator; renderers load `Preset.data` when set and expose `setTextureSearchPaths`
 
 ---
@@ -53,9 +53,9 @@ accounts or signing; untagged tasks are completable on the project Mac.
 
 **Independent Test**: quickstart.md Scenario A.
 
-- [ ] T216 [P] [US1] Extend `Apps/ProjectMiOS/Tests/PresetTests.swift`: with the library and no unlock, the Included scope's Next/Previous order equals release 1.0's 28-preset order (SC-107); a 1.0 favorite id still resolves (FR-104); favorites of ids missing from the index are dropped at launch
-- [ ] T217 [US1] Rework `Apps/ProjectMiOS/Coordinators/PresetCoordinator.swift` to use `PresetLibrary`, the current `PresetScope` (default `included`) and an entitlement flag; `AppCoordinator` loads the library off the main thread instead of `PresetRepository`; `RendererPresetLoader` resolves `path` in the bundle
-- [ ] T218 [US1] Add `settings.presetScope` to `Apps/ProjectMiOS/Coordinators/AppSettings.swift` (with the other `settings.*` keys) with FR-123's rule (a search scope stores `all`); update `AppSettings.allKeys`, `SettingsTests` and the FR-065 key list in `docs/test-reports/privacy-review.md`
+- [X] T216 [P] [US1] Extend `Apps/ProjectMiOS/Tests/PresetTests.swift`: with the library and no unlock, the Included scope's Next/Previous order equals release 1.0's 28-preset order (SC-107); a 1.0 favorite id still resolves (FR-104); favorites of ids missing from the index are dropped at launch — Verified 2026-11-10: PresetTests on the iOS 27.2 simulator, including the real bundled index against release 1.0's PresetRepository order.
+- [X] T217 [US1] Rework `Apps/ProjectMiOS/Coordinators/PresetCoordinator.swift` to use `PresetLibrary`, the current `PresetScope` (default `included`) and an entitlement flag; `AppCoordinator` loads the library off the main thread instead of `PresetRepository`; `RendererPresetLoader` resolves `path` in the bundle — Verified 2026-11-10: app builds with no warnings; PresetTests pass.
+- [X] T218 [US1] Add `settings.presetScope` to `Apps/ProjectMiOS/Coordinators/AppSettings.swift` (with the other `settings.*` keys) with FR-123's rule (a search scope stores `all`); update `AppSettings.allKeys`, `SettingsTests` and the FR-065 key list in `docs/test-reports/privacy-review.md` — Verified 2026-11-10: SettingsTests pass; key added to `docs/test-reports/privacy-review.md`.
 - [ ] T219 [US1] Rebuild `Apps/ProjectMiOS/Views/PresetBrowserView.swift` as a `NavigationStack`: library home (Included 28, each pack with its total and a lock before purchase, All A-Z), keeping the All/Favorites picker and FR-088's empty-state text
 - [ ] T220 [US1] Add folder lists per pack structure (FR-112) and All A-Z with letter sections and a section index in `Apps/ProjectMiOS/Views/PresetFolderView.swift`
 - [ ] T221 [US1] Add `.searchable` over the library with grouped, capped results and a "Refine your search" row (FR-113) in `PresetBrowserView.swift`
@@ -71,11 +71,11 @@ accounts or signing; untagged tasks are completable on the project Mac.
 
 **Independent Test**: quickstart.md Scenario B (simulator, StoreKit test configuration).
 
-- [ ] T224 [US2] Add `Apps/ProjectMiOS/Store/ProjectMiOS.storekit` (non-consumable `org.projectmios.ProjectMiOS.fullLibrary`, $1.99) and set it as the run and test StoreKit configuration of the ProjectMiOS scheme in `project.yml`
-- [ ] T225 [P] [US2] Write `Apps/ProjectMiOS/Tests/LibraryStoreTests.swift` with `SKTestSession`: purchase unlocks; cancel, failure and Ask to Buy unlock nothing and set the matching state; approval later unlocks; refund locks; restore unlocks; no `UserDefaults` key is written (FR-110)
-- [ ] T226 [US2] Implement `Apps/ProjectMiOS/Store/LibraryStore.swift` (`EntitlementProviding`, contracts/store.md: `Product.products(for:)`, `Transaction.currentEntitlements`, `Transaction.updates`, `AppStore.sync()`; verified, unrevoked transactions only) and a DEBUG `FakeEntitlements` driven by `-uitestUnlocked`
+- [X] T224 [US2] Add `Apps/ProjectMiOS/Store/ProjectMiOS.storekit` (non-consumable `org.projectmios.ProjectMiOS.fullLibrary`, $1.99) and set it as the run and test StoreKit configuration of the ProjectMiOS scheme in `project.yml` — Verified 2026-11-10: run scheme uses it; tests load it with SKTestSession.
+- [X] T225 [P] [US2] Write `Apps/ProjectMiOS/Tests/LibraryStoreTests.swift` with `SKTestSession`: purchase unlocks; cancel, failure and Ask to Buy unlock nothing and set the matching state; approval later unlocks; refund locks; restore unlocks; no `UserDefaults` key is written (FR-110) — Verified 2026-11-10: 7 tests pass on the iOS 27.2 simulator.
+- [X] T226 [US2] Implement `Apps/ProjectMiOS/Store/LibraryStore.swift` (`EntitlementProviding`, contracts/store.md: `Product.products(for:)`, `Transaction.currentEntitlements`, `Transaction.updates`, `AppStore.sync()`; verified, unrevoked transactions only) and a DEBUG `FakeEntitlements` driven by `-uitestUnlocked` — Verified 2026-11-10 by LibraryStoreTests.
 - [ ] T227 [US2] Implement `Apps/ProjectMiOS/Views/PurchaseSheet.swift`: localized price, the four packs with counts, Buy, Restore Purchases, Close; messages "Purchase cancelled", "Waiting for approval", "Purchase failed: <reason>", "The App Store isn't available right now", and a restricted-purchases message
-- [ ] T228 [US2] Wire entitlement changes into `PresetCoordinator`: unlock → scope `pack:cream-of-the-crop` and the tapped preset plays (FR-107, FR-119); refund → scope `included`, the playing preset continues (FR-109)
+- [X] T228 [US2] Wire entitlement changes into `PresetCoordinator`: unlock → scope `pack:cream-of-the-crop` and the tapped preset plays (FR-107, FR-119); refund → scope `included`, the playing preset continues (FR-109) — Verified 2026-11-10 by PresetTests (unlock, locked tap, refund).
 - [ ] T229 [US2] Write `Apps/ProjectMiOS/UITests/PurchaseUITests.swift` with the StoreKit configuration: sheet contents, buy unlocks and switches scope, cancel shows the message
 
 ---
@@ -86,8 +86,8 @@ accounts or signing; untagged tasks are completable on the project Mac.
 
 **Independent Test**: quickstart.md Scenario C.
 
-- [ ] T230 [P] [US3] Extend `PresetTests.swift`: choosing a preset from a folder, Favorites or a search sets that scope; Next wraps inside it; Random stays inside; a stored scope that no longer resolves falls back (Included before purchase, All after)
-- [ ] T246 [P] [US3] Exclude presets that fail to load from every scope for the rest of the session (FR-118, feature 001 FR-045) in `PresetCoordinator`, with a test in `PresetTests.swift`
+- [X] T230 [P] [US3] Extend `PresetTests.swift`: choosing a preset from a folder, Favorites or a search sets that scope; Next wraps inside it; Random stays inside; a stored scope that no longer resolves falls back (Included before purchase, All after) — Verified 2026-11-10 by PresetTests.
+- [X] T246 [P] [US3] Exclude presets that fail to load from every scope for the rest of the session (FR-118, feature 001 FR-045) in `PresetCoordinator`, with a test in `PresetTests.swift` — Verified 2026-11-10 by PresetTests.testFailedLoadKeepsThePreviousPresetReportsAndExcludesIt.
 - [ ] T231 [US3] Set the scope on selection in `PresetCoordinator` and show "<scope> · <count>" under the preset name in `Apps/ProjectMiOS/Views/ControlsOverlay.swift` (FR-120)
 - [ ] T232 [US3] Accessibility (FR-124): row labels "Name, by Author[, locked]", folder counts, purchase sheet controls, and an announcement when the scope changes
 - [ ] T233 [US3] Extend `PresetLibraryUITests.swift` (unlocked via `-uitestUnlocked YES`): Fractal › Nested Spiral scope, Next wrap, Random stays inside, scope line text
