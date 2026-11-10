@@ -66,6 +66,8 @@ queue, no AURemoteIO thread).
 (`psynch_mutexwait`, `ulock_wait`, ...); none occurred inside a callback. An uncontended
 `os_unfair_lock` taken by system code makes no syscall, so no trace can show it. Our callback code
 takes no locks (atomics only, by design and review).
+Owner ruling 2026-11-09: this limit is accepted; zero lock-wait syscalls meets T063's
+"zero lock acquisitions".
 
 **Fixes made during T063** (commit `bc606fc`):
 1. The first In-App Playback run found 22 allocations on the first callback:
