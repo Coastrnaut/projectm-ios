@@ -65,7 +65,7 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
   T106, T107, T108 (privacy review on D1, zero violations), T109 (ADR-0005 final "go", owner
   approved), T110, T111 done; T105 code done, its SC-012 audit not required (owner ruling); T112 done: 1.0 (1) uploaded (app ID 6833037520, store name
   "projectM-iOS"; "projectM" and "projectM Visualizer" were taken), listing complete with
-  screenshots and silent previews (`docs/release/screenshots/`); not yet submitted to App Review
+  screenshots (`docs/release/screenshots/`) and two silent previews (not in the repo); not yet submitted to App Review
   (waiting on Apple's media processing; automatic release after approval chosen). Mac and Vision Pro
   availability unchecked. Release log: `docs/test-reports/release-report.md`. Build the binaries first:
   `python3 scripts/build_projectm_xcframework.py` and `python3 scripts/build_angle_xcframework.py`.
