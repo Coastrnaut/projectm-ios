@@ -59,4 +59,4 @@ For each source rated "Works", on the reference device, 30-minute foreground cap
 
 | Stage | Decision (go / no-go) | Approver | Date | Evidence | Claimable sources |
 |-------|-----------------------|----------|------|----------|-------------------|
-| Stage 1 → Stage 2 | *pending* | | | | *none yet* |
+| Stage 1 → Stage 2 | **go** | Project owner (Coastrnaut) | 2026-11-09 | Gate 0 met (ADR-0001/0002 accepted); T040 (`t040-us1.md`) and T041 (`t041-lifecycle.md`) on D1, D2, D3 with exports; System/App Capture delivered non-silent Spotify audio on D1 and D2 in short runs; Gates 1 and 2 waived, T049-T053 and T113 not required (ADR-0001 rulings 18, 19); ADR-0005 conditional go (T055) | **None**: no source is rated under FR-031. Product wording: "System/App Capture, where iOS allows it", plus Microphone and In-App Playback |

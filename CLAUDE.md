@@ -38,8 +38,9 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
 
 ## Where things stand (2026-11-08)
 
-- **Stage 1 / Plan Phase A** (capture feasibility) is in progress. Do not start ProjectM engine,
-  renderer, or preset work: it is blocked until the Stage 1 gate (task T056) records "go".
+- **Stage 1 is complete: T056 recorded "go" on 2026-11-09** (`docs/test-reports/compatibility-report.md`,
+  Stage Decision). No source is claimed to work (none rated; Gates 1-2 waived). Next is Stage 2,
+  Plan Phase B (audio pipeline, T057-T063); Plan Phase C (engine) only after the Plan B exit.
 - Verified: 84 Swift package tests pass on Linux (AudioCore 40, CaptureKit 33, Diagnostics 7,
   CaptureUI 4) and 15 Python script tests pass.
 - CI is green (run 42552713447, 2026-11-09). The main job runs on `macos-26` with the image's
