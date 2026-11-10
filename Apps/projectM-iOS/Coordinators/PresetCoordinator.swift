@@ -130,6 +130,22 @@ final class PresetCoordinator {
         return all.filter { $0.folder == path }
     }
 
+    /// FR-111: a home or folder row's count. Locked rows show their total; rows the user can play
+    /// show the playable count, so presets that failed to load this session are left out (FR-118).
+    func displayCount(of node: PresetNode) -> Int {
+        guard !(node.locked && !unlocked), !excludedThisSession.isEmpty, let library else { return node.presetCount }
+        let failedHere = excludedThisSession.compactMap { library.preset(id: $0) }.filter { preset in
+            switch node.scope {
+            case .included: preset.isIncluded
+            case .pack(let id): preset.source == id
+            case .folder(let id, let path): preset.source == id && preset.folder.starts(with: path)
+            case .all: unlocked || preset.isIncluded
+            case .favorites, .search: false
+            }
+        }.count
+        return max(0, node.presetCount - failedHere)
+    }
+
     func isLocked(_ preset: IndexedPreset) -> Bool { library?.isLocked(preset, unlocked: unlocked) ?? false }
 
     func isPlayable(_ preset: IndexedPreset) -> Bool { !isLocked(preset) && !excludedThisSession.contains(preset.id) }
@@ -189,7 +205,10 @@ final class PresetCoordinator {
             var generator = SystemRandomNumberGenerator()
             pick = ScopeStepper.random(scopeMembers, excluding: current, using: &generator)
         }
-        guard let pick, pick != current else { return }
+        guard let pick, pick != current else {
+            if scopeMembers.isEmpty { offerPurchaseIfTheScopeIsLocked() }
+            return
+        }
         await select(pick)
     }
 
@@ -209,10 +228,22 @@ final class PresetCoordinator {
 
     private func step(_ delta: Int) async {
         guard let pick = ScopeStepper.step(members, from: current, by: delta) else {
-            if !unlocked, members.isEmpty, case .pack = scope { purchaseRequested = true }
+            offerPurchaseIfTheScopeIsLocked()
             return
         }
         await select(pick)
+    }
+
+    /// Spec Edge Cases: a scope with no playable presets because it is locked (a pack or one of its
+    /// folders before purchase): Next, Previous and Random offer the purchase sheet.
+    private func offerPurchaseIfTheScopeIsLocked() {
+        guard !unlocked, members.isEmpty, let library else { return }
+        let source: String
+        switch scope {
+        case .pack(let id), .folder(let id, _): source = id
+        default: return
+        }
+        if library.pack(id: source)?.locked == true { purchaseRequested = true }
     }
 
     // MARK: - Scope

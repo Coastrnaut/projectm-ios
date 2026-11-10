@@ -222,6 +222,25 @@ final class PresetTests: XCTestCase {
         XCTAssertEqual(defaults.string(forKey: AppSettings.presetScopeKey), "folder:cream-of-the-crop/F/S")
     }
 
+    /// FR-111 (T247): before purchase a locked pack shows its total; after purchase each row shows
+    /// its playable count, without the presets that failed this session.
+    func testRowCountsArePlayableCountsAfterPurchase() async throws {
+        let lib = try library()
+        let loader = FakeLoader()
+        let coordinator = makeCoordinator(lib, loader: loader)
+        let cream = try XCTUnwrap(lib.home.first { $0.scope == .pack("cream-of-the-crop") })
+        let total = cream.presetCount
+        loader.failing = ["cream-of-the-crop/F/S/c3.milk"]
+        XCTAssertEqual(coordinator.displayCount(of: cream), total)
+        await coordinator.setUnlocked(true)
+        await coordinator.select(try XCTUnwrap(lib.preset(id: "cream-of-the-crop/F/S/c3.milk")))
+        XCTAssertEqual(coordinator.displayCount(of: cream), total - 1, "the failed preset is not playable")
+        let folder = try XCTUnwrap(cream.children.first { $0.title == "F" })
+        XCTAssertEqual(coordinator.displayCount(of: folder), folder.presetCount - 1)
+        let included = try XCTUnwrap(lib.home.first { $0.scope == .included })
+        XCTAssertEqual(coordinator.displayCount(of: included), included.presetCount, "other rows unchanged")
+    }
+
     func testLockedPresetAsksForThePurchaseAndPlaysAfterUnlock() async throws {
         let lib = try library()
         let loader = FakeLoader()
@@ -255,6 +274,24 @@ final class PresetTests: XCTestCase {
         XCTAssertEqual(defaults.string(forKey: AppSettings.presetScopeKey), "all", "no search text stored")
         defaults.set("pack:removed-pack", forKey: AppSettings.presetScopeKey)
         XCTAssertEqual(makeCoordinator(lib).scope, .included, "unresolvable stored scope falls back before purchase")
+    }
+
+    /// Edge Cases (T249): Random in a locked folder, and Previous there, offer the purchase sheet;
+    /// an empty unlocked scope (Favorites with none) does not.
+    func testRandomAndPreviousInALockedFolderRequestThePurchase() async throws {
+        defaults.set("folder:cream-of-the-crop/F/S", forKey: AppSettings.presetScopeKey)
+        let locked = makeCoordinator(try library())
+        XCTAssertEqual(locked.scope, .folder("cream-of-the-crop", ["F", "S"]))
+        await locked.random()
+        XCTAssertTrue(locked.purchaseRequested, "Random")
+        locked.purchaseRequested = false
+        await locked.previous()
+        XCTAssertTrue(locked.purchaseRequested, "Previous")
+        defaults.set("favorites", forKey: AppSettings.presetScopeKey)
+        let emptyFavorites = makeCoordinator(try library())
+        await emptyFavorites.random()
+        await emptyFavorites.next()
+        XCTAssertFalse(emptyFavorites.purchaseRequested, "nothing to buy for an empty Favorites scope")
     }
 
     func testNextInALockedPackRequestsThePurchase() async throws {

@@ -65,7 +65,8 @@ final class LibraryStore: EntitlementProviding {
             }
         }
         await refreshEntitlement()
-        state = .idle
+        // Spec Edge Cases: Screen Time can forbid purchases; the sheet says so as soon as it opens.
+        state = AppStore.canMakePayments ? .idle : .restricted
     }
 
     func loadProduct() async {
@@ -73,7 +74,7 @@ final class LibraryStore: EntitlementProviding {
         do {
             product = try await Product.products(for: [Self.productID]).first
             displayPrice = product?.displayPrice
-            state = product == nil ? .unavailable : .idle
+            if state != .restricted { state = product == nil ? .unavailable : .idle }
         } catch {
             state = .unavailable
         }

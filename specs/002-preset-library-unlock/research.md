@@ -112,3 +112,28 @@ Numbering starts at R-21 so it never collides with feature 001's R-01 to R-16.
 - **Alternatives considered**: folder references (138 MB, fails SC-108); per-file compression
   (34.6 MB, close to the limit); one stream (12.4 MB but a 138 MB decompression per preset);
   committing the index and archive (repository growth on every pin change).
+
+## R-31 Hiding shader compiles on preset switches: warming upcoming presets
+
+- **Decision** (2026-11-10, after the T238 device runs):
+  - **Planned pick:** after each switch, `PresetCoordinator` chooses the next Random pick in
+    advance, uniformly over the scope and never the current preset (FR-117, SC-106).
+  - **Warm-up:** it passes that pick and Next to `VisualizerRenderer.prewarm`, a no-op by default.
+    `ANGLERenderer` waits 2.5 s, past the 2 s blend; a newer request replaces a pending one.
+  - **`PresetPrewarmer`:** renders each candidate twice on its own utility-priority thread. The
+    thread has an unshared EGL context on the same display, its own engine instance and a
+    256 × 256 BGRA8 target, the window surface's format.
+- **Rationale**:
+  - On ANGLE's Metal backend, pipelines are created synchronously on the first draw, so a heavy
+    preset's first frame waited about a second. Warming fills ANGLE's in-memory Metal library cache
+    and Metal's pipeline cache, so the visible switch skips those compiles.
+  - On D1, the median switch fell from 130-191 ms to about 105 ms.
+  - Warming immediately cut the frame rate from 43 to 29 fps. Delayed, it costs nothing: 53.5 fps
+    against 51.1 fps without it (`docs/test-reports/performance.md`).
+- **Alternatives considered**:
+  - An engine change compiling shaders asynchronously before the switch: projectM and ANGLE
+    patches, upstream work, larger.
+  - Warming on the render thread: it moves the stall instead of removing it.
+  - Warming three candidates (Random, Next, Previous) immediately: costs frame rate.
+  - Nothing: SC-104 passes at a realistic 8 s dwell without it (98%), but switches are slower.
+

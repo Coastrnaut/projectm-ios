@@ -103,10 +103,11 @@ Packages/PresetLibrary/                 # NEW: Foundation only, Linux-testable
 └── Tests/PresetLibraryTests/
 
 Packages/ProjectMBridge/                # + setTextureSearchPaths:, loadPresetData: (PMBridge.h/.mm)
-Packages/Rendering/                     # VisualizerRenderer gains texture paths; Preset stays the playable unit
+Packages/Rendering/                     # VisualizerRenderer gains texture paths and prewarm(_:); Preset stays the playable unit
+Packages/ANGLERendering/                # + PresetPrewarmer.swift: warms upcoming presets on a background context (R-31, SC-104)
 
 Apps/projectM-iOS/
-├── Coordinators/PresetCoordinator.swift    # scopes, entitlement-aware playback
+├── Coordinators/PresetCoordinator.swift    # scopes, entitlement-aware playback, planned Random pick (R-31)
 ├── Coordinators/FavoritesStore.swift       # + settings.presetScope
 ├── Store/LibraryStore.swift                # NEW: StoreKit 2 entitlement + purchase (EntitlementProviding)
 ├── Store/projectM-iOS.storekit              # NEW: StoreKit test configuration

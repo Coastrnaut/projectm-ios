@@ -119,7 +119,7 @@ accounts or signing; untagged tasks are completable on the project Mac.
 - [X] T240 Update `docs/privacy-policy.md` (purchase traffic through iOS only, FR-122), `docs/release/app-privacy.md`, `docs/release/store-copy.md` (in-app purchase, library size; no capture claims) and the privacy manifest scan — Verified 2026-11-10: policy (purchase section, network, stored scope), App Privacy (answers unchanged, basis updated), store copy (1.1 additions and claim table); `check_privacy_manifest.py` OK on a Release device build.
 - [ ] T241 {device} Re-run the privacy review (feature 001 T108) with the new key and a purchase — Automation ready (2026-11-10): `scripts/run_device_tests.py privacy --device D1` (fresh install, scripted session, container listing, key check). The simulator rehearsal had zero violations; StoreKit writes `SKTransactionUpdatesLastChecked` itself (a timestamp). Run on D1 2026-11-10: zero violations (`docs/test-reports/privacy-review.md`, feature 002 section). Stays open until the purchase part runs after T239.
 - [ ] T242 {owner} Create the in-app purchase in App Store Connect (`org.projectmios.ProjectMiOS.fullLibrary`, $1.99, review screenshot); accept the Paid Apps agreement and set up banking and tax
-- [ ] T243 CI: fetch `Vendor/presets/*` where needed, run `PresetLibrary` tests on Linux and macOS, run the index `--check`
+- [X] T243 CI: fetch `Vendor/presets/*` where needed, run `PresetLibrary` tests on Linux and macOS, run the index `--check` — Verified 2026-11-10: CI run 42914485586 (1ad0b99) green on all jobs. The main macOS job fetches `Vendor/presets/*` shallow and checks that the index builds (28 Included, more than 12,000 presets); PresetLibrary tests run on Linux, the macOS host and both simulators. The index `--check` became this build check once nothing generated is committed (R-30).
 - [X] T244 Update `README.md` section 18, `CLAUDE.md` status and `docs/test-reports/release-report.md` for feature 002 — Verified 2026-11-10: README 18.6, CLAUDE.md status and the release report note are written; validate_docs OK.
 
 ---
@@ -143,3 +143,13 @@ accounts or signing; untagged tasks are completable on the project Mac.
 MVP = Phases 1-3 (US1): the large library browsable with Included unchanged. Then US2 (purchase),
 US3 (scopes), US4 (credits), Polish. Device and owner tasks stay open with their tags until a
 person runs them.
+
+## Phase 8: Convergence
+
+- [X] T247 Show each pack's and folder's playable count after purchase (total minus presets that failed this session) in `PresetBrowserView.swift` and `PresetFolderView.swift` per FR-111 (partial) — Verified 2026-11-10: PresetTests.testRowCountsArePlayableCountsAfterPurchase; 46 unit tests pass on the iOS 27.2 simulator.
+- [X] T248 Record the preset warm-up (`PresetPrewarmer`, planned Random pick, start after the blend) as research decision R-31 and a plan touch-point per plan: architecture (unrequested) — Done 2026-11-10: research R-31 and plan Project Structure (ANGLERendering PresetPrewarmer, Rendering prewarm, PresetCoordinator planned pick); validate_docs OK.
+
+## Phase 9: Convergence
+
+- [X] T249 Offer the purchase sheet when Next, Previous or Random finds no playable preset in any locked scope (a locked pack or one of its folders) in `PresetCoordinator.swift` per Edge Cases: scope with no playable presets (partial) — Verified 2026-11-10: PresetTests.testRandomAndPreviousInALockedFolderRequestThePurchase and testNextInALockedPackRequestsThePurchase; 47 unit tests pass.
+- [X] T250 Report purchase restrictions (`AppStore.canMakePayments`) when the store starts, so the sheet shows "Purchases aren't allowed on this device" on opening, in `LibraryStore.swift` per Edge Cases: purchases restricted (partial) — Done 2026-11-10: `LibraryStore.start()` sets `.restricted` when `AppStore.canMakePayments` is false, and a later price load keeps it. The 8 LibraryStoreTests pass (unrestricted path). The restricted path needs Screen Time on a device: StoreKit testing cannot simulate it.

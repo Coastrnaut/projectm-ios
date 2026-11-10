@@ -52,7 +52,7 @@ struct PresetBrowserView: View {
         if let library = presets.library {
             ForEach(library.home) { node in
                 NavigationLink(value: node) {
-                    FolderRow(title: node.title, count: node.presetCount, locked: node.locked && !presets.unlocked)
+                    FolderRow(title: node.title, count: presets.displayCount(of: node), locked: node.locked && !presets.unlocked)
                 }
                 .accessibilityIdentifier("node:\(node.id)")
             }

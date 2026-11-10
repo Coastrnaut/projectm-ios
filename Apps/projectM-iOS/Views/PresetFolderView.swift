@@ -34,7 +34,7 @@ struct PresetFolderView: View {
                 }
                 ForEach(node.children) { child in
                     NavigationLink(value: child) {
-                        FolderRow(title: child.title, count: child.presetCount, locked: child.locked && !presets.unlocked)
+                        FolderRow(title: child.title, count: presets.displayCount(of: child), locked: child.locked && !presets.unlocked)
                     }
                     .accessibilityIdentifier("node:\(child.id)")
                 }
