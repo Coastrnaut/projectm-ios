@@ -57,7 +57,7 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
   10-minute sessions, no quality tiers or flash-limiter measurement for Gate 3. Next: Phase D (US4,
   T080 onward); T114 done with ProjectMiOS.
 - Phase D started 2026-11-09: `ProjectMiOS` (project.yml) runs notice → chooser → full-screen ANGLE
-  visualizer with controls; T080, T082, T083, T085, T086, US5 T088-T091 and US6 T094-T096 done (T093 like T081: red run not recorded); T081 (red run not recorded) and T084
+  visualizer with controls; T080, T082, T083, T085, T086, US5 T088-T091, US6 T094-T096 and US7 T098-T100 done (T081, T093: red run not recorded); T081 (red run not recorded) and T084
   (FR-089 on D1/D2) open; T087 needs the devices and a 240 fps camera. The app's signing team is set
   by hand in Xcode. Build the binaries first:
   `python3 scripts/build_projectm_xcframework.py` and `python3 scripts/build_angle_xcframework.py`.

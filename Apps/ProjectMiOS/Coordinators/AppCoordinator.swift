@@ -22,7 +22,7 @@ import UIKit
 
 @MainActor
 @Observable
-final class AppCoordinator {
+final class AppCoordinator: VisualizationControlling {
     enum Screen: Equatable { case notice, chooser, visualizer }
 
     static let noticeKey = "notice.photosensitivityAcknowledged"
@@ -51,7 +51,8 @@ final class AppCoordinator {
     #endif
     private var hideTask: Task<Void, Never>?
     private let lifecycle: LifecycleObserver
-    private let lifecycleForwarding: Task<Void, Never>
+    private var lifecycleForwarding: Task<Void, Never>?
+    @ObservationIgnored private var lifecycleCoordinator: LifecycleCoordinator!
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -79,9 +80,6 @@ final class AppCoordinator {
         self.manager = manager
         let lifecycle = LifecycleObserver()
         self.lifecycle = lifecycle
-        lifecycleForwarding = Task { @MainActor in
-            for await event in lifecycle.events { await manager.handle(event) }
-        }
         var bundled: [Preset] = []
         if let folder = Bundle.main.resourceURL?.appendingPathComponent("Presets"),
            let catalog = try? PresetRepository(presetsFolder: folder).load() {
@@ -91,6 +89,13 @@ final class AppCoordinator {
         #if DEBUG
         fakeSource = fake
         #endif
+        // Background/foreground/lock/unlock go through LifecycleCoordinator (T099): it suspends the
+        // visualization and forwards to CaptureManager's per-adapter matrix.
+        let lifecycleCoordinator = LifecycleCoordinator(manager: manager, visualization: self)
+        self.lifecycleCoordinator = lifecycleCoordinator
+        lifecycleForwarding = Task { @MainActor in
+            for await event in lifecycle.events { await lifecycleCoordinator.handle(event) }
+        }
         #if DEBUG
         // Debug builds only, for traces and test runs: `-autostart inAppPlayback` (or another
         // AudioSourceMode raw value) skips the notice and starts that source.
@@ -101,8 +106,8 @@ final class AppCoordinator {
         #endif
     }
 
-    deinit {
-        lifecycleForwarding.cancel()
+    isolated deinit {
+        lifecycleForwarding?.cancel()
     }
 
     // MARK: - Launch flow
@@ -134,6 +139,7 @@ final class AppCoordinator {
         prepareRenderer()
         sourceStarts += 1
         screen = .visualizer
+        lifecycleCoordinator.visualizationStarted()
         userPaused = false
         renderer?.resume()
         showControls()
@@ -146,6 +152,7 @@ final class AppCoordinator {
         hideTask?.cancel()
         renderer?.pause()
         screen = .chooser
+        lifecycleCoordinator.visualizationEnded()
         updateIdleTimer()
         Task { await manager.stop() }
     }
@@ -222,11 +229,21 @@ final class AppCoordinator {
         controlsVisible = false
     }
 
+    /// Scene activity drives the idle timer (FR-084); rendering follows the lifecycle events.
     func sceneBecame(active: Bool) {
         appIsActive = active
-        if screen == .visualizer, !userPaused {
-            active ? renderer?.resume() : renderer?.pause()
-        }
+        updateIdleTimer()
+    }
+
+    // MARK: - VisualizationControlling (LifecycleCoordinator)
+
+    func suspendVisualization() {
+        renderer?.pause()
+        updateIdleTimer()
+    }
+
+    func resumeVisualization() {
+        renderer?.resume()
         updateIdleTimer()
     }
 

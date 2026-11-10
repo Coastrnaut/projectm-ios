@@ -146,11 +146,12 @@ public final class GLESRenderer: NSObject, VisualizerRenderer {
     }
 
     /// FR-049: 60 fps normally; 30 under Low Power Mode or serious/critical thermal state.
+    /// FR-049 via QualityGovernor (T100): frame-rate cap and render scale for the thermal state
+    /// and Low Power Mode, never below 30 fps.
+    private var quality = QualityGovernor.current()
+
     private func frameRateRange() -> CAFrameRateRange {
-        let info = ProcessInfo.processInfo
-        let constrained = info.isLowPowerModeEnabled || info.thermalState == .serious || info.thermalState == .critical
-        return constrained ? CAFrameRateRange(minimum: 30, maximum: 30, preferred: 30)
-                           : CAFrameRateRange(minimum: 30, maximum: 60, preferred: 60)
+        quality.frameRateRange
     }
 
     private func observeFrameRatePressure() {
@@ -158,8 +159,12 @@ public final class GLESRenderer: NSObject, VisualizerRenderer {
         for name in [ProcessInfo.thermalStateDidChangeNotification, Notification.Name.NSProcessInfoPowerStateDidChange] {
             observers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
                 MainActor.assumeIsolated {
-                    guard let self, let link = self.displayLink else { return }
-                    link.preferredFrameRateRange = self.frameRateRange()
+                    guard let self else { return }
+                    let quality = QualityGovernor.current()
+                    guard quality != self.quality else { return }
+                    self.quality = quality
+                    self.displayLink?.preferredFrameRateRange = self.frameRateRange()
+                    self.layerView.setNeedsLayout()   // render scale may have changed
                 }
             })
         }
@@ -168,7 +173,8 @@ public final class GLESRenderer: NSObject, VisualizerRenderer {
     // MARK: - Drawable
 
     private func layoutDrawable() {
-        let scale = layerView.traitCollection.displayScale > 0 ? layerView.traitCollection.displayScale : 2
+        let displayScale = layerView.traitCollection.displayScale > 0 ? layerView.traitCollection.displayScale : 2
+        let scale = displayScale * quality.renderScale   // FR-049: lower render scale when critical
         layerView.contentScaleFactor = scale
         let width = GLint((layerView.bounds.width * scale).rounded())
         let height = GLint((layerView.bounds.height * scale).rounded())
