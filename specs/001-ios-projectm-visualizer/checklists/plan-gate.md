@@ -131,6 +131,6 @@ Reference key: `Spec §` = spec.md IDs/sections; `Plan §` = plan.md sections; `
 ### Iteration log
 
 - Iteration 1 (2026-11-07): all 60 items resolved in spec.md, plan.md, research.md, data-model.md,
-  contracts, quickstart.md, and docs/adr (commit a41d903), under the project owner's standing
+  contracts, quickstart.md, and docs/adr (commit 2fbc89e), under the project owner's standing
   approval of all suggested resolutions. Each item was verified against the updated text and
   checked.

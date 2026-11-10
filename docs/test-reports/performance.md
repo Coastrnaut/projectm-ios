@@ -43,7 +43,7 @@ ms are accepted for delivery and residency; the residency trace is T114 in Phase
 ## Plan Phase B exit (task T063)
 
 Run 2026-11-09 on D1 (iPhone 15, `iPhone15,4`, iOS 27.0.1), CaptureLab build 2, Debug
-configuration, commit `bc606fc`, Xcode 27.2 (27B52). **Owner ruling 2026-11-09: the CPU run is
+configuration, commit `20c79ca`, Xcode 27.2 (27B52). **Owner ruling 2026-11-09: the CPU run is
 3 minutes instead of 30.**
 
 | Adapter | Allocations in the callback (0) | Lock waits in the callback (0) | CPU, 3 min (< 15% of one core) | Pass? |
@@ -72,7 +72,7 @@ takes no locks (atomics only, by design and review).
 Owner ruling 2026-11-09: this limit is accepted; zero lock-wait syscalls meets T063's
 "zero lock acquisitions".
 
-**Fixes made during T063** (commit `bc606fc`):
+**Fixes made during T063** (commit `20c79ca`):
 1. The first In-App Playback run found 22 allocations on the first callback:
    `MemoryLayout<AudioBufferList>.offset(of: \.mBuffers)` in `PCMSink.write(_:format:frameCount:)`
    (and in `SampleBufferAudio.buffersHold`) builds a KeyPath object at run time in Debug. Replaced
