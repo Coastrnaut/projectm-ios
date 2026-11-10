@@ -26,6 +26,7 @@ ruling 16). `scripts/check_compliance.py` rejects entitlement keys in `project.y
 | `NSMicrophoneUsageDescription` | The FR-005 explainer text | Allowed |
 | `NSScreenCaptureUsageDescription` | "Only the audio of the content you choose to share is used, and only on this device. It is not recorded or sent anywhere." | Allowed |
 | `UIBackgroundModes` | `screen-capture` only | Allowed (ADR-0001 ruling 17) |
+| `ITSAppUsesNonExemptEncryption` | NO (added 2026-11-10, owner) | Export compliance: no encryption beyond iOS; not a capability |
 | `UILaunchScreen`, orientations, `UIApplicationSupportsIndirectInputEvents`, bundle keys | Standard | Not capabilities |
 
 No `NSAppTransportSecurity`, `NSLocalNetworkUsageDescription`, `NSBonjourServices`, URL schemes,

@@ -156,6 +156,8 @@ targets:
         # R-16 / ADR-0001 ruling 17: the only background mode allowed (capture keeps running while
         # the visualization is paused in the background, FR-050).
         UIBackgroundModes: [screen-capture]
+        # Export compliance (owner 2026-11-10): no encryption beyond what iOS provides; no networking.
+        ITSAppUsesNonExemptEncryption: false
         UIApplicationSupportsIndirectInputEvents: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
