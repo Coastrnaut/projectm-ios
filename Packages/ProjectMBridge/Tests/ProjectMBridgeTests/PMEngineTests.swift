@@ -121,6 +121,25 @@ final class PMEngineTests: XCTestCase {
         XCTAssertEqual(glGetError(), GLenum(GL_NO_ERROR))
     }
 
+    /// Feature 002 (research R-30, T215): pack presets load from their contents.
+    func testPresetLoadsFromData() throws {
+        let engine = try makeEngine()
+        let data = try Data(contentsOf: URL(fileURLWithPath: preset("100-square.milk")))
+        XCTAssertNoThrow(try engine.loadPresetData(data, smooth: false))
+        renderFrames(engine)
+        XCTAssertEqual(glGetError(), GLenum(GL_NO_ERROR))
+    }
+
+    /// Feature 002 (T215): texture search paths are accepted, including empty and missing ones.
+    func testTextureSearchPathsAreAccepted() throws {
+        let engine = try makeEngine()
+        engine.setTextureSearchPaths([FileManager.default.temporaryDirectory.path, "/nonexistent"])
+        engine.setTextureSearchPaths([])
+        try engine.loadPreset(atPath: preset("100-square.milk"), smooth: false)
+        renderFrames(engine)
+        XCTAssertEqual(glGetError(), GLenum(GL_NO_ERROR))
+    }
+
     func testAddsUpToMaxSamplesPerFrame() throws {
         let engine = try makeEngine()
         let frames = Int(ProjectMEngine.maxSamplesPerFrame)

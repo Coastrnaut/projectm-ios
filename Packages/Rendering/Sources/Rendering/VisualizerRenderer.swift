@@ -18,6 +18,8 @@ public protocol VisualizerRenderer: AnyObject {
     /// Loads a preset within 1 s (SC-007). On failure throws, and the previous preset keeps running
     /// (FR-045).
     func setPreset(_ preset: Preset) async throws
+    /// Directories searched (recursively) for preset textures (feature 002 T215).
+    func setTextureSearchPaths(_ paths: [URL])
     /// Stops the display link within one frame (FR-046, FR-050).
     func pause()
     func resume()
@@ -45,9 +47,12 @@ public struct Preset: Sendable, Hashable, Identifiable {
     public var license: String
     public var sourceURL: String
     public var sourceVersion: String
+    /// The preset's contents when it does not live in a file (feature 002: pack presets come from
+    /// the compressed archive, research R-30). When set, renderers load it instead of `fileURL`.
+    public var data: Data?
 
     public init(id: String, name: String, fileURL: URL, packID: String = "", author: String = "",
-                license: String = "", sourceURL: String = "", sourceVersion: String = "") {
+                license: String = "", sourceURL: String = "", sourceVersion: String = "", data: Data? = nil) {
         self.id = id
         self.name = name
         self.fileURL = fileURL
@@ -56,6 +61,7 @@ public struct Preset: Sendable, Hashable, Identifiable {
         self.license = license
         self.sourceURL = sourceURL
         self.sourceVersion = sourceVersion
+        self.data = data
     }
 }
 

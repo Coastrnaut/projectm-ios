@@ -133,7 +133,17 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer {
     public func setPreset(_ preset: Preset) async throws {
         guard let engine else { return }
         makeCurrent()
-        try engine.loadPreset(atPath: preset.fileURL.path, smooth: true)
+        if let data = preset.data {
+            try engine.loadPresetData(data, smooth: true)
+        } else {
+            try engine.loadPreset(atPath: preset.fileURL.path, smooth: true)
+        }
+    }
+
+    public func setTextureSearchPaths(_ paths: [URL]) {
+        guard let engine else { return }
+        makeCurrent()
+        engine.setTextureSearchPaths(paths.map(\.path))
     }
 
     public func pause() {

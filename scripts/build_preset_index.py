@@ -223,6 +223,7 @@ def main(argv: list[str] | None = None) -> int:
                         help="directory holding PresetBlocklist.json and PresetExclusions.txt (committed)")
     parser.add_argument("--included-dir", type=Path, default=INCLUDED_DIR)
     parser.add_argument("--packs-dir", type=Path, default=PACKS_DIR)
+    parser.add_argument("--stamp", type=Path, help="stamp file (default: <out>/.preset-index-stamp)")
     parser.add_argument("--force", action="store_true", help="ignore the stamp")
     args = parser.parse_args(argv)
 
@@ -235,7 +236,7 @@ def main(argv: list[str] | None = None) -> int:
     if missing:
         print(f"build_preset_index: missing pack submodules {missing}; run git submodule update --init", file=sys.stderr)
         return 2
-    stamp_file = args.out / ".preset-index-stamp"
+    stamp_file = args.stamp or (args.out / ".preset-index-stamp")
     current = stamp(args, blocklist_file, exclusions_file)
     if not args.force and stamp_file.exists() and stamp_file.read_text() == current \
             and (args.out / "PresetArchive.bin").exists():
@@ -247,6 +248,7 @@ def main(argv: list[str] | None = None) -> int:
     (args.out / "PresetPacks.json").write_text(dumps({"version": 1, "packs": packs}), encoding="utf-8")
     write_archive(archive, args.out / "PresetArchive.bin")
     images = copy_textures(args.packs_dir, args.out / "PresetTextures")
+    stamp_file.parent.mkdir(parents=True, exist_ok=True)
     stamp_file.write_text(current)
     counts = {p["id"]: p["presetCount"] for p in packs if p["presetCount"]}
     print(f"build_preset_index: {len(records)} presets {counts}, archive {len(archive)}, {images} texture files")

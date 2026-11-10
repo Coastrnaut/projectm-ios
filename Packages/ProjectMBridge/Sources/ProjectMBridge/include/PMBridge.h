@@ -55,6 +55,14 @@ NS_SWIFT_NAME(ProjectMEngine)
 /// preset keeps running (FR-045).
 - (BOOL)loadPresetAtPath:(NSString *)path smooth:(BOOL)smooth error:(NSError **)error;
 
+/// Loads a preset from its file contents (projectm_load_preset_data; feature 002 research R-30:
+/// pack presets come from the compressed archive). Same failure rules as loadPresetAtPath:.
+- (BOOL)loadPresetData:(NSData *)data smooth:(BOOL)smooth error:(NSError **)error;
+
+/// Directories the engine searches (recursively) for preset textures
+/// (projectm_set_texture_search_paths; feature 002 T215).
+- (void)setTextureSearchPaths:(NSArray<NSString *> *)paths;
+
 /// Length of the blend into a newly loaded preset, in seconds (projectm_set/get_soft_cut_duration).
 @property (nonatomic) double softCutDuration;
 

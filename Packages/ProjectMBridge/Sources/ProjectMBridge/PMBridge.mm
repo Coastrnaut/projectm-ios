@@ -10,6 +10,8 @@
 #include <projectM-4/projectM.h>
 
 #include <exception>
+#include <string>
+#include <vector>
 #include <pthread.h>
 
 NSErrorDomain const PMEngineErrorDomain = @"PMEngineError";
@@ -215,6 +217,41 @@ static void PMPresetSwitchFailed(const char *presetFilename, const char *message
         return NO;
     }
     return YES;
+}
+
+- (BOOL)loadPresetData:(NSData *)data smooth:(BOOL)smooth error:(NSError **)error {
+    PM_ASSERT_RENDER_THREAD();
+    _presetFailed = NO;
+    _presetFailureMessage = nil;
+    // The engine reads a NUL-terminated string.
+    std::string text(static_cast<const char *>(data.bytes), data.length);
+    try {
+        projectm_load_preset_data(_handle, text.c_str(), smooth);
+    } catch (const std::exception &e) {
+        _presetFailed = YES;
+        _presetFailureMessage = PMExceptionMessage(e);
+    } catch (...) {
+        _presetFailed = YES;
+        _presetFailureMessage = @"unknown engine exception";
+    }
+    if (_presetFailed) {
+        if (error) {
+            *error = PMMakeError(PMEngineErrorPresetLoadFailed,
+                                 _presetFailureMessage ?: @"The preset could not be loaded");
+        }
+        return NO;
+    }
+    return YES;
+}
+
+- (void)setTextureSearchPaths:(NSArray<NSString *> *)paths {
+    PM_ASSERT_RENDER_THREAD();
+    std::vector<const char *> cPaths;
+    cPaths.reserve(paths.count);
+    for (NSString *path in paths) {
+        cPaths.push_back(path.fileSystemRepresentation);
+    }
+    projectm_set_texture_search_paths(_handle, cPaths.data(), cPaths.size());
 }
 
 - (double)softCutDuration {
