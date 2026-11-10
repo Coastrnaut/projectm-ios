@@ -38,6 +38,12 @@ enum Fixtures {
 
     /// 13,000 presets across the four packs, about 180 folders.
     static func large() throws -> PresetLibrary {
+        let (index, packs) = try largeData()
+        return try PresetLibrary(index: index, packs: packs)
+    }
+
+    /// The large library's JSON, so a test can time the library build alone.
+    static func largeData() throws -> (index: Data, packs: Data) {
         let sources = ["cream-of-the-crop", "projectm-classic", "milkdrop-original", "en-d"]
         var big: [[String: Any]] = records.filter { $0["source"] as? String == "included" }
         for i in 0..<13_000 {
@@ -45,6 +51,7 @@ enum Fixtures {
             let folder = source == "cream-of-the-crop" ? ["Category \(i % 10)", "Sub \(i % 180)"] : ["Collection \(i % 7)"]
             big.append(record("\(source)/\(i).milk", "Preset \(i) Ünïcode", "Author \(i % 2400)", source, folder))
         }
-        return try library(records: big)
+        return (try JSONSerialization.data(withJSONObject: ["version": 1, "presets": big]),
+                try JSONSerialization.data(withJSONObject: ["version": 1, "packs": packs()]))
     }
 }
