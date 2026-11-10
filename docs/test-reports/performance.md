@@ -144,12 +144,37 @@ attempt at all (see ADR-0003).
 |-----------|--------|------------------|---------------|-------------|-------|
 | SC-005 frame rate | ≥ 55 fps for 95% of 10 min (60 fps cap on 120 Hz) | | | | |
 | SC-006 audio→visual delay | median < 150 ms (20 clicks) | | n/a | n/a | |
-| SC-007 preset switch | 95% first frame < 1 s; blend ≤ 2 s | | | | |
+| SC-007 preset switch | 95% first frame < 1 s; blend ≤ 2 s | 50/50 < 1 s; median 32 ms, p95 223 ms; blend 2 s | | | |
 | SC-008 memory | drift ≤ 10% (min 5→30); peak < 300 MB | | | | |
-| SC-009 cycles + lifecycle | 0 crashes | | | | |
+| SC-009 cycles + lifecycle | 0 crashes | 0 crashes; final states correct (In-App, Microphone) | | | |
 | SC-013 thermal | never critical; ≥ 30 fps; no termination | | | | |
 | SC-014 battery | ≤ 20% per 60 min | | | | |
-| SC-015 cold launch | < 2 s D1 / < 4 s D3 | | | | |
+| SC-015 cold launch | < 2 s D1 / < 4 s D3 | 10/10 < 2 s; median 80 ms, max 83 ms | | | |
+
+### Gate 4 automated runs (tasks T092, T101, T102; 2026-11-10)
+
+Measurement build: Release with `SWIFT_ACTIVE_COMPILATION_CONDITIONS=PROJECTM_AUTOMATION`
+(`Apps/ProjectMiOS/Automation/AutomationRunner.swift`), started by devicectl with
+`PROJECTM_AUTORUN`. Reports: `docs/test-reports/exports/gate4/`.
+
+**D1 iPhone 15, iOS 27.0.1**
+- SC-015: 11 launches in a row, each a new process (the notice was already acknowledged, so all 11
+  were recorded; the table uses the last 10). Process start (kernel start time) to the source
+  chooser's `onAppear`: 77-83 ms. Limits: the launches were back to back, so the file cache was
+  warm; `onAppear` comes just before the chooser's first frame. Both limits are far inside the 2 s
+  target.
+- SC-007: In-App Playback, 50 × Next, request to the first frame presented after the load: 50/50
+  under 1 s, median 32 ms, p95 223 ms, max 245 ms, 0 load failures. Blend duration is 2 s by
+  setting.
+- SC-009: 50 cycles of In-App Playback → Microphone → stop at 200 ms, then per mode the scripted
+  background, foreground, lock, unlock, interruption began, interruption ended (resume) and route
+  change (old device unavailable), posting the notifications iOS posts. The run finished and wrote
+  its report (no crash). After the cycles: chooser, stopped. In-App Playback: paused on
+  background and lock, active on return, interrupted then active, paused (audioRouteChanged) on
+  the route change, stopped. Microphone: the same, except the route change leaves it active: the
+  built-in microphone is still available, so the backend continues on it (lifecycle matrix;
+  `microphoneUnavailable` applies only when no input remains). System/App Capture is not
+  automated: every start shows the system picker.
 
 ## Stage 2 thresholds (finalized at Gate 4)
 

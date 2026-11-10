@@ -1,0 +1,113 @@
+{
+  "build" : "1",
+  "cycleNotes" : [
+    "after cycle 50: screen=chooser state=stopped mode=microphone"
+  ],
+  "cycles" : 50,
+  "cyclesFinal" : {
+    "activeMode" : "microphone",
+    "screen" : "chooser",
+    "state" : "stopped"
+  },
+  "device" : "iPhone15,4",
+  "finishedAt" : "2026-11-10T13:34:06Z",
+  "intervalMs" : 200,
+  "lifecycleScripts" : {
+    "inAppPlayback" : [
+      {
+        "reason" : "",
+        "state" : "active",
+        "step" : "started"
+      },
+      {
+        "reason" : "",
+        "state" : "paused",
+        "step" : "background"
+      },
+      {
+        "reason" : "",
+        "state" : "active",
+        "step" : "foreground"
+      },
+      {
+        "reason" : "",
+        "state" : "paused",
+        "step" : "lock"
+      },
+      {
+        "reason" : "",
+        "state" : "active",
+        "step" : "unlock"
+      },
+      {
+        "reason" : "interrupted",
+        "state" : "interrupted",
+        "step" : "interruptionBegan"
+      },
+      {
+        "reason" : "",
+        "state" : "active",
+        "step" : "interruptionEndedResume"
+      },
+      {
+        "reason" : "audioRouteChanged",
+        "state" : "paused",
+        "step" : "routeChangeOldDeviceUnavailable"
+      },
+      {
+        "reason" : "",
+        "state" : "stopped",
+        "step" : "stopped"
+      }
+    ],
+    "microphone" : [
+      {
+        "reason" : "",
+        "state" : "active",
+        "step" : "started"
+      },
+      {
+        "reason" : "",
+        "state" : "paused",
+        "step" : "background"
+      },
+      {
+        "reason" : "",
+        "state" : "active",
+        "step" : "foreground"
+      },
+      {
+        "reason" : "",
+        "state" : "paused",
+        "step" : "lock"
+      },
+      {
+        "reason" : "",
+        "state" : "active",
+        "step" : "unlock"
+      },
+      {
+        "reason" : "interrupted",
+        "state" : "interrupted",
+        "step" : "interruptionBegan"
+      },
+      {
+        "reason" : "",
+        "state" : "active",
+        "step" : "interruptionEndedResume"
+      },
+      {
+        "reason" : "",
+        "state" : "active",
+        "step" : "routeChangeOldDeviceUnavailable"
+      },
+      {
+        "reason" : "",
+        "state" : "stopped",
+        "step" : "stopped"
+      }
+    ]
+  },
+  "notAutomated" : "System\/App Capture: every start shows the system picker, which needs a person",
+  "systemVersion" : "27.0.1"
+}
