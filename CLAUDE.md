@@ -89,8 +89,9 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
     - Paid Apps Agreement Active; bank account and W-9 Active.
     - EU Digital Services Act: trader, In Review.
     - Remaining: submit the purchase together with the 1.1 version.
-  - Open: T239 (ready: the agreement is active and D1 is signed in to a US sandbox tester) and
-    the purchase part of T241. Both are automated by `scripts/run_device_tests.py`. Version 1.1 (2); T232's VoiceOver check is not required.
+  - Open: T239 and the purchase part of T241. Apple's sandbox returned no product on D1 or D2
+    for 2 hours after the agreement went active (2026-11-10). Retry later; if it still fails,
+    follow TN3186 and contact Apple Developer Support (tasks.md T239). Both are automated by `scripts/run_device_tests.py`. Version 1.1 (2); T232's VoiceOver check is not required.
 - Phase B verified on the project Mac 2026-11-09: AudioCore 76, CaptureKit 80, Diagnostics 8 tests
   on the host and the iOS 27.2 and 26.5 simulators; CaptureLab UI tests (3) on iOS 27.2; device
   builds with no warnings. The Linux path (no AVFAudio: linear resampler fallback) is tested on
@@ -383,6 +384,12 @@ agent-driven. Copy this section into a new repository's CLAUDE.md and adjust the
   - Keep the network product request out of any launch-time critical path.
 - **Driving App Store Connect:** the owner must authorize it (computer use or the browser), and
   the owner signs in. Never type credentials.
+- **Sandbox products:** they appear only once the Paid Apps Agreement, banking and tax are Active,
+  and can take hours or more to propagate. Finish the business setup on day one, well before the
+  purchase test.
+  - Fetching products doesn't use the sandbox account, so an empty product list is never the
+    account's fault.
+  - Compare two devices on different iOS versions before suspecting the OS.
 
 ### Performance lessons from feature 002
 
