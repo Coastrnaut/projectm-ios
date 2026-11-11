@@ -83,8 +83,13 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
       preset's first frame. Now it passes on D1 at an 8 s dwell: 96-98%, median 103 ms with the
       background warm-up (`PresetPrewarmer`, started 2.5 s after a switch; no frame-rate cost).
   - T241 on D1 2026-11-10: zero violations; the purchase part waits for T239.
-  - Open: T239 (needs T242 first), the purchase part of T241, and owner task T242. Both device
-    tasks are automated by `scripts/run_device_tests.py`. Version 1.1 (2); T232's VoiceOver check is not required.
+  - T242: the in-app purchase was created in App Store Connect on 2026-11-10 (Apple ID 6833245609,
+    $1.99, all countries, status Prepare for Submission).
+  - Owner still to do: sign the Paid Apps Agreement (status "New"; legal entity first, then
+    banking and tax) and answer the EU Digital Services Act trader question; then submit the
+    purchase with 1.1.
+  - Open: T239 (needs the Paid Apps Agreement active) and the purchase part of T241. Both are
+    automated by `scripts/run_device_tests.py`. Version 1.1 (2); T232's VoiceOver check is not required.
 - Phase B verified on the project Mac 2026-11-09: AudioCore 76, CaptureKit 80, Diagnostics 8 tests
   on the host and the iOS 27.2 and 26.5 simulators; CaptureLab UI tests (3) on iOS 27.2; device
   builds with no warnings. The Linux path (no AVFAudio: linear resampler fallback) is tested on

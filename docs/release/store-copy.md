@@ -46,9 +46,18 @@ wording for System/App Capture is the Stage Decision's: "where iOS allows it".
 
 Reviewed 2026-11-10. Still no compatibility claim.
 
-**In-App Purchase** (App Store Connect, T242): "Full Preset Library",
-`org.projectmios.ProjectMiOS.fullLibrary`, non-consumable, $1.99. Description: "Unlocks the projectM
-team's full preset library: 12,819 more presets."
+**In-App Purchase** (App Store Connect, T242; created 2026-11-10, Apple ID 6833245609).
+
+| Field | Value |
+|-------|-------|
+| Reference and display name | "Full Preset Library" |
+| Product ID | `org.projectmios.ProjectMiOS.fullLibrary` |
+| Type | Non-Consumable |
+| Price | $1.99 (US base; Apple's comparable prices in 175 countries or regions) |
+| Family Sharing | Off |
+| Description | "Unlocks 12,819 more presets from projectM's packs" (App Store Connect allows 55 characters) |
+| Review screenshot | `docs/release/screenshots/iap-review-purchase-sheet.png` |
+| Review notes | Where to find the purchase in the app |
 
 **Description**: add this paragraph after the "Browse presets" one:
 
