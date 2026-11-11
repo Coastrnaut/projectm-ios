@@ -128,7 +128,11 @@ accounts or signing; untagged tasks are completable on the project Mac.
   - the legal entity postal code was corrected to the standardized ZIP+4, with the owner's confirmation;
   - status is now "Pending User Info" (effective Nov 10, 2026 to Nov 8, 2027).
 
-  Still owner-only: a bank account and the tax form (account numbers and a tax ID are never entered by the agent), and the EU Digital Services Act trader question. Then submit the purchase with the 1.1 version: Apple requires the first purchase to go with a new app version. Sandbox products load only once the agreement is active, so T239 waits for it.
+  Completed the same day, with the agent navigating and the owner entering the bank details, the tax information and the published contact details:
+  - bank account: Active;
+  - U.S. Form W-9: Active;
+  - **Paid Apps Agreement: Active**;
+  - EU Digital Services Act: trader (owner's choice), contact details submitted, status In Review for the 27 EU countries. Then submit the purchase with the 1.1 version: Apple requires the first purchase to go with a new app version. Sandbox products load only once the agreement is active; it is now active, so T239 can run.
 - [X] T243 CI: fetch `Vendor/presets/*` where needed, run `PresetLibrary` tests on Linux and macOS, run the index `--check` — Verified 2026-11-10: CI run 42914485586 (1ad0b99) green on all jobs. The main macOS job fetches `Vendor/presets/*` shallow and checks that the index builds (28 Included, more than 12,000 presets); PresetLibrary tests run on Linux, the macOS host and both simulators. The index `--check` became this build check once nothing generated is committed (R-30).
 - [X] T244 Update `README.md` section 18, `CLAUDE.md` status and `docs/test-reports/release-report.md` for feature 002 — Verified 2026-11-10: README 18.6, CLAUDE.md status and the release report note are written; validate_docs OK.
 
