@@ -50,6 +50,20 @@ The feature therefore needs three layers: static checks that keep input inside t
 presets the engine is known to handle; a trial on an engine that is not the visible one, with a
 time limit; and a persistent record so a preset that killed or hung the app is not tried again.
 
+## Clarifications
+
+### Session 2026-11-12
+
+Answered under the standing delegation (recommended option first; no owner question was needed).
+Measurements are of the 14,604 `.milk` files built into the app (the four packs and Included),
+taken with a script on 2026-11-12.
+
+- Q: What are the static limits, and how far above real presets are they? → A: File size at most 524,288 bytes (512 KiB): the largest built-in preset is 168,391 bytes, the 99.9th percentile is 36,652, and the engine itself refuses files over 1 MiB. A line at most 8,192 bytes (largest built-in: 1,525). At most 20,000 lines (largest: 3,220). One code block at most 131,072 bytes (largest: 31,999). One statement at most 8,192 bytes after comments are removed (largest equation statement: 4,891; largest shader statement: 1,311). Brackets `(`, `[`, `{` nested at most 64 deep (deepest: 21). The statement and nesting limits exist because the engine's equation compiler, equation runner and shader translator recurse without a depth limit; they bound how deep that recursion can go. Every limit accepts the whole built-in corpus (S7). (R3, R8, R10)
+- Q: Is a texture that the app does not have a reason to quarantine, or a warning? → A: A warning. The engine substitutes a 1 × 1 placeholder and the preset still draws; 109 distinct texture names appear in the built-in corpus and several are not in the bundled texture pack, yet those presets play. Quarantining would refuse presets that work. The missing names are recorded on the preset so PRE-018 (integrity scanner) can offer a relink later. The same reasoning makes a numbering gap (11 built-in presets), a repeated key (764 occurrences in the corpus) and a line the engine ignores warnings. A declared warp or composite shader with unbalanced braces or parentheses, or without `shader_body`, is quarantined although the engine would only drop the shader: it is the signature of a truncated file, and only 2 of 14,604 built-in presets would be affected. (R9, R10, R11)
+- Q: What license metadata is recorded when Milkdrop presets almost never carry any? → A: Four facts, none invented. Origin: "supplied by the user" (the only value this feature writes). Rights verified: always no. Author: the text before the first " - " in the file name, stored as a guess and shown as "from the file name"; empty when the name has no such part. Lines found in the file: up to 5 lines, each cut to 200 characters, that contain the words license, licence, copyright, "public domain", "creative commons", a "CC-BY"/"CC0" tag or the © sign, kept verbatim. No field for a license the user states is added now: nothing in this feature would use it, and PRE-014 can add it with its own export rule. Later export features must treat "supplied by the user, rights not verified" as the user's own file and must never treat it as bundled content. (R12, R26)
+- Q: What happens to a file whose content the app already has? → A: It is refused and nothing is stored. Same content as an imported preset: the message names that preset. Same content as a quarantined file: the message gives its reason; deleting it from Quarantine allows a new attempt. Same content as a built-in preset, in any pack and whether locked or not: the message names the built-in preset and its pack. Content is compared with the same content hash the built-in index and the takedown list use, so the comparison needs no built-in file to be read. Refusing copies of built-in presets keeps bundled content out of user storage, so a later export can never carry it and import can never act as a way around the purchase. (R5, R6, R23)
+- Q: What exactly can and cannot be contained, and with what limits? → A: Contained: every failure the engine reports (caught in the trial, before the preset is playable); a preset that never finishes (the trial has a 10 second limit; it loads the preset and draws 30 frames with a test tone on an engine and drawing context separate from the visible one, on a worker with a stack no larger than the visible renderer's, so recursion that survives the trial survives on screen); a later failure on the visible renderer (previous preset keeps playing, preset quarantined). Not contained in-process: a native crash inside the engine or graphics translator during the trial ends the app once; the durable trial record then quarantines the preset at the next launch, so it cannot loop. A trial that hangs cannot be stopped: its worker is abandoned and keeps running until the app closes, at most one such worker exists, and while it exists later imports wait unchecked. A preset is "proven" after 3 seconds on the visible renderer; the app ending inside those 3 seconds quarantines it, which also catches a user who force-quits in that window (accepted: delete from Quarantine and import again). A trial interrupted by the app going to the background is "not checked yet", not a failure. (R14-R21)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Import a preset of my own and play it (Priority: P1)
@@ -212,8 +226,8 @@ open its information and find both.
   validating it; the app MUST NOT depend on the original location afterwards and MUST NOT store a
   reference to it.
 - **PRE-012-R3**: The picker result MUST be refused, with nothing stored, when the item is not a
-  regular file, has no `.milk` extension, is empty, cannot be read, or is larger than the size
-  limit. Reading MUST stop at the size limit.
+  regular file, has no `.milk` extension, is empty, cannot be read, or is larger than 524,288
+  bytes. Reading MUST stop at that limit.
 - **PRE-012-R4**: Stored copies MUST be named by a hash of their content, never by any part of the
   original file name. The original name is kept only as display text, cleaned of control
   characters and path separators and limited in length.
@@ -229,15 +243,15 @@ open its information and find both.
   from the file.
 - **PRE-012-R8**: Size and text checks. A file MUST be quarantined when it contains a NUL byte or
   another control character other than tab, line feed and carriage return; when a line is longer
-  than the line limit; or when it has more lines than the line-count limit. CRLF, CR and LF line
+  than 8,192 bytes; or when it has more than 20,000 lines. CRLF, CR and LF line
   endings, a UTF-8 byte-order mark and non-UTF-8 bytes above 0x7F are accepted.
 - **PRE-012-R9**: Structure checks. A file MUST be quarantined when it has no `[preset00]` section
   header before its first setting, or when it has no setting at all. Lines the engine ignores
   (comments, text without `=`) and repeated keys are tolerated and reported as warnings.
 - **PRE-012-R10**: Code checks, per code block (per-frame, per-frame init, per-pixel, warp shader,
   composite shader, and each custom wave's and shape's init, per-frame and per-point code). A file
-  MUST be quarantined when a block exceeds the block-size limit, when a single statement exceeds
-  the statement limit, when brackets nest deeper than the nesting limit, when an equation block
+  MUST be quarantined when a block exceeds 131,072 bytes, when a single statement exceeds
+  8,192 bytes, when brackets nest deeper than 64, when an equation block
   has unbalanced parentheses, or when a declared warp or composite shader has unbalanced braces or
   parentheses or no `shader_body`. A gap in a block's line numbering is a warning that names the
   block (the engine ignores the lines after the gap).
@@ -247,7 +261,7 @@ open its information and find both.
   import.
 - **PRE-012-R12**: License metadata. The app MUST record, per imported preset: that the file was
   supplied by the user; that the app has verified no rights to it; the author guessed from the
-  file name, marked as a guess; and up to a small number of lines from the file that mention a
+  file name, marked as a guess; and up to 5 lines from the file (each cut to 200 characters) that mention a
   license or copyright, verbatim. It MUST NOT assign or imply a license that the file does not
   state.
 - **PRE-012-R13**: Each quarantine reason MUST be specific and shown to the user in plain words,
@@ -258,7 +272,7 @@ open its information and find both.
 - **PRE-012-R14**: A preset that passed static validation MUST NOT be playable until it was loaded
   and drawn for several frames, with audio input, by an engine that is not the one drawing the
   visible picture. The visible picture MUST be unaffected by the trial's outcome.
-- **PRE-012-R15**: The trial MUST have a time limit. A trial that does not finish in time MUST end
+- **PRE-012-R15**: The trial MUST have a time limit of 10 seconds. A trial that does not finish in time MUST end
   with the preset quarantined, and the app MUST stay responsive. At most one trial runs at a time,
   and at most one abandoned trial may exist; while one exists, later imports wait as "not checked
   yet".
@@ -269,8 +283,8 @@ open its information and find both.
   and clear that record when the trial ends. At launch, a preset still recorded as on trial MUST
   be quarantined without being tried again.
 - **PRE-012-R18**: The first time a preset that passed its trial is shown on the visible renderer,
-  the same durable record MUST be kept until the preset has been drawn for a short proving
-  period. If the app ends inside that period, the preset MUST be quarantined at the next launch.
+  the same durable record MUST be kept until the preset has been drawn for a proving
+  period of 3 seconds. If the app ends inside that period, the preset MUST be quarantined at the next launch.
   Once proven, the preset is loaded without the record.
 - **PRE-012-R19**: If a user preset fails to load on the visible renderer, the previous preset
   MUST keep playing, the user MUST be told, and the preset MUST be quarantined.
@@ -363,8 +377,8 @@ open its information and find both.
 
 - One file per import; folders, archives and multi-selection are PRE-013.
 - Only `.milk` files are importable. The four built-in `.prjm` files are not a user format.
-- Limits are set from measurements of the built-in corpus (14,604 `.milk` files) with headroom,
-  and are recorded in Clarifications.
+- Limits are set from measurements of the built-in corpus (14,604 `.milk` files) with headroom;
+  the numbers and measurements are in Clarifications.
 - Simulator and Mac results are not device evidence (Constitution X); device checks are tagged
   `{device}` and belong to the roadmap's final device phase.
 - Editing, duplicating, exporting and re-scanning user presets are later roadmap rows. This

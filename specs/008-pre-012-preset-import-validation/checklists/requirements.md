@@ -34,5 +34,5 @@
 - The audit tables name source files and engine behavior on purpose: they are the evidence for
   what exists and what can go wrong, as in the earlier roadmap specs (003, 005). The requirements
   themselves state behavior only.
-- The exact limits (file size, line length, nesting, statement length, trial time) are left to
-  `/speckit-clarify`, which records them with the corpus measurements behind them.
+- The exact limits (file size, line length, nesting, statement length, trial time) were recorded
+  by `/speckit-clarify` with the corpus measurements behind them; all items re-validated, 16/16.
