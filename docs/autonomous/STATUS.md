@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-12T20:36:15Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-12T20:40:46Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,29 +9,29 @@
 
 | State | Features |
 |---|---|
-| audited | 309 |
-| implementing | 1 |
-| unit_passed | 1 |
-| integrated | 15 |
+| audited | 308 |
+| implementing | 2 |
+| integrated | 16 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated |
-|---|---|---|---|---|
-| P0 | 72 | 1 | 1 | 13 |
-| P1 | 149 | 0 | 0 | 2 |
-| P2 | 79 | 0 | 0 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated |
+|---|---|---|---|
+| P0 | 71 | 2 | 14 |
+| P1 | 149 | 0 | 2 |
+| P2 | 79 | 0 | 0 |
+| P3 | 9 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 311 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
+- 310 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
 
 ## Integrated
 
 | ID | Feature | Merge commit | Branch |
 |---|---|---|---|
+| AUD-001 | Import DRM-free audio files | `a2813ab3fa4f` | `feature/aud-001` |
 | AUTO-001 | Roadmap parser | `419cc2a999ed` | `autonomous/integration` |
 | AUTO-002 | Implementation inventory gate | `419cc2a999ed` | `autonomous/integration` |
 | AUTO-003 | Dependency scheduler | `419cc2a999ed` | `autonomous/integration` |
@@ -58,7 +58,7 @@ None.
 
 ## Evidence by feature
 
-### AUD-001 Import DRM-free audio files (unit_passed)
+### AUD-001 Import DRM-free audio files (integrated)
 - `python3 scripts/check_compliance.py`: pass at `d9a60b2a6692` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-001/20261112T153538/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `d9a60b2a6692` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-001/20261112T153538/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `d9a60b2a6692` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-001/20261112T153538/script-tests.log`)
@@ -71,6 +71,7 @@ None.
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `3051b5f72a55` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-001/20261112T153606/autonomous-tests.log`)
 - `swift test --package-path Packages/CaptureKit`: pass at `3051b5f72a55` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-001/20261112T153606/swift-test_CaptureKit.log`)
 - `swift test --package-path Packages/CaptureUI`: pass at `3051b5f72a55` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-001/20261112T153606/swift-test_CaptureUI.log`)
+- `integration checkout: xcodegen generate; xcodebuild -scheme projectM-iOS -destination id=4E32B01D (iPhone 17, iOS 27.2) test: projectM-iOSTests 66 pass, ImportedAudioUITests 4 pass, StatusUITests 7 pass`: pass at `a2813ab3fa4f` (log `.autonomous/logs/integration/aud-001/app-tests.log`)
 
 ### AUTO-001 Roadmap parser (integrated)
 - `python3 scripts/autonomous/tests/test_autonomous.py (48 tests)`: pass at `419cc2a999ed`

@@ -6,10 +6,9 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 72,
-   "implementing": 1,
-   "integrated": 13,
-   "unit_passed": 1
+   "audited": 71,
+   "implementing": 2,
+   "integrated": 14
   },
   "P1": {
    "audited": 149,
@@ -23,10 +22,9 @@
   }
  },
  "by_state": {
-  "audited": 309,
-  "implementing": 1,
-  "integrated": 15,
-  "unit_passed": 1
+  "audited": 308,
+  "implementing": 2,
+  "integrated": 16
  },
  "device_gate": {
   "blocked": [],
@@ -62,7 +60,6 @@
    "ANL-014",
    "ANL-015",
    "ANL-016",
-   "AUD-001",
    "AUD-002",
    "AUD-003",
    "AUD-004",
@@ -348,7 +345,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "311 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
+   "310 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
   ]
  },
  "features": {
@@ -637,20 +634,20 @@
    "branch": "feature/aud-001",
    "branch_sha": "3051b5f72a55eec13d76d3e300d1e446ce582ac7",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "a2813ab3fa4f2cd2b8fb8597ca8f7b87943a9dea",
    "priority": "P0",
    "spec_dir": "specs/003-aud-001-import-drm-free-audio-files",
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "AUD-002": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/aud-002",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/006-aud-002-support-common-audio-containers",
+   "state": "implementing"
   },
   "AUD-003": {
    "attempts": 0,
@@ -3615,6 +3612,11 @@
  },
  "integrated": [
   {
+   "branch": "feature/aud-001",
+   "id": "AUD-001",
+   "sha": "a2813ab3fa4f2cd2b8fb8597ca8f7b87943a9dea"
+  },
+  {
    "branch": "autonomous/integration",
    "id": "AUTO-001",
    "sha": "419cc2a999edbc771333eb97968590802bc490fe"
@@ -3697,5 +3699,5 @@
  "run_id": "cb545c51cf0b",
  "skipped_existing": [],
  "total": 326,
- "updated": "2026-11-12T20:36:15Z"
+ "updated": "2026-11-12T20:40:46Z"
 }
