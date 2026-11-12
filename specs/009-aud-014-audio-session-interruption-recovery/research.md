@@ -21,6 +21,20 @@ Paths are under `Packages/CaptureKit/Sources/CaptureKit/`.
 | Route `oldDeviceUnavailable` | `AVInAppPlaybackBackend.swift:164-172`: `pause()` + `.outputRouteLost`; manager `:368-371` only while running → Paused, `audioRouteChanged`; foreground does not resume it (`:197`) | continue on the new input or `.failed(.microphoneUnavailable)` | — |
 | Background during an interruption | `CaptureManager.swift:190-194`: suspend, `pauseReason = nil`, Paused. Foreground (`:195-198`) then resumes regardless of the interruption | same | keeps running |
 
+## What changed (after implementation, 2026-11-12)
+
+| Event | In-App Playback now | Microphone, System/App Capture |
+|---|---|---|
+| Interruption began | The backend holds the graph at once (`AVInAppPlaybackBackend.handle`), so the position is the one of that moment (player time, or start frame + frames the tap delivered). `CaptureManager` opens an `OpenInterruption` record | unchanged |
+| Ended, shouldResume | `InterruptionPolicy` decides: resume only if eligible, not paused by the user, transport untouched, output not lost, app presentable; deferred to the next foreground/unlock otherwise | unchanged |
+| Ended, no shouldResume | unchanged state ("Interrupted", FR-051); the record keeps a later foreground from resuming | unchanged |
+| Ended never delivered | stays "Interrupted"; a refused Play keeps the session (track, position) | unchanged |
+| Reason | `routeDisconnected` is treated as an interruption plus a lost output; the suspended-app marker is still not used (not sent on iOS 16+) | unchanged |
+| `AVAudioEngineConfigurationChange` | observed per graph; a playing graph is held and resumed through the cut, a held graph stays held | unchanged (not observed) |
+| Media services reset | the graph is rebuilt at its position; continues only if it was playing; failure → "In-App Playback failed" | unchanged (Microphone: visible error) |
+| Route `oldDeviceUnavailable` | as before while playing; now also recorded during an interruption and while the lifecycle holds playback, so nothing resumes by itself afterwards | unchanged |
+| Background during an interruption | Paused with the "Interrupted" reason; the foreground no longer resumes blindly | unchanged |
+
 ## Decisions
 
 ### AUD-014-D1: which system signals
