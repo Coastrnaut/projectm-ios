@@ -138,3 +138,21 @@ is unchanged, so the App Store Connect record (app ID 6833037520) still applies.
   2. Add the in-app purchase "Full Preset Library".
   3. Fill in What's New and the description from `docs/release/store-copy.md`.
   4. Submit for review.
+
+## 1.1 prepared for review, 2026-11-12
+
+Done in App Store Connect, in Chrome, with the owner signed in:
+- **Version 1.1** created, with build 2 attached.
+- **What's New, description and keywords** set exactly as in `docs/release/store-copy.md` (feature
+  002 additions):
+  - the library paragraph added;
+  - the network sentence changed to "the only network use is the App Store's own purchase and
+    restore";
+  - "Free and open source" changed to "Open source";
+  - "presets" added to the keywords.
+- **App Review notes** replaced with the 1.1 text from `docs/release/app-review-notes.md`, without
+  the internal ADR reference.
+- **Release settings** carried over from 1.0: automatic release, to all users immediately, keep
+  the existing rating.
+- **Draft submission:** "iOS App 1.1 (2)" and the in-app purchase "Full Preset Library"; the
+  version's status is Ready for Review. **Not submitted yet: waiting for the owner's go.**
