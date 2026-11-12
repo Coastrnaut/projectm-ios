@@ -109,8 +109,14 @@ Paths: `PKG` = `Packages/PresetLibrary/Sources/PresetLibrary`, `PKGT` =
     nothing, never reached by Next/Previous/Random; after `setUnlocked(true)` it plays; purchase
     state fields are otherwise untouched;
   - an entry missing from the library is not listed, not counted, and still in the file after a
-    reorder (S7); with a newer-format file `collectionsUnavailableText` is set and every action
-    reports the reason.
+    reorder (S7); with a newer-format file `collectionsAvailability` is `newerFormat`,
+    `collectionsUnavailableText` is the clarified sentence and every action reports the reason;
+    after an unreadable file was set aside `collectionsNotice` holds the clarified sentence until
+    dismissed (R15);
+  - edge cases: a collection whose every entry is locked or missing, as the scope: Next, Previous
+    and Random load nothing and do not request a purchase; after a refund (`setUnlocked(false)`)
+    a collection scope falls back to Included like every other scope (FR-109) and the collection
+    is unchanged.
   Evidence: the tests do not compile before T11.
 - [ ] PRE-007-T11 [US1] {sim} Extend `APP/Coordinators/PresetCoordinator.swift` (store in the
   initializer, collections API, `collectionsMessage`, titles, `resolveScope`, `displayCount`
@@ -130,7 +136,8 @@ Paths: `PKG` = `Packages/PresetLibrary/Sources/PresetLibrary`, `PKGT` =
   rows `collection:<name>` labelled "<name>, <n> presets"; `newCollection`; Edit mode with move
   and delete; swipe actions and context menu (Rename, Move Up, Move Down, Delete); VoiceOver
   custom actions for the moves; delete confirmation; `collectionsEmpty`;
-  `collectionsUnavailable`. Evidence: the app builds; exercised by T16.
+  `collectionsUnavailable` (newer format) and `collectionsNotice` (unreadable data set aside,
+  shown once with a dismiss button; R15). Evidence: the app builds; exercised by T16.
 - [ ] PRE-007-T14 [US2] {sim} Create `APP/Views/PresetCollectionView.swift` (R5, R6, R11, R13,
   R18): `PresetRow`s in the user's order, choosing calls `onChoose(preset, .collection(id))`,
   Edit mode with move and remove, context menu (Move Up, Move Down, Remove from Collection),
@@ -144,11 +151,14 @@ Paths: `PKG` = `Packages/PresetLibrary/Sources/PresetLibrary`, `PKGT` =
 - [ ] PRE-007-T16 [US2] {sim} Write `APP/UITests/PresetCollectionsUITests.swift` (launch with
   `-uitestUnlocked NO`; scroll lazily built rows into view):
   - create "Friday set", refuse a duplicate name with the message, add three Included presets
-    from the Included list, open the collection and check the order added;
+    from the Included list (the third through "New Collection…" is not used here; one of them is
+    added to a second collection created from inside the add sheet, R4), open the collection and
+    check the order added; adding a preset twice shows the checkmark and changes nothing;
   - Move Up on the last preset, relaunch without the reset argument, check the same order (S1);
   - choose a preset: the scope line is "Friday set · 3", Next and Previous follow the order and
     wrap, Random stays inside;
-  - create a second collection, move it up, relaunch, same order (S1);
+  - move the second collection up, relaunch, same order (S1);
+  - remove one preset from a collection: it is gone there and still in Included (R5);
   - star a preset, delete "Friday set": the preset is still in Included and still starred, the
     scope line falls back to "Included · 28" (S2).
   Evidence: the UI tests pass on the iOS 27.2 simulator, twice.

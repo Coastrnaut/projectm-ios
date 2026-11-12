@@ -199,6 +199,8 @@ reached by Next, Previous or Random; then unlock and check both play.
   others.
 - **Favorites and collections are independent**: starring or unstarring a preset never changes a
   collection, and the reverse.
+- **Refund while a collection is the scope**: as for every scope, the scope returns to Included
+  and the playing preset keeps playing (FR-109); the collection and its entries are unchanged.
 - **Purchases**: collections never read or write purchase state; they only ask the library
   whether a preset is locked.
 

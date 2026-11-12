@@ -196,7 +196,8 @@ logical records without the store.
 ### App layer
 
 - `PresetCoordinator` takes the store in its initializer. It exposes `collections`,
-  `collectionsAvailability`, `collectionListing(_:)`, and one method per user action; each catches
+  `collectionsAvailability`, `collectionsUnavailableText`, `collectionsNotice` (the set-aside
+  sentence, dismissible), `collectionListing(_:)`, and one method per user action; each catches
   `PresetCollectionError`, sets `collectionsMessage` (shown as an alert) and bumps
   `collectionsVersion` so views refresh. `members`, `scopeLine` and the scope announcement pass the
   store's dictionary and names. `resolveScope()` also falls back when a collection scope names a
