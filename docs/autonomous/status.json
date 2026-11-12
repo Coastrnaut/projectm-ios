@@ -6,9 +6,10 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 68,
+   "audited": 67,
    "implementing": 1,
-   "integrated": 18
+   "integrated": 18,
+   "unit_passed": 1
   },
   "P1": {
    "audited": 149,
@@ -22,9 +23,10 @@
   }
  },
  "by_state": {
-  "audited": 305,
+  "audited": 304,
   "implementing": 1,
-  "integrated": 20
+  "integrated": 20,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -758,12 +760,12 @@
   "AUD-014": {
    "attempts": 0,
    "branch": "feature/aud-014",
-   "branch_sha": null,
+   "branch_sha": "8d270f3cbeedd088367ebfed0bfda5ea9d6bca05",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": "specs/009-aud-014-audio-session-interruption-recovery",
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "AUD-015": {
    "attempts": 0,
@@ -2517,13 +2519,13 @@
   },
   "PRE-015": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/pre-015",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/010-pre-015-user-preset-duplication",
+   "state": "implementing"
   },
   "PRE-016": {
    "attempts": 0,
@@ -3715,5 +3717,5 @@
  "run_id": "cb545c51cf0b",
  "skipped_existing": [],
  "total": 326,
- "updated": "2026-11-12T23:36:13Z"
+ "updated": "2026-11-12T23:55:00Z"
 }
