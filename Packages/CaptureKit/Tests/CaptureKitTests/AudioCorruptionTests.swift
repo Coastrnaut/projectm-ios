@@ -124,6 +124,10 @@ final class AudioCorruptionTests: XCTestCase {
         await assertRefused(try AudioFixtures.truncated(aiff, to: source("cut50.aiff"), fraction: 0.5), .unreadable)
         await assertRefused(try AudioFixtures.truncated(aiff, to: source("cut90.aiff"), fraction: 0.9), .unreadable)
         await assertRefused(try AudioFixtures.truncated(lossless, to: source("cut90-lossless.m4a"), fraction: 0.9), .unreadable)
+        // A WAV cut inside its format chunk (30 bytes): recognized, but nothing can be decoded.
+        let wav = try tone("whole.wav", .wav16)
+        try Data(contentsOf: wav).prefix(30).write(to: source("cut-header.wav"))
+        await assertRefused(source("cut-header.wav"), .unreadable)
         // Under a wrong name the answer is the same: the content is recognized first.
         await assertRefused(try AudioFixtures.truncated(aiff, to: source("cut50-aiff.mp3"), fraction: 0.5), .unreadable)
     }

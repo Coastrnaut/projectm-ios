@@ -72,6 +72,16 @@ final class AudioLibraryCoordinatorTests: XCTestCase {
         XCTAssertFalse(coordinator.isImporting)
     }
 
+    /// A classic AIFF header (mono, 16-bit, 44.1 kHz) stating 44,100 frames, followed by only 100.
+    static func truncatedAIFF() -> Data {
+        func be<T: FixedWidthInteger>(_ value: T) -> [UInt8] { withUnsafeBytes(of: value.bigEndian) { Array($0) } }
+        let sound = [UInt8](repeating: 0, count: 200)
+        let common = be(Int16(1)) + be(UInt32(44_100)) + be(Int16(16)) + be(UInt16(0x400E)) + be(UInt64(0xAC44_0000_0000_0000))
+        var body: [UInt8] = Array("AIFF".utf8) + Array("COMM".utf8) + be(UInt32(common.count)) + common
+        body += Array("SSND".utf8) + be(UInt32(88_200 + 8)) + be(UInt32(0)) + be(UInt32(0)) + sound
+        return Data(Array("FORM".utf8) + be(UInt32(4 + 8 + common.count + 8 + 8 + 88_200)) + body)
+    }
+
     func testRefusedAndDuplicateFilesProduceOneMessage() async throws {
         let coordinator = makeCoordinator()
         let song = try wav("Song.wav")
@@ -80,12 +90,20 @@ final class AudioLibraryCoordinatorTests: XCTestCase {
         try Data("hello".utf8).write(to: notes)
         let fake = picked.appendingPathComponent("fake.wav")
         try Data(repeating: 7, count: 2048).write(to: fake)
-        await coordinator.importPicked(.success([notes, try wav("New.wav", seed: 5), song, fake]))
+        // AUD-002-R7: an AIFF whose header promises one second of audio but which holds 100 frames.
+        let cut = picked.appendingPathComponent("cut.aiff")
+        try Self.truncatedAIFF().write(to: cut)
+        let empty = picked.appendingPathComponent("empty.mp3")
+        try Data().write(to: empty)
+        await coordinator.importPicked(.success([notes, try wav("New.wav", seed: 5), song, fake, cut, empty]))
+        // AUD-002-R8: bytes that are no audio format are "unsupported", no longer "damaged".
         XCTAssertEqual(coordinator.resultMessage, """
         Imported 1 track.
         “notes.txt”: This file isn't a supported audio file.
         “Song” is already in your library.
-        “fake.wav”: This audio file can't be read. It may be damaged.
+        “fake.wav”: This file's format isn't supported. Import MP3, AAC, M4A, WAV or AIFF audio.
+        “cut.aiff”: This audio file can't be read. It may be damaged.
+        “empty.mp3”: This file contains no audio.
         """)
         XCTAssertEqual(coordinator.tracks.map(\.title), ["New", "Song"])
         XCTAssertEqual(announcements.last, coordinator.resultMessage)
