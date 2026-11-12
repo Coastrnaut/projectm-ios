@@ -123,8 +123,13 @@ final class FakePlaybackBackend: InAppPlaybackBackend {
         pauseCount += 1
     }
 
+    /// AUD-014: `resume()` throws this, like iOS refusing to give the audio back during a call.
+    var resumeError: SourceError?
+    private(set) var refusedResumeCount = 0
+
     func resume() throws {
         guard started else { callsAfterStop += 1; return }
+        if let resumeError { refusedResumeCount += 1; throw resumeError }
         paused = false
         resumeCount += 1
     }

@@ -28,6 +28,18 @@
 //   (Constitution IV). Unlike a lifecycle pause it is never undone by foreground or unlock, nor
 //   by the end of an interruption: only `resume()` continues. It never applies to System/App
 //   Capture or Microphone.
+// * Interruptions of In-App Playback (AUD-014): from "interruption began" until playback resumes
+//   or the session ends, the manager remembers the open interruption: whether playback was
+//   eligible to resume (it was playing, or only held by the app lifecycle), what iOS has indicated
+//   so far, whether the user changed the transport, and whether the output was lost. At
+//   "interruption ended" and at every return to the foreground or unlock it asks
+//   `InterruptionPolicy` and resumes only on `.resume`. So: no resume after a user pause, Stop
+//   playback, seek or track change during the interruption; none after a lost output; none on a
+//   return to the foreground while the interruption is open or ended without a resume indication
+//   (the Paused state then keeps the "Interrupted" reason, FR-015); a resume indicated while the
+//   app was in the background happens on the return. A Play that iOS refuses while the
+//   interruption is open leaves the session as it was. States, reasons and log names are those of
+//   feature 001 (FR-051). Microphone and System/App Capture take the paths they always took.
 import AudioCore
 import Observation
 
@@ -75,6 +87,23 @@ public final class CaptureManager {
     @ObservationIgnored private var cancelGeneration = 0
     @ObservationIgnored private var lastSequence: UInt64 = 0
     @ObservationIgnored private var pauseReason: StopReason?
+    /// The open interruption of In-App Playback (AUD-014); nil when there is none.
+    @ObservationIgnored private var interruption: OpenInterruption?
+    /// False between background or lock and the next foreground or unlock.
+    @ObservationIgnored private var isPresentable = true
+    /// The user pause is the transport's Stop playback (AUD-014: the policy's "stopped").
+    @ObservationIgnored private var userPauseIsStop = false
+
+    /// What is remembered about an interruption of In-App Playback (data-model.md).
+    private struct OpenInterruption {
+        /// Playback was playing, or only held by the app lifecycle, when the interruption began.
+        var eligible: Bool
+        var signal: InterruptionPolicy.SystemSignal = .pending
+        /// Pause, Stop playback, seek, next or previous since it began.
+        var userChangedTransport = false
+        /// The output route was lost since it began.
+        var outputLost = false
+    }
     @ObservationIgnored private var lastFormatChangeCount = 0
     @ObservationIgnored private var rmsSum: Double = 0
     @ObservationIgnored private var rmsCount = 0
@@ -165,22 +194,44 @@ public final class CaptureManager {
     /// the state is Paused with no reason, and only `resume()` continues it. A session that an
     /// interruption, a lost route or the app's lifecycle already paused becomes a user pause.
     /// No effect for System/App Capture and Microphone, or without a session.
-    public func pause() async {
+    ///
+    /// `asStop`: the pause is the transport's Stop playback (AUD-014: an interruption then leaves
+    /// playback stopped, not paused). A pause during an open interruption cancels its resume.
+    public func pause(asStop: Bool = false) async {
         await serialized {
-            guard let source = self.current, self.activeMode == .inAppPlayback, !self.isPausedByUser,
+            guard let source = self.current, self.activeMode == .inAppPlayback,
                   self.state.isRunning || self.state == .interrupted || self.state == .paused else { return }
+            self.interruption?.userChangedTransport = true
+            if self.isPausedByUser {
+                if asStop { self.userPauseIsStop = true }
+                return
+            }
             // A source that is already Paused (route lost, lifecycle) was suspended then.
             if self.state != .paused { await source.suspend() }
             self.pauseReason = nil
             self.isPausedByUser = true
+            self.userPauseIsStop = asStop
             self.apply(.suspended)
         }
+    }
+
+    /// The user moved In-App Playback's transport without pausing: a seek, or another track
+    /// (AUD-014-R2). During an open interruption this cancels the automatic resume; stopped
+    /// playback becomes paused at the new place.
+    public func noteUserTransportChange() {
+        guard activeMode == .inAppPlayback, current != nil else { return }
+        interruption?.userChangedTransport = true
+        userPauseIsStop = false
     }
 
     /// App lifecycle per the data-model lifecycle matrix (FR-050, FR-053, FR-054).
     public func handle(_ event: AppLifecycleEvent) async {
         log(event.rawValue)
         await serialized {
+            switch event {
+            case .background, .lock: self.isPresentable = false
+            case .foreground, .unlock: self.isPresentable = true
+            }
             guard let source = self.current, let mode = self.activeMode, mode != .systemAppCapture else {
                 // System/App Capture continues while the stream delivers (RI-003); if the OS ends
                 // it, the source reports endedBySystem.
@@ -190,11 +241,18 @@ public final class CaptureManager {
             case .background, .lock:
                 guard self.state.isRunning || self.state == .interrupted else { return }
                 await source.suspend()
-                self.pauseReason = nil
+                // AUD-014: an open interruption of In-App Playback stays visible as the reason.
+                self.pauseReason = self.interruption.map { $0.outputLost ? .audioRouteChanged : .interrupted }
                 self.apply(.suspended)
             case .foreground, .unlock:
                 // A user pause (AUD-006) stays until the user resumes.
-                guard self.state == .paused, self.pauseReason == nil, !self.isPausedByUser else { return }
+                guard !self.isPausedByUser else { return }
+                if self.interruption != nil {
+                    // AUD-014-R5, R6: only the policy resumes after an interruption.
+                    await self.applyInterruptionPolicy()
+                    return
+                }
+                guard self.state == .paused, self.pauseReason == nil else { return }
                 await self.resumeInner()
             }
         }
@@ -289,6 +347,8 @@ public final class CaptureManager {
         lastSequence = update.sequence
         pauseReason = nil
         isPausedByUser = false
+        userPauseIsStop = false
+        interruption = nil
         state = update.state
         stopReason = nil
         stopDetail = nil
@@ -312,6 +372,8 @@ public final class CaptureManager {
         // failure or an end by the system (FR-015).
         pauseReason = nil
         isPausedByUser = false
+        userPauseIsStop = false
+        interruption = nil
         eventTask?.cancel()
         eventTask = nil
         if let source = current {
@@ -327,8 +389,13 @@ public final class CaptureManager {
             try await source.resume()
             pauseReason = nil
             isPausedByUser = false
+            userPauseIsStop = false
+            interruption = nil
             apply(state == .interrupted ? .interruptionEnded(shouldResume: true) : .resumed)
         } catch let error as SourceError {
+            // AUD-014-R8: while the interruption is still open iOS may refuse to give the audio
+            // back (a call is going on). The session stays as it was: track, position, state.
+            if interruption?.signal == .pending { return }
             await stopCurrent()
             apply(.failed(error.reason))
             if let detail = error.detail { stopDetail = detail }
@@ -361,14 +428,32 @@ public final class CaptureManager {
             switch event {
             case .interruptionBegan:
                 // FR-051: for System/App Capture an interruption alone changes nothing.
-                if mode != .systemAppCapture { self.apply(.interruptionBegan) }
+                guard mode != .systemAppCapture else { return }
+                if mode == .inAppPlayback { self.openInterruption() }
+                self.apply(.interruptionBegan)
             case .interruptionEnded(let shouldResume):
+                if mode == .inAppPlayback {
+                    // AUD-014-R4: an end without an open interruption changes nothing.
+                    guard self.interruption?.signal == .pending else { return }
+                    self.interruption?.signal = shouldResume ? .endedShouldResume : .endedWithoutResume
+                    await self.applyInterruptionPolicy()
+                    return
+                }
                 guard mode != .systemAppCapture, self.state == .interrupted else { return }
                 if shouldResume { await self.resumeInner() }
             case .outputRouteLost:
-                guard self.state.isRunning else { return }
-                self.pauseReason = .audioRouteChanged
-                self.apply(.suspended)
+                if self.state.isRunning {
+                    self.pauseReason = .audioRouteChanged
+                    self.apply(.suspended)
+                } else if mode == .inAppPlayback, !self.isPausedByUser {
+                    // AUD-014-R14: lost during an interruption or while the lifecycle holds playback.
+                    // Nothing resumes by itself afterwards; a Paused state shows the reason now.
+                    self.interruption?.outputLost = true
+                    if self.state == .paused {
+                        self.pauseReason = .audioRouteChanged
+                        self.apply(.suspended)
+                    }
+                }
             case .failed(let reason):
                 await self.stopCurrent()
                 self.apply(.failed(reason))
@@ -379,6 +464,52 @@ public final class CaptureManager {
             case .formatChanged:
                 break
             }
+        }
+    }
+
+    // MARK: - Interruptions of In-App Playback (AUD-014)
+
+    /// "Interruption began" for In-App Playback: opens the record, or keeps the open one.
+    private func openInterruption() {
+        if var open = interruption {
+            // A second "began" while it is open changes nothing. After an end, playback is on hold:
+            // a new interruption can resume it only if the last one was told to resume and that
+            // resume is still waiting for the foreground (AUD-014-R4).
+            guard open.signal != .pending else { return }
+            open.eligible = open.eligible && open.signal == .endedShouldResume
+            open.signal = .pending
+            interruption = open
+            return
+        }
+        // Held only by the lifecycle (background, lock) counts as playing: it would resume on return.
+        let heldByLifecycle = state == .paused && !isPausedByUser && pauseReason == nil
+        interruption = OpenInterruption(eligible: state.isRunning || heldByLifecycle,
+                                        outputLost: pauseReason == .audioRouteChanged)
+        if heldByLifecycle {
+            pauseReason = .interrupted
+            apply(.suspended)                         // no state change; shows the reason
+        }
+    }
+
+    /// Asks the policy what the open interruption allows now, and does it.
+    private func applyInterruptionPolicy() async {
+        guard let open = interruption, current != nil, state == .interrupted || state == .paused else { return }
+        let before: InterruptionPolicy.Transport =
+            open.eligible ? .playing : (isPausedByUser && userPauseIsStop ? .stopped : .paused)
+        let pausedBy: InterruptionPolicy.PausedBy =
+            isPausedByUser ? .user : (open.outputLost || pauseReason == .audioRouteChanged ? .system : .nobody)
+        let decision = InterruptionPolicy.decide(InterruptionPolicy.Input(
+            source: .inAppPlayback, before: before, pausedBy: pausedBy, signal: open.signal,
+            isPresentable: isPresentable, userChangedTransport: open.userChangedTransport, sourceIsUsable: true))
+        switch decision {
+        case .resume:
+            await resumeInner()
+        case .stayPaused(.outputDisconnected):
+            // The source paused itself when the route was lost: "Paused — audio route changed".
+            pauseReason = .audioRouteChanged
+            apply(.suspended)
+        case .stayPaused, .stayStopped, .fail, .notApplicable:
+            break                                     // on hold: Interrupted (FR-051), or the user's pause
         }
     }
 
