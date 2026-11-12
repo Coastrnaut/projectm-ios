@@ -28,6 +28,18 @@ This feature adds only what is missing. The audit read the code and its tests at
 | Auto-lock | Suppressed only while the visualization runs and the app is active (FR-084). | `IdleTimerPolicy.swift`, `IdleTimerPolicyTests.swift` | None. Unchanged. |
 | Camera | The app has no camera code. | `docs/autonomous/AUDIT.md` (MED, CAM: missing) | No mechanism exists that a camera (or any later frame source) could join to be released in the background. |
 
+## Clarifications
+
+### Session 2026-11-12
+
+Answered under the standing delegation (recommended option first; no owner question was needed).
+
+- Q: Does the inactive state (Control Center, a call banner, the app switcher with the app still on screen) count as "cannot present frames"? → A: No. Only background and device lock do. In the inactive state the app is still visible and the system still shows its frames, so stopping would freeze a visible picture; HEAD already keeps rendering there and only auto-lock handling reacts (FR-084). (R1, S5)
+- Q: What happens when the device is unlocked while the app is still in the background? → A: Nothing resumes. Background and lock are two independent conditions; frames can be presented only when neither holds. "Will enter foreground" clears both, so a missing unlock signal can never leave the app suspended. This corrects HEAD, where that unlock resumed the visualization. The capture layer still receives every event unchanged. (R1)
+- Q: How much does the visible renderer give up while suspended? → A: The frame loop, the window surface (its drawables) and the Reduce-flashing target. It keeps the engine, the current preset and its textures, because rebuilding those costs up to a second of shader compiles and would change the picture on return. The warm-up, which holds a second engine and context only to save time later, is torn down completely. (R6, R7)
+- Q: Must warm-up work have stopped by the time the suspend operation returns, or may it finish in the background? → A: It must have stopped. Suspend waits for the warm-up thread to reach its next safe point (it checks between loading a preset and each of its two frames) and to destroy its context. The wait is bounded by one engine call and happens once per background transition; no GPU work is then left running behind the app. (R7)
+- Q: Is any of this state stored, and how is the change rolled back? → A: Nothing is stored. Availability is derived from live signals and starts as "can present" at launch; the registry lives in memory. There is no migration and no setting. Rollback is reverting the commits; no data is left behind. (R14)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Nothing draws while the app cannot be seen (Priority: P1)
@@ -174,8 +186,9 @@ deallocated.
   textures are kept, so the picture continues from the same preset.
 - **PERF-011-R7**: While suspended, the preset warm-up MUST do no work: a request waiting for its
   delay is cancelled, queued presets are dropped, the warm-up thread ends, and its graphics
-  context, engine instance and render target are destroyed. When suspension returns no warm-up
-  work is running.
+  context, engine instance and render target are destroyed. The suspend operation waits for the
+  thread to reach its next safe point (between a preset's load and each of its frames), so when
+  it returns no warm-up work is running.
 - **PERF-011-R8**: On resume, the most recent warm-up request (made before or during suspension)
   MUST be issued again with the normal delay. Presets already warmed MUST NOT be warmed again.
 - **PERF-011-R9**: The fallback renderer's frame loop MUST obey R5.
@@ -189,6 +202,9 @@ deallocated.
   and the number of active resources before and after. The report MUST contain no user content.
 - **PERF-011-R13**: All suspend and resume operations MUST be safe to repeat and MUST NOT use an
   object after it was released, including when the renderer is destroyed while suspended.
+
+- **PERF-011-R14**: Nothing about presentation availability or the registry is persisted. At
+  launch the app assumes it can present; the registry and its marks live in memory only.
 
 ### Key Entities
 
