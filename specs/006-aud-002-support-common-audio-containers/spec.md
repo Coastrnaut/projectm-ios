@@ -18,6 +18,19 @@ of feature 001 (`specs/001-ios-projectm-visualizer/spec.md`) and of AUD-001
 (`specs/003-aud-001-import-drm-free-audio-files/spec.md`) stay in force unless a line below amends
 one explicitly.
 
+## Clarifications
+
+### Session 2026-11-12
+
+Answered by Claude under the owner's standing approval (routine decisions delegated, no human
+interaction); each answer is the conservative, local-first option using public APIs only.
+
+- Q: Should formats outside the five (for example CAF or FLAC, which AUD-001 already imports when the device decodes them) now be refused? → A: No. The five formats are a tested guarantee, not an allow-list; anything else the device's own decoder reads keeps importing as in AUD-001, so nothing that worked stops working. Such formats are not named in any message (AUD-002-R1, Assumptions).
+- Q: Should a file that is cut off part-way be refused, or imported as far as it plays? → A: Follow the device's decoder, checked at the start and at the end of the file only: if the decoder cannot read the file's final part, the file is refused as damaged; if the decoder itself reports a shorter, readable length (as it does for WAV, MP3 and raw AAC), the file is imported with that length. The check never reads the whole file, so it stays fast for large files (AUD-002-R10, R11).
+- Q: How far does "recognize by content" go for a misnamed file? → A: Among files with an audio extension, content wins: the five formats are recognized by their leading bytes (after any ID3 tag) and the stored copy is named for the recognized format, so later playback reads it correctly. A file with a non-audio extension is still refused before copying, as in AUD-001; content the app does not recognize falls back to the name, as before (AUD-002-R5, R6).
+- Q: How is "an encoding this device can't decode" told apart from "damaged"? → A: Only by what the device's decoder reports: when it recognizes the container and says the audio encoding is unsupported, the message is "unsupported encoding"; every other failure of a recognized format is "damaged". The app keeps no codec table of its own, so an exotic encoding inside M4A that the decoder rejects without saying why is reported as damaged. Apple Lossless in M4A is decoded by the device and therefore accepted (AUD-002-R4, R7).
+- Q: Where does the MP3 test file come from, given that no MP3 encoder exists on Apple platforms or on the build Mac? → A: The project's own test code assembles a valid MPEG-1 Layer III stream (a synthetic tone) at test time. Nothing is downloaded or installed, no third-party media is used, and no binary fixture is committed. Real-encoder MP3 files are a device-phase check (AUD-002-R15, Assumptions).
+
 ## Baseline: what AUD-001 already delivers (audit of 2026-11-12)
 
 AUD-001 built the imported-audio library and plays its tracks as In-App Playback. It accepts "a
@@ -225,8 +238,8 @@ it: playback fails with the message; a second, intact track then plays.
 
 **Playback failures**
 
-- **AUD-002-R12**: Starting playback of a stored track whose copy is missing or no longer decodes
-  MUST fail with "In-App Playback failed" (AUD-001-R19) before any audio is started; it MUST NOT
+- **AUD-002-R12**: Starting playback of a stored track whose copy is missing or whose beginning no
+  longer decodes MUST fail with "In-App Playback failed" (AUD-001-R19) before any audio is started; it MUST NOT
   play silence or another track. The library and the other tracks stay usable.
 
 **Compliance**
