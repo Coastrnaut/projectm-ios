@@ -48,7 +48,7 @@ packages:
   PresetLibrary:
     path: Packages/PresetLibrary
   # PERF-011: presentation availability and the registry of presentation-bound resources
-  # (pure Swift; Rendering and ANGLERendering depend on it too).
+  # (pure Swift; the renderer packages depend on it too).
   PresentationLifecycle:
     path: Packages/PresentationLifecycle
 targets:
