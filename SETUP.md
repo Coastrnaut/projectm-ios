@@ -214,7 +214,9 @@ project, and reported results and App Store uploads come from the Mac Studio onl
 **Recorded 2026-11-12:** step 7 passed on the Mac Studio (macOS 27.2.1): `verify_environment.py`
 exit 0, 88 script tests (1 skipped), docs and compliance OK, AudioCore 77 tests, the unsigned
 simulator build succeeded, and D1-D3 are listed. ADR-0002 and `CLAUDE.md` are updated. One
-difference from step 1 remains: the iOS 26.5 simulator runtime there is build 23F73, not 23F77.
+difference from step 1 remains: the iOS 26.5 runtime 23F77 was installed the same day
+(`xcodebuild -downloadPlatform iOS -buildVersion 23F77`), but build 23F73 is still installed
+beside it under the same identifier.
 
 ## 10. The first Mac afterwards
 
