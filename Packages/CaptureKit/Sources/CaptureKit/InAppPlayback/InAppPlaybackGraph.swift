@@ -118,6 +118,9 @@ final class InAppPlaybackGraph {
     private var playedToEnd = false
     /// `silence()` was called: nothing is scheduled until another track replaces this one.
     private var silenced = false
+    /// The last position read from the player in the current schedule. Used when the player's time
+    /// cannot be read (the engine was stopped by an interruption): better than the start frame.
+    private var lastReadFrame: AVAudioFramePosition?
     /// Whether the current schedule loops (`loops` at the time it was made).
     private var scheduledLoops = true
     /// Passes queued in the current schedule (loop): picks the file handle and the first frame.
@@ -158,8 +161,12 @@ final class InAppPlaybackGraph {
            nodeTime.isSampleTimeValid || nodeTime.isHostTimeValid,
            let playerTime = player.playerTime(forNodeTime: nodeTime), playerTime.isSampleTimeValid {
             elapsed = max(0, playerTime.sampleTime)
+        } else if let lastReadFrame {
+            return lastReadFrame
         }
-        return PlaybackPositionMath.frame(start: startFrame, elapsed: elapsed, length: content.length, loops: scheduledLoops)
+        let frame = PlaybackPositionMath.frame(start: startFrame, elapsed: elapsed, length: content.length, loops: scheduledLoops)
+        lastReadFrame = frame
+        return frame
     }
 
     // MARK: - Setup
@@ -338,6 +345,7 @@ final class InAppPlaybackGraph {
     /// Queues the track from `frame` in the current generation and, if `play`, starts the player.
     private func schedule(from frame: AVAudioFramePosition, play: Bool) {
         playedToEnd = false
+        lastReadFrame = nil
         startFrame = normalized(frame)
         passCount = 0
         atEnd = false
