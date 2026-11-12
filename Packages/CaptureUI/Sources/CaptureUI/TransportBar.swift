@@ -6,7 +6,7 @@
 //
 // Scrubbing: while the scrubber is dragged the times follow the finger at once, playback follows
 // with at most 10 seeks per second (`ScrubThrottle`), and the release seeks to the exact final
-// value. A value set without a drag (an assistive technology, a UI test) seeks directly.
+// value. A touch on the scrubber without a drag moves playback to that point.
 // VoiceOver: the scrubber is "Playback position", its value is "‹elapsed› of ‹length›", and the
 // increment and decrement gestures move it by 10 seconds.
 #if canImport(SwiftUI)
@@ -26,9 +26,8 @@ public struct TransportBar: View {
     /// Seek to this many seconds (already limited to the track).
     public let onSeek: (Double) -> Void
 
-    /// The scrubber's value while it is dragged; nil otherwise.
+    /// The scrubber's value while it is touched; nil otherwise.
     @State private var dragValue: Double?
-    @State private var isDragging = false
     @State private var throttle = ScrubThrottle()
     @Environment(\.dynamicTypeSize) private var typeSize
 
@@ -92,7 +91,6 @@ public struct TransportBar: View {
         Text(UIStrings.elapsedTime(seconds))
             .font(.caption)
             .monospacedDigit()
-            .accessibilityHidden(true)             // the scrubber's value says it
             .accessibilityIdentifier("transportElapsed")
     }
 
@@ -100,38 +98,63 @@ public struct TransportBar: View {
         Text(UIStrings.remainingTime(elapsed: seconds, duration: duration))
             .font(.caption)
             .monospacedDigit()
-            .accessibilityHidden(true)
             .accessibilityIdentifier("transportRemaining")
     }
 
+    /// The scrubber: a track with a thumb. A touch anywhere on it moves playback there; a drag
+    /// scrubs. It is drawn and handled here rather than with `Slider`, whose end-of-editing
+    /// callback did not arrive reliably for a drag in TransportUITests on the iOS 27.2 simulator
+    /// (2026-11-12): the times then stayed at the dragged value while playback went on.
     private func scrubber(shown: Double, duration: Double) -> some View {
-        Slider(value: Binding(get: { shown }, set: { scrubbed(to: $0) }), in: 0...max(duration, 0.001)) { editing in
-            if editing {
-                isDragging = true
-                throttle.reset()
-            } else {
-                isDragging = false
-                if let final = dragValue { onSeek(final) }      // the release always seeks, exactly
-                dragValue = nil
+        GeometryReader { geometry in
+            let travel = max(geometry.size.width - TransportBar.thumbSize, 1)
+            let fraction = duration > 0 ? min(max(shown / duration, 0), 1) : 0
+            ZStack(alignment: .leading) {
+                Capsule().fill(Color.primary.opacity(0.25)).frame(height: 4)
+                Capsule().fill(Color.accentColor).frame(width: TransportBar.thumbSize / 2 + travel * fraction, height: 4)
+                Circle().fill(Color.white)
+                    .shadow(color: .black.opacity(0.3), radius: 1, y: 0.5)
+                    .frame(width: TransportBar.thumbSize, height: TransportBar.thumbSize)
+                    .offset(x: travel * fraction)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { gesture in
+                        guard duration > 0 else { return }
+                        let value = TransportBar.value(atX: gesture.location.x, travel: travel, duration: duration)
+                        if dragValue == nil { throttle.reset() }
+                        dragValue = value
+                        if throttle.shouldSeek(at: ProcessInfo.processInfo.systemUptime) { onSeek(value) }
+                    }
+                    .onEnded { gesture in
+                        dragValue = nil
+                        guard duration > 0 else { return }
+                        // The release always seeks, to the exact final value (AUD-006-R12).
+                        onSeek(TransportBar.value(atX: gesture.location.x, travel: travel, duration: duration))
+                    }
+            )
         }
-        .disabled(duration <= 0)
+        .frame(height: 32)
+        .opacity(duration > 0 ? 1 : 0.4)
+        .accessibilityElement()
         .accessibilityLabel(Text(UIStrings.transportScrubber))
         .accessibilityValue(Text(UIStrings.scrubberValue(elapsed: shown, duration: duration)))
         .accessibilityAdjustableAction { direction in
+            guard duration > 0 else { return }
             let step = direction == .increment ? UIStrings.scrubStepSeconds : -UIStrings.scrubStepSeconds
             onSeek(min(max(0, shown + step), duration))
         }
         .accessibilityIdentifier("transportScrubber")
     }
 
-    private func scrubbed(to value: Double) {
-        guard isDragging else {
-            onSeek(value)                                        // set without a drag
-            return
-        }
-        dragValue = value
-        if throttle.shouldSeek(at: ProcessInfo.processInfo.systemUptime) { onSeek(value) }
+    static let thumbSize: CGFloat = 18
+
+    /// The time at horizontal position `x` of a scrubber whose thumb can travel `travel` points.
+    static func value(atX x: CGFloat, travel: CGFloat, duration: Double) -> Double {
+        guard travel > 0, duration > 0 else { return 0 }
+        return Double(min(max((x - thumbSize / 2) / travel, 0), 1)) * duration
     }
 
     private func button(_ title: String, icon: String, id: String, action: @escaping () -> Void) -> some View {

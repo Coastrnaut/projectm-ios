@@ -49,4 +49,15 @@ final class TransportStringsTests: XCTestCase {
         XCTAssertEqual(UIStrings.scrubberValue(elapsed: 0, duration: 60), "0 seconds of 1 minute")
         XCTAssertEqual(UIStrings.scrubberValue(elapsed: 3_661, duration: 7_200), "1 hour 1 minute 1 second of 2 hours")
     }
+
+    func testScrubberMapsATouchToATime() {
+        // A 300-point scrubber: the thumb (18 points) travels 282 points.
+        XCTAssertEqual(TransportBar.value(atX: 9, travel: 282, duration: 180), 0, accuracy: 1e-9)
+        XCTAssertEqual(TransportBar.value(atX: 150, travel: 282, duration: 180), 90, accuracy: 1e-9)
+        XCTAssertEqual(TransportBar.value(atX: 291, travel: 282, duration: 180), 180, accuracy: 1e-9)
+        XCTAssertEqual(TransportBar.value(atX: -40, travel: 282, duration: 180), 0, "left of the scrubber is the start")
+        XCTAssertEqual(TransportBar.value(atX: 900, travel: 282, duration: 180), 180, "right of it is the end")
+        XCTAssertEqual(TransportBar.value(atX: 100, travel: 282, duration: 0), 0)
+        XCTAssertEqual(TransportBar.value(atX: 100, travel: 0, duration: 180), 0)
+    }
 }
