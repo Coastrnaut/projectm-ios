@@ -179,8 +179,9 @@ it: playback fails with the message; a second, intact track then plays.
   "not a supported audio file" (AUD-001-R4a); the Files picker does not offer such files.
 - Random bytes that happen to begin like an audio file: refused as damaged rather than as
   unsupported. Either way nothing is imported.
-- A file whose header claims an absurd length, sample rate or channel count: refused, with no
-  large memory allocation and no long wait.
+- A file whose header claims an absurd length, sample rate or channel count: the length is cut to
+  what the file really holds, and an impossible rate or channel count is refused (AUD-002-R16),
+  with no large memory allocation and no long wait.
 - More than two channels and DRM-protected files keep their AUD-001 messages.
 - A very large valid file: validation reads a bounded amount regardless of file size (apart from
   the copy itself, AUD-001-R4b).
@@ -236,6 +237,11 @@ it: playback fails with the message; a second, intact track then plays.
 - **AUD-002-R11**: Validation MUST be safe on malformed input: no crash, no hang, and memory use
   bounded independently of the file's size and of any length, rate or channel count its header
   claims.
+
+- **AUD-002-R16**: Audio whose sample rate is outside 8 kHz to 192 kHz MUST be refused at import
+  (as an unsupported encoding) and MUST NOT be handed to the playback engine at play time. Found
+  during implementation: a file header claiming an absurd rate (4 GHz) made the playback engine
+  raise an error the app cannot catch, which would crash it.
 
 **Playback failures**
 

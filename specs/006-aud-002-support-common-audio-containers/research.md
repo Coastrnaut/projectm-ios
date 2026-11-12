@@ -60,11 +60,13 @@ on the iOS simulator.
   | Situation | Error |
   |---|---|
   | zero bytes copied | `noAudio` |
+  | the file cannot be opened for reading (inspector used alone) | `unreadable` |
   | open fails, container not recognized | `unsupportedFormat` |
   | open fails with `'fmt?'`, container recognized | `unsupportedEncoding` |
   | open fails otherwise, container recognized | `unreadable` |
   | opens, zero frames | `noAudio` |
   | opens, invalid rate or channel count 0 | `unreadable` |
+  | sample rate outside 8 kHz…192 kHz (AUD-002-D11) | `unsupportedEncoding` |
   | more than two channels | `unsupportedChannelCount` (AUD-001) |
   | a decode probe fails with `'fmt?'` | `unsupportedEncoding` |
   | a decode probe fails otherwise, or the start decodes to zero frames | `unreadable` |
@@ -129,6 +131,21 @@ on the iOS simulator.
   the mixer converts to the output format (AUD-001-D7); a mono file is spread to both channels by
   the mixer. No code change is needed; AUD-001 tested one mono 44.1 kHz file at 48 kHz.
 - **Decision**: prove it per format and rate by measuring the frequency of each output channel.
+
+## AUD-002-D11 Sample-rate bounds (found during implementation, 2026-11-12)
+
+- **Probe**: `AVAudioEngine.connect(player, to: mixer, format:)` at 4,000,000,000 Hz raises an
+  `NSException` ("uncaught exception", process terminated); Swift cannot catch it. A 16-bit WAV
+  whose header states that rate opened fine in `AVAudioFile` and passed AUD-001's checks, so
+  playing it would have crashed the app. Rates from 100 Hz to 768 kHz connect and render on the
+  Mac.
+- **Decision**: `ImportedTrack.supportedSampleRates = 8,000…192,000` Hz. The inspector refuses
+  anything else as `unsupportedEncoding`, and `InAppPlaybackGraph.load` refuses it too, in case a
+  stored copy was replaced. Both ends of the range are tested through import and playback.
+- **Rationale**: 8 kHz is the lowest rate in real use (telephony). 192 kHz is the highest rate
+  the system's own file writer produces (asked for 384 kHz, `AVAudioFile` wrote 192 kHz), so it is
+  the highest rate a fixture can prove; higher-rate files are rare and are refused with a message
+  rather than accepted untested.
 
 ## AUD-002-D10 Licensing, privacy and neighboring features (analysis of 2026-11-12)
 

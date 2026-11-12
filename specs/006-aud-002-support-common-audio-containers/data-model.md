@@ -35,7 +35,7 @@ New:
 | Case | Meaning |
 |---|---|
 | `unsupportedFormat` | audio extension, but the content is no audio format the app or the device recognizes |
-| `unsupportedEncoding` | recognized container; the device has no decoder for the audio inside |
+| `unsupportedEncoding` | recognized container; the device has no decoder for the audio inside, or its sample rate is outside 8 kHz…192 kHz |
 | `noAudio` | zero-byte file, or a valid file with zero audio frames |
 
 `unreadable` now means only: a recognized format that is damaged or incomplete.

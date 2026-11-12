@@ -66,7 +66,8 @@ public struct AudioFileInfo: Sendable, Equatable {
 
 ## InAppPlaybackGraph.load
 
-`load(.file(url))` throws unless the file opens, has frames, a positive rate, one or two channels,
+`load(.file(url))` throws unless the file opens, has frames, a sample rate inside
+`ImportedTrack.supportedSampleRates` (8 kHz…192 kHz), one or two channels,
 **and its first frames decode**. The read position is back at 0 when it returns.
 `AVInAppPlaybackBackend.start` turns any throw into `SourceError(.inAppPlaybackFailed)` before the
 audio session is activated (unchanged).
