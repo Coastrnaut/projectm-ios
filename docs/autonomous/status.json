@@ -8,8 +8,7 @@
   "P0": {
    "audited": 67,
    "implementing": 1,
-   "integrated": 18,
-   "unit_passed": 1
+   "integrated": 19
   },
   "P1": {
    "audited": 149,
@@ -25,8 +24,7 @@
  "by_state": {
   "audited": 304,
   "implementing": 1,
-  "integrated": 20,
-  "unit_passed": 1
+  "integrated": 21
  },
  "device_gate": {
   "blocked": [],
@@ -72,7 +70,6 @@
    "AUD-011",
    "AUD-012",
    "AUD-013",
-   "AUD-014",
    "AUD-015",
    "AUD-016",
    "CAM-001",
@@ -343,7 +340,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "306 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
+   "305 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
   ]
  },
  "features": {
@@ -762,10 +759,10 @@
    "branch": "feature/aud-014",
    "branch_sha": "8d270f3cbeedd088367ebfed0bfda5ea9d6bca05",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "c4f03aa5e3d8d70168c21e2e42f71eb07d86a0df",
    "priority": "P0",
    "spec_dir": "specs/009-aud-014-audio-session-interruption-recovery",
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "AUD-015": {
    "attempts": 0,
@@ -3623,6 +3620,11 @@
    "branch": "feature/aud-006",
    "id": "AUD-006",
    "sha": "03b23a8ae6a0aad7e0f09d81dd1bfe960b5e795a"
+  },
+  {
+   "branch": "feature/aud-014",
+   "id": "AUD-014",
+   "sha": "c4f03aa5e3d8d70168c21e2e42f71eb07d86a0df"
   },
   {
    "branch": "autonomous/integration",

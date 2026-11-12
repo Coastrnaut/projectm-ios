@@ -11,22 +11,21 @@
 |---|---|
 | audited | 304 |
 | implementing | 1 |
-| unit_passed | 1 |
-| integrated | 20 |
+| integrated | 21 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated |
-|---|---|---|---|---|
-| P0 | 67 | 1 | 1 | 18 |
-| P1 | 149 | 0 | 0 | 2 |
-| P2 | 79 | 0 | 0 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated |
+|---|---|---|---|
+| P0 | 67 | 1 | 19 |
+| P1 | 149 | 0 | 2 |
+| P2 | 79 | 0 | 0 |
+| P3 | 9 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 306 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
+- 305 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
 
 ## Integrated
 
@@ -35,6 +34,7 @@ The physical-device suite may **not** start:
 | AUD-001 | Import DRM-free audio files | `a2813ab3fa4f` | `feature/aud-001` |
 | AUD-002 | Support common audio containers | `f886b7ce7c76` | `feature/aud-002` |
 | AUD-006 | Seekable transport | `03b23a8ae6a0` | `feature/aud-006` |
+| AUD-014 | Audio session interruption recovery | `c4f03aa5e3d8` | `feature/aud-014` |
 | AUTO-001 | Roadmap parser | `419cc2a999ed` | `autonomous/integration` |
 | AUTO-002 | Implementation inventory gate | `419cc2a999ed` | `autonomous/integration` |
 | AUTO-003 | Dependency scheduler | `419cc2a999ed` | `autonomous/integration` |
@@ -100,7 +100,7 @@ None.
 - `xcodebuild -scheme Rendering-Package -destination id=4E32B01D-7911-4A64-A944-877DDD445BC0 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `383d9ab633a4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-006/20261112T174904/sim-test_Rendering.log`)
 - `integration checkout, full preset library: xcodebuild -scheme projectM-iOS -destination id=4E32B01D (iPhone 17, iOS 27.2) test: projectM-iOSTests 87 pass; UI tests 22 pass (Transport 3, ImportedAudio 5, Status 7, Visualizer 7)`: pass at `e40e5780bb27` (log `.autonomous/logs/integration/aud-006/app-tests.log`)
 
-### AUD-014 Audio session interruption recovery (unit_passed)
+### AUD-014 Audio session interruption recovery (integrated)
 - `python3 scripts/check_compliance.py`: pass at `8d270f3cbeed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-014/20261112T185431/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `8d270f3cbeed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-014/20261112T185431/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `8d270f3cbeed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-014/20261112T185431/script-tests.log`)
