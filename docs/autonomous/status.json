@@ -6,10 +6,9 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 71,
-   "implementing": 1,
-   "integrated": 14,
-   "unit_passed": 1
+   "audited": 70,
+   "implementing": 2,
+   "integrated": 15
   },
   "P1": {
    "audited": 149,
@@ -23,10 +22,9 @@
   }
  },
  "by_state": {
-  "audited": 308,
-  "implementing": 1,
-  "integrated": 16,
-  "unit_passed": 1
+  "audited": 307,
+  "implementing": 2,
+  "integrated": 17
  },
  "device_gate": {
   "blocked": [],
@@ -62,7 +60,6 @@
    "ANL-014",
    "ANL-015",
    "ANL-016",
-   "AUD-002",
    "AUD-003",
    "AUD-004",
    "AUD-005",
@@ -347,7 +344,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "310 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
+   "309 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
   ]
  },
  "features": {
@@ -646,10 +643,10 @@
    "branch": "feature/aud-002",
    "branch_sha": "4700a64a37aa2249862a7ba51af4385135b6f926",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "f886b7ce7c761f4659f9937d7e4e44ef7e1f2199",
    "priority": "P0",
    "spec_dir": "specs/006-aud-002-support-common-audio-containers",
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "AUD-003": {
    "attempts": 0,
@@ -683,13 +680,13 @@
   },
   "AUD-006": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/aud-006",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/007-aud-006-seekable-transport",
+   "state": "implementing"
   },
   "AUD-007": {
    "attempts": 0,
@@ -3619,6 +3616,11 @@
    "sha": "a2813ab3fa4f2cd2b8fb8597ca8f7b87943a9dea"
   },
   {
+   "branch": "feature/aud-002",
+   "id": "AUD-002",
+   "sha": "f886b7ce7c761f4659f9937d7e4e44ef7e1f2199"
+  },
+  {
    "branch": "autonomous/integration",
    "id": "AUTO-001",
    "sha": "419cc2a999edbc771333eb97968590802bc490fe"
@@ -3701,5 +3703,5 @@
  "run_id": "cb545c51cf0b",
  "skipped_existing": [],
  "total": 326,
- "updated": "2026-11-12T21:20:13Z"
+ "updated": "2026-11-12T21:22:34Z"
 }
