@@ -97,6 +97,17 @@ final class ViewRenderTests: XCTestCase {
         XCTAssertGreaterThan(longSilence, silence, "prolonged-silence hint adds no height")
     }
 
+    /// AUD-014-T17: the explanation line takes part in layout for In-App Playback only.
+    func testBannerShowsThePlaybackHoldExplanationForInAppPlaybackOnly() throws {
+        for (reason, state) in [(StopReason.interrupted, AudioState.interrupted), (.audioRouteChanged, .paused)] {
+            let inApp = try height(StatusBanner(mode: .inAppPlayback, state: state, reason: reason, prolongedSilence: false) { _ in })
+            let microphone = try height(StatusBanner(mode: .microphone, state: state, reason: reason, prolongedSilence: false) { _ in })
+            XCTAssertGreaterThan(inApp, microphone, "\(reason.code): the explanation adds no height")
+            assertSmokeRenders(StatusBanner(mode: .inAppPlayback, state: state, reason: reason, prolongedSilence: false) { _ in },
+                               name: "banner on hold \(reason.code)")
+        }
+    }
+
     // MARK: Transport bar (AUD-006-T26)
 
     private func transportBar(title: String = "Track", isPlaying: Bool, seconds: Double = 65, duration: Double = 180) -> TransportBar {
