@@ -14,17 +14,17 @@ Paths: `PKG` = `Packages/PresetLibrary/Sources/PresetLibrary`, `PKGT` =
 
 ## Phase 1: Setup
 
-- [ ] PRE-007-T01 {mac} Add test resources to `Packages/PresetLibrary/Package.swift`
+- [X] PRE-007-T01 {mac} Add test resources to `Packages/PresetLibrary/Package.swift`
   (`resources: [.copy("Golden")]` on the test target) and create the immutable golden fixture
   `PKGT/Golden/collections-v1.json`: `schemaVersion` 1; three collections in a non-alphabetical
   order, one empty, one with a name containing an emoji and a diacritic, one holding an id that
   exists in `Fixtures.records`, a locked pack id and an id that is in no index. Evidence:
   `swift build --build-tests --package-path Packages/PresetLibrary` succeeds and the file parses
-  with `python3 -m json.tool`.
+  with `python3 -m json.tool`. — Verified 2026-11-12: `swift build --build-tests` succeeded and `python3 -m json.tool` parsed the fixture; `testTheGoldenVersion1FixtureDecodesIntact` reads it through `Bundle.module`.
 
 ## Phase 2: Foundational (model, file, store; blocks every story)
 
-- [ ] PRE-007-T02 {mac} Write `PKGT/PresetCollectionTests.swift` (R9, R10, R6, R14): name
+- [X] PRE-007-T02 {mac} Write `PKGT/PresetCollectionTests.swift` (R9, R10, R6, R14): name
   normalization (trim, line breaks → spaces, "1-60 user-perceived characters", an emoji counts
   once, exactly 60 accepted, 61 refused with `nameTooLong(limit: 60)`, white space only →
   `emptyName`); comparison key ignores case and diacritics; `moved(_:fromOffsets:toOffset:)` for
@@ -32,22 +32,22 @@ Paths: `PKG` = `Packages/PresetLibrary/Sources/PresetLibrary`, `PKGT` =
   `applying(visibleOrder:to:)` keeps hidden ids in their slots, accepts a full permutation,
   refuses a foreign id, a duplicate and (when nothing is hidden) is the identity for the same
   order; every `PresetCollectionError` has a non-empty `message`. Evidence: the tests do not
-  compile before T03.
-- [ ] PRE-007-T03 {mac} Implement `PKG/PresetCollection.swift`: `PresetCollection` (JSON key
+  compile before T03. — Verified 2026-11-12: written before the sources existed; `swift build --build-tests` failed with "cannot find type 'PresetCollectionStore'/'PresetCollectionsFile'/'PresetCollectionError' in scope" (one red run for T02, T04, T06 and T08 together).
+- [X] PRE-007-T03 {mac} Implement `PKG/PresetCollection.swift`: `PresetCollection` (JSON key
   `presets`), `PresetCollectionLimits` (60 / 100 / 1,000 / 16 MB), `PresetCollectionError` with
   `message`, `PresetCollectionName`, `PresetCollectionOrder`, per plan "Model and rules".
-  Evidence: T02 tests pass.
-- [ ] PRE-007-T04 {mac} Write `PKGT/PresetCollectionsFileTests.swift` (R15, S6): the golden v1
+  Evidence: T02 tests pass. — Verified 2026-11-12: `swift test --package-path Packages/PresetLibrary` on the Mac Studio host: 71 tests, 0 failures (PresetCollectionTests 12).
+- [X] PRE-007-T04 {mac} Write `PKGT/PresetCollectionsFileTests.swift` (R15, S6): the golden v1
   fixture decodes with every name, order and entry intact; `encode()` of the decoded fixture is
   semantically equal to the fixture (compared as JSON objects) and has `schemaVersion` 1; version
   2 → `ReadError.newerVersion(2)`; not JSON, a JSON array, a missing key, an empty or duplicate
   collection id, version 0 with no step, and data over 16 MB → `ReadError.unreadable`; duplicate
   preset ids in one collection are reduced to the first; unknown keys are ignored; an injected
   version-0 step (a bare array of collections) migrates and reports `migratedFrom == 0`; a step
-  that throws → `unreadable`. Evidence: the tests do not compile before T05.
-- [ ] PRE-007-T05 {mac} Implement `PKG/PresetCollectionsFile.swift` per plan "File and migration".
-  Evidence: T04 tests pass.
-- [ ] PRE-007-T06 {mac} Write `PKGT/PresetCollectionStoreTests.swift` against a fresh temporary
+  that throws → `unreadable`. Evidence: the tests do not compile before T05. — Verified 2026-11-12: written before the sources existed; `swift build --build-tests` failed with "cannot find type 'PresetCollectionStore'/'PresetCollectionsFile'/'PresetCollectionError' in scope" (one red run for T02, T04, T06 and T08 together).
+- [X] PRE-007-T05 {mac} Implement `PKG/PresetCollectionsFile.swift` per plan "File and migration".
+  Evidence: T04 tests pass. — Verified 2026-11-12: `swift test --package-path Packages/PresetLibrary` on the Mac Studio host: 71 tests, 0 failures (PresetCollectionsFileTests 10).
+- [X] PRE-007-T06 {mac} Write `PKGT/PresetCollectionStoreTests.swift` against a fresh temporary
   directory per test, with injected ids (R1-R8, R10, R14, R15; S1, S2, S5, S6, S7, S9):
   - create (appended last, empty), rename (id, contents, position unchanged; own name accepted;
     case/diacritic duplicate refused), delete (others byte-for-byte equal), unknown id refused;
@@ -68,13 +68,13 @@ Paths: `PKG` = `Packages/PresetLibrary/Sources/PresetLibrary`, `PKGT` =
     the migrated list;
   - ids absent from any index survive add, remove of another id, reorder and rename (S7);
   - the largest collection (1,000 ids): reorder and save in under 0.5 s (S9, host figure).
-  Evidence: the tests do not compile before T07.
-- [ ] PRE-007-T07 {mac} Implement `PKG/PresetCollectionStore.swift` per plan "Store" and the
-  contract. Evidence: T06 tests pass; `swift test --package-path Packages/PresetLibrary` is green.
+  Evidence: the tests do not compile before T07. — Verified 2026-11-12: written before the sources existed; `swift build --build-tests` failed with "cannot find type 'PresetCollectionStore'/'PresetCollectionsFile'/'PresetCollectionError' in scope" (one red run for T02, T04, T06 and T08 together).
+- [X] PRE-007-T07 {mac} Implement `PKG/PresetCollectionStore.swift` per plan "Store" and the
+  contract. Evidence: T06 tests pass; `swift test --package-path Packages/PresetLibrary` is green. — Verified 2026-11-12: `swift test --package-path Packages/PresetLibrary` on the Mac Studio host: 71 tests, 0 failures (PresetCollectionStoreTests 23).
 
 ## Phase 3: User Story 3 foundation - a collection as a scope (P2 in the spec, built before the UI stories because they call it)
 
-- [ ] PRE-007-T08 [US3] {mac} Write `PKGT/PresetCollectionScopeTests.swift` (R11-R14; S3, S4):
+- [X] PRE-007-T08 [US3] {mac} Write `PKGT/PresetCollectionScopeTests.swift` (R11-R14; S3, S4):
   storage round trip of `.collection(id)` (`collection:<id>`; an empty id is refused); members
   follow the stored order, not the alphabet; missing ids skipped; a locked preset is absent while
   locked and present when unlocked, in its position; a session-excluded preset is absent; an
@@ -82,11 +82,11 @@ Paths: `PKG` = `Packages/PresetLibrary/Sources/PresetLibrary`, `PKGT` =
   `title(of:collectionNames:)`; a full Next cycle visits each member once in order and Previous
   reverses it; 1,000 Random picks with the library locked never return a locked preset and never
   repeat the current one; existing scopes return what they returned before (default parameter).
-  Evidence: the tests do not compile before T09.
-- [ ] PRE-007-T09 [US3] {mac} Add `case collection(String)` to `PKG/PresetScope.swift` and the
+  Evidence: the tests do not compile before T09. — Verified 2026-11-12: written before the sources existed; `swift build --build-tests` failed with "cannot find type 'PresetCollectionStore'/'PresetCollectionsFile'/'PresetCollectionError' in scope" (one red run for T02, T04, T06 and T08 together).
+- [X] PRE-007-T09 [US3] {mac} Add `case collection(String)` to `PKG/PresetScope.swift` and the
   collection handling to `PKG/PresetLibrary.swift` (`members`, `collectionListing`, `title`,
   `resolves`) per plan "Scope". Evidence: T08 passes; the existing `PresetScopeTests`,
-  `PresetLibraryTests` and `PresetSearchTests` pass unchanged.
+  `PresetLibraryTests` and `PresetSearchTests` pass unchanged. — Verified 2026-11-12: `swift test --package-path Packages/PresetLibrary` on the Mac Studio host: 71 tests, 0 failures (PresetCollectionScopeTests 12; the 14 earlier tests unchanged and passing).
 
 ## Phase 4: User Stories 1, 2, 3, 4 - coordinator (P1)
 

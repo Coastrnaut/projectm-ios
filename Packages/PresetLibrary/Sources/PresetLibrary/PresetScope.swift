@@ -8,6 +8,9 @@ public enum PresetScope: Sendable, Hashable {
     case favorites
     case search(String)
     case all
+    /// A user-made collection, by its permanent id (PRE-007-R11). Its members are in the user's
+    /// order, not alphabetical.
+    case collection(String)
 
     /// Persisted as `settings.presetScope`. A search scope stores `all`: no search text is kept
     /// (spec Clarifications, FR-119).
@@ -18,6 +21,7 @@ public enum PresetScope: Sendable, Hashable {
         case .folder(let id, let path): "folder:" + ([id] + path).joined(separator: "/")
         case .favorites: "favorites"
         case .search, .all: "all"
+        case .collection(let id): "collection:\(id)"
         }
     }
 
@@ -31,6 +35,10 @@ public enum PresetScope: Sendable, Hashable {
                 let id = String(storageValue.dropFirst(5))
                 guard !id.isEmpty else { return nil }
                 self = .pack(id)
+            } else if storageValue.hasPrefix("collection:") {
+                let id = String(storageValue.dropFirst(11))
+                guard !id.isEmpty else { return nil }
+                self = .collection(id)
             } else if storageValue.hasPrefix("folder:") {
                 let parts = storageValue.dropFirst(7).split(separator: "/", omittingEmptySubsequences: false).map(String.init)
                 guard parts.count >= 2, !parts[0].isEmpty else { return nil }
