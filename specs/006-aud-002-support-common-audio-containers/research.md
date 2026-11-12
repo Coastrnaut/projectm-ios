@@ -129,3 +129,18 @@ on the iOS simulator.
   the mixer converts to the output format (AUD-001-D7); a mono file is spread to both channels by
   the mixer. No code change is needed; AUD-001 tested one mono 44.1 kHz file at 48 kHz.
 - **Decision**: prove it per format and rate by measuring the frequency of each output channel.
+
+## AUD-002-D10 Licensing, privacy and neighboring features (analysis of 2026-11-12)
+
+- **Licensing**: decoding is done only by the operating system's decoders, so no codec is shipped
+  or licensed by the app; the MP3 patents expired in 2017 in any case. No dependency is added
+  (Constitution IX). The fixtures are synthesized by test code; no media file is committed.
+- **Privacy**: nothing new is stored, logged or exported. Error classification reads a status
+  code, never file contents or names, and no diagnostics field is added (AUD-001-R23 stands).
+- **AUD-003 to AUD-006** (queue, repeat, shuffle, transport) build on the AUD-001 record, which
+  this feature does not change. AUD-006 will replace the loop scheduling; the decode check in
+  `load` stays valid for it.
+- **MED-014** (safe media decoder) is a separate feature for images and video; `AudioContainer`
+  shows the pattern (bounded signature check, typed refusal) but nothing is shared yet.
+- **Feature 004 (PERF-011)** releases resources in the background; it does not touch the library
+  or the playback graph's `load`.

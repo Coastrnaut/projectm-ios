@@ -197,7 +197,8 @@ it: playback fails with the message; a second, intact track then plays.
 - **AUD-002-R2**: For each of the five formats the listed duration, sample rate and channel count
   MUST match the file, and playback MUST deliver non-silent audio for non-silent content.
 - **AUD-002-R3**: Playback MUST preserve pitch, speed and channel placement whatever the file's
-  sample rate (at least 8, 22.05, 32, 44.1, 48 and 96 kHz where the format allows) and channel
+  sample rate (8, 11.025, 16, 22.05, 32, 44.1, 48 and 96 kHz, where the format and the system's
+  encoders allow) and channel
   count, including when they differ from the output's: mono is heard on both output channels;
   stereo keeps left and right.
 - **AUD-002-R4**: Decoding MUST use only the device's built-in decoders. The feature MUST NOT add
@@ -267,8 +268,8 @@ it: playback fails with the message; a second, intact track then plays.
   and play back non-silent audio, on the Mac and on an iOS simulator. (Roadmap acceptance, first
   half.)
 - **AUD-002-S2**: Across the format matrix (five formats × mono and stereo × the sample rates each
-  format allows), 100% of fixtures import with the correct duration (within 60 ms; compressed
-  formats may add padding), sample rate and channel count, and play at the generated pitch within
+  format allows), 100% of fixtures import with the correct duration (within 60 ms; raw AAC
+  within three 1,024-frame packets, whose padding the decoder counts), sample rate and channel count, and play at the generated pitch within
   3%.
 - **AUD-002-S3**: A corrupted fixture of every format (cut off at several points, bytes
   overwritten, header only) never crashes or hangs the app: each either imports and plays, or is
@@ -284,7 +285,8 @@ it: playback fails with the message; a second, intact track then plays.
 ## Assumptions
 
 - "Common sample rates" are 8, 11.025, 16, 22.05, 32, 44.1, 48 and 96 kHz; each format is tested at
-  the rates it and the Mac's encoders support (MP3: 32, 44.1 and 48 kHz; AAC up to 48 kHz).
+  the rates it and the Mac's encoders support (MP3 fixtures: 32, 44.1 and 48 kHz; AAC: 8 to 48 kHz;
+  WAV and AIFF: all eight).
 - The five formats are a guarantee, not a limit: other formats the device decodes keep working as
   in AUD-001.
 - Apple platforms ship no MP3 encoder and none is installed on the build Mac, so the MP3 fixture is
