@@ -38,15 +38,15 @@ Paths: `UP` = `Packages/PresetLibrary/Sources/PresetLibrary/UserPresets`, `PKGT`
   `UserPreset.duplicateOf` and `modifiedAt` (optional), and the well-formedness rule
   "`duplicateOf` present iff `license.origin == bundledDuplicate`". In `UP/UserPresetsFile.swift`:
   `currentVersion = 2`, migration `1 → 2`. Evidence: T02 passes, PRE-012 suites still pass. — Verified 2026-11-12: `swift test --package-path Packages/PresetLibrary`: 140 tests, 0 failures, 1 skipped (corpus).
-- [ ] PRE-015-T04 {mac} Write the path-guard tests in `PKGT/UserPresetEditingTests.swift`
+- [X] PRE-015-T04 {mac} Write the path-guard tests in `PKGT/UserPresetStoreGuardTests.swift`
   (R19, S3): an internal observer records every create, write, move and delete of the store;
   across add, update into and out of quarantine, replace, remove, trial records and migration,
   every recorded path is inside the store directory; a store whose directory is a symbolic link
   still passes; an operation on a path outside (forced through the internal helper) fails with
-  `saveFailed` and touches nothing. Record the red run.
-- [ ] PRE-015-T05 {mac} Implement the guard in `UP/UserPresetStore.swift`: one internal function
+  `saveFailed` and touches nothing. Record the red run. — Verified 2026-11-12: red run recorded (`swift build --build-tests` failed: `FileOperation`, `canonicalPath`, `removeFile`, `editCheck` did not exist); 4 tests in `UserPresetStoreGuardTests` (kept in their own file, not the editing file).
+- [X] PRE-015-T05 {mac} Implement the guard in `UP/UserPresetStore.swift`: one internal function
   for every file operation (create directory, write, move, remove, copy), standardized and
-  symlink-resolved containment check, `fileOperationObserver`. Evidence: T04 passes.
+  symlink-resolved containment check, `fileOperationObserver`. Evidence: T04 passes. — Verified 2026-11-12: `swift test --package-path Packages/PresetLibrary`: 144 tests, 0 failures, 1 skipped.
 
 ## Phase 3: User Story 1 - Duplicate a bundled preset (P1) 🎯 MVP
 
