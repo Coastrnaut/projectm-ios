@@ -153,8 +153,8 @@ pointer, Claude's memory, the engine xcframework, optionally ANGLE, `xcodegen`).
   script tests, docs and compliance OK, AudioCore 77 tests on the host, an unsigned simulator
   build of `projectM-iOS`, and `run_device_tests.py devices` listing D1-D3. The first Mac is
   retired from the project. "Project Mac" in older notes means the first Mac.
-  - Not run on the Mac Studio yet: the other packages' tests, simulator test runs, and any signed
-    device build.
+  - Not run on the Mac Studio yet: the other packages' tests, simulator test runs, and any
+    install or run on a device.
   - Open: its iOS 26.5 simulator runtime is build 23F73, not the pinned 23F77. Install 23F77
     (Xcode, Settings, Components) before reporting iOS 26.5 simulator results.
 - The owner does by hand: Xcode sign-in (Apple ID), the signing file, pairing D1-D3, `gh auth
@@ -162,8 +162,10 @@ pointer, Claude's memory, the engine xcframework, optionally ANGLE, `xcodegen`).
 - **Mac Studio progress, 2026-11-12 (SETUP.md step 6):** `Configs/Signing.local.xcconfig` exists
   there. On the owner's request Claude read the team from Xcode's signed-in account and created
   it (a one-time request; the setup script still never writes it), and both generated projects
-  resolve the team. D1-D3 are paired with the Mac Studio. Still open: the first "Apple
-  Development" certificate, which Xcode creates at the first signed device build.
+  resolve the team. D1-D3 are paired with the Mac Studio. A signed Debug device build of
+  `projectM-iOS` (`generic/platform=iOS`, `-allowProvisioningUpdates`) succeeded there on
+  2026-11-12: Xcode created the Mac's "Apple Development" certificate and a team profile for the
+  bundle ID, and `codesign --verify` passes. Not installed or run on a device.
 
 ## Next tasks on the Mac, in order
 

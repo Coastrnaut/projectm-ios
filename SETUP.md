@@ -145,9 +145,12 @@ Signing is never scripted and never committed (CLAUDE.md, "Signing is manual").
 - After `xcodegen generate` for both specs, every app and test target of `ProjectM-iOS.xcodeproj`
   and `RendererLab.xcodeproj` resolves that team in Debug and Release
   (`xcodebuild -showBuildSettings`).
-- Nothing has been signed yet. The keychain has no "Apple Development" certificate
-  (`security find-identity -v -p codesigning` finds none); Xcode creates one at the first device
-  build (step 2).
+- The first signed device build ran the same day, on the owner's go-ahead: `xcodebuild build
+  -scheme projectM-iOS -destination 'generic/platform=iOS' -allowProvisioningUpdates` succeeded.
+  Xcode created this Mac's "Apple Development" certificate and a team provisioning profile for
+  the app's bundle ID, and `codesign --verify --deep --strict` passes with the team from the
+  file. That the profile was issued for the existing bundle ID confirms the team is the right
+  one. The app was not installed or run on a device.
 - D1, D2 and D3 are paired (`xcrun devicectl list devices`: available, Developer Mode enabled).
   D3 is still on iPadOS 26.5.
 

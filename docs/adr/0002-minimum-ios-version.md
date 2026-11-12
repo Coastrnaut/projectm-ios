@@ -46,7 +46,8 @@ with System/App Capture only where the OS provides it.
   - `run_device_tests.py devices` lists D1, D2 and D3 (iOS 27.0.1, iPadOS 27.2, iPadOS 26.5).
 
   ANGLE there was built from source by Xcode 27.2 (`Build/ANGLEFrameworks/ANGLE.json`). Not run
-  there yet: the other packages' tests, simulator test runs, and any signed device build.
+  there yet: the other packages' tests, simulator test runs, and any install or run on a device
+  (a signed Debug device build of `projectM-iOS` succeeded on 2026-11-12).
   **Open difference:** its iOS 26.5 simulator runtime is build 23F73, not the pinned 23F77 (the
   same build as D3); install 23F77 before reporting iOS 26.5 simulator results.
   Before 2026-11-12 the machine of record was the first project Mac (macOS 27.2, Apple silicon;
