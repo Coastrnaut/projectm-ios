@@ -18,6 +18,10 @@
 // Real-time safety (Constitution VII): `enter` and `leave` are two atomic stores and one atomic
 // load. No allocation, no lock, no system call. `close` runs on the control side only; its wait
 // is bounded by `maxWait` (a write is a memory copy of one tap buffer).
+//
+// AUD-014: the gate also counts the frames written since the last `close()` (`count`, one atomic
+// add on the tap side). The graph uses it as the playback position when the player's own time
+// cannot be read, which is the case once iOS has stopped the engine for an interruption.
 import Synchronization
 
 #if canImport(Darwin)
@@ -34,6 +38,16 @@ final class PlaybackTapGate: Sendable {
 
     private let generation = Atomic<UInt64>(1)
     private let writing = Atomic<Bool>(false)
+    private let delivered = Atomic<Int64>(0)
+
+    /// Frames the current tap has written since the last `close()`.
+    var deliveredFrames: Int64 { delivered.load(ordering: .sequentiallyConsistent) }
+
+    /// Tap side, between a successful `enter` and `leave`: `frames` more frames were written.
+    @inline(__always)
+    func count(_ frames: Int) {
+        delivered.add(Int64(frames), ordering: .sequentiallyConsistent)
+    }
 
     /// The token a tap installed now has to present.
     var token: Token { generation.load(ordering: .sequentiallyConsistent) }
@@ -62,6 +76,8 @@ final class PlaybackTapGate: Sendable {
             usleep(50)
             waited += 50
         }
+        // No tap can write with an old token any more, and none has the new one yet.
+        delivered.store(0, ordering: .sequentiallyConsistent)
         return next
     }
 }

@@ -23,6 +23,12 @@ struct SourceStatusIndicator: View {
         UIAccessibility.post(notification: .announcement, argument: text(mode: mode, state: state))
     }
 
+    /// AUD-014-R18: what VoiceOver hears when In-App Playback goes on hold for a reason the user
+    /// did not choose: the indicator's text, then the explanation. Nil in every other case.
+    static func holdAnnouncement(mode: AudioSourceMode?, state: AudioState, reason: StopReason?) -> String? {
+        UIStrings.playbackHoldAnnouncement(status: text(mode: mode, state: state), mode: mode, reason: reason)
+    }
+
     var body: some View {
         Text(text)
             .font(.footnote.weight(.semibold))

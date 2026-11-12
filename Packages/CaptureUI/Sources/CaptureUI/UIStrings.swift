@@ -201,6 +201,28 @@ public enum UIStrings {
         "\(spokenDuration(elapsed)) of \(spokenDuration(total))"
     }
 
+    // MARK: In-App Playback on hold (AUD-014; specs/009-aud-014-audio-session-interruption-recovery/contracts/ui-strings.md)
+    public static let playbackInterruptedDetail = "Playback is on hold at its position. It continues when iOS allows it, or press Play."
+    public static let playbackOutputDisconnectedDetail = "The audio output was disconnected. Press Play to continue."
+
+    /// The explanation shown under the feature 001 message while In-App Playback is interrupted or
+    /// was paused by a disconnected output (AUD-014-R17). Nil for every other reason and for
+    /// Microphone and System/App Capture, whose texts do not change (AUD-014-R19).
+    public static func playbackHoldDetail(mode: AudioSourceMode?, reason: StopReason?) -> String? {
+        guard mode == .inAppPlayback else { return nil }
+        switch reason {
+        case .interrupted: return playbackInterruptedDetail
+        case .audioRouteChanged: return playbackOutputDisconnectedDetail
+        default: return nil
+        }
+    }
+
+    /// What VoiceOver announces when In-App Playback goes on hold (AUD-014-R18): `status` (the
+    /// source-and-state indicator's text), then the explanation. Nil when there is no explanation.
+    public static func playbackHoldAnnouncement(status: String, mode: AudioSourceMode?, reason: StopReason?) -> String? {
+        playbackHoldDetail(mode: mode, reason: reason).map { "\(status). \($0)" }
+    }
+
     // MARK: Actions
     public static let chooseSource = "Choose source"
     public static let chooseAudioSource = "Choose Audio Source"

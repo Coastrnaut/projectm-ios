@@ -97,6 +97,11 @@ public final class PlaybackTransport {
 
     public func play() async {
         guard isAvailable, state != .playing else { return }
+        let stoppedBefore = stoppedSession
+        defer {
+            // AUD-014-R8: a Play that iOS refused during an interruption changed nothing.
+            if stoppedBefore != nil, isAvailable, manager.isPausedByUser { stoppedSession = stoppedBefore }
+        }
         stoppedSession = nil
         // Paused at the end of a track (a seek to the end while paused): the track has finished.
         let position = source.playbackPosition
@@ -114,7 +119,7 @@ public final class PlaybackTransport {
     /// Stop playback: silence, position 0; the visualizer and the session stay.
     public func stop() async {
         guard isAvailable, state != .stopped else { return }
-        await manager.pause()
+        await manager.pause(asStop: true)
         guard isAvailable else { return }          // the session ended meanwhile
         source.seek(to: 0)
         positionRevision += 1
@@ -131,17 +136,20 @@ public final class PlaybackTransport {
     public func seek(to seconds: Double) {
         guard isAvailable else { return }
         stoppedSession = nil
+        manager.noteUserTransportChange()          // AUD-014: the user took over; no automatic resume
         source.seek(to: seconds.isNaN ? 0 : seconds)
         positionRevision += 1
     }
 
     public func next() async {
         guard isAvailable, let current, let item = order?.item(after: current.id) else { return }
+        manager.noteUserTransportChange()
         change(to: item)
     }
 
     public func previous() async {
         guard isAvailable, let current else { return }
+        manager.noteUserTransportChange()
         if source.playbackPosition.seconds > PlaybackTransport.previousRestartThreshold {
             source.seek(to: 0)
             positionRevision += 1
@@ -193,7 +201,7 @@ public final class PlaybackTransport {
 
     private func stopAtEnd() async {
         guard isAvailable else { return }
-        await manager.pause()
+        await manager.pause(asStop: true)
         guard isAvailable else { return }
         stoppedSession = source.sessionCount
     }
