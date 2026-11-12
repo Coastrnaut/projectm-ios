@@ -211,17 +211,33 @@ public actor AudioLibrary {
         guard await loadLocked() == .ready else { return .failed(fileName: name, .libraryUnavailable) }
         let files = FileManager.default
         let ext = ImportedTrack.storedExtension(fromFileName: name)
-        let temporary = incomingURL.appendingPathComponent(ext.isEmpty ? UUID().uuidString : "\(UUID().uuidString).\(ext)")
+        let stagingName = UUID().uuidString
+        // `temporary` is renamed once the content is recognized; the cleanup below follows it.
+        var temporary = incomingURL.appendingPathComponent(ext.isEmpty ? stagingName : "\(stagingName).\(ext)")
         do {
             let staged = try Self.stage(url, to: temporary, limit: maxFileBytes)
             if let existing = index.tracks.first(where: { $0.sha256 == staged.sha256 }) {
                 try? files.removeItem(at: temporary)
                 return .duplicate(existing)                       // AUD-001-R8
             }
+            // AUD-002-R5: the content decides what the file is. The system picks its parser by
+            // extension, so the copy is named for the recognized container before it is inspected,
+            // and keeps that name in `assets`, where playback opens it.
+            let container = AudioContainer.detect(at: temporary)
+            if let container, container.fileExtension != ext {
+                let renamed = incomingURL.appendingPathComponent("\(stagingName).\(container.fileExtension)")
+                do {
+                    try files.moveItem(at: temporary, to: renamed)
+                } catch {
+                    throw Self.storageError(error)
+                }
+                temporary = renamed
+            }
             let info = try await inspector.inspect(temporary)
             let track = ImportedTrack(id: makeID(), title: ImportedTrack.title(fromFileName: name), originalFileName: name,
                                       sha256: staged.sha256,
-                                      fileName: ImportedTrack.storedFileName(sha256: staged.sha256, originalFileName: name),
+                                      fileName: ImportedTrack.storedFileName(sha256: staged.sha256, originalFileName: name,
+                                                                             container: container),
                                       byteCount: staged.byteCount, durationSeconds: info.durationSeconds,
                                       sampleRate: info.sampleRate, channelCount: info.channelCount, importedAt: now())
             guard track.isValid else { throw AudioImportError.unreadable }
@@ -308,7 +324,7 @@ public actor AudioLibrary {
                 throw storageError(error)
             }
         }
-        guard total > 0 else { throw AudioImportError.unreadable }
+        guard total > 0 else { throw AudioImportError.noAudio }       // AUD-002-R7(d): a zero-byte file
         let digest = hasher.finalize().map { byte in
             let hex = String(byte, radix: 16)
             return hex.count == 1 ? "0" + hex : hex

@@ -39,18 +39,23 @@ final class AVAudioFileInspectorTests: XCTestCase {
         XCTAssertEqual(b.channelCount, 1)
     }
 
-    func testGarbageAndEmptyFilesAreUnreadable() async throws {
+    /// AUD-002-R8 amends what AUD-001 expected here ("unreadable" for all four): content that is
+    /// not audio is an unsupported format, and an empty file contains no audio. "Unreadable" is
+    /// left for a file that cannot be opened and for damaged audio (AudioCorruptionTests).
+    func testGarbageEmptyAndMissingFilesEachHaveTheirReason() async throws {
         let garbage = try AudioFixtures.writeGarbage(to: root.appendingPathComponent("garbage.wav"))
         let empty = root.appendingPathComponent("empty.wav")
         try Data().write(to: empty)
         let text = root.appendingPathComponent("text.mp3")
         try Data("this is not an mp3".utf8).write(to: text)
-        for url in [garbage, empty, text, root.appendingPathComponent("missing.wav")] {
+        let cases: [(URL, AudioImportError)] = [(garbage, .unsupportedFormat), (text, .unsupportedFormat), (empty, .noAudio),
+                                                (root.appendingPathComponent("missing.wav"), .unreadable)]
+        for (url, expected) in cases {
             do {
                 _ = try await AVAudioFileInspector().inspect(url)
                 XCTFail("\(url.lastPathComponent) must not pass")
             } catch {
-                XCTAssertEqual(error, .unreadable, url.lastPathComponent)
+                XCTAssertEqual(error, expected, url.lastPathComponent)
             }
         }
     }
@@ -349,14 +354,15 @@ final class AudioLibraryTests: XCTestCase {
         await assertRefused(noExtension, .notAudio, by: library)
     }
 
-    func testGarbageNamedWAVIsRefusedAsUnreadable() async throws {
+    /// AUD-002-R8 amends AUD-001 here: both were "unreadable"; they are now told apart.
+    func testGarbageNamedWAVIsUnsupportedAndAnEmptyFileHasNoAudio() async throws {
         let garbage = try AudioFixtures.writeGarbage(to: sources.appendingPathComponent("fake.wav"))
         let empty = sources.appendingPathComponent("empty.wav")
         try Data().write(to: empty)
         let library = makeLibrary()
         _ = try imported(await library.importFile(at: try tone("Existing.wav")))
-        await assertRefused(garbage, .unreadable, by: library)
-        await assertRefused(empty, .unreadable, by: library)
+        await assertRefused(garbage, .unsupportedFormat, by: library)
+        await assertRefused(empty, .noAudio, by: library)
     }
 
     func testOversizedFileIsRefusedAtTheLimit() async throws {
