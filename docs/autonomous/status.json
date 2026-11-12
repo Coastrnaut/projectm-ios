@@ -8,8 +8,7 @@
   "P0": {
    "audited": 69,
    "implementing": 1,
-   "integrated": 16,
-   "unit_passed": 1
+   "integrated": 17
   },
   "P1": {
    "audited": 149,
@@ -25,8 +24,7 @@
  "by_state": {
   "audited": 306,
   "implementing": 1,
-  "integrated": 18,
-  "unit_passed": 1
+  "integrated": 19
  },
  "device_gate": {
   "blocked": [],
@@ -65,7 +63,6 @@
    "AUD-003",
    "AUD-004",
    "AUD-005",
-   "AUD-006",
    "AUD-007",
    "AUD-008",
    "AUD-009",
@@ -345,7 +342,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "308 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
+   "307 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
   ]
  },
  "features": {
@@ -684,10 +681,10 @@
    "branch": "feature/aud-006",
    "branch_sha": "383d9ab633a4ec9d69407e2e5f1a9293997838fe",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "03b23a8ae6a0aad7e0f09d81dd1bfe960b5e795a",
    "priority": "P0",
    "spec_dir": "specs/007-aud-006-seekable-transport",
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "AUD-007": {
    "attempts": 0,
@@ -3620,6 +3617,11 @@
    "branch": "feature/aud-002",
    "id": "AUD-002",
    "sha": "f886b7ce7c761f4659f9937d7e4e44ef7e1f2199"
+  },
+  {
+   "branch": "feature/aud-006",
+   "id": "AUD-006",
+   "sha": "03b23a8ae6a0aad7e0f09d81dd1bfe960b5e795a"
   },
   {
    "branch": "autonomous/integration",

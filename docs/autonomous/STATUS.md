@@ -11,22 +11,21 @@
 |---|---|
 | audited | 306 |
 | implementing | 1 |
-| unit_passed | 1 |
-| integrated | 18 |
+| integrated | 19 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated |
-|---|---|---|---|---|
-| P0 | 69 | 1 | 1 | 16 |
-| P1 | 149 | 0 | 0 | 2 |
-| P2 | 79 | 0 | 0 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated |
+|---|---|---|---|
+| P0 | 69 | 1 | 17 |
+| P1 | 149 | 0 | 2 |
+| P2 | 79 | 0 | 0 |
+| P3 | 9 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 308 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
+- 307 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
 
 ## Integrated
 
@@ -34,6 +33,7 @@ The physical-device suite may **not** start:
 |---|---|---|---|
 | AUD-001 | Import DRM-free audio files | `a2813ab3fa4f` | `feature/aud-001` |
 | AUD-002 | Support common audio containers | `f886b7ce7c76` | `feature/aud-002` |
+| AUD-006 | Seekable transport | `03b23a8ae6a0` | `feature/aud-006` |
 | AUTO-001 | Roadmap parser | `419cc2a999ed` | `autonomous/integration` |
 | AUTO-002 | Implementation inventory gate | `419cc2a999ed` | `autonomous/integration` |
 | AUTO-003 | Dependency scheduler | `419cc2a999ed` | `autonomous/integration` |
@@ -85,7 +85,7 @@ None.
 - `swift test --package-path Packages/CaptureUI`: pass at `4700a64a37aa` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-002/20261112T161949/swift-test_CaptureUI.log`)
 - `integration checkout: xcodegen generate; xcodebuild -scheme projectM-iOS -destination id=4E32B01D (iPhone 17, iOS 27.2) test: projectM-iOSTests, ImportedAudioUITests (5)`: pass at `f886b7ce7c76` (log `.autonomous/logs/integration/aud-002/app-tests.log`)
 
-### AUD-006 Seekable transport (unit_passed)
+### AUD-006 Seekable transport (integrated)
 - `python3 scripts/check_compliance.py`: pass at `383d9ab633a4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-006/20261112T174904/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `383d9ab633a4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-006/20261112T174904/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `383d9ab633a4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-006/20261112T174904/script-tests.log`)
