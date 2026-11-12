@@ -17,8 +17,15 @@ Audio sources (the user chooses one; none starts by itself):
 - In-App Playback: a bundled reference track. Fastest way to review: choose In-App Playback.
 
 Visual presets are data files bundled with the app and reviewed for licensing. The engine
-interprets their math expressions to draw graphics; the app downloads no code or presets, cannot
-import them, and makes no network connections. No account, no data collection.
+interprets their math expressions to draw graphics; the app downloads no code or presets and cannot
+import them. No account, no data collection. Its only network use is the App Store's own purchase
+and restore (1.1).
+
+In-app purchase (1.1): "Full Preset Library", a one-time non-consumable for $1.99. 28 presets are
+free; the purchase unlocks 12,819 more that are already bundled in the app (no download), from the
+projectM team's preset packs (ADR-0007). To find it: choose In-App Playback, tap Presets, open a
+locked pack such as Cream of the Crop and tap "Unlock all", or tap any locked preset. Restore
+Purchases is on the same sheet. After purchase every pack plays immediately, offline too.
 
 The app shows a photosensitivity notice before any visuals, and Settings › Reduce flashing limits
 rapid brightness changes (on by default when Reduce Motion is on).
