@@ -61,6 +61,18 @@ enum PreviewFixtures {
     })
 }
 
+#Preview("Transport — playing and paused") {
+    VStack(spacing: 24) {
+        TransportBar(title: "A track with quite a long name that will not fit on one line.wav", isPlaying: true,
+                     position: { PlaybackPosition(seconds: 65, durationSeconds: 180) },
+                     onPlayPause: {}, onStop: {}, onPrevious: {}, onNext: {}, onSeek: { _ in })
+        TransportBar(title: UIStrings.referenceTrackTitle, isPlaying: false,
+                     position: { PlaybackPosition(seconds: 0, durationSeconds: 60) },
+                     onPlayPause: {}, onStop: {}, onPrevious: {}, onNext: {}, onSeek: { _ in })
+    }
+    .padding()
+}
+
 #Preview("Chooser — iOS 26, capture unavailable") {
     SourceChooserView(availability: PreviewFixtures.iOS26) { _ in }
 }

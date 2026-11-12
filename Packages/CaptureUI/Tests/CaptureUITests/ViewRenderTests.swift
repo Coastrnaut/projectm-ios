@@ -9,6 +9,7 @@
 // cannot draw, so CaptureLabUITests checks it in the running app instead.
 #if canImport(SwiftUI)
 import AudioCore
+import CaptureKit
 import CoreGraphics
 import SwiftUI
 import XCTest
@@ -94,6 +95,30 @@ final class ViewRenderTests: XCTestCase {
         let silence = try height(StatusBanner(mode: .microphone, state: .silent, reason: nil,
                                               prolongedSilence: false) { _ in })
         XCTAssertGreaterThan(longSilence, silence, "prolonged-silence hint adds no height")
+    }
+
+    // MARK: Transport bar (AUD-006-T26)
+
+    private func transportBar(title: String = "Track", isPlaying: Bool, seconds: Double = 65, duration: Double = 180) -> TransportBar {
+        TransportBar(title: title, isPlaying: isPlaying,
+                     position: { PlaybackPosition(seconds: seconds, durationSeconds: duration) },
+                     onPlayPause: {}, onStop: {}, onPrevious: {}, onNext: {}, onSeek: { _ in })
+    }
+
+    func testTransportBarSmokeRendersPlayingPausedStoppedAndEmpty() {
+        assertSmokeRenders(transportBar(isPlaying: true), name: "transport playing")
+        assertSmokeRenders(transportBar(isPlaying: false), name: "transport paused")
+        assertSmokeRenders(transportBar(isPlaying: false, seconds: 0), name: "transport stopped")
+        assertSmokeRenders(transportBar(isPlaying: false, seconds: 0, duration: 0), name: "transport with nothing loaded")
+        assertSmokeRenders(transportBar(title: String(repeating: "A very long title ", count: 20), isPlaying: true,
+                                        seconds: 3_700, duration: 7_300), name: "transport long title, hours")
+    }
+
+    func testTransportBarLaysOutAtTheLargestTextSize() throws {
+        let regular = try height(transportBar(isPlaying: true))
+        let large = try height(transportBar(isPlaying: true).dynamicTypeSize(.accessibility5))
+        XCTAssertGreaterThan(regular, 60, "title, scrubber row and button row")
+        XCTAssertGreaterThan(large, regular, "the times get their own row and all text grows")
     }
 
     /// Smoke test: the body evaluates without trapping and ImageRenderer returns a non-empty bitmap.

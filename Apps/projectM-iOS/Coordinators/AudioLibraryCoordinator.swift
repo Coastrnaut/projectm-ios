@@ -91,6 +91,27 @@ final class AudioLibraryCoordinator {
         return url
     }
 
+    // MARK: - Play order (AUD-006)
+
+    /// The listed tracks as playable items, in list order (newest first): what Next track and
+    /// Previous track move through (AUD-006-R14). Each item plays the library's own stored copy.
+    func playbackItems() async -> [PlaybackItem] {
+        guard let library else { return [] }
+        var items: [PlaybackItem] = []
+        for track in tracks {
+            guard let url = await library.storedFileURL(for: track.id) else { continue }
+            items.append(PlaybackItem(id: track.id.uuidString, title: track.title, durationSeconds: track.durationSeconds,
+                                      track: .file(url)))
+        }
+        return items
+    }
+
+    /// The bundled reference track as the only item of its order: it repeats, and Next track and
+    /// Previous track start it again. Its length is read from the file when it plays.
+    static var referenceItem: PlaybackItem {
+        PlaybackItem.reference(title: UIStrings.referenceTrackTitle, durationSeconds: 0)
+    }
+
     private func refresh() async {
         guard let library else { return }
         switch await library.load() {

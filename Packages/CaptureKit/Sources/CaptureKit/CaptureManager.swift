@@ -22,6 +22,12 @@
 // * Session time 0 is when the source's `start` returned (FR-022): the sink and the analyzer are
 //   both marked then. Lifecycle and source-event log entries are stamped with the session clock
 //   when this class handles them; entries handled while a start is pending are stamped 0.
+// * User pause (AUD-006): `pause()` suspends In-App Playback at the user's request (the
+//   transport's Pause and Stop playback). It goes through the classifier's `suspended` event, so
+//   the state is Paused and "Active audio" must be verified again after `resume()`
+//   (Constitution IV). Unlike a lifecycle pause it is never undone by foreground or unlock, nor
+//   by the end of an interruption: only `resume()` continues. It never applies to System/App
+//   Capture or Microphone.
 import AudioCore
 import Observation
 
@@ -50,6 +56,9 @@ public final class CaptureManager {
     /// True while a source's `start` is in flight: the system picker or a permission prompt may be
     /// on screen. The UI keeps Stop enabled then, because Stop cancels the start (ADR-0001 ruling 7).
     public private(set) var isStarting = false
+    /// True while In-App Playback is paused at the user's request (AUD-006): from `pause()` until
+    /// `resume()`, a stop, a failure, the end by the system, or a new attempt.
+    public private(set) var isPausedByUser = false
 
     private let sources: [AudioSourceMode: any AudioSource]
     private let sink = PCMSink()
@@ -103,6 +112,12 @@ public final class CaptureManager {
     /// (research R-05/R-06). The same reader serves every session; each attempt empties it.
     public nonisolated var normalizedOutput: any NormalizedPCMReader { analyzer.normalizedOutput }
 
+    /// True while `source` is the started source of the current session (AUD-006: the transport
+    /// acts only on its own In-App Playback source, never on a source that replaced it).
+    public func isCurrent(_ source: any AudioSource) -> Bool {
+        current === source
+    }
+
     public var displayedContentIdentity: String? {
         guard activeMode == .systemAppCapture, hasVerifiedActiveAudio,
               let identifying = current as? ContentIdentifying else { return nil }
@@ -141,9 +156,25 @@ public final class CaptureManager {
         }
     }
 
-    /// Resumes a Paused source (e.g. after "Paused — audio route changed").
+    /// Resumes a Paused source (e.g. after "Paused — audio route changed"), and ends a user pause.
     public func resume() async {
         await serialized { await self.resumeInner() }
+    }
+
+    /// Pauses In-App Playback at the user's request (AUD-006-R20, R21): the source stays started,
+    /// the state is Paused with no reason, and only `resume()` continues it. A session that an
+    /// interruption, a lost route or the app's lifecycle already paused becomes a user pause.
+    /// No effect for System/App Capture and Microphone, or without a session.
+    public func pause() async {
+        await serialized {
+            guard let source = self.current, self.activeMode == .inAppPlayback, !self.isPausedByUser,
+                  self.state.isRunning || self.state == .interrupted || self.state == .paused else { return }
+            // A source that is already Paused (route lost, lifecycle) was suspended then.
+            if self.state != .paused { await source.suspend() }
+            self.pauseReason = nil
+            self.isPausedByUser = true
+            self.apply(.suspended)
+        }
     }
 
     /// App lifecycle per the data-model lifecycle matrix (FR-050, FR-053, FR-054).
@@ -162,7 +193,8 @@ public final class CaptureManager {
                 self.pauseReason = nil
                 self.apply(.suspended)
             case .foreground, .unlock:
-                guard self.state == .paused, self.pauseReason == nil else { return }
+                // A user pause (AUD-006) stays until the user resumes.
+                guard self.state == .paused, self.pauseReason == nil, !self.isPausedByUser else { return }
                 await self.resumeInner()
             }
         }
@@ -256,6 +288,7 @@ public final class CaptureManager {
         // Updates published before this point belong to the previous session; `receive` drops them.
         lastSequence = update.sequence
         pauseReason = nil
+        isPausedByUser = false
         state = update.state
         stopReason = nil
         stopDetail = nil
@@ -278,6 +311,7 @@ public final class CaptureManager {
         // A pause reason describes the running session only; it must not outlive a stop, a
         // failure or an end by the system (FR-015).
         pauseReason = nil
+        isPausedByUser = false
         eventTask?.cancel()
         eventTask = nil
         if let source = current {
@@ -292,6 +326,7 @@ public final class CaptureManager {
         do {
             try await source.resume()
             pauseReason = nil
+            isPausedByUser = false
             apply(state == .interrupted ? .interruptionEnded(shouldResume: true) : .resumed)
         } catch let error as SourceError {
             await stopCurrent()
@@ -356,13 +391,19 @@ public final class CaptureManager {
         lastSequence = max(lastSequence, update.sequence)
         syncTransitions()
         state = update.state
-        stopReason = pauseReason ?? update.reason
+        stopReason = displayedReason(update.reason)
         hasVerifiedActiveAudio = update.hasVerifiedActiveAudio
         prolongedSilenceHint = update.prolongedSilenceHint
         statistics = update.statistics
         // A failed start has no session, so its duration stays 0.
         if case .startFailed = event { return }
         sessionSeconds = update.sessionSeconds
+    }
+
+    /// The reason shown with the state. A user pause shows none (AUD-006-R20): the reason of an
+    /// interruption or a route loss that the pause replaced no longer applies.
+    private func displayedReason(_ classified: StopReason?) -> StopReason? {
+        isPausedByUser ? nil : (pauseReason ?? classified)
     }
 
     /// Appends the analyzer's transitions not yet copied. The analyzer's log and `transitions` are
@@ -379,7 +420,7 @@ public final class CaptureManager {
         lastSequence = update.sequence
         syncTransitions()
         state = update.state
-        stopReason = pauseReason ?? update.reason
+        stopReason = displayedReason(update.reason)
         levels = update.levels
         statistics = update.statistics
         prolongedSilenceHint = update.prolongedSilenceHint
