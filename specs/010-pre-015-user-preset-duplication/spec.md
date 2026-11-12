@@ -34,7 +34,35 @@ PRE-018 (integrity scanner).
 
 ### Session 2026-11-12
 
-(Recorded by `/speckit-clarify`.)
+Answered under the standing delegation (recommended option first; no owner question was needed).
+Each answer is the conservative, local-first choice.
+
+- Q: What happens to an existing copy of a locked-pack preset when the purchase is refunded or
+  revoked? → A: It is held, not deleted: listed in My Presets as needing the full library, not
+  playable, not editable, not in any scope; tapping it offers the purchase; it plays again when
+  the entitlement returns. (Rejected: deleting it, which destroys user work; leaving it playable,
+  which turns duplication into a way around the purchase.) Applied in R7, R8, US3, S4.
+- Q: What happens when the user duplicates a preset whose unchanged copy is already in My
+  Presets? → A: Refused, naming the existing copy; nothing is stored. Numbered names ("copy 2")
+  are used when an earlier copy was edited or renamed and its name is taken. (Rejected: a second
+  record sharing the same text, which needs shared-file bookkeeping in quarantine and removal for
+  no user benefit.) Applied in R3, R6, US1 scenarios 2-3.
+- Q: When an edit fails a check, is it saved as invalid or not saved at all? → A: Not saved: the
+  stored file and record stay byte-identical, the editor stays open with the user's text and the
+  reason, and the last good version keeps playing. If the check is impossible right now (no
+  off-screen engine, app in the background), the save is refused with "try again"; the edit is
+  never stored unchecked. Applied in R11-R13, S5.
+- Q: Does the user-preset record change format, and how? → A: Version 2, with a pure migration
+  from version 1 that only raises the version (the new fields are optional and absent in migrated
+  records). A plain additive change without a version bump was rejected: a version-1 reader
+  cannot decode the new origin value and would set the whole record aside as unreadable, and it
+  would not enforce the lock on copies. With version 2, PRE-012's reader reports "saved by a
+  newer version" and changes nothing. Applied in R21.
+- Q: What happens when a bundled preset that PRE-012's validator would quarantine (2 such files
+  in the packs) is duplicated? → A: The duplicate is refused with the validator's reason and
+  nothing is stored; the built-in preset is unaffected and still plays. (Rejected: storing the
+  copy in Quarantine, where it could never be fixed because quarantined files are not editable.)
+  Applied in R5, US1 scenario 4.
 
 ## User Scenarios & Testing *(mandatory)*
 
