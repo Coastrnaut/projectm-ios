@@ -104,6 +104,18 @@ public final class Normalizer {
         #endif
     }
 
+    /// Drops the converter's internal state (a resampler holds a tail of the audio it was fed), so
+    /// nothing fed before this call is part of later output (AUD-006-R10). The next `process`
+    /// sets the conversion up again; the same format afterwards is not counted as a format change.
+    public func discardPending() {
+        current = nil
+        #if canImport(AVFAudio) && !AUDIOCORE_NO_AVFAUDIO
+        stage = nil
+        #else
+        fallback = nil
+        #endif
+    }
+
     /// Normalizes `frames` interleaved Float32 frames with `format.channelCount` channels into the
     /// output ring. `format.sampleType` and `isInterleaved` describe the source and are ignored here.
     @discardableResult

@@ -79,6 +79,12 @@ public final class NormalizedPCMRing: NormalizedPCMReader, @unchecked Sendable {
 
     public var droppedFrames: Int { overflowDroppedFrames + freshnessDroppedFrames }
 
+    /// Empties the ring and keeps the counters: the source jumped in its content (AUD-006), which
+    /// is not a new session. Safe while the reader runs.
+    public func discardBuffered() {
+        ring.drain()
+    }
+
     /// Empties the ring and restarts the counters (new session). Safe while the reader runs.
     public func reset() {
         ring.drain()
