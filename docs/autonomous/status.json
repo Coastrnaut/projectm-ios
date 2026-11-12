@@ -7,8 +7,9 @@
  "by_priority": {
   "P0": {
    "audited": 73,
-   "implementing": 2,
-   "integrated": 12
+   "implementing": 1,
+   "integrated": 12,
+   "unit_passed": 1
   },
   "P1": {
    "audited": 149,
@@ -23,8 +24,9 @@
  },
  "by_state": {
   "audited": 310,
-  "implementing": 2,
-  "integrated": 14
+  "implementing": 1,
+  "integrated": 14,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -2344,12 +2346,12 @@
   "PERF-011": {
    "attempts": 2,
    "branch": "feature/perf-011",
-   "branch_sha": null,
+   "branch_sha": "685f31acc792ea110c093b27dd355c3f2ddcb6ce",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": "specs/004-perf-011-background-resource-release",
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "PERF-012": {
    "attempts": 0,
@@ -3691,5 +3693,5 @@
  "run_id": "cb545c51cf0b",
  "skipped_existing": [],
  "total": 326,
- "updated": "2026-11-12T20:25:32Z"
+ "updated": "2026-11-12T20:27:41Z"
 }
