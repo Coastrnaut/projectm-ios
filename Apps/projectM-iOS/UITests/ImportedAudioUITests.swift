@@ -51,7 +51,7 @@ final class ImportedAudioUITests: XCTestCase {
 
     private func playTrackAndExpectInAppPlayback() {
         XCTAssertTrue(track.waitForExistence(timeout: 15), "the imported track is listed under Your Audio")
-        XCTAssertEqual(track.label, "UITest Tone, 2 seconds")
+        XCTAssertEqual(track.label, "UITestTone, 2 seconds")
         track.tap()
         XCTAssertTrue(indicator.waitForExistence(timeout: 10))
         XCTAssertTrue(indicator.label.hasPrefix("In-App Playback · "), indicator.label)   // AUD-001-R18
@@ -62,7 +62,7 @@ final class ImportedAudioUITests: XCTestCase {
         #if !targetEnvironment(simulator)
         throw XCTSkip("the app reads the test's file from the host; simulator only")
         #else
-        let tone = try writeTone(named: "UITest Tone.wav")
+        let tone = try writeTone(named: "UITestTone.wav")
         launch(["-uitestResetNotice", "-uitestResetAudioLibrary", "-uitestImportAudio", tone.path], acknowledgeNotice: true)
         XCTAssertTrue(app.staticTexts["Your Audio"].exists || app.staticTexts["YOUR AUDIO"].exists)
         XCTAssertTrue(app.buttons["In-App Playback"].exists, "AUD-001-R21: the reference-track row is still there")
