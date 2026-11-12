@@ -181,6 +181,11 @@ def cmd_worktree(args) -> int:
     build = ROOT / "Build"
     if build.exists() and not (path / "Build").exists():
         (path / "Build").symlink_to(build)   # gitignored; lets engine packages resolve
+        exclude = ROOT / ".git" / "info" / "exclude"   # `Build/` in .gitignore skips a symlink
+        if exclude.parent.is_dir() and "/Build\n" not in (
+                exclude.read_text() if exclude.exists() else ""):
+            with exclude.open("a") as f:
+                f.write("/Build\n")
     store.set_state(args.id, store.feature(args.id)["state"], worktree=str(path),
                     branch=branch_name(args.id), note="worktree ready")
     print(path)
@@ -193,7 +198,8 @@ def gate_feature(roadmap: Roadmap, store: StateStore, feature_id: str | None,
     if feature_id:
         checkout = wt.path(feature_id)
         changed = wt.changed_files(feature_id)
-        plan = gates_mod.plan_gates(checkout, changed, in_worktree=True)
+        plan = gates_mod.plan_gates(checkout, changed, in_worktree=True,
+                                    simulator_udid=simulator or gates_mod.default_simulator())
     else:
         checkout = ROOT
         base = store.data["repo_head_at_start"]

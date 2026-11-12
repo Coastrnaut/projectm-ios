@@ -37,6 +37,22 @@ public enum DiagnosticsLog {
     /// The analyzer's latency-stage signposts (research R-06), for CaptureManager.
     public static let pipeline = PipelineSignposts()
 
+    /// PERF-011-R12: one Points of Interest event per change of presentation availability
+    /// (background or lock, and the return), with how many presentation-bound resources were
+    /// active before and after. Counts only, no user content; private like every dynamic value.
+    public static func presentationTransition(canPresent: Bool, registered: Int, activeBefore: Int, activeAfter: Int) {
+        assertNotRealtime()
+        let summary = presentationSummary(canPresent: canPresent, registered: registered,
+                                          activeBefore: activeBefore, activeAfter: activeAfter)
+        signposter.emitEvent("Presentation", "\(summary, privacy: .private)")
+        app.info("presentation \(summary, privacy: .private)")
+    }
+
+    /// For example "unavailable active 2 -> 0 of 2".
+    static func presentationSummary(canPresent: Bool, registered: Int, activeBefore: Int, activeAfter: Int) -> String {
+        "\(canPresent ? "available" : "unavailable") active \(activeBefore) -> \(activeAfter) of \(registered)"
+    }
+
     /// Debug-only guard: real-time audio threads run at elevated priority with a
     /// "real-time" thread name in our sources; logging there is a bug (Constitution VII).
     static func assertNotRealtime() {

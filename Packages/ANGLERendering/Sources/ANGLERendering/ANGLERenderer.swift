@@ -12,10 +12,16 @@
 //   limiter draws the frame with its mean luminance changing at most `flashLimitPerSecond`.
 // * Everything runs on the main thread, the engine's render thread, except PresetPrewarmer
 //   (feature 002 SC-104), which warms upcoming presets on its own thread and context.
+// * PERF-011: while the app cannot present frames (background, device lock) the renderer is
+//   suspended: no display link, no frame, and the window surface and the Reduce-flashing target
+//   are released. The context, engine, preset and textures stay, so the picture continues where it
+//   was. Suspension is independent of pause()/resume() (FR-046): the loop runs only when neither
+//   applies. The warm-up is a second presentation-bound resource (PresetWarmUpController).
 import AudioCore
 import CANGLE
 import CFlashLimiter
 import Foundation
+import PresentationLifecycle
 import ProjectMBridge
 import QuartzCore
 import Rendering
@@ -29,7 +35,7 @@ public enum ANGLERendererError: Error, Equatable {
 }
 
 @MainActor
-public final class ANGLERenderer: NSObject, VisualizerRenderer {
+public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoundResource {
     public var view: UIView { layerView }
     public private(set) var metrics = RenderMetrics.zero
     public private(set) var presentedFrameCount = 0
@@ -59,16 +65,25 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer {
     private let maxFrames: Int
     private var meter = FrameRateMeter()
     private var paused = false
+    /// PERF-011: the app cannot present frames. Independent of `paused`.
+    private var presentationSuspended = false
+    /// The view is in a window, so a display link is wanted whenever frames can be presented.
+    private var inWindow = false
     private var observers: [NSObjectProtocol] = []
     /// Feature 002 SC-104: upcoming presets' pipelines are built in the background (PresetPrewarmer).
-    public var prewarmEnabled = true
+    public var prewarmEnabled: Bool {
+        get { warmUp.enabled }
+        set { warmUp.enabled = newValue }
+    }
     private var texturePaths: [String] = []
-    private lazy var prewarmer = PresetPrewarmer(display: display, config: config)
-    private var prewarmerStarted = false
     /// The warm-up starts this long after a request, once the switch's blend is over. Warming during
     /// the blend cost D1 a third of its frame rate (2026-11-10: 29 vs 43 fps in the 3 s after a switch).
-    public var prewarmDelay: Duration = .milliseconds(Int(presetBlendSeconds * 1000) + 500)
-    private var prewarmTask: Task<Void, Never>?
+    public var prewarmDelay: Duration {
+        get { warmUp.delay }
+        set { warmUp.delay = newValue }
+    }
+    /// When the warm-up runs; a presentation-bound resource of its own (PERF-011-R7, R8).
+    let warmUp: PresetWarmUpController
 
     private init(display: EGLDisplay, config: EGLConfig, context: EGLContext, placeholder: EGLSurface,
                  engine: ProjectMEngine) {
@@ -81,9 +96,12 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer {
         pcm = UnsafeMutablePointer<Float>.allocate(capacity: maxFrames * 2)
         pcm.initialize(repeating: 0, count: maxFrames * 2)
         layerView = MetalLayerView(frame: .zero)
+        warmUp = PresetWarmUpController(worker: PresetPrewarmer(display: display, config: config),
+                                        delay: .milliseconds(Int(presetBlendSeconds * 1000) + 500))
         super.init()
         layerView.onLayout = { [weak self] in self?.layoutSurface() }
         layerView.onWindowChange = { [weak self] inWindow in
+            self?.inWindow = inWindow
             inWindow ? self?.startDisplayLink() : self?.stopDisplayLink()
         }
         observeFrameRatePressure()
@@ -121,8 +139,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer {
     }
 
     isolated deinit {
-        prewarmTask?.cancel()
-        if prewarmerStarted { prewarmer.stop() }
+        warmUp.shutdown()
         displayLink?.invalidate()
         for observer in observers { NotificationCenter.default.removeObserver(observer) }
         eglMakeCurrent(display, placeholder, placeholder, context)
@@ -160,19 +177,11 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer {
     }
 
     public func prewarm(_ presets: [Preset]) {
-        prewarmTask?.cancel()
-        guard prewarmEnabled, !presets.isEmpty else { return }
-        let delay = prewarmDelay
-        prewarmTask = Task { [weak self] in
-            try? await Task.sleep(for: delay)
-            guard !Task.isCancelled, let self else { return }
-            prewarmerStarted = true
-            prewarmer.request(presets, texturePaths: texturePaths)
-        }
+        warmUp.request(presets, texturePaths: texturePaths)
     }
 
     /// Presets whose pipelines were built in the background (tests and automation reports).
-    public var prewarmedCount: Int { prewarmerStarted ? prewarmer.warmedCount : 0 }
+    public var prewarmedCount: Int { warmUp.warmedCount }
 
     public func pause() {
         paused = true
@@ -191,7 +200,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer {
     /// `frameTime` (seconds since the previous frame) sets the Reduce-flashing step.
     @discardableResult
     func renderFrame(present: Bool = true, frameTime: Double = 1.0 / 60) -> Bool {
-        guard let engine, let surface else { return false }
+        guard !presentationSuspended, let engine, let surface else { return false }
         eglMakeCurrent(display, surface, surface, context)
         if let reader {
             let frames = reader.read(into: pcm, maxFrames: maxFrames)
@@ -237,7 +246,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer {
     }
 
     private func startDisplayLink() {
-        guard displayLink == nil else { return }
+        guard displayLink == nil, !presentationSuspended else { return }
         let link = CADisplayLink(target: ANGLEDisplayLinkProxy(self), selector: #selector(ANGLEDisplayLinkProxy.fire(_:)))
         link.preferredFrameRateRange = frameRateRange()
         link.isPaused = paused
@@ -278,6 +287,8 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer {
     // MARK: - Surface
 
     private func layoutSurface() {
+        // PERF-011-R6: no surface while the app cannot present; resume lays out again.
+        guard !presentationSuspended else { return }
         let displayScale = layerView.traitCollection.displayScale > 0 ? layerView.traitCollection.displayScale : 2
         let scale = displayScale * quality.renderScale   // FR-049: lower render scale when critical
         layerView.contentScaleFactor = scale
@@ -300,6 +311,39 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer {
         surfaceSize = (Int(w), Int(h))
         eglMakeCurrent(display, created, created, context)
         engine?.setViewportWidth(Int(w), height: Int(h))
+    }
+
+    // MARK: - PERF-011: presentation-bound resource
+
+    /// Registration order: the frame loop and surface first, then the warm-up. The registry
+    /// suspends in reverse (warm-up first) and resumes in this order.
+    public var presentationResources: [any PresentationBoundResource] { [self, warmUp] }
+
+    public var presentationResourceName: String { "ANGLE frame loop and surface" }
+
+    /// Stops the frame loop and releases the window surface (its drawables) and the Reduce-flashing
+    /// target. The context, engine, current preset and textures are kept.
+    public func suspendForPresentationLoss() {
+        guard !presentationSuspended else { return }
+        presentationSuspended = true
+        stopDisplayLink()
+        eglMakeCurrent(display, placeholder, placeholder, context)
+        if let flashLimiter {
+            PMFlashLimiterDestroy(flashLimiter)   // recreated on the next limited frame
+            self.flashLimiter = nil
+        }
+        if let surface { eglDestroySurface(display, surface) }
+        surface = nil
+        surfaceSize = (0, 0)
+    }
+
+    /// Recreates the surface at the view's current size and restarts the frame loop if the view is
+    /// in a window (paused if the user paused).
+    public func resumeForPresentation() {
+        guard presentationSuspended else { return }
+        presentationSuspended = false
+        layoutSurface()
+        if inWindow { startDisplayLink() }
     }
 
     // MARK: - Measurement (RendererLab)
@@ -328,6 +372,8 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer {
     // MARK: - Test support
 
     var isDisplayLinkPaused: Bool? { displayLink?.isPaused }
+    var isPresentationSuspended: Bool { presentationSuspended }
+    var hasFlashLimiter: Bool { flashLimiter != nil }
     var currentSurfaceSize: (width: Int, height: Int) { surfaceSize }
     var hasWindowSurface: Bool { surface != nil }
 
@@ -342,6 +388,20 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer {
         guard let flashLimiter, let surface else { return nil }
         eglMakeCurrent(display, surface, surface, context)
         return PMFlashLimiterAdaptedLuminance(flashLimiter)
+    }
+
+    /// One frame of a solid gray `value` through the renderer's own Reduce-flashing limiter onto
+    /// the window surface (not presented); returns the adapted luminance, or nil without a surface
+    /// or limiter. Tests use it for exact luminance values, which the engine's picture cannot give.
+    func limitedSolidFrame(_ value: Float, maxStep: Float) -> Float? {
+        guard !presentationSuspended, let surface else { return nil }
+        eglMakeCurrent(display, surface, surface, context)
+        guard let limiter = flashLimiterForFrame() else { return nil }
+        let framebuffer = PMFlashLimiterBegin(limiter, Int32(surfaceSize.width), Int32(surfaceSize.height))
+        guard framebuffer != 0 else { return nil }
+        PMANGLEClearFramebuffer(framebuffer, value, value, value)
+        PMFlashLimiterFinish(limiter, 0, maxStep)
+        return PMFlashLimiterAdaptedLuminance(limiter)
     }
 
     /// Reads back the default framebuffer of the current surface as RGBA bytes (tests).

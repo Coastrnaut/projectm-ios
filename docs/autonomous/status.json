@@ -6,8 +6,10 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 75,
-   "integrated": 12
+   "audited": 72,
+   "implementing": 1,
+   "integrated": 13,
+   "unit_passed": 1
   },
   "P1": {
    "audited": 149,
@@ -21,8 +23,10 @@
   }
  },
  "by_state": {
-  "audited": 312,
-  "integrated": 14
+  "audited": 309,
+  "implementing": 1,
+  "integrated": 15,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -215,7 +219,6 @@
    "PERF-008",
    "PERF-009",
    "PERF-010",
-   "PERF-011",
    "PERF-012",
    "PERF-013",
    "PERF-014",
@@ -345,7 +348,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "312 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
+   "311 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
   ]
  },
  "features": {
@@ -631,13 +634,13 @@
   },
   "AUD-001": {
    "attempts": 0,
-   "branch": null,
-   "branch_sha": null,
+   "branch": "feature/aud-001",
+   "branch_sha": "d9a60b2a66929b503a1540bedd568ff9def63845",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/003-aud-001-import-drm-free-audio-files",
+   "state": "unit_passed"
   },
   "AUD-002": {
    "attempts": 0,
@@ -2340,14 +2343,14 @@
    "state": "audited"
   },
   "PERF-011": {
-   "attempts": 0,
-   "branch": null,
-   "branch_sha": null,
+   "attempts": 2,
+   "branch": "feature/perf-011",
+   "branch_sha": "685f31acc792ea110c093b27dd355c3f2ddcb6ce",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "6d669fcb857695767ec2b785f74feb29f98d5978",
    "priority": "P0",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/004-perf-011-background-resource-release",
+   "state": "integrated"
   },
   "PERF-012": {
    "attempts": 0,
@@ -2441,13 +2444,13 @@
   },
   "PRE-007": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/pre-007",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/005-pre-007-preset-collections",
+   "state": "implementing"
   },
   "PRE-008": {
    "attempts": 0,
@@ -3680,6 +3683,11 @@
    "branch": "autonomous/integration",
    "id": "AUTO-014",
    "sha": "419cc2a999edbc771333eb97968590802bc490fe"
+  },
+  {
+   "branch": "feature/perf-011",
+   "id": "PERF-011",
+   "sha": "6d669fcb857695767ec2b785f74feb29f98d5978"
   }
  ],
  "integration_branch": "autonomous/integration",
@@ -3689,5 +3697,5 @@
  "run_id": "cb545c51cf0b",
  "skipped_existing": [],
  "total": 326,
- "updated": "2026-11-12T19:46:09Z"
+ "updated": "2026-11-12T20:35:46Z"
 }

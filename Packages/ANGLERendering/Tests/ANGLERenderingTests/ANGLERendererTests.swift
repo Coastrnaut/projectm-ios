@@ -3,6 +3,7 @@
 // without presenting, and the window surface's framebuffer is read back.
 import XCTest
 import AudioCore
+import PresentationLifecycle
 import ProjectMBridge
 import Rendering
 @testable import ANGLERendering
@@ -27,6 +28,20 @@ final class ANGLERendererTests: XCTestCase {
 
     private func litPixels(_ pixels: [UInt8]) -> Int {
         stride(from: 0, to: pixels.count, by: 4).filter { pixels[$0] > 8 || pixels[$0 + 1] > 8 || pixels[$0 + 2] > 8 }.count
+    }
+
+    /// Renders frames (not presented) until the preset has lit pixels. A preset's first frames
+    /// after loading are black for a time that depends on the wall clock, so tests that need a
+    /// drawn picture drive frames until there is one, for at most 3 s. Returns the lit-pixel count.
+    @discardableResult
+    private func renderUntilLit(_ renderer: ANGLERenderer) async throws -> Int {
+        for _ in 0..<300 {
+            XCTAssertTrue(renderer.renderFrame(present: false))
+            let lit = litPixels(renderer.readPixels())
+            if lit > 0 { return lit }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        return 0
     }
 
     func testCreatesAWindowSurfaceAtTheDisplayScale() throws {
@@ -121,5 +136,244 @@ final class ANGLERendererTests: XCTestCase {
         XCTAssertEqual(renderer.isDisplayLinkPaused, false)
         layerView.onWindowChange?(false)
         XCTAssertNil(renderer.isDisplayLinkPaused)
+    }
+
+    // MARK: - PERF-011: presentation suspension (R5, R6, R13; S1-S4)
+
+    func testListsTheFrameLoopThenTheWarmUpAsPresentationResources() throws {
+        let renderer = try makeLaidOut()
+        let resources = renderer.presentationResources
+        XCTAssertEqual(resources.count, 2)
+        XCTAssertTrue(resources[0] === renderer)
+        XCTAssertTrue(resources[1] === renderer.warmUp)
+        XCTAssertEqual(resources.map(\.presentationResourceName), ["ANGLE frame loop and surface", "preset warm-up"])
+    }
+
+    func testSuspensionStopsTheLoopAndReleasesTheSurface() async throws {
+        let renderer = try makeLaidOut()
+        let layerView = try XCTUnwrap(renderer.view as? MetalLayerView)
+        layerView.onWindowChange?(true)
+        try await renderer.setPreset(preset("100-square.milk"))
+        XCTAssertTrue(renderer.renderFrame(present: true))
+        let presented = renderer.presentedFrameCount
+
+        renderer.suspendForPresentationLoss()
+        renderer.suspendForPresentationLoss()   // repeat: nothing
+        XCTAssertTrue(renderer.isPresentationSuspended)
+        XCTAssertNil(renderer.isDisplayLinkPaused, "S1: no display link")
+        XCTAssertFalse(renderer.hasWindowSurface, "S2: the window surface is released")
+        XCTAssertEqual(renderer.currentSurfaceSize.width, 0)
+        XCTAssertFalse(renderer.renderFrame(present: true), "S1: no frame is drawn")
+        XCTAssertFalse(renderer.renderFrame(present: false))
+        XCTAssertEqual(renderer.timedFrames(3, reduceFlashing: false), [])
+        XCTAssertEqual(renderer.readPixels(), [])
+        XCTAssertEqual(renderer.presentedFrameCount, presented)
+    }
+
+    func testNothingRestartsTheLoopOrTheSurfaceWhileSuspended() async throws {
+        let renderer = try makeLaidOut()
+        let layerView = try XCTUnwrap(renderer.view as? MetalLayerView)
+        layerView.onWindowChange?(true)
+        renderer.suspendForPresentationLoss()
+
+        renderer.resume()   // a source start or a user toggle
+        XCTAssertNil(renderer.isDisplayLinkPaused)
+        renderer.pause()
+        renderer.resume()
+        layerView.onWindowChange?(false)   // the view leaves and joins a window
+        layerView.onWindowChange?(true)
+        XCTAssertNil(renderer.isDisplayLinkPaused, "joining a window starts no loop")
+        renderer.view.frame = CGRect(x: 0, y: 0, width: 96, height: 48)   // a system layout pass
+        renderer.view.setNeedsLayout()
+        renderer.view.layoutIfNeeded()
+        XCTAssertFalse(renderer.hasWindowSurface, "layout creates no surface")
+        try await renderer.setPreset(preset("110-per_pixel.milk"))   // a load that was in flight
+        renderer.setTextureSearchPaths([])
+        XCTAssertFalse(renderer.hasWindowSurface)
+        XCTAssertFalse(renderer.renderFrame(present: false))
+    }
+
+    func testResumeRecreatesTheSurfaceAndKeepsThePreset() async throws {
+        let renderer = try makeLaidOut()
+        let layerView = try XCTUnwrap(renderer.view as? MetalLayerView)
+        layerView.onWindowChange?(true)
+        try await renderer.setPreset(preset("100-square.milk"))
+        let lit1 = try await renderUntilLit(renderer)
+        XCTAssertGreaterThan(lit1, 0, "the preset draws before the suspension")
+        let size = renderer.currentSurfaceSize
+
+        renderer.suspendForPresentationLoss()
+        renderer.resumeForPresentation()
+        renderer.resumeForPresentation()   // repeat: nothing
+        XCTAssertFalse(renderer.isPresentationSuspended)
+        XCTAssertTrue(renderer.hasWindowSurface)
+        XCTAssertEqual(renderer.currentSurfaceSize.width, size.width)
+        XCTAssertEqual(renderer.currentSurfaceSize.height, size.height)
+        XCTAssertEqual(renderer.isDisplayLinkPaused, false, "the loop is back, once")
+        // The engine and its preset were kept: frames light pixels without loading anything.
+        for _ in 0..<5 { XCTAssertTrue(renderer.renderFrame(present: false)) }
+        XCTAssertGreaterThan(litPixels(renderer.readPixels()), 0, "S3: the same preset draws")
+        XCTAssertTrue(renderer.renderFrame(present: true))
+    }
+
+    func testAUserPauseSurvivesSuspension() throws {
+        let renderer = try makeLaidOut()
+        let layerView = try XCTUnwrap(renderer.view as? MetalLayerView)
+        layerView.onWindowChange?(true)
+        renderer.pause()
+        renderer.suspendForPresentationLoss()
+        renderer.resumeForPresentation()
+        XCTAssertEqual(renderer.isDisplayLinkPaused, true, "FR-046: paused by the user stays paused")
+        XCTAssertTrue(renderer.hasWindowSurface, "the surface is ready for the user's resume")
+        renderer.resume()
+        XCTAssertEqual(renderer.isDisplayLinkPaused, false)
+
+        // Paused during the suspension.
+        renderer.suspendForPresentationLoss()
+        renderer.pause()
+        renderer.resumeForPresentation()
+        XCTAssertEqual(renderer.isDisplayLinkPaused, true)
+    }
+
+    func testResumeOutsideAWindowStartsNoLoop() throws {
+        let renderer = try makeLaidOut()
+        renderer.suspendForPresentationLoss()
+        renderer.resumeForPresentation()
+        XCTAssertNil(renderer.isDisplayLinkPaused)
+        XCTAssertTrue(renderer.hasWindowSurface)
+    }
+
+    func testASizeChangeWhileSuspendedAppliesOnResume() async throws {
+        let renderer = try makeLaidOut(width: 64, height: 64)
+        try await renderer.setPreset(preset("100-square.milk"))
+        renderer.suspendForPresentationLoss()
+        renderer.view.frame = CGRect(x: 0, y: 0, width: 80, height: 40)   // rotated while away
+        renderer.view.layoutIfNeeded()
+        renderer.resumeForPresentation()
+        let scale = renderer.view.contentScaleFactor
+        XCTAssertEqual(renderer.currentSurfaceSize.width, Int((80 * scale).rounded()))
+        XCTAssertEqual(renderer.currentSurfaceSize.height, Int((40 * scale).rounded()))
+        let lit2 = try await renderUntilLit(renderer)
+        XCTAssertGreaterThan(lit2, 0, "the preset draws at the new size")
+    }
+
+    /// The limiter is exercised with solid frames, whose luminance is exact. The engine's picture
+    /// is not used for values here: the test preset's brightness varies with wall-clock time, and a
+    /// very dark frame stays under the lit-pixel threshold once it goes through the limiter.
+    func testReduceFlashingTargetIsReleasedAndWorksAgainAfterResume() async throws {
+        let renderer = try makeLaidOut()
+        try await renderer.setPreset(preset("100-square.milk"))
+        renderer.reduceFlashing = true
+        for _ in 0..<5 { XCTAssertTrue(renderer.renderFrame(present: false)) }
+        XCTAssertTrue(renderer.hasFlashLimiter)
+        // Leave the limiter adapted to white, so a stale value would be visible after the resume.
+        XCTAssertEqual(try XCTUnwrap(renderer.limitedSolidFrame(1, maxStep: 1)), 1, accuracy: 0.01)
+
+        renderer.suspendForPresentationLoss()
+        XCTAssertFalse(renderer.hasFlashLimiter, "R6: the Reduce-flashing target is released")
+        XCTAssertNil(renderer.flashLimiterAdaptedLuminance)
+        XCTAssertNil(renderer.limitedSolidFrame(1, maxStep: 1), "nothing is drawn while suspended")
+        XCTAssertFalse(renderer.hasFlashLimiter, "and nothing recreates the target")
+        renderer.reduceFlashing = false   // toggled in the background: nothing to reset, no crash
+        renderer.reduceFlashing = true
+
+        renderer.resumeForPresentation()
+        // The engine's frames go through a new limiter onto the new surface.
+        for _ in 0..<5 { XCTAssertTrue(renderer.renderFrame(present: false)) }
+        XCTAssertTrue(renderer.hasFlashLimiter, "recreated on the first limited frame")
+        let adapted = try XCTUnwrap(renderer.flashLimiterAdaptedLuminance)
+        XCTAssertGreaterThanOrEqual(adapted, 0)
+        XCTAssertLessThanOrEqual(adapted, 1)
+        let size = renderer.currentSurfaceSize
+        XCTAssertEqual(renderer.readPixels().count, size.width * size.height * 4, "the output reaches the new surface")
+
+        // And it limits: black, then a cut to white becomes a ramp of at most maxStep per frame,
+        // visible on the surface.
+        XCTAssertEqual(try XCTUnwrap(renderer.limitedSolidFrame(0, maxStep: 1)), 0, accuracy: 0.01)
+        XCTAssertEqual(litPixels(renderer.readPixels()), 0)
+        XCTAssertEqual(try XCTUnwrap(renderer.limitedSolidFrame(1, maxStep: 0.25)), 0.25, accuracy: 0.01)
+        XCTAssertEqual(try XCTUnwrap(renderer.limitedSolidFrame(1, maxStep: 0.25)), 0.5, accuracy: 0.01)
+        let pixels = renderer.readPixels()
+        XCTAssertEqual(litPixels(pixels), size.width * size.height, "every pixel shows the limited frame")
+        // Mean luminance 0.5 is an encoded value of sqrt(0.5) = 181 of 255.
+        XCTAssertEqual(Double(pixels[0]), 181, accuracy: 4)
+    }
+
+    /// A new limiter starts from its first frame's brightness, also after a suspension: no ramp up
+    /// from black and no value left over from before.
+    func testTheLimiterStartsOverAfterASuspension() throws {
+        let renderer = try makeLaidOut()
+        renderer.reduceFlashing = true
+        XCTAssertEqual(try XCTUnwrap(renderer.limitedSolidFrame(0, maxStep: 0.01)), 0, accuracy: 0.01)
+        renderer.suspendForPresentationLoss()
+        renderer.resumeForPresentation()
+        XCTAssertEqual(try XCTUnwrap(renderer.limitedSolidFrame(1, maxStep: 0.01)), 1, accuracy: 0.01,
+                       "the first frame after the resume is shown at its own brightness")
+        XCTAssertEqual(try XCTUnwrap(renderer.limitedSolidFrame(0, maxStep: 0.01)), 0.99, accuracy: 0.01)
+    }
+
+    func testTenFlipsEndInAWorkingRenderer() async throws {
+        let renderer = try makeLaidOut()
+        let layerView = try XCTUnwrap(renderer.view as? MetalLayerView)
+        layerView.onWindowChange?(true)
+        try await renderer.setPreset(preset("100-square.milk"))
+        for _ in 0..<10 {
+            renderer.suspendForPresentationLoss()
+            XCTAssertFalse(renderer.hasWindowSurface)
+            renderer.resumeForPresentation()
+            XCTAssertTrue(renderer.renderFrame(present: false))
+        }
+        XCTAssertEqual(renderer.isDisplayLinkPaused, false)
+        let lit3 = try await renderUntilLit(renderer)
+        XCTAssertGreaterThan(lit3, 0)
+    }
+
+    func testARegistryDrivesBothResourcesInOrder() async throws {
+        let renderer = try makeLaidOut()
+        let layerView = try XCTUnwrap(renderer.view as? MetalLayerView)
+        layerView.onWindowChange?(true)
+        let registry = PresentationResourceRegistry()
+        renderer.presentationResources.forEach(registry.register)
+        XCTAssertEqual(registry.activeCount, 2)
+
+        let lost = registry.setCanPresent(false)
+        XCTAssertEqual(lost, PresentationTransitionReport(canPresent: false, registered: 2, activeBefore: 2, activeAfter: 0))
+        XCTAssertTrue(renderer.isPresentationSuspended)
+        XCTAssertTrue(renderer.warmUp.isSuspended)
+        XCTAssertFalse(renderer.hasWindowSurface)
+
+        let regained = registry.setCanPresent(true)
+        XCTAssertEqual(regained?.activeAfter, 2)
+        XCTAssertFalse(renderer.isPresentationSuspended)
+        XCTAssertFalse(renderer.warmUp.isSuspended)
+        XCTAssertTrue(renderer.renderFrame(present: false))
+    }
+
+    func testARendererCreatedWhileTheAppCannotPresentStartsSuspended() throws {
+        let registry = PresentationResourceRegistry()
+        registry.setCanPresent(false)
+        let renderer = try ANGLERenderer.make()
+        renderer.presentationResources.forEach(registry.register)
+        renderer.view.frame = CGRect(x: 0, y: 0, width: 64, height: 64)
+        renderer.view.layoutIfNeeded()
+        (renderer.view as? MetalLayerView)?.onWindowChange?(true)
+        XCTAssertFalse(renderer.hasWindowSurface)
+        XCTAssertNil(renderer.isDisplayLinkPaused)
+        registry.setCanPresent(true)
+        XCTAssertTrue(renderer.hasWindowSurface)
+        XCTAssertEqual(renderer.isDisplayLinkPaused, false)
+    }
+
+    func testDestroyingASuspendedRendererIsSafe() async throws {
+        var renderer: ANGLERenderer? = try makeLaidOut()
+        try await renderer?.setPreset(preset("100-square.milk"))
+        renderer?.reduceFlashing = true
+        renderer?.renderFrame(present: false)
+        renderer?.prewarmDelay = .zero
+        renderer?.prewarm([preset("110-per_pixel.milk")])
+        renderer?.presentationResources.reversed().forEach { $0.suspendForPresentationLoss() }
+        weak let released = renderer
+        renderer = nil
+        XCTAssertNil(released, "R13: released without touching what it already released")
     }
 }

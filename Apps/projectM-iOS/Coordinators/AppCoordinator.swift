@@ -9,6 +9,9 @@
 //   source-and-state indicator stays visible.
 // * Pause (FR-046, FR-085) stops rendering only; capture keeps running. Leaving the foreground
 //   pauses rendering too (FR-050) and resumes it on return unless the user paused.
+// * PERF-011: while the app cannot present frames (background, device lock) the renderer's
+//   presentation-bound resources are suspended through `presentation`: no frame loop, no window
+//   surface, no preset warm-up. LifecycleCoordinator drives the registry.
 // * Auto-lock (FR-084) follows IdleTimerPolicy.
 // * Imported audio (AUD-001): the chooser's "Your Audio" section lists AudioLibraryCoordinator's
 //   tracks. Tapping one selects that file on the In-App Playback source and starts it; the In-App
@@ -20,6 +23,7 @@ import CaptureUI
 import Diagnostics
 import Foundation
 import Observation
+import PresentationLifecycle
 import PresetLibrary
 import Rendering
 import UIKit
@@ -66,6 +70,8 @@ final class AppCoordinator: VisualizationControlling {
     private var hideTask: Task<Void, Never>?
     private let lifecycle: LifecycleObserver
     private var lifecycleForwarding: Task<Void, Never>?
+    /// Presentation-bound resources (PERF-011): the renderer registers its own in prepareRenderer().
+    @ObservationIgnored let presentation = PresentationResourceRegistry()
     @ObservationIgnored private var lifecycleCoordinator: LifecycleCoordinator!
 
     init(defaults: UserDefaults = .standard) {
@@ -111,7 +117,11 @@ final class AppCoordinator: VisualizationControlling {
         #endif
         // Background/foreground/lock/unlock go through LifecycleCoordinator (T099): it suspends the
         // visualization and forwards to CaptureManager's per-adapter matrix.
-        let lifecycleCoordinator = LifecycleCoordinator(manager: manager, visualization: self)
+        presentation.onTransition = { report in
+            DiagnosticsLog.presentationTransition(canPresent: report.canPresent, registered: report.registered,
+                                                  activeBefore: report.activeBefore, activeAfter: report.activeAfter)
+        }
+        let lifecycleCoordinator = LifecycleCoordinator(manager: manager, visualization: self, presentation: presentation)
         self.lifecycleCoordinator = lifecycleCoordinator
         lifecycleForwarding = Task { @MainActor in
             for await event in lifecycle.events { await lifecycleCoordinator.handle(event) }
@@ -248,6 +258,8 @@ final class AppCoordinator: VisualizationControlling {
             rendererError = "ANGLE: \(error)"
             renderer = try? GLESRenderer.make()
         }
+        // PERF-011: a renderer created while the app cannot present starts suspended.
+        renderer?.presentationResources.forEach(presentation.register)
         renderer?.attach(pcm: manager.normalizedOutput)
         applyReduceFlashing()
         if let textures = Bundle.main.resourceURL?.appendingPathComponent("PresetTextures") {

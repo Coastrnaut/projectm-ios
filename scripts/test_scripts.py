@@ -934,10 +934,9 @@ class SetupMacTests(unittest.TestCase):
             for name in ("001-first", "002-second", "notes"):
                 (specs / name).mkdir(parents=True)
             self.assertEqual(setup_mac.latest_feature(specs), "specs/002-second")
-        # The repository's own newest feature: whichever numbered folder sorts last (a fixed name
-        # here broke as soon as a new feature directory was added).
-        numbered = sorted(p.name for p in (setup_mac.ROOT / "specs").iterdir()
-                          if p.is_dir() and re.match(r"\d{3}-", p.name))
+        # The repository's own specs: the highest-numbered directory, whatever it is now (the
+        # autonomous roadmap adds one per feature; PERF-011 added 004).
+        numbered = sorted(d.name for d in (setup_mac.ROOT / "specs").iterdir() if d.is_dir() and d.name[:3].isdigit())
         self.assertGreaterEqual(numbered[-1], "002-preset-library-unlock")
         self.assertEqual(setup_mac.latest_feature(setup_mac.ROOT / "specs"), f"specs/{numbered[-1]}")
 

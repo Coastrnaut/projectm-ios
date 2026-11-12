@@ -11,12 +11,27 @@
 // The work runs at utility priority. Every engine and GL call stays on the warm-up thread, and the
 // context is created and destroyed there. A new request replaces the queue; presets already warmed
 // are skipped.
+//
+// PERF-011-R7: `stop()` ends the thread and waits until its framebuffer, engine, surface and
+// context are destroyed; afterwards the prewarmer is idle and a later request starts a new thread.
+// The thread checks for a stop between a preset's load and each of its two frames, so the wait is
+// at most one engine call, and an interrupted preset is not recorded as warmed.
 import CANGLE
 import Foundation
 import ProjectMBridge
 import Rendering
 
-final class PresetPrewarmer: @unchecked Sendable {
+/// What PresetWarmUpController needs from the warm-up worker (a fake in tests).
+protocol PresetWarming: AnyObject, Sendable {
+    /// Replaces the queue with `presets` (most likely first) and starts working if idle.
+    func request(_ presets: [Preset], texturePaths: [String])
+    /// Drops the queue, ends all work and releases the worker's graphics resources. When it
+    /// returns, no work is running. The worker can be used again afterwards.
+    func stop()
+    var warmedCount: Int { get }
+}
+
+final class PresetPrewarmer: PresetWarming, @unchecked Sendable {
     /// Pipeline descriptors do not depend on the target size, so a small target is enough.
     static let targetSize = 256
 
@@ -27,7 +42,10 @@ final class PresetPrewarmer: @unchecked Sendable {
     private var texturePaths: [String] = []
     private var stopping = false
     private var thread: Thread?
-    private var done = false
+    /// The context could not be created; later requests start nothing.
+    private var unavailable = false
+    /// The warm-up thread holds its EGL context, engine and render target (tests).
+    private var holdsContext = false
     /// Presets warmed so far (tests and automation reports).
     private var warmedIDs: Set<String> = []
 
@@ -41,7 +59,7 @@ final class PresetPrewarmer: @unchecked Sendable {
         condition.lock()
         queue = presets
         self.texturePaths = texturePaths
-        if thread == nil, !stopping {
+        if thread == nil, !stopping, !unavailable {
             let thread = Thread { [self] in run() }
             thread.name = "projectM preset warm-up"
             thread.qualityOfService = .utility
@@ -64,13 +82,45 @@ final class PresetPrewarmer: @unchecked Sendable {
         return warmedIDs.contains(id)
     }
 
-    /// Stops the thread and waits until its context and engine are gone.
+    /// Drops the queue, stops the thread and waits until its context and engine are gone. The
+    /// prewarmer is then idle; a later `request` starts a new thread. Does nothing when idle.
     func stop() {
         condition.lock()
-        stopping = true
-        condition.signal()
-        while thread != nil, !done { condition.wait() }
+        queue.removeAll()
+        if thread != nil {
+            stopping = true
+            condition.broadcast()
+            while thread != nil { condition.wait() }
+            stopping = false
+        }
         condition.unlock()
+    }
+
+    /// The warm-up thread exists.
+    var isRunning: Bool {
+        condition.lock()
+        defer { condition.unlock() }
+        return thread != nil
+    }
+
+    /// The warm-up thread holds an EGL context, engine and render target.
+    var hasGraphicsContext: Bool {
+        condition.lock()
+        defer { condition.unlock() }
+        return holdsContext
+    }
+
+    /// Presets waiting to be warmed.
+    var queuedCount: Int {
+        condition.lock()
+        defer { condition.unlock() }
+        return queue.count
+    }
+
+    private var shouldStop: Bool {
+        condition.lock()
+        defer { condition.unlock() }
+        return stopping
     }
 
     private func run() {
@@ -78,10 +128,11 @@ final class PresetPrewarmer: @unchecked Sendable {
         let pbufferAttributes: [EGLint] = [EGL_WIDTH, 1, EGL_HEIGHT, 1, EGL_NONE]
         guard let context = eglCreateContext(display, config, nil, contextAttributes),
               let pbuffer = eglCreatePbufferSurface(display, config, pbufferAttributes) else {
-            finish()
+            finish(unavailable: true)
             return
         }
         eglMakeCurrent(display, pbuffer, pbuffer, context)
+        setHoldsContext(true)
         var engine = try? ProjectMEngine(glLoader: PMANGLELoadProc, userData: nil)
         engine?.setViewportWidth(Self.targetSize, height: Self.targetSize)
         var texture: UInt32 = 0
@@ -100,7 +151,10 @@ final class PresetPrewarmer: @unchecked Sendable {
                 } else {
                     try engine.loadPreset(atPath: preset.fileURL.path, smooth: false)
                 }
+                // Safe points: a stop (PERF-011) leaves after the current engine call.
+                if shouldStop { break }
                 engine.renderFrame(toFramebuffer: framebuffer)
+                if shouldStop { break }
                 engine.renderFrame(toFramebuffer: framebuffer)
                 PMANGLEFinish()
             } catch {
@@ -116,7 +170,14 @@ final class PresetPrewarmer: @unchecked Sendable {
         eglMakeCurrent(display, nil, nil, nil)
         eglDestroySurface(display, pbuffer)
         eglDestroyContext(display, context)
-        finish()
+        setHoldsContext(false)
+        finish(unavailable: false)
+    }
+
+    private func setHoldsContext(_ value: Bool) {
+        condition.lock()
+        holdsContext = value
+        condition.unlock()
     }
 
     /// The next preset not yet warmed, or nil when stopping.
@@ -133,9 +194,11 @@ final class PresetPrewarmer: @unchecked Sendable {
         }
     }
 
-    private func finish() {
+    /// The thread is ending: the prewarmer is idle again (or unavailable for good).
+    private func finish(unavailable: Bool) {
         condition.lock()
-        done = true
+        if unavailable { self.unavailable = true }
+        thread = nil
         condition.broadcast()
         condition.unlock()
     }

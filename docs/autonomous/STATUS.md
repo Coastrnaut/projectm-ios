@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-12T19:46:09Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-12T20:35:46Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,22 +9,24 @@
 
 | State | Features |
 |---|---|
-| audited | 312 |
-| integrated | 14 |
+| audited | 309 |
+| implementing | 1 |
+| unit_passed | 1 |
+| integrated | 15 |
 
 ## Counts by priority
 
-| Priority | audited | integrated |
-|---|---|---|
-| P0 | 75 | 12 |
-| P1 | 149 | 2 |
-| P2 | 79 | 0 |
-| P3 | 9 | 0 |
+| Priority | audited | implementing | unit_passed | integrated |
+|---|---|---|---|---|
+| P0 | 72 | 1 | 1 | 13 |
+| P1 | 149 | 0 | 0 | 2 |
+| P2 | 79 | 0 | 0 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 312 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
+- 311 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
 
 ## Integrated
 
@@ -44,6 +46,7 @@ The physical-device suite may **not** start:
 | AUTO-012 | Progress dashboard | `419cc2a999ed` | `autonomous/integration` |
 | AUTO-013 | Final device-test gate | `419cc2a999ed` | `autonomous/integration` |
 | AUTO-014 | Unattended safety budget | `419cc2a999ed` | `autonomous/integration` |
+| PERF-011 | Background resource release | `6d669fcb8576` | `feature/perf-011` |
 
 ## Proved already implemented
 
@@ -54,6 +57,14 @@ None.
 None.
 
 ## Evidence by feature
+
+### AUD-001 Import DRM-free audio files (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `d9a60b2a6692` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-001/20261112T153538/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `d9a60b2a6692` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-001/20261112T153538/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `d9a60b2a6692` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-001/20261112T153538/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `d9a60b2a6692` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-001/20261112T153538/autonomous-tests.log`)
+- `swift test --package-path Packages/CaptureKit`: pass at `d9a60b2a6692` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-001/20261112T153538/swift-test_CaptureKit.log`)
+- `swift test --package-path Packages/CaptureUI`: pass at `d9a60b2a6692` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-001/20261112T153538/swift-test_CaptureUI.log`)
 
 ### AUTO-001 Roadmap parser (integrated)
 - `python3 scripts/autonomous/tests/test_autonomous.py (48 tests)`: pass at `419cc2a999ed`
@@ -96,3 +107,32 @@ None.
 
 ### AUTO-014 Unattended safety budget (integrated)
 - `python3 scripts/autonomous/tests/test_autonomous.py (48 tests)`: pass at `419cc2a999ed`
+
+### PERF-011 Background resource release (integrated)
+- `python3 scripts/check_compliance.py`: pass at `e463058b1c92` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T151252/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `e463058b1c92` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T151252/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `e463058b1c92` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T151252/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `e463058b1c92` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T151252/autonomous-tests.log`)
+- `swift test --package-path Packages/ANGLERendering`: exit 1 at `e463058b1c92` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T151252/swift-test_ANGLERendering.log`)
+- `python3 scripts/check_compliance.py`: pass at `e463058b1c92` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T151339/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `e463058b1c92` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T151339/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `e463058b1c92` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T151339/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `e463058b1c92` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T151339/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=4E32B01D-7911-4A64-A944-877DDD445BC0 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: exit 65 at `e463058b1c92` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T151339/sim-test_ANGLERendering.log`)
+- `python3 scripts/check_compliance.py`: pass at `685f31acc792` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T152418/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `685f31acc792` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T152418/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `685f31acc792` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T152418/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `685f31acc792` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T152418/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=4E32B01D-7911-4A64-A944-877DDD445BC0 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `685f31acc792` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T152418/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Diagnostics`: pass at `685f31acc792` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T152418/swift-test_Diagnostics.log`)
+- `swift test --package-path Packages/PresentationLifecycle`: pass at `685f31acc792` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T152418/swift-test_PresentationLifecycle.log`)
+- `xcodebuild -scheme Rendering-Package -destination id=4E32B01D-7911-4A64-A944-877DDD445BC0 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: exit 65 at `685f31acc792` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T152418/sim-test_Rendering.log`)
+- `python3 scripts/check_compliance.py`: pass at `685f31acc792` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T152635/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `685f31acc792` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T152635/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `685f31acc792` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T152635/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `685f31acc792` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T152635/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=4E32B01D-7911-4A64-A944-877DDD445BC0 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `685f31acc792` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T152635/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Diagnostics`: pass at `685f31acc792` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T152635/swift-test_Diagnostics.log`)
+- `swift test --package-path Packages/PresentationLifecycle`: pass at `685f31acc792` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T152635/swift-test_PresentationLifecycle.log`)
+- `xcodebuild -scheme Rendering-Package -destination id=4E32B01D-7911-4A64-A944-877DDD445BC0 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `685f31acc792` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T152635/sim-test_Rendering.log`)
+- `integration checkout: xcodegen generate; xcodebuild -scheme projectM-iOS -destination id=4E32B01D (iPhone 17, iOS 27.2) -only-testing:projectM-iOSTests test`: pass at `6d669fcb8576` (log `.autonomous/logs/integration/perf-011/app-unit-tests.log`)
