@@ -196,7 +196,8 @@ assert exact frames).
 - Otherwise: one segment to the end with a `.dataRendered` completion (the type that also fires in
   offline rendering; research AUD-006-D5) → main actor → `onTrackEnded` → the transport selects
   the next item and calls `replaceTrack`.
-- `replace(content:)`: hard cut; if the format differs, reconnect player → mixer in the new
+- `replace(content:)`: hard cut, except after a track that played to its end (its tail, up to
+  one 100 ms tap block, is still on its way and belongs before the new track); if the format differs, reconnect player → mixer in the new
   format (the mixer's tap format does not change); then schedule from frame 0, or hold frame 0
   when paused. A track that fails `load` makes the transport report `.failed(.inAppPlaybackFailed)`
   through the source's event stream; the manager stops the session (AUD-006-R19).

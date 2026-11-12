@@ -85,17 +85,64 @@ final class FakePlaybackBackend: InAppPlaybackBackend {
     /// Tracks that actually started.
     private(set) var startedTracks: [InAppPlaybackTrack] = []
 
+    // Transport (AUD-006): a scripted position and a record of every call.
+    var loopsCurrentTrack = true
+    var onTrackEnded: (@MainActor () -> Void)?
+    var positionSeconds = 0.0
+    var durationSeconds = 60.0
+    /// Tracks whose `replaceTrack` fails, like a stored copy that is gone.
+    var unplayable: Set<InAppPlaybackTrack> = []
+    private(set) var pauseCount = 0
+    private(set) var resumeCount = 0
+    private(set) var seekTargets: [Double] = []
+    private(set) var replaceRequests: [InAppPlaybackTrack] = []
+    private(set) var replacedTracks: [InAppPlaybackTrack] = []
+    /// `loopsCurrentTrack` at each start and each successful replace.
+    private(set) var loopFlags: [Bool] = []
+    /// Calls that reached the backend after `stop()`.
+    private(set) var callsAfterStop = 0
+
+    var position: PlaybackPosition { PlaybackPosition(seconds: positionSeconds, durationSeconds: durationSeconds) }
+
     func start(track: InAppPlaybackTrack, sink: PCMSink, onEvent: @escaping @Sendable (SourceEvent) -> Void) throws {
         requestedTracks.append(track)
         if trackMissing { throw SourceError(.inAppPlaybackFailed) }
         started = true
+        paused = false
+        positionSeconds = 0
         startedTracks.append(track)
+        loopFlags.append(loopsCurrentTrack)
         self.onEvent = onEvent
     }
 
     func stop() { started = false; stopCount += 1 }
-    func pause() { paused = true }
-    func resume() throws { paused = false }
+
+    func pause() {
+        guard started else { callsAfterStop += 1; return }
+        paused = true
+        pauseCount += 1
+    }
+
+    func resume() throws {
+        guard started else { callsAfterStop += 1; return }
+        paused = false
+        resumeCount += 1
+    }
+
+    func seek(to seconds: Double) {
+        guard started else { callsAfterStop += 1; return }
+        seekTargets.append(seconds)
+        positionSeconds = PlaybackPosition(seconds: seconds, durationSeconds: durationSeconds).seconds
+    }
+
+    func replaceTrack(_ track: InAppPlaybackTrack) throws {
+        guard started else { callsAfterStop += 1; throw SourceError(.inAppPlaybackFailed) }
+        replaceRequests.append(track)
+        if unplayable.contains(track) { throw SourceError(.inAppPlaybackFailed) }
+        replacedTracks.append(track)
+        loopFlags.append(loopsCurrentTrack)
+        positionSeconds = 0
+    }
 }
 
 // MARK: - System/App Capture (T036)

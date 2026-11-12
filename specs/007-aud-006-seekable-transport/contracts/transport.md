@@ -34,6 +34,8 @@ Guarantees:
 2. After `seek`, `replaceTrack` and `resume`, the first audio written to the sink is the track's
    audio at the new position, and nothing from before the call is written or left downstream
    (AUD-006-R10). The sink's `discardBufferedAudio()` is called exactly once per such call.
+   Exception: `replaceTrack` after the current track has played to its end (the automatic
+   change) discards nothing; the finished track's tail is delivered, then the new track.
 3. `seek` at or past the end: when looping, the position wraps to 0; otherwise the track is at its
    end, `onTrackEnded` is called once (asynchronously) if playing, and on the next `resume()` if
    paused.

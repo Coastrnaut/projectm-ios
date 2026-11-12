@@ -19,6 +19,8 @@
 //   cut no audio from before it reaches the sink (AUD-006-R10). The tap has to be replaced
 //   because the engine hands a tap its audio in 100 ms blocks, some time after rendering; a tap
 //   that survived a seek would deliver the rest of its block from the old position.
+// * The one change that is not a jump: a track that played to its end is followed by the next
+//   without a cut, so its last 100 ms still reach the analysis, in order, before the new track.
 // * Pause reads the position, stops the player and pauses the engine; resume starts the engine
 //   and cuts in at the held frame. Nothing depends on the player's timeline across a pause.
 //
@@ -111,6 +113,13 @@ final class InAppPlaybackGraph {
     private var heldFrame: AVAudioFramePosition?
     /// A track that does not loop is at its end and nothing is scheduled.
     private var atEnd = false
+    /// The current schedule was rendered to the track's end and nothing has cut in since. A track
+    /// change then needs no cut: what is still in transit is the track's own tail.
+    private var playedToEnd = false
+    /// `silence()` was called: nothing is scheduled until another track replaces this one.
+    private var silenced = false
+    /// Whether the current schedule loops (`loops` at the time it was made).
+    private var scheduledLoops = true
     /// Passes queued in the current schedule (loop): picks the file handle and the first frame.
     private var passCount = 0
     /// How many times content was handed to the player (tests: the loop, and its end after stop).
@@ -150,7 +159,7 @@ final class InAppPlaybackGraph {
            let playerTime = player.playerTime(forNodeTime: nodeTime), playerTime.isSampleTimeValid {
             elapsed = max(0, playerTime.sampleTime)
         }
-        return PlaybackPositionMath.frame(start: startFrame, elapsed: elapsed, length: content.length, loops: loops)
+        return PlaybackPositionMath.frame(start: startFrame, elapsed: elapsed, length: content.length, loops: scheduledLoops)
     }
 
     // MARK: - Setup
@@ -279,7 +288,15 @@ final class InAppPlaybackGraph {
             engine.disconnectNodeOutput(player)
             engine.connect(player, to: engine.mainMixerNode, format: newContent.format)
         }
-        cut()
+        silenced = false
+        // After a track that played to its end, its tail (up to one tap block, 100 ms) is still on
+        // its way to the analysis and belongs before the new track: no cut. Any other change (Next
+        // or Previous in the middle of a track) is a jump and cuts.
+        if playedToEnd, heldFrame == nil {
+            generation += 1
+        } else {
+            cut()
+        }
         if heldFrame != nil {
             heldFrame = 0
         } else {
@@ -287,12 +304,13 @@ final class InAppPlaybackGraph {
         }
     }
 
-    /// Stops the current track without scheduling anything (the next track could not be loaded).
+    /// Stops the current track for good (the track that should replace it could not be loaded):
+    /// nothing of it is delivered or scheduled again, also not by a later seek or resume.
     func silence() {
         guard isRunning else { return }
+        silenced = true
         cut()
         atEnd = true
-        startFrame = content.length
     }
 
     // MARK: - The cut and scheduling
@@ -306,6 +324,7 @@ final class InAppPlaybackGraph {
     private func cut() {
         generation += 1
         player.stop()
+        playedToEnd = false
         let token = gate.close()
         guard let sink else { return }
         if tapInstalled {
@@ -318,9 +337,15 @@ final class InAppPlaybackGraph {
 
     /// Queues the track from `frame` in the current generation and, if `play`, starts the player.
     private func schedule(from frame: AVAudioFramePosition, play: Bool) {
+        playedToEnd = false
         startFrame = normalized(frame)
         passCount = 0
         atEnd = false
+        scheduledLoops = loops
+        if silenced {
+            atEnd = true
+            return
+        }
         if loops {
             scheduleNextPass()
             scheduleNextPass()
@@ -355,7 +380,7 @@ final class InAppPlaybackGraph {
     }
 
     private func passConsumed(_ scheduled: Int) {
-        guard scheduled == generation, isRunning, heldFrame == nil, loops else { return }
+        guard scheduled == generation, isRunning, heldFrame == nil, scheduledLoops else { return }
         scheduleNextPass()
     }
 
@@ -372,6 +397,7 @@ final class InAppPlaybackGraph {
 
     private func trackRendered(_ scheduled: Int) {
         guard scheduled == generation, isRunning, heldFrame == nil else { return }
+        playedToEnd = !atEnd          // rendered to the end; not "asked to play at the end"
         onTrackEnded?()
     }
 

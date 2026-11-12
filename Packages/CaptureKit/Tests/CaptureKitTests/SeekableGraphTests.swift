@@ -344,6 +344,25 @@ final class SeekableGraphTests: XCTestCase {
         assertRun(try await collect(rig, renders: 10), startsAt: 50_000)
     }
 
+    func testATrackThatPlayedToItsEndIsDeliveredToItsLastFrameBeforeTheNext() async throws {
+        // The automatic change at the end of a track is not a jump: the old track's tail (still
+        // inside the tap, up to 100 ms) is delivered, then the new track from its frame 0.
+        let rig = try start(try counterTrack("short.caf", frames: 22_050), loops: false)
+        defer { rig.graph.stop() }
+        let other = try InAppPlaybackGraph.load(.file(try counterTrack("other.caf", frames: 66_150, offset: 1_000_000)), bundle: .main)
+        let graph = rig.graph
+        graph.onTrackEnded = { try? graph.replace(content: other) }
+        let indices = try await collect(rig, renders: 45)
+        let split = try XCTUnwrap(indices.firstIndex { $0 >= 1_000_000 })
+        assertRun(Array(indices[..<split]), startsAt: 0)
+        XCTAssertEqual(indices[split - 1], 22_049, "the old track's last frame arrived")
+        assertRun(Array(indices[split...]), startsAt: 1_000_000)
+        XCTAssertEqual(rig.discards.value, 1, "no discard at a natural track end")
+        // A change in the middle of the new track is a jump again.
+        try graph.replace(content: other)
+        XCTAssertEqual(rig.discards.value, 2)
+    }
+
     func testReplaceWithAnotherRateAndChannelCountKeepsPlaying() async throws {
         let rig = try start(try counterTrack(), loops: false)
         defer { rig.graph.stop() }

@@ -245,8 +245,10 @@ Capture: no transport. With VoiceOver, move the scrubber with the increment and 
 - **AUD-006-R10**: After a seek, the first audio delivered for analysis and visualization MUST be
   the track's audio at the requested position, and everything delivered after it MUST follow in
   track order. No audio that was read, queued or in transit before the seek may be delivered to the
-  analysis or to the visualizer after it. The same holds for a track change, Stop playback, and
-  Play after pause.
+  analysis or to the visualizer after it. The same holds for a track change made by the user
+  (Next track, Previous track), Stop playback, and Play after pause. The automatic change at the
+  end of a track is not a jump: the finished track is delivered to its last frame, then the next
+  track from its first, in that order.
 - **AUD-006-R11**: Levels shown for the source MUST NOT be computed from audio from before the
   seek once the seek has been handled.
 - **AUD-006-R12**: When several seeks arrive in quick succession, the last one MUST decide the

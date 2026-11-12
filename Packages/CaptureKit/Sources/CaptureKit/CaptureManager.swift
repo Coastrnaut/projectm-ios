@@ -112,6 +112,12 @@ public final class CaptureManager {
     /// (research R-05/R-06). The same reader serves every session; each attempt empties it.
     public nonisolated var normalizedOutput: any NormalizedPCMReader { analyzer.normalizedOutput }
 
+    /// True while `source` is the started source of the current session (AUD-006: the transport
+    /// acts only on its own In-App Playback source, never on a source that replaced it).
+    public func isCurrent(_ source: any AudioSource) -> Bool {
+        current === source
+    }
+
     public var displayedContentIdentity: String? {
         guard activeMode == .systemAppCapture, hasVerifiedActiveAudio,
               let identifying = current as? ContentIdentifying else { return nil }
