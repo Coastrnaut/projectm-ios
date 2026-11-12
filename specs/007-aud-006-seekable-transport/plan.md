@@ -223,8 +223,11 @@ track exactly when the order's next item is the current item.
 ### 7. UI
 
 `TransportBar` (CaptureUI) takes values and closures: title, state, a position provider polled by
-a `TimelineView` every 0.25 s while visible, and actions. The scrubber is a `Slider` over
-0…duration with an explicit adjustable action (±10 s) and a spoken value. `ControlsOverlay` shows
+a `TimelineView` every 0.25 s while visible, and actions. The scrubber is drawn and handled
+in the view (a track, a thumb and a drag gesture over 0…duration; a `Slider` was tried first and
+its end-of-editing callback did not arrive reliably for a drag on the simulator), exposed to
+assistive technologies as one element with a label, a spoken value and an adjustable action
+(±10 s). `PlaybackTransport.positionRevision` makes a jump show without waiting for the next poll. `ControlsOverlay` shows
 it above the existing rows when `transport.isAvailable`. Coordinator actions call `showControls()`
 so the hide delay restarts. Dragging uses `ScrubThrottle` (100 ms) and a final exact seek.
 

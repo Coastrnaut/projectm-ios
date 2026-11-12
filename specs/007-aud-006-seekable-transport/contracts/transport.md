@@ -45,6 +45,9 @@ Guarantees:
 6. The tap closure writes only to the sink, behind `PlaybackTapGate`: no allocation, lock, I/O or
    logging (AUD-006-R28).
 
+A backend whose `replaceTrack` failed stays silent: a later `seek` or `resume` does not bring the
+old track back.
+
 `InAppPlaybackSource` forwards these and adds `isStarted`, `sessionCount` (incremented by every
 successful start) and `reportFailure()` (yields `.failed(.inAppPlaybackFailed)` to the manager).
 After a successful `replaceTrack` the source's `track` is the new track, so a Restart plays it.
@@ -84,6 +87,7 @@ AUD-003 replaces `ListPlayOrder` with its queue; nil from an order means nothing
     public var state: State { get }             // derived (data-model)
     public private(set) var current: PlaybackItem?
     public var position: PlaybackPosition { get }    // not observable; poll
+    public private(set) var positionRevision: Int    // observable; bumped by every jump
     public func prepare(order: any PlayOrder, current: PlaybackItem)   // before the session starts
     public func play() async
     public func pause() async

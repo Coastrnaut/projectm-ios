@@ -136,6 +136,20 @@ real-time path differs only in who calls render.
 - PERF-013 (audio-render sync): the discard operation defines the discontinuity point it must
   account for.
 
+## AUD-006-D12: Found while implementing
+
+- A tap asked for a format other than the mixer bus has raises an Objective-C exception
+  (`-10865`); the bus format can change when the engine starts or the player is reconnected, so
+  the format is read at every tap installation.
+- `playerTime(forNodeTime:)` raises an exception for a node time with neither a valid sample time
+  nor a valid host time (right after a cut, before the next render); guarded.
+- Cutting at the automatic change after a finished track dropped that track's last tap block
+  (4,410 frames) from the analysis. A track that played to its end is therefore followed without
+  a cut; only user jumps cut (spec AUD-006-R10).
+- SwiftUI's `Slider` did not deliver its end-of-editing callback for a drag made by the simulator
+  UI test; the times stayed at the dragged value until the controls were rebuilt. The scrubber is
+  a drag gesture in `TransportBar` instead.
+
 ## Open, device phase
 
 - Whether `player.stop()` takes effect before the render cycle in flight on hardware (the cut
