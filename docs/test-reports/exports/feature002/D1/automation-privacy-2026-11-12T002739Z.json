@@ -1,0 +1,16 @@
+{
+  "build" : "2",
+  "defaultsKeys" : [
+    "SKTransactionUpdatesLastChecked",
+    "favorites",
+    "lastPresetID",
+    "notice.photosensitivityAcknowledged",
+    "settings.performanceOverlay",
+    "settings.presetScope",
+    "settings.reduceFlashing"
+  ],
+  "device" : "iPhone15,4",
+  "finishedAt" : "2026-11-12T00:27:39Z",
+  "scope" : "Favorites · 1",
+  "systemVersion" : "27.0.1"
+}

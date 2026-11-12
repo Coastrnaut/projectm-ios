@@ -92,6 +92,8 @@ and `privacy-verdict.json`.
   - in Documents, only this run's automation report. The shipping build writes nothing there.
 - **No audio:** no audio files anywhere.
 
-**Still open:** "with a purchase" needs a sandbox purchase on the same install (T239), and that
-waits for the in-app purchase in App Store Connect (T242). Then run `entitlement` and
-`privacy --no-install` on D1.
+**With a purchase (2026-11-11).** After the sandbox purchase, relaunch, offline relaunch and
+reinstall on D1 (T239), `privacy --no-install` on the same install found **zero violations**:
+- The same keys as before, with no purchase data and no unlock flag; StoreKit keeps the
+  entitlement.
+- The same container contents, plus only the automation reports in Documents.

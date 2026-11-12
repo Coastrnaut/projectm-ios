@@ -1,0 +1,14 @@
+{
+  "build" : "2",
+  "device" : "iPhone15,4",
+  "displayPrice" : "$1.99",
+  "finishedAt" : "2026-11-12T00:19:09Z",
+  "packPresetPlays" : false,
+  "purchaseState" : "idle",
+  "scopeLine" : "Included · 28",
+  "storedUnlockKeys" : [
+
+  ],
+  "systemVersion" : "27.0.1",
+  "unlocked" : false
+}

@@ -82,16 +82,16 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
     - SC-104 looked borderline because the test switched too fast, and shader compiles delayed a
       preset's first frame. Now it passes on D1 at an 8 s dwell: 96-98%, median 103 ms with the
       background warm-up (`PresetPrewarmer`, started 2.5 s after a switch; no frame-rate cost).
-  - T241 on D1 2026-11-10: zero violations; the purchase part waits for T239.
+  - T239 and T241 done on D1 2026-11-11: the sandbox product appeared overnight. Purchase,
+    relaunch, offline relaunch and reinstall all keep the library unlocked, and the privacy review
+    with the purchase found zero violations.
   - T242: the in-app purchase was created in App Store Connect on 2026-11-10 (Apple ID 6833245609,
     $1.99, all countries, status Prepare for Submission).
   - 2026-11-10, App Store Connect business setup:
     - Paid Apps Agreement Active; bank account and W-9 Active.
     - EU Digital Services Act: trader, In Review.
     - Remaining: submit the purchase together with the 1.1 version.
-  - Open: T239 and the purchase part of T241. Apple's sandbox returned no product on D1 or D2
-    for 2 hours after the agreement went active (2026-11-10). Retry later; if it still fails,
-    follow TN3186 and contact Apple Developer Support (tasks.md T239). Both are automated by `scripts/run_device_tests.py`. Version 1.1 (2); T232's VoiceOver check is not required.
+  - Open: only the 1.1 upload and submitting the purchase with it (T242). Version 1.1 (2); T232's VoiceOver check is not required.
 - Phase B verified on the project Mac 2026-11-09: AudioCore 76, CaptureKit 80, Diagnostics 8 tests
   on the host and the iOS 27.2 and 26.5 simulators; CaptureLab UI tests (3) on iOS 27.2; device
   builds with no warnings. The Linux path (no AVFAudio: linear resampler fallback) is tested on
@@ -390,6 +390,9 @@ agent-driven. Copy this section into a new repository's CLAUDE.md and adjust the
   - Fetching products doesn't use the sandbox account, so an empty product list is never the
     account's fault.
   - Compare two devices on different iOS versions before suspecting the OS.
+  - Here the product appeared overnight: nothing on day one for 2 hours, there the next day.
+  - devicectl reaches a device in Airplane Mode only over the USB cable; "unavailable" means the
+    cable is unplugged.
 
 ### Performance lessons from feature 002
 

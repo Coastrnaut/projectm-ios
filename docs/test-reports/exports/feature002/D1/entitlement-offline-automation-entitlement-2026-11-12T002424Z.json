@@ -1,0 +1,14 @@
+{
+  "build" : "2",
+  "device" : "iPhone15,4",
+  "displayPrice" : "$1.99",
+  "finishedAt" : "2026-11-12T00:24:24Z",
+  "packPresetPlays" : true,
+  "purchaseState" : "idle",
+  "scopeLine" : "Cream of the Crop · 9728",
+  "storedUnlockKeys" : [
+
+  ],
+  "systemVersion" : "27.0.1",
+  "unlocked" : true
+}
