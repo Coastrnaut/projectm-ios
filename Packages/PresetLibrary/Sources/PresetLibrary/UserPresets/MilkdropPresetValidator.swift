@@ -11,9 +11,21 @@
 //     leading backtick is dropped from each line.
 // Order of checks (the first that fails is the reason): binary content, line length, line count,
 // header, settings; then per code block in prefix order: size, bracket nesting, statement length,
-// balance (equations) or completeness (shaders).
-// The statement and nesting limits bound how deep the engine's equation compiler, equation
-// runner and shader translator can recurse on one expression (spec, engine audit).
+// statement complexity, control flow (shaders), balance (equations) or completeness (shaders).
+//
+// Why nesting, complexity and control flow are limited: the engine's shader translator
+// (hlslparser), ANGLE's shader compiler and the equation compiler recurse on the depth of an
+// expression or of nested statements, without a limit of their own. On the simulator a shader
+// statement with a chain of 768 casts overflowed the stack inside hlslparser, and one with
+// 2,048 additions overflowed it inside ANGLE (docs/test-reports/preset-import.md). Depth can only
+// come from brackets, operators and control-flow keywords, so the validator bounds those:
+//   * brackets nested at most `maxNestingDepth`;
+//   * "complexity" of a statement = its punctuation bytes other than `)`, `]`, `}`, `;` (a `.` counts
+//     only before a letter): an upper bound on the operators and brackets that can stack up. For
+//     a shader the complexity of all its preprocessor lines is added, because a macro can put
+//     its body inside any statement;
+//   * at most `maxShaderControlKeywords` of if/else/for/while/do in one shader, because
+//     `else if` chains and brace-less nesting stack up without any bracket.
 import Foundation
 
 public struct PresetValidation: Sendable, Equatable {
@@ -161,7 +173,39 @@ public enum MilkdropPresetValidator {
         var statement = 0
         var longest = 0
         var blank = true
-        for byte in code {
+        // Complexity: of the current statement, the largest seen, and of all preprocessor lines.
+        var complexity = 0
+        var mostComplex = 0
+        var directives = 0
+        var inDirective = false
+        var lineHasContent = false
+        var lastOnLine: UInt8 = 0
+        var keywords = 0
+        var word: [UInt8] = []
+        for (index, byte) in code.enumerated() {
+            // Lines: a shader line starting with "#" is a preprocessor line (a trailing "\" continues it).
+            if byte == 0x0A {
+                if !(inDirective && lastOnLine == 0x5C) { inDirective = false }
+                lineHasContent = false
+                lastOnLine = 0
+            } else if byte != 0x20 && byte != 0x09 {
+                if isShader && !lineHasContent && byte == 0x23 { inDirective = true }
+                lineHasContent = true
+                lastOnLine = byte
+            }
+            // Control-flow keywords.
+            if isShader {
+                if isIdentifier(byte) {
+                    if word.count < 8 { word.append(byte) }
+                } else {
+                    if controlKeywords.contains(word) { keywords += 1 }
+                    word.removeAll(keepingCapacity: true)
+                }
+            }
+            // Punctuation that can add a level to an expression tree.
+            if isComplexityByte(code, index) {
+                if inDirective { directives += 1 } else { complexity += 1 }
+            }
             switch byte {
             case 0x28, 0x5B, 0x7B:   // ( [ {
                 depth += 1
@@ -177,13 +221,20 @@ public enum MilkdropPresetValidator {
             if byte == 0x3B || (isShader && (byte == 0x7B || byte == 0x7D)) {
                 longest = max(longest, statement)
                 statement = 0
+                mostComplex = max(mostComplex, complexity)
+                complexity = 0
             } else if byte != 0x20 && byte != 0x09 && byte != 0x0A {
                 statement += 1   // white space and comments do not count
             }
         }
         longest = max(longest, statement)
+        mostComplex = max(mostComplex, complexity)
+        if controlKeywords.contains(word) { keywords += 1 }
         if maxDepth > PresetImportLimits.maxNestingDepth { return PresetQuarantineReason(.nestingTooDeep, detail: prefix) }
         if longest > PresetImportLimits.maxStatementBytes { return PresetQuarantineReason(.statementTooLong, detail: prefix) }
+        let complexityLimit = isShader ? PresetImportLimits.maxShaderStatementComplexity : PresetImportLimits.maxEquationStatementComplexity
+        if mostComplex + directives > complexityLimit { return PresetQuarantineReason(.statementTooComplex, detail: prefix) }
+        if keywords > PresetImportLimits.maxShaderControlKeywords { return PresetQuarantineReason(.tooMuchControlFlow, detail: prefix) }
         if isShader {
             // A blank shader is "no shader" to the engine.
             if !blank && (unbalanced || round != 0 || curly != 0 || !contains(code, "shader_body")) {
@@ -193,6 +244,22 @@ public enum MilkdropPresetValidator {
             return PresetQuarantineReason(.unbalancedEquation, detail: prefix)
         }
         return nil
+    }
+
+    private static let controlKeywords: Set<[UInt8]> = Set(["if", "else", "for", "while", "do"].map { Array($0.utf8) })
+
+    /// Punctuation other than closing brackets; a "." only when a name follows (member access,
+    /// not a number).
+    private static func isComplexityByte(_ code: [UInt8], _ index: Int) -> Bool {
+        let byte = code[index]
+        if byte <= 0x20 || byte >= 0x7F || isIdentifier(byte) { return false }
+        if byte == 0x29 || byte == 0x5D || byte == 0x7D || byte == 0x3B { return false }   // ) ] } ;
+        if byte == 0x2E {
+            guard index + 1 < code.count else { return false }
+            let next = code[index + 1]
+            return isIdentifier(next) && !isDigit(next)
+        }
+        return true
     }
 
     /// Replaces `// …` and `/* … */` comments with spaces, keeping line breaks.

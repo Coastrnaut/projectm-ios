@@ -16,8 +16,8 @@ final class MilkdropPresetValidatorTests: XCTestCase {
         XCTAssertEqual(result.rejection?.kind, kind, "got \(String(describing: result.rejection))", file: file, line: line)
     }
 
-    private func assertAccepted(_ text: String, file: StaticString = #filePath, line: UInt = #line) {
-        XCTAssertNil(validate(text).rejection, file: file, line: line)
+    private func assertAccepted(_ text: String, _ message: String = "", file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertNil(validate(text).rejection, message, file: file, line: line)
     }
 
     private func warningDetails(_ result: PresetValidation, _ kind: PresetImportWarning.Kind) -> [String] {
@@ -90,8 +90,8 @@ final class MilkdropPresetValidatorTests: XCTestCase {
     // MARK: - Code blocks (R10)
 
     func testBlockSize() {
-        // 8,000-byte statements, 17 lines: 136,017 bytes in one block.
-        let line = "q1 = " + String(repeating: "1+", count: 3_990) + "1;"
+        // 7,987-byte lines of short statements; 17 lines are 135,796 bytes in one block.
+        let line = String(repeating: "q1 = q1 + 1; ", count: 614) + "q2=1;"
         assertRejected(F.preset(perFrame: [String](repeating: line, count: 17)), .blockTooLarge)
         assertAccepted(F.preset(perFrame: [String](repeating: line, count: 16)))
     }
@@ -120,6 +120,49 @@ final class MilkdropPresetValidatorTests: XCTestCase {
         assertRejected(F.preset(perFrame: ["q1 ="] + open + ["1"] + close + [";"]), .nestingTooDeep)
         let mixed = "ret = " + String(repeating: "float3(", count: 33) + String(repeating: "[", count: 32)
         assertRejected(F.preset(comp: ["shader_body", "{", mixed, "}"]), .nestingTooDeep)
+    }
+
+    /// Complexity: punctuation that can add a level to an expression tree (operators, opening
+    /// brackets, member access). Shaders: 256 including preprocessor lines; equations: 512.
+    func testStatementComplexity() {
+        func shader(_ statement: String, defines: [String] = []) -> String {
+            F.preset(comp: defines + ["shader_body", "{", "ret = tex2D(sampler_main, uv).xyz;", statement, "}"])
+        }
+        // "ret = " is 1, each "(float3)" is 1.
+        let casts = L.maxShaderStatementComplexity - 1
+        assertAccepted(shader("ret = " + String(repeating: "(float3)", count: casts) + "ret;"))
+        assertRejected(shader("ret = " + String(repeating: "(float3)", count: casts + 1) + "ret;"), .statementTooComplex)
+        assertRejected(shader("ret = " + String(repeating: "-+", count: 128) + "ret;"), .statementTooComplex)
+        assertRejected(shader("ret = ret" + String(repeating: ".xyz", count: 256) + ";"), .statementTooComplex)
+        assertAccepted(shader("ret = ret*0.5" + String(repeating: " + 0.25", count: 254) + ";"), "numbers' dots do not count")
+        // A macro's body can end up inside any statement, so preprocessor lines add to every statement.
+        let define = "#define BIG (" + String(repeating: "ret+", count: 200) + "ret)"      // 1 + 1 + 200 = 202
+        assertAccepted(shader("ret = BIG" + String(repeating: "+BIG", count: 52) + ";", defines: [define]))     // 202 + 1 + 52 = 255... plus "#"
+        assertRejected(shader("ret = BIG" + String(repeating: "+BIG", count: 54) + ";", defines: [define]), .statementTooComplex)
+        assertRejected(shader("ret = ret;", defines: [define, define]), .statementTooComplex)
+        // Many simple statements are fine: the limit is per statement.
+        assertAccepted(shader([String](repeating: "ret = ret*0.99+0.001;", count: 300).joined(separator: " ")))
+
+        let terms = L.maxEquationStatementComplexity - 1
+        assertAccepted(F.preset(perFrame: ["q1 = " + String(repeating: "q2+", count: terms) + "q2;"]))
+        assertRejected(F.preset(perFrame: ["q1 = " + String(repeating: "q2+", count: terms + 1) + "q2;"]), .statementTooComplex)
+        assertRejected(F.preset(extra: ["shape_1_per_frame1=x = " + String(repeating: "-!", count: 256) + "x;"]), .statementTooComplex)
+        XCTAssertTrue(validate(shader("ret = " + String(repeating: "(float3)", count: 300) + "ret;")).rejection?.message.contains("256") ?? false)
+    }
+
+    func testShaderControlFlow() {
+        func shader(_ lines: [String]) -> String {
+            F.preset(comp: ["shader_body", "{", "ret = tex2D(sampler_main, uv).xyz;", "float t = uv.x;"] + lines + ["}"])
+        }
+        // "if" + 31 × "else if" = 63 keywords; one more "else" = 64.
+        let chain = ["if(t>2) ret*=0.9;"] + [String](repeating: "else if(t>2) ret*=0.9;", count: 31)
+        assertAccepted(shader(chain + ["else ret*=0.8;"]))
+        assertRejected(shader(chain + ["else if(t>3) ret*=0.8;"]), .tooMuchControlFlow)
+        assertRejected(shader([String(repeating: "if(t>-1) ", count: 65) + "ret*=0.99;"]), .tooMuchControlFlow)
+        assertRejected(shader([String(repeating: "for(int i=0;i<1;i++) ", count: 65) + "ret*=0.99;"]), .tooMuchControlFlow)
+        assertAccepted(shader(["float iffy = 1.0; float do_it = 2.0; float format = 3.0; // names that only contain keywords"]))
+        // Equations have no such keywords: `if` is a function there, limited by bracket nesting.
+        assertAccepted(F.preset(perFrame: [String](repeating: "q1 = if(above(q1,1), 0, q1+1);", count: 100)))
     }
 
     func testUnbalancedEquations() {
@@ -218,7 +261,8 @@ final class MilkdropPresetValidatorTests: XCTestCase {
             throw XCTSkip("the preset packs are not checked out here")
         }
         let limitKinds: Set<PresetQuarantineReason.Kind> = [.binaryContent, .lineTooLong, .tooManyLines, .missingHeader, .noSettings,
-                                                             .blockTooLarge, .statementTooLong, .nestingTooDeep]
+                                                             .blockTooLarge, .statementTooLong, .nestingTooDeep,
+                                                             .statementTooComplex, .tooMuchControlFlow]
         var files = 0
         var other: [PresetQuarantineReason.Kind: Int] = [:]
         for case let url as URL in enumerator where url.pathExtension.lowercased() == "milk" {

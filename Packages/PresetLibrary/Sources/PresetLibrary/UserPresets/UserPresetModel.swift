@@ -7,7 +7,8 @@ import Foundation
 public struct PresetQuarantineReason: Codable, Sendable, Hashable {
     public enum Kind: String, Sendable, CaseIterable {
         case binaryContent, lineTooLong, tooManyLines, missingHeader, noSettings
-        case blockTooLarge, statementTooLong, nestingTooDeep, unbalancedEquation, incompleteShader
+        case blockTooLarge, statementTooLong, nestingTooDeep, statementTooComplex, tooMuchControlFlow
+        case unbalancedEquation, incompleteShader
         case engineRejected, timedOut, interruptedDuringCheck, interruptedOnScreen, failedOnScreen
     }
 
@@ -36,6 +37,12 @@ public struct PresetQuarantineReason: Codable, Sendable, Hashable {
             return "A statement in the \(Self.blockName(detail)) is longer than \(n(PresetImportLimits.maxStatementBytes)) bytes."
         case .nestingTooDeep:
             return "Brackets in the \(Self.blockName(detail)) are nested more than \(PresetImportLimits.maxNestingDepth) deep."
+        case .statementTooComplex:
+            let limit = detail == "warp_" || detail == "comp_" ? PresetImportLimits.maxShaderStatementComplexity
+                : PresetImportLimits.maxEquationStatementComplexity
+            return "A statement in the \(Self.blockName(detail)) is too complex: more than \(limit) operators and brackets."
+        case .tooMuchControlFlow:
+            return "The \(Self.blockName(detail)) has more than \(PresetImportLimits.maxShaderControlKeywords) if, else and loop keywords."
         case .unbalancedEquation: return "The \(Self.blockName(detail)) has unbalanced parentheses."
         case .incompleteShader: return "The \(Self.blockName(detail)) is incomplete. The file may be cut off."
         case .engineRejected: return "The visualizer could not load this preset." + Self.suffix(detail)

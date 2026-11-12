@@ -15,8 +15,18 @@ public enum PresetImportLimits {
     /// Longest built-in statement: 4,891 bytes (equations), 1,311 (shaders). Bounds the depth of
     /// the engine's recursion over one expression.
     public static let maxStatementBytes = 8_192
-    /// Deepest built-in bracket nesting: 21.
+    /// Deepest built-in bracket nesting: 21. The engine survived 256 on the simulator.
     public static let maxNestingDepth = 64
+    /// Punctuation bytes in one shader statement plus all of the shader's preprocessor lines.
+    /// Largest built-in value: 196. On the simulator the engine survived the worst shape (a chain
+    /// of casts) at 512 and crashed at 768 (docs/test-reports/preset-import.md).
+    public static let maxShaderStatementComplexity = 256
+    /// Punctuation bytes in one equation statement. Largest built-in value: 268. The equation
+    /// compiler survived 4,096 on the simulator.
+    public static let maxEquationStatementComplexity = 512
+    /// if/else/for/while/do in one shader. Most in a built-in shader: 17. The engine survived
+    /// 256 chained or nested on the simulator.
+    public static let maxShaderControlKeywords = 64
 
     public static let maxLicenseLines = 5
     public static let maxLicenseLineCharacters = 200

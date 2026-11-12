@@ -11,7 +11,9 @@
 // * Reduce flashing (FR-072, T104): the engine renders into FlashLimiter's offscreen texture and the
 //   limiter draws the frame with its mean luminance changing at most `flashLimitPerSecond`.
 // * Everything runs on the main thread, the engine's render thread, except PresetPrewarmer
-//   (feature 002 SC-104), which warms upcoming presets on its own thread and context.
+//   (feature 002 SC-104), which warms upcoming presets on its own thread and context, and
+//   PresetTrialRunner (PRE-012), which tries imported presets on a thread, context and engine of
+//   its own before they may be loaded here.
 // * PERF-011: while the app cannot present frames (background, device lock) the renderer is
 //   suspended: no display link, no frame, and the window surface and the Reduce-flashing target
 //   are released. The context, engine, preset and textures stay, so the picture continues where it
@@ -84,6 +86,9 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     }
     /// When the warm-up runs; a presentation-bound resource of its own (PERF-011-R7, R8).
     let warmUp: PresetWarmUpController
+    /// PRE-012: tries imported presets on a separate engine before they may be played.
+    let trialRunner: PresetTrialRunner
+    public var presetTrial: (any PresetTrialing)? { trialRunner }
 
     private init(display: EGLDisplay, config: EGLConfig, context: EGLContext, placeholder: EGLSurface,
                  engine: ProjectMEngine) {
@@ -98,6 +103,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
         layerView = MetalLayerView(frame: .zero)
         warmUp = PresetWarmUpController(worker: PresetPrewarmer(display: display, config: config),
                                         delay: .milliseconds(Int(presetBlendSeconds * 1000) + 500))
+        trialRunner = PresetTrialRunner(display: display, config: config)
         super.init()
         layerView.onLayout = { [weak self] in self?.layoutSurface() }
         layerView.onWindowChange = { [weak self] inWindow in
@@ -139,6 +145,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     }
 
     isolated deinit {
+        trialRunner.setSuspended(true)   // no new trial; a running one stops at its next safe point
         warmUp.shutdown()
         displayLink?.invalidate()
         for observer in observers { NotificationCenter.default.removeObserver(observer) }
@@ -174,6 +181,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
         makeCurrent()
         texturePaths = paths.map(\.path)
         engine.setTextureSearchPaths(texturePaths)
+        trialRunner.setTexturePaths(texturePaths)
     }
 
     public func prewarm(_ presets: [Preset]) {
@@ -326,6 +334,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     public func suspendForPresentationLoss() {
         guard !presentationSuspended else { return }
         presentationSuspended = true
+        trialRunner.setSuspended(true)   // PRE-012: no off-screen trial without presentation either
         stopDisplayLink()
         eglMakeCurrent(display, placeholder, placeholder, context)
         if let flashLimiter {
@@ -342,6 +351,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     public func resumeForPresentation() {
         guard presentationSuspended else { return }
         presentationSuspended = false
+        trialRunner.setSuspended(false)
         layoutSurface()
         if inWindow { startDisplayLink() }
     }
