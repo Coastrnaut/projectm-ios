@@ -1,6 +1,7 @@
-// AVInAppPlaybackBackend.swift — looping reference-track playback with a mix tap (task T046;
-// research R-04). `.playback` category, so the silent switch does not mute user-started media.
-// Never touches the input node (FR-069).
+// AVInAppPlaybackBackend.swift — In-App Playback on AVAudioEngine: the audio session, route and
+// interruption handling around InAppPlaybackGraph (tasks T046 and AUD-001-T12; research R-04).
+// `.playback` category, so the silent switch does not mute user-started media. Never touches the
+// input node (FR-069).
 #if os(iOS) && canImport(AVFAudio)
 import AudioCore
 import AVFAudio
@@ -11,8 +12,7 @@ public final class AVInAppPlaybackBackend: InAppPlaybackBackend {
     private let bundle: Bundle
     private let resource: String
     private let fileExtension: String
-    private var engine: AVAudioEngine?
-    private var player: AVAudioPlayerNode?
+    private var graph: InAppPlaybackGraph?
     private var onEvent: (@Sendable (SourceEvent) -> Void)?
     private var observers: [any NSObjectProtocol] = []
 
@@ -22,19 +22,13 @@ public final class AVInAppPlaybackBackend: InAppPlaybackBackend {
         self.fileExtension = fileExtension
     }
 
-    public func start(sink: PCMSink, onEvent: @escaping @Sendable (SourceEvent) -> Void) throws {
-        guard let url = bundle.url(forResource: resource, withExtension: fileExtension) else {
-            throw SourceError(.inAppPlaybackFailed)
-        }
-        let file: AVAudioFile
-        let buffer: AVAudioPCMBuffer
+    public func start(track: InAppPlaybackTrack, sink: PCMSink, onEvent: @escaping @Sendable (SourceEvent) -> Void) throws {
+        // The reference track is read into memory; an imported file is streamed (AUD-001-R20). A
+        // track that cannot be opened fails here; the other track is never played instead
+        // (AUD-001-R19).
+        let content: InAppPlaybackGraph.Content
         do {
-            file = try AVAudioFile(forReading: url)
-            guard let b = AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: AVAudioFrameCount(file.length)) else {
-                throw SourceError(.inAppPlaybackFailed)
-            }
-            try file.read(into: b)
-            buffer = b
+            content = try InAppPlaybackGraph.load(track, bundle: bundle, resource: resource, fileExtension: fileExtension)
         } catch {
             throw SourceError(.inAppPlaybackFailed)
         }
@@ -51,53 +45,23 @@ public final class AVInAppPlaybackBackend: InAppPlaybackBackend {
         // InAppPlaybackSource never calls stop() after a failed start, so a session left active
         // would keep other apps' audio interrupted.
 
-        let engine = AVAudioEngine()
-        let player = AVAudioPlayerNode()
-        engine.attach(player)
-        engine.connect(player, to: engine.mainMixerNode, format: buffer.format)
-        let mixer = engine.mainMixerNode
-        let tapFormat = mixer.outputFormat(forBus: 0)
-        guard let format = AudioFormat(asbd: tapFormat.streamDescription.pointee) else {
-            Self.deactivateSession()
-            throw SourceError(.inAppPlaybackFailed)
-        }
-        // @Sendable makes the tap nonisolated. Without it the closure inherits this class's
-        // @MainActor isolation, and Swift 6's runtime isolation check traps when AVFAudio calls
-        // it on its real-time messenger queue. CaptureLabUITests hit this trap in this tap on the
-        // iOS Simulator (crash reports fault in this closure); AVMicrophoneBackend's input tap
-        // had the same pattern and got the same fix.
-        let layout = ChannelLayoutTag(rawValue: tapFormat.channelLayout?.layoutTag ?? 0)
-        AVAudioTapWarmUp.run(format: tapFormat)   // no first-call method-cache allocation in the tap (T063)
-        mixer.installTap(onBus: 0, bufferSize: 1024, format: tapFormat) { @Sendable tapBuffer, when in
-            // Capture delivery (task T062): the buffer's host time, in ns on the uptime clock.
-            let captureNs: UInt64 = when.isHostTimeValid
-                ? UInt64(AVAudioTime.seconds(forHostTime: when.hostTime) * 1_000_000_000) : 0
-            sink.write(tapBuffer.audioBufferList, format: format, frameCount: Int(tapBuffer.frameLength),
-                       layout: layout, captureTimeNs: captureNs)
-        }
-        engine.prepare()
+        let graph = InAppPlaybackGraph(content: content)
         do {
-            try engine.start()
+            try graph.installTap(into: sink)
+            try graph.start()
         } catch {
-            mixer.removeTap(onBus: 0)
+            graph.stop()
             Self.deactivateSession()
             throw SourceError(.inAppPlaybackFailed)
         }
-        player.scheduleBuffer(buffer, at: nil, options: .loops)
-        player.play()
-        AVAudioTapWarmUp.run(format: tapFormat)   // again: starting the engine can reset the caches
-        self.engine = engine
-        self.player = player
+        self.graph = graph
         self.onEvent = onEvent
         observe()
     }
 
     public func stop() {
-        engine?.mainMixerNode.removeTap(onBus: 0)
-        player?.stop()
-        engine?.stop()
-        player = nil
-        engine = nil
+        graph?.stop()
+        graph = nil
         observers.forEach { NotificationCenter.default.removeObserver($0) }
         observers.removeAll()
         onEvent = nil
@@ -105,19 +69,17 @@ public final class AVInAppPlaybackBackend: InAppPlaybackBackend {
     }
 
     public func pause() {
-        player?.pause()
-        engine?.pause()
+        graph?.pause()
     }
 
     public func resume() throws {
-        guard let engine, let player else { throw SourceError(.inAppPlaybackFailed) }
+        guard let graph else { throw SourceError(.inAppPlaybackFailed) }
         do {
             try AVAudioSession.sharedInstance().setActive(true)
-            try engine.start()
+            try graph.resume()
         } catch {
             throw SourceError(.inAppPlaybackFailed)
         }
-        player.play()
     }
 
     /// Releases the session and lets interrupted apps resume. Used by stop() and by every
