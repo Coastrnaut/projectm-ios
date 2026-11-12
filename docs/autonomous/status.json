@@ -6,8 +6,8 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 69,
-   "implementing": 1,
+   "audited": 68,
+   "implementing": 2,
    "integrated": 17
   },
   "P1": {
@@ -22,8 +22,8 @@
   }
  },
  "by_state": {
-  "audited": 306,
-  "implementing": 1,
+  "audited": 305,
+  "implementing": 2,
   "integrated": 19
  },
  "device_gate": {
@@ -758,13 +758,13 @@
   },
   "AUD-014": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/aud-014",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/009-aud-014-audio-session-interruption-recovery",
+   "state": "implementing"
   },
   "AUD-015": {
    "attempts": 0,
@@ -3711,5 +3711,5 @@
  "run_id": "cb545c51cf0b",
  "skipped_existing": [],
  "total": 326,
- "updated": "2026-11-12T22:50:47Z"
+ "updated": "2026-11-12T22:58:28Z"
 }
