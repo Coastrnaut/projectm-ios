@@ -76,6 +76,8 @@ final class FakeTrial: PresetTrialRunning, @unchecked Sendable {
     var onRun: (@Sendable (Data) -> Void)?
     /// When set, `run` never returns (the app "dies" during the trial).
     var hangs = false
+    /// Waits this long before returning (PRE-015: another call can run meanwhile).
+    var delay: Duration?
 
     init(_ results: [PresetTrialResult] = [], fallback: PresetTrialResult = .passed) {
         queue = results
@@ -88,6 +90,7 @@ final class FakeTrial: PresetTrialRunning, @unchecked Sendable {
         lock.withLock { seen.append(contents) }
         onRun?(contents)
         if hangs { try? await Task.sleep(for: .seconds(3600)) }
+        if let delay { try? await Task.sleep(for: delay) }
         return lock.withLock { queue.isEmpty ? fallback : queue.removeFirst() }
     }
 }

@@ -267,7 +267,7 @@ public enum UserPresetName {
         return (String(name.prefix(PresetImportLimits.maxNameCharacters)), String(author.prefix(PresetImportLimits.maxNameCharacters)))
     }
 
-    private static func clean(_ raw: String) -> String {
+    static func clean(_ raw: String) -> String {
         var out = String.UnicodeScalarView()
         for scalar in raw.unicodeScalars {
             switch scalar.properties.generalCategory {

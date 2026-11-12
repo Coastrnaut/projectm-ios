@@ -53,7 +53,7 @@ Paths: `UP` = `Packages/PresetLibrary/Sources/PresetLibrary/UserPresets`, `PKGT`
 **Goal**: a bundled preset becomes a new user preset with an origin. **Independent test**:
 `UserPresetDuplicationTests` and the app test below.
 
-- [ ] PRE-015-T06 [US1] {mac} Write `PKGT/UserPresetDuplicationTests.swift` (R2-R6, R20): a
+- [X] PRE-015-T06 [US1] {mac} Write `PKGT/UserPresetDuplicationTests.swift` (R2-R6, R20): a
   bundled fixture in a read-only temporary "bundle" folder; duplicate → `added`, bytes in
   `files/` equal the source byte-for-byte, record has a new `user/` id, name "<name> copy",
   author, origin fields, `rightsVerified == false`; the bundled file's bytes, hash and
@@ -63,11 +63,11 @@ Paths: `UP` = `Packages/PresetLibrary/Sources/PresetLibrary/UserPresets`, `PKGT`
   no byte under the directory changes; trial failed → `quarantined`; no trial → `waiting`;
   library full / quarantine full; newer-format store → `libraryUnavailable`; record save failure
   → `saveFailed` and no file left. Naming: "copy", "copy 2" after the first copy is edited,
-  case-insensitive collisions, 120-character limit. Record the red run.
-- [ ] PRE-015-T07 [US1] {mac} Implement `UP/UserPresetEditing.swift` (outcomes, refusals and
+  case-insensitive collisions, 120-character limit. Record the red run. — Verified 2026-11-12: red run recorded (`swift build --build-tests`: `duplicate`, `BundledPresetSource`, `PresetDuplicateRefusal`, `copyName` did not exist); `UserPresetDuplicationTests` 11 tests pass (with T16).
+- [X] PRE-015-T07 [US1] {mac} Implement `UP/UserPresetEditing.swift` (outcomes, refusals and
   their words; `UserPresetName.copyName`; `BundledPresetSource`) and
   `UserPresetLibrary.duplicate(_:contents:)` in `UP/UserPresetLibrary.swift`. Evidence: T06
-  passes.
+  passes. — Verified 2026-11-12: `swift test --package-path Packages/PresetLibrary`: 166 tests, 0 failures, 1 skipped.
 - [ ] PRE-015-T08 [US1] {sim} Write `APP/Tests/UserPresetDuplicationAppTests.swift` (S1, S2,
   R2, R20): with the app's real bundle and `PresetLibrary.load(from: .main)`, for each of the 28
   Included presets: bundled bytes' git blob hash equals the index hash before; duplicate through
@@ -91,7 +91,7 @@ Paths: `UP` = `Packages/PresetLibrary/Sources/PresetLibrary/UserPresets`, `PKGT`
 **Goal**: edit and save with checks; the original never changes. **Independent test**:
 `UserPresetEditingTests`, `UserPresetEditingUITests`.
 
-- [ ] PRE-015-T11 [US2] {mac} Extend `PKGT/UserPresetEditingTests.swift` (R9-R15, S5): edit a
+- [X] PRE-015-T11 [US2] {mac} Extend `PKGT/UserPresetEditingTests.swift` (R9-R15, S5): edit a
   playable copy → `saved`, the record's hashes and size describe the new text, the old body is
   deleted, the new body exists, `provenOnScreen == false`, `modifiedAt` set, the bundled fixture
   unchanged; unchanged text and name → `unchanged`, nothing written; name only → saved without a
@@ -102,10 +102,10 @@ Paths: `UP` = `Packages/PresetLibrary/Sources/PresetLibrary/UserPresets`, `PKGT`
   source text is allowed; a record-save failure during replace removes the new body; an
   `edit.json` left at launch is removed, the preset stays playable with its old text, and
   `takeEditNotices()` returns its name once; removal during the trial → `changedMeanwhile`;
-  `editorText` decodes UTF-8 and falls back to Latin-1 with `isUTF8 == false`. Record the red run.
-- [ ] PRE-015-T12 [US2] {mac} Implement `UserPresetStore.replaceContents`, the `editCheck` record
+  `editorText` decodes UTF-8 and falls back to Latin-1 with `isUTF8 == false`. Record the red run. — Verified 2026-11-12: red run recorded with T06 (same build: `edit`, `editorText`, `PresetEditRefusal` did not exist); `UserPresetEditingTests` 11 tests pass.
+- [X] PRE-015-T12 [US2] {mac} Implement `UserPresetStore.replaceContents`, the `editCheck` record
   (`UP/UserPresetStore.swift`), `UserPresetLibrary.edit`, `editorText`, `takeEditNotices`
-  (`UP/UserPresetLibrary.swift`). Evidence: T11 passes.
+  (`UP/UserPresetLibrary.swift`). Evidence: T11 passes. — Verified 2026-11-12: `replaceContents` and the `editCheck` record landed with T05 (commit 98c0c0c), `edit`/`editorText`/`takeEditNotices` here; 166 package tests pass.
 - [ ] PRE-015-T13 [US2] {sim} Write app tests in `APP/Tests/UserPresetDuplicationAppTests.swift`
   for editing: for each Included preset, duplicate then save an edit through
   `UserPresetsCoordinator.saveEdit`; the bundled hash and bytes equal the index before and after
@@ -128,13 +128,13 @@ Paths: `UP` = `Packages/PresetLibrary/Sources/PresetLibrary/UserPresets`, `PKGT`
 
 **Independent test**: hold tests in the package and the app.
 
-- [ ] PRE-015-T16 [US3] {mac} Write hold tests in `PKGT/UserPresetDuplicationTests.swift` (R7,
+- [X] PRE-015-T16 [US3] {mac} Write hold tests in `PKGT/UserPresetDuplicationTests.swift` (R7,
   R8, S4): locked source with `libraryUnlocked == false` → `locked`, nothing stored; unlocked →
   added with `requiresLibraryUnlock`; revoke → not in `playable`, in `needsUnlock`, `data(for:)`
   and `editorText(for:)` nil, `edit` → `needsUnlock`, no trial runs for a held pending copy;
-  unlock → playable again; Included copies unaffected; nothing deleted. Record the red run.
-- [ ] PRE-015-T17 [US3] {mac} Implement `setLibraryUnlocked`, `needsUnlock` and the hold in
-  `UP/UserPresetLibrary.swift`. Evidence: T16 passes.
+  unlock → playable again; Included copies unaffected; nothing deleted. Record the red run. — Verified 2026-11-12: red run recorded with T06; 3 hold tests in `UserPresetDuplicationTests` pass.
+- [X] PRE-015-T17 [US3] {mac} Implement `setLibraryUnlocked`, `needsUnlock` and the hold in
+  `UP/UserPresetLibrary.swift`. Evidence: T16 passes. — Verified 2026-11-12: 166 package tests pass, including the hold tests.
 - [ ] PRE-015-T18 [US3] {sim} App: `UserPresetGuarding.libraryUnlockChanged`, called by
   `PresetCoordinator.setUnlocked` before the scope changes; "Needs the full library" section in
   `UserPresetsView` (tap → purchase sheet; Information; Remove). Test in
