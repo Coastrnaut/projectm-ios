@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-12T20:35:46Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-12T20:36:15Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -65,6 +65,12 @@ None.
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `d9a60b2a6692` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-001/20261112T153538/autonomous-tests.log`)
 - `swift test --package-path Packages/CaptureKit`: pass at `d9a60b2a6692` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-001/20261112T153538/swift-test_CaptureKit.log`)
 - `swift test --package-path Packages/CaptureUI`: pass at `d9a60b2a6692` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-001/20261112T153538/swift-test_CaptureUI.log`)
+- `python3 scripts/check_compliance.py`: pass at `3051b5f72a55` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-001/20261112T153606/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `3051b5f72a55` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-001/20261112T153606/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `3051b5f72a55` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-001/20261112T153606/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `3051b5f72a55` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-001/20261112T153606/autonomous-tests.log`)
+- `swift test --package-path Packages/CaptureKit`: pass at `3051b5f72a55` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-001/20261112T153606/swift-test_CaptureKit.log`)
+- `swift test --package-path Packages/CaptureUI`: pass at `3051b5f72a55` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-001/20261112T153606/swift-test_CaptureUI.log`)
 
 ### AUTO-001 Roadmap parser (integrated)
 - `python3 scripts/autonomous/tests/test_autonomous.py (48 tests)`: pass at `419cc2a999ed`

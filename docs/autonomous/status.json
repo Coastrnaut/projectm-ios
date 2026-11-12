@@ -633,9 +633,9 @@
    "state": "audited"
   },
   "AUD-001": {
-   "attempts": 0,
+   "attempts": 1,
    "branch": "feature/aud-001",
-   "branch_sha": "d9a60b2a66929b503a1540bedd568ff9def63845",
+   "branch_sha": "3051b5f72a55eec13d76d3e300d1e446ce582ac7",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
@@ -3697,5 +3697,5 @@
  "run_id": "cb545c51cf0b",
  "skipped_existing": [],
  "total": 326,
- "updated": "2026-11-12T20:35:46Z"
+ "updated": "2026-11-12T20:36:15Z"
 }
