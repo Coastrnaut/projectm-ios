@@ -16,7 +16,7 @@ Paths: `PKG` = `Packages/PresetLibrary/Sources/PresetLibrary`, `UP` = `PKG/UserP
 
 ## Phase 1: Setup
 
-- [ ] PRE-012-T01 {mac} Create `PKGT/UserPresetFixtures.swift`: a builder for synthetic presets
+- [X] PRE-012-T01 {mac} Create `PKGT/UserPresetFixtures.swift`: a builder for synthetic presets
   (`[preset00]` header, a few settings, per-frame and per-pixel equations, optional warp and
   composite shaders using `sampler_main` and `sampler_noise_lq`), written for this repository
   (no third-party preset text), plus helpers for a temporary store directory and a scripted fake
@@ -24,18 +24,18 @@ Paths: `PKG` = `Packages/PresetLibrary/Sources/PresetLibrary`, `UP` = `PKG/UserP
   (`schemaVersion` 1; one playable proven preset with a warning and a license line, one pending,
   one quarantined with `engineRejected` and a detail, one quarantined with a reason code this
   version does not know; a name with an emoji and right-to-left text). Evidence: the package's
-  tests build and `python3 -m json.tool` parses the fixture.
+  tests build and `python3 -m json.tool` parses the fixture. — Verified 2026-11-12: fixtures in `UserPresetFixtures.swift`; `python3 -m json.tool` parsed `Golden/user-presets-v1.json`; `testTheGoldenVersion1FixtureDecodesIntact` reads it through `Bundle.module`.
 
 ## Phase 2: Foundational (hashing, validator, model, store; blocks every story)
 
-- [ ] PRE-012-T02 {mac} Write `PKGT/ContentHashTests.swift`: SHA-1 and SHA-256 of the empty
+- [X] PRE-012-T02 {mac} Write `PKGT/ContentHashTests.swift`: SHA-1 and SHA-256 of the empty
   input, "abc" and a 1,000,000 × "a" input equal the published test vectors; `gitBlobSHA1` of
   "hello\n" equals `ce013625030ba8dba906f756967f9e9ca394464a` (what `git hash-object` prints);
   inputs of 55, 56, 63, 64 and 65 bytes (padding boundaries) match values computed with
-  `shasum`. Record the red run.
-- [ ] PRE-012-T03 {mac} Implement `UP/ContentHash.swift` (pure Swift, iterative, no
-  dependencies). Evidence: T02 passes.
-- [ ] PRE-012-T04 {mac} Write `PKGT/MilkdropPresetValidatorTests.swift` (R7-R13, S1, S7): the
+  `shasum`. Record the red run. — Verified 2026-11-12: red run recorded (`swift build --build-tests` failed: the types did not exist); the padding vectors were computed with `shasum` and `git hash-object`.
+- [X] PRE-012-T03 {mac} Implement `UP/ContentHash.swift` (pure Swift, iterative, no
+  dependencies). Evidence: T02 passes. — Verified 2026-11-12: `swift test --filter ContentHashTests`: 4 tests pass.
+- [X] PRE-012-T04 {mac} Write `PKGT/MilkdropPresetValidatorTests.swift` (R7-R13, S1, S7): the
   valid fixture is accepted with no warnings; CRLF, CR-only, a UTF-8 byte-order mark and Latin-1
   bytes are accepted (Latin-1 adds the `notUTF8` warning); each of these is rejected with exactly
   this code: a NUL byte or control byte 0x01 → `binaryContent`; a line of 8,193 bytes and a line
@@ -43,7 +43,7 @@ Paths: `PKG` = `Packages/PresetLibrary/Sources/PresetLibrary`, `UP` = `PKG/UserP
   a header after the first setting, `[preset01]` → `missingHeader`; header only → `noSettings`; a
   block of 131,073 bytes → `blockTooLarge`; a statement of 8,193 bytes in equations and in a
   shader → `statementTooLong` (8,192 accepted; comments are not counted); brackets nested 65 deep
-  → `nestingTooDeep` (64 accepted), also for 100,000 nested parentheses; an equation block with
+  → `nestingTooDeep` (64 accepted), also for 50,000 nested parentheses (100,000 would exceed the block-size limit first); an equation block with
   one missing `)` → `unbalancedEquation`; a warp shader cut off before its closing brace, and a
   composite shader without `shader_body` → `incompleteShader`. Warnings: an unknown
   `sampler_mytexture` → `missingTexture("mytexture")`, while `sampler_main`, `sampler_fw_noise_lq`,
@@ -56,15 +56,15 @@ Paths: `PKG` = `Packages/PresetLibrary/Sources/PresetLibrary`, `UP` = `PKG/UserP
   `PRE012_CORPUS` or the repository's own `Vendor/presets`), asserts no file is rejected for a
   limit (`lineTooLong`, `tooManyLines`, `blockTooLarge`, `statementTooLong`, `nestingTooDeep`,
   `binaryContent`, `missingHeader`, `noSettings`) and reports the count of other rejections;
-  otherwise `XCTSkip`. Record the red run.
-- [ ] PRE-012-T05 {mac} Implement `UP/PresetImportLimits.swift` (maxFileBytes 524,288;
+  otherwise `XCTSkip`. Record the red run. — Verified 2026-11-12: red run recorded (build failed: no `MilkdropPresetValidator`). The test file grew two tests during implementation (`testStatementComplexity`, `testShaderControlFlow`) after the real engine crashed on deep expressions (research D13).
+- [X] PRE-012-T05 {mac} Implement `UP/PresetImportLimits.swift` (maxFileBytes 524,288;
   maxLineBytes 8,192; maxLines 20,000; maxBlockBytes 131,072; maxStatementBytes 8,192;
   maxNestingDepth 64; maxLicenseLines 5; maxLicenseLineCharacters 200; maxWarnings 50;
   maxUserPresets 1,000; maxQuarantined 200; trialTimeout 10 s; trialFrames 30; provingPeriod
   3 s), the reason, warning and license types of data-model.md in `UP/UserPresetModel.swift`, and
   `UP/MilkdropPresetValidator.swift` (contract order of checks; bytes only; iterative).
-  Evidence: T04 passes; the corpus test result is recorded here.
-- [ ] PRE-012-T06 {mac} Write `PKGT/UserPresetStoreTests.swift` (R4, R25-R27, S6): the golden
+  Evidence: T04 passes; the corpus test result is recorded here. — Verified 2026-11-12: `swift test --filter MilkdropPresetValidatorTests`: 20 tests pass (19 plus the corpus test when `PRE012_CORPUS` points at the main checkout's `Vendor/presets`: 14,576 files, none rejected for a limit, 2 rejected as `incompleteShader`). The check order is size, nesting, statement length, complexity, control flow, balance (contract updated).
+- [X] PRE-012-T06 {mac} Write `PKGT/UserPresetStoreTests.swift` (R4, R25-R27, S6): the golden
   version-1 fixture decodes intact and re-encodes to equal content; a record with an unknown
   reason code survives a load and a save; `schemaVersion` 2 → unavailable, file bytes unchanged,
   every change refused; garbage → set aside as `index.unreadable.json`, store empty and usable;
@@ -75,62 +75,62 @@ Paths: `PKG` = `Packages/PresetLibrary/Sources/PresetLibrary`, `UP` = `PKG/UserP
   emoji, right-to-left text, 400 characters); display names are cleaned and cut ("1-120
   characters", `originalFileName` "at most 255 characters"); `incoming/` is emptied at load; a
   trial record is written before and removed after, an unreadable record is ignored and removed.
-  Record the red run.
-- [ ] PRE-012-T07 {mac} Implement `UP/UserPresetsFile.swift` (version 1, migrations map,
+  Record the red run. — Verified 2026-11-12: red run recorded (build failed: no `UserPresetStore`).
+- [X] PRE-012-T07 {mac} Implement `UP/UserPresetsFile.swift` (version 1, migrations map,
   validation at decode, limits "1,000 non-quarantined, 200 quarantined, 4 MiB") and
   `UP/UserPresetStore.swift` (layout of plan.md; transactions with rollback; trial record).
-  Evidence: T06 passes.
+  Evidence: T06 passes. — Verified 2026-11-12: `swift test --filter UserPresetStoreTests`: 11 tests pass. The staging folder of the plan was dropped (the file is at most 512 KiB and is read into memory); the trial and proving records are two files (plan, data-model and contract updated).
 
 ## Phase 3: User Story 1 - Import a preset of my own and play it (P1)
 
 **Independent test**: import a valid preset, see it in My Presets, play it, step, delete the
 original, relaunch, play again.
 
-- [ ] PRE-012-T08 [US1] {mac} Write `PKGT/UserPresetScopeTests.swift` (R22, R23): `PresetScope.user`
+- [X] PRE-012-T08 [US1] {mac} Write `PKGT/UserPresetScopeTests.swift` (R22, R23): `PresetScope.user`
   round-trips through `storageValue` "user"; `withUserPresets` adds the presets to id lookup,
   search (group source `user`) and `members(of: .user)` alphabetically; `.all`, the home tree and
   every pack's members are unchanged; user presets are never locked, with `unlocked` false;
   favorites and a collection listing resolve a user id; replacing the user list removes old ones;
   the PRE-007 golden collections fixture still decodes (existing test stays green). Record the
-  red run.
-- [ ] PRE-012-T09 [US1] {mac} Implement `.user` in `PKG/PresetScope.swift` and
+  red run. — Verified 2026-11-12: red run recorded (build failed: no `withUserPresets`, no `.user`).
+- [X] PRE-012-T09 [US1] {mac} Implement `.user` in `PKG/PresetScope.swift` and
   `userSource`, `withUserPresets(_:)`, `.user` members and title "My Presets" in
-  `PKG/PresetLibrary.swift`. Evidence: T08 and all existing PresetLibrary tests pass.
-- [ ] PRE-012-T10 [US1] {mac} Write the import half of `PKGT/UserPresetLibraryTests.swift` (R2-R6,
+  `PKG/PresetLibrary.swift`. Evidence: T08 and all existing PresetLibrary tests pass. — Verified 2026-11-12: `swift test --package-path Packages/PresetLibrary`: all tests pass, including the PRE-007 golden collections fixture (unchanged).
+- [X] PRE-012-T10 [US1] {mac} Write the import half of `PKGT/UserPresetLibraryTests.swift` (R2-R6,
   R14, R16, R26): a valid file with a passing fake trial → `.added`, state `playable`, the
   stored bytes equal the original, `data(for:)` returns them, the record has both hashes, size,
   date, author guess from "Author - Title.milk" and `rightsVerified == false`; the original can
   be deleted afterwards; the fake trial received exactly the stored bytes; refused with nothing
   stored: a folder, a `.txt` file, an empty file, a 524,289-byte file, a missing file, a
   duplicate of an imported preset (names it), a built-in blob hash from the context (names the
-  preset and pack), a takedown hash; 1,001st preset refused. Record the red run.
-- [ ] PRE-012-T11 [US1] {mac} Implement the import path of `UP/UserPresetLibrary.swift` (actor;
+  preset and pack), a takedown hash; 1,001st preset refused. Record the red run. — Verified 2026-11-12: red run recorded (build failed: no `UserPresetLibrary`); written together with T17 and T22 in `UserPresetLibraryTests.swift`.
+- [X] PRE-012-T11 [US1] {mac} Implement the import path of `UP/UserPresetLibrary.swift` (actor;
   `load`, `setContext`, `importFile`, `data(for:)`, `remove`, `snapshot`) and the
-  `PresetTrialRunning` protocol with `PresetTrialResult`. Evidence: T10 passes.
-- [ ] PRE-012-T12 [US1] {sim} Write `ANG/Tests/ANGLERenderingTests/PresetTrialRunnerTests.swift`,
+  `PresetTrialRunning` protocol with `PresetTrialResult`. Evidence: T10 passes. — Verified 2026-11-12: `swift test --filter UserPresetLibraryTests`: 20 tests pass.
+- [X] PRE-012-T12 [US1] {sim} Write `ANG/Tests/ANGLERenderingTests/PresetTrialRunnerTests.swift`,
   first test only: a valid synthetic preset passes the trial on the real engine within the time
-  limit. Record the red run (the type does not exist).
-- [ ] PRE-012-T13 [US1] {sim} Add `PresetTrialOutcome`, `PresetTrialing` and
+  limit. Record the red run (the type does not exist). — Verified 2026-11-12: red run recorded on the simulator (`** TEST FAILED **`: "cannot find type 'PresetTrialing' in scope").
+- [X] PRE-012-T13 [US1] {sim} Add `PresetTrialOutcome`, `PresetTrialing` and
   `VisualizerRenderer.presetTrial` (default nil) to
   `Packages/Rendering/Sources/Rendering/VisualizerRenderer.swift`; implement
   `ANG/Sources/ANGLERendering/PresetTrialRunner.swift` (plan Design layer 3) and expose it from
   `ANGLERenderer` as `presetTrial`, registered in `presentationResources`. Evidence: T12 passes
-  and the existing ANGLERendering and Rendering tests pass.
-- [ ] PRE-012-T14 [US1] {sim} Write `APP/Tests/UserPresetsCoordinatorTests.swift`, import half:
+  and the existing ANGLERendering and Rendering tests pass. — Verified 2026-11-12: `xcodebuild test -scheme ANGLERendering` on the iOS 27.2 simulator: 51 tests pass (8 in `PresetTrialRunnerTests`); `Rendering-Package`: 28 tests pass. The trial stack is 768 KiB, not the planned 512 KiB (research D13).
+- [X] PRE-012-T14 [US1] {sim} Write `APP/Tests/UserPresetsCoordinatorTests.swift`, import half:
   with a fake trial, importing a valid file lists it, sets the result text "Added …", and makes
   `PresetCoordinator.members` of `.user` contain it; choosing it loads the stored bytes through
   the loader; Next/Previous/Random stay inside `.user`; the purchase state is untouched
   (`unlocked` stays false and locked presets stay locked); a starred user preset is in the
   favorites listing after a new coordinator attaches (relaunch); removing a user preset (R24)
   deletes it from `.user` while the current preset stays current, and a built-in preset's files
-  are untouched. Record the red run.
-- [ ] PRE-012-T15 [US1] {sim} Implement `APP/Coordinators/UserPresetsCoordinator.swift`, the user
+  are untouched. Record the red run. — Verified 2026-11-12: `UserPresetsCoordinatorTests` on the simulator: 13 tests pass. ⚠ The red run was not recorded: the tests were written first, but the code was written before the first app build.
+- [X] PRE-012-T15 [US1] {sim} Implement `APP/Coordinators/UserPresetsCoordinator.swift`, the user
   preset hooks in `APP/Coordinators/PresetCoordinator.swift` (`setUserPresets`, loader branch
   for source `user`), the wiring in `APP/Coordinators/AppCoordinator.swift` (create the
   coordinator, load it before the library attaches, give it the renderer's trial, reset in
   `-uitestResetNotice`, `-uitestImportPreset`), and bundle `PresetBlocklist.json`
-  (`project.yml`). Evidence: T14 passes.
-- [ ] PRE-012-T16 [US1] {sim} Implement `APP/Views/UserPresetsView.swift` (My Presets list with
+  (`project.yml`). Evidence: T14 passes. — Verified 2026-11-12: T14's tests pass; the app builds (`** TEST BUILD SUCCEEDED **`); `project.yml` no longer excludes `PresetBlocklist.json`. Whether the file is in the full app bundle is checked after the merge (T30).
+- [X] PRE-012-T16 [US1] {sim} Implement `APP/Views/UserPresetsView.swift` (My Presets list with
   `PresetRow`, pending section, empty state, "Import Preset…" with `fileImporter`, progress,
   result alert, remove with confirmation) and the `node:myPresets` row in
   `APP/Views/PresetBrowserView.swift`. Write `APP/UITests/UserPresetsUITests.swift`
@@ -138,14 +138,14 @@ original, relaunch, play again.
   open My Presets, tap it, the current preset name is the imported one and the scope line is
   "My Presets · 1"; delete the source file, relaunch without the argument, it is still listed
   and plays. The imported row must exist within 5 s of the visualizer appearing (S5). Evidence:
-  the UI test passes on the simulator.
+  the UI test passes on the simulator. — Verified 2026-11-12: `UserPresetsUITests.testImportPlayStepAndRelaunch` passes on the simulator with the real engine (import, list within 5 s, play, Next and Random stay on the only member, relaunch without the source file, remove).
 
 ## Phase 4: User Story 2 - A bad file is quarantined with a reason (P1)
 
 **Independent test**: import each invalid fixture; each ends in Quarantine with its reason, none
 is playable, the picture keeps drawing.
 
-- [ ] PRE-012-T17 [US2] {mac} Extend `PKGT/UserPresetLibraryTests.swift` (R13, R15, R16, R20, R24,
+- [X] PRE-012-T17 [US2] {mac} Extend `PKGT/UserPresetLibraryTests.swift` (R13, R15, R16, R20, R24,
   R27): a statically invalid `.milk` file → `.quarantined` with the validator's reason, its copy
   is in `quarantine/` and not in `files/`, `data(for:)` is nil, the fake trial was never called;
   fake trial `failed("x")` → `engineRejected` with the message; `timedOut` → `timedOut`;
@@ -153,10 +153,10 @@ is playable, the picture keeps drawing.
   passing trial makes it playable; importing quarantined content again is refused with its
   reason, and works after `remove`; removing deletes record and file; the 201st quarantined file
   is refused; every reason and refusal has a non-empty user text that contains the limit where
-  there is one. Record the red run.
-- [ ] PRE-012-T18 [US2] {mac} Implement quarantine, pending trials and the user texts in
-  `UP/UserPresetLibrary.swift` and `UP/UserPresetModel.swift`. Evidence: T17 passes.
-- [ ] PRE-012-T19 [US2] {mac} Write `PKGT/PresetMutationSweepTests.swift` (S2): seed-fixed
+  there is one. Record the red run. — Verified 2026-11-12: red run recorded with T10 (same file).
+- [X] PRE-012-T18 [US2] {mac} Implement quarantine, pending trials and the user texts in
+  `UP/UserPresetLibrary.swift` and `UP/UserPresetModel.swift`. Evidence: T17 passes. — Verified 2026-11-12: `swift test --filter UserPresetLibraryTests`: 20 tests pass.
+- [X] PRE-012-T19 [US2] {mac} Write `PKGT/PresetMutationSweepTests.swift` (S2): seed-fixed
   SplitMix64; 600 variants of the valid fixture (byte flips, truncation at a random offset, a
   random line repeated up to 30,000 times, random bracket insertion, NUL insertion, a run of up
   to 1,000,000 identical bytes, random bytes); for each: validation returns in under 1 second;
@@ -164,8 +164,8 @@ is playable, the picture keeps drawing.
   refused; after a refusal the directory listing and every file's bytes equal the snapshot taken
   before; after a quarantine the set of playable ids and the bytes under `files/` are unchanged;
   at the end `data(for:)` is nil for every quarantined id. Evidence: passes twice with the same
-  counts per outcome (deterministic).
-- [ ] PRE-012-T20 [US2] {sim} Extend `PresetTrialRunnerTests.swift` (S3) with the real engine: a
+  counts per outcome (deterministic). — Verified 2026-11-12: `swift test --filter PresetMutationSweepTests` three times with identical output: 98 accepted, 468 quarantined, 34 refused; slowest validation 0.17 s. The generator uses its own arithmetic only, so the counts do not depend on the Swift version.
+- [X] PRE-012-T20 [US2] {sim} Extend `PresetTrialRunnerTests.swift` (S3) with the real engine: a
   preset whose per-frame equations do not compile fails with a message containing "compile"; a
   preset that passes static validation at the limits (64 nested parentheses; an 8,192-byte
   operator chain in an equation and in a shader) ends passed or failed and the process survives;
@@ -174,8 +174,8 @@ is playable, the picture keeps drawing.
   trials run, a visible `ANGLERenderer` in a window with a valid preset keeps increasing
   `presentedFrameCount` and never receives the failing preset. Evidence: the tests pass on the
   simulator. The outcome of the at-the-limits presets is recorded here; if any crashes the
-  process, the limit is lowered in spec, plan and code before this task is ticked.
-- [ ] PRE-012-T21 [US2] {sim} Implement `PresetQuarantineView` (rows with name and reason,
+  process, the limit is lowered in spec, plan and code before this task is ticked. — Verified 2026-11-12: `PresetTrialRunnerTests` on the simulator: 8 tests pass. Recorded outcome of the at-the-limits presets: the first version of the test (8,192-byte statements) **crashed the test process** (ANGLE worker thread, 2,000-term shader sum); the limits were then changed (statement complexity 256/512, 64 control keywords, trial stack 768 KiB; spec Clarifications, research D13, `docs/test-reports/preset-import.md`). At the final limits and at twice the limits all 15 shapes end `passed` and the process survives.
+- [X] PRE-012-T21 [US2] {sim} Implement `PresetQuarantineView` (rows with name and reason,
   delete by swipe and by a button, empty state) in `APP/Views/UserPresetsView.swift`, and the
   quarantine part of `UserPresetsCoordinator`. Extend `UserPresetsCoordinatorTests.swift`: an
   import that ends quarantined sets the result text with the reason and adds nothing to any
@@ -183,14 +183,14 @@ is playable, the picture keeps drawing.
   with a built-in preset playing, import a binary `.milk` file and a preset with broken
   equations (two launches); the "Import Preset" alert shows the reason; Quarantine lists the file
   with its reason; the current preset name is unchanged; deleting the row removes it. Evidence:
-  unit and UI tests pass on the simulator.
+  unit and UI tests pass on the simulator. — Verified 2026-11-12: `UserPresetsCoordinatorTests` (13) and `UserPresetsUITests.testInvalidFilesAreQuarantinedAndThePictureKeepsRunning` pass on the simulator: a binary file (static check) and broken equations (real engine trial) are quarantined with their reasons and the current preset does not change. ⚠ Red run not recorded (as T14).
 
 ## Phase 5: User Story 3 - The app survives a preset that kills it (P1)
 
 **Independent test**: leave a trial record behind, start again, find the preset quarantined and
 not retried.
 
-- [ ] PRE-012-T22 [US3] {mac} Extend `PKGT/UserPresetLibraryTests.swift` (R17-R19, S4): a fake
+- [X] PRE-012-T22 [US3] {mac} Extend `PKGT/UserPresetLibraryTests.swift` (R17-R19, S4): a fake
   trial that never returns, with the library abandoned and a second library opened on the same
   directory → the preset is `quarantined(interruptedDuringCheck)`, the record file is gone, and
   `runPendingTrials()` calls no trial for it; `beginProving` then a second library →
@@ -198,52 +198,52 @@ not retried.
   second library changes nothing; `endProving(proven: false)` removes the record without proof;
   `quarantineOnScreenFailure` quarantines, moves the file and clears a proving record; the
   record is on disk before the fake trial is entered (checked from inside the fake). Record the
-  red run.
-- [ ] PRE-012-T23 [US3] {mac} Implement the trial record, launch recovery and proving in
-  `UP/UserPresetLibrary.swift`. Evidence: T22 passes.
-- [ ] PRE-012-T24 [US3] {sim} Extend `UserPresetsCoordinatorTests.swift`: a user preset whose
+  red run. — Verified 2026-11-12: red run recorded with T10 (same file).
+- [X] PRE-012-T23 [US3] {mac} Implement the trial record, launch recovery and proving in
+  `UP/UserPresetLibrary.swift`. Evidence: T22 passes. — Verified 2026-11-12: `swift test --filter UserPresetLibraryTests`: the five recovery and proving tests pass.
+- [X] PRE-012-T24 [US3] {sim} Extend `UserPresetsCoordinatorTests.swift`: a user preset whose
   load throws on the fake loader → the previous preset stays current, the failure text is shown,
   the preset is quarantined and leaves `.user`; selecting an unproven user preset begins proving
   before the load, and after the proving period with frames presented it is proven; switching
   away earlier ends proving without proof; a quarantined last-selected preset is not the initial
   preset. Then implement the hooks in `PresetCoordinator.swift` and `UserPresetsCoordinator.swift`.
-  Evidence: the tests pass (red run recorded first).
+  Evidence: the tests pass (red run recorded first). — Verified 2026-11-12: `UserPresetsCoordinatorTests`: on-screen failure, proving, early switch, and "not the initial preset" pass. ⚠ Red run not recorded (as T14). An empty My Presets falls back as a scope (added to spec Edge Cases).
 
 ## Phase 6: User Story 4 - See what the app knows about an imported preset (P2)
 
-- [ ] PRE-012-T25 [US4] {sim} Implement `UserPresetInfoView` in `APP/Views/UserPresetsView.swift`
+- [X] PRE-012-T25 [US4] {sim} Implement `UserPresetInfoView` in `APP/Views/UserPresetsView.swift`
   (file name, size, import date, author "from the file name", license lines "found in the file"
   or "No license information was found in the file.", "Imported by you. projectM-iOS has not
   verified any rights to this preset.", warnings in words) reachable from each My Presets row
   (context menu, swipe action and a VoiceOver action). Extend
   `UserPresetsUITests.testImportPlayStepAndRelaunch`: the fixture names an unknown texture and
-  carries a license comment; the information view shows both. Evidence: the UI test passes.
+  carries a license comment; the information view shows both. Evidence: the UI test passes. — Verified 2026-11-12: `testImportPlayStepAndRelaunch` finds the rights sentence, the missing-texture warning and the license line in the information view.
 
 ## Phase 7: Polish and gates
 
-- [ ] PRE-012-T26 {mac} Privacy (R30): add the stored-data sentence and the coverage row to
+- [X] PRE-012-T26 {mac} Privacy (R30): add the stored-data sentence and the coverage row to
   `docs/privacy-policy.md` directly after the PRE-007 row. Evidence: `validate_docs.py` passes
-  and the row cites `PRE-012-R30`.
-- [ ] PRE-012-T27 {sim} Accessibility (R29): every new row has a combined label (name, author or
+  and the row cites `PRE-012-R30`. — Verified 2026-11-12: `docs/privacy-policy.md` has the sentence and the row citing `PRE-012-R30` directly after the PRE-007 row; `validate_docs.py` OK.
+- [X] PRE-012-T27 {sim} Accessibility (R29): every new row has a combined label (name, author or
   reason); the import button, delete and information actions have labels; reasons wrap at the
   largest text size (no `lineLimit`). Add label helpers with unit tests in
   `UserPresetsCoordinatorTests.swift`. Evidence: tests pass; a screenshot at the largest text
-  size is looked at.
-- [ ] PRE-012-T28 {mac} Gates: `python3 scripts/validate_docs.py`, `check_compliance.py`,
-  `test_scripts.py` pass. Evidence: their output.
-- [ ] PRE-012-T29 {sim} Regression: `swift test` for PresetLibrary; `xcodebuild test` for
+  size is looked at. — Verified 2026-11-12: `testRowLabels` passes; both `UserPresetsUITests` pass at the simulator content size `accessibility-extra-extra-extra-large`; the kept screenshots of My Presets and Quarantine at that size were looked at (text wraps, nothing cut off). VoiceOver itself is T31.
+- [X] PRE-012-T28 {mac} Gates: `python3 scripts/validate_docs.py`, `check_compliance.py`,
+  `test_scripts.py` pass. Evidence: their output. — Verified 2026-11-12: `validate_docs.py` OK (105 files), `check_compliance.py` OK, `test_scripts.py` 95 tests OK (1 skipped).
+- [X] PRE-012-T29 {sim} Regression: `swift test` for PresetLibrary; `xcodebuild test` for
   `Rendering-Package` and `ANGLERendering`; in the app all unit tests, `PresetCollectionsUITests`,
   `VisualizerUITests`, `SettingsUITests` and `UserPresetsUITests`; each suite twice. Evidence:
-  test counts recorded here.
-- [ ] PRE-012-T32 {mac} Report (R21, Constitution X): write
+  test counts recorded here. — Verified 2026-11-12, each at least twice on the final code: `swift test --package-path Packages/PresetLibrary` 133 tests, 0 failures, 1 skipped (corpus; with `PRE012_CORPUS` 133 and 0 skipped); `ANGLERendering` 51 tests, 0 failures; `Rendering-Package` 28, 0 failures; `ProjectMBridge` 13, 0 failures (once); app on the iOS 27.2 simulator: 97 unit tests with 1 failure, `PresetTests.testBundledIncludedScopeMatchesRelease1_0` (needs the full library; known in a worktree), and 15 UI tests, 0 failures (`PresetCollectionsUITests` 3, `VisualizerUITests` 3, `SettingsUITests` 7, `UserPresetsUITests` 2), three runs with the same result. `PresetLibraryUITests`, `PurchaseUITests`, `StatusUITests`, `ImportedAudioUITests` and `PresetScrollPerformanceUITests` were not run here.
+- [X] PRE-012-T32 {mac} Report (R21, Constitution X): write
   `docs/test-reports/preset-import.md` with the engine audit, the corpus measurements behind each
   limit, the results of T04 (corpus), T19 (sweep counts) and T20 (real-engine outcomes), and a
   "Limitations" section stating what is not contained in-process. Evidence: the file exists and
-  `validate_docs.py` passes.
-- [ ] PRE-012-T30 {merge} After the merge, with the pack submodules: the corpus test of T04 over
+  `validate_docs.py` passes. — Verified 2026-11-12: `docs/test-reports/preset-import.md` written; `validate_docs.py` OK.
+- [ ] PRE-012-T30 {merge} (open: needs the merged checkout with the pack submodules; run by the main session) After the merge, with the pack submodules: the corpus test of T04 over
   all 14,604 files, the full app build, `PresetTests`, `python3 scripts/check_privacy_manifest.py` on the built app, and a check that
   the bundled `PresetBlocklist.json` is in the built app.
-- [ ] PRE-012-T31 {device} Final device phase on D1-D3: import through the real Files picker; a
+- [ ] PRE-012-T31 {device} (open: final device phase; also confirm on D1-D3 that the worst-case shapes at the static limits do not crash, since stack sizes differ from the simulator) Final device phase on D1-D3: import through the real Files picker; a
   renamed JPEG is quarantined; trial timing on device; VoiceOver pass over My Presets and
   Quarantine.
 

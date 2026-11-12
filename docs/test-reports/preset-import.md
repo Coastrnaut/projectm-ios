@@ -117,6 +117,19 @@ test, see above).
 - a binary file (static check) and a preset with broken equations (engine trial) end in
   Quarantine with their reasons; neither is playable; the preset on screen does not change.
 
+## Accessibility (PRE-012-R29), simulator
+
+- Labels: `UserPresetsCoordinatorTests.testRowLabels` (My Presets, Quarantine, a quarantined file
+  with its reason, a waiting preset, sizes). Every action has a route without a gesture: Remove
+  and Information are swipe actions, context-menu items and VoiceOver actions; Delete in
+  Quarantine is a button, a swipe action and a VoiceOver action.
+- Largest text size: both `UserPresetsUITests` pass with the simulator's content size set to
+  `accessibility-extra-extra-extra-large` (`xcrun simctl ui <udid> content_size …`). The kept
+  screenshots of My Presets and Quarantine were looked at: names, reasons and the explanation
+  wrap, nothing is cut off; the Import button shows its icon only at that size and keeps its
+  label for VoiceOver.
+- Not checked: VoiceOver itself (PRE-012-T31, device).
+
 ## Limitations (PRE-012-R21)
 
 What is **not** contained in-process, and what happens instead:
