@@ -1,7 +1,7 @@
 # Contract: user-visible strings added by AUD-001
 
 English only. `Packages/CaptureUI/Sources/CaptureUI/UIStrings.swift` holds each string verbatim;
-`scripts/test_scripts.py` cross-checks this table against it. `‹…›` marks a substituted value.
+`scripts/test_scripts.py` cross-checks every table row below against it. `‹…›` marks a substituted value.
 Source labels, audio states and stop reasons are unchanged (feature 001 `contracts/ui-states.md`).
 
 ## Chooser section
@@ -15,8 +15,10 @@ Source labels, audio states and stop reasons are unchanged (feature 001 `contrac
 | section footer | Imported tracks play as In-App Playback. Files are copied into the app and stay on this device. |
 | remove action | Remove |
 | row hint | Plays this track as In-App Playback. |
-| untitled track | Untitled |
-| recovered track | Recovered track ‹n› |
+
+Titles the library itself generates (CaptureKit `ImportedTrack`, stored in the record, not in
+`UIStrings`): "Untitled" for a file with no name, and "Recovered track ‹n›" after a damaged record
+was rebuilt (AUD-001-R14).
 
 ## Import results
 

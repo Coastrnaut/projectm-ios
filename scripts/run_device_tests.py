@@ -61,6 +61,13 @@ TARGETS = {
 # FR-065 plus FR-123: everything the app may store in its UserDefaults.
 ALLOWED_KEYS = {"favorites", "lastPresetID", "settings.performanceOverlay", "settings.reduceFlashing",
                 "settings.presetScope", "notice.photosensitivityAcknowledged"}
+# AUD-001-R22 amends FR-065: audio files the user imported are stored, and only here: the audio
+# library's content-addressed copies (assets/<sha256>[.ext]) and its imports in flight
+# (incoming/<uuid>[.ext]). An audio file anywhere else in the container is still a violation.
+IMPORTED_AUDIO = re.compile(
+    r"Library/Application Support/AudioLibrary/"
+    r"(assets/[0-9a-f]{64}(\.[0-9a-z]{1,8})?|incoming/[0-9A-Fa-f-]{36}(\.[0-9a-z]{1,8})?)")
+AUDIO_SUFFIXES = (".wav", ".caf", ".m4a", ".aac", ".mp3", ".pcm", ".aif", ".aiff", ".flac", ".mp4", ".alac")
 # Keys iOS frameworks write into the app's own defaults, not the app (reported as notes).
 SYSTEM_KEYS = {"SKTransactionUpdatesLastChecked": "StoreKit (iOS): when it last checked for transaction "
                                                   "updates; a timestamp, no purchase data"}
@@ -394,7 +401,8 @@ def cmd_privacy(args) -> None:
 
 
 def privacy_problems(files: list[str], keys: list[str]) -> list[str]:
-    """FR-060/FR-065/FR-123: only allowed keys; no files of the app's own besides its reports."""
+    """FR-060/FR-065/FR-123: only allowed keys; no files of the app's own besides its reports and,
+    since AUD-001-R22, the imported audio library."""
     problems = [f"key not allowed: {k}" for k in sorted(set(keys) - ALLOWED_KEYS - set(SYSTEM_KEYS))]
     for path in files:
         parts = path.split("/")
@@ -403,7 +411,9 @@ def privacy_problems(files: list[str], keys: list[str]) -> list[str]:
                 problems.append(f"unexpected file: {path}")
         if "/com.apple.metal" in path:   # Metal's shader caches (".pcm" there is a precompiled module)
             continue
-        if path.lower().endswith((".wav", ".caf", ".m4a", ".aac", ".mp3", ".pcm")):
+        if IMPORTED_AUDIO.fullmatch(path):   # the user's imported library (AUD-001-R22)
+            continue
+        if path.lower().endswith(AUDIO_SUFFIXES):
             problems.append(f"audio file: {path}")
     return problems
 

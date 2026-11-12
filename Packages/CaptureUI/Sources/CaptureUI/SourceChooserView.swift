@@ -3,13 +3,18 @@
 import AudioCore
 import SwiftUI
 
-public struct SourceChooserView: View {
+public struct SourceChooserView<ExtraSections: View>: View {
     public let availability: [AudioSourceMode: SourceAvailability]
     public let onSelect: (AudioSourceMode) -> Void
+    private let extraSections: ExtraSections
 
-    public init(availability: [AudioSourceMode: SourceAvailability], onSelect: @escaping (AudioSourceMode) -> Void) {
+    /// `extraSections` are list sections shown below the three sources (AUD-001: projectM-iOS puts
+    /// `ImportedAudioSection` there). The three source rows are the same with or without them.
+    public init(availability: [AudioSourceMode: SourceAvailability], onSelect: @escaping (AudioSourceMode) -> Void,
+                @ViewBuilder extraSections: () -> ExtraSections) {
         self.availability = availability
         self.onSelect = onSelect
+        self.extraSections = extraSections()
     }
 
     public var body: some View {
@@ -19,6 +24,7 @@ public struct SourceChooserView: View {
                     row(mode)
                 }
             }
+            extraSections
         }
     }
 
@@ -41,6 +47,12 @@ public struct SourceChooserView: View {
         .disabled(!isAvailable)
         .accessibilityLabel(Text(UIStrings.label(mode)))
         .accessibilityHint(Text(UIStrings.chooserHint(available, mode: mode)))
+    }
+}
+extension SourceChooserView where ExtraSections == EmptyView {
+    /// The three sources only (CaptureLab, previews).
+    public init(availability: [AudioSourceMode: SourceAvailability], onSelect: @escaping (AudioSourceMode) -> Void) {
+        self.init(availability: availability, onSelect: onSelect, extraSections: { EmptyView() })
     }
 }
 #endif
