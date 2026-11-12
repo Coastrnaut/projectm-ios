@@ -6,7 +6,8 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 75,
+   "audited": 73,
+   "implementing": 2,
    "integrated": 12
   },
   "P1": {
@@ -21,7 +22,8 @@
   }
  },
  "by_state": {
-  "audited": 312,
+  "audited": 310,
+  "implementing": 2,
   "integrated": 14
  },
  "device_gate": {
@@ -631,13 +633,13 @@
   },
   "AUD-001": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/aud-001",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/003-aud-001-import-drm-free-audio-files",
+   "state": "implementing"
   },
   "AUD-002": {
    "attempts": 0,
@@ -2341,13 +2343,13 @@
   },
   "PERF-011": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/perf-011",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/004-perf-011-background-resource-release",
+   "state": "implementing"
   },
   "PERF-012": {
    "attempts": 0,
@@ -3689,5 +3691,5 @@
  "run_id": "cb545c51cf0b",
  "skipped_existing": [],
  "total": 326,
- "updated": "2026-11-12T19:46:09Z"
+ "updated": "2026-11-12T19:46:48Z"
 }

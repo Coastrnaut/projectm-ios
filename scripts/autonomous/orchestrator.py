@@ -181,6 +181,11 @@ def cmd_worktree(args) -> int:
     build = ROOT / "Build"
     if build.exists() and not (path / "Build").exists():
         (path / "Build").symlink_to(build)   # gitignored; lets engine packages resolve
+        exclude = ROOT / ".git" / "info" / "exclude"   # `Build/` in .gitignore skips a symlink
+        if exclude.parent.is_dir() and "/Build\n" not in (
+                exclude.read_text() if exclude.exists() else ""):
+            with exclude.open("a") as f:
+                f.write("/Build\n")
     store.set_state(args.id, store.feature(args.id)["state"], worktree=str(path),
                     branch=branch_name(args.id), note="worktree ready")
     print(path)
