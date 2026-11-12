@@ -7,8 +7,9 @@
  "by_priority": {
   "P0": {
    "audited": 69,
-   "implementing": 2,
-   "integrated": 16
+   "implementing": 1,
+   "integrated": 16,
+   "unit_passed": 1
   },
   "P1": {
    "audited": 149,
@@ -23,8 +24,9 @@
  },
  "by_state": {
   "audited": 306,
-  "implementing": 2,
-  "integrated": 18
+  "implementing": 1,
+  "integrated": 18,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -680,12 +682,12 @@
   "AUD-006": {
    "attempts": 0,
    "branch": "feature/aud-006",
-   "branch_sha": null,
+   "branch_sha": "383d9ab633a4ec9d69407e2e5f1a9293997838fe",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": "specs/007-aud-006-seekable-transport",
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "AUD-007": {
    "attempts": 0,
@@ -3707,5 +3709,5 @@
  "run_id": "cb545c51cf0b",
  "skipped_existing": [],
  "total": 326,
- "updated": "2026-11-12T21:45:29Z"
+ "updated": "2026-11-12T22:50:47Z"
 }
