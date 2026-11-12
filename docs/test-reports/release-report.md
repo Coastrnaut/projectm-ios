@@ -155,4 +155,7 @@ Done in App Store Connect, in Chrome, with the owner signed in:
 - **Release settings** carried over from 1.0: automatic release, to all users immediately, keep
   the existing rating.
 - **Draft submission:** "iOS App 1.1 (2)" and the in-app purchase "Full Preset Library"; the
-  version's status is Ready for Review. **Not submitted yet: waiting for the owner's go.**
+  version's status is Ready for Review.
+- **Submitted for App Review 2026-11-12 at the owner's request**: "2 Items Submitted" (iOS App
+  1.1 (2) and Full Preset Library). Apple says review can take up to 48 hours; automatic release
+  follows approval.
