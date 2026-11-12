@@ -96,8 +96,12 @@ final class InterruptionUITests: XCTestCase {
 
     /// The elapsed time shown, in seconds ("1:05" → 65).
     private func elapsed(file: StaticString = #filePath, line: UInt = #line) -> Int {
+        // The controls hide 5 s after the last interaction, possibly between showing them and the
+        // read: read only an element that exists now, showing the controls afresh if needed.
+        let label = app.staticTexts["transportElapsed"]
         showControls(file: file, line: line)
-        let parts = app.staticTexts["transportElapsed"].label.split(separator: ":").compactMap { Int($0) }
+        if !label.exists { showFreshControls(file: file, line: line) }
+        let parts = label.label.split(separator: ":").compactMap { Int($0) }
         XCTAssertEqual(parts.count, 2, "elapsed time \"\(app.staticTexts["transportElapsed"].label)\"", file: file, line: line)
         return parts.count == 2 ? parts[0] * 60 + parts[1] : -1
     }
