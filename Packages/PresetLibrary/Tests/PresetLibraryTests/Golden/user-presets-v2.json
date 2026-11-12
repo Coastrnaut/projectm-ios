@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 2,
+  "presets": [
+    {
+      "id": "user/5f826cfe-63e5-4516-8c73-445a70aae86b",
+      "name": "Sunrise 🌅 שלום",
+      "author": "Example Author",
+      "originalFileName": "Example Author - Sunrise 🌅 שלום.milk",
+      "sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+      "blobHash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "byteCount": 1234,
+      "importedAt": "2026-11-12T10:00:00Z",
+      "modifiedAt": "2026-11-12T11:00:00Z",
+      "state": "playable",
+      "provenOnScreen": false,
+      "warnings": [],
+      "license": { "origin": "userImport", "rightsVerified": false, "authorFromFileName": true, "linesFound": [] }
+    },
+    {
+      "id": "user/6a937d0f-74f6-4627-9d84-556b81bbf97c",
+      "name": "Example copy 2",
+      "author": "Example Author",
+      "originalFileName": "Example.milk",
+      "sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+      "blobHash": "ffffffffffffffffffffffffffffffffffffffff",
+      "byteCount": 2048,
+      "importedAt": "2026-11-12T12:00:00Z",
+      "modifiedAt": "2026-11-12T12:30:00Z",
+      "state": "playable",
+      "provenOnScreen": true,
+      "warnings": [{ "code": "ignoredLines", "detail": "2" }],
+      "license": { "origin": "bundledDuplicate", "rightsVerified": false, "authorFromFileName": false, "linesFound": [] },
+      "duplicateOf": {
+        "presetID": "cream-of-the-crop/Folder/Example.milk",
+        "name": "Example",
+        "packID": "cream-of-the-crop",
+        "packTitle": "Cream of the Crop",
+        "sha256": "7777777777777777777777777777777777777777777777777777777777777777",
+        "blobHash": "0123456789abcdef0123456789abcdef01234567",
+        "licenseStatement": "Assumed public domain by the projectM team; removed on the author's request.",
+        "requiresLibraryUnlock": true
+      }
+    }
+  ]
+}

@@ -34,7 +34,7 @@ final class UserPresetStoreTests: XCTestCase {
 
     func testTheGoldenVersion1FixtureDecodesIntact() throws {
         let decoded = try UserPresetsFile.decode(try golden())
-        XCTAssertNil(decoded.migratedFrom)
+        XCTAssertEqual(decoded.migratedFrom, 1)   // PRE-015-R21: version 1 now migrates to 2
         let presets = decoded.file.presets
         XCTAssertEqual(presets.map(\.state), [.playable, .pending, .quarantined, .quarantined])
         XCTAssertEqual(presets[0].name, "Sunrise 🌅 שלום")
@@ -66,10 +66,10 @@ final class UserPresetStoreTests: XCTestCase {
 
     func testANewerVersionIsNeitherReadNorModified() throws {
         let directory = try F.tempDirectory(self)
-        let newer = Data(#"{"schemaVersion":2,"presets":[],"somethingNew":true}"#.utf8)
+        let newer = Data(#"{"schemaVersion":3,"presets":[],"somethingNew":true}"#.utf8)
         try install(newer, in: directory)
         let store = UserPresetStore(directory: directory)
-        XCTAssertEqual(store.availability, .newerFormat(version: 2))
+        XCTAssertEqual(store.availability, .newerFormat(version: 3))
         XCTAssertEqual(store.presets, [])
         XCTAssertThrowsError(try store.add(record(1), contents: contents(1))) {
             XCTAssertEqual($0 as? UserPresetStore.StoreError, .newerFormat)

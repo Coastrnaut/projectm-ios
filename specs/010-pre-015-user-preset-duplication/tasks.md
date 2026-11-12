@@ -15,15 +15,15 @@ Paths: `UP` = `Packages/PresetLibrary/Sources/PresetLibrary/UserPresets`, `PKGT`
 
 ## Phase 1: Setup
 
-- [ ] PRE-015-T01 {mac} Create the immutable golden fixture `PKGT/Golden/user-presets-v2.json`
+- [X] PRE-015-T01 {mac} Create the immutable golden fixture `PKGT/Golden/user-presets-v2.json`
   (`schemaVersion` 2): one imported playable preset, one copy with `license.origin`
   `bundledDuplicate`, `duplicateOf` (presetID `cream-of-the-crop/Folder/Example.milk`, pack
   title "Cream of the Crop", `licenseStatement` ≤ 1,000 characters, `requiresLibraryUnlock`
-  true) and `modifiedAt`. Evidence: `python3 -m json.tool` parses it.
+  true) and `modifiedAt`. Evidence: `python3 -m json.tool` parses it. — Verified 2026-11-12: `python3 -m json.tool` parses it; `testTheGoldenVersion2FixtureDecodesIntact` reads it through `Bundle.module`.
 
 ## Phase 2: Foundational (record v2, migration, path guard; blocks every story)
 
-- [ ] PRE-015-T02 {mac} Write `PKGT/UserPresetsMigrationTests.swift` (R21): the v1 golden file
+- [X] PRE-015-T02 {mac} Write `PKGT/UserPresetsMigrationTests.swift` (R21): the v1 golden file
   decodes through the migration with `migratedFrom == 1` and every record equal to the v1 decode
   with `duplicateOf == nil`, `modifiedAt == nil`; the migration step only changes
   `schemaVersion` (key-by-key comparison); the v2 golden decodes without migration; a v2 record
@@ -31,13 +31,13 @@ Paths: `UP` = `Packages/PresetLibrary/Sources/PresetLibrary/UserPresets`, `PKGT`
   a store opened on the v1 file keeps `index.v1.backup.json` when the save fails and removes it
   after the first successful save; a version 3 file is `newerFormat` and its bytes stay
   unchanged. Update `PKGT/UserPresetStoreTests.swift` expectations that hard-code version 1.
-  Record the red run.
-- [ ] PRE-015-T03 {mac} Implement in `UP/UserPresetModel.swift`: `Origin.bundledDuplicate`,
+  Record the red run. — Verified 2026-11-12: red run recorded (`swift build --build-tests`: 6 errors, `duplicateOf`, `modifiedAt`, `bundledDuplicate` did not exist); 7 tests in `UserPresetsMigrationTests`; two PRE-012 store tests updated (v1 now migrates; "newer" is version 3).
+- [X] PRE-015-T03 {mac} Implement in `UP/UserPresetModel.swift`: `Origin.bundledDuplicate`,
   `PresetDuplicateOrigin` (presetID "1-300 characters", name/pack ≤ 120, `sha256` hex 64,
   `blobHash` hex 40, `licenseStatement` "≤ 1,000 characters", `requiresLibraryUnlock`),
   `UserPreset.duplicateOf` and `modifiedAt` (optional), and the well-formedness rule
   "`duplicateOf` present iff `license.origin == bundledDuplicate`". In `UP/UserPresetsFile.swift`:
-  `currentVersion = 2`, migration `1 → 2`. Evidence: T02 passes, PRE-012 suites still pass.
+  `currentVersion = 2`, migration `1 → 2`. Evidence: T02 passes, PRE-012 suites still pass. — Verified 2026-11-12: `swift test --package-path Packages/PresetLibrary`: 140 tests, 0 failures, 1 skipped (corpus).
 - [ ] PRE-015-T04 {mac} Write the path-guard tests in `PKGT/UserPresetEditingTests.swift`
   (R19, S3): an internal observer records every create, write, move and delete of the store;
   across add, update into and out of quarantine, replace, remove, trial records and migration,
