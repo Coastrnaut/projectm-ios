@@ -93,7 +93,8 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
     - Remaining: submit the purchase together with the 1.1 version.
   - 1.1 (2) uploaded 2026-11-11 (`xcodebuild -exportArchive`, destination upload). Open: create
     version 1.1 in App Store Connect, attach build 2 and submit it with the in-app purchase
-    (T242). 1.0 is still Waiting for Review. Version 1.1 (2); T232's VoiceOver check is not required.
+    (T242). 1.0 is still Waiting for Review; owner ruling 2026-11-11: wait for 1.0, then submit 1.1
+    as an update. Version 1.1 (2); T232's VoiceOver check is not required.
 - Phase B verified on the project Mac 2026-11-09: AudioCore 76, CaptureKit 80, Diagnostics 8 tests
   on the host and the iOS 27.2 and 26.5 simulators; CaptureLab UI tests (3) on iOS 27.2; device
   builds with no warnings. The Linux path (no AVFAudio: linear resampler fallback) is tested on

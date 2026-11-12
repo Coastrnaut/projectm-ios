@@ -125,5 +125,5 @@ is unchanged, so the App Store Connect record (app ID 6833037520) still applies.
   - Add the in-app purchase "Full Preset Library" to that submission; Apple requires the first
     in-app purchase to go with a new version.
   - Update What's New and the description from `docs/release/store-copy.md`.
-  - 1.0 is still "Waiting for Review". Either let it finish, or remove it from review and submit
-    1.1 instead (owner's choice).
+  - 1.0 is still "Waiting for Review". **Owner ruling (2026-11-11): wait for 1.0's review to
+    finish, then submit 1.1 with the purchase as an update.**
