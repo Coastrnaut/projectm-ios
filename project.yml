@@ -47,6 +47,10 @@ packages:
   # Feature 002: the preset library index, tree, scopes and search (Foundation only).
   PresetLibrary:
     path: Packages/PresetLibrary
+  # PERF-011: presentation availability and the registry of presentation-bound resources
+  # (pure Swift; Rendering and ANGLERendering depend on it too).
+  PresentationLifecycle:
+    path: Packages/PresentationLifecycle
 targets:
   CaptureLab:
     type: application
@@ -158,6 +162,7 @@ targets:
       - package: Rendering
       - package: ANGLERendering
       - package: PresetLibrary
+      - package: PresentationLifecycle
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.ProjectMiOS

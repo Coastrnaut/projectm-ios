@@ -111,8 +111,8 @@ produced, with " — Verified <date>: <how>".
 
 ## Phase 6: Polish and verification
 
-- [ ] PERF-011-T18 [P] {mac} Add `PresentationLifecycle` to the four package loops (Linux tests,
-  macOS host tests, generic-iOS compile, simulator tests) in `.github/workflows/ios-ci.yml`.
+- [ ] PERF-011-T18 [P] {mac} Add `PresentationLifecycle` to the five package loops (Linux tests,
+  macOS host tests, generic-iOS compile, iOS 26 and iOS 27 simulator tests) in `.github/workflows/ios-ci.yml`.
   Evidence: the workflow file parses (`python3 -c "import yaml…"`) and the Linux-relevant code
   uses no Apple-only API.
 - [ ] PERF-011-T19 {mac} Run `python3 scripts/check_compliance.py`, `python3 scripts/validate_docs.py`,
