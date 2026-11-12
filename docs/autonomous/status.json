@@ -7,8 +7,9 @@
  "by_priority": {
   "P0": {
    "audited": 70,
-   "implementing": 2,
-   "integrated": 15
+   "implementing": 1,
+   "integrated": 15,
+   "unit_passed": 1
   },
   "P1": {
    "audited": 149,
@@ -23,8 +24,9 @@
  },
  "by_state": {
   "audited": 307,
-  "implementing": 2,
-  "integrated": 17
+  "implementing": 1,
+  "integrated": 17,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -2441,12 +2443,12 @@
   "PRE-007": {
    "attempts": 0,
    "branch": "feature/pre-007",
-   "branch_sha": null,
+   "branch_sha": "20a56625dc20177e97f4a3d65ce9a028fcad781e",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": "specs/005-pre-007-preset-collections",
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "PRE-008": {
    "attempts": 0,
@@ -3703,5 +3705,5 @@
  "run_id": "cb545c51cf0b",
  "skipped_existing": [],
  "total": 326,
- "updated": "2026-11-12T21:22:34Z"
+ "updated": "2026-11-12T21:34:56Z"
 }
