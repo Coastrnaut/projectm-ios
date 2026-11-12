@@ -1,0 +1,3 @@
+- [No co-author attribution](no-coauthor-attribution.md) — no Co-Authored-By or Claude attribution in commits or PRs
+- [Push/CI standing approval](push-ci-standing-approval.md) — push to main and run CI without asking
+- [Commit/push cadence](commit-push-cadence.md) — commit after every task, skill and fileset change; push right after

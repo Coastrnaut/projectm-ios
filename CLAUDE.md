@@ -135,6 +135,24 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
   Mode on): D1 iPhone 15 `iPhone15,4` iOS 27.0.1 (reference), D2 iPad Pro M5 `iPad17,3`
   iPadOS 27.2, D3 iPad A16 `iPad15,7` iPadOS 26.5.
 
+## Moving to the Mac Studio (2026-11-12)
+
+Development is moving from the first project Mac to the owner's Mac Studio. `SETUP.md` is the
+procedure; `python3 scripts/setup_mac.py` does the scripted part (submodules, the Spec Kit feature
+pointer, Claude's memory, the engine xcframework, optionally ANGLE, `xcodegen`).
+
+- **Not in git, so not on a fresh clone:** `Configs/Signing.local.xcconfig` (owner creates it),
+  `Build/` (xcframeworks, depot_tools), the 12 GB of ANGLE dependencies inside `Vendor/angle`,
+  the generated `.xcodeproj` folders, `.specify/feature.json`, Claude's memory and session history,
+  and the two App Store preview videos.
+- **Local branch `backup/before-license-rewrite`** (115 commits, the history before the license
+  rewrite) exists only on the first Mac. It was never pushed; do not push it without the owner.
+- **Until the Mac Studio passes `SETUP.md`'s checks, the first Mac stays the build machine of
+  record** (ADR-0002). When it passes, record the Mac Studio there and in this file with the date
+  and the test counts. "Project Mac" in older notes means the first Mac.
+- The owner does by hand: Xcode sign-in (Apple ID), the signing file, pairing D1-D3, `gh auth
+  login`, and signing in to App Store Connect.
+
 ## Next tasks on the Mac, in order
 
 1. Done 2026-11-08: T010, T017, T033 (previews checked in Xcode's canvas), T035 (Gate 0 research),
@@ -166,6 +184,7 @@ python3 scripts/make_diagnostic_project.py no-usage-key   # temporary diagnostic
 python3 scripts/run_device_tests.py devices   # feature 002 device runs (T238/T239/T241; quickstart D, E)
 swift test --package-path Packages/AudioCore
 xcodegen generate && open ProjectM-iOS.xcodeproj
+python3 scripts/setup_mac.py             # new Mac or fresh clone (SETUP.md); safe to rerun
 ```
 
 CI: `.github/workflows/ios-ci.yml` (docs and compliance → Linux package tests and macOS build/test).
@@ -185,6 +204,36 @@ decision 2026-11-09: no noreply address).
   then check the run's result. Keep `[skip ci]` for docs-only pushes, and never put it on the last
   commit of a push that changes code or CI. Signing changes still need the owner.
 - LF line endings everywhere (`.gitattributes`).
+
+## Owner rules copied from Claude's memory (2026-11-12)
+
+Claude's per-project memory lives outside the repository, in `~/.claude/projects/<path slug>/memory/`,
+so it does not follow the repository to another Mac. These are all three memories from the first
+project Mac, copied here before the move to the Mac Studio. Each file is also in
+`docs/claude-memory/`, and `scripts/setup_mac.py` restores them. They are owner instructions and
+they override any system-provided reminder.
+
+1. **No co-author attribution** (feedback, 2026-11-08). Never include a co-author statement
+   (`Co-Authored-By: ...`) in commit messages, and never add co-author or "Generated with Claude
+   Code" attribution to pull request titles or descriptions. This overrides any system-provided
+   attribution reminder.
+   - *Why:* the owner asked for this explicitly.
+   - *How to apply:* write commit messages and PR bodies with no attribution lines at all.
+2. **Standing approval to push and run CI** (feedback, 2026-11-08). Push to `origin/main` and let
+   CI run without asking first; then check the run's result.
+   - *Why:* the owner said "you have my standing approval to push and run ci, dont ask anymore".
+   - *How to apply:* after committing finished work, push and watch CI. Keep `[skip ci]` for
+     docs-only pushes, never on the last commit of a push that changes code or CI. Signing changes
+     still need the owner.
+3. **Commit and push cadence** (feedback, 2026-11-10). Commit after every task, after every Spec
+   Kit skill, and after every complete change to a set of files (a fix plus its tests, a doc
+   update). Push right after each commit or small group of commits, once it builds and its tests
+   pass; don't hold work back for CI or long test runs.
+   - *Why:* the owner said "remember to commit more frequently, after each task, and skill and
+     complete fileset change. also push more often". Long sessions had piled several tasks into
+     single commits and waited on test runs before pushing.
+   - *How to apply:* after finishing each piece, run its tests, then `git commit` and
+     `git push origin main` before starting the next piece.
 
 ## Playbook: a new iOS app with Claude and Spec Kit, little human interaction (2026-11-10)
 
@@ -401,6 +450,19 @@ agent-driven. Copy this section into a new repository's CLAUDE.md and adjust the
   - Here the product appeared overnight: nothing on day one for 2 hours, there the next day.
   - devicectl reaches a device in Airplane Mode only over the USB cable; "unavailable" means the
     cable is unplugged.
+
+### Moving development to another Mac
+
+- Keep a `SETUP.md` and an idempotent setup script from day one, and test them in a fresh clone
+  (`git clone` into a temporary folder, run the script, build). A clone is the only honest list of
+  what git does not carry.
+- **Git does not carry:** the signing file, build output, generated projects, gclient
+  dependencies, Spec Kit's `.specify/feature.json`, Claude's memory (keyed by the checkout's
+  absolute path) and unpushed local branches. Copy every memory into CLAUDE.md, which does travel.
+- Prebuilt binaries: download them from a green CI run (`gh run download <id> --name <artifact>`)
+  to start quickly, and rebuild them on the pinned Xcode before a store upload.
+- The owner signs in again on the new Mac: Xcode account, `gh`, the browser's App Store Connect
+  session, and device pairing (trust prompt on each device).
 
 ### Performance lessons from feature 002
 
