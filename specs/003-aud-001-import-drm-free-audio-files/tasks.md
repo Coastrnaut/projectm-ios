@@ -14,6 +14,10 @@ worktree cannot do (no preset submodules), so the main session verifies it after
 A task is ticked only when its acceptance evidence was produced, with
 " — Verified <date>: <how>" appended.
 
+Inside task descriptions, "T07" is short for `AUD-001-T07`. Phase (Constitution, Workflow): all
+tasks belong to the roadmap's AUD area, after feature 001's Phase E. Every task needs macOS with
+Xcode except AUD-001-T29 and AUD-001-T30 (any OS); only `{device}` tasks need a physical device.
+
 ## Phase 1: Setup
 
 - [ ] AUD-001-T01 Confirm the baseline before any change: `swift test --package-path Packages/CaptureKit`, `swift test --package-path Packages/CaptureUI`, `python3 scripts/test_scripts.py`, `python3 scripts/check_compliance.py`, `python3 scripts/validate_docs.py` all pass; record the test counts. Evidence: command output.
@@ -50,7 +54,7 @@ A task is ticked only when its acceptance evidence was produced, with
 ### Implementation
 
 - [ ] AUD-001-T15 [US1] Add `Packages/CaptureUI/Sources/CaptureUI/ImportedAudioSection.swift` (section title, import button with progress state, track rows newest first with title, duration, accessibility label and hint, empty and unavailable texts, footer, remove action) and give `SourceChooserView.swift` an optional trailing-sections builder that defaults to nothing; add a preview in `Previews.swift`. Evidence: CaptureUI builds for macOS and the iOS Simulator; existing CaptureUI tests pass; CaptureLab's call site is unchanged.
-- [ ] AUD-001-T16 [US1] {app} Write `Apps/projectM-iOS/Tests/AudioLibraryCoordinatorTests.swift` (before T17): with a library in a temporary directory, `importPicked(.success(urls))` lists the track newest first, sets and clears `isImporting`, sets the summary message for a rejected file and none for a clean single import… and `importPicked(.failure)` for a cancelled picker shows nothing.
+- [ ] AUD-001-T16 [US1] {app} Write `Apps/projectM-iOS/Tests/AudioLibraryCoordinatorTests.swift` (before T17): with a library in a temporary directory, `importPicked(.success(urls))` lists the track newest first, sets and clears `isImporting`, sets the summary message for a rejected file and none for a clean single import; `importPicked(.failure)` for a cancelled picker shows nothing.
 - [ ] AUD-001-T17 [US1] Add `Apps/projectM-iOS/Coordinators/AudioLibraryCoordinator.swift` (`@MainActor @Observable`: `tracks`, `isImporting`, `unavailableMessage`, `resultMessage`; `load()`, `importPicked(_:)`, `remove(_:)`, `fileURL(for:)`; VoiceOver announcement of the result) and wire it into `Apps/projectM-iOS/Coordinators/AppCoordinator.swift` (`audioLibrary`, `play(_ track:)` selecting `.file` and starting In-App Playback, `select(.inAppPlayback)` selecting `.reference`, the Debug launch argument `-uitestImportAudio <path>`). Evidence {app}: app builds; T16 passes.
 - [ ] AUD-001-T18 [US1] Show the section in `Apps/projectM-iOS/ProjectMApp.swift`: `ImportedAudioSection` in the chooser, SwiftUI `fileImporter` for `UTType.audio` with multiple selection, and the result alert. Evidence {app}: app builds; quickstart D steps 1-3 on a simulator.
 - [ ] AUD-001-T19 [US1] {app} Write `Apps/projectM-iOS/UITests/ImportedAudioUITests.swift`: launch with `-uitestImportAudio` pointing at a tone the test writes, find the row under "Your Audio", tap it, and read "In-App Playback" from the source indicator. Evidence: the UI test passes on an iOS 27.2 simulator.
@@ -87,7 +91,7 @@ A task is ticked only when its acceptance evidence was produced, with
 
 - [ ] AUD-001-T29 [P] Update `scripts/run_device_tests.py` `privacy_problems` per research AUD-001-D12 and add cases to `scripts/test_scripts.py`: an audio file in `Library/Application Support/AudioLibrary/assets/` is allowed; the same file in `Documents/`, `tmp/` or elsewhere under `Library/` is still reported. Evidence: script tests pass.
 - [ ] AUD-001-T30 [P] Update `docs/privacy-policy.md`: imported audio files and the library record are stored on the device, only when the user imports them, removable in the app, never transmitted; captured audio is still never stored (AUD-001-R22). Evidence: `python3 scripts/validate_docs.py` passes; text review.
-- [ ] AUD-001-T31 Run the full local gate: `swift test` for CaptureKit and CaptureUI, iOS Simulator builds of CaptureKit and CaptureUI with no warnings from new code, `python3 scripts/test_scripts.py`, `check_compliance.py`, `validate_docs.py`. Evidence: command output recorded in this file.
+- [ ] AUD-001-T31 Run the full local gate: `swift test` for CaptureKit and CaptureUI, iOS Simulator builds of CaptureKit and CaptureUI with no warnings from new code, `python3 scripts/test_scripts.py`, `check_compliance.py`, `validate_docs.py`; and confirm AUD-001-R23 by search: no source under `Packages/Diagnostics/` or the app's export path refers to the audio library, track titles or file names, and no networking API was added. Evidence: command output recorded in this file.
 - [ ] AUD-001-T32 {app} Build `projectM-iOS` and CaptureLab after the merge, run the app unit and UI tests of this feature and the existing suites, and run `python3 scripts/check_privacy_manifest.py` on the built app (no new required-reason API, research AUD-001-D11). Evidence: build and test logs.
 - [ ] AUD-001-T33 {device} Final device phase: routes and interruptions with an imported track (FR-051); AUD-001-S1 (10 MB file listed within 2 s on D1); AUD-001-S7 (memory with a 60-minute track); a file from iCloud Drive; the privacy review with a non-empty library. Evidence: `docs/test-reports/`.
 
@@ -121,3 +125,20 @@ it; US4 is small and ships with it too. `{app}` and `{device}` tasks stay open w
 | AUD-001-S3, S4 | T24 |
 | AUD-001-S5 | T20 |
 | AUD-001-S6 | T19 |
+
+## Analysis (speckit-analyze, 2026-11-12)
+
+Findings and the fixes applied; no CRITICAL finding.
+
+| ID | Severity | Finding | Fix |
+|---|---|---|---|
+| C1 | MEDIUM | AUD-001-R23 (diagnostics export carries no track data) had no verifying task | Added the search to AUD-001-T31 |
+| C2 | LOW | Tasks did not state their macOS or device needs (Constitution, Workflow) | Added the note above Phase 1 |
+| I1 | LOW | Short task references ("T07") differed from the IDs | Defined the short form |
+| I2 | LOW | AUD-001-T16 had a stray ellipsis | Reworded |
+| P1 | MEDIUM (privacy) | AUD-001-R22 amends FR-065 and the constitution's "audio is not recorded to disk by default" wording could be read as covering imports | Plan Constitution Check and Complexity Tracking record it; `docs/privacy-policy.md` (AUD-001-T30) and the device privacy check (AUD-001-T29) are updated; flagged for the owner in the feature report |
+| L1 | none (licensing) | No media is bundled or committed; fixtures are generated tones; no new dependency; the Licenses screen needs no entry | No change |
+| X1 | LOW (cross-feature) | `InAppPlaybackBackend.start` gains a `track` parameter; implementers are `AVInAppPlaybackBackend` and the test fake only, and CaptureLab constructs the backend with its default initializer | AUD-001-T12 keeps the default initializer; CaptureLab is rebuilt in AUD-001-T32 |
+| X2 | none (cross-feature) | AUD-002 to AUD-006 extend this library: format guarantees, queue order, repeat and shuffle state, transport | data-model.md "Versioning" reserves the extension path; nothing of theirs is implemented here |
+
+Coverage: 24 of 24 requirements and 7 of 7 success criteria have at least one task (table above).
