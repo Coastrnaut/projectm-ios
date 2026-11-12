@@ -1,7 +1,7 @@
 # ADR-0008: Autonomous Roadmap Run
 
 - **Status**: Accepted 2026-11-12 (decided by Claude under the run request's standing approval for
-  routine decisions; items marked "owner ruling needed" are not decided here)
+  routine decisions); OSC networking ruled by the owner 2026-11-12
 - **Date**: 2026-11-12
 - **Roadmap**: `docs/FEATURE_ROADMAP_AUTONOMOUS.md` (SHA-256 `77a775e9…a37`) · **Run**: `cb545c51cf0b`
 - **Constitution**: I, VI, VII, VIII, X; Privacy; Governance
@@ -43,18 +43,22 @@ dependency graph and the audit of `main` at `029d90c`.
 7. **Device evidence.** No feature is device-verified before the final phase. The run reports
    `awaiting_final_device` with prerequisites when a device or controller is missing.
 
-## Owner ruling needed
+## Owner ruling: networking for OSC (2026-11-12)
 
-- **Networking for OSC.** FR-068 and `check_compliance.py` forbid networking APIs in the app.
-  OSC-001, 003, 004, 005, 007, 008, 009, 010, 011 and 012 need a UDP listener, a sender or
-  Bonjour (directly or through OSC-001). They stay blocked until the owner amends FR-068:
-  an exception limited to one source folder, off by default, with a local-network usage
-  description. OSC-002 (parser) and OSC-006 (bundle ordering) need no networking.
+The owner ruled: "amend FR-068 for OSC, one-folder exception, off by default".
+
+- FR-068 in `specs/001-ios-projectm-visualizer/spec.md` carries the amendment.
+- `scripts/check_compliance.py` allows the Network framework only under
+  `Packages/PerformanceControl/Sources/PerformanceControl/OSCTransport/`; `URLSession`,
+  CFNetwork, sockets and WebKit stay forbidden everywhere, including that folder. Script tests
+  cover the folder boundary.
+- OSC-001, 003, 004, 005, 007 to 012 are no longer blocked by policy. They must keep the
+  listener and sender off until the user enables them (OSC-007), use the local network only,
+  and add the local-network usage description (and the Bonjour service list for OSC-011) to the
+  app's Info.plist through `project.yml`. The privacy policy and the App Store privacy answers
+  are updated in the feature that first ships a listener.
 
 ## Consequences
 
 - The integration branch can be reviewed and merged, or discarded, as a whole; `main` and
   `origin` stay as they were.
-- With a blocked OSC group the run cannot reach "strict implementation completion", so the final
-  device phase cannot start until the ruling is made (either way: amend, or declare the rows
-  infeasible).

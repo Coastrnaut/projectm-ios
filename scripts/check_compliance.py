@@ -8,7 +8,9 @@ Enforces, for source under Apps/ and Packages/ (Vendor/ is upstream and excluded
     (`import struct ReplayKit.X`; ADR-0001 owner ruling 13).
   * Constitution VI / ADR-0001: ScreenCaptureKit imported only inside
     Packages/CaptureKit/Sources/CaptureKit/ScreenCapture/ (same import forms).
-  * FR-068: no networking APIs (URLSession, Network framework, CFNetwork, sockets, WebKit).
+  * FR-068 (amended 2026-11-12): no networking APIs (URLSession, CFNetwork, sockets, WebKit)
+    anywhere; the Network framework only inside
+    Packages/PerformanceControl/Sources/PerformanceControl/OSCTransport/ (local OSC, off by default).
   * Research R-16: no entitlements or background modes in project.yml, in any YAML key form
     (plain, quoted, or flow style; ADR-0001 owner ruling 13). YAML comments are ignored.
   * ADR-0001 Decision 6, the one entitlement exception: project.yml may set
@@ -50,9 +52,16 @@ RULES: list[tuple[str, re.Pattern[str]]] = [
     ("class/selector lookup by string (Constitution I)",
      re.compile(r"\b(NSClassFromString|NSSelectorFromString|performSelector)\b")),
     ("networking API (FR-068)",
-     re.compile(r"\bURLSession\b|\bimport\s+Network\b|\bNWConnection\b|\bCFNetwork\b|"
-                r"\bimport\s+WebKit\b|\bWKWebView\b|\bCFSocket\b|<sys/socket\.h>")),
+     re.compile(r"\bURLSession\b|\bCFNetwork\b|\bimport\s+WebKit\b|\bWKWebView\b|"
+                r"\bCFSocket\b|<sys/socket\.h>")),
 ]
+# FR-068 as amended 2026-11-12 (owner ruling, ADR-0008): the Network framework is allowed in
+# exactly one folder, the local-network OSC transport, which is off by default. Everywhere
+# else it stays forbidden, and no other networking API is allowed anywhere.
+NETWORK_FRAMEWORK = re.compile(r"\bimport\s+Network\b|\bNW(Connection|Listener|Browser|"
+                               r"ConnectionGroup|PathMonitor|Endpoint|Parameters)\b")
+OSC_ALLOWED = (ROOT / "Packages" / "PerformanceControl" / "Sources" / "PerformanceControl"
+               / "OSCTransport")
 SCK_IMPORT = re.compile(swift_import("ScreenCaptureKit") + r"|<ScreenCaptureKit/")
 
 # A YAML mapping key starts a line (optionally as a `- ` list item) or follows `{` or `,` in
@@ -98,6 +107,12 @@ def source_files(paths: list[Path]) -> list[Path]:
 def check_file(path: Path) -> list[str]:
     text = strip_comments(path.read_text(encoding="utf-8", errors="replace"))
     found = [f"{path}: {name}" for name, rx in RULES if rx.search(text)]
+    if NETWORK_FRAMEWORK.search(text):
+        try:
+            path.resolve().relative_to(OSC_ALLOWED.resolve())
+        except ValueError:
+            found.append(f"{path}: networking API (FR-068): Network framework used outside "
+                         "PerformanceControl/OSCTransport/")
     if SCK_IMPORT.search(text):
         try:
             path.resolve().relative_to(SCK_ALLOWED.resolve())
