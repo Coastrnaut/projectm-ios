@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "presets": [
+    {
+      "id": "user/1b4e28ba-2fa1-41d2-883f-0016d3cca427",
+      "name": "Sunrise 🌅 שלום",
+      "author": "Example Author",
+      "originalFileName": "Example Author - Sunrise 🌅 שלום.milk",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "blobHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "byteCount": 1234,
+      "importedAt": "2026-11-12T10:00:00Z",
+      "state": "playable",
+      "provenOnScreen": true,
+      "warnings": [{ "code": "missingTexture", "detail": "mytexture" }],
+      "license": { "origin": "userImport", "rightsVerified": false, "authorFromFileName": true,
+                   "linesFound": ["// License: CC-BY 4.0"] }
+    },
+    {
+      "id": "user/2c5f39cb-30b2-42e3-9940-1127e4ddb538",
+      "name": "Waiting",
+      "author": "",
+      "originalFileName": "Waiting.milk",
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "blobHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "byteCount": 900,
+      "importedAt": "2026-11-12T10:01:00Z",
+      "state": "pending",
+      "provenOnScreen": false,
+      "warnings": [],
+      "license": { "origin": "userImport", "rightsVerified": false, "authorFromFileName": false, "linesFound": [] }
+    },
+    {
+      "id": "user/3d604adc-41c3-43f4-aa51-2238f5eec649",
+      "name": "Broken",
+      "author": "Someone",
+      "originalFileName": "Someone - Broken.milk",
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "blobHash": "cccccccccccccccccccccccccccccccccccccccc",
+      "byteCount": 2048,
+      "importedAt": "2026-11-12T10:02:00Z",
+      "state": "quarantined",
+      "provenOnScreen": false,
+      "quarantine": { "code": "engineRejected", "detail": "Could not compile per-frame code: syntax error" },
+      "warnings": [],
+      "license": { "origin": "userImport", "rightsVerified": false, "authorFromFileName": true, "linesFound": [] }
+    },
+    {
+      "id": "user/4e715bed-52d4-4405-bb62-3349a6ffd75a",
+      "name": "From the future",
+      "author": "",
+      "originalFileName": "From the future.milk",
+      "sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "blobHash": "dddddddddddddddddddddddddddddddddddddddd",
+      "byteCount": 10,
+      "importedAt": "2026-11-12T10:03:00Z",
+      "state": "quarantined",
+      "provenOnScreen": false,
+      "quarantine": { "code": "aReasonThisVersionDoesNotKnow" },
+      "warnings": [{ "code": "aWarningThisVersionDoesNotKnow", "detail": "kept" }],
+      "license": { "origin": "userImport", "rightsVerified": false, "authorFromFileName": false, "linesFound": [] }
+    }
+  ]
+}
