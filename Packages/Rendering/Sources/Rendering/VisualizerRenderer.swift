@@ -4,6 +4,7 @@
 // to the engine's maxSamplesPerFrame), and reports its frame rate for the FR-048 overlay. Backends:
 // GLESRenderer (Apple OpenGL ES 3.0, Phase C Option A); ANGLERenderer if ADR-0003 selects it.
 import AudioCore
+import PresentationLifecycle
 import UIKit
 
 /// The blend into a newly selected preset (T091: at most 2 s).
@@ -36,10 +37,17 @@ public protocol VisualizerRenderer: AnyObject {
     /// pipelines in the background so the switch does not wait for shader compiles. Replaces any
     /// earlier request; does nothing by default.
     func prewarm(_ presets: [Preset])
+    /// PERF-011: what this renderer stops and releases while the app cannot present frames
+    /// (background, device lock), in registration order. The app registers them with its
+    /// PresentationResourceRegistry. While suspended a renderer draws no frame and runs no frame
+    /// loop, whatever `pause()`/`resume()` calls it receives; `setPreset` still loads. None by
+    /// default.
+    var presentationResources: [any PresentationBoundResource] { get }
 }
 
 public extension VisualizerRenderer {
     func prewarm(_ presets: [Preset]) {}
+    var presentationResources: [any PresentationBoundResource] { [] }
 }
 
 /// A preset the renderer can load (data-model.md §Preset). PresetRepository (T074) builds these from

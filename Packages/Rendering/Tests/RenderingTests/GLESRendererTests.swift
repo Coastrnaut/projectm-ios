@@ -4,6 +4,7 @@
 // pause/resume, and a failed preset keeps the previous one (FR-045).
 import XCTest
 import AudioCore
+import PresentationLifecycle
 import ProjectMBridge
 @testable import Rendering
 
@@ -107,4 +108,50 @@ final class GLESRendererTests: XCTestCase {
         XCTAssertNil(renderer.isDisplayLinkPaused, "leaving the window stops the display link")
     }
 
+    // MARK: - PERF-011: presentation suspension (R9)
+
+    func testSuspensionStopsTheFrameLoopIndependentlyOfPause() throws {
+        let renderer = try makeLaidOut()
+        let layerView = try XCTUnwrap(renderer.view as? GLESLayerView)
+        layerView.onWindowChange?(true)
+        XCTAssertTrue(renderer.renderFrame())
+        let presented = renderer.presentedFrameCount
+
+        renderer.suspendForPresentationLoss()
+        renderer.suspendForPresentationLoss()   // repeat: nothing
+        XCTAssertNil(renderer.isDisplayLinkPaused, "no display link while the app cannot present")
+        XCTAssertFalse(renderer.renderFrame(), "no frame is drawn")
+        renderer.resume()   // a user resume, a source start: still nothing
+        XCTAssertNil(renderer.isDisplayLinkPaused)
+        layerView.onWindowChange?(false)
+        layerView.onWindowChange?(true)
+        XCTAssertNil(renderer.isDisplayLinkPaused, "joining a window starts no loop either")
+        XCTAssertEqual(renderer.presentedFrameCount, presented)
+
+        renderer.resumeForPresentation()
+        renderer.resumeForPresentation()
+        XCTAssertEqual(renderer.isDisplayLinkPaused, false)
+        XCTAssertTrue(renderer.renderFrame())
+    }
+
+    func testAUserPauseSurvivesSuspension() throws {
+        let renderer = try makeLaidOut()
+        let layerView = try XCTUnwrap(renderer.view as? GLESLayerView)
+        layerView.onWindowChange?(true)
+        renderer.pause()
+        renderer.suspendForPresentationLoss()
+        renderer.resumeForPresentation()
+        XCTAssertEqual(renderer.isDisplayLinkPaused, true, "FR-046: paused by the user stays paused")
+        renderer.resume()
+        XCTAssertEqual(renderer.isDisplayLinkPaused, false)
+    }
+
+    func testResumeOutsideAWindowStartsNoLoop() throws {
+        let renderer = try makeLaidOut()
+        renderer.suspendForPresentationLoss()
+        renderer.resumeForPresentation()
+        XCTAssertNil(renderer.isDisplayLinkPaused)
+        XCTAssertEqual(renderer.presentationResources.count, 1)
+        XCTAssertTrue(renderer.presentationResources[0] === renderer)
+    }
 }

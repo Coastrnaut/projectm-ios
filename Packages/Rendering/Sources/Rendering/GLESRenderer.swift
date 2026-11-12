@@ -15,6 +15,7 @@ import AudioCore
 import CFlashLimiter
 import Foundation
 import OpenGLES
+import PresentationLifecycle
 import ProjectMBridge
 import QuartzCore
 import UIKit
@@ -51,6 +52,10 @@ public final class GLESRenderer: NSObject, VisualizerRenderer {
     private let maxFrames: Int
     private var meter = FrameRateMeter()
     private var paused = false
+    /// PERF-011: the app cannot present frames. Independent of `paused` (FR-046); the display link
+    /// exists only while this is false and the view is in a window.
+    private var presentationSuspended = false
+    private var inWindow = false
     private var observers: [NSObjectProtocol] = []
 
     private init(context: EAGLContext, engine: ProjectMEngine) {
@@ -63,6 +68,7 @@ public final class GLESRenderer: NSObject, VisualizerRenderer {
         super.init()
         layerView.onLayout = { [weak self] in self?.layoutDrawable() }
         layerView.onWindowChange = { [weak self] inWindow in
+            self?.inWindow = inWindow
             inWindow ? self?.startDisplayLink() : self?.stopDisplayLink()
         }
         observeFrameRatePressure()
@@ -129,7 +135,7 @@ public final class GLESRenderer: NSObject, VisualizerRenderer {
     /// `frameTime` (seconds since the previous frame) sets the Reduce-flashing step.
     @discardableResult
     func renderFrame(frameTime: Double = 1.0 / 60) -> Bool {
-        guard let engine, framebuffer != 0 else { return false }
+        guard !presentationSuspended, let engine, framebuffer != 0 else { return false }
         EAGLContext.setCurrent(context)
         if let reader {
             let frames = reader.read(into: pcm, maxFrames: maxFrames)
@@ -164,7 +170,7 @@ public final class GLESRenderer: NSObject, VisualizerRenderer {
     }
 
     private func startDisplayLink() {
-        guard displayLink == nil else { return }
+        guard displayLink == nil, !presentationSuspended else { return }
         let link = CADisplayLink(target: DisplayLinkProxy(self), selector: #selector(DisplayLinkProxy.fire(_:)))
         link.preferredFrameRateRange = frameRateRange()
         link.isPaused = paused
@@ -308,4 +314,28 @@ private final class DisplayLinkProxy: NSObject {
     weak var renderer: GLESRenderer?
     init(_ renderer: GLESRenderer) { self.renderer = renderer }
     @MainActor @objc func fire(_ link: CADisplayLink) { renderer?.displayLinkFired(link) }
+}
+
+// MARK: - PERF-011: presentation-bound resource
+
+/// The fallback renderer stops its frame loop while the app cannot present frames. It keeps its
+/// layer-backed framebuffer (ANGLERenderer, the renderer in use, also releases its surface).
+extension GLESRenderer: PresentationBoundResource {
+    public var presentationResources: [any PresentationBoundResource] { [self] }
+    public var presentationResourceName: String { "GLES frame loop" }
+
+    public func suspendForPresentationLoss() {
+        guard !presentationSuspended else { return }
+        presentationSuspended = true
+        stopDisplayLink()
+    }
+
+    public func resumeForPresentation() {
+        guard presentationSuspended else { return }
+        presentationSuspended = false
+        if inWindow { startDisplayLink() }
+    }
+
+    /// Tests.
+    var isPresentationSuspended: Bool { presentationSuspended }
 }

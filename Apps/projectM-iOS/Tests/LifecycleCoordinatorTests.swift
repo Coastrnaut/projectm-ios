@@ -9,8 +9,13 @@
 // | OS ends session    | endedBySystem                 | n/a                         | n/a                          |
 // In every mode the visualization suspends on background/lock and resumes on return, unless the
 // user had paused it (FR-046, FR-050, FR-054).
+//
+// PERF-011 (T13, T17): the same events suspend and resume the presentation-bound resources in the
+// registry, in every mode and on the chooser; an unlock while still in the background resumes
+// nothing; entering the foreground clears a lock. The capture matrix above is unchanged.
 import AudioCore
 import CaptureKit
+import PresentationLifecycle
 import XCTest
 @testable import projectM_iOS
 
@@ -40,10 +45,30 @@ final class LifecycleCoordinatorTests: XCTestCase {
         var userPaused = false
         private(set) var suspended = false
         private(set) var calls: [String] = []
-        func suspendVisualization() { suspended = true; calls.append("suspend") }
-        func resumeVisualization() { suspended = false; calls.append("resume") }
+        var log: ((String) -> Void)?
+        func suspendVisualization() { suspended = true; calls.append("suspend"); log?("suspend visualization") }
+        func resumeVisualization() { suspended = false; calls.append("resume"); log?("resume visualization") }
     }
 
+    /// A presentation-bound resource that records its calls into a shared log (PERF-011).
+    final class FakeResource: PresentationBoundResource {
+        let presentationResourceName: String
+        private let log: (String) -> Void
+        private(set) var suspended = false
+        private(set) var suspends = 0
+        private(set) var resumes = 0
+        init(_ name: String, log: @escaping (String) -> Void) {
+            presentationResourceName = name
+            self.log = log
+        }
+        func suspendForPresentationLoss() { suspended = true; suspends += 1; log("suspend \(presentationResourceName)") }
+        func resumeForPresentation() { suspended = false; resumes += 1; log("resume \(presentationResourceName)") }
+    }
+
+    /// Calls of the visualization and the resources, in order.
+    private var order: [String] = []
+    private var loop: FakeResource!
+    private var warmUp: FakeResource!
     private var sources: [AudioSourceMode: StubSource] = [:]
     private var manager: CaptureManager!
     private var visualization: FakeVisualization!
@@ -59,6 +84,13 @@ final class LifecycleCoordinatorTests: XCTestCase {
         manager = CaptureManager(sources: Array(sources.values), runsAnalysisTimer: false)
         visualization = FakeVisualization()
         coordinator = LifecycleCoordinator(manager: manager, visualization: visualization)
+        order = []
+        visualization.log = { [weak self] in self?.order.append($0) }
+        // Registered the way AppCoordinator registers the renderer: frame loop, then warm-up.
+        loop = FakeResource("loop") { [weak self] in self?.order.append($0) }
+        warmUp = FakeResource("warm-up") { [weak self] in self?.order.append($0) }
+        coordinator.presentation.register(loop)
+        coordinator.presentation.register(warmUp)
     }
 
     private func start(_ mode: AudioSourceMode) async {
@@ -183,5 +215,127 @@ final class LifecycleCoordinatorTests: XCTestCase {
     func testNoVisualizationMeansNothingToSuspend() async {
         await coordinator.handle(.background)
         XCTAssertEqual(visualization.calls, [], "the chooser has no visualization")
+    }
+
+    // MARK: - PERF-011: presentation-bound resources (R1, R3, R10, R11)
+
+    func testBackgroundAndLockSuspendTheResourcesInEveryMode() async {
+        for mode in AudioSourceMode.allCases {
+            for event in [AppLifecycleEvent.background, .lock] {
+                reset()
+                await start(mode)
+                await coordinator.handle(event)
+                XCTAssertTrue(coordinator.suspended)
+                XCTAssertEqual(order, ["suspend visualization", "suspend warm-up", "suspend loop"], "\(mode) \(event)")
+                XCTAssertEqual(coordinator.presentation.activeCount, 0, "\(mode) \(event): nothing active")
+            }
+        }
+    }
+
+    func testTheChooserStillSuspendsRegisteredResources() async {
+        await coordinator.handle(.background)
+        XCTAssertEqual(order, ["suspend warm-up", "suspend loop"], "no visualization, but the resources are released")
+        await coordinator.handle(.foreground)
+        XCTAssertEqual(order, ["suspend warm-up", "suspend loop", "resume loop", "resume warm-up"])
+        XCTAssertEqual(visualization.calls, [])
+    }
+
+    func testForegroundResumesTheResourcesBeforeTheVisualization() async {
+        await start(.inAppPlayback)
+        await coordinator.handle(.background)
+        order = []
+        await coordinator.handle(.foreground)
+        XCTAssertEqual(order, ["resume loop", "resume warm-up", "resume visualization"])
+        XCTAssertFalse(coordinator.suspended)
+        XCTAssertEqual(coordinator.presentation.activeCount, 2)
+    }
+
+    func testAUserPauseKeepsTheVisualizationPausedButResumesTheResources() async {
+        await start(.inAppPlayback)
+        visualization.userPaused = true
+        await coordinator.handle(.background)
+        order = []
+        await coordinator.handle(.foreground)
+        XCTAssertEqual(order, ["resume loop", "resume warm-up"], "the renderer keeps its own pause (FR-046)")
+    }
+
+    func testUnlockWhileStillInTheBackgroundResumesNothing() async {
+        await start(.microphone)
+        await coordinator.handle(.background)
+        await coordinator.handle(.lock)
+        order = []
+        await coordinator.handle(.unlock)   // another app is in front
+        XCTAssertEqual(order, [], "the app still cannot present frames")
+        XCTAssertTrue(coordinator.suspended)
+        XCTAssertTrue(visualization.suspended)
+        XCTAssertEqual(coordinator.presentation.activeCount, 0)
+        // The capture layer still receives the event, as before this feature.
+        XCTAssertEqual(sources[.microphone]?.resumes, 1)
+
+        await coordinator.handle(.foreground)
+        XCTAssertEqual(order, ["resume loop", "resume warm-up", "resume visualization"])
+    }
+
+    func testForegroundClearsALockWithoutAnUnlockEvent() async {
+        await start(.inAppPlayback)
+        await coordinator.handle(.background)
+        await coordinator.handle(.lock)
+        await coordinator.handle(.foreground)
+        XCTAssertFalse(coordinator.suspended, "entering the foreground proves frames can be presented")
+        XCTAssertFalse(visualization.suspended)
+        await coordinator.handle(.unlock)   // late: nothing more happens
+        XCTAssertEqual(loop.suspends, 1)
+        XCTAssertEqual(loop.resumes, 1)
+        XCTAssertEqual(visualization.calls, ["suspend", "resume"])
+    }
+
+    func testLockThenUnlockInTheForeground() async {
+        await start(.inAppPlayback)
+        await coordinator.handle(.lock)
+        XCTAssertTrue(loop.suspended)
+        await coordinator.handle(.unlock)
+        XCTAssertFalse(loop.suspended)
+        XCTAssertEqual(visualization.calls, ["suspend", "resume"])
+    }
+
+    func testRepeatedAndRapidEventsCallEachResourceOncePerTransition() async {
+        await start(.systemAppCapture)
+        await coordinator.handle(.background)
+        await coordinator.handle(.background)
+        await coordinator.handle(.lock)
+        XCTAssertEqual(loop.suspends, 1)
+        XCTAssertEqual(warmUp.suspends, 1)
+        XCTAssertEqual(visualization.calls, ["suspend"])
+        await coordinator.handle(.foreground)
+        await coordinator.handle(.foreground)
+        XCTAssertEqual(loop.resumes, 1)
+        XCTAssertEqual(visualization.calls, ["suspend", "resume"])
+        for _ in 0..<10 {
+            await coordinator.handle(.background)
+            await coordinator.handle(.foreground)
+        }
+        XCTAssertEqual(loop.suspends, 11)
+        XCTAssertEqual(loop.resumes, 11)
+        XCTAssertEqual(warmUp.suspends, 11)
+        XCTAssertEqual(warmUp.resumes, 11)
+        XCTAssertFalse(loop.suspended)
+        XCTAssertEqual(sources[.systemAppCapture]?.suspends, 0, "System/App Capture is never suspended (RI-003)")
+    }
+
+    func testAResourceRegisteredInTheBackgroundStartsSuspended() async {
+        await coordinator.handle(.background)
+        let camera = FakeResource("camera") { [weak self] in self?.order.append($0) }
+        coordinator.presentation.register(camera)
+        XCTAssertTrue(camera.suspended)
+        await coordinator.handle(.foreground)
+        XCTAssertFalse(camera.suspended)
+        XCTAssertEqual(camera.resumes, 1)
+    }
+
+    func testAVisualizationStartedWhileSuspendedResumesOnForeground() async {
+        await coordinator.handle(.background)
+        await start(.inAppPlayback)
+        await coordinator.handle(.foreground)
+        XCTAssertEqual(visualization.calls, ["resume"])
     }
 }
