@@ -11,6 +11,10 @@ public struct ImportedTrack: Codable, Sendable, Hashable, Identifiable {
     public static let maxOriginalFileNameLength = 255
     public static let maxStoredExtensionLength = 8
     public static let untitled = "Untitled"
+    /// Sample rates the playback engine is given (AUD-002-R16). Outside this range a file is
+    /// refused at import and at play time: AVAudioEngine raises an exception, which Swift cannot
+    /// catch, when a node is connected at an absurd rate (seen with a 4 GHz WAV header).
+    public static let supportedSampleRates: ClosedRange<Double> = 8_000...192_000
 
     public var id: UUID
     /// The picked file's name without its extension.
@@ -80,8 +84,11 @@ public struct ImportedTrack: Codable, Sendable, Hashable, Identifiable {
     /// Title of a track rebuilt from its stored copy after the record was damaged (AUD-001-R14).
     public static func recoveredTitle(_ number: Int) -> String { "Recovered track \(number)" }
 
-    public static func storedFileName(sha256: String, originalFileName: String) -> String {
-        let ext = storedExtension(fromFileName: originalFileName)
+    /// The stored copy's name: the content hash plus the recognized container's extension, so the
+    /// system reads the copy with the right parser whatever the picked file was called
+    /// (AUD-002-R5). Unrecognized content keeps the picked extension, as in AUD-001.
+    public static func storedFileName(sha256: String, originalFileName: String, container: AudioContainer? = nil) -> String {
+        let ext = container?.fileExtension ?? storedExtension(fromFileName: originalFileName)
         return ext.isEmpty ? sha256 : "\(sha256).\(ext)"
     }
 }
@@ -154,16 +161,27 @@ public enum AudioLibraryState: Sendable, Equatable {
     case unavailable(Unavailable)
 }
 
-/// Why a picked file was not imported (AUD-001-R6). Messages: CaptureUI `UIStrings.message(_:)`.
+/// Why a picked file was not imported (AUD-001-R6, AUD-002-R7). Messages: CaptureUI
+/// `UIStrings.message(_:)`.
 public enum AudioImportError: Error, Sendable, Equatable {
+    /// The picked file's declared type is not audio (checked before copying).
     case notAudio
+    /// A recognized audio format that is damaged or incomplete.
     case unreadable
     case protectedContent
     case tooLarge(limitBytes: Int64)
     case unsupportedChannelCount(Int)
     case insufficientStorage
+    /// The picked file could not be opened or read.
     case sourceUnavailable
     case libraryUnavailable
+    /// An audio extension, but the content is no audio format the app or the device recognizes.
+    case unsupportedFormat
+    /// A recognized container whose audio the device cannot decode or play (no decoder for the
+    /// encoding, or a sample rate outside `ImportedTrack.supportedSampleRates`).
+    case unsupportedEncoding
+    /// A zero-byte file, or a valid file with zero audio frames.
+    case noAudio
 }
 
 /// The result for one picked file.
@@ -179,16 +197,21 @@ public struct AudioFileInfo: Sendable, Equatable {
     public var durationSeconds: Double
     public var sampleRate: Double
     public var channelCount: Int
+    /// The container recognized from the file's content; nil for any other decodable format.
+    public var container: AudioContainer?
 
-    public init(durationSeconds: Double, sampleRate: Double, channelCount: Int) {
+    public init(durationSeconds: Double, sampleRate: Double, channelCount: Int, container: AudioContainer? = nil) {
         self.durationSeconds = durationSeconds
         self.sampleRate = sampleRate
         self.channelCount = channelCount
+        self.container = container
     }
 }
 
 /// Validates an audio file that is already inside the library's own storage.
 public protocol AudioFileInspecting: Sendable {
-    /// Throws `.protectedContent`, `.unreadable` or `.unsupportedChannelCount`.
+    /// Throws `.protectedContent`, `.unsupportedFormat`, `.unsupportedEncoding`, `.noAudio`,
+    /// `.unreadable` or `.unsupportedChannelCount`. For the five containers of `AudioContainer`
+    /// the URL's extension matches the content: `AudioLibrary` names the file before calling.
     func inspect(_ url: URL) async throws(AudioImportError) -> AudioFileInfo
 }

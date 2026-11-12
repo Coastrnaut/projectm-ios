@@ -583,6 +583,29 @@ class UIStringsImportContractTests(unittest.TestCase):
         self.assertEqual(missing, [])
 
 
+class UIStringsContainerContractTests(unittest.TestCase):
+    """AUD-002: every string in specs/006's ui-strings contract is in CaptureUI's UIStrings.swift."""
+
+    ROOT = Path(__file__).resolve().parent.parent
+    CONTRACT = ROOT / "specs" / "006-aud-002-support-common-audio-containers" / "contracts" / "ui-strings.md"
+    SWIFT = ROOT / "Packages" / "CaptureUI" / "Sources" / "CaptureUI" / "UIStrings.swift"
+
+    def test_every_contract_string_is_in_swift(self):
+        rows = []
+        for line in self.CONTRACT.read_text(encoding="utf-8").splitlines():
+            if not line.startswith("|"):
+                continue
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            if len(cells) != 2 or set(cells[0]) <= set("-: ") or cells[1] == "String":
+                continue
+            rows.append(cells)
+        self.assertEqual([case for case, _ in rows], ["unsupportedFormat", "unsupportedEncoding", "noAudio"])
+        swift = self.SWIFT.read_text(encoding="utf-8")
+        for case, text in rows:
+            needle = f'case .{case}: return "{text}"'
+            self.assertTrue(needle in swift, needle)
+
+
 class CaptureLabExportCheckTests(unittest.TestCase):
     """scripts/check_capturelab_export.py on small exports written to a fake CoreSimulator tree."""
 

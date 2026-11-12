@@ -26,6 +26,42 @@ final class ImportStringsTests: XCTestCase {
         XCTAssertEqual(UIStrings.message(AudioImportError.libraryUnavailable), "Your audio library isn't available.")
     }
 
+    // AUD-002 (specs/006-aud-002-support-common-audio-containers/contracts/ui-strings.md).
+    func testContainerErrorsHaveTheirOwnMessages() {
+        XCTAssertEqual(UIStrings.message(AudioImportError.unsupportedFormat),
+                       "This file's format isn't supported. Import MP3, AAC, M4A, WAV or AIFF audio.")
+        XCTAssertEqual(UIStrings.message(AudioImportError.unsupportedEncoding),
+                       "The audio in this file uses an encoding this device can't play.")
+        XCTAssertEqual(UIStrings.message(AudioImportError.noAudio), "This file contains no audio.")
+    }
+
+    func testEveryImportErrorMessageIsDistinct() {
+        let all: [AudioImportError] = [.notAudio, .unreadable, .protectedContent, .tooLarge(limitBytes: 1024), .unsupportedChannelCount(3),
+                                       .insufficientStorage, .sourceUnavailable, .libraryUnavailable, .unsupportedFormat,
+                                       .unsupportedEncoding, .noAudio]
+        let messages = all.map { UIStrings.message($0) }
+        XCTAssertEqual(Set(messages).count, all.count)
+        XCTAssertFalse(messages.contains(""))
+    }
+
+    func testImportSummaryWithContainerErrors() {
+        let mixed: [AudioImportOutcome] = [
+            .failed(fileName: "notes.wav", .unsupportedFormat),
+            .imported(track("A")),
+            .failed(fileName: "exotic.wav", .unsupportedEncoding),
+            .failed(fileName: "cut.m4a", .unreadable),
+            .failed(fileName: "empty.mp3", .noAudio),
+        ]
+        XCTAssertEqual(UIStrings.importSummary(mixed), """
+        Imported 1 track.
+        “notes.wav”: This file's format isn't supported. Import MP3, AAC, M4A, WAV or AIFF audio.
+        “exotic.wav”: The audio in this file uses an encoding this device can't play.
+        “cut.m4a”: This audio file can't be read. It may be damaged.
+        “empty.mp3”: This file contains no audio.
+        """)
+        XCTAssertTrue(UIStrings.importNeedsAlert(mixed))
+    }
+
     func testSizeLimitText() {
         XCTAssertEqual(UIStrings.byteLimit(500 * 1024 * 1024), "500 MB")
         XCTAssertEqual(UIStrings.byteLimit(1024 * 1024), "1 MB")
