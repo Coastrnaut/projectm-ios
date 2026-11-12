@@ -15,6 +15,8 @@ public struct PresetNode: Sendable, Identifiable, Hashable {
 
 public final class PresetLibrary: Sendable {
     public static let includedSource = "included"
+    /// The source of presets the user imported (roadmap PRE-012). Never locked, never in a pack.
+    public static let userSource = "user"
     /// FR-102 pack priority after Included.
     public static let packOrder = ["cream-of-the-crop", "projectm-classic", "milkdrop-original", "en-d"]
 
