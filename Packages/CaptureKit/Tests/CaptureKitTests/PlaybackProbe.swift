@@ -48,6 +48,41 @@ enum PlaybackProbe {
         return try await capture(graph, sink: sink, outputRate: outputRate, seconds: seconds, budgetSeconds: budgetSeconds)
     }
 
+    // MARK: Exact-frame helpers (AUD-006-T06)
+
+    /// Everything in the sink ring right now, as interleaved stereo samples.
+    static func drain(_ sink: PCMSink) -> [Float] {
+        var samples: [Float] = []
+        var scratch = [Float](repeating: 0, count: 8192)
+        while true {
+            let count = scratch.withUnsafeMutableBufferPointer { sink.ring.read(into: $0.baseAddress!, maxCount: $0.count) }
+            if count == 0 { break }
+            samples.append(contentsOf: scratch[0..<count])
+        }
+        return samples
+    }
+
+    /// Renders `renders` calls of 1,024 frames, letting main-actor work (loop rescheduling, track
+    /// end) run in between, then waits until the tap thread has delivered what it will deliver
+    /// (the tap hands over whole 100 ms blocks) and returns the counter indices that reached the
+    /// sink, silence skipped.
+    static func renderAndCollect(_ render: (AVAudioFrameCount) throws -> Int, sink: PCMSink, renders: Int) async throws -> [Int] {
+        var samples: [Float] = []
+        for _ in 0..<renders {
+            _ = try render(1024)
+            samples += drain(sink)
+            try await Task.sleep(nanoseconds: 500_000)
+        }
+        // Quiet for 60 ms means the tap has nothing more to hand over.
+        var quiet = 0
+        while quiet < 12 {
+            try await Task.sleep(nanoseconds: 5_000_000)
+            let more = drain(sink)
+            if more.isEmpty { quiet += 1 } else { quiet = 0; samples += more }
+        }
+        return CounterDecoder.indices(interleaved: samples)
+    }
+
     /// Renders an already started graph; see `play`.
     static func capture(_ graph: InAppPlaybackGraph, sink: PCMSink, outputRate: Double, seconds: Double,
                         budgetSeconds: Double = 20) async throws -> Capture {

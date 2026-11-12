@@ -13,6 +13,10 @@
 // Transitions: every transition of the current attempt is kept, in order, in a log that callers
 // read synchronously with `transitions(from:)`. That log does not depend on the timer, so final
 // transitions (stopped, endedBySystem, startFailed) applied after `stopTimer()` are not lost.
+//
+// Discontinuities (AUD-006): `discardBufferedAudio()` runs on the queue, so it is ordered against
+// every drain pass: audio a pass had already read is in the normalized ring before that ring is
+// emptied. The analyzer registers it as its sink's discard handler.
 import Dispatch
 
 public struct AnalyzerUpdate: Sendable, Equatable {
@@ -76,6 +80,7 @@ public final class AudioAnalyzer: @unchecked Sendable {
         scratch = UnsafeMutablePointer<Float>.allocate(capacity: scratchCount)
         scratch.initialize(repeating: 0, count: scratchCount)
         log.reserveCapacity(AudioAnalyzer.maxTransitions)
+        sink.setDiscardHandler { [weak self] in self?.discardBufferedAudio() }
     }
 
     deinit {
@@ -179,6 +184,21 @@ public final class AudioAnalyzer: @unchecked Sendable {
     }
 
     public var currentState: AudioState { queue.sync { classifier.state } }
+
+    /// Discards every sample that has not been delivered to the renderer yet: the sink ring, the
+    /// Normalizer's converter state and the normalized ring; the last levels become silent, so no
+    /// level computed from discarded audio is published (AUD-006-R10, R11). The state, the
+    /// verified-audio flag, the statistics and the session clock are untouched. Synchronous; the
+    /// caller makes sure no producer is writing (`PCMSink.discardBufferedAudio()`). Not callable
+    /// from this analyzer's own queue.
+    public func discardBufferedAudio() {
+        queue.sync {
+            sink.ring.drain()
+            normalizer.discardPending()
+            normalizedOutput.discardBuffered()
+            lastLevels = .silent
+        }
+    }
 
     // MARK: - Queue-confined
 

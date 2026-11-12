@@ -5,6 +5,13 @@
 // (iPhone portrait, the smallest iPad split view) uses one row of icon buttons with the preset name
 // above it, and the preset browser opens as a sheet in both. Every control has an accessibility
 // label equal to its meaning (FR-070).
+//
+// AUD-006: while In-App Playback is the active source, the transport (CaptureUI's TransportBar:
+// track title, scrubber and times, Previous track, Play or Pause playback, Stop playback, Next
+// track) sits above those rows in both layouts. It is not shown for Microphone or System/App
+// Capture, and it appears and hides with the rest of the controls (AUD-006-R24, R25).
+import CaptureKit
+import CaptureUI
 import SwiftUI
 
 struct ControlsOverlay: View {
@@ -14,7 +21,11 @@ struct ControlsOverlay: View {
 
     var body: some View {
         // A real container, not a Group: a Group would pass the identifiers below to every button.
-        VStack {
+        VStack(spacing: 10) {
+            if coordinator.transport.isAvailable {
+                transport
+                Divider()
+            }
             // Accessibility text sizes use the one-row icon layout too: seven labeled buttons in a
             // row cannot fit (FR-070).
             if sizeClass == .compact || typeSize.isAccessibilitySize {
@@ -31,6 +42,20 @@ struct ControlsOverlay: View {
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("controls")
+    }
+
+    /// AUD-006: the transport of In-App Playback.
+    private var transport: some View {
+        let model = coordinator.transport
+        _ = model.positionRevision          // a seek or a track change shows at once, not at the next poll
+        return TransportBar(title: model.current?.title ?? "", isPlaying: model.state == .playing,
+                            position: { model.position },
+                            onPlayPause: { coordinator.transportPlayPause() }, onStop: { coordinator.transportStop() },
+                            onPrevious: { coordinator.transportPrevious() }, onNext: { coordinator.transportNext() },
+                            onSeek: { coordinator.transportSeek(to: $0) })
+            .frame(maxWidth: 560)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("transport")
     }
 
     private var presetName: some View {

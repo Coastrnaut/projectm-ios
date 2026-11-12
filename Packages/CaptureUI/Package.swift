@@ -11,6 +11,6 @@ let package = Package(
     dependencies: [.package(path: "../CaptureKit"), .package(path: "../AudioCore")],
     targets: [
         .target(name: "CaptureUI", dependencies: ["CaptureKit", "AudioCore"]),
-        .testTarget(name: "CaptureUITests", dependencies: ["CaptureUI", "AudioCore"]),
+        .testTarget(name: "CaptureUITests", dependencies: ["CaptureUI", "CaptureKit", "AudioCore"]),
     ]
 )

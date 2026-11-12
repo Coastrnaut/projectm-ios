@@ -16,6 +16,10 @@
 // * Imported audio (AUD-001): the chooser's "Your Audio" section lists AudioLibraryCoordinator's
 //   tracks. Tapping one selects that file on the In-App Playback source and starts it; the In-App
 //   Playback row itself always plays the reference track.
+// * Transport (AUD-006): `transport` controls In-App Playback while it is the active source: play,
+//   pause, stop playback, seek, next and previous track. Its play order is the "Your Audio" list
+//   as shown when the track was started; the reference track is an order of one. The existing
+//   Stop (back to the chooser) and Pause (freeze the picture) are unchanged.
 import ANGLERendering
 import AudioCore
 import CaptureKit
@@ -44,6 +48,8 @@ final class AppCoordinator: VisualizationControlling {
     let audioLibrary: AudioLibraryCoordinator
     var showAudioImporter = false
     @ObservationIgnored private let inAppPlayback: InAppPlaybackSource
+    /// Play, pause, stop playback, seek, next and previous for In-App Playback (AUD-006).
+    let transport: PlaybackTransport
     private(set) var renderer: (any VisualizerRenderer)?
     private(set) var rendererError: String?
     /// Preset browsing and switching (T090, T091).
@@ -104,6 +110,7 @@ final class AppCoordinator: VisualizationControlling {
         #endif
         let manager = CaptureManager(sources: sources, signposts: DiagnosticsLog.pipeline)   // latency stages (T062, T114)
         self.manager = manager
+        transport = PlaybackTransport(manager: manager, source: inAppPlayback)
         let lifecycle = LifecycleObserver()
         self.lifecycle = lifecycle
         // Feature 002: the library (12,941 presets) loads off the main thread (SC-101).
@@ -138,7 +145,10 @@ final class AppCoordinator: VisualizationControlling {
         // AudioSourceMode raw value) skips the notice and starts that source.
         if let raw = defaults.string(forKey: "autostart"), let mode = AudioSourceMode(rawValue: raw) {
             screen = .chooser
-            Task { @MainActor in self.start(mode) }
+            Task { @MainActor in
+                if mode == .inAppPlayback { self.prepareReferenceTrack() }
+                self.start(mode)
+            }
         }
         #endif
     }
@@ -163,8 +173,14 @@ final class AppCoordinator: VisualizationControlling {
             showMicrophoneExplainer = true
             return
         }
-        if mode == .inAppPlayback { inAppPlayback.track = .reference }   // the chooser row is the reference track (AUD-001-R21)
+        if mode == .inAppPlayback { prepareReferenceTrack() }   // the chooser row is the reference track (AUD-001-R21)
         start(mode)
+    }
+
+    /// The reference track, alone in its play order: it repeats (AUD-006-R14, R17).
+    private func prepareReferenceTrack() {
+        let reference = AudioLibraryCoordinator.referenceItem
+        transport.prepare(order: ListPlayOrder([reference]), current: reference)
     }
 
     // MARK: - Imported audio (AUD-001)
@@ -183,11 +199,22 @@ final class AppCoordinator: VisualizationControlling {
     /// own copy; if that copy is gone the source reports "In-App Playback failed" (AUD-001-R19).
     func play(_ track: ImportedTrack) {
         Task {
-            guard screen == .chooser, let url = await audioLibrary.playbackURL(for: track), screen == .chooser else { return }
-            inAppPlayback.track = .file(url)
+            guard screen == .chooser, await audioLibrary.playbackURL(for: track) != nil, screen == .chooser else { return }
+            // The play order is the list as shown now (AUD-006-R14).
+            let items = await audioLibrary.playbackItems()
+            guard screen == .chooser, let item = items.first(where: { $0.id == track.id.uuidString }) else { return }
+            transport.prepare(order: ListPlayOrder(items), current: item)
             start(.inAppPlayback)
         }
     }
+
+    // MARK: - Transport (AUD-006). Every use restarts the controls' hide delay (AUD-006-R25).
+
+    func transportPlayPause() { showControls(); Task { await transport.togglePlayPause() } }
+    func transportStop() { showControls(); Task { await transport.stop() } }
+    func transportNext() { showControls(); Task { await transport.next() } }
+    func transportPrevious() { showControls(); Task { await transport.previous() } }
+    func transportSeek(to seconds: Double) { showControls(); transport.seek(to: seconds) }
 
     func removeImported(_ track: ImportedTrack) {
         Task { await audioLibrary.remove(track) }
@@ -199,10 +226,12 @@ final class AppCoordinator: VisualizationControlling {
             guard let self else { return }
             await audioLibrary.load()
             #if DEBUG
-            // ImportedAudioUITests: `-uitestImportAudio <path>` imports that file through the same
-            // code path as the Files picker's result.
-            if let path = defaults.string(forKey: "uitestImportAudio") {
-                await audioLibrary.importPicked(.success([URL(fileURLWithPath: path)]))
+            // ImportedAudioUITests and TransportUITests: `-uitestImportAudio <path>[|<path>…]` imports
+            // those files, in that order, through the same code path as the Files picker's result.
+            if let paths = defaults.string(forKey: "uitestImportAudio") {
+                for path in paths.split(separator: "|") {
+                    await audioLibrary.importPicked(.success([URL(fileURLWithPath: String(path))]))
+                }
             }
             #endif
         }

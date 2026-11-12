@@ -1,14 +1,15 @@
 // InAppPlaybackSource.swift — deterministic In-App Playback fallback (task T046; FR-006, FR-051, FR-069).
 //
 // Plays the bundled reference track (scripts/generate_reference_audio.py), or a track from the
-// user's imported library (AUD-001), audibly through the current output, looping until stopped,
-// and taps the app's own mix. Never opens an input. Every track is In-App Playback: the mode and
+// user's imported library (AUD-001), audibly through the current output, and taps the app's own
+// mix. Without a transport a track repeats until stopped; PlaybackTransport (AUD-006) adds pause,
+// seek and track changes through the members at the end of this file. Never opens an input. Every track is In-App Playback: the mode and
 // its label do not change with the track (Constitution IV, AUD-001-R18).
 import AudioCore
 import Foundation
 
 /// What In-App Playback plays.
-public enum InAppPlaybackTrack: Sendable, Equatable {
+public enum InAppPlaybackTrack: Sendable, Hashable {
     /// The bundled reference track (FR-006).
     case reference
     /// A file in the app's own audio library (`AudioLibrary.fileURL(for:)`). Never a picked or
@@ -17,14 +18,36 @@ public enum InAppPlaybackTrack: Sendable, Equatable {
 }
 
 /// Platform seam (AVAudioEngine + AVAudioPlayerNode in production, a fake in tests).
+///
+/// Transport guarantees (AUD-006; specs/007-aud-006-seekable-transport/contracts/transport.md):
+/// 1. `pause()` holds the position and `resume()` continues from it.
+/// 2. After `seek`, `replaceTrack` and `resume`, the first audio written to the sink is the
+///    track's audio at the new position; nothing from before the call is written or left
+///    downstream (the backend calls the sink's `discardBufferedAudio()`).
+/// 3. A track that loops never ends; one that does not calls `onTrackEnded` once at its end.
 @MainActor
 public protocol InAppPlaybackBackend: AnyObject {
-    /// Loads `track` and starts looping playback, tapping the mix into `sink`. Throws `SourceError`
-    /// when the track cannot be played; it never plays a different track instead (AUD-001-R19).
+    /// Loads `track` and starts playback at its start, tapping the mix into `sink`. Throws
+    /// `SourceError` when the track cannot be played; it never plays a different track instead
+    /// (AUD-001-R19).
     func start(track: InAppPlaybackTrack, sink: PCMSink, onEvent: @escaping @Sendable (SourceEvent) -> Void) throws
     func stop()
     func pause()
     func resume() throws
+
+    /// True (the default): the current track repeats without a gap and never ends. False: it
+    /// plays to its end once, then `onTrackEnded` is called. Set before `start` or `replaceTrack`.
+    var loopsCurrentTrack: Bool { get set }
+    /// Called when a track that does not loop has reached its end while playing.
+    var onTrackEnded: (@MainActor () -> Void)? { get set }
+    /// Where playback is; `.zero` when not started.
+    var position: PlaybackPosition { get }
+    /// Moves to `seconds` (limited to the track). Playing continues from there, paused stays paused.
+    func seek(to seconds: Double)
+    /// Changes to `track` at its start, keeping playing or paused. Throws
+    /// `SourceError(.inAppPlaybackFailed)` when it cannot be loaded; the old track is then silent
+    /// and no other track is played (AUD-006-R19).
+    func replaceTrack(_ track: InAppPlaybackTrack) throws
 }
 
 @MainActor
@@ -34,14 +57,20 @@ public final class InAppPlaybackSource: AudioSource {
     private var continuation: AsyncStream<SourceEvent>.Continuation?
     private var running = false
     /// The track the next `start` plays. Changing it while running takes effect at the next start
-    /// (a restart through CaptureManager starts the same track again).
+    /// (a restart through CaptureManager starts the same track again); `replaceTrack` changes the
+    /// playing track and this value together.
     public var track: InAppPlaybackTrack = .reference
+    /// Successful starts so far. The transport uses it to tell sessions apart (AUD-006).
+    public private(set) var sessionCount = 0
 
     public init(backend: any InAppPlaybackBackend) {
         self.backend = backend
     }
 
     public var availability: SourceAvailability { .available }
+
+    /// True between a successful `start` and `stop`.
+    public var isStarted: Bool { running }
 
     public func start(into sink: PCMSink) async throws -> AsyncStream<SourceEvent> {
         let (stream, continuation) = AsyncStream.makeStream(of: SourceEvent.self)
@@ -53,6 +82,7 @@ public final class InAppPlaybackSource: AudioSource {
         }
         self.continuation = continuation
         running = true
+        sessionCount += 1
         return stream
     }
 
@@ -76,5 +106,41 @@ public final class InAppPlaybackSource: AudioSource {
         } catch {
             throw SourceError(.inAppPlaybackFailed)
         }
+    }
+
+    // MARK: - Transport (AUD-006). Used by PlaybackTransport; no effect unless started.
+
+    /// Whether the current track repeats by itself (one track in the play order) or ends.
+    public var loopsCurrentTrack: Bool {
+        get { backend.loopsCurrentTrack }
+        set { backend.loopsCurrentTrack = newValue }
+    }
+
+    /// Called when a track that does not loop has reached its end while playing.
+    public var onTrackEnded: (@MainActor () -> Void)? {
+        get { backend.onTrackEnded }
+        set { backend.onTrackEnded = newValue }
+    }
+
+    public var playbackPosition: PlaybackPosition {
+        running ? backend.position : .zero
+    }
+
+    public func seek(to seconds: Double) {
+        guard running else { return }
+        backend.seek(to: seconds)
+    }
+
+    /// Changes the playing track; `track` follows, so a Restart plays the new one.
+    public func replaceTrack(_ newTrack: InAppPlaybackTrack) throws {
+        guard running else { throw SourceError(.inAppPlaybackFailed) }
+        try backend.replaceTrack(newTrack)
+        track = newTrack
+    }
+
+    /// Ends the session as "In-App Playback failed" through the manager's event stream.
+    public func reportFailure() {
+        guard running else { return }
+        continuation?.yield(.failed(.inAppPlaybackFailed))
     }
 }

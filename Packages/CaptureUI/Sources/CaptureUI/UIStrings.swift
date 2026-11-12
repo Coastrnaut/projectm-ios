@@ -168,6 +168,39 @@ public enum UIStrings {
         return (total / 3600, (total % 3600) / 60, total % 60)
     }
 
+    // MARK: Transport (AUD-006; specs/007-aud-006-seekable-transport/contracts/ui-strings.md)
+    public static let transportPlay = "Play"
+    public static let transportPause = "Pause playback"
+    public static let transportStop = "Stop playback"
+    public static let previousTrack = "Previous track"
+    public static let nextTrack = "Next track"
+    public static let transportScrubber = "Playback position"
+    public static let referenceTrackTitle = "Reference track"
+    /// How far the VoiceOver increment and decrement gestures move the scrubber (AUD-006-R26).
+    public static let scrubStepSeconds = 10.0
+
+    /// The Play/Pause button's label: what a tap does.
+    public static func transportPlayPause(isPlaying: Bool) -> String {
+        isPlaying ? transportPause : transportPlay
+    }
+
+    /// Elapsed time as shown: `m:ss`, or `h:mm:ss` from one hour.
+    public static func elapsedTime(_ seconds: Double) -> String {
+        duration(seconds)
+    }
+
+    /// Remaining time as shown, with a minus sign: "−1:05". Whole seconds, so that elapsed plus
+    /// remaining is the track's length.
+    public static func remainingTime(elapsed: Double, duration total: Double) -> String {
+        let whole = elapsed.isFinite ? max(0, elapsed.rounded(.down)) : 0
+        return "−" + duration(max(0, (total.isFinite ? total : 0) - whole))
+    }
+
+    /// What VoiceOver reads for the scrubber: "1 minute 5 seconds of 3 minutes".
+    public static func scrubberValue(elapsed: Double, duration total: Double) -> String {
+        "\(spokenDuration(elapsed)) of \(spokenDuration(total))"
+    }
+
     // MARK: Actions
     public static let chooseSource = "Choose source"
     public static let chooseAudioSource = "Choose Audio Source"

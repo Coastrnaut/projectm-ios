@@ -21,6 +21,11 @@
 //
 // Phase A consumers (level metering, classification) are channel-agnostic, so a format change
 // mid-stream needs no flush; the new format is recorded and counted.
+//
+// Discontinuities (AUD-006): a source that jumps in its content (In-App Playback seeking or
+// changing track) calls `discardBufferedAudio()` from its control side, so that nothing written
+// before the jump is delivered after it. The consumer (AudioAnalyzer) registers how to do that for
+// every stage behind the ring. This is not on the producer path.
 import Synchronization
 
 public final class PCMSink: @unchecked Sendable {
@@ -51,6 +56,8 @@ public final class PCMSink: @unchecked Sendable {
     private let deliveryMaxNs = Atomic<UInt64>(0)
     /// Deliveries longer than this are treated as a clock mismatch and ignored.
     static let maxPlausibleDeliveryNs: UInt64 = 10_000_000_000
+    /// How the consumer discards undelivered audio (control side only; never used by `write…`).
+    private let discardHandler = Mutex<(@Sendable () -> Void)?>(nil)
 
     public init() {
         ring = SPSCRingBuffer(capacity: PCMSink.maxSampleRate * PCMSink.maxChannels)
@@ -93,6 +100,27 @@ public final class PCMSink: @unchecked Sendable {
     /// before the mark are reported at 0 rather than negative.
     public func markSessionStart(atNanoseconds start: UInt64 = MonotonicClock.nowNanoseconds()) {
         sessionStartNs.store(start, ordering: .releasing)
+    }
+
+    // MARK: - Discontinuities (control side; AUD-006, contracts/transport.md)
+
+    /// Discards every sample that was written but not yet delivered to a consumer. For the source
+    /// that owns the producer, when its content jumps (seek, track change).
+    ///
+    /// The caller guarantees that no `write…` is in flight and none starts until this returns.
+    /// When it returns, nothing written before the call can still reach a consumer: with an
+    /// `AudioAnalyzer` attached that covers the ring, the converter's state and the normalized
+    /// ring. Synchronous; never call it from an audio callback or from the analysis queue. The
+    /// session (statistics, start time, audio state) is not touched: a jump is not a new session.
+    public func discardBufferedAudio() {
+        let handler = discardHandler.withLock { $0 }
+        if let handler { handler() } else { ring.drain() }
+    }
+
+    /// Sets how the consumer discards undelivered audio; the handler must also empty this sink's
+    /// ring. `AudioAnalyzer` registers itself at init. nil restores the default (drain the ring).
+    public func setDiscardHandler(_ handler: (@Sendable () -> Void)?) {
+        discardHandler.withLock { $0 = handler }
     }
 
     // MARK: - Producer API (real-time safe)
