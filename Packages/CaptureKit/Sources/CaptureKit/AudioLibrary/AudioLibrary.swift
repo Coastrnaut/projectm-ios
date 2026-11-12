@@ -105,6 +105,13 @@ public actor AudioLibrary {
         return FileManager.default.fileExists(atPath: url.path) ? url : nil
     }
 
+    /// Where a track's copy is stored, whether or not the file is still there; nil for an unknown
+    /// id. Playback uses this so that a missing copy fails as "In-App Playback failed" instead of
+    /// being skipped silently (AUD-001-R19).
+    public func storedFileURL(for id: UUID) -> URL? {
+        index.tracks.first(where: { $0.id == id }).map { assetsURL.appendingPathComponent($0.fileName) }
+    }
+
     // MARK: - Serialization
 
     /// Runs `operation` after every earlier one has finished. The inspector is `async`, and actor

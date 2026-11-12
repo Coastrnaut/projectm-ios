@@ -207,6 +207,19 @@ final class AudioLibraryTests: XCTestCase {
         _ = await library.load()
         let url = await library.fileURL(for: UUID())
         XCTAssertNil(url)
+        let stored = await library.storedFileURL(for: UUID())
+        XCTAssertNil(stored)
+    }
+
+    func testStoredFileURLNamesTheCopyEvenWhenItIsGone() async throws {
+        let library = makeLibrary()
+        let track = try imported(await library.importFile(at: try tone("A.wav")))
+        let asset = libraryURL.appendingPathComponent("assets/\(track.fileName)")
+        try FileManager.default.removeItem(at: asset)
+        let existing = await library.fileURL(for: track.id)
+        XCTAssertNil(existing)
+        let stored = await library.storedFileURL(for: track.id)
+        XCTAssertEqual(stored?.lastPathComponent, track.fileName, "playback then fails visibly (AUD-001-R19)")
     }
 
     // MARK: US2 — relaunch and recovery (AUD-001-T20)

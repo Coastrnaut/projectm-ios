@@ -1,7 +1,9 @@
 // ProjectMApp.swift — the visualizer app (Stage 2; tasks T080, T082). The screen follows
 // AppCoordinator: photosensitivity notice (first launch) → source chooser → full-screen visualizer.
+// The chooser also lists the user's imported audio and opens the Files picker for it (AUD-001).
 import CaptureUI
 import SwiftUI
+import UniformTypeIdentifiers
 
 @main
 struct ProjectMApp: App {
@@ -26,10 +28,27 @@ struct RootView: View {
                 .onAppear { automationNoticeAppeared() }
         case .chooser:
             NavigationStack {
-                SourceChooserView(availability: coordinator.availability) { coordinator.select($0) }
-                    .navigationTitle("Choose source")
+                SourceChooserView(availability: coordinator.availability, onSelect: { coordinator.select($0) }, extraSections: {
+                    // AUD-001: imported tracks, played as In-App Playback.
+                    ImportedAudioSection(tracks: coordinator.audioLibrary.tracks,
+                                         isImporting: coordinator.audioLibrary.isImporting,
+                                         unavailableMessage: coordinator.audioLibrary.unavailableMessage,
+                                         onImport: { coordinator.importAudio() },
+                                         onPlay: { coordinator.play($0) },
+                                         onRemove: { coordinator.removeImported($0) })
+                })
+                .navigationTitle("Choose source")
             }
             .onAppear { automationChooserAppeared() }
+            // AUD-001-R1: the system Files picker, audio types only. The picked URLs are used once,
+            // to copy the files into the app's library, and are not kept.
+            .fileImporter(isPresented: $coordinator.showAudioImporter, allowedContentTypes: [.audio],
+                          allowsMultipleSelection: true) { coordinator.audioPicked($0) }
+            .alert(UIStrings.importAlertTitle, isPresented: importResultShown) {
+                Button(UIStrings.ok) { coordinator.audioLibrary.resultMessage = nil }
+            } message: {
+                Text(coordinator.audioLibrary.resultMessage ?? "")
+            }
             .sheet(isPresented: $coordinator.showMicrophoneExplainer) {
                 MicrophoneExplainerView(onContinue: { coordinator.microphoneExplainerContinue() },
                                         onCancel: { coordinator.showMicrophoneExplainer = false })
@@ -37,6 +56,12 @@ struct RootView: View {
         case .visualizer:
             VisualizerView(coordinator: coordinator)
         }
+    }
+
+    /// The import result alert (AUD-001-R6): shown while there is a message.
+    private var importResultShown: Binding<Bool> {
+        Binding(get: { coordinator.audioLibrary.resultMessage != nil },
+                set: { if !$0 { coordinator.audioLibrary.resultMessage = nil } })
     }
 
     private func automationChooserAppeared() {

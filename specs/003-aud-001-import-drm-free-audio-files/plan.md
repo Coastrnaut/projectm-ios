@@ -60,7 +60,7 @@ launch and rewritten on each change.
 | IV. Truthful source labeling | Pass | Imported tracks play through the existing `InAppPlaybackSource`, mode `.inAppPlayback`, label "In-App Playback" (AUD-001-R18). No new mode. |
 | V. No universal-capture claims | Pass | No compatibility claim; "supported" means the system decoder opens the file. |
 | VI. Modular boundaries | Pass | The library and backend live in `CaptureKit`; platform types stay inside it. The `AudioSource` contract is unchanged; `InAppPlaybackBackend.start` gains a `track` parameter. |
-| VII. Real-time audio safety | Pass | The tap closure is unchanged. File reads happen on AVAudioPlayerNode's own non-real-time scheduling thread; rescheduling for the loop runs on the player's completion callback thread, guarded by a short `NSLock` that the real-time thread never takes. |
+| VII. Real-time audio safety | Pass | The tap closure is unchanged. File reads happen on AVAudioPlayerNode's own non-real-time scheduling thread; the loop is rescheduled on the main actor (the player's completion callback only posts a task), so the render thread takes no lock and does no I/O. |
 | VIII. Upstream ProjectM fidelity | N/A | No engine or analysis change. |
 | IX. Pinned dependencies and license review | Pass | No new dependency. No media is bundled; test fixtures are generated tones. User files are the user's responsibility and are never redistributed. |
 | X. Evidence-based quality | Pass | Unit tests for all deterministic logic; device-only checks tagged `{device}` and left open. |
@@ -137,7 +137,8 @@ Details are in [research.md](research.md), [data-model.md](data-model.md) and
    entries without a file.
 3. **Playback**: `InAppPlaybackSource.track` selects `.reference` or `.file(URL)`.
    `InAppPlaybackGraph` builds the engine; a file track is streamed with
-   `AVAudioPlayerNode.scheduleFile` and rescheduled from its completion callback for the loop; the
+   `AVAudioPlayerNode.scheduleFile`, two passes queued, and rescheduled on the main actor each time
+   a pass is consumed (research AUD-001-D7); the
    reference track keeps its in-memory looping buffer. The tap and session handling are unchanged.
 4. **UI**: `SourceChooserView` shows `ImportedAudioSection` below the sources. The app presents
    SwiftUI's `fileImporter` for `UTType.audio` with multiple selection, hands the URLs to the

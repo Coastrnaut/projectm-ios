@@ -17,6 +17,7 @@ public actor AudioLibrary {
     public func importFiles(at urls: [URL]) async -> [AudioImportOutcome]   // in order, one at a time
     public func remove(_ id: UUID) async throws(AudioImportError)
     public func fileURL(for id: UUID) -> URL?                    // nil if unknown or the file is gone
+    public func storedFileURL(for id: UUID) -> URL?              // nil only if unknown; used to start playback
 }
 ```
 

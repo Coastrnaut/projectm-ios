@@ -10,6 +10,9 @@
 // * Pause (FR-046, FR-085) stops rendering only; capture keeps running. Leaving the foreground
 //   pauses rendering too (FR-050) and resumes it on return unless the user paused.
 // * Auto-lock (FR-084) follows IdleTimerPolicy.
+// * Imported audio (AUD-001): the chooser's "Your Audio" section lists AudioLibraryCoordinator's
+//   tracks. Tapping one selects that file on the In-App Playback source and starts it; the In-App
+//   Playback row itself always plays the reference track.
 import ANGLERendering
 import AudioCore
 import CaptureKit
@@ -33,6 +36,10 @@ final class AppCoordinator: VisualizationControlling {
     let manager: CaptureManager
     let microphone: MicrophoneSource
     var showMicrophoneExplainer = false
+    /// The user's imported audio (AUD-001) and the Files picker for it.
+    let audioLibrary: AudioLibraryCoordinator
+    var showAudioImporter = false
+    @ObservationIgnored private let inAppPlayback: InAppPlaybackSource
     private(set) var renderer: (any VisualizerRenderer)?
     private(set) var rendererError: String?
     /// Preset browsing and switching (T090, T091).
@@ -72,10 +79,13 @@ final class AppCoordinator: VisualizationControlling {
         settings = AppSettings(defaults: defaults, systemReduceMotion: UIAccessibility.isReduceMotionEnabled)
         screen = defaults.bool(forKey: Self.noticeKey) ? .chooser : .notice
         microphone = MicrophoneSource(backend: AVMicrophoneBackend())
+        let inAppPlayback = InAppPlaybackSource(backend: AVInAppPlaybackBackend())
+        self.inAppPlayback = inAppPlayback
+        audioLibrary = AudioLibraryCoordinator.makeDefault()
         var sources: [any AudioSource] = [
             ScreenCaptureSource.makeDefault(),
             microphone,
-            InAppPlaybackSource(backend: AVInAppPlaybackBackend()),
+            inAppPlayback,
         ]
         #if DEBUG
         // StatusUITests (T093): a scriptable fake replaces one mode's real source.
@@ -107,6 +117,7 @@ final class AppCoordinator: VisualizationControlling {
             for await event in lifecycle.events { await lifecycleCoordinator.handle(event) }
         }
         loadLibrary()
+        loadAudioLibrary()
         #if DEBUG || PROJECTM_AUTOMATION
         AutomationRunner.startIfRequested(self)   // Gate 4 device runs (PROJECTM_AUTORUN)
         #endif
@@ -140,7 +151,49 @@ final class AppCoordinator: VisualizationControlling {
             showMicrophoneExplainer = true
             return
         }
+        if mode == .inAppPlayback { inAppPlayback.track = .reference }   // the chooser row is the reference track (AUD-001-R21)
         start(mode)
+    }
+
+    // MARK: - Imported audio (AUD-001)
+
+    /// "Import Audio…": opens the system Files picker (AUD-001-R1).
+    func importAudio() {
+        showAudioImporter = true
+    }
+
+    /// The Files picker returned.
+    func audioPicked(_ result: Result<[URL], any Error>) {
+        Task { await audioLibrary.importPicked(result) }
+    }
+
+    /// Plays an imported track as In-App Playback (AUD-001-R17, R18). The file is the library's
+    /// own copy; if that copy is gone the source reports "In-App Playback failed" (AUD-001-R19).
+    func play(_ track: ImportedTrack) {
+        Task {
+            guard screen == .chooser, let url = await audioLibrary.playbackURL(for: track), screen == .chooser else { return }
+            inAppPlayback.track = .file(url)
+            start(.inAppPlayback)
+        }
+    }
+
+    func removeImported(_ track: ImportedTrack) {
+        Task { await audioLibrary.remove(track) }
+    }
+
+    /// Reads the audio library record off the launch path; the chooser fills in when it is ready.
+    private func loadAudioLibrary() {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            await audioLibrary.load()
+            #if DEBUG
+            // ImportedAudioUITests: `-uitestImportAudio <path>` imports that file through the same
+            // code path as the Files picker's result.
+            if let path = defaults.string(forKey: "uitestImportAudio") {
+                await audioLibrary.importPicked(.success([URL(fileURLWithPath: path)]))
+            }
+            #endif
+        }
     }
 
     func microphoneExplainerContinue() {

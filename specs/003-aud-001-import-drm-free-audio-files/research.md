@@ -67,14 +67,19 @@ present in the iOS 26.5 and 27.2 SDKs and on macOS 15.
 ## AUD-001-D7 Streaming, looping playback
 
 - **Decision**: for a library file, `AVAudioPlayerNode.scheduleFile(_:at:completionCallbackType:
-  .dataConsumed)`; the completion handler schedules the file again unless the graph was stopped.
-  One schedule is queued at a time.
+  .dataConsumed)`. The file is opened twice and two passes are kept queued; each time the player
+  has consumed one pass, its completion callback posts a main-actor task that queues the next pass,
+  unless the graph was stopped. Every call into the player happens on the main actor.
 - **Rationale**: the reference track is 60 s and is loaded into one buffer; an imported file may be
-  hours long, so it must stream (AUD-001-R20). The completion handler runs on a non-real-time
-  thread owned by the player, where scheduling is allowed; a lock-protected flag stops the loop
-  before `player.stop()` so no handler touches a stopped graph (Constitution VII: idempotent stop).
-- **Trade-off**: a gap of a few milliseconds at the loop point is possible; acceptable for a
-  visualizer and replaced by real transport in AUD-006.
+  hours long, so it must stream (AUD-001-R20). Keeping a whole pass queued ahead means the loop
+  does not depend on how quickly the main actor runs the next task.
+- **Finding (2026-11-12, host tests)**: scheduling from inside the completion callback deadlocks.
+  `play()` and `stop()` wait synchronously for the player's completion queue, while
+  `scheduleFile` called on that queue waits for them. The first implementation hung in
+  `AVAudioPlayerNodeImpl::StartImpl` → `dispatch_sync` on `AVAudioPlayerNodeImpl.CompletionHandlerQueue`.
+  Hence the callback only posts a task and returns.
+- **Trade-off**: a short gap at the loop point is possible if the main actor is blocked for a whole
+  pass of a very short file; acceptable for a visualizer and replaced by real transport in AUD-006.
 - **Alternatives**: `AVAudioPlayer` (no tap), reading the whole file (memory), `AVPlayerLooper`
   (different pipeline, no mixer tap).
 
