@@ -16,15 +16,17 @@ let package = Package(
     dependencies: [
         .package(path: "../AudioCore"),
         .package(path: "../ProjectMBridge"),
+        // PERF-011: renderers are presentation-bound resources.
+        .package(path: "../PresentationLifecycle"),
     ],
     targets: [
         .target(name: "CFlashLimiter"),
-        .target(name: "Rendering", dependencies: ["AudioCore", "ProjectMBridge", "CFlashLimiter"],
+        .target(name: "Rendering", dependencies: ["AudioCore", "ProjectMBridge", "CFlashLimiter", "PresentationLifecycle"],
                 // OpenGL ES is deprecated on iOS but is ADR-0003 Option A; the define must reach the
                 // Clang importer, so it is passed with -Xcc (a local path package may use unsafeFlags).
                 swiftSettings: [.unsafeFlags(["-Xcc", "-DGLES_SILENCE_DEPRECATION"])],
                 linkerSettings: [.linkedFramework("OpenGLES"), .linkedFramework("QuartzCore")]),
-        .testTarget(name: "RenderingTests", dependencies: ["Rendering", "AudioCore", "ProjectMBridge", "CFlashLimiter"],
+        .testTarget(name: "RenderingTests", dependencies: ["Rendering", "AudioCore", "ProjectMBridge", "CFlashLimiter", "PresentationLifecycle"],
                     swiftSettings: [.unsafeFlags(["-Xcc", "-DGLES_SILENCE_DEPRECATION"])]),
     ]
 )
