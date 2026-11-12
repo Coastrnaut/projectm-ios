@@ -216,6 +216,23 @@ empty), listed in registration order.
 No persisted state and no setting (R14), so there is nothing to migrate or restore. Rollback is
 `git revert` of the feature's commits; the app then behaves as at `e679131`.
 
+## Cross-feature notes (from /speckit-analyze, 2026-11-12)
+
+- **Feature 001**: FR-050, FR-051, FR-054 and FR-084 are cited, not changed. One behavior of the
+  visualization changes on purpose: an unlock that arrives while the app is still in the
+  background no longer resumes it (clarification 2). `contracts/projectm-bridge.md` of feature 001
+  is not edited; this feature's contract extends it and the main session may add a pointer there.
+- **Feature 002**: the warm-up (its SC-104) keeps its delay, its skip of warmed presets and its
+  public switches; only suspension is added. The SC-104 device numbers are not re-measured here.
+- **Roadmap**: CAM and MED rows adopt `PresentationBoundResource` for camera and video sessions.
+  PERF-006 (memory warning) may reuse the renderer's surface release but is not implemented.
+  PERF-010 is unrelated. AUD-001, built in parallel in another worktree, works in `CaptureKit`,
+  which this feature does not touch; both features may edit `project.yml` and
+  `.github/workflows/ios-ci.yml`, so the main session merges those two files by hand.
+- **Licensing**: no new dependency, asset or preset; nothing to record under constitution IX.
+- **Privacy**: no new data is read, stored or sent. The signpost carries one flag and three
+  counts. The privacy manifest and policy need no change.
+
 ## Complexity Tracking
 
 | Addition | Why needed | Simpler alternative rejected because |

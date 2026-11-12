@@ -6,7 +6,8 @@ contracts, quickstart)
 **Conventions**: task IDs are `PERF-011-T01…`. Tests come first within each story. Tags:
 `{mac}` runs on the Mac host, `{sim}` needs an iOS simulator, `{merge}` needs the full app build
 (preset submodules) and is run by the main session after the merge, `{device}` needs a physical
-device and belongs to the final device stage. A task is ticked only when its evidence was
+device and belongs to the final device stage. For a `{merge}` task the code and tests are written
+in this run; only the evidence (build and test run) waits for the merge. A task is ticked only when its evidence was
 produced, with " — Verified <date>: <how>".
 
 ## Phase 1: Setup
@@ -110,7 +111,7 @@ produced, with " — Verified <date>: <how>".
 
 ## Phase 6: Polish and verification
 
-- [ ] PERF-011-T18 [P] {mac} Add `PresentationLifecycle` to the three package loops (Linux tests,
+- [ ] PERF-011-T18 [P] {mac} Add `PresentationLifecycle` to the four package loops (Linux tests,
   macOS host tests, generic-iOS compile, simulator tests) in `.github/workflows/ios-ci.yml`.
   Evidence: the workflow file parses (`python3 -c "import yaml…"`) and the Linux-relevant code
   uses no Apple-only API.
