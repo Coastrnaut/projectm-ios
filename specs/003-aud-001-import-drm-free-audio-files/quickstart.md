@@ -37,6 +37,12 @@ xcodebuild test -project ProjectM-iOS.xcodeproj -scheme projectM-iOS \
 python3 scripts/check_privacy_manifest.py   # no new required-reason API (research AUD-001-D11)
 ```
 
+In a worktree without the preset submodules, the same tests can run from a scratch project:
+copy `project.yml` without the `preBuildScripts` block, `xcodegen generate --spec <copy> --project
+<scratch> --project-root <checkout>`, and link `<scratch>/Apps` to the checkout's `Apps` (the
+folder references resolve against the project directory). Tests that need the preset index fail
+there, by design.
+
 `ImportedAudioUITests` imports a generated tone through the Debug launch argument
 `-uitestImportAudio <path>` (the same library code path as the picker), plays it, relaunches and
 finds it again. The system Files picker itself is exercised by hand in D.

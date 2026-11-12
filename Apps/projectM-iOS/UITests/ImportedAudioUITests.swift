@@ -78,6 +78,47 @@ final class ImportedAudioUITests: XCTestCase {
         #endif
     }
 
+    /// AUD-001-R13 (AUD-001-T28): swipe a track, tap Remove; it is gone, and still gone after a relaunch.
+    func testSwipeToRemoveDeletesTheTrack() throws {
+        #if !targetEnvironment(simulator)
+        throw XCTSkip("the app reads the test's file from the host; simulator only")
+        #else
+        let tone = try writeTone(named: "UITestTone.wav")
+        launch(["-uitestResetNotice", "-uitestResetAudioLibrary", "-uitestImportAudio", tone.path], acknowledgeNotice: true)
+        XCTAssertTrue(track.waitForExistence(timeout: 15))
+        track.swipeLeft()
+        let remove = app.buttons["removeImportedTrack"].firstMatch
+        XCTAssertTrue(remove.waitForExistence(timeout: 5), "the swipe action is offered")
+        XCTAssertEqual(remove.label, "Remove")
+        remove.tap()
+        XCTAssertTrue(track.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["noImportedAudio"].waitForExistence(timeout: 5))
+
+        app.terminate()
+        try? FileManager.default.removeItem(at: folder)
+        launch([], acknowledgeNotice: false)
+        XCTAssertTrue(app.staticTexts["noImportedAudio"].waitForExistence(timeout: 5))
+        XCTAssertFalse(track.exists)
+        #endif
+    }
+
+    /// AUD-001-R1: "Import Audio…" presents the system Files picker; cancelling changes nothing.
+    /// Picking a file inside the system picker is not driven here (quickstart D, by hand).
+    func testImportAudioOpensTheFilesPickerAndCancelChangesNothing() {
+        launch(["-uitestResetNotice", "-uitestResetAudioLibrary"], acknowledgeNotice: true)
+        XCTAssertTrue(app.staticTexts["noImportedAudio"].waitForExistence(timeout: 5))
+        app.buttons["importAudio"].tap()
+        // The picker is the system's document browser, hosted out of process: the chooser's own
+        // controls stop being hittable while it is up, and its Cancel button dismisses it.
+        let cancel = app.buttons["Cancel"].firstMatch
+        XCTAssertTrue(cancel.waitForExistence(timeout: 15), "the Files picker is presented")
+        cancel.tap()
+        XCTAssertTrue(app.buttons["importAudio"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["importAudio"].isHittable)
+        XCTAssertTrue(app.staticTexts["noImportedAudio"].exists)
+        XCTAssertFalse(app.alerts.firstMatch.exists, "a cancelled picker shows no message")
+    }
+
     func testRefusedFileShowsItsReasonAndIsNotListed() throws {
         #if !targetEnvironment(simulator)
         throw XCTSkip("the app reads the test's file from the host; simulator only")
