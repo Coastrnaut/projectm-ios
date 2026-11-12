@@ -23,7 +23,8 @@ Uniqueness: `id`, and `sha256` across all records.
 ## QuarantineReason
 
 `{ code, detail? }`. Codes: `binaryContent`, `lineTooLong`, `tooManyLines`, `missingHeader`,
-`noSettings`, `blockTooLarge`, `statementTooLong`, `nestingTooDeep`, `unbalancedEquation`,
+`noSettings`, `blockTooLarge`, `statementTooLong`, `nestingTooDeep`, `statementTooComplex`,
+`tooMuchControlFlow`, `unbalancedEquation`,
 `incompleteShader`, `engineRejected` (detail: engine message, cut to 300 characters),
 `timedOut`, `interruptedDuringCheck`, `interruptedOnScreen`, `failedOnScreen` (detail). An unknown
 code read from disk is kept and shown as "could not be used".
@@ -42,10 +43,11 @@ code read from disk is kept and shown as "could not be used".
 | `authorFromFileName` | bool |
 | `linesFound` | up to 5 strings of at most 200 characters, verbatim |
 
-## Trial record (`trial.json`)
+## Trial records (`trial.json`, `proving.json`)
 
-`{ schemaVersion: 1, presetID, phase: "trial" | "proving" }`. At most one. An unreadable record
-is removed and ignored (it names nothing).
+`{ schemaVersion: 1, presetID, phase: "trial" | "proving" }`, one file per phase, at most one of
+each. An unreadable record, or one whose phase does not match its file, is removed and ignored
+(it names nothing).
 
 ## Document (`index.json`)
 
@@ -57,4 +59,4 @@ migration steps; anything else → set aside as `index.unreadable.json`.
 ## Scope
 
 `PresetScope.user`, stored as `user`. Members: playable user presets, alphabetical by name then
-id.
+id. An empty My Presets does not stay the chosen scope.

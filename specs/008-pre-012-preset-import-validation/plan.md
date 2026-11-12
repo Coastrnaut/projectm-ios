@@ -26,7 +26,7 @@ UniformTypeIdentifiers (app only). Hashing is a small pure-Swift SHA-1 and SHA-2
 D3).
 
 **Storage**: `<Application Support>/UserPresets/`: `index.json` (versioned, Codable, atomic),
-`files/<sha256>.milk`, `quarantine/<sha256>.milk`, `trial.json`, `incoming/` (staging). The scope
+`files/<sha256>.milk`, `quarantine/<sha256>.milk`, `trial.json`, `proving.json`. The scope
 stays in `settings.presetScope` with the new value `user`.
 
 **Testing**: XCTest. `PresetLibrary` with `swift test` on the macOS host (valid on Linux);
@@ -127,20 +127,20 @@ package. `ProjectMBridge` is unchanged: its typed load failure is all the trial 
 ### Layers
 
 1. **Admission** (`UserPresetLibrary.importFile`): regular file, `.milk`, 1…524,288 bytes, read
-   through a bounded read into `incoming/`. Hash (SHA-256 and git blob SHA-1). Refuse takedown
+   into memory through a read bounded at the limit plus one byte. Hash (SHA-256 and git blob SHA-1). Refuse takedown
    content and duplicates. Nothing is stored for a refusal.
 2. **Static validation** (`MilkdropPresetValidator`): one pass over bytes, iterative, no `String`
    decoding of the whole file. Mirrors the engine's own line parser (first `=` or space ends the
    key; the first occurrence of a key wins; code blocks are `prefix1…prefixN` until the first
    gap) so the validator judges what the engine will actually read.
-3. **Trial** (`PresetTrialRunner` behind `PresetTrialing`): a new thread with a 512 KiB stack
+3. **Trial** (`PresetTrialRunner` behind `PresetTrialing`): a new thread with a 768 KiB stack
    (the visible renderer runs on the main thread, 1 MiB), an unshared EGL context on the visible
    renderer's display, a fresh engine, a 256 × 256 BGRA target. Load, then 30 frames with a
    generated 440 Hz tone, then `glFinish`. Outcome is passed, failed(message), timedOut or
    unavailable(reason).
-4. **Record** (`UserPresetStore`): `trial.json` is written and synced before the trial or the
-   proving period starts and removed when it ends. `load()` at launch quarantines the preset it
-   names.
+4. **Record** (`UserPresetStore`): `trial.json` is written atomically before a trial starts,
+   `proving.json` before an unproven preset's first load on screen; each is removed when its step
+   ends. `load()` at launch quarantines the preset a leftover record names.
 5. **On screen** (`PresetCoordinator`): a user preset that fails on the visible renderer is
    quarantined; an unproven one is proven after 3 s of presented frames.
 
@@ -165,8 +165,7 @@ pending ──unavailable──▶ pending (tried again at the next opportunity)
 
 Every change builds a new index in memory, writes it atomically, and only then updates memory
 (the PRE-007 pattern). File moves happen before the index write and are undone when it fails, so
-after any failure the directory and index are what they were. `incoming/` is emptied at load.
-Files in `files/` or `quarantine/` that no record names are left alone (never deleted silently).
+after any failure the directory and index are what they were. Files in `files/` or `quarantine/` that no record names are left alone (never deleted silently).
 
 ### How user presets join the library
 
@@ -174,7 +173,7 @@ Files in `files/` or `quarantine/` that no record names are left alone (never de
 include the user presets (source `user`, never locked). Favorites, collections and search then
 work without format changes. `.all` and the home tree are the built-in library only; `.user` is
 the new scope. `PresetCoordinator` keeps the built-in library and rebuilds the combined one when
-the user list changes. User presets are not handed to the preset warm-up: its second engine is
+the user list changes; an empty My Presets is not kept as the scope. User presets are not handed to the preset warm-up: its second engine is
 outside the guarded path and its benefit for a handful of small presets is nil.
 
 ### Deterministic tests
@@ -190,7 +189,8 @@ outside the guarded path and its benefit for a handful of small presets is nil.
   directory without finishing the first.
 - Real engine (simulator): valid synthetic preset passes; bad equations fail with the engine's
   message; a nested-loop preset times out and later trials report unavailable; presets built at
-  the static limits (nesting 64, 8,192-byte statements) do not crash the process; the visible
+  the static limits and at twice the limits (nesting, statement complexity, control-flow
+  keywords) do not crash the process, on the trial thread or on the visible engine; the visible
   renderer keeps presenting frames of its preset during and after failing trials.
 - App: coordinator tests with a fake loader and fake trial; XCUITests import through a launch
   argument (the system picker is not driven), as AUD-001 does.

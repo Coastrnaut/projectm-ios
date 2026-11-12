@@ -21,7 +21,9 @@ recursion crashes uncontained.
 **Decision**: the numbers in spec Clarifications. **Measurements**: largest file 168,391 bytes
 (p50 9,367; p99 25,396; p99.9 36,652); longest line 1,525 bytes; most lines 3,220; largest code
 block 31,999 bytes; longest equation statement 4,891 bytes, shader statement 1,311; deepest
-bracket nesting 21 (equations), 16 (shaders); every file has `[preset00]` as its first
+bracket nesting 21 (equations), 16 (shaders); statement complexity (punctuation bytes) at most 268
+(equations) and 196 (shaders, with their preprocessor lines); at most 17 control-flow keywords in
+a shader; preprocessor lines in 383 files (so they cannot be refused); every file has `[preset00]` as its first
 non-version line; 0 files with NUL or other control characters; 37 files not valid UTF-8; 3,740
 with CRLF; loops nested up to 4 deep. **Alternatives**: the engine's 1 MiB cap as the size limit
 (no margin against the engine's own bound); rejecting nested loops (would reject built-in
@@ -56,7 +58,7 @@ no code path that plays presets can reach it.
 ## D6. Trial design
 
 **Decision**: one thread per trial, fresh engine and unshared context each time, 30 frames, 10 s
-limit, 512 KiB stack. **Rationale**: `PresetPrewarmer` proves a second engine on a second context
+limit, 768 KiB stack. **Rationale**: `PresetPrewarmer` proves a second engine on a second context
 works on ANGLE's Metal backend. A fresh engine isolates trials from each other. The visible
 renderer runs on the main thread (1 MiB stack on iOS); a smaller trial stack means recursion
 depth that passes the trial fits on screen. **Alternatives**: reuse the prewarmer (its failures
@@ -97,6 +99,26 @@ the content hash lets PRE-015/016/017 change content without changing identity.
 **Decision**: SwiftUI `fileImporter` with `UTType(filenameExtension: "milk") ?? .data` plus
 `.data`, single selection; the extension is checked again in the package. UI tests pass
 `-uitestImportPreset <path>` (Debug builds), the route AUD-001 uses.
+
+## D13. Expression depth (found during implementation)
+
+**Finding**: with the real engine on the simulator, a shader statement summing 2,000 terms
+overflowed the stack on an ANGLE worker thread (`sh::TIntermRebuild::traverseBinaryChildren`),
+and chains of casts or unary operators overflowed it inside the engine's own translator
+(`M4::HLSLParser::ParseTerminalExpression`): casts between 256 and 384 levels on a 512 KiB stack,
+and between 512 and 768 on 768 KiB; unary operators between 512 and 768 on 512 KiB. The equation
+compiler survived 4,096 levels of every shape. Nested brackets survived 256, `else if` chains
+and nested `if` 256.
+**Decision**: bound depth statically by what can create it: statement complexity (256 for a
+shader statement plus the shader's preprocessor lines, 512 for an equation statement) and 64
+control-flow keywords per shader; trial stack 768 KiB.
+**Rationale**: the worst shape then has a factor of 2 to 3 to the crash, and every built-in preset
+passes. Preprocessor lines are counted into every statement because a macro body can be expanded
+inside any expression, and macros can nest, but each definition can appear at most once along one
+path of the expression tree.
+**Alternatives**: a tighter statement-length limit (the worst shape costs one byte per level, so
+the limit would have to be far below real statements); expanding macros in the validator (more
+code to get wrong on hostile input).
 
 ## D12. Takedown list at run time
 

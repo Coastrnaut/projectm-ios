@@ -69,6 +69,11 @@ collections):
 And, only if you import audio, the files you imported and their list (see "Audio files you
 import").
 
+And, only if you import presets: a copy of each preset file you imported, including files the app
+put in Quarantine because they failed a check, and a list of them with each file's name, size,
+content checksums, import date and the result of the checks. They stay on your device, are never
+sent anywhere, and are deleted when you remove them in the app or delete the app.
+
 No captured or microphone audio, listening history or record of which apps you listened to is
 stored. Deleting the app
 deletes all of this.
@@ -120,3 +125,4 @@ issue in that repository.
 | Feature 002 FR-123: the preset scope setting | What is stored on your device |
 | AUD-001-R22 (amends FR-065): files the user imports are stored on the device | Audio files you import; What is stored on your device |
 | PRE-007-R17 (`specs/005-pre-007-preset-collections/spec.md`): the user's preset collections | What is stored on your device |
+| PRE-012-R30 (`specs/008-pre-012-preset-import-validation/spec.md`, amends FR-065): preset files the user imports, quarantined ones included, and their record | What is stored on your device |

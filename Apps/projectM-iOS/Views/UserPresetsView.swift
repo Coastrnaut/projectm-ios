@@ -197,7 +197,6 @@ struct PresetQuarantineView: View {
         }
         .navigationTitle("Quarantine")
         .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done", action: onDone) } }
-        .importResultAlert(userPresets)
     }
 }
 
