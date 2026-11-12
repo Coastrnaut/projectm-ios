@@ -233,14 +233,15 @@ verified any further rights, and shows when it was last edited.
 
 - **PRE-015-R7**: A bundled preset the user cannot play (a locked pack before the unlock, or one
   that failed to load this session) MUST NOT be duplicated. For a locked one, Duplicate MUST open
-  the purchase sheet, like choosing it to play does (FR-106). The user-preset library MUST refuse
-  it as well, independently of the interface.
+  the purchase sheet, like choosing it to play does (FR-106); for one that failed to load this
+  session, Duplicate MUST say so and store nothing. The user-preset library MUST refuse a locked
+  one as well, independently of the interface.
 - **PRE-015-R8**: While the full-library entitlement is absent, a copy whose source pack needs the
   unlock MUST NOT be playable, editable, readable through the editor, or a member of any scope
   (My Presets, favorites, collections, search). It MUST stay listed in My Presets, marked as
   needing the full library; tapping it opens the purchase sheet; it can be removed or viewed in
   Information. When the entitlement returns, it becomes playable again. Nothing is deleted
-  automatically.
+  automatically: neither the copy nor a favorite star or collection entry naming it.
 
 **Editing**
 
@@ -344,3 +345,7 @@ verified any further rights, and shows when it was last edited.
   Settings › Licenses); nothing new is claimed about rights.
 - Simulator and Mac results are not device evidence (Constitution X); device checks are tagged
   `{device}` and belong to the roadmap's final device phase.
+- PRE-014 (export) must not export bundled content it has no right to redistribute
+  (roadmap "Local formats and migration policy"). A copy's `duplicateOf` origin and its
+  `rightsVerified = false` are recorded so that PRE-014 can recognize copies of bundled presets
+  and apply its own rule; this feature exports nothing.

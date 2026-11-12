@@ -139,8 +139,9 @@ Paths: `UP` = `Packages/PresetLibrary/Sources/PresetLibrary/UserPresets`, `PKGT`
   `PresetCoordinator.setUnlocked` before the scope changes; "Needs the full library" section in
   `UserPresetsView` (tap → purchase sheet; Information; Remove). Test in
   `APP/Tests/UserPresetDuplicationAppTests.swift`: unlock, duplicate a pack preset, revoke →
-  not in the library or My Presets scope, choose → purchase requested; restore → playable.
-  Record the red run, then make it pass.
+  not in the library or My Presets scope, choose → purchase requested; a favorite naming the
+  copy survives a relaunch while held (`PresetCoordinator.attach` keeps favorites of known user
+  preset ids); restore → playable. Record the red run, then make it pass.
 
 ## Phase 6: User Story 4 - Origin information (P2)
 
