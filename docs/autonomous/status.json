@@ -6,10 +6,9 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 73,
-   "implementing": 1,
-   "integrated": 12,
-   "unit_passed": 1
+   "audited": 72,
+   "implementing": 2,
+   "integrated": 13
   },
   "P1": {
    "audited": 149,
@@ -23,10 +22,9 @@
   }
  },
  "by_state": {
-  "audited": 310,
-  "implementing": 1,
-  "integrated": 14,
-  "unit_passed": 1
+  "audited": 309,
+  "implementing": 2,
+  "integrated": 15
  },
  "device_gate": {
   "blocked": [],
@@ -219,7 +217,6 @@
    "PERF-008",
    "PERF-009",
    "PERF-010",
-   "PERF-011",
    "PERF-012",
    "PERF-013",
    "PERF-014",
@@ -349,7 +346,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "312 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
+   "311 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
   ]
  },
  "features": {
@@ -2348,10 +2345,10 @@
    "branch": "feature/perf-011",
    "branch_sha": "685f31acc792ea110c093b27dd355c3f2ddcb6ce",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "6d669fcb857695767ec2b785f74feb29f98d5978",
    "priority": "P0",
    "spec_dir": "specs/004-perf-011-background-resource-release",
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "PERF-012": {
    "attempts": 0,
@@ -2445,13 +2442,13 @@
   },
   "PRE-007": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/pre-007",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/005-pre-007-preset-collections",
+   "state": "implementing"
   },
   "PRE-008": {
    "attempts": 0,
@@ -3684,6 +3681,11 @@
    "branch": "autonomous/integration",
    "id": "AUTO-014",
    "sha": "419cc2a999edbc771333eb97968590802bc490fe"
+  },
+  {
+   "branch": "feature/perf-011",
+   "id": "PERF-011",
+   "sha": "6d669fcb857695767ec2b785f74feb29f98d5978"
   }
  ],
  "integration_branch": "autonomous/integration",
@@ -3693,5 +3695,5 @@
  "run_id": "cb545c51cf0b",
  "skipped_existing": [],
  "total": 326,
- "updated": "2026-11-12T20:27:41Z"
+ "updated": "2026-11-12T20:28:48Z"
 }
