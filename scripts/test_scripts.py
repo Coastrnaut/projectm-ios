@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import re
 import struct
 import sys
 import tempfile
@@ -888,8 +889,12 @@ class SetupMacTests(unittest.TestCase):
             for name in ("001-first", "002-second", "notes"):
                 (specs / name).mkdir(parents=True)
             self.assertEqual(setup_mac.latest_feature(specs), "specs/002-second")
-        self.assertEqual(setup_mac.latest_feature(setup_mac.ROOT / "specs"),
-                         "specs/002-preset-library-unlock")
+        # The repository's own newest feature: whichever numbered folder sorts last (a fixed name
+        # here broke as soon as a new feature directory was added).
+        numbered = sorted(p.name for p in (setup_mac.ROOT / "specs").iterdir()
+                          if p.is_dir() and re.match(r"\d{3}-", p.name))
+        self.assertGreaterEqual(numbered[-1], "002-preset-library-unlock")
+        self.assertEqual(setup_mac.latest_feature(setup_mac.ROOT / "specs"), f"specs/{numbered[-1]}")
 
     def test_angle_ready_needs_both_libraries(self):
         with tempfile.TemporaryDirectory() as tmp:
