@@ -390,6 +390,20 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
         return PMFlashLimiterAdaptedLuminance(flashLimiter)
     }
 
+    /// One frame of a solid gray `value` through the renderer's own Reduce-flashing limiter onto
+    /// the window surface (not presented); returns the adapted luminance, or nil without a surface
+    /// or limiter. Tests use it for exact luminance values, which the engine's picture cannot give.
+    func limitedSolidFrame(_ value: Float, maxStep: Float) -> Float? {
+        guard !presentationSuspended, let surface else { return nil }
+        eglMakeCurrent(display, surface, surface, context)
+        guard let limiter = flashLimiterForFrame() else { return nil }
+        let framebuffer = PMFlashLimiterBegin(limiter, Int32(surfaceSize.width), Int32(surfaceSize.height))
+        guard framebuffer != 0 else { return nil }
+        PMANGLEClearFramebuffer(framebuffer, value, value, value)
+        PMFlashLimiterFinish(limiter, 0, maxStep)
+        return PMFlashLimiterAdaptedLuminance(limiter)
+    }
+
     /// Reads back the default framebuffer of the current surface as RGBA bytes (tests).
     func readPixels() -> [UInt8] {
         guard let surface else { return [] }

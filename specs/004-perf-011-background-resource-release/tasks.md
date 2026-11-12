@@ -126,6 +126,23 @@ produced, with " — Verified <date>: <how>".
 - [ ] PERF-011-T22 {device} S8 on D1-D3: app switcher card and first frame after return, lock and
   unlock, rotation while away, Control Center (quickstart D3, D4). Final device stage. — Open: `{device}`, final device stage; not attempted.
 
+## Correction after the integration gate (2026-11-12)
+
+- [X] PERF-011-T23 {sim} `testReduceFlashingTargetIsReleasedAndWorksAgainAfterResume` in
+  `Packages/ANGLERendering/Tests/ANGLERenderingTests/ANGLERendererTests.swift` failed once in the
+  main session's run (about 1 run in 30 here). Cause: the test, not the renderer. It counted lit
+  pixels of the engine's picture after it had gone through the limiter, but the test preset's
+  brightness depends on wall-clock time since it was loaded, and a very dark frame comes out of
+  the limiter under the lit-pixel threshold. The same result appears with no suspension at all.
+  Fix: the limiter is now checked with solid frames through the renderer's own limiter
+  (`ANGLERenderer.limitedSolidFrame`, test support), whose luminance is exact; a second test
+  proves a new limiter starts over after a suspension; the tests that need a drawn picture drive
+  frames until there is one (`renderUntilLit`) instead of assuming a frame count. No production
+  behavior changed. — Verified 2026-11-12: the whole ANGLERendering suite six times in a row on the
+  iOS 27.2 simulator (iPhone 17), 43 of 43 each time; then `ANGLERendererTests` with
+  `-test-iterations 30`, 630 of 630. The counts in T09, T10, T16 and T19 above are from the first
+  run (42 tests); the suite now has 43.
+
 ## Dependencies
 
 - T01 → T02 → T03 → T04 → T05. T06 is independent of T02-T05.

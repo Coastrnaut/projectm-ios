@@ -30,6 +30,20 @@ final class ANGLERendererTests: XCTestCase {
         stride(from: 0, to: pixels.count, by: 4).filter { pixels[$0] > 8 || pixels[$0 + 1] > 8 || pixels[$0 + 2] > 8 }.count
     }
 
+    /// Renders frames (not presented) until the preset has lit pixels. A preset's first frames
+    /// after loading are black for a time that depends on the wall clock, so tests that need a
+    /// drawn picture drive frames until there is one, for at most 3 s. Returns the lit-pixel count.
+    @discardableResult
+    private func renderUntilLit(_ renderer: ANGLERenderer) async throws -> Int {
+        for _ in 0..<300 {
+            XCTAssertTrue(renderer.renderFrame(present: false))
+            let lit = litPixels(renderer.readPixels())
+            if lit > 0 { return lit }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        return 0
+    }
+
     func testCreatesAWindowSurfaceAtTheDisplayScale() throws {
         let renderer = try makeLaidOut(width: 80, height: 40)
         XCTAssertTrue(renderer.hasWindowSurface)
@@ -184,9 +198,9 @@ final class ANGLERendererTests: XCTestCase {
         let layerView = try XCTUnwrap(renderer.view as? MetalLayerView)
         layerView.onWindowChange?(true)
         try await renderer.setPreset(preset("100-square.milk"))
-        for _ in 0..<30 { renderer.renderFrame(present: false) }
+        let lit1 = try await renderUntilLit(renderer)
+        XCTAssertGreaterThan(lit1, 0, "the preset draws before the suspension")
         let size = renderer.currentSurfaceSize
-        XCTAssertGreaterThan(litPixels(renderer.readPixels()), 0)
 
         renderer.suspendForPresentationLoss()
         renderer.resumeForPresentation()
@@ -239,28 +253,63 @@ final class ANGLERendererTests: XCTestCase {
         let scale = renderer.view.contentScaleFactor
         XCTAssertEqual(renderer.currentSurfaceSize.width, Int((80 * scale).rounded()))
         XCTAssertEqual(renderer.currentSurfaceSize.height, Int((40 * scale).rounded()))
-        for _ in 0..<30 { XCTAssertTrue(renderer.renderFrame(present: false)) }
-        XCTAssertGreaterThan(litPixels(renderer.readPixels()), 0)
+        let lit2 = try await renderUntilLit(renderer)
+        XCTAssertGreaterThan(lit2, 0, "the preset draws at the new size")
     }
 
+    /// The limiter is exercised with solid frames, whose luminance is exact. The engine's picture
+    /// is not used for values here: the test preset's brightness varies with wall-clock time, and a
+    /// very dark frame stays under the lit-pixel threshold once it goes through the limiter.
     func testReduceFlashingTargetIsReleasedAndWorksAgainAfterResume() async throws {
         let renderer = try makeLaidOut()
         try await renderer.setPreset(preset("100-square.milk"))
         renderer.reduceFlashing = true
-        for _ in 0..<5 { renderer.renderFrame(present: false) }
+        for _ in 0..<5 { XCTAssertTrue(renderer.renderFrame(present: false)) }
         XCTAssertTrue(renderer.hasFlashLimiter)
+        // Leave the limiter adapted to white, so a stale value would be visible after the resume.
+        XCTAssertEqual(try XCTUnwrap(renderer.limitedSolidFrame(1, maxStep: 1)), 1, accuracy: 0.01)
 
         renderer.suspendForPresentationLoss()
         XCTAssertFalse(renderer.hasFlashLimiter, "R6: the Reduce-flashing target is released")
         XCTAssertNil(renderer.flashLimiterAdaptedLuminance)
+        XCTAssertNil(renderer.limitedSolidFrame(1, maxStep: 1), "nothing is drawn while suspended")
+        XCTAssertFalse(renderer.hasFlashLimiter, "and nothing recreates the target")
         renderer.reduceFlashing = false   // toggled in the background: nothing to reset, no crash
         renderer.reduceFlashing = true
 
         renderer.resumeForPresentation()
+        // The engine's frames go through a new limiter onto the new surface.
         for _ in 0..<5 { XCTAssertTrue(renderer.renderFrame(present: false)) }
         XCTAssertTrue(renderer.hasFlashLimiter, "recreated on the first limited frame")
-        XCTAssertNotNil(renderer.flashLimiterAdaptedLuminance)
-        XCTAssertGreaterThan(litPixels(renderer.readPixels()), 0)
+        let adapted = try XCTUnwrap(renderer.flashLimiterAdaptedLuminance)
+        XCTAssertGreaterThanOrEqual(adapted, 0)
+        XCTAssertLessThanOrEqual(adapted, 1)
+        let size = renderer.currentSurfaceSize
+        XCTAssertEqual(renderer.readPixels().count, size.width * size.height * 4, "the output reaches the new surface")
+
+        // And it limits: black, then a cut to white becomes a ramp of at most maxStep per frame,
+        // visible on the surface.
+        XCTAssertEqual(try XCTUnwrap(renderer.limitedSolidFrame(0, maxStep: 1)), 0, accuracy: 0.01)
+        XCTAssertEqual(litPixels(renderer.readPixels()), 0)
+        XCTAssertEqual(try XCTUnwrap(renderer.limitedSolidFrame(1, maxStep: 0.25)), 0.25, accuracy: 0.01)
+        XCTAssertEqual(try XCTUnwrap(renderer.limitedSolidFrame(1, maxStep: 0.25)), 0.5, accuracy: 0.01)
+        let pixels = renderer.readPixels()
+        XCTAssertEqual(litPixels(pixels), size.width * size.height, "every pixel shows the limited frame")
+        // Mean luminance 0.5 is an encoded value of sqrt(0.5) = 181 of 255.
+        XCTAssertEqual(Double(pixels[0]), 181, accuracy: 4)
+    }
+
+    /// A new limiter starts from its first frame's brightness, also after a suspension: no ramp up
+    /// from black and no value left over from before.
+    func testTheLimiterStartsOverAfterASuspension() throws {
+        let renderer = try makeLaidOut()
+        renderer.reduceFlashing = true
+        XCTAssertEqual(try XCTUnwrap(renderer.limitedSolidFrame(0, maxStep: 0.01)), 0, accuracy: 0.01)
+        renderer.suspendForPresentationLoss()
+        renderer.resumeForPresentation()
+        XCTAssertEqual(try XCTUnwrap(renderer.limitedSolidFrame(1, maxStep: 0.01)), 1, accuracy: 0.01,
+                       "the first frame after the resume is shown at its own brightness")
+        XCTAssertEqual(try XCTUnwrap(renderer.limitedSolidFrame(0, maxStep: 0.01)), 0.99, accuracy: 0.01)
     }
 
     func testTenFlipsEndInAWorkingRenderer() async throws {
@@ -275,8 +324,8 @@ final class ANGLERendererTests: XCTestCase {
             XCTAssertTrue(renderer.renderFrame(present: false))
         }
         XCTAssertEqual(renderer.isDisplayLinkPaused, false)
-        for _ in 0..<20 { renderer.renderFrame(present: false) }
-        XCTAssertGreaterThan(litPixels(renderer.readPixels()), 0)
+        let lit3 = try await renderUntilLit(renderer)
+        XCTAssertGreaterThan(lit3, 0)
     }
 
     func testARegistryDrivesBothResourcesInOrder() async throws {
