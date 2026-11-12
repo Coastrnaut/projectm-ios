@@ -154,6 +154,12 @@ pointer, Claude's memory, the engine xcframework, optionally ANGLE, `xcodegen`).
   "Project Mac" in older notes means the first Mac.
 - The owner does by hand: Xcode sign-in (Apple ID), the signing file, pairing D1-D3, `gh auth
   login`, and signing in to App Store Connect.
+- **Mac Studio progress, 2026-11-12 (SETUP.md step 6):** `Configs/Signing.local.xcconfig` exists
+  there. On the owner's request Claude read the team from Xcode's signed-in account and created
+  it (a one-time request; the setup script still never writes it), and both generated projects
+  resolve the team. Still open: pairing D1-D3 (devicectl lists only simulators) and the first
+  "Apple Development" certificate, which Xcode creates at the first device build. Step 7 is not
+  recorded yet.
 
 ## Next tasks on the Mac, in order
 

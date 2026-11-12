@@ -120,12 +120,36 @@ Signing is never scripted and never committed (CLAUDE.md, "Signing is manual").
    DEVELOPMENT_TEAM = <team ID>
    ```
 
-   The team ID is the same as on the first Mac: copy that file across, or read the ID from
-   developer.apple.com, Membership details.
-2. Run `xcodegen generate` again so the projects pick it up.
+   The team ID is the same as on the first Mac. Get it one of three ways:
+
+   - copy that file across;
+   - read the ID from developer.apple.com, Membership details;
+   - read it from the account Xcode is signed in to (step 2):
+     `defaults read com.apple.dt.Xcode IDEProvisioningTeamByIdentifier` prints each team's
+     `teamID`.
+2. Run `xcodegen generate` and `xcodegen generate --spec RendererLab.yml` again so both projects
+   pick it up. To check, this must print the team:
+
+   ```bash
+   xcodebuild -project ProjectM-iOS.xcodeproj -target projectM-iOS -showBuildSettings | grep DEVELOPMENT_TEAM
+   ```
 3. Connect D1, D2 and D3 by cable, unlock each and tap Trust. In Xcode, Window, Devices and
    Simulators, wait until each shows as ready. Developer Mode is already on, on all three.
 4. Do **not** update D3: it stays on iPadOS 26.5.
+
+**Mac Studio, 2026-11-12: sub-steps 1 and 2 are done; sub-step 3 is open.**
+
+- On the owner's request, Claude read the team from Xcode's signed-in account (one team, type
+  Individual) and created the file. This was a one-time request: `scripts/setup_mac.py` still
+  never writes it. The ID was not compared with the first Mac's file.
+- After `xcodegen generate` for both specs, every app and test target of `ProjectM-iOS.xcodeproj`
+  and `RendererLab.xcodeproj` resolves that team in Debug and Release
+  (`xcodebuild -showBuildSettings`).
+- Nothing has been signed yet. The keychain has no "Apple Development" certificate
+  (`security find-identity -v -p codesigning` finds none); Xcode creates one at the first device
+  build (step 2).
+- `xcrun devicectl list devices` shows only simulators, so D1-D3 still need the cable, the unlock
+  and Trust.
 
 ## 7. Check the Mac
 
