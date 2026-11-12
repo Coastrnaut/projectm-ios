@@ -6,8 +6,8 @@ password, a signing identity or a physical device, and no script or agent does t
 
 `python3 scripts/setup_mac.py` does the scripted part of steps 3-5 and 7 and is safe to run again.
 It was tested on 2026-11-12 in a fresh clone on the first Mac: clone, setup script, ANGLE from CI,
-then an unsigned simulator build of `projectM-iOS`. The Mac Studio itself is **not verified yet**;
-step 9 is where that gets recorded.
+then an unsigned simulator build of `projectM-iOS`. **The Mac Studio passed step 7 on 2026-11-12
+and is the build machine of record** (step 9, ADR-0002).
 
 ## What git does not carry
 
@@ -137,7 +137,7 @@ Signing is never scripted and never committed (CLAUDE.md, "Signing is manual").
    Simulators, wait until each shows as ready. Developer Mode is already on, on all three.
 4. Do **not** update D3: it stays on iPadOS 26.5.
 
-**Mac Studio, 2026-11-12: sub-steps 1 and 2 are done; sub-step 3 is open.**
+**Mac Studio, 2026-11-12: all four sub-steps are done.**
 
 - On the owner's request, Claude read the team from Xcode's signed-in account (one team, type
   Individual) and created the file. This was a one-time request: `scripts/setup_mac.py` still
@@ -148,8 +148,8 @@ Signing is never scripted and never committed (CLAUDE.md, "Signing is manual").
 - Nothing has been signed yet. The keychain has no "Apple Development" certificate
   (`security find-identity -v -p codesigning` finds none); Xcode creates one at the first device
   build (step 2).
-- `xcrun devicectl list devices` shows only simulators, so D1-D3 still need the cable, the unlock
-  and Trust.
+- D1, D2 and D3 are paired (`xcrun devicectl list devices`: available, Developer Mode enabled).
+  D3 is still on iPadOS 26.5.
 
 ## 7. Check the Mac
 
@@ -207,6 +207,11 @@ When step 7 passes on the Mac Studio:
 
 Until then the first Mac remains the build machine of record. After that it is retired from the
 project, and reported results and App Store uploads come from the Mac Studio only.
+
+**Recorded 2026-11-12:** step 7 passed on the Mac Studio (macOS 27.2.1): `verify_environment.py`
+exit 0, 88 script tests (1 skipped), docs and compliance OK, AudioCore 77 tests, the unsigned
+simulator build succeeded, and D1-D3 are listed. ADR-0002 and `CLAUDE.md` are updated. One
+difference from step 1 remains: the iOS 26.5 simulator runtime there is build 23F73, not 23F77.
 
 ## 10. The first Mac afterwards
 

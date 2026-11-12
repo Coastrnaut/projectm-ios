@@ -148,18 +148,22 @@ pointer, Claude's memory, the engine xcframework, optionally ANGLE, `xcodegen`).
 - **Owner rulings 2026-11-12:** the Mac Studio builds ANGLE from source
   (`setup_mac.py --angle build`); Claude's session history is not copied; the local branch
   `backup/before-license-rewrite` (pre-rewrite history, never pushed) was deleted.
-- **Until the Mac Studio passes `SETUP.md`'s checks, the first Mac stays the build machine of
-  record** (ADR-0002). When it passes, the Mac Studio replaces it (owner ruling: Mac Studio only):
-  record that there and in this file with the date and the test counts, and retire the first Mac.
-  "Project Mac" in older notes means the first Mac.
+- **The Mac Studio is the build machine of record since 2026-11-12** (ADR-0002; owner ruling:
+  Mac Studio only). It passed `SETUP.md` step 7 that day: `verify_environment.py` exit 0, 88
+  script tests, docs and compliance OK, AudioCore 77 tests on the host, an unsigned simulator
+  build of `projectM-iOS`, and `run_device_tests.py devices` listing D1-D3. The first Mac is
+  retired from the project. "Project Mac" in older notes means the first Mac.
+  - Not run on the Mac Studio yet: the other packages' tests, simulator test runs, and any signed
+    device build.
+  - Open: its iOS 26.5 simulator runtime is build 23F73, not the pinned 23F77. Install 23F77
+    (Xcode, Settings, Components) before reporting iOS 26.5 simulator results.
 - The owner does by hand: Xcode sign-in (Apple ID), the signing file, pairing D1-D3, `gh auth
   login`, and signing in to App Store Connect.
 - **Mac Studio progress, 2026-11-12 (SETUP.md step 6):** `Configs/Signing.local.xcconfig` exists
   there. On the owner's request Claude read the team from Xcode's signed-in account and created
   it (a one-time request; the setup script still never writes it), and both generated projects
-  resolve the team. Still open: pairing D1-D3 (devicectl lists only simulators) and the first
-  "Apple Development" certificate, which Xcode creates at the first device build. Step 7 is not
-  recorded yet.
+  resolve the team. D1-D3 are paired with the Mac Studio. Still open: the first "Apple
+  Development" certificate, which Xcode creates at the first signed device build.
 
 ## Next tasks on the Mac, in order
 

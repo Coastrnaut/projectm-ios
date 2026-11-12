@@ -35,10 +35,24 @@ with System/App Capture only where the OS provides it.
   owner review (2026-11-08) it also requires the Xcode build 27B52 and prints "Xcode build: 27B52
   OK" on the build Mac.
 
-- **Build machine of record**: the project Mac (macOS 27.2, Apple silicon), which has Python 3.15
-  (scripts need 3.10+) and simulator runtimes for iOS 27.2 and iOS 26.5 (23F77, the same build
-  as D3). A second iOS 26.5 runtime, 23F73, which had the same identifier, was removed on
-  2026-11-08 (owner review). Every `{mac}` build or test result is reported against this pin.
+- **Build machine of record**: since 2026-11-12 the owner's Mac Studio (Mac17,14, Apple M5 Max,
+  macOS 27.2.1, Python 3.15.2), by owner ruling 2026-11-12 (Mac Studio only). It passed
+  `SETUP.md` step 7 that day:
+  - `verify_environment.py` exit 0 (Xcode 27.2 build 27B52, SDK 27.2, Swift 6.4.2, XcodeGen
+    2.46.0, CMake 4.4.5);
+  - 88 script tests (1 skipped), `validate_docs.py` (57 files) and `check_compliance.py` OK;
+  - AudioCore: 77 tests, 0 failures, on the host;
+  - unsigned simulator build of `projectM-iOS`: succeeded;
+  - `run_device_tests.py devices` lists D1, D2 and D3 (iOS 27.0.1, iPadOS 27.2, iPadOS 26.5).
+
+  ANGLE there was built from source by Xcode 27.2 (`Build/ANGLEFrameworks/ANGLE.json`). Not run
+  there yet: the other packages' tests, simulator test runs, and any signed device build.
+  **Open difference:** its iOS 26.5 simulator runtime is build 23F73, not the pinned 23F77 (the
+  same build as D3); install 23F77 before reporting iOS 26.5 simulator results.
+  Before 2026-11-12 the machine of record was the first project Mac (macOS 27.2, Apple silicon;
+  Python 3.15; simulator runtimes iOS 27.2 and iOS 26.5 23F77; a second iOS 26.5 runtime, 23F73,
+  with the same identifier was removed there on 2026-11-08, owner review). It is retired from the
+  project. Every `{mac}` build or test result is reported against this pin.
 - **CI**: the main job runs on GitHub's `macos-26` image (`macos-26-arm64`; image 20261102.0473.1
   when it ran as `macos-latest`): Xcode 26.0–26.6, the iOS 26.5 SDK and iOS 26.x simulator
   runtimes. It covers the iOS 26 path, installs the pinned XcodeGen, and runs
