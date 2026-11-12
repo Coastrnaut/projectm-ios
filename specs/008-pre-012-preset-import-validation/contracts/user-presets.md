@@ -42,8 +42,7 @@ present frames, calls return `unavailable` and a running trial is cancelled as `
 
 ## UI identifiers (XCUITest)
 
-`node:myPresets`, `importPreset`, `userPresetsEmpty`, `userPreset:<name>` (via `preset:<name>`
-rows), `pendingPreset:<name>`, `quarantineLink`, `quarantined:<name>`, `quarantineReason:<name>`,
+`node:myPresets`, `importPreset`, `userPresetsEmpty`, `preset:<name>` (the shared preset row), `pendingPreset:<name>`, `quarantineLink`, `quarantined:<name>`, `quarantineReason:<name>`,
 `deleteQuarantined`, `presetInfo`, alert title "Import Preset".
 
 ## Launch arguments (Debug builds)

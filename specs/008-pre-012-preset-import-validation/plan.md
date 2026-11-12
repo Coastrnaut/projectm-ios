@@ -174,7 +174,8 @@ Files in `files/` or `quarantine/` that no record names are left alone (never de
 include the user presets (source `user`, never locked). Favorites, collections and search then
 work without format changes. `.all` and the home tree are the built-in library only; `.user` is
 the new scope. `PresetCoordinator` keeps the built-in library and rebuilds the combined one when
-the user list changes.
+the user list changes. User presets are not handed to the preset warm-up: its second engine is
+outside the guarded path and its benefit for a handful of small presets is nil.
 
 ### Deterministic tests
 

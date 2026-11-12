@@ -121,7 +121,9 @@ original, relaunch, play again.
   `PresetCoordinator.members` of `.user` contain it; choosing it loads the stored bytes through
   the loader; Next/Previous/Random stay inside `.user`; the purchase state is untouched
   (`unlocked` stays false and locked presets stay locked); a starred user preset is in the
-  favorites listing after a new coordinator attaches (relaunch). Record the red run.
+  favorites listing after a new coordinator attaches (relaunch); removing a user preset (R24)
+  deletes it from `.user` while the current preset stays current, and a built-in preset's files
+  are untouched. Record the red run.
 - [ ] PRE-012-T15 [US1] {sim} Implement `APP/Coordinators/UserPresetsCoordinator.swift`, the user
   preset hooks in `APP/Coordinators/PresetCoordinator.swift` (`setUserPresets`, loader branch
   for source `user`), the wiring in `APP/Coordinators/AppCoordinator.swift` (create the
@@ -135,7 +137,8 @@ original, relaunch, play again.
   `testImportPlayStepAndRelaunch` (S5): import a valid preset through `-uitestImportPreset`,
   open My Presets, tap it, the current preset name is the imported one and the scope line is
   "My Presets · 1"; delete the source file, relaunch without the argument, it is still listed
-  and plays. Evidence: the UI test passes on the simulator.
+  and plays. The imported row must exist within 5 s of the visualizer appearing (S5). Evidence:
+  the UI test passes on the simulator.
 
 ## Phase 4: User Story 2 - A bad file is quarantined with a reason (P1)
 
@@ -232,16 +235,21 @@ not retried.
   `Rendering-Package` and `ANGLERendering`; in the app all unit tests, `PresetCollectionsUITests`,
   `VisualizerUITests`, `SettingsUITests` and `UserPresetsUITests`; each suite twice. Evidence:
   test counts recorded here.
+- [ ] PRE-012-T32 {mac} Report (R21, Constitution X): write
+  `docs/test-reports/preset-import.md` with the engine audit, the corpus measurements behind each
+  limit, the results of T04 (corpus), T19 (sweep counts) and T20 (real-engine outcomes), and a
+  "Limitations" section stating what is not contained in-process. Evidence: the file exists and
+  `validate_docs.py` passes.
 - [ ] PRE-012-T30 {merge} After the merge, with the pack submodules: the corpus test of T04 over
-  all 14,604 files, the full app build, `PresetTests`, and a check that the bundled
-  `PresetBlocklist.json` is in the built app.
+  all 14,604 files, the full app build, `PresetTests`, `python3 scripts/check_privacy_manifest.py` on the built app, and a check that
+  the bundled `PresetBlocklist.json` is in the built app.
 - [ ] PRE-012-T31 {device} Final device phase on D1-D3: import through the real Files picker; a
   renamed JPEG is quarantined; trial timing on device; VoiceOver pass over My Presets and
   Quarantine.
 
 ## Dependencies
 
-T01 → T02-T07 → US1 (T08-T16) → US2 (T17-T21) → US3 (T22-T24) → US4 (T25) → T26-T29. T12-T13
+T01 → T02-T07 → US1 (T08-T16) → US2 (T17-T21) → US3 (T22-T24) → US4 (T25) → T26-T29, T32. T12-T13
 need only T05. T30 and T31 are outside this worktree.
 
 ## Parallel opportunities

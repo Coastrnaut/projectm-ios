@@ -313,7 +313,7 @@ open its information and find both.
 - **PRE-012-R26**: Each user preset MUST have a permanent id that does not depend on its name, and
   the record MUST keep the content hash, sizes, import date, validation warnings and license
   metadata, so later features (export, duplication, integrity scan) can rely on them.
-- **PRE-012-R27**: At most 1,000 user presets and 200 quarantined files are kept; an import that
+- **PRE-012-R27**: At most 1,000 user presets (waiting or playable) and 200 quarantined files are kept; an import that
   would exceed either is refused with that reason.
 
 **Interface, accessibility, privacy**
