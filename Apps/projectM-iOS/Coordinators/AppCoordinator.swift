@@ -48,6 +48,8 @@ final class AppCoordinator: VisualizationControlling {
     private(set) var rendererError: String?
     /// Preset browsing and switching (T090, T091).
     let presets: PresetCoordinator
+    /// Presets the user imported, their quarantine and their trial (PRE-012).
+    let userPresets: UserPresetsCoordinator
     @ObservationIgnored private let presetLoader = RendererPresetLoader()
     private(set) var controlsVisible = true
     private(set) var userPaused = false
@@ -82,6 +84,7 @@ final class AppCoordinator: VisualizationControlling {
             defaults.removeObject(forKey: FavoritesStore.lastPresetKey)
             AppSettings.allKeys.forEach(defaults.removeObject(forKey:))
             try? FileManager.default.removeItem(at: PresetCollectionStore.defaultDirectory())   // PRE-007: UI tests start without collections
+            try? FileManager.default.removeItem(at: UserPresetStore.defaultDirectory())         // PRE-012: and without imported presets
         }
         settings = AppSettings(defaults: defaults, systemReduceMotion: UIAccessibility.isReduceMotionEnabled)
         screen = defaults.bool(forKey: Self.noticeKey) ? .chooser : .notice
@@ -109,6 +112,8 @@ final class AppCoordinator: VisualizationControlling {
         // Feature 002: the library (12,941 presets) loads off the main thread (SC-101).
         presets = PresetCoordinator(store: FavoritesStore(defaults: defaults), settings: settings, loader: presetLoader,
                                     collections: PresetCollectionStore(directory: PresetCollectionStore.defaultDirectory()))
+        userPresets = UserPresetsCoordinator.makeDefault()
+        userPresets.connect(presets: presets, loader: presetLoader)   // PRE-012
         #if DEBUG || PROJECTM_AUTOMATION
         entitlements = AutomationRunner.entitlementsOverride() ?? FakeEntitlements.fromLaunchArguments() ?? LibraryStore()
         #else
@@ -268,7 +273,24 @@ final class AppCoordinator: VisualizationControlling {
             renderer?.setTextureSearchPaths([textures])   // feature 002 T215
         }
         presetLoader.renderer = renderer
+        startUserPresetTrials()
         selectInitialPresetIfReady()
+    }
+
+    /// PRE-012: imported presets are tried on the renderer's second engine before they can play.
+    private func startUserPresetTrials() {
+        let trial = renderer?.presetTrial.map { RendererPresetTrial(trial: $0) }
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            await userPresets.rendererReady(trial: trial, presentedFrames: { [weak self] in self?.renderer?.presentedFrameCount ?? 0 })
+            #if DEBUG
+            // UserPresetsUITests: `-uitestImportPreset <path>` imports that file through the same
+            // code path as the Files picker's result.
+            if let path = defaults.string(forKey: "uitestImportPreset") {
+                await userPresets.importPicked(.success(URL(fileURLWithPath: path)))
+            }
+            #endif
+        }
     }
 
     /// Plays the last or first preset once both the renderer and the library are ready.
@@ -291,6 +313,10 @@ final class AppCoordinator: VisualizationControlling {
                 await entitlements.start()
                 let library = try await loaded
                 presetLoader.library = library
+                // PRE-012: the imported presets are read first (a preset that ended the last launch
+                // is quarantined there), so the library never lists one that must not play.
+                await userPresets.load()
+                await userPresets.prepare(library: library, bundle: .main)
                 presets.attach(library)
                 presets.onScopeChange { UIAccessibility.post(notification: .announcement, argument: $0) }   // FR-124
                 await presets.setUnlocked(entitlements.isUnlocked)
@@ -377,6 +403,7 @@ final class AppCoordinator: VisualizationControlling {
     // MARK: - VisualizationControlling (LifecycleCoordinator)
 
     func suspendVisualization() {
+        Task { await userPresets.abandonProving() }   // PRE-012-R18: leaving the screen is not the preset's fault
         renderer?.pause()
         updateIdleTimer()
     }
@@ -411,6 +438,8 @@ final class AppCoordinator: VisualizationControlling {
 final class RendererPresetLoader: PresetLoading {
     var renderer: (any VisualizerRenderer)?
     var library: PresetLibrary?
+    /// The stored bytes of a playable imported preset (PRE-012); set by UserPresetsCoordinator.
+    var userPresetData: ((String) async -> Data?)?
     private var archive: PresetArchive?
 
     /// Included presets load from their bundled file; pack presets from PresetArchive.bin
@@ -419,7 +448,12 @@ final class RendererPresetLoader: PresetLoading {
         guard let renderer, let resources = Bundle.main.resourceURL else { throw CocoaError(.featureUnsupported) }
         let fileURL = resources.appendingPathComponent(preset.path)
         var playable = Preset(id: preset.id, name: preset.name, fileURL: fileURL, packID: preset.source, author: preset.author)
-        if !preset.isIncluded {
+        if preset.source == PresetLibrary.userSource {
+            // PRE-012: an imported preset loads from the user library's stored copy, which hands
+            // out playable presets only (never one that is waiting or quarantined).
+            guard let data = await userPresetData?(preset.id) else { throw CocoaError(.fileNoSuchFile) }
+            playable.data = data
+        } else if !preset.isIncluded {
             playable.data = try packArchive(resources).contents(of: preset.id)
         }
         try await renderer.setPreset(playable)
@@ -428,7 +462,8 @@ final class RendererPresetLoader: PresetLoading {
     /// SC-104: hands upcoming presets (with their archive data) to the renderer's warm-up.
     func prewarm(_ presets: [IndexedPreset]) {
         guard let renderer, let resources = Bundle.main.resourceURL else { return }
-        let playable: [Preset] = presets.compactMap { preset in
+        // Imported presets are not warmed: the warm-up engine is outside their guarded path (PRE-012).
+        let playable: [Preset] = presets.filter { $0.source != PresetLibrary.userSource }.compactMap { preset in
             var item = Preset(id: preset.id, name: preset.name, fileURL: resources.appendingPathComponent(preset.path),
                               packID: preset.source, author: preset.author)
             if !preset.isIncluded {
