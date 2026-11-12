@@ -1,11 +1,13 @@
 # Privacy Policy — projectM for iOS
 
 Effective: before the first App Store release (task T107; FR-063). Updated for the full preset
-library purchase (feature 002 T240; FR-122, FR-123). Applies to the projectM app for
+library purchase (feature 002 T240; FR-122, FR-123) and for importing your own audio files
+(AUD-001-T30; AUD-001-R22, in app versions that offer "Import Audio…"). Applies to the projectM app for
 iPhone and iPad published by Robert Pancoast.
 
 **Summary: the app collects no data. Audio is processed only in memory on your device, and nothing
-is recorded, stored or sent anywhere. The only network traffic is Apple's own App Store traffic
+is recorded or sent anywhere. The only audio the app stores is audio files you choose to import,
+which stay on your device until you remove them. The only network traffic is Apple's own App Store traffic
 when you buy or restore the full preset library.**
 
 ## The three audio sources and what each captures
@@ -18,7 +20,8 @@ The app turns audio into visuals. It starts no source until you choose one.
   the capture excludes the microphone.
 - **Microphone** visualizes sound in the room through your device's microphone. It does not
   capture audio directly from other apps. The microphone is used only while this mode runs.
-- **In-App Playback** visualizes a reference track built into the app. It opens no input.
+- **In-App Playback** visualizes a reference track built into the app, or an audio file you
+  imported into the app (see "Audio files you import"). It opens no input.
 
 ## Permissions and why
 
@@ -33,8 +36,22 @@ The app asks for no other permission.
 ## Audio stays in memory on your device
 
 Audio from every source is processed only in memory, on your device, to draw the visualization.
-It is never recorded, never written to storage, and never transmitted. There is no setting that
-changes this.
+What the app hears or captures is never recorded, never written to storage, and never transmitted.
+There is no setting that changes this.
+
+## Audio files you import
+
+If you tap "Import Audio…" and pick audio files, the app copies those files into its own storage
+on your device so it can play them later as In-App Playback, even offline and even if you delete
+the originals. Along with each copy it keeps the file's name, size, length, format and the date
+you imported it. It does not keep where the file came from, and it keeps no record of what you
+played or when.
+
+- Nothing is imported unless you pick it. The app cannot see your other files.
+- Imported files and their list never leave your device through the app. Like other app data,
+  they are included in your own device backups if you use them.
+- Copy-protected (DRM) files are refused; the app never removes copy protection.
+- Removing a track in the app deletes its copy. Deleting the app deletes all of them.
 
 ## What is stored on your device
 
@@ -49,7 +66,11 @@ collections):
 - the preset collections you create: their names, which presets are in them, and the order you
   put them in. No dates and no record of what you played are kept with them.
 
-No audio, listening history or record of which apps you listened to is stored. Deleting the app
+And, only if you import audio, the files you imported and their list (see "Audio files you
+import").
+
+No captured or microphone audio, listening history or record of which apps you listened to is
+stored. Deleting the app
 deletes all of this.
 
 ## The full preset library purchase
@@ -97,4 +118,5 @@ issue in that repository.
 | No analytics or tracking | No analytics, tracking or network use |
 | Feature 002 FR-122: only the platform's purchase and restore traffic | The full preset library purchase; No analytics, tracking or network use |
 | Feature 002 FR-123: the preset scope setting | What is stored on your device |
+| AUD-001-R22 (amends FR-065): files the user imports are stored on the device | Audio files you import; What is stored on your device |
 | PRE-007-R17 (`specs/005-pre-007-preset-collections/spec.md`): the user's preset collections | What is stored on your device |

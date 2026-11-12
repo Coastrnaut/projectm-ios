@@ -509,6 +509,12 @@ Each edge case below maps to a functional requirement.
 - **FR-068**: The app MUST make no network connections and MUST NOT include networking code paths,
   analytics, advertising, or third-party SDKs. The only way data leaves the device is the
   user-initiated diagnostics export (FR-021).
+  - *Amended 2026-11-12 (owner ruling, ADR-0008):* one exception, local-network OSC control from
+    the feature roadmap. It is off by default and opens no socket until the user turns it on; it
+    uses only the local network (no internet host, relay, account or analytics); its code lives
+    in one folder, `Packages/PerformanceControl/Sources/PerformanceControl/OSCTransport/`, the
+    only place `scripts/check_compliance.py` allows the Network framework. Every other
+    networking API stays forbidden everywhere.
 - **FR-069**: The microphone MUST be activated only in Microphone mode. System/App Capture MUST be
   configured to exclude microphone audio, and In-App Playback MUST NOT open any input.
 

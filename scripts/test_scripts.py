@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import re
 import struct
 import sys
 import tempfile
@@ -183,6 +184,48 @@ class ComplianceTests(unittest.TestCase):
             p = Path(d) / "project.yml"
             p.write_text("targets:\n  App:\n    entitlements:\n      path: x\n", encoding="utf-8")
             self.assertTrue(check_compliance.check_project_yml(p))
+
+
+class ComplianceOSCExceptionTests(unittest.TestCase):
+    """FR-068 as amended 2026-11-12: the Network framework only in the OSC transport folder."""
+
+    def write(self, folder: Path, text: str) -> Path:
+        folder.mkdir(parents=True, exist_ok=True)
+        path = folder / "File.swift"
+        path.write_text(text, encoding="utf-8")
+        return path
+
+    def test_network_framework_allowed_only_in_the_osc_transport_folder(self):
+        with tempfile.TemporaryDirectory() as d:
+            allowed = Path(d) / "OSCTransport"
+            with mock.patch.object(check_compliance, "OSC_ALLOWED", allowed):
+                source = "import Network\nlet l = try NWListener(using: .udp)\n"
+                self.assertEqual(check_compliance.check_file(self.write(allowed, source)), [])
+                self.assertEqual(check_compliance.check_file(self.write(allowed / "Sub", source)), [])
+                outside = check_compliance.check_file(self.write(Path(d) / "Elsewhere", source))
+                self.assertEqual(len(outside), 1)
+                self.assertIn("outside PerformanceControl/OSCTransport", outside[0])
+                sibling = check_compliance.check_file(self.write(Path(d) / "OSCTransportX", source))
+                self.assertEqual(len(sibling), 1)
+
+    def test_other_networking_apis_stay_forbidden_inside_the_folder(self):
+        with tempfile.TemporaryDirectory() as d:
+            allowed = Path(d) / "OSCTransport"
+            with mock.patch.object(check_compliance, "OSC_ALLOWED", allowed):
+                for source in ("let s = URLSession.shared\n", "import WebKit\n",
+                               "#include <sys/socket.h>\n", "import CFNetwork\n"):
+                    found = check_compliance.check_file(self.write(allowed, source))
+                    self.assertTrue(any("networking API (FR-068)" in f for f in found), source)
+
+    def test_path_monitor_and_connections_are_flagged_elsewhere(self):
+        with tempfile.TemporaryDirectory() as d:
+            for source in ("let m = NWPathMonitor()\n", "var c: NWConnection?\n",
+                           "let b = NWBrowser(for: x, using: .udp)\n"):
+                self.assertTrue(check_compliance.check_file(self.write(Path(d), source)), source)
+
+    def test_exception_folder_is_the_documented_one(self):
+        self.assertEqual(check_compliance.OSC_ALLOWED.relative_to(check_compliance.ROOT).as_posix(),
+                         "Packages/PerformanceControl/Sources/PerformanceControl/OSCTransport")
 
 
 class ComplianceImportKindTests(unittest.TestCase):
@@ -551,6 +594,60 @@ class UIStringsContractTests(unittest.TestCase):
         self.assertEqual(plist_text, row)   # FR-019
 
 
+class UIStringsImportContractTests(unittest.TestCase):
+    """AUD-001: every string in specs/003's ui-strings contract is in CaptureUI's UIStrings.swift."""
+
+    ROOT = Path(__file__).resolve().parent.parent
+    CONTRACT = ROOT / "specs" / "003-aud-001-import-drm-free-audio-files" / "contracts" / "ui-strings.md"
+    SWIFT = ROOT / "Packages" / "CaptureUI" / "Sources" / "CaptureUI" / "UIStrings.swift"
+
+    def contract_strings(self) -> list[str]:
+        found: list[str] = []
+        for line in self.CONTRACT.read_text(encoding="utf-8").splitlines():
+            if not line.startswith("|"):
+                continue
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            if len(cells) != 2 or set(cells[0]) <= set("-: ") or cells[1] == "String":
+                continue
+            found.append(cells[1])
+        return found
+
+    def test_every_contract_string_is_in_swift(self):
+        swift = self.SWIFT.read_text(encoding="utf-8")
+        strings = self.contract_strings()
+        self.assertEqual(len(strings), 23)
+        missing = []
+        for text in strings:
+            # A substituted value (‹name›) splits the string; each literal part must be present.
+            parts = [part for part in re.split(r"‹[^›]*›", text) if len(part) >= 3] if "‹" in text else [f'"{text}"']
+            self.assertTrue(parts, text)
+            missing += [text for part in parts if part not in swift]
+        self.assertEqual(missing, [])
+
+
+class UIStringsContainerContractTests(unittest.TestCase):
+    """AUD-002: every string in specs/006's ui-strings contract is in CaptureUI's UIStrings.swift."""
+
+    ROOT = Path(__file__).resolve().parent.parent
+    CONTRACT = ROOT / "specs" / "006-aud-002-support-common-audio-containers" / "contracts" / "ui-strings.md"
+    SWIFT = ROOT / "Packages" / "CaptureUI" / "Sources" / "CaptureUI" / "UIStrings.swift"
+
+    def test_every_contract_string_is_in_swift(self):
+        rows = []
+        for line in self.CONTRACT.read_text(encoding="utf-8").splitlines():
+            if not line.startswith("|"):
+                continue
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            if len(cells) != 2 or set(cells[0]) <= set("-: ") or cells[1] == "String":
+                continue
+            rows.append(cells)
+        self.assertEqual([case for case, _ in rows], ["unsupportedFormat", "unsupportedEncoding", "noAudio"])
+        swift = self.SWIFT.read_text(encoding="utf-8")
+        for case, text in rows:
+            needle = f'case .{case}: return "{text}"'
+            self.assertTrue(needle in swift, needle)
+
+
 class CaptureLabExportCheckTests(unittest.TestCase):
     """scripts/check_capturelab_export.py on small exports written to a fake CoreSimulator tree."""
 
@@ -739,6 +836,20 @@ class DeviceTestRunnerTests(unittest.TestCase):
         self.assertEqual(rdt.privacy_problems(files, keys),
                          ["key not allowed: unlocked", "unexpected file: Documents/recording.wav",
                           "audio file: Documents/recording.wav", "unexpected file: tmp/x.bin"])
+
+    def test_privacy_allows_only_the_imported_audio_library(self):
+        # AUD-001-R22: audio the user imported lives in the library's own folders, nowhere else.
+        digest = "ab" * 32
+        library = "Library/Application Support/AudioLibrary"
+        allowed = [f"{library}/index.json", f"{library}/index.damaged.json", f"{library}/assets/{digest}.wav",
+                   f"{library}/assets/{digest}.mp3", f"{library}/incoming/5F0C1E0A-0000-4000-8000-000000000000.m4a"]
+        self.assertEqual(rdt.privacy_problems(allowed, []), [])
+        elsewhere = ["Library/Application Support/recording.wav", f"Library/Caches/AudioLibrary/assets/{digest}.wav",
+                     f"{library}/assets/sub/{digest}.wav", f"{library}/capture.caf",
+                     f"Documents/AudioLibrary/assets/{digest}.wav", f"{library}/assets/not-a-hash.wav"]
+        problems = rdt.privacy_problems(elsewhere, [])
+        for path in elsewhere:
+            self.assertIn(f"audio file: {path}", problems)
 
     def test_thinning_report_and_growth(self):
         old = rdt.parse_thinning_report(
