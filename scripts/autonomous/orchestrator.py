@@ -198,7 +198,8 @@ def gate_feature(roadmap: Roadmap, store: StateStore, feature_id: str | None,
     if feature_id:
         checkout = wt.path(feature_id)
         changed = wt.changed_files(feature_id)
-        plan = gates_mod.plan_gates(checkout, changed, in_worktree=True)
+        plan = gates_mod.plan_gates(checkout, changed, in_worktree=True,
+                                    simulator_udid=simulator or gates_mod.default_simulator())
     else:
         checkout = ROOT
         base = store.data["repo_head_at_start"]

@@ -478,6 +478,13 @@ class GateTests(unittest.TestCase):
         in_wt = names(gates.plan_gates(self.repo, ["Packages/Engine/x.swift",
                                                    "Packages/Top/x.swift"], in_worktree=True))
         self.assertEqual(in_wt, ["compliance", "docs", "swift-test:Top"])
+        (self.repo / "Packages" / "Top" / "Package.swift").write_text(
+            'platforms: [.iOS("26.0")], .package(path: "../Mid")')
+        ios_only = gates.plan_gates(self.repo, ["Packages/Top/x.swift"], in_worktree=True,
+                                    simulator_udid="UDID")[-1]
+        self.assertEqual((ios_only.name, ios_only.cwd), ("sim-test:Top", "Packages/Top"))
+        self.assertIn("id=UDID", ios_only.command)
+        self.assertIn("-test-timeouts-enabled", ios_only.command)
         full = gates.plan_gates(self.repo, ["Apps/App/x.swift"], simulator_udid="UDID")
         self.assertEqual(names(full), ["compliance", "docs", "xcodegen", "app-build:simulator",
                                        "app-tests:simulator"])

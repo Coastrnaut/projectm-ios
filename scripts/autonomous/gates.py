@@ -91,7 +91,45 @@ def script_gates() -> list[Gate]:
                  kind="unit")]
 
 
-def package_gate(package: str) -> Gate:
+def host_testable(repo: Path, package: str) -> bool:
+    """False for iOS-only packages (no macOS platform): `swift test` cannot build them."""
+    text = (repo / "Packages" / package / "Package.swift").read_text(encoding="utf-8")
+    return ".macOS(" in text or "platforms:" not in text
+
+
+# Packages with more than one product get SwiftPM's "<Name>-Package" scheme.
+PACKAGE_SCHEMES = {"Rendering": "Rendering-Package"}
+
+
+def default_simulator(runner=subprocess.run) -> str | None:
+    """An iPhone simulator on the newest installed iOS runtime, chosen by runtime, not name."""
+    import json
+    try:
+        proc = runner(["xcrun", "simctl", "list", "devices", "available", "--json"],
+                      capture_output=True, text=True, timeout=60)
+        devices = json.loads(proc.stdout)["devices"]
+    except Exception:
+        return None
+    def version(runtime: str) -> tuple[int, ...]:
+        return tuple(int(n) for n in re.findall(r"\d+", runtime.rsplit("iOS-", 1)[-1]))
+    for runtime in sorted((r for r in devices if "SimRuntime.iOS-" in r), key=version,
+                          reverse=True):
+        phones = sorted((d for d in devices[runtime] if d["name"].startswith("iPhone")),
+                        key=lambda d: (d["state"] == "Booted", d["name"]))
+        if phones:
+            return phones[0]["udid"]
+    return None
+
+
+def package_gate(package: str, repo: Path | None = None, simulator_udid: str | None = None
+                 ) -> Gate:
+    if repo is not None and not host_testable(repo, package):
+        scheme = PACKAGE_SCHEMES.get(package, package)
+        return Gate(f"sim-test:{package}",
+                    ("xcodebuild", "-scheme", scheme, "-destination",
+                     f"id={simulator_udid or 'NO-SIMULATOR'}", "CODE_SIGNING_ALLOWED=NO",
+                     *TEST_LIMITS, "test"),
+                    cwd=f"Packages/{package}", kind="simulator", timeout=3600)
     return Gate(f"swift-test:{package}",
                 ("swift", "test", "--package-path", f"Packages/{package}"), kind="unit",
                 timeout=2400)
@@ -129,7 +167,7 @@ def plan_gates(repo: Path, changed: list[str], *, derived_data: str | None = Non
     for package in affected_packages(repo, changed):
         if in_worktree and needs_binaries(repo, package) and not (repo / "Build").exists():
             continue
-        gates.append(package_gate(package))
+        gates.append(package_gate(package, repo, simulator_udid))
     touches_app = any(c.startswith(("Apps/", "Packages/")) or c in ("project.yml",)
                       for c in changed)
     if touches_app and not in_worktree:
