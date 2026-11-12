@@ -20,6 +20,19 @@ of feature 001 (`specs/001-ios-projectm-visualizer/spec.md`), of AUD-001
 (`specs/004-perf-011-background-resource-release/spec.md`) stay in force unless a line below amends
 one explicitly.
 
+## Clarifications
+
+### Session 2026-11-12
+
+Answered by Claude under the owner's standing approval (routine decisions delegated, no human
+interaction); each answer is the conservative, local-first option using public APIs only.
+
+- Q: What should happen when a track reaches its end, now that one track no longer simply repeats forever? → A: Playback continues with the next track in the order and wraps from the last track to the first, so the visualizer never runs dry. With one track in the order (always the case for the reference track, and for a library of one) that track repeats without a gap, exactly as today. Nothing ends by itself; repeat modes that can end playback are AUD-004 (AUD-006-R17).
+- Q: Which order do Next track and Previous track follow, and what happens at its ends? → A: The order of the "Your Audio" list as shown when the track was started (newest import first): Next goes down the list, Previous up, and both wrap around. Previous restarts the current track when it has played for more than 3 seconds. The order is a replaceable interface so that the AUD-003 queue can take its place (AUD-006-R14 to R16).
+- Q: What does "stop" mean next to the existing Stop button, which leaves the visualizer? → A: The transport gets its own "Stop playback": sound stops and the position returns to 0:00, but the visualizer and the In-App Playback session stay. The existing Stop (back to the chooser) and the existing Pause (freeze the picture) keep their behavior and names. While playback is paused or stopped by the user the source status reads "Paused" for both, because the existing "Stopped" status means the source itself has ended (AUD-006-R5, R20, R23).
+- Q: How is audio from before a seek kept away from the visualizer, given that audio is in transit in several places at that moment? → A: A seek is a hard cut: everything not yet delivered is discarded at every stage before delivery resumes (audio queued for output, audio on its way from the output mix to the analysis, audio waiting for analysis, the converter's leftover state, and audio waiting for the renderer), and delivery is closed while this happens so nothing slips through. No cross-fade and no gradual catch-up. The discard runs outside the real-time audio callback, which only gains a constant-time check (AUD-006-R10, R11, R28).
+- Q: Does the scrubber seek continuously while it is dragged, or only when released? → A: Both, bounded: while dragging, playback follows the finger with at most 10 seeks per second, and the release always seeks to the exact final position. The times shown follow the finger immediately. With VoiceOver the scrubber moves in 10-second steps (AUD-006-R12, R26, R27).
+
 ## Baseline: what exists today (audit of 2026-11-12)
 
 In-App Playback plays one track per session: the bundled reference track, or one track of the
@@ -237,7 +250,9 @@ Capture: no transport. With VoiceOver, move the scrubber with the increment and 
 - **AUD-006-R11**: Levels shown for the source MUST NOT be computed from audio from before the
   seek once the seek has been handled.
 - **AUD-006-R12**: When several seeks arrive in quick succession, the last one MUST decide the
-  position; the app MUST stay responsive and MUST NOT queue an unbounded number of seeks.
+  position; the app MUST stay responsive and MUST NOT queue an unbounded number of seeks. While
+  the scrubber is dragged, at most 10 seeks per second are made, and releasing it always seeks to
+  the exact final position.
 - **AUD-006-R13**: A seek to the end of the track (or beyond) MUST be treated as the track having
   finished: while playing, the end-of-track rule applies at once (AUD-006-R17); while paused or
   stopped, the position shows the end and the rule applies when Play is pressed.
