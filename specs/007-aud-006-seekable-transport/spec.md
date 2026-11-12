@@ -101,8 +101,8 @@ the beginning.
 
 **Acceptance Scenarios**:
 
-1. **Given** a track is playing, **When** the user taps Pause, **Then** sound stops within a
-   moment, the position stops advancing, and the source status reads "Paused" (never "Active
+1. **Given** a track is playing, **When** the user taps Pause, **Then** sound stops, no
+   further audio is delivered to the visualizer, the position stops advancing, and the source status reads "Paused" (never "Active
    audio").
 2. **Given** playback is paused, **When** the user taps Play, **Then** playback continues from the
    paused position and the status returns to "Active audio" once sound is verified again.
@@ -270,7 +270,9 @@ Capture: no transport. With VoiceOver, move the scrubber with the increment and 
   the first track the last.
 - **AUD-006-R17**: When a track reaches its end while playing, playback MUST continue with the
   track after it in the order (wrapping from last to first). When the order holds one track, that
-  track MUST repeat without an audible gap, as before this feature. Playback never ends by itself.
+  track MUST repeat without an audible gap, as before this feature. With the play order of this
+  feature playback never ends by itself; an order that reports that nothing follows (reserved for
+  AUD-004) leaves the transport stopped at the end of the track.
 - **AUD-006-R18**: Next track, Previous track and the automatic change keep the transport state:
   playing stays playing; paused or stopped stays so, with the new track at 0:00.
 - **AUD-006-R19**: When the track to change to cannot be opened or decoded, the session MUST end
