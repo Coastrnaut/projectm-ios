@@ -60,6 +60,36 @@ enum AudioFixtures {
         return url
     }
 
+    // MARK: AUD-006 fixture: a track whose samples state their own position
+
+    /// Writes a Float32 CAF in which frame `n` (0-based) carries `m = n + 1 + offset`: the left
+    /// channel holds `(m / 4096) / 4096` and the right channel `(m % 4096) / 4096` (integer
+    /// division). Both are exact binary fractions, so unity-gain playback at the file's own sample
+    /// rate delivers them bit for bit and `CounterDecoder` recovers `n`; silence decodes to nothing.
+    /// A mono file carries only the left value. `offset` tells two tracks apart. Original content,
+    /// synthesized here; nothing is committed (AUD-006-T02, research AUD-006-D2).
+    @discardableResult
+    static func writeCounter(to url: URL, frames: Int, sampleRate: Double = 44_100, channels: Int = 2, offset: Int = 0) throws -> URL {
+        let settings: [String: Any] = [
+            AVFormatIDKey: kAudioFormatLinearPCM, AVSampleRateKey: sampleRate, AVNumberOfChannelsKey: channels,
+            AVLinearPCMBitDepthKey: 32, AVLinearPCMIsFloatKey: true, AVLinearPCMIsBigEndianKey: false,
+            AVLinearPCMIsNonInterleaved: false,
+        ]
+        let file = try AVAudioFile(forWriting: url, settings: settings)
+        guard let buffer = AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: AVAudioFrameCount(frames)),
+              let data = buffer.floatChannelData else {
+            throw CocoaError(.fileWriteUnknown)
+        }
+        buffer.frameLength = AVAudioFrameCount(frames)
+        for frame in 0..<frames {
+            let value = frame + 1 + offset
+            data[0][frame] = Float(value / 4096) / 4096
+            if channels > 1 { data[1][frame] = Float(value % 4096) / 4096 }
+        }
+        try file.write(from: buffer)
+        return url
+    }
+
     /// A 16-bit PCM WAV written byte by byte, for channel counts AVAudioFile will not write without
     /// a channel layout (for example 4). The samples are a quiet ramp.
     @discardableResult
@@ -170,6 +200,31 @@ enum AudioFixtures {
             paths.append(String(url.resolvingSymlinksInPath().path.dropFirst(base.count + 1)))
         }
         return paths.sorted()
+    }
+}
+
+/// Decodes `AudioFixtures.writeCounter` frames (stereo).
+enum CounterDecoder {
+    /// The 0-based frame index a stereo frame carries (plus the fixture's offset), or nil for silence.
+    static func frameIndex(left: Float, right: Float) -> Int? {
+        let value = Int((left * 4096).rounded()) * 4096 + Int((right * 4096).rounded())
+        return value > 0 ? value - 1 : nil
+    }
+
+    /// The indices carried by interleaved stereo samples, silence skipped.
+    static func indices(interleaved samples: [Float]) -> [Int] {
+        var result: [Int] = []
+        var index = 0
+        while index + 1 < samples.count {
+            if let frame = frameIndex(left: samples[index], right: samples[index + 1]) { result.append(frame) }
+            index += 2
+        }
+        return result
+    }
+
+    /// True when every element is its predecessor plus one.
+    static func isConsecutive(_ indices: [Int]) -> Bool {
+        zip(indices, indices.dropFirst()).allSatisfy { $1 == $0 + 1 }
     }
 }
 #endif

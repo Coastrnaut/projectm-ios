@@ -122,10 +122,12 @@ final class InAppPlaybackGraphTests: XCTestCase {
         XCTAssertFalse(graph.isRunning)
     }
 
-    func testInMemoryBufferLoops() async throws {
-        // The reference track's path: one buffer, looping.
+    func testReferenceContentLoops() async throws {
+        // The reference track's path. Since AUD-006 it is streamed from its file like a library
+        // track (seeking needs file segments; plan.md, Complexity Tracking); it still loops.
         let url = try AudioFixtures.writeTone(to: root.appendingPathComponent("reference.wav"), seconds: 0.1)
-        let graph = InAppPlaybackGraph(content: try InAppPlaybackGraph.loadIntoMemory(url))
+        let graph = InAppPlaybackGraph(content: try InAppPlaybackGraph.loadReference(url))
+        XCTAssertTrue(graph.loops, "one track repeats unless a play order says otherwise")
         try graph.enableOfflineRendering(sampleRate: 44_100, maximumFrameCount: 1024)
         let sink = PCMSink()
         try graph.installTap(into: sink)

@@ -620,4 +620,136 @@ final class CaptureManagerTests: XCTestCase {
         try? await Task.sleep(nanoseconds: 20_000_000)
         for _ in 0..<20 { await Task.yield() }
     }
+
+    // MARK: - User pause (AUD-006-T10; AUD-006-R20 to R22)
+
+    func testUserPauseShowsPausedWithoutAReasonAndSuspendsOnce() async {
+        await manager.select(.inAppPlayback)
+        playLoud(inApp)
+        XCTAssertFalse(manager.isPausedByUser)
+        await manager.pause()
+        XCTAssertEqual(manager.state, .paused)
+        XCTAssertNil(manager.stopReason, "a user pause shows no banner")
+        XCTAssertTrue(manager.isPausedByUser)
+        XCTAssertEqual(inApp.suspendCount, 1)
+        await manager.pause()
+        XCTAssertEqual(inApp.suspendCount, 1, "pausing twice suspends once")
+        // Audio arriving late does not make the state Active again (AUD-006-R20).
+        playLoud(inApp)
+        XCTAssertEqual(manager.state, .paused)
+    }
+
+    func testUserPauseSurvivesBackgroundForegroundLockAndUnlock() async {
+        await manager.select(.inAppPlayback)
+        playLoud(inApp)
+        await manager.pause()
+        for event in [AppLifecycleEvent.background, .foreground, .lock, .unlock, .background, .unlock, .foreground] {
+            await manager.handle(event)
+            XCTAssertEqual(manager.state, .paused, "\(event)")
+        }
+        XCTAssertEqual(inApp.resumeCount, 0, "only the user resumes a user pause (AUD-006-R21)")
+        XCTAssertEqual(inApp.suspendCount, 1)
+        XCTAssertTrue(manager.isPausedByUser)
+    }
+
+    func testResumeEndsAUserPause() async {
+        await manager.select(.inAppPlayback)
+        playLoud(inApp)
+        await manager.pause()
+        await manager.resume()
+        XCTAssertEqual(manager.state, .waiting, "Active has to be verified again after Play")
+        XCTAssertFalse(manager.isPausedByUser)
+        XCTAssertEqual(inApp.resumeCount, 1)
+        playLoud(inApp)
+        XCTAssertEqual(manager.state, .active)
+        // A lifecycle pause afterwards resumes by itself again (unchanged, AUD-006-R22).
+        await manager.handle(.background)
+        XCTAssertEqual(manager.state, .paused)
+        await manager.handle(.foreground)
+        XCTAssertEqual(manager.state, .waiting)
+        XCTAssertEqual(inApp.resumeCount, 2)
+    }
+
+    func testUserPauseAppliesToInAppPlaybackOnly() async {
+        await manager.select(.microphone)
+        playLoud(mic)
+        await manager.pause()
+        XCTAssertEqual(manager.state, .active)
+        XCTAssertEqual(mic.suspendCount, 0)
+        XCTAssertFalse(manager.isPausedByUser)
+        await manager.select(.systemAppCapture)
+        playLoud(capture)
+        await manager.pause()
+        XCTAssertEqual(manager.state, .active)
+        XCTAssertEqual(capture.suspendCount, 0)
+        XCTAssertFalse(manager.isPausedByUser)
+        // And with no session at all.
+        await manager.stop()
+        await manager.pause()
+        XCTAssertEqual(manager.state, .stopped)
+        XCTAssertFalse(manager.isPausedByUser)
+    }
+
+    func testUserPauseDuringAnInterruptionIsNotResumedWhenItEnds() async {
+        await manager.select(.inAppPlayback)
+        playLoud(inApp)
+        inApp.emit(.interruptionBegan)
+        await settle()
+        XCTAssertEqual(manager.state, .interrupted)
+        await manager.pause()
+        XCTAssertEqual(manager.state, .paused)
+        XCTAssertNil(manager.stopReason)
+        inApp.emit(.interruptionEnded(shouldResume: true))
+        await settle()
+        XCTAssertEqual(manager.state, .paused)
+        XCTAssertEqual(inApp.resumeCount, 0)
+        await manager.resume()
+        XCTAssertEqual(manager.state, .waiting)
+    }
+
+    func testUserPauseAfterARouteLossClearsTheReasonAndStaysPaused() async {
+        await manager.select(.inAppPlayback)
+        playLoud(inApp)
+        inApp.emit(.outputRouteLost)
+        await settle()
+        XCTAssertEqual(manager.stopReason, .audioRouteChanged)
+        await manager.pause()
+        XCTAssertEqual(manager.state, .paused)
+        XCTAssertNil(manager.stopReason)
+        XCTAssertTrue(manager.isPausedByUser)
+        await manager.handle(.background)
+        await manager.handle(.foreground)
+        XCTAssertEqual(manager.state, .paused)
+        XCTAssertEqual(inApp.resumeCount, 0)
+    }
+
+    func testStopFailureEndBySystemAndANewSessionClearTheUserPause() async {
+        await manager.select(.inAppPlayback)
+        await manager.pause()
+        await manager.stop()
+        XCTAssertFalse(manager.isPausedByUser)
+
+        await manager.select(.inAppPlayback)
+        await manager.pause()
+        inApp.emit(.failed(.inAppPlaybackFailed))
+        await settle()
+        XCTAssertEqual(manager.state, .stopped)
+        XCTAssertFalse(manager.isPausedByUser)
+
+        await manager.select(.inAppPlayback)
+        await manager.pause()
+        inApp.emit(.endedBySystem(nil))
+        await settle()
+        XCTAssertFalse(manager.isPausedByUser)
+
+        await manager.select(.inAppPlayback)
+        await manager.pause()
+        await manager.select(.inAppPlayback)
+        XCTAssertFalse(manager.isPausedByUser)
+        XCTAssertEqual(manager.state, .waiting)
+        await manager.pause()
+        await manager.restart()
+        XCTAssertFalse(manager.isPausedByUser)
+        XCTAssertEqual(manager.state, .waiting)
+    }
 }
