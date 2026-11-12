@@ -23,6 +23,7 @@ import check_compliance  # noqa: E402
 import generate_gles_loader as ggl  # noqa: E402
 import generate_reference_audio as gra  # noqa: E402
 import run_device_tests as rdt  # noqa: E402
+import setup_mac  # noqa: E402
 import validate_docs  # noqa: E402
 import verify_environment  # noqa: E402
 
@@ -871,6 +872,66 @@ class ANGLEXCFrameworkTests(unittest.TestCase):
         self.assertRegex(bax.DEPOT_TOOLS_COMMIT, r"^[0-9a-f]{40}$")
         text = (Path(__file__).resolve().parent.parent / ".gitmodules").read_text(encoding="utf-8")
         self.assertIn("url = https://github.com/Coastrnaut/angle.git", text)
+
+
+class SetupMacTests(unittest.TestCase):
+    def test_memory_dir_matches_claudes_folder_name(self):
+        got = setup_mac.memory_dir(Path("/Users/coast/Documents/GIT/projectm-ios"), Path("/Users/coast"))
+        self.assertEqual(str(got), "/Users/coast/.claude/projects/-Users-coast-Documents-GIT-projectm-ios/memory")
+        dotted = setup_mac.memory_dir(Path("/Users/a.b/my repo"), Path("/h"))
+        self.assertEqual(dotted.parent.name, "-Users-a-b-my-repo")
+
+    def test_latest_feature_is_the_highest_number(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            specs = Path(tmp) / "specs"
+            self.assertIsNone(setup_mac.latest_feature(specs))
+            for name in ("001-first", "002-second", "notes"):
+                (specs / name).mkdir(parents=True)
+            self.assertEqual(setup_mac.latest_feature(specs), "specs/002-second")
+        self.assertEqual(setup_mac.latest_feature(setup_mac.ROOT / "specs"),
+                         "specs/002-preset-library-unlock")
+
+    def test_angle_ready_needs_both_libraries(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            self.assertFalse(setup_mac.angle_ready(folder))
+            (folder / "libEGL.xcframework").mkdir()
+            self.assertFalse(setup_mac.angle_ready(folder))
+            (folder / "libGLESv2.xcframework").mkdir()
+            self.assertTrue(setup_mac.angle_ready(folder))
+
+    def test_missing_tools_names_each_absent_command(self):
+        self.assertEqual(setup_mac.missing_tools(lambda name: "/bin/" + name), [])
+        missing = setup_mac.missing_tools(lambda name: None if name == "xcodegen" else "/bin/" + name)
+        self.assertEqual(len(missing), 1)
+        self.assertTrue(missing[0].startswith("xcodegen: brew install xcodegen"))
+
+    def test_restore_memory_copies_the_export_and_never_overwrites(self):
+        exported = sorted(p.name for p in setup_mac.MEMORY_EXPORT.glob("*.md") if p.name != "README.md")
+        self.assertIn("MEMORY.md", exported)
+        self.assertEqual(len(exported), 4)
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            target = setup_mac.memory_dir(setup_mac.ROOT, home)
+            target.mkdir(parents=True)
+            (target / "MEMORY.md").write_text("mine\n", encoding="utf-8")
+            with mock.patch("builtins.print"):
+                setup_mac.restore_memory(setup_mac.Runner(dry_run=False), home)
+            self.assertEqual(sorted(p.name for p in target.iterdir()), exported)
+            self.assertEqual((target / "MEMORY.md").read_text(encoding="utf-8"), "mine\n")
+
+    def test_dry_run_changes_nothing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            with mock.patch("builtins.print"):
+                setup_mac.restore_memory(setup_mac.Runner(dry_run=True), home)
+                self.assertEqual(setup_mac.Runner(dry_run=True).run(["false"]), 0)
+            self.assertEqual(list(home.iterdir()), [])
+
+    def test_setup_never_writes_the_signing_file(self):
+        source = (setup_mac.ROOT / "scripts" / "setup_mac.py").read_text(encoding="utf-8")
+        self.assertNotIn("SIGNING.write", source)
+        self.assertNotIn("DEVELOPMENT_TEAM =", source.replace("`DEVELOPMENT_TEAM = <team ID>`", ""))
 
 
 if __name__ == "__main__":
