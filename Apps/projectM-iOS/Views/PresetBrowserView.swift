@@ -3,6 +3,8 @@
 // purchase, All A-Z), folder drill-down by each pack's own structure, search over names and
 // authors grouped by pack and capped, and a Favorites view across packs. Choosing a preset makes
 // its list the scope (FR-116); a locked preset opens the purchase sheet (FR-106).
+// Roadmap PRE-007: the home also leads to the user's collections, and every preset row offers
+// "Add to Collection" (touch and hold, or swipe right).
 import PresetLibrary
 import SwiftUI
 
@@ -36,6 +38,14 @@ struct PresetBrowserView: View {
             .navigationDestination(for: PresetNode.self) { node in
                 PresetFolderView(presets: presets, node: node, onChoose: onChoose) { dismiss() }
             }
+            .navigationDestination(for: CollectionRoute.self) { route in
+                switch route {
+                case .list: PresetCollectionsView(presets: presets) { dismiss() }
+                case .collection(let id):
+                    PresetCollectionView(presets: presets, collectionID: id, onChoose: onChoose) { dismiss() }
+                }
+            }
+            .collectionsAlert(presets)
             .searchable(text: $query, prompt: "Presets and authors")
             .task(id: query) {
                 // Debounced search over the in-memory index (FR-113, research R-26).
@@ -56,6 +66,17 @@ struct PresetBrowserView: View {
                 }
                 .accessibilityIdentifier("node:\(node.id)")
             }
+            // PRE-007: the user's own collections, after the library's lists.
+            NavigationLink(value: CollectionRoute.list) {
+                HStack {
+                    Text("Collections")
+                    Spacer()
+                    Text(presets.collections.count.formatted()).foregroundStyle(.secondary)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(PresetCoordinator.collectionsRowLabel(count: presets.collections.count))
+            }
+            .accessibilityIdentifier("node:collections")
         } else {
             ProgressView("Loading presets…")
         }
@@ -109,12 +130,23 @@ struct FolderRow: View {
     }
 }
 
-/// One preset: name, author (and pack), lock, current mark, star (FR-114, FR-124).
+/// One preset: name, author (and pack), lock, current mark, star (FR-114, FR-124). Every row offers
+/// "Add to Collection" (PRE-007-R4); inside a collection it also offers Move Up, Move Down and
+/// Remove (R5, R6, R18).
 struct PresetRow: View {
+    /// The row's place in the collection that lists it.
+    struct CollectionPlace {
+        let id: String
+        let isFirst: Bool
+        let isLast: Bool
+    }
+
     @Bindable var presets: PresetCoordinator
     let preset: IndexedPreset
     let showsPack: Bool
+    var collection: CollectionPlace?
     let onChoose: () -> Void
+    @State private var addingToCollection = false
 
     var body: some View {
         let locked = presets.isLocked(preset)
@@ -136,6 +168,8 @@ struct PresetRow: View {
             }
             .accessibilityLabel("\(preset.name), by \(preset.author)\(locked ? ", locked" : "")\(preset == presets.current ? ", current preset" : "")")
             .accessibilityIdentifier("preset:\(preset.name)")
+            .accessibilityAction(named: "Add to Collection") { addingToCollection = true }
+            .modifier(CollectionMoveActions(presets: presets, preset: preset, collection: collection))
             Button {
                 presets.toggleFavorite(preset)
             } label: {
@@ -145,6 +179,57 @@ struct PresetRow: View {
             .buttonStyle(.borderless)
             .accessibilityLabel(favorite ? "Remove from favorites" : "Add to favorites")
             .accessibilityIdentifier("star:\(preset.name)")
+        }
+        .swipeActions(edge: .leading, allowsFullSwipe: false) {
+            Button {
+                addingToCollection = true
+            } label: {
+                Label("Add to Collection", systemImage: "folder.badge.plus")
+            }
+            .tint(.indigo)
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            if let collection {
+                Button {
+                    presets.removeFromCollection([preset], collection.id)
+                } label: {
+                    Label("Remove", systemImage: "minus.circle")
+                }
+                .tint(.red)
+            }
+        }
+        .contextMenu {
+            Button { addingToCollection = true } label: { Label("Add to Collection…", systemImage: "folder.badge.plus") }
+            if let collection {
+                Button { presets.movePreset(preset, in: collection.id, by: -1) } label: { Label("Move Up", systemImage: "arrow.up") }
+                    .disabled(collection.isFirst)
+                Button { presets.movePreset(preset, in: collection.id, by: 1) } label: { Label("Move Down", systemImage: "arrow.down") }
+                    .disabled(collection.isLast)
+                Button(role: .destructive) {
+                    presets.removeFromCollection([preset], collection.id)
+                } label: {
+                    Label("Remove from Collection", systemImage: "minus.circle")
+                }
+            }
+        }
+        .sheet(isPresented: $addingToCollection) { AddToCollectionSheet(presets: presets, preset: preset) }
+    }
+
+    /// VoiceOver actions for reordering and removing inside a collection (PRE-007-R18).
+    private struct CollectionMoveActions: ViewModifier {
+        let presets: PresetCoordinator
+        let preset: IndexedPreset
+        let collection: CollectionPlace?
+
+        func body(content: Content) -> some View {
+            if let collection {
+                content
+                    .accessibilityAction(named: "Move Up") { presets.movePreset(preset, in: collection.id, by: -1) }
+                    .accessibilityAction(named: "Move Down") { presets.movePreset(preset, in: collection.id, by: 1) }
+                    .accessibilityAction(named: "Remove from Collection") { presets.removeFromCollection([preset], collection.id) }
+            } else {
+                content
+            }
         }
     }
 
