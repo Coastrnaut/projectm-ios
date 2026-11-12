@@ -11,6 +11,8 @@ public enum PresetScope: Sendable, Hashable {
     /// A user-made collection, by its permanent id (PRE-007-R11). Its members are in the user's
     /// order, not alphabetical.
     case collection(String)
+    /// The presets the user imported (PRE-012-R22), alphabetical.
+    case user
 
     /// Persisted as `settings.presetScope`. A search scope stores `all`: no search text is kept
     /// (spec Clarifications, FR-119).
@@ -22,6 +24,7 @@ public enum PresetScope: Sendable, Hashable {
         case .favorites: "favorites"
         case .search, .all: "all"
         case .collection(let id): "collection:\(id)"
+        case .user: "user"
         }
     }
 
@@ -30,6 +33,7 @@ public enum PresetScope: Sendable, Hashable {
         case "included": self = .included
         case "favorites": self = .favorites
         case "all": self = .all
+        case "user": self = .user
         default:
             if storageValue.hasPrefix("pack:") {
                 let id = String(storageValue.dropFirst(5))
