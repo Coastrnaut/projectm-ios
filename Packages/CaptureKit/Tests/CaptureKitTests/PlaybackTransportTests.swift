@@ -225,6 +225,30 @@ final class PlaybackTransportTests: XCTestCase {
         XCTAssertEqual(rig.transport.position.seconds, 7)
     }
 
+    func testEveryJumpBumpsThePositionRevision() async {
+        // The transport bar polls the position; the revision makes a jump show at once.
+        let rig = await playing([a, b], current: a)
+        var last = rig.transport.positionRevision
+        func assertBumped(_ label: String) {
+            XCTAssertGreaterThan(rig.transport.positionRevision, last, label)
+            last = rig.transport.positionRevision
+        }
+        rig.transport.seek(to: 10)
+        assertBumped("seek")
+        await rig.transport.next()
+        assertBumped("next")
+        rig.backend.positionSeconds = 20
+        await rig.transport.previous()
+        assertBumped("previous restarting the track")
+        await rig.transport.previous()
+        assertBumped("previous changing the track")
+        await rig.transport.stop()
+        assertBumped("stop playback")
+        await rig.transport.pause()
+        await rig.transport.play()
+        XCTAssertEqual(rig.transport.positionRevision, last, "pause and play do not move the position")
+    }
+
     // MARK: - Lifecycle (AUD-006-R21, R22)
 
     func testUserPauseAndStopSurviveBackgroundAndLock() async {

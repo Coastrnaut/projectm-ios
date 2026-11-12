@@ -90,6 +90,22 @@ final class TransportUITests: XCTestCase {
         XCTFail("the elapsed time did not reach \(seconds) s; it showed \(seen)", file: file, line: line)
     }
 
+    /// Waits until the elapsed time shown is at most `seconds` (the display follows a jump within
+    /// a refresh), and returns it.
+    @discardableResult
+    private func waitForElapsed(atMost seconds: Int, timeout: TimeInterval = 5, file: StaticString = #filePath, line: UInt = #line) -> Int {
+        let deadline = Date().addingTimeInterval(timeout)
+        var seen: [Int] = []
+        while Date() < deadline {
+            let value = elapsed(file: file, line: line)
+            if value <= seconds { return value }
+            seen.append(value)
+            usleep(100_000)
+        }
+        XCTFail("the elapsed time did not go back to \(seconds) s or less; it showed \(seen)", file: file, line: line)
+        return seen.last ?? -1
+    }
+
     private func expectState(_ state: String, timeout: TimeInterval = 15, file: StaticString = #filePath, line: UInt = #line) {
         let predicate = NSPredicate(format: "label == %@", "In-App Playback · \(state)")
         let result = XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: predicate, object: indicator)], timeout: timeout)
@@ -179,7 +195,7 @@ final class TransportUITests: XCTestCase {
         // (d) Next track (another sample rate and channel count), then Previous within 3 s.
         tap("transportNext")
         expectTitle("ToneA")
-        XCTAssertLessThanOrEqual(elapsed(), 2, "the next track starts at its beginning")
+        waitForElapsed(atMost: 2)                               // the next track starts at its beginning
         XCTAssertEqual(indicator.label.hasPrefix("In-App Playback · "), true)
         waitForElapsed(atLeast: 1)
         expectState("Active audio")
@@ -192,7 +208,7 @@ final class TransportUITests: XCTestCase {
         waitForElapsed(atLeast: 2)
         tap("transportStop")
         expectState("Paused")
-        XCTAssertEqual(elapsed(), 0)
+        XCTAssertEqual(waitForElapsed(atMost: 0), 0)
         XCTAssertEqual(playPause.label, "Play")
         XCTAssertTrue(app.otherElements["visualizer"].exists || app.otherElements["visualizerTapArea"].exists)
         XCTAssertFalse(app.buttons["importAudio"].exists, "Stop playback does not leave the visualizer")
@@ -220,10 +236,10 @@ final class TransportUITests: XCTestCase {
         waitForElapsed(atLeast: 2)
         tap("transportNext")                                    // the only track: it starts again
         expectTitle("Reference track")
-        XCTAssertLessThanOrEqual(elapsed(), 2)
+        waitForElapsed(atMost: 2)
         waitForElapsed(atLeast: 4)
         tap("transportPrevious")                                // more than 3 s in: restart
-        XCTAssertLessThanOrEqual(elapsed(), 2)
+        waitForElapsed(atMost: 2)
 
         // (h) The transport hides with the controls and returns with them.
         showControls()

@@ -36,6 +36,9 @@ public final class PlaybackTransport {
 
     /// The item being played, or prepared for the next session.
     public private(set) var current: PlaybackItem?
+    /// Incremented whenever a command moved the position (seek, Stop playback, a track change), so
+    /// that a view observing it shows the new position at once instead of at its next poll.
+    public private(set) var positionRevision = 0
 
     private let manager: CaptureManager
     private let source: InAppPlaybackSource
@@ -114,6 +117,7 @@ public final class PlaybackTransport {
         await manager.pause()
         guard isAvailable else { return }          // the session ended meanwhile
         source.seek(to: 0)
+        positionRevision += 1
         stoppedSession = source.sessionCount
     }
 
@@ -128,6 +132,7 @@ public final class PlaybackTransport {
         guard isAvailable else { return }
         stoppedSession = nil
         source.seek(to: seconds.isNaN ? 0 : seconds)
+        positionRevision += 1
     }
 
     public func next() async {
@@ -139,6 +144,7 @@ public final class PlaybackTransport {
         guard isAvailable, let current else { return }
         if source.playbackPosition.seconds > PlaybackTransport.previousRestartThreshold {
             source.seek(to: 0)
+            positionRevision += 1
             return
         }
         guard let item = order?.item(before: current.id) else { return }
@@ -151,6 +157,7 @@ public final class PlaybackTransport {
     /// False when the track could not be loaded; the session is then ending.
     @discardableResult
     private func change(to item: PlaybackItem) -> Bool {
+        positionRevision += 1
         if item.id == current?.id {
             source.seek(to: 0)                     // the only track in the order: start it again
             return true

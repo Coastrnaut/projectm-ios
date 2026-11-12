@@ -47,6 +47,7 @@ struct ControlsOverlay: View {
     /// AUD-006: the transport of In-App Playback.
     private var transport: some View {
         let model = coordinator.transport
+        _ = model.positionRevision          // a seek or a track change shows at once, not at the next poll
         return TransportBar(title: model.current?.title ?? "", isPlaying: model.state == .playing,
                             position: { model.position },
                             onPlayPause: { coordinator.transportPlayPause() }, onStop: { coordinator.transportStop() },

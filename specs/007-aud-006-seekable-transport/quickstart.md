@@ -39,6 +39,32 @@ Expected: the transport appears for an imported track and for the reference trac
 Microphone; Pause shows "In-App Playback · Paused" and holds the time; the scrubber moves the
 time; Next and Previous change the title; Stop playback returns to 0:00.
 
+## Verified on the build Mac, 2026-11-12 (Mac Studio, Xcode 27.2; feature worktree)
+
+| Suite | Where | Result |
+|---|---|---|
+| `AudioCore` | macOS host | 84 tests, 0 failures (79 with `-Xswiftc -DAUDIOCORE_NO_AVFAUDIO`) |
+| `CaptureKit` | macOS host | 236 tests, 0 failures |
+| `CaptureUI` | macOS host | 30 tests, 0 failures |
+| `Diagnostics` | macOS host | 10 tests, 0 failures |
+| `AudioCore`, `CaptureKit`, `CaptureUI` | iOS 27.2 simulator (iPhone Air) | 84, 236 and 30 tests, 0 failures |
+| App unit tests | iOS 27.2 simulator | 69 tests; the only failure is `PresetTests.testBundledIncludedScopeMatchesRelease1_0`, which needs the full preset library the worktree does not have |
+| `TransportUITests` (3), `ImportedAudioUITests` (5), `StatusUITests` (7), `VisualizerUITests` (7) | iOS 27.2 simulator, real time | 22 tests, 0 failures |
+| `scripts/test_scripts.py`, `check_compliance.py`, `validate_docs.py` | macOS host | 96 tests OK (1 skipped); OK; OK |
+
+Not run or not conclusive in the worktree:
+
+- `Rendering` and `ANGLERendering` do not build for the macOS host (iOS-only engine framework). On
+  the simulator, 3 of 28 and 11 of 43 tests fail with "Could not parse preset file": the worktree
+  has no `Vendor/projectM` submodule, so the upstream test preset is missing. No other failure.
+  They have to be run on the integration checkout.
+- The Linux package tests (no Linux host here).
+- Everything on a physical device (section E).
+
+What the simulator UI test adds to the offline tests: the cut runs against a real-time engine
+(pause, play, a drag and a touch on the scrubber, next track into another sample rate and channel
+count, stop playback) and the status reads "Paused" and returns to "Active audio".
+
 ## D. By hand (simulator or device)
 
 1. Import two tracks, play the upper one. The controls show its title, the transport buttons, the
