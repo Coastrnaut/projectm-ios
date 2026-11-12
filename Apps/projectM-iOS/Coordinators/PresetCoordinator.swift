@@ -23,6 +23,11 @@
 //   ones join the library as the source `user` and form the scope My Presets. Before one is
 //   loaded, after it loaded, when it is replaced and when its load fails, `userGuard` is told
 //   (PRE-012-R18, R19): a failing one is quarantined, and the running preset stays.
+// * Copies of built-in presets (roadmap PRE-015, specs/010-pre-015-user-preset-duplication): the
+//   user guard hears about entitlement changes before the scope changes, so copies of locked
+//   packs leave or rejoin the library first (PRE-015-R8); favorites of user presets that are
+//   only waiting (for a check or for the unlock) are kept; an edited preset on screen is
+//   reloaded with its new text (R17).
 import Foundation
 import Observation
 import PresetLibrary
@@ -52,6 +57,9 @@ final class PresetCoordinator {
     @ObservationIgnored private var userPresets: [IndexedPreset] = []
     /// Told about imported presets on the visible renderer (PRE-012-R18, R19).
     @ObservationIgnored weak var userGuard: (any UserPresetGuarding)?
+    /// User presets that exist but are not in the library now (waiting for a check or for the
+    /// unlock): their favorites are kept (PRE-015-R8).
+    @ObservationIgnored var retainedUserPresetIDs: Set<String> = []
     private(set) var current: IndexedPreset?
     private(set) var scope: PresetScope
     private(set) var unlocked = false
@@ -95,7 +103,7 @@ final class PresetCoordinator {
         builtInLibrary = builtIn
         let library = builtIn.withUserPresets(userPresets)
         self.library = library
-        let missing = store.favorites.filter { library.preset(id: $0) == nil }
+        let missing = store.favorites.filter { library.preset(id: $0) == nil && !retainedUserPresetIDs.contains($0) }
         for id in missing { store.toggle(id) }
         if !missing.isEmpty { favoritesVersion += 1 }
         resolveScope()
@@ -120,6 +128,7 @@ final class PresetCoordinator {
     func setUnlocked(_ value: Bool) async {
         guard value != unlocked else { return }
         unlocked = value
+        await userGuard?.libraryUnlockChanged(value)   // PRE-015-R8: copies of locked packs first
         if value {
             setScope(Self.unlockScope)
             if let pending = pendingLockedPreset {
@@ -227,6 +236,24 @@ final class PresetCoordinator {
             return
         }
         await select(preset, in: listScope)
+    }
+
+    /// Opens the purchase sheet without a preset to play afterwards (PRE-015-R7, R8: duplicating
+    /// a locked preset, or tapping a copy that waits for the unlock).
+    func requestPurchase() {
+        pendingLockedPreset = nil
+        purchaseRequested = true
+    }
+
+    /// PRE-015-R17: a user preset was saved from the editor. On screen with a new text, it is
+    /// loaded again through the guarded path; renamed only, the shown entry is refreshed.
+    func reloadIfCurrent(_ id: String) async {
+        guard let current, current.id == id, let fresh = library?.preset(id: id), fresh != current else { return }
+        if fresh.hash == current.hash {
+            self.current = fresh
+        } else {
+            await select(fresh)
+        }
     }
 
     /// Loads `preset`; on failure keeps the current one, reports it and excludes it for the

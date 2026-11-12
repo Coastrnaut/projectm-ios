@@ -10,6 +10,12 @@
 //     (`stoppedShowing`) and when its load failed (`failedOnScreen`).
 // Only playable presets are ever handed to PresetCoordinator, so nothing that is waiting or
 // quarantined can be chosen, stepped to or loaded (R20).
+//
+// Roadmap PRE-015 (specs/010-pre-015-user-preset-duplication): "Duplicate to My Presets" reads a
+// built-in preset's bytes through the loader (bundle file or archive) and hands them to the
+// library, which checks them against the index hash and stores a copy; the editor's text is
+// saved through the library's checked edit. Copies of locked packs wait for the unlock: the
+// entitlement reaches the library through `libraryUnlockChanged` (PRE-015-R7, R8).
 import Foundation
 import Observation
 import PresetLibrary
@@ -23,6 +29,8 @@ protocol UserPresetGuarding: AnyObject {
     func didShow(_ preset: IndexedPreset)
     func stoppedShowing(_ preset: IndexedPreset) async
     func failedOnScreen(_ preset: IndexedPreset, message: String) async
+    /// The full-library entitlement changed; called before the scope changes (PRE-015-R8).
+    func libraryUnlockChanged(_ unlocked: Bool) async
 }
 
 /// The renderer's off-screen trial as the library's `PresetTrialRunning`.
@@ -60,6 +68,16 @@ final class UserPresetsCoordinator: UserPresetGuarding {
     private(set) var notice: String?
     /// The result of the last import when it needs the user's attention; shown as an alert.
     var resultMessage: String?
+    /// Copies of locked-pack presets while the library is not unlocked (PRE-015-R8).
+    private(set) var needsUnlock: [UserPreset] = []
+    /// The result of the last "Duplicate to My Presets"; shown as an alert (PRE-015).
+    var duplicateMessage: String?
+    /// True while a duplicate is copied, checked and tried.
+    private(set) var isDuplicating = false
+    /// Set once when an edit was dropped because the app closed while checking it (PRE-015-R13).
+    private(set) var editNotice: String?
+    /// Reads a built-in preset's bytes (the loader's bundle and archive; tests replace it).
+    @ObservationIgnored var bundledData: (@MainActor (IndexedPreset) throws -> Data)?
 
     @ObservationIgnored private let library: UserPresetLibrary
     @ObservationIgnored private let provingPeriod: Duration
@@ -90,6 +108,10 @@ final class UserPresetsCoordinator: UserPresetGuarding {
         self.presets = presets
         presets.userGuard = self
         loader.userPresetData = { [library] id in await library.data(for: id) }
+        bundledData = { [weak loader] preset in
+            guard let loader else { throw CocoaError(.featureUnsupported) }
+            return try loader.bundledData(for: preset)
+        }
     }
 
     /// Reads the saved record. A preset that was being tried or first shown when the app last
@@ -97,6 +119,8 @@ final class UserPresetsCoordinator: UserPresetGuarding {
     func load() async {
         _ = await library.load()
         loaded = true
+        let dropped = await library.takeEditNotices()
+        if !dropped.isEmpty { editNotice = dropped.map(PresetEditRefusal.interruptedNotice(name:)).joined(separator: "\n") }
         await refresh()
     }
 
@@ -164,6 +188,72 @@ final class UserPresetsCoordinator: UserPresetGuarding {
 
     func dismissNotice() { notice = nil }
 
+    func dismissEditNotice() { editNotice = nil }
+
+    // MARK: - Duplicate (PRE-015-R1-R7)
+
+    /// "Duplicate to My Presets" for a built-in preset. A locked one opens the purchase sheet;
+    /// one that failed to load this session is refused; otherwise the outcome is announced and
+    /// shown.
+    func duplicate(_ preset: IndexedPreset) async {
+        guard preset.source != PresetLibrary.userSource, let presets, !isDuplicating else { return }
+        if presets.isLocked(preset) {
+            presets.requestPurchase()   // R7: like choosing it to play
+            return
+        }
+        let outcome: PresetDuplicateOutcome
+        if presets.excludedThisSession.contains(preset.id) {
+            outcome = .refused(.notPlayable)
+        } else {
+            isDuplicating = true
+            if !loaded { await load() }
+            let pack = presets.library?.pack(id: preset.source)
+            let source = BundledPresetSource(id: preset.id, name: preset.name, author: preset.author,
+                                             fileName: (preset.path as NSString).lastPathComponent, packID: preset.source,
+                                             packTitle: pack?.title ?? preset.source, licenseStatement: pack?.license ?? "",
+                                             blobHash: preset.hash, requiresLibraryUnlock: pack?.locked ?? false)
+            if let data = try? bundledData?(preset) {
+                outcome = await library.duplicate(source, contents: data)
+            } else {
+                outcome = .refused(.sourceMismatch)
+            }
+            await refresh()
+            isDuplicating = false
+        }
+        let message = outcome.message(sourceName: preset.name)
+        announce(message)
+        duplicateMessage = message
+    }
+
+    // MARK: - Edit (PRE-015-R9-R17)
+
+    /// The text the editor opens, or nil when the preset cannot be edited now.
+    func editorText(for preset: UserPreset) async -> PresetEditorText? {
+        await library.editorText(for: preset.id)
+    }
+
+    /// Saves the editor's name and text. An unchanged text is not sent again; a new one is
+    /// checked and tried before it is stored. The outcome is announced; a preset on screen is
+    /// reloaded with its new text.
+    func saveEdit(_ preset: UserPreset, name: String, text: String, opened: PresetEditorText) async -> PresetEditOutcome {
+        let outcome = await library.edit(preset.id, name: name, text: text == opened.text ? nil : text, expectedSHA256: opened.sha256)
+        await refresh()
+        if case .saved = outcome { await presets?.reloadIfCurrent(preset.id) }
+        announce(outcome.message)
+        return outcome
+    }
+
+    /// The record of a playable user preset, for Edit from any list.
+    func editableRecord(for preset: IndexedPreset) -> UserPreset? {
+        guard preset.source == PresetLibrary.userSource else { return nil }
+        return playable.first { $0.id == preset.id }
+    }
+
+    /// A copy that waits for the unlock was tapped: the purchase sheet (R8).
+    func chooseHeld(_ preset: UserPreset) {
+        presets?.requestPurchase()
+    }
+
     // MARK: - UserPresetGuarding (R18, R19)
 
     func willShow(_ preset: IndexedPreset) async {
@@ -190,6 +280,12 @@ final class UserPresetsCoordinator: UserPresetGuarding {
 
     func stoppedShowing(_ preset: IndexedPreset) async {
         if provingID == preset.id { await abandonProving() }
+    }
+
+    func libraryUnlockChanged(_ unlocked: Bool) async {
+        await library.setLibraryUnlocked(unlocked)
+        await library.runPendingTrials()   // copies that waited for the unlock and a check
+        await refresh()
     }
 
     func failedOnScreen(_ preset: IndexedPreset, message: String) async {
@@ -219,6 +315,8 @@ final class UserPresetsCoordinator: UserPresetGuarding {
         playable = snapshot.playable
         pending = snapshot.pending
         quarantined = snapshot.quarantined
+        needsUnlock = snapshot.needsUnlock
+        presets?.retainedUserPresetIDs = Set((snapshot.pending + snapshot.needsUnlock).map(\.id))
         unavailableMessage = snapshot.availability == .available ? nil : UserPresetText.newerFormat
         if snapshot.notice == .unreadableSetAside, notice == nil, !noticeShown {
             notice = UserPresetText.unreadable
@@ -276,6 +374,17 @@ final class UserPresetsCoordinator: UserPresetGuarding {
     nonisolated static func pendingLabel(name: String) -> String {
         "\(name), waiting to be checked"
     }
+
+    nonisolated static func heldLabel(name: String) -> String {
+        "\(name), needs the full library"
+    }
+
+    nonisolated static func originText(_ origin: PresetDuplicateOrigin) -> String {
+        "Duplicated from “\(origin.name)” in \(origin.packTitle)."
+    }
+
+    nonisolated static let duplicateRightsText =
+        "projectM-iOS has not verified any rights beyond the pack's statement. You can edit this copy on this device."
 
     nonisolated static func byteCountText(_ count: Int) -> String {
         "\(PresetImportLimits.grouped(count)) \(count == 1 ? "byte" : "bytes")"
