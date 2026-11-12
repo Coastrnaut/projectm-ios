@@ -71,7 +71,7 @@ struct VisualizerView: View {
         .statusBarHidden(coordinator.hidesSystemOverlays)
         .persistentSystemOverlays(coordinator.hidesSystemOverlays ? .hidden : .automatic)
         .sheet(isPresented: $coordinator.showPresetBrowser) {
-            PresetBrowserView(presets: coordinator.presets) { coordinator.choose($0, from: $1) }
+            PresetBrowserView(presets: coordinator.presets, userPresets: coordinator.userPresets) { coordinator.choose($0, from: $1) }
                 .sheet(isPresented: Binding(get: { coordinator.presets.purchaseRequested },
                                             set: { coordinator.presets.purchaseRequested = $0 })) { purchaseSheet }
         }

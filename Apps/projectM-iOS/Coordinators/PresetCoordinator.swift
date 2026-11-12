@@ -19,6 +19,10 @@
 //   a refusal or a failed save sets `collectionsMessage` and changes nothing (PRE-007-R8).
 // * A preset that fails to load leaves the running one on screen, shows "Preset could not be
 //   loaded", and is excluded from every scope for the rest of the session (FR-045, FR-118).
+// * Imported presets (roadmap PRE-012, specs/008-pre-012-preset-import-validation): the playable
+//   ones join the library as the source `user` and form the scope My Presets. Before one is
+//   loaded, after it loaded, when it is replaced and when its load fails, `userGuard` is told
+//   (PRE-012-R18, R19): a failing one is quarantined, and the running preset stays.
 import Foundation
 import Observation
 import PresetLibrary
@@ -43,6 +47,11 @@ final class PresetCoordinator {
     static let unlockScope = PresetScope.pack("cream-of-the-crop")
 
     private(set) var library: PresetLibrary?
+    /// The bundled library, without the user's imported presets (PRE-012).
+    @ObservationIgnored private var builtInLibrary: PresetLibrary?
+    @ObservationIgnored private var userPresets: [IndexedPreset] = []
+    /// Told about imported presets on the visible renderer (PRE-012-R18, R19).
+    @ObservationIgnored weak var userGuard: (any UserPresetGuarding)?
     private(set) var current: IndexedPreset?
     private(set) var scope: PresetScope
     private(set) var unlocked = false
@@ -82,7 +91,9 @@ final class PresetCoordinator {
     }
 
     /// The library is ready (FR-111). Drops favorites that no longer exist and resolves the stored scope.
-    func attach(_ library: PresetLibrary) {
+    func attach(_ builtIn: PresetLibrary) {
+        builtInLibrary = builtIn
+        let library = builtIn.withUserPresets(userPresets)
         self.library = library
         let missing = store.favorites.filter { library.preset(id: $0) == nil }
         for id in missing { store.toggle(id) }
@@ -91,6 +102,18 @@ final class PresetCoordinator {
     }
 
     func onScopeChange(_ announce: @escaping (String) -> Void) { scopeAnnouncer = announce }
+
+    /// The user's playable imported presets changed (PRE-012-R22). They are part of the library
+    /// from now on; presets that left it stop being listed, and an empty My Presets is not kept
+    /// as the scope. The playing preset keeps playing.
+    func setUserPresets(_ presets: [IndexedPreset]) {
+        guard presets != userPresets else { return }
+        userPresets = presets
+        guard let builtInLibrary else { return }
+        library = builtInLibrary.withUserPresets(presets)
+        plannedRandom = nil
+        resolveScope()
+    }
 
     // MARK: - Entitlement (FR-107, FR-109, FR-119)
 
@@ -161,7 +184,7 @@ final class PresetCoordinator {
             case .pack(let id): preset.source == id
             case .folder(let id, let path): preset.source == id && preset.folder.starts(with: path)
             case .all: unlocked || preset.isIncluded
-            case .favorites, .search, .collection: false
+            case .favorites, .search, .collection, .user: false
             }
         }.count
         return max(0, node.presetCount - failedHere)
@@ -210,15 +233,21 @@ final class PresetCoordinator {
     /// session (FR-045, FR-118).
     func select(_ preset: IndexedPreset, in newScope: PresetScope? = nil) async {
         if let newScope { setScope(newScope) }
+        let isUserPreset = preset.source == PresetLibrary.userSource
+        if let current, current != preset, current.source == PresetLibrary.userSource { await userGuard?.stoppedShowing(current) }
+        if isUserPreset { await userGuard?.willShow(preset) }   // PRE-012-R18: noted on disk before the engine sees it
         do {
             try await loader.load(preset)
             current = preset
             failureMessage = nil
             store.lastPresetID = preset.id
             planUpcoming()
+            if isUserPreset { userGuard?.didShow(preset) }
         } catch {
-            failureMessage = Self.failureText
+            failureMessage = isUserPreset ? UserPresetText.onScreenFailure : Self.failureText
             excludedThisSession.insert(preset.id)
+            // PRE-012-R19: the running preset stays; the imported one is quarantined for good.
+            if isUserPreset { await userGuard?.failedOnScreen(preset, message: (error as NSError).localizedDescription) }
         }
     }
 
@@ -290,6 +319,8 @@ final class PresetCoordinator {
         let resolves: Bool
         if case .collection(let id) = scope {
             resolves = collectionStore.collection(id: id) != nil
+        } else if case .user = scope {
+            resolves = !library.userPresets.isEmpty   // PRE-012: an empty My Presets is not a scope to stay in
         } else {
             resolves = library.resolves(scope)
         }

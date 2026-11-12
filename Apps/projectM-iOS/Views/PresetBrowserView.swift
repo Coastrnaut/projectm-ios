@@ -5,11 +5,14 @@
 // its list the scope (FR-116); a locked preset opens the purchase sheet (FR-106).
 // Roadmap PRE-007: the home also leads to the user's collections, and every preset row offers
 // "Add to Collection" (touch and hold, or swipe right).
+// Roadmap PRE-012: the home leads to My Presets (imported presets, Import Preset…, Quarantine).
 import PresetLibrary
 import SwiftUI
 
 struct PresetBrowserView: View {
     @Bindable var presets: PresetCoordinator
+    /// The user's imported presets (PRE-012).
+    let userPresets: UserPresetsCoordinator
     let onChoose: (IndexedPreset, PresetScope) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var query = ""
@@ -45,6 +48,12 @@ struct PresetBrowserView: View {
                     PresetCollectionView(presets: presets, collectionID: id, onChoose: onChoose) { dismiss() }
                 }
             }
+            .navigationDestination(for: UserPresetRoute.self) { route in
+                switch route {
+                case .list: UserPresetsView(presets: presets, userPresets: userPresets, onChoose: onChoose) { dismiss() }
+                case .quarantine: PresetQuarantineView(userPresets: userPresets) { dismiss() }
+                }
+            }
             .collectionsAlert(presets)
             .searchable(text: $query, prompt: "Presets and authors")
             .task(id: query) {
@@ -77,6 +86,17 @@ struct PresetBrowserView: View {
                 .accessibilityLabel(PresetCoordinator.collectionsRowLabel(count: presets.collections.count))
             }
             .accessibilityIdentifier("node:collections")
+            // PRE-012: the presets the user imported.
+            NavigationLink(value: UserPresetRoute.list) {
+                HStack {
+                    Text(UserPresetText.scopeTitle)
+                    Spacer()
+                    Text(userPresets.playable.count.formatted()).foregroundStyle(.secondary)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(UserPresetsCoordinator.myPresetsRowLabel(count: userPresets.playable.count))
+            }
+            .accessibilityIdentifier("node:myPresets")
         } else {
             ProgressView("Loading presets…")
         }
@@ -101,7 +121,8 @@ struct PresetBrowserView: View {
                 .accessibilityIdentifier("refineSearch")
         }
         ForEach(results.groups, id: \.source) { group in
-            Section(presets.library?.pack(id: group.source)?.title ?? group.source) {
+            Section(group.source == PresetLibrary.userSource ? UserPresetText.scopeTitle
+                    : presets.library?.pack(id: group.source)?.title ?? group.source) {
                 ForEach(group.presets) { preset in
                     PresetRow(presets: presets, preset: preset, showsPack: false) { onChoose(preset, .search(query)) }
                 }
@@ -145,6 +166,12 @@ struct PresetRow: View {
     let preset: IndexedPreset
     let showsPack: Bool
     var collection: CollectionPlace?
+    /// Set in My Presets: the row also offers Information and Remove (PRE-012-R24, US4).
+    struct UserActions {
+        let info: () -> Void
+        let remove: () -> Void
+    }
+    var user: UserActions?
     let onChoose: () -> Void
     @State private var addingToCollection = false
 
@@ -170,6 +197,7 @@ struct PresetRow: View {
             .accessibilityIdentifier("preset:\(preset.name)")
             .accessibilityAction(named: "Add to Collection") { addingToCollection = true }
             .modifier(CollectionMoveActions(presets: presets, preset: preset, collection: collection))
+            .modifier(UserPresetActions(user: user))
             Button {
                 presets.toggleFavorite(preset)
             } label: {
@@ -197,9 +225,20 @@ struct PresetRow: View {
                 }
                 .tint(.red)
             }
+            if let user {
+                Button(action: user.remove) { Label("Remove", systemImage: "trash") }
+                    .tint(.red)
+                    .accessibilityIdentifier("removeUserPreset")
+                Button(action: user.info) { Label("Info", systemImage: "info.circle") }
+                    .accessibilityIdentifier("userPresetInfo")
+            }
         }
         .contextMenu {
             Button { addingToCollection = true } label: { Label("Add to Collection…", systemImage: "folder.badge.plus") }
+            if let user {
+                Button(action: user.info) { Label("Information", systemImage: "info.circle") }
+                Button(role: .destructive, action: user.remove) { Label("Remove from My Presets", systemImage: "trash") }
+            }
             if let collection {
                 Button { presets.movePreset(preset, in: collection.id, by: -1) } label: { Label("Move Up", systemImage: "arrow.up") }
                     .disabled(collection.isFirst)
@@ -233,7 +272,23 @@ struct PresetRow: View {
         }
     }
 
+    /// VoiceOver actions for an imported preset (PRE-012-R29).
+    private struct UserPresetActions: ViewModifier {
+        let user: UserActions?
+
+        func body(content: Content) -> some View {
+            if let user {
+                content
+                    .accessibilityAction(named: "Information", user.info)
+                    .accessibilityAction(named: "Remove from My Presets", user.remove)
+            } else {
+                content
+            }
+        }
+    }
+
     private var subtitle: String {
+        if showsPack && preset.source == PresetLibrary.userSource { return "\(preset.author) · \(UserPresetText.scopeTitle)" }
         guard showsPack, let pack = presets.library?.pack(id: preset.source) else { return preset.author }
         return "\(preset.author) · \(pack.title)"
     }

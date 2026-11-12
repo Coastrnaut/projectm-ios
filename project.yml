@@ -126,8 +126,7 @@ targets:
           - "Tests/**"
           - "Resources/Presets"
           - "Resources/Licenses"
-          - "Resources/PresetBlocklist.json"   # build inputs only (research R-30)
-          - "Resources/PresetExclusions.txt"
+          - "Resources/PresetExclusions.txt"   # build input only (research R-30); PresetBlocklist.json is also bundled, for imports (PRE-012-R6)
           - "Store/*.storekit"   # StoreKit test configuration: scheme and tests only
       - path: Apps/projectM-iOS/Resources/Presets
         type: folder

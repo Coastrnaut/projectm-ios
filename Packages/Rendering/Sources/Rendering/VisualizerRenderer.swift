@@ -43,11 +43,35 @@ public protocol VisualizerRenderer: AnyObject {
     /// loop, whatever `pause()`/`resume()` calls it receives; `setPreset` still loads. None by
     /// default.
     var presentationResources: [any PresentationBoundResource] { get }
+    /// PRE-012: tries a preset the user imported on an engine that is not the visible one, before
+    /// it may ever be loaded with `setPreset`. Nil when this renderer cannot run a second engine;
+    /// imported presets then wait unchecked and are not playable.
+    var presetTrial: (any PresetTrialing)? { get }
 }
 
 public extension VisualizerRenderer {
     func prewarm(_ presets: [Preset]) {}
     var presentationResources: [any PresentationBoundResource] { [] }
+    var presetTrial: (any PresetTrialing)? { nil }
+}
+
+/// How an off-screen trial of an untrusted preset ended (PRE-012-R16).
+public enum PresetTrialOutcome: Sendable, Equatable {
+    /// The engine loaded the preset and drew its frames.
+    case passed
+    /// The engine refused the preset; its message.
+    case failed(String)
+    /// The trial did not finish in time. Its work was abandoned and may still be running.
+    case timedOut
+    /// No trial could run now (the app cannot present frames, or an abandoned trial still runs).
+    case unavailable(String)
+}
+
+/// Loads a preset's text on a separate engine and drawing context and draws it for a few frames
+/// with audio input (PRE-012-R14, R15). The visible picture is never involved. `run` never throws
+/// and returns within `timeout` (plus scheduling slack), whatever the preset does.
+public protocol PresetTrialing: AnyObject, Sendable {
+    func run(_ contents: Data, timeout: Duration) async -> PresetTrialOutcome
 }
 
 /// A preset the renderer can load (data-model.md §Preset). PresetRepository (T074) builds these from

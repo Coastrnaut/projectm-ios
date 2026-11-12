@@ -15,6 +15,8 @@ public struct PresetNode: Sendable, Identifiable, Hashable {
 
 public final class PresetLibrary: Sendable {
     public static let includedSource = "included"
+    /// The source of presets the user imported (roadmap PRE-012). Never locked, never in a pack.
+    public static let userSource = "user"
     /// FR-102 pack priority after Included.
     public static let packOrder = ["cream-of-the-crop", "projectm-classic", "milkdrop-original", "en-d"]
 
@@ -27,6 +29,9 @@ public final class PresetLibrary: Sendable {
     private let byId: [String: Int]
     private let searchKeys: [String]
     private let lockedSources: Set<String>
+    /// The first `builtInCount` entries of `presets` are the bundled library; the rest are the
+    /// user's imported presets (PRE-012), alphabetical.
+    private let builtInCount: Int
 
     public init(index: Data, packs packsData: Data) throws {
         let decoder = JSONDecoder()
@@ -56,7 +61,42 @@ public final class PresetLibrary: Sendable {
         searchKeys = sorted.map { Self.fold($0.name + " " + $0.author) }
         lockedSources = Set(packsFile.packs.filter(\.locked).map(\.id))
         home = Self.buildHome(sorted, packs: packsFile.packs)
+        builtInCount = sorted.count
     }
+
+    private init(presets: [IndexedPreset], packs: [PresetPackInfo], home: [PresetNode], archiveOrder: [String],
+                 byId: [String: Int], searchKeys: [String], lockedSources: Set<String>, builtInCount: Int) {
+        self.presets = presets
+        self.packs = packs
+        self.home = home
+        self.archiveOrder = archiveOrder
+        self.byId = byId
+        self.searchKeys = searchKeys
+        self.lockedSources = lockedSources
+        self.builtInCount = builtInCount
+    }
+
+    /// This library with `userPresets` as the user's imported presets (PRE-012-R22), replacing any
+    /// it had. They can be looked up, searched, starred and put in collections like any preset,
+    /// are never locked, and form the `.user` scope. The bundled presets, the home tree, the
+    /// packs and "All presets" stay exactly as they are. Entries whose source is not
+    /// `userSource`, or whose id a bundled preset has, are ignored.
+    public func withUserPresets(_ userPresets: [IndexedPreset]) -> PresetLibrary {
+        var ids = byId
+        var keys = Array(searchKeys.prefix(builtInCount))
+        var all = Array(presets.prefix(builtInCount))
+        for (id, index) in byId where index >= builtInCount { ids[id] = nil }
+        for preset in Self.alphabetical(userPresets) where preset.source == Self.userSource && ids[preset.id] == nil {
+            ids[preset.id] = all.count
+            all.append(preset)
+            keys.append(Self.fold(preset.name + " " + preset.author))
+        }
+        return PresetLibrary(presets: all, packs: packs, home: home, archiveOrder: archiveOrder, byId: ids, searchKeys: keys,
+                             lockedSources: lockedSources, builtInCount: builtInCount)
+    }
+
+    /// The user's imported presets in this library, alphabetical.
+    public var userPresets: [IndexedPreset] { Array(presets.suffix(from: builtInCount)) }
 
     /// Reads `PresetIndex.json` and `PresetPacks.json` from the bundle off the main thread (SC-101).
     public static func load(from bundle: Bundle) async throws -> PresetLibrary {
@@ -90,8 +130,9 @@ public final class PresetLibrary: Sendable {
         case .folder(let id, let path): candidates = presets.filter { $0.source == id && $0.folder.starts(with: path) }
         case .favorites: candidates = favoritesListing(favorites)
         case .search(let query): candidates = search(query, limit: Self.searchLimit).groups.flatMap(\.presets)
-        case .all: candidates = Self.alphabetical(presets)
+        case .all: candidates = Self.alphabetical(Array(presets.prefix(builtInCount)))   // the bundled library only (PRE-012-R22)
         case .collection(let id): candidates = collectionListing(collections[id] ?? [])
+        case .user: candidates = userPresets
         }
         return candidates.filter { !isLocked($0, unlocked: unlocked) && !excluded.contains($0.id) }
     }
@@ -117,6 +158,7 @@ public final class PresetLibrary: Sendable {
         case .search(let query): "Search: \(query)"
         case .all: "All presets"
         case .collection(let id): collectionNames[id] ?? "Collection"
+        case .user: UserPresetText.scopeTitle
         }
     }
 
