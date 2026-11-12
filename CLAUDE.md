@@ -145,11 +145,13 @@ pointer, Claude's memory, the engine xcframework, optionally ANGLE, `xcodegen`).
   `Build/` (xcframeworks, depot_tools), the 12 GB of ANGLE dependencies inside `Vendor/angle`,
   the generated `.xcodeproj` folders, `.specify/feature.json`, Claude's memory and session history,
   and the two App Store preview videos.
-- **Local branch `backup/before-license-rewrite`** (115 commits, the history before the license
-  rewrite) exists only on the first Mac. It was never pushed; do not push it without the owner.
+- **Owner rulings 2026-11-12:** the Mac Studio builds ANGLE from source
+  (`setup_mac.py --angle build`); Claude's session history is not copied; the local branch
+  `backup/before-license-rewrite` (pre-rewrite history, never pushed) was deleted.
 - **Until the Mac Studio passes `SETUP.md`'s checks, the first Mac stays the build machine of
-  record** (ADR-0002). When it passes, record the Mac Studio there and in this file with the date
-  and the test counts. "Project Mac" in older notes means the first Mac.
+  record** (ADR-0002). When it passes, the Mac Studio replaces it (owner ruling: Mac Studio only):
+  record that there and in this file with the date and the test counts, and retire the first Mac.
+  "Project Mac" in older notes means the first Mac.
 - The owner does by hand: Xcode sign-in (Apple ID), the signing file, pairing D1-D3, `gh auth
   login`, and signing in to App Store Connect.
 

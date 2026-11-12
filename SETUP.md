@@ -17,13 +17,12 @@ A fresh clone lacks all of these. Each has a step below.
 |------|----------------|-------------------|
 | Signing team | `Configs/Signing.local.xcconfig` (gitignored) | Owner recreates it (step 6) |
 | Engine xcframework | `Build/ProjectM.xcframework` | Built by the setup script, about 1 minute |
-| ANGLE xcframeworks | `Build/ANGLEFrameworks` | Copy, CI download or source build (step 5) |
-| ANGLE dependencies, 12 GB | inside `Vendor/angle` (gitignored) | Only a source build needs them |
+| ANGLE xcframeworks | `Build/ANGLEFrameworks` | Built from source (owner ruling 2026-11-12, step 5) |
+| ANGLE dependencies, 12 GB | inside `Vendor/angle` (gitignored) | `gclient sync`, run by the ANGLE build |
 | Xcode projects | `*.xcodeproj` (generated) | `xcodegen generate` |
 | Spec Kit feature pointer | `.specify/feature.json` | Setup script |
 | Claude's memory | `~/.claude/projects/<path slug>/memory/` | Setup script; also in `CLAUDE.md` |
-| Claude session history | `~/.claude/projects/<path slug>/` (855 MB) | Optional copy (step 8) |
-| Branch `backup/before-license-rewrite` | first Mac only, never pushed | Stays there (step 10) |
+| Claude session history | `~/.claude/projects/<path slug>/` (855 MB) | Not copied (owner ruling 2026-11-12) |
 | App Store preview videos | first Mac only, already uploaded | Not needed to build |
 | Device pairing, Xcode account, `gh` login | per Mac | Owner (steps 2, 6) |
 
@@ -79,7 +78,7 @@ name) has one advantage: Claude's memory and history folders keep the same name 
 ## 4. Run the setup script
 
 ```bash
-python3 scripts/setup_mac.py --angle ci
+python3 scripts/setup_mac.py --angle build
 ```
 
 It stops with a list if a tool from step 1 is missing. Otherwise it:
@@ -95,9 +94,11 @@ It stops with a list if a tool from step 1 is missing. Otherwise it:
 
 `--dry-run` prints the commands without running them.
 
-## 5. ANGLE: pick one
+## 5. ANGLE: built from source
 
 `projectM-iOS` and RendererLab link `Build/ANGLEFrameworks` (libEGL and libGLESv2 xcframeworks).
+**Owner ruling 2026-11-12: the Mac Studio builds ANGLE from source (option C).** Have about 15 GB
+free. Options A and B stay documented as a quick way to build the app while C runs or if it fails.
 
 | Option | How | Cost | Use it for |
 |--------|-----|------|------------|
@@ -105,8 +106,8 @@ It stops with a list if a tool from step 1 is missing. Otherwise it:
 | B. Download from CI | `python3 scripts/setup_mac.py --angle ci` | Seconds; needs `gh auth login` | Getting started. Built by CI's Xcode 26, and artifacts expire after 90 days |
 | C. Build from source | `python3 scripts/setup_mac.py --angle build` | About 12 GB of disk inside `Vendor/angle` and a long first run | Any App Store upload from this Mac, and any ANGLE pin change |
 
-Before an App Store upload from the Mac Studio, use A or C, so the shipped ANGLE is one built by
-the pinned Xcode. `Build/ANGLEFrameworks/ANGLE.json` records the commit and the Xcode that built
+An App Store upload from the Mac Studio needs A or C, so the shipped ANGLE is one built by the
+pinned Xcode; B is never uploaded. `Build/ANGLEFrameworks/ANGLE.json` records the commit and the Xcode that built
 it. Never delete or move `Vendor/angle` once option C has filled it (CLAUDE.md).
 
 ## 6. Signing (**Owner**)
@@ -165,9 +166,8 @@ procedures are in `specs/001-ios-projectm-visualizer/quickstart.md` and
   session starts with all of them even with no memory folder.
 - The setup script restores the three memory files. Claude names the folder after the checkout's
   absolute path, with `/` and `.` turned into `-`.
-- Session history is optional. To keep it, copy
-  `~/.claude/projects/-Users-<user>-Documents-GIT-projectm-ios/` (855 MB) from the first Mac to the
-  same place on the Mac Studio. It only lines up if the checkout path is the same on both Macs.
+- Session history is not copied (owner ruling 2026-11-12): the Mac Studio starts fresh. The
+  transcripts stay on the first Mac in `~/.claude/projects/-Users-<user>-Documents-GIT-projectm-ios/`.
 - Machine permissions are per Mac: macOS asks again for Screen Recording and Accessibility when
   Claude first uses computer control, and Chrome asks again for the extension's site access.
 
@@ -175,16 +175,18 @@ procedures are in `specs/001-ios-projectm-visualizer/quickstart.md` and
 
 When step 7 passes on the Mac Studio:
 
-1. Add the Mac Studio to ADR-0002 ("Build machine of record") with the date, macOS version and
-   the test counts from step 7.
+1. Replace the first Mac with the Mac Studio in ADR-0002 ("Build machine of record"; owner
+   ruling 2026-11-12: Mac Studio only) with the date, macOS version and the test counts from
+   step 7.
 2. Update the "Moving to the Mac Studio" section of `CLAUDE.md`.
 3. Commit and push (docs-only, so `[skip ci]`).
 
-Until then the first Mac remains the build machine of record.
+Until then the first Mac remains the build machine of record. After that it is retired from the
+project, and reported results and App Store uploads come from the Mac Studio only.
 
 ## 10. The first Mac afterwards
 
-- Keep `backup/before-license-rewrite` there, or decide what to do with it. It holds the history
-  from before the license rewrite and was deliberately never pushed to the public repository.
-- Keep `Build/ANGLEFrameworks` until the Mac Studio has its own (option A or C).
-- Nothing else on it is needed: `git status` is clean and `main` matches `origin/main`.
+- The local branch `backup/before-license-rewrite` (the history from before the license rewrite,
+  never pushed) was deleted on 2026-11-12 (owner ruling). No copy was kept.
+- Nothing on it is needed: `git status` is clean and `main` matches `origin/main`.
+- It can be retired from the project once step 9 is recorded.
