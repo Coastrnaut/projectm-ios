@@ -71,6 +71,16 @@ final class PresetCollectionStoreTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: fileURL), before)
     }
 
+    func testNameProblemMatchesWhatCreateAndRenameRefuse() throws {
+        let store = makeStore()
+        try store.create(name: "Chill")
+        XCTAssertNil(store.nameProblem("New"))
+        XCTAssertEqual(store.nameProblem("  "), .emptyName)
+        XCTAssertEqual(store.nameProblem(String(repeating: "x", count: 61)), .nameTooLong(limit: 60))
+        XCTAssertEqual(store.nameProblem("chíll"), .duplicateName)
+        XCTAssertNil(store.nameProblem("CHILL", renaming: "c1"))
+    }
+
     func testRenameKeepsIdContentsAndPosition() throws {
         let store = makeStore()
         try store.create(name: "A")

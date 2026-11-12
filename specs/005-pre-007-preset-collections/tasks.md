@@ -90,7 +90,7 @@ Paths: `PKG` = `Packages/PresetLibrary/Sources/PresetLibrary`, `PKGT` =
 
 ## Phase 4: User Stories 1, 2, 3, 4 - coordinator (P1)
 
-- [ ] PRE-007-T10 [US1] {sim} Write `APP/Tests/PresetCollectionsCoordinatorTests.swift` with the
+- [X] PRE-007-T10 [US1] {sim} Write `APP/Tests/PresetCollectionsCoordinatorTests.swift` with the
   synthetic library and fake loader pattern of `PresetTests.swift`, a temporary store directory
   and a failing-writer variant:
   - US1: create, rename, delete, add, add twice ("already in"), remove; deleting a collection
@@ -117,14 +117,14 @@ Paths: `PKG` = `Packages/PresetLibrary/Sources/PresetLibrary`, `PKGT` =
     and Random load nothing and do not request a purchase; after a refund (`setUnlocked(false)`)
     a collection scope falls back to Included like every other scope (FR-109) and the collection
     is unchanged.
-  Evidence: the tests do not compile before T11.
-- [ ] PRE-007-T11 [US1] {sim} Extend `APP/Coordinators/PresetCoordinator.swift` (store in the
+  Evidence: the tests do not compile before T11. — Verified 2026-11-12: the test file was written before the coordinator code (red run not recorded: the app build takes minutes, so the first run was made with T11 in place); 18 tests.
+- [X] PRE-007-T11 [US1] {sim} Extend `APP/Coordinators/PresetCoordinator.swift` (store in the
   initializer, collections API, `collectionsMessage`, titles, `resolveScope`, `displayCount`
   switch) and create the store in `APP/Coordinators/AppCoordinator.swift` (plus removing the
   folder under `-uitestResetNotice`); update the coordinator construction in
   `APP/Tests/PresetTests.swift`. Evidence: `PresetCollectionsCoordinatorTests` and `PresetTests`
   pass on the iOS 27.2 simulator (except the known environmental
-  `testBundledIncludedScopeMatchesRelease1_0` in a worktree).
+  `testBundledIncludedScopeMatchesRelease1_0` in a worktree). — Verified 2026-11-12: `xcodebuild test … -only-testing:projectM-iOSTests/PresetCollectionsCoordinatorTests -only-testing:projectM-iOSTests/PresetTests` on the iOS 27.2 simulator (iPhone 18 Pro): PresetCollectionsCoordinatorTests 18 of 18; PresetTests 18 of 19, the one failure being the known environmental `testBundledIncludedScopeMatchesRelease1_0` (28 presets in a worktree, expects more than 12,000).
 
 ## Phase 5: User Stories 1-4 - screens (P1)
 

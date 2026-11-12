@@ -93,6 +93,18 @@ public final class PresetCollectionStore {
         Dictionary(collections.map { ($0.id, $0.name) }, uniquingKeysWith: { first, _ in first })
     }
 
+    /// Why `name` cannot be used for a new collection, or for renaming `id` (nil = it can). The
+    /// same checks `create` and `rename` apply, for showing the reason while the user types.
+    public func nameProblem(_ name: String, renaming id: String? = nil) -> PresetCollectionError? {
+        if case .newerFormat(let version) = availability { return .newerFormat(version: version) }
+        do {
+            try Self.requireUnusedName(try PresetCollectionName.normalized(name), in: collections, except: id)
+            return nil
+        } catch {
+            return error as? PresetCollectionError ?? .saveFailed
+        }
+    }
+
     // MARK: - Changes (each one is saved before it is visible)
 
     /// R1: a new, empty collection at the end of the list.

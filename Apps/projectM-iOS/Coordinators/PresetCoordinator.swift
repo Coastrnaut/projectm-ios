@@ -12,6 +12,11 @@
 //   purchase or restore it becomes Cream of the Crop; after a refund it falls back to Included
 //   and the playing preset keeps playing (FR-109).
 // * Selecting a locked preset asks for the purchase sheet instead of playing it (FR-106).
+// * Collections (roadmap PRE-007, specs/005-pre-007-preset-collections): named lists in the user's
+//   own order, kept by PresetCollectionStore (one versioned file, saved atomically). A collection
+//   is a scope too: Next and Previous follow the user's order. Locked presets may be listed in a
+//   collection but never play through it (PRE-007-R13). Every change is saved before it is shown;
+//   a refusal or a failed save sets `collectionsMessage` and changes nothing (PRE-007-R8).
 // * A preset that fails to load leaves the running one on screen, shows "Preset could not be
 //   loaded", and is excluded from every scope for the rest of the session (FR-045, FR-118).
 import Foundation
@@ -54,13 +59,23 @@ final class PresetCoordinator {
     /// uniformly from the scope, never the current preset (FR-117, SC-106).
     private(set) var plannedRandom: IndexedPreset?
 
+    /// Bumped on every collections change so views refresh (PRE-007).
+    private(set) var collectionsVersion = 0
+    /// Why the last collections action was refused or could not be saved; shown as an alert.
+    var collectionsMessage: String?
+    /// Set once when unreadable saved collections were set aside (PRE-007-R15).
+    private(set) var collectionsNotice: String?
+
     @ObservationIgnored private let store: FavoritesStore
+    @ObservationIgnored private let collectionStore: PresetCollectionStore
     @ObservationIgnored private let settings: AppSettings
     @ObservationIgnored private let loader: any PresetLoading
     @ObservationIgnored private var scopeAnnouncer: ((String) -> Void)?
 
-    init(store: FavoritesStore, settings: AppSettings, loader: any PresetLoading) {
+    init(store: FavoritesStore, settings: AppSettings, loader: any PresetLoading, collections: PresetCollectionStore) {
         self.store = store
+        collectionStore = collections
+        if collections.loadNotice == .unreadableSetAside { collectionsNotice = PresetCollectionStore.unreadableText }
         self.settings = settings
         self.loader = loader
         scope = settings.presetScope.flatMap(PresetScope.init(storageValue:)) ?? .included
@@ -106,7 +121,13 @@ final class PresetCoordinator {
     var members: [IndexedPreset] {
         guard let library else { return [] }
         _ = favoritesVersion
-        return library.members(of: scope, unlocked: unlocked, favorites: Set(store.favorites), excluded: excludedThisSession)
+        var collections: [String: [String]] = [:]
+        if case .collection = scope {
+            _ = collectionsVersion
+            collections = collectionStore.presetIDsByCollection
+        }
+        return library.members(of: scope, unlocked: unlocked, favorites: Set(store.favorites), excluded: excludedThisSession,
+                               collections: collections)
     }
 
     /// FR-114: favorites across packs, alphabetical, locked ones listed (marked by the view).
@@ -140,7 +161,7 @@ final class PresetCoordinator {
             case .pack(let id): preset.source == id
             case .folder(let id, let path): preset.source == id && preset.folder.starts(with: path)
             case .all: unlocked || preset.isIncluded
-            case .favorites, .search: false
+            case .favorites, .search, .collection: false
             }
         }.count
         return max(0, node.presetCount - failedHere)
@@ -163,7 +184,13 @@ final class PresetCoordinator {
     /// "<scope> · <count>" under the preset name (FR-120).
     var scopeLine: String {
         guard let library else { return "" }
-        return "\(library.title(of: scope)) · \(members.count)"
+        return "\(title(of: scope, in: library)) · \(members.count)"
+    }
+
+    private func title(of scope: PresetScope, in library: PresetLibrary) -> String {
+        guard case .collection = scope else { return library.title(of: scope) }
+        _ = collectionsVersion
+        return library.title(of: scope, collectionNames: collectionStore.namesByCollection)
     }
 
     // MARK: - Switching
@@ -253,12 +280,140 @@ final class PresetCoordinator {
         scope = newScope
         plannedRandom = nil   // planned for the old scope
         settings.presetScope = newScope.storageValue
-        if let library { scopeAnnouncer?("\(library.title(of: newScope)), \(members.count) presets") }
+        if let library { scopeAnnouncer?("\(title(of: newScope, in: library)), \(members.count) presets") }
     }
 
-    /// A stored scope that no longer resolves falls back (spec Edge Cases).
+    /// A stored scope that no longer resolves falls back (spec Edge Cases). A collection scope
+    /// resolves while the collections store has that collection (PRE-007-R12).
     private func resolveScope() {
-        guard let library, !library.resolves(scope) else { return }
-        setScope(unlocked ? .all : .included)
+        guard let library else { return }
+        let resolves: Bool
+        if case .collection(let id) = scope {
+            resolves = collectionStore.collection(id: id) != nil
+        } else {
+            resolves = library.resolves(scope)
+        }
+        if !resolves { setScope(unlocked ? .all : .included) }
+    }
+
+    // MARK: - Collections (PRE-007)
+
+    enum AddToCollectionResult: Equatable { case added, alreadyThere, failed }
+
+    /// The user's collections, in the user's order.
+    var collections: [PresetCollection] {
+        _ = collectionsVersion
+        return collectionStore.collections
+    }
+
+    /// Non-nil when the saved collections come from a newer app version and cannot be used (R15).
+    var collectionsUnavailableText: String? {
+        collectionStore.availability == .available ? nil : PresetCollectionStore.newerFormatText
+    }
+
+    func dismissCollectionsNotice() { collectionsNotice = nil }
+
+    func collection(id: String) -> PresetCollection? {
+        _ = collectionsVersion
+        return collectionStore.collection(id: id)
+    }
+
+    /// What a collection's screen lists: its presets that exist in the library, in the user's
+    /// order, locked ones included (the row marks them; R13, R14).
+    func collectionListing(_ id: String) -> [IndexedPreset] {
+        guard let library, let collection = collection(id: id) else { return [] }
+        return library.collectionListing(collection.presetIDs)
+    }
+
+    func collectionCount(_ id: String) -> Int { collectionListing(id).count }
+
+    func isInCollection(_ preset: IndexedPreset, _ id: String) -> Bool {
+        collection(id: id)?.presetIDs.contains(preset.id) ?? false
+    }
+
+    /// Why a name cannot be used (nil = it can); shown while the user types (R9).
+    func collectionNameProblem(_ name: String, renaming id: String?) -> String? {
+        _ = collectionsVersion
+        return collectionStore.nameProblem(name, renaming: id)?.message
+    }
+
+    @discardableResult
+    func createCollection(named name: String) -> PresetCollection? {
+        var created: PresetCollection?
+        changeCollections { created = try collectionStore.create(name: name) }
+        return created
+    }
+
+    @discardableResult
+    func renameCollection(_ id: String, to name: String) -> Bool {
+        changeCollections { try collectionStore.rename(id, to: name) }
+    }
+
+    /// Removes the collection only: presets, favorites and other collections stay (R3). If it was
+    /// the scope, the scope falls back and the playing preset keeps playing (R12).
+    func deleteCollection(_ id: String) {
+        if changeCollections({ try collectionStore.delete(id) }) { resolveScope() }
+    }
+
+    @discardableResult
+    func addToCollection(_ preset: IndexedPreset, _ id: String) -> AddToCollectionResult {
+        var added = false
+        guard changeCollections({ added = try collectionStore.add(preset.id, to: id) }) else { return .failed }
+        return added ? .added : .alreadyThere
+    }
+
+    func removeFromCollection(_ presets: [IndexedPreset], _ id: String) {
+        changeCollections { try collectionStore.remove(Set(presets.map(\.id)), from: id) }
+    }
+
+    /// A list move of the shown presets (offsets as the list control gives them). Entries that are
+    /// not shown keep their places (R14).
+    func movePresets(in id: String, fromOffsets: IndexSet, toOffset: Int) {
+        let shown = collectionListing(id).map(\.id)
+        let order = PresetCollectionOrder.moved(shown, fromOffsets: fromOffsets, toOffset: toOffset)
+        guard order != shown else { return }
+        changeCollections { try collectionStore.reorderPresets(in: id, visibleOrder: order) }
+    }
+
+    /// Move Up (-1) or Move Down (+1): reordering without a drag (R18).
+    func movePreset(_ preset: IndexedPreset, in id: String, by delta: Int) {
+        guard let index = collectionListing(id).firstIndex(of: preset) else { return }
+        movePresets(in: id, fromOffsets: [index], toOffset: delta < 0 ? index - 1 : index + 2)
+    }
+
+    func moveCollections(fromOffsets: IndexSet, toOffset: Int) {
+        let ids = collections.map(\.id)
+        let order = PresetCollectionOrder.moved(ids, fromOffsets: fromOffsets, toOffset: toOffset)
+        guard order != ids else { return }
+        changeCollections { try collectionStore.reorderCollections(order) }
+    }
+
+    func moveCollection(_ id: String, by delta: Int) {
+        guard let index = collections.firstIndex(where: { $0.id == id }) else { return }
+        moveCollections(fromOffsets: [index], toOffset: delta < 0 ? index - 1 : index + 2)
+    }
+
+    /// "Friday set, 3 presets": a collection row for VoiceOver (R18).
+    nonisolated static func collectionRowLabel(name: String, count: Int) -> String {
+        "\(name), \(count.formatted(.number.locale(Locale(identifier: "en_US")))) \(count == 1 ? "preset" : "presets")"
+    }
+
+    nonisolated static func collectionsRowLabel(count: Int) -> String {
+        "Collections, \(count) \(count == 1 ? "collection" : "collections")"
+    }
+
+    /// Runs one store change. On a refusal or a failed save nothing changed: the reason goes to
+    /// `collectionsMessage` (R8). Views refresh either way, so an optimistic list move snaps back.
+    @discardableResult
+    private func changeCollections(_ change: () throws -> Void) -> Bool {
+        defer { collectionsVersion += 1 }
+        do {
+            try change()
+            plannedRandom = nil   // may have been planned from the old contents
+            return true
+        } catch {
+            collectionsMessage = (error as? PresetCollectionError)?.message ?? PresetCollectionError.saveFailed.message
+            return false
+        }
     }
 }

@@ -74,6 +74,7 @@ final class AppCoordinator: VisualizationControlling {
             defaults.removeObject(forKey: FavoritesStore.favoritesKey)
             defaults.removeObject(forKey: FavoritesStore.lastPresetKey)
             AppSettings.allKeys.forEach(defaults.removeObject(forKey:))
+            try? FileManager.default.removeItem(at: PresetCollectionStore.defaultDirectory())   // PRE-007: UI tests start without collections
         }
         settings = AppSettings(defaults: defaults, systemReduceMotion: UIAccessibility.isReduceMotionEnabled)
         screen = defaults.bool(forKey: Self.noticeKey) ? .chooser : .notice
@@ -96,7 +97,8 @@ final class AppCoordinator: VisualizationControlling {
         let lifecycle = LifecycleObserver()
         self.lifecycle = lifecycle
         // Feature 002: the library (12,941 presets) loads off the main thread (SC-101).
-        presets = PresetCoordinator(store: FavoritesStore(defaults: defaults), settings: settings, loader: presetLoader)
+        presets = PresetCoordinator(store: FavoritesStore(defaults: defaults), settings: settings, loader: presetLoader,
+                                    collections: PresetCollectionStore(directory: PresetCollectionStore.defaultDirectory()))
         #if DEBUG || PROJECTM_AUTOMATION
         entitlements = AutomationRunner.entitlementsOverride() ?? FakeEntitlements.fromLaunchArguments() ?? LibraryStore()
         #else
