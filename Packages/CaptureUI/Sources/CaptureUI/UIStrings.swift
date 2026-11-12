@@ -2,6 +2,7 @@
 // specs/001-ios-projectm-visualizer/contracts/ui-states.md (English only).
 // scripts/test_scripts.py cross-checks these literals against the contract on every CI run.
 import AudioCore
+import CaptureKit
 
 public enum UIStrings {
     // MARK: Source labels (FR-013)
@@ -71,6 +72,97 @@ public enum UIStrings {
 
     // MARK: Diagnostics export (FR-021)
     public static let exportNotePlaceholder = "Optional note, e.g. which app was playing. Do not enter personal information."
+
+    // MARK: Imported audio (AUD-001; specs/003-aud-001-import-drm-free-audio-files/contracts/ui-strings.md)
+    public static let yourAudio = "Your Audio"
+    public static let importAudio = "Import Audio…"
+    public static let importing = "Importing…"
+    public static let noImportedAudio = "No imported audio yet."
+    public static let importedAudioFooter = "Imported tracks play as In-App Playback. Files are copied into the app and stay on this device."
+    public static let remove = "Remove"
+    public static let importedTrackHint = "Plays this track as In-App Playback."
+    public static let importAlertTitle = "Import Audio"
+    public static let ok = "OK"
+
+    /// Why a picked file was not imported (AUD-001-R6).
+    public static func message(_ error: AudioImportError) -> String {
+        switch error {
+        case .notAudio: return "This file isn't a supported audio file."
+        case .unreadable: return "This audio file can't be read. It may be damaged."
+        case .protectedContent: return "This file is copy-protected (DRM) and can't be imported."
+        case .tooLarge(let limitBytes): return "This file is too large. The limit is \(byteLimit(limitBytes))."
+        case .unsupportedChannelCount: return "Only mono and stereo audio can be imported."
+        case .insufficientStorage: return "There isn't enough storage on this device."
+        case .sourceUnavailable: return "This file couldn't be opened."
+        case .libraryUnavailable: return "Your audio library isn't available."
+        }
+    }
+
+    /// Why the library cannot be used (AUD-001-R15).
+    public static func message(_ unavailable: AudioLibraryState.Unavailable) -> String {
+        switch unavailable {
+        case .newerFormat: return "Your audio library was saved by a newer version of the app. Update the app to use it."
+        case .storage: return "Your audio library couldn't be opened."
+        }
+    }
+
+    /// A size limit in whole binary units: "500 MB", "97 KB".
+    public static func byteLimit(_ bytes: Int64) -> String {
+        let megabyte: Int64 = 1024 * 1024
+        return bytes >= megabyte ? "\(bytes / megabyte) MB" : "\(max(1, bytes / 1024)) KB"
+    }
+
+    /// The result of one import, for the alert and the VoiceOver announcement: how many tracks were
+    /// imported, then one line per duplicate and per failure in the order picked. Nil when nothing
+    /// was picked.
+    public static func importSummary(_ outcomes: [AudioImportOutcome]) -> String? {
+        guard !outcomes.isEmpty else { return nil }
+        var imported = 0
+        var lines: [String] = []
+        for outcome in outcomes {
+            switch outcome {
+            case .imported: imported += 1
+            case .duplicate(let track): lines.append("“\(track.title)” is already in your library.")
+            case .failed(let name, let error): lines.append("“\(name)”: \(message(error))")
+            }
+        }
+        if imported == 1 { lines.insert("Imported 1 track.", at: 0) }
+        if imported > 1 { lines.insert("Imported \(imported) tracks.", at: 0) }
+        return lines.joined(separator: "\n")
+    }
+
+    /// True when the result must be shown: some file was a duplicate or was not imported.
+    public static func importNeedsAlert(_ outcomes: [AudioImportOutcome]) -> Bool {
+        outcomes.contains { if case .imported = $0 { return false } else { return true } }
+    }
+
+    /// A track's duration as shown: `m:ss`, or `h:mm:ss` from one hour.
+    public static func duration(_ seconds: Double) -> String {
+        let (hours, minutes, secs) = durationParts(seconds)
+        let ss = secs < 10 ? "0\(secs)" : "\(secs)"
+        guard hours > 0 else { return "\(minutes):\(ss)" }
+        return "\(hours):\(minutes < 10 ? "0\(minutes)" : "\(minutes)"):\(ss)"
+    }
+
+    /// A track's duration as VoiceOver reads it: "3 minutes 5 seconds".
+    public static func spokenDuration(_ seconds: Double) -> String {
+        let (hours, minutes, secs) = durationParts(seconds)
+        var parts: [String] = []
+        if hours > 0 { parts.append(hours == 1 ? "1 hour" : "\(hours) hours") }
+        if minutes > 0 { parts.append(minutes == 1 ? "1 minute" : "\(minutes) minutes") }
+        if secs > 0 || parts.isEmpty { parts.append(secs == 1 ? "1 second" : "\(secs) seconds") }
+        return parts.joined(separator: " ")
+    }
+
+    public static func trackAccessibilityLabel(_ track: ImportedTrack) -> String {
+        "\(track.title), \(spokenDuration(track.durationSeconds))"
+    }
+
+    private static func durationParts(_ seconds: Double) -> (hours: Int, minutes: Int, seconds: Int) {
+        guard seconds.isFinite, seconds > 0 else { return (0, 0, 0) }
+        let total = Int(min(seconds, 359_999))   // below 100 hours
+        return (total / 3600, (total % 3600) / 60, total % 60)
+    }
 
     // MARK: Actions
     public static let chooseSource = "Choose source"

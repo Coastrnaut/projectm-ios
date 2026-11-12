@@ -80,9 +80,16 @@ final class FakePlaybackBackend: InAppPlaybackBackend {
     private(set) var stopCount = 0
     var onEvent: (@Sendable (SourceEvent) -> Void)?
 
-    func start(sink: PCMSink, onEvent: @escaping @Sendable (SourceEvent) -> Void) throws {
+    /// Every track a start was asked to play, including failed starts.
+    private(set) var requestedTracks: [InAppPlaybackTrack] = []
+    /// Tracks that actually started.
+    private(set) var startedTracks: [InAppPlaybackTrack] = []
+
+    func start(track: InAppPlaybackTrack, sink: PCMSink, onEvent: @escaping @Sendable (SourceEvent) -> Void) throws {
+        requestedTracks.append(track)
         if trackMissing { throw SourceError(.inAppPlaybackFailed) }
         started = true
+        startedTracks.append(track)
         self.onEvent = onEvent
     }
 
@@ -333,6 +340,56 @@ final class InAppPlaybackSourceTests: XCTestCase {
         XCTAssertLessThan(Date().timeIntervalSince(t0), 1)
         XCTAssertEqual(backend.stopCount, 1)
         XCTAssertFalse(backend.openedInput, "FR-069: never opens an input")
+    }
+
+    // MARK: Imported tracks (AUD-001-T11)
+
+    func testTrackDefaultsToReference() async throws {
+        let backend = FakePlaybackBackend()
+        let source = InAppPlaybackSource(backend: backend)
+        XCTAssertEqual(source.track, .reference)
+        _ = try await source.start(into: PCMSink())
+        XCTAssertEqual(backend.startedTracks, [.reference])
+        XCTAssertEqual(source.mode, .inAppPlayback)
+    }
+
+    func testSelectedFileTrackReachesBackendAndKeepsTheMode() async throws {
+        let url = URL(fileURLWithPath: "/library/assets/abc.wav")
+        let backend = FakePlaybackBackend()
+        let source = InAppPlaybackSource(backend: backend)
+        source.track = .file(url)
+        _ = try await source.start(into: PCMSink())
+        XCTAssertEqual(backend.startedTracks, [.file(url)])
+        XCTAssertEqual(source.mode, .inAppPlayback, "AUD-001-R18: an imported track is In-App Playback")
+        XCTAssertEqual(source.availability, .available)
+    }
+
+    func testUnplayableFileTrackFailsWithoutFallback() async {
+        let url = URL(fileURLWithPath: "/library/assets/missing.wav")
+        let backend = FakePlaybackBackend()
+        backend.trackMissing = true
+        let source = InAppPlaybackSource(backend: backend)
+        source.track = .file(url)
+        await assertThrows(.inAppPlaybackFailed) { _ = try await source.start(into: PCMSink()) }
+        XCTAssertEqual(backend.requestedTracks, [.file(url)], "AUD-001-R19: no second start with another track")
+        XCTAssertEqual(backend.startedTracks, [])
+    }
+
+    func testManagerLabelsImportedTrackAsInAppPlaybackAndRestartsIt() async {
+        let url = URL(fileURLWithPath: "/library/assets/abc.wav")
+        let backend = FakePlaybackBackend()
+        let source = InAppPlaybackSource(backend: backend)
+        let manager = CaptureManager(sources: [source], runsAnalysisTimer: false)
+        source.track = .file(url)
+        await manager.select(.inAppPlayback)
+        XCTAssertEqual(manager.activeMode, .inAppPlayback)
+        await manager.restart()
+        XCTAssertEqual(backend.startedTracks, [.file(url), .file(url)])
+        // Back to the reference track at the next selection.
+        await manager.stop()
+        source.track = .reference
+        await manager.select(.inAppPlayback)
+        XCTAssertEqual(backend.startedTracks.last, .reference)
     }
 }
 

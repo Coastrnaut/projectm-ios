@@ -3,6 +3,7 @@
 // microphone explainer. Strings come from UIStrings, which matches contracts/ui-states.md.
 #if canImport(SwiftUI)
 import AudioCore
+import CaptureKit
 import SwiftUI
 
 enum PreviewFixtures {
@@ -14,6 +15,14 @@ enum PreviewFixtures {
         .audioRouteChanged, .endedBySystem, .unsupportedOS, .screenRecordingNotAllowed,
         .error("Example description"),
     ]
+
+    /// Two imported tracks, newest first (AUD-001).
+    static let importedTracks: [ImportedTrack] = [("Evening Set", 3725.0), ("Test Tone", 185.0)].enumerated().map { index, item in
+        let digest = String(repeating: index == 0 ? "ab" : "cd", count: 32)
+        return ImportedTrack(id: UUID(), title: item.0, originalFileName: "\(item.0).m4a", sha256: digest,
+                             fileName: "\(digest).m4a", byteCount: 1_000_000, durationSeconds: item.1, sampleRate: 44_100,
+                             channelCount: 2, importedAt: Date(timeIntervalSince1970: 1_794_477_600))
+    }
 
     /// iOS 27 or later: every mode available.
     static let allAvailable: [AudioSourceMode: SourceAvailability] =
@@ -37,6 +46,19 @@ enum PreviewFixtures {
 
 #Preview("Chooser — iOS 27, all modes available") {
     SourceChooserView(availability: PreviewFixtures.allAvailable) { _ in }
+}
+
+#Preview("Chooser — with imported audio (AUD-001)") {
+    SourceChooserView(availability: PreviewFixtures.allAvailable, onSelect: { _ in }, extraSections: {
+        ImportedAudioSection(tracks: PreviewFixtures.importedTracks, isImporting: false,
+                             onImport: {}, onPlay: { _ in }, onRemove: { _ in })
+    })
+}
+
+#Preview("Chooser — importing, empty library") {
+    SourceChooserView(availability: PreviewFixtures.allAvailable, onSelect: { _ in }, extraSections: {
+        ImportedAudioSection(tracks: [], isImporting: true, onImport: {}, onPlay: { _ in }, onRemove: { _ in })
+    })
 }
 
 #Preview("Chooser — iOS 26, capture unavailable") {
