@@ -7,8 +7,9 @@
  "by_priority": {
   "P0": {
    "audited": 68,
-   "implementing": 2,
-   "integrated": 17
+   "implementing": 1,
+   "integrated": 17,
+   "unit_passed": 1
   },
   "P1": {
    "audited": 149,
@@ -23,8 +24,9 @@
  },
  "by_state": {
   "audited": 305,
-  "implementing": 2,
-  "integrated": 19
+  "implementing": 1,
+  "integrated": 19,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -2489,12 +2491,12 @@
   "PRE-012": {
    "attempts": 0,
    "branch": "feature/pre-012",
-   "branch_sha": null,
+   "branch_sha": "6d4ada96b86c51d81de323001045c72a2c32e1b8",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": "specs/008-pre-012-preset-import-validation",
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "PRE-013": {
    "attempts": 0,
@@ -3711,5 +3713,5 @@
  "run_id": "cb545c51cf0b",
  "skipped_existing": [],
  "total": 326,
- "updated": "2026-11-12T22:58:28Z"
+ "updated": "2026-11-12T23:21:48Z"
 }
