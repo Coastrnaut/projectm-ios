@@ -17,6 +17,19 @@ requirements are `AUD-001-R1…`, success criteria `AUD-001-S1…`, tasks `AUD-0
 of feature 001 (`specs/001-ios-projectm-visualizer/spec.md`) and feature 002 stay in force unless a
 line below amends one explicitly.
 
+## Clarifications
+
+### Session 2026-11-12
+
+Answered by Claude under the owner's standing approval (routine decisions delegated, no human
+interaction); each answer is the conservative, local-first option.
+
+- Q: What happens when the user imports a file whose content is already in the library? → A: Nothing is stored twice. Content is compared byte for byte (by content hash, not by name); the existing track keeps its title and import date, and the user is told "already in your library" (AUD-001-R8).
+- Q: How large may one imported file be? → A: 500 MB, checked on the bytes actually copied rather than on the size the file reports; larger files are refused with a message stating the limit (AUD-001-R4).
+- Q: Feature 001's FR-065 says no audio is stored on the device; may the library store imported files? → A: Yes, but only files the user explicitly imports, plus the library record. AUD-001-R22 amends FR-065 for exactly that; captured, microphone and system audio are still never stored, and no listening history is kept. The device privacy check is updated to allow only the library's own folder. Flagged for the owner in the feature report.
+- Q: What should the app do when the library's record is damaged? → A: Keep the damaged record aside, rebuild the list from the stored copies that still decode, and carry on (AUD-001-R14). A record from a newer app version is different: it is left untouched and the library is shown as unavailable (AUD-001-R15), so a downgrade can never destroy data.
+- Q: Where does the user import and choose tracks, and which audio shapes are accepted? → A: On the source chooser of the projectM-iOS app, in a "Your Audio" section under the three sources; CaptureLab is unchanged. Only mono and stereo files are accepted; files with more channels are refused with their own message, because the existing playback path and visualizer input are stereo (AUD-001-R4).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Import my own audio and watch it (Priority: P1)
@@ -171,14 +184,15 @@ minimum needed to manage storage. Queueing, ordering and renaming are later feat
 - **AUD-001-R7**: The app MUST NOT attempt to decrypt, strip, or otherwise circumvent DRM or any
   content protection. A protected file is refused (Constitution I, FR-003).
 - **AUD-001-R8**: Importing content that is already in the library (byte-identical) MUST NOT store
-  a second copy; the existing track is kept and the user is told the track is already in the
-  library.
+  a second copy; the existing track is kept, with its title and import date, and the user is told
+  the track is already in the library. Identity is the content, not the file name.
 - **AUD-001-R9**: While files are being imported the chooser MUST show that an import is in
   progress, and the import MUST NOT block the interface.
 
 **Library**
 
-- **AUD-001-R10**: The chooser MUST list imported tracks under "Your Audio", most recently
+- **AUD-001-R10**: The chooser MUST list imported tracks in a "Your Audio" section below the three
+  sources, most recently
   imported first, each with its title (the picked file's name without extension) and duration.
 - **AUD-001-R11**: The library MUST record, for each track: a stable identifier, title, original
   file name, content hash, stored file name, size, duration, sample rate, channel count and import
