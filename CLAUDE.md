@@ -91,7 +91,9 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
     - Paid Apps Agreement Active; bank account and W-9 Active.
     - EU Digital Services Act: trader, In Review.
     - Remaining: submit the purchase together with the 1.1 version.
-  - Open: only the 1.1 upload and submitting the purchase with it (T242). Version 1.1 (2); T232's VoiceOver check is not required.
+  - 1.1 (2) uploaded 2026-11-11 (`xcodebuild -exportArchive`, destination upload). Open: create
+    version 1.1 in App Store Connect, attach build 2 and submit it with the in-app purchase
+    (T242). 1.0 is still Waiting for Review. Version 1.1 (2); T232's VoiceOver check is not required.
 - Phase B verified on the project Mac 2026-11-09: AudioCore 76, CaptureKit 80, Diagnostics 8 tests
   on the host and the iOS 27.2 and 26.5 simulators; CaptureLab UI tests (3) on iOS 27.2; device
   builds with no warnings. The Linux path (no AVFAudio: linear resampler fallback) is tested on
@@ -382,6 +384,9 @@ agent-driven. Copy this section into a new repository's CLAUDE.md and adjust the
   - Use StoreKit 2: `Transaction.currentEntitlements` and `Transaction.updates`. Store no
     unlock flag.
   - Keep the network product request out of any launch-time critical path.
+- **Uploading without Xcode's UI:** `xcodebuild archive`, then `xcodebuild -exportArchive` with an
+  options plist (`method` app-store-connect, `destination` upload, `signingStyle` automatic) and
+  `-allowProvisioningUpdates`. It uses the account signed in to Xcode; no credentials are typed.
 - **Driving App Store Connect:** the owner must authorize it (computer use or the browser), and
   the owner signs in. Never type credentials.
 - **Sandbox products:** they appear only once the Paid Apps Agreement, banking and tax are Active,

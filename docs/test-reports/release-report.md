@@ -106,3 +106,24 @@ Before a 1.1 upload:
 
 The app target was renamed `projectM-iOS`. Later archives are named `projectM-iOS`; the bundle ID
 is unchanged, so the App Store Connect record (app ID 6833037520) still applies.
+
+## 1.1 (2) upload, 2026-11-11
+
+- **Archive:** `xcodebuild archive`, Release, `projectM-iOS 1.1 (2).xcarchive`:
+  - bundle ID `org.projectmios.ProjectMiOS`, display name "projectM";
+  - one app (FR-090), 45 MB, with the preset library (`PresetIndex.json`, `PresetArchive.bin`,
+    `PresetTextures/`);
+  - no StoreKit test file;
+  - zero automation or test symbols (`nm -U`);
+  - `check_privacy_manifest.py`: OK.
+- **Upload:** `xcodebuild -exportArchive` with `method app-store-connect` and
+  `destination upload`, using automatic signing through the account signed in to Xcode; the
+  project's signing settings are unchanged. Result: "Upload succeeded". The only warnings are, as
+  for 1.0, that the three prebuilt frameworks have no dSYMs.
+- **Next:**
+  - Create version 1.1 in App Store Connect and attach build 2.
+  - Add the in-app purchase "Full Preset Library" to that submission; Apple requires the first
+    in-app purchase to go with a new version.
+  - Update What's New and the description from `docs/release/store-copy.md`.
+  - 1.0 is still "Waiting for Review". Either let it finish, or remove it from review and submit
+    1.1 instead (owner's choice).
