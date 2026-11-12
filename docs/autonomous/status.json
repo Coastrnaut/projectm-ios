@@ -7,8 +7,9 @@
  "by_priority": {
   "P0": {
    "audited": 72,
-   "implementing": 2,
-   "integrated": 13
+   "implementing": 1,
+   "integrated": 13,
+   "unit_passed": 1
   },
   "P1": {
    "audited": 149,
@@ -23,8 +24,9 @@
  },
  "by_state": {
   "audited": 309,
-  "implementing": 2,
-  "integrated": 15
+  "implementing": 1,
+  "integrated": 15,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -633,12 +635,12 @@
   "AUD-001": {
    "attempts": 0,
    "branch": "feature/aud-001",
-   "branch_sha": null,
+   "branch_sha": "d9a60b2a66929b503a1540bedd568ff9def63845",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": "specs/003-aud-001-import-drm-free-audio-files",
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "AUD-002": {
    "attempts": 0,
@@ -3695,5 +3697,5 @@
  "run_id": "cb545c51cf0b",
  "skipped_existing": [],
  "total": 326,
- "updated": "2026-11-12T20:28:48Z"
+ "updated": "2026-11-12T20:35:46Z"
 }
