@@ -127,3 +127,14 @@ is unchanged, so the App Store Connect record (app ID 6833037520) still applies.
   - Update What's New and the description from `docs/release/store-copy.md`.
   - 1.0 is still "Waiting for Review". **Owner ruling (2026-11-11): wait for 1.0's review to
     finish, then submit 1.1 with the purchase as an update.**
+
+## Status, 2026-11-12
+
+- **1.0 (1): Ready for Distribution.** App Review approved it, and with automatic release chosen
+  it is released on the App Store. Nothing is pending from us for 1.0.
+- **Build 1.1 (2): processed**, "Ready to Submit" in TestFlight › Builds.
+- **Next (owner ruling 2026-11-11):**
+  1. Create version 1.1 and attach build 2.
+  2. Add the in-app purchase "Full Preset Library".
+  3. Fill in What's New and the description from `docs/release/store-copy.md`.
+  4. Submit for review.
