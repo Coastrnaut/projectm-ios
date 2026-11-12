@@ -79,8 +79,10 @@ public final class PresetLibrary: Sendable {
         !unlocked && lockedSources.contains(preset.source)
     }
 
-    /// Scope members: alphabetical, playable only (FR-115, FR-118).
-    public func members(of scope: PresetScope, unlocked: Bool, favorites: Set<String>, excluded: Set<String>) -> [IndexedPreset] {
+    /// Scope members: alphabetical, playable only (FR-115, FR-118). A collection's members are in
+    /// the user's order (PRE-007-R11); `collections` maps a collection id to its preset ids.
+    public func members(of scope: PresetScope, unlocked: Bool, favorites: Set<String>, excluded: Set<String>,
+                        collections: [String: [String]] = [:]) -> [IndexedPreset] {
         let candidates: [IndexedPreset]
         switch scope {
         case .included: candidates = presets.filter(\.isIncluded)
@@ -89,6 +91,7 @@ public final class PresetLibrary: Sendable {
         case .favorites: candidates = favoritesListing(favorites)
         case .search(let query): candidates = search(query, limit: Self.searchLimit).groups.flatMap(\.presets)
         case .all: candidates = Self.alphabetical(presets)
+        case .collection(let id): candidates = collectionListing(collections[id] ?? [])
         }
         return candidates.filter { !isLocked($0, unlocked: unlocked) && !excluded.contains($0.id) }
     }
@@ -98,8 +101,14 @@ public final class PresetLibrary: Sendable {
         Self.alphabetical(favorites.compactMap { preset(id: $0) })
     }
 
-    /// A display title for a scope (FR-120).
-    public func title(of scope: PresetScope) -> String {
+    /// PRE-007-R13, R14: a collection's entries that exist in this library, in the stored order,
+    /// locked ones included (the view marks them). Ids that are not in the index are skipped.
+    public func collectionListing(_ presetIDs: [String]) -> [IndexedPreset] {
+        presetIDs.compactMap { preset(id: $0) }
+    }
+
+    /// A display title for a scope (FR-120). `collectionNames` maps a collection id to its name.
+    public func title(of scope: PresetScope, collectionNames: [String: String] = [:]) -> String {
         switch scope {
         case .included: "Included"
         case .pack(let id): pack(id: id)?.title ?? id
@@ -107,6 +116,7 @@ public final class PresetLibrary: Sendable {
         case .favorites: "Favorites"
         case .search(let query): "Search: \(query)"
         case .all: "All presets"
+        case .collection(let id): collectionNames[id] ?? "Collection"
         }
     }
 

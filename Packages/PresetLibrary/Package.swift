@@ -10,6 +10,7 @@ let package = Package(
     products: [.library(name: "PresetLibrary", targets: ["PresetLibrary"])],
     targets: [
         .target(name: "PresetLibrary"),
-        .testTarget(name: "PresetLibraryTests", dependencies: ["PresetLibrary"]),
+        .testTarget(name: "PresetLibraryTests", dependencies: ["PresetLibrary"],
+                    resources: [.copy("Golden")]),   // PRE-007: immutable format fixtures
     ]
 )

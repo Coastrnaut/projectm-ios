@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "collections": [
+    {
+      "id": "6F1C2B9E-0001-4000-8000-000000000003",
+      "name": "Zebra set",
+      "presets": [
+        "cream-of-the-crop/Fractal/Nested Spiral/Geiss - Spiral 1.milk",
+        "frontend-uwp/b.milk",
+        "removed-pack/Gone - Missing.milk",
+        "frontend-uwp/a.milk"
+      ]
+    },
+    {
+      "id": "6F1C2B9E-0001-4000-8000-000000000001",
+      "name": "Café 🎉 late",
+      "presets": [
+        "projectm-classic/tryptonaut/Tryptonaut - Café.milk"
+      ]
+    },
+    {
+      "id": "6F1C2B9E-0001-4000-8000-000000000002",
+      "name": "Empty",
+      "presets": []
+    }
+  ]
+}
