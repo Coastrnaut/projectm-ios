@@ -225,7 +225,7 @@ public enum UserPresetName {
 }
 
 /// Why a picked file was not kept at all (R3, R5, R6, R27). Nothing is stored for a refusal.
-public enum PresetImportRefusal: Sendable, Equatable {
+public enum PresetImportRefusal: Error, Sendable, Equatable {
     case notAFile
     case wrongType
     case empty
