@@ -25,6 +25,8 @@ jobs:
           python-version: "3.12"
       - name: Script tests
         run: python scripts/test_scripts.py
+      - name: Autonomous orchestrator tests
+        run: python scripts/autonomous/tests/test_autonomous.py
       - name: Validate docs
         run: python scripts/validate_docs.py
       - name: Constitution compliance (required on every merge)

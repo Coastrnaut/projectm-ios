@@ -61,3 +61,6 @@ Configs/Signing.local.xcconfig
 
 # Simulator rehearsals of scripts/run_device_tests.py: never evidence (Constitution X)
 docs/test-reports/exports/feature002/sim/
+
+# Autonomous roadmap run: local state, logs and worktrees (reports live in docs/autonomous/)
+.autonomous/
