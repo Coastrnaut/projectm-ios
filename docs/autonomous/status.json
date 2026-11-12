@@ -8,8 +8,7 @@
   "P0": {
    "audited": 68,
    "implementing": 1,
-   "integrated": 17,
-   "unit_passed": 1
+   "integrated": 18
   },
   "P1": {
    "audited": 149,
@@ -25,8 +24,7 @@
  "by_state": {
   "audited": 305,
   "implementing": 1,
-  "integrated": 19,
-  "unit_passed": 1
+  "integrated": 20
  },
  "device_gate": {
   "blocked": [],
@@ -229,7 +227,6 @@
    "PRE-009",
    "PRE-010",
    "PRE-011",
-   "PRE-012",
    "PRE-013",
    "PRE-014",
    "PRE-015",
@@ -344,7 +341,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "307 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
+   "306 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
   ]
  },
  "features": {
@@ -2493,10 +2490,10 @@
    "branch": "feature/pre-012",
    "branch_sha": "6d4ada96b86c51d81de323001045c72a2c32e1b8",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "4bf9f50d1af88eaf7b40aa3523c59c9b2d8c4bf6",
    "priority": "P0",
    "spec_dir": "specs/008-pre-012-preset-import-validation",
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "PRE-013": {
    "attempts": 0,
@@ -3704,6 +3701,11 @@
    "branch": "feature/pre-007",
    "id": "PRE-007",
    "sha": "e834535cb98bf0feac22839feba139ba53f2c2a7"
+  },
+  {
+   "branch": "feature/pre-012",
+   "id": "PRE-012",
+   "sha": "4bf9f50d1af88eaf7b40aa3523c59c9b2d8c4bf6"
   }
  ],
  "integration_branch": "autonomous/integration",
@@ -3713,5 +3715,5 @@
  "run_id": "cb545c51cf0b",
  "skipped_existing": [],
  "total": 326,
- "updated": "2026-11-12T23:21:48Z"
+ "updated": "2026-11-12T23:21:49Z"
 }
