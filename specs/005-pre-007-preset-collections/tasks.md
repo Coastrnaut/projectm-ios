@@ -128,27 +128,27 @@ Paths: `PKG` = `Packages/PresetLibrary/Sources/PresetLibrary`, `PKGT` =
 
 ## Phase 5: User Stories 1-4 - screens (P1)
 
-- [ ] PRE-007-T12 [US1] {sim} Create `APP/Views/CollectionSheets.swift`: `CollectionNameSheet`
+- [X] PRE-007-T12 [US1] {sim} Create `APP/Views/CollectionSheets.swift`: `CollectionNameSheet`
   (field `collectionName`, live message `collectionNameError`, `saveCollectionName` disabled
   until valid) and `AddToCollectionSheet` (rows `addTo:<name>` with a checkmark when present,
-  `newCollection`). Evidence: the app builds; used by T13-T15.
-- [ ] PRE-007-T13 [US1] {sim} Create `APP/Views/PresetCollectionsView.swift` (R1-R3, R7, R18):
+  `newCollection`). Evidence: the app builds; used by T13-T15. — Verified 2026-11-12: `xcodebuild build-for-testing` of `projectM-iOS` succeeded; both sheets are driven by the UI tests (`xcodebuild test … -only-testing:projectM-iOSUITests/PresetCollectionsUITests` on the iOS 27.2 simulator (iPhone 18 Pro): 3 of 3, in two consecutive final runs).
+- [X] PRE-007-T13 [US1] {sim} Create `APP/Views/PresetCollectionsView.swift` (R1-R3, R7, R18):
   rows `collection:<name>` labelled "<name>, <n> presets"; `newCollection`; Edit mode with move
   and delete; swipe actions and context menu (Rename, Move Up, Move Down, Delete); VoiceOver
   custom actions for the moves; delete confirmation; `collectionsEmpty`;
   `collectionsUnavailable` (newer format) and `collectionsNotice` (unreadable data set aside,
-  shown once with a dismiss button; R15). Evidence: the app builds; exercised by T16.
-- [ ] PRE-007-T14 [US2] {sim} Create `APP/Views/PresetCollectionView.swift` (R5, R6, R11, R13,
+  shown once with a dismiss button; R15). Evidence: the app builds; exercised by T16. — Verified 2026-11-12: exercised by the UI tests (create, duplicate-name refusal, Move Up of a collection, delete with confirmation, empty state): `xcodebuild test … -only-testing:projectM-iOSUITests/PresetCollectionsUITests` on the iOS 27.2 simulator (iPhone 18 Pro): 3 of 3, in two consecutive final runs. The newer-format and set-aside texts are covered at coordinator level (T10), not by a UI test.
+- [X] PRE-007-T14 [US2] {sim} Create `APP/Views/PresetCollectionView.swift` (R5, R6, R11, R13,
   R18): `PresetRow`s in the user's order, choosing calls `onChoose(preset, .collection(id))`,
   Edit mode with move and remove, context menu (Move Up, Move Down, Remove from Collection),
   custom actions, Rename in the toolbar, `collectionEmpty`, Done. Evidence: the app builds;
-  exercised by T16.
-- [ ] PRE-007-T15 [US1] {sim} Change `APP/Views/PresetBrowserView.swift`: the home row
+  exercised by T16. — Verified 2026-11-12: exercised by the UI tests (order as added, Move Up, Edit-mode drag handle, Remove from Collection, choose → scope, Rename sheet): `xcodebuild test … -only-testing:projectM-iOSUITests/PresetCollectionsUITests` on the iOS 27.2 simulator (iPhone 18 Pro): 3 of 3, in two consecutive final runs.
+- [X] PRE-007-T15 [US1] {sim} Change `APP/Views/PresetBrowserView.swift`: the home row
   `node:collections`, the navigation routes, the alert for `collectionsMessage`, and the
   "Add to Collection…" context-menu item and swipe action on `PresetRow` (R4), so every list
   (folders, All A-Z, search, Favorites, collections) offers it. Evidence: the app builds; the
-  existing browser identifiers are unchanged (`grep` of `PresetLibraryUITests.swift` ids).
-- [ ] PRE-007-T16 [US2] {sim} Write `APP/UITests/PresetCollectionsUITests.swift` (launch with
+  existing browser identifiers are unchanged (`grep` of `PresetLibraryUITests.swift` ids). — Verified 2026-11-12: exercised by the UI tests (home row and its label, Add to Collection from the Included list through the row menu). Existing identifiers unchanged: `SettingsUITests` 7 and `VisualizerUITests` 3 pass; `PresetLibraryUITests` needs the full library (T22). The swipe action and the search/Favorites/All lists use the same `PresetRow` and were not driven by a UI test.
+- [X] PRE-007-T16 [US2] {sim} Write `APP/UITests/PresetCollectionsUITests.swift` (launch with
   `-uitestUnlocked NO`; scroll lazily built rows into view):
   - create "Friday set", refuse a duplicate name with the message, add three Included presets
     from the Included list (the third through "New Collection…" is not used here; one of them is
@@ -161,30 +161,30 @@ Paths: `PKG` = `Packages/PresetLibrary/Sources/PresetLibrary`, `PKGT` =
   - remove one preset from a collection: it is gone there and still in Included (R5);
   - star a preset, delete "Friday set": the preset is still in Included and still starred, the
     scope line falls back to "Included · 28" (S2).
-  Evidence: the UI tests pass on the iOS 27.2 simulator, twice.
+  Evidence: the UI tests pass on the iOS 27.2 simulator, twice. — Verified 2026-11-12: `xcodebuild test … -only-testing:projectM-iOSUITests/PresetCollectionsUITests` on the iOS 27.2 simulator (iPhone 18 Pro): 3 of 3, in two consecutive final runs. Earlier runs failed and were fixed: a hang when a row menu and a pending drag-to-reorder shared the touch-and-hold (move handler now only in Edit mode), a hang after closing two sheets in one step, two test mistakes (ambiguous Done and alert button queries), a drag that needed slow velocity; one run failed at the first control tap while the Mac's load average was about 70 and passed when rerun.
 
 ## Phase 6: Polish and cross-cutting
 
-- [ ] PRE-007-T17 [P] {mac} Update `docs/privacy-policy.md` (R17): the stored-data list gains the
+- [X] PRE-007-T17 [P] {mac} Update `docs/privacy-policy.md` (R17): the stored-data list gains the
   collections bullet, the "settings storage" sentence covers the file, and the coverage table
-  gains a PRE-007-R17 row. Evidence: `python3 scripts/validate_docs.py` passes.
-- [ ] PRE-007-T18 {sim} Run `PresetLibrary` tests on the iOS 27.2 simulator
-  (`xcodebuild test -scheme PresetLibrary`). Evidence: all pass.
-- [ ] PRE-007-T19 {sim} Regression (S10): `PresetTests`, `LibraryStoreTests`, `SettingsTests`,
+  gains a PRE-007-R17 row. Evidence: `python3 scripts/validate_docs.py` passes. — Verified 2026-11-12: `python3 scripts/validate_docs.py` OK (77 files).
+- [X] PRE-007-T18 {sim} Run `PresetLibrary` tests on the iOS 27.2 simulator
+  (`xcodebuild test -scheme PresetLibrary`). Evidence: all pass. — Verified 2026-11-12: `xcodebuild test -scheme PresetLibrary -destination 'id=<iPhone 18 Pro, iOS 27.2>'`: 72 tests, 0 failures. Host: `swift test --package-path Packages/PresetLibrary` 72 tests, 0 failures, twice. Linux was not run.
+- [X] PRE-007-T19 {sim} Regression (S10): `PresetTests`, `LibraryStoreTests`, `SettingsTests`,
   `AccessibilityTests` and `SettingsUITests` pass in the worktree build; record the known
-  environmental failure. Evidence: xcodebuild log lines.
-- [ ] PRE-007-T20 {mac} `python3 scripts/check_compliance.py`, `python3 scripts/validate_docs.py`
+  environmental failure. Evidence: xcodebuild log lines. — Verified 2026-11-12: `-only-testing:projectM-iOSTests`: 75 tests, 1 failure, in two consecutive runs; the failure is the known environmental `PresetTests.testBundledIncludedScopeMatchesRelease1_0` (worktree has 28 presets). An earlier run stopped in `LibraryStoreTests.testFailureUnlocksNothing` (exceeded the 3-minute allowance; StoreKit test session, code this feature does not touch) and passed in both reruns. `SettingsUITests` 7 of 7 and `VisualizerUITests` 3 of 3.
+- [X] PRE-007-T20 {mac} `python3 scripts/check_compliance.py`, `python3 scripts/validate_docs.py`
   and `python3 scripts/test_scripts.py` pass; no file under `Vendor/`, `Apps/projectM-iOS/Store/`
-  or `Apps/projectM-iOS/Resources/` changed (`git diff --stat` against the branch point).
-- [ ] PRE-007-T21 {sim} Dynamic Type and labels (R18): run the collections UI flow once with the
+  or `Apps/projectM-iOS/Resources/` changed (`git diff --stat` against the branch point). — Verified 2026-11-12: `check_compliance.py` OK, `validate_docs.py` OK, `test_scripts.py` 88 tests OK (1 skipped); `git diff --stat 6d669fc -- Vendor Apps/projectM-iOS/Store Apps/projectM-iOS/Resources project.yml .github` is empty.
+- [X] PRE-007-T21 {sim} Dynamic Type and labels (R18): run the collections UI flow once with the
   largest accessibility text size (`-UIPreferredContentSizeCategoryName
   UICTContentSizeCategoryAccessibilityXXXL`) and check the rows and buttons exist and are
-  hittable; every new control has a label (unit assertion of the row label strings).
-- [ ] PRE-007-T22 {merge} Full-library checks on the integration checkout: the existing
+  hittable; every new control has a label (unit assertion of the row label strings). — Verified 2026-11-12: `testTheCollectionScreensWorkAtTheLargestTextSize` (AccessibilityXXXL) passes in both final runs: rows and buttons exist and are hittable; `testRowLabels` asserts the label strings. A VoiceOver pass by a person is part of T23.
+- [ ] PRE-007-T22 {merge} (open: needs the preset submodules, which a worktree does not have; for the main session after the merge) Full-library checks on the integration checkout: the existing
   `PresetLibraryUITests` and `PurchaseUITests` pass (S10); with `-uitestUnlocked NO` add a
   Cream of the Crop preset to a collection, see it locked there, tap it → purchase sheet (US4 on
   the real index).
-- [ ] PRE-007-T23 {device} S11 on D1-D3: collections survive installing over the previous build;
+- [ ] PRE-007-T23 {device} (open: final device stage) S11 on D1-D3: collections survive installing over the previous build;
   reorder with VoiceOver using the Move Up / Move Down actions; S8 timing by hand. Final device
   stage only.
 

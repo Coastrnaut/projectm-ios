@@ -77,6 +77,15 @@ Decisions are numbered `PRE-007-D1…`. All were made on 2026-11-12 from the cod
 - **Alternatives**: edit mode only (drag with VoiceOver works but is awkward and is not
   testable in the simulator in a stable way).
 
+- **Found during implementation (2026-11-12)**: with the list's move handler always attached, a
+  touch-and-hold on a row starts both the row menu and a pending drag-to-reorder; on the iOS 27.2
+  simulator the app then never became idle and the UI test timed out. The move handler is
+  therefore attached only while Edit mode is on (each screen owns its edit-mode state and passes it
+  to the list and the Edit button). Outside Edit mode, touch and hold opens the menu only.
+- **Also found**: closing the name sheet and its parent add sheet in the same step left the
+  presentation state inconsistent (the next row menu never opened). The add sheet now closes
+  itself only; that takes the name sheet with it.
+
 ## PRE-007-D8: Synchronous saves on the main actor
 
 - **Decision**: save synchronously inside the user action.

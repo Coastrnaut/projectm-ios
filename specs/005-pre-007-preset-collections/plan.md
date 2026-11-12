@@ -219,6 +219,8 @@ logical records without the store.
     `AddToCollectionSheet` (existing collections with a checkmark when the preset is already
     there, and "New Collection…").
   - `CollectionNameSheet`: text field, live validation message, Save disabled until valid.
+  - Drag handles exist only in Edit mode (research D7); the row menu and the VoiceOver actions
+    work in both modes.
 - Accessibility (R18): rows use `"<name>, <n> presets"`; move up/down are also VoiceOver custom
   actions (`accessibilityAction(named:)`) on both lists; all text uses system styles and wraps.
 

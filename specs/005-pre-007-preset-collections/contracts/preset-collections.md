@@ -62,6 +62,7 @@ public struct PresetCollectionsFile: Codable, Sendable, Equatable {
     public var schemaVersion: Int
     public var collections: [PresetCollection]
     public typealias Migration = @Sendable (Data) throws -> Data
+    public static let migrations: [Int: Migration]         // production steps; empty for version 1
     public enum ReadError: Error, Equatable { case newerVersion(Int), unreadable }
     public static func decode(_ data: Data, migrations: [Int: Migration] = [:]) throws -> (file: PresetCollectionsFile, migratedFrom: Int?)
     public func encode() throws -> Data
@@ -71,6 +72,9 @@ public final class PresetCollectionStore {
     public enum Availability: Equatable { case available, newerFormat(version: Int) }
     public enum LoadNotice: Equatable { case none, unreadableSetAside }
     public static let fileName = "collections.json"
+    public static let unreadableFileName = "collections.unreadable.json"
+    public static let newerFormatText: String             // the sentence for a newer-format file
+    public static let unreadableText: String              // the sentence after a file was set aside
     public static func defaultDirectory() -> URL          // <Application Support>/PresetCollections
 
     public init(directory: URL,
@@ -84,6 +88,7 @@ public final class PresetCollectionStore {
     public var presetIDsByCollection: [String: [String]] { get }
     public var namesByCollection: [String: String] { get }
     public func collection(id: String) -> PresetCollection?
+    public func nameProblem(_ name: String, renaming id: String? = nil) -> PresetCollectionError?
 
     @discardableResult public func create(name: String) throws -> PresetCollection
     public func rename(_ id: String, to name: String) throws
@@ -125,6 +130,7 @@ extension PresetLibrary {
 | `newCollection` | create button on the collections list and in the add sheet |
 | `collection:<name>` | a collection row (label `<name>, <n> presets`) |
 | `collectionName` | the name field; `collectionNameError` the validation text; `saveCollectionName` the Save button |
-| `collectionsEmpty`, `collectionEmpty`, `collectionsUnavailable` | state texts |
+| `collectionsEmpty`, `collectionEmpty`, `collectionsUnavailable`, `collectionsNotice` | state texts |
+| `renameCollection`, `confirmDeleteCollection`, `dismissCollectionsNotice` | buttons |
 | `addTo:<name>` | a collection in the add sheet |
 | `preset:<name>` | existing preset row (unchanged) |
