@@ -16,7 +16,8 @@ and the stored copy for the recognized container, so the system reads it with th
 import and at every later playback; (4) a decode check when playback starts. `CaptureUI` gets
 three strings. Tests add a generated format matrix (including an MP3 stream assembled by test
 code) through import and the offline playback graph, plus corruption sweeps. No new package,
-dependency, entitlement, stored field or schema version; the app target's sources do not change.
+dependency, entitlement, stored field or schema version; the app target's sources do not change
+(two of its tests state the amended messages).
 
 ## Technical Context
 
@@ -101,6 +102,8 @@ Packages/CaptureKit/Tests/CaptureKitTests/
 Packages/CaptureUI/Sources/CaptureUI/UIStrings.swift          # + 3 messages
 Packages/CaptureUI/Tests/CaptureUITests/ImportStringsTests.swift
 scripts/test_scripts.py                                       # + contract check for this feature's strings
+Apps/projectM-iOS/Tests/AudioLibraryCoordinatorTests.swift    # amended message (AUD-002-R8) + damaged and empty files
+Apps/projectM-iOS/UITests/ImportedAudioUITests.swift          # amended message + a damaged-file case
 ```
 
 **Structure Decision**: extend `CaptureKit` and `CaptureUI`. `project.yml`, the CI workflow and

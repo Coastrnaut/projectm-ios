@@ -142,8 +142,11 @@ minimum needed to manage storage. Queueing, ordering and renaming are later feat
 - Two files with the same name but different content: both are imported; each keeps its own title.
 - The same content under two names: the second pick is a duplicate (Story 3, scenario 6).
 - A file with no extension or a misleading extension: the declared type is checked first, then the
-  file must decode; a text file named `.wav` is refused as unreadable.
-- An empty (zero-length) audio file: refused as unreadable.
+  file must decode; a text file named `.wav` is refused as unreadable. *Amended by AUD-002-R8
+  (2026-11-12): the content decides what the file is, and such a file is refused as an unsupported
+  format (`specs/006-aud-002-support-common-audio-containers/spec.md`).*
+- An empty (zero-length) audio file: refused as unreadable. *Amended by AUD-002-R8: refused as
+  containing no audio.*
 - The library's record of tracks is damaged or was written by a newer app version: see
   AUD-001-R14 and AUD-001-R15.
 - The stored copy of a listed track is missing (for example after a partial device restore): the
