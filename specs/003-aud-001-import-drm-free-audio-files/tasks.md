@@ -1,0 +1,123 @@
+# Tasks: AUD-001 Import DRM-free audio files
+
+**Input**: Design documents in `specs/003-aud-001-import-drm-free-audio-files/` (spec.md, plan.md,
+research.md, data-model.md, contracts/, quickstart.md)
+
+**Tests**: test-first. Each test task comes before the code it covers and must fail (or not
+compile) before that code exists.
+
+**Format**: `- [ ] ID [P?] [Story?] Description with file path`. `[P]` = can run in parallel
+(different files). Tags: `{device}` = needs a physical device, done only in the roadmap's final
+device phase; `{app}` = needs the full `projectM-iOS` build or a simulator UI run, which this
+worktree cannot do (no preset submodules), so the main session verifies it after the merge.
+
+A task is ticked only when its acceptance evidence was produced, with
+" — Verified <date>: <how>" appended.
+
+## Phase 1: Setup
+
+- [ ] AUD-001-T01 Confirm the baseline before any change: `swift test --package-path Packages/CaptureKit`, `swift test --package-path Packages/CaptureUI`, `python3 scripts/test_scripts.py`, `python3 scripts/check_compliance.py`, `python3 scripts/validate_docs.py` all pass; record the test counts. Evidence: command output.
+
+## Phase 2: Foundational (blocks every story)
+
+**Purpose**: the model, the index format and the test fixtures every story uses.
+
+- [ ] AUD-001-T02 [P] Write `Packages/CaptureKit/Tests/CaptureKitTests/AudioFixtures.swift`: helpers that write a sine tone at run time with `AVAudioFile` (WAV 16-bit and CAF float; parameters: seconds, sample rate, channels, frequency), write garbage bytes, and make a unique temporary directory removed in teardown. No committed media. Evidence: used by T03 and later tests.
+- [ ] AUD-001-T03 [P] Write `Packages/CaptureKit/Tests/CaptureKitTests/AudioLibraryModelTests.swift` (fails until T04): a version 1 golden `index.json` literal decodes to the expected `ImportedTrack` values; encode → decode round trip; encoding has `schemaVersion` 1, sorted keys and ISO-8601 dates; unknown keys are ignored; the version probe reports a newer `schemaVersion`; track validation rejects each broken field from data-model.md (`sha256` not "64 lowercase hex digits", `fileName` containing `/` or `..`, `byteCount` outside "1 … 524 288 000", `durationSeconds` or `sampleRate` not "> 0", `channelCount` not "1 or 2"); title rule "trimmed; at most 200 characters; "Untitled" if empty"; stored-extension rule "lowercased and reduced to at most 8 ASCII letters or digits".
+- [ ] AUD-001-T04 Implement `Packages/CaptureKit/Sources/CaptureKit/AudioLibrary/AudioLibraryModel.swift`: `ImportedTrack`, `AudioLibraryIndex` (`currentSchemaVersion = 1`, `encoded()`, `decode(_:)` with version probe and migration hook), `AudioLibraryState`, `AudioImportError`, `AudioImportOutcome`, `AudioFileInfo`, title and extension helpers. Foundation only, compiles on Linux. Evidence: T03 passes.
+- [ ] AUD-001-T05 [P] Write the inspector tests in `Packages/CaptureKit/Tests/CaptureKitTests/AudioLibraryTests.swift` (`AVAudioFileInspectorTests`, fails until T06): a WAV and a CAF fixture report the right duration (±1 ms), sample rate and channel count; garbage bytes named `.wav` and an empty file throw `.unreadable`; a 4-channel fixture throws `.unsupportedChannelCount(4)`.
+- [ ] AUD-001-T06 Implement `Packages/CaptureKit/Sources/CaptureKit/AudioLibrary/AudioFileInspector.swift`: `AudioFileInspecting` and `AVAudioFileInspector` per research AUD-001-D5 (protected-content check, open, length, sample rate, channels, one read of up to 4096 frames). Evidence: T05 passes.
+
+**Checkpoint**: model and inspector tested on the host.
+
+## Phase 3: User Story 1 - Import my own audio and watch it (P1)
+
+**Goal**: pick audio in Files, see it under "Your Audio", tap it, it plays as In-App Playback.
+
+**Independent test**: quickstart A (package tests) and D steps 1-3.
+
+### Tests first
+
+- [ ] AUD-001-T07 [US1] Write `AudioLibraryTests` import cases in `Packages/CaptureKit/Tests/CaptureKitTests/AudioLibraryTests.swift` (fail until T08): importing a valid WAV returns `.imported` with title from the file name, the injected id and date, byte count equal to the file size and the SHA-256 of the bytes; the asset exists at `assets/<sha256>.wav` and equals the source byte for byte; `incoming/` is empty; `index.json` on disk lists exactly that track and no path or source location; `importFiles` returns outcomes in input order; `fileURL(for:)` resolves inside `assets/`.
+- [ ] AUD-001-T08 [US1] Implement `Packages/CaptureKit/Sources/CaptureKit/AudioLibrary/AudioLibrary.swift`: the actor per contracts/audio-library.md with `defaultDirectory()`, `load()` (create folders, read index), the import transaction of plan.md Design 1 (type check, security scope and file coordination, streaming copy with SHA-256 and size cap, inspect, rename, atomic index write), `importFiles`, `tracks`, `fileURL(for:)`, and the serial chain of research AUD-001-D9. Evidence: T07 passes.
+- [ ] AUD-001-T09 [P] [US1] Write `Packages/CaptureKit/Tests/CaptureKitTests/InAppPlaybackGraphTests.swift` (fails until T10): a graph built on a 0.25 s stereo tone fixture as `.file`, in offline manual-rendering mode, rendered for 1 s, delivers to a `PCMSink` at least 0.9 s of samples (so the loop rescheduled) with non-silent peak level; a missing file throws; `stop()` twice is safe and no further scheduling happens after it.
+- [ ] AUD-001-T10 [US1] Implement `Packages/CaptureKit/Sources/CaptureKit/InAppPlayback/InAppPlaybackGraph.swift` (engine, player, mixer tap into `PCMSink`, in-memory loop for a buffer, streaming loop for a file per research AUD-001-D7, offline rendering entry point for tests) and move the engine code of `AVInAppPlaybackBackend.swift` onto it without changing the tap closure's behavior. Evidence: T09 passes; iOS Simulator build of CaptureKit succeeds.
+- [ ] AUD-001-T11 [US1] Extend `Packages/CaptureKit/Tests/CaptureKitTests/SourceAdapterTests.swift` (fails until T12): `InAppPlaybackSource.track` defaults to `.reference`; the backend receives the selected `.file(url)` at `start`; a backend failure for a file track surfaces `.inAppPlaybackFailed` and the fake records no fallback start; `mode` is `.inAppPlayback` for both tracks; a restart through `CaptureManager` starts the same track again.
+- [ ] AUD-001-T12 [US1] Add `InAppPlaybackTrack` and `InAppPlaybackSource.track`, change `InAppPlaybackBackend.start` to `start(track:sink:onEvent:)` in `Packages/CaptureKit/Sources/CaptureKit/InAppPlayback/InAppPlaybackSource.swift`, and make `AVInAppPlaybackBackend.swift` open `.reference` from the bundle and `.file` from its URL (never substituting one for the other). Evidence: T11 and the existing CaptureKit suite pass.
+- [ ] AUD-001-T13 [P] [US1] Write `Packages/CaptureUI/Tests/CaptureUITests/ImportStringsTests.swift` (fails until T14): every `AudioImportError` maps to its string in contracts/ui-strings.md; the size limit is formatted ("500 MB"); `importSummary` returns nil for an empty or all-cancelled result, "Imported 1 track." / "Imported ‹n› tracks.", one line per duplicate and per failure in input order; duration text `m:ss` and `h:mm:ss`; spoken duration; the unavailable messages.
+- [ ] AUD-001-T14 [US1] Add the strings and helpers of contracts/ui-strings.md to `Packages/CaptureUI/Sources/CaptureUI/UIStrings.swift`, and add a `UIStringsImportContractTests` case to `scripts/test_scripts.py` that checks every string of that contract is in the Swift file. Evidence: T13 and the script test pass.
+
+### Implementation
+
+- [ ] AUD-001-T15 [US1] Add `Packages/CaptureUI/Sources/CaptureUI/ImportedAudioSection.swift` (section title, import button with progress state, track rows newest first with title, duration, accessibility label and hint, empty and unavailable texts, footer, remove action) and give `SourceChooserView.swift` an optional trailing-sections builder that defaults to nothing; add a preview in `Previews.swift`. Evidence: CaptureUI builds for macOS and the iOS Simulator; existing CaptureUI tests pass; CaptureLab's call site is unchanged.
+- [ ] AUD-001-T16 [US1] {app} Write `Apps/projectM-iOS/Tests/AudioLibraryCoordinatorTests.swift` (before T17): with a library in a temporary directory, `importPicked(.success(urls))` lists the track newest first, sets and clears `isImporting`, sets the summary message for a rejected file and none for a clean single import… and `importPicked(.failure)` for a cancelled picker shows nothing.
+- [ ] AUD-001-T17 [US1] Add `Apps/projectM-iOS/Coordinators/AudioLibraryCoordinator.swift` (`@MainActor @Observable`: `tracks`, `isImporting`, `unavailableMessage`, `resultMessage`; `load()`, `importPicked(_:)`, `remove(_:)`, `fileURL(for:)`; VoiceOver announcement of the result) and wire it into `Apps/projectM-iOS/Coordinators/AppCoordinator.swift` (`audioLibrary`, `play(_ track:)` selecting `.file` and starting In-App Playback, `select(.inAppPlayback)` selecting `.reference`, the Debug launch argument `-uitestImportAudio <path>`). Evidence {app}: app builds; T16 passes.
+- [ ] AUD-001-T18 [US1] Show the section in `Apps/projectM-iOS/ProjectMApp.swift`: `ImportedAudioSection` in the chooser, SwiftUI `fileImporter` for `UTType.audio` with multiple selection, and the result alert. Evidence {app}: app builds; quickstart D steps 1-3 on a simulator.
+- [ ] AUD-001-T19 [US1] {app} Write `Apps/projectM-iOS/UITests/ImportedAudioUITests.swift`: launch with `-uitestImportAudio` pointing at a tone the test writes, find the row under "Your Audio", tap it, and read "In-App Playback" from the source indicator. Evidence: the UI test passes on an iOS 27.2 simulator.
+
+**Checkpoint**: US1 works from the package level up; app-level evidence is `{app}`.
+
+## Phase 4: User Story 2 - Still there offline, without the original (P1)
+
+**Goal**: the copy is the track; a relaunch needs nothing else.
+
+**Independent test**: quickstart D step 4; `AudioLibraryTests` relaunch cases.
+
+- [ ] AUD-001-T20 [US2] Write relaunch and recovery cases in `Packages/CaptureKit/Tests/CaptureKitTests/AudioLibraryTests.swift` (fail until T21 where behavior is missing): after an import, delete the original and open a second `AudioLibrary` on the same directory: same track, `fileURL(for:)` opens with `AVAudioFile` and plays through `InAppPlaybackGraph` offline with non-silent output; a leftover file in `incoming/` and an unreferenced file in `assets/` are deleted by `load()`; an entry whose asset is missing is dropped and the index rewritten; a truncated `index.json` is moved to `index.damaged.json` and the list is rebuilt from the assets with titles "Recovered track 1…"; an index with `schemaVersion` 2 gives `unavailable(newerFormat)`, leaves every file byte-identical, and makes import and removal return `libraryUnavailable`.
+- [ ] AUD-001-T21 [US2] Complete `load()` in `Packages/CaptureKit/Sources/CaptureKit/AudioLibrary/AudioLibrary.swift`: sweep, missing-asset pruning, damaged-index recovery (AUD-001-R14), newer-format handling (AUD-001-R15) and storage failure state. Evidence: T20 passes.
+- [ ] AUD-001-T22 [US2] {app} Extend `Apps/projectM-iOS/UITests/ImportedAudioUITests.swift`: after the import, delete the source file, relaunch without the import argument, find the row and play it. Evidence: the UI test passes on a simulator.
+- [ ] AUD-001-T23 [US2] {device} On D1: import from Files, delete the original, Airplane Mode, relaunch, play (quickstart D 1-4). Evidence: tester note in `docs/test-reports/` in the final device phase.
+
+## Phase 5: User Story 3 - Refused files (P2)
+
+**Goal**: every refusal has its message and leaves nothing behind.
+
+**Independent test**: `AudioLibraryTests` rejection cases; quickstart D steps 5-6.
+
+- [ ] AUD-001-T24 [US3] Write rejection cases in `Packages/CaptureKit/Tests/CaptureKitTests/AudioLibraryTests.swift` (fail until T25 where behavior is missing), each asserting the outcome and that the directory tree and `index.json` bytes are unchanged: a `.txt` file → `.notAudio`; garbage bytes named `.wav` → `.unreadable`; a fixture larger than an injected small `maxFileBytes` → `.tooLarge(limitBytes:)` with the copy stopped at the limit; a 4-channel fixture → `.unsupportedChannelCount(4)`; a fake inspector reporting protection → `.protectedContent`; a missing source → `.sourceUnavailable`; an injected index-write failure → `.libraryUnavailable` with the new asset removed and `tracks` unchanged; the same content under another name → `.duplicate` of the first track, one asset on disk; two concurrent imports of the same content → one `.imported`, one `.duplicate`.
+- [ ] AUD-001-T25 [US3] Complete the failure paths in `Packages/CaptureKit/Sources/CaptureKit/AudioLibrary/AudioLibrary.swift`: error mapping (out of space → `.insufficientStorage`), cleanup on every exit, rollback of a failed index write, duplicate detection before inspection. Evidence: T24 passes.
+- [ ] AUD-001-T26 [US3] {device} With a real DRM-protected purchase in Files on D1: the import is refused with the copy-protected message and nothing is stored (AUD-001-R7). Evidence: tester note in the final device phase.
+
+## Phase 6: User Story 4 - Remove a track (P3)
+
+- [ ] AUD-001-T27 [US4] Write removal cases in `Packages/CaptureKit/Tests/CaptureKitTests/AudioLibraryTests.swift` (fail until T28): removing a track deletes its asset and its index entry and survives a reopen; removing an unknown id is a no-op; a failed index write leaves the track and its asset in place.
+- [ ] AUD-001-T28 [US4] Implement `remove(_:)` in `Packages/CaptureKit/Sources/CaptureKit/AudioLibrary/AudioLibrary.swift` (index first, then the asset) and connect the section's remove action through `AudioLibraryCoordinator.remove(_:)`. Evidence: T27 passes; {app} quickstart D step 7.
+
+## Phase 7: Polish and cross-cutting
+
+- [ ] AUD-001-T29 [P] Update `scripts/run_device_tests.py` `privacy_problems` per research AUD-001-D12 and add cases to `scripts/test_scripts.py`: an audio file in `Library/Application Support/AudioLibrary/assets/` is allowed; the same file in `Documents/`, `tmp/` or elsewhere under `Library/` is still reported. Evidence: script tests pass.
+- [ ] AUD-001-T30 [P] Update `docs/privacy-policy.md`: imported audio files and the library record are stored on the device, only when the user imports them, removable in the app, never transmitted; captured audio is still never stored (AUD-001-R22). Evidence: `python3 scripts/validate_docs.py` passes; text review.
+- [ ] AUD-001-T31 Run the full local gate: `swift test` for CaptureKit and CaptureUI, iOS Simulator builds of CaptureKit and CaptureUI with no warnings from new code, `python3 scripts/test_scripts.py`, `check_compliance.py`, `validate_docs.py`. Evidence: command output recorded in this file.
+- [ ] AUD-001-T32 {app} Build `projectM-iOS` and CaptureLab after the merge, run the app unit and UI tests of this feature and the existing suites, and run `python3 scripts/check_privacy_manifest.py` on the built app (no new required-reason API, research AUD-001-D11). Evidence: build and test logs.
+- [ ] AUD-001-T33 {device} Final device phase: routes and interruptions with an imported track (FR-051); AUD-001-S1 (10 MB file listed within 2 s on D1); AUD-001-S7 (memory with a 60-minute track); a file from iCloud Drive; the privacy review with a non-empty library. Evidence: `docs/test-reports/`.
+
+## Dependencies and order
+
+- T01 → Phase 2 (T02-T06) → US1 (T07-T19). US2 (T20-T23), US3 (T24-T26) and US4 (T27-T28) each
+  need T08; they are independent of one another. Polish last.
+- Within a story: the test task precedes its implementation task.
+- Parallel: T02, T03 and T05 (different files); T09 and T13 alongside T07; T29 and T30.
+
+## Implementation strategy
+
+MVP = Phases 1-3 at package level (library + playback seam + strings + section), then the app
+wiring. US2 and US3 complete the acceptance criterion and the untrusted-input rules and ship with
+it; US4 is small and ships with it too. `{app}` and `{device}` tasks stay open with their reason.
+
+## Requirement coverage
+
+| Requirement | Tasks |
+|---|---|
+| AUD-001-R1, R9 | T15, T17, T18 |
+| AUD-001-R2, R3, R11, R12 | T03, T04, T07, T08, T20 |
+| AUD-001-R4, R5, R6, R7, R8 | T05, T06, T13, T14, T24, T25, T26 |
+| AUD-001-R10, R24 | T13, T14, T15, T17 |
+| AUD-001-R13 | T27, T28 |
+| AUD-001-R14, R15, R16 | T20, T21 |
+| AUD-001-R17, R18, R19, R20, R21 | T09, T10, T11, T12, T17, T19, T33 |
+| AUD-001-R22, R23 | T29, T30, T31, T32 |
+| AUD-001-S1, S7 | T33 |
+| AUD-001-S2 | T20, T22, T23 |
+| AUD-001-S3, S4 | T24 |
+| AUD-001-S5 | T20 |
+| AUD-001-S6 | T19 |
