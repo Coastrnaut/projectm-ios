@@ -197,6 +197,9 @@ def gate_feature(roadmap: Roadmap, store: StateStore, feature_id: str | None,
     wt = Worktrees(ROOT, store.data["integration_branch"])
     if feature_id:
         checkout = wt.path(feature_id)
+        if not wt.is_clean(checkout):
+            raise GitError(["status"], 1, f"{checkout} has uncommitted or unmerged files; "
+                           "gates run only on a clean checkout")
         changed = wt.changed_files(feature_id)
         plan = gates_mod.plan_gates(checkout, changed, in_worktree=True,
                                     simulator_udid=simulator or gates_mod.default_simulator())

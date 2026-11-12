@@ -55,13 +55,16 @@ played or when.
 
 ## What is stored on your device
 
-Only these, in the app's own settings storage on your device:
+Only these, in the app's own storage on your device (its settings, and one file for your
+collections):
 
 - your favorite presets;
 - the last preset you selected;
 - your settings: the performance overlay, Reduce flashing, and which preset list Next and Random
   step through (a search is remembered as "All presets", never the search text);
-- whether you acknowledged the photosensitivity notice.
+- whether you acknowledged the photosensitivity notice;
+- the preset collections you create: their names, which presets are in them, and the order you
+  put them in. No dates and no record of what you played are kept with them.
 
 And, only if you import audio, the files you imported and their list (see "Audio files you
 import").
@@ -116,3 +119,4 @@ issue in that repository.
 | Feature 002 FR-122: only the platform's purchase and restore traffic | The full preset library purchase; No analytics, tracking or network use |
 | Feature 002 FR-123: the preset scope setting | What is stored on your device |
 | AUD-001-R22 (amends FR-065): files the user imports are stored on the device | Audio files you import; What is stored on your device |
+| PRE-007-R17 (`specs/005-pre-007-preset-collections/spec.md`): the user's preset collections | What is stored on your device |

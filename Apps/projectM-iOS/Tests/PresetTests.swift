@@ -21,6 +21,12 @@ final class PresetTests: XCTestCase {
 
     override func tearDown() async throws {
         defaults.removePersistentDomain(forName: suite)
+        try? FileManager.default.removeItem(at: collectionsDirectory)
+    }
+
+    /// PRE-007: the coordinator needs a collections store; these tests leave it empty.
+    private var collectionsDirectory: URL {
+        FileManager.default.temporaryDirectory.appendingPathComponent(suite, isDirectory: true)
     }
 
     /// Records loads; fails for the ids in `failing`.
@@ -57,7 +63,8 @@ final class PresetTests: XCTestCase {
 
     private func makeCoordinator(_ library: PresetLibrary, loader: FakeLoader = FakeLoader()) -> PresetCoordinator {
         let coordinator = PresetCoordinator(store: FavoritesStore(defaults: defaults),
-                                            settings: AppSettings(defaults: defaults, systemReduceMotion: false), loader: loader)
+                                            settings: AppSettings(defaults: defaults, systemReduceMotion: false), loader: loader,
+                                            collections: PresetCollectionStore(directory: collectionsDirectory))
         coordinator.attach(library)
         return coordinator
     }
