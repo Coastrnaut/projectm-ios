@@ -84,7 +84,7 @@ public enum UIStrings {
     public static let importAlertTitle = "Import Audio"
     public static let ok = "OK"
 
-    /// Why a picked file was not imported (AUD-001-R6).
+    /// Why a picked file was not imported (AUD-001-R6, AUD-002-R7).
     public static func message(_ error: AudioImportError) -> String {
         switch error {
         case .notAudio: return "This file isn't a supported audio file."
@@ -95,6 +95,10 @@ public enum UIStrings {
         case .insufficientStorage: return "There isn't enough storage on this device."
         case .sourceUnavailable: return "This file couldn't be opened."
         case .libraryUnavailable: return "Your audio library isn't available."
+        // AUD-002-R7 (specs/006-aud-002-support-common-audio-containers/contracts/ui-strings.md)
+        case .unsupportedFormat: return "This file's format isn't supported. Import MP3, AAC, M4A, WAV or AIFF audio."
+        case .unsupportedEncoding: return "The audio in this file uses an encoding this device can't play."
+        case .noAudio: return "This file contains no audio."
         }
     }
 

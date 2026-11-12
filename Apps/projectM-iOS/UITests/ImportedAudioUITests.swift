@@ -130,9 +130,32 @@ final class ImportedAudioUITests: XCTestCase {
         launch(["-uitestResetNotice", "-uitestResetAudioLibrary", "-uitestImportAudio", fake.path], acknowledgeNotice: true)
         let alert = app.alerts["Import Audio"]
         XCTAssertTrue(alert.waitForExistence(timeout: 15))
-        XCTAssertTrue(alert.staticTexts["“fake.wav”: This audio file can't be read. It may be damaged."].exists)
+        // AUD-002-R8: bytes that are no audio format are an unsupported format, not a damaged file.
+        XCTAssertTrue(alert.staticTexts["“fake.wav”: This file's format isn't supported. Import MP3, AAC, M4A, WAV or AIFF audio."].exists)
         alert.buttons["OK"].tap()
         XCTAssertTrue(app.staticTexts["noImportedAudio"].waitForExistence(timeout: 5))
+        XCTAssertFalse(track.exists)
+        try? FileManager.default.removeItem(at: folder)
+        #endif
+    }
+
+    /// AUD-002-R7: a damaged file in a recognized format keeps the "damaged" message, and the
+    /// chooser stays usable afterwards (a valid track could be imported or the reference played).
+    func testDamagedFileShowsItsReasonAndTheChooserStaysUsable() throws {
+        #if !targetEnvironment(simulator)
+        throw XCTSkip("the app reads the test's file from the host; simulator only")
+        #else
+        // A WAV cut off in the middle of its header chunk: recognized as WAV, not decodable.
+        let whole = try Data(contentsOf: try writeTone(named: "whole.wav"))   // also creates `folder`
+        let cut = folder.appendingPathComponent("cut.wav")
+        try whole.prefix(30).write(to: cut)
+        launch(["-uitestResetNotice", "-uitestResetAudioLibrary", "-uitestImportAudio", cut.path], acknowledgeNotice: true)
+        let alert = app.alerts["Import Audio"]
+        XCTAssertTrue(alert.waitForExistence(timeout: 15))
+        XCTAssertTrue(alert.staticTexts["“cut.wav”: This audio file can't be read. It may be damaged."].exists)
+        alert.buttons["OK"].tap()
+        XCTAssertTrue(app.staticTexts["noImportedAudio"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["importAudio"].isHittable)
         XCTAssertFalse(track.exists)
         try? FileManager.default.removeItem(at: folder)
         #endif

@@ -38,7 +38,8 @@ final class InAppPlaybackGraph {
     }
 
     /// Opens a track. `.reference` is `reference.wav` in `bundle`; `.file` is used as given. A
-    /// track that cannot be opened throws; no other track is ever substituted (AUD-001-R19).
+    /// track that cannot be opened or decoded throws; no other track is ever substituted
+    /// (AUD-001-R19, AUD-002-R12).
     static func load(_ track: InAppPlaybackTrack, bundle: Bundle, resource: String = "reference",
                      fileExtension: String = "wav") throws -> Content {
         switch track {
@@ -50,12 +51,26 @@ final class InAppPlaybackGraph {
         case .file(let url):
             let file = try AVAudioFile(forReading: url)
             let format = file.processingFormat
-            guard file.length > 0, format.sampleRate > 0, (1...2).contains(format.channelCount) else {
+            // The rate limit matters: connecting a player at an absurd rate raises an exception.
+            guard file.length > 0, ImportedTrack.supportedSampleRates.contains(format.sampleRate),
+                  (1...2).contains(format.channelCount) else {
                 throw SourceError(.inAppPlaybackFailed)
             }
+            // AUD-002-R12: a stored copy can still open after it was damaged (a truncated M4A
+            // does). Decode its first frames now, so a track that no longer plays fails here, as
+            // "In-App Playback failed", instead of starting and rendering silence.
+            guard let probe = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: decodeCheckFrames) else {
+                throw SourceError(.inAppPlaybackFailed)
+            }
+            try file.read(into: probe)
+            guard probe.frameLength > 0 else { throw SourceError(.inAppPlaybackFailed) }
+            file.framePosition = 0
             return .file(file, try AVAudioFile(forReading: url))
         }
     }
+
+    /// Frames decoded by `load` before a library track is played.
+    static let decodeCheckFrames: AVAudioFrameCount = 4096
 
     /// Reads a short file into one buffer (the reference track is 60 s).
     static func loadIntoMemory(_ url: URL) throws -> Content {
