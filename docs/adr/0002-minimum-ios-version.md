@@ -49,9 +49,10 @@ with System/App Capture only where the OS provides it.
   there yet: the other packages' tests, simulator test runs, and any install or run on a device
   (a signed Debug device build of `projectM-iOS` succeeded on 2026-11-12).
   The pinned iOS 26.5 simulator runtime, build 23F77 (the same build as D3), was installed there
-  on 2026-11-12 (`xcodebuild -downloadPlatform iOS -buildVersion 23F77`). **Open difference:**
-  build 23F73 is still installed beside it under the same runtime identifier, so which build an
-  iOS 26.5 simulator boots is ambiguous until 23F73 is removed, as it was on the first Mac.
+  on 2026-11-12 (`xcodebuild -downloadPlatform iOS -buildVersion 23F77`). Build 23F73, which
+  was installed beside it under the same runtime identifier, was removed the same day (owner's
+  go-ahead; `xcrun simctl runtime delete`), as on the first Mac. A booted iOS 26.5 simulator
+  reports `SIMULATOR_RUNTIME_BUILD_VERSION` 23F77.
   Before 2026-11-12 the machine of record was the first project Mac (macOS 27.2, Apple silicon;
   Python 3.15; simulator runtimes iOS 27.2 and iOS 26.5 23F77; a second iOS 26.5 runtime, 23F73,
   with the same identifier was removed there on 2026-11-08, owner review). It is retired from the

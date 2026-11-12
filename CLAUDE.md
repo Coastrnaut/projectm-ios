@@ -155,9 +155,8 @@ pointer, Claude's memory, the engine xcframework, optionally ANGLE, `xcodegen`).
   retired from the project. "Project Mac" in older notes means the first Mac.
   - Not run on the Mac Studio yet: the other packages' tests, simulator test runs, and any
     install or run on a device.
-  - The pinned iOS 26.5 simulator runtime 23F77 was installed on 2026-11-12. Open: build 23F73
-    is still installed beside it under the same identifier; remove it (owner's go-ahead) before
-    reporting iOS 26.5 simulator results.
+  - Simulator runtimes match the pin since 2026-11-12: iOS 27.2 and iOS 26.5 (23F77 only; 23F73
+    was removed on the owner's go-ahead). A booted iOS 26.5 simulator reports build 23F77.
 - The owner does by hand: Xcode sign-in (Apple ID), the signing file, pairing D1-D3, `gh auth
   login`, and signing in to App Store Connect.
 - **Mac Studio progress, 2026-11-12 (SETUP.md step 6):** `Configs/Signing.local.xcconfig` exists

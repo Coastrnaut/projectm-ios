@@ -214,9 +214,11 @@ project, and reported results and App Store uploads come from the Mac Studio onl
 **Recorded 2026-11-12:** step 7 passed on the Mac Studio (macOS 27.2.1): `verify_environment.py`
 exit 0, 88 script tests (1 skipped), docs and compliance OK, AudioCore 77 tests, the unsigned
 simulator build succeeded, and D1-D3 are listed. ADR-0002 and `CLAUDE.md` are updated. One
-difference from step 1 remains: the iOS 26.5 runtime 23F77 was installed the same day
-(`xcodebuild -downloadPlatform iOS -buildVersion 23F77`), but build 23F73 is still installed
-beside it under the same identifier.
+difference from step 1 was fixed the same day: the iOS 26.5 runtime was build 23F73, so 23F77
+was installed (`xcodebuild -downloadPlatform iOS -buildVersion 23F77`) and 23F73 removed
+(`xcrun simctl runtime delete <id>`; if it reports an unreclaimed MobileAsset, run
+`xcrun simctl runtime scan-and-mount` and delete it again). A booted iOS 26.5 simulator reports
+build 23F77.
 
 ## 10. The first Mac afterwards
 
