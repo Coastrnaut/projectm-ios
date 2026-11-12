@@ -29,6 +29,18 @@ This feature adds only what is missing. The audit read the code and its tests at
 | Browser | Home (Included, packs, All A-Z), folders, search, Favorites. | `PresetBrowserView.swift`, `PresetFolderView.swift`, `PresetLibraryUITests.swift` | No collections screens. |
 | Persistence | Settings storage only: favorites, last preset, settings, notice (FR-065, FR-123). | `AppSettings.swift`, `docs/privacy-policy.md` | No file of user-created data; no versioned format or migration. |
 
+## Clarifications
+
+### Session 2026-11-12
+
+Answered under the standing delegation (recommended option first; no owner question was needed).
+
+- Q: May two collections have the same name? → A: No. A name is refused when another collection already has it, compared after trimming surrounding white space and ignoring letter case and diacritics ("Chill" equals " chill " and "Chíll"). The collection's own current name is always accepted when renaming. Unique names keep the list, the "add to collection" chooser and VoiceOver unambiguous; the identifier, not the name, is what the scope and later features refer to. (R9)
+- Q: What are the limits on name length, number of collections and presets per collection? → A: A name has 1 to 60 characters after trimming (user-perceived characters, so an emoji counts once); line breaks inside a name are replaced by spaces. At most 100 collections; at most 1,000 presets in one collection. With these limits the saved data stays below about 8 MB in the worst case and is typically a few kilobytes; saved data larger than 16 MB is treated as unreadable. (R9, R10, S9)
+- Q: In what order do Next and Previous walk a collection used as the scope? → A: In the user's manual order, wrapping at both ends, not alphabetically. Every other scope stays alphabetical (FR-115). Manual order is the point of a collection, and a set list is meant to be played in the order arranged. Random stays uniform over the playable members. (R11, S4)
+- Q: How are locked presets handled in a collection? → A: Exactly as locked favorites are (FR-114): they can be added before purchase, are listed in their position with a lock mark and "locked" in the accessibility label, open the purchase sheet when tapped, and are left out of the scope's members, so Next, Previous and Random never reach them and the scope line counts only playable presets. The collection row's count is the number of listed presets, locked ones included. Nothing is removed on a refund. (R13, S3)
+- Q: What happens to saved collections the app cannot use: a newer format version, or unreadable data? → A: Newer version: the saved data is not interpreted and not modified; collections show as unavailable with the sentence "These collections were saved by a newer version of the app. Update the app to use them."; create, add, rename, reorder and delete are refused; a stored collection scope falls back. Unreadable data (damaged, not the expected shape, or over the size limit): it is renamed aside once (one set-aside copy is kept; a later one replaces it), the app starts with no collections and shows "Your collections could not be read and were set aside." once. Neither case deletes user data or crashes. (R15, S6)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Make a collection and fill it (Priority: P1)
@@ -178,8 +190,8 @@ reached by Next, Previous or Random; then unlock and check both play.
   the app starts with no collections, tells the user once, and keeps working.
 - **Saved data from an older format** (once a later version changes the format): it is converted
   on first start, and the original is kept until the converted data was saved successfully.
-- **Limits reached** (number of collections, presets in one collection, name length): the action
-  is refused with the reason; existing data is unchanged.
+- **Limits reached** (100 collections, 1,000 presets in one collection, 60 characters in a name):
+  the action is refused with the reason; existing data is unchanged.
 - **Names**: leading and trailing spaces are ignored; a name that is empty after that is refused.
   Names may contain any characters, including emoji and right-to-left text.
 - **Very large text sizes**: names and counts wrap; no control is clipped.
@@ -215,15 +227,17 @@ reached by Next, Previous or Random; then unlock and check both play.
   app is relaunched. A change that cannot be saved MUST leave the previously saved data intact,
   MUST NOT be shown as if it were saved, and MUST be reported to the user.
 - **PRE-007-R9**: Collection names MUST be validated: surrounding white space is ignored; the name
-  MUST NOT be empty and MUST NOT exceed the documented length limit; two collections MUST NOT
-  have the same name. A refused name MUST state the reason.
+  MUST have 1 to 60 user-perceived characters; line breaks become spaces; two collections MUST NOT
+  have the same name, compared ignoring letter case and diacritics. A refused name MUST state the
+  reason.
 - **PRE-007-R10**: The number of collections and the number of presets in one collection MUST be
-  bounded by documented limits, so that the saved data stays small. Reaching a limit refuses the
-  action with the reason.
+  bounded: at most 100 collections and at most 1,000 presets in one collection. Reaching a limit
+  refuses the action with the reason.
 - **PRE-007-R11**: A collection MUST be usable as a navigation scope: choosing a preset in a
   collection plays it and makes that collection the scope; Next and Previous then step through the
   collection's playable presets in the user's order, wrapping at both ends; Random picks only
-  among them and never repeats the playing preset when another exists; the scope line shows the
+  among them and never repeats the playing preset when another exists (the user's order applies
+  to Next and Previous only; all other scopes stay alphabetical, FR-115); the scope line shows the
   collection's name and its playable count; the scope is announced like other scope changes
   (FR-116-FR-120, FR-124).
 - **PRE-007-R12**: A collection scope MUST survive a relaunch. If the collection no longer exists
@@ -232,7 +246,8 @@ reached by Next, Previous or Random; then unlock and check both play.
 - **PRE-007-R13**: Lock state MUST hold in collections. A locked preset MAY be added to a
   collection and MUST be listed there marked as locked; choosing it MUST open the purchase sheet
   and MUST NOT play it; it MUST NOT be a member of the collection's scope while locked (FR-106,
-  FR-118). Collections MUST NOT read, write or depend on purchase or entitlement data beyond
+  FR-118). A collection row counts its listed presets, locked ones included; the scope line counts
+  playable ones. Collections MUST NOT read, write or depend on purchase or entitlement data beyond
   asking whether a preset is locked.
 - **PRE-007-R14**: Entries whose preset is not in the current library MUST be kept in the saved
   data, MUST NOT be shown or counted, MUST be skipped by navigation and MUST NOT cause a failure.
@@ -241,7 +256,9 @@ reached by Next, Previous or Random; then unlock and check both play.
   read back exactly. Data of an older version MUST be converted by a pure, tested conversion, with
   the original kept until the converted data is saved. Data of a newer, unknown version MUST be
   left untouched, MUST make collections read as unavailable (no create, change or delete), and
-  MUST NOT crash or lose data. Data that cannot be read at all MUST be set aside, not deleted.
+  MUST NOT crash or lose data. Data that cannot be read at all (damaged, wrong shape, or larger
+  than 16 MB) MUST be set aside, not deleted; one set-aside copy is kept. Both cases MUST be
+  explained to the user in a sentence.
 - **PRE-007-R16**: Collections MUST be stored only on the device, in the app's own storage, keyed
   by the library's stable preset ids. They contain only what the user entered: names, membership
   and order. No timestamps, play counts or history are stored. Nothing is sent anywhere; no
@@ -297,7 +314,7 @@ reached by Next, Previous or Random; then unlock and check both play.
   data.
 - **PRE-007-S8**: A user can create a collection, add a preset to it and start playing it in under
   30 seconds from the open browser.
-- **PRE-007-S9**: With the largest collection allowed, opening it and saving a reorder each take
+- **PRE-007-S9**: With the largest collection allowed (1,000 presets), opening it and saving a reorder each take
   under half a second on the build machine (simulator and host results are not device evidence).
 - **PRE-007-S10**: The existing preset, favorites, purchase and browser tests pass unchanged in
   meaning.
