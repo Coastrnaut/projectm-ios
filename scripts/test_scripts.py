@@ -186,6 +186,48 @@ class ComplianceTests(unittest.TestCase):
             self.assertTrue(check_compliance.check_project_yml(p))
 
 
+class ComplianceOSCExceptionTests(unittest.TestCase):
+    """FR-068 as amended 2026-11-12: the Network framework only in the OSC transport folder."""
+
+    def write(self, folder: Path, text: str) -> Path:
+        folder.mkdir(parents=True, exist_ok=True)
+        path = folder / "File.swift"
+        path.write_text(text, encoding="utf-8")
+        return path
+
+    def test_network_framework_allowed_only_in_the_osc_transport_folder(self):
+        with tempfile.TemporaryDirectory() as d:
+            allowed = Path(d) / "OSCTransport"
+            with mock.patch.object(check_compliance, "OSC_ALLOWED", allowed):
+                source = "import Network\nlet l = try NWListener(using: .udp)\n"
+                self.assertEqual(check_compliance.check_file(self.write(allowed, source)), [])
+                self.assertEqual(check_compliance.check_file(self.write(allowed / "Sub", source)), [])
+                outside = check_compliance.check_file(self.write(Path(d) / "Elsewhere", source))
+                self.assertEqual(len(outside), 1)
+                self.assertIn("outside PerformanceControl/OSCTransport", outside[0])
+                sibling = check_compliance.check_file(self.write(Path(d) / "OSCTransportX", source))
+                self.assertEqual(len(sibling), 1)
+
+    def test_other_networking_apis_stay_forbidden_inside_the_folder(self):
+        with tempfile.TemporaryDirectory() as d:
+            allowed = Path(d) / "OSCTransport"
+            with mock.patch.object(check_compliance, "OSC_ALLOWED", allowed):
+                for source in ("let s = URLSession.shared\n", "import WebKit\n",
+                               "#include <sys/socket.h>\n", "import CFNetwork\n"):
+                    found = check_compliance.check_file(self.write(allowed, source))
+                    self.assertTrue(any("networking API (FR-068)" in f for f in found), source)
+
+    def test_path_monitor_and_connections_are_flagged_elsewhere(self):
+        with tempfile.TemporaryDirectory() as d:
+            for source in ("let m = NWPathMonitor()\n", "var c: NWConnection?\n",
+                           "let b = NWBrowser(for: x, using: .udp)\n"):
+                self.assertTrue(check_compliance.check_file(self.write(Path(d), source)), source)
+
+    def test_exception_folder_is_the_documented_one(self):
+        self.assertEqual(check_compliance.OSC_ALLOWED.relative_to(check_compliance.ROOT).as_posix(),
+                         "Packages/PerformanceControl/Sources/PerformanceControl/OSCTransport")
+
+
 class ComplianceImportKindTests(unittest.TestCase):
     """ADR-0001 owner ruling 13a: kind-qualified Swift imports, with or without attributes."""
 

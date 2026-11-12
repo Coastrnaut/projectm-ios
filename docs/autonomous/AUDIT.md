@@ -51,7 +51,8 @@ Result: **no product feature is already complete.** 13 rows are extensions of ex
 
 ## Conflicts between the roadmap and repository policy
 
-Repository policy wins; these need an owner ruling before the affected rows can be built.
+Repository policy wins. Item 1 was ruled by the owner on 2026-11-12: FR-068 is amended for
+local OSC with a one-folder exception, off by default (ADR-0008).
 
 1. **Networking (FR-068, `check_compliance.py`).** The app may not use `Network`,
    `NWConnection`, sockets or `URLSession`. OSC-001, OSC-005, OSC-007, OSC-008, OSC-011 and
