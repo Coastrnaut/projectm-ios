@@ -73,9 +73,11 @@ ALLOWED_CODE_SIGN_ENTITLEMENTS = "Apps/CaptureLab/CaptureLab.entitlements"
 # *.entitlements file in the repository may hold.
 ENTITLEMENT_ALLOWLIST: dict[str, object] = {"com.apple.developer.screen-recording": True}
 # Not scanned for *.entitlements: git metadata and build output anywhere (case-insensitive),
-# upstream Vendor/ at the repository root, and agent worktrees under .claude/worktrees/.
+# upstream Vendor/ and the autonomous run's .autonomous/ at the repository root, and agent
+# worktrees under .claude/worktrees/.
 SKIP_DIRS = {".git", "build", ".build", "deriveddata"}
-SKIP_ROOT_DIRS = {"Vendor"}
+# .autonomous/ holds the autonomous run's feature worktrees (full checkouts, with their own Vendor/).
+SKIP_ROOT_DIRS = {"Vendor", ".autonomous"}
 
 
 def strip_comments(text: str) -> str:
