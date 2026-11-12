@@ -19,6 +19,19 @@ FR-053, FR-054, FR-055 and FR-070), of AUD-001, AUD-002, PERF-011 and of AUD-006
 (`specs/007-aud-006-seekable-transport/spec.md`, in particular AUD-006-R10, R20 and R21) stay in
 force. This feature cites them and adds to them; where it narrows how one applies, the line says so.
 
+## Clarifications
+
+### Session 2026-11-12
+
+Answered by Claude under the owner's standing approval (routine decisions delegated, no human
+interaction); each answer is the conservative, local-first option using public APIs only.
+
+- Q: When the user returns to the app while an interruption is still open (or after one ended without a resume indication), should playback resume as FR-050 does after an ordinary background? → A: No. It stays on hold and shows the "Interrupted" reason until iOS indicates a resume or the user presses Play. Resuming blindly would try to play over a call that is still going on. Without an interruption FR-050 is unchanged (AUD-014-R5, R6).
+- Q: Does a seek or a track change by the user during an interruption cancel the automatic resume, like a pause does? → A: Yes. Any transport action during the interruption (pause, Stop playback, seek, next, previous) means the user has taken over: playback stays on hold at the user's last choice and Play continues (AUD-014-R2).
+- Q: After an interruption ended without a resume indication, should the status change to "Paused" or keep feature 001's "Interrupted" with Restart? → A: Keep FR-051 exactly: "Interrupted" with Restart and Choose source. This feature adds an explanation line and guarantees that Play continues from the held position; it adds no state and no stop reason (AUD-014-R7, R17, R23).
+- Q: After iOS resets its media services while a track was playing, should playback continue by itself or wait for the user? → A: It is rebuilt and continues from the held position when it was playing and no interruption was open, because a reset is a fault inside iOS and not a request for silence; in every other state it stays on hold. If it cannot be rebuilt the session ends with "In-App Playback failed" (AUD-014-R16).
+- Q: iOS 27 introduces new notices for "session became inactive" and "resumption recommended" and marks the older interruption notice as deprecated from 27.0; which does the app rely on? → A: The older interruption notice with its type, option and reason values, because it is the only one available on every supported version (iOS 26.0 and later) and using both would report each interruption twice on iOS 27. The suspended-app marker is not relied on (the SDK documents that it is no longer sent from iOS 16). That the older notice still arrives on iOS 27 devices is checked in the device phase; moving to the new notices is a follow-up if it does not (Assumptions, AUD-014-S6).
+
 ## Baseline: what exists today (audit of 2026-11-12, commit `e40e578`)
 
 This is an extension row: most of the interruption handling exists. The audit below is per event
@@ -368,6 +381,8 @@ VoiceOver announcement.
   reason.
 - The app has no background audio mode (AUD-015 decides that later), so nothing plays while the
   app is in the background.
+- The app listens to the interruption notice that exists on every supported iOS version (26.0 and
+  later); the notices added in iOS 27 are not used by this feature (Clarifications).
 - Whether and when iOS delivers the end of an interruption after a real call is observed on
   devices in the final device phase; simulator and synthetic results are not evidence for it
   (Constitution X).
