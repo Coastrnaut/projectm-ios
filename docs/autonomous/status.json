@@ -7,8 +7,9 @@
  "by_priority": {
   "P0": {
    "audited": 71,
-   "implementing": 2,
-   "integrated": 14
+   "implementing": 1,
+   "integrated": 14,
+   "unit_passed": 1
   },
   "P1": {
    "audited": 149,
@@ -23,8 +24,9 @@
  },
  "by_state": {
   "audited": 308,
-  "implementing": 2,
-  "integrated": 16
+  "implementing": 1,
+  "integrated": 16,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -642,12 +644,12 @@
   "AUD-002": {
    "attempts": 0,
    "branch": "feature/aud-002",
-   "branch_sha": null,
+   "branch_sha": "4700a64a37aa2249862a7ba51af4385135b6f926",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": "specs/006-aud-002-support-common-audio-containers",
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "AUD-003": {
    "attempts": 0,
@@ -3699,5 +3701,5 @@
  "run_id": "cb545c51cf0b",
  "skipped_existing": [],
  "total": 326,
- "updated": "2026-11-12T20:40:46Z"
+ "updated": "2026-11-12T21:20:13Z"
 }
