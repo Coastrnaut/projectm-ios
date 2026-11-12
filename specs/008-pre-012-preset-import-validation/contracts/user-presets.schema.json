@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "UserPresets index.json, version 1 (PRE-012)",
+  "type": "object",
+  "required": ["schemaVersion", "presets"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "presets": {
+      "type": "array",
+      "maxItems": 1200,
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "author", "originalFileName", "sha256", "blobHash", "byteCount",
+                     "importedAt", "state", "provenOnScreen", "warnings", "license"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^user/[0-9a-f-]{36}$" },
+          "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+          "author": { "type": "string", "maxLength": 120 },
+          "originalFileName": { "type": "string", "maxLength": 255 },
+          "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "blobHash": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+          "byteCount": { "type": "integer", "minimum": 1, "maximum": 524288 },
+          "importedAt": { "type": "string", "format": "date-time" },
+          "state": { "enum": ["pending", "playable", "quarantined"] },
+          "provenOnScreen": { "type": "boolean" },
+          "quarantine": {
+            "type": "object",
+            "required": ["code"],
+            "properties": { "code": { "type": "string" }, "detail": { "type": "string", "maxLength": 300 } }
+          },
+          "warnings": {
+            "type": "array",
+            "maxItems": 50,
+            "items": {
+              "type": "object",
+              "required": ["code", "detail"],
+              "properties": { "code": { "type": "string" }, "detail": { "type": "string", "maxLength": 200 } }
+            }
+          },
+          "license": {
+            "type": "object",
+            "required": ["origin", "rightsVerified", "authorFromFileName", "linesFound"],
+            "properties": {
+              "origin": { "enum": ["userImport"] },
+              "rightsVerified": { "type": "boolean" },
+              "authorFromFileName": { "type": "boolean" },
+              "linesFound": { "type": "array", "maxItems": 5, "items": { "type": "string", "maxLength": 200 } }
+            }
+          }
+        }
+      }
+    }
+  }
+}
