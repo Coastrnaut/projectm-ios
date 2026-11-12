@@ -6,10 +6,9 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 70,
-   "implementing": 1,
-   "integrated": 15,
-   "unit_passed": 1
+   "audited": 69,
+   "implementing": 2,
+   "integrated": 16
   },
   "P1": {
    "audited": 149,
@@ -23,10 +22,9 @@
   }
  },
  "by_state": {
-  "audited": 307,
-  "implementing": 1,
-  "integrated": 17,
-  "unit_passed": 1
+  "audited": 306,
+  "implementing": 2,
+  "integrated": 18
  },
  "device_gate": {
   "blocked": [],
@@ -226,7 +224,6 @@
    "PRE-004",
    "PRE-005",
    "PRE-006",
-   "PRE-007",
    "PRE-008",
    "PRE-009",
    "PRE-010",
@@ -346,7 +343,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "309 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
+   "308 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
   ]
  },
  "features": {
@@ -2445,10 +2442,10 @@
    "branch": "feature/pre-007",
    "branch_sha": "c9aefe517159698c1855f34ff69f0981a3752d18",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "e834535cb98bf0feac22839feba139ba53f2c2a7",
    "priority": "P0",
    "spec_dir": "specs/005-pre-007-preset-collections",
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "PRE-008": {
    "attempts": 0,
@@ -2492,13 +2489,13 @@
   },
   "PRE-012": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/pre-012",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/008-pre-012-preset-import-validation",
+   "state": "implementing"
   },
   "PRE-013": {
    "attempts": 0,
@@ -3696,6 +3693,11 @@
    "branch": "feature/perf-011",
    "id": "PERF-011",
    "sha": "6d669fcb857695767ec2b785f74feb29f98d5978"
+  },
+  {
+   "branch": "feature/pre-007",
+   "id": "PRE-007",
+   "sha": "e834535cb98bf0feac22839feba139ba53f2c2a7"
   }
  ],
  "integration_branch": "autonomous/integration",
@@ -3705,5 +3707,5 @@
  "run_id": "cb545c51cf0b",
  "skipped_existing": [],
  "total": 326,
- "updated": "2026-11-12T21:35:21Z"
+ "updated": "2026-11-12T21:45:29Z"
 }
