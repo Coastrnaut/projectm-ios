@@ -21,6 +21,7 @@
 | [0019](0019-generator-graph-interpreter.md) | Generator graph interpreter | Accepted 2026-11-13 (SHD-002; owner rule 4) |
 | [0020](0020-imported-photo-layer.md) | Imported photo layer | Accepted 2026-11-13 (MED-001; owner rule 4) |
 | [0021](0021-expression-mapping-language.md) | Expression mapping language | Accepted 2026-11-13 (SHD-009; owner rule 4); 0020 is MED-001's |
+| [0023](0023-external-display-scene.md) | External display scene | Accepted 2026-11-13 (OUT-001; owner rule 4); 0022 left for MED-002 |
 | [0024](0024-user-content-code-execution-policy.md) | User content never runs as native code | Accepted 2026-11-13 (SHD-011; owner rule 4); 0022 and 0023 left to MED-002 and OUT-001 |
 
 Required by Constitution X: capture API, minimum OS, renderer, dependency strategy.

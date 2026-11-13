@@ -282,19 +282,22 @@ final class CameraVisualHost: PresentationBoundResource {
     /// FR-049 frame-rate pressure, background and scene connection (CAM-001-R7).
     private func observeSystem() {
         let center = NotificationCenter.default
-        let observed: [(Notification.Name, @MainActor (CameraVisualHost) -> Void)] = [
-            (UIApplication.didEnterBackgroundNotification, { $0.appEnteredBackground() }),
-            (UIApplication.willEnterForegroundNotification, { $0.appWillEnterForeground() }),
-            (UIScene.didDisconnectNotification, { $0.sceneDidDisconnect() }),
-            (UIScene.willConnectNotification, { $0.sceneWillConnect() }),
-            (ProcessInfo.thermalStateDidChangeNotification, { $0.qualityChanged() }),
-            (Notification.Name.NSProcessInfoPowerStateDidChange, { $0.qualityChanged() }),
+        let observed: [(Notification.Name, @MainActor (CameraVisualHost, Notification) -> Void)] = [
+            (UIApplication.didEnterBackgroundNotification, { host, _ in host.appEnteredBackground() }),
+            (UIApplication.willEnterForegroundNotification, { host, _ in host.appWillEnterForeground() }),
+            // OUT-001-R9: an external display scene's connect and disconnect never stop or start this visual.
+            (UIScene.didDisconnectNotification, { host, note in if ExternalDisplayScenes.affectsDeviceVisuals(note) { host.sceneDidDisconnect() } }),
+            (UIScene.willConnectNotification, { host, note in if ExternalDisplayScenes.affectsDeviceVisuals(note) { host.sceneWillConnect() } }),
+            (ProcessInfo.thermalStateDidChangeNotification, { host, _ in host.qualityChanged() }),
+            (Notification.Name.NSProcessInfoPowerStateDidChange, { host, _ in host.qualityChanged() }),
         ]
         for (name, action) in observed {
-            observers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+            observers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] (note: Notification) in
+                // Delivered on the main queue and used synchronously there, never sent anywhere else.
+                nonisolated(unsafe) let note = note
                 MainActor.assumeIsolated {
                     guard let self else { return }
-                    action(self)
+                    action(self, note)
                 }
             })
         }
