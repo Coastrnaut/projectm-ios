@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (SCN-002-T01-T09, T11-T16 verified on the Mac and the iOS 27.2 simulator; T10 `{device}` open)
 
 **Input**: User description: "Implement SCN-002 (Scene autosave) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Debounce edits into crash-safe
