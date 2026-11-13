@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (FILE-002-T01-T11 verified on the Mac host, the Linux shape and an iOS 27.2 simulator; no device task)
 
 **Input**: User description: "Implement FILE-002 (Archive manifest checksums) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Include SHA-256 checksums and sizes
