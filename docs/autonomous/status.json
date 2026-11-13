@@ -3793,7 +3793,7 @@
     ],
     "note": "Delivered by AUD-016 (merge f69525c): a versioned audio fixture generator with known expected feature values whose hashes are identical on the macOS host, the iOS simulator and Linux. QA-001's acceptance ('Generated fixture hashes are stable across supported hosts') is met; no separate implementation.",
     "test_evidence": [
-     "ReferenceToneCatalogTests.testGoldenHashesOnRepeatedRuns and ReferenceToneOracleTests passed on Linux in CI run 43349673457, job 131638159151 (commit 073f92c)",
+     "ReferenceToneCatalogTests.testGoldenHashesOnRepeatedRuns (split on 2026-11-13 into testGoldenHashesOnRepeatedRuns44100 and ...48000, plus testGoldenTableCoversEveryVariant; all 38 golden values still checked) and ReferenceToneOracleTests passed on Linux in CI run 43349673457, job 131638159151 (commit 073f92c)",
      "same suites passed on the macOS host and the iOS 27.2 simulator in the AUD-016 gates and post-merge run (.autonomous/logs/integration/aud-016/)",
      "scripts/check_reference_tone_goldens.py: independent CPython port reproduces 18 mono hashes (test_scripts.py)"
     ],
@@ -3803,5 +3803,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T15:31:19Z"
+ "updated": "2026-11-13T15:32:57Z"
 }

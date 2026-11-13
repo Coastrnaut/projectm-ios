@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T15:31:19Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T15:32:57Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -72,7 +72,7 @@ The physical-device suite may **not** start:
 
 ## Proved already implemented
 
-- **QA-001** Deterministic PCM fixtures: code Packages/AudioCore/Sources/AudioCore/ReferenceTones/ReferenceToneCatalog.swift (catalog version 1, 10 fixtures, expected FFT bins, onsets, tempo, sweep frequencies), Packages/AudioCore/Sources/AudioCore/ReferenceTones/ToneGenerator.swift and ToneMath.swift (frame-index generator, own sin/exp/log), specs/011-aud-016-reference-tone-suite/contracts/fixture-catalog.md (38 golden SHA-256 values); tests ReferenceToneCatalogTests.testGoldenHashesOnRepeatedRuns and ReferenceToneOracleTests passed on Linux in CI run 43349673457, job 131638159151 (commit 073f92c), same suites passed on the macOS host and the iOS 27.2 simulator in the AUD-016 gates and post-merge run (.autonomous/logs/integration/aud-016/), scripts/check_reference_tone_goldens.py: independent CPython port reproduces 18 mono hashes (test_scripts.py)
+- **QA-001** Deterministic PCM fixtures: code Packages/AudioCore/Sources/AudioCore/ReferenceTones/ReferenceToneCatalog.swift (catalog version 1, 10 fixtures, expected FFT bins, onsets, tempo, sweep frequencies), Packages/AudioCore/Sources/AudioCore/ReferenceTones/ToneGenerator.swift and ToneMath.swift (frame-index generator, own sin/exp/log), specs/011-aud-016-reference-tone-suite/contracts/fixture-catalog.md (38 golden SHA-256 values); tests ReferenceToneCatalogTests.testGoldenHashesOnRepeatedRuns (split on 2026-11-13 into testGoldenHashesOnRepeatedRuns44100 and ...48000, plus testGoldenTableCoversEveryVariant; all 38 golden values still checked) and ReferenceToneOracleTests passed on Linux in CI run 43349673457, job 131638159151 (commit 073f92c), same suites passed on the macOS host and the iOS 27.2 simulator in the AUD-016 gates and post-merge run (.autonomous/logs/integration/aud-016/), scripts/check_reference_tone_goldens.py: independent CPython port reproduces 18 mono hashes (test_scripts.py)
 
 ## Blocked or infeasible
 
