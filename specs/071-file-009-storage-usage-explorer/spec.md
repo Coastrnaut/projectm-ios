@@ -40,6 +40,35 @@ the preset archive's decompressed chunks live in memory. SHOW-001 shows are bein
 are not on this branch (follow-up in Scope). Bundled presets live in the signed app bundle, outside the
 data container, and are not counted.
 
+## Clarifications
+
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the conservative, local-first option.
+
+- Q: Which number does the screen show for a file, its length or the space it occupies? → A: The space
+  it occupies (allocated blocks), because that is what frees up when it is removed and what the
+  system's iPhone Storage shows; content bytes are measured too and are what the tests compare exactly.
+  "Within file-system overhead" is defined as: per regular file, space used ≤ content bytes + one 4 KiB
+  block (sparse or compressed files may use less). Applied to FILE-009-R3 and FILE-009-S1.
+- Q: Should the screen show the device's free space next to the app's usage? → A: No. Showing free space
+  would need a new privacy-manifest reason (Disk space 85F4.1, "display to the person") for little
+  value; the system's iPhone Storage already shows it. The app keeps only its existing reason E174.1
+  (REC-015). Applied to FILE-009-R8.
+- Q: Should the screen offer delete or clear buttons now? → A: No. FILE-010 owns cache and intermediate
+  cleanup and FILE-011 owns erasing user data; the temporary folders (Recordings, Sharing) are already
+  emptied at launch by their owners, and the Photos, Videos, presets and audio screens already offer
+  removal. The Storage screen is read-only. Applied to FILE-009-R7.
+- Q: What does "caches" mean on disk? → A: The app's `Library/Caches` folder. The app writes nothing
+  there itself; the system keeps compiled shader caches there and may purge them. In-memory caches
+  (texture pool, shader pipelines, preset archive chunks) take no disk space and are not shown.
+  Applied to the baseline and FILE-009-R2.
+- Q: What happens when a folder is too deep or too large, or cannot be read? → A: The walk stops at depth
+  32 and at 100,000 entries per category, skips unreadable folders, shows the sizes counted so far, and
+  adds the note "Some files could not be counted; sizes may be higher." Applied to FILE-009-R4 and
+  FILE-009-R6.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - See what the app's data takes up (Priority: P1)
@@ -113,12 +142,12 @@ Measuring runs in the background; leaving the screen or refreshing again stops t
 - **FILE-009-R3**: Measurement MUST count regular files only, with two numbers per file: content bytes
   (the file's length) and space used (the blocks the file system allocated). The screen shows space used.
 - **FILE-009-R4**: Measurement MUST never follow symbolic links, never walk a folder outside the app
-  container, and stop at a depth limit and an entry limit, reporting the result as incomplete when a
-  limit is reached or a folder cannot be read.
+  container, and stop at depth 32 and at 100,000 entries per category walk, reporting the result as
+  incomplete when a limit is reached or a folder cannot be read.
 - **FILE-009-R5**: Measurement MUST run off the main thread, MUST stop when cancelled, and a newer
   request MUST cancel an older one; no progress is shown beyond a busy indicator.
-- **FILE-009-R6**: The screen MUST offer Refresh, MUST show an incomplete note when the result is
-  incomplete, and MUST give each row an accessibility label and value (category and size).
+- **FILE-009-R6**: The screen MUST offer Refresh, MUST show "Some files could not be counted; sizes
+  may be higher." when the result is incomplete, and MUST give each row an accessibility label and value (category and size).
 - **FILE-009-R7**: The screen MUST NOT delete anything. Clearing caches belongs to FILE-010, erasing
   user data to FILE-011; temporary folders are already emptied at launch by their owners.
 - **FILE-009-R8**: Measurement MUST NOT read file dates or the free or total space of the volume
