@@ -7,9 +7,9 @@
  "by_priority": {
   "P0": {
    "audited": 13,
-   "implementing": 1,
    "integrated": 72,
-   "skipped_existing": 1
+   "skipped_existing": 1,
+   "unit_passed": 1
   },
   "P1": {
    "audited": 137,
@@ -25,9 +25,9 @@
  },
  "by_state": {
   "audited": 236,
-  "implementing": 1,
   "integrated": 88,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -1252,12 +1252,12 @@
   "FILE-012": {
    "attempts": 0,
    "branch": "feature/file-012",
-   "branch_sha": null,
+   "branch_sha": "51cdfefb92f2c87f09a72a9102103f78f991fe19",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "FILE-013": {
    "attempts": 0,
@@ -4007,5 +4007,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T23:11:03Z"
+ "updated": "2026-11-13T23:11:25Z"
 }
