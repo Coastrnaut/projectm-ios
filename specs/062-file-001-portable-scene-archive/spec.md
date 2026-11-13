@@ -47,6 +47,11 @@ interaction); each answer is the conservative, local-first option.
 - Q: Which limits apply? → A: Archive at most 600 MB (the 500 MB video cap, the 40 MB photo cap and the 1 MiB scene, plus headers), checked on the file size before it is read; at most 3 entries besides the manifest (scene, one photo, one video); manifest at most 64 KiB; scene at most 1 MiB (SCN-001); photo entries at most 40 MB; video entries at most 500 MB (the store caps). The bounds are the stores' own so no archive can carry what a picked import would refuse.
 - Q: Is there a screen in this row? → A: No. This row delivers the format, a tested export and import service in the app and its tests; the screen that saves the current stack as a scene (SCN-002 captures the live stack) and the Files/Share entry points are later rows (SCN-014 dependency pack UI, FILE-003 dry run, FILE-004 conflicts). Without a screen, no type is declared and no user-visible behavior changes yet.
 - Q: Is it networked? → A: No. Export writes a local temporary file that the user hands on; import reads a file the user picked. Nothing is uploaded or fetched (Constitution, privacy policy).
+- Q: (clarify pass) May an asset's path inside the archive be chosen freely? → A: No. It is exactly `assets/<key>.<ext>`, where `key` is the scene's asset key (SCN-001 rule: an ASCII letter, then letters and digits) and `ext` is `png` or `jpg` for a photo and `mov` for a video. A record whose path differs, or whose type differs from the scene's asset type, is a manifest/scene mismatch. Keys already exclude `/`, `.` and other path characters, so no asset name can leave `assets/`.
+- Q: (clarify pass) Are ZIP entries that are symbolic links read as files? → A: No. The PRE-014 reader is tightened for every archive: an entry whose Unix mode marks a symbolic link (or any type other than a regular file) is refused as unsupported. The app never creates links from archives, but a link entry is never what the app wrote.
+- Q: (clarify pass) What name does the exported file get? → A: `projectM-iOS Scene <local date>.pmscene`, like the preset export: no scene name, device or user name in the file name (the scene name is inside, where the user put it). The entries' ZIP dates are the export time; tests pass a fixed date so the bytes are reproducible.
+- Q: (clarify pass) Is the photo or video re-encoded on export? → A: No. The stored copy's bytes are packed unchanged (they were sanitized on import; MED-001, MED-002), so export is fast and lossless; import re-sanitizes, which for a sanitized PNG or remuxed movie keeps the pictures.
+- Q: (clarify pass) Where do staged files live and when are they removed? → A: In a new folder under the app's temporary directory per import; it is removed when the import ends, whether it succeeded or failed. The export's temporary file is removed when the hand-off ends (the screen row calls the cleanup; the service also clears leftovers from an earlier run before writing a new one).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -95,6 +100,8 @@ stores' files and identifiers byte-for-byte unchanged afterwards.
 - Unknown asset types and unknown fields in the scene: kept verbatim through export and import (SCN-001-R10); an unknown asset type carries no file.
 - An archive written by a newer app (format version 2): refused as "made by a newer version".
 - Two assets of the same type: export and import refuse (one stored photo, one stored video).
+- A ZIP entry marked as a symbolic link: refused by the reader.
+- An asset record whose path is not `assets/<key>.<ext>` for its type: refused as a manifest/scene mismatch.
 - An asset file whose extension does not match its bytes (a JPEG named `.png`): refused as not the declared type.
 - An empty archive, a non-ZIP file, a truncated file: refused by the reader.
 - Upper/lower case variants of one name (`assets/A.png` and `assets/a.png`): duplicate, refused.
@@ -115,6 +122,8 @@ stores' files and identifiers byte-for-byte unchanged afterwards.
 - **FILE-001-R10**: Import MUST import each asset through the stores' normal import checks (sanitizer, size caps, MED-014), into a staging folder first.
 - **FILE-001-R11**: Import MUST replace the photo/video assets' store IDs with the new store IDs and change nothing else in the scene; the result MUST validate with every reference resolving in the stores.
 - **FILE-001-R12**: Import MUST be all-or-nothing: on any failure, the stores' files and identifiers are unchanged and staged files are removed; on success, the previous photo/video (of the imported types only) are deleted after the switch, and the result names which were replaced.
+- **FILE-001-R14**: Every asset record's path MUST be exactly `assets/<key>.<ext>` (photo `png`/`jpg`, video `mov`); the PRE-014 reader MUST refuse ZIP entries marked as symbolic links or any non-regular file type.
+- **FILE-001-R15**: The exported file MUST be named `projectM-iOS Scene <local date>.pmscene` and its media bytes MUST be the stored copies unchanged.
 - **FILE-001-R13**: The format code (manifest, paths, content checks, remapping, reading and writing) MUST be plain Swift, read no files, use no network, and build and pass its tests on Linux.
 
 ### Key Entities
