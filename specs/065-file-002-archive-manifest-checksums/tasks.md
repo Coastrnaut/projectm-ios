@@ -23,7 +23,7 @@ store steps.
 
 ## Phase 3: US2 — every entry carries its size and checksum (P1)
 
-- [ ] FILE-002-T07 [P] [US2] In `SceneArchiveTamperTests.swift`: every entry of an exported archive except the manifest has exactly one record whose size and SHA-256 (computed independently with the incremental hasher) match the stored bytes (FILE-002-R1)
+- [ ] FILE-002-T07 [P] [US2] In `SceneArchiveTamperTests.swift`: every entry of an exported archive except the manifest has exactly one record whose size and SHA-256 (computed independently with the incremental hasher) match the stored bytes, and the manifest's `formatVersion` is still 1 (FILE-002-R1, R8)
 
 ## Phase 4: US3 — large entries without extra memory (P2)
 
@@ -34,6 +34,22 @@ store steps.
 
 - [ ] FILE-002-T10 Amend `docs/adr/0029-scene-archive-format.md` (integrity not authenticity, no signing, named record refusals, step observer, memory finding) and cross-reference contract C2 from `specs/062-file-001-portable-scene-archive/contracts/scene-archive.md` §4
 - [ ] FILE-002-T11 Verify: `swift test` for LocalPortability and SceneArchive on the host and the Linux shape; PresetLibrary's archive tests (shared layer); `projectM-iOSTests` scene archive classes on a dedicated iOS 27.2 simulator; compliance and docs checks; PosterBoard reports counted before and after (FILE-002-S4, R9)
+
+## Coverage (speckit-analyze 2026-11-13)
+
+| Requirement | Tasks |
+|---|---|
+| R1, R8 | T07 |
+| R2 | T04 (plus PRE-014's existing duplicate/missing tests) |
+| R3, R4 | T01, T02, T04 |
+| R5 | T05, T06 |
+| R6 | T03, T08, T09 |
+| R7 | T04 (consistent edit case), T10 |
+| R9 | T11 |
+| S1 | T04 · S2 T06 · S3 T08, T09 · S4 T11 |
+
+Analysis: 9 requirements, 4 success criteria, 11 tasks, 100% covered; no constitution conflict. One fix
+applied: R8 (format version unchanged) had no task, now asserted in T07.
 
 ## Dependencies
 
