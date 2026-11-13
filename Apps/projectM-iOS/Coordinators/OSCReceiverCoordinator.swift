@@ -86,6 +86,28 @@ final class OSCReceiverCoordinator {
         testValue = receiver.testValue
     }
 
+    // MARK: Listener badge (OSC-007; specs/038-osc-007-osc-network-access-switch, contract)
+
+    /// The port the visualizer's badge names: only while the listener is actually ready
+    /// (`listening`), never from the toggle alone (OSC-007-R2, R3; research OSC-007-D1).
+    static func listenerBadgePort(for state: OSCReceiverState) -> UInt16? {
+        if case .listening(let port) = state { port } else { nil }
+    }
+
+    var badgePort: UInt16? { Self.listenerBadgePort(for: state) }
+
+    static func badgeText(port: UInt16) -> String { "OSC listening on port \(port)" }
+
+    /// VoiceOver value of the badge (OSC-007-R7), a plain String so the port is never grouped.
+    static func badgeAccessibilityValue(port: UInt16) -> String { "Port \(port)" }
+
+    /// The badge's Stop (OSC-007-R4, R5): the same path as the Settings toggle, so the stored
+    /// setting turns off and the listener closes with OSC-001's confirmed cancel. Nothing else changes.
+    func stopFromBadge() {
+        guard settings.oscEnabled else { return }
+        setEnabled(false)
+    }
+
     // MARK: Texts (contract C6; unit-tested)
 
     var statusText: String { Self.statusText(for: state, enabled: isEnabled) }

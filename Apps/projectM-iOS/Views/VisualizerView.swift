@@ -59,6 +59,9 @@ struct VisualizerView: View {
                 .accessibilityLabel("Visualization")
                 .accessibilityHint("Shows or hides the controls")
             VStack(spacing: 8) {
+                // Top status stack. OSC-007-R2, R6: the OSC listener badge, with or without the
+                // controls. CAM-012's "Camera on" badge belongs here too (merge point: keep both).
+                OSCListenerBadge(osc: coordinator.osc)
                 banners
                 Spacer()
                 // AUD-007: the short explanation of a route change, with or without the controls.

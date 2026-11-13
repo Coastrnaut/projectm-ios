@@ -83,6 +83,8 @@ network) send control messages to the app. It is off until you turn it on.
 - While it is on and the app is open in the foreground, the app listens on the port you choose
   (9000 unless you change it) for OSC messages. It stops listening when you turn it off or the app
   leaves the foreground.
+- While it is listening, the visualizer and the source screen show "OSC listening on port …" with a
+  Stop button; Stop turns "OSC receiver" off and closes the port at once.
 - It accepts messages only from addresses on your local network (and from the device itself), never
   over cellular data, and it never connects to anything: it only receives.
 - In this version a received message can change only a test value shown in Settings, so you can

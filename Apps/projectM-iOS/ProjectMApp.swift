@@ -48,6 +48,8 @@ struct RootView: View {
                 })
                 .navigationTitle("Choose source")
             }
+            // OSC-007-R2: an enabled listener already runs on the chooser, so its badge is shown here too.
+            .safeAreaInset(edge: .bottom) { OSCListenerBadge(osc: coordinator.osc).padding(.bottom, 4) }
             .onAppear { automationChooserAppeared() }
             // AUD-001-R1: the system Files picker, audio types only. The picked URLs are used once,
             // to copy the files into the app's library, and are not kept.
