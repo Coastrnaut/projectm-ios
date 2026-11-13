@@ -23,6 +23,11 @@ DONE_STATES = frozenset({"integrated", "skipped_existing", "implementation_compl
                          "awaiting_final_device", "device_passed", "accepted"})
 BLOCKED_STATES = frozenset({"blocked", "infeasible"})
 
+# Final-phase rows: the physical-device matrix and the release evidence built on it. They become
+# ready only when every other feature is terminal (roadmap: "Run complete D1/D2/D3 matrix only
+# after all implementation tasks close"; device testing is the last stage).
+FINAL_PHASE = frozenset({"QA-011", "QA-012"})
+
 # Default ownership: the package or directory an area mostly writes to. Two features with a
 # common lock are serialized. `locks_for` can be replaced by a per-feature override map.
 AREA_LOCKS: dict[str, tuple[str, ...]] = {
@@ -125,9 +130,13 @@ class Scheduler:
     def ready(self, states: dict[str, str], running: set[str]) -> list[str]:
         """Not started, not running, every dependency done; in schedule order."""
         out = []
+        others_terminal = all(states.get(f) in DONE_STATES or states.get(f) in BLOCKED_STATES
+                              for f in self.roadmap.features if f not in FINAL_PHASE)
         for fid in self.order:
             state = states.get(fid, "proposed")
             if fid in running or state in DONE_STATES or state in BLOCKED_STATES:
+                continue
+            if fid in FINAL_PHASE and not others_terminal:
                 continue
             if all(states.get(d) in DONE_STATES for d in self.roadmap.features[fid].depends_on):
                 out.append(fid)

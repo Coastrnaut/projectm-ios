@@ -142,6 +142,15 @@ class SchedulerTests(unittest.TestCase):
                          {"AAA-002": ("AAA-001",), "CCC-002": ("AAA-002",)})
         self.assertFalse(s.finished(states))
 
+    def test_final_phase_waits_for_every_other_feature(self):
+        roadmap = roadmap_from(row("QA-001") + row("QA-011", deps="QA-001", priority="P0")
+                               + row("AAA-001", priority="P3"))
+        s = sched.Scheduler(roadmap, max_concurrency=10)
+        states = {"QA-001": "integrated"}
+        self.assertEqual(s.ready(states, set()), ["AAA-001"])
+        states["AAA-001"] = "blocked"
+        self.assertEqual(s.ready(states, set()), ["QA-011"])
+
     def test_concurrency_ceiling_and_cycle(self):
         with self.assertRaises(ValueError):
             sched.Scheduler(self.roadmap, max_concurrency=11)
