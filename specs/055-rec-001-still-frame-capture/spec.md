@@ -32,6 +32,19 @@ The row's gap status is "Gap candidate". The audit confirms it.
 | Export | Preset export (PRE-*) uses the system Files exporter. | No image export, no image encoder. |
 | Recording (REC-*) | Nothing (no AVAssetWriter pipeline). | REC-001 is the first REC row. |
 
+## Clarifications
+
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the conservative, local-first option.
+
+- Q: While the output is blacked out (OUT-010), should Save Frame capture the hidden live picture or refuse? → A: Refuse with a notice, also while the restore waits or fades in. During a blackout nobody sees the picture, and the blackout exists to hide it; a capture would record exactly what the user chose to hide, and a picture taken during the fade would not match the screen. Restoring takes one tap. Rejected: capture the hidden live frame on explicit action (records hidden content; needs a second confirmation for little value); capture the black cover (a useless file).
+- Q: Should a PNG keep the frame's transparency or always be opaque like the screen? → A: Keep it, straight (unpremultiplied) alpha, but only when some pixel's coverage is below 1; a fully opaque frame is written without an alpha channel. PNG is the lossless format people use to reuse a picture over other content, and over black it reproduces the screen exactly, so nothing shown is lost. HEIF has no alpha (flattened onto black), so the two formats' alpha policies differ as the row's acceptance expects. Rejected: always opaque PNG (discards the compositor's coverage that later rows such as REC-002 can use); always RGBA (an alpha channel of all 255 doubles nothing but adds size and confuses viewers).
+- Q: At what size is the frame saved: the drawable's pixels, the view's points, or a fixed 1× / 2× scale? → A: The drawable's pixel size, exactly the pixels the visual drew on the output it is on (device or external display), including the quality governor's render scale. That is the "current composited frame" with no resampling, so dimensions are testable and nothing is invented by upscaling. Rejected: points (loses detail); a fixed scale (resampling; another rendering pass that would change frame timing); re-rendering at a higher size (export presets belong to REC-014).
+- Q: Where does the file go: the system Files exporter only, or also the photo library? → A: The Files exporter only (the user picks the folder; iCloud Drive and other providers appear there). No photo library permission or usage description in this row: "Export to Photos" is REC-011, with its own opt-in, explicit action and privacy review. Rejected: saving to Photos now (a new permission prompt and privacy surface not asked for by the row); writing into the app's Documents (a stored copy the user did not ask for, FR-065).
+- Q: Should HEIF be 8-bit or 10-bit? → A: 8-bit sRGB, quality 0.9. Every drawable the app presents is 8-bit sRGB, so 10 bits would carry no information the screen showed, and 8-bit HEIF opens everywhere (including older Files previews). Rejected: 10-bit from the half-float composite (more than was shown; compatibility risk on iOS 26 viewers); lossless HEIF (PNG already covers lossless).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Save the frame on screen as a picture (Priority: P1)
