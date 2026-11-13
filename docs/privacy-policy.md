@@ -75,7 +75,10 @@ content checksums, import date and the result of the checks. The same applies to
 built-in presets you make with "Duplicate to My Presets" (with the name of the preset and pack
 each copy came from) and to the text you change when you edit a preset in My Presets. They stay
 on your device, are never sent anywhere, and are deleted when you remove them in the app or
-delete the app.
+delete the app. When you tap Export in My Presets, the app writes the presets you chose
+into one ZIP file (their texts, names, authors, license lines, dates and checksums, and nothing
+about your purchase or device) and opens the share sheet; the file leaves your device only if you
+share or save it there, and the app deletes its temporary copy when the share sheet closes.
 
 No captured or microphone audio, listening history or record of which apps you listened to is
 stored. Deleting the app

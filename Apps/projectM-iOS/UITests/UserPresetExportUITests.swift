@@ -72,11 +72,16 @@ final class UserPresetExportUITests: XCTestCase {
         tapControl("presets")
         XCTAssertTrue(app.buttons["node:included"].waitForExistence(timeout: 10), "library home")
         let node = app.buttons["node:myPresets"]
-        for _ in 0..<6 where !(node.exists && node.isHittable) { app.swipeUp() }
-        XCTAssertTrue(node.waitForExistence(timeout: 5))
-        node.tap()
-        dismissImportAlert()
-        XCTAssertTrue(app.buttons["exportPresets"].waitForExistence(timeout: 10), "My Presets offers Export")
+        // At the largest text sizes the row can sit half under the bottom edge, where a tap lands
+        // on the home indicator: scroll and retry until My Presets is open.
+        for _ in 0..<4 {
+            for _ in 0..<6 where !(node.exists && node.isHittable) { app.swipeUp() }
+            if node.exists { node.tap() }
+            dismissImportAlert()
+            if app.buttons["exportPresets"].waitForExistence(timeout: 5) { return }
+            app.swipeUp()
+        }
+        XCTAssertTrue(app.buttons["exportPresets"].exists, "My Presets offers Export")
     }
 
     /// Waits until the imported preset was tried and is listed as playable.
