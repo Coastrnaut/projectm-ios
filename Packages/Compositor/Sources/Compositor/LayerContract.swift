@@ -48,21 +48,10 @@ public enum LayerOutcome: Sendable, Equatable {
 }
 
 /// How a layer is combined with what is below it. CMP-003 adds opacity (premultiplied channels ×
-/// opacity before "over"); CMP-004 (blend modes) and CMP-005 (transforms) extend the compositor.
+/// opacity before "over"), CMP-005 transforms (`LayerTransform.swift`); CMP-004 adds blend modes.
 public enum LayerBlendMode: Sendable, Equatable {
     /// Premultiplied "over".
     case normal
-}
-
-/// A 2D affine transform in output pixels: x' = a·x + c·y + tx, y' = b·x + d·y + ty.
-public struct LayerTransform: Sendable, Equatable {
-    public var a, b, c, d, tx, ty: Double
-
-    public init(a: Double, b: Double, c: Double, d: Double, tx: Double, ty: Double) {
-        self.a = a; self.b = b; self.c = c; self.d = d; self.tx = tx; self.ty = ty
-    }
-
-    public static let identity = LayerTransform(a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0)
 }
 
 public struct LayerCompositeSettings: Sendable, Equatable {
@@ -79,13 +68,13 @@ public struct LayerCompositeSettings: Sendable, Equatable {
 
     /// CMP-001 accepts only opacity 1, normal blending and the identity transform (CMP-001-R11).
     public var isSupportedByCMP001: Bool {
-        opacity == 1 && blendMode == .normal && transform == .identity
+        opacity == 1 && blendMode == .normal && transform.isIdentity
     }
 
-    /// What the compositor draws today: any opacity (CMP-003), normal blending and the identity
-    /// transform (until CMP-004 and CMP-005).
+    /// What the compositor draws today: any opacity (CMP-003), any transform (CMP-005) and normal
+    /// blending (until CMP-004; `CompositorError.unsupportedCompositeSettings` stays for it).
     public var isSupportedByCompositor: Bool {
-        blendMode == .normal && transform == .identity
+        blendMode == .normal
     }
 }
 
@@ -96,7 +85,7 @@ public protocol LayerSource: AnyObject {
     var layerName: String { get }
     /// Read once when the compositor is built.
     var fallback: LayerFallback { get }
-    /// Read once when the compositor is built; any opacity, normal blend and identity transform.
+    /// Read once when the compositor is built; any opacity and transform, normal blend.
     var compositeSettings: LayerCompositeSettings { get }
     /// Called once before the first frame and once per size change. The only place a source may
     /// create its own working resources.

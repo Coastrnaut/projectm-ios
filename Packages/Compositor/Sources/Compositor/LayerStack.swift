@@ -4,8 +4,8 @@
 // A plain value, CPU only (builds on Linux): callers edit it and hand it to
 // `Compositor.apply(_:makeLayer:)`, which diffs it by instance ID. Index 0 is the BOTTOM layer;
 // the last index is drawn on top. Every operation either succeeds or throws and leaves the stack
-// unchanged. Opacity (CMP-003, supported), blend modes (CMP-004) and transforms
-// (CMP-005) live in each entry's `LayerCompositeSettings`; groups, masks and solo/mute will add
+// unchanged. Opacity (CMP-003), transforms (CMP-005) and blend modes (CMP-004, not yet)
+// live in each entry's `LayerCompositeSettings`; groups, masks and solo/mute will add
 // fields to the entry.
 
 /// The stable identity of one stack entry. Unique within a stack and never reused by it, so the
@@ -51,8 +51,8 @@ public struct LayerDescriptor: Equatable, Sendable {
 public struct LayerStackEntry: Equatable, Sendable {
     public let id: LayerInstanceID
     public var descriptor: LayerDescriptor
-    /// Any opacity (CMP-003; the target a layer settles at); blend and transform stay identity until
-    /// CMP-004/005 (CMP-002-R11).
+    /// Any opacity (CMP-003; the target a layer settles at) and transform (CMP-005; shown from the
+    /// next frame); blend stays normal until CMP-004 (CMP-002-R11).
     public var settings: LayerCompositeSettings
 
     public init(id: LayerInstanceID, descriptor: LayerDescriptor, settings: LayerCompositeSettings = LayerCompositeSettings()) {
