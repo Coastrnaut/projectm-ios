@@ -74,7 +74,7 @@ frame; analysis about 86 spectra per second of audio (hop 512). Reported, never 
 **Constraints**: no allocation, lock, log or I/O in our per-frame code (layout, tessellation,
 limiter, buffer exchange, encoding into preallocated buffers; Metal's own command objects are the
 system's); nothing on the audio callback; analysis on its own queue; nothing to projectM
-(Constitution VIII, ADR-0008 decision 5); GPU tests skip cleanly without a Metal device.
+(Constitution VIII, ADR-0008 decision 5); GPU tests skip cleanly without a Metal device. The Metal code is under `#if canImport(Metal) && !VISUAL_NO_METAL`, so `-Xswiftc -DVISUAL_NO_METAL` reproduces the Linux build shape on the Mac.
 
 **Scale/Scope**: about 1,100 lines of package Swift, 350 lines of app Swift, 900 lines of tests.
 
@@ -94,7 +94,7 @@ system's); nothing on the audio callback; analysis on its own queue; nothing to 
 | VIII ProjectM fidelity | projectM's reader, presets and engine untouched; analysis results go only to the native generator (ADR-0008 decision 5) | Pass |
 | IX Dependencies | None added | Pass |
 | X Evidence | Host, simulator and Linux tests; render check on host and simulator GPUs reported as such; device GPU checks are `{device}` tasks | Pass |
-| Privacy | Two user-setting keys; no audio stored or sent; no network | Pass |
+| Privacy | Two user-setting keys (VIS-001-R11 amends FR-065, recorded; device privacy allowed list updated); no audio stored or sent; no network | Pass with a recorded amendment |
 | Accessibility (FR-070, FR-072) | Labeled controls and visual; Reduce flashing honored with documented bounds | Pass |
 
 Post-design re-check: unchanged, all pass. No Complexity Tracking entries.
@@ -128,7 +128,7 @@ Packages/VisualGenerators/
     SpectrumBandFeed.swift  LiveBandAnalyzer.swift
   Tests/VisualGeneratorsTests/
     GeometryTestSupport.swift (independent angle oracle) ConfigurationTests  PaletteTests
-    CircularSpectrumGeometryTests (impulse × count × size × offset matrix)  TessellationTests
+    CircularSpectrumGeometryTests (impulse × count)  RotationTests (× size × offset)  TessellationTests
     FlashSafetyLimiterTests  BandFrameBufferTests  CircularSpectrumRenderTests (Metal, skips)
     BandFeedTests (AUD-016 sines → bands → lit bar)  LiveBandAnalyzerTests
 Packages/AudioCore/   AudioAnalyzer.swift (+ tap capacity), Tests (+ tap test)

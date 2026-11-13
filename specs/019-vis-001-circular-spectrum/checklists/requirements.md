@@ -37,3 +37,11 @@
   later VIS and CMP rows. The pixel format, shader approach and threading are left to the plan.
 - Validation pass 1 (2026-11-13): all items pass; no [NEEDS CLARIFICATION] markers (owner rule 4:
   open choices are decided in `/speckit-clarify`).
+- `/speckit-analyze` pass (2026-11-13): 0 critical. Fixed: VIS-001-R11 now states that it amends
+  FR-065 (user settings were limited to FR-048/FR-072); R15 states that Pause also stops the
+  analysis timer synchronously; the plan names the `VISUAL_NO_METAL` Linux-shape flag (used by
+  VIS-001-T32) and the RotationTests file; T21 spells out pause/suspend. Licensing: no third-party
+  code or assets (palettes are the project's own). Cross-feature: depends on ANL-001/ANL-002
+  (integrated) read-only; AudioCore/CaptureKit deltas default-off; ANL-004 works in
+  AnalysisFeatures, which this row does not modify; ANL-016 will replace `LiveBandAnalyzer`'s
+  timer; CMP-001 adopts `TextureGenerator`.
