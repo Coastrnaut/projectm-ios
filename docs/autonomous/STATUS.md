@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T23:31:36Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T23:34:39Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,28 +11,28 @@
 |---|---|
 | audited | 233 |
 | implementing | 2 |
-| unit_passed | 1 |
-| integrated | 89 |
+| integrated | 90 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 10 | 2 | 1 | 73 | 1 |
-| P1 | 137 | 0 | 0 | 14 | 0 |
-| P2 | 77 | 0 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 10 | 2 | 74 | 1 |
+| P1 | 137 | 0 | 14 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 236 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
+- 235 features are not implemented yet (first: ACC-003, ACC-004, ACC-005, ACC-006, ACC-007)
 
 ## Integrated
 
 | ID | Feature | Merge commit | Branch |
 |---|---|---|---|
+| ACC-001 | Reduce motion mode | `c5433e4` | `feature/acc-001` |
 | ACC-002 | Reduced flash preset policy | `61c926cb8b59` | `feature/acc-002` |
 | ANL-001 | Windowed FFT | `df16f2b90397` | `feature/anl-001` |
 | ANL-002 | Log-frequency bands | `493269c77462` | `feature/anl-002` |
@@ -133,11 +133,12 @@ None.
 
 ## Evidence by feature
 
-### ACC-001 Reduce motion mode (unit_passed)
+### ACC-001 Reduce motion mode (integrated)
 - `python3 scripts/check_compliance.py`: pass at `8910efa1b1f5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-001/20261113T183121/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `8910efa1b1f5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-001/20261113T183121/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `8910efa1b1f5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-001/20261113T183121/script-tests.log`)
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `8910efa1b1f5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-001/20261113T183121/autonomous-tests.log`)
+- `post-merge: projectM-iOSTests + ReduceMotion/NativeVisual/EmergencyBlackout UI tests on simulator`: pass at `c5433e4` (log `.autonomous/logs/integration/acc-001/app-tests.log`)
 
 ### ACC-002 Reduced flash preset policy (integrated)
 - `python3 scripts/check_compliance.py`: pass at `64829437c98c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-002/20261113T111136/compliance.log`)
