@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T13:22:03Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T13:31:08Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,18 +10,19 @@
 | State | Features |
 |---|---|
 | audited | 293 |
-| implementing | 2 |
+| implementing | 1 |
+| unit_passed | 1 |
 | integrated | 30 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 60 | 1 | 25 | 1 |
-| P1 | 145 | 1 | 5 | 0 |
-| P2 | 79 | 0 | 0 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 60 | 0 | 1 | 25 | 1 |
+| P1 | 145 | 1 | 0 | 5 | 0 |
+| P2 | 79 | 0 | 0 | 0 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -90,6 +91,12 @@ None.
 - `python3 scripts/validate_docs.py`: pass at `bf549085819b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-002/20261113T071424/docs.log`)
 - `swift test --package-path Packages/AnalysisFeatures`: pass at `bf549085819b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-002/20261113T071424/swift-test_AnalysisFeatures.log`)
 - `integration checkout: AnalysisFeatures 46 on iOS 27.2 sim; 46 (1 skipped) with -DANALYSIS_NO_ACCELERATE on the host; 0 PosterBoard reports`: pass at `493269c` (log `.autonomous/logs/integration/anl-002/analysis-sim.log`)
+
+### ANL-004 Spectral flux onset detector (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `e1aeb82495a0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-004/20261113T082643/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `e1aeb82495a0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-004/20261113T082643/docs.log`)
+- `swift test --package-path Packages/AnalysisFeatures`: pass at `e1aeb82495a0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-004/20261113T082643/swift-test_AnalysisFeatures.log`)
+- `swift test --package-path Packages/VisualGenerators`: pass at `e1aeb82495a0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-004/20261113T082643/swift-test_VisualGenerators.log`)
 
 ### AUD-001 Import DRM-free audio files (integrated)
 - `python3 scripts/check_compliance.py`: pass at `d9a60b2a6692` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-001/20261112T153538/compliance.log`)
