@@ -1,5 +1,6 @@
 // BloomParametersTests.swift — FX-001-T03: bloom parameters, ranges, clamping and the soft-knee
 // threshold (FX-001-R3, R4, R6; research FX-001-D3 step 1, D5). Pure arithmetic; runs on Linux.
+import Foundation
 import XCTest
 import VisualGenerators
 @testable import VisualEffects

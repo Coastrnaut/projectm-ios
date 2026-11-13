@@ -1,5 +1,6 @@
 // EffectChainDescriptionTests.swift — FX-001-T06: the versioned, serializable chain description
 // FX-020 will store (FX-001-R2; research FX-001-D6). Runs on Linux.
+import Foundation
 import XCTest
 @testable import VisualEffects
 
