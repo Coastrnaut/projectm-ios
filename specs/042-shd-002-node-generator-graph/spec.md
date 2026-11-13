@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (SHD-002-T01-T23 and T25 verified on the Mac: host, Linux shape and iOS 27.2 simulator; device task T24 `{device}` open)
 
 **Input**: User description: "Implement SHD-002 (Node-based generator graph) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Connect built-in noise, color,
