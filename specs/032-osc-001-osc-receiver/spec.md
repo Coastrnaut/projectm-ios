@@ -46,6 +46,9 @@ interaction); each answer is the conservative, local-first option.
 - Q: How is "disable closes listener" proved? → A: Turning the toggle off (or the app leaving the foreground) cancels the listener and every peer connection and reports "Off" only after the system confirms the listener is cancelled. A host integration test sends a float over loopback, sees the test value change, disables, then shows that a second packet changes nothing and that the same port can be bound again (OSC-001-R3, S2).
 - Q: What does the privacy policy and App Store answer change? → A: The policy gains an "OSC control on your local network" section: off by default, listens only on the local network while turned on and the app is in the foreground, never connects out, sends nothing, stores nothing it receives except the current test value in memory, and iOS asks for Local Network permission. The App Privacy answer stays "Data Not Collected" (nothing leaves the device; received values are not stored or sent), which the owner confirms in App Store Connect; `docs/release/app-privacy.md` records the reasoning (OSC-001-R17, R18).
 - Q: Where does the code live? → A: The decoder, the address scope check, the dispatcher and the receiver's state machine are pure Swift in the `PerformanceControl` target (Linux-testable). Only the transport, the code that touches the Network framework, lives in `Sources/PerformanceControl/OSCTransport/` and compiles only where the Network framework exists. A test-only loopback sender for the integration test lives in the same folder and compiles only in debug builds, so the shipping app contains no sending code and the test targets stay free of networking APIs (OSC-001-R19).
+- Q: When does a typed port take effect? → A: When the user submits the field (Return/Done) or leaves it, never per keystroke, so a half-typed "90" never opens port 90. A refused entry shows "Use a port from 1024 to 65535." under the field and the field returns to the stored port (OSC-001-R2).
+- Q: After a failure (port in use, permission denied, network lost), does the receiver retry by itself? → A: No automatic retry loop. The toggle stays on and the status shows the failure; the receiver tries again only when the user toggles it, changes the port, or the app returns to the foreground. This keeps the socket lifecycle tied to explicit user or app events (OSC-001-R3, R16).
+- Q: What does the receiver record about traffic? → A: In-memory counters only (datagrams received, applied, rejected by reason, dropped as non-local), readable by tests and later by OSC-007's status; never logged with payloads, never stored, never shown with peer addresses in this row (OSC-001-R13, R15).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -167,10 +170,12 @@ value.
   until the user turns it on.
 - **OSC-001-R2**: While on, and while the app is active in the foreground, the app MUST listen for
   UDP datagrams on the user's port, 1024-65535 (default 9000); entries outside that range or not a
-  number MUST be refused with a message, keeping the previous port.
+  number MUST be refused with a message, keeping the previous port. A port entry MUST take
+  effect only when submitted or when the field loses focus.
 - **OSC-001-R3**: Turning OSC off, changing the port, or the app leaving the foreground MUST cancel
   the listener and every peer connection; the off state MUST be reported only after the listener is
-  cancelled; afterwards no datagram MUST change any value.
+  cancelled; afterwards no datagram MUST change any value. A failed listener MUST NOT retry by
+  itself; it retries only on a toggle, a port change or the return to the foreground.
 - **OSC-001-R4**: The listener MUST use only the local network: it MUST never connect out or
   resolve a host, MUST refuse the cellular interface, and MUST drop datagrams from any address that
   is not loopback, private IPv4, IPv4 link-local, IPv6 link-local or IPv6 unique-local.
@@ -196,7 +201,8 @@ value.
   test parameter through the parameter store (clamped to its range); a non-finite float MUST change
   nothing.
 - **OSC-001-R13**: The dispatcher MUST apply a value only to a registered parameter whose policy
-  allows external control; every other message MUST be ignored and counted by reason.
+  allows external control; every other message MUST be ignored and counted by reason. Counters
+  MUST stay in memory and MUST NOT record payloads or peer addresses.
 - **OSC-001-R14**: Packets MUST be decoded and applied on a dedicated serial queue, never on the
   main thread or an audio thread.
 - **OSC-001-R15**: The toggle and the port MUST be stored as user settings (`settings.osc.enabled`,
