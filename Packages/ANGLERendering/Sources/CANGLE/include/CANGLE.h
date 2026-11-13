@@ -96,6 +96,8 @@ EGLBoolean eglQuerySurface(EGLDisplay dpy, EGLSurface surface, EGLint attribute,
 EGLBoolean eglMakeCurrent(EGLDisplay dpy, EGLSurface draw, EGLSurface read, EGLContext ctx);
 EGLBoolean eglSwapBuffers(EGLDisplay dpy, EGLSurface surface);
 EGLContext eglGetCurrentContext(void);
+EGLDisplay eglGetCurrentDisplay(void);
+EGLSurface eglGetCurrentSurface(EGLint readdraw);
 EGLint eglGetError(void);
 __eglMustCastToProperFunctionPointerType eglGetProcAddress(const char *_Nonnull procname);
 
