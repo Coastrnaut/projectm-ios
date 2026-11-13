@@ -2,6 +2,8 @@
 // persistence across relaunch, rotation with the circular spectrum on screen, switching back to
 // projectM, the bar count, and the fallback notice (VIS-001 User Stories 1, 3, 4). Simulator results
 // are never device evidence (Constitution X). Waits use generous ceilings, never frame budgets.
+// Shortened 2026-11-13 under owner rule 7: `-autostart inAppPlayback` replaces the notice and chooser
+// taps, and waits poll every 0.1 s (UITestWaits.swift) instead of about once a second.
 import XCTest
 
 @MainActor
@@ -12,19 +14,14 @@ final class NativeVisualUITests: XCTestCase {
         continueAfterFailure = false
     }
 
+    /// `reset` starts from fresh settings; `-autostart inAppPlayback` (Debug) starts the reference
+    /// track as the chooser's In-App Playback row does (VIS-001-T25's launch arguments).
     private func launch(reset: Bool, extra: [String] = []) {
         XCUIDevice.shared.orientation = .portrait
-        app.launchArguments = (reset ? ["-uitestResetNotice"] : []) + ["-uitestDiagnostics"] + extra + Self.noStore
+        app.launchArguments = (reset ? ["-uitestResetNotice"] : []) + ["-uitestDiagnostics", "-autostart", "inAppPlayback"]
+            + extra + Self.noStore
         app.launch()
-        if reset {
-            let acknowledge = app.buttons["acknowledgeNotice"]
-            XCTAssertTrue(acknowledge.waitForExistence(timeout: 10))
-            acknowledge.tap()
-        }
-        let inApp = app.buttons["In-App Playback"]
-        XCTAssertTrue(inApp.waitForExistence(timeout: 10))
-        inApp.tap()
-        XCTAssertTrue(app.staticTexts["sourceStarts"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
     }
 
     private var circularSpectrum: XCUIElement { app.descendants(matching: .any)["circularSpectrum"].firstMatch }
@@ -32,47 +29,40 @@ final class NativeVisualUITests: XCTestCase {
     private var starts: String? { app.staticTexts["sourceStarts"].value as? String }
 
     private func openSettings() {
-        if !app.buttons["settings"].waitForExistence(timeout: 2) { app.otherElements["visualizerTapArea"].firstMatch.tap() }
-        XCTAssertTrue(app.buttons["settings"].waitForExistence(timeout: 5))
+        if !app.buttons["settings"].appears(within: 1) { app.otherElements["visualizerTapArea"].firstMatch.tap() }
+        XCTAssertTrue(app.buttons["settings"].appears(within: 5))
         app.buttons["settings"].tap()
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Settings"].appears(within: 5))
     }
 
     private func closeSettings() {
         app.navigationBars["Settings"].buttons["Done"].tap()
-        XCTAssertTrue(app.navigationBars["Settings"].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Settings"].disappears(within: 5))
     }
 
     private func choose(_ title: String) {
         openSettings()
         let picker = app.segmentedControls["visualPicker"]
-        XCTAssertTrue(picker.waitForExistence(timeout: 5))
+        XCTAssertTrue(picker.appears(within: 5))
         picker.buttons[title].tap()
         closeSettings()
     }
 
     /// Polls `condition` on the main actor for up to 30 s.
-    private func waitUntil(_ condition: () -> Bool) -> Bool {
-        let deadline = Date().addingTimeInterval(30)
-        while Date() < deadline {
-            if condition() { return true }
-            RunLoop.current.run(until: Date().addingTimeInterval(0.1))
-        }
-        return condition()
-    }
+    private func waitUntil(_ condition: () -> Bool) -> Bool { poll(30, condition) }
 
     private func showControls() {
-        if !app.otherElements["controls"].waitForExistence(timeout: 1) { app.otherElements["visualizerTapArea"].firstMatch.tap() }
-        XCTAssertTrue(app.otherElements["controls"].waitForExistence(timeout: 5))
+        if !app.otherElements["controls"].appears(within: 0.5) { app.otherElements["visualizerTapArea"].firstMatch.tap() }
+        XCTAssertTrue(app.otherElements["controls"].appears(within: 5))
     }
 
     func testProjectMIsTheDefaultAndCircularSpectrumReplacesIt() {
         launch(reset: true)
-        XCTAssertTrue(projectM.waitForExistence(timeout: 10), "projectM by default")
+        XCTAssertTrue(projectM.appears(within: 10), "projectM by default")
         XCTAssertFalse(circularSpectrum.exists)
         choose("Circular Spectrum")
-        XCTAssertTrue(circularSpectrum.waitForExistence(timeout: 10), "the circular spectrum is shown")
-        XCTAssertFalse(projectM.exists, "projectM's view is gone while the native visual runs")
+        XCTAssertTrue(circularSpectrum.appears(within: 10), "the circular spectrum is shown")
+        XCTAssertTrue(projectM.disappears(within: 5), "projectM's view is gone while the native visual runs")
         showControls()
         XCTAssertTrue(app.staticTexts["currentVisual"].exists)
         for id in ["previous", "next", "random", "presets", "duplicateCurrent"] {
@@ -82,8 +72,8 @@ final class NativeVisualUITests: XCTestCase {
         XCTAssertEqual(starts, "1", "switching the visual does not restart the source")
 
         choose("projectM")
-        XCTAssertTrue(projectM.waitForExistence(timeout: 10), "projectM returns")
-        XCTAssertFalse(circularSpectrum.exists)
+        XCTAssertTrue(projectM.appears(within: 10), "projectM returns")
+        XCTAssertTrue(circularSpectrum.disappears(within: 5))
         showControls()
         XCTAssertTrue(app.buttons["next"].exists)
         XCTAssertEqual(starts, "1")
@@ -94,15 +84,15 @@ final class NativeVisualUITests: XCTestCase {
         openSettings()
         app.segmentedControls["visualPicker"].buttons["Circular Spectrum"].tap()
         let bars = app.segmentedControls["barsPicker"]
-        XCTAssertTrue(bars.waitForExistence(timeout: 5), "Bars offered for the circular spectrum")
+        XCTAssertTrue(bars.appears(within: 5), "Bars offered for the circular spectrum")
         XCTAssertTrue(bars.buttons["64"].isSelected, "64 bars by default")
         bars.buttons["16"].tap()
         closeSettings()
-        XCTAssertTrue(circularSpectrum.waitForExistence(timeout: 10))
+        XCTAssertTrue(circularSpectrum.appears(within: 10))
         app.terminate()
 
         launch(reset: false)
-        XCTAssertTrue(circularSpectrum.waitForExistence(timeout: 10), "the choice persisted")
+        XCTAssertTrue(circularSpectrum.appears(within: 10), "the choice persisted")
         openSettings()
         XCTAssertTrue(app.segmentedControls["visualPicker"].buttons["Circular Spectrum"].isSelected)
         XCTAssertTrue(app.segmentedControls["barsPicker"].buttons["16"].isSelected, "the bar count persisted")
@@ -112,7 +102,7 @@ final class NativeVisualUITests: XCTestCase {
     func testRotationKeepsTheCircularSpectrumWithoutRestartingTheSource() {
         launch(reset: true)
         choose("Circular Spectrum")
-        XCTAssertTrue(circularSpectrum.waitForExistence(timeout: 10))
+        XCTAssertTrue(circularSpectrum.appears(within: 10))
         let window = app.windows.firstMatch
         XCUIDevice.shared.orientation = .landscapeLeft
         XCTAssertTrue(waitUntil { window.frame.width > window.frame.height }, "landscape within 30 s")
@@ -130,13 +120,13 @@ final class NativeVisualUITests: XCTestCase {
     func testUnavailableNativeVisualFallsBackToProjectMWithANotice() {
         launch(reset: true, extra: ["-uitestNativeVisualFailure"])
         choose("Circular Spectrum")
-        XCTAssertTrue(app.staticTexts["nativeVisualUnavailable"].waitForExistence(timeout: 10), "visible notice (VIS-001-R16)")
+        XCTAssertTrue(app.staticTexts["nativeVisualUnavailable"].appears(within: 10), "visible notice (VIS-001-R16)")
         XCTAssertEqual(app.staticTexts["nativeVisualUnavailable"].label,
                        "Circular Spectrum isn't available on this device. Showing projectM.")
         XCTAssertTrue(projectM.exists, "projectM is shown instead")
         XCTAssertFalse(circularSpectrum.exists)
         openSettings()
-        XCTAssertTrue(app.staticTexts["nativeVisualUnavailableFooter"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["nativeVisualUnavailableFooter"].appears(within: 5))
         closeSettings()
         XCTAssertEqual(starts, "1")
     }

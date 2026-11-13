@@ -3,6 +3,8 @@
 // notice (FX-001 User Stories 1 and 4; FX-001-R11 to R13). The circular spectrum's accessibility
 // value reports the glow state ("Glow on", "Glow off", "Glow unavailable"). Simulator results are
 // never device evidence (Constitution X). Waits use generous ceilings, never frame budgets.
+// Shortened 2026-11-13 under owner rule 7: `-autostart inAppPlayback` replaces the notice and chooser
+// taps, and waits poll every 0.1 s (UITestWaits.swift) instead of about once a second.
 import XCTest
 
 @MainActor
@@ -13,19 +15,14 @@ final class GlowUITests: XCTestCase {
         continueAfterFailure = false
     }
 
+    /// `reset` starts from fresh settings; `-autostart inAppPlayback` (Debug) starts the reference
+    /// track as the chooser's In-App Playback row does.
     private func launch(reset: Bool, extra: [String] = []) {
         XCUIDevice.shared.orientation = .portrait
-        app.launchArguments = (reset ? ["-uitestResetNotice"] : []) + ["-uitestDiagnostics"] + extra + Self.noStore
+        app.launchArguments = (reset ? ["-uitestResetNotice"] : []) + ["-uitestDiagnostics", "-autostart", "inAppPlayback"]
+            + extra + Self.noStore
         app.launch()
-        if reset {
-            let acknowledge = app.buttons["acknowledgeNotice"]
-            XCTAssertTrue(acknowledge.waitForExistence(timeout: 10))
-            acknowledge.tap()
-        }
-        let inApp = app.buttons["In-App Playback"]
-        XCTAssertTrue(inApp.waitForExistence(timeout: 10))
-        inApp.tap()
-        XCTAssertTrue(app.staticTexts["sourceStarts"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
     }
 
     private var circularSpectrum: XCUIElement { app.descendants(matching: .any)["circularSpectrum"].firstMatch }
@@ -33,15 +30,15 @@ final class GlowUITests: XCTestCase {
     private var glowToggle: XCUIElement { app.switches["glowToggle"] }
 
     private func openSettings() {
-        if !app.buttons["settings"].waitForExistence(timeout: 2) { app.otherElements["visualizerTapArea"].firstMatch.tap() }
-        XCTAssertTrue(app.buttons["settings"].waitForExistence(timeout: 5))
+        if !app.buttons["settings"].appears(within: 1) { app.otherElements["visualizerTapArea"].firstMatch.tap() }
+        XCTAssertTrue(app.buttons["settings"].appears(within: 5))
         app.buttons["settings"].tap()
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Settings"].appears(within: 5))
     }
 
     private func closeSettings() {
         app.navigationBars["Settings"].buttons["Done"].tap()
-        XCTAssertTrue(app.navigationBars["Settings"].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Settings"].disappears(within: 5))
     }
 
     private func isOn(_ toggle: XCUIElement) -> Bool { (toggle.value as? String) == "1" }
@@ -51,18 +48,11 @@ final class GlowUITests: XCTestCase {
     }
 
     /// Polls `condition` for up to 30 s.
-    private func waitUntil(_ condition: () -> Bool) -> Bool {
-        let deadline = Date().addingTimeInterval(30)
-        while Date() < deadline {
-            if condition() { return true }
-            RunLoop.current.run(until: Date().addingTimeInterval(0.1))
-        }
-        return condition()
-    }
+    private func waitUntil(_ condition: () -> Bool) -> Bool { poll(30, condition) }
 
     private func chooseCircularSpectrum() {
         let picker = app.segmentedControls["visualPicker"]
-        XCTAssertTrue(picker.waitForExistence(timeout: 5))
+        XCTAssertTrue(picker.appears(within: 5))
         picker.buttons["Circular Spectrum"].tap()
     }
 
@@ -71,13 +61,13 @@ final class GlowUITests: XCTestCase {
         openSettings()
         XCTAssertFalse(glowToggle.exists, "no glow controls for projectM")
         chooseCircularSpectrum()
-        XCTAssertTrue(glowToggle.waitForExistence(timeout: 5))
+        XCTAssertTrue(glowToggle.appears(within: 5))
         XCTAssertFalse(isOn(glowToggle), "Glow is off by default")
         XCTAssertFalse(app.sliders["glowIntensitySlider"].exists)
         flip(glowToggle)
         XCTAssertTrue(isOn(glowToggle))
         let intensity = app.sliders["glowIntensitySlider"]
-        XCTAssertTrue(intensity.waitForExistence(timeout: 5))
+        XCTAssertTrue(intensity.appears(within: 5))
         XCTAssertEqual(intensity.label, "Intensity")
         XCTAssertEqual(intensity.value as? String, "50%")
         let radius = app.sliders["glowRadiusSlider"]
@@ -91,21 +81,21 @@ final class GlowUITests: XCTestCase {
         intensity.adjust(toNormalizedSliderPosition: 1)
         XCTAssertTrue(waitUntil { (intensity.value as? String) == "100%" }, "intensity moved: \(String(describing: intensity.value))")
         closeSettings()
-        XCTAssertTrue(circularSpectrum.waitForExistence(timeout: 10))
+        XCTAssertTrue(circularSpectrum.appears(within: 10))
         XCTAssertTrue(waitUntil { (self.circularSpectrum.value as? String) == "Glow on" },
                       "the running visual uses the glow: \(String(describing: circularSpectrum.value))")
         XCTAssertEqual(starts, "1", "changing the glow does not restart the source")
         app.terminate()
 
         launch(reset: false)
-        XCTAssertTrue(circularSpectrum.waitForExistence(timeout: 10))
+        XCTAssertTrue(circularSpectrum.appears(within: 10))
         XCTAssertTrue(waitUntil { (self.circularSpectrum.value as? String) == "Glow on" }, "the glow persisted")
         openSettings()
-        XCTAssertTrue(glowToggle.waitForExistence(timeout: 5))
+        XCTAssertTrue(glowToggle.appears(within: 5))
         XCTAssertTrue(isOn(glowToggle), "the toggle persisted")
         XCTAssertEqual(app.sliders["glowIntensitySlider"].value as? String, "100%", "the intensity persisted")
         flip(glowToggle)
-        XCTAssertFalse(app.sliders["glowIntensitySlider"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.sliders["glowIntensitySlider"].disappears(within: 2))
         closeSettings()
         XCTAssertTrue(waitUntil { (self.circularSpectrum.value as? String) == "Glow off" })
         XCTAssertEqual(starts, "1")
@@ -116,12 +106,12 @@ final class GlowUITests: XCTestCase {
         openSettings()
         chooseCircularSpectrum()
         closeSettings()
-        XCTAssertTrue(circularSpectrum.waitForExistence(timeout: 10), "the visual itself is not affected")
+        XCTAssertTrue(circularSpectrum.appears(within: 10), "the visual itself is not affected")
         openSettings()
-        XCTAssertTrue(glowToggle.waitForExistence(timeout: 5))
+        XCTAssertTrue(glowToggle.appears(within: 5))
         flip(glowToggle)
         let footer = app.staticTexts["glowUnavailableFooter"]
-        XCTAssertTrue(footer.waitForExistence(timeout: 5), "visible notice (FX-001-R13)")
+        XCTAssertTrue(footer.appears(within: 5), "visible notice (FX-001-R13)")
         XCTAssertEqual(footer.label, "Glow isn't available on this device.")
         closeSettings()
         XCTAssertTrue(circularSpectrum.exists, "never a black screen: the circular spectrum keeps rendering")

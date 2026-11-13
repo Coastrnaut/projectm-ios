@@ -9,7 +9,8 @@ swift test --package-path Packages/PresetLibrary
 ```
 
 Expect all tests to pass, including `MilkdropPresetValidatorTests`, `PresetMutationSweepTests`
-(600 seeded variants), `UserPresetStoreTests` (golden `user-presets-v1.json`), and
+(60 seeded variants by default, six per mutation kind; the full 600-variant S2 sweep runs with
+`PRESET_MUTATION_SWEEP_FULL=1`, owner rule 7, 2026-11-13), `UserPresetStoreTests` (golden `user-presets-v1.json`), and
 `UserPresetLibraryTests` (trial outcomes, both "app died" recoveries). The built-in corpus check
 (S7) runs only when `Vendor/presets/cream-of-the-crop` is populated and is skipped otherwise.
 

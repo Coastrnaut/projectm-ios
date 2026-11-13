@@ -4,10 +4,19 @@
 //   swift run -c release --package-path Packages/AnalysisFeatures/Bench AnalysisBench
 // Pass `--loop-seconds N` to repeat the timed loops for about N seconds (for an allocation trace
 // with `xcrun xctrace record --template Allocations --launch -- <binary> --loop-seconds 5`).
+// `--anl001-sweep` and `--anl004-sweep` run the full acceptance cross-products instead
+// (AcceptanceSweeps.swift; owner rule 7, 2026-11-13) and exit 1 on any failure.
 import AnalysisFeatures
 import AudioCore
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(Glibc)
+import Glibc
+#endif
 
 let arguments = CommandLine.arguments
+if arguments.contains("--anl001-sweep") { exit(runANL001Sweep()) }
+if arguments.contains("--anl004-sweep") { exit(runANL004Sweep()) }
 let loopSeconds = arguments.firstIndex(of: "--loop-seconds").flatMap { Int(arguments[$0 + 1]) } ?? 0
 let sampleRate = 44_100.0
 let framesPerRun = 2_000
