@@ -116,8 +116,9 @@ text; the bundled file and its index hash are identical before and after.
 2. **Given** an edit that fails a check, **When** the user taps Save, **Then** nothing is stored,
    the editor stays open with the user's text and shows the reason, and the last saved version
    keeps playing.
-3. **Given** unsaved changes, **When** the user taps Cancel or swipes the editor away, **Then**
-   they are asked to discard the changes or keep editing; discarding changes nothing.
+3. **Given** unsaved changes, **When** the user taps Cancel, **Then** they are asked to discard
+   the changes or keep editing; discarding changes nothing. Swiping the editor down does not
+   close it while there are unsaved changes.
 4. **Given** the app ends while an edit is being checked, **When** it starts again, **Then** the
    edit is discarded, the user is told once, and the last saved version is still playable (it is
    not quarantined).
@@ -266,8 +267,10 @@ verified any further rights, and shows when it was last edited.
   then delete the previous text. If the record cannot be saved, the new file is removed and
   nothing changes.
 - **PRE-015-R15**: A name-only change MUST be saved without a trial.
-- **PRE-015-R16**: Cancel, or swiping the editor down, with unsaved changes MUST ask "Discard
-  Changes" or "Keep Editing"; without changes it closes at once.
+- **PRE-015-R16**: Cancel with unsaved changes MUST ask "Discard Changes" or "Keep Editing";
+  without changes it closes at once. While there are unsaved changes (or a save is running),
+  swiping the editor down MUST NOT close it (the system offers no hook to ask there; Cancel
+  asks).
 - **PRE-015-R17**: When the saved preset is on screen, it MUST be reloaded with the new text
   through the normal guarded path (PRE-012-R18, R19).
 - **PRE-015-R18**: The editor MUST work with VoiceOver (labelled fields and buttons; the text

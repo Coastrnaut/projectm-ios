@@ -74,6 +74,8 @@ struct VisualizerView: View {
         // A locked pack reached from the controls (Next/Random with no playable preset).
         .sheet(isPresented: Binding(get: { coordinator.presets.purchaseRequested && !coordinator.showPresetBrowser },
                                     set: { coordinator.presets.purchaseRequested = $0 })) { purchaseSheet }
+        // PRE-015: "Duplicate to My Presets" from the controls (the browser shows its own).
+        .duplicateResultAlert(coordinator.userPresets, isPresented: !coordinator.showPresetBrowser)
         .sheet(isPresented: $coordinator.showSettings) {
             SettingsView(settings: coordinator.settings,
                          reduceFlashingAvailable: coordinator.renderer?.supportsReduceFlashing ?? true)

@@ -53,7 +53,8 @@ and `Golden/user-presets-v2.json` (new, with one copy).
   `quarantined(UserPreset)`, `refused(PresetDuplicateRefusal)`.
 - `PresetDuplicateRefusal`: `locked`, `notPlayable`, `sourceMismatch`, `blocked`,
   `alreadyCopied(name)`, `alreadyInQuarantine(name, reason)`, `invalid(reason)`, `libraryFull`,
-  `quarantineFull`, `libraryUnavailable`, `saveFailed`.
+  `libraryUnavailable`, `saveFailed`. (No `quarantineFull`: a copy the checks would quarantine
+  is refused, never stored.)
 - `PresetEditOutcome`: `saved(UserPreset)`, `unchanged`, `refused(PresetEditRefusal)`.
 - `PresetEditRefusal`: `notEditable`, `needsUnlock`, `emptyName`, `emptyText`, `tooLarge`,
   `blocked`, `sameAsBuiltIn(name, pack)`, `sameAsUserPreset(name)`, `invalid(reason)`,

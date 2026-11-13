@@ -9,7 +9,7 @@ Extends `specs/008-pre-012-preset-import-validation/contracts/user-presets.md`.
 | `setLibraryUnlocked(_ unlocked: Bool)` | Holds or releases copies of locked-pack presets (R8). Default false. |
 | `duplicate(_ source: BundledPresetSource, contents: Data) async -> PresetDuplicateOutcome` | R2-R7. Never throws. |
 | `editorText(for id: String) -> PresetEditorText?` | The current text of a playable, not held preset, decoded (UTF-8, else Latin-1 with `isUTF8 == false`); nil otherwise. |
-| `edit(_ id: String, name: String, text: String) async -> PresetEditOutcome` | R11-R15. Never throws. |
+| `edit(_ id: String, name: String, text: String?, expectedSHA256: String) async -> PresetEditOutcome` | R11-R15. `text` nil: the text is unchanged (rename only). `expectedSHA256`: the text the editor opened; another stored text → `changedMeanwhile`. Never throws. |
 | `takeEditNotices() -> [String]` | Names of presets whose edit was discarded because the app ended during its check (R13); returned once. |
 
 `BundledPresetSource`: `id`, `name`, `author`, `fileName`, `packID`, `packTitle`,
@@ -53,4 +53,5 @@ preset changed meanwhile → replace.
 - Accessibility identifiers: `duplicatePreset` (context menu item), `duplicateCurrent`
   (controls), `editUserPreset`, `presetEditor`, `presetEditorName`, `presetEditorText`,
   `presetEditorSave`, `presetEditorCancel`, `presetEditorError`, `presetEditorEncodingNote`,
-  `discardChanges`, `needsUnlockSection`, `heldPreset:<name>`, `presetOrigin`.
+  `needsUnlockSection`, `heldPreset:<name>`, `presetOrigin`; the discard question is an alert
+  with the buttons "Discard Changes" and "Keep Editing".
