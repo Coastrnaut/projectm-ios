@@ -20,6 +20,8 @@
 //   pause, stop playback, seek, next and previous track. Its play order is the "Your Audio" list
 //   as shown when the track was started; the reference track is an order of one. The existing
 //   Stop (back to the chooser) and Pause (freeze the picture) are unchanged.
+// * Test signals (AUD-016): the chooser's Diagnostics section starts a generated reference tone as
+//   In-App Playback, alone in its play order; nothing about the choice is stored.
 import ANGLERendering
 import AudioCore
 import CaptureKit
@@ -211,6 +213,30 @@ final class AppCoordinator: VisualizationControlling {
             transport.prepare(order: ListPlayOrder(items), current: item)
             start(.inAppPlayback)
         }
+    }
+
+    // MARK: - Test signals (AUD-016)
+
+    /// Plays a reference-tone fixture as In-App Playback (AUD-016-R14, R15, R17). Not stored.
+    func playTestSignal(_ fixture: ReferenceToneFixture) {
+        guard screen == .chooser else { return }
+        let (order, item) = Self.testSignalPlayback(fixture)
+        transport.prepare(order: order, current: item)
+        start(.inAppPlayback)
+    }
+
+    /// A test signal alone in its order: it repeats, and Next and Previous track start it again.
+    static func testSignalPlayback(_ fixture: ReferenceToneFixture) -> (order: ListPlayOrder, item: PlaybackItem) {
+        let item = PlaybackItem.tone(fixture)
+        return (ListPlayOrder([item]), item)
+    }
+
+    /// The test signal's name for the indicator while one plays as In-App Playback (AUD-016-R16).
+    var testSignalName: String? { Self.signalName(mode: manager.activeMode, item: transport.current) }
+
+    static func signalName(mode: AudioSourceMode?, item: PlaybackItem?) -> String? {
+        guard mode == .inAppPlayback else { return nil }
+        return item?.toneFixture?.name
     }
 
     // MARK: - Transport (AUD-006). Every use restarts the controls' hide delay (AUD-006-R25).

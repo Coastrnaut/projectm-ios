@@ -223,6 +223,22 @@ public enum UIStrings {
         playbackHoldDetail(mode: mode, reason: reason).map { "\(status). \($0)" }
     }
 
+    // MARK: Test signals (AUD-016; specs/011-aud-016-reference-tone-suite/contracts/ui-strings.md)
+    public static let diagnostics = "Diagnostics"
+    public static let testSignals = "Test Signals"
+    public static let testSignalsRowDetail = "Generated tones, sweeps, pulses and silence for checking the visualizer."
+    public static let testSignalsFooter = "These test signals are generated on this device for checking the visualizer. They are not music. Lower the volume before you start one. Each plays as In-App Playback and repeats until you stop it."
+    public static let testSignalHint = "Plays this test signal as In-App Playback."
+
+    /// The source-and-state indicator's text (FR-013, FR-042): "In-App Playback · Active audio", or
+    /// with a test signal playing "In-App Playback · Test tone 1 kHz · Active audio" (AUD-016-R16).
+    /// A signal name is shown only with In-App Playback, the only mode that plays one.
+    public static func sourceStatus(mode: AudioSourceMode?, state: AudioState, signal: String?) -> String {
+        let label = mode.map(UIStrings.label) ?? "No source"
+        if mode == .inAppPlayback, let signal { return "\(label) · \(signal) · \(UIStrings.state(state))" }
+        return "\(label) · \(UIStrings.state(state))"
+    }
+
     // MARK: Actions
     public static let chooseSource = "Choose source"
     public static let chooseAudioSource = "Choose Audio Source"

@@ -84,12 +84,13 @@ struct VisualizerView: View {
         }
         .onChange(of: coordinator.settings.reduceFlashing) { coordinator.applyReduceFlashing() }
         .onChange(of: coordinator.manager.state) { _, state in
-            SourceStatusIndicator.announce(mode: coordinator.manager.activeMode, state: state)   // FR-070
+            SourceStatusIndicator.announce(mode: coordinator.manager.activeMode, state: state, signal: coordinator.testSignalName)   // FR-070, AUD-016-R16
         }
         .onChange(of: coordinator.manager.stopReason) { _, reason in
             // AUD-014-R18: In-App Playback went on hold (interrupted, or the output was disconnected).
             let manager = coordinator.manager
-            if let text = SourceStatusIndicator.holdAnnouncement(mode: manager.activeMode, state: manager.state, reason: reason) {
+            if let text = SourceStatusIndicator.holdAnnouncement(mode: manager.activeMode, state: manager.state, reason: reason,
+                                                                 signal: coordinator.testSignalName) {
                 UIAccessibility.post(notification: .announcement, argument: text)
             }
         }
