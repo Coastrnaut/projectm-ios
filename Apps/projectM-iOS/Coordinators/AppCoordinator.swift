@@ -30,6 +30,9 @@
 //   projectM is paused (not torn down) and its preset controls are hidden; every pause/resume goes
 //   through pauseActiveVisual()/resumeActiveVisual(). If the native visual cannot be created it
 //   falls back to projectM with a notice (VIS-001-R16).
+// * Tap tempo (SHOW-011): `tempo` owns the manual tempo and the estimate. Its analysis follows the
+//   shown visual (own pipeline for projectM, the circular spectrum's pipeline otherwise) through
+//   resumeActiveVisual()/pauseActiveVisual(), and PERF-011 through `presentation`.
 import ANGLERendering
 import AudioCore
 import CaptureKit
@@ -94,6 +97,8 @@ final class AppCoordinator: VisualizationControlling {
     static func nativeVisualUnavailableMessage(for choice: VisualChoice) -> String {
         "\(choice.title) isn't available on this device. Showing projectM."
     }
+    /// Tap tempo and the tempo estimate (SHOW-011).
+    let tempo: TempoCoordinator
 
     private let defaults: UserDefaults
     #if DEBUG
@@ -142,6 +147,14 @@ final class AppCoordinator: VisualizationControlling {
         transport = PlaybackTransport(manager: manager, source: inAppPlayback)
         let lifecycle = LifecycleObserver()
         self.lifecycle = lifecycle
+        var tempoClock: () -> UInt64 = { MonotonicClock.nowNanoseconds() }
+        #if DEBUG
+        // TapTempoUITests: `-uitestTapInterval <ms>` spaces every tap exactly (SHOW-011 research D6).
+        if let step = defaults.string(forKey: "uitestTapInterval").flatMap(Double.init) {
+            tempoClock = TempoCoordinator.syntheticClock(stepMilliseconds: step)
+        }
+        #endif
+        tempo = TempoCoordinator(clock: tempoClock)
         // Feature 002: the library (12,941 presets) loads off the main thread (SC-101).
         presets = PresetCoordinator(store: FavoritesStore(defaults: defaults), settings: settings, loader: presetLoader,
                                     collections: PresetCollectionStore(directory: PresetCollectionStore.defaultDirectory()))
@@ -157,6 +170,7 @@ final class AppCoordinator: VisualizationControlling {
         #endif
         // Background/foreground/lock/unlock go through LifecycleCoordinator (T099): it suspends the
         // visualization and forwards to CaptureManager's per-adapter matrix.
+        presentation.register(tempo)   // SHOW-011: the tempo analysis stops with the presentation
         presentation.onTransition = { report in
             DiagnosticsLog.presentationTransition(canPresent: report.canPresent, registered: report.registered,
                                                   activeBefore: report.activeBefore, activeAfter: report.activeAfter)
@@ -510,9 +524,11 @@ final class AppCoordinator: VisualizationControlling {
         if showsNativeVisual {
             renderer?.pause()
             nativeVisual?.resume()
+            if let reader = nativeVisual?.tempoReader { tempo.follow(reader) } else { tempo.stopAnalysis() }
         } else {
             nativeVisual?.pause()
             renderer?.resume()
+            tempo.runOwnAnalysis(on: manager.analysisTap)
         }
     }
 
@@ -524,7 +540,13 @@ final class AppCoordinator: VisualizationControlling {
     private func pauseActiveVisual() {
         renderer?.pause()
         nativeVisual?.pause()
+        tempo.stopAnalysis()   // SHOW-011: the estimate's analysis runs only while a visual runs
     }
+
+    // MARK: - Tap tempo (SHOW-011). Every use restarts the controls' hide delay (SHOW-011-R17).
+
+    func tapTempo() { showControls(); tempo.tap() }
+    func resetTempo() { showControls(); tempo.reset() }
 
     /// Settings changed the visual, its bar count or the linear spectrum's options: switch without
     /// touching the audio source (VIS-001-R12, VIS-002-R12).

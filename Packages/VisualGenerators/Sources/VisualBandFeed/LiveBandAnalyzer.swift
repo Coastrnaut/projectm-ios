@@ -75,4 +75,19 @@ public final class LiveBandAnalyzer: Sendable {
     public func setBarCount(_ barCount: SpectrumBarCount) {
         pipeline.setBandCount(BandCount(rawValue: barCount.rawValue)!)
     }
+
+    // SHOW-011 hook (research SHOW-011-D3): while this visual is shown its pipeline is the analysis
+    // tap's only reader, so other consumers (the tap tempo's estimate) subscribe to it here.
+
+    /// Another subscription on this analyzer's pipeline (ANL-016-R10).
+    public func subscribe(eventCapacity: Int = AnalysisSubscription.defaultEventCapacity) throws(AnalysisBusError) -> AnalysisSubscription {
+        try pipeline.subscribe(eventCapacity: eventCapacity)
+    }
+
+    public func unsubscribe(_ subscription: AnalysisSubscription) {
+        pipeline.unsubscribe(subscription)
+    }
+
+    /// The pipeline's sample rate (for converting beat samples to time).
+    public var sampleRate: Double { pipeline.configuration.spectrum.sampleRate }
 }
