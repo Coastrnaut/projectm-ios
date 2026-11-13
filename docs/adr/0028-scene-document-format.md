@@ -165,3 +165,29 @@ SCN-010 (specs/077-scn-010-scene-undo-redo) keeps a bounded history of the curre
   change under its own rules. The history is in memory only and empty at launch. A cue, Reopen and a
   photo or video replacement restart it; the audio source, safety and accessibility settings, OSC,
   blackout and the camera are outside scenes and never undone.
+
+## Amendment 2026-11-13 (SCN-012, scene validation and repair report)
+
+SCN-012 (specs/079-scn-012-scene-validation) reports a scene's problems before it opens and offers
+repairs (research SCN-012-D1 to D7, contracts/scene-repair-report.md). No default is overridden.
+
+- **Report.** `SceneRepairReport` (SceneRepair.swift, plain Swift without Foundation, Linux) maps each
+  decode refusal, decode warning, validation issue and MOD-013 per-edge problem to an entry: one of
+  six groups (damaged file, unsupported version, missing media, invalid mappings, unknown content
+  kept, values adjusted), a severity (note, problem, needs repair, cannot open), the item in plain
+  words, the problem, what happens if opened anyway, and its repair actions. No second definition of
+  validity: every entry comes from an existing code. An error with a repair is "needs repair"; an
+  error without one (an invalid scene ID) and every refusal (newer version, damaged bytes, limits)
+  is "cannot open". Warnings the user should see before opening are missing media, invalid mappings
+  and unknown layer kinds; the rest are notes that open silently as before.
+- **Repairs.** Nine actions in one canonical order (rename, renumber layers, remove damaged layers,
+  remove extra layers, drop invalid values, remove invalid generators, drop missing media, drop
+  invalid mappings, keep unknown content). Each re-validates the document it is given and acts only on
+  its own codes' paths, so repairs are deterministic, independent of the order given and idempotent.
+  Renumbering keeps the first valid holder of an ID and gives the others the smallest free IDs.
+  Mappings keep exactly what MOD-013 applies. The scene ID, unknown layer kinds, unknown fields and
+  unknown parameter values are never removed.
+- **App.** A show step whose scene needs review, and PERF-010's Reopen whose held scene does, present
+  the report first (Open with repairs, Open as is only without errors, Cancel or Close). Repairs apply
+  to the live output only; the stored file is never written. The archive import result carries the
+  report for the SCN-014 screen; the launch restore stays silent (SCN-002 already falls back).

@@ -4,7 +4,13 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (SCN-012-T01-T12 verified on the Mac: host, Linux shape, own iOS
+27.2 simulator; no device claim). SceneFormat 67 tests (host 3.2 s, Linux shape 2.7 s; SceneRepairTests
+8, fuzz 500 cases 0.76-0.88 s), projectM-iOSTests 352 (19.0 s; SceneRepairCoordinatorTests 6),
+SceneRepairUITests 1 (9.9-12.1 s), ShowCueUITests 2, SessionRecoveryUITests 3. Compliance and docs
+checks OK. PosterBoard reports 32 before and after. Not exercised by a test: the VoiceOver heading
+trait of group titles (XCUITest exposes no traits) and the Reopen sheet in the UI (unit-tested
+decision and repaired held scene).
 
 **Input**: User description: "Implement SCN-012 (Scene validation) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Report missing assets, invalid
