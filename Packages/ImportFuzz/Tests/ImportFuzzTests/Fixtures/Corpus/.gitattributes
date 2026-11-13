@@ -1,0 +1,2 @@
+# QA-005: seed corpus bytes are fixtures; keep them exactly as written (CRLF presets included).
+* -text

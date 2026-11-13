@@ -1,0 +1,65 @@
+{
+  "format" : "projectm-ios.generator-graph",
+  "name" : "Hue Rings",
+  "nodes" : [
+    {
+      "id" : "p",
+      "kind" : "polar"
+    },
+    {
+      "id" : "r",
+      "inputs" : {
+        "point" : "p"
+      },
+      "kind" : "component",
+      "values" : {
+        "axis" : 1
+      }
+    },
+    {
+      "id" : "k",
+      "inputs" : {
+        "a" : "r"
+      },
+      "kind" : "multiply",
+      "values" : {
+        "b" : 3
+      }
+    },
+    {
+      "id" : "t",
+      "kind" : "time"
+    },
+    {
+      "id" : "pal",
+      "inputs" : {
+        "shift" : "t",
+        "t" : "k"
+      },
+      "kind" : "palette",
+      "values" : {
+        "frequency" : 1,
+        "shiftRate" : -0.5
+      }
+    },
+    {
+      "id" : "dim",
+      "inputs" : {
+        "color" : "pal"
+      },
+      "kind" : "scaleColor",
+      "values" : {
+        "amount" : 0.8
+      }
+    },
+    {
+      "id" : "out",
+      "inputs" : {
+        "color" : "dim"
+      },
+      "kind" : "output"
+    }
+  ],
+  "speed" : 0.25,
+  "version" : 1
+}
