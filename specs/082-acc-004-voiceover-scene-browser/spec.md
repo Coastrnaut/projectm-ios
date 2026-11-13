@@ -103,8 +103,8 @@ elements; every row is one element with a non-empty label and the expected trait
 1. **Given** the show has five cues and cue 1 is active, **When** VoiceOver focuses cue 1, **Then**
    it reads "Opening, Cue 1 of 5, active" and reports it selected.
 2. **Given** a cue row is focused, **When** the user opens the actions rotor, **Then** Go to Cue,
-   Rename, Duplicate Scene, Rename Scene, Move Up, Move Down and Delete are offered (Move Up absent
-   on the first cue's effect: it does nothing there).
+   Rename, Duplicate Scene, Rename Scene, Move Up, Move Down and Delete are offered (Move Up on the
+   first cue and Move Down on the last change nothing).
 3. **Given** a preset row for the playing preset, **When** focused, **Then** it is reported selected,
    its label ends "current preset", and its hint says activating plays the preset.
 4. **Given** a preset row, **When** the user picks the favorite action from the rotor, **Then** the

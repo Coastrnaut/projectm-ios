@@ -27,7 +27,7 @@ Not announced: automatic preset changes (failure replacement, launch restore, re
 | Preset browser | first pack `node:*` | button | |
 | Pack folder | first `preset:*` row and its `star:*` | button | preset label non-empty |
 | Collections | `newCollection` | button | |
-| My Presets | `importUserPreset` (or the screen's import control) | button | |
+| My Presets | `importPreset` | button | |
 | Settings | `showEditorLink`, `storageLink`, `licensesLink`, `visual.projectM` | button | |
 | Show editor | `showAddCurrentScene` | button | |
 | Show editor | `showCue1` … `showCue5` | element | label = cue label, value starts `Cue n of 5`; cue 1 selected |
