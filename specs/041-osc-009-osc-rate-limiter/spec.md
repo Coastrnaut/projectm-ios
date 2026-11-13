@@ -177,8 +177,9 @@ fast is explained rather than mysterious.
 - **OSC-009-S3**: In the flood fixture, the work done is bounded by counts: decoded datagrams ≤ the
   global allowance for the fixture's simulated duration, and every other datagram costs only the
   limiter's constant-time check.
-- **OSC-009-S4**: Under a flood of 10,000 changes, the app's main-thread refreshes number at most
-  elapsed time × 30 + 1.
+- **OSC-009-S4**: The app never has more than one main-thread refresh pending, however many changes
+  arrive (a flood of 10,000 changes), and refreshes start at most 30 times per second of (simulated)
+  time plus one.
 - **OSC-009-S5**: The OSC-001 loopback integration test and every existing OSC test still pass.
 
 ## Assumptions

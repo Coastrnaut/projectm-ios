@@ -23,9 +23,9 @@ Format: `- [ ] OSC-009-Tnn [P?] [Story?] description`. A task is ticked only whe
 
 - [ ] OSC-009-T04 [US1] Add `OSCSourceID` to the transport event (`.datagram([UInt8], source: OSCSourceID = .unattributed)`) in `OSC/OSCDatagramTransport.swift`, number accepted peers from 1 in `OSCTransport/NetworkDatagramTransport.swift`, pass the source through `OSCReceiver.handle`.
 - [ ] OSC-009-T05 [US1] Extend `OSC/OSCDispatcher.swift`: limits, clock and scheduler in `init`; `handle(_:source:)` checks the datagram limits before decoding (`.rateLimited`, `rateLimited` counter) and the target limit before applying (`.coalesced`, `coalesced` counter; non-finite values refused before holding); store writes under the lock; `flush()`, at most one scheduled; `resetLimits()`. Extend `OSC/OSCReceiver.swift`: `limits`, `clock`, `scheduleFlush` parameters, `resetLimits()` on launch and stop, `onActivity(_:)`.
-- [ ] OSC-009-T06 [US1] Write `Packages/PerformanceControl/Tests/PerformanceControlTests/OSCFloodTests.swift`, the acceptance fixture: 100,000 `/projectm/test` datagrams from 3 sources through the receiver (fake transport) with a fake clock advancing 1 ms per 50 datagrams and the manual scheduler run when due; assert applied updates never exceed `burst + rate × window` for every window (sliding, from the recorded apply times), decoded datagrams ≤ `100 + 500 × 2 s`, every other datagram counted `rateLimited`, at most one flush pending at any time (OSC-009-S1, S3); final value equals the last value that passed the datagram limits, and a value sent 100 ms after the flood is applied (S2).
-- [ ] OSC-009-T07 [US1] Write `Packages/PerformanceControl/Tests/PerformanceControlTests/OSCRefreshGateTests.swift`: first request runs at once (delay 0); requests while pending return nil; after `begin` at t, the next request's delay is `t + 1/30 s − now`; 10,000 requests over 1 simulated second start at most 31 refreshes.
-- [ ] OSC-009-T08 [US1] App: `Apps/projectM-iOS/Coordinators/OSCReceiverCoordinator.swift` refreshes through `OSCRefreshGate` from `receiver.onActivity` (one pending main-actor task; `refreshCount` for tests; `rateLimitedCount`), and `Apps/projectM-iOS/Tests/OSCReceiverCoordinatorTests.swift` gains `testFloodCoalescesMainActorRefreshes`: 10,000 datagrams sent synchronously on the main actor start at most one pending refresh (refreshCount ≤ 2 after the flood is drained) and the shown test value ends at the last value sent (OSC-009-S4).
+- [ ] OSC-009-T06 [US1] Write `Packages/PerformanceControl/Tests/PerformanceControlTests/OSCFloodTests.swift`, the acceptance fixture: 100,000 `/projectm/test` datagrams from 3 sources through the receiver (fake transport) with a fake clock advancing 1 ms per 50 datagrams and the manual scheduler run when due; assert applied updates never exceed `burst + rate × window` for every window (sliding, from the recorded apply times), decoded datagrams ≤ `100 + 500 × 2 s`, every other datagram counted `rateLimited`, at most one flush pending at any time (OSC-009-S1, S3); datagrams to an unknown address and malformed ones take no target slot (OSC-009-R4); final value equals the last value that passed the datagram limits, and a value sent 100 ms after the flood is applied (S2).
+- [ ] OSC-009-T07 [US1] Write `Packages/PerformanceControl/Tests/PerformanceControlTests/OSCRefreshGateTests.swift`: first request runs at once (delay 0); requests while pending return nil; after `begin` at t, the next request's delay is `t + 1/30 s − now`; 10,000 requests over 1 simulated second start at most 31 refreshes (OSC-009-S4, rate part).
+- [ ] OSC-009-T08 [US1] App: `Apps/projectM-iOS/Coordinators/OSCReceiverCoordinator.swift` refreshes through `OSCRefreshGate` from `receiver.onActivity` (one pending main-actor task; `refreshCount` for tests; `rateLimitedCount`), and `Apps/projectM-iOS/Tests/OSCReceiverCoordinatorTests.swift` gains `testFloodCoalescesMainActorRefreshes`: 10,000 datagrams sent synchronously on the main actor start at most one pending refresh (refreshCount ≤ 2 after the flood is drained) and the shown test value ends at the last value sent (OSC-009-S4, one-pending part; the rate part is T07).
 - [ ] OSC-009-T09 [US1] Run the whole PerformanceControl suite, including `OSCLoopbackIntegrationTests` and the existing dispatcher and receiver tests (OSC-009-S5).
 
 ## Phase 4: User Story 2 — the last value always wins (P1)
@@ -40,7 +40,7 @@ Format: `- [ ] OSC-009-Tnn [P?] [Story?] description`. A task is ticked only whe
 ## Phase 6: Polish
 
 - [ ] OSC-009-T13 Run the app tests on an own iOS 27.2 simulator (`-only-testing:` projectM-iOSTests, OSCReceiverUITests, OSCNetworkAccessUITests, OSCRateLimiterUITests); count PosterBoard reports before and after; delete the simulator.
-- [ ] OSC-009-T14 `python3 scripts/check_compliance.py`, `python3 scripts/validate_docs.py`; update the package header comment in `Packages/PerformanceControl/Package.swift` and the roadmap status if the roadmap lists one.
+- [ ] OSC-009-T14 `python3 scripts/check_compliance.py`, `python3 scripts/validate_docs.py`; `grep` confirms no `MainActor` or `DispatchQueue.main` in `Packages/PerformanceControl/Sources/PerformanceControl/OSC*` (OSC-009-R10); update the package header comment in `Packages/PerformanceControl/Package.swift` and the roadmap status if the roadmap lists one.
 - [ ] OSC-009-T15 {device} On D1, a LAN controller floods `/projectm/test` at ~2,000 msg/s for 10 s: rendering continues, "Rate-limited N" grows, the value ends at the last one sent (quickstart C). Device LAN check, last stage; not run by this row.
 
 ## Dependencies
@@ -53,3 +53,9 @@ coordinator change in T08.
 
 MVP = US1 (limits, flood fixture, gated refresh). US2 is covered by the same coalescing code and
 adds a focused test; US3 adds the Settings row and its UI test.
+
+## Analyze (2026-11-13)
+
+speckit-analyze findings, all applied: C1 (S4 split between T07's fake-clock gate test and T08's
+one-pending app test, so no wall-clock assertion), C2 (R4 checked in T06), C3 (R10 checked in T14).
+Coverage: R1-R12 and S1-S5 each have a task; no constitution conflict.
