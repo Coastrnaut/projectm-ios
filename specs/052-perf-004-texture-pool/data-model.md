@@ -6,6 +6,7 @@
 |---|---|---|
 | pixelFormat | UInt | `MTLPixelFormat.rawValue` |
 | width, height | Int | ≥ 1 |
+| depth, arrayLength | Int | ≥ 1 (1 for 2D pictures) |
 | usage | UInt | `MTLTextureUsage.rawValue` |
 | storageMode | UInt | `MTLStorageMode.rawValue` |
 | mipmapLevelCount | Int | ≥ 1 |
