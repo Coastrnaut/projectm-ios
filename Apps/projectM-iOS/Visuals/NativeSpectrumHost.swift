@@ -38,7 +38,12 @@
 //   generator's downstream luminance is a `ModulatedGlowLuminance` reference whose model follows
 //   the effective glow, so Reduce flashing (FX-019) bounds the frame actually shown. No allocation
 //   per frame. Unbinding returns to the manual glow at once.
+// * REC-001 (research REC-001-D1): `captureFrame` turns the layer's `framebufferOnly` off until the
+//   next readable drawable is drawn, blits that drawable (the frame as shown: glow and Reduce
+//   flashing included) into a shared buffer and delivers 8-bit sRGB BGRA on the main actor; then
+//   `framebufferOnly` returns to true. Stopping the loop cancels a pending capture.
 import AudioCore
+import FrameCapture
 import Metal
 import ParameterGraph
 import PerformanceControlAnalysis
@@ -97,6 +102,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
     private let modulator: AudioFeatureModulator? = (try? VisualParameterCatalog.makeRegistry()).map(AudioFeatureModulator.init(registry:))
     /// MOD-002: the luminance model the generator sees while the glow intensity is bound.
     private let glowLuminance = ModulatedGlowLuminance()
+    /// REC-001: the handler waiting for the next readable frame.
+    private var pendingCapture: (@MainActor (CapturedPixels?) -> Void)?
 
     var barCount: SpectrumBarCount {
         get { generator.barCount }
@@ -332,6 +339,52 @@ final class NativeSpectrumHost: PresentationBoundResource {
             displayLink = nil
             analyzer.stop()
             meter.reset()
+            cancelCapture()   // REC-001-R14: no frame comes while the loop is stopped
+        }
+    }
+
+    // MARK: - Frame capture (REC-001)
+
+    func captureFrame(_ handler: @escaping @MainActor (CapturedPixels?) -> Void) {
+        pendingCapture?(nil)
+        pendingCapture = handler
+        view.metalLayer.framebufferOnly = false   // the next drawables can be read
+    }
+
+    func cancelCapture() {
+        let handler = pendingCapture
+        pendingCapture = nil
+        view.metalLayer.framebufferOnly = true
+        handler?(nil)
+    }
+
+    /// Encodes the read-back of the drawn `target` when a capture waits and the drawable is readable.
+    private func encodeCaptureIfPending(_ target: MTLTexture, commands: MTLCommandBuffer) {
+        guard let handler = pendingCapture, !target.isFramebufferOnly else { return }
+        pendingCapture = nil
+        view.metalLayer.framebufferOnly = true
+        let width = target.width, height = target.height, rowBytes = width * 4
+        guard target.pixelFormat == .bgra8Unorm_srgb || target.pixelFormat == .bgra8Unorm,
+              let buffer = device.makeBuffer(length: rowBytes * height, options: .storageModeShared),
+              let blit = commands.makeBlitCommandEncoder() else {
+            handler(nil)
+            return
+        }
+        blit.label = "REC-001 native capture"
+        blit.copy(from: target, sourceSlice: 0, sourceLevel: 0, sourceOrigin: MTLOrigin(x: 0, y: 0, z: 0),
+                  sourceSize: MTLSize(width: width, height: height, depth: 1), to: buffer, destinationOffset: 0,
+                  destinationBytesPerRow: rowBytes, destinationBytesPerImage: rowBytes * height)
+        blit.endEncoding()
+        // Read only after the GPU finished; nothing else holds the buffer.
+        nonisolated(unsafe) let readBack = buffer
+        commands.addCompletedHandler { (completed: MTLCommandBuffer) in
+            var pixels: CapturedPixels?
+            if completed.status == .completed {
+                let bytes = readBack.contents().bindMemory(to: UInt8.self, capacity: rowBytes * height)
+                pixels = CapturedPixels(width: width, height: height,
+                                        layout: .sRGBBGRA8TopDown(Array(UnsafeBufferPointer(start: bytes, count: rowBytes * height))))
+            }
+            Task { @MainActor in handler(pixels) }
         }
     }
 
@@ -364,6 +417,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             drawn = generator.encode(into: target, commandBuffer: commands, bands: input, context: context)
         }
         guard drawn else { return }
+        encodeCaptureIfPending(target, commands: commands)   // REC-001; nothing without a request
         commands.present(drawable)
         commands.commit()
         presentedFrameCount += 1

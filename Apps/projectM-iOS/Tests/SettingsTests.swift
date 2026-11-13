@@ -58,9 +58,10 @@ final class SettingsTests: XCTestCase {
         settings.oscEnabled = true             // OSC-001-R15
         settings.oscPort = 8000
         let keys = Set(defaults.persistentDomain(forName: suite)?.keys ?? [:].keys)
-        // MED-001, MED-002: `settings.photo.id` and `settings.video.id` are in allKeys (the UI-test reset)
-        // but written by PhotoStore and VideoStore only.
-        XCTAssertEqual(keys, Set(AppSettings.allKeys).subtracting([AppSettings.photoIDKey, AppSettings.videoIDKey]), "FR-065")
+        // MED-001, MED-002, MED-009: `settings.photo.id`, `settings.video.id` and `settings.text.overlay` are
+        // in allKeys (the UI-test reset) but written by PhotoStore, VideoStore and TextOverlayStore only.
+        XCTAssertEqual(keys, Set(AppSettings.allKeys).subtracting([AppSettings.photoIDKey, AppSettings.videoIDKey,
+                                                                   AppSettings.textOverlayKey]), "FR-065")
     }
 
     /// VIS-001-T19 (VIS-001-R11): the visual choice and the bar count, with safe readings of bad values.

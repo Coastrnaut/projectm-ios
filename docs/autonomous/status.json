@@ -6,9 +6,9 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 36,
-   "implementing": 1,
-   "integrated": 49,
+   "audited": 33,
+   "implementing": 2,
+   "integrated": 51,
    "skipped_existing": 1
   },
   "P1": {
@@ -24,9 +24,9 @@
   }
  },
  "by_state": {
-  "audited": 260,
-  "implementing": 1,
-  "integrated": 64,
+  "audited": 257,
+  "implementing": 2,
+  "integrated": 66,
   "skipped_existing": 1
  },
  "device_gate": {
@@ -123,7 +123,6 @@
    "MED-006",
    "MED-007",
    "MED-008",
-   "MED-009",
    "MED-010",
    "MED-011",
    "MED-012",
@@ -211,7 +210,6 @@
    "QA-010",
    "QA-011",
    "QA-012",
-   "REC-001",
    "REC-002",
    "REC-003",
    "REC-004",
@@ -299,7 +297,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "261 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
+   "259 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
   ]
  },
  "features": {
@@ -1576,12 +1574,12 @@
   "MED-009": {
    "attempts": 0,
    "branch": "feature/med-009",
-   "branch_sha": null,
+   "branch_sha": "5adba5200543ccb116d18c9ca514f4d0b3341dc7",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "beca43d66718242bb6ba638c09213dfdeeceb612",
    "priority": "P0",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "integrated"
   },
   "MED-010": {
    "attempts": 0,
@@ -1625,13 +1623,13 @@
   },
   "MED-014": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/med-014",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "MIDI-001": {
    "attempts": 0,
@@ -2245,13 +2243,13 @@
   },
   "PERF-006": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/perf-006",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "PERF-007": {
    "attempts": 0,
@@ -2635,13 +2633,13 @@
   },
   "REC-001": {
    "attempts": 0,
-   "branch": null,
-   "branch_sha": null,
+   "branch": "feature/rec-001",
+   "branch_sha": "08830385f5642aaf0e0d47208839c2b71ebcf0e1",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "5666cc2332ffd383299f9f9dc306a5f3d21c9ab9",
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "integrated"
   },
   "REC-002": {
    "attempts": 0,
@@ -3761,6 +3759,11 @@
    "sha": "e9e04eeb62a82bb2ffc74f56b1bbeea34ebd3ec2"
   },
   {
+   "branch": "feature/med-009",
+   "id": "MED-009",
+   "sha": "beca43d66718242bb6ba638c09213dfdeeceb612"
+  },
+  {
    "branch": "feature/mod-001",
    "id": "MOD-001",
    "sha": "304f3bce431a7f6f0a1719bdced6b55b910c9668"
@@ -3846,6 +3849,11 @@
    "sha": "32172fdd5795d12b9a6386c3f56d1d33936b5344"
   },
   {
+   "branch": "feature/rec-001",
+   "id": "REC-001",
+   "sha": "5666cc2332ffd383299f9f9dc306a5f3d21c9ab9"
+  },
+  {
    "branch": "feature/shd-001",
    "id": "SHD-001",
    "sha": "ade4dfec39a538b841b105a67ff5545b1a6675e6"
@@ -3911,5 +3919,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T19:05:24Z"
+ "updated": "2026-11-13T19:32:32Z"
 }

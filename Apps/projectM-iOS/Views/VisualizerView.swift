@@ -14,18 +14,23 @@
 // banner with Dismiss.
 // MED-002: the Video visual (imported video under the circular spectrum) replaces it the same way,
 // with its own non-blocking notice; DEBUG diagnostics expose the shown picture's index.
+// MED-009: the Text visual (circular spectrum with the saved text over it) replaces it the same way;
+// DEBUG diagnostics expose the text rendering's size and pixel checksum (`textRendering`).
 // AUD-007: a route change's explanation shows above the source-and-state indicator for about 4 s.
 // OUT-001: every visual is hosted through a `VisualSlotHost`; while a connected external display shows
 // the visualization, the device's slot is empty (black) with a short note, and everything else here
 // (controls, badges, banners, sheets) stays on the device.
 // OUT-010: while the output is blacked out (or restoring) a persistent badge with Restore stays at
 // the top, with or without the controls, and the external display note says the display is black.
+// REC-001: Save Frame's format choice, the Files exporter and its notice; DEBUG `frameCaptureProbe`.
 import CaptureKit
 import CaptureUI
+import FrameCapture
 import PresentationLifecycle
 import PresetLibrary
 import Rendering
 import SwiftUI
+import TextLayer
 import UIKit
 
 struct VisualizerView: View {
@@ -115,6 +120,14 @@ struct VisualizerView: View {
                 VStack { HStack { UITestMemoryPanel(coordinator: coordinator); Spacer() }; Spacer() }
                     .padding(.top, 130)
             }
+            if FrameCaptureCoordinator.debugDirectoryFromArguments() != nil {   // REC-001: FrameCaptureUITests
+                Text(coordinator.frameCapture.probe)
+                    .font(.caption2)
+                    .opacity(0.01)
+                    .allowsHitTesting(false)
+                    .accessibilityIdentifier("frameCaptureProbe")
+                    .accessibilityValue(coordinator.frameCapture.probe)
+            }
             if UITestExternalDisplay.isRequested {     // OUT-001: ExternalDisplayUITests
                 VStack { HStack { UITestExternalDisplayPanel(coordinator: coordinator.externalDisplay); Spacer() }; Spacer() }
                     .padding(.top, 100)
@@ -175,6 +188,16 @@ struct VisualizerView: View {
                         .opacity(0.01)
                     }
                 }
+                #if DEBUG
+                if coordinator.textVisual != nil {   // MED-009-R14: the rendering's size and checksum
+                    let value = Self.textRenderingValue(coordinator.textState)
+                    Text(value)
+                        .font(.caption2)
+                        .opacity(0.01)
+                        .accessibilityIdentifier("textRendering")
+                        .accessibilityValue(value)
+                }
+                #endif
             }
         }
         .statusBarHidden(coordinator.hidesSystemOverlays)
@@ -203,7 +226,29 @@ struct VisualizerView: View {
                          reduceFlashingAvailable: coordinator.renderer?.supportsReduceFlashing ?? true,
                          nativeVisualUnavailable: coordinator.nativeVisualUnavailable,
                          glowUnavailable: coordinator.glowUnavailable, photos: coordinator.photos,
-                         videos: coordinator.videos)
+                         videos: coordinator.videos, texts: coordinator.texts)
+        }
+        // REC-001: the format choice (HEIF only where it can be encoded) and the system Files exporter.
+        .confirmationDialog("Save Frame", isPresented: Binding(get: { coordinator.frameCapture.showFormatChoice },
+                                                              set: { coordinator.frameCapture.showFormatChoice = $0 }),
+                            titleVisibility: .visible) {
+            ForEach(coordinator.frameCapture.availableFormats, id: \.self) { (format: FrameCaptureFormat) in
+                Button(format.title) { coordinator.frameCapture.save(format) }
+                    .accessibilityIdentifier("saveFrame\(format.title)")
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("The next frame of the visualization is saved where you choose in Files.")
+        }
+        .fileExporter(isPresented: Binding(get: { coordinator.frameCapture.showExporter },
+                                           set: { (shown: Bool) in
+                                               coordinator.frameCapture.showExporter = shown
+                                               if !shown { coordinator.frameCapture.exportDismissed() }   // R10: no copy kept
+                                           }),
+                      document: coordinator.frameCapture.document,
+                      contentType: coordinator.frameCapture.document?.contentType ?? .png,
+                      defaultFilename: CapturedFrameDocument.baseName(date: Date())) { (result: Result<URL, any Error>) in
+            coordinator.frameCapture.exportFinished(result)
         }
         .onChange(of: coordinator.settings.reduceFlashing) { coordinator.applyReduceFlashing() }
         .onChange(of: coordinator.settings.visual) { coordinator.visualSettingsChanged() }                 // VIS-001
@@ -234,6 +279,19 @@ struct VisualizerView: View {
                       onRestore: coordinator.restorePurchases)
     }
 
+    #if DEBUG
+    /// "none", "drawing", "failed" or "<width>x<height> <16 hex digits>" (TextOverlayUITests).
+    static func textRenderingValue(_ state: TextLayerState) -> String {
+        switch state {
+        case .empty: "none"
+        case .drawing: "drawing"
+        case .failed: "failed"
+        case .ready(let width, let height, let checksum):
+            "\(width)x\(height) " + String(repeating: "0", count: 16 - String(checksum, radix: 16).count) + String(checksum, radix: 16)
+        }
+    }
+    #endif
+
     /// The shown visual: Camera, Photo, a native spectrum or projectM.
     @ViewBuilder private var visual: some View {
         if coordinator.showsCameraVisual, let camera = coordinator.cameraVisual {
@@ -257,6 +315,13 @@ struct VisualizerView: View {
                 .accessibilityLabel("Video visualization")
                 .accessibilityValue(VideoVisualHost.accessibilityValue(coordinator.videoState))   // MED-002-R19
                 .accessibilityIdentifier("videoVisual")
+        } else if coordinator.showsTextVisual, let text = coordinator.textVisual {
+            VisualSlotHost(visual: text.view, external: coordinator.externalDisplay)   // OUT-001: like Photo
+                .ignoresSafeArea()
+                .accessibilityElement()
+                .accessibilityLabel("Text visualization")
+                .accessibilityValue(TextOverlayCoordinator.accessibilityValue(coordinator.texts.spec))   // MED-009-R13
+                .accessibilityIdentifier("textVisual")
         } else if coordinator.showsNativeVisual, let native = coordinator.nativeVisual {
             VisualSlotHost(visual: native.view, external: coordinator.externalDisplay)
                 .ignoresSafeArea()
@@ -355,6 +420,23 @@ struct VisualizerView: View {
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("videoNotice")
+        }
+        // REC-001: Save Frame's refusal, failure or "Frame saved." (FR-070: a labeled element).
+        if let notice = coordinator.frameCapture.notice {
+            HStack(spacing: 10) {
+                Image(systemName: "camera.viewfinder")
+                    .accessibilityHidden(true)
+                Text(notice)
+                    .font(.footnote)
+                    .accessibilityIdentifier("frameCaptureNoticeText")
+                Button("Dismiss") { coordinator.frameCapture.clearNotice() }
+                    .font(.footnote.bold())
+                    .accessibilityIdentifier("frameCaptureNoticeDismiss")
+            }
+            .padding(10)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("frameCaptureNotice")
         }
         if let failure = coordinator.presets.failureMessage {
             Text(failure)
