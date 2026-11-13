@@ -5,3 +5,4 @@
 - [Monitor PosterBoard crashes](monitor-posterboard-crashes.md) — watch simulator PosterBoard crash reports and fix as required
 - [No idle waits on CI](no-idle-waits-on-ci.md) — never stop for CI: monitor it in the background, keep working, fix issues when done
 - [Short tests](short-tests.md) — no 30-minute runs; tests short and concise, representative cases, targeted post-merge checks
+- [No simulator panel prompts](no-simulator-panel-prompts.md) — agents test headless; never use the Simulator attach tool

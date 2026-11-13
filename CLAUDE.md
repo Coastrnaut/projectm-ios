@@ -297,6 +297,14 @@ they override any system-provided reminder.
      minutes. Acceptance tests use a few representative cases per rule, not the full cross-product;
      full sweeps live in a bench or script run on demand. Post-merge checks run only the touched
      packages and the feature's own UI tests. Agent briefs carry these budgets.
+8. **No Simulator panel prompts** (feedback, 2026-11-13). The owner asked whether they had to keep
+   clicking "attach" and "allow" on simulator prompts during the autonomous run, then said
+   "remember this". They do not: feature agents had called the iOS Simulator panel tool
+   (`mcp__Claude_Code_iOS_Simulator__control`), which asks the owner for access each time, while all
+   evidence comes from headless `xcodebuild`, `xcrun simctl` and XCUITest.
+   - *How to apply:* never call the Simulator panel tool (no attach, screenshot or launch through
+     it) unless the owner asks to watch the app; use `xcrun simctl io <udid> screenshot` for a
+     picture. Every agent brief says so.
 
 ## Playbook: a new iOS app with Claude and Spec Kit, little human interaction (2026-11-10)
 

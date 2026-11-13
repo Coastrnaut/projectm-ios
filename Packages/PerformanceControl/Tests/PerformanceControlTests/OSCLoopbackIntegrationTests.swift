@@ -1,5 +1,6 @@
 // OSC-001-T14: the acceptance criterion over a real UDP listener on loopback (OSC-001-S1, S2, R14).
 // "Valid OSC float packet updates test value and disable closes listener."
+// OSC-002-T11: a bundle holding the test message over the same listener (OSC-002-S4).
 //
 // macOS host and simulator only (the listener needs the Network framework; Linux compiles this out).
 // Deterministic: expectations with generous ceilings, no wall-clock assertions. The sender is the
@@ -92,6 +93,27 @@ final class OSCLoopbackIntegrationTests: XCTestCase {
         stopAndWaitOff(second)
 
         XCTAssertTrue(offThread.withLock { $0 }, "datagrams must be applied off the main thread (OSC-001-R14)")
+    }
+
+    func testBundleOverLoopbackUpdatesTestValue() throws {
+        let receiver = OSCReceiver.system()
+        let port = try listen(receiver, port: 0)
+        let expected = Double(Float(0.42))
+        let changed = expectation(description: "test value 0.42 from a bundle")
+        changed.assertForOverFulfill = false
+        let observation = receiver.observeTestValue { value in
+            if value == expected { changed.fulfill() }
+        }
+        let bundle = OSCPacket.bundle(OSCBundle(timeTag: .immediately, elements: [
+            .message(OSCMessage(address: OSCReceiverCatalog.testAddress, arguments: [.float(0.42)])),
+        ]))
+        send(OSCEncoder.encode(bundle), to: port)
+        wait(for: [changed], timeout: 5)
+        XCTAssertEqual(receiver.testValue, expected, "counters: \(receiver.counters)")
+        XCTAssertEqual(receiver.counters.bundles, 1)
+        XCTAssertEqual(receiver.counters.applied, 1)
+        observation.cancel()
+        stopAndWaitOff(receiver)
     }
 }
 #endif
