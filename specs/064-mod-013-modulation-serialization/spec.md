@@ -46,7 +46,7 @@ interaction); each answer is the conservative, local-first option.
 - Q: Are orphaned, rejected and dropped edges written back when a restored scene is saved again? → A: Orphaned and rejected edges are written back verbatim (unknown fields included), because a newer version may know them and user data is never silently lost. Dropped (retired) edges are not written back: MOD-001 guarantees a retired ID never returns. Rewritten edges are written with their new IDs, so a migration happens once.
 - Q: Where does the migration table live and how does it compose across app versions? → A: In the parameter catalog (MOD-001's registry, next to the retired set): one append-only, ordered table of rules ("renamed to" or "retired", each tagged with the table version that added it) for parameter IDs and audio feature IDs. Rules are never edited or removed; renames chain (A → B, later B → C resolves A to C), resolution is idempotent, and loops, self-renames, duplicate rules and cross-kind renames are refused when the catalog is built. A rename requires the old parameter ID to be in the retired set, so MOD-001's "never reuse" rule holds. Recorded as an amendment of ADR-0012.
 - Q: Which connection is refused when connections form a feedback loop? → A: Edges are accepted in document order and a connection is refused when it would close a loop with the edges already accepted (bindings first, then modulation connections), so the earliest edges win and the report names the closing connection with the loop's readable path. Deterministic and minimal: only one edge per loop is refused.
-- Q: In what order does capture write edges, so that a round trip is stable? → A: Live (applied) edges first in their live order (bindings in binding order, connections in graph order), then preserved edges in the order the document had them. After the first capture, capture → save → open → restore → capture gives byte-identical documents. Binding order is meaningful (SCN-001), so a document that interleaves valid and preserved bindings is reordered once and said so in the report's documentation, never silently on every save.
+- Q: In what order does capture write edges, so that a round trip is stable? → A: Live (applied) edges first in their live order (bindings in binding order, connections in graph order), then preserved edges in the order the document had them. After the first capture, capture → save → open → restore → capture gives byte-identical documents. Binding order is meaningful (SCN-001), so a document that interleaves valid and preserved bindings is reordered once (recorded in ADR-0028), never again on later saves.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -198,7 +198,7 @@ the closing connection with the loop path and the binding with its reason; all o
 
 - **MOD-013-S1**: For a document with valid, renamed, retired, unknown-target, unknown-source,
   expression and feedback-loop edges, the report lists exactly the expected category and path for each
-  edge (7 of 7 categories as specified), and the scene opens.
+  edge (all 7 cases), and the scene opens; generator declarations that are invalid still refuse it.
 - **MOD-013-S2**: Every valid edge restored from a saved scene produces the same modulated values as
   the original for a fixed 64-frame input sequence and clock (100% bit-identical).
 - **MOD-013-S3**: Capture → save → open → restore → capture is a fixed point for 100% of 200 seeded

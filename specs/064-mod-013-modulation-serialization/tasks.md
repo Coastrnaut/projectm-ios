@@ -40,3 +40,12 @@ simulator or device task (no app code changes).
 ## Dependencies
 
 T01 → T02 → T03, T04; T05 → T06; T02 + T05 → T07 → T08 → T09 → T10 → T11-T14 → T15-T17.
+
+## Analysis (speckit-analyze, 2026-11-13)
+
+Coverage: MOD-013-R1 T05; R2-R3 T01, T03; R4 T02, T03; R5 T07, T11; R6 T09, T12; R7 T07, T11; R8 T07,
+T11; R9 T09, T11; R10 T09, T14; R11 T05, T11; R12 T16. S1 T11; S2 T12; S3 T14; S4 T03, T15, T16.
+Fixed: a vague capture-order clause in Clarifications (now "recorded in ADR-0028") and S1's
+category count (now "all 7 cases", with the generator-declaration exception stated). No conflict with
+the constitution; SCN-001-R11 is narrowed for modulation edges by the recorded clarification and the
+ADR-0028 amendment (T17).
