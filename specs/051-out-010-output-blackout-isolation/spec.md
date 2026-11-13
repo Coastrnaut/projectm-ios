@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (OUT-010-T01-T14 verified on the Mac: host and iOS 27.2 simulator, simulated and simctl external display; T15 `{device}` open)
 
 **Input**: User description: "Implement OUT-010 (Output blackout isolation) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Black out selected output while
