@@ -48,6 +48,8 @@ Format: `- [ ] SCN-001-Tnn [P?] [Story?] Description with file path`
 
 ## Phase 6: Polish
 
+- [ ] SCN-001-T22 [P] Source-safety test (R14, contract C7; analyze E1) in `Packages/SceneFormat/Tests/SceneFormatTests/SceneSourceSafetyTests.swift`: the module's sources contain no file, URL, network, process or dynamic-loading API (`FileManager`, `URL(`, `URLSession`, `Process`, `dlopen`, `NSExpression`, `fopen`) and no C stdio globals
+
 - [ ] SCN-001-T19 Linux shape run (`-DCOMPOSITOR_NO_METAL -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE`) of SceneFormat and Compositor's LayerStack tests; ParameterGraph tests unchanged (S5)
 - [ ] SCN-001-T20 ADR (next free number) `docs/adr/00NN-scene-document-format.md`, ADR-0013 amendment note (CMP-002 restore), `docs/adr/README.md` index, test report `docs/test-reports/scene-format.md`, spec status
 - [ ] SCN-001-T21 `python3 scripts/check_compliance.py`, `python3 scripts/validate_docs.py`, `python3 scripts/test_scripts.py`
@@ -61,3 +63,15 @@ independent of T02-T10. Parallel: T02/T03/T04; T07 after T03-T04; T15/T16/T17 af
 
 MVP is US1 (format, codec, round trip, live adapters). US2 hardens it for untrusted files; US3
 proves forward compatibility. Commit after each phase.
+
+## Analysis (speckit-analyze, 2026-11-13)
+
+| ID | Severity | Finding | Fix applied |
+|---|---|---|---|
+| E1 | MEDIUM | SCN-001-R14 (no files, network or execution) had no task that tests it. | Added SCN-001-T22 (source-safety test). |
+| E2 | LOW | SCN-001-S5 (suite under 1 minute) is measured only by T19's run. | T20's test report records the suite durations. |
+| F1 | LOW | "Missing asset" needs the app's stores; this row has none. | T14 defines `SceneAssetAvailability`; tests use a fake; the app adapter is SCN-002. |
+
+Coverage: R1-R6 → T05/T06/T08/T09; R7 → T04/T09; R8 → T03/T05/T15/T17; R9 → T14/T16; R10 → T18;
+R11-R12 → T11-T13/T16; R13 → T05/T09; R14 → T19/T22. S1 → T09/T10; S2 → T13; S3 → T15-T17; S4 →
+T18; S5 → T19/T20. No constitution conflicts; 0 critical, 0 duplicates, 0 ambiguities left.
