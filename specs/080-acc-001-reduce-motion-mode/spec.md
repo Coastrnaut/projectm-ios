@@ -42,6 +42,19 @@ package for `withAnimation`, `.animation(`, `.transition(`, `matchedGeometryEffe
 Today nothing reads the system Reduce Motion setting except FR-072 (Reduce flashing's default). The
 setting's change notification is observed only while the visualizer is on screen.
 
+## Clarifications
+
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the recommended, conservative, local-first option.
+
+- Q: Should the app offer its own Reduce Motion switch, or only follow the system setting? → A: Follow the system setting only (`ACC-001-R1`). Apple's guidance is to honor the system preference, users set it once for every app, and ACC-012 (sensory safety profile) is where per-user limits will live. Rejected: an in-app switch with "Follow system" like Reduce flashing (a second source of truth for a UI-only preference; Reduce flashing has one because it protects against content, which iOS does not control).
+- Q: With Reduce Motion on, should decorative transitions become instant or shorter cross-fades? → A: Instant (`ACC-001-R2`). Every decorative transition in the inventory is already a 0.2 s opacity fade, so a "replacement cross-fade" would change nothing; the row says "disable". Rejected: keeping the fades (no visible effect of the mode); shorter fades (arbitrary numbers, still motion).
+- Q: Should the app replace the system's sheet, navigation and alert animations? → A: No; they stay system-managed (`ACC-001-R6`). iOS adapts its own presentations to Reduce Motion, and overriding them would need non-standard presentation code on every sheet. Rejected: presenting every sheet without animation (fights the platform, more code at many call sites, risks breaking interactive dismissal).
+- Q: How is "immediately" proven on the simulator, where UI tests cannot change system settings? → A: Test builds accept a launch argument that sets the starting Reduce Motion state and a hidden test control that simulates a system change through the same path the system notification takes; the UI test reads a test-only probe with the last controls transition's duration (`ACC-001-R9`). Whether changing the simulator's accessibility defaults from the Mac reaches a running app is tried once and recorded in research; the device task (`ACC-001-S6`) is the real-toggle check. Rejected: relying on simulator defaults alone (undocumented, may not post the notification); no UI test (the row asks for accessibility UI verification).
+- Q: Is a project check that flags new app animations practical, and where does it run? → A: Yes: a script check over the app's Swift sources, run with the other script tests (`python3 scripts/test_scripts.py`) and therefore in CI, that fails on any `withAnimation` or `.animation(` call outside the shared rule, except an allowlist of safety fades (`ACC-001-R7`). Transitions (`.transition(`) only animate inside an animation, so they need no check. Rejected: a lint rule in a new tool (new dependency); no check (the next feature would silently add motion).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Controls appear without motion (Priority: P1)
