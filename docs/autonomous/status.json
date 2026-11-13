@@ -7,9 +7,9 @@
  "by_priority": {
   "P0": {
    "audited": 63,
-   "implementing": 1,
    "integrated": 22,
-   "skipped_existing": 1
+   "skipped_existing": 1,
+   "unit_passed": 1
   },
   "P1": {
    "audited": 147,
@@ -24,9 +24,9 @@
  },
  "by_state": {
   "audited": 298,
-  "implementing": 1,
   "integrated": 26,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -463,12 +463,12 @@
   "ANL-001": {
    "attempts": 0,
    "branch": "feature/anl-001",
-   "branch_sha": null,
+   "branch_sha": "0d0eb4b9f656534eda15bc424e2627daaebdcde0",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": "specs/014-anl-001-windowed-fft",
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "ANL-002": {
    "attempts": 0,
@@ -3758,5 +3758,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T11:03:50Z"
+ "updated": "2026-11-13T11:16:15Z"
 }
