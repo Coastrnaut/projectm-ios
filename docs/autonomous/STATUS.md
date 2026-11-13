@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T18:00:53Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T18:01:49Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,23 +10,22 @@
 | State | Features |
 |---|---|
 | audited | 267 |
-| unit_passed | 1 |
-| integrated | 57 |
+| integrated | 58 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 42 | 0 | 44 | 1 |
-| P1 | 139 | 0 | 12 | 0 |
-| P2 | 77 | 1 | 1 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | integrated | skipped_existing |
+|---|---|---|---|
+| P0 | 42 | 44 | 1 |
+| P1 | 139 | 12 | 0 |
+| P2 | 77 | 2 | 0 |
+| P3 | 9 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 268 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
+- 267 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
 
 ## Integrated
 
@@ -86,6 +85,7 @@ The physical-device suite may **not** start:
 | QA-007 | Audio source contract suite | `32172fdd5795` | `feature/qa-007` |
 | SHD-001 | Procedural material catalog | `ade4dfec39a5` | `feature/shd-001` |
 | SHD-002 | Node-based generator graph | `e91692538b99` | `feature/shd-002` |
+| SHD-009 | Expression mapping DSL | `d84b02f95a85` | `feature/shd-009` |
 | SHOW-011 | Tap tempo | `11329d52e6dc` | `feature/show-011` |
 | VIS-001 | Circular spectrum | `48285d49c422` | `feature/vis-001` |
 | VIS-002 | Linear spectrum | `c2b2f75c11bb` | `feature/vis-002` |
@@ -498,7 +498,7 @@ None.
 - `swift test --package-path Packages/Compositor`: pass at `094e008fa7bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-002/20261113T123540/swift-test_Compositor.log`)
 - `post-merge: Compositor xcodebuild test on iPhone 17 sim (GeneratorGraph 46 with the on-demand bench skipped, ProceduralMaterials 31, Compositor 79); projectM-iOSTests 186`: pass at `e91692538b99` (log `.autonomous/logs/integration/shd-002/compositor-sim.log`)
 
-### SHD-009 Expression mapping DSL (unit_passed)
+### SHD-009 Expression mapping DSL (integrated)
 - `python3 scripts/check_compliance.py`: pass at `269a293b8d9d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-009/20261113T125934/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `269a293b8d9d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-009/20261113T125934/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `269a293b8d9d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-009/20261113T125934/sim-test_ANGLERendering.log`)
@@ -506,6 +506,7 @@ None.
 - `swift test --package-path Packages/ParameterGraph`: pass at `269a293b8d9d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-009/20261113T125934/swift-test_ParameterGraph.log`)
 - `swift test --package-path Packages/PerformanceControl`: pass at `269a293b8d9d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-009/20261113T125934/swift-test_PerformanceControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `269a293b8d9d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-009/20261113T125934/swift-test_VisualGenerators.log`)
+- `post-merge: ParameterGraph scheme on iPhone 17 sim (ParameterGraph 66, ParameterExpression 21); projectM-iOSTests 193; AudioFeatureBindingUITests 13.9 s`: pass at `d84b02f95a85` (log `.autonomous/logs/integration/shd-009/pg-sim.log`)
 
 ### SHOW-011 Tap tempo (integrated)
 - `python3 scripts/check_compliance.py`: pass at `725551081f5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-011/20261113T104510/compliance.log`)
