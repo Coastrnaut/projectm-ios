@@ -48,6 +48,8 @@ first.
 - Q: How is inversion expressed? → A: By the order of the output ends: an end below the start inverts the mapping (louder → lower), as in MOD-002. The input range must be increasing (minimum below maximum); a separate "invert" flag is not added, since it would duplicate the swapped ends (MOD-003-R1).
 - Q: Which number types? → A: Double, the modulator's type. Float sources (band levels) are widened to Double without rounding, so Float-exact inputs stay exact. A generic Float version is not added until a Float consumer exists (MOD-003-R6).
 - Q: Is any app or UI change in scope? → A: No. The row is a model change in the parameter package; the app's existing tests run unchanged, so no simulator run is needed unless app code changes (it does not). The roadmap's "simulator" verification is satisfied by MOD-002's binding UI test path, which exercises this mapping through the modulator; this row runs the app's package tests on the host and Linux instead (MOD-003-R7, S5).
+- Q (clarify session): What does an invalid mapping (input range empty or reversed, a non-finite bound or end) return when it is used anyway? → A: It never traps and stays deterministic: it reports itself invalid, positions are still clamped to 0…1 with a non-finite position read as 0, and interpolation of non-finite ends returns whatever the formula gives without crashing. Bindings keep refusing invalid ranges before use (MOD-002 contract C2), so the app never evaluates one. Rejected: a failable initializer (it would break the binding's existing stored-field API and its value semantics for later editors that hold a mapping while it is being edited) (MOD-003-R1, R8).
+- Q (clarify session): Should the mapping be persistable (encodable) in this row? → A: No. Persistence of graph connections is MOD-013, which will choose its own format and migration rules; adding an encoding now would freeze a format early. The mapping is `Sendable` and `Hashable` only (MOD-003-R6).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -109,7 +111,7 @@ mapping with MOD-002's formula.
 
 - Equal output ends: a constant mapping; every input maps to that value exactly.
 - Inverted output ends: the mapping falls as the input rises.
-- Input range not increasing or not finite, output ends not finite: the mapping is invalid (reported by `isValid`); bindings keep refusing them (MOD-002 contract C2).
+- Input range not increasing or not finite, output ends not finite: the mapping reports itself invalid and never traps when used (MOD-003-R8); bindings keep refusing them (MOD-002 contract C2).
 - Non-finite input or position: the start.
 - Spans near the limit of Double (−1e300…1e300): no overflow (the opposite-sign branch never subtracts the ends).
 - Signed zero: −0 and +0 compare equal; the result at position 0 is the start as configured.
@@ -125,6 +127,7 @@ mapping with MOD-002's formula.
 - **MOD-003-R5**: Mapping an input MUST equal interpolating its position (input clamping then interpolation).
 - **MOD-003-R6**: The mapping MUST be pure (no state, no clock), deterministic, allocation-free, `Sendable` and `Hashable`, dependency-free and built and tested on every CI host, Linux included (MOD-002-R9, R10).
 - **MOD-003-R7**: The audio feature modulator MUST compute its signal position and its mapped value with this mapping; a binding MUST expose its mapping. Results MUST be bit-identical to MOD-002 at the ends and for output ends of opposite sign or including zero, and differ by at most 2 units in the last place otherwise; validation and the app are unchanged.
+- **MOD-003-R8**: Using an invalid mapping MUST NOT trap: positions stay clamped to 0…1 (non-finite → 0) and the result is deterministic; callers (bindings) refuse invalid mappings before use.
 
 ### Key Entities
 
