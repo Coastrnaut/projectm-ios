@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T22:17:59Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T22:40:44Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,23 +9,24 @@
 
 | State | Features |
 |---|---|
-| audited | 242 |
-| integrated | 83 |
+| audited | 239 |
+| implementing | 2 |
+| integrated | 84 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | integrated | skipped_existing |
-|---|---|---|---|
-| P0 | 19 | 67 | 1 |
-| P1 | 137 | 14 | 0 |
-| P2 | 77 | 2 | 0 |
-| P3 | 9 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 16 | 2 | 68 | 1 |
+| P1 | 137 | 0 | 14 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 242 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
+- 241 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
 
 ## Integrated
 
@@ -97,6 +98,7 @@ The physical-device suite may **not** start:
 | PRE-014 | Bulk preset export | `a20ba4bafb5e` | `feature/pre-014` |
 | PRE-015 | User preset duplication | `c6cce9988587` | `feature/pre-015` |
 | QA-002 | Golden render scenes | `dffa2be908f5` | `feature/qa-002` |
+| QA-005 | Import fuzz suite | `d7faef231370` | `feature/qa-005` |
 | QA-007 | Audio source contract suite | `32172fdd5795` | `feature/qa-007` |
 | REC-001 | Still frame capture | `5666cc2332ff` | `feature/rec-001` |
 | REC-003 | Video recording | `bf82b49836a5` | `feature/rec-003` |
@@ -627,6 +629,12 @@ None.
 - `python3 scripts/validate_docs.py`: pass at `494ac9eeb8d4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-002/20261113T162728/docs.log`)
 - `swift test --package-path Packages/RenderGoldens`: pass at `494ac9eeb8d4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-002/20261113T162728/swift-test_RenderGoldens.log`)
 - `post-merge: RenderGoldens on iOS 27.2 sim (35, 7 scenes x 2 sizes against the simulator goldens), host in the gate, Linux shape (GPU compiled out)`: pass at `dffa2be908f5` (log `.autonomous/logs/integration/qa-002/goldens-sim.log`)
+
+### QA-005 Import fuzz suite (integrated)
+- `python3 scripts/check_compliance.py`: pass at `e4bdc6cdaf96` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-005/20261113T174006/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `e4bdc6cdaf96` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-005/20261113T174006/docs.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `e4bdc6cdaf96` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-005/20261113T174006/swift-test_ImportFuzz.log`)
+- `post-merge: ImportFuzz 15 suites on host (gate) and Linux shape; 12,040 default inputs, 0 violations; larger on-demand runs 155,200 inputs, 0 violations (agent)`: pass at `d7faef231370` (log `.autonomous/logs/integration/qa-005/linux.log`)
 
 ### QA-007 Audio source contract suite (integrated)
 - `python3 scripts/check_compliance.py`: pass at `1985f0c1e666` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-007/20261112T210720/compliance.log`)

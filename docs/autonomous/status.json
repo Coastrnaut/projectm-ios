@@ -6,8 +6,9 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 19,
-   "integrated": 67,
+   "audited": 16,
+   "implementing": 2,
+   "integrated": 68,
    "skipped_existing": 1
   },
   "P1": {
@@ -23,8 +24,9 @@
   }
  },
  "by_state": {
-  "audited": 242,
-  "integrated": 83,
+  "audited": 239,
+  "implementing": 2,
+  "integrated": 84,
   "skipped_existing": 1
  },
  "device_gate": {
@@ -191,7 +193,6 @@
    "PRE-018",
    "QA-003",
    "QA-004",
-   "QA-005",
    "QA-006",
    "QA-008",
    "QA-009",
@@ -278,7 +279,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "242 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
+   "241 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
   ]
  },
  "features": {
@@ -1234,13 +1235,13 @@
   },
   "FILE-010": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/file-010",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "FILE-011": {
    "attempts": 0,
@@ -2534,13 +2535,13 @@
   },
   "QA-005": {
    "attempts": 0,
-   "branch": null,
-   "branch_sha": null,
+   "branch": "feature/qa-005",
+   "branch_sha": "e4bdc6cdaf96ed4ad204c6762dd56b1389860566",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "d7faef231370e244e64dba2d096cd1ec1a77c97c",
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "integrated"
   },
   "QA-006": {
    "attempts": 0,
@@ -2794,13 +2795,13 @@
   },
   "SCN-003": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/scn-003",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "SCN-004": {
    "attempts": 0,
@@ -3875,6 +3876,11 @@
    "sha": "dffa2be908f507e21886d1561549282279cd67da"
   },
   {
+   "branch": "feature/qa-005",
+   "id": "QA-005",
+   "sha": "d7faef231370e244e64dba2d096cd1ec1a77c97c"
+  },
+  {
    "branch": "feature/qa-007",
    "id": "QA-007",
    "sha": "32172fdd5795d12b9a6386c3f56d1d33936b5344"
@@ -3985,5 +3991,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T22:17:59Z"
+ "updated": "2026-11-13T22:40:44Z"
 }

@@ -1,0 +1,60 @@
+{
+  "format" : "projectm-ios.generator-graph",
+  "name" : "Ember Drift",
+  "nodes" : [
+    {
+      "id" : "t",
+      "kind" : "time"
+    },
+    {
+      "id" : "flow",
+      "inputs" : {
+        "phase" : "t"
+      },
+      "kind" : "drift",
+      "values" : {
+        "velocityX" : 0.3,
+        "velocityY" : 0.1
+      }
+    },
+    {
+      "id" : "n",
+      "inputs" : {
+        "point" : "flow"
+      },
+      "kind" : "noise",
+      "values" : {
+        "octaves" : 4,
+        "scale" : 3
+      }
+    },
+    {
+      "id" : "c",
+      "inputs" : {
+        "t" : "n"
+      },
+      "kind" : "gradient",
+      "values" : {
+        "colorA" : [
+          0.05,
+          0,
+          0.02
+        ],
+        "colorB" : [
+          0.9,
+          0.35,
+          0.05
+        ]
+      }
+    },
+    {
+      "id" : "out",
+      "inputs" : {
+        "color" : "c"
+      },
+      "kind" : "output"
+    }
+  ],
+  "speed" : 0.2,
+  "version" : 1
+}
