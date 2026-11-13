@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T22:45:54Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T22:47:49Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 238 |
 | implementing | 1 |
-| unit_passed | 1 |
-| integrated | 85 |
+| integrated | 86 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 15 | 1 | 1 | 69 | 1 |
-| P1 | 137 | 0 | 0 | 14 | 0 |
-| P2 | 77 | 0 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 15 | 1 | 70 | 1 |
+| P1 | 137 | 0 | 14 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 240 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
+- 239 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
 
 ## Integrated
 
@@ -72,6 +71,7 @@ The physical-device suite may **not** start:
 | FILE-002 | Archive manifest checksums | `77fcfa3f1e56` | `feature/file-002` |
 | FILE-007 | Document schema validator | `d8e359893ae7` | `feature/file-007` |
 | FILE-009 | Storage usage explorer | `efddbc041837` | `feature/file-009` |
+| FILE-010 | Safe cache cleanup | `f65b410a8d7c` | `feature/file-010` |
 | FX-001 | Bloom | `1192e0d6503e` | `feature/fx-001` |
 | FX-019 | Strobe safety envelope | `6cfcbaabc8d0` | `feature/fx-019` |
 | MED-001 | Import photo layer | `dd604d0b1d51` | `feature/med-001` |
@@ -397,13 +397,14 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `d7df58dcb6e7` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-009/20261113T165948/swift-test_SceneArchive.log`)
 - `post-merge: projectM-iOSTests 301 incl. StorageLocationsTests; StorageUsageUITests 18.9 s; SettingsUITests 4 and GlowUITests 2 pass twice after the downward-drag fix; LocalPortability 82 in the gate`: pass at `efddbc041837` (log `.autonomous/logs/integration/file-009/app-tests.log`)
 
-### FILE-010 Safe cache cleanup (unit_passed)
+### FILE-010 Safe cache cleanup (integrated)
 - `python3 scripts/check_compliance.py`: pass at `a71cc74c8b52` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-010/20261113T174416/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `a71cc74c8b52` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-010/20261113T174416/docs.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `a71cc74c8b52` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-010/20261113T174416/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/LocalPortability`: pass at `a71cc74c8b52` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-010/20261113T174416/swift-test_LocalPortability.log`)
 - `swift test --package-path Packages/PresetLibrary`: pass at `a71cc74c8b52` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-010/20261113T174416/swift-test_PresetLibrary.log`)
 - `swift test --package-path Packages/SceneArchive`: pass at `a71cc74c8b52` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-010/20261113T174416/swift-test_SceneArchive.log`)
+- `post-merge: projectM-iOSTests 331 incl. CacheCleanupAcceptanceTests (user data byte-identical, scenes and show load); CacheCleanupUITests 15.6 s, StorageUsage, SceneDuplicate UI tests on iOS 27.2 sim; LocalPortability 93 in the gate`: pass at `f65b410a8d7c` (log `.autonomous/logs/integration/file-010/app-tests.log`)
 
 ### FX-001 Bloom (integrated)
 - `python3 scripts/check_compliance.py`: pass at `94f4b3a6b7c3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-001/20261113T090348/compliance.log`)
