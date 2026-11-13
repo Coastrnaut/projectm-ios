@@ -42,3 +42,10 @@ code changes, so no simulator task; no device task.
 ## Dependencies
 
 T01 → T02 → (T03, T04, T05); T05 → T06, T07; T02 → T08; T09 independent; T10, T11 last.
+
+## Analysis (speckit-analyze, 2026-11-13)
+
+Coverage: R1-R4 → T01, T03; R5 → T02, T06-T08; R6 → T05-T07; R7 → T08; R8 → T09; R9 → T06-T08, T11;
+R10 → T11. S1 → T03; S2 → T06-T09; S3 → T04; S4 → T11. No requirement without a task, no task without a
+requirement. Fixed: US2 scenario 1 needed "any top-level value allowed" (an array root is otherwise
+`notAnObject`); contract C1 now states when the root check runs. No constitution conflict.

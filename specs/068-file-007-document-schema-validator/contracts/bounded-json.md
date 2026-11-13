@@ -8,7 +8,8 @@
    / `unexpectedEnd`. `EF BB BF` at the start → `byteOrderMark`.
 2. RFC 8259 grammar, one value surrounded by optional white space; anything after → `trailingData`.
 3. The first refusal wins; offsets are byte indexes into `data`.
-4. Brackets inside strings are text. Depth counts open containers (top level = 1).
+4. With `requiresObjectRoot`, a first value that is not `{` is refused as `notAnObject` at its offset
+   (before reading it). Brackets inside strings are text. Depth counts open containers (top level = 1).
 5. Duplicate keys compare the decoded key (escapes resolved).
 6. `bytesExamined ≤ offset + 1` on refusal and `= data.count` on success.
 

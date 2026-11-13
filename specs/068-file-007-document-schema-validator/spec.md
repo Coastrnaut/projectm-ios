@@ -92,7 +92,7 @@ gets either success or one typed reason with the byte offset where reading stopp
 
 **Acceptance Scenarios**:
 
-1. **Given** 100,000 nested `[`, **When** validated with depth limit 8, **Then** it is refused as too
+1. **Given** 100,000 nested `[`, **When** validated with depth limit 8 and any top-level value allowed, **Then** it is refused as too
    deep at the 9th bracket, having examined at most 9 bytes.
 2. **Given** a 10 MB string, **When** validated with a 4 MiB byte limit, **Then** it is refused as too
    large without examining any byte.
