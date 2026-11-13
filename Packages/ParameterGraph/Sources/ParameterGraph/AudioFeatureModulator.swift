@@ -79,8 +79,7 @@ public final class AudioFeatureModulator {
         for i in slots.indices {
             let binding = slots[i].binding
             let feature = binding.source.value(in: frame)
-            let position = (feature - binding.inputMinimum) / (binding.inputMaximum - binding.inputMinimum)
-            let target = min(max(position.isFinite ? position : 0, 0), 1)
+            let target = binding.mapping.position(of: feature)   // 0…1, non-finite → 0 (MOD-003)
             var elapsed = 0.0
             if let last = slots[i].lastTime {
                 if timeNanoseconds > last {
@@ -131,7 +130,7 @@ public final class AudioFeatureModulator {
 
     private func effective(_ slot: Slot, manual: Double) -> Double {
         let s = slot.signal
-        let mapped = (1 - s) * slot.binding.outputStart + s * slot.binding.outputEnd
+        let mapped = slot.binding.mapping.interpolate(s)   // exact ends, bounded, monotonic (MOD-003)
         let combined: Double = switch slot.binding.mixMode {
         case .replace: mapped
         case .add: manual + mapped

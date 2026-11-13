@@ -21,7 +21,7 @@ extension AudioFeatureBinding { public var mapping: LinearMapping { get set } }
 ```
 
 - **L1 position**: `(input − inputMinimum) / (inputMaximum − inputMinimum)`, then
-  `clampedPosition`: NaN → 0, below 0 → 0, above 1 → 1. Never traps (MOD-003-R2, R8).
+  `clampedPosition`: non-finite (NaN, ±∞) → 0, below 0 → 0, above 1 → 1. Never traps (MOD-003-R2, R8).
 - **L2 exact ends**: `interpolate(0) == outputStart` and `interpolate(1) == outputEnd` for every
   finite pair of ends (MOD-003-R3).
 - **L3 bounded and monotonic**: for p in 0…1 the result lies in `min(start, end)…max(start, end)`

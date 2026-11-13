@@ -68,7 +68,7 @@ values at and beyond the input range ends) and compare with `==` to the configur
 **Acceptance Scenarios**:
 
 1. **Given** output ranges 0…1, 0.2…0.9, 0.9…0.1, −3…7, 7…−3, −5…−1, 1e−9…2e−9, −1e300…1e300, 1e300…1.5e300, 0.1…0.1, **When** positions 0 and 1 are mapped, **Then** the results equal the start and the end exactly.
-2. **Given** input range 0.25…0.75, **When** inputs 0.25 and below (and −∞, NaN) or 0.75 and above are mapped, **Then** the result is exactly the start, or exactly the end (non-finite → the start).
+2. **Given** input range 0.25…0.75, **When** inputs 0.25 and below or 0.75 and above are mapped, **Then** the result is exactly the start, or exactly the end; a non-finite input (−∞, +∞, NaN) gives the start, as in MOD-002.
 
 ---
 
