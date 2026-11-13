@@ -287,6 +287,15 @@ final class UserPresetsCoordinator: UserPresetGuarding {
     nonisolated static let defaultExportDirectory = FileManager.default.temporaryDirectory
         .appendingPathComponent("PresetExport", isDirectory: true)
 
+    /// FILE-010-R5: what cache cleanup must keep — the export folder while an archive is written, the
+    /// archive while its share sheet is open.
+    var filesInUse: [URL] {
+        var urls: [URL] = []
+        if isExporting { urls.append(exportDirectory) }
+        if let exportFile { urls.append(exportFile) }
+        return urls
+    }
+
     /// Export is offered unless the record is from a newer version or another change runs.
     var canExport: Bool { unavailableMessage == nil && !isImporting && !isDuplicating && !isExporting }
 

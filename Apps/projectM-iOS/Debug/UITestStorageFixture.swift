@@ -2,6 +2,8 @@
 // screen at `<tmp>/StorageFixture/container`, a copy of the container's layout recreated once per
 // launch with known sizes (research R7), and shows "Add Test Recording" (2,000,000 more bytes in
 // Recordings). The real stores are never touched. Not compiled into Release builds.
+// FILE-010: also the two export folders, a nested cache folder, a link in Caches to the photo, and a show
+// (user data under Other app data), so Clear Caches has every kind of item to clear and to keep.
 #if DEBUG
 import Foundation
 import LocalPortability
@@ -40,6 +42,18 @@ enum UITestStorageFixture {
             (container.appendingPathComponent("Library/Preferences", isDirectory: true), "settings.plist", 1_000),
         ]
         for (folder, name, size) in files { write(size, to: folder.appendingPathComponent(name)) }
+        // FILE-010 additions.
+        let shares = locations.roots[.sharesAndExports] ?? []
+        let support = container.appendingPathComponent("Library/Application Support", isDirectory: true)
+        let more: [(URL, String, Int)] = [
+            (shares.count > 1 ? shares[1] : container, "scene.pmscene", 30_000),
+            (shares.count > 2 ? shares[2].appendingPathComponent("export", isDirectory: true) : container, "presets.zip", 40_000),
+            (first(.caches).appendingPathComponent("sub", isDirectory: true), "nested.cache", 6_000),
+            (support.appendingPathComponent(StorageLocations.showFolderName, isDirectory: true), "show.json", 2_000),
+        ]
+        for (folder, name, size) in more { write(size, to: folder.appendingPathComponent(name)) }
+        try? FileManager.default.createSymbolicLink(at: first(.caches).appendingPathComponent("photo-link"),
+                                                    withDestinationURL: first(.photos).appendingPathComponent("photo.heic"))
         return locations
     }()
 
