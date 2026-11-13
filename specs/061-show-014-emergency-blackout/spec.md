@@ -80,8 +80,8 @@ external display.
    button, **Then** the external display is black and the button never appears on it.
 3. **Given** no external display, **When** the user taps the emergency button, **Then** the
    device's visualization is black and the device's controls and badge stay usable.
-4. **Given** the controls are shown, **Then** the emergency button is still shown at the same place
-   and works the same way.
+4. **Given** the controls are shown, **Then** the emergency button is still shown at the same
+   trailing edge, directly above the controls, and works the same way.
 
 ---
 

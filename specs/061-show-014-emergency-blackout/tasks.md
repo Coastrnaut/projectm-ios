@@ -40,9 +40,9 @@ Format: `- [ ] SHOW-014-Tnn [P?] [Story?] Description with file path`
 
 ## Phase 6: Polish
 
-- [ ] SHOW-014-T11 Run the quickstart's test set on `SHOW14 iPhone 17` (iOS 27.2): `projectM-iOSTests`, `EmergencyBlackoutUITests`, `OutputBlackoutUITests`, `ExternalDisplayUITests`, `NativeVisualUITests`; the package tests; `check_compliance.py`, `validate_docs.py`; count PosterBoard reports before and after; delete the simulator
+- [ ] SHOW-014-T11 Run the quickstart's test set on `SHOW14 iPhone 17` (iOS 27.2): `projectM-iOSTests`, `EmergencyBlackoutUITests`, `OutputBlackoutUITests`, `ExternalDisplayUITests`, `NativeVisualUITests`; the package tests; `check_compliance.py`, `validate_docs.py`; count PosterBoard reports before and after; delete the simulator; check the diff adds no stored key and no log line (SHOW-014-R9); the iOS 26 build (SHOW-014-R10) is CI's Xcode 26 job after integration
 - [ ] SHOW-014-T12 {device} On D1 with HDMI or AirPlay and D2 with an external display and a hardware keyboard: quickstart "Device" steps 1-5 (owner's hands)
-- [ ] SHOW-014-T13 Record recording and Save Frame behavior (REC-003 stops, REC-001 refuses; same gate) in the spec's Clarifications (SHOW-014-R8) and close the spec status
+- [ ] SHOW-014-T13 Confirm SHOW-014-R8 by citing the shared gate (`blackoutPhase == .live` in AppCoordinator's contexts) and the REC-001/REC-003 gate tests in `spec.md`, and close the spec status
 
 ## Dependencies
 
