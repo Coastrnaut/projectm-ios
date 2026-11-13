@@ -113,15 +113,19 @@ public final class CaptureManager {
     ///   - runsAnalysisTimer: false in tests, which drive `analyzer.step()` directly.
     ///   - clock: injected for tests.
     ///   - signposts: latency-stage signposts (task T062), e.g. Diagnostics' `PipelineSignposts`.
+    ///   - analysisTapCapacityFrames: > 0 adds an analysis tap of that many stereo frames to the
+    ///     normalized output, read through `analysisTap` by native visuals (VIS-001-R14); 0, the
+    ///     default, means no tap.
     public init(sources: [any AudioSource], thresholds: ClassifierThresholds = .default,
                 runsAnalysisTimer: Bool = true,
                 clock: @escaping @Sendable () -> Double = { MonotonicClock.nowSeconds() },
-                signposts: (any AudioPipelineSignposts)? = nil) {
+                signposts: (any AudioPipelineSignposts)? = nil,
+                analysisTapCapacityFrames: Int = 0) {
         var map: [AudioSourceMode: any AudioSource] = [:]
         for s in sources { map[s.mode] = s }
         self.sources = map
         self.runsAnalysisTimer = runsAnalysisTimer
-        analyzer = AudioAnalyzer(sink: sink, thresholds: thresholds, clock: clock)
+        analyzer = AudioAnalyzer(sink: sink, thresholds: thresholds, clock: clock, analysisTapCapacityFrames: analysisTapCapacityFrames)
         analyzer.setSignposts(signposts)
         analyzer.setUpdateHandler { [weak self] update in
             Task { @MainActor in self?.receive(update) }
@@ -140,6 +144,11 @@ public final class CaptureManager {
     /// analysis work queue: source → PCMSink → work queue → Normalizer → normalized ring
     /// (research R-05/R-06). The same reader serves every session; each attempt empties it.
     public nonisolated var normalizedOutput: any NormalizedPCMReader { analyzer.normalizedOutput }
+
+    /// The normalized output's analysis tap (ANL-001-R9): the same audio, every frame in order, for
+    /// one analysis consumer such as a native visual's band feed (VIS-001-R14). Nil unless `init`
+    /// got a positive `analysisTapCapacityFrames`. Never handed to projectM (ADR-0008 decision 5).
+    public nonisolated var analysisTap: (any NormalizedPCMReader)? { analyzer.normalizedOutput.analysisTap }
 
     /// True while `source` is the started source of the current session (AUD-006: the transport
     /// acts only on its own In-App Playback source, never on a source that replaced it).

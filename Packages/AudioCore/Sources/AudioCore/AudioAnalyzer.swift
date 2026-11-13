@@ -60,8 +60,9 @@ public final class AudioAnalyzer: @unchecked Sendable {
     private var attemptPending = false
     private var sequence: UInt64 = 0
     private var onUpdate: (@Sendable (AnalyzerUpdate) -> Void)?
-    /// Normalized audio for the renderer (research R-05/R-06), filled on this queue.
-    public let normalizedOutput = NormalizedPCMRing()
+    /// Normalized audio for the renderer (research R-05/R-06), filled on this queue. Its analysis tap
+    /// (ANL-001-R9) exists only when `init` gets a positive `analysisTapCapacityFrames` (VIS-001-R14).
+    public let normalizedOutput: NormalizedPCMRing
     private let normalizer: Normalizer
     private var conversionFailure: StopReason?
     private var signposts: (any AudioPipelineSignposts)?
@@ -69,9 +70,13 @@ public final class AudioAnalyzer: @unchecked Sendable {
     /// Maximum transitions recorded per session (export schema `maxItems`).
     public static let maxTransitions = 1000
 
+    /// - Parameter analysisTapCapacityFrames: > 0 gives the normalized ring an analysis tap of that
+    ///   many stereo frames (VIS-001-R14); 0, the default, keeps the ring without one.
     public init(sink: PCMSink, thresholds: ClassifierThresholds = .default,
-                clock: @escaping @Sendable () -> Double = { MonotonicClock.nowSeconds() }) {
+                clock: @escaping @Sendable () -> Double = { MonotonicClock.nowSeconds() },
+                analysisTapCapacityFrames: Int = 0) {
         self.sink = sink
+        normalizedOutput = NormalizedPCMRing(analysisTapCapacityFrames: analysisTapCapacityFrames)
         self.clock = clock
         sessionStart = clock()
         classifier = AudioStateClassifier(thresholds: thresholds)

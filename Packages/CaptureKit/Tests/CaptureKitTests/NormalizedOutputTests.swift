@@ -101,3 +101,33 @@ final class NormalizedOutputTests: XCTestCase {
     }
     #endif
 }
+
+/// VIS-001-T09: the analysis tap is off unless the manager is created with a capacity
+/// (VIS-001-R14); with one, it receives the same normalized audio and projectM's reader is unchanged.
+@MainActor
+final class AnalysisTapTests: XCTestCase {
+    private func format(_ rate: Double, _ channels: Int) -> AudioFormat {
+        AudioFormat(sampleRate: rate, channelCount: channels, isInterleaved: true, sampleType: .float32)
+    }
+
+    func testNoTapByDefault() {
+        let manager = CaptureManager(sources: [FakeAudioSource(mode: .systemAppCapture)], runsAnalysisTimer: false)
+        XCTAssertNil(manager.analysisTap)
+    }
+
+    func testTapReceivesTheNormalizedAudio() async throws {
+        let capture = FakeAudioSource(mode: .systemAppCapture)
+        let manager = CaptureManager(sources: [capture], runsAnalysisTimer: false,
+                                     analysisTapCapacityFrames: NormalizedPCMRing.analysisTapDefaultCapacityFrames)
+        let tap = try XCTUnwrap(manager.analysisTap)
+        await manager.select(.systemAppCapture)
+        capture.pushAudio(amplitude: 0.5, frames: 441, format: format(44_100, 2))
+        manager.stepAnalysisForTesting()
+        var out = [Float](repeating: .nan, count: 2 * 4_096)
+        let frames = out.withUnsafeMutableBufferPointer { tap.read(into: $0.baseAddress!, maxFrames: 4_096) }
+        XCTAssertEqual(frames, 441)
+        XCTAssertEqual(Set(out[0..<882]), [0.5])
+        let main = out.withUnsafeMutableBufferPointer { manager.normalizedOutput.read(into: $0.baseAddress!, maxFrames: 4_096) }
+        XCTAssertEqual(main, 441, "projectM's reader still gets every frame")
+    }
+}
