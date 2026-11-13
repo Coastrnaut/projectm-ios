@@ -66,6 +66,7 @@ import VideoLayer
 import TextLayer
 import AudioCore
 import CaptureKit
+import Compositor
 import CaptureUI
 import Diagnostics
 import Foundation
@@ -153,6 +154,16 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     private(set) var textState: TextLayerState = .empty
     /// The native visual could not be created on this launch; projectM is shown instead (VIS-001-R16).
     private(set) var nativeVisualUnavailable = false
+    /// PERF-014 (AppCoordinator+RenderHealth.swift): bumped on every reported render health change.
+    var renderHealthRevision = 0
+    /// PERF-014-R11: VIS-001-R16 fallbacks, recorded as `visualUnavailable`.
+    var visualCreationHealth = RenderHealth()
+    /// PERF-014-R13: the counts last logged per visual kind.
+    @ObservationIgnored var loggedRenderCounts: [String: [Int]] = [:]
+    #if DEBUG
+    /// PERF-014-R15: `clearRenderFaults()` was called (new visuals are not armed any more).
+    @ObservationIgnored var renderFaultsCleared = false
+    #endif
     /// The notice naming the chosen native visual (VIS-001-R16, VIS-002-R12).
     static func nativeVisualUnavailableMessage(for choice: VisualChoice) -> String {
         "\(choice.title) isn't available on this device. Showing projectM."
@@ -489,6 +500,12 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             rendererError = "ANGLE: \(error)"
             renderer = try? GLESRenderer.make()
         }
+        if let angle = renderer as? ANGLERenderer {   // PERF-014: projectM's render health
+            angle.onRenderHealthChange = observeRenderHealth(of: "projectM")
+            #if DEBUG
+            angle.faultInjection = armedRenderFaults
+            #endif
+        }
         // PERF-011: a renderer created while the app cannot present starts suspended.
         renderer?.presentationResources.forEach(presentation.register)
         renderer?.memoryPressureResponders.forEach(memoryPressure.register)   // PERF-006-R9, R10
@@ -617,6 +634,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     private func markNativeVisualUnavailable(_ error: any Error) {
         nativeVisualUnavailable = true
         rendererError = "\(settings.visual.title): \(error)"
+        recordVisualUnavailable()   // PERF-014-R11
         UIAccessibility.post(notification: .announcement, argument: Self.nativeVisualUnavailableMessage(for: settings.visual))
     }
 
@@ -659,6 +677,10 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             #endif
             let host = try CameraVisualHost.make(device: device, reader: manager.analysisTap, barCount: circularSpectrumBarCount)
             host.reduceFlashing = settings.reduceFlashing
+            host.onRenderHealthChange = observeRenderHealth(of: "camera")   // PERF-014
+            #if DEBUG
+            host.compositor.faultInjection = armedRenderFaults
+            #endif
             host.onFeedStateChange = { [weak self] state in self?.cameraStateChanged(state) }
             presentation.register(host)   // PERF-011: starts suspended while the app cannot present
             cameraVisual = host
@@ -683,6 +705,10 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             #endif
             let host = try PhotoVisualHost.make(device: device, reader: manager.analysisTap, barCount: circularSpectrumBarCount)
             host.reduceFlashing = settings.reduceFlashing
+            host.onRenderHealthChange = observeRenderHealth(of: "photo")   // PERF-014
+            #if DEBUG
+            host.compositor.faultInjection = armedRenderFaults
+            #endif
             host.onImageStateChange = { [weak self] (state: ImageLayerState) in self?.photoStateChanged(state) }
             host.content = Self.photoContent(photos.photo)
             presentation.register(host)   // PERF-011: starts suspended while the app cannot present
@@ -725,6 +751,10 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             #endif
             let host = try VideoVisualHost.make(device: device, reader: manager.analysisTap, barCount: circularSpectrumBarCount)
             host.reduceFlashing = settings.reduceFlashing
+            host.onRenderHealthChange = observeRenderHealth(of: "video")   // PERF-014
+            #if DEBUG
+            host.compositor.faultInjection = armedRenderFaults
+            #endif
             host.onVideoStateChange = { [weak self] (state: VideoLayerState) in self?.videoStateChanged(state) }
             host.content = Self.videoContent(videos.video)
             presentation.register(host)   // PERF-011: starts suspended while the app cannot present
@@ -763,6 +793,10 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             #endif
             let host = try TextVisualHost.make(device: device, reader: manager.analysisTap, barCount: circularSpectrumBarCount)
             host.reduceFlashing = settings.reduceFlashing
+            host.onRenderHealthChange = observeRenderHealth(of: "text")   // PERF-014
+            #if DEBUG
+            host.compositor.faultInjection = armedRenderFaults
+            #endif
             host.onTextStateChange = { [weak self] (state: TextLayerState) in self?.textState = state }
             host.spec = texts.spec
             presentation.register(host)   // PERF-011: starts suspended while the app cannot present
