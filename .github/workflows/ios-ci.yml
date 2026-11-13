@@ -162,6 +162,8 @@ jobs:
           xcodebuild -quiet -project ProjectM-iOS.xcodeproj -scheme projectM-iOS \
             -destination 'generic/platform=iOS' -derivedDataPath "$RUNNER_TEMP/dd-app" \
             CODE_SIGNING_ALLOWED=NO build
+      - name: No networking code in the built app (FILE-012-R5; a few seconds of nm and otool)
+        run: python3 scripts/check_network_symbols.py "$RUNNER_TEMP/dd-app/Build/Products/Debug-iphoneos/projectM-iOS.app"
       - name: Find an iOS simulator
         id: sim
         run: |
