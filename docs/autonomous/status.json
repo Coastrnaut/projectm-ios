@@ -7,8 +7,7 @@
  "by_priority": {
   "P0": {
    "audited": 65,
-   "integrated": 21,
-   "unit_passed": 1
+   "integrated": 22
   },
   "P1": {
    "audited": 148,
@@ -23,8 +22,7 @@
  },
  "by_state": {
   "audited": 301,
-  "integrated": 24,
-  "unit_passed": 1
+  "integrated": 25
  },
  "device_gate": {
   "blocked": [],
@@ -235,7 +233,6 @@
    "QA-004",
    "QA-005",
    "QA-006",
-   "QA-007",
    "QA-008",
    "QA-009",
    "QA-010",
@@ -337,7 +334,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "302 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
+   "301 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
   ]
  },
  "features": {
@@ -2616,10 +2613,10 @@
    "branch": "feature/qa-007",
    "branch_sha": "1985f0c1e6665179cc8a15262abae4c7191f5508",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "32172fdd5795d12b9a6386c3f56d1d33936b5344",
    "priority": "P0",
    "spec_dir": "specs/013-qa-007-audio-source-contract-suite",
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "QA-008": {
    "attempts": 0,
@@ -3722,6 +3719,11 @@
    "branch": "feature/pre-015",
    "id": "PRE-015",
    "sha": "c6cce9988587b09d1c791c173ab511ee50fb2f26"
+  },
+  {
+   "branch": "feature/qa-007",
+   "id": "QA-007",
+   "sha": "32172fdd5795d12b9a6386c3f56d1d33936b5344"
   }
  ],
  "integration_branch": "autonomous/integration",

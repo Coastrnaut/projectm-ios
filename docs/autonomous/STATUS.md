@@ -10,22 +10,21 @@
 | State | Features |
 |---|---|
 | audited | 301 |
-| unit_passed | 1 |
-| integrated | 24 |
+| integrated | 25 |
 
 ## Counts by priority
 
-| Priority | audited | unit_passed | integrated |
-|---|---|---|---|
-| P0 | 65 | 1 | 21 |
-| P1 | 148 | 0 | 3 |
-| P2 | 79 | 0 | 0 |
-| P3 | 9 | 0 | 0 |
+| Priority | audited | integrated |
+|---|---|---|
+| P0 | 65 | 22 |
+| P1 | 148 | 3 |
+| P2 | 79 | 0 |
+| P3 | 9 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 302 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
+- 301 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
 
 ## Integrated
 
@@ -55,6 +54,7 @@ The physical-device suite may **not** start:
 | PRE-012 | Preset import validation | `4bf9f50d1af8` | `feature/pre-012` |
 | PRE-014 | Bulk preset export | `a20ba4bafb5e` | `feature/pre-014` |
 | PRE-015 | User preset duplication | `c6cce9988587` | `feature/pre-015` |
+| QA-007 | Audio source contract suite | `32172fdd5795` | `feature/qa-007` |
 
 ## Proved already implemented
 
@@ -226,7 +226,7 @@ None.
 - `swift test --package-path Packages/PresetLibrary`: pass at `f4a06e68c3fe` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-015/20261112T194121/swift-test_PresetLibrary.log`)
 - `integration checkout, full preset library: xcodebuild projectM-iOS test on iPhone 17 iOS 27.2: projectM-iOSTests 108 pass; UI 24 pass (UserPresetEditing, UserPresets, PresetCollections, PresetLibrary, Purchase, Visualizer)`: pass at `41836f305bad` (log `.autonomous/logs/integration/pre-015/app-tests.log`)
 
-### QA-007 Audio source contract suite (unit_passed)
+### QA-007 Audio source contract suite (integrated)
 - `python3 scripts/check_compliance.py`: pass at `1985f0c1e666` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-007/20261112T210720/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `1985f0c1e666` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-007/20261112T210720/docs.log`)
 - `swift test --package-path Packages/CaptureKit`: pass at `1985f0c1e666` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-007/20261112T210720/swift-test_CaptureKit.log`)
