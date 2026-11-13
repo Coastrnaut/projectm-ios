@@ -19,6 +19,9 @@
 // VIS-001-R13: while the native Circular Spectrum is shown there is no preset on screen, so the title
 // names the visual (`currentVisual`) and Previous, Next, Random, Presets and Duplicate are left out;
 // Stop, Pause/Resume, Settings and the transport stay.
+//
+// SHOW-011: the tap tempo group (TempoControls: readout, Tap, Reset tempo) sits beside the indicator
+// in the compact layout and after the buttons in the regular one, for both visuals.
 import CaptureKit
 import CaptureUI
 import PresetLibrary
@@ -137,6 +140,7 @@ struct ControlsOverlay: View {
             HStack {
                 SourceStatusIndicator(coordinator: coordinator)
                 Spacer(minLength: 0)
+                TempoControls(coordinator: coordinator, compact: true)   // SHOW-011
             }
             presetName.frame(maxWidth: .infinity, alignment: .leading)
             HStack(spacing: 0) {
@@ -167,6 +171,7 @@ struct ControlsOverlay: View {
                     .buttonStyle(.bordered)
                     .accessibilityIdentifier(item.id)
                 }
+                TempoControls(coordinator: coordinator)   // SHOW-011
             }
         }
     }

@@ -25,6 +25,7 @@
 //   are the system's.
 import AudioCore
 import Metal
+import PerformanceControlAnalysis
 import PresentationLifecycle
 import QuartzCore
 import Rendering
@@ -149,6 +150,12 @@ final class CircularSpectrumHost: PresentationBoundResource {
         observers.forEach(NotificationCenter.default.removeObserver)
         bands.deinitialize(count: SpectrumBarCount.maximum)
         bands.deallocate()
+    }
+
+    /// SHOW-011 (research SHOW-011-D3): while this visual is shown its analyzer is the analysis tap's
+    /// only reader, so the tap tempo reads this subscription on its pipeline.
+    private(set) lazy var tempoReader: TempoSubscriptionReader? = (try? analyzer.subscribe()).map {
+        TempoSubscriptionReader(subscription: $0, sampleRate: analyzer.sampleRate)
     }
 
     /// True while the frame loop runs (resumed and not suspended).

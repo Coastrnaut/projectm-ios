@@ -59,6 +59,9 @@ packages:
     path: Packages/AnalysisFeatures
   VisualGenerators:
     path: Packages/VisualGenerators
+  # SHOW-011: tap tempo and the tempo source for live-performance rows (pure Swift + bus adapter).
+  PerformanceControl:
+    path: Packages/PerformanceControl
 targets:
   CaptureLab:
     type: application
@@ -171,6 +174,7 @@ targets:
       - package: PresetLibrary
       - package: PresentationLifecycle
       - package: VisualGenerators   # VIS-001: the circular spectrum
+      - package: PerformanceControl   # SHOW-011: tap tempo
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.ProjectMiOS
@@ -216,6 +220,8 @@ targets:
     dependencies:
       - target: projectM-iOS
       - package: PresetLibrary
+      - package: PerformanceControl   # SHOW-011 TempoCoordinatorTests
+      - package: AudioCore            # SHOW-011 TempoCoordinatorTests (an analysis tap)
       - sdk: StoreKitTest.framework
     settings:
       base:
