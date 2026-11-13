@@ -1,0 +1,84 @@
+# Tasks: CMP-001 Unified Layer Protocol
+
+**Input**: Design documents in `specs/029-cmp-001-unified-layer-protocol/` (spec.md, plan.md,
+research.md, data-model.md, contracts/layer-source.md, quickstart.md); ADR-0012 (with ADR-0003,
+ADR-0009, ADR-0010, ADR-0011).
+
+**Tests**: test-first. Each test task comes before the code it covers; the red run (compile failure
+or failing assertions) is recorded before the production change. Budgets (owner rule 7): a unit
+test about 1-2 s (≤ 10 s) on the host, the package suite under 1 minute; representative cases only
+(64 × 64 pictures, a few frames, one strobe of 2 s at 60 Hz).
+
+**Format**: `- [ ] ID [P?] [Story?] Description with file path`. `[P]` = can run in parallel
+(different files). Tags: `{device}` = needs a physical device, done only in the roadmap's final
+device phase; `{sim}` = needs the iOS 27.2 simulator "iPhone Air" (udid
+`77E17861-E687-4274-8A84-14224F32BE3E`). Inside descriptions "T07" is short for `CMP-001-T07`. A
+task is ticked only when its acceptance evidence was produced, with " — Verified <date>: <how>"
+appended. Logs go to `.build/scratch/`.
+
+## Phase 1: Setup
+
+- [ ] CMP-001-T01 Record the baseline at `733c5d6`: `python3 scripts/check_compliance.py`, `scripts/validate_docs.py`, `scripts/test_scripts.py`; `swift test --package-path Packages/VisualGenerators` (the adapters' dependency, not changed) on the host; ANGLERendering tests on the simulator {sim} (the package this row extends). Evidence: counts recorded here.
+- [X] CMP-001-T02 Spike (research CMP-001-D5): declare the client-buffer EGL entry points, constants and C helpers in `Packages/ANGLERendering/Sources/CANGLE/include/CANGLE.h` and `CANGLE.c`; write `Packages/ANGLERendering/Tests/ANGLERenderingTests/ClientBufferSpikeTests.swift` (extension string, Metal-texture image round trip, IOSurface pbuffer round trip, shared-event sync) {sim}. Evidence: the printed extension string and pass/fail per path, recorded in research CMP-001-D5 and ADR-0012. — Verified 2026-11-13: 4 tests pass on the iPhone Air iOS 27.2 simulator in 0.38 s (extension string, both client-buffer paths exact, GL row 0 = Metal row 0, shared event signaled) (.build/scratch/spike1.log).
+
+## Phase 2: Foundational (package, CPU contract; blocks every story)
+
+- [ ] CMP-001-T03 Create `Packages/Compositor/Package.swift` (product `Compositor` with targets `Compositor` → `AnalysisFeatures`, `FlashSafety`; `SpectrumLayers` → `Compositor`, `VisualGenerators`; test target `CompositorTests`; platforms iOS 26, macOS 15; header comment naming `COMPOSITOR_NO_METAL`), and add `Compositor` to the five package loops of `.github/workflows/ios-ci.yml` (Linux host, macOS host, generic iOS, iOS 26 and iOS 27 simulators). Evidence: `swift build --package-path Packages/Compositor` succeeds.
+- [ ] CMP-001-T04 [P] Write the CPU contract tests (Linux-buildable) in `Packages/Compositor/Tests/CompositorTests/FrameContextTests.swift` (clock: frame 0 duration 0; t₁ − t₀ in seconds; "clamped 0…0.1 s"; a backwards time repeats the previous time with duration 0; frame index +1 per frame; non-finite or ≤ 0 scale reads 1), `AudioContextTests.swift` (empty context; `set` copies bands and events exactly; more than 128 bands → 128; 70 events → the newest 64, oldest first, droppedEvents 6; a following frame starts empty of events; `update(from:)` with a live `AnalysisSubscription` fed by an `AnalysisPipeline` returns its latest frame without allocation-visible change of capacity), `LayerSlotsTests.swift` (data-model transitions: success flips the render index with two pictures; transparent failure shows nothing; last-good failure shows the last good picture and never renders into it; last-good before any success shows nothing; prepare failure → unavailable until retry or resize; resize forgets the last good), `ContractTests.swift` (descriptor equality and the "rgba16Float, linearSRGB, premultiplied, topLeft" fixed values; composite settings: only "opacity 1, normal, identity" supported; identity transform; outcome equality). Record the red run.
+- [ ] CMP-001-T05 Implement `Packages/Compositor/Sources/Compositor/LayerPicture.swift`, `LayerFrameContext.swift`, `LayerAudioContext.swift`, `LayerContract.swift` (CPU part), `LayerSlots.swift`. Evidence: T04 passes on the host and in the Linux shape (`-Xswiftc -DCOMPOSITOR_NO_METAL -Xswiftc -DVISUAL_NO_METAL -Xswiftc -DANALYSIS_NO_ACCELERATE`).
+
+## Phase 3: User Story 1 - two independent layers combine (P1, MVP; roadmap acceptance)
+
+**Goal**: "Two dummy sources composite without direct engine coupling." **Independent test**: `TwoLayerCompositeTests`.
+
+- [ ] CMP-001-T06 [P] [US1] Write `Packages/Compositor/Tests/CompositorTests/TestLayers.swift` (a `SolidLayer` that clears its picture to a premultiplied color; a `FailingLayer` that fails on chosen frames; a `ProbeLayer` that records the contexts it receives; none imports anything but `Compositor`, `Metal`, `AnalysisFeatures`) and `TwoLayerCompositeTests.swift` (Metal; skip without a device): opaque blue below half-transparent red (premultiplied 0.5, 0, 0, 0.5) at 64 × 64 into an `rgba16Float` output and into a `bgra8Unorm` output read back: every pixel = (0.5, 0, 0.5, 1) within 1/255; reversed order = opaque blue; no layers = transparent; a duplicate layer and non-identity settings are rejected at init. Record the red run.
+- [ ] CMP-001-T07 [US1] Implement the Metal part: `LayerSource` protocol in `LayerContract.swift`, `CompositorShaders.swift` (full-screen triangle, over pass, output pass), `Compositor.swift` (pictures from `LayerSlots`, prepare on size change, render, fallback, over accumulation in `rgba16Float`, output pass per output pixel format with pipelines built when the format first appears) with a pass-through guard stub. Evidence: T06 passes on the host; a source-level check (`grep` in the test) shows the test layers import no engine module.
+
+## Phase 4: User Story 2 - explicit clock and music (P1)
+
+- [ ] CMP-001-T08 [US2] Add to `Packages/Compositor/Tests/CompositorTests/TwoLayerCompositeTests.swift` (GPU) a probe test: three composites at times 1 000 000 000, 1 016 666 667 and 900 000 000 ns with a `LayerAudioBuffer` holding 32 bands and two events, then an empty context: the probe sees frame indexes 0, 1, 2, durations 0, 0.016666667, 0, times never decreasing, the output size 64 × 64, scale 3, Reduce flashing as given, exactly the bands and events, then an empty context. Evidence: passes on the host.
+
+## Phase 5: User Story 3 - a failing layer never takes the picture down (P1)
+
+- [ ] CMP-001-T09 [P] [US3] Write `Packages/Compositor/Tests/CompositorTests/FallbackRenderTests.swift` (GPU): a transparent-fallback failing layer over blue → blue, outcome `.fallbackTransparent(.frameSkipped)`; a last-good layer (red) that succeeds on frame 0 then fails → frame 1 still shows red over blue, outcome `.fallbackLastGood`; a last-good layer failing from frame 0 → blue; a layer whose `prepare` throws → outcome `.unavailable`, the other layer composites, `retryUnavailableLayers()` brings it back. Record the red run.
+- [ ] CMP-001-T10 [US3] Complete the fallback paths in `Compositor.swift` if T09 fails. Evidence: T09 passes on the host.
+
+## Phase 6: User Story 4 - resize and ownership (P2)
+
+- [ ] CMP-001-T11 [US4] Add to `FallbackRenderTests.swift` (GPU): 5 frames at 64 × 64 then 5 at 32 × 48 with one transparent and one last-good layer: `pictureAllocations` = 2 × (1 + 2) = 6, each layer prepared exactly twice with the right descriptor; at a steady size no allocation after frame 0; a 0-sized output returns false and allocates nothing. Evidence: passes on the host.
+
+## Phase 7: User Story 5 - flashing bounded on the composite (P1)
+
+- [ ] CMP-001-T12 [P] [US5] Write `Packages/Compositor/Tests/CompositorTests/CompositeFlashGuardTests.swift` (GPU): a layer alternating white and black every frame at 60 Hz for 120 frames at 64 × 64 into `rgba16Float`; per frame read back the output, compute the 17 area levels with `FlashColor` math, run `FlashAnalysis.analyze` per area: ≤ 4 transitions per 1 s window with Reduce flashing on (and every rise ≤ 0.25 × frame time + 1e-3), ≤ 6 with it off; the GPU gain matches `FlashEnvelope.gain(inputs:…)` on the same levels within 1e-4 every frame; a steady half-gray frame keeps gain 1 and the exact output; `resetFlashHistory()` lets the next frame through. Record the red run (the T07 stub passes everything through).
+- [ ] CMP-001-T13 [US5] Implement `CompositeFlashGuard.swift` (compute kernel per research CMP-001-D4; state and gain in private buffers; parameters from `FlashEnvelopeConfiguration`) and wire it between accumulation and the output pass in `Compositor.swift`. Evidence: T12 passes on the host; T06, T08, T09, T11 still pass.
+
+## Phase 8: User Story 6 - existing visuals and projectM as layers (P2)
+
+- [ ] CMP-001-T14 [P] [US6] Write `Packages/Compositor/Tests/CompositorTests/SpectrumLayerTests.swift` (GPU): a `CircularSpectrumGenerator` and a `LinearSpectrumGenerator` (`rgba16Float`, transparent background) as `SpectrumLayerSource`s fed a reference band vector through the audio context at 64 × 64: lit pixels lie within the generator's own layout prediction grown by 1 px (linear: bar rectangles; circular: radius bounds), an empty band context draws nothing but the background; with the glow on, the layer still renders and `downstreamLuminance` is set. Record the red run.
+- [ ] CMP-001-T15 [US6] Implement `Packages/Compositor/Sources/SpectrumLayers/SpectrumLayerSource.swift`. Evidence: T14 passes on the host.
+- [ ] CMP-001-T16 [P] [US6] Write `Packages/ANGLERendering/Tests/ANGLERenderingTests/ProjectMLayerTests.swift` {sim}: a `ProjectMLayerSource` in a `Compositor` at 64 × 64: (a) with the internal test-pattern hook (GL clear: bottom-left quadrant of the picture encoded 0.5 red, rest encoded blue) the composite reads back upright — Metal's bottom-left quadrant linear red 0.214 ± 2/255, top-right blue, alpha 1; (b) with a test preset from `Vendor/projectM/presets/tests` and silent PCM, three frames read back opaque and not all black; (c) the EGL binding current before `composite` is current after it. Record the red run.
+- [ ] CMP-001-T17 [US6] Add target `ProjectMLayer` to `Packages/ANGLERendering/Package.swift` (in the `ANGLERendering` product; dependency `../Compositor`) and implement `Packages/ANGLERendering/Sources/ProjectMLayer/ProjectMLayerSource.swift` (extension check, EGL context and engine, Metal texture image framebuffer, shared-event sync, flip/decode pass, `attach(pcm:)`, `loadPreset`, restore of the caller's EGL binding); add `eglGetCurrentDisplay`/`eglGetCurrentSurface` to `CANGLE.h` if needed. Evidence: T16 passes {sim}; the whole ANGLERendering suite passes {sim}.
+
+## Phase 9: Polish and cross-cutting
+
+- [ ] CMP-001-T18 Check the app is unchanged (CMP-001-R14): `xcodegen generate`, build `projectM-iOS` for the simulator, run the app unit tests and `NativeVisualUITests` {sim}. Evidence: build succeeds; tests pass (known environmental failure in worktrees: `PresetTests.testBundledIncludedScopeMatchesRelease1_0`).
+- [ ] CMP-001-T19 Run every gate: `swift test --package-path Packages/Compositor` (host and Linux shape; suite < 1 min, each test ≤ 10 s); `xcodebuild test -scheme Compositor` {sim}; `python3 scripts/check_compliance.py`, `validate_docs.py`, `test_scripts.py`; count new `PosterBoard-*.ips` reports; shut the simulator down. Evidence: counts and durations recorded here.
+- [ ] CMP-001-T20 {device} On D1-D3: the spike tests and `ProjectMLayerTests` on each device, and a frame-time sample of a compositor with two spectrum layers and a projectM layer (CMP-001-S7 on hardware, the cost noted in ADR-0012). Roadmap final device phase; not run in this row.
+
+## Dependencies
+
+T01, T02 → T03 → T04 → T05 → US1 (T06 → T07) → US2 (T08), US3 (T09 → T10), US4 (T11), US5 (T12 →
+T13), US6 (T14 → T15; T16 → T17) → T18, T19. T20 after the roadmap's device phase opens. US2-US6
+depend only on US1's compositor; US6's projectM part depends on T13 only through the composite.
+
+## Parallel examples
+
+- T04's four test files are independent of each other.
+- After T07: T08, T09, T12, T14 and T16 are separate files and can be written in parallel; their
+  implementations touch `Compositor.swift` (T10, T13) or separate files (T15, T17).
+
+## Implementation strategy
+
+MVP = Phases 1-3 (the roadmap acceptance). Then the context and failure stories (US2, US3, US4),
+the flash bound (US5) before any adapter can be used in the app, then the adapters (US6). Every
+phase ends with a commit; the app is not changed.
