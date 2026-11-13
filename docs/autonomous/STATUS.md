@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T01:24:02Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T01:36:49Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -122,6 +122,7 @@ None.
 - `swift test --package-path Packages/CaptureUI`: pass at `a7e38976d177` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-016/20261112T202048/swift-test_CaptureUI.log`)
 - `swift test --package-path Packages/Diagnostics`: pass at `a7e38976d177` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-016/20261112T202048/swift-test_Diagnostics.log`)
 - `xcodebuild -scheme Rendering-Package -destination id=4E32B01D-7911-4A64-A944-877DDD445BC0 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `a7e38976d177` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-016/20261112T202048/sim-test_Rendering.log`)
+- `integration checkout, full preset library: CaptureKit 287 host / 291 iOS 27.2 sim; xcodebuild projectM-iOS test on iPhone 17 iOS 27.2: projectM-iOSTests 111 pass; UI 25 pass (TestSignals, Interruption, Transport, ImportedAudio, Status, Settings)`: pass at `25617b630dbb` (log `.autonomous/logs/integration/aud-016/app-tests.log`)
 
 ### AUTO-001 Roadmap parser (integrated)
 - `python3 scripts/autonomous/tests/test_autonomous.py (48 tests)`: pass at `419cc2a999ed`

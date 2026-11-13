@@ -51,15 +51,24 @@ final class PlaybackTapGateTests: XCTestCase {
             }
         }
         writer.start()
+        // Wait (bounded) for the writer's first write. On slow CI runners (Linux, the xcode-27
+        // image) a tight close() loop could finish before the writer was ever scheduled, so the
+        // race below was never exercised and the "writer did run" check failed (run 43341222344).
+        let deadline = Date().addingTimeInterval(10)
+        while writes.load(ordering: .relaxed) == 0 && Date() < deadline { usleep(100) }
         var stale = 0
-        for _ in 0..<2_000 {
+        var overlapped = 0                             // closes made while a write was in flight
+        for i in 0..<2_000 {
+            if inside.load(ordering: .sequentiallyConsistent) != 0 { overlapped += 1 }
             let current = gate.close()
             let seen = inside.load(ordering: .sequentiallyConsistent)
             if seen != 0 && seen < current { stale += 1 }
+            if i % 20 == 0 { usleep(50) }              // let the writer re-enter with the new token
         }
         done.store(true, ordering: .relaxed)
         while !writer.isFinished { usleep(1_000) }
         XCTAssertEqual(stale, 0, "a write with an old token was still in flight after close() returned")
         XCTAssertGreaterThan(writes.load(ordering: .relaxed), 0, "the writer did run")
+        print("PlaybackTapGateTests: \(writes.load(ordering: .relaxed)) writes, \(overlapped) closes during a write")
     }
 }
