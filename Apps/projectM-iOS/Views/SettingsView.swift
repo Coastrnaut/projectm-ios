@@ -1,7 +1,7 @@
 // SettingsView.swift — Settings (task T103): the visual (VIS-001-R11, VIS-002-R11), its options and
 // glow (FX-001-R11),
-// the performance overlay (FR-048), Reduce flashing (FR-072), the OSC receiver (OSC-001-R16) and the
-// Licenses screen (FR-067).
+// the Camera visual (CAM-001-R1), the performance overlay (FR-048), Reduce flashing (FR-072), the OSC
+// receiver (OSC-001-R16) and the Licenses screen (FR-067).
 import SwiftUI
 import VisualEffects
 import VisualGenerators
@@ -46,13 +46,28 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section {
-                    Picker("Visual", selection: $settings.visual) {
-                        ForEach(VisualChoice.allCases, id: \.self) { Text($0.title).tag($0) }
+                // VIS-002-F1 (2026-11-13): one row per visual instead of a segmented control. Four
+                // segments ("projectM", "Circular Spectrum", "Linear Spectrum", "Camera") truncate on
+                // narrow iPhones and at large text sizes; rows never do. Row identifiers: `visual.<raw>`.
+                Section("Visual") {
+                    ForEach(VisualChoice.allCases, id: \.self) { choice in
+                        Button {
+                            settings.visual = choice
+                        } label: {
+                            HStack {
+                                Text(choice.title).foregroundStyle(.primary)
+                                Spacer(minLength: 8)
+                                if settings.visual == choice {
+                                    Image(systemName: "checkmark").foregroundStyle(.tint).accessibilityHidden(true)
+                                }
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .accessibilityAddTraits(settings.visual == choice ? .isSelected : [])
+                        .accessibilityIdentifier("visual.\(choice.rawValue)")
                     }
-                    .pickerStyle(.segmented)
-                    .accessibilityLabel("Visual")
-                    .accessibilityIdentifier("visualPicker")
+                }
+                Section {
                     if settings.visual.isNative {
                         Picker("Bars", selection: $settings.circularSpectrumBars) {
                             ForEach(AppSettings.circularSpectrumBarChoices, id: \.self) { Text("\($0)").tag($0) }
@@ -88,12 +103,12 @@ struct SettingsView: View {
                 } header: {
                     Text("Visual")
                 } footer: {
-                    if nativeVisualUnavailable && settings.visual.isNative {
+                    if nativeVisualUnavailable && settings.visual.replacesProjectM {
                         Text("\(settings.visual.title) isn't available on this device, so projectM is shown.")
                             .accessibilityIdentifier("nativeVisualUnavailableFooter")
                     } else {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks.")
+                            Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Camera shows your rear camera behind a circular spectrum, only while it is on screen; the picture is never recorded or sent.")
                             if settings.visual.isNative {
                                 if glowUnavailable {
                                     Text(AppCoordinator.glowUnavailableMessage)

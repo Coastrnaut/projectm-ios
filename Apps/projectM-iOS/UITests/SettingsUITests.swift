@@ -136,7 +136,17 @@ final class SettingsUITests: XCTestCase {
         let window = app.windows.firstMatch
         let top = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3))
         let bottom = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8))
-        for _ in 0..<8 where !(element.exists && element.isHittable) {
+        // Scrolling down (back to the top) also waits until the row clears the navigation bar: a row
+        // under the bar counts as hittable, but a tap there lands on the bar.
+        let bar = app.navigationBars.firstMatch
+        func visible() -> Bool {
+            // Frames, not `isHittable`: that one fails the test for a row that exists off screen.
+            guard element.exists else { return false }
+            let frame = element.frame, screen = window.frame
+            let top = down ? bar.frame.maxY : screen.minY
+            return frame.height > 0 && frame.minY >= top && frame.maxY <= screen.maxY
+        }
+        for _ in 0..<8 where !visible() {
             let (from, to) = down ? (top, bottom) : (bottom, top)
             from.press(forDuration: 0.05, thenDragTo: to, withVelocity: .default, thenHoldForDuration: 0.1)
         }

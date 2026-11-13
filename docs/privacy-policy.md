@@ -2,13 +2,15 @@
 
 Effective: before the first App Store release (task T107; FR-063). Updated for the full preset
 library purchase (feature 002 T240; FR-122, FR-123) and for importing your own audio files
-(AUD-001-T30; AUD-001-R22, in app versions that offer "Import Audio…"), and for the optional OSC
-receiver (OSC-001-R18, in app versions that offer "OSC receiver" in Settings). Applies to the projectM app for
+(AUD-001-T30; AUD-001-R22, in app versions that offer "Import Audio…"), for the optional OSC
+receiver (OSC-001-R18, in app versions that offer "OSC receiver" in Settings), and for the Camera
+visual (CAM-001; `specs/033-cam-001-rear-camera-layer`, in app versions that offer it). Applies to the projectM app for
 iPhone and iPad published by Robert Pancoast.
 
 **Summary: the app collects no data. Audio is processed only in memory on your device, and nothing
 is recorded or sent anywhere. The only audio the app stores is audio files you choose to import,
-which stay on your device until you remove them. The only network traffic is Apple's own App Store traffic
+which stay on your device until you remove them. If you choose the Camera visual, the rear camera's
+picture is shown on screen while that visual is on; it is never recorded, stored, sent or analysed. The only network traffic is Apple's own App Store traffic
 when you buy or restore the full preset library, and, only if you turn it on, OSC control messages
 that devices on your own local network send to the app.**
 
@@ -37,7 +39,21 @@ The app turns audio into visuals. It starts no source until you choose one.
   network"). If you decline or later turn it off in Settings › Privacy & Security › Local Network,
   the rest of the app keeps working.
 
+- **Camera**: asked the first time you choose the Camera visual in Settings, and only then, so the
+  app can show the live view from your rear camera behind the visualization. If you decline, or
+  later turn it off in Settings › Privacy & Security › Camera, the visualization keeps running
+  without the camera and a short notice explains how to allow it.
+
 The app asks for no other permission.
+
+## The camera picture stays on your screen
+
+When you choose the Camera visual, the rear camera runs only while that visual is on screen and
+the app is in the foreground; it stops when you choose another visual, pause, stop, or leave the
+app, and iOS shows its camera indicator whenever it runs. Each picture is held in memory only until
+the next one replaces it and is drawn on your screen. The app never records, saves, sends or
+analyses camera pictures (no face, person or scene detection), and it does not remember the Camera
+choice: after a relaunch the camera starts only when you choose it again.
 
 ## Audio stays in memory on your device
 
@@ -157,4 +173,5 @@ issue in that repository.
 | AUD-001-R22 (amends FR-065): files the user imports are stored on the device | Audio files you import; What is stored on your device |
 | PRE-007-R17 (`specs/005-pre-007-preset-collections/spec.md`): the user's preset collections | What is stored on your device |
 | OSC-001-R18 (`specs/032-osc-001-osc-receiver/spec.md`, under the FR-068 amendment): the optional local-network OSC receiver, its permission and its two settings | Permissions and why; OSC control on your local network; What is stored on your device; No analytics, tracking or network use |
+| CAM-001-R16 (`specs/033-cam-001-rear-camera-layer/spec.md`): the camera permission and on-device use of camera pictures | Permissions and why; The camera picture stays on your screen |
 | PRE-012-R30 (`specs/008-pre-012-preset-import-validation/spec.md`, amends FR-065): preset files the user imports, quarantined ones included, and their record; extended by PRE-015-R23 (`specs/010-pre-015-user-preset-duplication/spec.md`): copies of built-in presets, their origin, and edited preset text | What is stored on your device |
