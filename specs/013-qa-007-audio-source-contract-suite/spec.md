@@ -201,7 +201,9 @@ and holds for every source configuration, with the per-source parameters the con
   current session (backend stopped, event stream finished) before starting a new one
   (Constitution VII).
 - **QA-007-R3** (stop): Stop is idempotent, reaches Stopped with no reason, stops the backend before
-  it returns, and a second stop or a stop with no session reaches no backend; a stop while a start
+  it returns, ends a backend session at most once, and the manager's second stop or a stop with no
+  session reaches no source (System/App Capture forwards every adapter stop to its idempotent driver,
+  contract P7); a stop while a start
   still waits on the system picker or the permission prompt ends the attempt as "Not started —
   cancelled" (FR-007, FR-052, ADR-0001 ruling 7).
 - **QA-007-R4** (no event after stop): After stop returns, the session's event stream is finished
@@ -272,7 +274,43 @@ and holds for every source configuration, with the per-source parameters the con
 
 ## Defects found by the suite
 
-Filled in by implementation (QA-007-R16).
+Red run 2026-11-12 (`swift test --package-path Packages/CaptureKit --filter AudioSourceContractTests`,
+before any production change): 18 tests, 1 failing — `testR2RepeatedStartNeverYieldsTwoSessions`
+with 20 assertion failures, 4 for each of the 5 configurations. The other 17 tests passed.
+
+- **QA-007-D1 — a second `start` on a started adapter ran two sessions** (all three adapters).
+  `ScreenCaptureSource`, `MicrophoneSource` and `InAppPlaybackSource` called their backend's
+  `start` again without stopping the running session, and replaced their event continuation
+  without finishing the old one. With the real backends this means two `AVAudioEngine` input taps
+  (and duplicate notification observers) or two `SCStream`s writing into the one shared sink, and
+  an event stream that never ends; only `AVInAppPlaybackBackend` guarded itself. `CaptureManager`
+  never calls `start` twice (it stops first), so no shipped flow reached it; it broke
+  Constitution VII ("Start/stop MUST be idempotent") and the adapter contract for any other caller.
+  **Fix**: each adapter's `start` ends its current session first (`if running { await stop() }`;
+  for `ScreenCaptureSource`, `if continuation != nil`). **Regression test**:
+  `testR2RepeatedStartNeverYieldsTwoSessions` (adapter part), green after the fix for all 5
+  configurations.
+
+Findings that are not defects of this feature (recorded, not changed):
+
+- **QA-007-F1 — AUD-014 policy table vs Microphone.** `specs/009-…/contracts/interruption-policy.md`
+  says rows 4 to 7 "describe what `CaptureManager` already does for Microphone", but on a return to
+  the foreground during an open interruption the manager resumes Microphone (FR-050), while row 5
+  says it stays paused. AUD-014-R9 requires the feature 001 behavior, and
+  `InterruptionRecoveryTests.testMicrophoneKeepsItsFeature001Behavior` asserts it; the contract
+  records it as parameter P5. Whether Microphone should follow row 5 needs device evidence (an
+  activation refused during a call would show "Microphone unavailable" instead of "Interrupted")
+  and is left to a later feature.
+- **QA-007-F2 — the microphone permission prompt cannot be cancelled by the app.** A Stop issued
+  while the prompt is up waits until the user answers; the attempt then ends as "Not started —
+  cancelled" and a session that started is stopped again (contract guarantee 3). The prompt is
+  modal, so Stop cannot be tapped while it shows; asserted by
+  `testR3StopDuringAPendingMicrophonePermissionPromptEndsAsCancelled`.
+
+Mutation check (2026-11-12, temporary edits, reverted): removing `backend.stop()` from
+`MicrophoneSource.stop` and the System/App Capture exemption from `CaptureManager.handle(_:)` made
+the suite fail with 66 assertion failures (R2, R3, R5, R10, R11, R13 for Microphone; R9, R10 for
+System/App Capture).
 
 ## Assumptions
 

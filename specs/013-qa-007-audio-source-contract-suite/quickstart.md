@@ -25,13 +25,15 @@ The suite uses no AVFAudio; CI's Linux job runs it with the rest of CaptureKit.
 
 ## Reading a failure
 
-- `R2 … maxLiveSessions 2`: an adapter started a second backend session without stopping the first.
-- `R4 … late event delivered`: an adapter's event stream outlived `stop()`.
-- `R8 … transition paused → active`: a state change that spec 001's graph does not allow.
+- `R2 adapter: start on a started source ran a second backend session without stopping the first`
+  (QA-007-D1 before its fix).
+- `R4 the event stream finishes at stop` / `only events from before stop are delivered`: an
+  adapter's event stream outlived `stop()`.
+- `R8 …: transition paused → active is not in spec 001's graph`: a state change the graph forbids.
 
 ## Adding a source
 
-Add a `SourceConfiguration` case, a conformance backend for its seam, and its parameters P1 to P6
+Add a `SourceConfiguration` case, a conformance backend for its seam, and its parameters P1 to P8
 with citations ([contracts/source-contract.md](contracts/source-contract.md)). Every invariant then
 runs for it automatically; a difference is a parameter, never a skip.
 

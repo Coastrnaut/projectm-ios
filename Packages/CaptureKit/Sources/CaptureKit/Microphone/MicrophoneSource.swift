@@ -46,6 +46,10 @@ public final class MicrophoneSource: AudioSource {
     public func acknowledgeExplainer() { explainerAcknowledged = true }
 
     public func start(into sink: PCMSink) async throws -> AsyncStream<SourceEvent> {
+        // Start on a started source ends the current session first (Constitution VII; QA-007-R2):
+        // otherwise the backend would run a second engine into the sink and the first event
+        // stream would never finish.
+        if running { await stop() }
         switch backend.permission {
         case .denied:
             throw SourceError(.permissionDenied)

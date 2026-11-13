@@ -42,6 +42,10 @@ public final class ScreenCaptureSource: AudioSource, ContentIdentifying {
     public var contentIdentity: String? { driver?.contentIdentity }
 
     public func start(into sink: PCMSink) async throws -> AsyncStream<SourceEvent> {
+        // Start on a started source ends the current session first (Constitution VII; QA-007-R2):
+        // otherwise the driver would open a second stream into the sink and the first event stream
+        // would never finish. `continuation` is set exactly while a session is started.
+        if continuation != nil { await stop() }
         guard let driver, driver.isSupported else { throw SourceError(.unsupportedOS) }
         guard driver.isAllowed else {
             throw SourceError(.screenRecordingNotAllowed, detail: "SCContentSharingPicker.isAvailable is false at start")
