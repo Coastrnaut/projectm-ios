@@ -137,7 +137,9 @@ final class InterruptionUITests: XCTestCase {
 
     /// The position shown does not move for 3 s, and the button offers Play.
     private func assertOnHold(file: StaticString = #filePath, line: UInt = #line) -> Int {
-        showControls(file: file, line: line)
+        // Fresh controls: with `showControls` the 5 s hide timer could fire between the existence
+        // check and the label read (seen 2026-11-12 in AUD-016's gate run: shown at 18.9 s, read at 23.7 s).
+        showFreshControls(file: file, line: line)
         XCTAssertEqual(playPause.label, "Play", "the transport shows paused", file: file, line: line)
         let held = elapsed(file: file, line: line)
         sleep(3)
