@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (CAM-012-T01-T12 verified on the Mac with the stand-in camera; device task T13 `{device}` open)
 
 **Input**: User description: "Implement CAM-012 (Camera privacy status) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Show persistent camera-active
