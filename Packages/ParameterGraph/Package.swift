@@ -16,10 +16,9 @@ import PackageDescription
 let package = Package(
     name: "ParameterGraph",
     platforms: [.iOS("26.0"), .macOS(.v15)],
-    products: [
-        .library(name: "ParameterGraph", targets: ["ParameterGraph"]),
-        .library(name: "ParameterExpression", targets: ["ParameterExpression"]),
-    ],
+    // One product lists every target (as in Compositor), so the package keeps a single Xcode scheme
+    // named `ParameterGraph` that CI's `xcodebuild -scheme ParameterGraph` builds and tests whole.
+    products: [.library(name: "ParameterGraph", targets: ["ParameterGraph", "ParameterExpression"])],
     targets: [
         .target(name: "ParameterGraph"),
         .testTarget(name: "ParameterGraphTests", dependencies: ["ParameterGraph"]),

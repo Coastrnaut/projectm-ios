@@ -6,7 +6,7 @@
 
 ## Summary
 
-Add a `ParameterExpression` target (and library product) to `Packages/ParameterGraph`. It depends
+Add a `ParameterExpression` target to `Packages/ParameterGraph` (listed in the package's one `ParameterGraph` library product, as Compositor lists all its targets, so CI's `-scheme ParameterGraph` builds and tests it). It depends
 only on the `ParameterGraph` target (for MOD-002's `AudioFeatureSource` names and frames and
 MOD-003's `LinearMapping`) and the platform C math library; it does not import Foundation, so the
 system expression evaluator (`NSExpression`), script engines and dynamic loading are not even in
@@ -113,8 +113,8 @@ Packages/ParameterGraph/
 and MOD-003's interpolation, and being its own module lets the compiler prove the absence of
 Foundation (hence `NSExpression`). `ParameterGraph`'s existing target and its dependants are not
 touched; CI already tests the package on Linux, macOS and simulators, so no workflow change is
-needed (`swift test` and `-scheme ParameterGraph-Package` pick up the new targets; checked in
-SHD-009-T19).
+needed: the target joins the single `ParameterGraph` product, so the package keeps one scheme
+(`ParameterGraph`) whose build and test actions include the new targets (checked in SHD-009-T19).
 
 ## Complexity Tracking
 

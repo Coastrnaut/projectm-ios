@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (SHD-009-T01-T19 verified on the Mac host and in the Linux build shape; no device or simulator stage)
 
 **Input**: User description: "Implement SHD-009 (Expression mapping DSL) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Evaluate a restricted numeric
