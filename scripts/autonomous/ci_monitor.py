@@ -9,7 +9,9 @@ failure (the Linux job finishes in about 5 minutes) can be acted on before the r
 
   python3 scripts/autonomous/ci_monitor.py --sha 81f5c65 [--interval 300] [--max-hours 3]
 
-Exit status: 0 all jobs succeeded, 1 some job failed or was cancelled, 2 timed out or gh error.
+Exit status: 0 all jobs succeeded, 1 some job failed or was cancelled, 2 timed out or gh error,
+3 superseded: the run was cancelled before any job started because a newer push replaced it in
+the queue (expected with cancel-in-progress false; the newer run covers this commit).
 The final JSON summary goes to stdout and to `.autonomous/logs/ci-<run id>.json`.
 """
 from __future__ import annotations
@@ -86,6 +88,9 @@ def main(argv: list[str] | None = None, runner=subprocess.run, sleep=time.sleep)
             out.parent.mkdir(parents=True, exist_ok=True)
             out.write_text(json.dumps(summary, indent=1), encoding="utf-8")
             print(json.dumps(summary), flush=True)
+            if summary["conclusion"] == "cancelled" and not summary["jobs"]:
+                print("superseded: cancelled before any job started (a newer run covers it)", flush=True)
+                return 3
             return 0 if not summary["failed"] and summary["conclusion"] == "success" else 1
         sleep(args.interval)
     print(f"timed out after {args.max_hours} h", flush=True)
