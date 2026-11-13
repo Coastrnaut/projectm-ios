@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (REC-003-T01-T22 verified on the Mac: host, Linux shape and iOS 27.2 simulator; T23-T25 `{device}` open)
 
 **Input**: User description: "Implement REC-003 (Video recording) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Record composited frames into local

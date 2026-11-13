@@ -51,7 +51,9 @@ enum RecordingPixelBuffers {
 
 final class VideoFileWriter: RecordingSampleSink, @unchecked Sendable {
     let codec: RecordingCodec
-    let queue = DispatchQueue(label: "REC-003 video writer", qos: .userInitiated)
+    /// Utility QoS: appends never wait on the encoder in real time, and `cancelWriting` waits on
+    /// AVFoundation's own utility threads (a higher QoS here would be a priority inversion).
+    let queue = DispatchQueue(label: "REC-003 video writer", qos: .utility)
     let url: URL
     // Used only on `queue` after `make` returns.
     private let writer: AVAssetWriter
