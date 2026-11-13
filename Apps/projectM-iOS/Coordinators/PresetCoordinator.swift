@@ -28,6 +28,11 @@
 //   packs leave or rejoin the library first (PRE-015-R8); favorites of user presets that are
 //   only waiting (for a check or for the unlock) are kept; an edited preset on screen is
 //   reloaded with its new text (R17).
+// * Reduced flash preset policy (roadmap ACC-002, specs/030-acc-002-reduced-flash-preset-policy,
+//   ADR-0014): while Reduce flashing is on, presets the flash risk screen flagged are skipped by
+//   Next, Previous, Random, the warm-up and the launch preset (they walk `walkable`), and choosing
+//   one by name sets `flashWarning` instead of loading it, until Load Anyway or Cancel. With the
+//   setting off nothing changes. FX-019's envelope still limits every frame either way.
 import Foundation
 import Observation
 import PresetLibrary
@@ -50,6 +55,22 @@ final class PresetCoordinator {
     static let failureText = "Preset could not be loaded"
     static let emptyFavoritesText = "No favorites yet — tap the star on a preset to add one."
     static let unlockScope = PresetScope.pack("cream-of-the-crop")
+    /// ACC-002-R9: Next, Previous or Random found only flagged presets in the scope.
+    static let allFlaggedText = "Every preset here may flash."
+    static let flashWarningTitle = "May flash"
+    /// ACC-002-R6: the warning's message for a flagged preset chosen by name.
+    nonisolated static func flashWarningMessage(_ name: String) -> String {
+        "“\(name)” may contain fast flashing. Reduce flashing still limits flashes while it plays."
+    }
+    /// ACC-002-R7: what a flagged row adds to its VoiceOver label.
+    nonisolated static let mayFlashLabel = "may flash"
+
+    /// ACC-002: a flagged preset the user chose by name, waiting for Load Anyway or Cancel.
+    struct FlashWarning: Equatable, Identifiable {
+        let preset: IndexedPreset
+        let scope: PresetScope
+        var id: String { preset.id }
+    }
 
     private(set) var library: PresetLibrary?
     /// The bundled library, without the user's imported presets (PRE-012).
@@ -75,6 +96,9 @@ final class PresetCoordinator {
     /// The next Random pick, chosen in advance so the renderer can warm it up (SC-104). Chosen
     /// uniformly from the scope, never the current preset (FR-117, SC-106).
     private(set) var plannedRandom: IndexedPreset?
+    /// ACC-002-R6: set while a flagged preset chosen by name waits for the user's decision. Never
+    /// stored (R12).
+    private(set) var flashWarning: FlashWarning?
 
     /// Bumped on every collections change so views refresh (PRE-007).
     private(set) var collectionsVersion = 0
@@ -133,7 +157,7 @@ final class PresetCoordinator {
             setScope(Self.unlockScope)
             if let pending = pendingLockedPreset {
                 pendingLockedPreset = nil
-                await select(pending, in: Self.unlockScope)
+                await choose(pending, from: Self.unlockScope)   // ACC-002: a flagged one is warned first
             }
         } else {
             setScope(.included)   // the playing preset keeps playing (FR-109)
@@ -145,8 +169,8 @@ final class PresetCoordinator {
     /// The preset to start with: the last selected one if it is playable, else the scope's first.
     var initialPreset: IndexedPreset? {
         guard let library else { return nil }
-        if let id = store.lastPresetID, let last = library.preset(id: id), isPlayable(last) { return last }
-        return members.first
+        if let id = store.lastPresetID, let last = library.preset(id: id), isPlayable(last), !isFlagged(last) { return last }
+        return walkable.first   // ACC-002-R10: never a flagged preset while Reduce flashing is on
     }
 
     /// Members of the current scope (what Next/Previous/Random walk).
@@ -160,6 +184,23 @@ final class PresetCoordinator {
         }
         return library.members(of: scope, unlocked: unlocked, favorites: Set(store.favorites), excluded: excludedThisSession,
                                collections: collections)
+    }
+
+    /// ACC-002: whether the policy applies to this preset now (Reduce flashing on and flagged).
+    func isFlagged(_ preset: IndexedPreset) -> Bool { settings.reduceFlashing && preset.mayFlash }
+
+    /// ACC-002-R5: what Next, Previous, Random and the warm-up walk: the scope's members without
+    /// flagged presets while Reduce flashing is on (exactly `members` with it off, R8).
+    var walkable: [IndexedPreset] {
+        let all = members
+        guard settings.reduceFlashing else { return all }
+        return all.filter { !$0.mayFlash }
+    }
+
+    /// ACC-002-R7: a row's VoiceOver label, with ", may flash" for a flagged preset.
+    func rowLabel(_ preset: IndexedPreset, locked: Bool) -> String {
+        "\(preset.name), by \(preset.author)\(locked ? ", locked" : "")\(preset == current ? ", current preset" : "")"
+            + (isFlagged(preset) ? ", \(Self.mayFlashLabel)" : "")
     }
 
     /// FR-114: favorites across packs, alphabetical, locked ones listed (marked by the view).
@@ -235,8 +276,23 @@ final class PresetCoordinator {
             purchaseRequested = true
             return
         }
+        if isFlagged(preset) {   // ACC-002-R6: warned before anything loads
+            flashWarning = FlashWarning(preset: preset, scope: listScope)
+            return
+        }
         await select(preset, in: listScope)
     }
+
+    /// ACC-002-R6: Load Anyway. The warned preset loads in the list it was chosen from. The alert
+    /// passes the warning it showed, so the order in which SwiftUI dismisses it does not matter.
+    func confirmFlashWarning(_ shown: FlashWarning? = nil) async {
+        guard let warning = shown ?? flashWarning else { return }
+        if flashWarning == warning { flashWarning = nil }
+        await select(warning.preset, in: warning.scope)
+    }
+
+    /// ACC-002-R6: Cancel (or the browser closed). Nothing loads.
+    func cancelFlashWarning() { flashWarning = nil }
 
     /// Opens the purchase sheet without a preset to play afterwards (PRE-015-R7, R8: duplicating
     /// a locked preset, or tapping a copy that waits for the unlock).
@@ -282,14 +338,14 @@ final class PresetCoordinator {
     func previous() async { await step(-1) }
 
     func random() async {
-        let scopeMembers = members
+        let scopeMembers = walkable
         var pick = plannedRandom
         if pick == nil || pick == current || !scopeMembers.contains(pick!) {
             var generator = SystemRandomNumberGenerator()
             pick = ScopeStepper.random(scopeMembers, excluding: current, using: &generator)
         }
         guard let pick, pick != current else {
-            if scopeMembers.isEmpty { offerPurchaseIfTheScopeIsLocked() }
+            if scopeMembers.isEmpty { reportEmptyWalk() }
             return
         }
         await select(pick)
@@ -299,7 +355,7 @@ final class PresetCoordinator {
     /// preset in the scope (SC-104). Previous is left out: warming costs frame rate, and Previous is
     /// the least used.
     private func planUpcoming() {
-        let scopeMembers = members
+        let scopeMembers = walkable   // ACC-002-R5: flagged presets are never warmed or planned
         var generator = SystemRandomNumberGenerator()
         plannedRandom = ScopeStepper.random(scopeMembers, excluding: current, using: &generator)
         var upcoming: [IndexedPreset] = []
@@ -310,11 +366,43 @@ final class PresetCoordinator {
     }
 
     private func step(_ delta: Int) async {
-        guard let pick = ScopeStepper.step(members, from: current, by: delta) else {
-            offerPurchaseIfTheScopeIsLocked()
+        let scopeMembers = walkable
+        let pick: IndexedPreset?
+        if let current, !scopeMembers.contains(current), members.contains(current) {
+            // ACC-002: a flagged current preset is not in the walk; go to the nearest walkable one
+            // in the scope's order, so Next and Previous keep their direction.
+            pick = neighbour(of: current, in: scopeMembers, by: delta)
+        } else {
+            pick = ScopeStepper.step(scopeMembers, from: current, by: delta)
+        }
+        guard let pick else {
+            reportEmptyWalk()
             return
         }
         await select(pick)
+    }
+
+    /// The first walkable preset after (delta > 0) or before `preset` in the scope's full order,
+    /// wrapping; nil when there is none or `preset` is not a member.
+    private func neighbour(of preset: IndexedPreset, in walk: [IndexedPreset], by delta: Int) -> IndexedPreset? {
+        let all = members
+        guard let index = all.firstIndex(of: preset), !walk.isEmpty else { return nil }
+        let allowed = Set(walk.map(\.id))
+        for offset in 1..<max(all.count, 1) {
+            let candidate = all[((index + offset * (delta > 0 ? 1 : -1)) % all.count + all.count) % all.count]
+            if allowed.contains(candidate.id) { return candidate }
+        }
+        return nil
+    }
+
+    /// Nothing to walk: a locked scope offers the purchase; a scope whose playable presets are all
+    /// flagged says so (ACC-002-R9).
+    private func reportEmptyWalk() {
+        if settings.reduceFlashing, !members.isEmpty {
+            failureMessage = Self.allFlaggedText
+            return
+        }
+        offerPurchaseIfTheScopeIsLocked()
     }
 
     /// Spec Edge Cases: a scope with no playable presets because it is locked (a pack or one of its
