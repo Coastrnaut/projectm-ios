@@ -60,7 +60,9 @@ Call `apply` on the compositor's thread, between frames (never while encoding on
 5. On any error nothing changes (the previous stack stays applied).
 6. New layers are prepared now when the compositor has an output size (their pictures are created
    now), otherwise with the first frame. A failed prepare makes that layer `unavailable` (CMP-001).
-7. Layers whose IDs are gone are released (the compositor holds no reference afterwards).
+7. Layers whose IDs are gone are released (the compositor holds no reference afterwards). The
+   compositor calls nothing on a released layer: whoever owns a layer with outside resources (the
+   camera's capture session) stops it before or after the apply.
 8. The flash guard's history is kept.
 9. `composite` at a steady size creates no pictures (unchanged CMP-001-R9).
 

@@ -147,11 +147,11 @@ the circular spectrum on top, the camera indicator and Stop camera working as be
 - **CMP-002-R1**: A layer stack MUST be an ordered value: index 0 is the bottom layer and the last
   index is drawn on top; compositing MUST follow that order exactly.
 - **CMP-002-R2**: Each entry MUST have a stable instance identity that is unique within the stack
-  and never reused by it, a layer description (its kind and its parameters) and its composite
+  and never reused by it, a layer descriptor (its kind and its parameters) and its composite
   settings.
 - **CMP-002-R3**: The stack MUST support adding a layer at any index from 0 to its count (default:
   the top), removing a layer, duplicating a layer (copy directly above the original, new identity,
-  equal description and settings) and moving a layer to any valid index.
+  equal descriptor and settings) and moving a layer to any valid index.
 - **CMP-002-R4**: Every refused operation MUST report a typed reason (unknown layer, index out of
   range, stack full, kind limit reached) and leave the stack unchanged.
 - **CMP-002-R5**: A stack MUST hold at most 8 layers.
@@ -181,8 +181,8 @@ the circular spectrum on top, the camera indicator and Stop camera working as be
 - **Layer instance ID**: the stable identity of one entry; never reused within a stack.
 - **Layer kind**: what sort of layer an entry is (camera, circular spectrum, …) and how many
   instances a stack may hold.
-- **Layer description**: a kind plus the layer's parameters.
-- **Layer stack entry**: an instance ID, a description and composite settings.
+- **Layer descriptor**: a kind plus the layer's parameters.
+- **Layer stack entry**: an instance ID, a descriptor and composite settings.
 - **Layer stack**: the ordered entries, bottom first, and the next free identity.
 - **Layer factory**: the caller's function that turns a new entry into a live layer.
 
