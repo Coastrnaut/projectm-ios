@@ -96,6 +96,31 @@ final class SceneAutosaveCoordinator {
         return SceneAutosaveCapture.restoredValues(document, live: result.state, registry: registry)
     }
 
+    // MARK: - Held restore (PERF-010; research PERF-010-D3)
+
+    /// After an abnormal exit: reads the committed scene without adopting it (the carry stays fresh,
+    /// nothing is applied). nil when nothing valid exists. Fallback events are recorded as in `restore`.
+    func holdCommittedScene(assets availability: (any SceneAssetAvailability)?) -> SceneAutosaveHeldScene? {
+        let load = store.load(registry: registry, assets: availability)
+        record(load.events)
+        guard let document = load.document, let result = load.result else { return nil }
+        return SceneAutosaveHeldScene(document: document, live: result.state, source: load.source)
+    }
+
+    /// The user chose Reopen: adopts the held scene as `restore` would have at launch and returns the
+    /// values the app applies (the next commit records them).
+    func reopen(_ held: SceneAutosaveHeldScene) -> SceneRestoredValues {
+        restoredSource = held.source
+        carry = SceneAutosaveCarry(document: held.document, live: held.live)
+        return SceneAutosaveCapture.restoredValues(held.document, live: held.live, registry: registry)
+    }
+
+    /// The user chose Start fresh: commits the shown (fresh) scene at once, replacing the held one.
+    func commitFreshScene() {
+        noteEdit()
+        commitNow()
+    }
+
     // MARK: - Tracking and triggers
 
     /// Starts observing the inputs (after the restored values were applied) and the app lifecycle.
@@ -249,6 +274,13 @@ final class SceneAutosaveCoordinator {
         events += new
         for event in new { DiagnosticsLog.app.info("scene autosave \(event.description, privacy: .private)") }
     }
+}
+
+/// A committed scene read at launch but not applied until the user chooses Reopen (PERF-010).
+struct SceneAutosaveHeldScene: Sendable {
+    let document: SceneDocument
+    let live: SceneLiveState
+    let source: SceneAutosaveSource
 }
 
 /// The newest revision written and the failed steps not yet reported (set on the write queue, taken
