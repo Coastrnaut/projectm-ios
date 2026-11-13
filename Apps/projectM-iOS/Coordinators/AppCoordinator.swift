@@ -257,7 +257,11 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         self.recovery = recovery
         let guide = GuidedFirstSceneCoordinator(defaults: defaults, suppressed: GuidedFirstScenePolicy.harnessSuppresses())
         self.guide = guide
+        #if DEBUG
+        osc = OSCReceiverCoordinator(settings: settings, receiver: UITestOSCFailure.receiverIfRequested() ?? .system())
+        #else
         osc = OSCReceiverCoordinator(settings: settings)
+        #endif
         photos = PhotoCoordinator.makeDefault(defaults: defaults)
         videos = VideoCoordinator.makeDefault(defaults: defaults)
         texts = TextOverlayCoordinator.makeDefault(defaults: defaults)
@@ -555,7 +559,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         switch action {
         case .chooseSource: stop()
         case .openSettings:
-            if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
+            PermissionCatalog.openSettings()   // FILE-013-R4: the one opener
         case .restart:
             sourceStarts += 1
             Task { await manager.restart() }

@@ -441,25 +441,10 @@ struct VisualizerView: View {
                 .accessibilityIdentifier("nativeVisualUnavailable")
         }
         // CAM-001-R5, R6, R8: never blocks; stays while the camera cannot show pictures.
-        if coordinator.showsCameraVisual, let notice = coordinator.cameraState.notice {
-            HStack(spacing: 10) {
-                Image(systemName: "video.slash")
-                    .accessibilityHidden(true)
-                Text(notice)
-                    .font(.footnote)
-                    .accessibilityIdentifier("cameraNoticeText")
-                if coordinator.cameraState.offersSettings {
-                    Button("Open Settings") {
-                        if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
-                    }
-                    .font(.footnote.bold())
-                    .accessibilityIdentifier("cameraOpenSettings")
-                }
-            }
-            .padding(10)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-            .accessibilityElement(children: .contain)
-            .accessibilityIdentifier("cameraNotice")
+        // FILE-013-R3: denied and restricted come from the permission catalog; the other states
+        // (no camera, paused) keep CAM-001's notice without Open Settings. One notice view for both.
+        if coordinator.showsCameraVisual, let notice = PermissionCatalog.cameraNotice(for: coordinator.cameraState) {
+            PermissionNoticeView(notice: notice, symbol: "video.slash", identifierPrefix: "camera")
         }
         // MED-001-R11: never blocks; clears itself after a few seconds.
         if coordinator.showsPhotoVisual, !coordinator.showSettings, let notice = coordinator.photos.notice {

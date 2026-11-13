@@ -139,6 +139,13 @@ final class OSCReceiverCoordinator {
 
     var statusText: String { Self.statusText(for: state, enabled: isEnabled) }
 
+    /// FILE-013-R3, R4: the Local Network notice (with Open Settings) while the listener is denied.
+    var permissionNotice: PermissionNotice? {
+        PermissionCatalog.state(localNetwork: state).flatMap { (s: PermissionState) -> PermissionNotice? in
+            PermissionCatalog.notice(.localNetwork, s)
+        }
+    }
+
     static func statusText(for state: OSCReceiverState, enabled: Bool) -> String {
         switch state {
         case .off, .stopping:
@@ -151,7 +158,7 @@ final class OSCReceiverCoordinator {
             switch failure {
             case .portInUse: return "Port \(port) is in use. Choose another port."
             case .localNetworkDenied:
-                return "Local network access is off for projectM in Settings › Privacy & Security › Local Network."
+                return PermissionCatalog.localNetworkDenied   // FILE-013-R3: the catalog's text
             case .unavailable: return "OSC isn't available on this device."
             case .other: return "OSC couldn't listen on port \(port). Turn it off and on to try again."
             }

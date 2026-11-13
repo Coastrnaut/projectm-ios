@@ -4,6 +4,7 @@
 // Launch arguments:
 //   -uitestFake <mode>               replace that mode's real source with this fake
 //                                    (systemAppCapture, microphone or inAppPlayback)
+//   -uitestFakeAvailability <reason> the mode is unavailable for that reason (FILE-013)
 //   -uitestFakeStartError <reason>   `start` throws SourceError(reason) (a StopReason code;
 //                                    "error" uses the detail "fake failure")
 // While the visualizer shows, FakeSourcePanel offers buttons the tests tap to write loud, silent or
@@ -34,7 +35,13 @@ final class UITestFakeSource: AudioSource {
         let defaults = UserDefaults.standard
         guard let raw = defaults.string(forKey: "uitestFake"), let mode = AudioSourceMode(rawValue: raw) else { return nil }
         let error = defaults.string(forKey: "uitestFakeStartError").flatMap(Self.reason)
-        return UITestFakeSource(mode: mode, startError: error)
+        let fake = UITestFakeSource(mode: mode, startError: error)
+        // FILE-013-R8: `-uitestFakeAvailability <reason>` makes the mode unavailable (for example
+        // screenRecordingNotAllowed: System/App Capture not allowed on this device).
+        if let reason = defaults.string(forKey: "uitestFakeAvailability").flatMap(Self.reason) {
+            fake.availability = .unavailable(reason)
+        }
+        return fake
     }
 
     init(mode: AudioSourceMode, startError: StopReason?) {
