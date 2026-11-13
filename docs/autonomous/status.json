@@ -7,9 +7,9 @@
  "by_priority": {
   "P0": {
    "audited": 42,
-   "implementing": 1,
    "integrated": 43,
-   "skipped_existing": 1
+   "skipped_existing": 1,
+   "unit_passed": 1
   },
   "P1": {
    "audited": 139,
@@ -26,9 +26,10 @@
  },
  "by_state": {
   "audited": 267,
-  "implementing": 2,
+  "implementing": 1,
   "integrated": 56,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -1505,12 +1506,12 @@
   "MED-001": {
    "attempts": 0,
    "branch": "feature/med-001",
-   "branch_sha": null,
+   "branch_sha": "ad09298aa7147556e7178c0124d7c7015c5c445b",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "MED-002": {
    "attempts": 0,
@@ -3880,5 +3881,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T17:55:32Z"
+ "updated": "2026-11-13T17:56:41Z"
 }

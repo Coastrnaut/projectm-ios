@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T17:55:32Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T17:56:41Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,18 +10,19 @@
 | State | Features |
 |---|---|
 | audited | 267 |
-| implementing | 2 |
+| implementing | 1 |
+| unit_passed | 1 |
 | integrated | 56 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 42 | 1 | 43 | 1 |
-| P1 | 139 | 0 | 12 | 0 |
-| P2 | 77 | 1 | 1 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 42 | 0 | 1 | 43 | 1 |
+| P1 | 139 | 0 | 0 | 12 | 0 |
+| P2 | 77 | 1 | 0 | 1 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -343,6 +344,12 @@ None.
 - `xcodebuild -scheme Rendering-Package -destination id=77E17861-E687-4274-8A84-14224F32BE3E CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `bc80d4775650` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-019/20261113T095545/sim-test_Rendering.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `bc80d4775650` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-019/20261113T095545/swift-test_VisualGenerators.log`)
 - `integration checkout: VisualGenerators 81 on iOS 27.2 sim, 63 with -DVISUAL_NO_METAL; FlashSafety 20; app: projectM-iOSTests 133, UI 11 (NativeVisual, Visualizer); 211 s wall; 0 PosterBoard reports`: pass at `6cfcbaa` (log `.autonomous/logs/integration/fx-019/app-tests.log`)
+
+### MED-001 Import photo layer (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `ad09298aa714` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-001/20261113T125543/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `ad09298aa714` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-001/20261113T125543/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `ad09298aa714` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-001/20261113T125543/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `ad09298aa714` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-001/20261113T125543/swift-test_Compositor.log`)
 
 ### MOD-001 Typed parameter registry (integrated)
 - `python3 scripts/check_compliance.py`: pass at `c62c162f633a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-001/20261113T104902/compliance.log`)
