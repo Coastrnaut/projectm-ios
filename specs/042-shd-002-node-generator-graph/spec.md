@@ -30,6 +30,19 @@ The row's gap status is "Gap candidate". The audit confirms it.
 | Flash safety | Materials bound their speeds (≤ 1 cycle per second) and draw under the composite flash guard (FX-019). | A combination of nodes could multiply speeds; no rule bounds that. |
 | Editor | None. | Out of scope for this row (see Assumptions). |
 
+## Clarifications
+
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the conservative, local-first option.
+
+- Q: Does this row build the on-screen node editor ("visually")? → A: No. This row delivers the editor's foundation: the node catalog (kinds, inputs, settings, ranges, types) as data an editor can list, validation messages that name the node and input, and drawing of a compiled graph. No roadmap row owns a graph editor today (SHD-005 and SHD-006 are gradient and noise editors, SHD-003 inspector metadata); the editor is recorded as a follow-up row to add after SHD-003, SHD-005 and SHD-006, and SHD-011 decides which graphs may be imported. Rejected: a Debug-only canvas (an app screen no user sees, with UI tests, for an XL row whose acceptance is about compilation).
+- Q: How is a graph drawn without ever generating shader code from it? → A: One fixed drawing program, authored in the app and compiled from a module constant (ADR-0018 decision 3), interprets the compiled plan per pixel: a bounded list (≤ 64) of fixed-size instructions, each naming a built-in operation, its input registers or literal values and its settings, read from a GPU buffer. One shared program serves every graph, so a new graph never compiles anything. Rejected: one render pass per node through intermediate pictures (about 12 full-size pictures written and read per frame for a 12-node graph; research SHD-002-D2) and generating Metal source from the graph (forbidden by ADR-0018).
+- Q: How is flashing prevented when nodes can multiply time? → A: Three layers. (1) Time enters only as a separate "phase" type that only bounded inputs accept (|rate| ≤ 1 cycle per unit of phase), and the graph's speed is at most 1 in magnitude. (2) The compiler bounds how fast the output color can change per unit of phase and per unit of music level (a per-node derivative bound) and limits the speed and the music follower's rate so that neither part can change any channel faster than π per second (a full-range cosine at one cycle per second, SHD-001's per-term limit); a graph whose limit would fall below 1/64 is rejected as "changes too fast". (3) Every graph draws under the composite flash guard. Rejected: rejecting every graph with a time multiplication (too restrictive) and relying on the guard alone (it dims the picture instead of preventing the strobe).
+- Q: How does music reach a graph? → A: Through one "music level" node: the mean of the finite bands, clamped 0…1, followed by a level that changes at most 1 per second (lower when the compiler's limit says so). Unlike SHD-001 materials, music may drive any scalar input (brightness included), because its rate is bounded like time. Rejected: music changing only the speed (it would make the "audio-level input" useless as a node).
+- Q: What are the size limits? → A: 64 nodes, 128 connections, a longest path of 32 nodes and 16 values alive at once while drawing (each a four-number register); the document name at most 64 characters and node IDs 1-32 characters. Larger graphs are rejected, never truncated. These keep the fixed program's work per pixel bounded (at most 64 instructions) and leave room for SHD-011's import checks.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Describe a picture as connected nodes (Priority: P1)
@@ -214,7 +227,9 @@ a kind outside the list is refused.
 - **SHD-002-R12**: Compilation MUST compute a bound on how fast the output color can change with
   phase and with the music level, MUST limit the graph's speed and the music follower's rate so that
   neither can make the picture change faster than a full-range cosine at one cycle per second, and
-  MUST reject a graph that would need a limit below 1/64 of the normal maximum.
+  MUST reject a graph that would need a limit below 1/64 of the normal maximum. "Changes" is
+  measured per pixel and per color channel; the bound is π per second for time and π per second
+  for music (a full-range cosine at one cycle per second each).
 - **SHD-002-R13**: The shipped example graphs at default values, with or without music, MUST stay
   within two transitions per one-second window in every flash area under the Reduce flashing
   thresholds, and the composite guard MUST NOT need to dim them; any graph at its highest speed with
@@ -260,8 +275,8 @@ a kind outside the list is refused.
 ## Assumptions
 
 - "Visually" (an on-screen node editor) is out of scope for this row: the row delivers the graph
-  model, validation, compiler and drawing that an editor needs. The editor belongs to a later row
-  (recorded in the Clarifications).
+  model, validation, compiler and drawing that an editor needs. No roadmap row owns the editor yet;
+  it is recorded as a follow-up row after SHD-003, SHD-005 and SHD-006 (Clarifications).
 - Graphs are not yet registered as MOD-001 parameters; inspectors are SHD-003's.
 - The build Mac has no Metal Toolchain (ADR-0009 decision 3), so the fixed drawing program is a
   constant compiled at run time, like SHD-001's materials.
