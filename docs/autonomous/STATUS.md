@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T11:43:46Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T12:16:23Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,18 +10,19 @@
 | State | Features |
 |---|---|
 | audited | 296 |
-| implementing | 2 |
+| implementing | 1 |
+| unit_passed | 1 |
 | integrated | 27 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 62 | 1 | 23 | 1 |
-| P1 | 146 | 1 | 4 | 0 |
-| P2 | 79 | 0 | 0 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 62 | 0 | 1 | 23 | 1 |
+| P1 | 146 | 1 | 0 | 4 | 0 |
+| P2 | 79 | 0 | 0 | 0 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -81,6 +82,11 @@ None.
 - `swift test --package-path Packages/Diagnostics`: pass at `0d0eb4b9f656` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-001/20261113T061117/swift-test_Diagnostics.log`)
 - `xcodebuild -scheme Rendering-Package -destination id=62BA098B-4CBB-4DB6-91AD-51494936CF89 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `0d0eb4b9f656` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-001/20261113T061117/sim-test_Rendering.log`)
 - `integration checkout: AnalysisFeatures 28 and AudioCore 125 on iOS 27.2 sim; app: projectM-iOSTests 126 pass after the LibraryStore fix, TestSignals and Status UI pass; PurchaseUITests 3 pass`: pass at `e6cd73d5f648` (log `.autonomous/logs/integration/librarystore-fix/app-tests.log`)
+
+### ANL-002 Log-frequency bands (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `bf549085819b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-002/20261113T071424/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `bf549085819b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-002/20261113T071424/docs.log`)
+- `swift test --package-path Packages/AnalysisFeatures`: pass at `bf549085819b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-002/20261113T071424/swift-test_AnalysisFeatures.log`)
 
 ### AUD-001 Import DRM-free audio files (integrated)
 - `python3 scripts/check_compliance.py`: pass at `d9a60b2a6692` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-001/20261112T153538/compliance.log`)

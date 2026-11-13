@@ -7,9 +7,9 @@
  "by_priority": {
   "P0": {
    "audited": 62,
-   "implementing": 1,
    "integrated": 23,
-   "skipped_existing": 1
+   "skipped_existing": 1,
+   "unit_passed": 1
   },
   "P1": {
    "audited": 146,
@@ -25,9 +25,10 @@
  },
  "by_state": {
   "audited": 296,
-  "implementing": 2,
+  "implementing": 1,
   "integrated": 27,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -473,12 +474,12 @@
   "ANL-002": {
    "attempts": 0,
    "branch": "feature/anl-002",
-   "branch_sha": null,
+   "branch_sha": "bf549085819bea27e8c7b5051594af81acd4a702",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": "specs/016-anl-002-log-frequency-bands",
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "ANL-003": {
    "attempts": 0,
@@ -3763,5 +3764,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T11:43:46Z"
+ "updated": "2026-11-13T12:16:23Z"
 }
