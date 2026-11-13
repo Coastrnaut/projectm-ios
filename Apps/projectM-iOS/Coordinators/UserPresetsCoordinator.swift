@@ -211,7 +211,9 @@ final class UserPresetsCoordinator: UserPresetGuarding {
             let source = BundledPresetSource(id: preset.id, name: preset.name, author: preset.author,
                                              fileName: (preset.path as NSString).lastPathComponent, packID: preset.source,
                                              packTitle: pack?.title ?? preset.source, licenseStatement: pack?.license ?? "",
-                                             blobHash: preset.hash, requiresLibraryUnlock: pack?.locked ?? false)
+                                             blobHash: preset.hash,
+                                             // Unknown pack metadata: only Included is assumed free.
+                                             requiresLibraryUnlock: pack?.locked ?? !preset.isIncluded)
             if let data = try? bundledData?(preset) {
                 outcome = await library.duplicate(source, contents: data)
             } else {
