@@ -7,8 +7,7 @@
  "by_priority": {
   "P0": {
    "audited": 66,
-   "integrated": 20,
-   "unit_passed": 1
+   "integrated": 21
   },
   "P1": {
    "audited": 148,
@@ -25,8 +24,7 @@
  "by_state": {
   "audited": 302,
   "implementing": 1,
-  "integrated": 22,
-  "unit_passed": 1
+  "integrated": 23
  },
  "device_gate": {
   "blocked": [],
@@ -73,7 +71,6 @@
    "AUD-012",
    "AUD-013",
    "AUD-015",
-   "AUD-016",
    "CAM-001",
    "CAM-002",
    "CAM-003",
@@ -341,7 +338,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "304 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
+   "303 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
   ]
  },
  "features": {
@@ -780,10 +777,10 @@
    "branch": "feature/aud-016",
    "branch_sha": "a7e38976d177449b7e11281bad49aaa2b96c6a11",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "f69525cf0e8dbed847b54612e6cc98d98440be34",
    "priority": "P0",
    "spec_dir": "specs/011-aud-016-reference-tone-suite",
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "AUTO-001": {
    "attempts": 0,
@@ -3626,6 +3623,11 @@
    "branch": "feature/aud-014",
    "id": "AUD-014",
    "sha": "c4f03aa5e3d8d70168c21e2e42f71eb07d86a0df"
+  },
+  {
+   "branch": "feature/aud-016",
+   "id": "AUD-016",
+   "sha": "f69525cf0e8dbed847b54612e6cc98d98440be34"
   },
   {
    "branch": "autonomous/integration",

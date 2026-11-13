@@ -11,22 +11,21 @@
 |---|---|
 | audited | 302 |
 | implementing | 1 |
-| unit_passed | 1 |
-| integrated | 22 |
+| integrated | 23 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated |
-|---|---|---|---|---|
-| P0 | 66 | 0 | 1 | 20 |
-| P1 | 148 | 1 | 0 | 2 |
-| P2 | 79 | 0 | 0 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated |
+|---|---|---|---|
+| P0 | 66 | 0 | 21 |
+| P1 | 148 | 1 | 2 |
+| P2 | 79 | 0 | 0 |
+| P3 | 9 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 304 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
+- 303 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
 
 ## Integrated
 
@@ -36,6 +35,7 @@ The physical-device suite may **not** start:
 | AUD-002 | Support common audio containers | `f886b7ce7c76` | `feature/aud-002` |
 | AUD-006 | Seekable transport | `03b23a8ae6a0` | `feature/aud-006` |
 | AUD-014 | Audio session interruption recovery | `c4f03aa5e3d8` | `feature/aud-014` |
+| AUD-016 | Reference tone suite | `f69525cf0e8d` | `feature/aud-016` |
 | AUTO-001 | Roadmap parser | `419cc2a999ed` | `autonomous/integration` |
 | AUTO-002 | Implementation inventory gate | `419cc2a999ed` | `autonomous/integration` |
 | AUTO-003 | Dependency scheduler | `419cc2a999ed` | `autonomous/integration` |
@@ -111,7 +111,7 @@ None.
 - `swift test --package-path Packages/CaptureUI`: pass at `8d270f3cbeed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-014/20261112T185431/swift-test_CaptureUI.log`)
 - `integration checkout, full preset library: xcodebuild projectM-iOS test on iPhone 17 iOS 27.2: projectM-iOSTests 102 pass; UI 25 pass (Interruption, Transport, ImportedAudio, Status, Visualizer)`: pass at `b96d30cfbd82` (log `.autonomous/logs/integration/aud-014/app-tests.log`)
 
-### AUD-016 Reference tone suite (unit_passed)
+### AUD-016 Reference tone suite (integrated)
 - `python3 scripts/check_compliance.py`: pass at `a7e38976d177` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-016/20261112T202048/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `a7e38976d177` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-016/20261112T202048/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `a7e38976d177` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-016/20261112T202048/script-tests.log`)
