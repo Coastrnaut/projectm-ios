@@ -11,7 +11,10 @@ on:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # false (2026-11-13): the macOS jobs take 50-90 minutes, so cancelling on every push meant no
+  # run on main ever finished them. Now a running run completes and GitHub keeps at most one newer
+  # run waiting (an even newer push replaces the waiting one), so pushes never need holding back.
+  cancel-in-progress: false
 
 jobs:
   docs-and-compliance:

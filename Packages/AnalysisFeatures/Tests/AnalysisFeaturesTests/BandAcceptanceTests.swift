@@ -76,7 +76,8 @@ final class BandAcceptanceTests: XCTestCase {
         }
         print(matrix.joined(separator: "\n"))
         print("ANL-002 summary: \(matrix.count) combinations, \(strictCount) strict, lowest expected-band value/A \(String(format: "%.3f", lowestExpected)), largest strict error \(String(format: "%.4f", worstStrict)), largest far-band value/A \(String(format: "%.5f", worstFar))")
-        fflush(stdout)   // keep the matrix in one piece in the log
+        // No fflush(stdout): on Linux, Swift 6 rejects the C global `stdout` as not concurrency-safe
+        // (CI run 43432992539). print() already writes each line whole.
     }
 
     // MARK: US2 — zero input stays zero

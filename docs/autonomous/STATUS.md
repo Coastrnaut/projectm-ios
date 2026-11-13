@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T13:21:46Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T13:42:49Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,24 +9,24 @@
 
 | State | Features |
 |---|---|
-| audited | 294 |
+| audited | 293 |
 | implementing | 1 |
-| integrated | 30 |
+| integrated | 31 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
 | Priority | audited | implementing | integrated | skipped_existing |
 |---|---|---|---|---|
-| P0 | 60 | 1 | 25 | 1 |
-| P1 | 146 | 0 | 5 | 0 |
+| P0 | 60 | 0 | 26 | 1 |
+| P1 | 145 | 1 | 5 | 0 |
 | P2 | 79 | 0 | 0 | 0 |
 | P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 295 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
+- 294 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
 
 ## Integrated
 
@@ -34,6 +34,7 @@ The physical-device suite may **not** start:
 |---|---|---|---|
 | ANL-001 | Windowed FFT | `df16f2b90397` | `feature/anl-001` |
 | ANL-002 | Log-frequency bands | `493269c77462` | `feature/anl-002` |
+| ANL-004 | Spectral flux onset detector | `e1ae49c81d34` | `feature/anl-004` |
 | AUD-001 | Import DRM-free audio files | `a2813ab3fa4f` | `feature/aud-001` |
 | AUD-002 | Support common audio containers | `f886b7ce7c76` | `feature/aud-002` |
 | AUD-003 | Audio library queue | `c06876d434a3` | `feature/aud-003` |
@@ -90,6 +91,13 @@ None.
 - `python3 scripts/validate_docs.py`: pass at `bf549085819b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-002/20261113T071424/docs.log`)
 - `swift test --package-path Packages/AnalysisFeatures`: pass at `bf549085819b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-002/20261113T071424/swift-test_AnalysisFeatures.log`)
 - `integration checkout: AnalysisFeatures 46 on iOS 27.2 sim; 46 (1 skipped) with -DANALYSIS_NO_ACCELERATE on the host; 0 PosterBoard reports`: pass at `493269c` (log `.autonomous/logs/integration/anl-002/analysis-sim.log`)
+
+### ANL-004 Spectral flux onset detector (integrated)
+- `python3 scripts/check_compliance.py`: pass at `e1aeb82495a0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-004/20261113T082643/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `e1aeb82495a0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-004/20261113T082643/docs.log`)
+- `swift test --package-path Packages/AnalysisFeatures`: pass at `e1aeb82495a0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-004/20261113T082643/swift-test_AnalysisFeatures.log`)
+- `swift test --package-path Packages/VisualGenerators`: pass at `e1aeb82495a0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-004/20261113T082643/swift-test_VisualGenerators.log`)
+- `integration checkout: AnalysisFeatures 73 on iOS 27.2 sim (213 s) and 73 (1 skipped) with -DANALYSIS_NO_ACCELERATE (318 s); VisualGenerators 40 on sim; app: projectM-iOSTests 131, NativeVisualUITests 4 pass; 0 PosterBoard reports`: pass at `e1ae49c` (log `.autonomous/logs/integration/anl-004/app-tests.log`)
 
 ### AUD-001 Import DRM-free audio files (integrated)
 - `python3 scripts/check_compliance.py`: pass at `d9a60b2a6692` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-001/20261112T153538/compliance.log`)

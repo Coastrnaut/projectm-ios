@@ -7,12 +7,12 @@
  "by_priority": {
   "P0": {
    "audited": 60,
-   "implementing": 1,
-   "integrated": 25,
+   "integrated": 26,
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 146,
+   "audited": 145,
+   "implementing": 1,
    "integrated": 5
   },
   "P2": {
@@ -23,9 +23,9 @@
   }
  },
  "by_state": {
-  "audited": 294,
+  "audited": 293,
   "implementing": 1,
-  "integrated": 30,
+  "integrated": 31,
   "skipped_existing": 1
  },
  "device_gate": {
@@ -47,7 +47,6 @@
    "ACC-011",
    "ACC-012",
    "ANL-003",
-   "ANL-004",
    "ANL-005",
    "ANL-006",
    "ANL-007",
@@ -332,7 +331,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "295 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
+   "294 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
   ]
  },
  "features": {
@@ -489,12 +488,12 @@
   "ANL-004": {
    "attempts": 0,
    "branch": "feature/anl-004",
-   "branch_sha": null,
+   "branch_sha": "e1aeb82495a0ff8404ccde0ba26cecf0d3e63dcc",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "e1ae49c81d348731e7af056c400ae2610f50adf6",
    "priority": "P0",
    "spec_dir": "specs/018-anl-004-spectral-flux-onset-detector",
-   "state": "implementing"
+   "state": "integrated"
   },
   "ANL-005": {
    "attempts": 0,
@@ -1328,13 +1327,13 @@
   },
   "FX-001": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/fx-001",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/020-fx-001-bloom",
+   "state": "implementing"
   },
   "FX-002": {
    "attempts": 0,
@@ -3609,6 +3608,11 @@
    "sha": "493269c774625de485c726c55aa7a1b7b8f6eb74"
   },
   {
+   "branch": "feature/anl-004",
+   "id": "ANL-004",
+   "sha": "e1ae49c81d348731e7af056c400ae2610f50adf6"
+  },
+  {
    "branch": "feature/aud-001",
    "id": "AUD-001",
    "sha": "a2813ab3fa4f2cd2b8fb8597ca8f7b87943a9dea"
@@ -3774,5 +3778,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T13:21:46Z"
+ "updated": "2026-11-13T13:42:49Z"
 }
