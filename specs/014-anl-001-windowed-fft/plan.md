@@ -59,7 +59,7 @@ analysis worker, never on the audio callback or main thread; nothing into projec
 | VI Modular boundaries | Analysis in its own package; AudioCore change is a format-agnostic tap; no platform capture types | Pass |
 | VII Real-time safety | Analysis on a worker; per-frame path preallocated; tap uses the existing bounded drop-oldest SPSC ring, only written on the existing work-queue producer | Pass |
 | VIII ProjectM fidelity | Measured need recorded (research ANL-001-D1: no spectrum/beat getter in the 68 exported functions); projectM keeps `projectm_pcm_add_float`; nothing passed back (ANL-001-R12, ADR-0008 decision 5) | Pass |
-| IX Dependencies | None added; FFT written in-house (portable) or Apple's Accelerate | Pass |
+| IX Dependencies | None added; FFT written in-house from the textbook radix-2 algorithm (no copied third-party code, so no license question) or Apple's Accelerate | Pass |
 | X Evidence | Unit tests on host, Linux shape and simulator; CPU from a host bench; no device claim | Pass |
 | Privacy | Nothing stored, recorded or sent; privacy policy unchanged | Pass |
 
