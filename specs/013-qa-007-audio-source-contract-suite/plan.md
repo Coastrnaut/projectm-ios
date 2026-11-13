@@ -64,6 +64,7 @@ scheduling assumptions; no physical device before the final stage.
 | X Evidence-based quality | Unit tests for deterministic logic; device behavior of the real backends stays a `{device}` check (QA-011); simulator results are not device evidence | Pass |
 | Tests not weakened | No existing test is changed, disabled or skipped; per-source differences are parameters, never skips | Pass |
 | Privacy | Nothing stored, no network, no new entitlement | Pass |
+| IX Licensing | No new dependency or third-party content; test fixtures are generated in code (AUD-016's catalog) | Pass |
 
 Post-design re-check (after Phase 1): unchanged, all pass.
 
@@ -112,3 +113,13 @@ the feature's commits restores the previous state completely; nothing is persist
 ## Complexity Tracking
 
 No constitution violations to justify.
+
+## Analysis (speckit-analyze, 2026-11-12)
+
+Applied: S5 made conditional on production changes, matching QA-007-T19; R3 now names the stop
+during a pending start, which the contract and QA-007-T05 already covered; the duplicate "ended"
+edge case is now in QA-007-T08; licensing row added to the Constitution Check; QA-007-T20 confirms
+the package scheme name. No critical issue. Cross-feature: depends only on AUD-014 (integrated);
+touches no file of the concurrent preset-export work (PresetLibrary, My Presets UI) and no shared
+file (`project.yml`, CI workflow, `AppCoordinator.swift`, `scripts/test_scripts.py`). Privacy:
+nothing stored or sent. Coverage: R1-R16 and S1-S5 each map to at least one task.

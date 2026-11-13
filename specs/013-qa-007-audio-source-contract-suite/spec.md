@@ -201,7 +201,9 @@ and holds for every source configuration, with the per-source parameters the con
   current session (backend stopped, event stream finished) before starting a new one
   (Constitution VII).
 - **QA-007-R3** (stop): Stop is idempotent, reaches Stopped with no reason, stops the backend before
-  it returns, and a second stop or a stop with no session reaches no backend (FR-007).
+  it returns, and a second stop or a stop with no session reaches no backend; a stop while a start
+  still waits on the system picker or the permission prompt ends the attempt as "Not started —
+  cancelled" (FR-007, FR-052, ADR-0001 ruling 7).
 - **QA-007-R4** (no event after stop): After stop returns, the session's event stream is finished
   and an event from the OS delivers nothing; the manager ignores events from a source that is no
   longer current (contracts/audio-source.md guarantee 4).
@@ -263,8 +265,10 @@ and holds for every source configuration, with the per-source parameters the con
   job; the whole suite completes in under 10 seconds on the Mac host.
 - **QA-007-S4**: Every defect the suite found has a test that failed before its fix and passes
   after it, and is listed in this spec.
-- **QA-007-S5**: Every existing CaptureKit, CaptureUI and app test still passes (known
-  environmental failure excepted: `PresetTests.testBundledIncludedScopeMatchesRelease1_0`).
+- **QA-007-S5**: Every existing CaptureKit test still passes; if production code changes, every
+  CaptureUI test and the app's unit tests and `InterruptionUITests`, `TransportUITests`,
+  `StatusUITests` also pass (known environmental failure excepted:
+  `PresetTests.testBundledIncludedScopeMatchesRelease1_0`).
 
 ## Defects found by the suite
 

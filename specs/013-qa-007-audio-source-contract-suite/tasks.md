@@ -31,7 +31,7 @@ Paths are relative to the repository root; tests live in
 - [ ] QA-007-T05 [US1] Same file: `testR3StopIsIdempotentAndReachesTheBackendBeforeReturning` (stop twice, stop with no session, adapter-level stop twice) and `testR3StopDuringAPendingMicrophonePermissionPromptEndsAsCancelled`.
 - [ ] QA-007-T06 [US1] Same file: `testR4NoEventIsDeliveredAfterStop` (adapter: late `sendLate` after stop, the stream ends with no event; manager: state unchanged).
 - [ ] QA-007-T07 [US1] Same file: `testR5DeniedStartLeavesNoSessionAndALaterStartWorks` (per P1; also System/App Capture's cancelled picker).
-- [ ] QA-007-T08 [US1] Same file: `testR9InterruptionFollowsThePolicyForEachSource` (began; ended with and without resume; one-tap resume; expected outcome computed with `InterruptionPolicy.decide` for P2) and `testR9ReturnDuringAnOpenInterruption` (P5).
+- [ ] QA-007-T08 [US1] Same file: `testR9InterruptionFollowsThePolicyForEachSource` (began; ended with and without resume; one-tap resume; a duplicate "ended" resumes at most once; expected outcome computed with `InterruptionPolicy.decide` for P2) and `testR9ReturnDuringAnOpenInterruption` (P5).
 - [ ] QA-007-T09 [US1] Same file: `testR10LifecyclePausesAndResumesPerSource` (background/foreground, lock/unlock, P3), `testR10LifecycleWithoutASessionReachesNoBackend`, `testR10ResumeRechecksPermission` (P6).
 - [ ] QA-007-T10 [US1] Same file: `testR11TerminalOSEventEndsTheSessionWithItsReason` (P4) and `testR12RestartAfterEveryTerminalOutcome` (stopped, ended by system / failed, denied).
 - [ ] QA-007-T11 [US1] Same file: `testR13SwitchFromEverySourceToEveryOther` (6 ordered pairs: order log stop-before-start, one live session, old backend has no sink, old late event changes nothing).
@@ -55,7 +55,7 @@ Paths are relative to the repository root; tests live in
 
 ## Phase 6: Polish & cross-cutting
 
-- [ ] QA-007-T20 [P] Run CaptureKit's tests on the iOS 27.2 simulator (`77E17861-E687-4274-8A84-14224F32BE3E`) with `-test-timeouts-enabled YES -default-test-execution-time-allowance 180 CODE_SIGNING_ALLOWED=NO`; record which configurations ran (all 5: the driver seam compiles without ScreenCaptureKit).
+- [ ] QA-007-T20 [P] Run CaptureKit's tests on the iOS 27.2 simulator (`77E17861-E687-4274-8A84-14224F32BE3E`) with `-test-timeouts-enabled YES -default-test-execution-time-allowance 180 CODE_SIGNING_ALLOWED=NO`; record which configurations ran (all 5: the driver seam compiles without ScreenCaptureKit); confirm the package scheme name used in quickstart.md.
 - [ ] QA-007-T21 Run the CaptureKit host suite 5 times in a row; record each run's executed and failed counts and the suite's duration (QA-007-S2, S3).
 - [ ] QA-007-T22 [P] `python3 scripts/check_compliance.py`, `python3 scripts/validate_docs.py`, `python3 scripts/test_scripts.py` pass.
 - [ ] QA-007-T23 {device} The real platform backends keep the seam's promises (no sink write after stop, interruption and end events mapped as the fakes model them) on D1-D3: part of the final device matrix (QA-011); not run in this feature.
