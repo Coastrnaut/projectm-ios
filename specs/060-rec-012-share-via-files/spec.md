@@ -151,3 +151,21 @@ temporary file is deleted.
 - Temporary-folder copies of a video use the file system's copy (a clone on APFS, so no doubling of space in practice).
 - What a receiving app or service does with a shared file is outside the app; the privacy policy says so.
 - The Photos export (REC-011) and a recording library (REC-010) are separate rows.
+
+## Privacy Review
+
+Reviewed 2026-11-13 (REC-012-T11) against the constitution's Platform, Security & Privacy Constraints
+and FR-065:
+
+- **Trigger**: only the user's Share… tap; nothing is shared or copied otherwise.
+- **What leaves the app**: one temporary copy of a file the user just made (a still with only its
+  color profile, or a silent video), to the one activity the user picks in the system sheet. The app
+  opens no network connection (REC-012-R12; `check_compliance.py` finds no networking API).
+- **Permissions**: none added. Save to Photos and Assign to Contact are excluded, and Info.plist has no
+  Photos or Contacts usage string (REC-012-S4, unit test).
+- **Storage**: the copy lives in `<tmp>/Sharing/<UUID>/` only while its sheet is open, and leftovers
+  are deleted at launch; the offered still is memory only; the offered recording stays in
+  `<tmp>/Recordings` until Save…, Discard or the next launch. Nothing outlives the session.
+- **Required-reason APIs**: none (no file timestamps, no disk-space query; a directory listing).
+- **Label**: unchanged, Data Not Collected (`docs/release/app-privacy.md`); `docs/privacy-policy.md`
+  has a "Sharing a picture or video" section. The App Store Connect confirmation stays the owner's.
