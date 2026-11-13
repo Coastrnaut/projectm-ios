@@ -41,7 +41,7 @@ Paths are relative to the repository root; `PC` = `Packages/PerformanceControl`.
 
 **Independent Test**: the malformed table and the fuzz in `OSCPacketDecoderTests`.
 
-- [ ] OSC-002-T12 [P] [US2] Malformed table in `PC/Tests/PerformanceControlTests/OSCPacketDecoderTests.swift`, each case mapped to its exact reason: truncation at every 4-byte boundary of a representative bundle, misaligned and unterminated strings, invalid UTF-8, negative/huge/past-end blob sizes, element size 0/unaligned/past the end, a short bundle, nesting depth 5, 65 elements, unknown tags, non-ASCII address in an element (OSC-002-S1)
+- [ ] OSC-002-T12 [P] [US2] Malformed table in `PC/Tests/PerformanceControlTests/OSCPacketDecoderTests.swift`, each case mapped to its exact reason: truncation at every 4-byte boundary of a representative bundle, misaligned and unterminated strings, invalid UTF-8, negative/huge/past-end blob sizes, element size 0/unaligned/past the end, a short bundle, nesting depth 5, 65 elements, unknown tags (`c`, `[`), a 17th argument counted across no-payload tags (`tooManyArguments`), a bundle element that starts with neither `/` nor `#bundle` and a non-ASCII address in an element (`invalidAddress`), a blob whose padding runs past the end (`invalidBlobSize`) (OSC-002-S1)
 - [ ] OSC-002-T13 [US2] Fixed-seed structure-aware fuzz (≥ 20,000 packets: random bytes, byte mutations, truncations, size-word mutations) in `PC/Tests/PerformanceControlTests/OSCPacketDecoderTests.swift`: no crash, accepted packets re-encode exactly, decoded payload ≤ datagram size, depth ≤ 4, elements ≤ 64, both outcomes seen (OSC-002-S2)
 
 ## Phase 5: User Story 3 - OSC-001 behavior unchanged (P2)
@@ -54,7 +54,7 @@ Paths are relative to the repository root; `PC` = `Packages/PerformanceControl`.
 
 ## Phase 6: Polish
 
-- [ ] OSC-002-T15 Update the header comments of the changed OSC files and the package comment in `PC/Package.swift` if needed; run `python3 scripts/check_compliance.py` (no Network import in `OSC/`) and `python3 scripts/validate_docs.py`
+- [ ] OSC-002-T15 Update the header comments (OSC-002-R12: the `OSC/` files import nothing) of the changed OSC files and the package comment in `PC/Package.swift` if needed; run `python3 scripts/check_compliance.py` (no Network import in `OSC/`) and `python3 scripts/validate_docs.py`
 - [ ] OSC-002-T16 Run the package once on an iOS 27.2 simulator (`xcodebuild test -scheme PerformanceControl`, own simulator, deleted afterwards, PosterBoard reports counted) and write results, limits, reasons and decisions to `docs/test-reports/osc-message-parser.md`
 
 ## Dependencies
