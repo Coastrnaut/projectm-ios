@@ -21,8 +21,8 @@
   targets, smallest ID first among ready nodes.
 - **G8 Incremental**: `wouldCreateCycle(adding: edge)` returns the shortest loop that the edge would
   close, starting at the edge's target and ending with the edge, or nil. Non-nil exactly when
-  validating the graph plus the edge yields a `selfLoop` or `cycle` issue. It does not check the
-  edge's endpoints (full validation does).
+  validating the graph plus the edge yields a `selfLoop` or `cycle` issue. A connection with a
+  structural problem (G4) returns nil, as full validation leaves it out of the loop search.
 - **G9 Bindings**: `AudioFeatureModulator.modulationGraph` has one `.audio(source) →
   .parameter(target)` value connection per binding, in binding order. `bind` validates the
   candidate set after contract C2 of MOD-002; a loop throws

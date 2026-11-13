@@ -28,7 +28,7 @@ with Xcode 26, so closures passed to `sorted`, `map` and `reduce` get explicit t
 
 **Testing**: XCTest on the macOS host and Linux (CI; locally the Linux build shape of
 VisualGenerators). Deterministic: fixed seeds, no clock, no wall-time assertions. Budgets (owner
-rule 7): each test well under 1 s, the ParameterGraph suite under 10 s.
+rule 7): each test well under 1 s, the ParameterGraph suite under 1 minute (expected a few seconds).
 
 **Target Platform**: iOS/iPadOS 26+ (through the app), macOS 15 host, Linux.
 
