@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T23:39:19Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T23:41:50Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,23 +10,22 @@
 | State | Features |
 |---|---|
 | audited | 233 |
-| unit_passed | 1 |
-| integrated | 91 |
+| integrated | 92 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 10 | 1 | 75 | 1 |
-| P1 | 137 | 0 | 14 | 0 |
-| P2 | 77 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | integrated | skipped_existing |
+|---|---|---|---|
+| P0 | 10 | 76 | 1 |
+| P1 | 137 | 14 | 0 |
+| P2 | 77 | 2 | 0 |
+| P3 | 9 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 234 features are not implemented yet (first: ACC-003, ACC-004, ACC-005, ACC-006, ACC-007)
+- 233 features are not implemented yet (first: ACC-003, ACC-004, ACC-005, ACC-006, ACC-007)
 
 ## Integrated
 
@@ -112,6 +111,7 @@ The physical-device suite may **not** start:
 | SCN-002 | Scene autosave | `1aa354c0b623` | `feature/scn-002` |
 | SCN-003 | Scene duplicate and rename | `4936d8fcd1d3` | `feature/scn-003` |
 | SCN-010 | Scene undo/redo | `01b155c6c3d0` | `feature/scn-010` |
+| SCN-012 | Scene validation | `2a86515` | `feature/scn-012` |
 | SHD-001 | Procedural material catalog | `ade4dfec39a5` | `feature/shd-001` |
 | SHD-002 | Node-based generator graph | `e91692538b99` | `feature/shd-002` |
 | SHD-009 | Expression mapping DSL | `d84b02f95a85` | `feature/shd-009` |
@@ -746,7 +746,7 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `96baa4c3de9b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-010/20261113T180647/swift-test_ShowControl.log`)
 - `post-merge: projectM-iOSTests 346 incl. SceneHistoryCoordinatorTests; SceneUndoUITests 19.5 s, GuidedFirstScene reopen, Settings 4 UI tests on iOS 27.2 sim; SceneFormat 59 in the gate`: pass at `01b155c6c3d0` (log `.autonomous/logs/integration/scn-010/app-tests.log`)
 
-### SCN-012 Scene validation (unit_passed)
+### SCN-012 Scene validation (integrated)
 - `python3 scripts/check_compliance.py`: pass at `f41bcda078a7` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-012/20261113T183809/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `f41bcda078a7` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-012/20261113T183809/docs.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `f41bcda078a7` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-012/20261113T183809/swift-test_ImportFuzz.log`)
@@ -754,6 +754,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `f41bcda078a7` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-012/20261113T183809/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `f41bcda078a7` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-012/20261113T183809/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `f41bcda078a7` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-012/20261113T183809/swift-test_ShowControl.log`)
+- `post-merge: projectM-iOSTests + SceneRepair/ShowCue/SessionRecovery UI tests`: pass at `2a86515` (log `.autonomous/logs/integration/scn-012/app-tests.log`)
 
 ### SHD-001 Procedural material catalog (integrated)
 - `python3 scripts/check_compliance.py`: pass at `67186e7fa06d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-001/20261113T120524/compliance.log`)
