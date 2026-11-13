@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Clarified 2026-11-13
 
 **Input**: User description: "Implement SCN-003 (Scene duplicate and rename) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Duplicate scene under new ID and
@@ -33,7 +33,14 @@ The row's gap status is "Gap candidate; re-audit at implementation". The audit c
 
 ### Session 2026-11-13
 
-(Recorded by `/speckit-clarify`.)
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the recommended, conservative, local-first option.
+
+- Q: Which scenes can the user duplicate and rename in this row, given there is no scene library yet? → A: The scenes the show stores (each cue's scene, from Settings → Show), plus the operations on the scene document itself so the library rows (SCN-004 to SCN-006) reuse them unchanged. SCN-002's current scene (one fixed ID, autosaved) is not duplicated or renamed: it is the live look, not a named scene. Rejected: building a scene library first (that is SCN-004's size M row); duplicating the current scene into a hidden store with no screen to reach it.
+- Q: Should a duplicate copy the stored photo or video it uses, or share it? → A: Share it by store ID. The app keeps one photo and one video (MED-001, MED-002), so a copy of the media would be a second file no screen can reach; scenes already refer to media by store ID. Nothing counts references in a file: the set of referenced media is computed by reading every stored scene (`SCN-003-R9`), so it can never drift. FILE-010 (cleanup) must not delete media at all (it touches caches only) and FILE-011 (erase) must use this set before deleting media a scene still names. Replacing the stored photo or video (MED-001-R6) is unchanged: every scene that named the old one shows the existing "no longer stored" notice. Rejected: copying media (doubles storage, orphaned copies); a stored reference count (can drift from the files after a crash).
+- Q: Where does the duplicate's cue go, and what are the copy's scene name and cue label? → A: A new cue right after the cue it was made from, so the variation sits next to its source; scene name "<name> copy" and cue label "<label> copy", each shortened to fit 120 and 80 characters. The show's position does not change and nothing is applied. Rejected: appending at the end (the copy lands far from its source in a long show); duplicating without a cue (the scene file would be removed at the next save, since SHOW-001 removes scenes no cue refers to).
+- Q: When the user renames a scene that several cues show, what changes? → A: The scene's own name, once, for every cue that shows it (they all refer to the same scene ID); cue labels never change with it, and a cue rename never changes the scene name. The editor shows the scene name under a cue whose label differs. Rejected: renaming the scene also relabels cues (overwrites the operator's labels); copy-on-rename for shared scenes (a rename would silently break the link between cues).
+- Q: How is a typed name stored: exactly as typed or trimmed, and what does "kept exactly" mean for the rest of the scene? → A: Trimmed of leading and trailing white space, then checked by the SCN-001 rule (1 to 120 characters, no control characters, which also excludes line breaks); an invalid name is refused. "Kept exactly" means the stored (canonical SCN-001) bytes of the copy, with its ID and name put back to the original's, equal the original's stored bytes; a rename likewise differs from the original only in the name. Rejected: storing untrimmed text (a name of only spaces around text would show oddly and differ from what the user sees); comparing decoded values only (would miss unknown content changes).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -143,8 +150,10 @@ everything but the ID and name exactly, and renaming keeps everything but the na
 - **SCN-003-R8**: Every file written by duplicate or rename MUST be written whole (never half
   written); the copy's scene file MUST be stored before the show refers to it.
 - **SCN-003-R9**: Stored photo and video MUST be shared by reference, not copied. The app MUST be able
-  to list every stored photo and video ID referred to by any stored scene, so that any later cleanup
-  (FILE-010) or erase (FILE-011) can avoid orphaning a scene's media.
+  to list every stored photo and video ID referred to by any stored scene (computed from the stored
+  scenes, never a stored count), so that any later cleanup (FILE-010) or erase (FILE-011) can avoid
+  orphaning a scene's media. Deleting a scene (its last cue removed) MUST NOT delete media another
+  scene still refers to.
 - **SCN-003-R10**: The feature stays on the device: no network use; it stores nothing new beyond
   scene names and copies of scenes the user made.
 
