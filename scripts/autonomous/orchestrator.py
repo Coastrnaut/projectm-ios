@@ -167,6 +167,14 @@ def cmd_set(args) -> int:
     return 0
 
 
+def cmd_requeue(args) -> int:
+    roadmap, store = load(args)
+    for fid in args.ids:
+        store.requeue(fid, args.note)
+    write_report(roadmap, store)
+    return 0
+
+
 def cmd_evidence(args) -> int:
     roadmap, store = load(args)
     store.add_evidence(args.id, args.command, args.exit_code, args.log, args.sha)
@@ -368,6 +376,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--code-path", action="append")
     p.add_argument("--test-evidence", action="append")
     p.set_defaults(fn=cmd_set)
+    p = sub.add_parser("requeue")
+    p.add_argument("ids", nargs="+")
+    p.add_argument("--note", required=True)
+    p.set_defaults(fn=cmd_requeue)
     p = sub.add_parser("evidence")
     p.add_argument("id")
     p.add_argument("--command", required=True)
