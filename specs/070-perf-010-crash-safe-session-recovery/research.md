@@ -35,8 +35,9 @@
   visual stored at launch is copied to `session.recovery.heldVisual` before the defaults are applied;
   a later abnormal launch with an unanswered offer reuses it (R8). Camera is never held (the stored
   visual is never Camera; `recordedVisual` maps it anyway).
-- **Start fresh**: dismisses; clears the held visual. The committed scene file stays until the next
-  edit commits the fresh scene (SCN-002), so nothing is deleted outright.
+- **Start fresh**: dismisses, clears the held visual and commits the fresh scene at once
+  (`commitFreshScene`), so a later normal launch does not silently restore the held scene (SCN-002
+  keeps the previous file as its backup). A crash loop commits the fresh scene at launch.
 - **Held scene**: on an abnormal launch SCN-002's coordinator reads the committed scene without
   adopting it (`holdCommittedScene`: load only; the carry stays fresh, so a native spectrum created
   while the offer is pending gets no restored bindings). Reopen adopts the held document

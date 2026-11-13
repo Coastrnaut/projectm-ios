@@ -65,7 +65,7 @@ Apps/projectM-iOS/Views/
 Apps/projectM-iOS/ProjectMApp.swift    # card on the chooser
 Apps/projectM-iOS/Tests/SessionRecoveryTests.swift      # unit (new)
 Apps/projectM-iOS/UITests/SessionRecoveryUITests.swift  # acceptance UI test (new)
-docs/adr/00NN-crash-recovery-consent.md                 # OSC toggle after an abnormal exit (new)
+docs/adr/0032-crash-recovery-consent.md                 # OSC toggle after an abnormal exit (new)
 docs/privacy-policy.md                                  # the three stored values
 ```
 

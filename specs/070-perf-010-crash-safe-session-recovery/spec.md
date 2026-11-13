@@ -44,7 +44,7 @@ interaction); each answer is the conservative, local-first option.
   `settings.osc.enabled` is set to off before the receiver is created. A one-shot suspension would
   leave the stored value on, so the next normal launch would reopen the listener without new consent.
   The port is kept. This overrides OSC-001-R15's persistence after an abnormal exit only; recorded in
-  an ADR (PERF-010-R2).
+  ADR-0032 (PERF-010-R2).
 - Q: Should the last scene be restored silently after an abnormal exit (with sensors and network
   off), or only after the user accepts an offer? → A: Only after an offer (the row's own wording,
   and the conservative reading: the scene may be what crashed). Until the user answers, the fresh
@@ -111,7 +111,7 @@ in another run Start fresh keeps projectM and dismisses the offer.
 2. **Given** the offer, **When** the user taps Reopen, **Then** the last committed non-sensor scene
    (its visual and values) is applied and the offer goes away.
 3. **Given** the offer, **When** the user taps Start fresh, **Then** the fresh scene stays, the offer
-   goes away, and the next edit replaces the old committed scene.
+   goes away, and the fresh scene is committed in place of the old one.
 4. **Given** the app went to the background (or terminated normally) before it ended, **When** it
    relaunches, **Then** no offer is shown and SCN-002's silent restore runs as today.
 
@@ -171,12 +171,16 @@ the card says the app closed unexpectedly again and offers Start fresh only.
   other settings are not touched.
 - **PERF-010-R6 Reopen**: Reopen applies the last committed scene (SCN-002's restored values) and the
   visual that was stored at the abnormal exit (never Camera), then dismisses the card.
-- **PERF-010-R7 Start fresh**: Start fresh dismisses the card and keeps the fresh scene; the next edit
-  replaces the committed scene through SCN-002.
+- **PERF-010-R7 Start fresh**: Start fresh dismisses the card, keeps the fresh scene and commits it at
+  once through SCN-002 (replacing the held scene), so a later normal launch does not restore the
+  held scene.
 - **PERF-010-R8 Held scene survives another kill**: If the app is killed again before the user
   answers (and without an edit in between), the next launch offers the same scene.
 - **PERF-010-R9 Crash-loop guard**: When the app exits abnormally in the session where the user
-  reopened a scene or in the next session (N = 2 sessions), the next launch offers Start fresh only.
+  reopened a scene or in the next session (N = 2 sessions), the next launch offers Start fresh only
+  and commits the fresh scene at once.
+- **PERF-010-R14 Unanswered offer**: An offer the user has not answered is shown again on the next
+  launch, also after a normal exit (OSC is not turned off by a normal exit).
 - **PERF-010-R10 Normal exit unchanged**: After a normal exit no card is shown and SCN-002's silent
   restore runs as today.
 - **PERF-010-R11 Diagnostics event**: Each abnormal exit is logged once with only counts and flags

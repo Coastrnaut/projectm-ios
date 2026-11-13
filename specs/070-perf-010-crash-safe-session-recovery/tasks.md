@@ -45,7 +45,7 @@ the owner's device and stay open until run.
 ## Phase 4: Polish
 
 - [ ] PERF-010-T11 ADR (next free number) for the OSC toggle after an abnormal exit (OSC-001-R15
-  override); privacy policy lists the three stored values (PERF-010-R13).
+  override, ADR-0032); privacy policy lists the three stored values (PERF-010-R13).
 - [ ] PERF-010-T12 Regression: projectM-iOSTests, SceneAutosaveUITests, OSCReceiverUITests,
   CameraUITests, NativeVisualUITests pass with the suppression.
 - [ ] PERF-010-T13 `check_compliance.py`, `validate_docs.py`, `check_privacy_manifest.py` on the Debug
@@ -57,7 +57,7 @@ the owner's device and stay open until run.
 ## Analysis (speckit-analyze, 2026-11-13)
 
 Coverage: R1 T01-T03; R2 T05, T07, T08; R3 T07, T08; R4 T06, T08; R5 T05, T07; R6 T05, T07, T08;
-R7 T05, T07; R8 T03, T07; R9 T01, T02, T10; R10 T05, T09; R11 T03; R12 T01, T03, T06, T12; R13 T11.
+R7 T05, T07; R8 T03, T07; R9 T01, T02, T10; R10 T05, T09; R11 T03; R12 T01, T03, T06, T12; R13 T11; R14 (added at implementation) T02, T07.
 S1 T08; S2 T08, T09; S3 T08; S4 T02, T10; S5 T08 (fixed: S5 had no task). No constitution conflict;
 terminology aligned ("abnormal exit", "offer", "held scene"). No other findings.
 
