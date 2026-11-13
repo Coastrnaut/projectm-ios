@@ -35,7 +35,11 @@ The row's gap status is "Gap candidate". The audit confirms it.
 Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
 interaction); each answer is the conservative, local-first option.
 
-- (filled by /speckit-clarify)
+- Q: How is the camera layer shown before CMP-002 (layer stack) lets users build stacks? → A: As a fourth Visual choice, "Camera", that is one fixed stack in its own compositor: the camera layer at the bottom and the circular spectrum layer (transparent background, the user's bar count) on top (CAM-001-R1). Rejected: a camera-only picture (no music visible, so not a visualizer) and a camera switch behind every visual (projectM does not render through the compositor yet). CMP-002 takes over choosing and ordering layers; the camera layer itself is reusable as is.
+- Q: Is the Camera choice remembered across launches? → A: No. It lasts for the session only; the next launch shows the visual chosen before Camera, and the camera starts only when the user chooses Camera again (CAM-001-R11). A sensor should never start from a stored setting the user may have forgotten.
+- Q: What happens to the camera when the user pauses? → A: The camera stops (CAM-001-R7). As for every visual, the last composited frame stays on screen dimmed under "Paused" (FR-085); it is only the screen's own picture, never copied or stored, and it is dropped when the user resumes, stops or leaves Camera (CAM-001-R9).
+- Q: Are camera pictures analysed in any way (faces, people, motion, color)? → A: No. This row only scales and draws pictures; no Vision and no image analysis of any kind (CAM-001-R9). Analysis would need its own specification and privacy review.
+- Q: What does the denied notice offer, and does it repeat? → A: A banner over the visualizer, not an alert: "Camera access is off. To show the camera, allow it in Settings." with an "Open Settings" button that opens the app's page in iOS Settings; it stays while Camera is chosen and access is off, and needs no dismissal (CAM-001-R5). The no-camera and interrupted notices are the same banner without the button. The app never asks again by itself: iOS shows its prompt only once.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -164,7 +168,8 @@ background; it starts again when the Camera visual is shown again in the foregro
   the camera picture MUST return when the interruption ends, while R7 still holds.
 - **CAM-001-R9**: Camera pictures MUST stay in memory on the device: never written to storage,
   never sent anywhere, never analysed for faces, people or other content, and never kept after
-  they are replaced by a newer picture or the camera stops.
+  they are replaced by a newer picture or the camera stops (the paused frame on screen is the
+  display's own picture, see Clarifications).
 - **CAM-001-R10**: The app MUST NOT hide or work around iOS's camera-in-use indicator. While the
   camera runs, the app MUST NOT hide the status bar.
 - **CAM-001-R11**: The Camera choice MUST NOT be restored at the next launch (R4, R7: the camera
