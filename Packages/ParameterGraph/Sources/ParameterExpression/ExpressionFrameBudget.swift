@@ -7,7 +7,10 @@
 // remaining cost. The set hands the frame loop an immutable `ExpressionFrameSnapshot` whose only
 // operation is evaluation into a caller buffer. Neither type accepts source text, so parsing and
 // compiling cannot happen on the frame path; and since every instruction runs exactly once, a
-// snapshot's evaluation does exactly `operationCost` weighted instructions, with no clock and no heap.
+// snapshot's evaluation does exactly `operationCost` weighted instructions, plus at most one sum over
+// the bands for `audio.bandMean` per call, with no clock and no heap.
+
+import ParameterGraph
 
 public struct ExpressionFrameBudget: Sendable, Hashable {
     /// Formulas evaluated per frame.
@@ -57,7 +60,8 @@ public struct ExpressionBudgetError: Error, Sendable, Hashable, CustomStringConv
 /// The formulas admitted for evaluation every frame. Edit it off the frame loop; give the frame loop
 /// its `snapshot`.
 public struct ExpressionFrameSet: Sendable {
-    /// Identifies one admission; issued from 1 upward and never reused within one set.
+    /// Identifies one admission; issued from 1 upward and never reused within one set. A handle is
+    /// meaningful only for the set that issued it.
     public struct Handle: Sendable, Hashable, Comparable {
         public let rawValue: UInt64
 
@@ -125,11 +129,16 @@ public struct ExpressionFrameSnapshot: Sendable {
 
     /// Evaluates the formulas in admission order into `results` (result `i` belongs to `handles[i]`);
     /// evaluates `min(expressions.count, results.count)` formulas and returns that number. No heap
-    /// allocation, no clock.
+    /// allocation, no clock. `audio.bandMean` is summed at most once per call, for all formulas.
     public func evaluate(_ inputs: ExpressionInputs, into results: UnsafeMutableBufferPointer<Double>) -> Int {
         let n = Swift.min(expressions.count, results.count)
+        var mean: Double?
         for i in 0..<n {
-            results[i] = expressions[i].evaluate(inputs)
+            let expression = expressions[i]
+            if mean == nil, expression.audioSources.contains(.bandMean) {
+                mean = AudioFeatureSource.bandMean.value(in: inputs.frame)
+            }
+            results[i] = expression.evaluate(inputs, bandMean: mean)
         }
         return n
     }

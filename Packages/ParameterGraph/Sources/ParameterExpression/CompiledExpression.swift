@@ -157,6 +157,14 @@ public struct CompiledExpression: Sendable, Hashable {
 
     /// The formula's value for `inputs`: always finite, deterministic, no heap allocation.
     public func evaluate(_ inputs: ExpressionInputs) -> Double {
+        evaluate(inputs, bandMean: nil)
+    }
+
+    /// `bandMean`, when given, is `audio.bandMean` for `inputs.frame` computed once by the caller (the
+    /// frame snapshot); otherwise the mean is computed at most once per evaluation, however often the
+    /// formula reads it (SHD-010-D4: a read is then a load, not a sum over up to 128 bands).
+    func evaluate(_ inputs: ExpressionInputs, bandMean: Double?) -> Double {
+        var mean = bandMean
         let time = inputs.timeSeconds.isFinite ? inputs.timeSeconds : 0
         let frame = inputs.frame
         let capacity = Swift.max(1, slotCount + maximumStackDepth)
@@ -175,7 +183,14 @@ public struct CompiledExpression: Sendable, Hashable {
                     memory[top] = AudioFeatureSource.band(Int(instruction.index)).value(in: frame)
                     top += 1
                 case .bandMean:
-                    memory[top] = AudioFeatureSource.bandMean.value(in: frame)
+                    let value: Double
+                    if let mean {
+                        value = mean
+                    } else {
+                        value = AudioFeatureSource.bandMean.value(in: frame)
+                        mean = value
+                    }
+                    memory[top] = value
                     top += 1
                 case .onset:
                     memory[top] = AudioFeatureSource.onset.value(in: frame)

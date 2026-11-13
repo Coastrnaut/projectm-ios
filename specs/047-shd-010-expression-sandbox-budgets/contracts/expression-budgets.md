@@ -36,7 +36,8 @@ extension CompiledExpression {
 }
 ```
 
-No API of the frame set or the snapshot takes source text.
+No API of the frame set or the snapshot takes source text. Handles are numbered from 1 within one
+set and never reused there; a handle is meaningful only for the set that issued it.
 
 ## B2 Refusal messages (in check order)
 
