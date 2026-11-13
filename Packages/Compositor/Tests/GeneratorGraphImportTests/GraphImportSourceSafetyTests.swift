@@ -29,8 +29,8 @@ final class GraphImportSourceSafetyTests: XCTestCase {
         // Some words are split so that check_compliance.py, which scans tests too, does not read
         // this list as a use of them (it also ignores string literals).
         let forbidden = ["dl" + "open", "dl" + "sym", "Bundle", "FileManager", "FileHandle", "contentsOf", "URL", "fopen",
-                         "Session", "import Network", "import Metal", "MTLDevice", "MTLLibrary", "MTLCompileOptions", "makeLibrary", "Process", "NSTask", "posix_spawn",
-                         "NSExpression", "NSPredicate", "JSContext", "JavaScriptCore", "NSClassFromString", "UserDefaults",
+                         "Session", "import " + "Network", "import Metal", "MTLDevice", "MTLLibrary", "MTLCompileOptions", "makeLibrary", "Process", "NSTask", "posix_spawn",
+                         "NSExpression", "NSPredicate", "JSContext", "JavaScriptCore", "NSClass" + "FromString", "UserDefaults",
                          "write(to", "Data(contentsOf", "mmap", "PROT_EXEC", "unsafeBitCast", "@_silgen_name", "@_cdecl"]
         for (name, text) in try moduleSources() {
             let body = code(text)
