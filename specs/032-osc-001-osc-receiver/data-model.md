@@ -85,3 +85,9 @@ off ──start(p)──▶ starting(p) ──ready(q)──▶ listening(q)
 |---|---|---|
 | `settings.osc.enabled` | Bool | off |
 | `settings.osc.port` | Int | 9000 (any value outside 1024-65535 → 9000) |
+
+## OSCPeerTable (struct)
+
+Insertion-ordered set of peer keys, capacity 8 (OSC-001-R5). `admit(key) -> evicted key?`:
+a known key evicts nothing; a ninth new key evicts the least recently admitted. `remove(key)`.
+Pure; the transport keeps its connections keyed by it.
