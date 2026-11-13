@@ -28,7 +28,7 @@ by extending the existing seams instead of adding new ones:
    the very end with a cue starts the cued item (R6). A mode change is a queue change: the existing
    `onOrderChange` → `orderDidChange()` → `updateLooping` path applies it at once without a cut
    (AUD-003-R8, AUD-004-R9). No change to the backend, the graph or the tap.
-3. `CaptureUI`: `RepeatModeStrings` in `UIStrings` (label, values, announcement, icons, footer); an
+3. `CaptureUI`: repeat strings in `UIStrings` (`repeatLabel`, `repeatValue`, `repeatAnnouncement`, `repeatIcon`, `repeatFooter`; contracts/ui-strings.md); an
    optional Repeat button in `TransportBar` (shown when a mode is given); a "Repeat" section with
    three selectable rows in `PlayQueueView`.
 4. App (thin): `ControlsOverlay` passes the queue's mode and a cycle action to `TransportBar` when the
@@ -136,6 +136,17 @@ Apps/projectM-iOS/UITests/RepeatModeUITests.swift   # new
 **Structure Decision**: extend existing packages; no new package or target. `project.yml`,
 `AppCoordinator.swift`, `.github/workflows/ios-ci.yml` and `scripts/test_scripts.py` need no change
 (targets take their folders by path; new test files are picked up automatically).
+
+## Analysis notes (speckit-analyze, 2026-11-13)
+
+- Coverage: R1-R5, R7, R10 → T03-T05, T08-T09; R6 → T04, T05(c); R9 → T04, T05(d); R11 → T03, T10;
+  R12-R13 → T11-T15; R14 → T02, T03, T07, T08, T15; R15 → T18; R16 → T04 (state Stopped); R17 →
+  T19 `{device}`. S1-S3 → T05; S4 → T15; S5 → T12, T15; S6 → T09, T10, T16, T17.
+- Licensing: no new dependency or asset (SF Symbols are system symbols). Privacy: one enum value
+  added to an app-private file of identifiers; the App Store privacy answers do not change.
+- Cross-feature: AUD-003's `queue.json` stays version 1 (AUD-003-D8); AUD-005 (shuffle) will add
+  its own `endOfTrack`/`item(after:)` answers on top of the mode; QA-007's contract suite uses
+  `ListPlayOrder`, whose behavior is unchanged by the protocol default.
 
 ## Rollback
 
