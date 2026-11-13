@@ -40,7 +40,7 @@ appended. Logs go to `.build/scratch/`.
 
 ## Phase 5: User Story 3 - a failing layer never takes the picture down (P1)
 
-- [ ] CMP-001-T09 [P] [US3] Write `Packages/Compositor/Tests/CompositorTests/FallbackRenderTests.swift` (GPU): a transparent-fallback failing layer over blue → blue, outcome `.fallbackTransparent(.frameSkipped)`; a last-good layer (red) that succeeds on frame 0 then fails → frame 1 still shows red over blue, outcome `.fallbackLastGood`; a last-good layer failing from frame 0 → blue; a layer whose `prepare` throws → outcome `.unavailable`, the other layer composites, `retryUnavailableLayers()` brings it back. Record the red run.
+- [ ] CMP-001-T09 [P] [US3] Write `Packages/Compositor/Tests/CompositorTests/FallbackRenderTests.swift` (GPU): a transparent-fallback failing layer over blue → blue, outcome `.fallbackTransparent(.frameSkipped)`; a last-good layer (red) that succeeds on frame 0 then fails → frame 1 still shows red over blue, outcome `.fallbackLastGood`; a last-good layer failing from frame 0 → blue; a layer whose `prepare` throws → outcome `.unavailable`, the other layer composites, `retryUnavailableLayers()` brings it back; a layer that writes NaN and infinite values over blue leaves the output finite (non-finite channels read 0, alpha clamped to 0…1; the spec's edge case). Record the red run.
 - [ ] CMP-001-T10 [US3] Complete the fallback paths in `Compositor.swift` if T09 fails. Evidence: T09 passes on the host.
 
 ## Phase 6: User Story 4 - resize and ownership (P2)
@@ -62,7 +62,7 @@ appended. Logs go to `.build/scratch/`.
 ## Phase 9: Polish and cross-cutting
 
 - [ ] CMP-001-T18 Check the app is unchanged (CMP-001-R14): `xcodegen generate`, build `projectM-iOS` for the simulator, run the app unit tests and `NativeVisualUITests` {sim}. Evidence: build succeeds; tests pass (known environmental failure in worktrees: `PresetTests.testBundledIncludedScopeMatchesRelease1_0`).
-- [ ] CMP-001-T19 Run every gate: `swift test --package-path Packages/Compositor` (host and Linux shape; suite < 1 min, each test ≤ 10 s); `xcodebuild test -scheme Compositor` {sim}; `python3 scripts/check_compliance.py`, `validate_docs.py`, `test_scripts.py`; count new `PosterBoard-*.ips` reports; shut the simulator down. Evidence: counts and durations recorded here.
+- [ ] CMP-001-T19 Run every gate: `swift test --package-path Packages/Compositor` (host and Linux shape; suite < 1 min, each test ≤ 10 s); `xcodebuild test -scheme Compositor` {sim}; `python3 scripts/check_compliance.py`, `validate_docs.py`, `test_scripts.py`; count new `PosterBoard-*.ips` reports; shut the simulator down; review the per-frame paths of `Compositor.swift`, `CompositeFlashGuard.swift`, `SpectrumLayerSource.swift` and `ProjectMLayerSource.swift` for allocation (no array, string or closure creation; `setBytes` and Metal's own command objects only) (CMP-001-R15). Evidence: counts and durations recorded here.
 - [ ] CMP-001-T20 {device} On D1-D3: the spike tests and `ProjectMLayerTests` on each device, and a frame-time sample of a compositor with two spectrum layers and a projectM layer (CMP-001-S7 on hardware, the cost noted in ADR-0012). Roadmap final device phase; not run in this row.
 
 ## Dependencies
