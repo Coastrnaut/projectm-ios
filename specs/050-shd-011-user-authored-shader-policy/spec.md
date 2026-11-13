@@ -33,6 +33,49 @@ the app and what the app does with it.
 | Generator graphs | SHD-002 (no file import yet) | Validator, compiler to fixed 80-byte instructions, one module-constant interpreter shader (ADR-0019) | No (ADR-0019) | **No importer**: ADR-0019 Decision 6 leaves the byte-size limit and decoding to this row. |
 | Source code of the app | n/a | `scripts/check_compliance.py` forbids `dlopen`/`dlsym`, class/selector lookup by string, private frameworks, networking | — | **No static rule** for bundle loading, script engines, `NSExpression`, process spawning, executable memory, or Metal compilation outside the module constants. SHD-001/SHD-002 scan only their own modules. |
 
+## Clarifications
+
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the conservative, local-first option.
+
+- Q: Does translating projectM preset shader text count as "code execution" that this row must
+  stop? → A: No; it is an accepted, bounded exception, recorded in the ADR. Preset warp and composite
+  shader text never becomes native CPU code: hlslparser translates it to GLSL ES, ANGLE's shader
+  compiler validates and translates that to Metal shading language, and the GPU driver compiles it
+  into GPU code that runs in the GPU's sandbox with no access to files, libraries or system calls.
+  Preset equations run in projectm-eval, a tree interpreter (a rewrite of ns-eel2 that removed its
+  machine-code generation). This ships in 1.0 and 1.1; the bounds are PRE-012's static limits
+  (512 KiB, statement complexity 256, nesting 64, 64 control-flow keywords per shader, quarantine)
+  plus the composite flash guard. No preset field names a library or path that is loaded; on iOS the
+  engine's GL resolver opens no native library (projectM patch 3). Rejected: refusing preset shaders
+  (it would break most of the 12,847 bundled presets and every imported one, with no security gain
+  over the GPU sandbox). The ADR-0018 rule "no Metal source from user input" stays a rule for the
+  app's own modules; ANGLE's translator inside the vendored engine path is the one exception.
+- Q: What are the importer's size and structure limits? → A: At most 65,536 bytes (64 KiB, checked
+  before any content is read beyond the first 4 bytes, inclusive), and JSON bracket nesting at most 8
+  outside strings (a document needs 5: object, `nodes` array, node object, `values` object, number
+  array). The largest valid graph SHD-002 allows (64 nodes with every value set) encodes well below
+  the limit (measured in research). Rejected: 1 MiB (no graph needs it) and relying on the decoder's
+  own depth limit (platform-dependent and recursive).
+- Q: Does this row add an import screen or store imported graphs? → A: No. The importer is a pure
+  function over bytes ready for a document picker; it returns the canonical re-encoding that any
+  storage must keep (never the original bytes). Storage in Application Support (like MED-001) and a
+  Files import screen belong to the row that first lets a user pick a graph (a node editor follow-up
+  after SHD-003/SHD-005/SHD-006, ADR-0019 Decision 7). So no `{device}` task is needed here.
+- Q: Is `NSExpression` forbidden entirely, and what about `NSPredicate`? → A: `NSExpression` is
+  forbidden everywhere (no source uses it; its format strings can call methods by name).
+  `NSPredicate(format:)` is allowed only when the format is a string literal (UI tests use literal
+  predicates such as `label BEGINSWITH %@`); a non-literal format is a violation.
+- Q: How are archives handled? → A: Every archive is refused; archives are not a graph format and the
+  importer never extracts anything. For zip archives the importer reads only the central-directory
+  entry names (bounded by the size limit) to say whether the archive holds code (`.dylib`, `.so`,
+  `.framework`, `.bundle`, `.app`, `.appex`, `.metallib`, `.a`, `.o`, scripts), naming the first such
+  entry. Accepted file names: no extension or `.json` (case-insensitive); a known executable,
+  library, script or archive extension is refused as an executable file type; any other extension is
+  refused as unsupported.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - An imported graph file is only ever data (Priority: P1)
@@ -139,7 +182,8 @@ and reviewed") is a policy; it must exist as a document others build on.
   `#!` scripts; static-library archives; compiled Metal libraries; WebAssembly) and zip archives
   (naming a code entry when one exists), and refuse each with a typed reason before decoding.
 - **SHD-011-R4**: The importer MUST refuse content that is not UTF-8 text, whose top level is not a
-  JSON object, or whose bracket nesting exceeds a small limit, before handing it to the decoder.
+  JSON object, or whose bracket nesting outside strings exceeds 8, before handing it to the decoder.
+  The byte-size limit is 65,536 bytes, inclusive.
 - **SHD-011-R5**: The importer MUST decode into the SHD-002 document type, then validate and compile
   it with SHD-002 unchanged; every SHD-002 issue MUST be returned as a typed refusal.
 - **SHD-011-R6**: An accepted import MUST return the document, its compiled plan and a canonical
@@ -150,7 +194,8 @@ and reviewed") is a policy; it must exist as a document others build on.
   included): loading bundles or libraries other than the main bundle; script engines; expression
   evaluation of format strings that are not literals; process spawning; executable memory; and
   Metal library creation from source outside an allowlist of reviewed files, or from files, data or
-  dynamic libraries anywhere.
+  dynamic libraries anywhere. `NSExpression` is forbidden entirely; `NSPredicate(format:)` only with a
+  string-literal format.
 - **SHD-011-R9**: The repository MUST pass the extended compliance check, and the check's script
   tests MUST cover each new rule with a violating and a passing example.
 - **SHD-011-R10**: The importer module MUST be covered by a source-scan test proving it calls no
