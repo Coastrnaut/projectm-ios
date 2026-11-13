@@ -6,15 +6,15 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 55,
-   "implementing": 2,
+   "audited": 54,
+   "implementing": 3,
    "integrated": 29,
    "skipped_existing": 1
   },
   "P1": {
    "audited": 142,
-   "implementing": 1,
-   "integrated": 8
+   "integrated": 8,
+   "unit_passed": 1
   },
   "P2": {
    "audited": 79
@@ -24,10 +24,11 @@
   }
  },
  "by_state": {
-  "audited": 285,
+  "audited": 284,
   "implementing": 3,
   "integrated": 37,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -673,12 +674,12 @@
   "AUD-007": {
    "attempts": 0,
    "branch": "feature/aud-007",
-   "branch_sha": null,
+   "branch_sha": "6fdff3fc48ef41ecfbf3534bed65f4b82d05b203",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": "specs/026-aud-007-audio-output-route-indicator",
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "AUD-008": {
    "attempts": 0,
@@ -1042,13 +1043,13 @@
   },
   "CMP-001": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/cmp-001",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/029-cmp-001-unified-layer-protocol",
+   "state": "implementing"
   },
   "CMP-002": {
    "attempts": 0,
@@ -3803,5 +3804,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T15:32:57Z"
+ "updated": "2026-11-13T15:36:06Z"
 }
