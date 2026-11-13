@@ -6,11 +6,10 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 58,
-   "implementing": 1,
-   "integrated": 26,
-   "skipped_existing": 1,
-   "unit_passed": 1
+   "audited": 57,
+   "implementing": 2,
+   "integrated": 27,
+   "skipped_existing": 1
   },
   "P1": {
    "audited": 144,
@@ -24,11 +23,10 @@
   }
  },
  "by_state": {
-  "audited": 290,
-  "implementing": 1,
-  "integrated": 33,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "audited": 289,
+  "implementing": 2,
+  "integrated": 34,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -127,7 +125,6 @@
    "FX-016",
    "FX-017",
    "FX-018",
-   "FX-019",
    "FX-020",
    "MED-001",
    "MED-002",
@@ -331,7 +328,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "292 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
+   "291 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
   ]
  },
  "features": {
@@ -1510,10 +1507,10 @@
    "branch": "feature/fx-019",
    "branch_sha": "bc80d4775650339bf278d7d377ba8c4802689e75",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "6cfcbaabc8d039e71290067a1a0cf0069c7e67de",
    "priority": "P0",
    "spec_dir": "specs/022-fx-019-strobe-safety-envelope",
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "FX-020": {
    "attempts": 0,
@@ -3407,13 +3404,13 @@
   },
   "VIS-002": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/vis-002",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/025-vis-002-linear-spectrum",
+   "state": "implementing"
   },
   "VIS-003": {
    "attempts": 0,
@@ -3728,6 +3725,11 @@
    "sha": "1192e0d6503e390abc9485e6e9382553b034a80a"
   },
   {
+   "branch": "feature/fx-019",
+   "id": "FX-019",
+   "sha": "6cfcbaabc8d039e71290067a1a0cf0069c7e67de"
+  },
+  {
    "branch": "feature/perf-011",
    "id": "PERF-011",
    "sha": "6d669fcb857695767ec2b785f74feb29f98d5978"
@@ -3788,5 +3790,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T14:57:42Z"
+ "updated": "2026-11-13T15:02:06Z"
 }
