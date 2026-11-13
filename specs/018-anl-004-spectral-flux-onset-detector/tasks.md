@@ -1,0 +1,115 @@
+# Tasks: ANL-004 Spectral Flux Onset Detector
+
+**Input**: Design documents in `specs/018-anl-004-spectral-flux-onset-detector/` (spec.md, plan.md,
+research.md, data-model.md, contracts/onset-detector.md, quickstart.md)
+
+**Tests**: test-first. Each test task comes before the code it covers; the red run (compile failure
+or failing assertions) is recorded before any production change.
+
+**Format**: `- [ ] ID [P?] [Story?] Description with file path`. `[P]` = can run in parallel
+(different files). Tags: `{device}` = needs a physical device, done only in the roadmap's final
+device phase; `{sim}` = needs the iOS 27.2 simulator "iPhone 18 Pro" (udid
+`62BA098B-4CBB-4DB6-91AD-51494936CF89`).
+
+A task is ticked only when its acceptance evidence was produced, with " — Verified <date>: <how>"
+appended. Inside descriptions, "T07" is short for `ANL-004-T07`. Logs go to `.build/scratch/`.
+Paths below are under `Packages/AnalysisFeatures/` unless they start with `specs/` or `scripts/`.
+
+## Phase 1: Setup
+
+- [X] ANL-004-T01 Confirm the baseline before any change: `swift test --package-path Packages/AnalysisFeatures` (with and without `-Xswiftc -DANALYSIS_NO_ACCELERATE`); `python3 scripts/check_compliance.py`, `scripts/validate_docs.py`, `scripts/test_scripts.py`; record the counts here. — Verified 2026-11-13: at b271209, host 46 tests, 0 failures (112 s); -DANALYSIS_NO_ACCELERATE 46 tests, 1 skipped (ANL-002 backend agreement), 0 failures (84 s); check_compliance OK; validate_docs OK (204 files); test_scripts.py 98 tests OK (1 skipped) (.build/scratch/anl004-T01-*.log).
+
+## Phase 2: Foundational (stream deltas, configuration, event; blocks every story)
+
+- [X] ANL-004-T02 [P] Write `Tests/AnalysisFeaturesTests/SpectrumStreamLeadInTests.swift`: (a) a default stream (no `leadIn`) gives the same frames (indices 0, hop, 2·hop…, magnitudes bit-identical) as before and `frame.hop == configuration.hop`; (b) `leadIn: .silence` at size 2,048, hop 512: first frame index `−1536`, `hop == 512`, frames advance by the hop, and the frame at index `k` has the same magnitudes bit for bit as a default stream fed `1536` explicit zeros followed by the same input (frame index + 1536); (c) `reset()` re-applies the lead-in with the configuration current at that moment; (d) a hop change via `setConfiguration` is reported in the next frame's `hop`; (e) `SpectrumFrame(index:size:sampleRate:timestampNanoseconds:)` without `hop` gives `hop == size/2` (ANL-004-R7, R8, S7). — Verified 2026-11-13: written before any production change; red run in T06; 5 tests pass after T07 on the host and with -DANALYSIS_NO_ACCELERATE.
+- [X] ANL-004-T03 [P] Write `Tests/AnalysisFeaturesTests/OnsetConfigurationTests.swift`: defaults (44,100 Hz, 64 bands, −70 dB, 0.06, 1.5, 0.1 s, 0.05 s); each field's range from data-model.md rejected with its named error at both ends and for NaN/±∞ ("sampleRate finite, ≥ 8,000"; "floorDecibels −120…−20"; "thresholdOffset > 0 and < 1"; "thresholdMultiplier 0…10"; "thresholdWindowSeconds > 0 and ≤ 2"; "minimumInterOnsetSeconds 0…2"); `historyFrames(hop:)` = round(window·rate/hop) clamped to 1…128 (e.g. 44,100 Hz hop 1,024 → 4; hop 64 at 48 kHz → 75; hop 16 → 128 cap; hop 8,192 → 1); `minimumInterOnsetSamples` = round(0.05·rate) (2,205 / 2,400); `OnsetEvent.seconds` (ANL-004-R13, R9). — Verified 2026-11-13: written before any production change; red run in T06; 4 tests pass after T08 in both builds.
+- [X] ANL-004-T04 [P] Write `Tests/AnalysisFeaturesTests/OnsetTestSupport.swift`: a runner (mono samples → stream with a chosen lead-in, size, hop, rate, backend, `clock: { 0 }` → detector → `[OnsetEvent]` and optionally every frame's `lastFlux`), a matcher (events and onsets in order, each onset matched by the first unmatched event within ±hop; returns misses, unmatched events and the largest |error|), and fixed-seed noise (the LCG of `TestSupport.noise`). No Accelerate import. — Verified 2026-11-13: compiles in both builds (no Accelerate import); drives T10-T17.
+- [X] ANL-004-T05 [P] Write `Tests/AnalysisFeaturesTests/OnsetDetectorTests.swift` on synthetic spectra (for every backend): an all-zero frame gives nil and `lastFlux` bit pattern 0; a flat broadband spectrum after zeros gives one event with `sampleIndex == index + size − hop`, `frameIndex == index`, strength == `lastFlux` in (threshold, 1], `threshold == 0.06` (empty history), sequence 1; repeating the same spectrum gives flux 0 and no event; zeros then the spectrum again fires again only after a frame at or below the threshold (re-arm) and after the minimum interval (a second rise 0.03 s later is suppressed, 0.06 s later fires); a decreasing spectrum gives flux 0; sequence numbers continue across `reset()` (1, 2 → reset → 3) while reset restores the silence reference; an index gap and a size change each make that frame a baseline (nil, `lastFlux == 0`) and the next contiguous frame is processed normally; a wrong sample rate or magnitude count is ignored (`ignoredFrames` +1, nil) and the next frame is a baseline; NaN/∞/negative magnitudes give a finite flux in 0…1; a full-scale broadband rise gives `lastFlux ≤ 1`; the array convenience equals the pointer API; `processedFrames` counts accepted frames (ANL-004-R1 to R6, R9 to R12). — Verified 2026-11-13: written before any production change; red run in T06; 10 tests pass after T09 for both backends and with -DANALYSIS_NO_ACCELERATE.
+- [X] ANL-004-T06 Record the red run of T02-T05 (compile failure on missing `SpectrumLeadIn`, `SpectrumFrame.hop`, `OnsetDetectorConfiguration`, `OnsetEvent`, `SpectralFluxOnsetDetector`) in `.build/scratch/anl004-red-T02-T05.log`. — Verified 2026-11-13: `swift build --build-tests` failed with 75 errors (`cannot find 'OnsetDetectorConfiguration' in scope`, missing `SpectrumLeadIn`, `hop:` and the detector) before any production change (.build/scratch/anl004-red-T02-T05.log).
+- [X] ANL-004-T07 Implement the stream deltas in `Sources/AnalysisFeatures/SpectrumStream.swift`: `SpectrumFrame.hop` (init parameter `hop: Int? = nil` → size/2), `SpectrumLeadIn` (`.none`, `.silence`), `SpectrumStream.init(…, leadIn:)` and `leadIn` property; with `.silence` the FIFO holds `size − hop` zeros and `nextIndex = −(size − hop)` at init and after `reset()`; `nextFrame()` fills `hop`. Evidence: T02 passes; every existing ANL-001/ANL-002 test passes unchanged. — Verified 2026-11-13: SpectrumStreamLeadInTests 5 tests pass (lead-in equals explicit zeros bit for bit with indices shifted by size − hop, for both backends); the existing 46 tests pass unchanged (T24).
+- [X] ANL-004-T08 Implement `Sources/AnalysisFeatures/OnsetDetectorConfiguration.swift` (`OnsetDetectorConfigurationError`, `OnsetDetectorConfiguration` with the data-model ranges and a non-throwing `standard` value, `historyFrames(hop:)`, `minimumInterOnsetSamples`; `OnsetEvent`). Evidence: T03 passes. — Verified 2026-11-13: OnsetConfigurationTests 4 tests pass in both builds.
+- [X] ANL-004-T09 Implement `Sources/AnalysisFeatures/SpectralFluxOnsetDetector.swift` per data-model.md state transitions and research ANL-004-D1, D2, D5, D6 (BandReducer of the configured rate; preallocated band, previous, current and 128-value history buffers; scalar `BandMath.normalizedDecibels`; `vDSP_vsub`/`vDSP_vthres`/`vDSP_sve` or ordered loops; threshold from the ordered history mean; arm and IOI rule; event fields). Evidence: T05 passes for both backends and with `-DANALYSIS_NO_ACCELERATE`. — Verified 2026-11-13: OnsetDetectorTests 10 tests pass for both backends on the host and with -DANALYSIS_NO_ACCELERATE, first run, no test change (.build/scratch/anl004-T07-T09*.log).
+
+## Phase 3: User Story 1 - every click of a pulse train becomes one onset at the right time (P1)
+
+**Goal**: the roadmap acceptance's first half. **Independent test**: `OnsetAcceptanceTests.testPulseFixturesGiveOneOnsetPerPulseWithinOneHop`.
+
+- [X] ANL-004-T10 [US1] Write `Tests/AnalysisFeaturesTests/OnsetAcceptanceTests.swift` (pulses): `pulse-120`, `pulse-120-accent`, `pulse-132` × 5 sizes × hops N/2, N/4, N/8 × 44,100/48,000 Hz (90 combinations) on the build's first backend, and hops N/2, N/4 (60) on the portable backend where vDSP exists (the portable-only build runs all 90 on the portable path; runtime trim 2026-11-13, one test per fixture), the mono loop through a `.silence` lead-in stream and a default detector: 0 misses, 0 unmatched events, every |error| ≤ hop; print one `ANL-004 matrix:` line per combination (fixture, rate, size, hop, onsets, events, misses, false events, max |error|) for the first backend; assert the combination count is 90 (ANL-004-R17, S1; US1 scenarios 1 and 2). — Verified 2026-11-13: written after T09 against the finished API (no red run: every symbol existed; first result in T12). Three tests, one per fixture.
+- [X] ANL-004-T11 [US1] In `OnsetAcceptanceTests.swift`: `pulse-120` scaled to a 0.1 peak (−20 dBFS) and a single-sample unit impulse train (amplitude 1.0 at 1,234 + k·10,007, 10 s) at hops N/2 and N/4, 5 sizes, both rates: 0 misses, 0 unmatched, |error| ≤ hop (ANL-004-S4; US1 scenario 3). — Verified 2026-11-13: testQuieterPulsesAndUnitImpulsesWithinOneHop: 40 combinations (2 signals × 5 sizes × 2 hops × 2 rates), 0 misses, 0 false events, on the host (vDSP) and with -DANALYSIS_NO_ACCELERATE (portable).
+- [X] ANL-004-T12 [US1] Record the first result of T10-T11 and make them pass; if a case fails, investigate before changing a default and record any change in research ANL-004-D3. Evidence: `swift test --filter OnsetAcceptanceTests` on the host; matrix saved to `.build/scratch/anl004-matrix.txt`. — Verified 2026-11-13: first result (.build/scratch/anl004-T10-first.log): all 90 pulse combinations passed on both backends with no code or default change (largest |error| 0.887 hop); the sine/sweep test failed in 26 of 180 runs with 0 events instead of 1 (start not detected at hop N/8, larger sizes) — the requirement was wrong, not the code: changed to "at most one, at the start" (spec Clarifications, research ANL-004-D3), then the pulse test was split per fixture and tones/noise trimmed to hops N/2, N/4 for runtime. Second run: 8 tests pass (.build/scratch/anl004-T10-second.log); matrix in .build/scratch/anl004-matrix.txt (90 lines, 0 misses, 0 false events); the portable-only build's matrix is identical line for line.
+
+## Phase 4: User Story 2 - silence and near-silence never produce onsets (P1)
+
+**Goal**: "no false silence events". **Independent test**: `OnsetAcceptanceTests.testSilenceAndBelowFloorNoiseNeverProduceOnsets`.
+
+- [X] ANL-004-T13 [US2] In `OnsetAcceptanceTests.swift`: the `silence` fixture and seeded noise at peaks 1e-4 and 3e-4 (−80 and −70 dBFS; every band about 10 dB or more below the −70 dBFS floor) at 5 sizes × hops N/2, N/4 × both rates (N/8 is covered by the pulse matrix; runtime trim 2026-11-13): 0 events and every frame's `lastFlux` bit pattern 0 (ANL-004-R3, S2); noise at 1e-2 peak (−40 dBFS, partly above the floor in the top bands): 0 events after the start (≤ 1 event, at the start); one pulse followed by 1 s of silence: exactly 1 event (ending a sound is not an onset). — Verified 2026-11-13: testSilenceAndBelowFloorNoiseNeverProduceOnsets: 62,709 frames (silence, −80 and −70 dBFS noise × 5 sizes × 2 hops × 2 rates), 0 events and every lastFlux bit pattern 0; −40 dBFS noise ≤ 1 event (start); one pulse then 1 s silence: exactly 1 event.
+- [X] ANL-004-T14 [US2] Make T13 pass (no production change expected). Evidence: host, both builds. — Verified 2026-11-13: passes on the host and with -DANALYSIS_NO_ACCELERATE; no production change.
+
+## Phase 5: User Story 3 - steady and gliding tones are not onsets (P1)
+
+**Goal**: a sweep is not an onset. **Independent test**: `OnsetAcceptanceTests.testSinesAndSweepsGiveOnlyTheStartEvent`, `testLoudNoiseStaysWithinTheDocumentedBound`.
+
+- [X] ANL-004-T15 [US3] In `OnsetAcceptanceTests.swift`: every sine and sweep fixture (mid of the stereo loop) at 5 sizes × hops N/2, N/4 × both rates: at most 1 event, `|sampleIndex| ≤ hop`, none after the start (corrected 2026-11-13 from "exactly 1": see T16); seeded white noise at peak 0.3 (−10 dBFS): events (including the start) ≤ 25 at 512, ≤ 4 at 1,024, exactly 1 at 2,048 and above, hops N/2 and N/4, both rates; print the counts (ANL-004-S3). — Verified 2026-11-13: testSinesAndSweepsGiveAtMostTheStartEvent: 120 runs, every run exactly 1 event within one hop of sample 0 at hops N/2 and N/4, 0 after the start; testLoudNoiseStaysWithinTheDocumentedBound: −10 dBFS noise events per 10 s: 11-22 at 512 points, 1-3 at 1,024, exactly 1 at 2,048 and above.
+- [X] ANL-004-T16 [US3] Make T15 pass. Evidence: host, both builds. — Verified 2026-11-13: both pass on the host and with -DANALYSIS_NO_ACCELERATE after the T12 requirement correction; no production change.
+
+## Phase 6: User Story 4 - same events on every run and every CI path (P2)
+
+**Goal**: AUD-016-R22 for onsets. **Independent test**: `OnsetAcceptanceTests.testRepeatedRunsAndBackendsGiveIdenticalEvents`.
+
+- [X] ANL-004-T17 [US4] In `OnsetAcceptanceTests.swift`: each pulse fixture, `sweep-log` and noise at 0.3 peak, at 2,048/1,024 and 1,024/256 (size/hop), both rates, analysed twice with fresh objects: identical event lists (all fields, strength by bit pattern) and identical `lastFlux` sequences; with vDSP available, accelerated vs portable: same count, sequence, sample and frame indices, |Δstrength| and |Δthreshold| ≤ 1e-4 (largest printed); without vDSP the comparison part prints that it is skipped (ANL-004-R15, S5). — Verified 2026-11-13: testRepeatedRunsAndBackendsGiveIdenticalEvents: 10 inputs × 2 shapes, repeated runs identical in every field and every lastFlux bit; vDSP vs portable: identical counts, sequences, sample and frame indices in all 20 comparisons, largest |Δstrength|/|Δthreshold| 1.79e-7 (tolerance 1e-4).
+- [X] ANL-004-T18 [US4] Make T17 pass. Evidence: host (both backends) and `-DANALYSIS_NO_ACCELERATE`. — Verified 2026-11-13: passes on the host (both backends); with -DANALYSIS_NO_ACCELERATE it passes and prints that the agreement part is skipped (.build/scratch/anl004-run1-noaccel.log).
+
+## Phase 7: User Story 5 - events a later feature can consume (P2)
+
+**Goal**: output shape for ANL-005, ANL-016, VIS-008, MOD-006. **Independent test**: T05's sequence, reset and inspection cases plus the contract.
+
+- [X] ANL-004-T19 [US5] Real-time review of `process(_:magnitudes:)`: no Array, String, class or escaping-closure creation, no lock, I/O or log; returns `OnsetEvent?`; `SpectralFluxOnsetDetector` not `Sendable`. Evidence: the diff read plus a malloc-stack trace of the bench's onset loop (as ANL-002-T13) (ANL-004-R14, S6). — Verified 2026-11-13: diff read: `process(_:magnitudes:)` uses only pointers allocated in init, `BandReducer.reduce`, scalar `BandMath.normalizedDecibels`, `vDSP_vsub`/`vDSP_vthres`/`vDSP_sve` or a scalar loop, an ordered history loop, and returns `OnsetEvent?` (a struct); no Array/String/class/closure creation, lock, I/O or log; the detector is a non-Sendable class. Malloc trace of the Release bench (`MallocStackLoggingNoCompact=1`, `malloc_history -allEvents` 5 s into an 8 s loop): 369,678 ALLOC events, 0 with `process(` or `rectifiedMeanIncrease` in the stack and 0 at the bench's process call (main.swift line 122); the detector allocations all come from `SpectralFluxOnsetDetector.init` (the bench rebuilds detectors every pass) (.build/scratch/anl004-malloc-history.txt).
+- [X] ANL-004-T20 [US5] Update ANL-001's contract `specs/014-anl-001-windowed-fft/contracts/spectrum-analyzer.md` with an "Amended by ANL-004" note (frame `hop`, `SpectrumLeadIn`) and check `contracts/onset-detector.md` against the code (names and signatures). — Verified 2026-11-13: "Amended by ANL-004" section added to specs/014-anl-001-windowed-fft/contracts/spectrum-analyzer.md; contracts/onset-detector.md checked against the code (names, labels, defaults; `OnsetEvent`'s public initializer added to the contract).
+
+## Phase 8: Polish and cross-cutting
+
+- [X] ANL-004-T21 [P] Add an onset section to `Bench/Sources/AnalysisBench/main.swift`: ns per `process` at 2,048 and 8,192 points, both backends; run it in Release and record the numbers here (reported, not asserted). — Verified 2026-11-13: onset section added; `swift run -c release --package-path Packages/AnalysisFeatures/Bench AnalysisBench` on the Mac Studio host, ns per process (64 bands, default hop; includes the band reduction), vDSP / portable: N=2,048 405 / 497; N=8,192 832 / 1,546 — about 24 % and 13 % of the vDSP spectrum's own cost (1,722 and 6,607 ns in the same run) (.build/scratch/anl004-bench1.log).
+- [X] ANL-004-T22 {sim} Run `xcodebuild test -scheme AnalysisFeatures` from `Packages/AnalysisFeatures` on the iOS 27.2 simulator (udid `62BA098B-…`) with `-test-timeouts-enabled YES -default-test-execution-time-allowance 180 CODE_SIGNING_ALLOWED=NO`, log in `.build/scratch/`; grep `: error: `, `Executed N tests`, `** TEST`; count new `~/Library/Logs/DiagnosticReports/PosterBoard-*.ips` files; shut the simulator down afterwards. — Verified 2026-11-13: iOS 27.2 simulator iPhone 18 Pro (62BA098B-…), booted once: `xcodebuild test -scheme AnalysisFeatures` 73 tests, 0 failures, ** TEST SUCCEEDED **, 0 `: error: ` lines (.build/scratch/anl004-sim1.log, 3 min 56 s wall including the build); onset acceptance tests 3.1-26.2 s each (longest: determinism 26.2 s, well under the 180 s allowance); the pulse matrix equals the host's line for line; 0 new PosterBoard-*.ips reports during the run (32 before and after); the simulator was shut down afterwards.
+- [X] ANL-004-T23 `python3 scripts/check_compliance.py`, `scripts/validate_docs.py`, `scripts/test_scripts.py` pass; the grep over `project.yml`, `RendererLab.yml`, `Apps`, `Packages/ProjectMBridge`, `Packages/Rendering`, `Packages/ANGLERendering` finds no `AnalysisFeatures` (ANL-004-R16); `git diff --stat` shows no change outside `Packages/AnalysisFeatures` and `specs/` (plus the ANL-001 contract note). — Verified 2026-11-13: check_compliance OK; validate_docs OK (204 files); test_scripts.py 98 tests OK (1 skipped); the grep over project.yml, RendererLab.yml, Apps, ProjectMBridge, Rendering and ANGLERendering finds no `AnalysisFeatures`; `git diff --stat 1d74d3d` shows changes only under Packages/AnalysisFeatures and specs/ (ANL-004's directory plus the ANL-001 contract note); no third-party code added; project.yml, ios-ci.yml and scripts/test_scripts.py untouched.
+- [X] ANL-004-T24 Run the AnalysisFeatures suites twice at the end (host, host `-DANALYSIS_NO_ACCELERATE`) and record counts and the onset suites' runtime; ANL-001 and ANL-002 tests still pass unchanged (ANL-004-S7). — Verified 2026-11-13: two runs each, same counts, 0 failures: host 73 tests (46 ANL-001/ANL-002 unchanged + 27 ANL-004; 270 s and 256 s), -DANALYSIS_NO_ACCELERATE 73 tests with 1 skipped (ANL-002's vDSP agreement; 320 s and 316 s). ANL-004's 27 tests take 142-149 s on the host and 234-238 s in the portable-only build (acceptance dominates; the main session's VIS-001 integration ran on the same Mac during the second pair). The 90-line pulse matrix is identical in all four runs and on the simulator (.build/scratch/anl004-run{1,2}-{host,noaccel}.log).
+- [ ] ANL-004-T25 {device} (open: final device phase, only if a later row needs it) Measure `process` cost on D1 in Release. Not required for this row's acceptance (spec Assumptions).
+
+## Dependencies
+
+- T01 → T02–T05 (tests, red: T06) → T07 → T08 → T09 → US1 (T10–T12), US2 (T13–T14), US3
+  (T15–T16), US4 (T17–T18), US5 (T19–T20) → T21–T24. T25 waits for the roadmap's final device phase.
+- The acceptance tests use ANL-001's stream (with T07's lead-in) and ANL-002's reducer.
+
+## Parallel opportunities
+
+- T02, T03, T04, T05 (different files). T21 alongside T10–T20. US1–US4 test sections share one
+  file, so they are written in sequence.
+
+## Implementation strategy
+
+MVP = Phases 1–4 (the roadmap acceptance: pulses within one hop, silence silent). Then sines and
+sweeps, determinism and backend agreement, the consumer contract, the bench and the gates.
+
+## Analysis (speckit-analyze, 2026-11-13)
+
+Consistency pass over spec.md, plan.md, tasks.md, research.md, data-model.md and the contract.
+Coverage: every requirement maps to at least one task (R1–R6, R9–R12: T05, T09; R7, R8: T02, T07;
+R13: T03, T08; R14: T19; R15: T17; R16: T23; R17: T10; S1: T10; S2: T13; S3: T15; S4: T11; S5:
+T17; S6: T19, T21; S7: T02, T24). Constitution: VII (allocation-free `process`, optional return)
+and VIII (ADR-0008 decision 5's measured need; nothing into projectM, package not linked by the
+app) hold; no CRITICAL finding. Licensing: no third-party code or dependency; the cited papers
+(research ANL-004-D1) are references for public formulas only (IX). Privacy: nothing stored, sent
+or recorded. Cross-feature: the ANL-001 deltas are additive with defaults (existing frame
+comparisons are stream-to-stream, so the new `hop` field changes no existing assertion); ANL-002
+is consumed unchanged; AudioCore and the AUD-016 catalog unchanged; VIS-001 (in progress in
+another worktree) only reads AnalysisFeatures, and frames built with the old initializer still
+compile. Fixes applied:
+
+- F1 (MEDIUM, underspecified): data-model.md did not say how the first frame after creation or
+  reset is treated by the gap check; added "previous frame: none, the first frame is contiguous
+  and compared with silence" (matches spec Edge Cases and R11).
+- F2 (LOW, real-time/style): the contract's default argument used `try!`; replaced by a
+  non-throwing `OnsetDetectorConfiguration.standard` (T08 updated).
+- F3 (HIGH, test validity): T13 required an exactly-zero flux for noise at −60 dBFS peak, whose top
+  bands sit only ~12 dB below the floor in expectation and can cross it; the exact-zero check now
+  uses −80 and −70 dBFS peaks, and −40 dBFS noise checks only "no event after the start".

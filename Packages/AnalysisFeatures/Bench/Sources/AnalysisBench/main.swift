@@ -1,5 +1,6 @@
 // AnalysisBench — CPU per spectrum frame for every FFT size and backend (ANL-001-T21; research
-// ANL-001-D9) and per band reduction (ANL-002-T16). Reported, never asserted. Run in Release:
+// ANL-001-D9), per band reduction (ANL-002-T16) and per onset `process` (ANL-004-T21). Reported,
+// never asserted. Run in Release:
 //   swift run -c release --package-path Packages/AnalysisFeatures/Bench AnalysisBench
 // Pass `--loop-seconds N` to repeat the timed loops for about N seconds (for an allocation trace
 // with `xcrun xctrace record --template Allocations --launch -- <binary> --loop-seconds 5`).
@@ -94,6 +95,40 @@ repeat {
                                 print("bands \(name)  N=\(String(size.rawValue).padding(5))  B=\(String(count.rawValue).padding(3))  \(Int(perReduce.rounded())) ns/reduce")
                             }
                         }
+                    }
+                }
+            }
+        }
+    }
+    // ANL-004: one onset `process` call (band reduction + flux + threshold), alternating a noise
+    // spectrum with a quieter copy so rises and decays both occur; contiguous frames at the default hop.
+    for backend in backends {
+        let detector = SpectralFluxOnsetDetector(backend: backend)
+        let analyzer = SpectrumAnalyzer(backend: backend)
+        for size in [FFTSize.n2048, .n8192] {
+            var loud = [Float](repeating: 0, count: size.binCount)
+            noise.withUnsafeBufferPointer { input in
+                loud.withUnsafeMutableBufferPointer { analyzer.magnitudes(of: input.baseAddress!, size: size, into: $0.baseAddress!) }
+            }
+            let quiet = loud.map { $0 * 0.01 }
+            let hop = size.rawValue / 2
+            detector.reset()
+            var index: Int64 = 0
+            var events = 0
+            loud.withUnsafeBufferPointer { l in
+                quiet.withUnsafeBufferPointer { q in
+                    func step() {
+                        let frame = SpectrumFrame(index: index, size: size, sampleRate: sampleRate, timestampNanoseconds: 0, hop: hop)
+                        if detector.process(frame, magnitudes: (index / Int64(hop)) % 8 == 0 ? l : q) != nil { events += 1 }
+                        index += Int64(hop)
+                    }
+                    for _ in 0..<50 { step() }
+                    let start = MonotonicClock.nowNanoseconds()
+                    for _ in 0..<framesPerRun { step(); sink += detector.lastFlux }
+                    let perProcess = Double(MonotonicClock.nowNanoseconds() - start) / Double(framesPerRun)
+                    if loopSeconds == 0 || MonotonicClock.nowNanoseconds() >= deadline {
+                        let name = backend == .accelerated ? "accelerated" : "portable   "
+                        print("onsets \(name)  N=\(String(size.rawValue).padding(5))  B=64  \(Int(perProcess.rounded())) ns/process  (\(events) events)")
                     }
                 }
             }
