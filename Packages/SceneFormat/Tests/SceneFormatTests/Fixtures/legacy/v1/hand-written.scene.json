@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "format": "projectm-ios.scene",
+  "name": "Hand written",
+  "id": "6F9619FF-8B86-D011-B42D-00C04FC964FF",
+  "layers": [
+    { "kind": "spectrum.linear", "instance": 3 },
+    { "kind": "photo", "instance": 5, "content": { "asset": "backdrop" },
+      "composite": { "opacity": 0.5, "blend": "normal" }, "values": { "fit": 1 } }
+  ],
+  "assets": {
+    "backdrop": { "type": "photo", "storeID": "0A1B2C3D-4E5F-6071-8293-A4B5C6D7E8F9" }
+  },
+  "parameters": {
+    "visual.circularSpectrum.gap": { "value": 0.125, "kind": "continuous" }
+  },
+  "bindings": [
+    { "target": "visual.circularSpectrum.gap", "source": "audio.bandMean", "output": { "start": 0, "end": 1 } }
+  ]
+}

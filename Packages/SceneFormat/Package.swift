@@ -32,6 +32,8 @@ let package = Package(
                     dependencies: ["SceneFormat",
                                    .product(name: "ParameterGraph", package: "ParameterGraph"),
                                    .product(name: "Compositor", package: "Compositor"),
-                                   .product(name: "VisualGenerators", package: "VisualGenerators")]),
+                                   .product(name: "VisualGenerators", package: "VisualGenerators")],
+                    // SCN-013 golden legacy fixtures, read through #filePath (host and Linux).
+                    exclude: ["Fixtures"]),
     ]
 )
