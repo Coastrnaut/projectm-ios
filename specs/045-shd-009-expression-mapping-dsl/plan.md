@@ -114,7 +114,7 @@ and MOD-003's interpolation, and being its own module lets the compiler prove th
 Foundation (hence `NSExpression`). `ParameterGraph`'s existing target and its dependants are not
 touched; CI already tests the package on Linux, macOS and simulators, so no workflow change is
 needed (`swift test` and `-scheme ParameterGraph-Package` pick up the new targets; checked in
-SHD-009-T13).
+SHD-009-T19).
 
 ## Complexity Tracking
 
