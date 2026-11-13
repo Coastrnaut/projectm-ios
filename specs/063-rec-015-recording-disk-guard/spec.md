@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (REC-015-T01-T16 verified on the Mac: iOS 27.2 simulator, host and Linux shape; T17 `{device}` open)
 
 **Input**: User description: "Implement REC-015 (Recording disk guard) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Estimate free space and stop
