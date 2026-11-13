@@ -196,7 +196,7 @@ resume, deliver a synthetic interruption, and check positions and delivered fram
   signal may have its own frequency, or be silent).
 - **AUD-016-R5**: Sweep: start and end frequency, duration, amplitude, logarithmic or linear; phase
   is continuous within the sweep.
-- **AUD-016-R6**: Pulse train: tempo in beats per minute (or pulses per second), pulse width,
+- **AUD-016-R6**: Pulse train: tempo in beats per minute, pulse width,
   amplitude, an optional accent pattern of per-beat amplitude factors; onset `k` starts at the sample
   nearest to `k × 60 / BPM` seconds.
 - **AUD-016-R7**: Every parameter MUST be bounded and validated (Edge Cases); invalid parameters
@@ -219,7 +219,7 @@ resume, deliver a synthetic interruption, and check positions and delivered fram
   alone: for each sine the exact and the nearest FFT bin for FFT sizes 512, 1024, 2048, 4096 and
   8192 at 44.1 kHz and 48 kHz, and whether the tone is centered on a bin; for each pulse train the
   onset sample indices of one loop, the tempo, the inter-onset interval and the accent of each
-  onset; for each sweep the instantaneous frequency at 0, 2.5, 5 and 7.5 seconds; for silence that
+  onset; for each sweep the instantaneous frequency at 0, 1.25, 2.5, 5 and 7.5 seconds; for silence that
   every sample is zero.
 - **AUD-016-R12**: The tests MUST check the expected values against an independent reference
   computation written in the tests only (a straightforward discrete Fourier transform at small sizes
@@ -288,8 +288,8 @@ resume, deliver a synthetic interruption, and check positions and delivered fram
   transform, the peak is at the documented nearest bin in 100% of cases.
 - **AUD-016-S3**: For every pulse fixture, the reference onset scan finds 100% of documented onsets
   at exactly the documented sample, with no extra onsets.
-- **AUD-016-S4**: For every sweep fixture, the measured local frequency at the documented times is
-  within 1% of the documented value.
+- **AUD-016-S4**: For every sweep fixture, the measured local frequency at each documented time after
+  0 is within 1% of the documented value; at 0 the sweep starts at phase 0 (sample value 0).
 - **AUD-016-S5**: Played through the production path at a matching rate, 100% of delivered frames
   equal the generated frames; at a different rate the delivered signal stays within the documented
   tolerance; two runs give identical delivered audio.
