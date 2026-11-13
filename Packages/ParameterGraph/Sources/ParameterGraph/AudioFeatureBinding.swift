@@ -76,6 +76,8 @@ public enum AudioFeatureBindingError: Error, Sendable, Hashable, CustomStringCon
     case outputOutOfRange(ParameterID, ModulationMixMode, minimum: Double, maximum: Double)
     case invalidEnvelope(ParameterID)
     case tooManyBindings(ParameterID, limit: Int)
+    /// The binding set would contain a feedback loop (MOD-014-R9); `path` is the loop, readable.
+    case feedbackCycle(ParameterID, path: String)
 
     public var description: String {
         switch self {
@@ -97,6 +99,8 @@ public enum AudioFeatureBindingError: Error, Sendable, Hashable, CustomStringCon
             "the envelope bound to \"\(id)\" needs finite times in 0…\(AudioFeatureEnvelope.maximumSeconds) s"
         case let .tooManyBindings(id, limit):
             "\"\(id)\" cannot be bound: \(limit) bindings already exist"
+        case let .feedbackCycle(id, path):
+            "\"\(id)\" cannot be bound: it would create the feedback loop \(path)"
         }
     }
 }

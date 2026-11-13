@@ -108,4 +108,47 @@ final class ModulationGraphOrderTests: XCTestCase {
         XCTAssertGreaterThan(loops, 10, "the fixture exercises loops")
         XCTAssertLessThan(loops, 190, "and loop-free additions")
     }
+
+    // MARK: Audio bindings (T11, contract G9)
+
+    func testAudioBindingsExpressAsGraphAndModulateIdentically() throws {
+        let registry = try F.registry()
+        let modulator = AudioFeatureModulator(registry: registry)
+        let gapBinding = AudioFeatureBinding(source: .band(0), target: F.gap, outputStart: 0.1, outputEnd: 0.9)
+        let widthBinding = AudioFeatureBinding(source: .bandMean, target: F.width, outputStart: -0.2, outputEnd: 0.2, mixMode: .add)
+        let modeBinding = AudioFeatureBinding(source: .onset, target: F.mode, inputMaximum: 0.5, outputStart: 0, outputEnd: 4)
+        for binding in [gapBinding, widthBinding, modeBinding] { try modulator.bind(binding) }
+        try modulator.bind(gapBinding)   // rebinding keeps the binding's place
+
+        let graph = modulator.modulationGraph
+        XCTAssertEqual(graph.generators, [])
+        XCTAssertEqual(graph.edges, [
+            ModulationEdge(source: .audio(.band(0)), target: F.param(F.gap)),
+            ModulationEdge(source: .audio(.bandMean), target: F.param(F.width)),
+            ModulationEdge(source: .audio(.onset), target: F.param(F.mode)),
+        ])
+        XCTAssertEqual(graph.validate(in: registry), [])
+        XCTAssertEqual(try ValidatedModulationGraph(graph, registry: registry).evaluationOrder.count, 6)
+
+        // Values equal the MOD-002/MOD-003 formula bit for bit (no envelope: the signal is the position).
+        let frames: [(bands: [Float], onset: Float)] = [([0, 0.2], 0), ([0.37, 0.9], 0.13), ([1, 1], 0.5), ([0.61, 0.05], 0.31)]
+        for (i, frame) in frames.enumerated() {
+            frame.bands.withUnsafeBufferPointer { (bands: UnsafeBufferPointer<Float>) -> Void in
+                modulator.advance(frame: AudioFeatureFrame(bands: bands, onset: frame.onset), timeNanoseconds: UInt64(i) * 16_666_667)
+            }
+            let mean = (Double(frame.bands[0]) + Double(frame.bands[1])) / 2
+            let gap = gapBinding.mapping.interpolate(gapBinding.mapping.position(of: Double(frame.bands[0])))
+            XCTAssertEqual(modulator.value(for: F.gap, manual: 0.5), gap, "frame \(i)")
+            let width = min(max(0.5 + widthBinding.mapping.interpolate(widthBinding.mapping.position(of: mean)), 0), 1)
+            XCTAssertEqual(modulator.value(for: F.width, manual: 0.5), width, "frame \(i)")
+            let mode = modeBinding.mapping.interpolate(modeBinding.mapping.position(of: Double(frame.onset)))
+            XCTAssertEqual(modulator.value(for: F.mode, manual: 1), Double(Int(mode.rounded(.toNearestOrAwayFromZero))), "frame \(i)")
+        }
+    }
+
+    func testFeedbackCycleBindingErrorIsReadable() {
+        let error = AudioFeatureBindingError.feedbackCycle(F.gap, path: F.acceptancePath)
+        XCTAssertTrue(error.description.contains("visual.ring.gap"), error.description)
+        XCTAssertTrue(error.description.contains(F.acceptancePath), error.description)
+    }
 }
