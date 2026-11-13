@@ -6,14 +6,16 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 51,
+   "audited": 50,
+   "implementing": 1,
    "integrated": 35,
    "skipped_existing": 1
   },
   "P1": {
    "audited": 140,
-   "implementing": 2,
-   "integrated": 9
+   "implementing": 1,
+   "integrated": 9,
+   "unit_passed": 1
   },
   "P2": {
    "audited": 79
@@ -23,10 +25,11 @@
   }
  },
  "by_state": {
-  "audited": 279,
+  "audited": 278,
   "implementing": 2,
   "integrated": 44,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -1914,13 +1917,13 @@
   },
   "MOD-014": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/mod-014",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "MOD-015": {
    "attempts": 0,
@@ -1955,12 +1958,12 @@
   "OSC-001": {
    "attempts": 0,
    "branch": "feature/osc-001",
-   "branch_sha": null,
+   "branch_sha": "6467d622b4bc70ed377af9acbee2e146d29e4b22",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "OSC-002": {
    "attempts": 0,
@@ -3830,5 +3833,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T16:27:42Z"
+ "updated": "2026-11-13T16:31:45Z"
 }
