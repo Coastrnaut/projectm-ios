@@ -51,6 +51,8 @@ final class PhotoVisualHost: PresentationBoundResource {
     private(set) var metrics = RenderMetrics.zero
     /// FR-072: the app's Reduce flashing setting.
     var reduceFlashing = false
+    /// REC-003: the attached video recording, fed with each composited frame (nil when not recording).
+    var videoRecording: VideoRecordingTap?
     /// The photo layer's state; `onImageStateChange` reports every change.
     private(set) var imageState: ImageLayerState = .empty
     var onImageStateChange: ((ImageLayerState) -> Void)?
@@ -238,6 +240,11 @@ final class PhotoVisualHost: PresentationBoundResource {
                                    presentationTimeNanoseconds: UInt64(max(link.targetTimestamp, 0) * 1e9),
                                    contentScale: Double(view.contentScaleFactor), reduceFlashing: reduceFlashing,
                                    audio: audio) else { return }
+        // REC-003: the shown frame once more into the recording's pixel buffer (nothing without a recording).
+        videoRecording?.record(commandBuffer: commands, presentationNanoseconds: UInt64(max(link.targetTimestamp, 0) * 1e9),
+                               drawable: drawable.texture) { (texture: MTLTexture) -> Bool in
+            compositor.encodeOutput(into: texture, commandBuffer: commands)
+        }
         commands.present(drawable)
         commands.commit()
         framesComposited &+= 1

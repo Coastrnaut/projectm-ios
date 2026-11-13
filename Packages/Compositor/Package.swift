@@ -45,6 +45,10 @@
 // * `MediaSniffing` (MED-014, specs/056-med-014-safe-media-decoder) checks the structure of untrusted
 //   image and movie bytes (PNG, JPEG, HEIF, ISO/QuickTime boxes) before ImageIO or AVFoundation sees
 //   them: bounded, plain Swift, no dependencies, builds on Linux. ImageLayer and VideoLayer call it.
+// * `FrameRecording` (REC-003, specs/058-rec-003-video-recording, ADR-0027) records shown frames into an
+//   MP4 video: settings, geometry, the timestamp timeline, the bounded frame gate and the outcomes are
+//   plain Swift and build on Linux; the AVAssetWriter writer, the read-back inspector and the Metal
+//   recorder (IOSurface pixel buffers through a texture cache, no CPU read-back) compile out there.
 // Nothing here imports projectM, ANGLE, capture or the app (Constitution VI). The projectM layer is
 // target `ProjectMLayer` in Packages/ANGLERendering.
 // One library product, so CI's `-scheme Compositor` builds and tests every target.
@@ -53,7 +57,7 @@ import PackageDescription
 let package = Package(
     name: "Compositor",
     platforms: [.iOS("26.0"), .macOS(.v15)],
-    products: [.library(name: "Compositor", targets: ["Compositor", "SpectrumLayers", "CameraLayer", "ProceduralMaterials", "GeneratorGraph", "GeneratorGraphImport", "ImageLayer", "VideoLayer", "TextLayer", "FrameCapture", "MediaSniffing"])],
+    products: [.library(name: "Compositor", targets: ["Compositor", "SpectrumLayers", "CameraLayer", "ProceduralMaterials", "GeneratorGraph", "GeneratorGraphImport", "ImageLayer", "VideoLayer", "TextLayer", "FrameCapture", "MediaSniffing", "FrameRecording"])],
     dependencies: [
         .package(path: "../AnalysisFeatures"),
         .package(path: "../FlashSafety"),
@@ -64,6 +68,8 @@ let package = Package(
     targets: [
         // REC-001: still frame capture: formats, color conversion, ImageIO encoding (pure Swift + ImageIO).
         .target(name: "FrameCapture"),
+        // REC-003: video recording (pure Swift rules + AVFoundation writer + Metal recorder).
+        .target(name: "FrameRecording"),
         .target(name: "Compositor", dependencies: ["AnalysisFeatures", "FlashSafety", "FrameCapture"]),
         .target(name: "SpectrumLayers", dependencies: ["Compositor", .product(name: "VisualGenerators", package: "VisualGenerators")]),
         .target(name: "CameraLayer", dependencies: ["Compositor"]),
@@ -75,13 +81,14 @@ let package = Package(
         .target(name: "GeneratorGraphImport", dependencies: ["GeneratorGraph"]),
         .target(name: "TextLayer", dependencies: ["Compositor"]),
         .testTarget(name: "CompositorTests",
-                    dependencies: ["Compositor", "SpectrumLayers", "CameraLayer", "ImageLayer", "VideoLayer", "MediaSniffing", "AnalysisFeatures", "FlashSafety", "FrameCapture",
+                    dependencies: ["Compositor", "SpectrumLayers", "CameraLayer", "ImageLayer", "VideoLayer", "MediaSniffing", "AnalysisFeatures", "FlashSafety", "FrameCapture", "FrameRecording",
                                    .product(name: "VisualGenerators", package: "VisualGenerators")]),
         .testTarget(name: "ProceduralMaterialsTests",
                     dependencies: ["ProceduralMaterials", "Compositor", "ParameterGraph", "FlashSafety", "AnalysisFeatures"]),
         .testTarget(name: "GeneratorGraphTests",
                     dependencies: ["GeneratorGraph", "Compositor", "FlashSafety", "AnalysisFeatures", "ProceduralMaterials"]),
         .testTarget(name: "FrameCaptureTests", dependencies: ["FrameCapture"]),
+        .testTarget(name: "FrameRecordingTests", dependencies: ["FrameRecording"]),
         .testTarget(name: "GeneratorGraphImportTests", dependencies: ["GeneratorGraphImport", "GeneratorGraph"]),
         .testTarget(name: "MediaSniffingTests", dependencies: ["MediaSniffing"]),
         .testTarget(name: "TextLayerTests", dependencies: ["TextLayer", "Compositor", "FlashSafety", "AnalysisFeatures"]),
