@@ -35,7 +35,7 @@ with " — Verified <date>: <how>".
 
 ## Phase 5: US3 — record only on purpose (P2)
 
-- [ ] QA-002-T15 [US3] Record-mode behavior tests on a scratch golden folder (missing written, unchanged file untouched, refused writes nothing, missing without record fails via the suite's decision function) in `Tests/RenderGoldensTests/GoldenRecordTests.swift`
+- [ ] QA-002-T15 [US3] `GoldenDecision` (contract G4 as a plain function: golden present/absent × comparison × policy × OS sensitivity → pass, fail, write, notCompared, pending) in `Sources/GoldenImages/GoldenDecision.swift`, and record-mode tests on a scratch golden folder (missing written, unchanged file untouched, refused writes nothing, missing without record fails, text scene on another OS not compared — QA-002-R12) in `Tests/RenderGoldensTests/GoldenRecordTests.swift`
 
 ## Phase 6: US4 — consistent and small set (P3)
 
@@ -46,6 +46,12 @@ with " — Verified <date>: <how>".
 - [ ] QA-002-T17 [P] `Packages/RenderGoldens/README.md` (scenes and licensing, record mode, review, CI guard, size), ADR `docs/adr/00NN-golden-render-scenes.md` and its index row
 - [ ] QA-002-T18 Append `RenderGoldens` to the 5 package loops in `.github/workflows/ios-ci.yml`
 - [ ] QA-002-T19 Verify: host `swift test`, Linux shape, iOS 27.2 simulator `xcodebuild test`, iOS 26.5 simulator cross-check, `check_compliance.py`, `validate_docs.py`, PosterBoard count; record results in this file and the spec status
+
+## Analysis fixes (speckit-analyze, 2026-11-13)
+
+- M1: QA-002-R12 (text OS rule) had no test → added to T15.
+- M2: contract G4 is a plain `GoldenDecision` function (Linux-testable) used by the suite → T15.
+- L1: `.build/` is already gitignored (checked), so the diff folder needs no ignore entry.
 
 ## Dependencies
 
