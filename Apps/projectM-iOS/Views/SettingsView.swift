@@ -2,6 +2,10 @@
 // glow (FX-001-R11),
 // the Camera visual (CAM-001-R1), the performance overlay (FR-048), Reduce flashing (FR-072), the OSC
 // receiver (OSC-001-R16) and the Licenses screen (FR-067).
+// MED-001: with Photo chosen, a Photo section offers Choose from Photos… (the out-of-process Photos
+// picker: no library permission), Choose from Files… (images only), Remove Photo, the stored
+// photo's size and the import notice.
+import PhotosUI
 import SwiftUI
 import VisualEffects
 import VisualGenerators
@@ -17,7 +21,11 @@ struct SettingsView: View {
     var nativeVisualUnavailable = false
     /// FX-001-R13: the glow could not be built on this device.
     var glowUnavailable = false
+    /// MED-001: the imported photo (nil hides the Photo section, e.g. in previews).
+    var photos: PhotoCoordinator?
     @Environment(\.dismiss) private var dismiss
+    @State private var pickedPhoto: PhotosPickerItem?
+    @State private var showPhotoFileImporter = false
     /// The port being typed; applied on submit or when the field loses focus (OSC-001-R2).
     @State private var portText = ""
     @FocusState private var portFieldFocused: Bool
@@ -108,7 +116,7 @@ struct SettingsView: View {
                             .accessibilityIdentifier("nativeVisualUnavailableFooter")
                     } else {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Camera shows your rear camera behind a circular spectrum, only while it is on screen; the picture is never recorded or sent.")
+                            Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Camera shows your rear camera behind a circular spectrum, only while it is on screen; the picture is never recorded or sent. Photo shows a picture you choose behind a circular spectrum.")
                             if settings.visual.isNative {
                                 if glowUnavailable {
                                     Text(AppCoordinator.glowUnavailableMessage)
@@ -119,6 +127,9 @@ struct SettingsView: View {
                             }
                         }
                     }
+                }
+                if settings.visual.usesPhoto, let photos {
+                    photoSection(photos)
                 }
                 Section {
                     Toggle("Reduce flashing", isOn: $settings.reduceFlashing)
@@ -156,6 +167,45 @@ struct SettingsView: View {
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         }
         .accessibilityIdentifier("settings")
+    }
+
+    // MARK: Photo (MED-001-R2, R7, R11, R15)
+
+    private func photoSection(_ photos: PhotoCoordinator) -> some View {
+        Section {
+            LabeledContent("Photo", value: photos.summary)
+                .accessibilityIdentifier("photoSummary")
+            PhotosPicker(selection: $pickedPhoto, matching: .images, preferredItemEncoding: .automatic) {
+                Text("Choose from Photos…")
+            }
+            .disabled(photos.isImporting)
+            .accessibilityIdentifier("choosePhotoFromPhotos")
+            Button("Choose from Files…") { showPhotoFileImporter = true }
+                .disabled(photos.isImporting)
+                .accessibilityIdentifier("choosePhotoFromFiles")
+            if photos.photo != nil {
+                Button("Remove Photo", role: .destructive) { photos.remove() }
+                    .disabled(photos.isImporting)
+                    .accessibilityIdentifier("removePhoto")
+            }
+            if let notice = photos.notice {
+                Text(notice)
+                    .foregroundStyle(.red)
+                    .accessibilityIdentifier("photoNotice")
+            }
+        } header: {
+            Text("Photo")
+        } footer: {
+            Text("The picture you choose is copied into the app on this device without its location or camera details, and is never uploaded. Remove Photo deletes the copy.")
+        }
+        .onChange(of: pickedPhoto) { _, item in
+            guard let item else { return }
+            pickedPhoto = nil
+            Task { await photos.photoPicked(item) }
+        }
+        .fileImporter(isPresented: $showPhotoFileImporter, allowedContentTypes: [.image]) { (result: Result<URL, any Error>) in
+            Task { await photos.filePicked(result) }
+        }
     }
 
     // MARK: OSC receiver (OSC-001-R16)
