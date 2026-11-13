@@ -2,6 +2,11 @@
 // AUD-001-R1, R9, R10, R13, R24). The library itself (validation, copying, the record) is
 // CaptureKit's `AudioLibrary`; this type only lists it for the chooser, runs imports off the main
 // actor's critical path, and words the result.
+//
+// AUD-003: it also owns the play queue (`PlayQueue`, stored as `queue.json` in the library folder)
+// and keeps it in step with the library: after every ready load, import and removal the queue gets
+// the library's tracks, and newly imported tracks join it at the top. An unavailable library is
+// never handed to the queue, so its stored order is left alone.
 import CaptureKit
 import CaptureUI
 import Foundation
@@ -20,14 +25,19 @@ final class AudioLibraryCoordinator {
     /// The result of the last import when something was not imported; shown as an alert.
     var resultMessage: String?
 
+    /// The play order of imported audio (AUD-003).
+    let queue: PlayQueue
+
     @ObservationIgnored private let library: AudioLibrary?
     @ObservationIgnored private let announce: @MainActor (String) -> Void
 
     /// `library` is nil when its folder cannot even be named; the section then shows the storage message.
-    init(library: AudioLibrary?,
+    /// `queueDirectory`: where `queue.json` lives (the library folder); nil keeps the queue in memory.
+    init(library: AudioLibrary?, queueDirectory: URL? = nil,
          announce: @escaping @MainActor (String) -> Void = { UIAccessibility.post(notification: .announcement, argument: $0) }) {
         self.library = library
         self.announce = announce
+        queue = PlayQueue(store: queueDirectory.map { PlayQueueStore(directory: $0) })
         if library == nil { unavailableMessage = UIStrings.message(AudioLibraryState.Unavailable.storage) }
     }
 
@@ -40,7 +50,7 @@ final class AudioLibraryCoordinator {
             try? FileManager.default.removeItem(at: directory)
         }
         #endif
-        return AudioLibraryCoordinator(library: directory.map { AudioLibrary(directory: $0) })
+        return AudioLibraryCoordinator(library: directory.map { AudioLibrary(directory: $0) }, queueDirectory: directory)
     }
 
     /// Reads the library record; safe to call again.
@@ -65,6 +75,7 @@ final class AudioLibraryCoordinator {
         isImporting = true
         let outcomes = await library.importFiles(at: urls)
         await refresh()
+        queue.didImport(outcomes.compactMap { if case .imported(let track) = $0 { track.id.uuidString } else { nil } })
         isImporting = false
         guard let summary = UIStrings.importSummary(outcomes) else { return }
         announce(summary)                                          // FR-070 / AUD-001-R24
@@ -93,8 +104,8 @@ final class AudioLibraryCoordinator {
 
     // MARK: - Play order (AUD-006)
 
-    /// The listed tracks as playable items, in list order (newest first): what Next track and
-    /// Previous track move through (AUD-006-R14). Each item plays the library's own stored copy.
+    /// The listed tracks as playable items, in list order (newest first). The queue takes them as
+    /// its catalog (AUD-003); each item plays the library's own stored copy.
     func playbackItems() async -> [PlaybackItem] {
         guard let library else { return [] }
         var items: [PlaybackItem] = []
@@ -104,6 +115,20 @@ final class AudioLibraryCoordinator {
                                       track: .file(url)))
         }
         return items
+    }
+
+    // MARK: - Queue (AUD-003)
+
+    /// "Play Next": right after the current track (at the top when there is none).
+    func playNext(_ track: ImportedTrack) {
+        queue.playNext(track.id.uuidString)
+        announce(UIStrings.playNextAnnouncement(title: track.title))
+    }
+
+    /// "Add to Queue": at the end.
+    func addToQueue(_ track: ImportedTrack) {
+        queue.addToEnd(track.id.uuidString)
+        announce(UIStrings.queueAddedAnnouncement(title: track.title))
     }
 
     /// The bundled reference track as the only item of its order: it repeats, and Next track and
@@ -118,6 +143,7 @@ final class AudioLibraryCoordinator {
         case .ready:
             unavailableMessage = nil
             tracks = await library.tracks.reversed()
+            queue.setLibrary(await playbackItems())
         case .unavailable(let reason):
             unavailableMessage = UIStrings.message(reason)
             tracks = []

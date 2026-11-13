@@ -1,7 +1,9 @@
 // ProjectMApp.swift — the visualizer app (Stage 2; tasks T080, T082). The screen follows
 // AppCoordinator: photosensitivity notice (first launch) → source chooser → full-screen visualizer.
-// The chooser also lists the user's imported audio and opens the Files picker for it (AUD-001),
+// The chooser also lists the user's imported audio and opens the Files picker for it (AUD-001)
+// and the play queue (AUD-003),
 // and offers generated test signals under Diagnostics (AUD-016).
+import CaptureKit
 import CaptureUI
 import SwiftUI
 import UniformTypeIdentifiers
@@ -36,7 +38,11 @@ struct RootView: View {
                                          unavailableMessage: coordinator.audioLibrary.unavailableMessage,
                                          onImport: { coordinator.importAudio() },
                                          onPlay: { coordinator.play($0) },
-                                         onRemove: { coordinator.removeImported($0) })
+                                         onRemove: { coordinator.removeImported($0) },
+                                         queueCount: coordinator.audioLibrary.queue.ids.count,
+                                         onShowQueue: { coordinator.openQueue() },
+                                         onPlayNext: { coordinator.audioLibrary.playNext($0) },
+                                         onAddToQueue: { coordinator.audioLibrary.addToQueue($0) })
                     // AUD-016: generated test signals, one level down; nothing plays until one is tapped.
                     TestSignalsSection { coordinator.playTestSignal($0) }
                 })
@@ -51,6 +57,14 @@ struct RootView: View {
                 Button(UIStrings.ok) { coordinator.audioLibrary.resultMessage = nil }
             } message: {
                 Text(coordinator.audioLibrary.resultMessage ?? "")
+            }
+            // AUD-003: the queue, with Play Queue; a row plays that track.
+            .sheet(isPresented: $coordinator.showQueue) {
+                NavigationStack {
+                    PlayQueueView(queue: coordinator.audioLibrary.queue, isPlaying: false,
+                                  onPlayQueue: { coordinator.playQueue() }, onPlay: { coordinator.playQueued($0) },
+                                  onDone: { coordinator.closeQueue() })
+                }
             }
             .sheet(isPresented: $coordinator.showMicrophoneExplainer) {
                 MicrophoneExplainerView(onContinue: { coordinator.microphoneExplainerContinue() },
