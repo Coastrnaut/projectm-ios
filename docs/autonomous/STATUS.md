@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T22:47:49Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T23:11:03Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,16 +9,16 @@
 
 | State | Features |
 |---|---|
-| audited | 238 |
+| audited | 236 |
 | implementing | 1 |
-| integrated | 86 |
+| integrated | 88 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
 | Priority | audited | implementing | integrated | skipped_existing |
 |---|---|---|---|---|
-| P0 | 15 | 1 | 70 | 1 |
+| P0 | 13 | 1 | 72 | 1 |
 | P1 | 137 | 0 | 14 | 0 |
 | P2 | 77 | 0 | 2 | 0 |
 | P3 | 9 | 0 | 0 | 0 |
@@ -26,7 +26,7 @@
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 239 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
+- 237 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
 
 ## Integrated
 
@@ -108,6 +108,7 @@ The physical-device suite may **not** start:
 | SCN-001 | Versioned scene format | `c3886d1cb0bb` | `feature/scn-001` |
 | SCN-002 | Scene autosave | `1aa354c0b623` | `feature/scn-002` |
 | SCN-003 | Scene duplicate and rename | `4936d8fcd1d3` | `feature/scn-003` |
+| SCN-010 | Scene undo/redo | `01b155c6c3d0` | `feature/scn-010` |
 | SHD-001 | Procedural material catalog | `ade4dfec39a5` | `feature/shd-001` |
 | SHD-002 | Node-based generator graph | `e91692538b99` | `feature/shd-002` |
 | SHD-009 | Expression mapping DSL | `d84b02f95a85` | `feature/shd-009` |
@@ -116,6 +117,7 @@ The physical-device suite may **not** start:
 | SHOW-001 | Manual cue list | `77cf6988ac8e` | `feature/show-001` |
 | SHOW-011 | Tap tempo | `11329d52e6dc` | `feature/show-011` |
 | SHOW-014 | Emergency blackout | `c3886d1cb0bb` | `feature/show-014` |
+| UIX-001 | Guided first scene | `f8f54e2ac938` | `feature/uix-001` |
 | VIS-001 | Circular spectrum | `48285d49c422` | `feature/vis-001` |
 | VIS-002 | Linear spectrum | `c2b2f75c11bb` | `feature/vis-002` |
 
@@ -710,6 +712,16 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `0186ee96ba05` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-003/20261113T174126/swift-test_ShowControl.log`)
 - `post-merge: projectM-iOSTests incl. ShowSceneEditCoordinatorTests; SceneDuplicateUITests, ShowCueUITests 2 on iOS 27.2 sim; SceneFormat 48 and ShowControl 25 in the gate`: pass at `4936d8fcd1d3` (log `.autonomous/logs/integration/scn-003/app-tests.log`)
 
+### SCN-010 Scene undo/redo (integrated)
+- `python3 scripts/check_compliance.py`: pass at `96baa4c3de9b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-010/20261113T180647/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `96baa4c3de9b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-010/20261113T180647/docs.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `96baa4c3de9b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-010/20261113T180647/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `96baa4c3de9b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-010/20261113T180647/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `96baa4c3de9b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-010/20261113T180647/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `96baa4c3de9b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-010/20261113T180647/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `96baa4c3de9b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-010/20261113T180647/swift-test_ShowControl.log`)
+- `post-merge: projectM-iOSTests 346 incl. SceneHistoryCoordinatorTests; SceneUndoUITests 19.5 s, GuidedFirstScene reopen, Settings 4 UI tests on iOS 27.2 sim; SceneFormat 59 in the gate`: pass at `01b155c6c3d0` (log `.autonomous/logs/integration/scn-010/app-tests.log`)
+
 ### SHD-001 Procedural material catalog (integrated)
 - `python3 scripts/check_compliance.py`: pass at `67186e7fa06d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-001/20261113T120524/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `67186e7fa06d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-001/20261113T120524/docs.log`)
@@ -774,6 +786,11 @@ None.
 - `swift test --package-path Packages/PresentationLifecycle`: pass at `081b69a69a42` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-014/20261113T154000/swift-test_PresentationLifecycle.log`)
 - `xcodebuild -scheme Rendering-Package -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `081b69a69a42` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-014/20261113T154000/sim-test_Rendering.log`)
 - `post-merge (batch with SCN-001, REC-012, SHOW-014, FILE-001 on a second iOS 27.2 iPhone 17 simulator): projectM-iOSTests 271 incl. SceneArchiveServiceTests; CaptureShareUITests, EmergencyBlackoutUITests 2, OutputBlackoutUITests; SceneFormat 31 and SceneArchive 18 on host and Linux shape`: pass at `c3886d1cb0bb` (log `.autonomous/logs/integration/batch-scn-rec12-show14-file1/app-tests.log`)
+
+### UIX-001 Guided first scene (integrated)
+- `python3 scripts/check_compliance.py`: pass at `47115ca78022` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-001/20261113T180131/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `47115ca78022` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-001/20261113T180131/docs.log`)
+- `post-merge: projectM-iOSTests 342 incl. GuidedFirstScene tests; GuidedFirstSceneUITests 4 (offline finish, skip, largest text, reopen), CacheCleanup, SessionRecovery 3 UI tests on iOS 27.2 sim`: pass at `f8f54e2ac938` (log `.autonomous/logs/integration/uix-001/app-tests.log`)
 
 ### VIS-001 Circular spectrum (integrated)
 - `python3 scripts/check_compliance.py`: pass at `7fa6d4e0f3c1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-001/20261113T080701/compliance.log`)

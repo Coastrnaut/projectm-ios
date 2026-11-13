@@ -46,6 +46,7 @@ extension AppCoordinator {
         guard let registry = try? SceneArchiveService.appRegistry() else { return [] }
         let apply = ShowSceneSnapshot.apply(of: document, warnings: warnings, registry: registry)
         Self.set(apply, settings: settings, texts: texts)
+        sceneHistory.restart()   // SCN-010-R9: a cue is not an edit
         if refresh {
             visualSettingsChanged()
             glowSettingsChanged()

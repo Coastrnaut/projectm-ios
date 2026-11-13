@@ -34,6 +34,9 @@ final class SceneAutosaveCoordinator {
     /// last captured live ones (contract A5).
     var bindings: [AudioFeatureBinding] { carry.bindings }
 
+    /// SCN-010: the content the current scene carries (the history captures its states over it).
+    var carrySnapshot: SceneAutosaveCarry { carry }
+
     /// DEBUG probe value (contract A6).
     var probe: String {
         "restored=\(restoredSource.rawValue) committed=\(committedRevision) pending=\(isPending ? 1 : 0) events=\(events.count)"
