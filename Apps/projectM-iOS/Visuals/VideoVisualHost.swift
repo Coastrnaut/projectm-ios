@@ -60,6 +60,11 @@ final class VideoVisualHost: PresentationBoundResource {
     var onVideoStateChange: ((VideoLayerState) -> Void)?
     /// Presented frames (tests, diagnostics).
     private(set) var framesComposited = 0
+    /// PERF-014: the compositor's render health record, reported when it changes (once per tick).
+    var onRenderHealthChange: ((RenderHealth) -> Void)?
+    private var reportedHealthRevision = 0
+    /// PERF-014: frame ticks of this visual (DEBUG readout, tests).
+    var renderTicks: UInt64 { compositor.frameTicks }
 
     /// Frames that showed a video picture (diagnostics, UI tests).
     var framesShown: Int { video.framesShown }
@@ -222,6 +227,7 @@ final class VideoVisualHost: PresentationBoundResource {
         let run = !paused && !isSuspended && !inBackground && !sceneDisconnected
         if run, displayLink == nil {
             compositor.resetFlashHistory()   // a new scene for the flash guard (FX-019-R11)
+            compositor.resetRenderHealth()   // PERF-014-R6: a fresh retry budget whenever the loop starts
             if let reader { analyzer.start(reader: reader) }
             let link = CADisplayLink(target: VideoVisualLinkProxy(self), selector: #selector(VideoVisualLinkProxy.fire(_:)))
             link.preferredFrameRateRange = quality.frameRateRange
@@ -249,7 +255,11 @@ final class VideoVisualHost: PresentationBoundResource {
         guard compositor.composite(into: drawable.texture, commandBuffer: commands,
                                    presentationTimeNanoseconds: UInt64(max(link.targetTimestamp, 0) * 1e9),
                                    contentScale: Double(view.contentScaleFactor), reduceFlashing: reduceFlashing,
-                                   audio: audio) else { return }
+                                   audio: audio) else {
+            reportRenderHealth()
+            return
+        }
+        reportRenderHealth()
         // REC-003: the shown frame once more into the recording's pixel buffer (nothing without a recording).
         videoRecording?.record(commandBuffer: commands, presentationNanoseconds: UInt64(max(link.targetTimestamp, 0) * 1e9),
                                drawable: drawable.texture) { (texture: MTLTexture) -> Bool in
@@ -259,6 +269,14 @@ final class VideoVisualHost: PresentationBoundResource {
         commands.commit()
         framesComposited &+= 1
         if meter.record(presentedAt: link.timestamp) { metrics = meter.metrics }
+    }
+
+    /// PERF-014: reports the compositor's health record when its revision changed (no allocation).
+    private func reportRenderHealth() {
+        let health = compositor.health
+        guard health.revision != reportedHealthRevision else { return }
+        reportedHealthRevision = health.revision
+        onRenderHealthChange?(health)
     }
 
     private func layoutDrawable() {

@@ -42,6 +42,8 @@ struct VisualizerView: View {
         ZStack {
             Color.black.ignoresSafeArea()
             visual
+            // PERF-014-R10: a visual that can show nothing fades to the placeholder (0.5 s, linear).
+            RenderPlaceholderView(shown: coordinator.showsRenderPlaceholder)
             if coordinator.externalDisplay.showsVisualExternally {
                 // OUT-001-R2: the visualization is drawn on the external display only (no device preview, R3).
                 externalDisplayNote
@@ -97,7 +99,8 @@ struct VisualizerView: View {
             .padding()
             .animation(.easeInOut(duration: 0.2), value: coordinator.controlsVisible)
             if coordinator.settings.showsPerformanceOverlay, coordinator.renderer != nil || coordinator.showsAlternateVisual {
-                VStack { HStack { Spacer(); PerformanceOverlay(metrics: { coordinator.activeVisualMetrics }, manager: coordinator.manager) }; Spacer() }
+                VStack { HStack { Spacer(); PerformanceOverlay(metrics: { coordinator.activeVisualMetrics }, manager: coordinator.manager,
+                                                                   renderHealth: { coordinator.renderHealthOverlayLine }) }; Spacer() }
                     .padding(.top, 2)
                     .padding(.trailing, 8)
             }
@@ -121,6 +124,10 @@ struct VisualizerView: View {
             if UITestMemoryPanel.isRequested {         // PERF-006: MemoryPressureUITests
                 VStack { HStack { UITestMemoryPanel(coordinator: coordinator); Spacer() }; Spacer() }
                     .padding(.top, 130)
+            }
+            if UITestRenderFaultPanel.isRequested {    // PERF-014: RenderFaultUITests
+                VStack { HStack { UITestRenderFaultPanel(coordinator: coordinator); Spacer() }; Spacer() }
+                    .padding(.top, 160)
             }
             if FrameCaptureCoordinator.debugDirectoryFromArguments() != nil {   // REC-001: FrameCaptureUITests
                 Text(coordinator.frameCapture.probe)
