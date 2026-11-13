@@ -32,6 +32,37 @@ The app cannot tell a clean exit from an abnormal one: every launch is handled t
 | Memory, blackout, presets | No session state persisted beyond settings, favorites and the last preset. | Same. | None. |
 | Diagnostics | Nothing records an abnormal exit. MetricKit is not used. | — | A diagnostics event without user data. |
 
+## Clarifications
+
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the conservative, local-first option.
+
+- Q: After an abnormal exit, is the OSC toggle's stored value cleared, or is the listener only
+  suspended for this launch while the stored value stays on? → A: Cleared: the stored
+  `settings.osc.enabled` is set to off before the receiver is created. A one-shot suspension would
+  leave the stored value on, so the next normal launch would reopen the listener without new consent.
+  The port is kept. This overrides OSC-001-R15's persistence after an abnormal exit only; recorded in
+  an ADR (PERF-010-R2).
+- Q: Should the last scene be restored silently after an abnormal exit (with sensors and network
+  off), or only after the user accepts an offer? → A: Only after an offer (the row's own wording,
+  and the conservative reading: the scene may be what crashed). Until the user answers, the fresh
+  scene (scene settings at defaults) is shown (PERF-010-R4, R5).
+- Q: How is an abnormal exit detected? → A: A "session open" flag in the app's own preferences, set
+  at launch and on return to the foreground, cleared on the background transition and on terminate.
+  No timestamps (no required-reason file timestamp APIs), no MetricKit in the decision, no crash
+  reporter, no private API. A crash in the background is not detected (accepted limitation)
+  (PERF-010-R1).
+- Q: What is the crash-loop window? → A: N = 2 sessions: an abnormal exit in the session where the
+  user tapped Reopen or in the next one offers Start fresh only; after two sessions without an
+  abnormal exit the counter is cleared (PERF-010-R9).
+- Q: How do existing UI tests, which relaunch the app after `terminate()` without a background
+  transition, avoid the offer? → A: In DEBUG builds a launch with any `-uitest…` or `-autostart`
+  argument, a unit-test host, or a `PROJECTM_AUTORUN` automation run treats the launch as clean
+  (the marker is still kept) unless `-uitestSessionRecovery` is passed; `-uitestResetNotice` also
+  clears the recovery state. Release builds always decide (PERF-010-R12).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A crash never turns a sensor or the network back on by itself (Priority: P1)
