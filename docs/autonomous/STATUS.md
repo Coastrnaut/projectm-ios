@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T13:12:19Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T13:21:46Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -285,3 +285,4 @@ None.
 - `swift test --package-path Packages/Diagnostics`: pass at `7fa6d4e0f3c1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-001/20261113T080701/swift-test_Diagnostics.log`)
 - `xcodebuild -scheme Rendering-Package -destination id=77E17861-E687-4274-8A84-14224F32BE3E CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `7fa6d4e0f3c1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-001/20261113T080701/sim-test_Rendering.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `7fa6d4e0f3c1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-001/20261113T080701/swift-test_VisualGenerators.log`)
+- `integration checkout, full preset library: VisualGenerators 40 on iOS 27.2 sim (render tests ran) and 37 with -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE; xcodebuild projectM-iOS test: projectM-iOSTests 131 pass; UI 21 pass (NativeVisual, Visualizer, Settings, Status); 0 PosterBoard reports`: pass at `48285d4` (log `.autonomous/logs/integration/vis-001/app-tests.log`)
