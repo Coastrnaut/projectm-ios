@@ -73,6 +73,20 @@ interaction); each answer is the conservative, local-first option.
   counters in the lexer, parser and compiler (not by a clock); pathological fixtures (deep nesting,
   token floods, long binding chains, maximal cost, oversized source, binding fan-out) are each
   refused with their exact message or compiled within the documented step bound.
+- Q: What do the frame set's refusal messages say? → A: They have no `line:column` (the formula
+  itself is valid) and state the numbers, checked in this order: loosened limits first ("the
+  formula was compiled with an operation cost limit of 100000; the standard limit is 256", naming the
+  first loosened field in the order source bytes, tokens, nodes, nesting, bindings, operation cost),
+  then the count ("the frame already evaluates 32 formulas; at most 32 are allowed"), then the cost
+  ("a formula of cost 256 would bring the frame to 2100; at most 2048 is allowed (1844 used)").
+  Rejected: reusing `ExpressionError` (it requires a source position).
+- Q: How does the frame loop get the results? → A: The snapshot evaluates every admitted formula in
+  admission order into a caller-provided buffer of at least as many values, so the frame path makes
+  no allocation; a buffer that is too small evaluates only as many formulas as fit (never a trap).
+  Rejected: returning an array (allocates every frame).
+- Q: How are admitted formulas identified? → A: By a handle issued on admission, increasing and
+  never reused within one frame set, so a stale handle can never remove a later formula. The handle
+  also gives the formula's position in the snapshot's results.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -150,6 +164,8 @@ every run; the informational measurement runs only on request.
 - Removing an unknown or already removed handle: reports that nothing was removed; the set is
   unchanged.
 - An empty frame set: its snapshot evaluates nothing and costs 0.
+- A result buffer smaller than the formula count: only the formulas that fit are evaluated.
+- Several limits loosened at once: the message names the first in the documented order.
 - A long `let` chain where each binding doubles the previous one (`let a1 = a0 + a0; …`): accepted
   with linear cost, because each binding is evaluated once (no exponential blow-up).
 - A formula compiled under tighter limits than the standard: admitted (tighter is always allowed).
@@ -166,7 +182,8 @@ every run; the informational measurement runs only on request.
 - **SHD-010-R3**: Adding a formula to the per-frame set MUST be refused, with a readable message and
   the set unchanged, when it would exceed the formula count or the total cost, or when the formula
   was compiled under limits looser than the standard per-formula limits. Removing a formula MUST
-  free its cost and count.
+  free its cost and count. Refusals are checked in the order loosened limits, count, cost, with the
+  messages given in the Clarifications. Admission returns a handle that is never reused.
 - **SHD-010-R4**: The per-frame set MUST accept only compiled formulas, never source text, and the
   part handed to the frame loop MUST be an immutable value whose only operation is evaluation; so
   parsing and compiling cannot run in the frame path.
@@ -178,8 +195,9 @@ every run; the informational measurement runs only on request.
   evaluation (or, for fixtures the language allows, compiled within the step bound and the cost
   limit).
 - **SHD-010-R7**: Budgets, costs, step counts and messages MUST be deterministic.
-- **SHD-010-R8**: Evaluating the per-frame snapshot MUST NOT allocate heap memory and MUST NOT read
-  a clock (work bounded by the used cost alone).
+- **SHD-010-R8**: Evaluating the per-frame snapshot MUST write each result, in admission order, into
+  a caller-provided buffer, MUST NOT allocate heap memory and MUST NOT read a clock (work bounded by
+  the used cost alone).
 - **SHD-010-R9**: The module MUST stay pure: no new imports, Linux-buildable, tests within the
   owner's budget (unit test about 1-2 s, at most 10 s; suite under 1 minute; no wall-clock
   assertions).
