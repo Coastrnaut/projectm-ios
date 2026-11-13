@@ -126,10 +126,11 @@ keyboard (⌘Z, ⇧⌘Z).
   Reopen/Start fresh and photo or video import or removal are not undoable edits.
 - **SCN-010-R3**: An edit whose resulting scene state has the same canonical bytes as the current
   state MUST NOT be recorded.
-- **SCN-010-R4**: Consecutive changes to the same continuous control (a slider: spacing, glow
-  intensity, radius, threshold, text size, text outline; and typing the text message) MUST coalesce
+- **SCN-010-R4**: Consecutive changes to the same continuous control (a slider: glow intensity,
+  radius, threshold, text size, text outline; and typing the text message) MUST coalesce
   into one step until a boundary: a change to another control, an undo or redo, Settings closing, or
-  the end of a slider drag. Discrete controls (pickers, toggles, the visual) never coalesce. No
+  the end of a slider drag. Discrete controls (pickers such as
+  bars, orientation and spacing, toggles, the visual) never coalesce. No
   boundary depends on wall-clock time.
 - **SCN-010-R5**: Undo MUST restore the state before the newest step and move that step to the redo
   list; Redo MUST restore the state after it and move it back. A new recorded edit MUST empty the

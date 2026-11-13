@@ -37,6 +37,16 @@ A task is ticked `[X]` only when verified, with " — Verified <date>: <how>".
 - [ ] SCN-010-T09 Amend docs/adr/0028-scene-document-format.md (history decisions); run `python3 scripts/check_compliance.py`, `python3 scripts/validate_docs.py`
 - [ ] SCN-010-T10 Run projectM-iOSTests, SceneUndoUITests, SceneAutosaveUITests, NativeVisualUITests, ShowCueUITests on the own simulator; count PosterBoard reports after; delete the simulator; record results in spec Status
 
+## Analysis (speckit-analyze, 2026-11-13)
+
+Coverage: R1-R6, R11 → T02, T03; R7-R9 → T05, T06; R10 → T07, T08; S1-S4 → T03, T06; S5 → T08;
+S6 → T03, T08, T10. Findings applied: (1) spec R4 listed spacing as a slider; it is a segmented
+picker in Settings, so it is discrete (spec R4 fixed). (2) The Camera edge case (an undo that keeps
+the visual leaves Camera running) is covered by `applySceneInputs` comparing the recorded visual;
+T06 asserts the apply closure receives the full state and T05 implements the comparison. (3) The
+"empty after relaunch" edge case follows from the in-memory design (no storage); no test needed.
+No constitution conflicts; no unmapped tasks.
+
 ## Dependencies
 
 T01 → T02 → T03; T02 → T04 → T05 → T06; T05 → T07 → T08; all → T09, T10. T03 and T04 can run in
