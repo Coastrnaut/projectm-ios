@@ -6,7 +6,8 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 10,
+   "audited": 7,
+   "implementing": 3,
    "integrated": 76,
    "skipped_existing": 1
   },
@@ -23,7 +24,8 @@
   }
  },
  "by_state": {
-  "audited": 233,
+  "audited": 230,
+  "implementing": 3,
   "integrated": 92,
   "skipped_existing": 1
  },
@@ -305,13 +307,13 @@
   },
   "ACC-004": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/acc-004",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "ACC-005": {
    "attempts": 0,
@@ -2885,13 +2887,13 @@
   },
   "SCN-013": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/scn-013",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "SCN-014": {
    "attempts": 0,
@@ -3355,13 +3357,13 @@
   },
   "VIS-003": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/vis-003",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "VIS-004": {
    "attempts": 0,
@@ -4021,5 +4023,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T23:41:50Z"
+ "updated": "2026-11-13T23:42:18Z"
 }
