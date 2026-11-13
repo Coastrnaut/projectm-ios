@@ -72,7 +72,16 @@ There is no shared announcement path: each feature posts directly, with no prote
 
 ## Clarifications
 
-_(filled by /speckit-clarify)_
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the recommended, conservative option.
+
+- Q: How long is the window in which same-kind announcements are coalesced, and when is a repeat dropped? → A: 1.0 s per kind, leading plus trailing: the first change of a kind is spoken at once; changes inside the following 1.0 s replace one pending text, spoken when the window closes (which opens a new window); a text identical to the last spoken text of its kind within 2.0 s is dropped (`ACC-004-R7`). Rejected: speaking every change (queues of preset names while a key is held); trailing-only (a single Next would wait 1 s for feedback); one global window (a blackout could be swallowed by a preset burst).
+- Q: Which preset changes count as caused by the user and are announced? → A: Previous, Next and Random (button or keyboard) and a preset chosen in the browser, announced as "Preset: <name>" once the preset has loaded; a show cue's preset change is covered by the cue's own announcement. Not announced: the app replacing a preset that failed, the preset restored at launch, scene reopen or recovery, OSC commands and any future automatic rotation (`ACC-004-R6`). Rejected: announcing every engine change (spam during automatic rotation, the brief's explicit concern); announcing before the load (a failed load would announce a preset that never showed).
+- Q: Which touch-only row actions get new VoiceOver actions? → A: Only those with no other touch-free path: Move Up and Move Down on show cues (today only Edit-mode drag) and Add to / Remove from Favorites on preset rows (today only the separate star). Swipe actions and swipe-to-delete are already exposed by iOS as VoiceOver actions (collections' Rename and Delete, cues' Delete), so they are not duplicated (`ACC-004-R3`). Rejected: duplicating every swipe action by hand (double entries in the actions rotor).
+- Q: Which system audit types run, and how may issues be filtered? → A: Element description, hit region, contrast, Dynamic Type and trait on every covered screen, at the default text size. An issue may be filtered only by a per-issue rule naming the audit type and the element (identifier or label) with a written reason, kept in one list in the suite and in the contract; filtering a whole audit type or a whole screen is not allowed (`ACC-004-R8`). Rejected: `.all` (includes text-clipped and parent/child checks that QA-009 owns at large sizes); ignoring contrast entirely because of the moving visualization.
+- Q: Do announcements post when VoiceOver is off, and how are they tested? → A: They post regardless (the system drops them when no assistive technology listens, as every existing announcement in the app does); test builds record the last spoken text and kind in a hidden probe for the UI suite, and the rate rule is a pure value tested with a fake clock (`ACC-004-R9`). Rejected: checking whether VoiceOver runs first (untestable in UI tests, and Switch Control users would lose them).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -175,9 +184,11 @@ issue documented) and every declared control is found.
   whose label and value carry its name and state (position, active / current, missing, locked, may
   flash) and whose active / current state also sets the Selected trait.
 - **ACC-004-R3**: Every row action available by touch (swipe, context menu, Edit mode) MUST also be
-  available as a named VoiceOver action: for cues Go to Cue, Rename, Duplicate Scene, Rename Scene,
-  Move Up, Move Down, Delete; for presets Add to Collection, Add to / Remove from Favorites and the
-  existing per-list actions; for collections Rename, Delete, Move Up, Move Down.
+  reachable from the VoiceOver actions rotor: for cues Go to Cue, Rename, Duplicate Scene, Rename
+  Scene, Move Up, Move Down, Delete; for presets Add to Collection, Add to / Remove from Favorites and
+  the existing per-list actions; for collections Rename, Delete, Move Up, Move Down. Actions iOS
+  already exposes from swipe actions are not duplicated; the app adds cue Move Up / Move Down and the
+  preset favorite action.
 - **ACC-004-R4**: Controls whose label alone does not say what they act on (Previous, Next, Random,
   Presets, Black out) MUST carry a hint saying it; visible text does not change.
 - **ACC-004-R5**: State changes the user causes MUST be announced: preset changed by Previous, Next,
@@ -186,8 +197,11 @@ issue documented) and every declared control is found.
 - **ACC-004-R6**: State changes the user did not cause (automatic preset replacement after a failure,
   restore at launch, remote OSC commands) MUST NOT produce a preset announcement.
 - **ACC-004-R7**: Announcements MUST go through one shared path that limits each kind: the first of a
-  burst is spoken at once, later ones within the window are coalesced into one final announcement of
-  the latest state, and an identical repeat is dropped. Kinds are limited independently.
+  burst is spoken at once, later ones within the following 1.0 s are coalesced into one announcement
+  of the latest state when the window closes, and a text identical to the kind's last spoken text
+  within 2.0 s is dropped. Kinds are limited independently. New announcements (R5) and the show cue
+  announcement use it; other features' existing one-shot announcements keep their direct path
+  (ACC-011 may move them).
 - **ACC-004-R8**: An automated UI suite MUST, for each primary screen, run the system accessibility
   audit (element description, hit region, contrast, Dynamic Type, traits) and check the declared list
   of primary controls (presence, non-empty label, trait). Each filtered audit issue MUST be listed with
