@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (MED-009-T01-T22 verified on the Mac: host, Linux shape and iOS 27.2 simulator; device task T23 `{device}` open)
 
 **Input**: User description: "Implement MED-009 (Text overlay) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Place editable text with font,
