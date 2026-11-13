@@ -172,8 +172,8 @@ the circular spectrum on top, the camera indicator and Stop camera working as be
 - **CMP-002-R13**: The Camera visual MUST build its layers through the stack (camera bottom,
   circular spectrum top) with unchanged appearance and camera behaviour (CAM-001-R7, CAM-012-R4,
   R6).
-- **CMP-002-R15**: Applying a stack MUST NOT reset the composite flash guard's history.
-- **CMP-002-R14**: The per-layer frame cost of a 4-layer stack MUST be measured on D1-D3 (device
+- **CMP-002-R14**: Applying a stack MUST NOT reset the composite flash guard's history.
+- **CMP-002-R15**: The per-layer frame cost of a 4-layer stack MUST be measured on D1-D3 (device
   stage).
 
 ### Key Entities
