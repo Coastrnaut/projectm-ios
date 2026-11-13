@@ -12,8 +12,7 @@
   },
   "P1": {
    "audited": 146,
-   "integrated": 4,
-   "unit_passed": 1
+   "integrated": 5
   },
   "P2": {
    "audited": 79
@@ -24,9 +23,8 @@
  },
  "by_state": {
   "audited": 296,
-  "integrated": 28,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "integrated": 29,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -60,7 +58,6 @@
    "ANL-014",
    "ANL-015",
    "ANL-016",
-   "AUD-004",
    "AUD-005",
    "AUD-007",
    "AUD-008",
@@ -334,7 +331,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "297 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
+   "296 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
   ]
  },
  "features": {
@@ -653,10 +650,10 @@
    "branch": "feature/aud-004",
    "branch_sha": "489f122c14315f4e16de78577bbe3d28cd964203",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "8d96030954ff1ece93fb4f39cad7f27ea8668f8b",
    "priority": "P1",
    "spec_dir": "specs/017-aud-004-loop-track-and-queue",
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "AUD-005": {
    "attempts": 0,
@@ -3626,6 +3623,11 @@
    "sha": "c06876d434a3570a4fbc45ddd890d735964fe0eb"
   },
   {
+   "branch": "feature/aud-004",
+   "id": "AUD-004",
+   "sha": "8d96030954ff1ece93fb4f39cad7f27ea8668f8b"
+  },
+  {
    "branch": "feature/aud-006",
    "id": "AUD-006",
    "sha": "03b23a8ae6a0aad7e0f09d81dd1bfe960b5e795a"
@@ -3766,5 +3768,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T12:20:28Z"
+ "updated": "2026-11-13T12:20:33Z"
 }
