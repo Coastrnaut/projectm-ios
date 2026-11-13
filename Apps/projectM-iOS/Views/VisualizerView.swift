@@ -61,6 +61,9 @@ struct VisualizerView: View {
                 .accessibilityLabel("Visualization")
                 .accessibilityHint("Shows or hides the controls")
             VStack(spacing: 8) {
+                // Top status stack. OSC-007-R2, R6: the OSC listener badge, with or without the
+                // controls; then CAM-012's "Camera on" badge.
+                OSCListenerBadge(osc: coordinator.osc)
                 let indicator = coordinator.cameraIndicator
                 if indicator.isShown {   // CAM-012-R1 to R3: never hidden with the controls
                     CameraIndicatorBadge(indicator: indicator) { coordinator.stopCamera() }
