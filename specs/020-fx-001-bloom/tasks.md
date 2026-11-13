@@ -65,11 +65,11 @@ story labels keep the spec's numbering.
 
 ## Phase 7: Polish and cross-cutting
 
-- [ ] FX-001-T23 {sim} Regression: all app unit tests, `NativeVisualUITests`, `SettingsUITests`, `VisualizerUITests`, `GlowUITests` on the simulator (known environmental failure: `PresetTests.testBundledIncludedScopeMatchesRelease1_0`). Evidence: counts and log path.
-- [ ] FX-001-T24 {sim} Screenshot of the circular spectrum with Glow on and the reference track to `.build/scratch/fx-001-bloom.png` (not evidence of device behavior).
-- [ ] FX-001-T25 `python3 scripts/check_compliance.py`, `scripts/validate_docs.py`, `scripts/test_scripts.py`; count new `~/Library/Logs/DiagnosticReports/PosterBoard-*.ips` since the start of the run (owner rule 5); record test runtimes.
-- [ ] FX-001-T26 Record the evidence summary (commands, counts, runtimes, skips, PosterBoard count, open tasks) in this file's "Evidence summary" section; update `specs/020-fx-001-bloom/quickstart.md` if a command changed. (`docs/FEATURE_ROADMAP_AUTONOMOUS.md` and its status belong to the main session's integration.)
-- [ ] FX-001-T27 {device} On D1, D2, D3 with the reference track: frame rate with Glow off vs on at default and maximum radius (performance overlay), appearance after rotation, Reduce flashing on. Final device phase only; not run in this row.
+- [X] FX-001-T23 {sim} Regression: all app unit tests, `NativeVisualUITests`, `SettingsUITests`, `VisualizerUITests`, `GlowUITests` on the simulator (known environmental failure: `PresetTests.testBundledIncludedScopeMatchesRelease1_0`). Evidence: counts and log path. — Verified 2026-11-13: `xcodebuild test-without-building` on iPhone Air iOS 27.2: app unit tests 133 (1 failure, the known environmental `PresetTests.testBundledIncludedScopeMatchesRelease1_0`: 28 included presets in this worktree); UI tests 16, 0 failures: GlowUITests 2, NativeVisualUITests 4, SettingsUITests 3, VisualizerUITests 7 (UI 6.3 min; .build/scratch/fx001-T23-regression.log).
+- [X] FX-001-T24 {sim} Screenshot of the circular spectrum with Glow on and the reference track to `.build/scratch/fx-001-bloom.png` (not evidence of device behavior). — Verified 2026-11-13: `.build/scratch/fx-001-bloom.png` (Glow on, default parameters, reference track via `-autostart inAppPlayback`): green bars with a soft halo, black background. Not device evidence. Note: the very first screenshot attempt (taken right after the UI test run) was entirely black apart from the status capsule (kept as `.build/scratch/fx-001-first-launch-black.png`); four later launches with the same arguments, including two fresh installs with Glow on and off, all showed the bars (with the halo when on) at 60 fps, so the cause was not reproduced and is not identified.
+- [X] FX-001-T25 `python3 scripts/check_compliance.py`, `scripts/validate_docs.py`, `scripts/test_scripts.py`; count new `~/Library/Logs/DiagnosticReports/PosterBoard-*.ips` since the start of the run (owner rule 5); record test runtimes. — Verified 2026-11-13: check_compliance OK; validate_docs OK; test_scripts.py 98 OK (1 skipped); PosterBoard reports: 32 before the run, 32 after (0 new); simulator 77E17861 booted once and shut down at the end. Runtimes: package host `swift test` 10.1 s (76 tests), no-Metal 4.4 s (59), simulator package 9.9 s test time (76), app unit 2.6 s (133), UI 6.3 min (16).
+- [X] FX-001-T26 Record the evidence summary (commands, counts, runtimes, skips, PosterBoard count, open tasks) in this file's "Evidence summary" section; update `specs/020-fx-001-bloom/quickstart.md` if a command changed. (`docs/FEATURE_ROADMAP_AUTONOMOUS.md` and its status belong to the main session's integration.) — Verified 2026-11-13: the section below; quickstart commands unchanged (one test added after T13: `EffectChainRenderTests.testCircularSpectrumThroughTheChainInTheAppFormat`, generator → bloom in `bgra8Unorm_srgb`).
+- [ ] FX-001-T27 {device} (open: final device phase) On D1, D2, D3 with the reference track: frame rate with Glow off vs on at default and maximum radius (performance overlay), appearance after rotation, Reduce flashing on. Final device phase only; not run in this row.
 
 ## Dependencies
 
@@ -90,4 +90,20 @@ branch carries code and no `[skip ci]`.
 
 ## Evidence summary
 
-(Filled during `/speckit-implement`.)
+2026-11-13, Mac Studio (Apple M5 Max), Xcode 27.2, simulator iPhone Air iOS 27.2 (77E17861…).
+
+| Check | Command | Result |
+|---|---|---|
+| Package, host GPU | `swift test --package-path Packages/VisualGenerators` | 76 tests, 0 failures, 0 skipped (40 VIS-001 + 36 FX-001) |
+| Package, Linux shape | `swift test … -Xswiftc -DVISUAL_NO_METAL` | 59 tests, 0 failures (GPU tests compiled out) |
+| Package, simulator | `xcodebuild test -scheme VisualGenerators` (quickstart §2) | 76 tests, 0 failures, none skipped |
+| App unit | `-only-testing:projectM-iOSTests` | 133 tests, 1 known environmental failure |
+| App UI | Glow 2, NativeVisual 4, Settings 3, Visualizer 7 | 16 tests, 0 failures |
+| Scripts, docs, compliance | `test_scripts.py`, `validate_docs.py`, `check_compliance.py` | 98 OK (1 skipped); OK; OK |
+
+Acceptance (GPU, host and simulator): all-black frames exactly black at 16 parameter corners in both
+formats; bright patch halos non-zero next to the patch, farthest non-zero pixel 3…75 px against
+E = 6…80 px (D = 2, 4, 8), never brighter than the patch, non-increasing outward, added energy within
+k·ΣP; below-threshold patch exact (rgba16Float) and within 1/255 (sRGB); intensity 0 / off bit-exact;
+reruns bit-identical. Reduce flashing with the glow at maximum: CPU model rise exactly at the bound,
+GPU measured worst rise 0.00253 per 1/60 s frame against 0.00417. Open: FX-001-T27 `{device}`.

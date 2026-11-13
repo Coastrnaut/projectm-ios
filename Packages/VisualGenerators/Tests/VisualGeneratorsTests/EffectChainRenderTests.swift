@@ -132,5 +132,42 @@ final class EffectChainRenderTests: XCTestCase {
         XCTAssertThrowsError(try EffectChain(device: rig.device, pixelFormat: .bgra8Unorm_srgb, effects: [bloom]),
                              "an effect of another pixel format is refused")
     }
+
+    /// The app's configuration: `CircularSpectrumGenerator` → bloom in `bgra8Unorm_srgb`, as the
+    /// circular spectrum host draws a frame. The bars are drawn and gain a halo.
+    func testCircularSpectrumThroughTheChainInTheAppFormat() throws {
+        let rig = try RenderRig()
+        let format: MTLPixelFormat = .bgra8Unorm_srgb
+        let size = 240
+        let generator = try rig.build { try CircularSpectrumGenerator(device: rig.device, pixelFormat: format) }
+        let parameters = BloomParameters(enabled: true, intensity: 1, radius: 0.03)
+        let bloom = try rig.build { try BloomEffect(device: rig.device, pixelFormat: format, parameters: parameters) }
+        let chain = try EffectChain(device: rig.device, pixelFormat: format, effects: [bloom])
+        func frame(_ chained: Bool) throws -> PixelImage {
+            try chain.prepare(width: size, height: size)
+            let output = try rig.makeTexture(width: size, height: size, format: format)
+            let commands = try XCTUnwrap(rig.queue.makeCommandBuffer())
+            let bands = [Float](repeating: 0.8, count: 64)
+            let context = VisualFrameContext(timeNanoseconds: 0, frameDuration: 1.0 / 60, reduceFlashing: false)
+            let drawn = bands.withUnsafeBufferPointer { b in
+                chained ? chain.encode(output: output, commandBuffer: commands) { generator.encode(into: $0, commandBuffer: commands, bands: b, context: context) }
+                        : generator.encode(into: output, commandBuffer: commands, bands: b, context: context)
+            }
+            XCTAssertTrue(drawn)
+            let buffer = try rig.encodeReadBack(output, commands: commands)
+            commands.commit()
+            commands.waitUntilCompleted()
+            XCTAssertEqual(commands.status, .completed, "\(String(describing: commands.error))")
+            return rig.decode(RenderRig.bytes(of: buffer), width: size, height: size, format: format)
+        }
+        let plain = try frame(false)
+        let glowing = try frame(true)
+        let plainMean = plain.pixels.reduce(0.0) { $0 + luminance($1) } / Double(size * size)
+        let glowMean = glowing.pixels.reduce(0.0) { $0 + luminance($1) } / Double(size * size)
+        print("FX-001 app-format chain: mean luminance without glow \(plainMean), with glow \(glowMean)")
+        XCTAssertGreaterThan(plainMean, 0.01, "bars drawn")
+        XCTAssertGreaterThan(glowMean, plainMean, "the glow adds light")
+        XCTAssertEqual(glowing[0, 0], plain[0, 0], "far corner unchanged")
+    }
 }
 #endif

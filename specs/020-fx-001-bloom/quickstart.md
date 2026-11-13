@@ -11,7 +11,7 @@ swift test --package-path Packages/VisualGenerators -Xswiftc -DVISUAL_NO_METAL #
 ```
 
 Expected: all pass. With Metal: `BloomRenderTests` (black, bright patch halo, below threshold,
-gradient, intensity 0, determinism, both pixel formats), `EffectChainRenderTests` and
+gradient, intensity 0, determinism, both pixel formats), `EffectChainRenderTests` (including the app format, `bgra8Unorm_srgb`) and
 `BloomFlashSafetyRenderTests` (generator → bloom with Reduce flashing on, measured mean luminance)
 run on the host GPU. Without Metal they compile out; the CPU tests (`BloomParametersTests`,
 `BloomPlanTests`, `EffectChainDescriptionTests`, `BloomLuminanceModelTests`,
