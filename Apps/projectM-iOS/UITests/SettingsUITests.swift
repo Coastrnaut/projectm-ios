@@ -75,13 +75,15 @@ final class SettingsUITests: XCTestCase {
         XCTAssertFalse(app.buttons["reduceFlashingFollowSystem"].exists)
         flip(toggle)
         XCTAssertTrue(isOn(toggle))
-        XCTAssertTrue(app.buttons["reduceFlashingFollowSystem"].appears(within: 3))
+        XCTAssertTrue(app.buttons["reduceFlashingFollowSystem"].appears(within: 3) || scrollTo(app.buttons["reduceFlashingFollowSystem"]),
+                      "below the toggle; off screen once MED-009 added the Text row")
 
         app.terminate()
         launch(reset: false)
         openSettings()
         XCTAssertTrue(app.switches["reduceFlashingToggle"].appears(within: 2) || scrollTo(app.switches["reduceFlashingToggle"]))
         XCTAssertTrue(isOn(app.switches["reduceFlashingToggle"]), "the choice persists")
+        XCTAssertTrue(scrollTo(app.buttons["reduceFlashingFollowSystem"]))
         app.buttons["reduceFlashingFollowSystem"].tap()
         XCTAssertFalse(isOn(app.switches["reduceFlashingToggle"]), "back to following Reduce Motion")
     }

@@ -50,10 +50,14 @@
 //   layer under the circular spectrum layer) with the same create/release and run rules as Photo.
 //   `videos` (VideoCoordinator) owns the stored copy; its changes set the layer's content. A copy
 //   that cannot be played shows the video notice. The video's soundtrack is never played (R16).
+// * Text (MED-009): Settings' persisted "Text" choice shows `TextVisualHost` (the circular spectrum
+//   with the text layer over it) with the same create/release and run rules as Photo. `texts`
+//   (TextOverlayCoordinator) owns the saved message and style; its changes set the layer's spec.
 import ANGLERendering
 import CameraLayer
 import ImageLayer
 import VideoLayer
+import TextLayer
 import AudioCore
 import CaptureKit
 import CaptureUI
@@ -135,6 +139,12 @@ final class AppCoordinator: VisualizationControlling {
     private(set) var videoVisual: VideoVisualHost?
     /// The video layer's state while the Video visual exists (`empty` otherwise).
     private(set) var videoState: VideoLayerState = .empty
+    /// The Text visual's message and style (MED-009): the editor's model and the saved value.
+    let texts: TextOverlayCoordinator
+    /// The Text visual (MED-009), created when Text is chosen and released when another visual is.
+    private(set) var textVisual: TextVisualHost?
+    /// The text layer's state while the Text visual exists (`empty` otherwise).
+    private(set) var textState: TextLayerState = .empty
     /// The native visual could not be created on this launch; projectM is shown instead (VIS-001-R16).
     private(set) var nativeVisualUnavailable = false
     /// The notice naming the chosen native visual (VIS-001-R16, VIS-002-R12).
@@ -175,9 +185,11 @@ final class AppCoordinator: VisualizationControlling {
         osc = OSCReceiverCoordinator(settings: settings)
         photos = PhotoCoordinator.makeDefault(defaults: defaults)
         videos = VideoCoordinator.makeDefault(defaults: defaults)
+        texts = TextOverlayCoordinator.makeDefault(defaults: defaults)
         #if DEBUG
         UITestPhotoFixture.seedIfRequested(photos)   // MED-001: PhotoLayerUITests (pickers cannot be automated)
         UITestVideoFixture.seedIfRequested(videos)   // MED-002: VideoLayerUITests
+        UITestTextFixture.seedIfRequested(texts)     // MED-009: TextOverlayUITests
         #endif
         screen = defaults.bool(forKey: Self.noticeKey) ? .chooser : .notice
         microphone = MicrophoneSource(backend: AVMicrophoneBackend())
@@ -239,6 +251,7 @@ final class AppCoordinator: VisualizationControlling {
         }
         photos.onPhotoChange = { [weak self] (stored: StoredPhoto?) in self?.photoVisual?.content = Self.photoContent(stored) }
         videos.onVideoChange = { [weak self] (stored: StoredVideo?) in self?.videoVisual?.content = Self.videoContent(stored) }
+        texts.onSpecChange = { [weak self] (spec: TextOverlaySpec) in self?.textVisual?.spec = spec }   // MED-009
         routes.context = { [weak self] in self?.routeContext }   // AUD-007
         routes.isActive = { [weak self] in self?.appIsActive ?? true }
         loadLibrary()
@@ -528,6 +541,7 @@ final class AppCoordinator: VisualizationControlling {
         photoVisual?.reduceFlashing = settings.reduceFlashing    // MED-001
         externalDisplay.reduceFlashing = settings.reduceFlashing // OUT-010-R6: the restore fade's length
         videoVisual?.reduceFlashing = settings.reduceFlashing    // MED-002
+        textVisual?.reduceFlashing = settings.reduceFlashing     // MED-009
     }
 
     // MARK: - Visual choice (VIS-001)
@@ -556,8 +570,15 @@ final class AppCoordinator: VisualizationControlling {
         settings.visual.usesVideo && videoVisual != nil && screen == .visualizer
     }
 
-    /// A native spectrum, the Camera, Photo or Video visual is shown instead of projectM (preset controls hidden).
-    var showsAlternateVisual: Bool { showsNativeVisual || showsCameraVisual || showsPhotoVisual || showsVideoVisual }
+    /// The Text visual replaces projectM only when chosen, created and on the visualizer (MED-009).
+    var showsTextVisual: Bool {
+        settings.visual.usesText && textVisual != nil && screen == .visualizer
+    }
+
+    /// A native spectrum, the Camera, Photo, Video or Text visual is shown instead of projectM (preset controls hidden).
+    var showsAlternateVisual: Bool {
+        showsNativeVisual || showsCameraVisual || showsPhotoVisual || showsVideoVisual || showsTextVisual
+    }
 
     private var circularSpectrumBarCount: SpectrumBarCount {
         SpectrumBarCount(rawValue: settings.circularSpectrumBars) ?? .b64
@@ -707,6 +728,34 @@ final class AppCoordinator: VisualizationControlling {
         }
     }
 
+    /// Creates the Text visual when Text is chosen (MED-009-R1); on failure, falls back to projectM
+    /// with the same notice as the native visuals. It draws the saved spec.
+    private func prepareTextVisualIfNeeded() {
+        guard settings.visual.usesText, textVisual == nil, !nativeVisualUnavailable else { return }
+        do {
+            var device = MTLCreateSystemDefaultDevice()
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("-uitestNativeVisualFailure") { device = nil }
+            #endif
+            let host = try TextVisualHost.make(device: device, reader: manager.analysisTap, barCount: circularSpectrumBarCount)
+            host.reduceFlashing = settings.reduceFlashing
+            host.onTextStateChange = { [weak self] (state: TextLayerState) in self?.textState = state }
+            host.spec = texts.spec
+            presentation.register(host)   // PERF-011: starts suspended while the app cannot present
+            textVisual = host
+        } catch {
+            markNativeVisualUnavailable(error)
+        }
+    }
+
+    /// Drops the Text visual (another visual was chosen); the saved text stays.
+    private func releaseTextVisual() {
+        guard let host = textVisual else { return }
+        host.pause()
+        textVisual = nil   // the presentation registry holds it weakly
+        textState = .empty
+    }
+
     /// Stops the camera and drops the Camera visual (another visual was chosen; CAM-001-R7, R9).
     private func releaseCameraVisual() {
         guard let host = cameraVisual else { return }
@@ -743,11 +792,13 @@ final class AppCoordinator: VisualizationControlling {
         prepareCameraVisualIfNeeded()
         preparePhotoVisualIfNeeded()
         prepareVideoVisualIfNeeded()
+        prepareTextVisualIfNeeded()
         if showsCameraVisual {
             renderer?.pause()
             nativeVisual?.pause()
             photoVisual?.pause()
             videoVisual?.pause()
+            textVisual?.pause()
             cameraVisual?.resume()   // starts the camera (CAM-001-R7)
             if let reader = cameraVisual?.tempoReader { tempo.follow(reader) } else { tempo.stopAnalysis() }
         } else if showsPhotoVisual {
@@ -755,6 +806,7 @@ final class AppCoordinator: VisualizationControlling {
             nativeVisual?.pause()
             cameraVisual?.pause()
             videoVisual?.pause()
+            textVisual?.pause()
             photoVisual?.resume()
             if let reader = photoVisual?.tempoReader { tempo.follow(reader) } else { tempo.stopAnalysis() }
         } else if showsVideoVisual {
@@ -762,13 +814,23 @@ final class AppCoordinator: VisualizationControlling {
             nativeVisual?.pause()
             cameraVisual?.pause()
             photoVisual?.pause()
+            textVisual?.pause()
             videoVisual?.resume()
             if let reader = videoVisual?.tempoReader { tempo.follow(reader) } else { tempo.stopAnalysis() }
+        } else if showsTextVisual {
+            renderer?.pause()
+            nativeVisual?.pause()
+            cameraVisual?.pause()
+            photoVisual?.pause()
+            videoVisual?.pause()
+            textVisual?.resume()
+            if let reader = textVisual?.tempoReader { tempo.follow(reader) } else { tempo.stopAnalysis() }
         } else if showsNativeVisual {
             renderer?.pause()
             cameraVisual?.pause()
             photoVisual?.pause()
             videoVisual?.pause()
+            textVisual?.pause()
             nativeVisual?.resume()
             if let reader = nativeVisual?.tempoReader { tempo.follow(reader) } else { tempo.stopAnalysis() }
         } else {
@@ -776,6 +838,7 @@ final class AppCoordinator: VisualizationControlling {
             cameraVisual?.pause()
             photoVisual?.pause()
             videoVisual?.pause()
+            textVisual?.pause()
             renderer?.resume()
             tempo.runOwnAnalysis(on: manager.analysisTap)
         }
@@ -786,6 +849,7 @@ final class AppCoordinator: VisualizationControlling {
         if showsCameraVisual { return cameraVisual?.metrics ?? .zero }
         if showsPhotoVisual { return photoVisual?.metrics ?? .zero }
         if showsVideoVisual { return videoVisual?.metrics ?? .zero }
+        if showsTextVisual { return textVisual?.metrics ?? .zero }
         return showsNativeVisual ? (nativeVisual?.metrics ?? .zero) : (renderer?.metrics ?? .zero)
     }
 
@@ -795,6 +859,7 @@ final class AppCoordinator: VisualizationControlling {
         cameraVisual?.pause()   // stops the camera (CAM-001-R7)
         photoVisual?.pause()
         videoVisual?.pause()
+        textVisual?.pause()
         tempo.stopAnalysis()   // SHOW-011: the estimate's analysis runs only while a visual runs
     }
 
@@ -809,10 +874,12 @@ final class AppCoordinator: VisualizationControlling {
         if !settings.visual.usesCamera { releaseCameraVisual() }   // CAM-001-R7: leaving Camera stops it
         if !settings.visual.usesPhoto { releasePhotoVisual() }     // MED-001
         if !settings.visual.usesVideo { releaseVideoVisual() }     // MED-002: leaving Video stops its decoder
+        if !settings.visual.usesText { releaseTextVisual() }       // MED-009
         nativeVisual?.barCount = circularSpectrumBarCount
         cameraVisual?.barCount = circularSpectrumBarCount
         photoVisual?.barCount = circularSpectrumBarCount
         videoVisual?.barCount = circularSpectrumBarCount
+        textVisual?.barCount = circularSpectrumBarCount
         if settings.visual.isNative, let host = nativeVisual {
             do {
                 try host.apply(style: nativeSpectrumStyle)
@@ -829,6 +896,7 @@ final class AppCoordinator: VisualizationControlling {
             prepareCameraVisualIfNeeded()
             preparePhotoVisualIfNeeded()
             prepareVideoVisualIfNeeded()
+            prepareTextVisualIfNeeded()
             pauseActiveVisual()
         }
     }

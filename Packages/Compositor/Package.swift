@@ -35,6 +35,9 @@
 //   compiled generator graph or one typed refusal: size limit before decoding, executables, scripts
 //   and archives refused by their first bytes, `JSONDecoder` into the SHD-002 document. It reads no
 //   files and loads nothing; Foundation only, builds on Linux.
+// * `TextLayer` (MED-009, specs/053-med-009-text-overlay) draws one styled message as a layer: spec,
+//   cleaning, limits, direction and placement are plain Swift and build on Linux; the CoreText
+//   rasterizer and the Metal upload (clear + blit, no shader) compile out there.
 // Nothing here imports projectM, ANGLE, capture or the app (Constitution VI). The projectM layer is
 // target `ProjectMLayer` in Packages/ANGLERendering.
 // One library product, so CI's `-scheme Compositor` builds and tests every target.
@@ -43,7 +46,7 @@ import PackageDescription
 let package = Package(
     name: "Compositor",
     platforms: [.iOS("26.0"), .macOS(.v15)],
-    products: [.library(name: "Compositor", targets: ["Compositor", "SpectrumLayers", "CameraLayer", "ProceduralMaterials", "GeneratorGraph", "GeneratorGraphImport", "ImageLayer", "VideoLayer"])],
+    products: [.library(name: "Compositor", targets: ["Compositor", "SpectrumLayers", "CameraLayer", "ProceduralMaterials", "GeneratorGraph", "GeneratorGraphImport", "ImageLayer", "VideoLayer", "TextLayer"])],
     dependencies: [
         .package(path: "../AnalysisFeatures"),
         .package(path: "../FlashSafety"),
@@ -60,6 +63,7 @@ let package = Package(
         .target(name: "ImageLayer", dependencies: ["Compositor"]),
         .target(name: "VideoLayer", dependencies: ["Compositor", "CameraLayer"]),
         .target(name: "GeneratorGraphImport", dependencies: ["GeneratorGraph"]),
+        .target(name: "TextLayer", dependencies: ["Compositor"]),
         .testTarget(name: "CompositorTests",
                     dependencies: ["Compositor", "SpectrumLayers", "CameraLayer", "ImageLayer", "VideoLayer", "AnalysisFeatures", "FlashSafety",
                                    .product(name: "VisualGenerators", package: "VisualGenerators")]),
@@ -68,5 +72,6 @@ let package = Package(
         .testTarget(name: "GeneratorGraphTests",
                     dependencies: ["GeneratorGraph", "Compositor", "FlashSafety", "AnalysisFeatures", "ProceduralMaterials"]),
         .testTarget(name: "GeneratorGraphImportTests", dependencies: ["GeneratorGraphImport", "GeneratorGraph"]),
+        .testTarget(name: "TextLayerTests", dependencies: ["TextLayer", "Compositor", "FlashSafety", "AnalysisFeatures"]),
     ]
 )
