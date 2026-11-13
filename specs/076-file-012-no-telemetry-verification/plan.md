@@ -108,7 +108,8 @@ python3 scripts/observe_app_network.py --udid <udid> --executable projectM-iOS \
   message to `/file012/probe`, which no binding uses) from `127.0.0.1` and records its source port.
 - After the command exits: stops the stream, classifies, writes the report, prints a summary, exits
   non-zero if the command failed, the observation failed (no app process seen, log stream never
-  ready, probe not seen when requested) or anything unexpected was seen.
+  ready, or, when `--probe` was given, the probe's peer socket not seen in `lsof` or no server-side
+  connection event in the log: FILE-012-R7) or anything unexpected was seen.
 - Pure functions (tested on any OS): `parse_lsof_fields`, `app_pids_from_ps`, `classify_sockets`,
   `classify_log_events`, `evaluate`.
 

@@ -37,3 +37,11 @@ are never device evidence. No app behaviour changes (FILE-012-R11).
 
 T01 → T02, T03, T04. T05 → T06, T09. T07, T08 → T09. T03, T09 → T10. Everything → T12. T11 needs D1
 and the owner.
+
+## Analysis (speckit-analyze, 2026-11-13)
+
+Coverage: every requirement maps to a task (R1-R3 T01; R4 T02; R5 T04; R6 T05-T06; R7 T05, T09; R8
+T07-T08; R9 T10; R10 T11; R11 T12) and every success criterion to a verifying task (S1 T03; S2 T02;
+S3-S5 T09). One fix applied: the plan's observer failure rules now name both halves of FILE-012-R7
+(the probe's peer socket in `lsof` and a server-side connection event in the log). No constitution
+conflicts; no ambiguous terms left.
