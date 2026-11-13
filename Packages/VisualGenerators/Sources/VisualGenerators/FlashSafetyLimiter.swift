@@ -84,4 +84,37 @@ public final class FlashSafetyLimiter {
         hasPreviousLuminance = true
         return Float(gain)
     }
+
+    /// Bisection steps of `gain(frameTime:enabled:luminanceAtGain:)`: precision 2⁻²⁴ ≈ 6e-8.
+    public static let bisectionSteps = 24
+
+    /// The gain (0…1) for a frame whose mean luminance at gain g is `luminanceAtGain(g)`,
+    /// nondecreasing in g (for example the composited luminance with a glow, FX-001-R10; research
+    /// FX-001-D4): the largest g whose luminance stays within the rise bound, found by a fixed
+    /// number of bisection steps. Records the luminance actually shown. No allocation.
+    public func gain(frameTime: Double, enabled: Bool, luminanceAtGain: (Float) -> Double) -> Float {
+        @inline(__always) func sanitized(_ v: Double) -> Double { v.isFinite ? max(v, 0) : 0 }
+        var gain: Float = 1
+        var shown = sanitized(luminanceAtGain(1))
+        if enabled && hasPreviousLuminance {
+            let ceiling = previousLuminance + Self.maxLuminanceRisePerSecond * Self.clampedFrameTime(frameTime)
+            if shown > ceiling {
+                var lo: Float = 0
+                var hi: Float = 1
+                var loLuminance = sanitized(luminanceAtGain(0))
+                if loLuminance <= ceiling {
+                    for _ in 0..<Self.bisectionSteps {
+                        let mid = (lo + hi) / 2
+                        let l = sanitized(luminanceAtGain(mid))
+                        if l <= ceiling { lo = mid; loLuminance = l } else { hi = mid }
+                    }
+                }
+                gain = lo
+                shown = loLuminance
+            }
+        }
+        previousLuminance = shown
+        hasPreviousLuminance = true
+        return gain
+    }
 }

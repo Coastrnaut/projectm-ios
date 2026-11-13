@@ -11,13 +11,16 @@
 // * `VisualBandFeed` turns the normalized ring's analysis tap into normalized bands
 //   (AnalysisFeatures, ANL-001/002) on its own queue. Nothing here feeds projectM (Constitution
 //   VIII, ADR-0008 decision 5).
-// One library product, so CI's `-scheme VisualGenerators` builds and tests both targets.
+// * `VisualEffects` (FX-001, ADR-0010) holds post-processing effects and the effect chain; it
+//   depends only on `VisualGenerators`. CPU parts (parameters, plans, the chain description) build
+//   everywhere; the Metal effects compile out like the generators.
+// One library product, so CI's `-scheme VisualGenerators` builds and tests every target.
 import PackageDescription
 
 let package = Package(
     name: "VisualGenerators",
     platforms: [.iOS("26.0"), .macOS(.v15)],
-    products: [.library(name: "VisualGenerators", targets: ["VisualGenerators", "VisualBandFeed"])],
+    products: [.library(name: "VisualGenerators", targets: ["VisualGenerators", "VisualBandFeed", "VisualEffects"])],
     dependencies: [
         .package(path: "../AudioCore"),
         .package(path: "../AnalysisFeatures"),
@@ -25,7 +28,8 @@ let package = Package(
     targets: [
         .target(name: "VisualGenerators"),
         .target(name: "VisualBandFeed", dependencies: ["VisualGenerators", "AudioCore", "AnalysisFeatures"]),
+        .target(name: "VisualEffects", dependencies: ["VisualGenerators"]),
         .testTarget(name: "VisualGeneratorsTests",
-                    dependencies: ["VisualGenerators", "VisualBandFeed", "AudioCore", "AnalysisFeatures"]),
+                    dependencies: ["VisualGenerators", "VisualBandFeed", "VisualEffects", "AudioCore", "AnalysisFeatures"]),
     ]
 )
