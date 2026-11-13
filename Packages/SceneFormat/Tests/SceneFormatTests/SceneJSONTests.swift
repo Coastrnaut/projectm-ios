@@ -94,4 +94,20 @@ final class SceneJSONTests: XCTestCase {
             XCTAssertEqual($0 as? SceneDecodeError, .duplicateKey(path: "$.parameters[\"a.b\"]", key: "x"))
         }
     }
+
+    /// SCN-002-T01: the public entry point keeps the reader's bounds and round-trips canonically.
+    func testPublicParseIsBoundedAndCanonical() throws {
+        let text = "{\"a\":[1,2.5,true,null],\"b\":\"x\"}"
+        XCTAssertEqual(try SceneJSON.parse(Array(text.utf8)).canonicalBytes, Array(text.utf8))
+        XCTAssertThrowsError(try SceneJSON.parse([])) { (e: Error) in XCTAssertEqual(e as? SceneDecodeError, .empty) }
+        XCTAssertThrowsError(try SceneJSON.parse(Array("{\"a\":1,\"a\":2}".utf8)))
+        let deep = String(repeating: "[", count: 40) + String(repeating: "]", count: 40)
+        XCTAssertThrowsError(try SceneJSON.parse(Array(deep.utf8))) { (e: Error) in
+            XCTAssertEqual(e as? SceneDecodeError, .nestingTooDeep(limit: SceneLimits.maximumDepth))
+        }
+        let big = [UInt8](repeating: 0x20, count: SceneLimits.maximumBytes + 1)
+        XCTAssertThrowsError(try SceneJSON.parse(big)) { (e: Error) in
+            XCTAssertEqual(e as? SceneDecodeError, .tooLarge(bytes: SceneLimits.maximumBytes + 1, limit: SceneLimits.maximumBytes))
+        }
+    }
 }

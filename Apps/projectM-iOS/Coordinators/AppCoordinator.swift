@@ -59,6 +59,9 @@
 // * Text (MED-009): Settings' persisted "Text" choice shows `TextVisualHost` (the circular spectrum
 //   with the text layer over it) with the same create/release and run rules as Photo. `texts`
 //   (TextOverlayCoordinator) owns the saved message and style; its changes set the layer's spec.
+// * Scene autosave (SCN-002): `sceneAutosave` restores the last committed scene before anything is
+//   shown (before UI-test seeds), then debounces edits of `sceneInputs` into atomic saves; closing
+//   Settings commits at once; restored bindings go to the native spectrum when it is created.
 import ANGLERendering
 import CameraLayer
 import ImageLayer
@@ -77,8 +80,8 @@ import Rendering
 import Metal
 import UIKit
 import VisualGenerators
-#if DEBUG
 import ParameterGraph
+#if DEBUG
 import VisualParameters
 #endif
 
@@ -125,7 +128,11 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     private(set) var libraryReady = false
     /// The full-library purchase (feature 002 US2): StoreKit, or a fixed fake in UI tests.
     let entitlements: any EntitlementProviding
-    var showSettings = false
+    var showSettings = false {
+        didSet { if oldValue && !showSettings { sceneAutosave?.commitNow() } }   // SCN-002-R3
+    }
+    /// SCN-002: the current scene's autosave (nil only if its folder cannot be made).
+    @ObservationIgnored let sceneAutosave: SceneAutosaveCoordinator?
     /// Performance overlay and Reduce flashing (T103).
     let settings: AppSettings
     /// The native spectra (VIS-001 circular, VIS-002 linear), created the first time one is needed.
@@ -215,6 +222,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             try? FileManager.default.removeItem(at: UserPresetStore.defaultDirectory())         // PRE-012: and without imported presets
             if let photos = try? PhotoStore.defaultDirectory() { try? FileManager.default.removeItem(at: photos) }   // MED-001: no photo
             if let videos = try? VideoStore.defaultDirectory() { try? FileManager.default.removeItem(at: videos) }   // MED-002: no video
+            if let scenes = try? SceneAutosaveStore.defaultDirectory() { try? FileManager.default.removeItem(at: scenes) }   // SCN-002: no scene
         }
         settings = AppSettings(defaults: defaults, systemReduceMotion: UIAccessibility.isReduceMotionEnabled)
         self.externalDisplay.reduceFlashing = settings.reduceFlashing   // OUT-010-R6
@@ -222,6 +230,15 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         photos = PhotoCoordinator.makeDefault(defaults: defaults)
         videos = VideoCoordinator.makeDefault(defaults: defaults)
         texts = TextOverlayCoordinator.makeDefault(defaults: defaults)
+        // SCN-002: the last committed scene wins over the settings (research SCN-002-D2).
+        let sceneAutosave = SceneAutosaveCoordinator.makeDefault(defaults: defaults)
+        let stored = StoredMediaAvailability(photos: Set([photos.photo?.id.uuidString].compactMap { $0 }),
+                                             videos: Set([videos.video?.id.uuidString].compactMap { $0 }))
+        if let values = sceneAutosave?.restore(assets: stored) {
+            SceneAutosaveCapture.apply(values, to: settings)
+            if let text = values.text { texts.spec = text }
+        }
+        self.sceneAutosave = sceneAutosave
         #if DEBUG
         UITestPhotoFixture.seedIfRequested(photos)   // MED-001: PhotoLayerUITests (pickers cannot be automated)
         UITestVideoFixture.seedIfRequested(videos)   // MED-002: VideoLayerUITests
@@ -297,6 +314,9 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             SharedTexturePool.relaxIdleEvictionForUITests()   // MemoryPressureUITests (research PERF-006-D7)
         }
         #endif
+        sceneAutosave?.inputs = { [unowned self] () -> SceneInputs in self.sceneInputs }
+        sceneAutosave?.liveBindings = { [weak self] () -> [AudioFeatureBinding]? in self?.nativeVisual?.bindings }
+        sceneAutosave?.startTracking()
         loadLibrary()
         loadAudioLibrary()
         #if DEBUG || PROJECTM_AUTOMATION
@@ -664,6 +684,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                                                    barCount: circularSpectrumBarCount, glow: settings.glowParameters,
                                                    forceGlowFailure: forceGlowFailure)
             host.reduceFlashing = settings.reduceFlashing
+            for binding in sceneAutosave?.bindings ?? [] { try? host.bind(binding) }   // SCN-002: restored bindings
             #if DEBUG
             bindGlowToLevelIfRequested(host)   // MOD-002: AudioFeatureBindingUITests
             #endif
@@ -989,6 +1010,18 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             prepareTextVisualIfNeeded()
             pauseActiveVisual()
         }
+    }
+
+    // MARK: - Scene autosave (SCN-002)
+
+    /// What the current scene captures (research SCN-002-D1). Camera is session only: the visual
+    /// chosen before it is recorded (CAM-001-R11).
+    var sceneInputs: SceneInputs {
+        SceneInputs(visual: SceneAutosaveCapture.recordedVisual(settings.visual, beforeCamera: settings.visualBeforeCamera),
+                    bars: settings.circularSpectrumBars, orientation: settings.linearSpectrumOrientation,
+                    spacing: settings.linearSpectrumSpacing, glowEnabled: settings.glowEnabled,
+                    glowIntensity: settings.glowIntensity, glowRadius: settings.glowRadius, glowThreshold: settings.glowThreshold,
+                    text: texts.spec, photoID: photos.photo?.id, videoID: videos.video?.id)
     }
 
     // MARK: - Glow (FX-001)
