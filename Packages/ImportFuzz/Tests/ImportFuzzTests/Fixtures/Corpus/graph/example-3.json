@@ -1,0 +1,101 @@
+{
+  "format" : "projectm-ios.generator-graph",
+  "name" : "Soft Orbs",
+  "nodes" : [
+    {
+      "id" : "t",
+      "kind" : "time"
+    },
+    {
+      "id" : "s",
+      "inputs" : {
+        "phase" : "t"
+      },
+      "kind" : "spin",
+      "values" : {
+        "rate" : 0.2
+      }
+    },
+    {
+      "id" : "m",
+      "inputs" : {
+        "point" : "s"
+      },
+      "kind" : "translate",
+      "values" : {
+        "x" : 0.25
+      }
+    },
+    {
+      "id" : "orb",
+      "inputs" : {
+        "point" : "m"
+      },
+      "kind" : "circle",
+      "values" : {
+        "radius" : 0.2,
+        "softness" : 0.25
+      }
+    },
+    {
+      "id" : "music",
+      "kind" : "musicLevel"
+    },
+    {
+      "id" : "lift",
+      "inputs" : {
+        "a" : "music"
+      },
+      "kind" : "multiply",
+      "values" : {
+        "b" : 0.3
+      }
+    },
+    {
+      "id" : "gain",
+      "inputs" : {
+        "a" : "lift"
+      },
+      "kind" : "add",
+      "values" : {
+        "b" : 0.7
+      }
+    },
+    {
+      "id" : "col",
+      "inputs" : {
+        "t" : "orb"
+      },
+      "kind" : "mixColor",
+      "values" : {
+        "a" : [
+          0.02,
+          0.03,
+          0.12
+        ],
+        "b" : [
+          0.9,
+          0.6,
+          0.3
+        ]
+      }
+    },
+    {
+      "id" : "lit",
+      "inputs" : {
+        "amount" : "gain",
+        "color" : "col"
+      },
+      "kind" : "scaleColor"
+    },
+    {
+      "id" : "out",
+      "inputs" : {
+        "color" : "lit"
+      },
+      "kind" : "output"
+    }
+  ],
+  "speed" : 0.1,
+  "version" : 1
+}

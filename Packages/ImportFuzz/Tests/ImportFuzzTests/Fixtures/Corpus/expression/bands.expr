@@ -1,0 +1,1 @@
+mix(audio.band.0, audio.band.2, 0.5 + 0.5 * sin(time))

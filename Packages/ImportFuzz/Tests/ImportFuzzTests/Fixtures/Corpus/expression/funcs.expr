@@ -1,0 +1,1 @@
+pow(2, 10) + sqrt(16) + abs(-2.5) + floor(-1.5) + fract(2.75) + step(0.5, audio.bandMean)
