@@ -26,6 +26,19 @@ The row's gap status is "Gap candidate". The audit confirms it.
 | Parameters | MOD-001 (ADR-0012) defines stable IDs, bounds, defaults, units and modulation policies; the spectra and the glow are registered. | No material parameters. |
 | Shader safety | Every shader in the app is a constant in the app's own code; nothing is compiled from user text or downloaded. | Nothing states or tests this rule for a catalog of authored visuals that later rows (SHD-002 graphs, SHD-004 variants, SHD-011 policy) will extend. |
 
+## Clarifications
+
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the conservative, local-first option.
+
+- Q: Which five materials make up the curated catalog? → A: Gradient Field (`material.gradient`, two colors turning slowly), Plasma (`material.plasma`, soft interfering waves), Noise Flow (`material.noiseFlow`, drifting layered value noise in one tint), Ring Tunnel (`material.tunnel`, soft concentric rings moving outward) and Starfield (`material.starfield`, small stars drifting from the center). Rejected: a kaleidoscope or feedback material (feedback can build up brightness over frames and is harder to bound) and any material that blinks by design (SHD-001-R1).
+- Q: Does this row add anything a viewer can see in the app (a picker or a debug view)? → A: No. The catalog is exposed to code only; choosing and stacking materials belongs to CMP-002 (layer stack), their inspector controls to SHD-003 (shader parameter metadata) and variant switching to SHD-004. Rejected: a Debug-only viewer (it would add app code and tests for a screen no user sees; the package's GPU tests already render every material).
+- Q: How does music drive a material? → A: Through one level per frame: the mean of the audio context's bands (clamped to 0…1, NaN ignored, silence when there are none), smoothed so it rises by at most 4 per second and falls by at most 1 per second, then multiplied by the material's "Audio reactivity" (0…1, default 0.25); the material's speed is multiplied by 1 + that product, so music can at most double the speed and never changes brightness (SHD-001-R10).
+- Q: Which parameters may be modulated or controlled externally? → A: Continuous parameters (speeds, scales, brightness, contrast, audio reactivity) use the MOD-001 continuous default (modulatable by replace, add, multiply; MIDI/OSC allowed). Colors and the integer octave count are manual only with external control allowed (MOD-001's discrete policy), because modulating them per frame gives abrupt color or detail jumps (SHD-001-R2).
+- Q: What does a golden snapshot store, and with what tolerance? → A: For each material at 64 × 64, after 30 frames at 60 frames per second (0.5 s) with no music: the picture's mean linear RGB and four sampled pixels (the centre and three fixed points), stored as numbers in the test source; a channel may differ by at most 0.02 (half-float rounding and GPU-class differences). No images are stored (SHD-001-R14).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Built-in materials ready to use (Priority: P1)
@@ -141,13 +154,14 @@ constants defined in the module and no file, bundle or network reads.
 
 ### Functional Requirements
 
-- **SHD-001-R1**: The app MUST ship a fixed, curated catalog of five procedural materials, listed in
-  a fixed order, each with a stable ID of the form `material.<name>`, a display name and a one-line
-  description.
+- **SHD-001-R1**: The app MUST ship a fixed, curated catalog of five procedural materials, in this
+  order: Gradient Field, Plasma, Noise Flow, Ring Tunnel, Starfield; each has a stable ID of the
+  form `material.<name>`, a display name and a one-line description. None blinks by design.
 - **SHD-001-R2**: Every material parameter MUST be registered in the MOD-001 typed parameter registry
   with a stable ID `material.<name>.<parameter>`, a display name, a group per material, a unit, a
-  kind with bounds and a default inside them, and a modulation policy; the catalog's registry MUST
-  pass MOD-001 validation.
+  kind with bounds and a default inside them, and a modulation policy (continuous parameters:
+  modulatable, external control allowed; colors and counts: manual, external control allowed); the
+  catalog's registry MUST pass MOD-001 validation.
 - **SHD-001-R3**: The catalog MUST let a caller list materials, their parameter descriptions and
   their default values, and create a material's layer by ID; an unknown ID MUST yield nothing.
 - **SHD-001-R4**: A material's layer MUST implement the CMP-001 layer contract: it draws the whole
@@ -169,7 +183,8 @@ constants defined in the module and no file, bundle or network reads.
   cannot exceed full white and its motion cannot oscillate faster than one cycle per second without
   music (two with music).
 - **SHD-001-R10**: Music MUST change only a material's motion (its speed), through a level that is
-  smoothed with a bounded rate of change and scaled by a bounded "audio reactivity" parameter; music
+  smoothed with a bounded rate of change (rise at most 4 per second, fall at most 1 per second) and
+  scaled by a bounded "audio reactivity" parameter (0…1), so music at most doubles the speed; music
   MUST NOT change brightness directly.
 - **SHD-001-R11**: At default parameters, with or without music, no material may produce more than
   two luminance or redness transitions (FX-019 thresholds) in any one-second window in any of the 17
@@ -179,9 +194,9 @@ constants defined in the module and no file, bundle or network reads.
   composite flash guard; the guard still applies on top.
 - **SHD-001-R13**: Every pixel a material draws MUST be finite, with color between 0 and alpha and
   alpha exactly 1, for every parameter value in range.
-- **SHD-001-R14**: Each material MUST have a recorded reference ("golden") signature at a small fixed
-  size and a fixed frame sequence, and a test MUST fail when its output drifts beyond a documented
-  tolerance.
+- **SHD-001-R14**: Each material MUST have a recorded reference ("golden") signature at 64 × 64 after
+  30 frames at 60 frames per second (mean linear RGB and four sampled pixels, stored as numbers, no
+  images), and a test MUST fail when a channel drifts by more than 0.02.
 - **SHD-001-R15**: The catalog, IDs, descriptors, parameter values and motion bookkeeping MUST build
   and be tested on Linux; only the drawing compiles out there.
 - **SHD-001-R16**: The cost of drawing each material per frame on the three test devices MUST be
@@ -221,7 +236,7 @@ constants defined in the module and no file, bundle or network reads.
 
 - A user-facing material picker, scene placement and layer stacking belong to later rows (CMP-002
   layer stack, SHD-003 shader parameter metadata for inspectors, SHD-004 variant switching); this row
-  exposes the catalog to code only.
+  exposes the catalog to code only and adds no app screen, not even a Debug viewer.
 - The build Mac has no Metal Toolchain (ADR-0009 decision 3), so "built into the app" means shader
   source compiled into the app binary as constants and turned into a GPU library on the device when a
   material is prepared, exactly like every other shader in the app.
