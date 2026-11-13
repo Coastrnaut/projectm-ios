@@ -178,6 +178,9 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         return FrameCaptureCoordinator.Context(source: self.activeFrameCaptureSource,
                                                outputLive: self.externalDisplay.blackoutPhase == .live, paused: self.userPaused)
     }
+    /// REC-012: Share… for an offered frame or recording; created with the app so its sweep of
+    /// leftover share copies runs at launch (REC-012-R6).
+    @ObservationIgnored let captureShare = CaptureShareCoordinator()
     /// REC-003: Record (the shown visual's frames into a video file, handed to the file mover).
     @ObservationIgnored private(set) lazy var videoRecording = VideoRecordingCoordinator { [weak self] () -> VideoRecordingCoordinator.Context in
         guard let self else { return VideoRecordingCoordinator.Context(source: nil, visualShown: false, outputLive: false, paused: false) }
