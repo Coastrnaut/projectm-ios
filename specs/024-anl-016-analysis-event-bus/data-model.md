@@ -41,7 +41,7 @@ beat (BeatTrackerConfiguration). Validation: the three sample rates are equal, e
 ## AnalysisSubscription
 
 State under one lock: latest frame (metadata + 128 floats), fresh flag, `overwrittenFrames`,
-event ring (capacity 1…1,024), `droppedEvents`, `deliveredEvents`, `isCancelled`.
+event ring (capacity 1…1,024), `droppedEvents`, `isCancelled`.
 
 Transitions: active → cancelled (by `unsubscribe`; final; pending items discarded). At each
 session start the frame slot is emptied (fresh flag cleared).

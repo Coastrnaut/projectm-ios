@@ -59,9 +59,9 @@ root. The only device check is optional and tagged `{device}`.
 
 ## Phase 8: Polish and cross-cutting
 
-- [ ] ANL-016-T21 Full checks: AnalysisFeatures suite on the host (with and without `-DANALYSIS_NO_ACCELERATE`), AudioCore suite, VisualGenerators suite (both shapes), `xcodebuild test -scheme AnalysisFeatures` on the `TestSpeed iPhone 17` simulator (`6ABB17A2-D4EB-4B42-B5FF-E7C39E89637A`), an unsigned simulator build of `projectM-iOS` (app compiles with the new output type); record counts and each new test's duration (ANL-016-S7).
+- [ ] ANL-016-T21 Full checks: AnalysisFeatures suite on the host (with and without `-DANALYSIS_NO_ACCELERATE`), AudioCore suite, VisualGenerators suite (both shapes), `xcodebuild test -scheme AnalysisFeatures` on the `TestSpeed iPhone 17` simulator (`6ABB17A2-D4EB-4B42-B5FF-E7C39E89637A`), an unsigned simulator build of `projectM-iOS` (app compiles with the new output type); read `step()` and the publish path for allocation, logging and I/O (ANL-016-R15); record counts and each new test's duration (ANL-016-S7).
 - [ ] ANL-016-T22 `python3 scripts/check_compliance.py`, `python3 scripts/validate_docs.py`, `python3 scripts/test_scripts.py`; count new PosterBoard reports.
-- [ ] ANL-016-T23 Write `docs/test-reports/analysis-event-bus.md` (evidence: test names, counts, durations, printed lines) and add the hand-off notes to the contract if anything changed.
+- [ ] ANL-016-T23 Record the evidence in this file's Verified notes (test names, counts, durations, printed lines; no separate report file) and update `contracts/analysis-event-bus.md` if the implemented API differs.
 
 ## Dependencies
 
