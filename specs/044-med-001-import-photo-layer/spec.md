@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (MED-001-T01-T21 verified on the Mac: host, Linux shape and iOS 27.2 simulator; device tasks T22-T24 `{device}` open)
 
 **Input**: User description: "Implement MED-001 (Import photo layer) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Choose an image from Photos or

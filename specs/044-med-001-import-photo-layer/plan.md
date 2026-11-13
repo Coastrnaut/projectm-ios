@@ -99,7 +99,8 @@ Apps/projectM-iOS/
 ├── Views/SettingsView.swift, VisualizerView.swift, ControlsOverlay.swift
 ├── Tests/PhotoStoreTests.swift
 └── UITests/PhotoLayerUITests.swift
-docs/privacy-policy.md, docs/release/app-privacy.md, docs/adr/00NN-imported-photo-layer.md
+docs/privacy-policy.md, docs/release/app-privacy.md, docs/adr/0020-imported-photo-layer.md,
+docs/test-reports/photo-layer.md
 ```
 
 **Structure Decision**: the photo layer is a target of the Compositor package beside CameraLayer
