@@ -6,8 +6,9 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 47,
-   "integrated": 39,
+   "audited": 45,
+   "implementing": 1,
+   "integrated": 40,
    "skipped_existing": 1
   },
   "P1": {
@@ -15,15 +16,17 @@
    "integrated": 12
   },
   "P2": {
-   "audited": 79
+   "audited": 78,
+   "implementing": 1
   },
   "P3": {
    "audited": 9
   }
  },
  "by_state": {
-  "audited": 274,
-  "integrated": 51,
+  "audited": 271,
+  "implementing": 2,
+  "integrated": 52,
   "skipped_existing": 1
  },
  "device_gate": {
@@ -72,7 +75,6 @@
    "CAM-010",
    "CAM-011",
    "CAM-013",
-   "CMP-002",
    "CMP-003",
    "CMP-004",
    "CMP-005",
@@ -309,7 +311,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "274 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
+   "273 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
   ]
  },
  "features": {
@@ -1035,13 +1037,13 @@
   },
   "CMP-002": {
    "attempts": 0,
-   "branch": null,
-   "branch_sha": null,
+   "branch": "feature/cmp-002",
+   "branch_sha": "85425ca7d2ee7221a2ca538f5471c1c2d48ae359",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "4c8340e68244fb10cf952a6b8bf20b804e79086a",
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "integrated"
   },
   "CMP-003": {
    "attempts": 0,
@@ -2025,13 +2027,13 @@
   },
   "OSC-009": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/osc-009",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "OSC-010": {
    "attempts": 0,
@@ -2965,13 +2967,13 @@
   },
   "SHD-002": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/shd-002",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "SHD-003": {
    "attempts": 0,
@@ -3736,6 +3738,11 @@
    "sha": "ba60b9d3485aa03e685f60186c2acd91e955589e"
   },
   {
+   "branch": "feature/cmp-002",
+   "id": "CMP-002",
+   "sha": "4c8340e68244fb10cf952a6b8bf20b804e79086a"
+  },
+  {
    "branch": "feature/fx-001",
    "id": "FX-001",
    "sha": "1192e0d6503e390abc9485e6e9382553b034a80a"
@@ -3856,5 +3863,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T17:07:54Z"
+ "updated": "2026-11-13T17:26:25Z"
 }
