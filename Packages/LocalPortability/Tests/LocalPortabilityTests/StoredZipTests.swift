@@ -243,4 +243,28 @@ final class StoredZipTests: XCTestCase {
             XCTAssertFalse(error.message.isEmpty, "\(error)")
         }
     }
+
+    // MARK: - FILE-001-T03: symbolic links and special files (FILE-001-R14)
+
+    private func withMode(_ mode: Int, madeBy: Int = 0x0314) throws -> Data {
+        var data = try archive(sample)
+        let central = ZipBytes.centralHeaders(data)[1]
+        ZipBytes.set16(&data, central + 4, madeBy)
+        ZipBytes.set32(&data, central + 38, mode << 16)
+        return data
+    }
+
+    func testSymbolicLinkAndSpecialEntriesAreRefused() throws {
+        let refusal = StoredZipError.unsupported("symbolic links or special files")
+        assertRefused(try withMode(0o120777), refusal)     // symbolic link
+        assertRefused(try withMode(0o040755), refusal)     // directory
+        assertRefused(try withMode(0o010644), refusal)     // FIFO
+    }
+
+    func testRegularAndUnsetModesAndNonUnixHostsAreRead() throws {
+        XCTAssertEqual(try StoredZipReader.read(try withMode(0o100600), limits: limits).count, 3)
+        XCTAssertEqual(try StoredZipReader.read(try withMode(0), limits: limits).count, 3)
+        // An MS-DOS host (0) carries no Unix type in the high bits.
+        XCTAssertEqual(try StoredZipReader.read(try withMode(0o120777, madeBy: 0x0014), limits: limits).count, 3)
+    }
 }

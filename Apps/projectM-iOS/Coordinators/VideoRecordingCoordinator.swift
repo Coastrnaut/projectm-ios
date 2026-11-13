@@ -16,6 +16,13 @@
 //   never copied), never the photo library; a cancelled move keeps it offered (REC-012 supersedes
 //   REC-003-R13's delete on cancel). Leftovers in `<tmp>/Recordings` are deleted at launch
 //   (REC-003-R13), so nothing outlives the session. Nothing else is stored.
+// * REC-015 (specs/063-rec-015-recording-disk-guard): Record reads the free storage once (after the
+//   refusals above) and refuses below the reserve plus one minute; while recording, a 5 s loop reads
+//   the free storage and the file's size off the main actor and stops with `.lowStorage` (the normal
+//   finish: the file is finished and offered). An out-of-space writer failure ends as `storageFull`
+//   (the package deletes the partial file). The value is used only for that, never stored or sent.
+//   DEBUG `-uitestStorage low|dropAfter:<n>` fakes the readings (1 s interval) and an offered file is
+//   read back into `probe`.
 // * DEBUG: `-uitestRecordingDirectory <name>` moves the file into `<tmp>/<name>/` instead of showing
 //   the mover, and `probe` reports what AVFoundation reads back ("video hvc1 1178x2556 frames=58
 //   duration=1.93 audio=0").
@@ -114,15 +121,28 @@ final class VideoRecordingCoordinator {
     @ObservationIgnored private var ticker: Task<Void, Never>?
     @ObservationIgnored private var backgroundTask: UIBackgroundTaskIdentifier = .invalid
     @ObservationIgnored private var observers: [NSObjectProtocol] = []
+    @ObservationIgnored private let storageProbe: any StorageProbe
+    @ObservationIgnored private let storageCheckInterval: Duration?
+    @ObservationIgnored private let writerFault: RecordingWriterFault?
+    @ObservationIgnored private var storagePolicy: RecordingStoragePolicy?
+    @ObservationIgnored private var storageTicker: Task<Void, Never>?
 
     /// `checkInterval` nil: no periodic check (tests call `checkContext()`).
+    /// `storageCheckInterval` nil: no storage loop (tests call `checkStorage()`). `writerFault`: tests only.
     init(directory: URL = VideoRecordingCoordinator.defaultDirectory,
          debugDirectory: URL? = VideoRecordingCoordinator.debugDirectoryFromArguments(),
          checkInterval: Duration? = .milliseconds(250),
+         storageProbe: (any StorageProbe)? = nil,
+         storageCheckInterval: Duration? = .seconds(RecordingStoragePolicy.checkIntervalSeconds),
+         writerFault: RecordingWriterFault? = nil,
          context: @escaping @MainActor () -> Context) {
         self.directory = directory
         self.debugDirectory = debugDirectory
         self.checkInterval = checkInterval
+        let debugStorage = Self.debugStorageFromArguments()
+        self.storageProbe = storageProbe ?? debugStorage?.probe ?? VolumeStorageProbe()
+        self.storageCheckInterval = storageProbe == nil ? (debugStorage?.interval ?? storageCheckInterval) : storageCheckInterval
+        self.writerFault = writerFault
         self.context = context
         Self.removeLeftovers(in: directory)   // REC-003-R13: a crash may have left a temporary file
         observeBackground()
@@ -130,6 +150,7 @@ final class VideoRecordingCoordinator {
 
     isolated deinit {
         ticker?.cancel()
+        storageTicker?.cancel()
         observers.forEach(NotificationCenter.default.removeObserver)
     }
 
@@ -242,10 +263,23 @@ final class VideoRecordingCoordinator {
         guard let source = c.source else { return }
         let size = source.recordingDrawableSize
         let url = directory.appendingPathComponent(Self.fileName(date: Date()))
+        let settings = RecordingSettings.standard
         do {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            // REC-015-R1, R3: one free-storage reading before anything is written.
+            var policy: RecordingStoragePolicy?
+            if let geometry = RecordingGeometry(drawableWidth: Int(size.width), drawableHeight: Int(size.height),
+                                                maxLongSide: settings.maxLongSide) {
+                let rules = RecordingStoragePolicy(estimate: RecordingStorageEstimate(geometry: geometry, settings: settings))
+                guard rules.allowsStart(availableBytes: storageProbe.availableBytes(at: directory)) else {
+                    refuse(.lowStorage)
+                    return
+                }
+                policy = rules
+            }
             let recorder = try MetalFrameRecorder(device: source.recordingDevice, url: url, drawableWidth: Int(size.width),
-                                                  drawableHeight: Int(size.height))
+                                                  drawableHeight: Int(size.height), settings: settings, fault: writerFault)
+            storagePolicy = policy
             let tap = VideoRecordingTap(recorder: recorder)
             tap.onStop = { [weak self] (reason: RecordingStopReason) in self?.stop(reason) }
             source.videoRecording = tap
@@ -264,6 +298,34 @@ final class VideoRecordingCoordinator {
         lastStopReason = nil
         probe = "recording"
         startTicker()
+        startStorageTicker()
+    }
+
+    // MARK: - Storage (REC-015-R4, R5)
+
+    private func startStorageTicker() {
+        guard let storageCheckInterval else { return }
+        storageTicker = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: storageCheckInterval)
+                guard !Task.isCancelled, let self else { return }
+                await self.checkStorage()
+            }
+        }
+    }
+
+    /// One storage sample: the free storage and the file's size are read off the main actor, the
+    /// decision is made here; stops with `.lowStorage` when the policy says so. Unknown values never stop.
+    func checkStorage() async {
+        guard state == .recording, let recorder, let policy = storagePolicy else { return }
+        let probe = storageProbe, folder = directory, url = recorder.url
+        let reading = await Task.detached(priority: .utility) { () -> (Int64?, Int64?) in
+            (probe.availableBytes(at: folder), RecordingStorage.fileBytes(at: url))
+        }.value
+        guard state == .recording, self.recorder === recorder else { return }
+        if policy.shouldStop(availableBytes: reading.0, fileBytes: reading.1, recordedSeconds: recorder.recordedSeconds) {
+            stop(.lowStorage)
+        }
     }
 
     private func startTicker() {
@@ -304,6 +366,9 @@ final class VideoRecordingCoordinator {
         lastStopReason = reason
         ticker?.cancel()
         ticker = nil
+        storageTicker?.cancel()
+        storageTicker = nil
+        storagePolicy = nil
         source?.videoRecording = nil   // no later frame is offered
         source = nil
         elapsedSeconds = recorder.recordedSeconds
@@ -325,6 +390,7 @@ final class VideoRecordingCoordinator {
                 moveForTests(video, into: debugDirectory)
             } else {
                 offered = video.url   // REC-012-R1: offered, nothing opens by itself
+                inspectOfferedForTests(video.url)
             }
         }
         endBackgroundTask()
@@ -368,6 +434,44 @@ final class VideoRecordingCoordinator {
 
     // MARK: - DEBUG
 
+    /// DEBUG: true when `-uitestStorage` is given (the view then shows the probe). False in Release.
+    static var debugStorageRequested: Bool {
+        #if DEBUG
+        return ProcessInfo.processInfo.arguments.contains("-uitestStorage")
+        #else
+        return false
+        #endif
+    }
+
+    /// DEBUG `-uitestStorage low` (always 50 MB free) or `dropAfter:<n>` (the first n readings 64 GB,
+    /// then 50 MB), with a 1 s storage interval. nil in Release and without the option.
+    static func debugStorageFromArguments() -> (probe: any StorageProbe, interval: Duration)? {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let i = arguments.firstIndex(of: "-uitestStorage"), i + 1 < arguments.count else { return nil }
+        let value = arguments[i + 1]
+        let ample: Int64 = 64_000_000_000
+        let low: Int64 = 50_000_000
+        if value == "low" { return (ScriptedStorageProbe(ampleReadings: 0, ample: ample, low: low), .seconds(1)) }
+        if value.hasPrefix("dropAfter:"), let n = Int(value.dropFirst("dropAfter:".count)) {
+            return (ScriptedStorageProbe(ampleReadings: n, ample: ample, low: low), .seconds(1))
+        }
+        #endif
+        return nil
+    }
+
+    /// DEBUG: an offered recording is read back into `probe` (UI tests check it plays); nothing in Release.
+    private func inspectOfferedForTests(_ url: URL) {
+        #if DEBUG
+        probe = "inspecting"
+        Task { [weak self] in
+            let info = await RecordedVideoInspector.inspect(url)
+            guard let self, self.probe == "inspecting" else { return }
+            self.probe = info?.summary ?? "failed: unreadable"
+        }
+        #endif
+    }
+
     /// UI tests: the mover cannot be automated, so the file goes to a temporary folder and is read back.
     private func moveForTests(_ video: RecordedVideo, into folder: URL) {
         let destination = folder.appendingPathComponent(video.url.lastPathComponent)
@@ -388,6 +492,30 @@ final class VideoRecordingCoordinator {
         }
     }
 }
+
+#if DEBUG
+/// DEBUG `-uitestStorage`: the first `ampleReadings` readings return `ample`, later ones `low`.
+final class ScriptedStorageProbe: StorageProbe, @unchecked Sendable {
+    private let lock = NSLock()
+    private var readings = 0
+    private let ampleReadings: Int
+    private let ample: Int64
+    private let low: Int64
+
+    init(ampleReadings: Int, ample: Int64, low: Int64) {
+        self.ampleReadings = ampleReadings
+        self.ample = ample
+        self.low = low
+    }
+
+    func availableBytes(at directory: URL) -> Int64? {
+        lock.withLock { () -> Int64 in
+            readings += 1
+            return readings <= ampleReadings ? ample : low
+        }
+    }
+}
+#endif
 
 private extension Result {
     var failureValue: Failure? {

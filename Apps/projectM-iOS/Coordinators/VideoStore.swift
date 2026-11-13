@@ -13,6 +13,8 @@
 //   then the key is set and the previous copy deleted (R6). A failed import changes nothing and
 //   leaves no file. No file timestamps or volume capacity are read (required-reason APIs): a full
 //   disk surfaces as a failed export (`.saveFailed`).
+// FILE-001 splits the import into stage, adopt (from a staging folder) and makeCurrent so a scene
+// archive's media are switched together after every check (SceneArchiveService).
 // Sendable; imports run off the main actor (VideoCoordinator).
 import Foundation
 import VideoLayer
@@ -66,9 +68,17 @@ struct VideoStore: @unchecked Sendable {
     /// Imports the video at `source` (a picked file) and makes it the stored video.
     @discardableResult
     func importVideo(at source: URL) async throws(VideoImportError) -> StoredVideo {
+        let staged = try await stage(at: source)
+        makeCurrent(staged)
+        return staged
+    }
+
+    /// FILE-001: the checked, remuxed copy of `source` written into this store's folder under a new
+    /// identifier, without making it current (the identifier key is not touched). A failure leaves
+    /// no file.
+    func stage(at source: URL) async throws(VideoImportError) -> StoredVideo {
         let picked = try Self.copyPicked(source, limits: limits)
         defer { try? FileManager.default.removeItem(at: picked) }
-        let previous = current()
         let id = UUID()
         let url = file(for: id)
         do {
@@ -82,9 +92,34 @@ struct VideoStore: @unchecked Sendable {
             try? FileManager.default.removeItem(at: url)
             throw error
         }
-        defaults.set(id.uuidString, forKey: Self.idKey)
-        if let previous { try? FileManager.default.removeItem(at: previous.url) }
         return StoredVideo(id: id, url: url)
+    }
+
+    /// FILE-001: moves a copy staged by another store (a staging folder) into this folder under the
+    /// same name, without making it current. Only `<UUID>.mov` names are accepted.
+    func adopt(_ staged: StoredVideo) throws(VideoImportError) -> StoredVideo {
+        guard staged.url.lastPathComponent == "\(staged.id.uuidString).\(Self.fileExtension)" else { throw .saveFailed }
+        let url = file(for: staged.id)
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            try FileManager.default.moveItem(at: staged.url, to: url)
+        } catch {
+            throw .saveFailed
+        }
+        return StoredVideo(id: staged.id, url: url)
+    }
+
+    /// Makes a copy inside this folder the stored video, then deletes the previous copy (R6).
+    func makeCurrent(_ video: StoredVideo) {
+        let previous = current()
+        defaults.set(video.id.uuidString, forKey: Self.idKey)
+        if let previous, previous.id != video.id { try? FileManager.default.removeItem(at: previous.url) }
+    }
+
+    /// FILE-001: deletes a copy that never became current (staged or adopted, then abandoned).
+    func discard(_ video: StoredVideo) {
+        guard video.id != current()?.id else { return }
+        try? FileManager.default.removeItem(at: file(for: video.id))
     }
 
     /// Deletes the stored copy and its identifier (MED-002-R7).

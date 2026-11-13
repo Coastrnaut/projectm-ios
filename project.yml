@@ -68,6 +68,11 @@ packages:
   # CMP-001 layer contract and compositor; CAM-001: the camera layer (target CameraLayer).
   Compositor:
     path: Packages/Compositor
+  # SCN-001 scene document; FILE-001 portable scene archive (pure Swift; SceneArchiveService).
+  SceneFormat:
+    path: Packages/SceneFormat
+  SceneArchive:
+    path: Packages/SceneArchive
 targets:
   CaptureLab:
     type: application
@@ -184,6 +189,8 @@ targets:
       - package: VisualGenerators   # VIS-001: the circular spectrum
       - package: PerformanceControl   # SHOW-011: tap tempo; OSC-001: the OSC receiver
       - package: Compositor           # CAM-001: the Camera visual (camera and spectrum layers)
+      - package: SceneFormat          # FILE-001: scene documents in scene archives
+      - package: SceneArchive         # FILE-001: SceneArchiveService
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.ProjectMiOS
@@ -245,6 +252,7 @@ targets:
       - package: PerformanceControl   # SHOW-011 TempoCoordinatorTests
       - package: AudioCore            # SHOW-011 TempoCoordinatorTests (an analysis tap)
       - package: ParameterGraph       # MOD-001 ParameterCatalogAppTests; OSC-001 coordinator tests
+      - package: LocalPortability     # FILE-001 SceneArchiveServiceTests (a hand-built hostile archive)
       - sdk: StoreKitTest.framework
     settings:
       base:

@@ -150,6 +150,9 @@ struct ControlsOverlay: View {
     }
 
     /// One row of icon buttons (FR-087).
+    /// The compact grid's minimum cell width, scaled with Dynamic Type (32 pt at the default size).
+    @ScaledMetric(relativeTo: .title3) private var buttonCellWidth: CGFloat = 32
+
     private var compact: some View {
         VStack(spacing: 8) {
             HStack {
@@ -161,7 +164,11 @@ struct ControlsOverlay: View {
                 HStack { route; Spacer(minLength: 0) }
             }
             presetName.frame(maxWidth: .infinity, alignment: .leading)
-            HStack(spacing: 0) {
+            // A grid that wraps instead of one row (2026-11-13): with Save Frame, Record and Black out
+            // the row had about 11 buttons, and at the largest text sizes it ran off the screen (the
+            // Presets button sat at x 412 on a 402 pt iPhone). Cells keep a minimum width that scales
+            // with the text, so every control stays on screen and tappable at any size.
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: buttonCellWidth), spacing: 0)], spacing: 4) {
                 ForEach(buttons, id: \.id) { item in
                     Button(action: item.action) {
                         Image(systemName: item.icon).frame(maxWidth: .infinity, minHeight: 36)
