@@ -23,6 +23,7 @@ import build_angle_xcframework as bax  # noqa: E402
 import build_projectm_xcframework as bpx  # noqa: E402
 import check_compliance  # noqa: E402
 import check_privacy_manifest as cpm  # noqa: E402
+import check_permission_catalog as cpc  # noqa: E402
 import check_network_symbols as cns  # noqa: E402
 import observe_app_network as oan  # noqa: E402
 import generate_gles_loader as ggl  # noqa: E402
@@ -1516,6 +1517,68 @@ class AppNetworkObserverTests(unittest.TestCase):
         self.assertIn("blind: the probe was never sent", never["problems"])
         no_listener = self.report((), (), osc=47131)
         self.assertIn("the OSC listener on port 47131 was never seen", no_listener["problems"])
+
+
+class PermissionCatalogCheckTests(unittest.TestCase):
+    """check_permission_catalog.py (FILE-013-T09): catalog vs project.yml and the privacy policy."""
+
+    ROOT = Path(__file__).resolve().parent.parent
+
+    def inputs(self):
+        return ((self.ROOT / cpc.PROJECT).read_text(encoding="utf-8"),
+                (self.ROOT / cpc.CATALOG).read_text(encoding="utf-8"),
+                (self.ROOT / cpc.POLICY).read_text(encoding="utf-8"))
+
+    def test_repository_is_consistent(self):
+        yml, swift, policy = self.inputs()
+        self.assertEqual(cpc.problems(yml, swift, policy), [])
+        self.assertEqual(set(cpc.plist_keys(yml)), {"NSMicrophoneUsageDescription", "NSCameraUsageDescription",
+                                                    "NSLocalNetworkUsageDescription", "NSScreenCaptureUsageDescription"})
+
+    def test_capturelab_keys_are_not_the_apps(self):
+        yml, _, _ = self.inputs()
+        self.assertNotIn("NSLocalNetworkUsageDescription", cpc.plist_keys(yml, "CaptureLab"))
+
+    def test_key_missing_from_catalog_fails(self):
+        yml, swift, policy = self.inputs()
+        yml = yml.replace('        NSLocalNetworkUsageDescription: "When',
+                          '        NSBluetoothAlwaysUsageDescription: "x"\n        NSLocalNetworkUsageDescription: "When')
+        self.assertIn("NSBluetoothAlwaysUsageDescription: in project.yml (projectM-iOS) but not in the catalog",
+                      cpc.problems(yml, swift, policy))
+
+    def test_catalog_entry_missing_from_project_fails(self):
+        yml, swift, policy = self.inputs()
+        yml = "\n".join(line for line in yml.splitlines()
+                        if not (line.strip().startswith("NSCameraUsageDescription:")))
+        self.assertIn("NSCameraUsageDescription: in the catalog but not in project.yml (projectM-iOS)",
+                      cpc.problems(yml, swift, policy))
+
+    def test_changed_text_fails(self):
+        yml, swift, policy = self.inputs()
+        swift = swift.replace("It never connects to the internet.", "It never connects anywhere.")
+        self.assertIn("NSLocalNetworkUsageDescription: the catalog's text differs from project.yml",
+                      cpc.problems(yml, swift, policy))
+
+    def test_photos_key_fails(self):
+        yml, swift, policy = self.inputs()
+        for key in cpc.PHOTOS_KEYS:
+            bad = yml + f'\n        {key}: "x"\n'
+            self.assertTrue(any(p.startswith(f"{key}: Photos library keys are not allowed")
+                                for p in cpc.problems(bad, swift, policy)), key)
+
+    def test_policy_mismatch_fails(self):
+        yml, swift, policy = self.inputs()
+        missing = policy.replace("- **Local Network**:", "- Local Network:")
+        self.assertIn("privacy policy: 'Local Network' is in the catalog but not in '## Permissions and why'",
+                      cpc.problems(yml, swift, missing))
+        extra = policy.replace("- **Camera**:", "- **Location**: never.\n- **Camera**:")
+        self.assertIn("privacy policy: 'Location' is listed but is not a catalog permission",
+                      cpc.problems(yml, swift, extra))
+
+    def test_main_exit_codes(self):
+        with mock.patch("sys.stdout", new_callable=io.StringIO) as out:
+            self.assertEqual(cpc.main(["--root", str(self.ROOT), "--json"]), 0)
+        self.assertTrue(json.loads(out.getvalue())["ok"])
 
 
 if __name__ == "__main__":
