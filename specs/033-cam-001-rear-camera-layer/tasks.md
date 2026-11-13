@@ -1,0 +1,68 @@
+# Tasks: CAM-001 Rear Camera Layer
+
+**Input**: `specs/033-cam-001-rear-camera-layer/` (spec, plan, research, data-model, contracts, quickstart)
+
+Tests are required by the spec (CAM-001-R13, S1-S6). Budgets (owner rule 7): unit tests about 1-2 s
+(≤ 10 s), package suite under 1 minute, UI tests under 30 s. `{device}` tasks are the final device
+stage and stay open until a person runs them on D1-D3.
+
+## Phase 1: Setup
+
+- [ ] CAM-001-T01 Add target `CameraLayer` (dependencies: `Compositor`) to `Packages/Compositor/Package.swift`, include it in the `Compositor` library product, and add it to `CompositorTests`' dependencies; header comment names CAM-001 and the Linux shape
+- [ ] CAM-001-T02 [P] Add package `Compositor` to `project.yml` (`packages:` and the `projectM-iOS` target's dependencies) and `NSCameraUsageDescription: "The Camera visual shows the live view from your rear camera behind the visualization. The picture stays on your device and is never recorded or sent."` to the app's Info.plist properties
+
+## Phase 2: Foundational (blocks every story)
+
+- [ ] CAM-001-T03 [P] `CameraFeedState` (states `idle`, `requestingAccess`, `starting`, `running`, `denied`, `restricted`, `unavailable`, `interrupted`, `failed`; `showsPicture`, `notice`, `offersSettings`, `accessibilityValue` per data-model.md), `CameraRotation` and `CameraScenario` in `Packages/Compositor/Sources/CameraLayer/CameraFeedState.swift` (CPU, every platform)
+- [ ] CAM-001-T04 [P] `CameraPictureGeometry` (aspect fill with equal crop, rotation, identity for sizes ≤ 0) in `Packages/Compositor/Sources/CameraLayer/CameraPictureGeometry.swift` (CPU)
+- [ ] CAM-001-T05 [P] CPU tests `CameraGeometryTests` (fill of wide, tall and equal pictures; each rotation; degenerate sizes) and `CameraFeedStateTests` (every state's notice, settings offer, value) in `Packages/Compositor/Tests/CompositorTests/CameraGeometryTests.swift`; run on the host and in the Linux shape
+- [ ] CAM-001-T06 `CameraFrameProvider` protocol, `CameraFrame`, `LatestCameraFrame` (unfair lock, try-lock read, clear) in `Packages/Compositor/Sources/CameraLayer/CameraFrameProvider.swift` (Metal platforms)
+- [ ] CAM-001-T07 `CameraLayerSource` (fallback `.transparent`, `.notReady` unless `running` with a picture, aspect-fill shader sampling `.bgra8Unorm_srgb`, `setFragmentBytes`, `framesShown`, `start()`/`stop()`) in `Packages/Compositor/Sources/CameraLayer/CameraLayerSource.swift`
+- [ ] CAM-001-T08 `StubCameraFrameProvider` (scenarios of data-model.md; solid or three-stripe picture created once in `start()`; `interrupt()`, `endInterruption()`, `fail()`; never asks the system) in `Packages/Compositor/Sources/CameraLayer/StubCameraFrameProvider.swift`
+
+## Phase 3: User Story 1 - Live rear camera behind the music (P1) — MVP
+
+**Independent test**: a granted stub's solid color reads back as its linear value through the compositor; the app's Camera visual counts shown frames.
+
+- [ ] CAM-001-T09 [US1] GPU tests in `Packages/Compositor/Tests/CompositorTests/CameraLayerTests.swift`: solid sRGB 188 stub → linear ≈ 0.503 within 1/255, alpha 1 (CAM-001-S1, R3); three-stripe 30×10 stub in a 64×64 output shows only the middle stripe (R2); rotation 90 of a two-color picture puts the colors top/bottom; spectrum layer over camera composites; `framesShown` grows
+- [ ] CAM-001-T10 [US1] `AVCameraFrameProvider` (iOS only): back wide camera checked before authorization, `requestAccess` only from `start()` when not determined, `.hd1280x720` or `.medium`, BGRA video output with `alwaysDiscardsLateVideoFrames`, own serial queues, `CVMetalTextureCache` as `.bgra8Unorm_srgb`, rotation from `AVCaptureDevice.RotationCoordinator`, no audio, no outputs that write; in `Packages/Compositor/Sources/CameraLayer/AVCameraFrameProvider.swift`
+- [ ] CAM-001-T11 [US1] `VisualChoice.camera` ("Camera", `isNative` false, `replacesProjectM`, `usesCamera`), not written to UserDefaults and a stored `camera` read as projectM, in `Apps/projectM-iOS/Coordinators/AppSettings.swift`
+- [ ] CAM-001-T12 [US1] `CameraVisualHost` (CAMetalLayer view `cameraVisual`, display link, `LiveBandAnalyzer`, `Compositor` [camera, circular spectrum with transparent background], `resume`/`pause`, PERF-011 suspension, scene-disconnect stop, `feedState`, `framesShown`, tempo reader) in `Apps/projectM-iOS/Visuals/CameraVisualHost.swift`; DEBUG `-uitestCamera <scenario>` selects the stub
+- [ ] CAM-001-T13 [US1] Wire Camera in `Apps/projectM-iOS/Coordinators/AppCoordinator.swift` (create on choice, resume/pause with the active visual, release on another visual, fall back to projectM with the unavailable notice if it cannot be built, `hidesSystemOverlays` false while shown), `Views/VisualizerView.swift` (host view, accessibility, diagnostics counter `cameraFramesShown`), `Views/ControlsOverlay.swift` (visual name, preset controls hidden) and `Views/SettingsView.swift` (picker entry, footer text)
+- [ ] CAM-001-T14 [US1] App unit tests `Apps/projectM-iOS/Tests/CameraVisualTests.swift`: Camera not persisted (R11), stored `camera` reads projectM, host with granted stub shows frames, `replacesProjectM`/`isNative` sets
+- [ ] CAM-001-T15 [US1] UI test `testGrantedCameraShowsFrames` in `Apps/projectM-iOS/UITests/CameraUITests.swift` (`-uitestCamera granted`): choose Camera, `cameraVisual` value "Live", `cameraFramesShown` grows, source started once
+
+## Phase 4: User Story 2 - Denied or unavailable camera never blocks (P1)
+
+**Independent test**: a denied stub shows the notice with Open Settings while the controls and Settings keep working.
+
+- [ ] CAM-001-T16 [US2] GPU/state tests in `CameraLayerTests.swift`: denied, restricted, unavailable, not-determined-deny → layer outcome `fallbackTransparent(.notReady)`, transparent output, matching state; not-determined-grant → running and frames (R4-R6)
+- [ ] CAM-001-T17 [US2] Banner `cameraNotice` with `cameraOpenSettings` for denied/restricted in `Apps/projectM-iOS/Views/VisualizerView.swift`; feed state published by `AppCoordinator.cameraState`
+- [ ] CAM-001-T18 [US2] UI test `testDeniedCameraShowsNoticeAndAppStaysUsable` in `CameraUITests.swift` (`-uitestCamera denied`): notice and Open Settings appear, spectrum view present, controls toggle, Settings opens and closes, source started once (S2)
+- [ ] CAM-001-T19 [US2] Simulator unit test: `AVCameraFrameProvider` with no back camera reports `unavailable` without asking (skipped if a camera exists) in `Apps/projectM-iOS/Tests/CameraVisualTests.swift`
+
+## Phase 5: User Story 3 - Camera runs only while shown (P1)
+
+**Independent test**: with the stub, the provider is running only while Camera is shown, running and presentable.
+
+- [ ] CAM-001-T20 [US3] Package tests: `stop()` drops the picture (`latestFrame()` nil, next render `.notReady`); interruption → fallback, end → frames again; failure → fallback (R8, S5) in `CameraLayerTests.swift`
+- [ ] CAM-001-T21 [US3] App unit tests in `CameraVisualTests.swift`: host `pause()`, `suspendForPresentationLoss()`, scene disconnect each stop the provider before returning; `resume()`/`resumeForPresentation()` restart it; coordinator stops it on another visual (S3)
+
+## Phase 6: Polish & cross-cutting
+
+- [ ] CAM-001-T22 [P] Privacy docs: camera section in `docs/privacy-policy.md` (permissions, on-device only, not stored or sent, not analysed, FR-063 table row) and `docs/release/app-privacy.md` (answers unchanged, Data Not Collected; owner confirms in App Store Connect)
+- [ ] CAM-001-T23 Gates: `python3 scripts/check_compliance.py`, `python3 scripts/validate_docs.py`, Compositor package tests on the host and in the Linux shape, app unit tests and `CameraUITests` on the iOS 27.2 simulator; PosterBoard reports counted before/after; review the camera path for per-frame allocation, file writes and network use (S6)
+- [ ] CAM-001-T24 {device} On D1, D2, D3: choose Camera → system prompt → Allow → live upright picture under the spectrum and the camera indicator; rotate (S1, R2)
+- [ ] CAM-001-T25 {device} On D1 and D3: Don't Allow → notice and Open Settings; allow then revoke in Settings while backgrounded → notice on return, no crash (R5, US2 scenario 4)
+- [ ] CAM-001-T26 {device} On D1: interruption by another app (Camera app in Split View on D2, a FaceTime call on D1) → paused notice, picture returns; 3 minutes running with thermal state and frame rate recorded (R8)
+- [ ] CAM-001-T27 {device} On D1: another visual, pause, Stop, background, lock → the camera indicator turns off each time; relaunch → the camera does not start until Camera is chosen (R7, R11, S3, S4)
+
+## Dependencies
+
+T01 → T03-T08 → US1 (T09-T15) → US2 (T16-T19) and US3 (T20-T21) → T22-T23 → device tasks T24-T27.
+US2 and US3 depend only on the foundation and T12-T13. T02-T05 and T22 are parallel.
+
+## Implementation strategy
+
+MVP is US1 on the stub (package layer and the app's Camera visual). US2 and US3 add the fallback
+notice and the lifecycle proofs; the device stage closes the real-camera behaviour last.
