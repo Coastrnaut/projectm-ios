@@ -36,7 +36,11 @@ reuses its scenes.
 Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
 interaction); each answer is the conservative, local-first option.
 
-- (Filled in by `/speckit-clarify`.)
+- Q: What is a "platform class" for goldens, and does a different GPU or OS of the same class need its own goldens? → A: Two classes, the macOS host (any Mac GPU) and the iOS Simulator (any runtime). Every run of a class compares with that class's goldens under the tolerance; the GPU name and OS version they were recorded with are stored in the manifest for information only. Keying by GPU or OS would leave CI (a different GPU and OS 26) without goldens, and "CI fails on missing goldens" would then always fail. Physical devices have no class yet (device FINAL stage).
+- Q: What tolerance does this row use until QA-003 replaces it? → A: Equal pixel hashes pass; otherwise same size and at most ⌊0.1 % × pixels⌋ pixels whose largest channel difference (alpha included, 8-bit straight RGBA) exceeds 2/255. One named rule value (`GoldenTolerance.qa002`), recorded in the ADR.
+- Q: Which frames are rendered and captured? → A: Each scene renders 8 frames at 60 Hz starting at presentation time 1 s; frame 0 is the warm-up (asynchronous layers are settled after it) and is never captured; the last frame (7) is captured, and the flash-guard scene also captures frame 6 so the guard's alternation is visible. Few captures keep the set small and the suite short.
+- Q: Where do failure artifacts go? → A: Each failed comparison attaches expected, actual and diff PNGs and a summary to the XCTest result (kept always, so they are in the `.xcresult`), and writes them to `Packages/RenderGoldens/.build/golden-diffs/<class>/` (gitignored, `GOLDEN_DIFF_DIR` overrides), with one summary line per failure appended to `summary.txt` there. A folder that cannot be written is reported in the failure message.
+- Q: How is recording switched on and how is CI kept from recording? → A: `GOLDEN_RECORD=1` (on the simulator `TEST_RUNNER_GOLDEN_RECORD=1`, which xcodebuild forwards as `GOLDEN_RECORD`). If `CI` or `GITHUB_ACTIONS` is set the switch is refused: the test fails and writes nothing. Recording writes only the current class's goldens, leaves files whose pixels are unchanged untouched, and rewrites that class's manifest in canonical (sorted) order. Text scenes are compared only where the OS version (major.minor) equals the recorded one.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -190,7 +194,7 @@ half-recorded sets.
 - **QA-002-R10**: Recording MUST leave a golden file untouched when its pixels are unchanged.
 - **QA-002-R11**: Goldens MUST be kept per platform class (macOS host GPU, iOS Simulator); a run on a
   platform class without goldens (a physical device) MUST be reported as pending, not passed.
-- **QA-002-R12**: Text scenes MUST be compared only on the OS version their golden was recorded on;
+- **QA-002-R12**: Text scenes MUST be compared only on the OS version (major.minor) their golden was recorded on;
   elsewhere they are rendered (proving they still render) and reported as not compared.
 - **QA-002-R13**: A deliberate-regression check MUST prove that a changed renderer parameter produces
   a failing comparison with the diff artifacts.
