@@ -7,9 +7,10 @@
  "by_priority": {
   "P0": {
    "audited": 52,
-   "implementing": 3,
+   "implementing": 2,
    "integrated": 31,
-   "skipped_existing": 1
+   "skipped_existing": 1,
+   "unit_passed": 1
   },
   "P1": {
    "audited": 142,
@@ -24,9 +25,10 @@
  },
  "by_state": {
   "audited": 282,
-  "implementing": 3,
+  "implementing": 2,
   "integrated": 40,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -1039,12 +1041,12 @@
   "CMP-001": {
    "attempts": 0,
    "branch": "feature/cmp-001",
-   "branch_sha": null,
+   "branch_sha": "19d1bd7e65a2f50f8cd4d60df63d28e3b95a0ffd",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": "specs/029-cmp-001-unified-layer-protocol",
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "CMP-002": {
    "attempts": 0,
@@ -3814,5 +3816,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T15:56:30Z"
+ "updated": "2026-11-13T16:07:32Z"
 }
