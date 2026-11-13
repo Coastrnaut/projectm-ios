@@ -11,8 +11,8 @@ target and build and test on Linux: a bounded OSC message decoder (and a small e
 OSC-005), the local-address scope check, the port rules, a one-parameter test catalog on MOD-001's
 `ParameterStore`, a dispatcher that applies a value only where `ModulationPolicy.allowsExternalControl`
 is true, and `OSCReceiver`, a lifecycle state machine over a transport protocol. The one transport
-that touches the Network framework, `NetworkDatagramTransport` (an `NWListener` for UDP with
-`acceptLocalOnly`, cellular prohibited, at most 8 peers), and a debug-only loopback sender for the
+that touches the Network framework, `NetworkDatagramTransport` (an `NWListener` for UDP, cellular
+prohibited, non-local peers dropped before any read, at most 8 peers), and a debug-only loopback sender for the
 integration test live in `Sources/PerformanceControl/OSCTransport/`, the only folder FR-068 (amended,
 ADR-0008) allows. The app adds two settings, an `OSCReceiverCoordinator` (foreground-only listener,
 status text, test value) and an "OSC receiver" section in Settings; Info.plist gets

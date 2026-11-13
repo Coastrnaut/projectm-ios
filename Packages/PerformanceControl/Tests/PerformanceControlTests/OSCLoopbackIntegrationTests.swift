@@ -72,7 +72,7 @@ final class OSCLoopbackIntegrationTests: XCTestCase {
         }
         send(packet(0.42), to: port)
         wait(for: [changed], timeout: 5)
-        XCTAssertEqual(receiver.testValue, expected)
+        XCTAssertEqual(receiver.testValue, expected, "counters: \(receiver.counters)")
         XCTAssertEqual(receiver.counters.applied, 1)
 
         // Disable closes the listener: off is reported after the cancel, then a packet changes nothing.

@@ -6,8 +6,11 @@
 // networking API is used here or anywhere.
 //
 // * Listens only: never connects out, never resolves a host, no Bonjour (OSC-011 adds discovery).
-// * Local network only: `acceptLocalOnly`, cellular prohibited, and each peer's address must pass
-//   `OSCPeerAddress.isLocal` before anything is read from it.
+// * Local network only: cellular prohibited, and each peer's address must pass
+//   `OSCPeerAddress.isLocal` before anything is read from it. `NWParameters.acceptLocalOnly` is NOT
+//   set: with it the iOS 27.2 simulator never delivered a loopback datagram (the macOS host did), and
+//   its exact rule is not documented, so the app enforces its own tested rule instead (research
+//   OSC-001-D2).
 // * At most 8 peers (`OSCPeerTable`); the least recently admitted one is cancelled for a ninth.
 // * All state is confined to one private serial queue; events are reported on it.
 // * `stop()` cancels the listener and every peer, then reports `.cancelled` once the listener is
@@ -48,7 +51,6 @@ public final class NetworkDatagramTransport: OSCDatagramTransport, @unchecked Se
         requestedPort = port
         guard !stopRequested, listener == nil else { return }
         let parameters = NWParameters.udp
-        parameters.acceptLocalOnly = true
         parameters.prohibitedInterfaceTypes = [.cellular]
         let endpointPort = NWEndpoint.Port(rawValue: port) ?? .any
         let listener: NWListener

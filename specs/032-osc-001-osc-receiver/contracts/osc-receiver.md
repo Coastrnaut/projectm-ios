@@ -54,7 +54,7 @@ public protocol OSCDatagramTransport: AnyObject, Sendable {
 
 - C4.1 After `stop()`, no `.datagram` event is delivered.
 - C4.2 `NetworkDatagramTransport` (in `OSCTransport/`, `#if canImport(Network)`): UDP `NWListener`,
-  `acceptLocalOnly`, cellular prohibited, at most 8 peers (oldest cancelled), datagrams over the
+  cellular prohibited, peers checked with `OSCPeerAddress.isLocal`, at most 8 peers (oldest cancelled), datagrams over the
   limit reported as `.oversized` without copying.
 
 ## C5 Receiver

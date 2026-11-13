@@ -17,12 +17,17 @@ Decisions are numbered `OSC-001-D1…` (validate_docs.py reserves plain `R-nn` h
 
 ## OSC-001-D2 Local network only
 
-- **Decision**: three layers. `NWParameters.acceptLocalOnly = true`, `prohibitedInterfaceTypes =
-  [.cellular]`, and our own check of each peer's address (`OSCPeerAddress.isLocal`: IPv4 loopback,
+- **Decision**: two layers. `prohibitedInterfaceTypes = [.cellular]`, and our own check of each peer's address (`OSCPeerAddress.isLocal`: IPv4 loopback,
   10/8, 172.16/12, 192.168/16, 169.254/16; IPv6 `::1`, `fe80::/10`, `fc00::/7`; IPv4-mapped IPv6
   is checked as IPv4). A non-local peer's connection is cancelled before any read.
-- **Rationale**: the system flag is the primary control; the explicit check is pure, testable on
-  Linux, and documents the rule. Carrier-grade NAT (100.64/10) is not a local network and is refused.
+- **Rationale**: the explicit check is pure, testable on Linux, and documents the rule.
+  Carrier-grade NAT (100.64/10) is not a local network and is refused. A LAN peer that sends from a
+  global IPv6 address is refused too (conservative); IPv4 and link-local IPv6 work.
+- **Evidence (2026-11-13, implementation)**: `NWParameters.acceptLocalOnly = true` was planned as a
+  third layer. With it, the loopback integration test passed on the macOS host but the iOS 27.2
+  simulator never delivered the datagram (receiver counters all 0; passes with the flag off). Apple
+  does not document which sources the flag admits, so it is not used: the app's own rule is the
+  enforced one. Whether a device admits LAN peers is checked by the `{device}` task OSC-001-T26.
 - **Alternatives**: binding to a specific interface address (fragile across Wi-Fi changes).
 
 ## OSC-001-D3 Decoder bounds
