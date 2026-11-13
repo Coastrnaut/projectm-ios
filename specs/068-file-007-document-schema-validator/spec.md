@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (FILE-007-T01-T11 verified on the Mac host and the Linux shape; no app code changed, so no simulator or device task)
 
 **Input**: User description: "Implement FILE-007 (Document schema validator) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Validate imported JSON against
