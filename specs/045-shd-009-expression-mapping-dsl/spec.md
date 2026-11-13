@@ -176,8 +176,8 @@ system expression evaluator, a script engine, dynamic loading or shader compilat
 - Non-ASCII bytes, control characters, tabs and line breaks: tabs, carriage returns and line
   feeds are whitespace (line feeds count lines); any other control or non-ASCII byte is rejected at
   its position.
-- `audio.band.128`, `audio.band.07`: unknown identifiers (MOD-002 names only); `audio.band.-1`
-  reads as `audio.band - 1`, so `audio.band` is reported as unknown.
+- `audio.band.128`, `audio.band.07`: unknown identifiers (MOD-002 names only); in `audio.band.-1`
+  the name ends at `audio.band` and the stray `.` is rejected as an unexpected character.
 - A function name used without a call (`sin + 1`) or a value called as a function (`time(1)`):
   rejected with a message saying which.
 - A binding that shadows a known name (`let time = 1`) or is defined twice: rejected.
