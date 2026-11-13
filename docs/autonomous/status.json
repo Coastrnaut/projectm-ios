@@ -6,11 +6,10 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 56,
-   "implementing": 1,
-   "integrated": 28,
-   "skipped_existing": 1,
-   "unit_passed": 1
+   "audited": 55,
+   "implementing": 2,
+   "integrated": 29,
+   "skipped_existing": 1
   },
   "P1": {
    "audited": 142,
@@ -25,11 +24,10 @@
   }
  },
  "by_state": {
-  "audited": 286,
-  "implementing": 2,
-  "integrated": 36,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "audited": 285,
+  "implementing": 3,
+  "integrated": 37,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -307,7 +305,6 @@
    "UIX-013",
    "UIX-014",
    "UIX-015",
-   "VIS-002",
    "VIS-003",
    "VIS-004",
    "VIS-005",
@@ -329,7 +326,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "289 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
+   "288 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
   ]
  },
  "features": {
@@ -1795,13 +1792,13 @@
   },
   "MOD-001": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/mod-001",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/028-mod-001-typed-parameter-registry",
+   "state": "implementing"
   },
   "MOD-002": {
    "attempts": 0,
@@ -3408,10 +3405,10 @@
    "branch": "feature/vis-002",
    "branch_sha": "f3a531c11e882f60ed36a2b9de01b95c2d24d32e",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "c2b2f75c11bbb94c0ee00da9da49d8369f88212a",
    "priority": "P0",
    "spec_dir": "specs/025-vis-002-linear-spectrum",
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "VIS-003": {
    "attempts": 0,
@@ -3774,6 +3771,11 @@
    "branch": "feature/vis-001",
    "id": "VIS-001",
    "sha": "48285d49c422576ac32986029ee731b214fcde63"
+  },
+  {
+   "branch": "feature/vis-002",
+   "id": "VIS-002",
+   "sha": "c2b2f75c11bbb94c0ee00da9da49d8369f88212a"
   }
  ],
  "integration_branch": "autonomous/integration",
@@ -3801,5 +3803,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T15:25:13Z"
+ "updated": "2026-11-13T15:27:29Z"
 }

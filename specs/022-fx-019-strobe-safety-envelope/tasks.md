@@ -75,3 +75,13 @@ T17, T18 → T19 → T20 → T21. T22-T23 wait for the roadmap's device phase.
 
 MVP = Phase 2 + T07/T08 (the definition, proven on synthetic sequences); then the projectM path
 (the most strobing content), then native visuals, then CI and app checks.
+
+## Follow-up found during integration (2026-11-13)
+
+- [ ] FX-019-F1 Glow light per tile is an estimate that undercounts at very small render sizes with
+  thin bars: VIS-002 measured 5 transitions per 1 s window in the top tiles at 64×64 with 32 bars
+  (limit 4); at 128×128 the worst is 1, and the whole-frame bound holds within +0.002. Real screens
+  are far larger, so shipped behavior stays within the limit. Before ACC-002 (flash policy) or
+  ACC-012 (sensory profile) relies on per-tile numbers, replace the estimate with an exact tile
+  integration of the halo, or document the minimum size it is valid for. Source: VIS-002 report,
+  `specs/025-vis-002-linear-spectrum/research.md`.

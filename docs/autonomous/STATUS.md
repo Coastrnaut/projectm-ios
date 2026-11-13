@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T15:25:13Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T15:27:29Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,25 +9,24 @@
 
 | State | Features |
 |---|---|
-| audited | 286 |
-| implementing | 2 |
-| unit_passed | 1 |
-| integrated | 36 |
+| audited | 285 |
+| implementing | 3 |
+| integrated | 37 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 56 | 1 | 1 | 28 | 1 |
-| P1 | 142 | 1 | 0 | 8 | 0 |
-| P2 | 79 | 0 | 0 | 0 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 55 | 2 | 29 | 1 |
+| P1 | 142 | 1 | 8 | 0 |
+| P2 | 79 | 0 | 0 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 289 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
+- 288 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
 
 ## Integrated
 
@@ -69,6 +68,7 @@ The physical-device suite may **not** start:
 | PRE-015 | User preset duplication | `c6cce9988587` | `feature/pre-015` |
 | QA-007 | Audio source contract suite | `32172fdd5795` | `feature/qa-007` |
 | VIS-001 | Circular spectrum | `48285d49c422` | `feature/vis-001` |
+| VIS-002 | Linear spectrum | `c2b2f75c11bb` | `feature/vis-002` |
 
 ## Proved already implemented
 
@@ -126,6 +126,7 @@ None.
 - `swift test --package-path Packages/Diagnostics`: pass at `1e9e7eec69b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-016/20261113T101505/swift-test_Diagnostics.log`)
 - `xcodebuild -scheme Rendering-Package -destination id=4E32B01D-7911-4A64-A944-877DDD445BC0 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `1e9e7eec69b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-016/20261113T101505/sim-test_Rendering.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `1e9e7eec69b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-016/20261113T101505/swift-test_VisualGenerators.log`)
+- `integration checkout: AnalysisFeatures 106 on iOS 27.2 sim; app: projectM-iOSTests 133; NativeVisualUITests 3 of 4 (fallback test fails in openSettings, a test-helper race; fix pending from the test pass)`: exit 1 at `97e498d` (log `.autonomous/logs/integration/anl-016/app-tests.log`)
 
 ### AUD-001 Import DRM-free audio files (integrated)
 - `python3 scripts/check_compliance.py`: pass at `d9a60b2a6692` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-001/20261112T153538/compliance.log`)
@@ -346,9 +347,10 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `7fa6d4e0f3c1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-001/20261113T080701/swift-test_VisualGenerators.log`)
 - `integration checkout, full preset library: VisualGenerators 40 on iOS 27.2 sim (render tests ran) and 37 with -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE; xcodebuild projectM-iOS test: projectM-iOSTests 131 pass; UI 21 pass (NativeVisual, Visualizer, Settings, Status); 0 PosterBoard reports`: pass at `48285d4` (log `.autonomous/logs/integration/vis-001/app-tests.log`)
 
-### VIS-002 Linear spectrum (unit_passed)
+### VIS-002 Linear spectrum (integrated)
 - `python3 scripts/check_compliance.py`: pass at `f3a531c11e88` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-002/20261113T102444/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `f3a531c11e88` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-002/20261113T102444/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `f3a531c11e88` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-002/20261113T102444/script-tests.log`)
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `f3a531c11e88` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-002/20261113T102444/autonomous-tests.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `f3a531c11e88` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-002/20261113T102444/swift-test_VisualGenerators.log`)
+- `integration checkout: VisualGenerators 95 on iOS 27.2 sim; app: projectM-iOSTests 135, UI 3 (LinearSpectrum, Glow x2), 100 s wall; 0 PosterBoard reports`: pass at `c2b2f75` (log `.autonomous/logs/integration/vis-002/app-tests.log`)
