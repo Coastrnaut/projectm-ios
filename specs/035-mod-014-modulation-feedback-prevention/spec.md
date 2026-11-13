@@ -36,6 +36,20 @@ So the row must add the shared graph description, a validator that refuses every
 readable path, an incremental "would this connection create a loop?" check, and a deterministic
 evaluation order, and route MOD-002's bindings through it without changing their behavior.
 
+## Clarifications
+
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (owner rule 4: routine decisions delegated,
+no human interaction); each answer is the conservative, local-first option, recommended option
+first.
+
+- Q: Should a cycle be rejected, or accepted and broken with a one-frame delay? → A: Rejected. A refusal with a readable path is predictable, testable and cannot oscillate or run away; a delayed connection changes what the user hears and sees in ways that depend on frame rate. A later row may add an explicit "delayed" connection kind that validation treats as breaking the loop; nothing here blocks it. Rejected: implicit delay of the closing connection (which connection is "closing" depends on order), accept-and-clamp recursion depth (unbounded work per frame until the clamp) (MOD-014-R10; research MOD-014-D1).
+- Q: Must validation list every distinct loop, or one loop per tangle of mutually reachable nodes? → A: One loop per strongly connected group (a set of nodes that can all reach each other), with a shortest path through the group's first node by ID. Listing every distinct loop can grow exponentially with the graph and would break the linear bound; one path per group names every place that must change, and the user re-validates after a fix. Rejected: all elementary loops (exponential), only the first loop found (hides other groups) (MOD-014-R2, R3, R6; research MOD-014-D2).
+- Q: Should the readable path use stable IDs or display names? → A: Stable IDs as the path (unambiguous, the form saved scenes and logs use, and identical across languages), plus a display path with the registry's display names (generators' own names, audio features by ID) for the matrix UI. The acceptance asserts both exactly (MOD-014-R3).
+- Q: How are nodes counted against the limits, and what are they? → A: Nodes are the declared generators plus every distinct parameter and audio feature that a connection names; at most 1,024 nodes and 4,096 connections, about 30 times MOD-002's 32 bindings and far above a usable matrix. A graph over either limit gets one size issue and no other checks, so validation work is bounded (MOD-014-R6).
+- Q: What does a binding refused by the graph check look like to MOD-002 callers? → A: A new binding error, `feedbackCycle`, carrying the target and the loop's path; bindings are unchanged. It cannot occur with audio-only bindings today (audio features have no inputs), so app behavior is unchanged; the binding's existing checks (contract C2) still run first, so an unknown target keeps its existing error (MOD-014-R9).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A loop is refused with a path a person can read (Priority: P1)
@@ -135,10 +149,10 @@ test shows bit-identical modulated values.
 - **MOD-014-R3**: A path MUST list stable IDs joined by ` → `; a step entering a generator input other than `value` is written `<id>.<input>`. The path starts at the group's smallest node by ID, follows a shortest loop back to it (ties by ID), and is also offered with display names.
 - **MOD-014-R4**: Validation MUST report, as distinct issues: unknown parameter, retired parameter, undeclared generator, undeclared input, audio feature used as a target, duplicate connection, duplicate generator, malformed generator ID, generator ID that conflicts with a parameter or audio ID, duplicate input name, and size over the limits.
 - **MOD-014-R5**: Issues MUST be in a stable order for the same graph: size first (alone), then generator issues in declaration order, then connection issues in connection order, then self-loops in connection order, then cycles in order of their first node's ID.
-- **MOD-014-R6**: Validation MUST run in time and memory linear in nodes plus connections (up to a logarithmic factor for ordering), MUST NOT recurse in proportion to graph size, and MUST refuse graphs over 1,024 nodes or 4,096 connections before any other work.
+- **MOD-014-R6**: Validation MUST run in time and memory linear in nodes plus connections (up to a logarithmic factor for ordering), MUST NOT recurse in proportion to graph size, and MUST refuse graphs over 1,024 nodes (declared generators plus distinct parameters and audio features named by connections) or 4,096 connections before any other work.
 - **MOD-014-R7**: An accepted graph MUST provide an evaluation order in which every source precedes its targets, ties broken by smallest stable ID first; the order is the same on every host.
 - **MOD-014-R8**: An accepted graph MUST answer whether adding one connection would create a cycle, returning the loop's path (starting at the new connection's target) or none; the answer MUST equal full validation of the graph with that connection added.
-- **MOD-014-R9**: The audio feature modulator MUST express its bindings as graph connections (audio feature → parameter) and validate each new binding set through this validator; a refused set MUST leave bindings unchanged and name the path. Modulated values MUST be bit-identical to before.
+- **MOD-014-R9**: The audio feature modulator MUST express its bindings as graph connections (audio feature → parameter) and validate each new binding set through this validator; a refused set MUST leave bindings unchanged and throw a `feedbackCycle` binding error naming the target and the path, after the existing binding checks. Modulated values MUST be bit-identical to before.
 - **MOD-014-R10**: Cycles are refused, not delayed: no one-frame-delay connection exists in this row (a later row may add one as an explicit connection kind).
 - **MOD-014-R11**: The graph model and validator MUST be deterministic, `Sendable`, dependency-free, and built and tested on every CI host, Linux included.
 
