@@ -41,7 +41,11 @@ detection exists, the user-facing report before opening does not.
 Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
 interaction); each answer is the recommended, conservative, local-first option.
 
-- (filled by /speckit-clarify)
+- Q: Which problems make the report appear before opening, and which open silently as today? → A: The report appears for errors and for three user-relevant warnings: missing media (`missingAsset`), invalid mappings (every MOD-013 per-edge problem: `invalidBinding`, `duplicateBindingTarget`, `invalidExpression`, `orphanedBinding`, `orphanedConnection`, `rejectedConnection`, `retiredReference`) and unknown layer kinds (a layer is not shown). Notes open silently: values adjusted on read (`valueClamped`, `droppedField`, `parameterClamped`, `unsupportedBlendMode`, `migratedReference`) and content kept but unused (`unusedAsset`, `unknownAssetType`, `orphanedParameter`, `rejectedParameter`). Rejected: a report for every warning (a show would stop for harmless clamps); errors only (the row names missing assets and invalid mappings, which are warnings today).
+- Q: Does "Open with repairs" write the repaired scene back to the stored file? → A: No. Repairs apply to the live output only and the stored file stays byte-identical (`SCN-012-R9`); stepping through a show is not an edit (SHOW-001-R6) and a later save of the look (Add Current Scene, autosave) records whatever is shown. Rejected: saving on open (silently rewrites a show's scene, loses the original for a later app version that could read it); a separate "Save repairs" button (a scene editor is a later row).
+- Q: When a cue's scene needs the report, does the show's position still move? → A: Yes: the position moves as SHOW-001-R9 already rules for a broken scene, and the output stays unchanged until the performer opens the scene; Cancel leaves the output on the previous look. Rejected: holding the position until the report is answered (the show list and the keyboard steps would disagree with the visible cue).
+- Q: Which errors have a repair, and which make the scene "Cannot open"? → A: Repairable (each repair touches only the named items): duplicate or out-of-range instance IDs → renumber the later layers with the next free IDs; a layer whose asset is undefined, of the wrong type, damaged (text or graph), has an invalid key or store ID, or uses an unknown material → remove that layer (and its asset); more layers of a kind than allowed → remove the extra layers; an invalid value name → drop that value; a malformed parameter ID → drop that value; an invalid name → rename to "Untitled scene"; invalid generator declarations → remove the modulation generators and the connections that use them. Not repairable: an invalid scene ID (the scene's identity; shows and archives refer to it) and every decode refusal (newer version, damaged bytes, limits). Rejected: guessing a new scene ID (would break the cue's reference); trying to salvage truncated JSON (could open a wrong look).
+- Q: What does "Open with repairs" do with unknown content (layer kinds, fields, parameter values this version does not know)? → A: Keeps it: the default action "Keep unknown content" changes nothing, so a newer minor format's content survives (ADR-0028 forward compatibility); missing media and invalid mappings are removed. Rejected: removing unknown layers by default (destroys content a newer version made).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -142,7 +146,8 @@ naming a missing photo presents the report.
 - Repairs are idempotent: repairing a repaired scene changes nothing.
 - A repair never removes content that has no problem; unknown layer kinds, unknown fields and
   unknown parameter values are kept (forward compatibility, ADR-0028).
-- A scene whose errors cannot all be repaired (an invalid scene ID or name) shows "Cannot open".
+- A scene whose errors cannot all be repaired (an invalid scene ID) shows "Cannot open"; an invalid
+  name is repaired to "Untitled scene".
 - Report generation never crashes, whatever the bytes: a seeded fuzz of mutated scenes proves it.
 - A report while another sheet (Settings) is open: the report appears when the user is back on the
   visualizer; the show's position has already moved.
@@ -170,7 +175,9 @@ naming a missing photo presents the report.
 - **SCN-012-R7**: Report generation MUST never crash or trap for any input bytes or document.
 - **SCN-012-R8**: Stepping to a show cue whose scene has errors or user-relevant warnings (missing
   media, invalid mappings, unknown layers) MUST show the report before applying anything, with Open
-  with repairs (when repairs exist), Open as is (only when there are no errors) and Cancel.
+  with repairs (when repairs exist), Open as is (only when there are no errors) and Cancel. The
+  show's position moves as SHOW-001-R9 rules; the output stays unchanged until the user opens it.
+  Scenes with only notes (values adjusted, content kept but unused) open without a report.
 - **SCN-012-R9**: Opening with repairs MUST apply the repaired scene to the live output only; the
   stored scene file MUST stay unchanged.
 - **SCN-012-R10**: Reopen after a crash (PERF-010) MUST show the report before applying when the held
@@ -181,6 +188,8 @@ naming a missing photo presents the report.
   silent: it logs and falls back as today.
 - **SCN-012-R13**: The report MUST be readable with VoiceOver (group headings, each entry one
   element) and Dynamic Type (FR-070).
+- **SCN-012-R15**: The default repair set ("Open with repairs") MUST keep unknown layer kinds,
+  fields and parameter values, and remove only missing media, invalid mappings and repairable errors.
 - **SCN-012-R14**: Report generation and repairs MUST read no files, use no network and execute
   nothing from the document (Constitution, ADR-0028).
 
