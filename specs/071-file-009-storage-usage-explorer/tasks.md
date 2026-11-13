@@ -30,7 +30,7 @@ Simulator results are never device evidence.
 
 ## Phase 4: US3 — measuring never gets in the way (P2)
 
-- [ ] FILE-009-T10 [US3] `Apps/projectM-iOS/Tests/StorageLocationsTests.swift`: the model drops a cancelled measurement's result and shows only the newest (FILE-009-R5)
+- [ ] FILE-009-T10 [US3] `Apps/projectM-iOS/Tests/StorageLocationsTests.swift` (model section): the model drops a cancelled measurement's result and shows only the newest (FILE-009-R5)
 
 ## Phase 5: Polish
 
