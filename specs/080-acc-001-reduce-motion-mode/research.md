@@ -51,8 +51,8 @@ animation, governed by Reduce flashing). Already instant: A6, A7. System-owned: 
 ## D6 — Static check
 
 - **Decision**: `scripts/check_motion_policy.py`, tested from `scripts/test_scripts.py` (runs in CI).
-  Flags `withAnimation(` and `.animation(` in app sources outside `MotionPolicy.swift`; a line passes
-  when it goes through `reduceMotionAware(` or `MotionPolicy.safetyFade(`. Comments and strings are
+  Flags `withAnimation(`, `.animation(` and `UIView.animate` in app sources outside `MotionPolicy.swift`
+  (contract C1); a line passes when it contains `reduceMotionAware(` or `MotionPolicy.`. Comments and strings are
   ignored.
 - **Rationale**: cheap, no new tool, catches the two ways SwiftUI code introduces animation.
   `.transition(` needs an animated transaction, so it is covered indirectly. UIKit
