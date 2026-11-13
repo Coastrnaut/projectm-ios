@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T01:53:01Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T02:05:40Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -218,6 +218,7 @@ None.
 - `python3 scripts/validate_docs.py`: pass at `10193f697212` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-014/20261112T205210/docs.log`)
 - `swift test --package-path Packages/LocalPortability`: pass at `10193f697212` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-014/20261112T205210/swift-test_LocalPortability.log`)
 - `swift test --package-path Packages/PresetLibrary`: pass at `10193f697212` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-014/20261112T205210/swift-test_PresetLibrary.log`)
+- `integration checkout, full preset library: LocalPortability 51 on iOS 27.2 sim; xcodebuild projectM-iOS test on iPhone 17 iOS 27.2: projectM-iOSTests 119 pass; UI 16 pass (UserPresetExport, UserPresetEditing, UserPresets, PresetLibrary, Purchase)`: pass at `623a76c85396` (log `.autonomous/logs/integration/pre-014/app-tests.log`)
 
 ### PRE-015 User preset duplication (integrated)
 - `python3 scripts/check_compliance.py`: pass at `f4a06e68c3fe` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-015/20261112T194121/compliance.log`)
