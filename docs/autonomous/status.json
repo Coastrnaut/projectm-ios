@@ -7,9 +7,10 @@
  "by_priority": {
   "P0": {
    "audited": 13,
-   "implementing": 2,
+   "implementing": 1,
    "integrated": 71,
-   "skipped_existing": 1
+   "skipped_existing": 1,
+   "unit_passed": 1
   },
   "P1": {
    "audited": 137,
@@ -25,9 +26,10 @@
  },
  "by_state": {
   "audited": 236,
-  "implementing": 2,
+  "implementing": 1,
   "integrated": 87,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -2863,12 +2865,12 @@
   "SCN-010": {
    "attempts": 0,
    "branch": "feature/scn-010",
-   "branch_sha": null,
+   "branch_sha": "96baa4c3de9b93bdc3c7a9bddd9146dd6826dd9d",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "SCN-011": {
    "attempts": 0,
@@ -4003,5 +4005,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T23:05:16Z"
+ "updated": "2026-11-13T23:07:42Z"
 }
