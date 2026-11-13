@@ -92,7 +92,7 @@ public struct BandLayout: Sendable, Equatable {
                     if w > BandLayout.weightEpsilon {
                         if first < 0 { first = k }
                         // Keep the range contiguous (an interior zero cannot occur: intervals tile).
-                        weights.append(contentsOf: [Double](repeating: 0, count: k - first - weights.count))
+                        while weights.count < k - first { weights.append(0) }
                         weights.append(min(w, 1))
                     }
                 }
