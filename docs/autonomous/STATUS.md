@@ -10,28 +10,28 @@
 | State | Features |
 |---|---|
 | audited | 298 |
-| unit_passed | 1 |
-| integrated | 26 |
+| integrated | 27 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 63 | 1 | 22 | 1 |
-| P1 | 147 | 0 | 4 | 0 |
-| P2 | 79 | 0 | 0 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | integrated | skipped_existing |
+|---|---|---|---|
+| P0 | 63 | 23 | 1 |
+| P1 | 147 | 4 | 0 |
+| P2 | 79 | 0 | 0 |
+| P3 | 9 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 299 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
+- 298 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
 
 ## Integrated
 
 | ID | Feature | Merge commit | Branch |
 |---|---|---|---|
+| ANL-001 | Windowed FFT | `df16f2b90397` | `feature/anl-001` |
 | AUD-001 | Import DRM-free audio files | `a2813ab3fa4f` | `feature/aud-001` |
 | AUD-002 | Support common audio containers | `f886b7ce7c76` | `feature/aud-002` |
 | AUD-003 | Audio library queue | `c06876d434a3` | `feature/aud-003` |
@@ -69,7 +69,7 @@ None.
 
 ## Evidence by feature
 
-### ANL-001 Windowed FFT (unit_passed)
+### ANL-001 Windowed FFT (integrated)
 - `python3 scripts/check_compliance.py`: pass at `0d0eb4b9f656` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-001/20261113T061117/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `0d0eb4b9f656` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-001/20261113T061117/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=62BA098B-4CBB-4DB6-91AD-51494936CF89 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `0d0eb4b9f656` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-001/20261113T061117/sim-test_ANGLERendering.log`)

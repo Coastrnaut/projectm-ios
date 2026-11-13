@@ -7,9 +7,8 @@
  "by_priority": {
   "P0": {
    "audited": 63,
-   "integrated": 22,
-   "skipped_existing": 1,
-   "unit_passed": 1
+   "integrated": 23,
+   "skipped_existing": 1
   },
   "P1": {
    "audited": 147,
@@ -24,9 +23,8 @@
  },
  "by_state": {
   "audited": 298,
-  "integrated": 26,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "integrated": 27,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -46,7 +44,6 @@
    "ACC-010",
    "ACC-011",
    "ACC-012",
-   "ANL-001",
    "ANL-002",
    "ANL-003",
    "ANL-004",
@@ -336,7 +333,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "299 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
+   "298 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
   ]
  },
  "features": {
@@ -465,10 +462,10 @@
    "branch": "feature/anl-001",
    "branch_sha": "0d0eb4b9f656534eda15bc424e2627daaebdcde0",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "df16f2b90397a087cda6aa8fccb2d831e94e1d78",
    "priority": "P0",
    "spec_dir": "specs/014-anl-001-windowed-fft",
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "ANL-002": {
    "attempts": 0,
@@ -3602,6 +3599,11 @@
   }
  },
  "integrated": [
+  {
+   "branch": "feature/anl-001",
+   "id": "ANL-001",
+   "sha": "df16f2b90397a087cda6aa8fccb2d831e94e1d78"
+  },
   {
    "branch": "feature/aud-001",
    "id": "AUD-001",
