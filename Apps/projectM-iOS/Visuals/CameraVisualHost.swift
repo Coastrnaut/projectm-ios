@@ -10,6 +10,10 @@
 //   while Camera is shown on the visualizer and not paused), not suspended for presentation loss
 //   (PERF-011), the app not in the background and the scene connected. Whenever one of these stops
 //   holding, the loop and the camera stop before the call returns (CAM-001-R7).
+// * CAM-012: `stopCamera()` is the user's Stop camera. The camera stops before it returns (the
+//   provider's slot closed, its picture dropped, state idle); the frame loop keeps running if it
+//   ran, and nothing on this host starts the camera again (the coordinator then releases the host).
+//   `framesComposited` counts presented frames, so tests can see that the loop never froze.
 // * The provider's state is mirrored in `feedState` and handed to the coordinator, which shows the
 //   non-blocking notice (CAM-001-R5, R6, R8). The view's accessibility value names it (R14).
 // * Per frame this file allocates nothing: the band scratch is preallocated and the audio context is
@@ -40,6 +44,10 @@ final class CameraVisualHost: PresentationBoundResource {
     private var bandCount = 0
     private var displayLink: CADisplayLink?
     private var paused = true
+    /// CAM-012: the user stopped the camera; this host never starts it again.
+    private(set) var cameraStoppedByUser = false
+    /// CAM-012: frames the loop presented (tests, diagnostics; an Int, no allocation).
+    private(set) var framesComposited = 0
     private(set) var isSuspended = false
     private var inBackground = false
     private var sceneDisconnected = false
@@ -148,6 +156,14 @@ final class CameraVisualHost: PresentationBoundResource {
         view.accessibilityValue = feedState.accessibilityValue
     }
 
+    /// CAM-012-R4: the user's Stop camera. Stops the camera before returning (the provider reports
+    /// idle synchronously), drops the held picture, and keeps the camera off on this host whatever
+    /// happens next (resume, foreground, scene, presentation). The frame loop is left as it was.
+    func stopCamera() {
+        cameraStoppedByUser = true
+        camera.stop()
+    }
+
     // MARK: - Pause (FR-046), presentation (PERF-011), background and scene (CAM-001-R7)
 
     func pause() {
@@ -202,7 +218,7 @@ final class CameraVisualHost: PresentationBoundResource {
         let run = !paused && !isSuspended && !inBackground && !sceneDisconnected
         if run, displayLink == nil {
             compositor.resetFlashHistory()   // a new scene for the flash guard (FX-019-R11)
-            camera.start()
+            if !cameraStoppedByUser { camera.start() }   // CAM-012-R6
             if let reader { analyzer.start(reader: reader) }
             let link = CADisplayLink(target: CameraVisualLinkProxy(self), selector: #selector(CameraVisualLinkProxy.fire(_:)))
             link.preferredFrameRateRange = quality.frameRateRange
@@ -234,6 +250,7 @@ final class CameraVisualHost: PresentationBoundResource {
                                    audio: audio) else { return }
         commands.present(drawable)
         commands.commit()
+        framesComposited &+= 1
         if meter.record(presentedAt: link.timestamp) { metrics = meter.metrics }
     }
 
