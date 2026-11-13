@@ -4,6 +4,7 @@
 // VIS-001, VIS-002: when Settings chooses a native spectrum (Circular or Linear), its Metal view
 // replaces the renderer's view (projectM is paused meanwhile); if it cannot be created a notice says
 // projectM is shown instead.
+// AUD-007: a route change's explanation shows above the source-and-state indicator for about 4 s.
 import CaptureKit
 import CaptureUI
 import PresetLibrary
@@ -49,6 +50,16 @@ struct VisualizerView: View {
             VStack(spacing: 8) {
                 banners
                 Spacer()
+                // AUD-007: the short explanation of a route change, with or without the controls.
+                if let explanation = coordinator.routes.explanation, coordinator.routeContext != nil {
+                    Text(explanation)
+                        .font(.footnote)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(.regularMaterial, in: Capsule())
+                        .transition(.opacity)
+                        .accessibilityIdentifier("routeExplanation")
+                }
                 if coordinator.controlsVisible {
                     ControlsOverlay(coordinator: coordinator)
                         .transition(.opacity)
@@ -71,6 +82,10 @@ struct VisualizerView: View {
             if UITestSessionEventPanel.isRequested {   // AUD-014: InterruptionUITests
                 VStack { HStack { UITestSessionEventPanel(); Spacer() }; Spacer() }
                     .padding(.top, 2)
+            }
+            if UITestRouteProvider.isRequested {       // AUD-007: RouteIndicatorUITests
+                VStack { HStack { UITestRoutePanel(); Spacer() }; Spacer() }
+                    .padding(.top, 40)
             }
             #endif
             if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {
@@ -113,6 +128,7 @@ struct VisualizerView: View {
         .onChange(of: coordinator.settings.linearSpectrumSpacing) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.glowParameters) { coordinator.glowSettingsChanged() }          // FX-001
         .onChange(of: coordinator.manager.state) { _, state in
+            coordinator.routes.refresh()   // AUD-007-R3: a source started or changed state
             SourceStatusIndicator.announce(mode: coordinator.manager.activeMode, state: state, signal: coordinator.testSignalName)   // FR-070, AUD-016-R16
         }
         .onChange(of: coordinator.manager.stopReason) { _, reason in
