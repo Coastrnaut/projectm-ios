@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T16:45:54Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T16:47:50Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,13 +10,13 @@
 | State | Features |
 |---|---|
 | audited | 277 |
-| implementing | 2 |
+| unit_passed | 2 |
 | integrated | 46 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
+| Priority | audited | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|
 | P0 | 49 | 2 | 35 | 1 |
 | P1 | 140 | 0 | 11 | 0 |
@@ -339,6 +339,15 @@ None.
 - `post-merge: projectM-iOSTests 159 + AudioFeatureBindingUITests 13.8 s on iPhone 17 iOS 27.2 sim`: pass at `29cd3bbb1e12` (log `.autonomous/logs/integration/mod-003/app-tests.log`)
 - `post-merge: ParameterGraph xcodebuild test on iPhone 17 sim (48)`: pass at `29cd3bbb1e12` (log `.autonomous/logs/integration/mod-003/pg-sim.log`)
 
+### MOD-014 Modulation feedback prevention (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `a08446ecdde1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-014/20261113T114626/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `a08446ecdde1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-014/20261113T114626/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `a08446ecdde1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-014/20261113T114626/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `a08446ecdde1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-014/20261113T114626/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ParameterGraph`: pass at `a08446ecdde1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-014/20261113T114626/swift-test_ParameterGraph.log`)
+- `swift test --package-path Packages/PerformanceControl`: pass at `a08446ecdde1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-014/20261113T114626/swift-test_PerformanceControl.log`)
+- `swift test --package-path Packages/VisualGenerators`: pass at `a08446ecdde1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-014/20261113T114626/swift-test_VisualGenerators.log`)
+
 ### OSC-001 OSC receiver (integrated)
 - `python3 scripts/check_compliance.py`: pass at `6467d622b4bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-001/20261113T113140/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `6467d622b4bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-001/20261113T113140/docs.log`)
@@ -346,6 +355,11 @@ None.
 - `post-merge: projectM-iOSTests 165 + OSCReceiverUITests 12.5 s on iPhone 17 iOS 27.2 sim (SettingsUITests licenses fixed in the next commit, all 4 pass)`: pass at `13d9883531b9` (log `.autonomous/logs/integration/osc-001/app-tests.log`)
 - `post-merge: PerformanceControl xcodebuild test on iPhone 17 sim (58, incl. loopback acceptance)`: pass at `13d9883531b9` (log `.autonomous/logs/integration/osc-001/perf-sim.log`)
 - `post-merge: SettingsUITests 4 pass after scrolling to Licenses (9.3-20.1 s)`: pass at `13d9883531b9` (log `.autonomous/logs/integration/osc-001/settings-ui.log`)
+
+### OSC-002 OSC message parser (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `e0b3e36021ba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-002/20261113T114747/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `e0b3e36021ba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-002/20261113T114747/docs.log`)
+- `swift test --package-path Packages/PerformanceControl`: pass at `e0b3e36021ba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-002/20261113T114747/swift-test_PerformanceControl.log`)
 
 ### PERF-011 Background resource release (integrated)
 - `python3 scripts/check_compliance.py`: pass at `e463058b1c92` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T151252/compliance.log`)
