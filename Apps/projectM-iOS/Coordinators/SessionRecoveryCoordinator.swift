@@ -3,7 +3,7 @@
 //
 // * Launch (AppCoordinator.init, before the OSC receiver exists): `SessionRecoveryPolicy.launch`
 //   decides from the stored record and marks the session open. `prepare(settings:)` then applies the
-//   consent rules: after an abnormal exit the stored OSC toggle is turned off (ADR-0031: never reopened
+//   consent rules: after an abnormal exit the stored OSC toggle is turned off (ADR-0032: never reopened
 //   without the user), and while an offer is pending the scene settings are put at their defaults
 //   with the stored visual held for Reopen. Camera is never held (it is never stored, CAM-001-R11).
 // * Lifecycle: the background transition and terminate end the session; a return to the foreground
