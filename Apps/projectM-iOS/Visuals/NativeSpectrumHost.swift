@@ -104,6 +104,12 @@ final class NativeSpectrumHost: PresentationBoundResource {
     private let glowLuminance = ModulatedGlowLuminance()
     /// REC-001: the handler waiting for the next readable frame.
     private var pendingCapture: (@MainActor (CapturedPixels?) -> Void)?
+    /// REC-003: the attached video recording; the drawables stay readable while it is set.
+    var videoRecording: VideoRecordingTap? {
+        didSet { view.metalLayer.framebufferOnly = videoRecording == nil && pendingCapture == nil }
+    }
+    /// REC-003: the device the recording's pixel buffers are made for.
+    var recordingDevice: MTLDevice { device }
 
     var barCount: SpectrumBarCount {
         get { generator.barCount }
@@ -354,7 +360,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
     func cancelCapture() {
         let handler = pendingCapture
         pendingCapture = nil
-        view.metalLayer.framebufferOnly = true
+        view.metalLayer.framebufferOnly = videoRecording == nil   // REC-003 keeps the drawables readable
         handler?(nil)
     }
 
@@ -362,7 +368,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
     private func encodeCaptureIfPending(_ target: MTLTexture, commands: MTLCommandBuffer) {
         guard let handler = pendingCapture, !target.isFramebufferOnly else { return }
         pendingCapture = nil
-        view.metalLayer.framebufferOnly = true
+        view.metalLayer.framebufferOnly = videoRecording == nil   // REC-003 keeps the drawables readable
         let width = target.width, height = target.height, rowBytes = width * 4
         guard target.pixelFormat == .bgra8Unorm_srgb || target.pixelFormat == .bgra8Unorm,
               let buffer = device.makeBuffer(length: rowBytes * height, options: .storageModeShared),
@@ -386,6 +392,19 @@ final class NativeSpectrumHost: PresentationBoundResource {
             }
             Task { @MainActor in handler(pixels) }
         }
+    }
+
+    /// REC-003: a blit of the readable drawable's top-left region into the recording's texture.
+    private static func encodeRecordingCopy(from target: MTLTexture, into texture: MTLTexture, commands: MTLCommandBuffer) -> Bool {
+        guard !target.isFramebufferOnly, target.pixelFormat == texture.pixelFormat,
+              texture.width <= target.width, texture.height <= target.height,
+              let blit = commands.makeBlitCommandEncoder() else { return false }
+        blit.label = "REC-003 native recording copy"
+        blit.copy(from: target, sourceSlice: 0, sourceLevel: 0, sourceOrigin: MTLOrigin(x: 0, y: 0, z: 0),
+                  sourceSize: MTLSize(width: texture.width, height: texture.height, depth: 1), to: texture,
+                  destinationSlice: 0, destinationLevel: 0, destinationOrigin: MTLOrigin(x: 0, y: 0, z: 0))
+        blit.endEncoding()
+        return true
     }
 
     // MARK: - Frames
@@ -418,6 +437,11 @@ final class NativeSpectrumHost: PresentationBoundResource {
         }
         guard drawn else { return }
         encodeCaptureIfPending(target, commands: commands)   // REC-001; nothing without a request
+        // REC-003: the drawn drawable (glow included) copied into the recording's pixel buffer.
+        videoRecording?.record(commandBuffer: commands, presentationNanoseconds: context.timeNanoseconds,
+                               drawable: target) { (texture: MTLTexture) -> Bool in
+            Self.encodeRecordingCopy(from: target, into: texture, commands: commands)
+        }
         commands.present(drawable)
         commands.commit()
         presentedFrameCount += 1

@@ -7,8 +7,13 @@
 //
 // ImageIODecoder, in order of cost (each failure is typed):
 //   1. size: data longer than `maxFileBytes` → `.tooLarge`, before ImageIO sees it;
+//   1a. structure (MED-014-R1 to R5): `ImageHeaderSniffer` checks PNG, JPEG and HEIF before ImageIO
+//      (no bytes → `.notAnImage`; cut short, bad checksum, illegal field → `.damaged`), and a size
+//      stated in the header over `maxPixelCount` → `.tooManyPixels` before any decoding. Other
+//      formats (GIF, TIFF/DNG, WebP…) go on to ImageIO's checks below;
 //   2. type: ImageIO must recognise an image type with at least one picture → `.notAnImage`;
-//   3. integrity: the data must be complete → `.damaged` (a truncated file decodes as a grey tail);
+//   3. integrity: ImageIO's status must be complete → `.damaged` (it misses a PNG cut short, which
+//      step 1a catches);
 //   4. pixel count: width × height from the picture's properties (only those two numbers are read;
 //      no other metadata) > `maxPixelCount` → `.tooManyPixels`;
 //   5. decode: an upright (orientation applied) picture at most `maxStoredLongestSide` long, drawn
@@ -16,6 +21,7 @@
 //      with straight (non-premultiplied) alpha → `.damaged` when ImageIO cannot decode it.
 // Only the first picture of a multi-picture file is used (animation is MED-008).
 import Foundation
+import MediaSniffing
 
 /// An upright picture: RGBA8, sRGB-encoded, straight alpha, row 0 at the top, `width × 4` bytes per row.
 public struct DecodedImage: Sendable, Equatable {
@@ -44,6 +50,23 @@ public protocol ImageDecoding: Sendable {
     func decode(_ data: Data, limits: ImageImportLimits) throws(ImageImportError) -> DecodedImage
 }
 
+/// The structure and header-size checks of `ImageIODecoder` (MED-014-R1 to R5), plain Swift.
+public enum ImageStructureCheck {
+    /// Throws the typed error for malformed bytes or a header size over the pixel limit.
+    public static func check(_ data: Data, limits: ImageImportLimits) throws(ImageImportError) {
+        let facts: ImageHeaderFacts
+        do throws(MediaSniffError) {
+            facts = try ImageHeaderSniffer.sniff(data)
+        } catch {
+            switch error {
+            case .empty, .unrecognized: throw .notAnImage
+            case .truncated, .corrupt, .unreadable: throw .damaged
+            }
+        }
+        if let pixels = facts.pixelCount, pixels > limits.maxPixelCount { throw .tooManyPixels }
+    }
+}
+
 #if canImport(ImageIO)
 import CoreGraphics
 import ImageIO
@@ -62,6 +85,7 @@ public struct ImageIODecoder: ImageDecoding {
     /// Steps 1-5 up to the upright, bounded `CGImage`.
     static func uprightImage(_ data: Data, limits: ImageImportLimits) throws(ImageImportError) -> CGImage {
         guard Int64(data.count) <= limits.maxFileBytes else { throw .tooLarge }
+        try ImageStructureCheck.check(data, limits: limits)
         let sourceOptions = [kCGImageSourceShouldCache: false] as CFDictionary
         guard let source = CGImageSourceCreateWithData(data as CFData, sourceOptions),
               let typeIdentifier = CGImageSourceGetType(source) as String?,

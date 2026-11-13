@@ -178,6 +178,12 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         return FrameCaptureCoordinator.Context(source: self.activeFrameCaptureSource,
                                                outputLive: self.externalDisplay.blackoutPhase == .live, paused: self.userPaused)
     }
+    /// REC-003: Record (the shown visual's frames into a video file, handed to the file mover).
+    @ObservationIgnored private(set) lazy var videoRecording = VideoRecordingCoordinator { [weak self] () -> VideoRecordingCoordinator.Context in
+        guard let self else { return VideoRecordingCoordinator.Context(source: nil, visualShown: false, outputLive: false, paused: false) }
+        return VideoRecordingCoordinator.Context(source: self.activeVideoRecordingSource, visualShown: self.screen == .visualizer,
+                                                 outputLive: self.externalDisplay.blackoutPhase == .live, paused: self.userPaused)
+    }
 
     private let defaults: UserDefaults
     #if DEBUG
@@ -911,6 +917,18 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         if showsTextVisual { return textVisual }
         if showsNativeVisual { return nativeVisual }
         return renderer as? ANGLERenderer
+    }
+
+    /// REC-003: the shown visual's recording source; nil for projectM (not recordable in this row,
+    /// ADR-0027) and when no visual is shown.
+    var activeVideoRecordingSource: (any VideoRecordingSource)? {
+        guard screen == .visualizer else { return nil }
+        if showsCameraVisual { return cameraVisual }
+        if showsPhotoVisual { return photoVisual }
+        if showsVideoVisual { return videoVisual }
+        if showsTextVisual { return textVisual }
+        if showsNativeVisual { return nativeVisual }
+        return nil
     }
 
     /// Frame statistics of the shown visual (FR-048 overlay).

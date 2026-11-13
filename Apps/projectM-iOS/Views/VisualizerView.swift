@@ -23,6 +23,8 @@
 // OUT-010: while the output is blacked out (or restoring) a persistent badge with Restore stays at
 // the top, with or without the controls, and the external display note says the display is black.
 // REC-001: Save Frame's format choice, the Files exporter and its notice; DEBUG `frameCaptureProbe`.
+// REC-003: the recording indicator, the system file mover for a finished recording, its notice;
+// DEBUG `videoRecordingProbe`.
 import CaptureKit
 import CaptureUI
 import FrameCapture
@@ -134,6 +136,14 @@ struct VisualizerView: View {
                     .allowsHitTesting(false)
                     .accessibilityIdentifier("frameCaptureProbe")
                     .accessibilityValue(coordinator.frameCapture.probe)
+            }
+            if VideoRecordingCoordinator.debugDirectoryFromArguments() != nil {   // REC-003: VideoRecordingUITests
+                Text(coordinator.videoRecording.probe)
+                    .font(.caption2)
+                    .opacity(0.01)
+                    .allowsHitTesting(false)
+                    .accessibilityIdentifier("videoRecordingProbe")
+                    .accessibilityValue(coordinator.videoRecording.probe)
             }
             if UITestExternalDisplay.isRequested {     // OUT-001: ExternalDisplayUITests
                 VStack { HStack { UITestExternalDisplayPanel(coordinator: coordinator.externalDisplay); Spacer() }; Spacer() }
@@ -256,6 +266,14 @@ struct VisualizerView: View {
                       contentType: coordinator.frameCapture.document?.contentType ?? .png,
                       defaultFilename: CapturedFrameDocument.baseName(date: Date())) { (result: Result<URL, any Error>) in
             coordinator.frameCapture.exportFinished(result)
+        }
+        // REC-003: the finished recording is moved (not copied) to the folder the user picks in Files.
+        .fileMover(isPresented: Binding(get: { coordinator.videoRecording.showMover },
+                                        set: { coordinator.videoRecording.showMover = $0 }),
+                   file: coordinator.videoRecording.fileToMove) { (result: Result<URL, any Error>) in
+            coordinator.videoRecording.moverFinished(result)
+        } onCancellation: {
+            coordinator.videoRecording.moverCancelled()   // REC-003-R13: the temporary file is deleted
         }
         .onChange(of: coordinator.settings.reduceFlashing) { coordinator.applyReduceFlashing() }
         .onChange(of: coordinator.settings.visual) { coordinator.visualSettingsChanged() }                 // VIS-001
@@ -444,6 +462,38 @@ struct VisualizerView: View {
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("frameCaptureNotice")
+        }
+        // REC-003: the recording indicator (app UI, never part of the recorded picture; REC-003-R16).
+        if coordinator.videoRecording.state != .idle {
+            let finishing = coordinator.videoRecording.state == .finishing
+            HStack(spacing: 8) {
+                Circle().fill(finishing ? Color.secondary : Color.red).frame(width: 10, height: 10)
+                Text(finishing ? "Finishing…" : "REC \(coordinator.videoRecording.elapsedText)")
+                    .font(.footnote.monospacedDigit().bold())
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(.regularMaterial, in: Capsule())
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(finishing ? "Finishing the recording" : "Recording, \(coordinator.videoRecording.elapsedText)")
+            .accessibilityIdentifier("recordingIndicator")
+        }
+        // REC-003: refusals, stop reasons, failures and "Recording saved." (FR-070: a labeled element).
+        if let notice = coordinator.videoRecording.notice {
+            HStack(spacing: 10) {
+                Image(systemName: "record.circle")
+                    .accessibilityHidden(true)
+                Text(notice)
+                    .font(.footnote)
+                    .accessibilityIdentifier("videoRecordingNoticeText")
+                Button("Dismiss") { coordinator.videoRecording.clearNotice() }
+                    .font(.footnote.bold())
+                    .accessibilityIdentifier("videoRecordingNoticeDismiss")
+            }
+            .padding(10)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("videoRecordingNotice")
         }
         if let failure = coordinator.presets.failureMessage {
             Text(failure)

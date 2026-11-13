@@ -46,3 +46,19 @@ no photo picker. CMP-001 (ADR-0013) and CMP-002 define layers and stacks; the Ca
 - `PhotoVisualHost` repeats `CameraVisualHost`'s loop; a shared host is left to the scene rows.
 - Device behaviour (the real pickers, HEIC, large panoramas, iCloud Drive) is verified by the owner
   on D1 and D3 (MED-001-T22 to T24).
+
+## Amendment 2026-11-13: MED-014 safe media decoder
+
+Decided by Claude under the owner's best-judgement rule (owner rule 4); `specs/056-med-014-safe-media-decoder`.
+
+- **Structure before ImageIO.** `ImageIODecoder` now runs `ImageStructureCheck` (target
+  `MediaSniffing`, plain Swift, no dependencies, Linux-tested) right after the size limit: PNG
+  (signature, IHDR fields, chunk lengths, CRC-32 of critical chunks, IDAT, IEND), JPEG (SOI, segment
+  lengths, SOF before the first scan, EOI) and HEIF/AVIF (`ftyp` image brand, top-level boxes inside
+  the file, `meta`, largest `ispe`). Malformed → `.damaged`; a header size over 100 million pixels →
+  `.tooManyPixels` before any decode. Other formats (GIF, TIFF/DNG, WebP…) keep decision 3's ImageIO
+  checks. This closes MED-001's known gap: ImageIO decoded a PNG cut short as "complete".
+- **No new errors or messages**; the layer's load uses the same decoder, so a stored copy damaged on
+  disk fails as `.failed(.damaged)`, draws transparent and shows "The photo couldn't be loaded."
+- Proven by a 16-row fixture table, a fixed-seed fuzz (2,700 sniffer and 300 decoder mutations) and
+  a running compositor whose photo and video files are replaced by corrupt fixtures.

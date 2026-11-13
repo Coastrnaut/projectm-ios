@@ -8,7 +8,8 @@ visual (CAM-001; `specs/033-cam-001-rear-camera-layer`, in app versions that off
 Photo visual (MED-001; `specs/044-med-001-import-photo-layer`, in app versions that offer it), and for
 the Video visual (MED-002; `specs/048-med-002-import-video-layer`, in app versions that offer it), and for
 the Text visual (MED-009; `specs/053-med-009-text-overlay`, in app versions that offer it), and for
-Save Frame (REC-001; `specs/055-rec-001-still-frame-capture`, in app versions that offer it). Applies to the projectM app for
+Save Frame (REC-001; `specs/055-rec-001-still-frame-capture`, in app versions that offer it), and for
+Record (REC-003; `specs/058-rec-003-video-recording`, in app versions that offer it). Applies to the projectM app for
 iPhone and iPad published by Robert Pancoast.
 
 **Summary: the app collects no data. Audio is processed only in memory on your device, and nothing
@@ -16,7 +17,9 @@ is recorded or sent anywhere. The only audio the app stores is audio files you c
 which stay on your device until you remove them, and the one photo you may choose for the Photo
 visual and the one video you may choose for the Video visual, which also stay on your device until
 you remove them (a video's own sound is removed and never played or analysed). If you choose the Camera visual, the rear camera's
-picture is shown on screen while that visual is on; it is never recorded, stored, sent or analysed. The only network traffic is Apple's own App Store traffic
+picture is shown on screen while that visual is on; it is never recorded, stored, sent or analysed
+unless you yourself tap Save Frame or Record. Record makes a silent video of the visualization only
+while you record and hands it to Files; the app keeps no copy. The only network traffic is Apple's own App Store traffic
 when you buy or restore the full preset library, and, only if you turn it on, OSC control messages
 that devices on your own local network send to the app.**
 
@@ -117,6 +120,30 @@ it and choose PNG or HEIF.
   place you saved it.
 - While the output is blacked out, or the visualization is paused, Save Frame saves nothing and
   says why.
+
+## Videos you record with Record
+
+"Record" in the visualizer's controls records a video of the visualization (Camera, Photo, Video,
+Text and the spectrum visuals; not projectM in this version), only between your tap on Record and
+the moment the recording stops.
+
+- The video shows the visualization as it is shown, after the app's flash limiting; the controls and
+  the recording indicator are not in it. If you use the Camera visual, the video includes what the
+  camera shows while you record, exactly like a screen recording you make yourself.
+- The video has no sound: no microphone, app or system audio is recorded.
+- While it records, the video is written to a temporary file inside the app on your device. When the
+  recording stops, iOS shows its own Files sheet and you choose where the video goes (for example On
+  My iPhone or iCloud Drive) or cancel. If you cancel, the app deletes the temporary file; any
+  temporary file left by an interrupted run is deleted the next time the app starts. The app never
+  saves to your photo library and asks for no permission.
+- The file holds only the video and the technical details a video file needs (size, frame times,
+  codec, color tags): no location, device, camera or account details. Its suggested name contains
+  the date and time, and you can change it.
+- Recording stops by itself, keeping what was recorded, after 10 minutes, when the app leaves the
+  screen, when you pause, when the output is blacked out, or when the visual or its size changes.
+  While the output is blacked out or the visualization is paused, Record does not start.
+- Nothing is uploaded or sent anywhere by the app; what happens to the file afterwards is up to you
+  and the place you saved it.
 
 ## Audio stays in memory on your device
 
