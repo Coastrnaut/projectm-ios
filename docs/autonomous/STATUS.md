@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T21:30:55Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T21:33:09Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 244 |
 | implementing | 2 |
-| unit_passed | 1 |
-| integrated | 78 |
+| integrated | 79 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 20 | 2 | 1 | 63 | 1 |
-| P1 | 138 | 0 | 0 | 13 | 0 |
-| P2 | 77 | 0 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 20 | 2 | 64 | 1 |
+| P1 | 138 | 0 | 13 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 247 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
+- 246 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
 
 ## Integrated
 
@@ -102,6 +101,7 @@ The physical-device suite may **not** start:
 | REC-012 | Share via Files | `c3886d1cb0bb` | `feature/rec-012` |
 | REC-015 | Recording disk guard | `d1a76394fab1` | `feature/rec-015` |
 | SCN-001 | Versioned scene format | `c3886d1cb0bb` | `feature/scn-001` |
+| SCN-002 | Scene autosave | `1aa354c0b623` | `feature/scn-002` |
 | SHD-001 | Procedural material catalog | `ade4dfec39a5` | `feature/shd-001` |
 | SHD-002 | Node-based generator graph | `e91692538b99` | `feature/shd-002` |
 | SHD-009 | Expression mapping DSL | `d84b02f95a85` | `feature/shd-009` |
@@ -645,12 +645,13 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `65ce45cdc91d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-001/20261113T152510/swift-test_SceneFormat.log`)
 - `post-merge (batch with SCN-001, REC-012, SHOW-014, FILE-001 on a second iOS 27.2 iPhone 17 simulator): projectM-iOSTests 271 incl. SceneArchiveServiceTests; CaptureShareUITests, EmergencyBlackoutUITests 2, OutputBlackoutUITests; SceneFormat 31 and SceneArchive 18 on host and Linux shape`: pass at `c3886d1cb0bb` (log `.autonomous/logs/integration/batch-scn-rec12-show14-file1/app-tests.log`)
 
-### SCN-002 Scene autosave (unit_passed)
+### SCN-002 Scene autosave (integrated)
 - `python3 scripts/check_compliance.py`: pass at `ce5c83d6d82a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-002/20261113T163028/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `ce5c83d6d82a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-002/20261113T163028/docs.log`)
 - `swift test --package-path Packages/RenderGoldens`: pass at `ce5c83d6d82a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-002/20261113T163028/swift-test_RenderGoldens.log`)
 - `swift test --package-path Packages/SceneArchive`: pass at `ce5c83d6d82a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-002/20261113T163028/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `ce5c83d6d82a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-002/20261113T163028/swift-test_SceneFormat.log`)
+- `post-merge: projectM-iOSTests 297 incl. 20 autosave tests; SceneAutosaveUITests kill-and-relaunch 19.9 s, NativeVisual 4, TextOverlay, LinearSpectrum UI tests on iOS 27.2 sim`: pass at `1aa354c0b623` (log `.autonomous/logs/integration/scn-002/app-tests.log`)
 
 ### SHD-001 Procedural material catalog (integrated)
 - `python3 scripts/check_compliance.py`: pass at `67186e7fa06d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-001/20261113T120524/compliance.log`)

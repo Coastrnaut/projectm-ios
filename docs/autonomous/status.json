@@ -8,9 +8,8 @@
   "P0": {
    "audited": 20,
    "implementing": 2,
-   "integrated": 63,
-   "skipped_existing": 1,
-   "unit_passed": 1
+   "integrated": 64,
+   "skipped_existing": 1
   },
   "P1": {
    "audited": 138,
@@ -27,9 +26,8 @@
  "by_state": {
   "audited": 244,
   "implementing": 2,
-  "integrated": 78,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "integrated": 79,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -217,7 +215,6 @@
    "REC-013",
    "REC-014",
    "REC-016",
-   "SCN-002",
    "SCN-003",
    "SCN-004",
    "SCN-005",
@@ -287,7 +284,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "247 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
+   "246 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
   ]
  },
  "features": {
@@ -2796,10 +2793,10 @@
    "branch": "feature/scn-002",
    "branch_sha": "ce5c83d6d82ab60e1943588ce7258800a5e4e8da",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "1aa354c0b62389109787e72b284331b0b5e06233",
    "priority": "P0",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "SCN-003": {
    "attempts": 0,
@@ -3899,6 +3896,11 @@
    "sha": "c3886d1cb0bb2fc8bfeec909a094332bdfb8ff71"
   },
   {
+   "branch": "feature/scn-002",
+   "id": "SCN-002",
+   "sha": "1aa354c0b62389109787e72b284331b0b5e06233"
+  },
+  {
    "branch": "feature/shd-001",
    "id": "SHD-001",
    "sha": "ade4dfec39a538b841b105a67ff5545b1a6675e6"
@@ -3969,5 +3971,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T21:30:55Z"
+ "updated": "2026-11-13T21:33:09Z"
 }
