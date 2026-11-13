@@ -3,7 +3,8 @@
 // (ANL rows; research ANL-001-D2). It reads normalized PCM from AudioCore's analysis tap and never
 // feeds projectM (Constitution VIII, ADR-0008 decision 5). Accelerate (vDSP) is used on Apple
 // platforms; a portable FFT stands in elsewhere, and `-Xswiftc -DANALYSIS_NO_ACCELERATE` compiles
-// Accelerate out on Apple platforms too (the Linux build shape).
+// Accelerate out on Apple platforms too (the Linux build shape). The CPU benchmark is a separate
+// package in `Bench/` so this package keeps one scheme with its tests (CI's `-scheme AnalysisFeatures`).
 import PackageDescription
 
 let package = Package(
@@ -13,8 +14,6 @@ let package = Package(
     dependencies: [.package(path: "../AudioCore")],
     targets: [
         .target(name: "AnalysisFeatures", dependencies: ["AudioCore"]),
-        // Host benchmark for CPU per frame and allocation traces (research ANL-001-D9). Not a product.
-        .executableTarget(name: "AnalysisBench", dependencies: ["AnalysisFeatures"]),
         .testTarget(name: "AnalysisFeaturesTests", dependencies: ["AnalysisFeatures", "AudioCore"]),
     ]
 )
