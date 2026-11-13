@@ -12,8 +12,8 @@
   },
   "P1": {
    "audited": 146,
-   "implementing": 1,
-   "integrated": 4
+   "integrated": 4,
+   "unit_passed": 1
   },
   "P2": {
    "audited": 79
@@ -24,9 +24,9 @@
  },
  "by_state": {
   "audited": 296,
-  "implementing": 1,
   "integrated": 28,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -651,12 +651,12 @@
   "AUD-004": {
    "attempts": 0,
    "branch": "feature/aud-004",
-   "branch_sha": null,
+   "branch_sha": "489f122c14315f4e16de78577bbe3d28cd964203",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": "specs/017-aud-004-loop-track-and-queue",
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "AUD-005": {
    "attempts": 0,
@@ -3766,5 +3766,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T12:16:24Z"
+ "updated": "2026-11-13T12:20:28Z"
 }
