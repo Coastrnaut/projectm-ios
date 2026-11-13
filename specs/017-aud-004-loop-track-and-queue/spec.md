@@ -23,6 +23,20 @@ explicitly. Amended here: AUD-006-R17 and AUD-003-R9 for the "Off" and "One Trac
 "All Tracks", the default, both apply unchanged), and AUD-003-R13 (the queue record may also hold the
 repeat mode).
 
+## Clarifications
+
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (CLAUDE.md owner rule 4: best judgement on
+all choices, no human interaction); each answer is the recommended, conservative, local-first
+option using public APIs only.
+
+- Q: Which mode is the default, for new installs and for queues stored before this feature? → A: All Tracks, which is exactly today's behavior (owner ruling 2026-11-12, ADR-0008: the end of a track advances to the next imported track; "repeat modes stay with AUD-004"). A user who never touches the control notices no change. Rejected: Off (would make playback end by itself after an update) (AUD-004-R2).
+- Q: What does "Off" do at the end of the last queued track: stay at the end of that track, or stop and go back to the first track? → A: Stop and cue: the transport becomes Stopped (as after Stop playback), the first queued track becomes current at 0:00, nothing more plays, and Play starts the queue again. Staying at the end of the last track would leave Play with nothing to play (a dead button) and show a 0:00-remaining scrubber; the cue matches the common music-player convention. An empty queue keeps AUD-006/AUD-003's "stopped at the end of the track" (AUD-004-R5, R6).
+- Q: What do Next track and Previous track do in "One Track" and "Off"? → A: The same as today in every mode: they move through the queue and wrap (the 3-second Previous rule stays). The mode only decides what happens when a track plays to its end; in One Track the newly selected track then repeats. Rejected: Next restarting the same track in One Track (makes Next useless) and Next doing nothing on the last track in Off (a dead button) (AUD-004-R7).
+- Q: What happens when the playing track is removed from the queue under each mode? → A: All Tracks: AUD-003-R9 unchanged. One Track: the removed track is no longer repeated (removing it says it should not play again); it plays to its end, then the track at its former place (wrapping) plays and repeats. Off: as AUD-003-R9 but without wrapping; a former place past the end is the end of the queue (stop and cue the first track). Empty queue: every mode stops at the end of the track (AUD-004-R10).
+- Q: How is the mode stored, and how does an older app cope with it? → A: As an optional `repeatMode` field inside `queue.json`, which stays at version 1, as AUD-003's research decided (AUD-003-D8: "a later version may add fields; decoding ignores unknown keys"). The field is written only for "off" and "one", so an All Tracks record is byte-identical to AUD-003's; a missing or unknown value reads as All Tracks. An app with only AUD-003 reads the file unchanged (it ignores the field), so a rollback keeps the queue; if that app rewrites the file the mode falls back to All Tracks, today's behavior. Rejected: version 2 (an AUD-003 app would treat the queue as "newer format" and stop storing edits) and a separate file (two files to keep consistent) (AUD-004-R14).
+
 ## Baseline: what exists today (audit of 2026-11-13)
 
 | Capability | Today |
@@ -186,9 +200,10 @@ made deliberately.
   one (AUD-006-R14, AUD-016-R17); the repeat mode does not apply to them and its control is not shown
   for them.
 - **AUD-004-R12**: The transport MUST show a Repeat button while an imported track is the current
-  item. Each tap MUST move the mode Off → All Tracks → One Track → Off. Its accessibility label MUST be
-  "Repeat" and its value the mode's name; a change MUST be announced to VoiceOver. Its icon MUST
-  distinguish the three modes, and it MUST stay usable at every Dynamic Type size.
+  item. Each tap MUST move the mode Off → All Tracks → One Track → Off (the order iOS music players use; from the default a
+  tap gives One Track). Its accessibility label MUST be "Repeat" and its value the mode's name; a
+  change MUST be announced to VoiceOver. Its icon MUST distinguish the three modes (`repeat` dimmed
+  for Off, `repeat` in the accent color for All Tracks, `repeat.1` for One Track), and it MUST stay usable at every Dynamic Type size.
 - **AUD-004-R13**: The queue screen MUST show a "Repeat" section listing the three modes as
   selectable rows (the current one marked selected for VoiceOver too), reachable from the chooser and
   from the transport.
