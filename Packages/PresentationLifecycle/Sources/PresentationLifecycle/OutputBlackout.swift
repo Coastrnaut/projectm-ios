@@ -21,6 +21,13 @@ public struct OutputBlackout: Equatable, Sendable {
         case restoreWaiting
         /// The output fades in from black.
         case fadingIn
+
+        /// SHOW-014-R1, R3: the emergency Black out button is shown (and carries the B key): while
+        /// the output is live or fading in. Never true together with `offersRestore`.
+        public var offersEmergencyBlackout: Bool { self == .live || self == .fadingIn }
+        /// SHOW-014-R6: the badge offers Restore (and carries the B key): while blacked out. During
+        /// `restoreWaiting` neither is offered; the restore already requested proceeds.
+        public var offersRestore: Bool { self == .blackedOut }
     }
 
     /// The shortest frame time between two restore starts (OUT-010-R7).

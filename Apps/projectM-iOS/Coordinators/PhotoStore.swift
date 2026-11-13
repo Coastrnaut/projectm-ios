@@ -11,6 +11,9 @@
 // * Import: the picked file is read once (its security scope and a coordinated read end before
 //   this returns; the URL is not kept), sanitized, written atomically, then the key is set and only
 //   then the previous copy deleted (R6). A failed import changes nothing.
+// * FILE-001 splits the import into stage (sanitized copy under a new identifier, not current),
+//   adopt (move a staged copy in from a staging folder) and makeCurrent, so a scene archive's photo
+//   and video are switched together only after every check passed (SceneArchiveService).
 // * No file timestamps or volume capacity are read (required-reason APIs; research MED-001-D10): a
 //   full disk surfaces as a failed write (`.saveFailed`).
 // Synchronous and Sendable: imports run off the main actor (PhotoCoordinator).
@@ -62,9 +65,17 @@ struct PhotoStore: @unchecked Sendable {
     /// Imports the image at `source` (a picked file) and makes it the stored photo.
     @discardableResult
     func importImage(at source: URL) throws(ImageImportError) -> StoredPhoto {
+        let staged = try stage(at: source)
+        makeCurrent(staged)
+        return staged
+    }
+
+    /// FILE-001: the sanitized copy of `source` written into this store's folder under a new
+    /// identifier, without making it current (the identifier key is not touched). A failure leaves
+    /// no file.
+    func stage(at source: URL) throws(ImageImportError) -> StoredPhoto {
         let data = try Self.readPicked(source, limits: limits)
         let copy = try ImageSanitizer.sanitize(data, limits: limits)
-        let previous = current()
         let id = UUID()
         let url = directory.appendingPathComponent("\(id.uuidString).\(copy.fileExtension)", isDirectory: false)
         do {
@@ -74,9 +85,35 @@ struct PhotoStore: @unchecked Sendable {
             try? FileManager.default.removeItem(at: url)
             throw .saveFailed
         }
-        defaults.set(id.uuidString, forKey: Self.idKey)
-        if let previous { deleteFiles(of: previous.id) }
         return StoredPhoto(id: id, url: url)
+    }
+
+    /// FILE-001: moves a copy staged by another store (a staging folder) into this folder under the
+    /// same name, without making it current. Only `<UUID>.png`/`<UUID>.jpg` names are accepted.
+    func adopt(_ staged: StoredPhoto) throws(ImageImportError) -> StoredPhoto {
+        let ext = staged.url.pathExtension
+        guard Self.extensions.contains(ext), staged.url.lastPathComponent == "\(staged.id.uuidString).\(ext)" else { throw .saveFailed }
+        let url = directory.appendingPathComponent(staged.url.lastPathComponent, isDirectory: false)
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            try FileManager.default.moveItem(at: staged.url, to: url)
+        } catch {
+            throw .saveFailed
+        }
+        return StoredPhoto(id: staged.id, url: url)
+    }
+
+    /// Makes a copy inside this folder the stored photo, then deletes the previous copy (R6).
+    func makeCurrent(_ photo: StoredPhoto) {
+        let previous = current()
+        defaults.set(photo.id.uuidString, forKey: Self.idKey)
+        if let previous, previous.id != photo.id { deleteFiles(of: previous.id) }
+    }
+
+    /// FILE-001: deletes a copy that never became current (staged or adopted, then abandoned).
+    func discard(_ photo: StoredPhoto) {
+        guard photo.id != current()?.id else { return }
+        deleteFiles(of: photo.id)
     }
 
     /// Deletes the stored copy and its identifier (MED-001-R7).

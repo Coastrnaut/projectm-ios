@@ -84,6 +84,9 @@ enum ZipFormat {
     static let madeBy: UInt16 = 0x0314            // Unix, specification 2.0
     static let fileMode: UInt32 = 0o100644 << 16  // regular file, rw-r--r--
     static let maxUInt32 = Int(UInt32.max)
+    static let unixHost = 3
+    static let fileTypeMask = 0o170000
+    static let regularFileType = 0o100000
 }
 
 // MARK: - Writer
@@ -249,7 +252,8 @@ public enum StoredZipReader {
             let flags = bytes.u16(at + 8), method = bytes.u16(at + 10)
             let crc = bytes.u32(at + 16), compressed = bytes.u32(at + 20), size = bytes.u32(at + 24)
             let nameLength = bytes.u16(at + 28), extraLength = bytes.u16(at + 30), commentLength = bytes.u16(at + 32)
-            let diskStart = bytes.u16(at + 34), localOffset = bytes.u32(at + 42)
+            let madeBy = bytes.u16(at + 4), diskStart = bytes.u16(at + 34)
+            let externalAttributes = bytes.u32(at + 38), localOffset = bytes.u32(at + 42)
             let next = at + ZipFormat.centralHeaderSize + nameLength + extraLength + commentLength
             guard next <= end else { throw StoredZipError.malformed("central directory") }
             if flags & 0x0001 != 0 { throw StoredZipError.unsupported("encryption") }
@@ -259,6 +263,14 @@ public enum StoredZipReader {
             }
             if method != 0 { throw StoredZipError.unsupported("compressed entries") }
             if diskStart != 0 { throw StoredZipError.unsupported("multiple disks") }
+            // FILE-001-R14: a Unix entry's mode must be a regular file (or unset); symbolic links
+            // and special files are never what the app wrote (research FILE-001-D2).
+            if madeBy >> 8 == ZipFormat.unixHost {
+                let fileType = (externalAttributes >> 16) & ZipFormat.fileTypeMask
+                if fileType != 0 && fileType != ZipFormat.regularFileType {
+                    throw StoredZipError.unsupported("symbolic links or special files")
+                }
+            }
             guard compressed == size else { throw StoredZipError.malformed("sizes disagree") }
             guard nameLength > 0 else { throw StoredZipError.malformed("an empty name") }
             let nameBytes = bytes.slice(at + ZipFormat.centralHeaderSize, nameLength)
