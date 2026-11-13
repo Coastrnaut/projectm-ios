@@ -269,6 +269,13 @@ into one ZIP file (their texts, names, authors, license lines, dates and checksu
 about your purchase or device) and opens the share sheet; the file leaves your device only if you
 share or save it there, and the app deletes its temporary copy when the share sheet closes.
 
+And, once you change the shown visual in Settings, its current look, saved automatically so it
+comes back after the app closes unexpectedly: which layers the visual draws, its bar count, linear
+spectrum options and glow settings, the Text visual's text and style, and which stored photo or video
+it shows (by the app's own identifier, never a file location). The app keeps this file and one
+earlier copy of it, nothing else. It holds no audio, no file locations and nothing about your
+device or account, stays on your device, is never sent anywhere, and is deleted with the app.
+
 No captured or microphone audio, listening history or record of which apps you listened to is
 stored. Deleting the app
 deletes all of this.
@@ -327,4 +334,5 @@ issue in that repository.
 | MED-001-R17 (`specs/044-med-001-import-photo-layer/spec.md`, amends FR-065): the photo the user chooses, stored on the device without metadata, removable | Summary; Permissions and why; A photo you choose; What is stored on your device |
 | MED-002-R21 (`specs/048-med-002-import-video-layer/spec.md`, amends FR-065): the video the user chooses, stored on the device without soundtrack or metadata, removable | Summary; Permissions and why; A video you choose; What is stored on your device |
 | FILE-001-R16 (`specs/062-file-001-portable-scene-archive/spec.md`): scene archives hold the user's scene and its stored photo and video, are written only on the user's export and leave the device only by the user's action; opening one replaces the stored photo and video only after every check passed | A photo you choose; A video you choose; Scene archives |
+| SCN-002-R11 (`specs/067-scn-002-scene-autosave/spec.md`): the autosaved current scene (the shown visual's settings, text and stored photo/video identifiers) and one earlier copy, on the device only | What is stored on your device |
 | PRE-012-R30 (`specs/008-pre-012-preset-import-validation/spec.md`, amends FR-065): preset files the user imports, quarantined ones included, and their record; extended by PRE-015-R23 (`specs/010-pre-015-user-preset-duplication/spec.md`): copies of built-in presets, their origin, and edited preset text | What is stored on your device |

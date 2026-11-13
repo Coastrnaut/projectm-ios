@@ -237,6 +237,9 @@ final class NativeSpectrumHost: PresentationBoundResource {
         resolveEffectiveGlow()
     }
 
+    /// The live bindings in order (SCN-002 captures them into the current scene).
+    var bindings: [AudioFeatureBinding] { modulator?.bindings ?? [] }
+
     /// Removes a binding; the parameter returns to its manual value at once.
     @discardableResult
     func unbind(_ target: ParameterID) -> Bool {

@@ -214,6 +214,14 @@ struct VisualizerView: View {
                     }
                 }
                 #if DEBUG
+                if let autosave = coordinator.sceneAutosave {   // SCN-002-R12: the committed revision
+                    Text(autosave.probe)
+                        .font(.caption2)
+                        .opacity(0.01)
+                        .allowsHitTesting(false)
+                        .accessibilityIdentifier("sceneAutosave")
+                        .accessibilityValue(autosave.probe)
+                }
                 if coordinator.textVisual != nil {   // MED-009-R14: the rendering's size and checksum
                     let value = Self.textRenderingValue(coordinator.textState)
                     Text(value)
