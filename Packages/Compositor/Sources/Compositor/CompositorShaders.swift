@@ -32,6 +32,25 @@ enum CompositorShaders {
         return c * clamp(opacity, 0.0, 1.0);
     }
 
+    // CMP-005: a transformed layer. `row0`, `row1` (xyz) are the inverse placement matrix in pixels:
+    // output pixel centre → layer pixel. Bilinear sample; outside the picture reads (0, 0, 0, 0),
+    // transparent in premultiplied alpha. Then sanitized and × opacity (`params.x`) as `cmp_over`.
+    // Identity transforms never come here (they keep the exact per-pixel `cmp_over`).
+    struct CMPTransformedDraw { float4 row0; float4 row1; float4 params; };
+
+    fragment float4 cmp_over_transformed(FullScreenOut in [[stage_in]], texture2d<float, access::sample> picture [[texture(0)]],
+                                         constant CMPTransformedDraw &d [[buffer(0)]]) {
+        constexpr sampler bilinear(coord::normalized, address::clamp_to_zero, filter::linear);
+        float3 p = float3(in.position.xy, 1.0);
+        float2 src = float2(dot(d.row0.xyz, p), dot(d.row1.xyz, p));
+        float2 size = float2(float(picture.get_width()), float(picture.get_height()));
+        float4 c = picture.sample(bilinear, src / size);
+        c = select(c, float4(0.0), isnan(c) || isinf(c));
+        c.a = clamp(c.a, 0.0, 1.0);
+        c.rgb = max(c.rgb, float3(0.0));
+        return c * clamp(d.params.x, 0.0, 1.0);
+    }
+
     // The composite times the flash guard's gain (RGB only; never brightens). The output's format
     // does the encoding (sRGB for the screen).
     fragment float4 cmp_output(FullScreenOut in [[stage_in]], texture2d<float, access::read> composite [[texture(0)]],
