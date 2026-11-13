@@ -136,7 +136,8 @@ the card says the app closed unexpectedly again and offers Start fresh only.
 - No committed scene exists (fresh install, or SCN-002's folder unavailable): after an abnormal exit
   the card still says the app closed unexpectedly (with Start fresh only), and OSC is still off.
 - The app is killed again while the offer is still unanswered: the next launch offers the same scene
-  again (the held visual survives the kill).
+  again (the held visual survives the kill). If the user edited the scene meanwhile, SCN-002 already
+  committed the edit, so the newer committed scene is offered.
 - The system ends the app while it is in the background (memory, an update): this is not an abnormal
   exit; the background transition already ended the session.
 - The app crashes while running in the background (System/App Capture keeps running there): not
@@ -173,7 +174,7 @@ the card says the app closed unexpectedly again and offers Start fresh only.
 - **PERF-010-R7 Start fresh**: Start fresh dismisses the card and keeps the fresh scene; the next edit
   replaces the committed scene through SCN-002.
 - **PERF-010-R8 Held scene survives another kill**: If the app is killed again before the user
-  answers, the next launch offers the same scene.
+  answers (and without an edit in between), the next launch offers the same scene.
 - **PERF-010-R9 Crash-loop guard**: When the app exits abnormally in the session where the user
   reopened a scene or in the next session (N = 2 sessions), the next launch offers Start fresh only.
 - **PERF-010-R10 Normal exit unchanged**: After a normal exit no card is shown and SCN-002's silent
