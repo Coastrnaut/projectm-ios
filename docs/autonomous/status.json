@@ -6,11 +6,10 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 53,
-   "implementing": 2,
-   "integrated": 30,
-   "skipped_existing": 1,
-   "unit_passed": 1
+   "audited": 52,
+   "implementing": 3,
+   "integrated": 31,
+   "skipped_existing": 1
   },
   "P1": {
    "audited": 142,
@@ -24,11 +23,10 @@
   }
  },
  "by_state": {
-  "audited": 283,
-  "implementing": 2,
-  "integrated": 39,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "audited": 282,
+  "implementing": 3,
+  "integrated": 40,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -152,7 +150,6 @@
    "MIDI-011",
    "MIDI-012",
    "MIDI-013",
-   "MOD-001",
    "MOD-002",
    "MOD-003",
    "MOD-004",
@@ -325,7 +322,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "286 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
+   "285 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
   ]
  },
  "features": {
@@ -1794,20 +1791,20 @@
    "branch": "feature/mod-001",
    "branch_sha": "c62c162f633a6c19539fd95f93ccc7a452ed6eab",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "304f3bce431a7f6f0a1719bdced6b55b910c9668",
    "priority": "P0",
    "spec_dir": "specs/028-mod-001-typed-parameter-registry",
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "MOD-002": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/mod-002",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "MOD-003": {
    "attempts": 0,
@@ -3742,6 +3739,11 @@
    "sha": "6cfcbaabc8d039e71290067a1a0cf0069c7e67de"
   },
   {
+   "branch": "feature/mod-001",
+   "id": "MOD-001",
+   "sha": "304f3bce431a7f6f0a1719bdced6b55b910c9668"
+  },
+  {
    "branch": "feature/perf-011",
    "id": "PERF-011",
    "sha": "6d669fcb857695767ec2b785f74feb29f98d5978"
@@ -3812,5 +3814,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T15:49:22Z"
+ "updated": "2026-11-13T15:56:30Z"
 }
