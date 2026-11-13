@@ -256,7 +256,9 @@ on R2 to R7 and R13 being verified (MED-001-S2 to S5) and on the device tasks.
 - **MED-001-S2**: After a relaunch, the same stored copy renders with no new choice (UI test: seed,
   show, terminate, relaunch, shown again with the same size).
 - **MED-001-S3**: A stored copy made from a fixture with location and camera metadata has no
-  location, camera (EXIF), TIFF, IPTC or XMP properties when read back.
+  location (GPS), TIFF, IPTC, maker or XMP camera properties when read back, its EXIF holds only
+  the copy's own pixel size and color space (written by the system encoder), and none of the
+  original's values appear anywhere in the stored bytes.
 - **MED-001-S4**: Remove Photo deletes the copy (the file no longer exists) and the identifier; the
   next frame shows no photo.
 - **MED-001-S5**: 100 % of corrupt, oversized, too-many-pixel and non-image fixtures are refused
