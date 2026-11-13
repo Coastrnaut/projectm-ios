@@ -182,9 +182,11 @@ never an output, and its texts never name a source mode or another app.
 
 **Truthfulness, safety, privacy**
 
-- **AUD-007-R11**: No route text may name a source mode ("System/App Capture", "Microphone",
-  "In-App Playback"), use the words "capture" or "captured", name a third-party app, or describe an
-  output as where audio comes from (Constitution IV, V).
+- **AUD-007-R11**: The app's own route wording (every text with the inserted port name removed, and
+  every generic name) MUST NOT name a source mode ("System/App Capture", "Microphone", "In-App
+  Playback"), use the word "capture" in any form, name a third-party app, or describe an output as
+  where audio comes from (Constitution IV, V). Port names from iOS are hardware names and are shown
+  verbatim (for example "iPhone Microphone").
 - **AUD-007-R12**: AUD-014's behavior on a lost output MUST NOT change (AUD-014-R14, R17, R18).
   The QA-007 source contract suite MUST stay green.
 - **AUD-007-R13**: Nothing may run on a real-time audio callback; route handling runs on the main
