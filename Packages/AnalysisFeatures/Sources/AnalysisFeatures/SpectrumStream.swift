@@ -4,7 +4,10 @@
 // A linear mono FIFO of 16,384 samples (twice the largest FFT) collects input. `nextFrame()`
 // computes a spectrum whenever `size` samples are buffered, then advances by `hop` (one memmove of
 // the remainder). Frame index = samples advanced past since creation or the last `reset()`: a
-// deterministic sample clock. Each frame also carries the injected clock's reading
+// deterministic sample clock. Each frame carries the hop it advanced by (ANL-004-R8). An opt-in
+// lead-in (`SpectrumLeadIn.silence`, ANL-004-R7, research ANL-004-D4) starts the stream as if
+// preceded by `size − hop` samples of silence, so sample 0 passes the same window positions as any
+// other sample; frame indices then start at `−(size − hop)`. Each frame also carries the injected clock's reading
 // (`MonotonicClock.nowNanoseconds()` by default) for alignment with other timestamped data.
 //
 // `append` never drops: it accepts at most the free space and returns how much it took, so frame
@@ -23,17 +26,31 @@ import Glibc
 import Musl
 #endif
 
+/// How a stream starts at creation and after `reset()` (ANL-004-R7).
+public enum SpectrumLeadIn: Sendable, Hashable {
+    /// The first window starts at the first input sample (ANL-001's behavior).
+    case none
+    /// The stream starts as if preceded by `size − hop` samples of silence (the configuration at that
+    /// moment): every input sample, sample 0 included, is seen at the same window positions.
+    case silence
+}
+
 /// Metadata of one computed spectrum (ANL-001-R7). The magnitudes are read from the stream.
 public struct SpectrumFrame: Sendable, Equatable {
     /// First input sample of the window, counted since the stream's creation or last reset.
+    /// Negative only during a `.silence` lead-in (those samples are the lead-in's zeros).
     public let index: Int64
+    /// Samples from this frame's first sample to the next frame's (ANL-004-R8).
+    public let hop: Int
     public let size: FFTSize
     public let sampleRate: Double
     /// The stream's clock when the frame was computed (monotonic nanoseconds by default).
     public let timestampNanoseconds: UInt64
 
-    public init(index: Int64, size: FFTSize, sampleRate: Double, timestampNanoseconds: UInt64) {
+    /// `hop` nil means half the size (the default hop), so frames built before ANL-004 keep compiling.
+    public init(index: Int64, size: FFTSize, sampleRate: Double, timestampNanoseconds: UInt64, hop: Int? = nil) {
         self.index = index
+        self.hop = hop ?? size.rawValue / 2
         self.size = size
         self.sampleRate = sampleRate
         self.timestampNanoseconds = timestampNanoseconds
@@ -47,6 +64,8 @@ public final class SpectrumStream {
     public static let pullChunkFrames = 2_048
 
     public private(set) var configuration: SpectrumConfiguration
+    /// How the stream starts at creation and after `reset()`.
+    public let leadIn: SpectrumLeadIn
     private let analyzer: SpectrumAnalyzer
     private let clock: @Sendable () -> UInt64
     private let fifo: UnsafeMutablePointer<Float>
@@ -58,8 +77,10 @@ public final class SpectrumStream {
     private var lastBinCount = 0
 
     public init(configuration: SpectrumConfiguration, backend: SpectrumBackend = .automatic,
-                clock: @escaping @Sendable () -> UInt64 = { MonotonicClock.nowNanoseconds() }) {
+                clock: @escaping @Sendable () -> UInt64 = { MonotonicClock.nowNanoseconds() },
+                leadIn: SpectrumLeadIn = .none) {
         self.configuration = configuration
+        self.leadIn = leadIn
         self.clock = clock
         analyzer = SpectrumAnalyzer(backend: backend)
         fifo = .allocate(capacity: SpectrumStream.fifoCapacity)
@@ -68,6 +89,7 @@ public final class SpectrumStream {
         output.initialize(repeating: 0, count: FFTSize.maximum.binCount)
         scratch = .allocate(capacity: scratchCount)
         scratch.initialize(repeating: 0, count: scratchCount)
+        applyLeadIn()
     }
 
     deinit {
@@ -88,10 +110,23 @@ public final class SpectrumStream {
     }
 
     /// Empties the FIFO and restarts frame indices at 0.
+    /// With a `.silence` lead-in, the FIFO restarts with `size − hop` zeros (current configuration)
+    /// and indices at `−(size − hop)`.
     public func reset() {
         buffered = 0
         nextIndex = 0
         lastBinCount = 0
+        applyLeadIn()
+    }
+
+    /// Pre-fills the lead-in's zeros (no allocation: the FIFO exists).
+    private func applyLeadIn() {
+        guard leadIn == .silence else { return }
+        let count = configuration.size.rawValue - configuration.hop
+        guard count > 0 else { return }
+        fifo.update(repeating: 0, count: count)
+        buffered = count
+        nextIndex = -Int64(count)
     }
 
     /// Appends interleaved audio with `channels` channels (1 = mono, taken as is; ≥ 2 = the first
@@ -135,9 +170,9 @@ public final class SpectrumStream {
         guard buffered >= n else { return nil }
         analyzer.magnitudes(of: fifo, size: size, into: output)
         lastBinCount = size.binCount
-        let frame = SpectrumFrame(index: nextIndex, size: size, sampleRate: configuration.sampleRate,
-                                  timestampNanoseconds: clock())
         let hop = configuration.hop
+        let frame = SpectrumFrame(index: nextIndex, size: size, sampleRate: configuration.sampleRate,
+                                  timestampNanoseconds: clock(), hop: hop)
         let remaining = buffered - hop
         if remaining > 0 { memmove(fifo, fifo + hop, remaining * MemoryLayout<Float>.stride) }   // overlapping
         buffered = remaining
