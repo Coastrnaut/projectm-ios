@@ -13,8 +13,7 @@
   },
   "P1": {
    "audited": 142,
-   "integrated": 8,
-   "unit_passed": 1
+   "integrated": 9
   },
   "P2": {
    "audited": 79
@@ -26,9 +25,8 @@
  "by_state": {
   "audited": 284,
   "implementing": 3,
-  "integrated": 37,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "integrated": 38,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -59,7 +57,6 @@
    "ANL-013",
    "ANL-014",
    "ANL-015",
-   "AUD-007",
    "AUD-008",
    "AUD-009",
    "AUD-010",
@@ -327,7 +324,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "288 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
+   "287 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
   ]
  },
  "features": {
@@ -676,10 +673,10 @@
    "branch": "feature/aud-007",
    "branch_sha": "6fdff3fc48ef41ecfbf3534bed65f4b82d05b203",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "902d1734d42a1d0c6796565fb290d82aefbadaf2",
    "priority": "P1",
    "spec_dir": "specs/026-aud-007-audio-output-route-indicator",
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "AUD-008": {
    "attempts": 0,
@@ -3649,6 +3646,11 @@
    "sha": "03b23a8ae6a0aad7e0f09d81dd1bfe960b5e795a"
   },
   {
+   "branch": "feature/aud-007",
+   "id": "AUD-007",
+   "sha": "902d1734d42a1d0c6796565fb290d82aefbadaf2"
+  },
+  {
    "branch": "feature/aud-014",
    "id": "AUD-014",
    "sha": "c4f03aa5e3d8d70168c21e2e42f71eb07d86a0df"
@@ -3804,5 +3806,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T15:36:06Z"
+ "updated": "2026-11-13T15:40:16Z"
 }
