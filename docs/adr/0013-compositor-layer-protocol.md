@@ -98,3 +98,31 @@ of layers" with an editable stack; every other decision stands.
 5. **App.** The Camera visual builds its camera + circular spectrum stack through `LayerStack`;
    behaviour is unchanged. No user-facing editor: CMP-015 (layer inspector) and the editing UI rows.
    Per-layer frame cost of a 4-layer stack on D1-D3 is CMP-002-T15 `{device}`.
+
+## Amendment: CMP-003 opacity per layer (2026-11-13)
+
+Decided by Claude under owner rule 4 (feature CMP-003, `specs/043-cmp-003-opacity-per-layer/`,
+research CMP-003-D1 to D9, contract `contracts/layer-opacity.md`). It lifts CMP-002's opacity
+restriction; blend modes and transforms stay refused until CMP-004 and CMP-005.
+
+1. **Opacity in the composite pass.** `cmp_over` multiplies the sanitized premultiplied picture
+   (colour and alpha) by the layer's opacity, passed per draw with `setFragmentBytes` (no buffer
+   per frame); the blend state is unchanged. × 1.0 is exact, so opacity 1 is bit-identical to the
+   CMP-002 output. A layer whose shown opacity is exactly 0 is not drawn (the output equals the
+   stack without it) but keeps rendering and stays prepared.
+2. **Stored values clamp, fade requests refuse.** `LayerCompositeSettings` keeps CMP-001's rule
+   (clamped to 0…1, non-finite reads 1), so `apply` never fails for opacity; a fade request with a
+   non-finite target or a negative or non-finite duration throws `LayerOpacityError`. The
+   compositor accepts `isSupportedByCompositor` settings (normal blend, identity transform).
+3. **Fades.** The entry's opacity is the target. `apply(_:opacityTransition:makeLayer:)` (default
+   `.immediate`) fades each kept layer whose opacity changed from the opacity shown last, with a
+   linear or ease-in-out (smoothstep) curve; new layers start at their opacity. Each layer's
+   `LayerOpacityAnimator` (CPU, Linux) advances by the frame clock's clamped frame durations: no
+   wall clock, no jump after a stall, exact target at the end. `LayerStack.setSettings(_:of:)`
+   changes an entry's settings. The helper is local, not ParameterGraph's `LinearMapping`, to keep
+   the core target's dependencies.
+4. **Flash safety.** Opacity changes the composite the guard measures and never resets its
+   history, so opacity strobes are limited like any other (30 Hz test with Reduce flashing on).
+5. **Not here.** No `layer.<id>.opacity` parameter (MOD-001 IDs are catalog-stable; layer IDs are
+   runtime numbers): the MOD and UIX rows expose opacity. The device cost is covered by
+   CMP-002-T15.

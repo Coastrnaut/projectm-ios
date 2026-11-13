@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (CMP-003-T01-T12 verified on the Mac: host, Linux shape and iOS 27.2 simulator; device frame cost covered by CMP-002-T15 `{device}`)
 
 **Input**: User description: "Implement CMP-003 (Opacity per layer) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Set opacity 0 to 1 with

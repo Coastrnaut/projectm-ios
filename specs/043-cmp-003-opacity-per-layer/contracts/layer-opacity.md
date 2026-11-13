@@ -29,6 +29,11 @@ public struct LayerOpacityAnimator: Sendable, Equatable {
     @discardableResult public mutating func advance(by frameDuration: Double) -> Double
 }
 
+extension LayerStack {
+    /// Replaces an entry's composite settings; `unknownLayer` (stack unchanged) for a missing ID.
+    public mutating func setSettings(_ settings: LayerCompositeSettings, of id: LayerInstanceID) throws(LayerStackError)
+}
+
 extension LayerCompositeSettings {
     public var isSupportedByCompositor: Bool   // normal blend and identity transform; any opacity
 }
