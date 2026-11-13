@@ -66,6 +66,8 @@
 //   the previous session ended abnormally. Then the stored OSC toggle is turned off (no listener without
 //   consent), the committed scene is held instead of restored, the scene settings start fresh, and the
 //   offer card asks Reopen or Start fresh. The camera is session only and never restarts by itself.
+// * Show (SHOW-001): `show` (ShowCoordinator) owns the manual cue list; a step applies the cue's scene
+//   through the Settings path (AppCoordinator+Show.swift), never touching the audio source.
 import ANGLERendering
 import CameraLayer
 import ImageLayer
@@ -81,6 +83,7 @@ import Observation
 import PresentationLifecycle
 import PresetLibrary
 import Rendering
+import ShowStorage
 import Metal
 import UIKit
 import VisualGenerators
@@ -161,6 +164,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     private(set) var videoState: VideoLayerState = .empty
     /// The Text visual's message and style (MED-009): the editor's model and the saved value.
     let texts: TextOverlayCoordinator
+    /// SHOW-001: the manual cue list.
+    let show: ShowCoordinator
     /// The Text visual (MED-009), created when Text is chosen and released when another visual is.
     private(set) var textVisual: TextVisualHost?
     /// The text layer's state while the Text visual exists (`empty` otherwise).
@@ -230,6 +235,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             if let videos = try? VideoStore.defaultDirectory() { try? FileManager.default.removeItem(at: videos) }   // MED-002: no video
             if let scenes = try? SceneAutosaveStore.defaultDirectory() { try? FileManager.default.removeItem(at: scenes) }   // SCN-002: no scene
             SessionRecoveryCoordinator.reset(defaults)   // PERF-010: no previous session
+            if let shows = try? ShowStore.defaultDirectory() { try? FileManager.default.removeItem(at: shows) }   // SHOW-001: no show
         }
         settings = AppSettings(defaults: defaults, systemReduceMotion: UIAccessibility.isReduceMotionEnabled)
         self.externalDisplay.reduceFlashing = settings.reduceFlashing   // OUT-010-R6
@@ -253,6 +259,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             if let text = values.text { texts.spec = text }
         }
         self.sceneAutosave = sceneAutosave
+        show = ShowCoordinator.makeDefault()   // SHOW-001
         #if DEBUG
         UITestPhotoFixture.seedIfRequested(photos)   // MED-001: PhotoLayerUITests (pickers cannot be automated)
         UITestVideoFixture.seedIfRequested(videos)   // MED-002: VideoLayerUITests
@@ -334,6 +341,10 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         // PERF-010-R9: in a crash loop the scene that crashed is replaced by the fresh one at once.
         if recovery.decision.isCrashLoop { sceneAutosave?.commitFreshScene() }
         recovery.startObservingLifecycle()
+        connectShow()   // SHOW-001
+        #if DEBUG
+        UITestShowFixture.seedIfRequested(self)   // SHOW-001: ShowCueUITests
+        #endif
         loadLibrary()
         loadAudioLibrary()
         #if DEBUG || PROJECTM_AUTOMATION

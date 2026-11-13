@@ -73,6 +73,9 @@ packages:
     path: Packages/SceneFormat
   SceneArchive:
     path: Packages/SceneArchive
+  # SHOW-001: the manual cue list (pure model) and its folder store (ShowStorage, on SceneFormat).
+  ShowControl:
+    path: Packages/ShowControl
 targets:
   CaptureLab:
     type: application
@@ -192,6 +195,7 @@ targets:
       - package: SceneFormat          # FILE-001: scene documents in scene archives
       - package: SceneArchive         # FILE-001: SceneArchiveService
       - package: LocalPortability     # FILE-009: StorageUsageCalculator
+      - package: ShowControl          # SHOW-001: the cue list and its folder store
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.ProjectMiOS

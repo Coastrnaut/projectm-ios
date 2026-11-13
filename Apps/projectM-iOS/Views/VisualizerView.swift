@@ -28,6 +28,8 @@
 // REC-003: the recording indicator, the system file mover for a finished recording, its notice;
 // DEBUG `videoRecordingProbe`.
 // REC-012: the ready panels (Save…, Share…, Discard) and the share notice (`CaptureResultPanels`).
+// SHOW-001: the show's keyboard shortcuts (arrows, Page Up/Down; with or without the controls), its
+// step notice, Settings → Show, and the DEBUG probe `showAppliedScene` (applied scene ID | visual).
 import CaptureKit
 import CaptureUI
 import FrameCapture
@@ -95,6 +97,9 @@ struct VisualizerView: View {
                         .transition(.opacity)
                         .accessibilityIdentifier("routeExplanation")
                 }
+                if let notice = coordinator.show.notice {   // SHOW-001-R9
+                    ShowNotice(text: notice).transition(.opacity)
+                }
                 if coordinator.externalDisplay.blackoutPhase.offersEmergencyBlackout {   // SHOW-014-R1: with or without the controls
                     HStack { Spacer(); EmergencyBlackoutButton(external: coordinator.externalDisplay) }
                         .transition(.opacity)
@@ -108,6 +113,9 @@ struct VisualizerView: View {
             }
             .padding()
             .animation(.easeInOut(duration: 0.2), value: coordinator.controlsVisible)
+            if coordinator.show.hasCues && !coordinator.showSettings {   // SHOW-001-R15
+                ShowKeyCommands(coordinator: coordinator)
+            }
             if coordinator.settings.showsPerformanceOverlay, coordinator.renderer != nil || coordinator.showsAlternateVisual {
                 VStack { HStack { Spacer(); PerformanceOverlay(metrics: { coordinator.activeVisualMetrics }, manager: coordinator.manager,
                                                                    renderHealth: { coordinator.renderHealthOverlayLine }) }; Spacer() }
@@ -155,6 +163,15 @@ struct VisualizerView: View {
                     .allowsHitTesting(false)
                     .accessibilityIdentifier("videoRecordingProbe")
                     .accessibilityValue(coordinator.videoRecording.probe)
+            }
+            if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {   // SHOW-001: ShowCueUITests
+                let value = "\(coordinator.show.appliedSceneID ?? "none")|\(coordinator.settings.visual.rawValue)"
+                Text(value)
+                    .font(.caption2)
+                    .opacity(0.01)
+                    .allowsHitTesting(false)
+                    .accessibilityIdentifier("showAppliedScene")
+                    .accessibilityValue(value)
             }
             if UITestExternalDisplay.isRequested {     // OUT-001: ExternalDisplayUITests
                 VStack { HStack { UITestExternalDisplayPanel(coordinator: coordinator.externalDisplay); Spacer() }; Spacer() }
@@ -270,7 +287,8 @@ struct VisualizerView: View {
                          reduceFlashingAvailable: coordinator.renderer?.supportsReduceFlashing ?? true,
                          nativeVisualUnavailable: coordinator.nativeVisualUnavailable,
                          glowUnavailable: coordinator.glowUnavailable, photos: coordinator.photos,
-                         videos: coordinator.videos, texts: coordinator.texts)
+                         videos: coordinator.videos, texts: coordinator.texts,
+                         show: coordinator.show, addCurrentScene: { coordinator.addCurrentSceneToShow() })
         }
         // REC-001: the format choice (HEIF only where it can be encoded) and the system Files exporter.
         .confirmationDialog("Save Frame", isPresented: Binding(get: { coordinator.frameCapture.showFormatChoice },

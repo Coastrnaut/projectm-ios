@@ -11,6 +11,7 @@
 // color, alignment, vertical position, outline, background box and Reset Text; every change is saved
 // and drawn at once. It is a standard List section, so Dynamic Type and VoiceOver apply.
 // FILE-009: a Storage row (StorageUsageView: the space the app's data takes, read-only).
+// SHOW-001: a Show row opens the cue list editor (ShowEditorView).
 import PhotosUI
 import SwiftUI
 import TextLayer
@@ -34,6 +35,9 @@ struct SettingsView: View {
     var videos: VideoCoordinator?
     /// MED-009: the Text visual's message and style (nil hides the Text section).
     var texts: TextOverlayCoordinator?
+    /// SHOW-001: the show (nil hides the Show row) and Add Current Scene.
+    var show: ShowCoordinator?
+    var addCurrentScene: () -> Void = {}
     @Environment(\.dismiss) private var dismiss
     @State private var pickedPhoto: PhotosPickerItem?
     @State private var showPhotoFileImporter = false
@@ -175,6 +179,16 @@ struct SettingsView: View {
                     Text("Shows the frame rate and the audio state over the visualization.")
                 }
                 oscSection
+                if let show {   // SHOW-001-R14
+                    Section {
+                        NavigationLink {
+                            ShowEditorView(show: show, addCurrentScene: addCurrentScene)
+                        } label: {
+                            LabeledContent("Show", value: show.hasCues ? "\(show.list.cues.count) \(show.list.cues.count == 1 ? "cue" : "cues")" : "No cues")
+                        }
+                        .accessibilityIdentifier("showEditorLink")
+                    }
+                }
                 Section {
                     NavigationLink("Storage") { StorageUsageView() }   // FILE-009
                         .accessibilityIdentifier("storageLink")

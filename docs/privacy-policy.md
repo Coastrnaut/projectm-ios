@@ -126,6 +126,18 @@ nothing about your device, account, purchase or listening, and no audio.
 - Nothing is uploaded, downloaded or sent anywhere by the app while exporting or opening a scene
   archive.
 
+## Shows
+
+A show (Settings → Show) is your list of cues: each cue's label, and a copy of the visual settings
+you added it with (the visual, its options, the text overlay, and a reference to the photo or video
+the app stores; the photo and video themselves are not copied again). It also remembers which cue is
+active.
+
+- It is kept only in the app's own storage on your device, and in your own device backups if you use
+  them. Nothing is uploaded or sent anywhere, and it contains no audio, listening history or file
+  names.
+- Deleting cues removes their settings copies; deleting the app deletes the show.
+
 ## Pictures you save with Save Frame
 
 "Save Frame" in the visualizer's controls saves one picture of the visualization, only when you tap
