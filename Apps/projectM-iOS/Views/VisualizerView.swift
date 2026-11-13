@@ -15,6 +15,9 @@
 // MED-002: the Video visual (imported video under the circular spectrum) replaces it the same way,
 // with its own non-blocking notice; DEBUG diagnostics expose the shown picture's index.
 // AUD-007: a route change's explanation shows above the source-and-state indicator for about 4 s.
+// OUT-001: every visual is hosted through a `VisualSlotHost`; while a connected external display shows
+// the visualization, the device's slot is empty (black) with a short note, and everything else here
+// (controls, badges, banners, sheets) stays on the device.
 import CaptureKit
 import CaptureUI
 import PresetLibrary
@@ -29,6 +32,10 @@ struct VisualizerView: View {
         ZStack {
             Color.black.ignoresSafeArea()
             visual
+            if coordinator.externalDisplay.showsVisualExternally {
+                // OUT-001-R2: the visualization is drawn on the external display only (no device preview, R3).
+                externalDisplayNote
+            }
             if coordinator.userPaused {
                 // FR-085: the last frame stays, dimmed, with "Paused".
                 Color.black.opacity(0.5).ignoresSafeArea().allowsHitTesting(false)
@@ -96,6 +103,10 @@ struct VisualizerView: View {
             if UITestModulationPanel.isRequested {     // MOD-002: AudioFeatureBindingUITests
                 VStack { HStack { UITestModulationPanel(coordinator: coordinator); Spacer() }; Spacer() }
                     .padding(.top, 70)
+            }
+            if UITestExternalDisplay.isRequested {     // OUT-001: ExternalDisplayUITests
+                VStack { HStack { UITestExternalDisplayPanel(coordinator: coordinator.externalDisplay); Spacer() }; Spacer() }
+                    .padding(.top, 100)
             }
             #endif
             if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {
@@ -199,28 +210,28 @@ struct VisualizerView: View {
     /// The shown visual: Camera, Photo, a native spectrum or projectM.
     @ViewBuilder private var visual: some View {
         if coordinator.showsCameraVisual, let camera = coordinator.cameraVisual {
-            NativeVisualHost(view: camera.view)
+            VisualSlotHost(visual: camera.view, external: coordinator.externalDisplay)
                 .ignoresSafeArea()
                 .accessibilityElement()
                 .accessibilityLabel("Camera visualization")
                 .accessibilityValue(coordinator.cameraState.accessibilityValue)   // CAM-001-R14
                 .accessibilityIdentifier("cameraVisual")
         } else if coordinator.showsPhotoVisual, let photo = coordinator.photoVisual {
-            NativeVisualHost(view: photo.view)
+            VisualSlotHost(visual: photo.view, external: coordinator.externalDisplay)
                 .ignoresSafeArea()
                 .accessibilityElement()
                 .accessibilityLabel("Photo visualization")
                 .accessibilityValue(PhotoVisualHost.accessibilityValue(coordinator.photoState))   // MED-001-R15
                 .accessibilityIdentifier("photoVisual")
         } else if coordinator.showsVideoVisual, let video = coordinator.videoVisual {
-            NativeVisualHost(view: video.view)
+            VisualSlotHost(visual: video.view, external: coordinator.externalDisplay)   // OUT-001: like Photo
                 .ignoresSafeArea()
                 .accessibilityElement()
                 .accessibilityLabel("Video visualization")
                 .accessibilityValue(VideoVisualHost.accessibilityValue(coordinator.videoState))   // MED-002-R19
                 .accessibilityIdentifier("videoVisual")
         } else if coordinator.showsNativeVisual, let native = coordinator.nativeVisual {
-            NativeVisualHost(view: native.view)
+            VisualSlotHost(visual: native.view, external: coordinator.externalDisplay)
                 .ignoresSafeArea()
                 .accessibilityElement()
                 .accessibilityLabel("\(native.style.title) visualization")
@@ -229,10 +240,21 @@ struct VisualizerView: View {
                                                                           glowUnavailable: coordinator.glowUnavailable))   // FX-001, VIS-002-R13
                 .accessibilityIdentifier(native.style.accessibilityIdentifier)
         } else if let renderer = coordinator.renderer {
-            RendererHost(renderer: renderer)
+            VisualSlotHost(visual: renderer.view, external: coordinator.externalDisplay)
                 .ignoresSafeArea()
                 .accessibilityIdentifier("visualizer")
         }
+    }
+
+    /// OUT-001: shown on the device while the visualization is on the external display.
+    private var externalDisplayNote: some View {
+        Label("Showing on external display", systemImage: "tv")
+            .font(.callout)
+            .foregroundStyle(.white.opacity(0.8))
+            .allowsHitTesting(false)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("The visualization is showing on the external display")
+            .accessibilityIdentifier("externalDisplayNote")
     }
 
     @ViewBuilder private var banners: some View {
@@ -314,16 +336,3 @@ struct VisualizerView: View {
     }
 }
 
-/// Hosts the native visual's UIView (VIS-001).
-struct NativeVisualHost: UIViewRepresentable {
-    let view: UIView
-    func makeUIView(context: Context) -> UIView { view }
-    func updateUIView(_ uiView: UIView, context: Context) {}
-}
-
-/// Hosts the renderer's UIView.
-struct RendererHost: UIViewRepresentable {
-    let renderer: any VisualizerRenderer
-    func makeUIView(context: Context) -> UIView { renderer.view }
-    func updateUIView(_ uiView: UIView, context: Context) {}
-}

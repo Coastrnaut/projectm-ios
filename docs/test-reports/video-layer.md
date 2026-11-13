@@ -51,6 +51,27 @@ simulator Debug app OK (no new required-reason API); the built Info.plist has no
 `NSPhotoLibraryUsageDescription`; `build-for-testing` shows no warnings in the Video files.
 PosterBoard crash reports: 32 before the simulator runs, 32 after.
 
+## After merging `autonomous/integration` (SHD-011, OUT-001), 2026-11-13
+
+- SHD-011's stricter `check_compliance.py` flagged `VideoLayerSource.swift` (`makeLibrary(source:)`
+  outside the allowlist). Its shader is a module constant like the image layer's, so it is the ninth
+  entry of `METAL_SOURCE_ALLOWED` (script docstring, ADR-0024 and ADR-0022 updated);
+  `check_compliance.py` OK, `test_scripts.py` 111 OK (1 skipped), `validate_docs.py` OK.
+- OUT-001: the Video visual's view is placed through `VisualSlotHost` like Photo's, and
+  `VideoVisualHost` ignores external display scenes' connect/disconnect
+  (`ExternalDisplayScenes.affectsDeviceVisuals`), so an external display never stops its decoder.
+- Package: CompositorTests 154/154, GeneratorGraphImportTests 14/14, ProceduralMaterials 31/31,
+  GeneratorGraph 46 (1 skipped).
+- Simulator (new "MED2 iPhone 17", iOS 27.2): projectM-iOSTests 209/210 (only the known worktree
+  `PresetTests` case); VideoLayerUITests passed (21.6 s, then 23.6 s after the fixture change),
+  PhotoLayerUITests (22.3 s), CameraUITests 2/2 (14.7 s, 12.0 s), ExternalDisplayUITests (9.7 s).
+- The Thread Performance Checker reports a priority-inversion notice (a user-initiated thread
+  waiting on a utility one) in two VideoStoreTests and the video UI test; it remained after the DEBUG
+  fixture writer stopped blocking on `finishWriting`, so it comes from the import's synchronous
+  AVFoundation / file-coordination calls. A notice, not a failure; MED-014 can revisit import QoS.
+  Every UI test (Camera, Photo, Video, External display) also shows the existing "UI unresponsiveness"
+  notice about an audio-session call on the main thread, which predates this row.
+
 ## Device (owner; open)
 
 MED-002-T26 to T28 `{device}`: Photos and Files picks on D1 and D3 (HEVC from the camera, an H.264

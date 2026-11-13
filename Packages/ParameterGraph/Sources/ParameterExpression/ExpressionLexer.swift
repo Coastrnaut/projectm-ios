@@ -2,6 +2,10 @@
 //
 // Byte-oriented and ASCII-only: positions count bytes, so a byte is a character. The length limit
 // is checked before anything else; the token limit at the first token over it.
+//
+// SHD-010 (contract B4): the length is checked with `utf8.count` before any byte is copied, so an
+// oversized source costs work proportional to the limit, not to its length; every scan counts its
+// steps into `ExpressionCompileWork.lexerSteps`.
 
 enum TokenKind: Equatable {
     case number(Double)
@@ -28,13 +32,21 @@ struct Token {
 enum ExpressionLexer {
     private static let punctuation: [UInt8] = Array("(),;=+-*/".utf8)
 
-    static func tokens(of source: String, limits: ExpressionLimits) throws(ExpressionError) -> [Token] {
-        let bytes = Array(source.utf8)
-        if bytes.count > limits.maximumSourceBytes {
-            throw ExpressionError(.sourceTooLong(bytes: bytes.count, limit: limits.maximumSourceBytes),
-                                  at: position(ofOffset: limits.maximumSourceBytes, in: bytes))
+    static func tokens(of source: String, limits: ExpressionLimits,
+                       work: inout ExpressionCompileWork) throws(ExpressionError) -> [Token] {
+        let byteCount = source.utf8.count
+        work.lexerSteps += 1
+        work.boundedBytes = Swift.min(byteCount, Swift.max(0, limits.maximumSourceBytes))
+        if byteCount > limits.maximumSourceBytes {
+            // Only the bytes up to the limit are read, to place the error.
+            let head = Array(source.utf8.prefix(Swift.max(0, limits.maximumSourceBytes)))
+            work.lexerSteps += head.count
+            throw ExpressionError(.sourceTooLong(bytes: byteCount, limit: limits.maximumSourceBytes),
+                                  at: position(ofOffset: limits.maximumSourceBytes, in: head))
         }
+        let bytes = Array(source.utf8)
         var tokens: [Token] = []
+        defer { work.tokens = tokens.count }
         var i = 0
         var line = 1
         var lineStart = 0
@@ -52,16 +64,21 @@ enum ExpressionLexer {
             let here = SourcePosition(line: line, column: i - lineStart + 1)
             switch b {
             case 0x0A:
+                work.lexerSteps += 1
                 i += 1
                 line += 1
                 lineStart = i
             case 0x20, 0x09, 0x0D:
+                work.lexerSteps += 1
                 i += 1
             case _ where isDigit(b):
                 let start = i
                 guard let end = numberEnd(bytes, from: start) else {
-                    throw ExpressionError(.malformedNumber(text(bytes, start, malformedEnd(bytes, from: start))), at: here)
+                    let malformed = malformedEnd(bytes, from: start)
+                    work.lexerSteps += 2 * (malformed - start)   // the failed scan and the delimiting scan
+                    throw ExpressionError(.malformedNumber(text(bytes, start, malformed)), at: here)
                 }
+                work.lexerSteps += end - start
                 let literal = text(bytes, start, end)
                 guard let value = Double(literal), value.isFinite else {
                     throw ExpressionError(.numberOutOfRange(literal), at: here)
@@ -76,14 +93,18 @@ enum ExpressionLexer {
                     i += 1
                     while i < bytes.count, isNameCharacter(bytes[i]) { i += 1 }
                 }
+                work.lexerSteps += i - start
                 let name = text(bytes, start, i)
                 try append(name == "let" ? .letKeyword : .name(name), from: start, to: i)
             case _ where punctuation.contains(b):
+                work.lexerSteps += 1
                 try append(.punctuation(b), from: i, to: i + 1)
                 i += 1
             case 0x21...0x7E:
+                work.lexerSteps += 1
                 throw ExpressionError(.unexpectedCharacter(Character(Unicode.Scalar(b))), at: here)
             default:
+                work.lexerSteps += 1
                 throw ExpressionError(.unexpectedByte(b), at: here)
             }
         }

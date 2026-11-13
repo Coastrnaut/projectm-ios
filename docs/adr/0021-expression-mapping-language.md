@@ -4,6 +4,8 @@
   rule 4)
 - **Feature**: SHD-009 (`specs/045-shd-009-expression-mapping-dsl`)
 - **Constitution**: I, VI, VII, X; Security (untrusted input); FR-068
+- **Amended**: 2026-11-13 by SHD-010 (`specs/047-shd-010-expression-sandbox-budgets`): Decision 5
+  cost table (`audio.bandMean` 4) and new Decision 9 (budgets); same decision basis (owner rule 4)
 - **Builds on**: ADR-0018 (content is data, no shader source from content), ADR-0019 (closed
   operation sets, validation before anything runs), ADR-0012 (parameter registry, MOD-002 features)
 
@@ -39,7 +41,7 @@ formula.
    assignments.
 5. **Static limits with exact errors.** Source ≤ 512 bytes, ≤ 256 tokens, ≤ 128 nodes, nesting ≤ 16
    (parentheses, call arguments, unary operands; flat chains stay at one level), ≤ 16 bindings and a
-   static weighted operation cost ≤ 256 (transcendental functions and `smoothstep` cost 4). The
+   static weighted operation cost ≤ 256 (transcendental functions and `smoothstep` cost 4; `audio.bandMean` too since SHD-010, Decision 9). The
    parser checks nesting before each descent, so its own recursion is bounded. Errors are the
    first problem in a fixed phase order, formatted `line:column: reason`. Limits are one value
    (`ExpressionLimits`), so SHD-010 can lower them per graph; since there are no loops, the static
@@ -58,13 +60,29 @@ formula.
 8. **For SHD-011**: imported formulas are compiled with these limits after the import's own size
    check; no imported text can reach code generation, dynamic loading or native code.
 
+9. **Budgets (SHD-010).** Time limits are static: there are no loops or jumps, so evaluation work
+   equals the static cost (Σ instruction costs, tested), and no clock or step counter runs on the
+   frame path. `audio.bandMean` costs 4 (amends Decision 5) and is summed at most once per
+   evaluation and once per frame, so a read is a load (a host measurement showed a per-read sum over
+   128 bands costing about 15× its weight). The formulas evaluated per frame are admitted to an
+   `ExpressionFrameSet` off the frame loop: at most 32 formulas (MOD-002's binding limit) and a total
+   cost of 2,048, each compiled under limits no looser than `ExpressionLimits.standard`; a formula
+   that would exceed the budget is refused with a message giving the numbers, and removing one frees
+   its cost. The frame loop receives an immutable `ExpressionFrameSnapshot` whose only operation is
+   evaluation into a caller buffer; neither type accepts source text, so parsing and compiling cannot
+   run there. Compile work is counted (lexer, parser, compiler steps) and bounded linearly in the
+   source size (contract B4: ≤ 3,858 steps at the standard limits for a source of any length; the
+   length is checked before any byte is copied). SHD-002 generator graphs keep ADR-0019's limits;
+   they are already validated and compiled before a layer exists. Host figure (information only,
+   M5 Max, Release): a full-budget frame takes 0.8-1.7 µs; the D1 figure is open (SHD-010-T13).
+
 ## Consequences
 
 - A formula can be shown, stored and shared as plain text; its compiled form has a stable byte
   encoding (`CompiledExpression.bytes`) for determinism tests and caching.
 - Authors cannot write loops or recursive helpers; anything beyond the language needs a new
   whitelisted function and a new opcode (reviewed, tested, appended with a new permanent value).
-- `audio.bandMean` costs 1 although it reads every band (≤ 128); SHD-010 may weight it when it
-  sets time budgets.
+- `audio.bandMean` costs 4 since SHD-010 (Decision 9); formulas that read it many times near the
+  256 limit compiled under SHD-009 may now be refused.
 - Not measured: an allocation counter during evaluation (the no-heap property rests on the
   standard library's stack placement of small temporary allocations and code review).

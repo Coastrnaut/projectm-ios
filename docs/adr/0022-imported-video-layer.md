@@ -53,6 +53,10 @@ decoder (MED-014).
 ## Consequences
 
 - App Privacy stays "Data Not Collected"; the privacy policy describes imported videos.
+- The video shader is a module constant compiled at run time like the other layers'; its file is
+  the ninth entry of `check_compliance.py`'s `METAL_SOURCE_ALLOWED` (ADR-0024). The external-display
+  rule of OUT-001 (ADR-0023) applies: the Video visual's view moves between display slots like
+  Photo's, and an external display scene's connect or disconnect never stops or starts its decoder.
 - `VideoVisualHost`, `VideoStore` and `VideoCoordinator` repeat the Photo files; a shared media host
   is left to the scene rows.
 - After a hitch shorter than 1 s the first frame may still show an older decoded picture (never a

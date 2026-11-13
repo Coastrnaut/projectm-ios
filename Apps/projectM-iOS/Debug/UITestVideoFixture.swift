@@ -17,8 +17,8 @@ enum UITestVideoFixture {
         guard let i = arguments.firstIndex(of: argument), i + 1 < arguments.count else { return }
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("uitest-video-\(UUID().uuidString).mov")
         Task { @MainActor in
-            let written = await Task.detached(priority: .userInitiated) { () -> Bool in
-                (try? writeCounter(to: url)) != nil
+            let written = await Task.detached(priority: .userInitiated) { () async -> Bool in
+                (try? await writeCounter(to: url)) != nil
             }.value
             guard written else { return }
             await videos.importNow(at: url)
@@ -27,7 +27,7 @@ enum UITestVideoFixture {
     }
 
     /// 60 pictures at 30 fps; picture i is grey 8 + 8 × (i % 30).
-    nonisolated static func writeCounter(to url: URL) throws {
+    nonisolated static func writeCounter(to url: URL) async throws {
         let width = 64, height = 48
         let writer = try AVAssetWriter(outputURL: url, fileType: .mov)
         let input = AVAssetWriterInput(mediaType: .video, outputSettings: [
@@ -63,9 +63,7 @@ enum UITestVideoFixture {
             }
         }
         input.markAsFinished()
-        let done = DispatchSemaphore(value: 0)
-        writer.finishWriting { done.signal() }
-        done.wait()
+        await writer.finishWriting()   // awaited, not waited on: no priority inversion
         guard writer.status == .completed else { throw writer.error ?? CocoaError(.fileWriteUnknown) }
     }
 }

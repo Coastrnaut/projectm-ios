@@ -18,7 +18,11 @@ final class ExpressionLimitTests: XCTestCase {
         XCTAssertEqual([limits.maximumSourceBytes, limits.maximumTokens, limits.maximumNodes, limits.maximumNesting,
                         limits.maximumBindings, limits.maximumOperationCost], [512, 256, 128, 16, 16, 256])
         XCTAssertEqual(ExpressionOpcode.allCases.filter { (op: ExpressionOpcode) -> Bool in ExpressionLimits.cost(of: op) == 4 },
-                       [.sin, .cos, .smoothstep, .sqrt, .pow])
+                       [.bandMean, .sin, .cos, .smoothstep, .sqrt, .pow], "SHD-010-R1: audio.bandMean costs 4")
+        XCTAssertEqual(try CompiledExpression(source: "audio.bandMean").operationCost, 4)
+        XCTAssertNil(limits.firstLooserField(than: .standard))
+        XCTAssertEqual(ExpressionLimits(maximumNesting: 17, maximumOperationCost: 300).firstLooserField(than: .standard), .nesting)
+        XCTAssertNil(ExpressionLimits(maximumTokens: 10).firstLooserField(than: .standard), "tighter is never looser")
     }
 
     func testSourceLength() {

@@ -35,7 +35,7 @@ final class VideoStoreTests: XCTestCase {
     /// A "picked" movie outside the store's folder.
     private func pickedFile(in sandbox: Sandbox, name: String = "picked") async throws -> URL {
         let url = sandbox.root.appendingPathComponent("\(name).mov")
-        try await Task.detached { try UITestVideoFixture.writeCounter(to: url) }.value
+        try await UITestVideoFixture.writeCounter(to: url)
         return url
     }
 

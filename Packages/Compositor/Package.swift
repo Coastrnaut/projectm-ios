@@ -29,6 +29,10 @@
 //   metadata) and plays one video as a layer at its own rate through a bounded decode queue. Limits,
 //   errors, the playback clock and the queue are plain Swift and build on Linux; AVFoundation reading
 //   and the Metal layer compile out there. It reuses CameraLayer's rotation and aspect-fill geometry.
+// * `GeneratorGraphImport` (SHD-011, ADR-0024) turns the bytes of an imported file into a validated,
+//   compiled generator graph or one typed refusal: size limit before decoding, executables, scripts
+//   and archives refused by their first bytes, `JSONDecoder` into the SHD-002 document. It reads no
+//   files and loads nothing; Foundation only, builds on Linux.
 // Nothing here imports projectM, ANGLE, capture or the app (Constitution VI). The projectM layer is
 // target `ProjectMLayer` in Packages/ANGLERendering.
 // One library product, so CI's `-scheme Compositor` builds and tests every target.
@@ -37,7 +41,7 @@ import PackageDescription
 let package = Package(
     name: "Compositor",
     platforms: [.iOS("26.0"), .macOS(.v15)],
-    products: [.library(name: "Compositor", targets: ["Compositor", "SpectrumLayers", "CameraLayer", "ProceduralMaterials", "GeneratorGraph", "ImageLayer", "VideoLayer"])],
+    products: [.library(name: "Compositor", targets: ["Compositor", "SpectrumLayers", "CameraLayer", "ProceduralMaterials", "GeneratorGraph", "GeneratorGraphImport", "ImageLayer", "VideoLayer"])],
     dependencies: [
         .package(path: "../AnalysisFeatures"),
         .package(path: "../FlashSafety"),
@@ -53,6 +57,7 @@ let package = Package(
         .target(name: "GeneratorGraph", dependencies: ["Compositor"]),
         .target(name: "ImageLayer", dependencies: ["Compositor"]),
         .target(name: "VideoLayer", dependencies: ["Compositor", "CameraLayer"]),
+        .target(name: "GeneratorGraphImport", dependencies: ["GeneratorGraph"]),
         .testTarget(name: "CompositorTests",
                     dependencies: ["Compositor", "SpectrumLayers", "CameraLayer", "ImageLayer", "VideoLayer", "AnalysisFeatures", "FlashSafety",
                                    .product(name: "VisualGenerators", package: "VisualGenerators")]),
@@ -60,5 +65,6 @@ let package = Package(
                     dependencies: ["ProceduralMaterials", "Compositor", "ParameterGraph", "FlashSafety", "AnalysisFeatures"]),
         .testTarget(name: "GeneratorGraphTests",
                     dependencies: ["GeneratorGraph", "Compositor", "FlashSafety", "AnalysisFeatures", "ProceduralMaterials"]),
+        .testTarget(name: "GeneratorGraphImportTests", dependencies: ["GeneratorGraphImport", "GeneratorGraph"]),
     ]
 )
