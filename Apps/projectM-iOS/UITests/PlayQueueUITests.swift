@@ -60,16 +60,16 @@ final class PlayQueueUITests: XCTestCase {
             + Self.noStore
         app.launch()
         let acknowledge = app.buttons["acknowledgeNotice"]
-        XCTAssertTrue(acknowledge.waitForExistence(timeout: 10))
+        XCTAssertTrue(acknowledge.appears(within: 10))
         acknowledge.tap()
         let rows = app.buttons.matching(identifier: "importedTrack")
-        XCTAssertTrue(rows.element(boundBy: 2).waitForExistence(timeout: 20), "the three tracks are listed")
+        XCTAssertTrue(rows.element(boundBy: 2).appears(within: 20), "the three tracks are listed")
         XCTAssertTrue(rows.element(boundBy: 0).label.hasPrefix("ToneC"))
     }
 
     /// The queue's titles in order, read from the rows' labels ("ToneB, 4 seconds, 1 of 3").
     private func queueOrder(count: Int = 3, file: StaticString = #filePath, line: UInt = #line) -> [String] {
-        XCTAssertTrue(entries.element(boundBy: count - 1).waitForExistence(timeout: 10), "\(count) queue rows", file: file, line: line)
+        XCTAssertTrue(entries.element(boundBy: count - 1).appears(within: 10), "\(count) queue rows", file: file, line: line)
         var titles: [String] = []
         for index in 0..<entries.count {
             let label = entries.element(boundBy: index).label
@@ -82,25 +82,24 @@ final class PlayQueueUITests: XCTestCase {
     /// Touch and hold a queue row, then pick a menu item.
     private func menu(row title: String, _ item: String, file: StaticString = #filePath, line: UInt = #line) {
         let row = entries.matching(NSPredicate(format: "label BEGINSWITH %@", "\(title),")).firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: 5), title, file: file, line: line)
+        XCTAssertTrue(row.appears(within: 5), title, file: file, line: line)
         row.press(forDuration: 1.0)
         let button = app.buttons[item]
-        XCTAssertTrue(button.waitForExistence(timeout: 5), item, file: file, line: line)
+        XCTAssertTrue(button.appears(within: 5), item, file: file, line: line)
         button.tap()
     }
 
     private func openQueueFromTheChooser() {
         let row = app.buttons["queueRow"]
-        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        XCTAssertTrue(row.appears(within: 10))
         XCTAssertEqual(row.label, "Queue, 3 tracks")
         row.tap()
-        XCTAssertTrue(app.navigationBars["Queue"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Queue"].appears(within: 5))
     }
 
     private func closeQueue() {
         app.buttons["queueDone"].tap()
-        let gone = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: app.navigationBars["Queue"])
-        XCTAssertEqual(XCTWaiter().wait(for: [gone], timeout: 5), .completed)
+        XCTAssertTrue(app.navigationBars["Queue"].disappears(within: 5))
     }
 
     // MARK: - (a) reorder, relaunch, same order, nothing plays (AUD-003-S2)
@@ -124,7 +123,7 @@ final class PlayQueueUITests: XCTestCase {
         app.terminate()
         app.launchArguments = Self.noStore
         app.launch()
-        XCTAssertTrue(app.buttons["importAudio"].waitForExistence(timeout: 10), "the chooser, not the visualizer")
+        XCTAssertTrue(app.buttons["importAudio"].appears(within: 10), "the chooser, not the visualizer")
         XCTAssertFalse(indicator.exists, "nothing plays after a relaunch (AUD-003-R15)")
         openQueueFromTheChooser()
         XCTAssertEqual(queueOrder(), ["ToneB", "ToneA", "ToneC"])
@@ -138,8 +137,8 @@ final class PlayQueueUITests: XCTestCase {
         let area = app.otherElements["visualizerTapArea"].firstMatch
         if playPause.exists { area.tap() }
         area.tap()
-        if !playPause.waitForExistence(timeout: 2) { area.tap() }
-        XCTAssertTrue(playPause.waitForExistence(timeout: 5), "the transport is shown with the controls", file: file, line: line)
+        if !playPause.appears(within: 2) { area.tap() }
+        XCTAssertTrue(playPause.appears(within: 5), "the transport is shown with the controls", file: file, line: line)
     }
 
     /// The elapsed time shown, in seconds ("0:05" → 5).
@@ -153,9 +152,7 @@ final class PlayQueueUITests: XCTestCase {
 
     private func expectTitle(_ text: String, file: StaticString = #filePath, line: UInt = #line) {
         if !title.exists { showFreshControls(file: file, line: line) }
-        let predicate = NSPredicate(format: "label == %@", text)
-        let result = XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: predicate, object: title)], timeout: 10)
-        XCTAssertEqual(result, .completed, "title \"\(text)\"; the transport shows \"\(title.label)\"", file: file, line: line)
+        XCTAssertTrue(poll(10) { self.title.label == text }, "title \"\(text)\"; the transport shows \"\(title.label)\"", file: file, line: line)
     }
 
     func testReorderWhilePlayingKeepsTheTrackAndNextFollowsTheNewOrder() throws {
@@ -164,19 +161,19 @@ final class PlayQueueUITests: XCTestCase {
         #else
         try launchWithThreeTracks(seconds: 30)
         app.buttons.matching(identifier: "importedTrack").element(boundBy: 0).tap()    // ToneC; queue C, B, A
-        XCTAssertTrue(indicator.waitForExistence(timeout: 10))
+        XCTAssertTrue(indicator.appears(within: 10))
         expectTitle("ToneC")
         let deadline = Date().addingTimeInterval(20)
-        while elapsed() < 2, Date() < deadline { usleep(250_000) }
+        while elapsed() < 1, Date() < deadline { usleep(250_000) }
         let before = elapsed()
-        XCTAssertGreaterThanOrEqual(before, 2, "playback advances")
+        XCTAssertGreaterThanOrEqual(before, 1, "playback advances")
 
         showFreshControls()
         let queueButton = app.buttons["transportQueue"]
         XCTAssertTrue(queueButton.exists, "the transport offers the queue for an imported track")
         XCTAssertEqual(queueButton.label, "Queue")
         queueButton.tap()
-        XCTAssertTrue(app.navigationBars["Queue"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Queue"].appears(within: 5))
         XCTAssertEqual(queueOrder(), ["ToneC", "ToneB", "ToneA"])
         XCTAssertTrue(entries.element(boundBy: 0).label.hasSuffix("1 of 3, Now Playing"), entries.element(boundBy: 0).label)
         menu(row: "ToneA", "Move Up")

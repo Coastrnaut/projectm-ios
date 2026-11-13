@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T15:11:34Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T15:15:18Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,25 +9,24 @@
 
 | State | Features |
 |---|---|
-| audited | 288 |
-| implementing | 2 |
-| unit_passed | 1 |
-| integrated | 34 |
+| audited | 287 |
+| implementing | 3 |
+| integrated | 35 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 57 | 2 | 0 | 27 | 1 |
-| P1 | 143 | 0 | 1 | 7 | 0 |
-| P2 | 79 | 0 | 0 | 0 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 57 | 2 | 27 | 1 |
+| P1 | 142 | 1 | 8 | 0 |
+| P2 | 79 | 0 | 0 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 291 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
+- 290 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
 
 ## Integrated
 
@@ -41,6 +40,7 @@ The physical-device suite may **not** start:
 | AUD-002 | Support common audio containers | `f886b7ce7c76` | `feature/aud-002` |
 | AUD-003 | Audio library queue | `c06876d434a3` | `feature/aud-003` |
 | AUD-004 | Loop track and queue | `8d96030954ff` | `feature/aud-004` |
+| AUD-005 | Shuffle with history | `bf010e1ee1e6` | `None` |
 | AUD-006 | Seekable transport | `03b23a8ae6a0` | `feature/aud-006` |
 | AUD-014 | Audio session interruption recovery | `c4f03aa5e3d8` | `feature/aud-014` |
 | AUD-016 | Reference tone suite | `f69525cf0e8d` | `feature/aud-016` |
@@ -110,6 +110,11 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `cff52d8eb33b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-005/20261113T094159/swift-test_VisualGenerators.log`)
 - `integration checkout: AnalysisFeatures 91 on iOS 27.2 sim in 34 s; 91 (1 skipped) with -DANALYSIS_NO_ACCELERATE in 50 s; test-speed UI run with the full library 11/11 in 235 s; 0 PosterBoard reports`: pass at `18a7b93` (log `.autonomous/logs/integration/anl-005/analysis-sim.log`)
 
+### ANL-016 Analysis event bus (implementing)
+- `python3 scripts/check_compliance.py`: pass at `1e9e7eec69b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-016/20261113T101323/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `1e9e7eec69b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-016/20261113T101323/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: exit 65 at `1e9e7eec69b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-016/20261113T101323/sim-test_ANGLERendering.log`)
+
 ### AUD-001 Import DRM-free audio files (integrated)
 - `python3 scripts/check_compliance.py`: pass at `d9a60b2a6692` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-001/20261112T153538/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `d9a60b2a6692` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-001/20261112T153538/docs.log`)
@@ -148,11 +153,12 @@ None.
 - `swift test --package-path Packages/CaptureUI`: pass at `489f122c1431` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-004/20261113T071949/swift-test_CaptureUI.log`)
 - `integration checkout: CaptureKit 395 on iOS 27.2 sim; xcodebuild projectM-iOS test: projectM-iOSTests 126 pass; UI 15 pass (RepeatMode, PlayQueue, Transport, ImportedAudio, Interruption); 0 PosterBoard reports`: pass at `8d96030` (log `.autonomous/logs/integration/aud-004/app-tests.log`)
 
-### AUD-005 Shuffle with history (unit_passed)
+### AUD-005 Shuffle with history (integrated)
 - `python3 scripts/check_compliance.py`: pass at `8b729cdfa06d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-005/20261113T101054/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `8b729cdfa06d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-005/20261113T101054/docs.log`)
 - `swift test --package-path Packages/CaptureKit`: pass at `8b729cdfa06d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-005/20261113T101054/swift-test_CaptureKit.log`)
 - `swift test --package-path Packages/CaptureUI`: pass at `8b729cdfa06d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-005/20261113T101054/swift-test_CaptureUI.log`)
+- `integration checkout: CaptureKit 431 on iOS 27.2 sim; app: projectM-iOSTests 133; UI 7 (Shuffle 2, RepeatMode 2, PlayQueue 2, plus reference no-shuffle), every UI test under 24 s; 171 s wall; 0 PosterBoard reports`: pass at `bf010e1` (log `.autonomous/logs/integration/aud-005/app-tests.log`)
 
 ### AUD-006 Seekable transport (integrated)
 - `python3 scripts/check_compliance.py`: pass at `383d9ab633a4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-006/20261112T174904/compliance.log`)
