@@ -21,7 +21,7 @@ Format: `- [ ] OSC-007-Tnn [P?] [Story?] description`. A task is ticked only whe
 ## Phase 3: User Story 1 — see that OSC is listening (P1)
 
 - [ ] OSC-007-T04 [US1] Create `Apps/projectM-iOS/Views/OSCListenerBadge.swift`: shown iff `osc.badgePort != nil`; visible "OSC listening on port N" and a "Stop" button; identifiers `oscListenerBadge`, `oscListenerBadgeText`, `oscStopButton`; label "OSC listening", value "Port N"; Stop label "Stop OSC", hint "Turns off the OSC receiver" (contract, OSC-007-R7).
-- [ ] OSC-007-T05 [US1] Show the badge as the first row of the top status stack in `Apps/projectM-iOS/Views/VisualizerView.swift`, independent of `controlsVisible` (OSC-007-R2, R6; CAM-012 merge point noted in a comment), and in the chooser's bottom safe-area inset in `Apps/projectM-iOS/ProjectMApp.swift`.
+- [ ] OSC-007-T05 [US1] Show the badge as the first row of the top status stack in `Apps/projectM-iOS/Views/VisualizerView.swift`, independent of `controlsVisible` (OSC-007-R2, R6; CAM-012 merge point noted in a comment), and in the chooser's bottom safe-area inset in `Apps/projectM-iOS/ProjectMApp.swift`. The chooser placement has no UI test (the UI tests autostart past the chooser); it is verified by the build and by reading the diff (analyze finding C3).
 
 ## Phase 4: User Story 2 — Stop with one tap (P1)
 
@@ -35,7 +35,7 @@ Format: `- [ ] OSC-007-Tnn [P?] [Story?] description`. A task is ticked only whe
 
 ## Phase 6: UI test and polish
 
-- [ ] OSC-007-T10 Write `Apps/projectM-iOS/UITests/OSCNetworkAccessUITests.swift` (launch like `OSCReceiverUITests`, port 47124, `UITestWaits` polls, `scrollTo` with held drags): enable in Settings, close Settings, the badge reads "OSC listening on port 47124" with the controls hidden; tap Stop; the badge disappears; open Settings: toggle value "0", status "Off" (OSC-007-S4, < 30 s).
+- [ ] OSC-007-T10 Write `Apps/projectM-iOS/UITests/OSCNetworkAccessUITests.swift` (launch like `OSCReceiverUITests`, port 47124, `UITestWaits` polls, `scrollTo` with held drags): enable in Settings, close Settings, the badge reads "OSC listening on port 47124" with the controls shown (its Stop and the controls' `settings` button both hittable, OSC-007-R6) and with the controls hidden; the badge text's label is "OSC listening" and value "Port 47124", the Stop button's label "Stop OSC" (OSC-007-R7); tap Stop; the badge disappears; open Settings: toggle value "0", status "Off" (OSC-007-S4, < 30 s).
 - [ ] OSC-007-T11 One sentence on the badge and Stop in `docs/privacy-policy.md` ("OSC control on your local network"); results in `docs/test-reports/osc-network-access.md`; `check_compliance.py`, `validate_docs.py`, PerformanceControl suite; PosterBoard count before/after.
 - [ ] OSC-007-T12 `{device}` On D1 over Wi-Fi (quickstart D): the badge shows while listening, Stop ends delivery and Settings shows off (OSC-007-S5). Owner, last stage.
 
