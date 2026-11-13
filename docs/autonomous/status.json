@@ -6,7 +6,8 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 45,
+   "audited": 43,
+   "implementing": 2,
    "integrated": 41,
    "skipped_existing": 1
   },
@@ -16,17 +17,18 @@
   },
   "P2": {
    "audited": 78,
-   "implementing": 1
+   "unit_passed": 1
   },
   "P3": {
    "audited": 9
   }
  },
  "by_state": {
-  "audited": 271,
-  "implementing": 1,
+  "audited": 269,
+  "implementing": 2,
   "integrated": 53,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -1045,13 +1047,13 @@
   },
   "CMP-003": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/cmp-003",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "CMP-004": {
    "attempts": 0,
@@ -1505,13 +1507,13 @@
   },
   "MED-001": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/med-001",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "MED-002": {
    "attempts": 0,
@@ -2966,12 +2968,12 @@
   "SHD-002": {
    "attempts": 0,
    "branch": "feature/shd-002",
-   "branch_sha": null,
+   "branch_sha": "094e008fa7bc5b84358a7109aeecbc09aed9c74e",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "SHD-003": {
    "attempts": 0,
@@ -3866,5 +3868,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T17:28:59Z"
+ "updated": "2026-11-13T17:36:40Z"
 }
