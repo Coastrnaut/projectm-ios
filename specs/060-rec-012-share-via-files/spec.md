@@ -125,12 +125,12 @@ temporary file is deleted.
 - **REC-012-R8**: The result stays offered until Save… completes, the user taps Discard, or (stills only) a new Save Frame replaces it. A cancelled Save… keeps it.
 - **REC-012-R9**: Discard of a recording MUST delete its temporary file; a completed Save… moves it (REC-003); nothing is kept beyond the session (FR-065).
 - **REC-012-R10**: While a recording is offered, Record MUST refuse with "Save, share or discard the last recording first." and start nothing.
-- **REC-012-R15**: After a completed share the notice reads "Shared."; a cancel adds no notice; an error reads "The file couldn't be shared.". The ready panel stays in all three cases.
-- **REC-012-R16**: An offered result MUST stay offered when the visual changes, the user pauses, the output is blacked out or the app goes to the background; a still and a recording can be offered at the same time, each in its own panel.
 - **REC-012-R11**: If the copy cannot be made, no sheet opens, the notice reads "The file couldn't be shared." and the result stays offered.
 - **REC-012-R12**: The app itself MUST NOT use the network; a share leaves the device only through the activity the user picks.
 - **REC-012-R13**: The ready panel and its buttons MUST have accessibility labels (FR-070); on iPad the share sheet is anchored to the Share… button.
 - **REC-012-R14**: DEBUG only: with `-uitestShareSimulation`, Share… makes the copy and shows "Simulate share completed" / "Simulate share cancelled" instead of the system sheet, and a probe reports the number of copies, what is offered and the last outcome. Release builds contain none of it.
+- **REC-012-R15**: After a completed share the notice reads "Shared."; a cancel adds no notice; an error reads "The file couldn't be shared.". The ready panel stays in all three cases.
+- **REC-012-R16**: An offered result MUST stay offered when the visual changes, the user pauses, the output is blacked out or the app goes to the background; a still and a recording can be offered at the same time, each in its own panel.
 
 ### Key Entities
 

@@ -33,18 +33,18 @@ physical devices; left open.
 **Goal**: the row's acceptance.
 **Independent test**: unit tests on the store and coordinator; UI test cancel path.
 
-- [ ] REC-012-T08 [US2] Unit tests: copy has the original's bytes and descriptive name (frame PNG, recording MP4); cancel → copy and its folder deleted, original kept and unchanged; complete → copy deleted, original kept, "Shared."; failed → copy deleted, notice; copy failure → no request, notice; second request while one is shown is refused; leftovers swept at init; excluded types exactly `[.saveToCameraRoll, .assignToContact]`; outcome mapping (REC-012-S1 to S4), in `Apps/projectM-iOS/Tests/CaptureShareAppTests.swift`
+- [ ] REC-012-T08 [US2] Unit tests: copy has the original's bytes and descriptive name (frame PNG, recording MP4); cancel → copy and its folder deleted, original kept and unchanged; complete → copy deleted, original kept, "Shared."; failed → copy deleted, notice; copy failure → no request, notice; second request while one is shown is refused; leftovers swept at init; excluded types exactly `[.saveToCameraRoll, .assignToContact]`; outcome mapping; an offered still and recording survive a context change to paused, blacked out and another visual (REC-012-R16) (REC-012-S1 to S4), in `Apps/projectM-iOS/Tests/CaptureShareAppTests.swift`
 - [ ] REC-012-T09 [US2] UI test with `-uitestShareSimulation` on the seeded Photo visual: Save Frame → PNG → Share… → `copies=1` → simulated cancel → `copies=0 frame=yes`, panel still shown; Record ~1 s → Stop → Share… → simulated completion → `copies=0 recording=yes last=completed`, "Shared."; under 30 s, in `Apps/projectM-iOS/UITests/CaptureShareUITests.swift`
 
 ## Phase 5: User Story 3 - Done with the result (P2)
 
-- [ ] REC-012-T10 [US3] Update REC-001 and REC-003 app tests for the offered result (exporter after `requestExport`, cancel keeps, success clears, Discard; mover cancel keeps the file, Discard deletes it, Record refused while offered), in `Apps/projectM-iOS/Tests/FrameCaptureAppTests.swift`, `Apps/projectM-iOS/Tests/VideoRecordingAppTests.swift`
+- [ ] REC-012-T10 [US3] Update REC-001 and REC-003 app tests for the offered result (exporter after `requestExport`, cancel keeps, success clears, Discard, a new capture replaces the offered still (REC-012-R8); mover cancel keeps the file, Discard deletes it, Record refused while offered), in `Apps/projectM-iOS/Tests/FrameCaptureAppTests.swift`, `Apps/projectM-iOS/Tests/VideoRecordingAppTests.swift`
 
 ## Phase 6: Polish & cross-cutting
 
 - [ ] REC-012-T11 [P] Privacy review and docs: `docs/privacy-policy.md` (sharing: only on Share…, only to the activity the user picks, temporary copy deleted, Photos and Contacts excluded, results kept only for the session), `docs/release/app-privacy.md` (label unchanged); superseded notes in `specs/055-rec-001-still-frame-capture/spec.md` (REC-001-R10) and `specs/058-rec-003-video-recording/spec.md` (REC-003-R13)
-- [ ] REC-012-T12 Gates: `check_compliance.py`, `validate_docs.py`, `check_privacy_manifest.py` on the Debug simulator app; `xcodebuild test` projectM-iOSTests, CaptureShareUITests, FrameCaptureUITests, VideoRecordingUITests on the iOS 27.2 simulator; PosterBoard reports counted after
-- [ ] REC-012-T13 {device} D1: AirDrop, Messages and Save to Files from the share sheet for a frame and a recording; cancel keeps the panel; no Photos or Contacts activity, no permission prompt (quickstart, REC-012-S5)
+- [ ] REC-012-T12 Gates: `check_compliance.py`, `validate_docs.py`, `check_privacy_manifest.py` on the Debug simulator app; `xcodebuild test` projectM-iOSTests, CaptureShareUITests, FrameCaptureUITests, VideoRecordingUITests on the iOS 27.2 simulator; `grep` shows the simulation and probe only inside `#if DEBUG` (REC-012-R14); `check_compliance.py` finds no networking API (REC-012-R12); PosterBoard reports counted after
+- [ ] REC-012-T13 {device} D1: AirDrop, Messages and Save to Files from the share sheet for a frame and a recording; cancel keeps the panel; no Photos or Contacts activity, no permission prompt; on D2 or D3 the sheet is a popover at Share… (REC-012-R13) (quickstart, REC-012-S5)
 
 ## Dependencies
 
