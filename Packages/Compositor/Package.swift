@@ -18,6 +18,10 @@
 //   materials whose parameters are MOD-001 descriptors (ParameterGraph, pure Swift) and whose layer
 //   draws them under the contract. The shader source is a constant in the module (no external code);
 //   the catalog, values and motion build on Linux, the layer and shaders compile out there.
+// * `ImageLayer` (MED-001, specs/044-med-001-import-photo-layer) imports, sanitizes (pixels only, no
+//   metadata) and draws one still image as a layer. Limits, errors and geometry are plain Swift and
+//   build on Linux; the ImageIO decoder/sanitizer and the Metal layer compile out there. The
+//   `ImageDecoding` protocol is the seam MED-014 (safe media decoder) hardens.
 // Nothing here imports projectM, ANGLE, capture or the app (Constitution VI). The projectM layer is
 // target `ProjectMLayer` in Packages/ANGLERendering.
 // One library product, so CI's `-scheme Compositor` builds and tests every target.
@@ -26,7 +30,7 @@ import PackageDescription
 let package = Package(
     name: "Compositor",
     platforms: [.iOS("26.0"), .macOS(.v15)],
-    products: [.library(name: "Compositor", targets: ["Compositor", "SpectrumLayers", "CameraLayer", "ProceduralMaterials"])],
+    products: [.library(name: "Compositor", targets: ["Compositor", "SpectrumLayers", "CameraLayer", "ProceduralMaterials", "ImageLayer"])],
     dependencies: [
         .package(path: "../AnalysisFeatures"),
         .package(path: "../FlashSafety"),
@@ -39,8 +43,9 @@ let package = Package(
         .target(name: "SpectrumLayers", dependencies: ["Compositor", .product(name: "VisualGenerators", package: "VisualGenerators")]),
         .target(name: "CameraLayer", dependencies: ["Compositor"]),
         .target(name: "ProceduralMaterials", dependencies: ["Compositor", "ParameterGraph"]),
+        .target(name: "ImageLayer", dependencies: ["Compositor"]),
         .testTarget(name: "CompositorTests",
-                    dependencies: ["Compositor", "SpectrumLayers", "CameraLayer", "AnalysisFeatures", "FlashSafety",
+                    dependencies: ["Compositor", "SpectrumLayers", "CameraLayer", "ImageLayer", "AnalysisFeatures", "FlashSafety",
                                    .product(name: "VisualGenerators", package: "VisualGenerators")]),
         .testTarget(name: "ProceduralMaterialsTests",
                     dependencies: ["ProceduralMaterials", "Compositor", "ParameterGraph", "FlashSafety", "AnalysisFeatures"]),
