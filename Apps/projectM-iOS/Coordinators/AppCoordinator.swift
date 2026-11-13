@@ -67,6 +67,8 @@ final class AppCoordinator: VisualizationControlling {
     @ObservationIgnored private let inAppPlayback: InAppPlaybackSource
     /// Play, pause, stop playback, seek, next and previous for In-App Playback (AUD-006).
     let transport: PlaybackTransport
+    /// AUD-007: the audio route indicator and its explanations.
+    let routes = RouteCoordinator.makeDefault()
     private(set) var renderer: (any VisualizerRenderer)?
     private(set) var rendererError: String?
     /// Preset browsing and switching (T090, T091).
@@ -87,11 +89,14 @@ final class AppCoordinator: VisualizationControlling {
     var showSettings = false
     /// Performance overlay and Reduce flashing (T103).
     let settings: AppSettings
-    /// The native circular spectrum (VIS-001), created the first time it is needed.
-    private(set) var nativeVisual: CircularSpectrumHost?
+    /// The native spectra (VIS-001 circular, VIS-002 linear), created the first time one is needed.
+    private(set) var nativeVisual: NativeSpectrumHost?
     /// The native visual could not be created on this launch; projectM is shown instead (VIS-001-R16).
     private(set) var nativeVisualUnavailable = false
-    static let nativeVisualUnavailableMessage = "Circular Spectrum isn't available on this device. Showing projectM."
+    /// The notice naming the chosen native visual (VIS-001-R16, VIS-002-R12).
+    static func nativeVisualUnavailableMessage(for choice: VisualChoice) -> String {
+        "\(choice.title) isn't available on this device. Showing projectM."
+    }
     /// Tap tempo and the tempo estimate (SHOW-011).
     let tempo: TempoCoordinator
 
@@ -175,6 +180,8 @@ final class AppCoordinator: VisualizationControlling {
         lifecycleForwarding = Task { @MainActor in
             for await event in lifecycle.events { await lifecycleCoordinator.handle(event) }
         }
+        routes.context = { [weak self] in self?.routeContext }   // AUD-007
+        routes.isActive = { [weak self] in self?.appIsActive ?? true }
         loadLibrary()
         loadAudioLibrary()
         #if DEBUG || PROJECTM_AUTOMATION
@@ -464,7 +471,7 @@ final class AppCoordinator: VisualizationControlling {
 
     /// The native visual replaces projectM only when chosen, created and on the visualizer.
     static func nativeVisualShown(choice: VisualChoice, hostAvailable: Bool, onVisualizer: Bool) -> Bool {
-        choice == .circularSpectrum && hostAvailable && onVisualizer
+        choice.isNative && hostAvailable && onVisualizer
     }
 
     var showsNativeVisual: Bool {
@@ -475,10 +482,22 @@ final class AppCoordinator: VisualizationControlling {
         SpectrumBarCount(rawValue: settings.circularSpectrumBars) ?? .b64
     }
 
-    /// Creates the circular spectrum the first time it is chosen; on failure, falls back to projectM
+    /// The native spectrum the settings ask for (VIS-002-R11; circular for any other choice).
+    private var nativeSpectrumStyle: NativeSpectrumStyle {
+        settings.visual == .linearSpectrum
+            ? .linear(settings.linearSpectrumOrientation, spacing: settings.linearSpectrumSpacing) : .circular
+    }
+
+    private func markNativeVisualUnavailable(_ error: any Error) {
+        nativeVisualUnavailable = true
+        rendererError = "\(settings.visual.title): \(error)"
+        UIAccessibility.post(notification: .announcement, argument: Self.nativeVisualUnavailableMessage(for: settings.visual))
+    }
+
+    /// Creates the native spectrum the first time one is chosen; on failure, falls back to projectM
     /// with a notice (VIS-001-R16). The stored choice is kept.
     private func prepareNativeVisualIfNeeded() {
-        guard settings.visual == .circularSpectrum, nativeVisual == nil, !nativeVisualUnavailable else { return }
+        guard settings.visual.isNative, nativeVisual == nil, !nativeVisualUnavailable else { return }
         do {
             var device = MTLCreateSystemDefaultDevice()
             #if DEBUG
@@ -488,15 +507,14 @@ final class AppCoordinator: VisualizationControlling {
             #if DEBUG
             forceGlowFailure = ProcessInfo.processInfo.arguments.contains("-uitestGlowFailure")   // GlowUITests (FX-001-R13)
             #endif
-            let host = try CircularSpectrumHost.make(device: device, reader: manager.analysisTap, barCount: circularSpectrumBarCount,
-                                                     glow: settings.glowParameters, forceGlowFailure: forceGlowFailure)
+            let host = try NativeSpectrumHost.make(device: device, reader: manager.analysisTap, style: nativeSpectrumStyle,
+                                                   barCount: circularSpectrumBarCount, glow: settings.glowParameters,
+                                                   forceGlowFailure: forceGlowFailure)
             host.reduceFlashing = settings.reduceFlashing
             presentation.register(host)   // PERF-011: starts suspended while the app cannot present
             nativeVisual = host
         } catch {
-            nativeVisualUnavailable = true
-            rendererError = "Circular Spectrum: \(error)"
-            UIAccessibility.post(notification: .announcement, argument: Self.nativeVisualUnavailableMessage)
+            markNativeVisualUnavailable(error)
         }
     }
 
@@ -530,10 +548,19 @@ final class AppCoordinator: VisualizationControlling {
     func tapTempo() { showControls(); tempo.tap() }
     func resetTempo() { showControls(); tempo.reset() }
 
-    /// Settings changed the visual or its bar count: switch without touching the audio source
-    /// (VIS-001-R12).
+    /// Settings changed the visual, its bar count or the linear spectrum's options: switch without
+    /// touching the audio source (VIS-001-R12, VIS-002-R12).
     func visualSettingsChanged() {
         nativeVisual?.barCount = circularSpectrumBarCount
+        if settings.visual.isNative, let host = nativeVisual {
+            do {
+                try host.apply(style: nativeSpectrumStyle)
+            } catch {
+                host.pause()
+                nativeVisual = nil   // the presentation registry holds it weakly
+                markNativeVisualUnavailable(error)
+            }
+        }
         if visualizationState == .running {
             resumeActiveVisual()
         } else {
@@ -589,6 +616,12 @@ final class AppCoordinator: VisualizationControlling {
     func restorePurchases() { Task { await entitlements.restore() } }
 
     // MARK: - Controls and lifecycle
+
+    /// AUD-007: what the route indicator shows (outputs for In-App Playback, inputs for
+    /// Microphone); nil hides it.
+    var routeContext: AudioRouteContext? {
+        AudioRouteContext.make(mode: manager.activeMode, state: manager.state, isPausedByUser: manager.isPausedByUser)
+    }
 
     /// A tap on the visualization (FR-042).
     func toggleControls() {

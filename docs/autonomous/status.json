@@ -6,16 +6,14 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 57,
-   "implementing": 1,
-   "integrated": 27,
-   "skipped_existing": 1,
-   "unit_passed": 1
+   "audited": 54,
+   "implementing": 3,
+   "integrated": 29,
+   "skipped_existing": 1
   },
   "P1": {
    "audited": 142,
-   "implementing": 1,
-   "integrated": 8
+   "integrated": 9
   },
   "P2": {
    "audited": 79
@@ -25,11 +23,10 @@
   }
  },
  "by_state": {
-  "audited": 287,
-  "implementing": 2,
-  "integrated": 35,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "audited": 284,
+  "implementing": 3,
+  "integrated": 38,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -60,8 +57,6 @@
    "ANL-013",
    "ANL-014",
    "ANL-015",
-   "ANL-016",
-   "AUD-007",
    "AUD-008",
    "AUD-009",
    "AUD-010",
@@ -308,7 +303,6 @@
    "UIX-013",
    "UIX-014",
    "UIX-015",
-   "VIS-002",
    "VIS-003",
    "VIS-004",
    "VIS-005",
@@ -330,7 +324,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "290 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
+   "287 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
   ]
  },
  "features": {
@@ -609,10 +603,10 @@
    "branch": "feature/anl-016",
    "branch_sha": "1e9e7eec69b86bb860821afd1f36118eed1cb948",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "97e498d64a14b6a3a5dbe88e27a6b04ac8556e0a",
    "priority": "P0",
    "spec_dir": "specs/024-anl-016-analysis-event-bus",
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "AUD-001": {
    "attempts": 1,
@@ -677,12 +671,12 @@
   "AUD-007": {
    "attempts": 0,
    "branch": "feature/aud-007",
-   "branch_sha": null,
+   "branch_sha": "6fdff3fc48ef41ecfbf3534bed65f4b82d05b203",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "902d1734d42a1d0c6796565fb290d82aefbadaf2",
    "priority": "P1",
    "spec_dir": "specs/026-aud-007-audio-output-route-indicator",
-   "state": "implementing"
+   "state": "integrated"
   },
   "AUD-008": {
    "attempts": 0,
@@ -1046,13 +1040,13 @@
   },
   "CMP-001": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/cmp-001",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/029-cmp-001-unified-layer-protocol",
+   "state": "implementing"
   },
   "CMP-002": {
    "attempts": 0,
@@ -1796,13 +1790,13 @@
   },
   "MOD-001": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/mod-001",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/028-mod-001-typed-parameter-registry",
+   "state": "implementing"
   },
   "MOD-002": {
    "attempts": 0,
@@ -3196,13 +3190,13 @@
   },
   "SHOW-011": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/show-011",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/027-show-011-tap-tempo",
+   "state": "implementing"
   },
   "SHOW-012": {
    "attempts": 0,
@@ -3407,12 +3401,12 @@
   "VIS-002": {
    "attempts": 0,
    "branch": "feature/vis-002",
-   "branch_sha": null,
+   "branch_sha": "f3a531c11e882f60ed36a2b9de01b95c2d24d32e",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "c2b2f75c11bbb94c0ee00da9da49d8369f88212a",
    "priority": "P0",
    "spec_dir": "specs/025-vis-002-linear-spectrum",
-   "state": "implementing"
+   "state": "integrated"
   },
   "VIS-003": {
    "attempts": 0,
@@ -3617,6 +3611,11 @@
    "sha": "18a7b93483d6f967dbd5aac8efd9e378932959e5"
   },
   {
+   "branch": "feature/anl-016",
+   "id": "ANL-016",
+   "sha": "97e498d64a14b6a3a5dbe88e27a6b04ac8556e0a"
+  },
+  {
    "branch": "feature/aud-001",
    "id": "AUD-001",
    "sha": "a2813ab3fa4f2cd2b8fb8597ca8f7b87943a9dea"
@@ -3645,6 +3644,11 @@
    "branch": "feature/aud-006",
    "id": "AUD-006",
    "sha": "03b23a8ae6a0aad7e0f09d81dd1bfe960b5e795a"
+  },
+  {
+   "branch": "feature/aud-007",
+   "id": "AUD-007",
+   "sha": "902d1734d42a1d0c6796565fb290d82aefbadaf2"
   },
   {
    "branch": "feature/aud-014",
@@ -3770,6 +3774,11 @@
    "branch": "feature/vis-001",
    "id": "VIS-001",
    "sha": "48285d49c422576ac32986029ee731b214fcde63"
+  },
+  {
+   "branch": "feature/vis-002",
+   "id": "VIS-002",
+   "sha": "c2b2f75c11bbb94c0ee00da9da49d8369f88212a"
   }
  ],
  "integration_branch": "autonomous/integration",
@@ -3787,7 +3796,7 @@
     ],
     "note": "Delivered by AUD-016 (merge f69525c): a versioned audio fixture generator with known expected feature values whose hashes are identical on the macOS host, the iOS simulator and Linux. QA-001's acceptance ('Generated fixture hashes are stable across supported hosts') is met; no separate implementation.",
     "test_evidence": [
-     "ReferenceToneCatalogTests.testGoldenHashesOnRepeatedRuns and ReferenceToneOracleTests passed on Linux in CI run 43349673457, job 131638159151 (commit 073f92c)",
+     "ReferenceToneCatalogTests.testGoldenHashesOnRepeatedRuns (split on 2026-11-13 into testGoldenHashesOnRepeatedRuns44100 and ...48000, plus testGoldenTableCoversEveryVariant; all 38 golden values still checked) and ReferenceToneOracleTests passed on Linux in CI run 43349673457, job 131638159151 (commit 073f92c)",
      "same suites passed on the macOS host and the iOS 27.2 simulator in the AUD-016 gates and post-merge run (.autonomous/logs/integration/aud-016/)",
      "scripts/check_reference_tone_goldens.py: independent CPython port reproduces 18 mono hashes (test_scripts.py)"
     ],
@@ -3797,5 +3806,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T15:19:14Z"
+ "updated": "2026-11-13T15:40:16Z"
 }

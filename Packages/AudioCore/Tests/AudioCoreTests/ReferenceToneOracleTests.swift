@@ -10,25 +10,32 @@ import XCTest
 final class ReferenceToneOracleTests: XCTestCase {
     // MARK: Oracles
 
-    /// One-sided magnitudes |X[k]|, k = 0…N/2, of the first `size` samples with a periodic Hann
-    /// window, by the defining sum (cosine and sine from a table indexed by k·n mod N).
-    private func hannMagnitudes(_ samples: ArraySlice<Float>, size: Int) -> [Double] {
+    /// One-sided magnitudes |X[k]|, k in `bins` (default 0…N/2), of the first `size` samples with a
+    /// periodic Hann window, by the defining sum (cosine and sine from a table indexed by k·n mod N).
+    /// Also returns the windowed signal's energy Σ x_w[n]² for the Parseval bound below.
+    private func hannMagnitudes(_ samples: ArraySlice<Float>, size: Int,
+                                bins: ClosedRange<Int>? = nil) -> (magnitudes: [Int: Double], energy: Double) {
         let start = samples.startIndex
+        let bins = bins ?? 0...(size / 2)
         var cosines = [Double](repeating: 0, count: size)
         var sines = [Double](repeating: 0, count: size)
         var windowed = [Double](repeating: 0, count: size)
+        var energy = 0.0
         for n in 0..<size {
             let angle = 2 * Double.pi * Double(n) / Double(size)
             cosines[n] = cos(angle)
             sines[n] = sin(angle)
             windowed[n] = Double(samples[start + n]) * (0.5 - 0.5 * cos(angle))
+            energy += windowed[n] * windowed[n]
         }
-        var magnitudes = [Double](repeating: 0, count: size / 2 + 1)
+        var magnitudes: [Int: Double] = [:]
         cosines.withUnsafeBufferPointer { c in
             sines.withUnsafeBufferPointer { s in
                 windowed.withUnsafeBufferPointer { x in
+                    // Plain pointers: buffer-pointer subscripts are bounds-checked in Debug builds.
+                    let c = c.baseAddress!, s = s.baseAddress!, x = x.baseAddress!
                     let mask = size - 1                      // sizes are powers of two
-                    for k in 0...(size / 2) {
+                    for k in bins {
                         var re = 0.0, im = 0.0, index = 0
                         for n in 0..<size {
                             re += x[n] * c[index]
@@ -40,8 +47,15 @@ final class ReferenceToneOracleTests: XCTestCase {
                 }
             }
         }
-        return magnitudes
+        return (magnitudes, energy)
     }
+
+    /// Largest FFT size whose every bin is computed by the direct sum. Above it the oracle computes
+    /// the bins near the documented one and proves no other bin is larger with Parseval's theorem
+    /// (shortened 2026-11-13 under owner rule 7: the all-bin sums at 4096 and 8192 took 21 s). Set
+    /// `REFERENCE_TONE_ORACLE_FULL=1` to compute every bin at every size, as before.
+    private static let fullDFTMaxSize = ProcessInfo.processInfo.environment["REFERENCE_TONE_ORACLE_FULL"] == nil ? 2_048 : 8_192
+    private static let bandHalfWidth = 6
 
     /// Frames where a pulse begins: a non-zero sample after a zero one (or at frame 0).
     private func onsets(_ samples: [Float]) -> [(frame: Int64, level: Double)] {
@@ -80,14 +94,27 @@ final class ReferenceToneOracleTests: XCTestCase {
                     guard let frequency, index == 0 || frequency != tone.left, !(fixture.id == "sine-split" && frequency == 1_000) else { continue }
                     let samples = channel(frames, index, of: 2)
                     for size in ReferenceToneCatalog.fftSizes {
-                        let magnitudes = hannMagnitudes(samples[0..<size], size: size)
-                        let peak = magnitudes.indices.max { magnitudes[$0] < magnitudes[$1] }!
-                        XCTAssertEqual(peak, ReferenceToneCatalog.nearestBin(frequency: frequency, fftSize: size, sampleRate: rate),
-                                       "\(fixture.id) channel \(index) \(rate) Hz N=\(size)")
-                        XCTAssertTrue(magnitudes.allSatisfy(\.isFinite))
+                        let documented = ReferenceToneCatalog.nearestBin(frequency: frequency, fftSize: size, sampleRate: rate)
+                        let label = "\(fixture.id) channel \(index) \(rate) Hz N=\(size)"
+                        let band = size <= Self.fullDFTMaxSize ? 0...(size / 2)
+                            : max(0, documented - Self.bandHalfWidth)...min(size / 2, documented + Self.bandHalfWidth)
+                        let (magnitudes, energy) = hannMagnitudes(samples[0..<size], size: size, bins: band)
+                        XCTAssertTrue(magnitudes.values.allSatisfy(\.isFinite), label)
+                        let peak = band.max { magnitudes[$0]! < magnitudes[$1]! }!
+                        XCTAssertEqual(peak, documented, label)
+                        if band.count < size / 2 + 1 {
+                            // Parseval: Σ_{k=0}^{N-1} |X[k]|² = N·Σ x_w[n]², and |X[k]| = |X[N−k]|, so any bin
+                            // outside the band has |X[k]|² ≤ (that total − the band's share). Below peak², no
+                            // bin outside the band can be the largest.
+                            let bandShare = band.reduce(0.0) { sum, k in
+                                sum + (k == 0 || k == size / 2 ? 1 : 2) * magnitudes[k]! * magnitudes[k]!
+                            }
+                            let outside = Double(size) * energy - bandShare
+                            XCTAssertLessThan(outside, magnitudes[peak]! * magnitudes[peak]!, "\(label): a bin outside the band could be larger")
+                        }
                         if ReferenceToneCatalog.isBinCentered(frequency: frequency, fftSize: size, sampleRate: rate) {
                             // A·N/4 for a bin-centered tone under a periodic Hann window.
-                            XCTAssertEqual(magnitudes[peak] / (0.25 * Double(size) / 4), 1, accuracy: 1e-6, "\(fixture.id) N=\(size)")
+                            XCTAssertEqual(magnitudes[peak]! / (0.25 * Double(size) / 4), 1, accuracy: 1e-6, "\(fixture.id) N=\(size)")
                         }
                     }
                 }
@@ -123,7 +150,7 @@ final class ReferenceToneOracleTests: XCTestCase {
         for rate in ReferenceToneCatalog.variantRates {
             let loop = try silence.loop(sampleRate: rate, channels: 2)
             XCTAssertTrue(onsets(loop).isEmpty)
-            XCTAssertTrue(hannMagnitudes(loop[0..<512], size: 512).allSatisfy { $0 == 0 })
+            XCTAssertTrue(hannMagnitudes(loop[0..<512], size: 512).magnitudes.values.allSatisfy { $0 == 0 })
         }
     }
 

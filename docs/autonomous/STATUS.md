@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T15:19:14Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T15:40:16Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,25 +9,24 @@
 
 | State | Features |
 |---|---|
-| audited | 287 |
-| implementing | 2 |
-| unit_passed | 1 |
-| integrated | 35 |
+| audited | 284 |
+| implementing | 3 |
+| integrated | 38 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 57 | 1 | 1 | 27 | 1 |
-| P1 | 142 | 1 | 0 | 8 | 0 |
-| P2 | 79 | 0 | 0 | 0 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 54 | 3 | 29 | 1 |
+| P1 | 142 | 0 | 9 | 0 |
+| P2 | 79 | 0 | 0 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 290 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
+- 287 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
 
 ## Integrated
 
@@ -37,12 +36,14 @@ The physical-device suite may **not** start:
 | ANL-002 | Log-frequency bands | `493269c77462` | `feature/anl-002` |
 | ANL-004 | Spectral flux onset detector | `e1ae49c81d34` | `feature/anl-004` |
 | ANL-005 | Adaptive beat tracker | `18a7b93483d6` | `feature/anl-005` |
+| ANL-016 | Analysis event bus | `97e498d64a14` | `feature/anl-016` |
 | AUD-001 | Import DRM-free audio files | `a2813ab3fa4f` | `feature/aud-001` |
 | AUD-002 | Support common audio containers | `f886b7ce7c76` | `feature/aud-002` |
 | AUD-003 | Audio library queue | `c06876d434a3` | `feature/aud-003` |
 | AUD-004 | Loop track and queue | `8d96030954ff` | `feature/aud-004` |
 | AUD-005 | Shuffle with history | `bf010e1ee1e6` | `None` |
 | AUD-006 | Seekable transport | `03b23a8ae6a0` | `feature/aud-006` |
+| AUD-007 | Audio output route indicator | `902d1734d42a` | `feature/aud-007` |
 | AUD-014 | Audio session interruption recovery | `c4f03aa5e3d8` | `feature/aud-014` |
 | AUD-016 | Reference tone suite | `f69525cf0e8d` | `feature/aud-016` |
 | AUTO-001 | Roadmap parser | `419cc2a999ed` | `autonomous/integration` |
@@ -68,10 +69,11 @@ The physical-device suite may **not** start:
 | PRE-015 | User preset duplication | `c6cce9988587` | `feature/pre-015` |
 | QA-007 | Audio source contract suite | `32172fdd5795` | `feature/qa-007` |
 | VIS-001 | Circular spectrum | `48285d49c422` | `feature/vis-001` |
+| VIS-002 | Linear spectrum | `c2b2f75c11bb` | `feature/vis-002` |
 
 ## Proved already implemented
 
-- **QA-001** Deterministic PCM fixtures: code Packages/AudioCore/Sources/AudioCore/ReferenceTones/ReferenceToneCatalog.swift (catalog version 1, 10 fixtures, expected FFT bins, onsets, tempo, sweep frequencies), Packages/AudioCore/Sources/AudioCore/ReferenceTones/ToneGenerator.swift and ToneMath.swift (frame-index generator, own sin/exp/log), specs/011-aud-016-reference-tone-suite/contracts/fixture-catalog.md (38 golden SHA-256 values); tests ReferenceToneCatalogTests.testGoldenHashesOnRepeatedRuns and ReferenceToneOracleTests passed on Linux in CI run 43349673457, job 131638159151 (commit 073f92c), same suites passed on the macOS host and the iOS 27.2 simulator in the AUD-016 gates and post-merge run (.autonomous/logs/integration/aud-016/), scripts/check_reference_tone_goldens.py: independent CPython port reproduces 18 mono hashes (test_scripts.py)
+- **QA-001** Deterministic PCM fixtures: code Packages/AudioCore/Sources/AudioCore/ReferenceTones/ReferenceToneCatalog.swift (catalog version 1, 10 fixtures, expected FFT bins, onsets, tempo, sweep frequencies), Packages/AudioCore/Sources/AudioCore/ReferenceTones/ToneGenerator.swift and ToneMath.swift (frame-index generator, own sin/exp/log), specs/011-aud-016-reference-tone-suite/contracts/fixture-catalog.md (38 golden SHA-256 values); tests ReferenceToneCatalogTests.testGoldenHashesOnRepeatedRuns (split on 2026-11-13 into testGoldenHashesOnRepeatedRuns44100 and ...48000, plus testGoldenTableCoversEveryVariant; all 38 golden values still checked) and ReferenceToneOracleTests passed on Linux in CI run 43349673457, job 131638159151 (commit 073f92c), same suites passed on the macOS host and the iOS 27.2 simulator in the AUD-016 gates and post-merge run (.autonomous/logs/integration/aud-016/), scripts/check_reference_tone_goldens.py: independent CPython port reproduces 18 mono hashes (test_scripts.py)
 
 ## Blocked or infeasible
 
@@ -111,7 +113,7 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `cff52d8eb33b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-005/20261113T094159/swift-test_VisualGenerators.log`)
 - `integration checkout: AnalysisFeatures 91 on iOS 27.2 sim in 34 s; 91 (1 skipped) with -DANALYSIS_NO_ACCELERATE in 50 s; test-speed UI run with the full library 11/11 in 235 s; 0 PosterBoard reports`: pass at `18a7b93` (log `.autonomous/logs/integration/anl-005/analysis-sim.log`)
 
-### ANL-016 Analysis event bus (unit_passed)
+### ANL-016 Analysis event bus (integrated)
 - `python3 scripts/check_compliance.py`: pass at `1e9e7eec69b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-016/20261113T101323/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `1e9e7eec69b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-016/20261113T101323/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: exit 65 at `1e9e7eec69b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-016/20261113T101323/sim-test_ANGLERendering.log`)
@@ -125,6 +127,8 @@ None.
 - `swift test --package-path Packages/Diagnostics`: pass at `1e9e7eec69b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-016/20261113T101505/swift-test_Diagnostics.log`)
 - `xcodebuild -scheme Rendering-Package -destination id=4E32B01D-7911-4A64-A944-877DDD445BC0 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `1e9e7eec69b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-016/20261113T101505/sim-test_Rendering.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `1e9e7eec69b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-016/20261113T101505/swift-test_VisualGenerators.log`)
+- `integration checkout: AnalysisFeatures 106 on iOS 27.2 sim; app: projectM-iOSTests 133; NativeVisualUITests 3 of 4 (fallback test fails in openSettings, a test-helper race; fix pending from the test pass)`: exit 1 at `97e498d` (log `.autonomous/logs/integration/anl-016/app-tests.log`)
+- `integration checkout after the NativeVisualUITests fix (facfd46): NativeVisualUITests 4/4 (fallback test 13.2 s), 79 s wall; agent's 5 runs 20/20`: pass at `facfd46` (log `.autonomous/logs/integration/flaky-fix/ui.log`)
 
 ### AUD-001 Import DRM-free audio files (integrated)
 - `python3 scripts/check_compliance.py`: pass at `d9a60b2a6692` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-001/20261112T153538/compliance.log`)
@@ -182,6 +186,13 @@ None.
 - `swift test --package-path Packages/Diagnostics`: pass at `383d9ab633a4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-006/20261112T174904/swift-test_Diagnostics.log`)
 - `xcodebuild -scheme Rendering-Package -destination id=4E32B01D-7911-4A64-A944-877DDD445BC0 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `383d9ab633a4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-006/20261112T174904/sim-test_Rendering.log`)
 - `integration checkout, full preset library: xcodebuild -scheme projectM-iOS -destination id=4E32B01D (iPhone 17, iOS 27.2) test: projectM-iOSTests 87 pass; UI tests 22 pass (Transport 3, ImportedAudio 5, Status 7, Visualizer 7)`: pass at `e40e5780bb27` (log `.autonomous/logs/integration/aud-006/app-tests.log`)
+
+### AUD-007 Audio output route indicator (integrated)
+- `python3 scripts/check_compliance.py`: pass at `6fdff3fc48ef` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-007/20261113T103522/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `6fdff3fc48ef` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-007/20261113T103522/docs.log`)
+- `swift test --package-path Packages/CaptureKit`: pass at `6fdff3fc48ef` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-007/20261113T103522/swift-test_CaptureKit.log`)
+- `swift test --package-path Packages/CaptureUI`: pass at `6fdff3fc48ef` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-007/20261113T103522/swift-test_CaptureUI.log`)
+- `integration checkout (after the VisualizerView merge with VIS-002): CaptureKit 449 on iOS 27.2 sim; app: projectM-iOSTests 140; UI 9 (RouteIndicator, Status, LinearSpectrum); 239 s wall; 0 PosterBoard reports`: pass at `902d173` (log `.autonomous/logs/integration/aud-007/app-tests.log`)
 
 ### AUD-014 Audio session interruption recovery (integrated)
 - `python3 scripts/check_compliance.py`: pass at `8d270f3cbeed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-014/20261112T185431/compliance.log`)
@@ -344,3 +355,11 @@ None.
 - `xcodebuild -scheme Rendering-Package -destination id=77E17861-E687-4274-8A84-14224F32BE3E CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `7fa6d4e0f3c1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-001/20261113T080701/sim-test_Rendering.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `7fa6d4e0f3c1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-001/20261113T080701/swift-test_VisualGenerators.log`)
 - `integration checkout, full preset library: VisualGenerators 40 on iOS 27.2 sim (render tests ran) and 37 with -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE; xcodebuild projectM-iOS test: projectM-iOSTests 131 pass; UI 21 pass (NativeVisual, Visualizer, Settings, Status); 0 PosterBoard reports`: pass at `48285d4` (log `.autonomous/logs/integration/vis-001/app-tests.log`)
+
+### VIS-002 Linear spectrum (integrated)
+- `python3 scripts/check_compliance.py`: pass at `f3a531c11e88` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-002/20261113T102444/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `f3a531c11e88` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-002/20261113T102444/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `f3a531c11e88` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-002/20261113T102444/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `f3a531c11e88` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-002/20261113T102444/autonomous-tests.log`)
+- `swift test --package-path Packages/VisualGenerators`: pass at `f3a531c11e88` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-002/20261113T102444/swift-test_VisualGenerators.log`)
+- `integration checkout: VisualGenerators 95 on iOS 27.2 sim; app: projectM-iOSTests 135, UI 3 (LinearSpectrum, Glow x2), 100 s wall; 0 PosterBoard reports`: pass at `c2b2f75` (log `.autonomous/logs/integration/vis-002/app-tests.log`)

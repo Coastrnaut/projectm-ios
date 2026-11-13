@@ -56,7 +56,7 @@ final class ReferenceToneCatalogTests: XCTestCase {
             for rate in ReferenceToneCatalog.variantRates {
                 for channels in fixture.layouts {
                     let generator = try fixture.generator(sampleRate: rate, channels: channels)
-                    let loop = generator.interleaved(frames: fixture.loopFrames(sampleRate: rate))
+                    let loop = try ReferenceToneLoops.firstRun(fixture, rate: rate, channels: channels)
                     let peak = loop.map { abs($0) }.max() ?? 0
                     XCTAssertLessThanOrEqual(peak, 0.5, "\(fixture.id) \(rate)/\(channels)")
                     if fixture.id != "silence" { XCTAssertGreaterThan(peak, 0.2, "\(fixture.id)") }
@@ -133,26 +133,68 @@ final class ReferenceToneCatalogTests: XCTestCase {
 
     // MARK: Golden hashes (AUD-016-R10, S1)
 
-    /// Generates every variant twice; both runs are equal and hash to the stored value.
-    func testGoldenHashesOnRepeatedRuns() throws {
+    /// Generates every variant twice; both runs are equal and hash to the stored value. The first
+    /// run is the shared one also used by `testPeaksAndSeamlessLoops` (generated once per process);
+    /// the second is generated here and hashed. Shortened 2026-11-13 under owner rule 7: each variant
+    /// was generated three times per suite and hashed with the portable SHA-256 in one 29 s test; now
+    /// twice, hashed with CryptoKit where it exists (TestSHA256.swift), split by rate into two tests.
+    /// Together they still check all 38 golden values.
+    private func checkGoldens(rate: Int) throws -> Set<String> {
         var computed: [String: String] = [:]
         for fixture in ReferenceToneCatalog.fixtures {
-            for rate in ReferenceToneCatalog.variantRates {
-                for channels in fixture.layouts {
-                    let key = ReferenceToneGoldens.key(fixture.id, rate: rate, channels: channels)
-                    let first = try fixture.loop(sampleRate: rate, channels: channels)
-                    let second = try fixture.loop(sampleRate: rate, channels: channels)
-                    XCTAssertEqual(first.count, fixture.loopFrames(sampleRate: rate) * channels, key)
-                    XCTAssertTrue(first.withUnsafeBytes { a in second.withUnsafeBytes { b in a.count == b.count && memcmp(a.baseAddress!, b.baseAddress!, a.count) == 0 } },
-                                  "\(key): two runs differ")
-                    computed[key] = TestSHA256.hex(samples: first)
-                }
+            for channels in fixture.layouts {
+                let key = ReferenceToneGoldens.key(fixture.id, rate: rate, channels: channels)
+                let first = try ReferenceToneLoops.firstRun(fixture, rate: rate, channels: channels)
+                let second = try fixture.loop(sampleRate: rate, channels: channels)
+                XCTAssertEqual(first.count, fixture.loopFrames(sampleRate: rate) * channels, key)
+                XCTAssertTrue(first.withUnsafeBytes { a in second.withUnsafeBytes { b in a.count == b.count && memcmp(a.baseAddress!, b.baseAddress!, a.count) == 0 } },
+                              "\(key): two runs differ")
+                computed[key] = TestSHA256.hex(samples: second)
             }
         }
-        XCTAssertEqual(computed.count, 38)
+        XCTAssertEqual(computed.count, 19, "variants at \(rate) Hz")
         let mismatches = computed.keys.sorted().filter { ReferenceToneGoldens.sha256[$0] != computed[$0] }
-        XCTAssertEqual(ReferenceToneGoldens.sha256.count, computed.count, "stored goldens")
         XCTAssertTrue(mismatches.isEmpty,
                       "hashes differ from the goldens:\n" + mismatches.map { "\"\($0)\": \"\(computed[$0]!)\"," }.joined(separator: "\n"))
+        return Set(computed.keys)
+    }
+
+    func testGoldenHashesOnRepeatedRuns44100() throws {
+        XCTAssertEqual(try checkGoldens(rate: 44_100), goldenKeys(rate: 44_100))
+    }
+
+    func testGoldenHashesOnRepeatedRuns48000() throws {
+        XCTAssertEqual(try checkGoldens(rate: 48_000), goldenKeys(rate: 48_000))
+    }
+
+    /// The stored table has exactly the 38 variants the two rate tests check, and nothing else.
+    func testGoldenTableCoversEveryVariant() {
+        XCTAssertEqual(ReferenceToneGoldens.sha256.count, 38, "stored goldens")
+        XCTAssertEqual(goldenKeys(rate: 44_100).union(goldenKeys(rate: 48_000)), Set(ReferenceToneGoldens.sha256.keys))
+        XCTAssertEqual(ReferenceToneCatalog.variantRates, [44_100, 48_000])
+    }
+
+    private func goldenKeys(rate: Int) -> Set<String> {
+        Set(ReferenceToneCatalog.fixtures.flatMap { fixture in
+            fixture.layouts.map { ReferenceToneGoldens.key(fixture.id, rate: rate, channels: $0) }
+        })
+    }
+}
+
+/// The first generation of every catalog variant, made once per test process and shared by the
+/// peak, seamless-loop and golden tests (about 107 MB; each variant otherwise cost a further
+/// generation in a Debug build).
+enum ReferenceToneLoops {
+    private static let lock = NSLock()
+    nonisolated(unsafe) private static var loops: [String: [Float]] = [:]
+
+    static func firstRun(_ fixture: ReferenceToneFixture, rate: Int, channels: Int) throws -> [Float] {
+        let key = ReferenceToneGoldens.key(fixture.id, rate: rate, channels: channels)
+        lock.lock()
+        defer { lock.unlock() }
+        if let loop = loops[key] { return loop }
+        let loop = try fixture.loop(sampleRate: rate, channels: channels)
+        loops[key] = loop
+        return loop
     }
 }

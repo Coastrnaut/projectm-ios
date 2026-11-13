@@ -53,6 +53,8 @@ final class SettingsTests: XCTestCase {
         settings.glowIntensity = 0.8
         settings.glowRadius = 0.03
         settings.glowThreshold = 0.5
+        settings.linearSpectrumOrientation = .horizontal   // VIS-002-R11
+        settings.linearSpectrumSpacing = 0.5
         let keys = Set(defaults.persistentDomain(forName: suite)?.keys ?? [:].keys)
         XCTAssertEqual(keys, Set(AppSettings.allKeys), "FR-065")
     }
@@ -78,6 +80,36 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(AppSettings(defaults: defaults, systemReduceMotion: false).circularSpectrumBars, 64, "not a band count → 64")
         XCTAssertTrue(AppSettings.allKeys.contains("settings.visual"))
         XCTAssertTrue(AppSettings.allKeys.contains("settings.circularSpectrum.bars"))
+    }
+
+    /// VIS-002-T11 (VIS-002-R11): the third visual, its orientation and spacing, with safe readings.
+    func testLinearSpectrumOptionsDefaultPersistAndReadSafely() {
+        let settings = AppSettings(defaults: defaults, systemReduceMotion: false)
+        XCTAssertEqual(settings.linearSpectrumOrientation, .vertical, "vertical by default")
+        XCTAssertEqual(settings.linearSpectrumSpacing, 0.2, "Narrow by default")
+        XCTAssertEqual(AppSettings.linearSpectrumSpacingChoices.map(\.value), [0, 0.2, 0.5])
+        XCTAssertEqual(AppSettings.linearSpectrumSpacingChoices.map(\.title), ["None", "Narrow", "Wide"])
+        settings.visual = .linearSpectrum
+        settings.linearSpectrumOrientation = .horizontal
+        settings.linearSpectrumSpacing = 0.5
+        XCTAssertEqual(defaults.string(forKey: "settings.visual"), "linearSpectrum")
+        XCTAssertEqual(defaults.string(forKey: "settings.linearSpectrum.orientation"), "horizontal")
+        XCTAssertEqual(defaults.double(forKey: "settings.linearSpectrum.spacing"), 0.5)
+        let reloaded = AppSettings(defaults: defaults, systemReduceMotion: false)
+        XCTAssertEqual(reloaded.visual, .linearSpectrum)
+        XCTAssertEqual(reloaded.linearSpectrumOrientation, .horizontal)
+        XCTAssertEqual(reloaded.linearSpectrumSpacing, 0.5)
+        settings.linearSpectrumSpacing = 0.7
+        XCTAssertEqual(settings.linearSpectrumSpacing, 0.2, "not a choice → Narrow")
+        defaults.set("diagonal", forKey: AppSettings.linearSpectrumOrientationKey)
+        defaults.set(0.33, forKey: AppSettings.linearSpectrumSpacingKey)
+        let bad = AppSettings(defaults: defaults, systemReduceMotion: false)
+        XCTAssertEqual(bad.linearSpectrumOrientation, .vertical, "unknown → vertical")
+        XCTAssertEqual(bad.linearSpectrumSpacing, 0.2, "unknown → Narrow")
+        XCTAssertTrue(AppSettings.allKeys.contains("settings.linearSpectrum.orientation"))
+        XCTAssertTrue(AppSettings.allKeys.contains("settings.linearSpectrum.spacing"))
+        XCTAssertEqual(VisualChoice.allCases.filter(\.isNative), [.circularSpectrum, .linearSpectrum])
+        XCTAssertEqual(VisualChoice.linearSpectrum.title, "Linear Spectrum")
     }
 
     func testTheBundledLicenseManifestIsComplete() throws {
