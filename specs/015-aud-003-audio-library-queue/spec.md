@@ -25,6 +25,20 @@ explicitly. Amended here: AUD-006-R14 (the play order of imported audio becomes 
 part of AUD-006-R30 that says no order is written to disk (the queue is stored; nothing else of the
 transport is).
 
+## Clarifications
+
+### Session 2026-11-12
+
+Answered by Claude under the owner's standing approval (CLAUDE.md owner rule 4: best judgement on
+all choices, no human interaction); each answer is the recommended, conservative, local-first
+option using public APIs only.
+
+- Q: How does the queue relate to the "Your Audio" library list? → A: An explicit queue separate from the library, which starts as the library list order (newest first) and diverges once edited. New imports join it at the top, matching the list; removing from the queue never deletes; deleting from the library removes from the queue; a track is in the queue at most once. Rejected: making the library list itself reorderable (removing a track from the order would then delete the file), and an empty-by-default queue (would silently change AUD-006 behavior for existing users) (AUD-003-R1 to R6).
+- Q: What happens when the playing track is removed from the queue? → A: It plays to its end, without interruption; then the track now at its former place in the queue plays (wrapping to the first when the place is past the end). With an empty queue playback stops at the end of the track. Next and Previous track use the same place. Rejected: skipping to the next track at once (an interruption the roadmap forbids) and stopping at once (AUD-003-R9).
+- Q: Where and how is the queue stored? → A: In a separate versioned file, `queue.json`, next to AUD-001's `index.json` in the app's private library folder, written atomically; it holds only track identifiers and the current identifier. AUD-001's index keeps version 1 untouched, so no library migration is needed and a queue problem can never damage the library. Damaged: kept aside as `queue.damaged.json`, the queue restarts from the library order. Newer version: left untouched, this launch uses the library order and does not store edits (AUD-003-R13, R14, R16).
+- Q: Does a queue edit during an interruption cancel the automatic resume, as a user transport change does (AUD-014-R2)? → A: No. A queue edit never moves playback, so it is not a transport change; resume follows the interruption policy exactly as without the edit (AUD-003-R12).
+- Q: How is the queue reached while the visualizer plays, given the chooser is not on screen then? → A: A "Queue" button in the transport opens the queue as a sheet over the visualizer; the same screen opens from a "Queue" row in "Your Audio" in the chooser, where it also offers "Play Queue". In the sheet, tracks not in the queue are listed below it with "Add to Queue" and "Play Next" (AUD-003-R10).
+
 ## Baseline: what exists today (audit of 2026-11-12)
 
 | Capability | Today |
