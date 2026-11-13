@@ -127,4 +127,8 @@ Recorded by AUD-016-T09 from the generator's output on the Mac host (2026-11-12)
 ## Playback tolerance (AUD-016-R20)
 
 - Output at 48 kHz: every delivered frame equals the 48 kHz stereo variant exactly.
-- Output at another rate: recorded by AUD-016-T16 from measurement (pending).
+- Output at another rate (measured by AUD-016-T16 at 44.1 kHz, offline engine on the Mac host,
+  2026-11-12): `sine-1k` frequency by zero crossings within 1 Hz (0.1%) of 1,000 Hz and RMS within
+  0.1 dB of −15.05 dBFS; every `pulse-120` interval within ±1 frame of 22,050; two runs bit-identical.
+  Onsets shift by the converter's constant delay, so analyses compare intervals, not absolute frames,
+  after a conversion.

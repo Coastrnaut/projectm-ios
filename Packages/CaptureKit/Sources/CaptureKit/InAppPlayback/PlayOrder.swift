@@ -4,6 +4,7 @@
 // `PlayOrder` is the seam for the queue of AUD-003 and the repeat and shuffle modes of AUD-004 and
 // AUD-005: the transport only asks what comes after and before an item. In this feature the order
 // is the "Your Audio" list as shown, wrapping around at both ends (`ListPlayOrder`).
+import AudioCore
 import Foundation
 
 /// One entry of a play order.
@@ -28,6 +29,19 @@ public struct PlaybackItem: Sendable, Equatable, Identifiable {
     /// The bundled reference track (feature 001 FR-006).
     public static func reference(title: String, durationSeconds: Double) -> PlaybackItem {
         PlaybackItem(id: referenceID, title: title, durationSeconds: durationSeconds, track: .reference)
+    }
+
+    /// A reference-tone fixture (AUD-016): id `tone.<fixture id>`, the fixture's name as the title,
+    /// and its loop as the length. Played alone in its order, so it repeats (AUD-016-R17).
+    public static func tone(_ fixture: ReferenceToneFixture) -> PlaybackItem {
+        PlaybackItem(id: "tone.\(fixture.id)", title: fixture.name, durationSeconds: Double(fixture.loopSeconds),
+                     track: .tone(fixture))
+    }
+
+    /// The fixture this item plays, when it is a reference tone.
+    public var toneFixture: ReferenceToneFixture? {
+        if case .tone(let fixture) = track { return fixture }
+        return nil
     }
 }
 

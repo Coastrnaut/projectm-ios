@@ -296,9 +296,10 @@ final class AudioCorruptionTests: XCTestCase {
         let track = try await imported(try tone("short.wav", .wav16, seconds: 0.05))   // 2,205 frames: shorter than the decode check
         let content = try InAppPlaybackGraph.load(.file(try await storedURL(track)), bundle: .main)
         // Since AUD-006 every track streams from its file, so the content is always two handles.
-        XCTAssertEqual(content.first.framePosition, 0)
-        XCTAssertEqual(content.second.framePosition, 0)
-        XCTAssertEqual(content.first.length, 2205)
+        guard case .file(let first, let second) = content.storage else { return XCTFail("a library track is a file") }
+        XCTAssertEqual(first.framePosition, 0)
+        XCTAssertEqual(second.framePosition, 0)
+        XCTAssertEqual(first.length, 2205)
     }
 }
 #endif

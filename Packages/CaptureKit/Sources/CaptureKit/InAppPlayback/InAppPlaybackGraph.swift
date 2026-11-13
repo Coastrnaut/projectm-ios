@@ -2,10 +2,13 @@
 // into PCMSink, and a positioned player on top (tasks T046, AUD-001-T10, AUD-006-T15; research
 // R-04, AUD-001-D7/D8, AUD-006-D1 to D6).
 //
-// Content is always a file streamed from disk by the player (the bundled reference track too,
-// since AUD-006: seeking needs file segments), so a track's length never costs memory
-// (AUD-001-R20). The file is opened twice, so two passes can be queued without sharing a read
-// position.
+// Content is a file streamed from disk by the player (the bundled reference track too, since
+// AUD-006: seeking needs file segments), so a track's length never costs memory (AUD-001-R20). The
+// file is opened twice, so two passes can be queued without sharing a read position.
+// A reference tone (AUD-016) is the one exception: one 10 s loop generated into a buffer in memory
+// when it is loaded (ToneContent.swift, 3.84 MB), played with the same passes, cuts and positions.
+// A pass from frame 0 schedules the whole buffer; a pass from another frame schedules a copy of its
+// tail, made here on the main actor, never on the render thread (AUD-016-R19).
 //
 // Playing (AUD-006):
 // * A track is scheduled as a segment from a start frame. The position is that start frame plus
@@ -55,13 +58,38 @@ import Foundation
 
 @MainActor
 final class InAppPlaybackGraph {
-    /// An opened track: the same file twice, so that two passes can be queued.
+    /// An opened track: the same file twice, so that two passes can be queued, or a generated
+    /// reference tone in memory (AUD-016).
     struct Content {
-        let first: AVAudioFile
-        let second: AVAudioFile
+        enum Storage {
+            case file(AVAudioFile, AVAudioFile)
+            case buffer(AVAudioPCMBuffer)
+        }
 
-        var format: AVAudioFormat { first.processingFormat }
-        var length: AVAudioFramePosition { first.length }
+        let storage: Storage
+
+        init(first: AVAudioFile, second: AVAudioFile) {
+            storage = .file(first, second)
+        }
+
+        init(buffer: AVAudioPCMBuffer) {
+            storage = .buffer(buffer)
+        }
+
+        var format: AVAudioFormat {
+            switch storage {
+            case .file(let first, _): return first.processingFormat
+            case .buffer(let buffer): return buffer.format
+            }
+        }
+
+        var length: AVAudioFramePosition {
+            switch storage {
+            case .file(let first, _): return first.length
+            case .buffer(let buffer): return AVAudioFramePosition(buffer.frameLength)
+            }
+        }
+
         var sampleRate: Double { format.sampleRate }
     }
 
@@ -78,6 +106,8 @@ final class InAppPlaybackGraph {
             return try loadReference(url)
         case .file(let url):
             return try open(url)
+        case .tone(let fixture):
+            return try ToneContent.make(fixture)
         }
     }
 
@@ -406,15 +436,22 @@ final class InAppPlaybackGraph {
     /// Queues one more pass of a looping track: the first from the start frame, the others whole,
     /// alternating between the two file handles.
     private func scheduleNextPass() {
-        let file = passCount.isMultiple(of: 2) ? content.first : content.second
         let from = passCount == 0 ? startFrame : 0
+        let pass = passCount
         passCount += 1
         scheduleCount += 1
         let scheduled = generation
-        player.scheduleSegment(file, startingFrame: from, frameCount: frameCount(from: from), at: nil,
-                               completionCallbackType: .dataConsumed) { @Sendable [weak self] _ in
+        let consumed: @Sendable (AVAudioPlayerNodeCompletionCallbackType) -> Void = { [weak self] _ in
             // On the player's completion queue: hand over to the main actor and return at once.
             Task { @MainActor [weak self] in self?.passConsumed(scheduled) }
+        }
+        switch content.storage {
+        case .file(let first, let second):
+            player.scheduleSegment(pass.isMultiple(of: 2) ? first : second, startingFrame: from, frameCount: frameCount(from: from),
+                                   at: nil, completionCallbackType: .dataConsumed, completionHandler: consumed)
+        case .buffer(let buffer):
+            guard let part = ToneContent.tail(of: buffer, from: from) else { return }
+            player.scheduleBuffer(part, at: nil, options: [], completionCallbackType: .dataConsumed, completionHandler: consumed)
         }
     }
 
@@ -428,9 +465,16 @@ final class InAppPlaybackGraph {
     private func scheduleToEnd() {
         scheduleCount += 1
         let scheduled = generation
-        player.scheduleSegment(content.first, startingFrame: startFrame, frameCount: frameCount(from: startFrame), at: nil,
-                               completionCallbackType: .dataRendered) { @Sendable [weak self] _ in
+        let rendered: @Sendable (AVAudioPlayerNodeCompletionCallbackType) -> Void = { [weak self] _ in
             Task { @MainActor [weak self] in self?.trackRendered(scheduled) }
+        }
+        switch content.storage {
+        case .file(let first, _):
+            player.scheduleSegment(first, startingFrame: startFrame, frameCount: frameCount(from: startFrame), at: nil,
+                                   completionCallbackType: .dataRendered, completionHandler: rendered)
+        case .buffer(let buffer):
+            guard let part = ToneContent.tail(of: buffer, from: startFrame) else { return }
+            player.scheduleBuffer(part, at: nil, options: [], completionCallbackType: .dataRendered, completionHandler: rendered)
         }
     }
 
