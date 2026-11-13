@@ -89,6 +89,7 @@ final class SettingsUITests: XCTestCase {
     func testLicensesScreen() {
         launch(reset: true)
         openSettings()
+        XCTAssertTrue(scrollTo(app.buttons["licensesLink"]), "Licenses is below the OSC section")
         app.buttons["licensesLink"].tap()
         XCTAssertTrue(app.navigationBars["Licenses"].appears(within: 5))
         for id in ["lgplNote", "license:app", "license:projectm", "license:glm", "license:angle-ANGLE", "license:presets"] {
@@ -113,6 +114,7 @@ final class SettingsUITests: XCTestCase {
     func testLicensesListEveryPresetPack() {
         launch(reset: true)
         openSettings()
+        XCTAssertTrue(scrollTo(app.buttons["licensesLink"]), "Licenses is below the OSC section")
         app.buttons["licensesLink"].tap()
         XCTAssertTrue(app.navigationBars["Licenses"].appears(within: 5))
         for pack in ["cream-of-the-crop", "projectm-classic", "milkdrop-original", "en-d", "milkdrop-texture-pack"] {
