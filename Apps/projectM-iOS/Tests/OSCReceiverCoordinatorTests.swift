@@ -118,6 +118,47 @@ final class OSCReceiverCoordinatorTests: XCTestCase {
         XCTAssertEqual(OSCReceiverCoordinator.testValueText(0.25), "0.25")
     }
 
+    /// OSC-009-T08 (OSC-009-R11, S4 one-pending part): a flood of 10,000 datagrams delivered on the
+    /// main actor (so no refresh can run in between) leaves at most one refresh pending; once drained,
+    /// a handful of refreshes (not 10,000) showed the final value. The 30-per-second rate is proven
+    /// with a fake clock in PerformanceControl's OSCRefreshGateTests.
+    func testFloodCoalescesMainActorRefreshes() async throws {
+        let (settings, cleanup) = try makeSettings()
+        defer { cleanup() }
+        let latest = LatestTransport()
+        let log = TransportLog()
+        let wide = OSCRateLimitConfiguration(perSource: OSCRateLimit(perSecond: 1_000_000, burst: 1_000),
+                                             global: OSCRateLimit(perSecond: 1_000_000, burst: 1_000))
+        let receiver = OSCReceiver(limits: wide, makeTransport: {
+            let t = ImmediateTransport(log: log)
+            latest.set(t)
+            return t
+        })
+        let osc = OSCReceiverCoordinator(settings: settings, receiver: receiver)
+        osc.setEnabled(true)
+        let transport = try XCTUnwrap(latest.get())
+        // Let the state-change refreshes queued by setEnabled run first: they are not traffic.
+        try await Task.sleep(nanoseconds: 100_000_000)
+        let before = osc.refreshCount
+        let count = 10_000
+        for i in 1...count {
+            let value = Float(i) / Float(count)
+            transport.send(.datagram(OSCEncoder.encode(OSCMessage(address: OSCReceiverCatalog.testAddress, arguments: [.float(value)]))))
+        }
+        XCTAssertEqual(osc.refreshCount, before, "nothing ran on the main actor during the flood")
+        for _ in 0..<200 where osc.testValue != 1 { try await Task.sleep(nanoseconds: 10_000_000) }
+        XCTAssertEqual(osc.testValue, 1, "the last value sent is shown")
+        XCTAssertGreaterThan(receiver.counters.coalesced, 0, "the target limit held values")
+        XCTAssertEqual(osc.rateLimitedCount, receiver.counters.rateLimited + receiver.counters.coalesced)
+        XCTAssertLessThanOrEqual(osc.refreshCount - before, 3,
+                                 "one refresh for the flood, one for the deferred flush, at most one more; not one per message")
+    }
+
+    func testRateLimitedText() {
+        XCTAssertEqual(OSCReceiverCoordinator.rateLimitedText(0), "0")
+        XCTAssertEqual(OSCReceiverCoordinator.rateLimitedText(12345), "12345", "never grouped")
+    }
+
     func testStatusTexts() {
         typealias C = OSCReceiverCoordinator
         XCTAssertEqual(C.statusText(for: .starting(port: 9000), enabled: true), "Starting…")

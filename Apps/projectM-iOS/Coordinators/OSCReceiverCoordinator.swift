@@ -6,6 +6,11 @@
 // * The port is applied on submit (or when the field loses focus), never per keystroke; an entry
 //   outside 1024-65535 is refused and the stored port stays (OSC-001-R2).
 // * Status and test value come from the receiver's queue and are copied onto the main actor.
+// * OSC-009-R11 (specs/041-osc-009-osc-rate-limiter, research OSC-009-D7): traffic never schedules
+//   main-thread work per message. Every datagram, drop or flush asks an `OSCRefreshGate`; only when
+//   no refresh is pending does one main-actor task start, no sooner than 1/30 s after the previous
+//   refresh, and it reads the latest state. A flood therefore costs the main thread (and the
+//   render loop it drives) at most about 30 short refreshes a second.
 // * A failure is shown and never retried by itself (OSC-001-R3).
 // The test value feeds nothing that renders (OSC-001-R7). The networking itself lives in
 // PerformanceControl's OSCTransport/ folder (FR-068 amendment, ADR-0008).
@@ -21,13 +26,18 @@ final class OSCReceiverCoordinator {
 
     private(set) var state: OSCReceiverState = .off
     private(set) var testValue: Double = 0
+    /// OSC-009-R12: datagrams dropped plus updates held by the rate limiter since launch.
+    private(set) var rateLimitedCount = 0
     /// Shown under the port field after a refused entry; cleared by the next valid one.
     private(set) var portError: String?
 
     @ObservationIgnored private let settings: AppSettings
     @ObservationIgnored private let receiver: OSCReceiver
-    @ObservationIgnored private var observation: ParameterObservation?
     @ObservationIgnored private(set) var appIsActive: Bool
+    @ObservationIgnored private let refreshGate = OSCRefreshGate()
+    @ObservationIgnored private let refreshClock = OSCMonotonicClock.continuous()
+    /// Main-actor refreshes so far (tests: a flood must not add one per message).
+    @ObservationIgnored private(set) var refreshCount = 0
 
     init(settings: AppSettings, receiver: OSCReceiver = .system(), appIsActive: Bool = true) {
         self.settings = settings
@@ -37,8 +47,14 @@ final class OSCReceiverCoordinator {
         receiver.onStateChange { [weak self] _ in
             Task { @MainActor in self?.refresh() }
         }
-        observation = receiver.observeTestValue { [weak self] _ in
-            Task { @MainActor in self?.refresh() }
+        let gate = refreshGate, clock = refreshClock
+        receiver.onActivity { [weak self] in
+            guard let delay = gate.request(now: clock.now()) else { return }   // one refresh pending at most
+            Task { @MainActor [weak self] in
+                if delay > 0 { try? await Task.sleep(nanoseconds: delay) }
+                gate.begin(now: clock.now())
+                self?.refresh()
+            }
         }
         apply()
     }
@@ -82,8 +98,11 @@ final class OSCReceiverCoordinator {
     }
 
     private func refresh() {
+        refreshCount += 1
         state = receiver.state
         testValue = receiver.testValue
+        let counters = receiver.counters
+        rateLimitedCount = counters.rateLimited + counters.coalesced
     }
 
     // MARK: Listener badge (OSC-007; specs/038-osc-007-osc-network-access-switch, contract)
@@ -130,6 +149,9 @@ final class OSCReceiverCoordinator {
             }
         }
     }
+
+    /// The Settings row's value (OSC-009-R12): a plain number, never grouped.
+    static func rateLimitedText(_ count: Int) -> String { String(count) }
 
     static func testValueText(_ value: Double) -> String {
         String(format: "%.2f", value)
