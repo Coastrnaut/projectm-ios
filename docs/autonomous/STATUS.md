@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T20:54:03Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T20:55:55Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,18 +10,19 @@
 | State | Features |
 |---|---|
 | audited | 249 |
-| implementing | 2 |
+| implementing | 1 |
+| unit_passed | 1 |
 | integrated | 74 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 25 | 2 | 59 | 1 |
-| P1 | 138 | 0 | 13 | 0 |
-| P2 | 77 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 25 | 1 | 1 | 59 | 1 |
+| P1 | 138 | 0 | 0 | 13 | 0 |
+| P2 | 77 | 0 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -594,6 +595,16 @@ None.
 - `python3 scripts/check_compliance.py`: pass at `8909040fb290` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-012/20261113T152825/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `8909040fb290` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-012/20261113T152825/docs.log`)
 - `post-merge (batch with SCN-001, REC-012, SHOW-014, FILE-001 on a second iOS 27.2 iPhone 17 simulator): projectM-iOSTests 271 incl. SceneArchiveServiceTests; CaptureShareUITests, EmergencyBlackoutUITests 2, OutputBlackoutUITests; SceneFormat 31 and SceneArchive 18 on host and Linux shape`: pass at `c3886d1cb0bb` (log `.autonomous/logs/integration/batch-scn-rec12-show14-file1/app-tests.log`)
+
+### REC-015 Recording disk guard (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `74c0bc1fd8b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-015/20261113T155416/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `74c0bc1fd8b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-015/20261113T155416/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `74c0bc1fd8b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-015/20261113T155416/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `74c0bc1fd8b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-015/20261113T155416/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `74c0bc1fd8b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-015/20261113T155416/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `74c0bc1fd8b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-015/20261113T155416/swift-test_Compositor.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `74c0bc1fd8b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-015/20261113T155416/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `74c0bc1fd8b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-015/20261113T155416/swift-test_SceneFormat.log`)
 
 ### SCN-001 Versioned scene format (integrated)
 - `python3 scripts/check_compliance.py`: pass at `65ce45cdc91d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-001/20261113T152510/compliance.log`)
