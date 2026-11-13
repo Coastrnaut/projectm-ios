@@ -6,9 +6,9 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 57,
+   "audited": 56,
    "implementing": 1,
-   "integrated": 27,
+   "integrated": 28,
    "skipped_existing": 1,
    "unit_passed": 1
   },
@@ -25,9 +25,9 @@
   }
  },
  "by_state": {
-  "audited": 287,
+  "audited": 286,
   "implementing": 2,
-  "integrated": 35,
+  "integrated": 36,
   "skipped_existing": 1,
   "unit_passed": 1
  },
@@ -60,7 +60,6 @@
    "ANL-013",
    "ANL-014",
    "ANL-015",
-   "ANL-016",
    "AUD-007",
    "AUD-008",
    "AUD-009",
@@ -330,7 +329,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "290 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
+   "289 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
   ]
  },
  "features": {
@@ -609,10 +608,10 @@
    "branch": "feature/anl-016",
    "branch_sha": "1e9e7eec69b86bb860821afd1f36118eed1cb948",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "97e498d64a14b6a3a5dbe88e27a6b04ac8556e0a",
    "priority": "P0",
    "spec_dir": "specs/024-anl-016-analysis-event-bus",
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "AUD-001": {
    "attempts": 1,
@@ -3196,13 +3195,13 @@
   },
   "SHOW-011": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/show-011",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/027-show-011-tap-tempo",
+   "state": "implementing"
   },
   "SHOW-012": {
    "attempts": 0,
@@ -3407,12 +3406,12 @@
   "VIS-002": {
    "attempts": 0,
    "branch": "feature/vis-002",
-   "branch_sha": null,
+   "branch_sha": "f3a531c11e882f60ed36a2b9de01b95c2d24d32e",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": "specs/025-vis-002-linear-spectrum",
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "VIS-003": {
    "attempts": 0,
@@ -3617,6 +3616,11 @@
    "sha": "18a7b93483d6f967dbd5aac8efd9e378932959e5"
   },
   {
+   "branch": "feature/anl-016",
+   "id": "ANL-016",
+   "sha": "97e498d64a14b6a3a5dbe88e27a6b04ac8556e0a"
+  },
+  {
    "branch": "feature/aud-001",
    "id": "AUD-001",
    "sha": "a2813ab3fa4f2cd2b8fb8597ca8f7b87943a9dea"
@@ -3797,5 +3801,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T15:19:14Z"
+ "updated": "2026-11-13T15:25:13Z"
 }
