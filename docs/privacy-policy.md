@@ -7,7 +7,8 @@ receiver (OSC-001-R18, in app versions that offer "OSC receiver" in Settings), a
 visual (CAM-001; `specs/033-cam-001-rear-camera-layer`, in app versions that offer it), and for the
 Photo visual (MED-001; `specs/044-med-001-import-photo-layer`, in app versions that offer it), and for
 the Video visual (MED-002; `specs/048-med-002-import-video-layer`, in app versions that offer it), and for
-the Text visual (MED-009; `specs/053-med-009-text-overlay`, in app versions that offer it). Applies to the projectM app for
+the Text visual (MED-009; `specs/053-med-009-text-overlay`, in app versions that offer it), and for
+Save Frame (REC-001; `specs/055-rec-001-still-frame-capture`, in app versions that offer it). Applies to the projectM app for
 iPhone and iPad published by Robert Pancoast.
 
 **Summary: the app collects no data. Audio is processed only in memory on your device, and nothing
@@ -98,6 +99,24 @@ behind the visualization, also after you reopen the app.
   own device backups if you use them.
 - "Remove Video" in Settings deletes the copy; choosing another video replaces it; deleting the app
   deletes it.
+
+## Pictures you save with Save Frame
+
+"Save Frame" in the visualizer's controls saves one picture of the visualization, only when you tap
+it and choose PNG or HEIF.
+
+- The picture is the next frame of the visualization as it is shown, after the app's flash
+  limiting; the controls are not in it. If you use the Camera visual, the picture includes what
+  the camera shows at that moment, exactly like a screenshot you take yourself.
+- iOS shows its own Files sheet, and you choose where the file goes (for example On My iPhone or
+  iCloud Drive) or cancel. The app never saves it to your photo library and asks for no permission.
+- The file holds only the picture and its color profile: no location, date, device, camera or
+  account details. Its suggested name contains the date and time, and you can change it.
+- The app keeps no copy: the picture is held in memory only until the Files sheet closes. Nothing
+  is uploaded or sent anywhere by the app; what happens to the file afterwards is up to you and the
+  place you saved it.
+- While the output is blacked out, or the visualization is paused, Save Frame saves nothing and
+  says why.
 
 ## Audio stays in memory on your device
 

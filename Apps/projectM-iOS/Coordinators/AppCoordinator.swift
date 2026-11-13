@@ -50,6 +50,12 @@
 //   layer under the circular spectrum layer) with the same create/release and run rules as Photo.
 //   `videos` (VideoCoordinator) owns the stored copy; its changes set the layer's content. A copy
 //   that cannot be played shows the video notice. The video's soundtrack is never played (R16).
+// * Memory pressure (PERF-006): `memoryPressure` (MemoryPressureCoordinator.shared) receives the system
+//   memory warning. The app registers its cache steps there: the renderer's preset warm-up (its
+//   context, and the warm-up itself as optional work), the preset archive's decompressed chunk, and
+//   "idle native spectrum", a circular or linear spectrum host kept after the user chose another
+//   visual (released; created again when a spectrum is chosen). The shown visual, the source and
+//   the settings are never touched.
 // * Text (MED-009): Settings' persisted "Text" choice shows `TextVisualHost` (the circular spectrum
 //   with the text layer over it) with the same create/release and run rules as Photo. `texts`
 //   (TextOverlayCoordinator) owns the saved message and style; its changes set the layer's spec.
@@ -77,7 +83,7 @@ import VisualParameters
 
 @MainActor
 @Observable
-final class AppCoordinator: VisualizationControlling {
+final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     enum Screen: Equatable { case notice, chooser, visualizer }
 
     static let noticeKey = "notice.photosensitivityAcknowledged"
@@ -155,6 +161,12 @@ final class AppCoordinator: VisualizationControlling {
     let tempo: TempoCoordinator
     /// The OSC receiver (OSC-001): off by default, listens only while enabled and active.
     let osc: OSCReceiverCoordinator
+    /// REC-001: Save Frame (the shown visual's next frame, to the Files exporter).
+    @ObservationIgnored private(set) lazy var frameCapture = FrameCaptureCoordinator { [weak self] () -> FrameCaptureCoordinator.Context in
+        guard let self else { return FrameCaptureCoordinator.Context(source: nil, outputLive: false, paused: false) }
+        return FrameCaptureCoordinator.Context(source: self.activeFrameCaptureSource,
+                                               outputLive: self.externalDisplay.blackoutPhase == .live, paused: self.userPaused)
+    }
 
     private let defaults: UserDefaults
     #if DEBUG
@@ -166,9 +178,13 @@ final class AppCoordinator: VisualizationControlling {
     /// Presentation-bound resources (PERF-011): the renderer registers its own in prepareRenderer().
     @ObservationIgnored let presentation = PresentationResourceRegistry()
     @ObservationIgnored private var lifecycleCoordinator: LifecycleCoordinator!
+    /// PERF-006: the one receiver of memory warnings; the app's recovery steps are registered there.
+    @ObservationIgnored let memoryPressure: MemoryPressureCoordinator
 
-    init(defaults: UserDefaults = .standard, externalDisplay: ExternalDisplayCoordinator? = nil) {
+    init(defaults: UserDefaults = .standard, externalDisplay: ExternalDisplayCoordinator? = nil,
+         memoryPressure: MemoryPressureCoordinator? = nil) {
         self.defaults = defaults
+        self.memoryPressure = memoryPressure ?? .shared
         self.externalDisplay = externalDisplay ?? .shared
         if ProcessInfo.processInfo.arguments.contains("-uitestResetNotice") {
             defaults.removeObject(forKey: Self.noticeKey)
@@ -254,6 +270,13 @@ final class AppCoordinator: VisualizationControlling {
         texts.onSpecChange = { [weak self] (spec: TextOverlaySpec) in self?.textVisual?.spec = spec }   // MED-009
         routes.context = { [weak self] in self?.routeContext }   // AUD-007
         routes.isActive = { [weak self] in self?.appIsActive ?? true }
+        self.memoryPressure.register(presetLoader)   // PERF-006-R11: the archive's decompressed chunk
+        self.memoryPressure.register(self)           // PERF-006-R12: an idle native spectrum
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains(UITestMemoryPanel.argument) {
+            SharedTexturePool.relaxIdleEvictionForUITests()   // MemoryPressureUITests (research PERF-006-D7)
+        }
+        #endif
         loadLibrary()
         loadAudioLibrary()
         #if DEBUG || PROJECTM_AUTOMATION
@@ -468,6 +491,7 @@ final class AppCoordinator: VisualizationControlling {
         }
         // PERF-011: a renderer created while the app cannot present starts suspended.
         renderer?.presentationResources.forEach(presentation.register)
+        renderer?.memoryPressureResponders.forEach(memoryPressure.register)   // PERF-006-R9, R10
         renderer?.attach(pcm: manager.normalizedOutput)
         applyReduceFlashing()
         if let textures = Bundle.main.resourceURL?.appendingPathComponent("PresetTextures") {
@@ -844,6 +868,17 @@ final class AppCoordinator: VisualizationControlling {
         }
     }
 
+    /// REC-001: the shown visual's capture source (the same choice as `activeVisualMetrics`).
+    var activeFrameCaptureSource: (any FrameCaptureSource)? {
+        guard screen == .visualizer else { return nil }
+        if showsCameraVisual { return cameraVisual }
+        if showsPhotoVisual { return photoVisual }
+        if showsVideoVisual { return videoVisual }
+        if showsTextVisual { return textVisual }
+        if showsNativeVisual { return nativeVisual }
+        return renderer as? ANGLERenderer
+    }
+
     /// Frame statistics of the shown visual (FR-048 overlay).
     var activeVisualMetrics: RenderMetrics {
         if showsCameraVisual { return cameraVisual?.metrics ?? .zero }
@@ -1006,6 +1041,42 @@ final class AppCoordinator: VisualizationControlling {
         updateIdleTimer()
     }
 
+    // MARK: - Memory pressure (PERF-006-R12): the idle native spectrum
+
+    let memoryPressureName = "idle native spectrum"
+    let memoryPressureTier = MemoryPressureTier.cache
+    /// The spectrum's images have no measured size; the step reports items only (research PERF-006-D5).
+    var reclaimableBytes: Int { 0 }
+
+    /// Releases a native spectrum host that is not the chosen visual (it is paused: its frame loop has
+    /// stopped and in-flight command buffers keep their own references). A chosen one is kept; it is
+    /// created again the next time a spectrum is chosen.
+    func releaseForMemoryPressure(_ level: MemoryPressureLevel) -> MemoryPressureRelease {
+        guard let host = nativeVisual, Self.releasesIdleNativeSpectrum(choice: settings.visual, hostExists: true) else { return .none }
+        host.pause()
+        nativeVisual = nil   // the presentation registry holds it weakly
+        return MemoryPressureRelease(bytes: 0, items: 1)
+    }
+
+    /// A spectrum host is idle (and may be freed) only while the chosen visual is not a native spectrum.
+    static func releasesIdleNativeSpectrum(choice: VisualChoice, hostExists: Bool) -> Bool {
+        hostExists && !choice.isNative
+    }
+
+    #if DEBUG
+    /// Frames presented by the shown visual (MemoryPressureUITests).
+    var activeVisualFrames: Int {
+        if showsCameraVisual { return cameraVisual?.framesShown ?? 0 }
+        if showsPhotoVisual { return photoVisual?.framesShown ?? 0 }
+        if showsVideoVisual { return videoVisual?.framesShown ?? 0 }
+        if showsNativeVisual { return nativeVisual?.presentedFrameCount ?? 0 }
+        return renderer?.presentedFrameCount ?? 0
+    }
+
+    /// The preset warm-up holds its thread or context now (its cache step could free something).
+    var warmUpHoldsContext: Bool { (renderer?.memoryPressureResponders.first?.reclaimableBytes ?? 0) > 0 }
+    #endif
+
     // MARK: - VisualizationControlling (LifecycleCoordinator)
 
     func suspendVisualization() {
@@ -1047,7 +1118,7 @@ final class AppCoordinator: VisualizationControlling {
 
 /// Loads presets into whichever renderer the app created (PresetLoading for PresetCoordinator).
 @MainActor
-final class RendererPresetLoader: PresetLoading {
+final class RendererPresetLoader: PresetLoading, MemoryPressureResponder {
     var renderer: (any VisualizerRenderer)?
     var library: PresetLibrary?
     /// The stored bytes of a playable imported preset (PRE-012); set by UserPresetsCoordinator.
@@ -1093,6 +1164,18 @@ final class RendererPresetLoader: PresetLoading {
             return item
         }
         renderer.prewarm(playable)
+    }
+
+    // MARK: - Memory pressure (PERF-006-R11)
+
+    let memoryPressureName = "preset archive cache"
+    let memoryPressureTier = MemoryPressureTier.cache
+    var reclaimableBytes: Int { archive?.cachedBytes ?? 0 }
+
+    /// Drops the archive's decompressed chunk (measured); the archive stays open (its file is mapped).
+    func releaseForMemoryPressure(_ level: MemoryPressureLevel) -> MemoryPressureRelease {
+        let bytes = archive?.dropCache() ?? 0
+        return MemoryPressureRelease(bytes: bytes, items: bytes > 0 ? 1 : 0)
     }
 
     private func packArchive(_ resources: URL) throws -> PresetArchive {

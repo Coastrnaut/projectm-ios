@@ -47,12 +47,17 @@ public protocol VisualizerRenderer: AnyObject {
     /// it may ever be loaded with `setPreset`. Nil when this renderer cannot run a second engine;
     /// imported presets then wait unchecked and are not playable.
     var presetTrial: (any PresetTrialing)? { get }
+    /// PERF-006: what this renderer frees on memory pressure (caches it rebuilds lazily, optional
+    /// background work). The app registers them with its MemoryPressureRecovery. Never the visible
+    /// engine or its surface. None by default.
+    var memoryPressureResponders: [any MemoryPressureResponder] { get }
 }
 
 public extension VisualizerRenderer {
     func prewarm(_ presets: [Preset]) {}
     var presentationResources: [any PresentationBoundResource] { [] }
     var presetTrial: (any PresetTrialing)? { nil }
+    var memoryPressureResponders: [any MemoryPressureResponder] { [] }
 }
 
 /// How an off-screen trial of an untrusted preset ended (PRE-012-R16).

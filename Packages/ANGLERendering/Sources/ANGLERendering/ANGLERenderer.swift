@@ -21,6 +21,10 @@
 //   are released. The context, engine, preset and textures stay, so the picture continues where it
 //   was. Suspension is independent of pause()/resume() (FR-046): the loop runs only when neither
 //   applies. The warm-up is a second presentation-bound resource (PresetWarmUpController).
+// * REC-001 (specs/055-rec-001-still-frame-capture, research REC-001-D1): `captureNextFrame` reads
+//   the next rendered frame back with glReadPixels after the FX-019 post-pass wrote framebuffer 0 and
+//   before eglSwapBuffers (the swap leaves the buffer undefined), i.e. the frame as shown. One
+//   synchronous read on the render thread, only for a request; frames without one are unchanged.
 import AudioCore
 import CANGLE
 import CFlashLimiter
@@ -31,6 +35,14 @@ import ProjectMBridge
 import QuartzCore
 import Rendering
 import UIKit
+
+/// REC-001: one frame read back from the window surface: 8-bit RGBA as the engine and the post-pass
+/// wrote it (display-encoded), rows bottom-up (GL order), the surface's pixel size.
+public struct ANGLECapturedFrame: Sendable, Equatable {
+    public let width: Int
+    public let height: Int
+    public let rgbaBottomUp: [UInt8]
+}
 
 public enum ANGLERendererError: Error, Equatable {
     case displayUnavailable(Int32)
@@ -74,6 +86,8 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     /// The view is in a window, so a display link is wanted whenever frames can be presented.
     private var inWindow = false
     private var observers: [NSObjectProtocol] = []
+    /// REC-001: the handler waiting for the next rendered frame.
+    private var pendingCapture: (@MainActor (ANGLECapturedFrame?) -> Void)?
     /// Feature 002 SC-104: upcoming presets' pipelines are built in the background (PresetPrewarmer).
     public var prewarmEnabled: Bool {
         get { warmUp.enabled }
@@ -230,12 +244,37 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
         } else {
             engine.renderFrame(toFramebuffer: 0)
         }
+        if let handler = pendingCapture {   // REC-001: the frame as shown, before the swap
+            pendingCapture = nil
+            let pixels = readPixels()
+            handler(pixels.isEmpty ? nil : ANGLECapturedFrame(width: surfaceSize.width, height: surfaceSize.height, rgbaBottomUp: pixels))
+            eglMakeCurrent(display, surface, surface, context)
+        }
         if present {
             eglSwapBuffers(display, surface)
             presentedFrameCount += 1
         }
         return true
     }
+
+    // MARK: - Frame capture (REC-001)
+
+    /// Reads back the next frame this renderer renders, after the flash post-pass; `handler` runs once
+    /// on the main actor (nil if the read fails or the request is replaced or cancelled).
+    public func captureNextFrame(_ handler: @escaping @MainActor (ANGLECapturedFrame?) -> Void) {
+        pendingCapture?(nil)
+        pendingCapture = handler
+    }
+
+    /// Drops a pending capture (its handler gets nil).
+    public func cancelFrameCapture() {
+        let handler = pendingCapture
+        pendingCapture = nil
+        handler?(nil)
+    }
+
+    /// True while a capture waits for the next frame.
+    public var hasPendingFrameCapture: Bool { pendingCapture != nil }
 
     /// Created on first use, with the context current.
     private func flashLimiterForFrame() -> OpaquePointer? {
@@ -328,6 +367,8 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     /// Registration order: the frame loop and surface first, then the warm-up. The registry
     /// suspends in reverse (warm-up first) and resumes in this order.
     public var presentationResources: [any PresentationBoundResource] { [self, warmUp] }
+    /// PERF-006: the warm-up's context (cache) and the warm-up itself (optional).
+    public var memoryPressureResponders: [any MemoryPressureResponder] { warmUp.memoryPressureResponders }
 
     public var presentationResourceName: String { "ANGLE frame loop and surface" }
 
@@ -336,6 +377,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     public func suspendForPresentationLoss() {
         guard !presentationSuspended else { return }
         presentationSuspended = true
+        cancelFrameCapture()   // REC-001-R14: no frame until presentation returns
         trialRunner.setSuspended(true)   // PRE-012: no off-screen trial without presentation either
         stopDisplayLink()
         eglMakeCurrent(display, placeholder, placeholder, context)

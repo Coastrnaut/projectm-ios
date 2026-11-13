@@ -38,6 +38,10 @@
 // * `TextLayer` (MED-009, specs/053-med-009-text-overlay) draws one styled message as a layer: spec,
 //   cleaning, limits, direction and placement are plain Swift and build on Linux; the CoreText
 //   rasterizer and the Metal upload (clear + blit, no shader) compile out there.
+// * `FrameCapture` (REC-001, specs/055-rec-001-still-frame-capture) turns a captured frame (linear
+//   premultiplied half floats from the compositor, or 8-bit sRGB from the native and projectM paths)
+//   into 8-bit sRGB pixels per format policy and encodes PNG or HEIF with ImageIO (no metadata). The
+//   conversion and refusal rules are plain Swift and build on Linux; ImageIO compiles out there.
 // * `MediaSniffing` (MED-014, specs/056-med-014-safe-media-decoder) checks the structure of untrusted
 //   image and movie bytes (PNG, JPEG, HEIF, ISO/QuickTime boxes) before ImageIO or AVFoundation sees
 //   them: bounded, plain Swift, no dependencies, builds on Linux. ImageLayer and VideoLayer call it.
@@ -49,7 +53,7 @@ import PackageDescription
 let package = Package(
     name: "Compositor",
     platforms: [.iOS("26.0"), .macOS(.v15)],
-    products: [.library(name: "Compositor", targets: ["Compositor", "SpectrumLayers", "CameraLayer", "ProceduralMaterials", "GeneratorGraph", "GeneratorGraphImport", "ImageLayer", "VideoLayer", "TextLayer", "MediaSniffing"])],
+    products: [.library(name: "Compositor", targets: ["Compositor", "SpectrumLayers", "CameraLayer", "ProceduralMaterials", "GeneratorGraph", "GeneratorGraphImport", "ImageLayer", "VideoLayer", "TextLayer", "FrameCapture", "MediaSniffing"])],
     dependencies: [
         .package(path: "../AnalysisFeatures"),
         .package(path: "../FlashSafety"),
@@ -58,7 +62,9 @@ let package = Package(
         .package(path: "../ParameterGraph"),
     ],
     targets: [
-        .target(name: "Compositor", dependencies: ["AnalysisFeatures", "FlashSafety"]),
+        // REC-001: still frame capture: formats, color conversion, ImageIO encoding (pure Swift + ImageIO).
+        .target(name: "FrameCapture"),
+        .target(name: "Compositor", dependencies: ["AnalysisFeatures", "FlashSafety", "FrameCapture"]),
         .target(name: "SpectrumLayers", dependencies: ["Compositor", .product(name: "VisualGenerators", package: "VisualGenerators")]),
         .target(name: "CameraLayer", dependencies: ["Compositor"]),
         .target(name: "ProceduralMaterials", dependencies: ["Compositor", "ParameterGraph"]),
@@ -69,12 +75,13 @@ let package = Package(
         .target(name: "GeneratorGraphImport", dependencies: ["GeneratorGraph"]),
         .target(name: "TextLayer", dependencies: ["Compositor"]),
         .testTarget(name: "CompositorTests",
-                    dependencies: ["Compositor", "SpectrumLayers", "CameraLayer", "ImageLayer", "VideoLayer", "MediaSniffing", "AnalysisFeatures", "FlashSafety",
+                    dependencies: ["Compositor", "SpectrumLayers", "CameraLayer", "ImageLayer", "VideoLayer", "MediaSniffing", "AnalysisFeatures", "FlashSafety", "FrameCapture",
                                    .product(name: "VisualGenerators", package: "VisualGenerators")]),
         .testTarget(name: "ProceduralMaterialsTests",
                     dependencies: ["ProceduralMaterials", "Compositor", "ParameterGraph", "FlashSafety", "AnalysisFeatures"]),
         .testTarget(name: "GeneratorGraphTests",
                     dependencies: ["GeneratorGraph", "Compositor", "FlashSafety", "AnalysisFeatures", "ProceduralMaterials"]),
+        .testTarget(name: "FrameCaptureTests", dependencies: ["FrameCapture"]),
         .testTarget(name: "GeneratorGraphImportTests", dependencies: ["GeneratorGraphImport", "GeneratorGraph"]),
         .testTarget(name: "MediaSniffingTests", dependencies: ["MediaSniffing"]),
         .testTarget(name: "TextLayerTests", dependencies: ["TextLayer", "Compositor", "FlashSafety", "AnalysisFeatures"]),

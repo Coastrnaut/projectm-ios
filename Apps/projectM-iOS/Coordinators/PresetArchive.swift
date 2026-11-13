@@ -1,7 +1,7 @@
 // PresetArchive.swift — reads pack presets out of PresetArchive.bin (feature 002, research R-30;
 // format: scripts/build_preset_index.py). Chunks are raw deflate (RFC 1951), decompressed with
 // Foundation's public `decompressed(using: .zlib)`; the last chunk read is cached so stepping
-// through a folder rarely decompresses twice.
+// through a folder rarely decompresses twice. PERF-006: memory pressure drops that chunk.
 import Foundation
 import PresetLibrary
 
@@ -47,6 +47,18 @@ final class PresetArchive {
         guard entry.offset + entry.length <= raw.count else { throw ArchiveError.corruptChunk(entry.chunk) }
         return raw.subdata(in: entry.offset..<(entry.offset + entry.length))
     }
+
+    /// PERF-006-R11: drops the decompressed chunk (memory pressure); returns its size in bytes. The
+    /// next read decompresses again.
+    @discardableResult
+    func dropCache() -> Int {
+        let bytes = cache?.data.count ?? 0
+        cache = nil
+        return bytes
+    }
+
+    /// Bytes of the decompressed chunk held now.
+    var cachedBytes: Int { cache?.data.count ?? 0 }
 
     private func chunkData(_ index: Int) throws -> Data {
         if let cache, cache.index == index { return cache.data }

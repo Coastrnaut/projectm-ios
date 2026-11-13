@@ -29,6 +29,12 @@ protocol PresetWarming: AnyObject, Sendable {
     /// returns, no work is running. The worker can be used again afterwards.
     func stop()
     var warmedCount: Int { get }
+    /// PERF-006: the worker holds a thread or graphics resources (context, engine, target) now.
+    var holdsGraphicsResources: Bool { get }
+}
+
+extension PresetWarming {
+    var holdsGraphicsResources: Bool { false }
 }
 
 final class PresetPrewarmer: PresetWarming, @unchecked Sendable {
@@ -108,6 +114,13 @@ final class PresetPrewarmer: PresetWarming, @unchecked Sendable {
         condition.lock()
         defer { condition.unlock() }
         return holdsContext
+    }
+
+    /// PERF-006: a thread, or its context, engine and target, exist.
+    var holdsGraphicsResources: Bool {
+        condition.lock()
+        defer { condition.unlock() }
+        return thread != nil || holdsContext
     }
 
     /// Presets waiting to be warmed.

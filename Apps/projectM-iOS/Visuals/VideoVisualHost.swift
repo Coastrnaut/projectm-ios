@@ -34,7 +34,7 @@ final class VideoVisualHost: PresentationBoundResource {
     let view: NativeSpectrumLayerView
     let video: VideoLayerSource
     private let spectrum: SpectrumLayerSource
-    private let compositor: Compositor
+    let compositor: Compositor   // REC-001: the frame capture source
     private let queue: MTLCommandQueue
     private let analyzer: LiveBandAnalyzer
     private let reader: (any NormalizedPCMReader)?

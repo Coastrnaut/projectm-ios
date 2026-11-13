@@ -6,9 +6,9 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 34,
-   "implementing": 2,
-   "integrated": 50,
+   "audited": 33,
+   "implementing": 1,
+   "integrated": 52,
    "skipped_existing": 1
   },
   "P1": {
@@ -24,9 +24,9 @@
   }
  },
  "by_state": {
-  "audited": 258,
-  "implementing": 2,
-  "integrated": 65,
+  "audited": 257,
+  "implementing": 1,
+  "integrated": 67,
   "skipped_existing": 1
  },
  "device_gate": {
@@ -178,7 +178,6 @@
    "PERF-002",
    "PERF-003",
    "PERF-005",
-   "PERF-006",
    "PERF-007",
    "PERF-008",
    "PERF-009",
@@ -210,7 +209,6 @@
    "QA-010",
    "QA-011",
    "QA-012",
-   "REC-001",
    "REC-002",
    "REC-003",
    "REC-004",
@@ -298,7 +296,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "260 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
+   "258 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
   ]
  },
  "features": {
@@ -1624,13 +1622,13 @@
   },
   "MED-014": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/med-014",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "MIDI-001": {
    "attempts": 0,
@@ -2245,12 +2243,12 @@
   "PERF-006": {
    "attempts": 0,
    "branch": "feature/perf-006",
-   "branch_sha": null,
+   "branch_sha": "fd72d08eab5d70a2b3bf4c73b4d7acb464b24714",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "b4281645619e9e3630a0dd6dd5cce9ddd4182046",
    "priority": "P0",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "integrated"
   },
   "PERF-007": {
    "attempts": 0,
@@ -2635,12 +2633,12 @@
   "REC-001": {
    "attempts": 0,
    "branch": "feature/rec-001",
-   "branch_sha": null,
+   "branch_sha": "08830385f5642aaf0e0d47208839c2b71ebcf0e1",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "5666cc2332ffd383299f9f9dc306a5f3d21c9ab9",
    "priority": "P0",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "integrated"
   },
   "REC-002": {
    "attempts": 0,
@@ -3820,6 +3818,11 @@
    "sha": "ea0ee43e0f04f2b66596b10b89bd93be24387842"
   },
   {
+   "branch": "feature/perf-006",
+   "id": "PERF-006",
+   "sha": "b4281645619e9e3630a0dd6dd5cce9ddd4182046"
+  },
+  {
    "branch": "feature/perf-011",
    "id": "PERF-011",
    "sha": "6d669fcb857695767ec2b785f74feb29f98d5978"
@@ -3848,6 +3851,11 @@
    "branch": "feature/qa-007",
    "id": "QA-007",
    "sha": "32172fdd5795d12b9a6386c3f56d1d33936b5344"
+  },
+  {
+   "branch": "feature/rec-001",
+   "id": "REC-001",
+   "sha": "5666cc2332ffd383299f9f9dc306a5f3d21c9ab9"
   },
   {
    "branch": "feature/shd-001",
@@ -3915,5 +3923,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T19:26:56Z"
+ "updated": "2026-11-13T19:36:59Z"
 }

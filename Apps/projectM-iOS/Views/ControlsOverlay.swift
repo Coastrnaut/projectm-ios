@@ -27,6 +27,8 @@
 // OUT-010: "Black out output" / "Restore output" blacks out the current output (the external display
 // while the visualization is on one, else the device's visualization) with one tap; its
 // accessibility value says the output's state (OUT-010-R1, R10). Shown for every visual.
+// REC-001: "Save Frame" asks for PNG or HEIF and saves the visual's next frame through the Files
+// exporter (REC-001-R1); shown for every visual.
 import CaptureKit
 import CaptureUI
 import PresentationLifecycle
@@ -223,6 +225,10 @@ struct ControlsOverlay: View {
             Item(id: "pauseResume", title: coordinator.userPaused ? "Resume" : "Pause",
                  icon: coordinator.userPaused ? "play.fill" : "pause.fill") { coordinator.togglePause() },
             blackoutItem,
+            Item(id: "saveFrame", title: "Save Frame", icon: "camera.viewfinder") {   // REC-001
+                coordinator.showControls()
+                coordinator.frameCapture.requestSave()
+            },
             Item(id: "previous", title: "Previous", icon: "backward.fill") { coordinator.previous() },
             Item(id: "next", title: "Next", icon: "forward.fill") { coordinator.next() },
             Item(id: "random", title: "Random", icon: "shuffle") { coordinator.random() },
