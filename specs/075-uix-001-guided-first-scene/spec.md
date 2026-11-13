@@ -30,6 +30,31 @@ explanation).
 | Keeping it | SCN-002 commits the scene when the visual changes or Settings closes; restored on the next launch. | Nothing tells the user the scene is kept. |
 | Accounts, network | The app has no accounts; its only network traffic is the optional App Store purchase and the optional OSC receiver (off by default). | None; the tutorial must keep it so. |
 
+## Clarifications
+
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the conservative, local-first option.
+
+- Q: Which visuals should the tutorial offer? → A: Circular Spectrum (preselected), Linear Spectrum and
+  Text: each is permission-free, needs no file and has a look setting that the scene document records.
+  projectM stays the app's default outside the tutorial (its look is a preset, not a scene setting);
+  Camera (permission), Photo and Video (a picker and a file) are named as "in Settings" only
+  (UIX-001-R3).
+- Q: Should finishing the tutorial also add the scene to the show as cue 1? → A: No. The tutorial
+  ends at a running, committed scene; a cue list is a performer's tool (SHOW-001) and an empty show
+  is the right default for a new user. Settings › Show › Add Current Scene does it in one tap.
+- Q: Should users who installed before this version see the tutorial once after updating? → A: No.
+  Only an install whose notice is acknowledged after this version is offered it (the stored state is
+  set to pending at that moment); everyone can open it from Settings (UIX-001-R1, R8).
+- Q: How is the tutorial presented, and how do steps change? → A: As a full-screen, opaque, modal
+  view over the current screen with no transition animation at all (instant step changes), so
+  Reduce Motion needs no separate path and VoiceOver focus stays inside it (UIX-001-R11, R12).
+- Q: What does the Text look step prefill, and is an empty message allowed? → A: Prefilled with
+  "Hello" (a short, neutral word that shows the visual working); an empty message is allowed and
+  shows the spectrum without text (MED-009) (UIX-001-R3).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A new user makes and plays a first scene in a few taps (Priority: P1)
@@ -150,8 +175,8 @@ button can be scrolled to and tapped.
   first); (3) Visual: a choice of permission-free visuals; (4) Look: one setting for the chosen visual;
   (5) Play: a summary of the scene and the Play button.
 - **UIX-001-R3 Choices**: Visual offers Circular Spectrum (preselected), Linear Spectrum and Text. Look
-  offers Glow on/off for the spectra (preselected on) and the message for Text (prefilled with a short
-  default). Nothing that needs a permission, a system picker or a file is offered.
+  offers Glow on/off for the spectra (preselected on) and the message for Text (prefilled with
+  "Hello"; may be emptied). Nothing that needs a permission, a system picker or a file is offered.
 - **UIX-001-R4 Navigation**: Every step has a primary button (Next, or Play on the last step) and
   Skip; steps 2-5 also have Back. Back keeps the choices made.
 - **UIX-001-R5 Finish (Play)**: Play applies the chosen visual and look through the same settings
