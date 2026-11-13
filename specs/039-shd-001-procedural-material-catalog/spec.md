@@ -37,7 +37,7 @@ interaction); each answer is the conservative, local-first option.
 - Q: Does this row add anything a viewer can see in the app (a picker or a debug view)? → A: No. The catalog is exposed to code only; choosing and stacking materials belongs to CMP-002 (layer stack), their inspector controls to SHD-003 (shader parameter metadata) and variant switching to SHD-004. Rejected: a Debug-only viewer (it would add app code and tests for a screen no user sees; the package's GPU tests already render every material).
 - Q: How does music drive a material? → A: Through one level per frame: the mean of the audio context's bands (clamped to 0…1, NaN ignored, silence when there are none), smoothed so it rises by at most 4 per second and falls by at most 1 per second, then multiplied by the material's "Audio reactivity" (0…1, default 0.25); the material's speed is multiplied by 1 + that product, so music can at most double the speed and never changes brightness (SHD-001-R10).
 - Q: Which parameters may be modulated or controlled externally? → A: Continuous parameters (speeds, scales, brightness, contrast, audio reactivity) use the MOD-001 continuous default (modulatable by replace, add, multiply; MIDI/OSC allowed). Colors and the integer octave count are manual only with external control allowed (MOD-001's discrete policy), because modulating them per frame gives abrupt color or detail jumps (SHD-001-R2).
-- Q: What does a golden snapshot store, and with what tolerance? → A: For each material at 64 × 64, after 30 frames at 60 frames per second (0.5 s) with no music: the picture's mean linear RGB and four sampled pixels (the centre and three fixed points), stored as numbers in the test source; a channel may differ by at most 0.02 (half-float rounding and GPU-class differences). No images are stored (SHD-001-R14).
+- Q: What does a golden snapshot store, and with what tolerance? → A: For each material at 64 × 64, after 30 frames at 60 frames per second (0.5 s) with no music: the picture's mean and peak linear RGB and four sampled pixels (the centre and three fixed points; the peak catches a blank sparse material such as the starfield), stored as numbers in the test source; a channel may differ by at most 0.02 (half-float rounding and GPU-class differences). No images are stored (SHD-001-R14).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -195,8 +195,8 @@ constants defined in the module and no file, bundle or network reads.
 - **SHD-001-R13**: Every pixel a material draws MUST be finite, with color between 0 and alpha and
   alpha exactly 1, for every parameter value in range.
 - **SHD-001-R14**: Each material MUST have a recorded reference ("golden") signature at 64 × 64 after
-  30 frames at 60 frames per second (mean linear RGB and four sampled pixels, stored as numbers, no
-  images), and a test MUST fail when a channel drifts by more than 0.02.
+  30 frames at 60 frames per second (mean and peak linear RGB and four sampled pixels, stored as numbers,
+  no images), and a test MUST fail when a channel drifts by more than 0.02.
 - **SHD-001-R15**: The catalog, IDs, descriptors, parameter values and motion bookkeeping MUST build
   and be tested on Linux; only the drawing compiles out there.
 - **SHD-001-R16**: The cost of drawing each material per frame on the three test devices MUST be

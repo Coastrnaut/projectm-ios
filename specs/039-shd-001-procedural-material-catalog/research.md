@@ -69,8 +69,8 @@
 
 ## SHD-001-D7: Golden signatures
 
-- **Decision**: Per material at 64 × 64, frame 30 (0.5 s at 60 Hz), no music: mean linear RGB and
-  the pixels at (32, 32), (8, 8), (56, 16), (16, 56), stored as numbers in the test; tolerance 0.02
+- **Decision**: Per material at 64 × 64, frame 30 (0.5 s at 60 Hz), no music: mean and peak linear RGB
+  and the pixels at (32, 32), (8, 8), (56, 16), (16, 56), stored as numbers in the test; tolerance 0.02
   per channel.
 - **Rationale**: Small, reviewable, catches structural regressions (a broken formula moves the
   mean or the sampled points) while tolerating half-float rounding and GPU differences.
