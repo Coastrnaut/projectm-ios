@@ -1,5 +1,5 @@
 // AnalysisBench — CPU per spectrum frame for every FFT size and backend (ANL-001-T21; research
-// ANL-001-D9). Reported, never asserted. Run in Release:
+// ANL-001-D9) and per band reduction (ANL-002-T16). Reported, never asserted. Run in Release:
 //   swift run -c release --package-path Packages/AnalysisFeatures/Bench AnalysisBench
 // Pass `--loop-seconds N` to repeat the timed loops for about N seconds (for an allocation trace
 // with `xcrun xctrace record --template Allocations --launch -- <binary> --loop-seconds 5`).
@@ -69,6 +69,35 @@ repeat {
     let streamNs = Double(MonotonicClock.nowNanoseconds() - streamStart) / Double(max(1, streamFrames))
     if loopSeconds == 0 || MonotonicClock.nowNanoseconds() >= deadline {
         print("stream (\(stream.resolvedBackend == .accelerated ? "accelerated" : "portable"), 2048, append 512-frame blocks + nextFrame): \(Int(streamNs.rounded())) ns/frame over \(streamFrames) frames")
+    }
+    // ANL-002: band reduction of one spectrum (ns per reduce), every band count at 2,048 and 8,192.
+    for backend in backends {
+        let reducer = try! BandReducer(sampleRate: sampleRate, backend: backend)
+        let analyzer = SpectrumAnalyzer(backend: backend)
+        var spectrum = [Float](repeating: 0, count: FFTSize.maximum.binCount)
+        var bands = [Float](repeating: 0, count: BandCount.b128.rawValue)
+        for size in [FFTSize.n2048, .n8192] {
+            noise.withUnsafeBufferPointer { input in
+                spectrum.withUnsafeMutableBufferPointer { s in
+                    analyzer.magnitudes(of: input.baseAddress!, size: size, into: s.baseAddress!)
+                    bands.withUnsafeMutableBufferPointer { out in
+                        for count in BandCount.allCases {
+                            for _ in 0..<50 { reducer.reduce(magnitudes: s.baseAddress!, size: size, bandCount: count, into: out.baseAddress!) }
+                            let start = MonotonicClock.nowNanoseconds()
+                            for _ in 0..<framesPerRun {
+                                reducer.reduce(magnitudes: s.baseAddress!, size: size, bandCount: count, into: out.baseAddress!)
+                                sink += out[0]
+                            }
+                            let perReduce = Double(MonotonicClock.nowNanoseconds() - start) / Double(framesPerRun)
+                            if loopSeconds == 0 || MonotonicClock.nowNanoseconds() >= deadline {
+                                let name = backend == .accelerated ? "accelerated" : "portable   "
+                                print("bands \(name)  N=\(String(size.rawValue).padding(5))  B=\(String(count.rawValue).padding(3))  \(Int(perReduce.rounded())) ns/reduce")
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 } while MonotonicClock.nowNanoseconds() < deadline
 print("checksum \(sink)")
