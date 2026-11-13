@@ -23,7 +23,7 @@ Simulator results are never device evidence.
 
 **Independent test**: Settings › Storage › Clear Caches… › Clear on the fixture.
 
-- [ ] FILE-010-T06 [US1] `Apps/projectM-iOS/Coordinators/StorageUsageModel.swift`: `prepareCleanup()`, `confirmCleanup()`, `dismissCleanup()`, `pendingPlan`, `isClearing`, `lastCleanup`, an in-use provider; detached utility tasks; refresh after clearing (FILE-010-R6)
+- [ ] FILE-010-T06 [US1] `Apps/projectM-iOS/Coordinators/StorageUsageModel.swift`: `prepareCleanup()`, `confirmCleanup()`, `dismissCleanup()`, `pendingPlan`, `isClearing`, `lastCleanup`, an in-use provider; detached utility tasks; refresh after clearing; model tests in `CacheCleanupAcceptanceTests`: Cancel removes nothing, an empty plan gives the nothing-to-clear state, leaving the screen does not stop a clear (FILE-010-R2, R6)
 - [ ] FILE-010-T07 [US1] `Apps/projectM-iOS/Views/StorageUsageView.swift`: Clear Caches… section, the alerts and result notes (contract C4); `UITestStorageFixture` seeds the two export folders, a show and a preferences file (FILE-010-R1, R2, R9)
 - [ ] FILE-010-T08 [US1] `Apps/projectM-iOS/UITests/CacheCleanupUITests.swift`: fixture → Clear Caches… → alert text → Clear → Recordings, Shares and exports, Caches "Zero KB"; Photos, Videos, Scenes, Presets, Imported audio unchanged (FILE-010-S4)
 

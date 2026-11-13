@@ -40,7 +40,7 @@ For each item, in plan order:
 
 - Section with a button "Clear Caches…" (`storageClearCaches`), disabled while measuring, planning or
   clearing.
-- With items: alert "Clear Caches?" message "Frees <size>. Photos, videos, scenes, the show, presets,
+- With items: alert "Clear Caches?" message "Frees <size>." (or "Frees about <size>." when the plan is incomplete), then " Photos, videos, scenes, the show, presets,
   imported audio and settings are kept." plus " Files in use are kept." when any were kept; buttons
   "Clear" (destructive, `storageClearConfirm`) and "Cancel".
 - Without items: alert "Nothing to Clear" message "There are no caches to clear." (or "The remaining
