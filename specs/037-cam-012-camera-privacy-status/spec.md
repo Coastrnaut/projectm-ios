@@ -25,6 +25,19 @@ The row's gap status is "Gap candidate". The audit confirms it.
 | Turning the camera off | Pause, Stop (audio), backgrounding, or opening Settings and choosing another visual. | No one-tap control that turns the camera off. |
 | After the camera stops | The Camera visual keeps drawing the spectrum over the camera layer's transparent fallback. | No defined return to a non-camera visual. |
 
+## Clarifications
+
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the conservative, local-first option.
+
+- Q: Which visual does Stop camera return to? → A: The visual chosen before Camera: the stored visual choice, which Camera never overwrites (CAM-001-R11), so projectM when none was ever chosen (CAM-012-R5). Rejected: always the circular spectrum (it would overwrite the user's stored choice, a new persisted state against R8) and staying on the Camera visual with the camera off (Settings would show Camera chosen while it is off, and choosing it again would not be a change).
+- Q: Is the indicator shown while the camera is starting, or only once pictures arrive? → A: Starting and running (value "Starting" or "Live"). The capture hardware may already be on while the session starts, so the privacy-conservative answer shows it then too; while iOS's permission prompt is up, no indicator (the camera is not on) (CAM-012-R1).
+- Q: Where is Stop camera offered? → A: On the indicator itself, a "Stop camera" button inside the badge, so it is reachable in one tap whenever the camera is on, controls shown or not (CAM-012-R3). No second copy in the controls panel: one place to look, and nothing for the controls' hide timer to hide.
+- Q: Does Stop camera wait for the camera hardware to finish shutting down? → A: No main-thread wait. Stop returns only after the camera feed refuses new pictures, the held picture is dropped and the feed reports idle; the capture session's own shutdown is sent to its queue at once (CAM-001's provider), because blocking the main thread for it could freeze the picture. A device task (CAM-012-S5) checks that iOS's indicator turns off within a second (CAM-012-R4).
+- Q: After Stop camera, can pause/resume or returning from the background start the camera again? → A: No. Stop camera leaves the Camera visual; only choosing Camera again in Settings starts it (CAM-012-R6), the same rule as CAM-001-R4 and R11.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - See at a glance that the camera is on (Priority: P1)
