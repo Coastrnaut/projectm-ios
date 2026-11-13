@@ -115,6 +115,16 @@ consumers listed in the spec's hand-off (SHOW-003, SHOW-010, UIX-005, MOD-009, M
 one small module and not on the app. AnalysisFeatures stays analysis-only; extending it with
 user-tap state would mix concerns.
 
+## Shared files and parallel work
+
+VIS-002 (Packages/VisualGenerators, Settings), AUD-007 (CaptureKit, CaptureUI, the controls
+overlay) and a test-speed pass run at the same time. This row's edits to shared files are
+additive and localized: two methods and a property on `LiveBandAnalyzer`, one method on
+`CircularSpectrumHost`, a property and four call sites in `AppCoordinator`, one view per layout in
+`ControlsOverlay`, the package in `project.yml` and in each CI package loop. Licensing: no new
+dependency or third-party content. Privacy: nothing stored, logged or sent; no new
+`PrivacyInfo.xcprivacy` entry.
+
 ## Persistence and rollback
 
 Nothing is persisted: the manual tempo, the tap sequence and the estimate live in memory and end
