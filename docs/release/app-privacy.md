@@ -92,6 +92,19 @@ this in App Store Connect › App Privacy when a version with Record is submitte
 query: REC-015 owns that) add no required-reason API; `check_privacy_manifest.py` on the simulator
 Debug build is the check (REC-003-T22).
 
+REC-012 (2026-11-13; `specs/060-rec-012-share-via-files`, privacy review in its spec): the frame or
+recording the user just made is offered with Save…, Share… and Discard. Share… hands a temporary copy
+(in the app's temporary folder, deleted when the share sheet closes and at launch) to the system share
+sheet; the file goes only to the activity the user picks (AirDrop, Messages, Mail, Files or another
+app). Save to Photos and Assign to Contact are excluded, so no Photos or Contacts permission or usage
+description is added. The app itself sends nothing and keeps nothing beyond the session (an offered
+still is in memory; an offered recording's temporary file is deleted by Discard, a completed Save… or
+the next launch). A user sharing their own file through a system sheet is not collection by the app:
+the answers stay **No** and the label stays **Data Not Collected**. Owner action: confirm in App Store
+Connect › App Privacy when a version with Share… is submitted. No required-reason API is added (copies
+and the cleanup use plain file operations and a directory listing); `check_privacy_manifest.py` on the
+simulator Debug build is the check (REC-012-T12).
+
 ## Privacy manifest (`Apps/projectM-iOS/PrivacyInfo.xcprivacy`)
 
 - `NSPrivacyTracking`: false; `NSPrivacyTrackingDomains`: empty; `NSPrivacyCollectedDataTypes`: empty.

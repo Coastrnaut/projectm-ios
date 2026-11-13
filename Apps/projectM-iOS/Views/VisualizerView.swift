@@ -27,6 +27,7 @@
 // REC-001: Save Frame's format choice, the Files exporter and its notice; DEBUG `frameCaptureProbe`.
 // REC-003: the recording indicator, the system file mover for a finished recording, its notice;
 // DEBUG `videoRecordingProbe`.
+// REC-012: the ready panels (Save…, Share…, Discard) and the share notice (`CaptureResultPanels`).
 import CaptureKit
 import CaptureUI
 import FrameCapture
@@ -270,7 +271,7 @@ struct VisualizerView: View {
                                            }),
                       document: coordinator.frameCapture.document,
                       contentType: coordinator.frameCapture.document?.contentType ?? .png,
-                      defaultFilename: CapturedFrameDocument.baseName(date: Date())) { (result: Result<URL, any Error>) in
+                      defaultFilename: coordinator.frameCapture.offeredBaseName) { (result: Result<URL, any Error>) in
             coordinator.frameCapture.exportFinished(result)
         }
         // REC-003: the finished recording is moved (not copied) to the folder the user picks in Files.
@@ -469,6 +470,9 @@ struct VisualizerView: View {
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("frameCaptureNotice")
         }
+        // REC-012: "Frame ready" / "Recording ready" with Save…, Share…, Discard; the share notice.
+        CaptureResultPanels(frameCapture: coordinator.frameCapture, videoRecording: coordinator.videoRecording,
+                            share: coordinator.captureShare)
         // REC-003: the recording indicator (app UI, never part of the recorded picture; REC-003-R16).
         if coordinator.videoRecording.state != .idle {
             let finishing = coordinator.videoRecording.state == .finishing
