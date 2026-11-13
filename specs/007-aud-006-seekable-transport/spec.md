@@ -22,6 +22,10 @@ one explicitly.
 
 ## Clarifications
 
+### Owner rulings 2026-11-12
+
+- Owner ruling 2026-11-12 ("all recommended for policy choices"): with more than one imported track, the end of a track advances to the next track in the order and wraps; one track, and the reference track, repeat as before. Repeat modes stay with AUD-004.
+
 ### Session 2026-11-12
 
 Answered by Claude under the owner's standing approval (routine decisions delegated, no human

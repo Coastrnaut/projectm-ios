@@ -6,8 +6,8 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 67,
-   "implementing": 1,
+   "audited": 66,
+   "implementing": 2,
    "integrated": 19
   },
   "P1": {
@@ -22,8 +22,8 @@
   }
  },
  "by_state": {
-  "audited": 304,
-  "implementing": 1,
+  "audited": 303,
+  "implementing": 2,
   "integrated": 21
  },
  "device_gate": {
@@ -776,13 +776,13 @@
   },
   "AUD-016": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/aud-016",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/011-aud-016-reference-tone-suite",
+   "state": "implementing"
   },
   "AUTO-001": {
    "attempts": 0,
@@ -3719,5 +3719,5 @@
  "run_id": "cb545c51cf0b",
  "skipped_existing": [],
  "total": 326,
- "updated": "2026-11-13T00:04:03Z"
+ "updated": "2026-11-13T00:04:06Z"
 }
