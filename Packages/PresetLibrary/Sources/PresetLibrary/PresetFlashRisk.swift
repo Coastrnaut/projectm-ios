@@ -7,7 +7,8 @@
 // PresetFlashRiskTests and scripts/test_scripts.py). Change both together, with the fixtures.
 //
 // It reads text only and measures nothing: FX-019's envelope (ADR-0011) still limits every frame.
-// Foundation only (NSRegularExpression), so it runs on Linux too.
+// Foundation only (NSRegularExpression, NSString(string:) rather than `as` bridging), so it runs on
+// Linux too.
 import Foundation
 
 public enum PresetFlashRisk {
@@ -106,11 +107,11 @@ public enum PresetFlashRisk {
             } else if c == Char.close {
                 depth = max(0, depth - 1)
             } else if c == Char.semicolon && depth == 0 {
-                out.append(String(utf16CodeUnits: Array(chars[start..<i]), count: i - start))
+                out.append(String(decoding: chars[start..<i], as: UTF16.self))
                 start = i + 1
             }
         }
-        out.append(String(utf16CodeUnits: Array(chars[start...]), count: chars.count - start))
+        out.append(String(decoding: chars[start...], as: UTF16.self))
         return out.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
     }
 
@@ -120,7 +121,7 @@ public enum PresetFlashRisk {
 
     /// Spans [start, end) (UTF-16 offsets) of the flicker sources in a statement.
     static func flickerSpans(_ s: String) -> [Span] {
-        let ns = s as NSString
+        let ns = NSString(string: s)
         var spans: [Span] = []
         for m in Pattern.rand.matches(in: s) {
             spans.append((m.range.location, closing(ns, m.range.upperBound - 1) + 1))
@@ -147,7 +148,7 @@ public enum PresetFlashRisk {
     /// Spans of `c * term` (literal c < damping) and of if(cond, a, b) with literals a, b less than
     /// `damping` apart.
     static func dampedSpans(_ s: String) -> [Span] {
-        let ns = s as NSString
+        let ns = NSString(string: s)
         let chars = Array(s.utf16)
         var spans: [Span] = []
         for m in Pattern.coefficient.matches(in: s) {
@@ -185,7 +186,7 @@ public enum PresetFlashRisk {
 
     /// The largest K in `word*K` or `K*word` inside arg (1 for a bare word); nil when absent.
     static func rate(_ arg: String, _ word: String) -> Double? {
-        let ns = arg as NSString
+        let ns = NSString(string: arg)
         var best: Double?
         for m in Pattern("(?<![a-z0-9_.])\(word)(?![a-z0-9_])").matches(in: arg) {
             let after = ns.substring(from: m.range.upperBound)
@@ -273,19 +274,19 @@ public enum PresetFlashRisk {
         }
 
         func matches(in s: String, from start: Int = 0, anchored: Bool = false) -> [NSTextCheckingResult] {
-            let length = (s as NSString).length
+            let length = NSString(string: s).length
             guard start <= length else { return [] }
             return regex.matches(in: s, options: anchored ? [.anchored] : [], range: NSRange(location: start, length: length - start))
         }
 
         func firstGroup(in s: String) -> String? {
             matches(in: s, anchored: true).first.flatMap { m in
-                m.range.upperBound == (s as NSString).length ? s.substring(m.range(at: 1)) : nil
+                m.range.upperBound == NSString(string: s).length ? s.substring(m.range(at: 1)) : nil
             }
         }
 
         func fullyMatches(_ s: String) -> Bool {
-            matches(in: s, anchored: true).first?.range.length == (s as NSString).length
+            matches(in: s, anchored: true).first?.range.length == NSString(string: s).length
         }
 
         static let num = "(?:[0-9]+\\.?[0-9]*|\\.[0-9]+)"
@@ -308,6 +309,6 @@ public enum PresetFlashRisk {
 extension String {
     /// The text in a UTF-16 range of this string.
     fileprivate func substring(_ range: NSRange) -> String {
-        range.location == NSNotFound ? "" : (self as NSString).substring(with: range)
+        range.location == NSNotFound ? "" : NSString(string: self).substring(with: range)
     }
 }
