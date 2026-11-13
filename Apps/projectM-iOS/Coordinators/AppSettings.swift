@@ -21,6 +21,9 @@
 // * Photo (MED-001-R8): `visual` may be `photo`, stored like the spectra (no sensor is involved).
 //   The chosen photo's identifier is `settings.photo.id` (PhotoStore.idKey; absent = no photo); the
 //   copy itself lives in Application Support/Photos.
+// * Video (MED-002-R8): `visual` may be `video`, stored like Photo. The chosen video's identifier is
+//   `settings.video.id` (VideoStore.idKey); the copy lives in Application Support/Videos. The playback
+//   position is never stored.
 // * OSC receiver (OSC-001-R15): key `settings.osc.enabled` (Bool, absent → off, so a fresh install
 //   opens no listener) and `settings.osc.port` (Int, absent or outside 1024-65535 → 9000).
 // All keys are "user settings" in the FR-065 list of what may be stored (FR-123 adds the scope,
@@ -49,9 +52,11 @@ final class AppSettings {
     static let oscPortKey = "settings.osc.port"
     /// MED-001: the stored photo's identifier (written by PhotoStore).
     static let photoIDKey = PhotoStore.idKey
+    /// MED-002: the stored video's identifier (written by VideoStore).
+    static let videoIDKey = VideoStore.idKey
     static let allKeys = [performanceOverlayKey, reduceFlashingKey, presetScopeKey, visualKey, circularSpectrumBarsKey,
                           glowKey, glowIntensityKey, glowRadiusKey, glowThresholdKey,
-                          linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey]
+                          linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey, videoIDKey]
     /// VIS-002-R4: the spacings offered for the linear spectrum.
     static let linearSpectrumSpacingChoices: [(title: String, value: Double)] = [("None", 0), ("Narrow", 0.2), ("Wide", 0.5)]
     static let defaultLinearSpectrumSpacing = 0.2
@@ -227,6 +232,8 @@ enum VisualChoice: String, CaseIterable, Sendable {
     case camera
     /// The imported photo with the circular spectrum over it (MED-001; persisted).
     case photo
+    /// The imported video with the circular spectrum over it (MED-002; persisted).
+    case video
 
     var title: String {
         switch self {
@@ -235,6 +242,7 @@ enum VisualChoice: String, CaseIterable, Sendable {
         case .linearSpectrum: "Linear Spectrum"
         case .camera: "Camera"
         case .photo: "Photo"
+        case .video: "Video"
         }
     }
 
@@ -249,4 +257,7 @@ enum VisualChoice: String, CaseIterable, Sendable {
 
     /// The photo visual (MED-001).
     var usesPhoto: Bool { self == .photo }
+
+    /// The video visual (MED-002).
+    var usesVideo: Bool { self == .video }
 }

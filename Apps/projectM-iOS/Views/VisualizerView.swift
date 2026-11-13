@@ -12,6 +12,8 @@
 // MED-001: the Photo visual (imported photo under the circular spectrum) replaces the renderer's view
 // the same way; the photo notice (an import refused, the stored copy unreadable) is a non-blocking
 // banner with Dismiss.
+// MED-002: the Video visual (imported video under the circular spectrum) replaces it the same way,
+// with its own non-blocking notice; DEBUG diagnostics expose the shown picture's index.
 // AUD-007: a route change's explanation shows above the source-and-state indicator for about 4 s.
 import CaptureKit
 import CaptureUI
@@ -120,6 +122,21 @@ struct VisualizerView: View {
                             .accessibilityValue("\(photo.framesShown)")
                     }
                 }
+                if let video = coordinator.videoVisual {   // MED-002: frames shown and the shown picture's index
+                    TimelineView(.periodic(from: .now, by: 0.25)) { _ in
+                        let index = video.shownFrameIndex().map(String.init) ?? "none"
+                        VStack {
+                            Text("\(video.framesShown)")
+                                .accessibilityIdentifier("videoFramesShown")
+                                .accessibilityValue("\(video.framesShown)")
+                            Text(index)
+                                .accessibilityIdentifier("videoFrameIndex")
+                                .accessibilityValue(index)
+                        }
+                        .font(.caption2)
+                        .opacity(0.01)
+                    }
+                }
             }
         }
         .statusBarHidden(coordinator.hidesSystemOverlays)
@@ -147,7 +164,8 @@ struct VisualizerView: View {
             SettingsView(settings: coordinator.settings, osc: coordinator.osc,
                          reduceFlashingAvailable: coordinator.renderer?.supportsReduceFlashing ?? true,
                          nativeVisualUnavailable: coordinator.nativeVisualUnavailable,
-                         glowUnavailable: coordinator.glowUnavailable, photos: coordinator.photos)
+                         glowUnavailable: coordinator.glowUnavailable, photos: coordinator.photos,
+                         videos: coordinator.videos)
         }
         .onChange(of: coordinator.settings.reduceFlashing) { coordinator.applyReduceFlashing() }
         .onChange(of: coordinator.settings.visual) { coordinator.visualSettingsChanged() }                 // VIS-001
@@ -194,6 +212,13 @@ struct VisualizerView: View {
                 .accessibilityLabel("Photo visualization")
                 .accessibilityValue(PhotoVisualHost.accessibilityValue(coordinator.photoState))   // MED-001-R15
                 .accessibilityIdentifier("photoVisual")
+        } else if coordinator.showsVideoVisual, let video = coordinator.videoVisual {
+            NativeVisualHost(view: video.view)
+                .ignoresSafeArea()
+                .accessibilityElement()
+                .accessibilityLabel("Video visualization")
+                .accessibilityValue(VideoVisualHost.accessibilityValue(coordinator.videoState))   // MED-002-R19
+                .accessibilityIdentifier("videoVisual")
         } else if coordinator.showsNativeVisual, let native = coordinator.nativeVisual {
             NativeVisualHost(view: native.view)
                 .ignoresSafeArea()
@@ -262,6 +287,23 @@ struct VisualizerView: View {
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("photoNotice")
+        }
+        // MED-002-R14: never blocks; clears itself after a few seconds.
+        if coordinator.showsVideoVisual, !coordinator.showSettings, let notice = coordinator.videos.notice {
+            HStack(spacing: 10) {
+                Image(systemName: "film")
+                    .accessibilityHidden(true)
+                Text(notice)
+                    .font(.footnote)
+                    .accessibilityIdentifier("videoNoticeText")
+                Button("Dismiss") { coordinator.videos.clearNotice() }
+                    .font(.footnote.bold())
+                    .accessibilityIdentifier("videoNoticeDismiss")
+            }
+            .padding(10)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("videoNotice")
         }
         if let failure = coordinator.presets.failureMessage {
             Text(failure)
