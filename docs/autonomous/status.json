@@ -6,7 +6,8 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 13,
+   "audited": 10,
+   "implementing": 3,
    "integrated": 73,
    "skipped_existing": 1
   },
@@ -23,7 +24,8 @@
   }
  },
  "by_state": {
-  "audited": 236,
+  "audited": 233,
+  "implementing": 3,
   "integrated": 89,
   "skipped_existing": 1
  },
@@ -278,13 +280,13 @@
  "features": {
   "ACC-001": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/acc-001",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "ACC-002": {
    "attempts": 0,
@@ -1258,13 +1260,13 @@
   },
   "FILE-013": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/file-013",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "FX-001": {
    "attempts": 0,
@@ -2878,13 +2880,13 @@
   },
   "SCN-012": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/scn-012",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "SCN-013": {
    "attempts": 0,
@@ -4009,5 +4011,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T23:13:23Z"
+ "updated": "2026-11-13T23:13:36Z"
 }
