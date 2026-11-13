@@ -1,0 +1,12 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=2
+[preset00]
+// ACC-002 test fixture written for projectM-iOS (MIT). Not a third-party preset.
+fDecay=0.980000
+zoom=1.010000
+rot=0.000000
+wave_r=0.6
+wave_g=0.6
+wave_b=0.9
+per_frame_1=solarize = above(
+per_frame_2=treb, 1.1); ib_a = 0.2;
