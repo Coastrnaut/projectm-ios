@@ -68,6 +68,8 @@
 //   offer card asks Reopen or Start fresh. The camera is session only and never restarts by itself.
 // * Show (SHOW-001): `show` (ShowCoordinator) owns the manual cue list; a step applies the cue's scene
 //   through the Settings path (AppCoordinator+Show.swift), never touching the audio source.
+// * Guided first scene (UIX-001): `guide` offers the tutorial after the notice on a new install (not
+//   while PERF-010's offer is pending); Play is AppCoordinator+Guide.swift.
 import ANGLERendering
 import CameraLayer
 import ImageLayer
@@ -142,6 +144,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     @ObservationIgnored let sceneAutosave: SceneAutosaveCoordinator?
     /// PERF-010: abnormal-exit detection, the recovery offer and its consent rules.
     let recovery: SessionRecoveryCoordinator
+    /// UIX-001: the guided first scene (stored state and whether it is shown).
+    let guide: GuidedFirstSceneCoordinator
     /// Performance overlay and Reduce flashing (T103).
     let settings: AppSettings
     /// The native spectra (VIS-001 circular, VIS-002 linear), created the first time one is needed.
@@ -235,6 +239,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             if let videos = try? VideoStore.defaultDirectory() { try? FileManager.default.removeItem(at: videos) }   // MED-002: no video
             if let scenes = try? SceneAutosaveStore.defaultDirectory() { try? FileManager.default.removeItem(at: scenes) }   // SCN-002: no scene
             SessionRecoveryCoordinator.reset(defaults)   // PERF-010: no previous session
+            GuidedFirstSceneCoordinator.reset(defaults)  // UIX-001: never offered
             if let shows = try? ShowStore.defaultDirectory() { try? FileManager.default.removeItem(at: shows) }   // SHOW-001: no show
         }
         settings = AppSettings(defaults: defaults, systemReduceMotion: UIAccessibility.isReduceMotionEnabled)
@@ -244,6 +249,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         let recovery = SessionRecoveryCoordinator(defaults: defaults, suppressed: SessionRecoveryCoordinator.harnessSuppresses())
         let holdsScene = recovery.prepare(settings: settings)
         self.recovery = recovery
+        let guide = GuidedFirstSceneCoordinator(defaults: defaults, suppressed: GuidedFirstScenePolicy.harnessSuppresses())
+        self.guide = guide
         osc = OSCReceiverCoordinator(settings: settings)
         photos = PhotoCoordinator.makeDefault(defaults: defaults)
         videos = VideoCoordinator.makeDefault(defaults: defaults)
@@ -265,7 +272,10 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         UITestVideoFixture.seedIfRequested(videos)   // MED-002: VideoLayerUITests
         UITestTextFixture.seedIfRequested(texts)     // MED-009: TextOverlayUITests
         #endif
-        screen = defaults.bool(forKey: Self.noticeKey) ? .chooser : .notice
+        let initialScreen: Screen = defaults.bool(forKey: Self.noticeKey) ? .chooser : .notice
+        screen = initialScreen
+        // UIX-001-R1: a pending tutorial is offered again (not over PERF-010's offer).
+        if initialScreen == .chooser { guide.presentAtLaunchIfDue(recoveryPending: recovery.offer == .pending) }
         microphone = MicrophoneSource(backend: AVMicrophoneBackend())
         let inAppPlayback = InAppPlaybackSource(backend: AVInAppPlaybackBackend())
         self.inAppPlayback = inAppPlayback
@@ -372,6 +382,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     func acknowledgeNotice() {
         defaults.set(true, forKey: Self.noticeKey)
         screen = .chooser
+        guide.noticeAcknowledged(recoveryPending: recovery.offer == .pending)   // UIX-001-R1
     }
 
     var availability: [AudioSourceMode: SourceAvailability] {
