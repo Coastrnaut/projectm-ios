@@ -392,7 +392,9 @@ jobs:
     # run on any simulator and is tested only on devices.
     needs: [docs-and-compliance, angle-xcframeworks]
     runs-on: xcode-27
-    timeout-minutes: 40
+    # 90 minutes, like build-and-test-apple: run 43419354416 spent 38 minutes in the package tests
+    # on the iOS 27 simulator and hit the old 40-minute limit after the suites grew.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v5
       - name: Select the newest Xcode 27 that can build for iOS devices
