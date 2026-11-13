@@ -7,9 +7,9 @@
  "by_priority": {
   "P0": {
    "audited": 49,
-   "integrated": 35,
+   "integrated": 36,
    "skipped_existing": 1,
-   "unit_passed": 2
+   "unit_passed": 1
   },
   "P1": {
    "audited": 140,
@@ -24,9 +24,9 @@
  },
  "by_state": {
   "audited": 277,
-  "integrated": 46,
+  "integrated": 47,
   "skipped_existing": 1,
-  "unit_passed": 2
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -157,7 +157,6 @@
    "MOD-011",
    "MOD-012",
    "MOD-013",
-   "MOD-014",
    "MOD-015",
    "MOD-016",
    "MOD-017",
@@ -316,7 +315,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "279 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
+   "278 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
   ]
  },
  "features": {
@@ -1915,10 +1914,10 @@
    "branch": "feature/mod-014",
    "branch_sha": "a08446ecdde1081af304e1f05bc48487591a92b7",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "09a831b48364261759adc865d0c5399134a40030",
    "priority": "P0",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "MOD-015": {
    "attempts": 0,
@@ -3763,6 +3762,11 @@
    "sha": "29cd3bbb1e120730aa759744facd1511a94c7c2d"
   },
   {
+   "branch": "feature/mod-014",
+   "id": "MOD-014",
+   "sha": "09a831b48364261759adc865d0c5399134a40030"
+  },
+  {
    "branch": "feature/osc-001",
    "id": "OSC-001",
    "sha": "13d9883531b90718c4b9f8d5558a18269420f39f"
@@ -3838,5 +3842,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T16:47:50Z"
+ "updated": "2026-11-13T16:47:57Z"
 }

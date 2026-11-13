@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T16:47:50Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T16:47:57Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,15 +10,15 @@
 | State | Features |
 |---|---|
 | audited | 277 |
-| unit_passed | 2 |
-| integrated | 46 |
+| unit_passed | 1 |
+| integrated | 47 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
 | Priority | audited | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|
-| P0 | 49 | 2 | 35 | 1 |
+| P0 | 49 | 1 | 36 | 1 |
 | P1 | 140 | 0 | 11 | 0 |
 | P2 | 79 | 0 | 0 | 0 |
 | P3 | 9 | 0 | 0 | 0 |
@@ -26,7 +26,7 @@
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 279 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
+- 278 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
 
 ## Integrated
 
@@ -68,6 +68,7 @@ The physical-device suite may **not** start:
 | MOD-001 | Typed parameter registry | `304f3bce431a` | `feature/mod-001` |
 | MOD-002 | Audio feature binding | `006678f3d7a5` | `feature/mod-002` |
 | MOD-003 | Linear mapping | `29cd3bbb1e12` | `feature/mod-003` |
+| MOD-014 | Modulation feedback prevention | `09a831b48364` | `feature/mod-014` |
 | OSC-001 | OSC receiver | `13d9883531b9` | `feature/osc-001` |
 | PERF-011 | Background resource release | `6d669fcb8576` | `feature/perf-011` |
 | PRE-007 | Preset collections | `e834535cb98b` | `feature/pre-007` |
@@ -339,7 +340,7 @@ None.
 - `post-merge: projectM-iOSTests 159 + AudioFeatureBindingUITests 13.8 s on iPhone 17 iOS 27.2 sim`: pass at `29cd3bbb1e12` (log `.autonomous/logs/integration/mod-003/app-tests.log`)
 - `post-merge: ParameterGraph xcodebuild test on iPhone 17 sim (48)`: pass at `29cd3bbb1e12` (log `.autonomous/logs/integration/mod-003/pg-sim.log`)
 
-### MOD-014 Modulation feedback prevention (unit_passed)
+### MOD-014 Modulation feedback prevention (integrated)
 - `python3 scripts/check_compliance.py`: pass at `a08446ecdde1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-014/20261113T114626/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `a08446ecdde1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-014/20261113T114626/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `a08446ecdde1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-014/20261113T114626/sim-test_ANGLERendering.log`)
