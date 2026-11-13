@@ -53,7 +53,10 @@ final class OSCLoopbackIntegrationTests: XCTestCase {
         off.assertForOverFulfill = false
         receiver.onStateChange { if $0 == .off { off.fulfill() } }
         receiver.stop()
-        if receiver.state != .off { wait(for: [off], timeout: 5) }
+        // Always wait: an expectation that is created but never waited fails the test ("unwaited
+        // expectation"), which happened on CI when the listener was already off here (fb28723).
+        if receiver.state == .off { off.fulfill() }
+        wait(for: [off], timeout: 5)
         XCTAssertEqual(receiver.state, .off)
     }
 

@@ -3,6 +3,7 @@
 // The chooser also lists the user's imported audio and opens the Files picker for it (AUD-001)
 // and the play queue (AUD-003),
 // and offers generated test signals under Diagnostics (AUD-016).
+// UIX-001: the guided first scene covers the current screen (no animation) while it is presented.
 import CaptureKit
 import CaptureUI
 import SwiftUI
@@ -28,6 +29,18 @@ struct RootView: View {
     @Bindable var coordinator: AppCoordinator
 
     var body: some View {
+        ZStack {
+            screenContent
+                .accessibilityHidden(coordinator.guide.isPresented)
+            if coordinator.guide.isPresented {   // UIX-001 (research D1: an overlay, never animated)
+                GuidedFirstSceneView(guide: coordinator.guide, soundIsPlaying: coordinator.screen == .visualizer,
+                                     onPlay: { coordinator.finishGuidedFirstScene() })
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var screenContent: some View {
         switch coordinator.screen {
         case .notice:
             PhotosensitivityNoticeView { coordinator.acknowledgeNotice() }

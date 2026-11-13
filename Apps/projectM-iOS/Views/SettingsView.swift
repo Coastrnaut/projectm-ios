@@ -12,6 +12,7 @@
 // and drawn at once. It is a standard List section, so Dynamic Type and VoiceOver apply.
 // FILE-009: a Storage row (StorageUsageView: the space the app's data takes, read-only).
 // SHOW-001: a Show row opens the cue list editor (ShowEditorView).
+// UIX-001: a "Guided first scene" row closes Settings and opens the tutorial (UIX-001-R8).
 import PhotosUI
 import SwiftUI
 import TextLayer
@@ -40,6 +41,8 @@ struct SettingsView: View {
     var addCurrentScene: () -> Void = {}
     /// FILE-010: the files Clear Caches must keep (absolute paths).
     var cacheFilesInUse: @MainActor () -> Set<String> = { () -> Set<String> in [] }
+    /// UIX-001: opens the guided first scene (nil hides the row, e.g. in previews).
+    var openGuide: (() -> Void)?
     /// SCN-010: Undo and Redo in the navigation bar (nil hides them, e.g. in previews).
     var history: SceneHistoryCoordinator?
     @Environment(\.dismiss) private var dismiss
@@ -193,6 +196,14 @@ struct SettingsView: View {
                             LabeledContent("Show", value: show.hasCues ? "\(show.list.cues.count) \(show.list.cues.count == 1 ? "cue" : "cues")" : "No cues")
                         }
                         .accessibilityIdentifier("showEditorLink")
+                    }
+                }
+                if let openGuide {   // UIX-001-R8
+                    Section {
+                        Button("Guided first scene", action: openGuide)
+                            .accessibilityIdentifier("guidedFirstSceneButton")
+                    } footer: {
+                        Text("A short guide to making a scene. Everything stays on this device.")
                     }
                 }
                 Section {
