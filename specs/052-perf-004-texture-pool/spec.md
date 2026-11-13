@@ -166,7 +166,7 @@ first; pictures idle longer than the age limit are evicted; a purge empties the 
 
 - **Picture description (key)**: what makes two pictures interchangeable.
 - **Pool entry**: a picture with its key, its size in bytes, its state (in use, waiting for GPU
-  completion, idle) and the frame it was returned at.
+  completion, idle) and the frame it was returned at. "Retired" means returned: waiting or idle.
 - **Completion signal**: tells whether the last GPU work that may use a returned picture has
   finished.
 - **Pool limits**: idle-byte cap and idle-age limit.
