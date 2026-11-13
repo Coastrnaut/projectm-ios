@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T22:14:37Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T22:17:59Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,23 +10,22 @@
 | State | Features |
 |---|---|
 | audited | 242 |
-| unit_passed | 1 |
-| integrated | 82 |
+| integrated | 83 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 19 | 1 | 66 | 1 |
-| P1 | 137 | 0 | 14 | 0 |
-| P2 | 77 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | integrated | skipped_existing |
+|---|---|---|---|
+| P0 | 19 | 67 | 1 |
+| P1 | 137 | 14 | 0 |
+| P2 | 77 | 2 | 0 |
+| P3 | 9 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 243 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
+- 242 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
 
 ## Integrated
 
@@ -110,6 +109,7 @@ The physical-device suite may **not** start:
 | SHD-009 | Expression mapping DSL | `d84b02f95a85` | `feature/shd-009` |
 | SHD-010 | Expression sandbox budgets | `e906db183292` | `feature/shd-010` |
 | SHD-011 | User-authored shader policy | `26de54ff2c0b` | `feature/shd-011` |
+| SHOW-001 | Manual cue list | `77cf6988ac8e` | `feature/show-001` |
 | SHOW-011 | Tap tempo | `11329d52e6dc` | `feature/show-011` |
 | SHOW-014 | Emergency blackout | `c3886d1cb0bb` | `feature/show-014` |
 | VIS-001 | Circular spectrum | `48285d49c422` | `feature/vis-001` |
@@ -724,10 +724,11 @@ None.
 - `swift test --package-path Packages/Compositor`: pass at `e19f0be39822` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-011/20261113T133733/swift-test_Compositor.log`)
 - `post-merge: check_compliance OK with the new code-execution rules over the whole repository; Compositor scheme on iPhone 17 sim incl. GeneratorGraphImportTests`: pass at `26de54ff2c0b` (log `.autonomous/logs/integration/shd-011/compositor-sim.log`)
 
-### SHOW-001 Manual cue list (unit_passed)
+### SHOW-001 Manual cue list (integrated)
 - `python3 scripts/check_compliance.py`: pass at `07c6e6d736f0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-001/20261113T171409/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `07c6e6d736f0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-001/20261113T171409/docs.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `07c6e6d736f0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-001/20261113T171409/swift-test_ShowControl.log`)
+- `post-merge: projectM-iOSTests 324 incl. ShowCoordinatorTests; ShowCueUITests 2 (five cues deterministic, editor), EmergencyBlackout 2, SceneAutosave, SessionRecovery 3 UI tests on iOS 27.2 sim; ShowControl 19 in the gate`: pass at `77cf6988ac8e` (log `.autonomous/logs/integration/show-001/app-tests.log`)
 
 ### SHOW-011 Tap tempo (integrated)
 - `python3 scripts/check_compliance.py`: pass at `725551081f5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-011/20261113T104510/compliance.log`)
