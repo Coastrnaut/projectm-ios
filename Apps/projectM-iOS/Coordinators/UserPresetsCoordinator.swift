@@ -16,6 +16,11 @@
 // library, which checks them against the index hash and stores a copy; the editor's text is
 // saved through the library's checked edit. Copies of locked packs wait for the unlock: the
 // entitlement reaches the library through `libraryUnlockChanged` (PRE-015-R7, R8).
+//
+// Roadmap PRE-014 (specs/012-pre-014-bulk-preset-export): Export writes one archive of the
+// selected exportable presets into a private temporary folder, words and announces the summary,
+// and hands the file to the share sheet; the folder is deleted when the share sheet closes and
+// at the next launch. Copies of full-library presets never leave (ADR-0008); nothing is logged.
 import Foundation
 import Observation
 import PresetLibrary
@@ -88,11 +93,31 @@ final class UserPresetsCoordinator: UserPresetGuarding {
     @ObservationIgnored private var provingTask: Task<Void, Never>?
     @ObservationIgnored private var loaded = false
 
+    /// What the Export sheet lists and says about the rest (PRE-014-R1, R2).
+    private(set) var exportPlan: UserPresetExportPlan = .empty
+    /// True while an archive is written (PRE-014-R18).
+    private(set) var isExporting = false
+    /// The written archive while the share sheet is open (PRE-014-R3, R4).
+    private(set) var exportFile: URL?
+    /// The last export's summary, shown at the top of the Export sheet (PRE-014-R5).
+    private(set) var exportSummary: String?
+    /// Why the last export failed (PRE-014-R6).
+    private(set) var exportError: String?
+    @ObservationIgnored private let exportDirectory: URL
+    @ObservationIgnored private let now: @MainActor () -> Date
+    @ObservationIgnored private let appVersion: String
+
     init(library: UserPresetLibrary, provingPeriod: Duration = PresetImportLimits.provingPeriod,
-         announce: @escaping @MainActor (String) -> Void = { UIAccessibility.post(notification: .announcement, argument: $0) }) {
+         announce: @escaping @MainActor (String) -> Void = { UIAccessibility.post(notification: .announcement, argument: $0) },
+         exportDirectory: URL = UserPresetsCoordinator.defaultExportDirectory,
+         now: @escaping @MainActor () -> Date = { Date() },
+         appVersion: String = UserPresetsCoordinator.bundleVersion(.main)) {
         self.library = library
         self.provingPeriod = provingPeriod
         self.announce = announce
+        self.exportDirectory = exportDirectory
+        self.now = now
+        self.appVersion = appVersion
     }
 
     /// The app's library in Application Support (R2).
@@ -117,6 +142,7 @@ final class UserPresetsCoordinator: UserPresetGuarding {
     /// Reads the saved record. A preset that was being tried or first shown when the app last
     /// ended is quarantined here (R17, R18), before any list or renderer can see it.
     func load() async {
+        if exportFile == nil { removeExportFiles() }   // PRE-014-R4: an earlier launch ended while sharing
         _ = await library.load()
         loaded = true
         let dropped = await library.takeEditNotices()
@@ -164,7 +190,7 @@ final class UserPresetsCoordinator: UserPresetGuarding {
             if (error as? CocoaError)?.code != .userCancelled { resultMessage = Self.pickerFailedText }
             return
         }
-        guard !isImporting else { return }
+        guard !isImporting, !isExporting else { return }
         isImporting = true
         if !loaded { await load() }
         let outcome = await library.importFile(at: url)
@@ -196,7 +222,7 @@ final class UserPresetsCoordinator: UserPresetGuarding {
     /// one that failed to load this session is refused; otherwise the outcome is announced and
     /// shown.
     func duplicate(_ preset: IndexedPreset) async {
-        guard preset.source != PresetLibrary.userSource, let presets, !isDuplicating else { return }
+        guard preset.source != PresetLibrary.userSource, let presets, !isDuplicating, !isExporting else { return }
         if presets.isLocked(preset) {
             presets.requestPurchase()   // R7: like choosing it to play
             return
@@ -255,6 +281,81 @@ final class UserPresetsCoordinator: UserPresetGuarding {
     func chooseHeld(_ preset: UserPreset) {
         presets?.requestPurchase()
     }
+
+    // MARK: - Export (PRE-014-R1-R6, R18)
+
+    nonisolated static let defaultExportDirectory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("PresetExport", isDirectory: true)
+
+    /// Export is offered unless the record is from a newer version or another change runs.
+    var canExport: Bool { unavailableMessage == nil && !isImporting && !isDuplicating && !isExporting }
+
+    /// "Not exported: …" for the Export sheet's footer, or nil.
+    var exportExclusionText: String? { UserPresetExportExclusion.sentence(exportPlan.excluded) }
+
+    /// Reads what can be exported now. Clears the last summary and error.
+    func prepareExport() async {
+        if !loaded { await load() }
+        exportPlan = await library.exportPlan()
+        exportSummary = nil
+        exportError = nil
+    }
+
+    /// Writes the archive of `ids` and returns its file for the share sheet, or nil (the error
+    /// is set and announced). An earlier archive is deleted first.
+    func export(ids: [String]) async -> URL? {
+        guard canExport else { return nil }
+        isExporting = true
+        defer { isExporting = false }
+        removeExportFiles()
+        exportSummary = nil
+        exportError = nil
+        let date = now()
+        let folder = exportDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let url = folder.appendingPathComponent(Self.exportFileName(for: date))
+        let result: Result<UserPresetExportSummary, UserPresetExportError>
+        if (try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)) == nil {
+            result = .failure(.writeFailed)
+        } else {
+            result = await library.export(ids: ids, appVersion: appVersion, exportedAt: date, to: url)
+        }
+        switch result {
+        case .success(let summary):
+            exportSummary = summary.message
+            exportFile = url
+            announce(summary.message)
+            #if DEBUG
+            copyForUITest(url)
+            #endif
+            return url
+        case .failure(let error):
+            removeExportFiles()
+            exportError = error.message
+            announce(error.message)
+            return nil
+        }
+    }
+
+    /// The share sheet closed, shared or not: the archive is deleted (PRE-014-R4).
+    func finishSharing() {
+        exportFile = nil
+        removeExportFiles()
+    }
+
+    private func removeExportFiles() {
+        if FileManager.default.fileExists(atPath: exportDirectory.path) { try? FileManager.default.removeItem(at: exportDirectory) }
+    }
+
+    #if DEBUG
+    /// UserPresetExportUITests: `-uitestExportPresetTo <host path>` receives a copy of the archive
+    /// (the simulator shares the Mac's file system). DEBUG builds only.
+    private func copyForUITest(_ url: URL) {
+        guard let path = UserDefaults.standard.string(forKey: "uitestExportPresetTo") else { return }
+        let target = URL(fileURLWithPath: path)
+        try? FileManager.default.removeItem(at: target)
+        try? FileManager.default.copyItem(at: url, to: target)
+    }
+    #endif
 
     // MARK: - UserPresetGuarding (R18, R19)
 
@@ -387,6 +488,31 @@ final class UserPresetsCoordinator: UserPresetGuarding {
 
     nonisolated static let duplicateRightsText =
         "projectM-iOS has not verified any rights beyond the pack's statement. You can edit this copy on this device."
+
+    nonisolated static func exportRowLabel(name: String, selected: Bool) -> String {
+        "\(name), \(selected ? "selected" : "not selected")"
+    }
+
+    nonisolated static func exportCountText(selected: Int, of total: Int) -> String {
+        "\(selected) of \(total) \(total == 1 ? "preset" : "presets") selected"
+    }
+
+    /// "projectM-iOS Presets 2026-11-12.zip": the local date, no device or user name.
+    nonisolated static func exportFileName(for date: Date, timeZone: TimeZone = .current) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.timeZone = timeZone
+        formatter.dateFormat = "yyyy-MM-dd"
+        return "projectM-iOS Presets \(formatter.string(from: date)).zip"
+    }
+
+    /// "1.1 (2)" from the bundle; informational only (spec Clarifications).
+    nonisolated static func bundleVersion(_ bundle: Bundle) -> String {
+        let short = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
+        let build = bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
+        return "\(short) (\(build))"
+    }
 
     nonisolated static func byteCountText(_ count: Int) -> String {
         "\(PresetImportLimits.grouped(count)) \(count == 1 ? "byte" : "bytes")"
