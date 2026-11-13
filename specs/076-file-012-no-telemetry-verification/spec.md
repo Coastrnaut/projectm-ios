@@ -31,6 +31,33 @@ manifest scan, `check_privacy_manifest.py`).
 Until now the only evidence was the source rule. Nothing checked the built binaries (which also carry
 vendored C/C++ that the source rule does not scan) or observed the running app.
 
+## Clarifications
+
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the conservative option.
+
+- Q: The roadmap says "local proxy test". What stands in for it on the simulator? → A: Two observers of
+  the app's process from the Mac: its internet sockets (sampled every 0.2 s) and the simulator's
+  Network-framework and URL-loading log events for that process (which record even short-lived
+  connections). Both are stricter than a proxy, which sees only proxy-aware HTTP(S). A proxy or the
+  system's App Privacy Report on D1 is the `{device}` task. Applied to FILE-012-R6, R10 and Assumptions.
+- Q: How is StoreKit handled in the session? → A: Stubbed (`-uitestUnlocked NO`, as every non-purchase
+  UI test), so the session makes no store request; purchase and restore traffic is made by iOS's store
+  service in another process, which is not application-initiated and not in the observed process. The
+  binary scan reports StoreKit linkage as allowed. Applied to FILE-012-R3 and US2.
+- Q: Does CI run the scan? → A: Yes, on the Debug generic-iOS app the macOS job already builds (a few
+  seconds of `nm`/`otool`). CI builds no Release app, so the Release simulator and device scans are run
+  on the Mac and recorded in the report. Applied to FILE-012-R5.
+- Q: What does the observer do with a network log event it cannot classify? → A: With expectation
+  `none` it fails on every event except launch bookkeeping (activity reports and settings reads, seen
+  with no networking at all); with OSC it passes only listener events and connections the log
+  describes as server-side (inbound), and fails on anything else. Applied to FILE-012-R6.
+- Q: Do the new UI tests run in the normal suite? → A: Yes; without the observer they only exercise the
+  flows and pass. The no-telemetry evidence comes only from runs wrapped by the observer. Applied to
+  FILE-012-R8.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - The shipped binaries cannot make network requests on their own (Priority: P1)
