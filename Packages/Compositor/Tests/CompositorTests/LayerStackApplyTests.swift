@@ -170,12 +170,6 @@ final class LayerStackApplyTests: XCTestCase {
             return existing
         }) { XCTAssertEqual($0 as? CompositorError, .duplicateLayer(index: 2)) }
 
-        // Settings CMP-001 cannot draw yet (CMP-003 lifts this).
-        var faded = stack
-        try faded.add(SolidFactory.solid(green), settings: LayerCompositeSettings(opacity: 0.5))
-        XCTAssertThrowsError(try apply(faded, compositor, factory)) {
-            XCTAssertEqual($0 as? CompositorError, .unsupportedCompositeSettings(index: 2))
-        }
 
         XCTAssertEqual(compositor.appliedStack, applied)
         XCTAssertEqual(compositor.layerCount, 2)

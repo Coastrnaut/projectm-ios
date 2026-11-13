@@ -40,17 +40,16 @@ final class TwoLayerCompositeTests: XCTestCase {
         assertAll(try rig.read(output), equal: .zero, "no layers")
     }
 
-    func testDuplicateLayerAndUnsupportedSettingsAreRejected() throws {
+    func testDuplicateLayersAreRejectedAndTransformsAccepted() throws {
         let rig = try GPURig()
         let layer = SolidLayer("blue", color: blue)
         XCTAssertThrowsError(try Compositor(device: rig.device, layers: [layer, layer])) {
             XCTAssertEqual($0 as? CompositorError, .duplicateLayer(index: 1))
         }
-        let faded = SolidLayer("faded", color: blue)
-        faded.settings = LayerCompositeSettings(opacity: 0.5)
-        XCTAssertThrowsError(try Compositor(device: rig.device, layers: [layer, faded])) {
-            XCTAssertEqual($0 as? CompositorError, .unsupportedCompositeSettings(index: 1))
-        }
+        // CMP-005: transforms are accepted (only blend modes other than normal will be refused, CMP-004).
+        let moved = SolidLayer("moved", color: blue)
+        moved.settings = LayerCompositeSettings(transform: try LayerTransform(uniformScale: 2))
+        XCTAssertNoThrow(try Compositor(device: rig.device, layers: [layer, moved]))
     }
 
     /// The acceptance's "without direct engine coupling": the test layers' source imports nothing but

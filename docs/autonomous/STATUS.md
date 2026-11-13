@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T17:38:18Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T17:59:23Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,24 +9,24 @@
 
 | State | Features |
 |---|---|
-| audited | 269 |
-| implementing | 2 |
-| integrated | 54 |
+| audited | 267 |
+| implementing | 1 |
+| integrated | 57 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
 | Priority | audited | implementing | integrated | skipped_existing |
 |---|---|---|---|---|
-| P0 | 43 | 2 | 41 | 1 |
+| P0 | 42 | 0 | 44 | 1 |
 | P1 | 139 | 0 | 12 | 0 |
-| P2 | 78 | 0 | 1 | 0 |
+| P2 | 77 | 1 | 1 | 0 |
 | P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 271 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
+- 268 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
 
 ## Integrated
 
@@ -65,8 +65,11 @@ The physical-device suite may **not** start:
 | CAM-012 | Camera privacy status | `a188b049fc60` | `feature/cam-012` |
 | CMP-001 | Unified layer protocol | `ba60b9d3485a` | `feature/cmp-001` |
 | CMP-002 | Ordered layer stack | `4c8340e68244` | `feature/cmp-002` |
+| CMP-003 | Opacity per layer | `65caf9e9e6ec` | `feature/cmp-003` |
+| CMP-005 | Transform controls | `dd604d0b1d51` | `feature/cmp-005` |
 | FX-001 | Bloom | `1192e0d6503e` | `feature/fx-001` |
 | FX-019 | Strobe safety envelope | `6cfcbaabc8d0` | `feature/fx-019` |
+| MED-001 | Import photo layer | `dd604d0b1d51` | `feature/med-001` |
 | MOD-001 | Typed parameter registry | `304f3bce431a` | `feature/mod-001` |
 | MOD-002 | Audio feature binding | `006678f3d7a5` | `feature/mod-002` |
 | MOD-003 | Linear mapping | `29cd3bbb1e12` | `feature/mod-003` |
@@ -312,6 +315,20 @@ None.
 - `swift test --package-path Packages/Compositor`: pass at `85425ca7d2ee` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-002/20261113T122331/swift-test_Compositor.log`)
 - `post-merge: Compositor xcodebuild test on iPhone 17 sim (CompositorTests 79 incl. red/blue reorder acceptance, ProceduralMaterials 31); projectM-iOSTests 184, CameraUITests 2, CameraPrivacyStatusUITests 1`: pass at `4c8340e68244` (log `.autonomous/logs/integration/cmp-002/compositor-sim.log`)
 
+### CMP-003 Opacity per layer (integrated)
+- `python3 scripts/check_compliance.py`: pass at `e105dc91fb50` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-003/20261113T124019/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `e105dc91fb50` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-003/20261113T124019/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `e105dc91fb50` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-003/20261113T124019/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `e105dc91fb50` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-003/20261113T124019/swift-test_Compositor.log`)
+- `post-merge: Compositor xcodebuild test on iPhone 17 sim (Compositor 95 incl. opacity GPU tests, GeneratorGraph 46 with 1 bench skipped, ProceduralMaterials 31); projectM-iOSTests 186; CameraUITests 2`: pass at `65caf9e9e6ec` (log `.autonomous/logs/integration/cmp-003/compositor-sim.log`)
+
+### CMP-005 Transform controls (integrated)
+- `python3 scripts/check_compliance.py`: pass at `95bb91a901f3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-005/20261113T125428/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `95bb91a901f3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-005/20261113T125428/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `95bb91a901f3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-005/20261113T125428/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `95bb91a901f3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-005/20261113T125428/swift-test_Compositor.log`)
+- `post-merge: Compositor xcodebuild test on iPhone 17 sim (Compositor 134 incl. transform save/reload acceptance and transformed GPU tests, GeneratorGraph 46 with 1 bench skipped, ProceduralMaterials 31)`: pass at `dd604d0b1d51` (log `.autonomous/logs/integration/cmp-005-med-001/compositor-sim.log`)
+
 ### FX-001 Bloom (integrated)
 - `python3 scripts/check_compliance.py`: pass at `94f4b3a6b7c3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-001/20261113T090348/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `94f4b3a6b7c3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-001/20261113T090348/docs.log`)
@@ -328,6 +345,13 @@ None.
 - `xcodebuild -scheme Rendering-Package -destination id=77E17861-E687-4274-8A84-14224F32BE3E CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `bc80d4775650` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-019/20261113T095545/sim-test_Rendering.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `bc80d4775650` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-019/20261113T095545/swift-test_VisualGenerators.log`)
 - `integration checkout: VisualGenerators 81 on iOS 27.2 sim, 63 with -DVISUAL_NO_METAL; FlashSafety 20; app: projectM-iOSTests 133, UI 11 (NativeVisual, Visualizer); 211 s wall; 0 PosterBoard reports`: pass at `6cfcbaa` (log `.autonomous/logs/integration/fx-019/app-tests.log`)
+
+### MED-001 Import photo layer (integrated)
+- `python3 scripts/check_compliance.py`: pass at `ad09298aa714` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-001/20261113T125543/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `ad09298aa714` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-001/20261113T125543/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `ad09298aa714` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-001/20261113T125543/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `ad09298aa714` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-001/20261113T125543/swift-test_Compositor.log`)
+- `post-merge: projectM-iOSTests 193 incl. PhotoStoreTests; PhotoLayerUITests 20.2 s (renders after relaunch, Remove Photo); CameraUITests 2, SettingsUITests 4; Compositor ImageLayer tests on iPhone 17 sim`: pass at `dd604d0b1d51` (log `.autonomous/logs/integration/cmp-005-med-001/app-tests.log`)
 
 ### MOD-001 Typed parameter registry (integrated)
 - `python3 scripts/check_compliance.py`: pass at `c62c162f633a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-001/20261113T104902/compliance.log`)

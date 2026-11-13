@@ -18,6 +18,9 @@
 // * Camera (CAM-001-R1, R11): `visual` may be `.camera` for the session only. It is never written,
 //   so the key keeps the visual chosen before it, and a stored `camera` (never written by the app)
 //   reads as projectM: the camera starts only from the user's choice in the running session.
+// * Photo (MED-001-R8): `visual` may be `photo`, stored like the spectra (no sensor is involved).
+//   The chosen photo's identifier is `settings.photo.id` (PhotoStore.idKey; absent = no photo); the
+//   copy itself lives in Application Support/Photos.
 // * OSC receiver (OSC-001-R15): key `settings.osc.enabled` (Bool, absent → off, so a fresh install
 //   opens no listener) and `settings.osc.port` (Int, absent or outside 1024-65535 → 9000).
 // All keys are "user settings" in the FR-065 list of what may be stored (FR-123 adds the scope,
@@ -44,9 +47,11 @@ final class AppSettings {
     static let linearSpectrumSpacingKey = "settings.linearSpectrum.spacing"
     static let oscEnabledKey = "settings.osc.enabled"
     static let oscPortKey = "settings.osc.port"
+    /// MED-001: the stored photo's identifier (written by PhotoStore).
+    static let photoIDKey = PhotoStore.idKey
     static let allKeys = [performanceOverlayKey, reduceFlashingKey, presetScopeKey, visualKey, circularSpectrumBarsKey,
                           glowKey, glowIntensityKey, glowRadiusKey, glowThresholdKey,
-                          linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey]
+                          linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey]
     /// VIS-002-R4: the spacings offered for the linear spectrum.
     static let linearSpectrumSpacingChoices: [(title: String, value: Double)] = [("None", 0), ("Narrow", 0.2), ("Wide", 0.5)]
     static let defaultLinearSpectrumSpacing = 0.2
@@ -220,6 +225,8 @@ enum VisualChoice: String, CaseIterable, Sendable {
     case linearSpectrum
     /// The rear camera with the circular spectrum over it (CAM-001; session only).
     case camera
+    /// The imported photo with the circular spectrum over it (MED-001; persisted).
+    case photo
 
     var title: String {
         switch self {
@@ -227,15 +234,19 @@ enum VisualChoice: String, CaseIterable, Sendable {
         case .circularSpectrum: "Circular Spectrum"
         case .linearSpectrum: "Linear Spectrum"
         case .camera: "Camera"
+        case .photo: "Photo"
         }
     }
 
     /// Drawn by the native spectrum host instead of projectM.
     var isNative: Bool { self == .circularSpectrum || self == .linearSpectrum }
 
-    /// Shown instead of projectM (a native spectrum or the camera visual).
+    /// Shown instead of projectM (a native spectrum, the camera or the photo visual).
     var replacesProjectM: Bool { self != .projectM }
 
     /// The camera visual (CAM-001): uses the rear camera while shown.
     var usesCamera: Bool { self == .camera }
+
+    /// The photo visual (MED-001).
+    var usesPhoto: Bool { self == .photo }
 }

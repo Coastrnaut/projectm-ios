@@ -18,15 +18,22 @@ final class ContractTests: XCTestCase {
         XCTAssertNil(LayerPictureDescriptor(width: 64, height: -1))
     }
 
-    func testOnlyIdentityCompositeSettingsAreSupported() {
+    func testOnlyIdentityCompositeSettingsAreSupported() throws {
         XCTAssertTrue(LayerCompositeSettings().isSupportedByCMP001)
         XCTAssertEqual(LayerCompositeSettings().opacity, 1)
         XCTAssertEqual(LayerCompositeSettings().blendMode, .normal)
         XCTAssertEqual(LayerCompositeSettings().transform, .identity)
         XCTAssertFalse(LayerCompositeSettings(opacity: 0.5).isSupportedByCMP001)
-        XCTAssertFalse(LayerCompositeSettings(transform: LayerTransform(a: 2, b: 0, c: 0, d: 1, tx: 0, ty: 0)).isSupportedByCMP001)
+        let moved = try XCTUnwrap(try? LayerTransform(translation: LayerPoint(x: 0.25, y: 0)))
+        XCTAssertFalse(LayerCompositeSettings(transform: moved).isSupportedByCMP001)
+        let anchored = try XCTUnwrap(try? LayerTransform(anchor: LayerPoint(x: 0, y: 1)))
+        XCTAssertTrue(LayerCompositeSettings(transform: anchored).isSupportedByCMP001, "an identity with another anchor")
         XCTAssertEqual(LayerCompositeSettings(opacity: 3).opacity, 1, "opacity is clamped to 0…1")
         XCTAssertEqual(LayerCompositeSettings(opacity: .nan).opacity, 1, "non-finite opacity reads 1")
+        // CMP-003: the compositor draws any opacity; CMP-005: any transform; blend modes wait for CMP-004.
+        XCTAssertTrue(LayerCompositeSettings(opacity: 0).isSupportedByCompositor)
+        XCTAssertTrue(LayerCompositeSettings(opacity: 0.5).isSupportedByCompositor)
+        XCTAssertTrue(LayerCompositeSettings(transform: moved).isSupportedByCompositor)
     }
 
     func testOutcomes() {
