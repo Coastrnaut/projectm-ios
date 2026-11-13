@@ -13,6 +13,12 @@
 // Real-time safety (Constitution VII): after init nothing allocates, locks or logs. Every write is
 // a whole number of stereo frames and the capacity is even, so drop-oldest and the freshness skip
 // keep L/R alignment.
+//
+// Analysis tap (ANL-001-R9; research ANL-001-D7): an optional second SPSC ring, created only when
+// `init(analysisTapCapacityFrames:)` gets a positive capacity, receives a copy of every write. It
+// has its own consumer (the analysis worker), drop-oldest overflow and counter, and no freshness
+// rule, so reading it (or never reading it) leaves the main ring's reads unchanged. Without a tap
+// (the default) the ring behaves exactly as before. Nothing read from the tap goes to projectM.
 import Synchronization
 
 /// Reads normalized audio (Float32 interleaved stereo at 44.1 kHz). Consumed by the renderer.
@@ -38,12 +44,47 @@ public final class NormalizedPCMRing: NormalizedPCMReader, @unchecked Sendable {
     /// how long audio waited here; read by the latency signposts).
     private let lastBacklog = Atomic<Int>(0)
 
-    public init() {}
+    /// 0.5 s at 44.1 kHz: the analysis tap's capacity when a caller enables it with the default.
+    public static let analysisTapDefaultCapacityFrames = 22_050
+
+    private let tapRing: SPSCRingBuffer?
+    /// `tapRing.droppedSamples` at the last `reset()`.
+    private let tapOverflowBaseline = Atomic<Int>(0)
+    private let tapReader: AnalysisTapReader?
+
+    /// `analysisTapCapacityFrames` > 0 adds an analysis tap of that many stereo frames; 0 (the
+    /// default) or less means no tap.
+    public init(analysisTapCapacityFrames: Int = 0) {
+        if analysisTapCapacityFrames > 0 {
+            let tap = SPSCRingBuffer(capacity: analysisTapCapacityFrames * NormalizedPCMRing.channelCount)
+            tapRing = tap
+            tapReader = AnalysisTapReader(ring: tap)
+        } else {
+            tapRing = nil
+            tapReader = nil
+        }
+    }
 
     /// Producer side (the work queue). `samples` holds `frames` interleaved stereo frames.
     public func write(_ samples: UnsafePointer<Float>, frames: Int) {
         guard frames > 0 else { return }
         ring.write(samples, count: frames * NormalizedPCMRing.channelCount)
+        tapRing?.write(samples, count: frames * NormalizedPCMRing.channelCount)
+    }
+
+    /// Reads the analysis tap (no freshness rule); nil when the ring has no tap. One consumer only:
+    /// the analysis worker.
+    public var analysisTap: (any NormalizedPCMReader)? { tapReader }
+
+    /// Frames buffered in the analysis tap (0 without a tap).
+    public var analysisTapAvailableFrames: Int {
+        (tapRing?.availableToRead ?? 0) / NormalizedPCMRing.channelCount
+    }
+
+    /// Frames the analysis tap dropped (drop-oldest) since the last `reset()` (0 without a tap).
+    public var analysisTapDroppedFrames: Int {
+        guard let tapRing else { return 0 }
+        return (tapRing.droppedSamples - tapOverflowBaseline.load(ordering: .relaxed)) / NormalizedPCMRing.channelCount
     }
 
     /// Consumer side (the render loop): applies the freshness rule, then reads.
@@ -83,13 +124,31 @@ public final class NormalizedPCMRing: NormalizedPCMReader, @unchecked Sendable {
     /// is not a new session. Safe while the reader runs.
     public func discardBuffered() {
         ring.drain()
+        tapRing?.drain()
     }
 
     /// Empties the ring and restarts the counters (new session). Safe while the reader runs.
     public func reset() {
         ring.drain()
         overflowBaseline.store(ring.droppedSamples, ordering: .relaxed)
+        if let tapRing {
+            tapRing.drain()
+            tapOverflowBaseline.store(tapRing.droppedSamples, ordering: .relaxed)
+        }
         freshnessDropped.store(0, ordering: .relaxed)
         lastBacklog.store(0, ordering: .relaxed)
+    }
+}
+
+/// The consumer side of a `NormalizedPCMRing`'s analysis tap (ANL-001-R9): reads every buffered
+/// stereo frame in order, without the main ring's freshness rule. Real-time safe like the ring.
+final class AnalysisTapReader: NormalizedPCMReader, @unchecked Sendable {
+    private let ring: SPSCRingBuffer
+
+    init(ring: SPSCRingBuffer) { self.ring = ring }
+
+    func read(into dst: UnsafeMutablePointer<Float>, maxFrames: Int) -> Int {
+        guard maxFrames > 0 else { return 0 }
+        return ring.read(into: dst, maxCount: maxFrames * NormalizedPCMRing.channelCount) / NormalizedPCMRing.channelCount
     }
 }
