@@ -26,7 +26,7 @@
 - **Decision**: in DEBUG (or automation) builds, a launch with `XCTestConfigurationFilePath`,
   `PROJECTM_AUTORUN`, any `-uitest…` argument or `-autostart` never offers the tutorial by itself
   unless `-uitestGuidedFirstScene` is passed. `-uitestResetNotice` removes the key.
-- **Rationale**: the 48 existing UI suites launch with `-uitestResetNotice` and tap the notice; they
+- **Rationale**: the existing UI suites launch with `-uitestResetNotice` and tap the notice; they
   must not meet the tutorial (UIX-001-S5). The Settings row is never gated.
 
 ## UIX-001-D4 Play reuses existing paths

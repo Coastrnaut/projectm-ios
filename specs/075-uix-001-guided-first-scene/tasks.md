@@ -62,3 +62,11 @@ the owner's device and stay open until run.
 ## Dependencies
 
 T01 → T02 → T03; T02 → T04 → T05 → T06-T10; T11-T13 after T10; T14 owner.
+
+## Analysis (speckit-analyze, 2026-11-13)
+
+Every requirement maps to a task: R1 T01/T02/T04, R2-R4 T01/T05, R5 T04/T07, R6 T02/T08, R7 T02/T03,
+R8 T09, R9-R10 T04/T07, R11-R12 T05/T10, R13 T01/T03, R14 T12; every success criterion to a test
+(S1/S2/S6 T07, S3 T08, S4 T10, S5 T11). No constitution conflict, no ADR needed (no default
+overridden). Fixed: research D3 no longer states a suite count it did not measure; the S1 tap count
+starts after the notice (the notice's own tap is FR-071's, not the tutorial's).
