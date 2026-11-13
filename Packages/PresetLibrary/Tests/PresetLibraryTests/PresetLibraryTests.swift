@@ -18,6 +18,21 @@ final class PresetLibraryTests: XCTestCase {
         }
     }
 
+    /// ACC-002-T09 (R13): the optional "flash" field decodes; records without it are not flagged,
+    /// and the index version stays 1.
+    func testFlashFieldIsOptionalAndAdditive() throws {
+        var records = Fixtures.records
+        records[0]["flash"] = ["toggle-driven", "luma-flicker"]
+        let library = try Fixtures.library(records: records)
+        let flagged = try XCTUnwrap(library.preset(id: "frontend-uwp/b.milk"))
+        XCTAssertEqual(flagged.flash, ["toggle-driven", "luma-flicker"])
+        XCTAssertTrue(flagged.mayFlash)
+        XCTAssertEqual(library.presets.filter(\.mayFlash).count, 1)
+        XCTAssertFalse(try Fixtures.library().presets.contains(where: \.mayFlash), "an index without the field flags nothing")
+        XCTAssertFalse(IndexedPreset(id: "u", name: "n", author: "a", source: "user", folder: [], path: "p", hash: "h", flash: []).mayFlash)
+        XCTAssertNil(IndexedPreset(id: "u", name: "n", author: "a", source: "user", folder: [], path: "p", hash: "h", flash: []).flash)
+    }
+
     func testHomeOrderAndCounts() throws {
         let library = try Fixtures.library()
         XCTAssertEqual(library.home.map(\.title), ["Included", "Cream of the Crop", "projectM Classic", "Milkdrop Original", "En D", "All presets A-Z"])

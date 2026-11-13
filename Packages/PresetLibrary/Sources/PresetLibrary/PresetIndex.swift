@@ -15,12 +15,22 @@ public struct IndexedPreset: Sendable, Hashable, Identifiable, Codable {
     /// Included: bundle-relative file path. Packs: the archive key (equal to `id`).
     public let path: String
     public let hash: String
+    /// ACC-002: the flash risk rules that flag this preset's text (PresetFlashRisk, research
+    /// ACC-002-D2), written by the index build or, for user presets, by the in-app screen. Absent
+    /// (nil) means not flagged; older indexes have no such field (ACC-002-R13).
+    public let flash: [String]?
 
     public var isIncluded: Bool { source == PresetLibrary.includedSource }
 
-    public init(id: String, name: String, author: String, source: String, folder: [String], path: String, hash: String) {
+    /// ACC-002: the screen flagged this preset; with Reduce flashing on the app skips it when
+    /// stepping and warns before loading it.
+    public var mayFlash: Bool { !(flash ?? []).isEmpty }
+
+    public init(id: String, name: String, author: String, source: String, folder: [String], path: String, hash: String,
+                flash: [String]? = nil) {
         self.id = id; self.name = name; self.author = author; self.source = source
         self.folder = folder; self.path = path; self.hash = hash
+        self.flash = flash.flatMap { $0.isEmpty ? nil : $0 }
     }
 }
 

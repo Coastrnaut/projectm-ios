@@ -219,9 +219,12 @@ public struct UserPreset: Codable, Sendable, Hashable, Identifiable {
     public var fileName: String { sha256 + ".milk" }
 
     /// The library entry of a playable preset.
-    public var indexed: IndexedPreset {
+    public var indexed: IndexedPreset { indexed(flash: nil) }
+
+    /// The library entry with the flash risk rules the in-app screen found (ACC-002-R4).
+    public func indexed(flash: [String]?) -> IndexedPreset {
         IndexedPreset(id: id, name: name, author: author.isEmpty ? "Unknown author" : author, source: PresetLibrary.userSource,
-                      folder: [], path: fileName, hash: blobHash)
+                      folder: [], path: fileName, hash: blobHash, flash: flash)
     }
 
     /// What the record must satisfy to be read back (UserPresetsFile).

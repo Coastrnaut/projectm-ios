@@ -42,8 +42,8 @@ MIN_TIME_RATE = 18.0
 MIN_FRAME_RATE = 0.3
 DAMPING = 0.1
 
-_NUM = r"(?:\d+\.?\d*|\.\d+)"
-_LINE = re.compile(r"^per_frame_(\d+)\s*=(.*)$")
+_NUM = r"(?:[0-9]+\.?[0-9]*|\.[0-9]+)"   # ASCII digits only, like the Swift twin
+_LINE = re.compile(r"^per_frame_([0-9]+)\s*=(.*)$")
 _IDENT = re.compile(r"[a-z_][a-z0-9_]*")
 _ASSIGN = re.compile(r"(?<![a-z0-9_])([a-z_][a-z0-9_]*)\s*[-+*/%]?=(?!=)")
 _CONSTANT = re.compile(r"^([a-z_][a-z0-9_]*)\s*=\s*-?" + _NUM + r"$")
