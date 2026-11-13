@@ -48,6 +48,7 @@ Non-finite values are rejected by the same checks.
 | State | Initial / after reset | Update per accepted contiguous frame |
 |---|---|---|
 | previous normalized bands | all 0 (silence) | current normalized bands |
+| previous frame (index, hop, size) | none: the first frame is contiguous by definition and is compared with silence | this frame's |
 | needsBaseline | false | set true by a gap, size change, or ignored frame |
 | history (≤ 128 flux values) | empty | append flux (oldest dropped) |
 | armed | true | false if flux > threshold, true otherwise |

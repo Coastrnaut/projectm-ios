@@ -34,6 +34,7 @@ public struct OnsetDetectorConfiguration: Sendable, Hashable {
     public static let defaultThresholdWindowSeconds: Double = 0.1
     public static let defaultMinimumInterOnsetSeconds: Double = 0.05
     public static let maximumHistoryFrames = 128
+    public static let standard: OnsetDetectorConfiguration   // the defaults, 44,100 Hz (non-throwing)
     public init(sampleRate: Double = 44_100, bandCount: BandCount = .b64,
                 floorDecibels: Float = defaultFloorDecibels, thresholdOffset: Float = defaultThresholdOffset,
                 thresholdMultiplier: Float = defaultThresholdMultiplier,
@@ -50,7 +51,7 @@ public struct OnsetEvent: Sendable, Hashable {
 public final class SpectralFluxOnsetDetector {          // not Sendable: confined to one worker
     public let configuration: OnsetDetectorConfiguration
     public let resolvedBackend: SpectrumBackend
-    public init(configuration: OnsetDetectorConfiguration = try! .init(), backend: SpectrumBackend = .automatic)
+    public init(configuration: OnsetDetectorConfiguration = .standard, backend: SpectrumBackend = .automatic)
     public static func recommendedLeadIn() -> SpectrumLeadIn   // .silence
     public func process(_ frame: SpectrumFrame, magnitudes: UnsafeBufferPointer<Float>) -> OnsetEvent?
     public func process(_ frame: SpectrumFrame, magnitudes: [Float]) -> OnsetEvent?   // convenience, no allocation
@@ -63,8 +64,9 @@ public final class SpectralFluxOnsetDetector {          // not Sendable: confine
 }
 ```
 
-The configuration's throwing default initializer cannot fail for the defaults; `init()` of the
-detector uses them.
+`OnsetDetectorConfiguration.standard` holds the defaults without a throwing call; `init()` of the
+detector uses it. The detector builds a `BandReducer` for the configuration's sample rate, which
+cannot fail because the configuration already enforces ANL-002's minimum rate.
 
 ## Guarantees
 

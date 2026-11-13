@@ -27,7 +27,7 @@ Paths below are under `Packages/AnalysisFeatures/` unless they start with `specs
 - [ ] ANL-004-T05 [P] Write `Tests/AnalysisFeaturesTests/OnsetDetectorTests.swift` on synthetic spectra (for every backend): an all-zero frame gives nil and `lastFlux` bit pattern 0; a flat broadband spectrum after zeros gives one event with `sampleIndex == index + size − hop`, `frameIndex == index`, strength == `lastFlux` in (threshold, 1], `threshold == 0.06` (empty history), sequence 1; repeating the same spectrum gives flux 0 and no event; zeros then the spectrum again fires again only after a frame at or below the threshold (re-arm) and after the minimum interval (a second rise 0.03 s later is suppressed, 0.06 s later fires); a decreasing spectrum gives flux 0; sequence numbers continue across `reset()` (1, 2 → reset → 3) while reset restores the silence reference; an index gap and a size change each make that frame a baseline (nil, `lastFlux == 0`) and the next contiguous frame is processed normally; a wrong sample rate or magnitude count is ignored (`ignoredFrames` +1, nil) and the next frame is a baseline; NaN/∞/negative magnitudes give a finite flux in 0…1; a full-scale broadband rise gives `lastFlux ≤ 1`; the array convenience equals the pointer API; `processedFrames` counts accepted frames (ANL-004-R1 to R6, R9 to R12).
 - [ ] ANL-004-T06 Record the red run of T02-T05 (compile failure on missing `SpectrumLeadIn`, `SpectrumFrame.hop`, `OnsetDetectorConfiguration`, `OnsetEvent`, `SpectralFluxOnsetDetector`) in `.build/scratch/anl004-red-T02-T05.log`.
 - [ ] ANL-004-T07 Implement the stream deltas in `Sources/AnalysisFeatures/SpectrumStream.swift`: `SpectrumFrame.hop` (init parameter `hop: Int? = nil` → size/2), `SpectrumLeadIn` (`.none`, `.silence`), `SpectrumStream.init(…, leadIn:)` and `leadIn` property; with `.silence` the FIFO holds `size − hop` zeros and `nextIndex = −(size − hop)` at init and after `reset()`; `nextFrame()` fills `hop`. Evidence: T02 passes; every existing ANL-001/ANL-002 test passes unchanged.
-- [ ] ANL-004-T08 Implement `Sources/AnalysisFeatures/OnsetDetectorConfiguration.swift` (`OnsetDetectorConfigurationError`, `OnsetDetectorConfiguration` with the data-model ranges, `historyFrames(hop:)`, `minimumInterOnsetSamples`; `OnsetEvent`). Evidence: T03 passes.
+- [ ] ANL-004-T08 Implement `Sources/AnalysisFeatures/OnsetDetectorConfiguration.swift` (`OnsetDetectorConfigurationError`, `OnsetDetectorConfiguration` with the data-model ranges and a non-throwing `standard` value, `historyFrames(hop:)`, `minimumInterOnsetSamples`; `OnsetEvent`). Evidence: T03 passes.
 - [ ] ANL-004-T09 Implement `Sources/AnalysisFeatures/SpectralFluxOnsetDetector.swift` per data-model.md state transitions and research ANL-004-D1, D2, D5, D6 (BandReducer of the configured rate; preallocated band, previous, current and 128-value history buffers; scalar `BandMath.normalizedDecibels`; `vDSP_vsub`/`vDSP_vthres`/`vDSP_sve` or ordered loops; threshold from the ordered history mean; arm and IOI rule; event fields). Evidence: T05 passes for both backends and with `-DANALYSIS_NO_ACCELERATE`.
 
 ## Phase 3: User Story 1 - every click of a pulse train becomes one onset at the right time (P1)
@@ -42,7 +42,7 @@ Paths below are under `Packages/AnalysisFeatures/` unless they start with `specs
 
 **Goal**: "no false silence events". **Independent test**: `OnsetAcceptanceTests.testSilenceAndBelowFloorNoiseNeverProduceOnsets`.
 
-- [ ] ANL-004-T13 [US2] In `OnsetAcceptanceTests.swift`: the `silence` fixture and seeded noise at peaks 1e-4 and 1e-3 (−80 and −60 dBFS; every band below −70 dBFS) at 5 sizes × hops N/2, N/4, N/8 × both rates: 0 events and every frame's `lastFlux` bit pattern 0 (ANL-004-R3, S2); one pulse followed by 1 s of silence: exactly 1 event (ending a sound is not an onset).
+- [ ] ANL-004-T13 [US2] In `OnsetAcceptanceTests.swift`: the `silence` fixture and seeded noise at peaks 1e-4 and 3e-4 (−80 and −70 dBFS; every band about 10 dB or more below the −70 dBFS floor) at 5 sizes × hops N/2, N/4, N/8 × both rates: 0 events and every frame's `lastFlux` bit pattern 0 (ANL-004-R3, S2); noise at 1e-2 peak (−40 dBFS, partly above the floor in the top bands): 0 events after the start (≤ 1 event, at the start); one pulse followed by 1 s of silence: exactly 1 event (ending a sound is not an onset).
 - [ ] ANL-004-T14 [US2] Make T13 pass (no production change expected). Evidence: host, both builds.
 
 ## Phase 5: User Story 3 - steady and gliding tones are not onsets (P1)
@@ -89,3 +89,27 @@ Paths below are under `Packages/AnalysisFeatures/` unless they start with `specs
 
 MVP = Phases 1–4 (the roadmap acceptance: pulses within one hop, silence silent). Then sines and
 sweeps, determinism and backend agreement, the consumer contract, the bench and the gates.
+
+## Analysis (speckit-analyze, 2026-11-13)
+
+Consistency pass over spec.md, plan.md, tasks.md, research.md, data-model.md and the contract.
+Coverage: every requirement maps to at least one task (R1–R6, R9–R12: T05, T09; R7, R8: T02, T07;
+R13: T03, T08; R14: T19; R15: T17; R16: T23; R17: T10; S1: T10; S2: T13; S3: T15; S4: T11; S5:
+T17; S6: T19, T21; S7: T02, T24). Constitution: VII (allocation-free `process`, optional return)
+and VIII (ADR-0008 decision 5's measured need; nothing into projectM, package not linked by the
+app) hold; no CRITICAL finding. Licensing: no third-party code or dependency; the cited papers
+(research ANL-004-D1) are references for public formulas only (IX). Privacy: nothing stored, sent
+or recorded. Cross-feature: the ANL-001 deltas are additive with defaults (existing frame
+comparisons are stream-to-stream, so the new `hop` field changes no existing assertion); ANL-002
+is consumed unchanged; AudioCore and the AUD-016 catalog unchanged; VIS-001 (in progress in
+another worktree) only reads AnalysisFeatures, and frames built with the old initializer still
+compile. Fixes applied:
+
+- F1 (MEDIUM, underspecified): data-model.md did not say how the first frame after creation or
+  reset is treated by the gap check; added "previous frame: none, the first frame is contiguous
+  and compared with silence" (matches spec Edge Cases and R11).
+- F2 (LOW, real-time/style): the contract's default argument used `try!`; replaced by a
+  non-throwing `OnsetDetectorConfiguration.standard` (T08 updated).
+- F3 (HIGH, test validity): T13 required an exactly-zero flux for noise at −60 dBFS peak, whose top
+  bands sit only ~12 dB below the floor in expectation and can cross it; the exact-zero check now
+  uses −80 and −70 dBFS peaks, and −40 dBFS noise checks only "no event after the start".
