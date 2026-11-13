@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (SHD-001-T01-T18 verified on the Mac: host, Linux shape and iOS 27.2 simulator; device task T19 `{device}` open)
 
 **Input**: User description: "Implement SHD-001 (Procedural material catalog) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Expose curated parameterized
