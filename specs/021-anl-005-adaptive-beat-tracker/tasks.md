@@ -38,7 +38,7 @@ device; none is tagged `{device}` (spec Assumptions: device measurements not nee
 ## Phase 5: User Story 3 — tempo changes and gaps (P1)
 
 - [ ] ANL-005-T10 [US3] `BeatAcceptanceTests`: `pulse-120` loop followed by the `pulse-132` loop (44.1 kHz, 2048/512): converges to 120 before the change and to 132 within 6.0 s after it (ANL-005-S3); print `ANL-005 change`.
-- [ ] ANL-005-T11 [US3] `BeatAcceptanceTests`: `pulse-120` loop, 6 s of silence, `pulse-132` loop (44.1 kHz, 2048/512): during the silence confidence never rises and the estimate is gone within 4.0 s of the last pulse with no beat events after that; the new tempo converges within 4.0 s of its start (ANL-005-S3); print `ANL-005 gap`.
+- [ ] ANL-005-T11 [US3] `BeatAcceptanceTests`: `pulse-120` loop, 6 s of silence, `pulse-132` loop (44.1 kHz, 2048/512): during the silence confidence never rises and the estimate is gone within 4.0 s of the last onset event (≤ 4.0 s + one hop of the last pulse) with no beat events after that; the new tempo converges within 4.0 s of its start (ANL-005-S3); print `ANL-005 gap`.
 
 ## Phase 6: User Story 4 — noise and silence never claim a tempo (P1)
 

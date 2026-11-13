@@ -37,8 +37,10 @@ public final class AdaptiveBeatTracker {
    the estimate's last matched onset is `timeout` or more before `p` the estimate and history are
    dropped (no beat); if there is no estimate and the newest onset is `timeout` before `p` the
    history is dropped. Then, if an estimate exists and a previous position `p0` exists, the latest
-   grid beat `b` with `p0 ≤ b < p` is reported, unless it is closer than half a period to the last
-   reported beat (`suppressedBeats`); other beats in `[p0, p)` count as `skippedBeats`.
+   grid beat `b` with `p0 − τ ≤ b < p` is reported, unless it is closer than half a period to the last
+   reported beat (`suppressedBeats`); other beats in `[p0, p)` count as `skippedBeats`. The τ allowance
+   catches a beat that a re-fit on this frame's onset moved from just after `p0` to just before it
+   (implementation finding 2026-11-13: `pulse-132` at 48 kHz lost one beat without it).
 3. `process(frame, onset)`: `add(onset)` if present, then `advance(to: frame.index + frame.size)`.
 4. Determinism: bit-identical outputs for identical inputs and configuration; the accelerated and
    portable backends are bit-identical (ANL-005-R12).

@@ -54,6 +54,12 @@ the Swift tests then measure the real pipeline (results in tasks.md and the fina
   span, no neutral half-beats and support full at 8 beats bring the maximum to 0.40 (rate 2/s),
   0.26 (1/s), 0.38 (4/s), 0.36 (8/s), 0.34 (16/s), while every pulse run reaches 1.0 within 3 s
   of the start. Off-beat onsets in real music therefore lower confidence; ANL-006 may refine.
+- **Implementation finding (2026-11-13)**: in Swift, random onsets at 1/s (seed 11) fitted a
+  89 BPM grid with 6 of 6 onsets (precision 1, coverage 0.86) and reached 0.57 with support
+  (m − 2)/6. Six onsets cannot rule out a lucky fit (the grid has two free parameters and is
+  searched over 561 tempi), so support became clamp((m − 4)/4, 0, 1): still 1 at 8 matched beats,
+  but 0.5 at 6. That case now peaks at 0.43; pulse trains converge 0.5 s later (3.5 s at 120 BPM,
+  3.2 s at 132), inside the 4.0 s limit.
 - **Alternatives**: histogram peak-to-mean ratio — depends on the onset count and window;
   residual RMS — penalises large hops on clean pulses.
 
