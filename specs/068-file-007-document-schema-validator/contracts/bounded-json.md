@@ -22,7 +22,9 @@
 | `UserPresetsFile.schema` (`org.projectmios.user-presets-file`) | PresetLibrary | 4 MiB / 8 / 16,384 / 32 / 4,096 | 0…2 |
 | `PresetCollectionsFile.schema` (`org.projectmios.preset-collections`) | PresetLibrary | 16 MiB / 8 / 16,384 / 32 / 16,384 | 0…1 |
 
-All refuse duplicate keys and require an object root.
+All refuse duplicate keys. The two archive manifests require an object root; the two local files
+accept any top-level value, because a version-0 document (an older format with no version field) has
+no fixed shape and only a migration step reads it.
 
 ## C3 Archive manifests
 
