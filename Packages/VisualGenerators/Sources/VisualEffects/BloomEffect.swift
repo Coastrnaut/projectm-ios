@@ -48,7 +48,15 @@ public final class BloomEffect: PostProcessEffect {
     public var parameters: BloomParameters {
         didSet {
             parameters = parameters.clamped()
-            updatePlan()
+            // The plan never reads the intensity: an intensity-only change (MOD-002 modulation, every
+            // frame) updates the uniforms without building a new plan and its weight array.
+            var sameExceptIntensity = oldValue
+            sameExceptIntensity.intensity = parameters.intensity
+            if sameExceptIntensity == parameters {
+                updateUniforms()
+            } else {
+                updatePlan()
+            }
         }
     }
 
@@ -56,6 +64,8 @@ public final class BloomEffect: PostProcessEffect {
     public private(set) var plan: BloomPlan?
     /// Counts working-texture creations (tests, diagnostics).
     public private(set) var resourceGeneration = 0
+    /// Counts plan builds (tests: MOD-002 keeps intensity-only changes from rebuilding the plan).
+    public private(set) var planBuildCount = 0
 
     private let prefilter: MTLComputePipelineState
     private let blurH: MTLComputePipelineState
@@ -122,12 +132,14 @@ public final class BloomEffect: PostProcessEffect {
         reducedB = b
         resourceGeneration += 1
         plan = BloomPlan(parameters: parameters, width: w, height: h)
+        planBuildCount += 1
         updateUniforms()
     }
 
     private func updatePlan() {
         guard let old = plan else { return }
         plan = BloomPlan(parameters: parameters, width: old.width, height: old.height)
+        planBuildCount += 1
         updateUniforms()
     }
 

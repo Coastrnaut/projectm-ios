@@ -98,6 +98,10 @@ struct VisualizerView: View {
                 VStack { HStack { UITestRoutePanel(); Spacer() }; Spacer() }
                     .padding(.top, 40)
             }
+            if UITestModulationPanel.isRequested {     // MOD-002: AudioFeatureBindingUITests
+                VStack { HStack { UITestModulationPanel(coordinator: coordinator); Spacer() }; Spacer() }
+                    .padding(.top, 70)
+            }
             #endif
             if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {
                 Text("\(coordinator.sourceStarts)")
@@ -138,7 +142,7 @@ struct VisualizerView: View {
             }
         }
         .sheet(isPresented: $coordinator.showSettings) {
-            SettingsView(settings: coordinator.settings,
+            SettingsView(settings: coordinator.settings, osc: coordinator.osc,
                          reduceFlashingAvailable: coordinator.renderer?.supportsReduceFlashing ?? true,
                          nativeVisualUnavailable: coordinator.nativeVisualUnavailable,
                          glowUnavailable: coordinator.glowUnavailable)

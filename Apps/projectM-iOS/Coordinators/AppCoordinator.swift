@@ -53,6 +53,10 @@ import Rendering
 import Metal
 import UIKit
 import VisualGenerators
+#if DEBUG
+import ParameterGraph
+import VisualParameters
+#endif
 
 @MainActor
 @Observable
@@ -110,6 +114,8 @@ final class AppCoordinator: VisualizationControlling {
     }
     /// Tap tempo and the tempo estimate (SHOW-011).
     let tempo: TempoCoordinator
+    /// The OSC receiver (OSC-001): off by default, listens only while enabled and active.
+    let osc: OSCReceiverCoordinator
 
     private let defaults: UserDefaults
     #if DEBUG
@@ -133,6 +139,7 @@ final class AppCoordinator: VisualizationControlling {
             try? FileManager.default.removeItem(at: UserPresetStore.defaultDirectory())         // PRE-012: and without imported presets
         }
         settings = AppSettings(defaults: defaults, systemReduceMotion: UIAccessibility.isReduceMotionEnabled)
+        osc = OSCReceiverCoordinator(settings: settings)
         screen = defaults.bool(forKey: Self.noticeKey) ? .chooser : .notice
         microphone = MicrophoneSource(backend: AVMicrophoneBackend())
         let inAppPlayback = InAppPlaybackSource(backend: AVInAppPlaybackBackend())
@@ -531,6 +538,9 @@ final class AppCoordinator: VisualizationControlling {
                                                    barCount: circularSpectrumBarCount, glow: settings.glowParameters,
                                                    forceGlowFailure: forceGlowFailure)
             host.reduceFlashing = settings.reduceFlashing
+            #if DEBUG
+            bindGlowToLevelIfRequested(host)   // MOD-002: AudioFeatureBindingUITests
+            #endif
             presentation.register(host)   // PERF-011: starts suspended while the app cannot present
             nativeVisual = host
         } catch {
@@ -650,6 +660,25 @@ final class AppCoordinator: VisualizationControlling {
         }
     }
 
+    #if DEBUG
+    // MARK: - Audio feature binding test path (MOD-002-R12; DEBUG only)
+
+    /// Launch argument of AudioFeatureBindingUITests: bind the mean band level to the glow intensity
+    /// (track-independent: the reference track leaves the lowest band below the floor).
+    static let bindGlowToLevelArgument = "-uitestBindGlowToLevel"
+
+    private func bindGlowToLevelIfRequested(_ host: NativeSpectrumHost) {
+        guard ProcessInfo.processInfo.arguments.contains(Self.bindGlowToLevelArgument) else { return }
+        try? host.bind(AudioFeatureBinding(source: .bandMean, target: VisualParameterIDs.bloomIntensity,
+                                           outputStart: 0, outputEnd: 1))
+    }
+
+    /// "bound, manual 0.50, effective 0.73", or a note when no native visual exists.
+    var glowModulationReadout: String { nativeVisual?.glowModulationReadout ?? "no native visual" }
+
+    func unbindGlowTest() { nativeVisual?.unbind(VisualParameterIDs.bloomIntensity) }
+    #endif
+
     /// The system Reduce Motion setting changed.
     func systemReduceMotionChanged(_ enabled: Bool) {
         settings.systemReduceMotion = enabled
@@ -717,6 +746,7 @@ final class AppCoordinator: VisualizationControlling {
     /// Scene activity drives the idle timer (FR-084); rendering follows the lifecycle events.
     func sceneBecame(active: Bool) {
         appIsActive = active
+        osc.sceneBecame(active: active)   // OSC-001-R3: no listener outside the foreground
         updateIdleTimer()
     }
 

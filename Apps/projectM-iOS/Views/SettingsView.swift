@@ -1,12 +1,15 @@
 // SettingsView.swift — Settings (task T103): the visual (VIS-001-R11, VIS-002-R11), its options and
 // glow (FX-001-R11),
-// the Camera visual (CAM-001-R1), the performance overlay (FR-048), Reduce flashing (FR-072) and the Licenses screen (FR-067).
+// the Camera visual (CAM-001-R1), the performance overlay (FR-048), Reduce flashing (FR-072), the OSC
+// receiver (OSC-001-R16) and the Licenses screen (FR-067).
 import SwiftUI
 import VisualEffects
 import VisualGenerators
 
 struct SettingsView: View {
     @Bindable var settings: AppSettings
+    /// OSC-001: the OSC receiver's toggle, port, status and test value.
+    var osc: OSCReceiverCoordinator
     /// False when the active renderer cannot limit flashing (FR-072, T116). Both current renderers
     /// can (T119); this keeps Settings honest for any renderer that cannot.
     var reduceFlashingAvailable = true
@@ -15,6 +18,9 @@ struct SettingsView: View {
     /// FX-001-R13: the glow could not be built on this device.
     var glowUnavailable = false
     @Environment(\.dismiss) private var dismiss
+    /// The port being typed; applied on submit or when the field loses focus (OSC-001-R2).
+    @State private var portText = ""
+    @FocusState private var portFieldFocused: Bool
 
     /// "50%", or "2.0%" with one decimal.
     static func percent(_ value: Double, decimals: Int = 0) -> String {
@@ -123,6 +129,7 @@ struct SettingsView: View {
                 } footer: {
                     Text("Shows the frame rate and the audio state over the visualization.")
                 }
+                oscSection
                 Section {
                     NavigationLink("Licenses") { LicensesView() }
                         .accessibilityIdentifier("licensesLink")
@@ -134,5 +141,61 @@ struct SettingsView: View {
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         }
         .accessibilityIdentifier("settings")
+    }
+
+    // MARK: OSC receiver (OSC-001-R16)
+
+    private var oscSection: some View {
+        Section {
+            Toggle("OSC receiver", isOn: Binding(get: { osc.isEnabled }, set: { osc.setEnabled($0) }))
+                .accessibilityIdentifier("oscReceiverToggle")
+            HStack {
+                Text("Port")
+                Spacer()
+                TextField("9000", text: $portText)
+                    .keyboardType(.numberPad)
+                    .multilineTextAlignment(.trailing)
+                    .monospacedDigit()
+                    .frame(maxWidth: 120)
+                    .focused($portFieldFocused)
+                    .onSubmit(submitPort)
+                    .accessibilityLabel("Port")
+                    .accessibilityIdentifier("oscPortField")
+            }
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") { portFieldFocused = false }
+                        .accessibilityIdentifier("oscPortDone")
+                }
+            }
+            if let error = osc.portError {
+                Text(error)
+                    .foregroundStyle(.red)
+                    .accessibilityIdentifier("oscPortError")
+            }
+            Text(osc.statusText)
+                .foregroundStyle(.secondary)
+                .accessibilityLabel("OSC status")
+                .accessibilityValue(osc.statusText)
+                .accessibilityIdentifier("oscStatus")
+            if osc.isEnabled {
+                LabeledContent("Test value", value: OSCReceiverCoordinator.testValueText(osc.testValue))
+                    .accessibilityIdentifier("oscTestValue")
+            }
+        } header: {
+            Text("OSC")
+        } footer: {
+            Text("Lets an OSC controller on your local network send /projectm/test with a number from 0 to 1 to check the connection. projectM only listens while this is on and the app is open, never connects to the internet, and keeps nothing it receives.")
+        }
+        .onAppear { portText = String(osc.port) }
+        .onChange(of: portFieldFocused) { _, focused in
+            if !focused { submitPort() }
+        }
+    }
+
+    private func submitPort() {
+        osc.submitPort(portText)
+        portText = String(osc.port)   // a refused entry returns to the stored port
     }
 }
