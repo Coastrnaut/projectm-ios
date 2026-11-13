@@ -169,7 +169,8 @@ Measuring runs in the background; leaving the screen or refreshing again stops t
 
 - **FILE-009-S1**: For the fixture tree (at least 200 small files, nested folders, a sparse file, an
   empty folder, a link to outside), content bytes equal the bytes written exactly, and space used per
-  file is at most its content bytes plus one 4 KiB block (a sparse file uses less than its length).
+  file is at most its content bytes plus one 4 KiB block (a sparse file uses less than its length
+  where the file system reports allocation; the Linux lane reports none and checks content bytes only).
 - **FILE-009-S2**: Category mapping: a file placed in each baseline folder (redirected to a temporary
   container) is counted in exactly its category and in no other; the total equals the sum.
 - **FILE-009-S3**: The link to outside is never listed; depth and entry limits stop the walk exactly at
