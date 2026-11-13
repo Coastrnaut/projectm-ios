@@ -124,6 +124,15 @@ Packages/VisualGenerators/Tests/VisualGeneratorsTests/{FlashSafetyLimiterTests,G
   60 Hz strobing; replaced by "off leaves non-strobing content at gain 1"),
   `FlashSafetyLimiterTests.testDisabledIsPassThrough` (still holds: 4 frames are within the cap).
 
+## Licensing and cross-feature notes
+
+- No third-party code or text is copied: WCAG, ITU-R BT.1702 and Ofcom are cited for their
+  thresholds only. No dependency is added (Constitution IX).
+- PERF-011: the projectM limiter is released on suspension (state lost, as before); the native
+  host's loop restart calls `FlashSafetyLimiter.reset()`, which keeps the envelope history.
+- ANL-005 (another agent) changes `Packages/AnalysisFeatures` only; this row does not touch it.
+- ACC-002, ACC-012, PERF-003 consume `FlashEnvelopeConfiguration` later (ADR-0011 decision 6).
+
 ## Persistence and rollback
 
 - Nothing is persisted. Rollback is a code revert of this branch's commits; no stored data or
