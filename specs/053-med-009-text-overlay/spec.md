@@ -37,7 +37,16 @@ The row's gap status is "Gap candidate". The audit confirms it.
 
 ## Clarifications
 
-*(Filled by /speckit-clarify.)*
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the conservative, local-first option.
+
+- Q: Where is the saved text kept: as one value in the app's settings, or as a file in the app's own storage folder? → A: One versioned value in the app's settings (key `settings.text.overlay`), like every other setting. It is small (at most 280 characters plus a few style fields), is removed by the UI-test reset with the other settings keys, and needs no folder or file name rules. A JSON file in Application Support was rejected: it adds a second store, file-name validation and a delete path for a few hundred bytes.
+- Q: Is the text drawn over the circular spectrum or under it, and what is behind both? → A: Over it: the text layer is the top of the stack (spectrum at index 0, text at index 1) so the message is never hidden by bars; the outline (on by default) keeps it readable over bright bars. Behind both is black, as for the native spectrum. Text over projectM or the photo/video visuals is later scene work (one overlay per stack for now).
+- Q: Which fonts does the curated list offer? → A: Four families that ship with iOS and need no licence or bundling: System (San Francisco), Avenir Next, Georgia (serif) and Menlo (monospaced), each with four weights (regular, medium, bold, heavy); a family without the exact weight uses its nearest face. Characters a family lacks use the system's fallback fonts (R7). User font files are out of scope (spec Assumptions).
+- Q: What does a new or reset text look like? → A: Empty message; System bold; 8 % of the picture height; white, fully opaque; centered horizontally, in the middle vertically; a black outline at 6 % of the size; no background box (box color black at 50 % when turned on).
+- Q: When a message mixes directions or has several paragraphs, which direction decides "leading"? → A: The first strong letter of the whole message (Unicode's rule for a paragraph, applied to the message as one unit); a message with no strong letter (digits, emoji only) is left to right. One direction for the whole message keeps every line aligned to the same side; each run is still ordered and shaped by the text engine within its line.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -161,13 +170,14 @@ message.
 ### Functional Requirements
 
 - **MED-009-R1**: Settings MUST offer a "Text" visual beside the existing visuals. It shows the
-  circular spectrum layer with the text layer over it, built as a layer stack (CMP-002-R1: index 0
-  bottom).
+  circular spectrum layer (index 0, over black) with the text layer over it (index 1), built as a
+  layer stack (CMP-002-R1: index 0 bottom).
 - **MED-009-R2**: While Text is chosen, Settings MUST offer an editor: the message (multi-line text
-  field), a font from a short curated list of fonts that ship with the system, a weight, a size, a
-  text color with opacity, an alignment (leading, center, trailing), a vertical position (top,
+  field), a font from a curated list of fonts that ship with the system (System, Avenir Next,
+  Georgia, Menlo), a weight (regular, medium, bold, heavy), a size, a text color with opacity, an alignment (leading, center, trailing), a vertical position (top,
   middle, bottom), an outline width and outline color, and an optional background box with its
-  color. Each change MUST be saved and shown at once.
+  color. Each change MUST be saved and shown at once. A new or reset text uses the defaults in the
+  Clarifications (System bold, 8 %, white, centered, middle, black outline at 6 %, no box).
 - **MED-009-R3**: The message MUST be limited to 280 user-perceived characters (extended grapheme
   clusters) and 8 lines. Longer input MUST be cut at the limit, never split inside a character (an
   emoji sequence or a letter with its combining marks stays whole).
@@ -178,8 +188,9 @@ message.
 - **MED-009-R5**: Size MUST be relative to the picture's height (the same message covers the same
   share of the picture on any screen or display): from 3 % to 25 % of the height per line, default
   8 %. Outline width MUST be relative to the size: 0 to 15 % of it, default 6 %.
-- **MED-009-R6**: Alignment MUST follow the message's own direction: the paragraph direction comes
-  from its first strong letter (right to left for Arabic, Hebrew and other right-to-left scripts);
+- **MED-009-R6**: Alignment MUST follow the message's own direction: the direction comes from the
+  first strong letter of the whole message (right to left for Arabic, Hebrew and other right-to-left
+  scripts; left to right when there is none);
   "leading" is the start side of that direction (right for right-to-left), "trailing" the end side.
 - **MED-009-R7**: The text MUST be drawn with the system's text engine, including its font fallback
   (emoji, CJK, Arabic shaping) and bidirectional ordering, inside a text area of the picture's width
@@ -193,7 +204,7 @@ message.
   frame the layer MUST NOT draw text, allocate, wait on a lock without bound or do I/O. CMP-003
   opacity and CMP-005 transforms apply to it like any layer.
 - **MED-009-R10**: The message and style MUST be stored as one versioned value in the app's settings
-  on the device. A value with an unknown version or one that cannot be read MUST NOT crash or be
+  on the device (one settings key). A value with an unknown version or one that cannot be read MUST NOT crash or be
   shown; an unreadable value is removed, a newer version is left untouched until the viewer edits.
 - **MED-009-R11**: The Text visual choice MUST persist across launches, like Photo and Video; after a
   relaunch the saved text MUST render identically at the same size (R8).
