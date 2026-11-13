@@ -40,10 +40,13 @@ struct PhotoStore: @unchecked Sendable {
         self.limits = limits
     }
 
+    /// The folder's name in Application Support (FILE-009 measures it).
+    static let folderName = "Photos"
+
     /// `Library/Application Support/Photos`.
     static func defaultDirectory() throws -> URL {
         try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-            .appendingPathComponent("Photos", isDirectory: true)
+            .appendingPathComponent(folderName, isDirectory: true)
     }
 
     /// The stored photo, or nil (clearing an invalid identifier or one whose file is gone).

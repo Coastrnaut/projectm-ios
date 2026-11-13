@@ -39,6 +39,7 @@ final class OSCReceiverUITests: XCTestCase {
 
     private func status() -> String {
         let element = app.staticTexts["oscStatus"]
+        app.reveal(element)   // below the fold as Settings grows (PERF-010 added a DEBUG section)
         return (element.value as? String) ?? element.label
     }
 

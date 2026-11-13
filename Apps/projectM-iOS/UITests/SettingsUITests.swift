@@ -149,7 +149,11 @@ final class SettingsUITests: XCTestCase {
             return frame.height > 0 && frame.minY >= top && frame.maxY <= screen.maxY
         }
         for _ in 0..<8 where !visible() {
-            let (from, to) = down ? (top, bottom) : (bottom, top)
+            // Down (towards the top of the list) uses a short drag from mid-screen: a long pull from
+            // near the top on a list already at its top dismisses the sheet instead of scrolling.
+            let midHigh = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.42))
+            let midLow = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.72))
+            let (from, to) = down ? (midHigh, midLow) : (bottom, top)
             from.press(forDuration: 0.05, thenDragTo: to, withVelocity: .default, thenHoldForDuration: 0.1)
         }
         return element.exists

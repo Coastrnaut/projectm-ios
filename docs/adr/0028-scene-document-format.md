@@ -92,3 +92,33 @@ Decided under the owner's standing approval (owner rule 4); specs/064-mod-013-mo
 - `liveState` returns the per-edge `modulationReport`; `SceneLiveState.apply(to:)` and
   `validatedGraph(registry:)` wire the modulator and the MOD-014 graph. Parameter values keep
   decision 7's orphan handling; migrating stored values is SCN-013's.
+
+## Amendment 2026-11-13 (SCN-002, scene autosave)
+
+Decided under the owner's standing approval (owner rule 4); specs/067-scn-002-scene-autosave
+(research SCN-002-D1 to D8, contracts/scene-autosave.md). No default is overridden; this records how
+the app uses the format.
+
+- **Current scene.** The app autosaves one document for the shown visual: the visual's fixed stack
+  (Circular, Linear, Photo, Video, Text; projectM has no compositor layer; Camera records the visual
+  chosen before it), the seven registered values the app holds (bar count, linear orientation and
+  spacing, glow on, intensity, radius, threshold), the `text`, `photo` and `video` assets, and the
+  native spectrum's live bindings. The visual choice itself stays a setting (decision 8).
+- **Files.** `Library/Application Support/Scenes/current.scene` and one backup, `current.scene.bak`.
+  A save writes `current.scene.tmp`, `F_FULLFSYNC`s it (`fsync` if refused), hard-links the known-good
+  main file as the backup, `rename`s the temporary file over the main file and `fsync`s the folder, so
+  a committed scene exists at every step. `Data.write(options: .atomic)` is not used (no flush promise).
+- **Load.** Main, then backup, through `decode` and `liveState` (decision 7, MOD-013); a damaged file is
+  an event, never an error or a blocked launch; a file of a newer version is set aside once as
+  `<name>.newer` and never written (decision 4's "never rewritten").
+- **Which wins.** A valid committed scene is applied over the settings at launch (MOD-001 restore,
+  then AppSettings' setters), so a kill never shows a mix of committed and uncommitted edits. Edits
+  commit 1 s after the last change (5 s at most), at once on a visual change, when Settings closes, on
+  background and on terminate.
+- **Unknown content (Consequences, first bullet).** The restored document is carried: its ID, name and
+  unknown fields, layers of kinds the app does not build at their index (renumbered on a collision,
+  dropped beyond 8 with an event), matched layers' instances and composites, their assets and assets
+  of unknown types, parameter values the app does not hold, bindings, expressions, the modulation
+  section and MOD-013's preserved edges.
+- **Later rows.** The scene library (SCN-004…006) stores named copies of this document; SCN-003
+  duplicates under a new ID; SCN-010 keeps its history over the same capture; SCN-015 locks edits.

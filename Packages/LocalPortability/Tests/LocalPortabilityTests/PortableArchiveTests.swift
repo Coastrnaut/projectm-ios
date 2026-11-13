@@ -84,7 +84,7 @@ final class PortableArchiveTests: XCTestCase {
         var out = Data()
         let writer = PortableArchiveWriter(modified: date) { out.append($0) }
         try writer.finish(manifest: Data("{not json".utf8))
-        assertRefused(out, .malformedManifest)
+        assertRefused(out, .manifestRejected(.unexpectedCharacter(offset: 1)))   // FILE-007-R6: typed, before decoding
 
         let badHash = try archive([("a", "1")]) { $0.files[0].sha256 = "ABC" }
         assertRefused(badHash, .invalidRecord("a"))   // FILE-002-R4: named, no longer generic
@@ -185,9 +185,75 @@ final class PortableArchiveTests: XCTestCase {
     func testErrorsHaveWords() {
         for error in [PortableArchiveError.missingManifest, .malformedManifest, .wrongFormat, .newerVersion(2), .unlistedFile("a"),
                       .missingFile("a"), .duplicateListing("a"), .lengthMismatch("a"), .checksumMismatch("a"), .unsafePath("a"),
-                      .invalidRecord("a"), .zip(.truncated)] {
+                      .invalidRecord("a"), .zip(.truncated), .manifestRejected(.byteOrderMark)] {
             XCTAssertFalse(error.message.isEmpty, "\(error)")
         }
         XCTAssertEqual(PortableArchiveError.zip(.truncated).message, StoredZipError.truncated.message)
+    }
+    // MARK: FILE-007-T05: the manifest's shape is checked before any decoding (R6, contract C3)
+
+    /// An archive with one listed file and `manifest` as the raw manifest bytes (valid CRC-32s).
+    private func archive(rawManifest manifest: [UInt8]) throws -> Data {
+        var out = Data()
+        let writer = PortableArchiveWriter(modified: date) { out.append($0) }
+        _ = try writer.add(path: "a.txt", data: Data("alpha".utf8))
+        try writer.finish(manifest: Data(manifest))
+        return out
+    }
+
+    private var schema: DocumentSchema {
+        DocumentSchema(name: format, oldestReadableVersion: 1, currentVersion: 1,
+                       limits: JSONLimits(maxBytes: 65_536, maxDepth: 4, maxStringBytes: 256, maxNumberBytes: 20, maxElements: 8))
+    }
+
+    private func assertRejected(_ manifest: [UInt8], _ expected: JSONShapeError, file: StaticString = #filePath, line: UInt = #line) throws {
+        let data = try archive(rawManifest: manifest)
+        XCTAssertThrowsError(try PortableArchive.read(data, schema: schema, limits: limits), file: file, line: line) { error in
+            XCTAssertEqual(error as? PortableArchiveError, .manifestRejected(expected), file: file, line: line)
+        }
+    }
+
+    func testHostileManifestsAreRejectedBeforeDecoding() throws {
+        let valid = try archive([("a.txt", "alpha")])
+        XCTAssertNoThrow(try PortableArchive.read(valid, schema: schema, limits: limits), "a valid archive still reads")
+
+        let deep = Array(String(repeating: "[", count: 5_000).utf8)
+        try assertRejected(deep, .notAnObject(offset: 0))
+        let deepInObject = Array(("{\"files\":" + String(repeating: "[", count: 5_000)).utf8)
+        try assertRejected(deepInObject, .nestingTooDeep(offset: 12, limit: 4))
+        // Two `files` lists: the platform decoder would keep one silently.
+        let duplicate = Array("{\"format\":\"\(format)\",\"formatVersion\":1,\"files\":[],\"files\":[]}".utf8)
+        try assertRejected(duplicate, .duplicateKey(offset: 72))
+        let longString = Array(("{\"note\":\"" + String(repeating: "x", count: 300) + "\"}").utf8)
+        try assertRejected(longString, .stringTooLong(offset: 265, limit: 256))
+        let manyElements = Array(("{\"files\":[" + Array(repeating: "0", count: 20).joined(separator: ",") + "]}").utf8)
+        try assertRejected(manyElements, .tooManyElements(offset: 26, limit: 8))
+        try assertRejected([0xEF, 0xBB, 0xBF] + Array("{}".utf8), .byteOrderMark)
+        try assertRejected(Array("{\"a\":\"\u{00E9}\"}".utf8).map { (b: UInt8) -> UInt8 in b == 0xA9 ? 0x28 : b }, .invalidUTF8(offset: 7))
+    }
+
+    func testManifestOverTheSchemaByteLimitIsRejected() throws {
+        let small = DocumentSchema(name: format, oldestReadableVersion: 1, currentVersion: 1,
+                                   limits: JSONLimits(maxBytes: 64, maxDepth: 4, maxStringBytes: 256, maxNumberBytes: 20, maxElements: 8))
+        let data = try archive([("a.txt", "alpha")])
+        XCTAssertThrowsError(try PortableArchive.read(data, schema: small, limits: limits)) { error in
+            guard case .manifestRejected(.tooLarge(_, 64))? = error as? PortableArchiveError else {
+                return XCTFail("expected tooLarge, got \(error)")
+            }
+        }
+    }
+
+    func testRejectionMessagesFollowTheFamily() {
+        XCTAssertEqual(PortableArchiveError.manifestRejected(.unexpectedEnd(offset: 1)).message, "The archive's manifest is not valid JSON.")
+        XCTAssertEqual(PortableArchiveError.manifestRejected(.nestingTooDeep(offset: 1, limit: 2)).message,
+                       "The archive's manifest is too large or too deeply nested to read.")
+        XCTAssertEqual(PortableArchiveError.manifestRejected(.duplicateKey(offset: 1)).message, "The archive's manifest lists the same field twice.")
+    }
+
+    func testNewerVersionIsStillRecognisedAfterTheShapeCheck() throws {
+        let data = try archive([("a.txt", "alpha")], version: 2)
+        XCTAssertThrowsError(try PortableArchive.read(data, schema: schema, limits: limits)) { error in
+            XCTAssertEqual(error as? PortableArchiveError, .newerVersion(2))
+        }
     }
 }

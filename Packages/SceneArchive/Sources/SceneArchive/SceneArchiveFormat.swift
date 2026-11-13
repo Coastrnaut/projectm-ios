@@ -12,6 +12,16 @@ public enum SceneArchiveFormat {
     public static let fileExtension = "pmscene"
     public static let typeIdentifier = "org.projectmios.scene-archive"
 
+    /// The manifest's versioned constraints (FILE-007-R5; contract C2 of
+    /// specs/068-file-007-document-schema-validator): version 1 only; depth 8 (the largest valid
+    /// manifest has 3), strings up to 4,096 bytes (paths are at most 255), numbers up to 32
+    /// characters, 256 elements per list or object (3 files at most), no duplicate keys. The byte
+    /// limit is the reader's `maxManifestBytes` (64 KiB standard).
+    public static let manifestSchema = DocumentSchema(
+        name: formatName, oldestReadableVersion: 1, currentVersion: currentVersion,
+        limits: JSONLimits(maxBytes: SceneArchiveLimits.standard.maxManifestBytes, maxDepth: 8, maxStringBytes: 4_096,
+                           maxNumberBytes: 32, maxElements: 256))
+
     /// Allowed extensions per asset type, in the order the writer prefers.
     public static func allowedExtensions(for type: SceneArchiveAssetType) -> [String] {
         switch type {

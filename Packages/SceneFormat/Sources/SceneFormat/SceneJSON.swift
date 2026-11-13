@@ -66,3 +66,16 @@ public enum SceneJSON: Sendable, Hashable {
     public var numberValue: SceneNumber? { if case let .number(n) = self { n } else { nil } }
     public var boolValue: Bool? { if case let .bool(b) = self { b } else { nil } }
 }
+
+extension SceneJSON {
+    /// SCN-002: reads one JSON value with the scene reader's bounds (at most
+    /// `SceneLimits.maximumBytes`, nesting at most `SceneLimits.maximumDepth`, duplicate keys refused).
+    /// The app uses it to embed a stored MED-009 text overlay as a scene text asset.
+    public static func parse(_ bytes: [UInt8]) throws(SceneDecodeError) -> SceneJSON {
+        guard !bytes.isEmpty else { throw .empty }
+        guard bytes.count <= SceneLimits.maximumBytes else {
+            throw .tooLarge(bytes: bytes.count, limit: SceneLimits.maximumBytes)
+        }
+        return try SceneJSONParser.parse(bytes, maximumDepth: SceneLimits.maximumDepth)
+    }
+}

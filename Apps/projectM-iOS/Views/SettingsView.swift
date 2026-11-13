@@ -10,6 +10,7 @@
 // MED-009: with Text chosen, a Text section edits the message (multi-line field), font, weight, size,
 // color, alignment, vertical position, outline, background box and Reset Text; every change is saved
 // and drawn at once. It is a standard List section, so Dynamic Type and VoiceOver apply.
+// FILE-009: a Storage row (StorageUsageView: the space the app's data takes, read-only).
 // SHOW-001: a Show row opens the cue list editor (ShowEditorView).
 import PhotosUI
 import SwiftUI
@@ -189,11 +190,22 @@ struct SettingsView: View {
                     }
                 }
                 Section {
+                    NavigationLink("Storage") { StorageUsageView() }   // FILE-009
+                        .accessibilityIdentifier("storageLink")
                     NavigationLink("Licenses") { LicensesView() }
                         .accessibilityIdentifier("licensesLink")
                     LabeledContent("Version",
                                    value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")
                 }
+                #if DEBUG
+                // PERF-010-T15 ({device}): a real crash for the recovery check on D1. Debug builds only.
+                Section {
+                    Button("Crash now (DEBUG)", role: .destructive) { fatalError("PERF-010 DEBUG crash button") }
+                        .accessibilityIdentifier("debugCrashButton")
+                } footer: {
+                    Text("Debug builds only: ends the app abnormally to test session recovery.")
+                }
+                #endif
             }
             .navigationTitle("Settings")
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }

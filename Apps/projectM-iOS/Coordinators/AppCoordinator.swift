@@ -59,6 +59,13 @@
 // * Text (MED-009): Settings' persisted "Text" choice shows `TextVisualHost` (the circular spectrum
 //   with the text layer over it) with the same create/release and run rules as Photo. `texts`
 //   (TextOverlayCoordinator) owns the saved message and style; its changes set the layer's spec.
+// * Scene autosave (SCN-002): `sceneAutosave` restores the last committed scene before anything is
+//   shown (before UI-test seeds), then debounces edits of `sceneInputs` into atomic saves; closing
+//   Settings commits at once; restored bindings go to the native spectrum when it is created.
+// * Session recovery (PERF-010): `recovery` decides at launch, before the OSC receiver exists, whether
+//   the previous session ended abnormally. Then the stored OSC toggle is turned off (no listener without
+//   consent), the committed scene is held instead of restored, the scene settings start fresh, and the
+//   offer card asks Reopen or Start fresh. The camera is session only and never restarts by itself.
 // * Show (SHOW-001): `show` (ShowCoordinator) owns the manual cue list; a step applies the cue's scene
 //   through the Settings path (AppCoordinator+Show.swift), never touching the audio source.
 import ANGLERendering
@@ -80,8 +87,8 @@ import ShowStorage
 import Metal
 import UIKit
 import VisualGenerators
-#if DEBUG
 import ParameterGraph
+#if DEBUG
 import VisualParameters
 #endif
 
@@ -128,7 +135,13 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     private(set) var libraryReady = false
     /// The full-library purchase (feature 002 US2): StoreKit, or a fixed fake in UI tests.
     let entitlements: any EntitlementProviding
-    var showSettings = false
+    var showSettings = false {
+        didSet { if oldValue && !showSettings { sceneAutosave?.commitNow() } }   // SCN-002-R3
+    }
+    /// SCN-002: the current scene's autosave (nil only if its folder cannot be made).
+    @ObservationIgnored let sceneAutosave: SceneAutosaveCoordinator?
+    /// PERF-010: abnormal-exit detection, the recovery offer and its consent rules.
+    let recovery: SessionRecoveryCoordinator
     /// Performance overlay and Reduce flashing (T103).
     let settings: AppSettings
     /// The native spectra (VIS-001 circular, VIS-002 linear), created the first time one is needed.
@@ -220,14 +233,32 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             try? FileManager.default.removeItem(at: UserPresetStore.defaultDirectory())         // PRE-012: and without imported presets
             if let photos = try? PhotoStore.defaultDirectory() { try? FileManager.default.removeItem(at: photos) }   // MED-001: no photo
             if let videos = try? VideoStore.defaultDirectory() { try? FileManager.default.removeItem(at: videos) }   // MED-002: no video
+            if let scenes = try? SceneAutosaveStore.defaultDirectory() { try? FileManager.default.removeItem(at: scenes) }   // SCN-002: no scene
+            SessionRecoveryCoordinator.reset(defaults)   // PERF-010: no previous session
             if let shows = try? ShowStore.defaultDirectory() { try? FileManager.default.removeItem(at: shows) }   // SHOW-001: no show
         }
         settings = AppSettings(defaults: defaults, systemReduceMotion: UIAccessibility.isReduceMotionEnabled)
         self.externalDisplay.reduceFlashing = settings.reduceFlashing   // OUT-010-R6
+        // PERF-010 (contract C1): decide before the OSC receiver exists, so an abnormal exit never
+        // reopens the listener; a pending offer holds the scene instead of restoring it.
+        let recovery = SessionRecoveryCoordinator(defaults: defaults, suppressed: SessionRecoveryCoordinator.harnessSuppresses())
+        let holdsScene = recovery.prepare(settings: settings)
+        self.recovery = recovery
         osc = OSCReceiverCoordinator(settings: settings)
         photos = PhotoCoordinator.makeDefault(defaults: defaults)
         videos = VideoCoordinator.makeDefault(defaults: defaults)
         texts = TextOverlayCoordinator.makeDefault(defaults: defaults)
+        // SCN-002: the last committed scene wins over the settings (research SCN-002-D2).
+        let sceneAutosave = SceneAutosaveCoordinator.makeDefault(defaults: defaults)
+        let stored = StoredMediaAvailability(photos: Set([photos.photo?.id.uuidString].compactMap { $0 }),
+                                             videos: Set([videos.video?.id.uuidString].compactMap { $0 }))
+        if holdsScene {
+            recovery.hold(recovery.decision.isCrashLoop ? nil : sceneAutosave?.holdCommittedScene(assets: stored))
+        } else if let values = sceneAutosave?.restore(assets: stored) {
+            SceneAutosaveCapture.apply(values, to: settings)
+            if let text = values.text { texts.spec = text }
+        }
+        self.sceneAutosave = sceneAutosave
         show = ShowCoordinator.makeDefault()   // SHOW-001
         #if DEBUG
         UITestPhotoFixture.seedIfRequested(photos)   // MED-001: PhotoLayerUITests (pickers cannot be automated)
@@ -304,6 +335,12 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             SharedTexturePool.relaxIdleEvictionForUITests()   // MemoryPressureUITests (research PERF-006-D7)
         }
         #endif
+        sceneAutosave?.inputs = { [unowned self] () -> SceneInputs in self.sceneInputs }
+        sceneAutosave?.liveBindings = { [weak self] () -> [AudioFeatureBinding]? in self?.nativeVisual?.bindings }
+        sceneAutosave?.startTracking()
+        // PERF-010-R9: in a crash loop the scene that crashed is replaced by the fresh one at once.
+        if recovery.decision.isCrashLoop { sceneAutosave?.commitFreshScene() }
+        recovery.startObservingLifecycle()
         connectShow()   // SHOW-001
         #if DEBUG
         UITestShowFixture.seedIfRequested(self)   // SHOW-001: ShowCueUITests
@@ -675,6 +712,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                                                    barCount: circularSpectrumBarCount, glow: settings.glowParameters,
                                                    forceGlowFailure: forceGlowFailure)
             host.reduceFlashing = settings.reduceFlashing
+            for binding in sceneAutosave?.bindings ?? [] { try? host.bind(binding) }   // SCN-002: restored bindings
             #if DEBUG
             bindGlowToLevelIfRequested(host)   // MOD-002: AudioFeatureBindingUITests
             #endif
@@ -1000,6 +1038,44 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             prepareTextVisualIfNeeded()
             pauseActiveVisual()
         }
+    }
+
+    // MARK: - Session recovery (PERF-010, contract C3)
+
+    /// Reopen: the held committed scene and visual (never Camera). OSC and the camera stay off until
+    /// the user turns them on. The autosave records the change.
+    func reopenLastScene() {
+        let visual = recovery.heldVisual
+        guard let held = recovery.markReopened() else { return }
+        if let values = sceneAutosave?.reopen(held) {
+            SceneAutosaveCapture.apply(values, to: settings)
+            if let text = values.text { texts.spec = text }
+        }
+        if let visual { settings.visual = visual }
+        announceRecovery("Last scene reopened.")
+    }
+
+    /// Start fresh: keeps the fresh scene and commits it, replacing the held one.
+    func startFresh() {
+        guard recovery.offer == .pending else { return }
+        recovery.markStartedFresh()
+        sceneAutosave?.commitFreshScene()
+    }
+
+    private func announceRecovery(_ text: String) {
+        UIAccessibility.post(notification: .announcement, argument: text)
+    }
+
+    // MARK: - Scene autosave (SCN-002)
+
+    /// What the current scene captures (research SCN-002-D1). Camera is session only: the visual
+    /// chosen before it is recorded (CAM-001-R11).
+    var sceneInputs: SceneInputs {
+        SceneInputs(visual: SceneAutosaveCapture.recordedVisual(settings.visual, beforeCamera: settings.visualBeforeCamera),
+                    bars: settings.circularSpectrumBars, orientation: settings.linearSpectrumOrientation,
+                    spacing: settings.linearSpectrumSpacing, glowEnabled: settings.glowEnabled,
+                    glowIntensity: settings.glowIntensity, glowRadius: settings.glowRadius, glowThreshold: settings.glowThreshold,
+                    text: texts.spec, photoID: photos.photo?.id, videoID: videos.video?.id)
     }
 
     // MARK: - Glow (FX-001)

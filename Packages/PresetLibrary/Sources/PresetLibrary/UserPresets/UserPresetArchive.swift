@@ -21,6 +21,15 @@ public enum UserPresetArchiveFormat {
     public static let limits = PortableArchiveLimits(maxFiles: PresetImportLimits.maxUserPresets,
                                                      maxFileBytes: PresetImportLimits.maxFileBytes,
                                                      maxManifestBytes: PresetImportLimits.maxIndexBytes)
+    /// The manifest's versioned constraints (FILE-007-R5; contract C2 of
+    /// specs/068-file-007-document-schema-validator): version 1 only; 4 MiB; depth 8 (the largest
+    /// valid manifest has 5: preset → license lines); strings up to 16 KiB (license lines are at most
+    /// 200 characters); numbers up to 32 characters; 4,096 elements per list or object (1,000
+    /// presets and files at most); no duplicate keys. Checked before any decoding.
+    public static let manifestSchema = DocumentSchema(
+        name: name, oldestReadableVersion: 1, currentVersion: version,
+        limits: JSONLimits(maxBytes: PresetImportLimits.maxIndexBytes, maxDepth: 8, maxStringBytes: 16_384,
+                           maxNumberBytes: 32, maxElements: 4_096))
     static let maxIDSuffixCharacters = 75
     static let maxAppVersionCharacters = 40
 
@@ -187,8 +196,7 @@ public enum UserPresetArchiveReader {
     public static func read(_ data: Data) throws -> UserPresetArchive {
         let contents: PortableArchiveContents
         do {
-            contents = try PortableArchive.read(data, format: UserPresetArchiveFormat.name,
-                                                supportedVersion: UserPresetArchiveFormat.version, limits: UserPresetArchiveFormat.limits)
+            contents = try PortableArchive.read(data, schema: UserPresetArchiveFormat.manifestSchema, limits: UserPresetArchiveFormat.limits)
         } catch let error as PortableArchiveError {
             throw UserPresetArchiveError.archive(error)
         }

@@ -115,6 +115,14 @@ final class OSCReceiverCoordinator {
 
     var badgePort: UInt16? { Self.listenerBadgePort(for: state) }
 
+    /// PERF-010-R12: the transport is listening or about to (the DEBUG recovery probe).
+    var isListenerOpen: Bool {
+        switch state {
+        case .starting, .listening: true
+        default: false
+        }
+    }
+
     static func badgeText(port: UInt16) -> String { "OSC listening on port \(port)" }
 
     /// VoiceOver value of the badge (OSC-007-R7), a plain String so the port is never grouped.
