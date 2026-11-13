@@ -3,6 +3,9 @@
 // the visual); drag to reorder; swipe or Edit to delete; Rename…; Go to Cue. Editing never changes the
 // output (SHOW-001-R6); Go to Cue shows the cue's scene. A standard List, so Dynamic Type, VoiceOver
 // ("Cue 2 of 5, Intro, active") and Full Keyboard Access apply (FR-070).
+// SCN-003: Duplicate Scene and Rename Scene… per cue (context menu and VoiceOver actions); a row whose
+// scene name differs from its label shows "Scene: <name>" and VoiceOver reads ", scene <name>".
+import SceneFormat
 import ShowControl
 import SwiftUI
 
@@ -11,6 +14,8 @@ struct ShowEditorView: View {
     let addCurrentScene: () -> Void
     @State private var renaming: ShowCue?
     @State private var renameText = ""
+    @State private var renamingScene: ShowCue?
+    @State private var sceneNameText = ""
 
     var body: some View {
         List {
@@ -53,16 +58,30 @@ struct ShowEditorView: View {
         } message: {
             Text("1 to \(ShowCueList.maximumLabelLength) characters.")
         }
+        .alert("Rename Scene", isPresented: Binding(get: { renamingScene != nil }, set: { if !$0 { renamingScene = nil } })) {
+            TextField("Scene name", text: $sceneNameText).accessibilityIdentifier("showSceneNameField")
+            Button("Rename") {
+                if let cue = renamingScene { show.renameScene(of: cue.id, to: sceneNameText) }
+                renamingScene = nil
+            }
+            Button("Cancel", role: .cancel) { renamingScene = nil }
+        } message: {
+            Text("Every cue that shows this scene uses the new name. 1 to \(SceneLimits.maximumNameLength) characters.")
+        }
         .accessibilityIdentifier("showEditor")
     }
 
     private func row(_ cue: ShowCue, number: Int) -> some View {
         let active = show.list.activeCue?.id == cue.id
         let missing = show.isSceneMissing(cue)
+        let sceneName = show.sceneName(of: cue).flatMap { (name: String) -> String? in name == cue.label ? nil : name }
         return HStack {
             Text("\(number)").monospacedDigit().foregroundStyle(.secondary).frame(minWidth: 28, alignment: .trailing)
             VStack(alignment: .leading, spacing: 2) {
                 Text(cue.label)
+                if let sceneName {
+                    Text("Scene: \(sceneName)").font(.caption).foregroundStyle(.secondary)
+                }
                 if missing {
                     Label("Scene missing", systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.orange)
                 }
@@ -73,17 +92,40 @@ struct ShowEditorView: View {
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(cue.label)
-        .accessibilityValue("Cue \(number) of \(show.list.cues.count)" + (active ? ", active" : "") + (missing ? ", scene missing" : ""))
+        .accessibilityValue("Cue \(number) of \(show.list.cues.count)" + (active ? ", active" : "") + (missing ? ", scene missing" : "")
+                            + (sceneName.map { (name: String) -> String in ", scene \(name)" } ?? ""))
         .accessibilityIdentifier("showCue\(number)")
         .contextMenu {
             Button("Go to Cue") { show.go(to: cue.id) }
             Button("Rename…") { renameText = cue.label; renaming = cue }
+            Button("Duplicate Scene") { show.duplicateScene(of: cue.id) }
+                .disabled(missing || show.list.cues.count >= ShowCueList.maximumCues)
+            Button("Rename Scene…") { startSceneRename(cue) }.disabled(missing)
             Button("Delete", role: .destructive) { show.remove(cue.id) }
         }
         .swipeActions(edge: .leading) {
             Button("Go") { show.go(to: cue.id) }.tint(.accentColor)
+            // SCN-003: also here (the context menu's live blur over the visualizer is slow to settle).
+            if !missing {
+                Button("Duplicate") { show.duplicateScene(of: cue.id) }
+                    .tint(.indigo)
+                    .disabled(show.list.cues.count >= ShowCueList.maximumCues)
+                    .accessibilityLabel("Duplicate Scene")
+                    .accessibilityIdentifier("showDuplicateScene")
+                Button("Name") { startSceneRename(cue) }
+                    .tint(.gray)
+                    .accessibilityLabel("Rename Scene")
+                    .accessibilityIdentifier("showRenameScene")
+            }
         }
         .accessibilityAction(named: "Go to Cue") { show.go(to: cue.id) }
         .accessibilityAction(named: "Rename") { renameText = cue.label; renaming = cue }
+        .accessibilityAction(named: "Duplicate Scene") { show.duplicateScene(of: cue.id) }
+        .accessibilityAction(named: "Rename Scene") { startSceneRename(cue) }
+    }
+
+    private func startSceneRename(_ cue: ShowCue) {
+        sceneNameText = show.sceneName(of: cue) ?? cue.label
+        renamingScene = cue
     }
 }

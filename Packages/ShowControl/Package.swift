@@ -20,11 +20,14 @@ let package = Package(
     products: [.library(name: "ShowControl", targets: ["ShowControl", "ShowStorage"])],
     dependencies: [
         .package(path: "../SceneFormat"),
+        // Tests only (SCN-003): a parameter registry for SCN-001 `liveState` in the load tests.
+        .package(path: "../ParameterGraph"),
     ],
     targets: [
         .target(name: "ShowControl"),
         .target(name: "ShowStorage", dependencies: ["ShowControl", .product(name: "SceneFormat", package: "SceneFormat")]),
         .testTarget(name: "ShowControlTests",
-                    dependencies: ["ShowControl", "ShowStorage", .product(name: "SceneFormat", package: "SceneFormat")]),
+                    dependencies: ["ShowControl", "ShowStorage", .product(name: "SceneFormat", package: "SceneFormat"),
+                                   .product(name: "ParameterGraph", package: "ParameterGraph")]),
     ]
 )
