@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T17:24:51Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T17:26:25Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 271 |
 | implementing | 2 |
-| unit_passed | 1 |
-| integrated | 51 |
+| integrated | 52 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 45 | 1 | 1 | 39 | 1 |
-| P1 | 139 | 0 | 0 | 12 | 0 |
-| P2 | 78 | 1 | 0 | 0 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 45 | 1 | 40 | 1 |
+| P1 | 139 | 0 | 12 | 0 |
+| P2 | 78 | 1 | 0 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 274 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
+- 273 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
 
 ## Integrated
 
@@ -65,6 +64,7 @@ The physical-device suite may **not** start:
 | CAM-001 | Rear camera layer | `05ef3cb4e24b` | `feature/cam-001` |
 | CAM-012 | Camera privacy status | `a188b049fc60` | `feature/cam-012` |
 | CMP-001 | Unified layer protocol | `ba60b9d3485a` | `feature/cmp-001` |
+| CMP-002 | Ordered layer stack | `4c8340e68244` | `feature/cmp-002` |
 | FX-001 | Bloom | `1192e0d6503e` | `feature/fx-001` |
 | FX-019 | Strobe safety envelope | `6cfcbaabc8d0` | `feature/fx-019` |
 | MOD-001 | Typed parameter registry | `304f3bce431a` | `feature/mod-001` |
@@ -303,11 +303,12 @@ None.
 - `post-merge: Compositor xcodebuild test on iPhone 17 sim (43)`: pass at `ba60b9d3485a` (log `.autonomous/logs/integration/cmp-001/compositor-sim.log`)
 - `post-merge: Compositor Linux shape on host, -DCOMPOSITOR_NO_METAL -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE (21)`: pass at `ba60b9d3485a` (log `.autonomous/logs/integration/cmp-001/compositor-linuxshape.log`)
 
-### CMP-002 Ordered layer stack (unit_passed)
+### CMP-002 Ordered layer stack (integrated)
 - `python3 scripts/check_compliance.py`: pass at `85425ca7d2ee` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-002/20261113T122331/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `85425ca7d2ee` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-002/20261113T122331/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `85425ca7d2ee` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-002/20261113T122331/sim-test_ANGLERendering.log`)
 - `swift test --package-path Packages/Compositor`: pass at `85425ca7d2ee` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-002/20261113T122331/swift-test_Compositor.log`)
+- `post-merge: Compositor xcodebuild test on iPhone 17 sim (CompositorTests 79 incl. red/blue reorder acceptance, ProceduralMaterials 31); projectM-iOSTests 184, CameraUITests 2, CameraPrivacyStatusUITests 1`: pass at `4c8340e68244` (log `.autonomous/logs/integration/cmp-002/compositor-sim.log`)
 
 ### FX-001 Bloom (integrated)
 - `python3 scripts/check_compliance.py`: pass at `94f4b3a6b7c3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-001/20261113T090348/compliance.log`)
