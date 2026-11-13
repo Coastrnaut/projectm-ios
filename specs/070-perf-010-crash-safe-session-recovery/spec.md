@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (PERF-010-T01-T14 verified on the Mac and the iOS 27.2 simulator; T15 `{device}` open)
 
 **Input**: User description: "Implement PERF-010 (Crash-safe session recovery) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Offer reopening last locally saved
