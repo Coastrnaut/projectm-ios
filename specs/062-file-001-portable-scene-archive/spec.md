@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (FILE-001-T01-T18 verified on the Mac host, the Linux shape and the iOS 27.2 simulator; T19 `{device}` open)
 
 **Input**: User description: "Implement FILE-001 (Portable scene archive) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Package scene JSON and permitted
@@ -125,6 +125,7 @@ stores' files and identifiers byte-for-byte unchanged afterwards.
 - **FILE-001-R13**: The format code (manifest, paths, content checks, remapping, reading and writing) MUST be plain Swift, read no files, use no network, and build and pass its tests on Linux.
 - **FILE-001-R14**: Every asset record's path MUST be exactly `assets/<key>.<ext>` (photo `png`/`jpg`, video `mov`); the PRE-014 reader MUST refuse ZIP entries marked as symbolic links or any non-regular file type.
 - **FILE-001-R15**: The exported file MUST be named `projectM-iOS Scene <local date>.pmscene` and its media bytes MUST be the stored copies unchanged.
+- **FILE-001-R16**: The privacy policy MUST describe scene archives: what they contain, that the app writes one only on the user's export and deletes its temporary copy, that it leaves the device only by the user's action, and that opening one replaces the stored photo and video only after every check passed.
 
 ### Key Entities
 

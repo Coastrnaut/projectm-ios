@@ -38,24 +38,27 @@ then assets by key.
 
 | Case | Error |
 |---|---|
-| File larger than the archive limit | `archiveTooLarge` |
+| File larger than the archive limit | `archiveTooLarge(limit:)` |
 | ZIP or manifest problem (PRE-014: unsafe/absolute path, `..`, duplicate, too many entries, entry too large, compressed, encrypted, symbolic link, CRC, missing/malformed manifest, wrong format, unlisted or missing file, length or SHA-256 mismatch) | `archive(PortableArchiveError)` |
 | Newer format version | `archive(.newerVersion(n))` |
 | Scene-archive keys missing or wrong (`scene` ≠ `scene.json`, bad record, unknown type, duplicate key, path ≠ `assets/<key>.<ext>`) | `malformedManifest(String)` |
 | More than one photo or video record | `tooManyMedia(type)` |
 | `scene.json` not listed | `missingScene` |
+| A listed file that is neither scene nor asset | `unexpectedFile(path)` |
+| An asset record's path not in the file list | `missingAssetFile(path)` |
 | Scene decode refusal | `sceneRefused(SceneDecodeError)` |
 | Scene validation errors | `sceneInvalid([SceneIssue])` |
 | A photo/video asset without a record, a record without such an asset, or types differ | `mismatch(key)` |
-| A listed file that is neither scene nor asset | `unexpectedFile(path)` |
 | Asset first bytes are a program/script | `executableContent(path, ExecutableKind)` |
 | Asset first bytes are an archive | `nestedArchive(path)` |
 | Asset bytes not of the declared type | `wrongContent(path)` |
 | Asset larger than its type's limit | `assetTooLarge(path)` |
 
-App service adds: `unreadable` (file cannot be read), `media(path, String)` (the store's import refused
-the bytes; its message), `saveFailed` (staging or commit write failed), `missingMedia(key)` (export:
-asset not in the stores), `tooManyMedia` (export), `invalidScene` (export: the document has errors).
+Writer: `missingMedia(key:)` (asset not in the stores), `tooManyMedia`, `mismatch`, `wrongContent`,
+`sceneInvalid` (the document has errors), `writeFailed`. App service (`SceneArchiveServiceError`) wraps
+these as `archive(_)` and adds `unreadable` (file cannot be read), `media(path:message:)` (the store's
+import refused the bytes; its message), `saveFailed` (staging or commit write failed) and
+`unresolved` (a guard: references still missing after remapping).
 
 ## 5. Export
 

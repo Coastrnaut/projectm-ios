@@ -96,7 +96,7 @@ project.yml, .github/workflows/ios-ci.yml                               # packag
 ```
 
 **Structure Decision**: one new package (format, Linux-tested) plus one app service (stores,
-decoding). ADR: next free number at commit time records the format and the staging commit.
+decoding). ADR-0029 (the next free number at commit time) records the format and the staging commit.
 
 ## Complexity Tracking
 

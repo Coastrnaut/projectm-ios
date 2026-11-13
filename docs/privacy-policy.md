@@ -79,8 +79,9 @@ also after you reopen the app.
   on the longest side.
 - Nothing is uploaded or sent anywhere. The app does not keep where the picture came from, its
   file name, or which item of your library it was.
-- The copy never leaves your device through the app. Like other app data, it is included in your
-  own device backups if you use them.
+- The copy never leaves your device through the app, except inside a scene archive you export
+  yourself (see "Scene archives"). Like other app data, it is included in your own device backups
+  if you use them.
 - "Remove Photo" in Settings deletes the copy; choosing another photo replaces it; deleting the
   app deletes it.
 
@@ -98,10 +99,30 @@ behind the visualization, also after you reopen the app.
   source you chose.
 - Nothing is uploaded or sent anywhere. The app does not keep where the video came from, its file
   name, which item of your library it was, or where you stopped watching.
-- The copy never leaves your device through the app. Like other app data, it is included in your
-  own device backups if you use them.
+- The copy never leaves your device through the app, except inside a scene archive you export
+  yourself (see "Scene archives"). Like other app data, it is included in your own device backups
+  if you use them.
 - "Remove Video" in Settings deletes the copy; choosing another video replaces it; deleting the app
   deletes it.
+
+## Scene archives
+
+A scene archive (a `.pmscene` file) packs one scene so you can move it to another device or keep a
+copy: the scene's layers and settings, its text overlay and generator settings, and copies of the
+photo and video the scene uses, exactly as the app stores them (already without location, date,
+device details or sound; see above). It contains no file names of your originals, no folder paths,
+nothing about your device, account, purchase or listening, and no audio.
+
+- The app writes a scene archive only when you export a scene, into its temporary folder, and
+  deletes that copy when you finish or cancel handing it on. It leaves your device only if you
+  share or save it yourself (for example with AirDrop or Files). Anyone you give it to can see the
+  photo, video and text in it.
+- When you open a scene archive, the app reads only that file, checks it (size, structure, and that
+  each picture and video is what it claims to be; programs and archives inside are refused) and
+  copies its photo and video into its own storage the same way as a photo or video you choose,
+  replacing the photo and video you had. If any check fails, nothing is changed.
+- Nothing is uploaded, downloaded or sent anywhere by the app while exporting or opening a scene
+  archive.
 
 ## Pictures you save with Save Frame
 
@@ -280,4 +301,5 @@ issue in that repository.
 | CAM-001-R16 (`specs/033-cam-001-rear-camera-layer/spec.md`): the camera permission and on-device use of camera pictures | Permissions and why; The camera picture stays on your screen |
 | MED-001-R17 (`specs/044-med-001-import-photo-layer/spec.md`, amends FR-065): the photo the user chooses, stored on the device without metadata, removable | Summary; Permissions and why; A photo you choose; What is stored on your device |
 | MED-002-R21 (`specs/048-med-002-import-video-layer/spec.md`, amends FR-065): the video the user chooses, stored on the device without soundtrack or metadata, removable | Summary; Permissions and why; A video you choose; What is stored on your device |
+| FILE-001-R16 (`specs/062-file-001-portable-scene-archive/spec.md`): scene archives hold the user's scene and its stored photo and video, are written only on the user's export and leave the device only by the user's action; opening one replaces the stored photo and video only after every check passed | A photo you choose; A video you choose; Scene archives |
 | PRE-012-R30 (`specs/008-pre-012-preset-import-validation/spec.md`, amends FR-065): preset files the user imports, quarantined ones included, and their record; extended by PRE-015-R23 (`specs/010-pre-015-user-preset-duplication/spec.md`): copies of built-in presets, their origin, and edited preset text | What is stored on your device |
