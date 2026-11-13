@@ -10,7 +10,9 @@ public enum FuzzJSON {
     /// Most nodes visited when choosing a target; deeper or larger documents are mutated in their first part.
     static let maximumNodes = 4_096
 
-    /// A custom mutation for `FuzzCampaign`: input that is not JSON is returned unchanged.
+    /// A custom mutation for `FuzzCampaign`: input that is not a JSON array or object, or a result that
+    /// is not one (a replaced root), is returned unchanged. Foundation's top-level-fragment options are
+    /// avoided so the code is the same on Darwin and Linux.
     public static let mutation: @Sendable ([UInt8], inout FuzzRandom, Int) -> [UInt8] = { (bytes: [UInt8], rng: inout FuzzRandom, cap: Int) -> [UInt8] in
         let out = mutateValue(bytes, rng: &rng)
         return out.count > cap ? Array(out.prefix(cap)) : out
@@ -18,7 +20,7 @@ public enum FuzzJSON {
 
     public static func mutateValue(_ bytes: [UInt8], rng: inout FuzzRandom) -> [UInt8] {
         guard !bytes.isEmpty,
-              let root = try? JSONSerialization.jsonObject(with: Data(bytes), options: [.fragmentsAllowed]) else { return bytes }
+              let root = try? JSONSerialization.jsonObject(with: Data(bytes), options: []) else { return bytes }
         var paths: [[Step]] = [[]]
         collect(root, prefix: [], into: &paths)
         let path = rng.element(of: paths)
@@ -26,8 +28,8 @@ public enum FuzzJSON {
         let palette = values(&rng)
         let replacement: Any = rng.element(of: palette)
         guard let mutated = edit(root, path: path[...], action: action, replacement: replacement, rng: &rng),
-              JSONSerialization.isValidJSONObject(mutated) || !(mutated is [Any] || mutated is [String: Any]),
-              let data = try? JSONSerialization.data(withJSONObject: mutated, options: [.sortedKeys, .fragmentsAllowed]) else {
+              JSONSerialization.isValidJSONObject(mutated),
+              let data = try? JSONSerialization.data(withJSONObject: mutated, options: [.sortedKeys]) else {
             return bytes
         }
         return [UInt8](data)
