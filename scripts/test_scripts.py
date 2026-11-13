@@ -24,6 +24,7 @@ import build_projectm_xcframework as bpx  # noqa: E402
 import check_compliance  # noqa: E402
 import check_privacy_manifest as cpm  # noqa: E402
 import check_network_symbols as cns  # noqa: E402
+import check_motion_policy as cmp  # noqa: E402
 import observe_app_network as oan  # noqa: E402
 import generate_gles_loader as ggl  # noqa: E402
 import generate_reference_audio as gra  # noqa: E402
@@ -1531,6 +1532,39 @@ class AppNetworkObserverTests(unittest.TestCase):
         self.assertIn("blind: the probe was never sent", never["problems"])
         no_listener = self.report((), (), osc=47131)
         self.assertIn("the OSC listener on port 47131 was never seen", no_listener["problems"])
+
+
+class MotionPolicyCheckTests(unittest.TestCase):
+    """check_motion_policy.py (ACC-001-T09, R7): app animations go through MotionPolicy."""
+
+    def test_bare_animations_are_flagged(self):
+        text = "a\n.animation(.easeInOut, value: x)\nwithAnimation { y = 1 }\nUIView.animate(withDuration: 1) {}\n"
+        self.assertEqual(cmp.violations(text), [2, 3, 4])
+
+    def test_policy_safety_comments_and_strings_pass(self):
+        text = "\n".join([
+            ".reduceMotionAware(MotionPolicy.controlsFade, value: v, policy: p)",
+            ".animation(MotionPolicy.safetyFade(.linear(duration: 0.5)), value: s)",
+            "x // .animation(.default, value: v)",
+            "/* withAnimation {",
+            "   .animation(.default) */ let a = 1",
+            'let s = ".animation(.default)"',
+            ".transition(.opacity)",
+        ])
+        self.assertEqual(cmp.violations(text), [])
+
+    def test_tests_and_the_policy_file_are_excluded(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            app = Path(tmp)
+            (app / "Tests").mkdir()
+            (app / "Tests" / "T.swift").write_text("withAnimation { }\n")
+            (app / "MotionPolicy.swift").write_text("self.animation(x, value: v)\n")
+            (app / "V.swift").write_text("ok\n.animation(.spring, value: v)\n")
+            self.assertEqual([p.name for p in cmp.source_files(app)], ["V.swift"])
+            self.assertEqual(len(cmp.check(app)), 1)
+
+    def test_the_app_is_clean(self):
+        self.assertEqual(cmp.check(), [])
 
 
 if __name__ == "__main__":

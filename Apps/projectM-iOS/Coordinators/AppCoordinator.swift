@@ -127,7 +127,18 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// Presets the user imported, their quarantine and their trial (PRE-012).
     let userPresets: UserPresetsCoordinator
     @ObservationIgnored private let presetLoader = RendererPresetLoader()
-    private(set) var controlsVisible = true
+    private(set) var controlsVisible = true {
+        didSet {
+            #if DEBUG
+            // ACC-001-R9: the duration the controls transition was given (the view uses `motion`).
+            if controlsVisible != oldValue { lastControlsTransitionSeconds = motion.controlsTransitionSeconds }
+            #endif
+        }
+    }
+    #if DEBUG
+    /// ACC-001 (`motionProbe`): the last controls transition's duration; nil before the first.
+    private(set) var lastControlsTransitionSeconds: Double?
+    #endif
     private(set) var userPaused = false
     private(set) var appIsActive = true
     /// Number of source starts (UI tests check that rotation does not restart capture).
@@ -248,7 +259,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             GuidedFirstSceneCoordinator.reset(defaults)  // UIX-001: never offered
             if let shows = try? ShowStore.defaultDirectory() { try? FileManager.default.removeItem(at: shows) }   // SHOW-001: no show
         }
-        settings = AppSettings(defaults: defaults, systemReduceMotion: UIAccessibility.isReduceMotionEnabled)
+        settings = AppSettings(defaults: defaults, systemReduceMotion: Self.currentSystemReduceMotion())
         self.externalDisplay.reduceFlashing = settings.reduceFlashing   // OUT-010-R6
         // PERF-010 (contract C1): decide before the OSC receiver exists, so an abnormal exit never
         // reopens the listener; a pending offer holds the scene instead of restoring it.
@@ -1137,6 +1148,54 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         applyReduceFlashing()
     }
 
+    // MARK: - Reduce Motion (ACC-001)
+
+    /// ACC-001-R2: the policy every decorative UI animation goes through; it follows
+    /// `settings.systemReduceMotion`, so views re-render as soon as the system setting changes.
+    var motion: MotionPolicy { MotionPolicy(settings: settings) }
+
+    /// The system Reduce Motion state, or in DEBUG the `-uitestReduceMotion YES|NO` override.
+    static func currentSystemReduceMotion() -> Bool {
+        #if DEBUG
+        if let override = reduceMotionOverride { return override }
+        #endif
+        return UIAccessibility.isReduceMotionEnabled
+    }
+
+    /// ACC-001-R3: the system notification (observed at the app root) and scene activation land here.
+    func syncSystemReduceMotion() {
+        let current = Self.currentSystemReduceMotion()
+        if current != settings.systemReduceMotion { systemReduceMotionChanged(current) }
+    }
+
+    #if DEBUG
+    static let reduceMotionArgument = "-uitestReduceMotion"
+    /// The UI-test override (contract C2); while set, the real setting is ignored.
+    static var reduceMotionOverride: Bool? = {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: reduceMotionArgument), index + 1 < arguments.count else { return nil }
+        switch arguments[index + 1] {
+        case "YES": return true
+        case "NO": return false
+        default: return nil   // `system`: the real setting, with the probe panel (research D5)
+        }
+    }()
+    /// The probe panel is shown whenever the argument is present.
+    static let reduceMotionPanelRequested = ProcessInfo.processInfo.arguments.contains(reduceMotionArgument)
+
+    /// `motionProbe` (contract C2): "reduce=<on|off> controls=<seconds|none>".
+    var motionProbe: String {
+        let seconds = lastControlsTransitionSeconds.map { String(format: "%.2f", $0) } ?? "none"
+        return "reduce=\(motion.reduceMotion ? "on" : "off") controls=\(seconds)"
+    }
+
+    /// `simulateReduceMotionToggle`: flips the override and takes the notification's path.
+    func simulateSystemReduceMotionToggle() {
+        Self.reduceMotionOverride = !Self.currentSystemReduceMotion()
+        syncSystemReduceMotion()
+    }
+    #endif
+
     func togglePause() {
         userPaused.toggle()
         userPaused ? pauseActiveVisual() : resumeActiveVisual()
@@ -1198,6 +1257,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// Scene activity drives the idle timer (FR-084); rendering follows the lifecycle events.
     func sceneBecame(active: Bool) {
         appIsActive = active
+        if active { syncSystemReduceMotion() }   // ACC-001-R3: a change made while in the background
         osc.sceneBecame(active: active)   // OSC-001-R3: no listener outside the foreground
         updateIdleTimer()
     }

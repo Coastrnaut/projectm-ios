@@ -112,7 +112,8 @@ struct VisualizerView: View {
                 }
             }
             .padding()
-            .animation(.easeInOut(duration: 0.2), value: coordinator.controlsVisible)
+            // ACC-001-R2: the controls and the badges riding on them are instant with Reduce Motion.
+            .reduceMotionAware(MotionPolicy.controlsFade, value: coordinator.controlsVisible, policy: coordinator.motion)
             if coordinator.show.hasCues && !coordinator.showSettings {   // SHOW-001-R15
                 ShowKeyCommands(coordinator: coordinator)
             }
@@ -173,6 +174,10 @@ struct VisualizerView: View {
                     .allowsHitTesting(false)
                     .accessibilityIdentifier("showAppliedScene")
                     .accessibilityValue(value)
+            }
+            if AppCoordinator.reduceMotionPanelRequested {   // ACC-001: ReduceMotionUITests (contract C2)
+                VStack { HStack { reduceMotionPanel; Spacer() }; Spacer() }
+                    .padding(.top, 190)
             }
             if UITestExternalDisplay.isRequested {     // OUT-001: ExternalDisplayUITests
                 VStack { HStack { UITestExternalDisplayPanel(coordinator: coordinator.externalDisplay); Spacer() }; Spacer() }
@@ -342,10 +347,24 @@ struct VisualizerView: View {
                 UIAccessibility.post(notification: .announcement, argument: text)
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: UIAccessibility.reduceMotionStatusDidChangeNotification)) { _ in
-            coordinator.systemReduceMotionChanged(UIAccessibility.isReduceMotionEnabled)
-        }
     }
+
+    #if DEBUG
+    /// ACC-001-R9: the last controls transition's duration and a simulated system toggle.
+    private var reduceMotionPanel: some View {
+        HStack(spacing: 6) {
+            Button("Toggle Reduce Motion") { coordinator.simulateSystemReduceMotionToggle() }
+                .font(.caption2)
+                .accessibilityIdentifier("simulateReduceMotionToggle")
+            Text(coordinator.motionProbe)
+                .font(.caption2)
+                .accessibilityIdentifier("motionProbe")
+                .accessibilityValue(coordinator.motionProbe)
+        }
+        .padding(4)
+        .background(.regularMaterial, in: Capsule())
+    }
+    #endif
 
     private var purchaseSheet: some View {
         PurchaseSheet(packs: coordinator.presets.library?.packs ?? [], price: coordinator.entitlements.displayPrice,
