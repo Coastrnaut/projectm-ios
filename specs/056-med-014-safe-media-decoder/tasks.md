@@ -10,35 +10,35 @@ Format: `- [ ] MED-014-Tnn [P?] [Story?] Description with file path`
 
 ## Phase 1: Setup
 
-- [ ] MED-014-T01 Add target `MediaSniffing` (no dependencies) to the library product, make `ImageLayer` and `VideoLayer` depend on it, add test target `MediaSniffingTests` (dependency `MediaSniffing`) and add `MediaSniffing` to `CompositorTests`' dependencies, with a header comment line for MED-014, in `Packages/Compositor/Package.swift`
+- [X] MED-014-T01 Add target `MediaSniffing` (no dependencies) to the library product, make `ImageLayer` and `VideoLayer` depend on it, add test target `MediaSniffingTests` (dependency `MediaSniffing`) and add `MediaSniffing` to `CompositorTests`' dependencies, with a header comment line for MED-014, in `Packages/Compositor/Package.swift` — Verified 2026-11-13: `swift build`/`swift test --package-path Packages/Compositor --filter MediaSniffingTests` (target and test target build and run)
 
 ## Phase 2: Foundational (plain Swift, every host; blocks all stories)
 
-- [ ] MED-014-T02 [P] `MediaSniffError` (`empty unrecognized truncated corrupt unreadable`), `ByteSource`, `DataByteSource`, `FileByteSource` (FileHandle, `seek` + `read(upToCount:)`, reads clamped to the file length) in `Packages/Compositor/Sources/MediaSniffing/ByteSource.swift` (R13)
-- [ ] MED-014-T03 [P] CRC-32 (PNG polynomial, table) in `Packages/Compositor/Sources/MediaSniffing/CRC32.swift`
-- [ ] MED-014-T04 Fixture builders in `Packages/Compositor/Tests/MediaSniffingTests/MediaFixtures.swift`: PNG from chunks with computed CRCs and a stored (uncompressed) zlib stream; minimal ISO boxes (`ftyp`, `moov/trak/mdia/hdlr/minf/stbl/stsd`); SplitMix64 (research D6, D7)
+- [X] MED-014-T02 [P] `MediaSniffError` (`empty unrecognized truncated corrupt unreadable`), `ByteSource`, `DataByteSource`, `FileByteSource` (FileHandle, `seek` + `read(upToCount:)`, reads clamped to the file length) in `Packages/Compositor/Sources/MediaSniffing/ByteSource.swift` (R13) — Verified 2026-11-13: MovieContainerSnifferTests.testFileByteSourceReadsOnlyWhatItIsAskedFor (clamped reads, missing file → unreadable), host and Linux shape
+- [X] MED-014-T03 [P] CRC-32 (PNG polynomial, table) in `Packages/Compositor/Sources/MediaSniffing/CRC32.swift` — Verified 2026-11-13: PNG fixtures with computed CRCs pass and a flipped byte fails (ImageHeaderSnifferTests), host and Linux shape
+- [X] MED-014-T04 Fixture builders `MediaFixtureBytes` in `Packages/Compositor/Sources/MediaSniffing/MediaFixtureBytes.swift` (in the library, not a test target, so CompositorTests and the app's DEBUG seeds share them; nothing on the decode path uses them): PNG from chunks with computed CRCs and a stored (uncompressed) zlib stream; minimal ISO boxes (`ftyp`, `moov/trak/mdia/hdlr/minf/stbl/stsd`); SplitMix64 (research D6, D7) — Verified 2026-11-13: used by all 20 MediaSniffingTests, host and Linux shape
 
 ## Phase 3: User Story 1 — A damaged or hostile image is refused (P1, MVP)
 
 **Goal**: PNG/JPEG/HEIF structure and header size checked before ImageIO. **Independent test**: the image rows of the fixture table.
 
-- [ ] MED-014-T05 [US1] `ImageHeaderSniffer.sniff(_:)` and `ImageHeaderFacts`/`ImageContainer` in `Packages/Compositor/Sources/MediaSniffing/ImageHeaderSniffer.swift`: PNG, JPEG, HEIF rules exactly as research D2 (R1-R4); `.other` for anything else; `.empty` for no bytes
+- [X] MED-014-T05 [US1] `ImageHeaderSniffer.sniff(_:)` and `ImageHeaderFacts`/`ImageContainer` in `Packages/Compositor/Sources/MediaSniffing/ImageHeaderSniffer.swift`: PNG, JPEG, HEIF rules exactly as research D2 (R1-R4); `.other` for anything else; `.empty` for no bytes — Verified 2026-11-13: ImageHeaderSnifferTests 10/10 on the host and in the Linux shape (`-DCOMPOSITOR_NO_METAL -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE`)
 - [ ] MED-014-T06 [US1] `ImageIODecoder` in `Packages/Compositor/Sources/ImageLayer/ImageDecoding.swift`: sniff after the size check (`.empty` → `.notAnImage`, `.truncated`/`.corrupt`/`.unreadable` → `.damaged`), header pixel count > `maxPixelCount` → `.tooManyPixels` before ImageIO (R5, R6, R11); header comment updated
-- [ ] MED-014-T07 [P] [US1] Image sniffer tests in `Packages/Compositor/Tests/MediaSniffingTests/ImageHeaderSnifferTests.swift`: F1-F4, F8-F11 and a valid HEIF header with two `ispe` (largest wins), PNG with junk after IEND, JPEG with bytes after EOI, APNG-style ancillary chunk (Linux shape)
+- [X] MED-014-T07 [P] [US1] Image sniffer tests in `Packages/Compositor/Tests/MediaSniffingTests/ImageHeaderSnifferTests.swift`: F1-F4, F8-F11 and a valid HEIF header with two `ispe` (largest wins), PNG with junk after IEND, JPEG with bytes after EOI, APNG-style ancillary chunk (Linux shape) — Verified 2026-11-13: ImageHeaderSnifferTests 10/10, host and Linux shape
 - [ ] MED-014-T08 [US1] Decoder table in `Packages/Compositor/Tests/CompositorTests/SafeDecoderTests.swift`: F1-F9 through `ImageSanitizer.sanitize` with exact `ImageImportError`s (F5-F7 encoded by ImageIO; R6's thumbnail bound stays covered by MED-001's scale-down test, analyze C3), and MED-001's `testDamagedImagesAreRefused` comment updated to cite MED-014 with a truncated-PNG assertion in `Packages/Compositor/Tests/CompositorTests/ImageImportTests.swift` (S1)
 
 ## Phase 4: User Story 2 — A damaged or hostile video is refused (P1)
 
 **Goal**: container checked before AVFoundation; non-blocking first-picture check. **Independent test**: the movie rows of the fixture table.
 
-- [ ] MED-014-T09 [US2] `MovieContainerSniffer.sniff(_:limits:)`, `MovieContainerFacts`, `MovieSniffLimits` (`maxBoxes` 4,096, `maxDepth` 8, `maxTracks` 64, `maxEntryBytes` 4,096) in `Packages/Compositor/Sources/MediaSniffing/MovieContainerSniffer.swift` (R7, R8)
+- [X] MED-014-T09 [US2] `MovieContainerSniffer.sniff(_:limits:)`, `MovieContainerFacts`, `MovieSniffLimits` (`maxBoxes` 4,096, `maxDepth` 8, `maxTracks` 64, `maxEntryBytes` 4,096) in `Packages/Compositor/Sources/MediaSniffing/MovieContainerSniffer.swift` (R7, R8) — Verified 2026-11-13: MovieContainerSnifferTests 8/8, host and Linux shape
 - [ ] MED-014-T10 [US2] `VideoProbe.check` in `Packages/Compositor/Sources/VideoLayer/AVVideoProbe.swift`: sniff with `FileByteSource` after the size check (mapping per contract), then AVFoundation; first picture with `AVAssetImageGenerator.image(at: .zero)`, `maximumSize` 256 × 256, tolerances `.positiveInfinity`, `appliesPreferredTrackTransform` false (R8, R9); `AVVideoFrameReader.open` sniffs before each open in `Packages/Compositor/Sources/VideoLayer/AVVideoFrameReader.swift` (R12)
-- [ ] MED-014-T11 [P] [US2] Movie sniffer tests in `Packages/Compositor/Tests/MediaSniffingTests/MovieContainerSnifferTests.swift`: F12, F13, F15, F16, 64-bit size, size 0 last box, `moov` after `mdat`, two `moov`, depth > 8, box count > 4,096, `FileByteSource` on a temporary file (Linux shape)
+- [X] MED-014-T11 [P] [US2] Movie sniffer tests in `Packages/Compositor/Tests/MediaSniffingTests/MovieContainerSnifferTests.swift`: F12, F13, F15, F16, 64-bit size, size 0 last box, `moov` after `mdat`, two `moov`, depth > 8, box count > 4,096, `FileByteSource` on a temporary file (Linux shape) — Verified 2026-11-13: MovieContainerSnifferTests 8/8, host and Linux shape
 - [ ] MED-014-T12 [US2] Movie rows in `Packages/Compositor/Tests/CompositorTests/SafeDecoderTests.swift`: F12-F16 through `VideoProbe.check` with exact `VideoImportError`s; F14 sniffed facts `avc1` 64 × 48 (S1)
 
 ## Phase 5: User Story 3 — Typed result for every malformed file (P1)
 
-- [ ] MED-014-T13 [P] [US3] Fuzz in `Packages/Compositor/Tests/MediaSniffingTests/SnifferFuzzTests.swift`: seed fixed, ≥ 2,000 mutations (bit flip, overwrite, truncate, duplicate range, insert, length field 0xFFFFFFFF) over the PNG, HEIF-header and movie-header fixtures; every result facts or `MediaSniffError` (S2)
+- [X] MED-014-T13 [P] [US3] Fuzz in `Packages/Compositor/Tests/MediaSniffingTests/SnifferFuzzTests.swift`: seed fixed, ≥ 2,000 mutations (bit flip, overwrite, truncate, duplicate range, insert, length field 0xFFFFFFFF) over the PNG, HEIF-header and movie-header fixtures; every result facts or `MediaSniffError` (S2) — Verified 2026-11-13: SnifferFuzzTests 2/2 (2,700 mutations, 0.02 s), host and Linux shape
 - [ ] MED-014-T14 [US3] Decoder fuzz in `Packages/Compositor/Tests/CompositorTests/SafeDecoderTests.swift`: ≈ 300 mutations of F1 and F5 through `ImageIODecoder`; every result a picture or an `ImageImportError` (S2)
 
 ## Phase 6: User Story 4 — A stored file that breaks later does not stop the show (P1)
