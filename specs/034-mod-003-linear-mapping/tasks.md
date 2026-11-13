@@ -26,7 +26,7 @@ None: the mapping type is the first story's deliverable.
 `testInputIsClampedToTheEnds`.
 
 - [ ] MOD-003-T02 [US1] Write `Packages/ParameterGraph/Tests/ParameterGraphTests/LinearMappingTests.swift` (a) the roadmap acceptance: for output ranges 0…1, 0.2…0.9, 0.9…0.1, −3…7, 7…−3, −5…−1, 1e−9…2e−9, −1e300…1e300, 1e300…1.5e300 and 0.1…0.1, `interpolate(0) == start`, `interpolate(1) == end`, and the same via the static `interpolate(from:to:at:)` (contract L2); (b) input 0.25…0.75 → 0.9…0.1: `map` of 0.25, 0, −∞, NaN gives exactly 0.9; of 0.75, 1, +∞ exactly 0.1; Float-exact band levels (`Double(Float(0.25))`) are exact too (contract L1, L4); (c) `isValid` (false for 1…1, 1…0, NaN bounds, infinite ends), `isInverted`, `isConstant`, `.identity`; an invalid mapping's `position` and `map` return without trapping and positions stay in 0…1 (MOD-003-R8).
-- [ ] MOD-003-T03 [US1] Record the T02 red run; implement `Packages/ParameterGraph/Sources/ParameterGraph/LinearMapping.swift` per contract L1-L4 and research MOD-003-D1 ("finite, minimum below maximum" for validity; default input range 0…1). Evidence: T02 passes on the host.
+- [ ] MOD-003-T03 [US1] Record the T02 red run; implement `Packages/ParameterGraph/Sources/ParameterGraph/LinearMapping.swift` per contract L1-L4 and research MOD-003-D1 ("finite, minimum below maximum" for validity; default input range 0…1; stored scalars and arithmetic only, so allocation-free by construction, MOD-003-R6). Evidence: T02 passes on the host.
 
 ## Phase 4: User Story 2 - values in between stay in range and move one way (P1)
 
@@ -44,7 +44,7 @@ None: the mapping type is the first story's deliverable.
 ## Phase 6: Polish & cross-cutting
 
 - [ ] MOD-003-T07 [P] Run `swift test --package-path Packages/VisualGenerators` and the Linux shape `swift test --package-path Packages/VisualGenerators -Xswiftc -DVISUAL_NO_METAL -Xswiftc -DANALYSIS_NO_ACCELERATE --scratch-path .build/linuxshape` (the app catalog's binding tests, Linux-safe code). Evidence: pass counts and durations recorded here.
-- [ ] MOD-003-T08 [P] Run `python3 scripts/check_compliance.py` and `python3 scripts/validate_docs.py`; update the roadmap row MOD-003 status in `docs/FEATURE_ROADMAP_AUTONOMOUS.md` only if other integrated rows record their status there (follow the MOD-002 precedent). Evidence: both exit 0.
+- [ ] MOD-003-T08 [P] Run `python3 scripts/check_compliance.py` and `python3 scripts/validate_docs.py`. The roadmap table is not edited (MOD-002 precedent: row status is tracked by the autonomous run's status files, not the roadmap). Evidence: both exit 0.
 
 ## Dependencies
 

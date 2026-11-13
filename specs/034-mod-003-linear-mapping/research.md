@@ -20,6 +20,9 @@ All questions were resolved in the spec's Clarifications; this file records the 
     adjacent representable s each: MOD-002's formula clamped to the ends had 20,763 reversals in
     1,000,000 steps; the two-branch formula had 0 reversals and 0 out-of-range results, and agreed
     bit for bit with MOD-002 in 80.6 % of samples (all opposite-sign cases included).
+  - Difference from MOD-002 for same-sign ranges over 1,001 evenly spaced positions, in units in
+    the last place of the larger end: 0.2…0.9 at most 2.0; 0.9…0.1, −5…−1, 1e300…1.5e300,
+    1e−9…2e−9, 0.1…0.1, 7…3 at most 1.0; 0.5…1 at most 0.5. Hence the 2-ulp bound in MOD-003-R7.
 - **Alternatives**: MOD-002's formula unchanged (unbounded for constant ranges, not monotonic);
   plus a clamp (bounded, still not monotonic); `a + t·(b − a)` alone (not exact at t = 1).
 
