@@ -91,8 +91,9 @@ public struct FuzzCampaign: Sendable {
         self.customMutations = customMutations
     }
 
-    /// Input `iteration`: the corpus items first, unchanged; then 1-4 stacked mutations of a corpus
-    /// item (or, one in 16, of random bytes). Depends only on (seed, iteration).
+    /// Input `iteration`: the corpus items first, unchanged; then 1 (half the time) to 4 stacked
+    /// mutations of a corpus item (or, one in 16, of random bytes); with custom mutations, each step
+    /// is a custom one half the time. Depends only on (seed, iteration).
     public func input(_ iteration: Int) -> FuzzInput {
         let cap = budget.maxInputBytes
         if iteration < corpus.count {
@@ -109,9 +110,9 @@ public struct FuzzCampaign: Sendable {
             bytes = Array(corpus[i].prefix(cap))
         }
         var applied: [FuzzMutation] = []
-        let steps = rng.pick(1...4)
+        let steps = rng.chance(oneIn: 2) ? 1 : rng.pick(2...4)
         for _ in 0..<steps {
-            if !customMutations.isEmpty, rng.chance(oneIn: 3) {
+            if !customMutations.isEmpty, rng.chance(oneIn: 2) {
                 let custom = customMutations[rng.below(customMutations.count)]
                 bytes = custom(bytes, &rng, cap)
                 if bytes.count > cap { bytes = Array(bytes.prefix(cap)) }
