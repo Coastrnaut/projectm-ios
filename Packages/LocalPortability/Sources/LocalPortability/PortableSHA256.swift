@@ -27,45 +27,110 @@ public enum PortableSHA256 {
 
     private static func rotr(_ x: UInt32, _ n: UInt32) -> UInt32 { (x >> n) | (x << (32 - n)) }
 
+    static let initialState: [UInt32] = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19]
+
+    /// One 64-byte block into `h`; `w` is the caller's 64-word scratch schedule (reused, no allocation).
+    static func compress(_ h: inout [UInt32], _ w: inout [UInt32], _ block: UnsafeBufferPointer<UInt8>) {
+        for i in 0..<16 {
+            w[i] = UInt32(block[i * 4]) << 24 | UInt32(block[i * 4 + 1]) << 16 | UInt32(block[i * 4 + 2]) << 8 | UInt32(block[i * 4 + 3])
+        }
+        for i in 16..<64 {
+            let s0 = rotr(w[i - 15], 7) ^ rotr(w[i - 15], 18) ^ (w[i - 15] >> 3)
+            let s1 = rotr(w[i - 2], 17) ^ rotr(w[i - 2], 19) ^ (w[i - 2] >> 10)
+            w[i] = w[i - 16] &+ s0 &+ w[i - 7] &+ s1
+        }
+        var (a, b, c, d, e, f, g, hh) = (h[0], h[1], h[2], h[3], h[4], h[5], h[6], h[7])
+        for i in 0..<64 {
+            let s1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)
+            let ch = (e & f) ^ (~e & g)
+            let t1 = hh &+ s1 &+ ch &+ k[i] &+ w[i]
+            let s0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22)
+            let maj = (a & b) ^ (a & c) ^ (b & c)
+            (hh, g, f, e, d, c, b, a) = (g, f, e, d &+ t1, c, b, a, t1 &+ s0 &+ maj)
+        }
+        h[0] &+= a; h[1] &+= b; h[2] &+= c; h[3] &+= d; h[4] &+= e; h[5] &+= f; h[6] &+= g; h[7] &+= hh
+    }
+
+    /// The padding for a message of `length` bytes whose last `tail` bytes (< 64) are not yet
+    /// compressed: tail, 0x80, zeros, the bit length (64 or 128 bytes).
+    static func paddedTail(_ tail: [UInt8], length: Int) -> [UInt8] {
+        var padded = tail
+        padded.append(0x80)
+        while padded.count % 64 != 56 { padded.append(0) }
+        let bits = UInt64(length) &* 8
+        for shift in stride(from: 56, through: 0, by: -8) { padded.append(UInt8((bits >> UInt64(shift)) & 0xFF)) }
+        return padded
+    }
+
     /// Full 64-byte blocks are read in place; only the tail is copied for padding.
     static func digestWords(_ bytes: UnsafeBufferPointer<UInt8>) -> [UInt32] {
-        var h: [UInt32] = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19]
+        var h = initialState
         var w = [UInt32](repeating: 0, count: 64)
-        func compress(_ block: UnsafeBufferPointer<UInt8>) {
-            for i in 0..<16 {
-                w[i] = UInt32(block[i * 4]) << 24 | UInt32(block[i * 4 + 1]) << 16 | UInt32(block[i * 4 + 2]) << 8 | UInt32(block[i * 4 + 3])
-            }
-            for i in 16..<64 {
-                let s0 = rotr(w[i - 15], 7) ^ rotr(w[i - 15], 18) ^ (w[i - 15] >> 3)
-                let s1 = rotr(w[i - 2], 17) ^ rotr(w[i - 2], 19) ^ (w[i - 2] >> 10)
-                w[i] = w[i - 16] &+ s0 &+ w[i - 7] &+ s1
-            }
-            var (a, b, c, d, e, f, g, hh) = (h[0], h[1], h[2], h[3], h[4], h[5], h[6], h[7])
-            for i in 0..<64 {
-                let s1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)
-                let ch = (e & f) ^ (~e & g)
-                let t1 = hh &+ s1 &+ ch &+ k[i] &+ w[i]
-                let s0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22)
-                let maj = (a & b) ^ (a & c) ^ (b & c)
-                (hh, g, f, e, d, c, b, a) = (g, f, e, d &+ t1, c, b, a, t1 &+ s0 &+ maj)
-            }
-            h[0] &+= a; h[1] &+= b; h[2] &+= c; h[3] &+= d; h[4] &+= e; h[5] &+= f; h[6] &+= g; h[7] &+= hh
-        }
         let fullBlocks = bytes.count / 64
         for block in 0..<fullBlocks {
-            compress(UnsafeBufferPointer(rebasing: bytes[(block * 64)..<(block * 64 + 64)]))
+            compress(&h, &w, UnsafeBufferPointer(rebasing: bytes[(block * 64)..<(block * 64 + 64)]))
         }
-        var tail = Array(bytes[(fullBlocks * 64)...])
-        tail.append(0x80)
-        while tail.count % 64 != 56 { tail.append(0) }
-        let bits = UInt64(bytes.count) &* 8
-        for shift in stride(from: 56, through: 0, by: -8) { tail.append(UInt8((bits >> UInt64(shift)) & 0xFF)) }
-        tail.withUnsafeBufferPointer { padded in
-            for block in 0..<(padded.count / 64) {
-                compress(UnsafeBufferPointer(rebasing: padded[(block * 64)..<(block * 64 + 64)]))
+        let padded = paddedTail(Array(bytes[(fullBlocks * 64)...]), length: bytes.count)
+        padded.withUnsafeBufferPointer { (p: UnsafeBufferPointer<UInt8>) in
+            for block in 0..<(p.count / 64) {
+                compress(&h, &w, UnsafeBufferPointer(rebasing: p[(block * 64)..<(block * 64 + 64)]))
             }
         }
         return h
+    }
+
+    /// Incremental SHA-256 (FILE-002-R6; research FILE-002-D3): feed the bytes in chunks of any size,
+    /// then `finalize()`. Its state is fixed-size (8 words, a 64-word schedule, fewer than 64 pending
+    /// bytes and a length), so hashing a file chunk by chunk needs no memory proportional to the file.
+    /// Gives the same digest as `hex(_:)` for every split of the input.
+    public struct Hasher: Sendable {
+        private var h = PortableSHA256.initialState
+        private var w = [UInt32](repeating: 0, count: 64)
+        private var pending: [UInt8] = []
+        private var length = 0
+
+        public init() {
+            pending.reserveCapacity(64)
+        }
+
+        public mutating func update(_ data: Data) {
+            data.withUnsafeBytes { (raw: UnsafeRawBufferPointer) in update(raw.bindMemory(to: UInt8.self)) }
+        }
+
+        public mutating func update(_ bytes: [UInt8]) {
+            bytes.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<UInt8>) in update(buffer) }
+        }
+
+        public mutating func update(_ bytes: UnsafeBufferPointer<UInt8>) {
+            length += bytes.count
+            var start = 0
+            if !pending.isEmpty {
+                let take = min(64 - pending.count, bytes.count)
+                pending.append(contentsOf: bytes[0..<take])
+                start = take
+                guard pending.count == 64 else { return }
+                pending.withUnsafeBufferPointer { (block: UnsafeBufferPointer<UInt8>) in PortableSHA256.compress(&h, &w, block) }
+                pending.removeAll(keepingCapacity: true)
+            }
+            while start + 64 <= bytes.count {
+                PortableSHA256.compress(&h, &w, UnsafeBufferPointer(rebasing: bytes[start..<(start + 64)]))
+                start += 64
+            }
+            if start < bytes.count { pending.append(contentsOf: bytes[start...]) }
+        }
+
+        /// Lowercase hex of the digest. The hasher can be finalized more than once (it is a value).
+        public func finalize() -> String {
+            var state = h
+            var schedule = w
+            let padded = PortableSHA256.paddedTail(pending, length: length)
+            padded.withUnsafeBufferPointer { (p: UnsafeBufferPointer<UInt8>) in
+                for block in 0..<(p.count / 64) {
+                    PortableSHA256.compress(&state, &schedule, UnsafeBufferPointer(rebasing: p[(block * 64)..<(block * 64 + 64)]))
+                }
+            }
+            return PortableSHA256.hex(of: state)
+        }
     }
 
     static func hex(of words: [UInt32]) -> String {

@@ -56,3 +56,31 @@ one stored video (MED-001, MED-002).
   (MED-001/MED-002 tests pass unchanged).
 - A multi-photo library (FILE-008, SCN library rows) will need a new store model and a new format
   version only if more than one photo/video per scene becomes possible.
+
+## Amendment 2026-11-13: FILE-002 archive manifest checksums
+
+Decided by Claude under owner rule 4 (`specs/065-file-002-archive-manifest-checksums`, research
+FILE-002-D1 to D5). No default is overridden and the format stays version 1.
+
+1. **What the checksums prove.** Every entry except `manifest.json` is listed with its byte count and
+   SHA-256 (unchanged). Reading checks every entry's ZIP CRC-32, then per record: safe path,
+   well-formed digest and size, unique, present, size, SHA-256; then no unlisted entry. Every
+   per-entry refusal names the entry; a malformed digest or negative size is now
+   `PortableArchiveError.invalidRecord(path)` instead of the unnamed `malformedManifest`, and size and
+   checksum mismatches have distinct messages. The rule applies to preset archives too (same layer).
+2. **Integrity, not authenticity.** The manifest cannot carry its own digest, and a digest elsewhere
+   in the file can be rewritten with it. A file changed together with its record and its CRC-32 is
+   therefore accepted by the checksum layer (FILE-001's content checks, SCN-001 validation and the
+   stores' sanitizers still apply). Detecting a deliberate forger needs a signature verified with a
+   key the app trusts; the local-first app has no accounts or key distribution and no roadmap row
+   asks for it. A test records this limit (`SceneArchiveTamperTests`).
+3. **Before the library changes.** `SceneArchiveService` takes an optional step observer (nil in the
+   app) reporting `.verified`, `.staged(path)`, `.adopted(type)`, `.madeCurrent(type)`. Tests import
+   tampered archives into seeded stores and require zero steps and byte-identical stores; a valid
+   import reports `.verified` before every store step.
+4. **Memory.** Verification hashes in place over the memory-mapped archive's entry bytes (CRC-32 and
+   SHA-256 add O(1) memory). The reader still copies each entry once (Decision 5's staging), so a
+   500 MiB video import holds about one copy of the video; not measured on a device.
+   `PortableSHA256.Hasher` (incremental, fixed-size state, same compression function) exists for
+   file-based hashing later (FILE-006). No CryptoKit: the plain-Swift SHA-256 keeps Linux CI.
+

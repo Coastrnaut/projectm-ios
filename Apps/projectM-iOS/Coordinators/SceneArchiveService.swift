@@ -13,6 +13,9 @@
 //   validated against the staged copies; only then are the copies moved into the real stores and
 //   the identifiers switched (previous copies deleted). Any failure before the switch leaves the
 //   stores as they were; the staging folder is removed in every case.
+// * Checksums (FILE-002): the reader verifies every entry's CRC-32, listed size and SHA-256 before
+//   anything is staged; the optional `observer` sees `.verified` and then each store step, so tests
+//   prove that a tampered archive runs no stage, adopt or make-current step (ADR-0029 amendment).
 // No networking; nothing from an archive is executed. Runs off the main actor.
 import Foundation
 import ImageLayer
@@ -33,6 +36,17 @@ struct SceneArchiveImportResult: Sendable {
     let replacedVideo: Bool
     /// SCN-001 decode and validation warnings.
     let warnings: [SceneIssue]
+}
+
+/// One step of an import, in order (FILE-002-R5; contracts/archive-checksums.md C3). Only `.adopted`
+/// and `.madeCurrent` touch the real stores; `.staged` writes into the per-import staging folder.
+enum SceneArchiveImportStep: Sendable, Equatable {
+    /// The reader accepted the archive: checksums, sizes, records, scene and content checks.
+    case verified
+    /// An archive media file went through a staging store's import (archive path).
+    case staged(String)
+    case adopted(SceneArchiveAssetType)
+    case madeCurrent(SceneArchiveAssetType)
 }
 
 struct SceneArchiveExport: Sendable, Equatable {
@@ -81,14 +95,18 @@ struct SceneArchiveService: Sendable {
     /// The temporary directory (tests pass their own).
     let temporaryRoot: URL
     let limits: SceneArchiveLimits
+    /// Sees each import step (tests); nil in the app.
+    let observer: (@Sendable (SceneArchiveImportStep) -> Void)?
 
     init(photos: PhotoStore, videos: VideoStore, registry: ParameterRegistry,
-         temporaryRoot: URL = FileManager.default.temporaryDirectory, limits: SceneArchiveLimits = .standard) {
+         temporaryRoot: URL = FileManager.default.temporaryDirectory, limits: SceneArchiveLimits = .standard,
+         observer: (@Sendable (SceneArchiveImportStep) -> Void)? = nil) {
         self.photos = photos
         self.videos = videos
         self.registry = registry
         self.temporaryRoot = temporaryRoot
         self.limits = limits
+        self.observer = observer
     }
 
     /// The visual catalog plus the material catalog, as scenes are validated (SCN-001).
@@ -171,6 +189,7 @@ struct SceneArchiveService: Sendable {
         } catch {
             throw .archive(error)
         }
+        observer?(.verified)
 
         // Stage every asset through the stores' own import path, in a store rooted in staging.
         let stagingPhotos = PhotoStore(directory: staging.appendingPathComponent("Photos", isDirectory: true), defaults: photos.defaults, limits: photos.limits)
@@ -191,6 +210,7 @@ struct SceneArchiveService: Sendable {
             case .photo:
                 do throws(ImageImportError) {
                     let staged = try stagingPhotos.stage(at: file)
+                    observer?(.staged(item.path))
                     stagedPhoto = staged
                     storeIDs[item.key] = staged.id.uuidString
                 } catch {
@@ -199,6 +219,7 @@ struct SceneArchiveService: Sendable {
             case .video:
                 do throws(VideoImportError) {
                     let staged = try await stagingVideos.stage(at: file)
+                    observer?(.staged(item.path))
                     stagedVideo = staged
                     storeIDs[item.key] = staged.id.uuidString
                 } catch {
@@ -219,8 +240,14 @@ struct SceneArchiveService: Sendable {
         var adoptedPhoto: StoredPhoto?
         var adoptedVideo: StoredVideo?
         do {
-            if let stagedPhoto { adoptedPhoto = try photos.adopt(stagedPhoto) }
-            if let stagedVideo { adoptedVideo = try videos.adopt(stagedVideo) }
+            if let stagedPhoto {
+                adoptedPhoto = try photos.adopt(stagedPhoto)
+                observer?(.adopted(.photo))
+            }
+            if let stagedVideo {
+                adoptedVideo = try videos.adopt(stagedVideo)
+                observer?(.adopted(.video))
+            }
         } catch {
             if let adoptedPhoto { photos.discard(adoptedPhoto) }
             if let adoptedVideo { videos.discard(adoptedVideo) }
@@ -228,8 +255,14 @@ struct SceneArchiveService: Sendable {
         }
         let replacedPhoto = adoptedPhoto != nil && photos.current() != nil
         let replacedVideo = adoptedVideo != nil && videos.current() != nil
-        if let adoptedPhoto { photos.makeCurrent(adoptedPhoto) }
-        if let adoptedVideo { videos.makeCurrent(adoptedVideo) }
+        if let adoptedPhoto {
+            photos.makeCurrent(adoptedPhoto)
+            observer?(.madeCurrent(.photo))
+        }
+        if let adoptedVideo {
+            videos.makeCurrent(adoptedVideo)
+            observer?(.madeCurrent(.video))
+        }
         return SceneArchiveImportResult(document: document, photo: adoptedPhoto, video: adoptedVideo,
                                         replacedPhoto: replacedPhoto, replacedVideo: replacedVideo, warnings: contents.warnings)
     }

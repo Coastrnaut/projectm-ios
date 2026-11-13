@@ -1,5 +1,6 @@
 // Test helpers: read and patch the little-endian fields of a stored ZIP built by the tests.
 import Foundation
+import LocalPortability
 
 enum ZipBytes {
     static func u16(_ data: Data, _ at: Int) -> Int { Int(data[data.startIndex + at]) | Int(data[data.startIndex + at + 1]) << 8 }
@@ -34,5 +35,16 @@ enum ZipBytes {
     static func dataStart(_ data: Data, entry: Int) -> Int {
         let local = localHeader(data, entry: entry)
         return local + 30 + u16(data, local + 26) + u16(data, local + 28)
+    }
+
+    /// Recomputes entry `entry`'s CRC-32 in its central and local headers (an attacker who repairs the
+    /// ZIP checksum after changing the bytes; FILE-002 tamper cases).
+    static func repairCRC(_ data: inout Data, entry: Int) {
+        let central = centralHeaders(data)[entry]
+        let size = u32(data, central + 24)
+        let start = dataStart(data, entry: entry)
+        let crc = Int(CRC32.checksum(data[(data.startIndex + start)..<(data.startIndex + start + size)]))
+        set32(&data, central + 16, crc)
+        set32(&data, localHeader(data, entry: entry) + 14, crc)
     }
 }

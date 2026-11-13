@@ -1,0 +1,168 @@
+{
+  "entries" : [
+    {
+      "file" : "graph-hue-rings-128x96-f7.png",
+      "fileSHA256" : "f825d00849198c172c25a9bfe411b1b5710e2ed1e4fea43e24e6b0da5a831cce",
+      "frame" : 7,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "d15c9344f84968193961d68e5e134322b7ace7222807674eb63dbccfa4fc755f",
+      "scene" : "graph-hue-rings",
+      "width" : 128
+    },
+    {
+      "file" : "graph-hue-rings-256x192-f7.png",
+      "fileSHA256" : "289240baf6b0eaccdc53f1c53251266a1a3d3beaade48cf7982e691d763152ec",
+      "frame" : 7,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "0af92b9d7a440bba5ebc5f7a64af9534e92fd681e9dc3ef3541368555042b49e",
+      "scene" : "graph-hue-rings",
+      "width" : 256
+    },
+    {
+      "file" : "material-plasma-128x96-f7.png",
+      "fileSHA256" : "6cbdf81212d88ece654b9afbfc13c35bcf8acaf7a3ef54a95a794ddb3188cba9",
+      "frame" : 7,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "ff4725636f214f4acfc4017fd055e0e699021b702ad4db2d772cafd4847c52a1",
+      "scene" : "material-plasma",
+      "width" : 128
+    },
+    {
+      "file" : "material-plasma-256x192-f7.png",
+      "fileSHA256" : "4985150e476f9bac95967702f7333a3015f764fcff7eadd907809a792dfc446a",
+      "frame" : 7,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "59c16a104dde421620ef4ef141837c8a707819147e0b0c1bb88e036757d5c6f5",
+      "scene" : "material-plasma",
+      "width" : 256
+    },
+    {
+      "file" : "photo-gradient-128x96-f7.png",
+      "fileSHA256" : "98f5ca20c3e07829cb17a8b226eb7c9c10a4c93395effeb4a575c3b8fd81b6b1",
+      "frame" : 7,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "2f1e90d93a742b31038b719fa21b289d4b1fcf393cc0bc04bdf9dea5b3062368",
+      "scene" : "photo-gradient",
+      "width" : 128
+    },
+    {
+      "file" : "photo-gradient-256x192-f7.png",
+      "fileSHA256" : "d6322a85c03a8d5422d63afd18495497ebac75655142865b21ec90833639fc03",
+      "frame" : 7,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "976d10e313d2c76431813ac459cbc4a7ba3ed1dc758dba657fd9c57d4f141326",
+      "scene" : "photo-gradient",
+      "width" : 256
+    },
+    {
+      "file" : "spectrum-circular-128x96-f7.png",
+      "fileSHA256" : "fcee360b40e9826af1423a38806a7e88959d45e0b7d09fdbed7603220872dae4",
+      "frame" : 7,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "0b1eef074cb5f4532734e504b9f50b693f36cbdb5779a94b448bb1d302ff645a",
+      "scene" : "spectrum-circular",
+      "width" : 128
+    },
+    {
+      "file" : "spectrum-circular-256x192-f7.png",
+      "fileSHA256" : "3196b7bd80688f8b4e7b9d5d91f63624613ecc9ad85d6e952e91d737eba29c98",
+      "frame" : 7,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "fd87e9b7728e17805961d4a311f909daad37697c5fd0300c5ecb1e386a98c8f1",
+      "scene" : "spectrum-circular",
+      "width" : 256
+    },
+    {
+      "file" : "stack-composite-128x96-f7.png",
+      "fileSHA256" : "bd60caab43f4053fc253c713bd9a988b7bec5808e6382b6fdd7016f72c032022",
+      "frame" : 7,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "6442022731c347c0650ad0b9d863fa8c54944165ef6b5e57242c2f71d17f61fa",
+      "scene" : "stack-composite",
+      "width" : 128
+    },
+    {
+      "file" : "stack-composite-256x192-f7.png",
+      "fileSHA256" : "a545add8837bd5316b85fcc271372240225423a5548e04f132887c267e3430d4",
+      "frame" : 7,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "24ce5b4bfcb3040d1863a351f121b4ef2f09dccf8b210155f70c3d5e78f1f8e2",
+      "scene" : "stack-composite",
+      "width" : 256
+    },
+    {
+      "file" : "strobe-guarded-128x96-f6.png",
+      "fileSHA256" : "81dcdc8440a619c0e6ca7cea39e0f9a491811d98172c5f7c4c48ae9f3b67db9b",
+      "frame" : 6,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "a4c600f3105541f971b90e4ebc3392a41ed52f19526f1bb8b2d44797ed3bb40b",
+      "scene" : "strobe-guarded",
+      "width" : 128
+    },
+    {
+      "file" : "strobe-guarded-128x96-f7.png",
+      "fileSHA256" : "2b24170b69a42c1c9f4cad9bf4cb20b0ae69d55e38a28233ad81b4228d57ca10",
+      "frame" : 7,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "97496d013eed2d7eaa663f5bb3dd7de4748dfa958aff2470702c90aef731f820",
+      "scene" : "strobe-guarded",
+      "width" : 128
+    },
+    {
+      "file" : "strobe-guarded-256x192-f6.png",
+      "fileSHA256" : "8d2ac231c2be6ac1d9270528a87a02fad4f848e0c54ccbb170f20537c04c3d54",
+      "frame" : 6,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "b651b0a8bf260e92646ae30d4d3038e37372753b346fd8d2a32a7ba6ef4264b7",
+      "scene" : "strobe-guarded",
+      "width" : 256
+    },
+    {
+      "file" : "strobe-guarded-256x192-f7.png",
+      "fileSHA256" : "b84ccad7af52f39ea7f633a9cd7f215f2d150fe46375534e771be6f99cc0dbe0",
+      "frame" : 7,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "531526ae560c4d3761d72582e8728ea12fcd8354d0fa89ca22295c4de5e985ee",
+      "scene" : "strobe-guarded",
+      "width" : 256
+    },
+    {
+      "file" : "text-caption-128x96-f7.png",
+      "fileSHA256" : "77440ebeb64d92223fa097f591cab0a48c2205067c040d01f2ad1d7176ba8457",
+      "frame" : 7,
+      "height" : 96,
+      "osSensitive" : true,
+      "pixelSHA256" : "df83cac73fd0201dc4583655b2e6b0280c475915a82b8fbfad4c3fc1b31fdb2d",
+      "scene" : "text-caption",
+      "width" : 128
+    },
+    {
+      "file" : "text-caption-256x192-f7.png",
+      "fileSHA256" : "0706cf8e648275f38ba8788edf690788df1d95b8ec7b54c6cd49570a3391f83a",
+      "frame" : 7,
+      "height" : 192,
+      "osSensitive" : true,
+      "pixelSHA256" : "d147288bd537f27931d3b52fe2bfaecbaa74c7a58a254cfc6a609fc0ad46c98b",
+      "scene" : "text-caption",
+      "width" : 256
+    }
+  ],
+  "formatVersion" : 1,
+  "platform" : "macos",
+  "recordedGPU" : "Apple M5 Max",
+  "recordedOS" : "27.2"
+}

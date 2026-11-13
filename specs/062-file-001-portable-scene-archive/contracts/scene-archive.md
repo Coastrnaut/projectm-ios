@@ -39,7 +39,7 @@ then assets by key.
 | Case | Error |
 |---|---|
 | File larger than the archive limit | `archiveTooLarge(limit:)` |
-| ZIP or manifest problem (PRE-014: unsafe/absolute path, `..`, duplicate, too many entries, entry too large, compressed, encrypted, symbolic link, CRC, missing/malformed manifest, wrong format, unlisted or missing file, length or SHA-256 mismatch) | `archive(PortableArchiveError)` |
+| ZIP or manifest problem (PRE-014: unsafe/absolute path, `..`, duplicate, too many entries, entry too large, compressed, encrypted, symbolic link, CRC, missing/malformed manifest, wrong format, unlisted or missing file, length or SHA-256 mismatch, malformed record → `invalidRecord(path)`; order and named refusals: FILE-002 `specs/065-file-002-archive-manifest-checksums/contracts/archive-checksums.md` C2) | `archive(PortableArchiveError)` |
 | Newer format version | `archive(.newerVersion(n))` |
 | Scene-archive keys missing or wrong (`scene` ≠ `scene.json`, bad record, unknown type, duplicate key, path ≠ `assets/<key>.<ext>`) | `malformedManifest(String)` |
 | More than one photo or video record | `tooManyMedia(type)` |
