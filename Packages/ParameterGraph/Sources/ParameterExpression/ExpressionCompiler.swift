@@ -7,6 +7,9 @@
 //    reported from its first binding in source order, at the reference that closes it;
 // 3. code: bindings in dependency order (depth-first post-order), each stored once in its slot
 //    (its source index), then the result; the running cost is checked at every instruction.
+//
+// SHD-010 (contract B4): every node resolved, binding named, dependency visit, reference followed,
+// loop-report step and instruction emitted counts one step (`ExpressionCompileWork.compilerSteps`).
 import ParameterGraph
 
 /// A name resolved to what it reads.
@@ -36,15 +39,19 @@ struct ExpressionCompiler {
     /// Per binding, the bindings its body reads with the reading position, in source order.
     private var references: [[(target: Int, position: SourcePosition)]] = []
     private var audioSources: [AudioFeatureSource] = []
+    private var audioSourceSet: Set<AudioFeatureSource> = []
     private var readsTime = false
 
     private var instructions: [ExpressionInstruction] = []
     private var cost = 0
     private var depth = 0
     private var maximumDepth = 0
+    private var steps = 0
 
-    static func compile(_ program: ParsedProgram, limits: ExpressionLimits) throws(ExpressionError) -> Output {
+    static func compile(_ program: ParsedProgram, limits: ExpressionLimits,
+                        work: inout ExpressionCompileWork) throws(ExpressionError) -> Output {
         var compiler = ExpressionCompiler(program: program, limits: limits)
+        defer { work.compilerSteps += compiler.steps }
         return try compiler.run()
     }
 
@@ -64,6 +71,7 @@ struct ExpressionCompiler {
         var bodies: [ResolvedNode] = []
         var seen: Set<String> = []
         for (i, binding) in program.bindings.enumerated() {
+            steps += 1
             if binding.name.contains(".") {
                 throw ExpressionError(.invalidBindingName(binding.name), at: binding.namePosition)
             }
@@ -93,6 +101,7 @@ struct ExpressionCompiler {
     // MARK: Names
 
     private mutating func resolve(_ node: ExpressionNode, inBinding owner: Int?) throws(ExpressionError) -> ResolvedNode {
+        steps += 1
         switch node {
         case let .number(value, position):
             return .constant(value, position)
@@ -108,7 +117,7 @@ struct ExpressionCompiler {
             case let .constant(value):
                 return .constant(value, position)
             case let .audio(source):
-                if !audioSources.contains(source) { audioSources.append(source) }
+                if audioSourceSet.insert(source).inserted { audioSources.append(source) }
                 return .audio(source, position)
             case nil:
                 if ExpressionCatalog.function(named: name) != nil {
@@ -143,20 +152,26 @@ struct ExpressionCompiler {
     // MARK: Recursion
 
     /// Depth-first post-order of all bindings (dependencies first); throws on the first loop.
-    private func dependencyOrder() throws(ExpressionError) -> [Int] {
+    private mutating func dependencyOrder() throws(ExpressionError) -> [Int] {
         let count = program.bindings.count
         var state = Array(repeating: 0, count: count)   // 0 new, 1 on the path, 2 done
         var path: [Int] = []
         var order: [Int] = []
         order.reserveCapacity(count)
+        var visits = 0
+        defer { steps += visits }
 
         func visit(_ i: Int) throws(ExpressionError) {
+            visits += 1
             state[i] = 1
             path.append(i)
             for reference in references[i] {
+                visits += 1
                 let j = reference.target
                 if state[j] == 1 {
-                    throw loopError(Array(path[path.lastIndex(of: j)!...]))
+                    let members = Array(path[path.lastIndex(of: j)!...])
+                    visits += 3 * members.count + references[members[members.count - 1]].count
+                    throw loopError(members)
                 }
                 if state[j] == 0 { try visit(j) }
             }
@@ -214,6 +229,7 @@ struct ExpressionCompiler {
     }
 
     private mutating func append(_ instruction: ExpressionInstruction, at position: SourcePosition) throws(ExpressionError) {
+        steps += 1
         cost += ExpressionLimits.cost(of: instruction.opcode)
         if cost > limits.maximumOperationCost {
             throw ExpressionError(.operationCostOverLimit(limit: limits.maximumOperationCost), at: position)

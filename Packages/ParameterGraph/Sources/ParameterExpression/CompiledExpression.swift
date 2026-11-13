@@ -103,9 +103,26 @@ public struct CompiledExpression: Sendable, Hashable {
 
     /// Compiles `source` (contract E1-E7); throws the first problem with its position.
     public init(source: String, limits: ExpressionLimits = .standard) throws(ExpressionError) {
-        let tokens = try ExpressionLexer.tokens(of: source, limits: limits)
-        let program = try ExpressionParser.parse(tokens, limits: limits)
-        let output = try ExpressionCompiler.compile(program, limits: limits)
+        var work = ExpressionCompileWork()
+        try self.init(source: source, limits: limits, work: &work)
+    }
+
+    /// Compiles `source` and reports the counted work (SHD-010-R5, contract B4), whether it compiled
+    /// or was refused. Compile off the frame loop; the frame loop only evaluates (contract B1).
+    public static func measure(source: String, limits: ExpressionLimits = .standard)
+        -> (result: Result<CompiledExpression, ExpressionError>, work: ExpressionCompileWork) {
+        var work = ExpressionCompileWork()
+        do {
+            return (.success(try CompiledExpression(source: source, limits: limits, work: &work)), work)
+        } catch {
+            return (.failure(error), work)
+        }
+    }
+
+    private init(source: String, limits: ExpressionLimits, work: inout ExpressionCompileWork) throws(ExpressionError) {
+        let tokens = try ExpressionLexer.tokens(of: source, limits: limits, work: &work)
+        let program = try ExpressionParser.parse(tokens, limits: limits, work: &work)
+        let output = try ExpressionCompiler.compile(program, limits: limits, work: &work)
         self.source = source
         self.limits = limits
         self.instructions = output.instructions
@@ -140,6 +157,14 @@ public struct CompiledExpression: Sendable, Hashable {
 
     /// The formula's value for `inputs`: always finite, deterministic, no heap allocation.
     public func evaluate(_ inputs: ExpressionInputs) -> Double {
+        evaluate(inputs, bandMean: nil)
+    }
+
+    /// `bandMean`, when given, is `audio.bandMean` for `inputs.frame` computed once by the caller (the
+    /// frame snapshot); otherwise the mean is computed at most once per evaluation, however often the
+    /// formula reads it (SHD-010-D4: a read is then a load, not a sum over up to 128 bands).
+    func evaluate(_ inputs: ExpressionInputs, bandMean: Double?) -> Double {
+        var mean = bandMean
         let time = inputs.timeSeconds.isFinite ? inputs.timeSeconds : 0
         let frame = inputs.frame
         let capacity = Swift.max(1, slotCount + maximumStackDepth)
@@ -158,7 +183,14 @@ public struct CompiledExpression: Sendable, Hashable {
                     memory[top] = AudioFeatureSource.band(Int(instruction.index)).value(in: frame)
                     top += 1
                 case .bandMean:
-                    memory[top] = AudioFeatureSource.bandMean.value(in: frame)
+                    let value: Double
+                    if let mean {
+                        value = mean
+                    } else {
+                        value = AudioFeatureSource.bandMean.value(in: frame)
+                        mean = value
+                    }
+                    memory[top] = value
                     top += 1
                 case .onset:
                     memory[top] = AudioFeatureSource.onset.value(in: frame)
