@@ -34,6 +34,19 @@ advance (SHOW-003), per-cue transition override (SHOW-004), hold and skip (SHOW-
 preview (SHOW-006), timeline transport (SHOW-007), cue notes (SHOW-012), scene rotation (SHOW-013),
 performance lock (SHOW-015) and OSC cue sync (OSC-012). This row delivers only the manual list.
 
+## Clarifications
+
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the recommended, conservative, local-first option.
+
+- Q: What should Next do on the last cue, and Previous on the first: stop or wrap around? → A: Stop. Next on the last cue and Previous on the first cue (or at Standby) do nothing and the button shows unavailable; the result says "at end" or "at start". A live show must never jump from its finale back to its opening on an extra press; wrapping is a later automation choice (SHOW-013 rotation). Rejected: wrap (an accidental press shows cue 1 to the audience); stop and blank (blanking is SHOW-014's job).
+- Q: How does a cue refer to its scene while there is no scene library? → A: By scene ID. The show is its own versioned file; each scene the show uses is an SCN-001 document stored next to it in the show's folder under its scene ID, captured (a snapshot with a new scene ID) when the cue is added. Two cues may share a scene ID. When the scene library arrives (SCN-004 to SCN-006) cues keep the same scene IDs and the folder copies move into the library. Rejected: embedding scenes inside the show file (one huge file, rewritten on every cursor move; scenes not reusable by ID); referring to the live "current scene" (SCN-002), which changes after the cue is made.
+- Q: Is the show's position saved, and is the active cue shown again at launch? → A: The position is saved with the show (Standby or the active cue's ID), so a relaunch mid-show keeps its place; the cue is not applied again at launch: the app shows what it restores today (and SCN-002's current scene once merged, which is the last applied cue's look). Rejected: not saving the position (a crash mid-show restarts at Standby); applying the cue at launch (a launch would silently change the look).
+- Q: Where are the show's Next and Previous controls? → A: In the visualizer's controls, as a show row above the buttons (Previous cue, "Cue 2 of 5 · Intro", Next cue), shown only when the show has at least one cue and hidden with the controls; the arrow and page keys (a keyboard or presentation clicker) work whether or not the controls are shown. The editor (add, reorder, rename, delete, Go to cue) is in Settings → Show. Rejected: a persistent on-screen cue bar (covers the visualization on the device; the emergency control is the only persistent one, SHOW-014); a separate full-screen show mode (too large for this row).
+- Q: What happens when a step lands on a cue whose scene is missing or invalid: skip to the next good cue, or stop on it? → A: Stop on it: the position moves to that cue (so counting presses stays predictable and deterministic), the output is left unchanged, a non-blocking notice says "Cue 3: the scene could not be shown" and VoiceOver announces it; the editor flags the cue. Rejected: skipping (one press would move by a varying number of cues, breaking the operator's count and the determinism criterion); refusing to move (the show would be stuck on a damaged cue).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Step through a prepared show (Priority: P1)
@@ -168,10 +181,11 @@ fades in. The arrow keys move the show like the buttons.
 - **SHOW-001-R12**: The show and its scenes MUST be saved on the device after every change, each file
   written whole (never half written). A scene is stored before a cue refers to it, keeps its scene ID
   byte for byte, and is removed when no cue refers to it any more.
-- **SHOW-001-R13**: The visualizer's controls MUST show, when the show has at least one cue, Previous
+- **SHOW-001-R13**: The visualizer's controls MUST show (hidden with them), when the show has at least one cue, Previous
   cue and Next cue buttons and the active cue's position and label ("Cue 2 of 5 · Intro", or
   "Standby · 5 cues"), with VoiceOver labels and the value "Cue 2 of 5, Intro"; a button that would do
-  nothing is shown unavailable (FR-070).
+  nothing is shown unavailable (FR-070). A step's result notice (missing scene) shows for about 4 s
+  and is announced to VoiceOver.
 - **SHOW-001-R14**: Settings MUST offer a show editor: the cue list with each cue's number, label and
   a flag for a missing scene; Add Current Scene; reorder; delete; rename; Go to cue.
 - **SHOW-001-R15**: On the visualizer, Right Arrow and Page Down MUST act as Next cue, Left Arrow and
