@@ -35,7 +35,11 @@ The row's gap status is "Gap candidate". The audit confirms it.
 Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
 interaction); each answer is the conservative, local-first option.
 
-<!-- clarify answers are appended here -->
+- Q: What does the compositor do with an opacity outside 0…1 or a non-finite one: clamp or refuse? → A: Two rules, by where the value comes from. A stored opacity (a stack entry's or a layer's composite settings) keeps CMP-001's rule: finite values are clamped to 0…1 when set, a non-finite value reads 1, so a stack can never hold an invalid opacity and `apply` never fails for opacity. A requested fade follows the parameter registry's convention (MOD-001: clamp on set, refuse non-finite): a finite target is clamped, a non-finite target or a negative or non-finite duration is refused with a typed error and changes nothing. Rejected: refusing out-of-range stored values at `apply` (an `apply` that fails for a slider overshoot is worse than a clamp, and CMP-001 already clamps).
+- Q: At opacity 0, does the layer stop rendering, or only stop being composited? → A: Only its composite draw is skipped. The layer keeps rendering into its own picture each frame, so a fade-in shows current content at once, `.lastGoodFrame` fallbacks stay fresh and layers that integrate time see every frame. The saved work is the composite draw (one full-screen pass per layer). Rejected: pausing the layer's render (bigger saving, but a fade-in would first show a stale picture and time-integrating layers would see gaps); a later row (solo and mute, CMP-012) can add a real pause.
+- Q: How does a caller ask for a fade, and where does the target live? → A: The stack entry's opacity is the target (the value the layer settles at). `Compositor.apply` takes an optional opacity transition (duration and curve; default immediate) used for every kept layer whose opacity changed in that apply; new layers appear at their opacity at once. The fade itself is a small value type (`LayerOpacityAnimator` with `setOpacity(_:duration:curve:)`) that the compositor keeps per layer and that callers and tests can use alone. Curves: linear and ease-in-out (smoothstep, 3t² − 2t³: exact ends, monotonic, zero slope at both ends). Rejected: a separate `setOpacity(of:)` on the compositor that bypasses the stack (the applied stack and the shown target would drift apart and the next `apply` would snap back).
+- Q: Which clock drives a fade, and what happens after a stall? → A: The frame clock's frame durations (CMP-001-R3: the presentation-time difference clamped to 0…0.1 s), summed per layer. A fade therefore never jumps after a stall (the same rule every layer's animation follows) and is fully deterministic from the frame times; a fade of duration d ends exactly at the target on the first frame whose summed durations reach d. No wall clock is read. Rejected: absolute presentation time (a 2 s stall would complete a fade in one frame).
+- Q: Is per-layer opacity registered as a modulation parameter (`layer.<id>.opacity`)? → A: No, not in this row. MOD-001 parameter IDs are catalog-stable dotted names whose segments start with a letter and are never reused, while layer instance IDs are per-stack runtime numbers; registering them would need dynamic registration that MOD-001 does not have. The MOD rows (modulation targets) and the UIX rows (layer inspector, CMP-015) expose opacity through the stack. This row exposes opacity to code only.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -122,6 +126,9 @@ flashing on.
   and fades it in).
 - A fade continues across stack edits that keep the layer; removing the layer ends it.
 - A size change does not restart or jump a fade.
+- A stall between frames advances a fade by at most 0.1 s (the frame clock's clamp), so a fade never
+  completes in one frame because of a stall.
+- Opacity is not a modulation parameter in this row (no `layer.<id>.opacity` ID; MOD and UIX rows).
 - Frame times that repeat or go backwards (the frame clock clamps them) do not move a fade
   backwards.
 - Blend modes other than normal and non-identity transforms are still refused (CMP-004, CMP-005).
@@ -141,9 +148,11 @@ flashing on.
   the stack without the layer exactly, and the layer's composite draw MUST be skipped; the layer
   MUST stay prepared and keep rendering, so it reappears with current content.
 - **CMP-003-R5**: A caller MUST be able to change a layer's opacity with a duration and a curve
-  (at least linear and ease-in-out). The fade MUST be driven only by frame presentation times (no
-  wall clock), start from the currently shown opacity at the first frame after the change, be
-  monotonic between its ends, and reach the target exactly when the duration has elapsed.
+  (linear and ease-in-out) when applying a stack; the stack entry's opacity is the target. The fade
+  MUST be driven only by the frame clock's frame durations (CMP-001-R3, clamped to 0.1 s; no wall
+  clock), start from the currently shown opacity at the first frame after the change, be monotonic
+  between its ends, and reach the target exactly on the first frame whose summed frame durations
+  reach the fade's duration. New layers appear at their opacity at once.
 - **CMP-003-R6**: A change during a fade MUST start from the opacity shown last (continuity); a
   duration of 0 MUST take effect at the next frame.
 - **CMP-003-R7**: A non-finite target or a negative or non-finite duration MUST be refused with a
