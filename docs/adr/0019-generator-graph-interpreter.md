@@ -52,7 +52,8 @@ SHD-001's per-parameter speed bounds are not enough on their own.
 6. **For SHD-011**: importing must decode a document with a byte-size limit before validation (this
    module reads no files and has no Foundation); after decoding, this ADR's validation, limits and
    interpreter apply unchanged, and no imported content can reach shader compilation, dynamic
-   loading or native code.
+   loading or native code. *Done by SHD-011 (ADR-0024 Decision 4): `GeneratorGraphImport` checks a
+   65,536-byte limit, executable and archive signatures and JSON nesting before decoding.*
 7. **No editor in this row.** No roadmap row owns a node editor yet; it is a follow-up after SHD-003
    (inspector metadata), SHD-005 and SHD-006 (gradient and noise editors). The kind table
    (`GraphNodeKind.spec`) and per-node messages are the editor's data.

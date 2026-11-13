@@ -35,11 +35,11 @@ roadmap ID (`SHD-011-T01…`). No `{device}` task: no import UI in this row (Cla
 
 ## Phase 5: User Story 3 - The policy is written down (P2)
 
-- [ ] SHD-011-T12 [US3] ADR-0024 user-content code-execution policy (inventory, treatment, preset-shader exception and PRE-012 bounds, forbidden mechanisms → rules, review requirement, constitution proposal) in `docs/adr/0024-user-content-code-execution-policy.md`; index row in `docs/adr/README.md`; ADR-0019 Decision 6 gets a "Done by SHD-011" note
+- [X] SHD-011-T12 [US3] ADR-0024 user-content code-execution policy (inventory, treatment, preset-shader exception and PRE-012 bounds, forbidden mechanisms → rules, review requirement, constitution proposal) in `docs/adr/0024-user-content-code-execution-policy.md`; index row in `docs/adr/README.md`; ADR-0019 Decision 6 gets a "Done by SHD-011" note — Verified 2026-11-13: ADR-0024 written and indexed, ADR-0019 Decision 6 annotated; `python3 scripts/validate_docs.py` → OK (468 files)
 
 ## Phase 6: Polish
 
-- [ ] SHD-011-T13 Run quickstart.md: compliance, script tests, docs, importer tests on the host and in the Linux shape, `GeneratorGraphTests` unchanged; record counts and durations here and set the spec status
+- [X] SHD-011-T13 Run quickstart.md: compliance, script tests, docs, importer tests on the host and in the Linux shape, `GeneratorGraphTests` unchanged; record counts and durations here and set the spec status — Verified 2026-11-13: on the Mac Studio host: `check_compliance.py` OK; `test_scripts.py` 111 tests OK (7.2 s); `validate_docs.py` OK; `swift test --filter GeneratorGraphImportTests` 14 tests OK (0.03 s of test time, about 4 s wall with an incremental build) on the host and with `-Xswiftc -DCOMPOSITOR_NO_METAL -Xswiftc -DVISUAL_NO_METAL -Xswiftc -DANALYSIS_NO_ACCELERATE` (14 OK); `swift test --filter ^GeneratorGraphTests` 46 tests OK, 1 skipped (SHD-002 unchanged). Not run: a real Linux machine (CI's Linux job covers it), simulator (no app code changed)
 
 ## Dependencies
 

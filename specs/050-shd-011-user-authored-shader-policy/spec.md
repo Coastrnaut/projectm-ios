@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (SHD-011-T01-T13 verified on the Mac host and in the Linux build shape; policy in ADR-0024; no `{device}` task)
 
 **Input**: User description: "Implement SHD-011 (User-authored shader policy) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Offer only safe declarative
