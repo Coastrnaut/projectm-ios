@@ -244,7 +244,9 @@ final class MilkdropPresetValidatorTests: XCTestCase {
         for (index, bytes) in shapes.enumerated() {
             let start = Date()
             _ = MilkdropPresetValidator.validate(bytes, knownTextures: [])
-            XCTAssertLessThan(Date().timeIntervalSince(start), 1.0, "shape \(index)")
+            // A hang guard (see PresetMutationSweepTests): CI's Debug simulator is several times
+            // slower than the Mac, so a 1 s limit would fail there without a defect.
+            XCTAssertLessThan(Date().timeIntervalSince(start), 10.0, "shape \(index) looks hung")
         }
     }
 
