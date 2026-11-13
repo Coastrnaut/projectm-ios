@@ -197,6 +197,62 @@ final class MetalFrameRecorderTests: XCTestCase {
         let again = await recorder.finish()
         XCTAssertEqual(again, .failure(.cancelled))
     }
+
+    // MARK: - REC-015 disk guard
+
+    /// REC-015-S2: free space that drops below the stop threshold at frame k stops the recording; the
+    /// finished file plays: k frames, strictly increasing times.
+    func testLowStorageStopFinishesAPlayableFile() async throws {
+        let (device, queue) = try gpu()
+        let url = temporaryURL("lowstorage")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let settings = RecordingSettings(codecPreference: [.h264])
+        let recorder = try MetalFrameRecorder(device: device, url: url, drawableWidth: 64, drawableHeight: 48,
+                                              settings: settings, realTime: false)
+        let policy = RecordingStoragePolicy(estimate: RecordingStorageEstimate(geometry: recorder.geometry, settings: settings))
+        let plenty: Int64 = 64_000_000_000
+        let low: Int64 = 50_000_000
+        let k = 6
+        var stoppedAt: Int?
+        for i in 0..<20 {
+            let available: Int64 = i >= k ? low : plenty   // the fake probe's reading before frame i
+            if policy.shouldStop(availableBytes: available, fileBytes: RecordingStorage.fileBytes(at: url),
+                                 recordedSeconds: recorder.recordedSeconds) {
+                stoppedAt = i
+                break
+            }
+            XCTAssertEqual(try offer(recorder, queue: queue, time: UInt64(i) * frame, level: Double(i % 10) / 10), .submitted)
+            recorder.waitForPendingFrames()
+        }
+        XCTAssertEqual(stoppedAt, k)
+        let video = try (await recorder.finish()).get()
+        XCTAssertEqual(video.frameCount, k)
+        let info = try await XCTUnwrapAsync(await RecordedVideoInspector.inspect(url))
+        XCTAssertEqual(info.frameCount, k)
+        XCTAssertTrue(info.timesStrictlyIncrease, "\(info.presentationTicks)")
+        XCTAssertEqual(info.presentationTicks, [0, 20, 40, 60, 80, 100])
+    }
+
+    /// REC-015-S3: a real writer made to fail with "disk full" after 3 frames: the recorder stops, the
+    /// outcome is `storageFull` and no partial file is left.
+    func testInjectedDiskFullIsStorageFullAndDeletesTheFile() async throws {
+        let (device, queue) = try gpu()
+        let url = temporaryURL("diskfull")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let recorder = try MetalFrameRecorder(device: device, url: url, drawableWidth: 64, drawableHeight: 48,
+                                              settings: RecordingSettings(codecPreference: [.h264]), realTime: false,
+                                              fault: .diskFull(afterFrames: 3))
+        for i in 0..<4 {
+            XCTAssertEqual(try offer(recorder, queue: queue, time: UInt64(i) * frame), .submitted)
+            recorder.waitForPendingFrames()
+        }
+        XCTAssertTrue(recorder.hasFailed)
+        XCTAssertEqual(recorder.statistics.written, 3)
+        XCTAssertEqual(try offer(recorder, queue: queue, time: 4 * frame), .failed)
+        let result = await recorder.finish()
+        XCTAssertEqual(result, .failure(.storageFull))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: url.path), "no partial file is offered or kept")
+    }
 }
 
 /// `XCTUnwrap` for an async-produced optional.

@@ -13,6 +13,8 @@ public enum RecordingStopReason: String, Sendable, Equatable, CaseIterable {
     case sizeChanged
     case presentationLost
     case writerFailed
+    /// REC-015: the free storage fell close to the reserve; the file is finished and offered.
+    case lowStorage
 
     /// The notice shown after the stop (nil for the user's own stop).
     public var notice: String? {
@@ -26,6 +28,7 @@ public enum RecordingStopReason: String, Sendable, Equatable, CaseIterable {
         case .sizeChanged: "Recording stopped when the picture size changed."
         case .presentationLost: "Recording stopped when the visual stopped drawing."
         case .writerFailed: RecordingFailure.writerFailed("").notice
+        case .lowStorage: "Recording stopped because storage is almost full."
         }
     }
 }
@@ -37,6 +40,8 @@ public enum RecordingRefusal: String, Sendable, Equatable, CaseIterable {
     case outputBlackedOut
     case paused
     case busy
+    /// REC-015-R3: not enough free storage for the reserve plus one minute (checked after the others).
+    case lowStorage
 
     public var notice: String {
         switch self {
@@ -45,6 +50,7 @@ public enum RecordingRefusal: String, Sendable, Equatable, CaseIterable {
         case .outputBlackedOut: "Restore the output to record."
         case .paused: "Resume to record."
         case .busy: "Finishing the last recording."
+        case .lowStorage: "There isn't enough free storage to record. Free up space and try again."
         }
     }
 }
@@ -61,13 +67,52 @@ public enum RecordingFailure: Error, Sendable, Equatable {
     case tooFewFrames
     /// The recording was cancelled; the file was deleted.
     case cancelled
+    /// REC-015-R7: the writer ran out of space; the partial file was deleted.
+    case storageFull
 
     public var notice: String {
         switch self {
+        case .storageFull: "Storage is full; the recording couldn't be saved."
         case .tooFewFrames: "Nothing was recorded."
         case .cancelled: "The recording was cancelled."
         case .encoderUnavailable, .pixelBufferUnavailable, .writerFailed: "The recording couldn't be finished."
         }
+    }
+}
+
+// MARK: - Out-of-space errors (REC-015-R7, research REC-015-D4)
+
+extension RecordingFailure {
+    static let cocoaDomain = "NSCocoaErrorDomain"
+    static let cocoaOutOfSpaceCode = 640            // NSFileWriteOutOfSpaceError
+    static let avFoundationDomain = "AVFoundationErrorDomain"
+    static let avFoundationDiskFullCode = -11807    // AVError.diskFull
+    static let posixDomain = "NSPOSIXErrorDomain"
+    static let posixNoSpaceCode = 28                // ENOSPC
+
+    /// True when the error, or an error it wraps (up to 4 levels), says the storage is full.
+    public static func isOutOfSpace(_ error: any Error) -> Bool {
+        isOutOfSpace(error as NSError, depth: 0)
+    }
+
+    private static func isOutOfSpace(_ error: NSError, depth: Int) -> Bool {
+        switch (error.domain, error.code) {
+        case (cocoaDomain, cocoaOutOfSpaceCode), (avFoundationDomain, avFoundationDiskFullCode), (posixDomain, posixNoSpaceCode):
+            return true
+        default:
+            break
+        }
+        guard depth < 4 else { return false }
+        var wrapped: [NSError] = []
+        if let underlying = error.userInfo[NSUnderlyingErrorKey] as? NSError { wrapped.append(underlying) }
+        if let many = error.userInfo["NSMultipleUnderlyingErrorsKey"] as? [NSError] { wrapped.append(contentsOf: many) }
+        return wrapped.contains { (inner: NSError) -> Bool in isOutOfSpace(inner, depth: depth + 1) }
+    }
+
+    /// `storageFull` for an out-of-space error, else `writerFailed` with the error's description.
+    public static func fromWriterError(_ error: (any Error)?, fallback: String) -> RecordingFailure {
+        guard let error else { return .writerFailed(fallback) }
+        return isOutOfSpace(error) ? .storageFull : .writerFailed(error.localizedDescription)
     }
 }
 

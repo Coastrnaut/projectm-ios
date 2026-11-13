@@ -166,7 +166,8 @@ final class VideoFileWriter: RecordingSampleSink, @unchecked Sendable {
     private func finishOnQueue(endTick: Int64, keep: Bool, done: @escaping @Sendable (Result<Void, RecordingFailure>) -> Void) {
         let url = url
         guard keep, writer.status == .writing else {
-            let failure = writer.status == .failed ? RecordingFailure.writerFailed(writer.error?.localizedDescription ?? "failed") : nil
+            // REC-015-R7: an out-of-space error becomes `storageFull`.
+            let failure: RecordingFailure? = writer.status == .failed ? RecordingFailure.fromWriterError(writer.error, fallback: "failed") : nil
             if writer.status == .writing { writer.cancelWriting() }
             try? FileManager.default.removeItem(at: url)   // REC-003-R17: no partial file is kept
             done(failure.map { (f: RecordingFailure) -> Result<Void, RecordingFailure> in .failure(f) } ?? .success(()))
@@ -181,9 +182,48 @@ final class VideoFileWriter: RecordingSampleSink, @unchecked Sendable {
                 done(.success(()))
             } else {
                 try? FileManager.default.removeItem(at: url)
-                done(.failure(.writerFailed(finished.error?.localizedDescription ?? "finish failed")))
+                done(.failure(RecordingFailure.fromWriterError(finished.error, fallback: "finish failed")))
             }
         }
+    }
+}
+
+/// REC-015-R12 test seam: forwards to the real writer until `fault.afterFrames` frames were appended,
+/// then fails every append; finishing cancels the real writer (its file is deleted) and reports the
+/// injected error as a real writer failure would be reported.
+final class FaultInjectingSink: RecordingSampleSink, @unchecked Sendable {
+    private let inner: any RecordingSampleSink
+    private let fault: RecordingWriterFault
+    /// Used only on `queue`.
+    private var appended = 0
+    private var failed = false
+
+    init(wrapping inner: any RecordingSampleSink, fault: RecordingWriterFault) {
+        self.inner = inner
+        self.fault = fault
+    }
+
+    var codec: RecordingCodec { inner.codec }
+    var queue: DispatchQueue { inner.queue }
+    func makePixelBuffer() -> CVPixelBuffer? { inner.makePixelBuffer() }
+
+    func append(_ buffer: CVPixelBuffer, tick: Int64) -> RecordingAppendResult {
+        if failed || appended >= fault.afterFrames {
+            failed = true
+            return .failed
+        }
+        let result = inner.append(buffer, tick: tick)
+        if result == .appended { appended += 1 }
+        return result
+    }
+
+    func finish(endTick: Int64, keep: Bool) async -> Result<Void, RecordingFailure> {
+        let hasFailed = await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+            queue.async { continuation.resume(returning: self.failed) }
+        }
+        guard hasFailed else { return await inner.finish(endTick: endTick, keep: keep) }
+        _ = await inner.finish(endTick: endTick, keep: false)
+        return .failure(RecordingFailure.fromWriterError(fault.error, fallback: "injected"))
     }
 }
 #endif
