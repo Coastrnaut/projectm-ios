@@ -26,6 +26,11 @@
 //   without a cut, so its last 100 ms still reach the analysis, in order, before the new track.
 // * Pause reads the position, stops the player and pauses the engine; resume starts the engine
 //   and cuts in at the held frame. Nothing depends on the player's timeline across a pause.
+// * AUD-004, the end of the queue: a track that played to its end and is then held (the transport
+//   stops there) keeps its tail. `hasDeliveredTrackEnd` says when the tap has handed over one more
+//   block after the end, so the transport pauses only once the last frames are on their way to the
+//   analysis; a cue (another track, or a seek to 0) while held after the end then needs no cut either,
+//   since nothing else can arrive. The cut happens at the next resume.
 //
 // Holding the position without the player's clock (AUD-014-R10): when iOS stops the engine for an
 // interruption or a hardware change, the player's time can no longer be read. The position is
@@ -157,6 +162,8 @@ final class InAppPlaybackGraph {
     /// The current schedule was rendered to the track's end and nothing has cut in since. A track
     /// change then needs no cut: what is still in transit is the track's own tail.
     private var playedToEnd = false
+    /// AUD-004: the tap's count when the current track was rendered to its end (nil otherwise).
+    private var deliveredAtEnd: Int64?
     /// `silence()` was called: nothing is scheduled until another track replaces this one.
     private var silenced = false
     /// The player's time at the last successful read in the current schedule, in track frames
@@ -344,6 +351,10 @@ final class InAppPlaybackGraph {
     func seek(toFrame frame: AVAudioFramePosition) {
         guard isRunning else { return }
         let target = normalized(frame)
+        if playedToEnd, heldFrame != nil {
+            heldFrame = target                     // AUD-004: held after the end, the tail stays; resume cuts
+            return
+        }
         cut()
         if heldFrame != nil {
             heldFrame = target
@@ -368,7 +379,9 @@ final class InAppPlaybackGraph {
         // After a track that played to its end, its tail (up to one tap block, 100 ms) is still on
         // its way to the analysis and belongs before the new track: no cut. Any other change (Next
         // or Previous in the middle of a track) is a jump and cuts.
-        if playedToEnd, heldFrame == nil {
+        // AUD-004: held after a track played to its end (the end of the queue), only the tail can still
+        // arrive, and it belongs there too: no cut; the resume cuts.
+        if playedToEnd {
             generation += 1
         } else {
             cut()
@@ -417,6 +430,7 @@ final class InAppPlaybackGraph {
         generation += 1
         player.stop()
         playedToEnd = false
+        deliveredAtEnd = nil
         let token = gate.close()
         deliveredBeforeSchedule = 0
         guard let sink else { return }
@@ -431,6 +445,7 @@ final class InAppPlaybackGraph {
     /// Queues the track from `frame` in the current generation and, if `play`, starts the player.
     private func schedule(from frame: AVAudioFramePosition, play: Bool) {
         playedToEnd = false
+        deliveredAtEnd = nil
         lastReadElapsed = nil
         startFrame = normalized(frame)
         passCount = 0
@@ -506,7 +521,19 @@ final class InAppPlaybackGraph {
     private func trackRendered(_ scheduled: Int) {
         guard scheduled == generation, isRunning, heldFrame == nil else { return }
         playedToEnd = !atEnd          // rendered to the end; not "asked to play at the end"
+        deliveredAtEnd = playedToEnd ? gate.deliveredFrames : nil
         onTrackEnded?()
+    }
+
+    /// The engine hands a tap its audio in blocks of about 100 ms (file header).
+    static let tapBlockSeconds = 0.1
+
+    /// AUD-004: false while a track that played to its end may still have frames on their way to the
+    /// tap: until the tap has delivered one more block (silence) after the end was reported. True in
+    /// every other state. Read on the main actor; the tap's counter is atomic.
+    var hasDeliveredTrackEnd: Bool {
+        guard playedToEnd, let mark = deliveredAtEnd, tapSampleRate > 0, heldFrame == nil, isRunning else { return true }
+        return gate.deliveredFrames >= mark + Int64((tapSampleRate * Self.tapBlockSeconds).rounded(.up))
     }
 
     private func frameCount(from frame: AVAudioFramePosition) -> AVAudioFrameCount {

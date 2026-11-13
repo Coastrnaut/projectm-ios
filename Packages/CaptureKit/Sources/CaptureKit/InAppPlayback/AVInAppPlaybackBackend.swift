@@ -166,6 +166,9 @@ public final class AVInAppPlaybackBackend: InAppPlaybackBackend {
         graph.seek(toFrame: PlaybackPositionMath.frame(seconds: seconds, sampleRate: graph.sampleRate, length: graph.lengthFrames))
     }
 
+    /// AUD-004: false while the tail of a track that played to its end may still reach the tap.
+    public var hasDeliveredTrackEnd: Bool { graph?.hasDeliveredTrackEnd ?? true }
+
     /// AUD-003: applies a change of looping at once, keeping the position, without a cut.
     public func updateLooping(_ loops: Bool) {
         if let graph {

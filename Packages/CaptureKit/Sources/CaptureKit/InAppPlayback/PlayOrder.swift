@@ -4,7 +4,8 @@
 // `PlayOrder` is the seam for the queue of AUD-003 and the repeat and shuffle modes of AUD-004 and
 // AUD-005: the transport only asks what comes after and before an item. `ListPlayOrder` is a fixed
 // list that wraps around (the reference track and test signals, each alone). Imported audio plays
-// in the user's queue, `PlayQueue` (AUD-003), a `MutablePlayOrder` that can change while it plays.
+// in the user's queue, `PlayQueue` (AUD-003), a `MutablePlayOrder` that can change while it plays,
+// whose repeat mode (AUD-004) decides `endOfTrack(after:)`.
 import AudioCore
 import Foundation
 
@@ -47,11 +48,24 @@ public struct PlaybackItem: Sendable, Equatable, Identifiable {
 }
 
 /// Answers what follows and what precedes an item. nil means nothing does (not produced by
-/// `ListPlayOrder`; an empty `PlayQueue` gives it, and repeat "off" will, AUD-004).
+/// `ListPlayOrder`; an empty `PlayQueue` gives it).
+///
+/// `item(after:)` and `item(before:)` are what Next track and Previous track select;
+/// `endOfTrack(after:)` is what happens when a track plays to its end, and whether it repeats
+/// (AUD-004). By default the end of a track continues with `item(after:)`; the queue answers by its
+/// repeat mode instead.
 @MainActor
 public protocol PlayOrder: AnyObject {
     func item(after id: PlaybackItem.ID) -> PlaybackItem?
     func item(before id: PlaybackItem.ID) -> PlaybackItem?
+    func endOfTrack(after id: PlaybackItem.ID) -> EndOfTrackStep
+}
+
+extension PlayOrder {
+    /// The default: the item after this one, or stop at the end when there is none.
+    public func endOfTrack(after id: PlaybackItem.ID) -> EndOfTrackStep {
+        item(after: id).map(EndOfTrackStep.play) ?? .stop(cue: nil)
+    }
 }
 
 /// An order that can change while it plays (AUD-003). The transport sets `onOrderChange` when it

@@ -27,7 +27,9 @@ by extending the existing seams instead of adding new ones:
    playback does and, with a cue, selects the cued item at 0:00 while stopped (AUD-004-R5); Play at
    the very end with a cue starts the cued item (R6). A mode change is a queue change: the existing
    `onOrderChange` → `orderDidChange()` → `updateLooping` path applies it at once without a cut
-   (AUD-003-R8, AUD-004-R9). No change to the backend, the graph or the tap.
+   (AUD-003-R8, AUD-004-R9). Before stopping at the end, the transport waits until the ended
+   track's tail has reached the sink (`hasDeliveredTrackEnd`, research AUD-004-D3): a read of the
+   tap's existing atomic counter on the main actor; the tap closure itself is unchanged.
 3. `CaptureUI`: repeat strings in `UIStrings` (`repeatLabel`, `repeatValue`, `repeatAnnouncement`, `repeatIcon`, `repeatFooter`; contracts/ui-strings.md); an
    optional Repeat button in `TransportBar` (shown when a mode is given); a "Repeat" section with
    three selectable rows in `PlayQueueView`.
@@ -83,7 +85,7 @@ tests (waits use a ≥30 s ceiling and conditions, never iteration budgets).
 | IV Truthful labeling | Source stays "In-App Playback"; the stopped end of queue reports Stopped through the manager's user pause, never playing (AUD-004-R16). PASS |
 | V No universal-capture claims | Not touched. PASS |
 | VI Modular boundaries | Logic in CaptureKit, views and strings in CaptureUI, app glue a few lines. PASS |
-| VII Real-time safety | No change to the tap, graph or backend; the end-of-track decision runs on the main actor in the existing callback hop. PASS |
+| VII Real-time safety | The tap closure is unchanged; the end-of-track decision and the tail check (an atomic load of the tap's existing counter) run on the main actor. PASS |
 | X Evidence-based quality | Acceptance by deterministic offline-rendering tests; device checks tagged `{device}`. PASS |
 | Privacy | Adds one enum value to a file of track identifiers in app-private storage. No upload. PASS |
 | Security | The stored value is untrusted input: decoded leniently, unknown values read as All Tracks. PASS |
@@ -116,6 +118,9 @@ Packages/CaptureKit/Sources/CaptureKit/
 ├── InAppPlayback/PlayOrder.swift             # + endOfTrack(after:) requirement with default
 ├── InAppPlayback/PlayQueue.swift             # + repeatMode, setRepeatMode, cycleRepeatMode, endOfTrack
 ├── InAppPlayback/PlaybackTransport.swift     # end of track and looping from endOfTrack; stop and cue
+├── InAppPlayback/InAppPlaybackGraph.swift    # + hasDeliveredTrackEnd; no cut for a cue held after the end
+├── InAppPlayback/AVInAppPlaybackBackend.swift# + hasDeliveredTrackEnd
+├── InAppPlayback/InAppPlaybackSource.swift   # + hasDeliveredTrackEnd (protocol default true)
 └── AudioLibrary/PlayQueueRecord.swift        # + optional repeatMode in version 1
 Packages/CaptureKit/Tests/CaptureKitTests/
 ├── RepeatModeTests.swift                     # new (Linux)

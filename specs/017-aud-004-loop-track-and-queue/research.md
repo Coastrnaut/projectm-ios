@@ -42,6 +42,16 @@ every decision uses APIs and seams already in the repository.
 - **Ordering**: the pause comes first, so no audio of the cued track is rendered between the end and
   the stop. Between the end of the last track and the pause the player has nothing scheduled
   (silence), which is what the offline test asserts as "nothing after the last frame".
+- **The tail (found by AUD-004-T05's first green attempt, 2026-11-13)**: stopping at once lost the
+  last 2,200-2,700 frames of C: the tap hands audio over in ~100 ms blocks, so when the transport
+  paused right after the player's end callback, the last partial block never reached the sink, and
+  the cue's cut then discarded what had. Fix, kept off the real-time path: the graph records the tap's
+  delivered-frame counter when the track is rendered to its end and reports `hasDeliveredTrackEnd`
+  once one more tap block (100 ms, silence) has been delivered; the transport waits for it (main
+  actor, 5 ms polls, at most 2 s, abandoned when the user acts meanwhile) before pausing. While held
+  after a track played to its end, a cue (`replace` or a seek) needs no cut: only that track's tail
+  can still arrive; the resume cuts as before. Mutation check: with `hasDeliveredTrackEnd` forced to
+  true, the three Off pipeline tests fail again.
 - **Play at the very end** (paused at the end of the last track by a seek, Off): `play()` already
   detects "at the end of a non-looping track"; with `.stop(cue: item)` it now changes to the cue and
   resumes, so the queue starts again (AUD-004-R6). With `.stop(cue: nil)` it stays as today.

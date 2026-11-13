@@ -64,6 +64,46 @@ final class PlayQueueStoreTests: XCTestCase {
         XCTAssertThrowsError(try PlayQueueRecord.decode(Data(#"{"schemaVersion":1}"#.utf8)))
     }
 
+    // MARK: - The repeat mode (AUD-004-T02; AUD-004-R14, research AUD-004-D2)
+
+    /// The exact bytes AUD-003 wrote (version 1, no mode): the golden input of the "migration".
+    private var goldenVersion1: String {
+        #"{"currentTrackID":"\#(idA)","schemaVersion":1,"trackIDs":["\#(idC)","\#(idA)","\#(idB)"]}"#
+    }
+
+    func testAnAUD003RecordReadsAsAllTracksAndReencodesByteForByte() throws {
+        let decoded = try PlayQueueRecord.decode(Data(goldenVersion1.utf8))
+        guard case .record(let record) = decoded else { return XCTFail("\(decoded)") }
+        XCTAssertEqual(record.repeatMode, .all)
+        XCTAssertEqual(record, PlayQueueRecord(trackIDs: [idC, idA, idB], currentTrackID: idA, repeatMode: .all))
+        XCTAssertEqual(String(decoding: try record.encoded(), as: UTF8.self), goldenVersion1,
+                       "All Tracks is not written: the file stays what AUD-003 reads")
+    }
+
+    func testOffAndOneAreWrittenInVersionOneWithSortedKeysAndRoundTrip() throws {
+        for (mode, raw) in [(RepeatMode.off, "off"), (.one, "one")] {
+            let record = PlayQueueRecord(trackIDs: [idA, idB], currentTrackID: idB, repeatMode: mode)
+            let text = String(decoding: try record.encoded(), as: UTF8.self)
+            XCTAssertEqual(text, #"{"currentTrackID":"\#(idB)","repeatMode":"\#(raw)","schemaVersion":1,"trackIDs":["\#(idA)","\#(idB)"]}"#)
+            XCTAssertEqual(try PlayQueueRecord.decode(Data(text.utf8)), .record(record))
+        }
+    }
+
+    func testAMissingWrongOrUnknownModeReadsAsAllTracks() throws {
+        for value in [#""all""#, #""shuffle""#, "42", "null", #"["one"]"#, #""ONE""#] {
+            let json = #"{"schemaVersion":1,"trackIDs":["\#(idA)"],"repeatMode":\#(value)}"#
+            XCTAssertEqual(try PlayQueueRecord.decode(Data(json.utf8)),
+                           .record(PlayQueueRecord(trackIDs: [idA], currentTrackID: nil, repeatMode: .all)), value)
+        }
+    }
+
+    func testTheStoreKeepsTheMode() throws {
+        let store = PlayQueueStore(directory: directory)
+        let record = PlayQueueRecord(trackIDs: [idA], currentTrackID: idA, repeatMode: .one)
+        try store.save(record)
+        XCTAssertEqual(PlayQueueStore(directory: directory).load(), .record(record))
+    }
+
     // MARK: - The store
 
     func testAMissingFileIsMissing() {
