@@ -63,6 +63,19 @@ the conservative option that changes no user-visible behavior unless the suite f
   effect is "no change", the harness sends a marker event through the same stream and waits for its
   log entry; events are handled strictly in order, so the earlier event is then fully handled. Waits
   are on conditions with a generous ceiling, never fixed sleeps.
+- Q: How can a fake show that a late sample of the old source is never counted for the new one,
+  when every source writes into the manager's one shared sink? → A: By checking the two links the
+  app relies on: the adapter stops its backend before `stop()` returns, and the manager awaits that
+  stop before the next source's backend starts (a shared order log). The conformance fakes then drop
+  the sink at stop, as the platform backends must (contracts/audio-source.md guarantee 4); whether
+  each platform backend keeps that promise is tested where it can run (`PlaybackTapGateTests`,
+  `InterruptionPipelineTests` for In-App Playback) and otherwise on a device (QA-011, `{device}`).
+- Q: Does the suite measure FR-007's 1-second stop budget? → A: No. Wall-clock limits on fakes
+  prove nothing and make tests depend on the runner's speed (the `PlaybackTapGateTests` lesson).
+  The suite checks that stop completes and reaches the backend; the budget stays a device check.
+- Q: Does the suite cover the analysis and normalized output (levels, resampling)? → A: Only as far
+  as the audio states need it. Normalization and levels have their own suites
+  (`NormalizedOutputTests`, AudioCore); the contract is about source lifecycles and states.
 
 ## Baseline: what exists today (audit of 2026-11-12, commit `d4d2a5f`)
 
@@ -217,7 +230,8 @@ and holds for every source configuration, with the per-source parameters the con
   a restart starts the same source again in a new session (FR-055).
 - **QA-007-R13** (switch): Switching from any source to any other stops the old backend before the
   new backend starts, leaves exactly one backend session, shows the new mode in Waiting with a clean
-  slate, and a late event or late sample of the old source changes nothing (FR-001, FR-016).
+  slate, and a late event of the old source changes nothing; the old backend has no sink when the
+  new one starts, so no late sample can be counted for the new source (FR-001, FR-016).
 - **QA-007-R14** (release): An adapter or a manager that is no longer referenced is released even
   if its backend still holds an event callback, and that callback is harmless afterwards
   (Constitution VII).
