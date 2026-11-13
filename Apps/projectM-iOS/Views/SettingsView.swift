@@ -197,6 +197,9 @@ struct SettingsView: View {
             if osc.isEnabled {
                 LabeledContent("Test value", value: OSCReceiverCoordinator.testValueText(osc.testValue))
                     .accessibilityIdentifier("oscTestValue")
+                // OSC-009-R12: what the rate limiter dropped or held since launch.
+                LabeledContent("Rate-limited", value: OSCReceiverCoordinator.rateLimitedText(osc.rateLimitedCount))
+                    .accessibilityIdentifier("oscRateLimited")
             }
         } header: {
             Text("OSC")

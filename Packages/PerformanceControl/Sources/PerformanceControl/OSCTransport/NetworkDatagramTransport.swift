@@ -12,6 +12,7 @@
 //   its exact rule is not documented, so the app enforces its own tested rule instead (research
 //   OSC-001-D2).
 // * At most 8 peers (`OSCPeerTable`); the least recently admitted one is cancelled for a ninth.
+// * Each peer connection is numbered (`OSCSourceID`) for the OSC-009 rate limiter.
 // * All state is confined to one private serial queue; events are reported on it.
 // * `stop()` cancels the listener and every peer, then reports `.cancelled` once the listener is
 //   cancelled, so the port is free for the next listener.
@@ -33,6 +34,8 @@ public final class NetworkDatagramTransport: OSCDatagramTransport, @unchecked Se
     private var events: (@Sendable (OSCTransportEvent) -> Void)?
     private var stopRequested = false
     private var cancelReported = false
+    /// OSC-009-R3: each accepted peer connection gets the next number; the address is never kept.
+    private var lastSource: UInt64 = 0
 
     public init() {}
 
@@ -134,7 +137,8 @@ public final class NetworkDatagramTransport: OSCDatagramTransport, @unchecked Se
             }
         }
         connection.start(queue: queue)
-        receive(on: connection, id: id)
+        lastSource += 1
+        receive(on: connection, id: id, source: OSCSourceID(rawValue: lastSource))
     }
 
     private func forget(_ id: ObjectIdentifier) {
@@ -142,18 +146,18 @@ public final class NetworkDatagramTransport: OSCDatagramTransport, @unchecked Se
         peers.remove(id)
     }
 
-    private func receive(on connection: NWConnection, id: ObjectIdentifier) {
+    private func receive(on connection: NWConnection, id: ObjectIdentifier, source: OSCSourceID) {
         connection.receiveMessage { data, _, _, error in
             guard !self.stopRequested, self.connections[id] != nil else { return }
             if let data {
                 if data.count > OSCLimits.maximumDatagramBytes {
                     self.events?(.oversized(data.count))
                 } else {
-                    self.events?(.datagram([UInt8](data)))
+                    self.events?(.datagram([UInt8](data), source: source))
                 }
             }
             if error == nil {
-                self.receive(on: connection, id: id)
+                self.receive(on: connection, id: id, source: source)
             } else {
                 self.forget(id)
             }

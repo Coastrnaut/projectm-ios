@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T17:07:54Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T17:28:59Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,23 +9,24 @@
 
 | State | Features |
 |---|---|
-| audited | 274 |
-| integrated | 51 |
+| audited | 271 |
+| implementing | 1 |
+| integrated | 53 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | integrated | skipped_existing |
-|---|---|---|---|
-| P0 | 47 | 39 | 1 |
-| P1 | 139 | 12 | 0 |
-| P2 | 79 | 0 | 0 |
-| P3 | 9 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 45 | 0 | 41 | 1 |
+| P1 | 139 | 0 | 12 | 0 |
+| P2 | 78 | 1 | 0 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 274 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
+- 272 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
 
 ## Integrated
 
@@ -63,6 +64,7 @@ The physical-device suite may **not** start:
 | CAM-001 | Rear camera layer | `05ef3cb4e24b` | `feature/cam-001` |
 | CAM-012 | Camera privacy status | `a188b049fc60` | `feature/cam-012` |
 | CMP-001 | Unified layer protocol | `ba60b9d3485a` | `feature/cmp-001` |
+| CMP-002 | Ordered layer stack | `4c8340e68244` | `feature/cmp-002` |
 | FX-001 | Bloom | `1192e0d6503e` | `feature/fx-001` |
 | FX-019 | Strobe safety envelope | `6cfcbaabc8d0` | `feature/fx-019` |
 | MOD-001 | Typed parameter registry | `304f3bce431a` | `feature/mod-001` |
@@ -72,6 +74,7 @@ The physical-device suite may **not** start:
 | OSC-001 | OSC receiver | `13d9883531b9` | `feature/osc-001` |
 | OSC-002 | OSC message parser | `3b3a60649025` | `feature/osc-002` |
 | OSC-007 | OSC network access switch | `ade4dfec39a5` | `feature/osc-007` |
+| OSC-009 | OSC rate limiter | `1ee3a05d25fb` | `feature/osc-009` |
 | PERF-011 | Background resource release | `6d669fcb8576` | `feature/perf-011` |
 | PRE-007 | Preset collections | `e834535cb98b` | `feature/pre-007` |
 | PRE-012 | Preset import validation | `4bf9f50d1af8` | `feature/pre-012` |
@@ -301,6 +304,13 @@ None.
 - `post-merge: Compositor xcodebuild test on iPhone 17 sim (43)`: pass at `ba60b9d3485a` (log `.autonomous/logs/integration/cmp-001/compositor-sim.log`)
 - `post-merge: Compositor Linux shape on host, -DCOMPOSITOR_NO_METAL -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE (21)`: pass at `ba60b9d3485a` (log `.autonomous/logs/integration/cmp-001/compositor-linuxshape.log`)
 
+### CMP-002 Ordered layer stack (integrated)
+- `python3 scripts/check_compliance.py`: pass at `85425ca7d2ee` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-002/20261113T122331/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `85425ca7d2ee` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-002/20261113T122331/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `85425ca7d2ee` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-002/20261113T122331/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `85425ca7d2ee` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-002/20261113T122331/swift-test_Compositor.log`)
+- `post-merge: Compositor xcodebuild test on iPhone 17 sim (CompositorTests 79 incl. red/blue reorder acceptance, ProceduralMaterials 31); projectM-iOSTests 184, CameraUITests 2, CameraPrivacyStatusUITests 1`: pass at `4c8340e68244` (log `.autonomous/logs/integration/cmp-002/compositor-sim.log`)
+
 ### FX-001 Bloom (integrated)
 - `python3 scripts/check_compliance.py`: pass at `94f4b3a6b7c3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-001/20261113T090348/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `94f4b3a6b7c3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-001/20261113T090348/docs.log`)
@@ -376,6 +386,12 @@ None.
 - `python3 scripts/check_compliance.py`: pass at `30fe777ae19d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-007/20261113T120523/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `30fe777ae19d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-007/20261113T120523/docs.log`)
 - `post-merge: projectM-iOSTests 184 incl. OSCNetworkAccessTests (real listener ready/cancelled), OSCNetworkAccessUITests 14.9 s, OSCReceiverUITests 14.8 s, CameraPrivacyStatusUITests 14.8 s (shared status stack) on iPhone 17 iOS 27.2 sim`: pass at `ade4dfec39a5` (log `.autonomous/logs/integration/osc-007-shd-001/app-tests.log`)
+
+### OSC-009 OSC rate limiter (integrated)
+- `python3 scripts/check_compliance.py`: pass at `f4291322e4b6` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-009/20261113T122631/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `f4291322e4b6` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-009/20261113T122631/docs.log`)
+- `swift test --package-path Packages/PerformanceControl`: pass at `f4291322e4b6` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-009/20261113T122631/swift-test_PerformanceControl.log`)
+- `post-merge: PerformanceControl xcodebuild test on iPhone 17 sim (89, incl. 100,000-datagram flood fixture); projectM-iOSTests 186; OSC UI tests 3 and SettingsUITests 4 (8.3-19.4 s)`: pass at `1ee3a05d25fb` (log `.autonomous/logs/integration/osc-009/perf-sim.log`)
 
 ### PERF-011 Background resource release (integrated)
 - `python3 scripts/check_compliance.py`: pass at `e463058b1c92` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T151252/compliance.log`)

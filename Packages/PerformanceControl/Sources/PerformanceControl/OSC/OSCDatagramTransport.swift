@@ -22,8 +22,10 @@ public enum OSCTransportEvent: Sendable {
     case ready(port: UInt16)
     /// The listener failed; the transport stops itself or is stopped by the receiver.
     case failed(OSCListenerFailure)
-    /// One datagram of at most `OSCLimits.maximumDatagramBytes` from a local peer.
-    case datagram([UInt8])
+    /// One datagram of at most `OSCLimits.maximumDatagramBytes` from a local peer. `source` numbers
+    /// the peer connection (OSC-009-R3: never an address); transports that cannot tell use
+    /// `.unattributed`.
+    case datagram([UInt8], source: OSCSourceID = .unattributed)
     /// A datagram over the limit, dropped without copying.
     case oversized(Int)
     /// A peer outside the local network, dropped before any read.

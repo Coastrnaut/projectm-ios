@@ -11,6 +11,9 @@
 // * A failure cancels the transport and stays `failed` until the next `start` or `stop` (no retry).
 // * Datagrams are decoded and applied on the transport's queue (never the main thread or an audio
 //   thread). State handlers run there too; callers hop to their own actor.
+// * OSC-009: datagrams pass the dispatcher's rate limits (per source, global, per target); every
+//   launch and stop starts the limiter afresh (held values discarded). `onActivity` lets the app
+//   coalesce its main-thread refreshes (`OSCRefreshGate`) instead of hopping once per message.
 import ParameterGraph
 import Synchronization
 
@@ -45,8 +48,11 @@ public final class OSCReceiver: Sendable {
 
     public init(store: ParameterStore = OSCReceiverCatalog.makeStore(),
                 routes: [OSCRoute] = OSCReceiverCatalog.routes,
+                limits: OSCRateLimitConfiguration = .default,
+                clock: OSCMonotonicClock = .continuous(),
+                scheduler: OSCFlushScheduler = .sleepingTask,
                 makeTransport: @escaping @Sendable () -> (any OSCDatagramTransport)?) {
-        dispatcher = OSCDispatcher(store: store, routes: routes)
+        dispatcher = OSCDispatcher(store: store, routes: routes, limits: limits, clock: clock, scheduler: scheduler)
         self.makeTransport = makeTransport
     }
 
@@ -85,6 +91,13 @@ public final class OSCReceiver: Sendable {
         }
     }
 
+    /// Calls `handler` on the receiving side after every handled datagram, drop and deferred flush
+    /// (OSC-009-R11). It must be cheap and must not call back into the receiver's counters
+    /// synchronously; the app uses it to request a gated main-thread refresh.
+    public func onActivity(_ handler: @escaping @Sendable () -> Void) {
+        dispatcher.onActivity(handler)
+    }
+
     /// Calls `handler` after every state change (on the transport's queue, or the caller's thread for
     /// changes made synchronously by `start`/`stop`).
     public func onStateChange(_ handler: @escaping StateHandler) {
@@ -114,6 +127,7 @@ public final class OSCReceiver: Sendable {
     }
 
     public func stop() {
+        dispatcher.resetLimits()                      // held values are discarded (OSC-009-R5)
         let effects = lockedState.withLock { s -> Effects in
             s.desiredPort = nil
             guard var active = s.active else {
@@ -141,8 +155,8 @@ public final class OSCReceiver: Sendable {
     private func handle(_ event: OSCTransportEvent, generation: UInt64) {
         // Datagrams are the hot path: check the generation, then dispatch outside the lock.
         switch event {
-        case .datagram(let bytes):
-            if isCurrent(generation) { dispatcher.handle(bytes) }
+        case .datagram(let bytes, let source):
+            if isCurrent(generation) { dispatcher.handle(bytes, source: source) }
             return
         case .oversized(let count):
             if isCurrent(generation) { dispatcher.noteOversized(count) }
@@ -201,6 +215,7 @@ public final class OSCReceiver: Sendable {
         }
         s.generation += 1
         s.active = Active(transport: transport, generation: s.generation)
+        dispatcher.resetLimits()                      // every listener starts with full buckets (OSC-009-R5)
         s.phase = .starting(port: port)
         return Effects(start: (transport, port, s.generation), notify: s.phase)
     }

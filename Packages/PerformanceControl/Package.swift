@@ -15,6 +15,9 @@
 //   Network framework is allowed ONLY in `Sources/PerformanceControl/OSCTransport/` (FR-068 as
 //   amended 2026-11-12, ADR-0008; scripts/check_compliance.py) and compiles out where the framework
 //   does not exist (Linux).
+// * OSC-009 (specs/041-osc-009-osc-rate-limiter/contracts/osc-rate-limiter.md): token-bucket limits
+//   per source, across sources and per target, on an injected monotonic clock, with latest-value
+//   coalescing and a refresh gate that keeps a flood off the main thread; pure Swift.
 // Nothing here feeds projectM (Constitution VIII, ADR-0008 decision 5).
 // One library product, so CI's `-scheme PerformanceControl` builds and tests every target.
 import PackageDescription

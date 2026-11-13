@@ -8,7 +8,8 @@
 //   `LayerSource` protocol, the Metal compositor and the composite flash guard. Shader source is a
 //   Swift constant compiled at run time (ADR-0009 decision 3), so the package has no resources and
 //   builds on Linux, where only the Metal files compile out. `-Xswiftc -DCOMPOSITOR_NO_METAL` (with
-//   `-DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE`) gives that shape on the Mac.
+//   `-DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE`) gives that shape on the Mac. CMP-002 adds the
+//   `LayerStack` value (CPU) that `Compositor.apply` takes between frames (ADR-0013 amendment).
 // * `SpectrumLayers` adapts the native spectra (VIS-001, VIS-002, FX-001 glow) to the contract.
 // * `CameraLayer` (CAM-001, ADR-0017) draws the newest picture of a `CameraFrameProvider` (a stub,
 //   or the iOS `AVCaptureSession` provider) as a layer. Its feed states and geometry are plain Swift
