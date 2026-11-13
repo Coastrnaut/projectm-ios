@@ -49,15 +49,15 @@ this row.
 **Goal**: the app's one stack goes through `LayerStack` (CMP-002-R13).
 **Independent test**: `projectM-iOSTests`, `CameraUITests`, `CameraPrivacyStatusUITests`.
 
-- [ ] CMP-002-T09 [US4] `CameraVisualHost.make` builds `LayerStack` [camera (`.camera`), circular spectrum (`.circularSpectrum`)] and applies it with a factory returning the host's camera and spectrum layers; header notes updated (editor: CMP-015 and the editing UI rows) in `Apps/projectM-iOS/Visuals/CameraVisualHost.swift`
-- [ ] CMP-002-T10 [US4] Run the app tests on an iOS 27.2 simulator: `projectM-iOSTests`, `projectM-iOSUITests/CameraUITests`, `projectM-iOSUITests/CameraPrivacyStatusUITests` (known worktree failure: `PresetTests.testBundledIncludedScopeMatchesRelease1_0`, empty preset submodules); count PosterBoard reports before and after
+- [X] CMP-002-T09 [US4] `CameraVisualHost.make` builds `LayerStack` [camera (`.camera`), circular spectrum (`.circularSpectrum`)] and applies it with a factory returning the host's camera and spectrum layers; header notes updated (editor: CMP-015 and the editing UI rows) in `Apps/projectM-iOS/Visuals/CameraVisualHost.swift` — Verified 2026-11-13: app builds; projectM-iOSTests (CameraVisualTests, CameraPrivacyStatusTests among 183 passing) and the Camera UI tests below on the iOS 27.2 simulator
+- [X] CMP-002-T10 [US4] Run the app tests on an iOS 27.2 simulator: `projectM-iOSTests`, `projectM-iOSUITests/CameraUITests`, `projectM-iOSUITests/CameraPrivacyStatusUITests` (known worktree failure: `PresetTests.testBundledIncludedScopeMatchesRelease1_0`, empty preset submodules); count PosterBoard reports before and after — Verified 2026-11-13: `xcodebuild test` on a fresh iOS 27.2 iPhone 17 simulator (deleted afterwards): projectM-iOSTests 183/184 (only the known worktree failure `PresetTests.testBundledIncludedScopeMatchesRelease1_0`, empty preset submodules), CameraUITests 2/2, CameraPrivacyStatusUITests 1/1 (45.8 s); PosterBoard reports 32 before and 32 after
 
 ## Phase 7: Polish & Cross-Cutting
 
-- [ ] CMP-002-T11 [P] ADR-0013 "Amendment: CMP-002 ordered layer stack" (value stack, ID reuse rule, apply semantics, camera limit, 8 layers) in `docs/adr/0013-compositor-layer-protocol.md`; header comments of `Compositor.swift` and `Packages/Compositor/Package.swift` (comment only) mention the stack
-- [ ] CMP-002-T12 Linux shape: `swift test --package-path Packages/Compositor --scratch-path .build/linuxshape -Xswiftc -DCOMPOSITOR_NO_METAL -Xswiftc -DVISUAL_NO_METAL -Xswiftc -DANALYSIS_NO_ACCELERATE` runs `LayerStackTests`
-- [ ] CMP-002-T13 Simulator package run: `xcodebuild test -scheme Compositor` from `Packages/Compositor` on the iOS 27.2 simulator
-- [ ] CMP-002-T14 `python3 scripts/check_compliance.py` and `python3 scripts/validate_docs.py` OK; spec status updated
+- [X] CMP-002-T11 [P] ADR-0013 "Amendment: CMP-002 ordered layer stack" (value stack, ID reuse rule, apply semantics, camera limit, 8 layers) in `docs/adr/0013-compositor-layer-protocol.md`; header comments of `Compositor.swift` and `Packages/Compositor/Package.swift` (comment only) mention the stack — Verified 2026-11-13: ADR-0013 amendment and ADR index note; `python3 scripts/validate_docs.py` OK
+- [X] CMP-002-T12 Linux shape: `swift test --package-path Packages/Compositor --scratch-path .build/linuxshape -Xswiftc -DCOMPOSITOR_NO_METAL -Xswiftc -DVISUAL_NO_METAL -Xswiftc -DANALYSIS_NO_ACCELERATE` runs `LayerStackTests` — Verified 2026-11-13: Linux shape CompositorTests 37/37 (LayerStackTests 8/8) and ProceduralMaterialsTests pass, 7.9 s wall
+- [X] CMP-002-T13 Simulator package run: `xcodebuild test -scheme Compositor` from `Packages/Compositor` on the iOS 27.2 simulator — Verified 2026-11-13: `xcodebuild test -scheme Compositor` on the iOS 27.2 simulator: CompositorTests 79/79, ProceduralMaterialsTests 31/31, ** TEST SUCCEEDED ** (25 s)
+- [X] CMP-002-T14 `python3 scripts/check_compliance.py` and `python3 scripts/validate_docs.py` OK; spec status updated — Verified 2026-11-13: `check_compliance: OK`, `validate_docs: OK`; spec status updated
 - [ ] CMP-002-T15 {device} Per-layer frame cost of a 4-layer stack (projectM or a material, camera, two spectra) on D1, D2 and D3: GPU time per frame with 1 to 4 layers, recorded in `docs/test-reports/performance.md` (CMP-002-S6, R15)
 
 ## Dependencies

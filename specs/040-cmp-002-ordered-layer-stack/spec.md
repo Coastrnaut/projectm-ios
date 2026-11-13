@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (CMP-002-T01-T14 verified on the Mac: host, Linux shape and iOS 27.2 simulator; device task T15 `{device}` open)
 
 **Input**: User description: "Implement CMP-002 (Ordered layer stack) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Add, remove, duplicate and
