@@ -1,7 +1,8 @@
 // AudioFeatureBinding.swift — one audio feature bound to one parameter, and why a binding is
 // refused (MOD-002-R2 to R4; research MOD-002-D4, D5; contract C2).
 //
-// A binding maps the feature's position in the input range (0…1, clamped) to the output range,
+// A binding maps the feature's position in the input range (0…1, clamped) to the output range
+// with its `LinearMapping` (MOD-003),
 // optionally smoothed by an attack/release envelope, and combines it with the parameter's manual
 // value by the mix mode. `AudioFeatureModulator.bind` validates it against the registry.
 
@@ -49,6 +50,18 @@ public struct AudioFeatureBinding: Sendable, Hashable {
         self.outputEnd = outputEnd
         self.mixMode = mixMode
         self.envelope = envelope
+    }
+
+    /// The input and output ranges as a linear mapping (MOD-003-R7): exact ends, bounded,
+    /// monotonic. Reading and writing it reads and writes the four range fields.
+    public var mapping: LinearMapping {
+        get { LinearMapping(inputMinimum: inputMinimum, inputMaximum: inputMaximum, outputStart: outputStart, outputEnd: outputEnd) }
+        set {
+            inputMinimum = newValue.inputMinimum
+            inputMaximum = newValue.inputMaximum
+            outputStart = newValue.outputStart
+            outputEnd = newValue.outputEnd
+        }
     }
 }
 
