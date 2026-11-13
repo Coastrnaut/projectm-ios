@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T22:44:02Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T22:45:54Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,18 +10,19 @@
 | State | Features |
 |---|---|
 | audited | 238 |
-| implementing | 2 |
+| implementing | 1 |
+| unit_passed | 1 |
 | integrated | 85 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 15 | 2 | 69 | 1 |
-| P1 | 137 | 0 | 14 | 0 |
-| P2 | 77 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 15 | 1 | 1 | 69 | 1 |
+| P1 | 137 | 0 | 0 | 14 | 0 |
+| P2 | 77 | 0 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -395,6 +396,14 @@ None.
 - `swift test --package-path Packages/PresetLibrary`: pass at `d7df58dcb6e7` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-009/20261113T165948/swift-test_PresetLibrary.log`)
 - `swift test --package-path Packages/SceneArchive`: pass at `d7df58dcb6e7` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-009/20261113T165948/swift-test_SceneArchive.log`)
 - `post-merge: projectM-iOSTests 301 incl. StorageLocationsTests; StorageUsageUITests 18.9 s; SettingsUITests 4 and GlowUITests 2 pass twice after the downward-drag fix; LocalPortability 82 in the gate`: pass at `efddbc041837` (log `.autonomous/logs/integration/file-009/app-tests.log`)
+
+### FILE-010 Safe cache cleanup (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `a71cc74c8b52` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-010/20261113T174416/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `a71cc74c8b52` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-010/20261113T174416/docs.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `a71cc74c8b52` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-010/20261113T174416/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LocalPortability`: pass at `a71cc74c8b52` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-010/20261113T174416/swift-test_LocalPortability.log`)
+- `swift test --package-path Packages/PresetLibrary`: pass at `a71cc74c8b52` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-010/20261113T174416/swift-test_PresetLibrary.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `a71cc74c8b52` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-010/20261113T174416/swift-test_SceneArchive.log`)
 
 ### FX-001 Bloom (integrated)
 - `python3 scripts/check_compliance.py`: pass at `94f4b3a6b7c3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-001/20261113T090348/compliance.log`)
