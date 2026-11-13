@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T16:31:45Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T16:34:59Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 278 |
 | implementing | 2 |
-| unit_passed | 1 |
-| integrated | 44 |
+| integrated | 45 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 50 | 1 | 0 | 35 | 1 |
-| P1 | 140 | 1 | 1 | 9 | 0 |
-| P2 | 79 | 0 | 0 | 0 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 50 | 1 | 35 | 1 |
+| P1 | 140 | 1 | 10 | 0 |
+| P2 | 79 | 0 | 0 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 281 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
+- 280 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
 
 ## Integrated
 
@@ -68,6 +67,7 @@ The physical-device suite may **not** start:
 | MOD-001 | Typed parameter registry | `304f3bce431a` | `feature/mod-001` |
 | MOD-002 | Audio feature binding | `006678f3d7a5` | `feature/mod-002` |
 | MOD-003 | Linear mapping | `29cd3bbb1e12` | `feature/mod-003` |
+| OSC-001 | OSC receiver | `13d9883531b9` | `feature/osc-001` |
 | PERF-011 | Background resource release | `6d669fcb8576` | `feature/perf-011` |
 | PRE-007 | Preset collections | `e834535cb98b` | `feature/pre-007` |
 | PRE-012 | Preset import validation | `4bf9f50d1af8` | `feature/pre-012` |
@@ -330,10 +330,13 @@ None.
 - `post-merge: projectM-iOSTests 159 + AudioFeatureBindingUITests 13.8 s on iPhone 17 iOS 27.2 sim`: pass at `29cd3bbb1e12` (log `.autonomous/logs/integration/mod-003/app-tests.log`)
 - `post-merge: ParameterGraph xcodebuild test on iPhone 17 sim (48)`: pass at `29cd3bbb1e12` (log `.autonomous/logs/integration/mod-003/pg-sim.log`)
 
-### OSC-001 OSC receiver (unit_passed)
+### OSC-001 OSC receiver (integrated)
 - `python3 scripts/check_compliance.py`: pass at `6467d622b4bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-001/20261113T113140/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `6467d622b4bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-001/20261113T113140/docs.log`)
 - `swift test --package-path Packages/PerformanceControl`: pass at `6467d622b4bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-001/20261113T113140/swift-test_PerformanceControl.log`)
+- `post-merge: projectM-iOSTests 165 + OSCReceiverUITests 12.5 s on iPhone 17 iOS 27.2 sim (SettingsUITests licenses fixed in the next commit, all 4 pass)`: pass at `13d9883531b9` (log `.autonomous/logs/integration/osc-001/app-tests.log`)
+- `post-merge: PerformanceControl xcodebuild test on iPhone 17 sim (58, incl. loopback acceptance)`: pass at `13d9883531b9` (log `.autonomous/logs/integration/osc-001/perf-sim.log`)
+- `post-merge: SettingsUITests 4 pass after scrolling to Licenses (9.3-20.1 s)`: pass at `13d9883531b9` (log `.autonomous/logs/integration/osc-001/settings-ui.log`)
 
 ### PERF-011 Background resource release (integrated)
 - `python3 scripts/check_compliance.py`: pass at `e463058b1c92` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T151252/compliance.log`)
