@@ -26,8 +26,8 @@ ACC-005. Types and fields: [data-model.md](../data-model.md). Decisions: ADR-001
 ## C3. Value store
 
 1. Starts with every parameter at its default.
-2. `set` clamps finite continuous values to range (no snapping), snaps integers to step from the
-   minimum then clamps, clamps color components to 0…1; it rejects unknown IDs, wrong kinds,
+2. `set` clamps finite continuous values to range (no snapping), snaps integers to the nearest step
+   from the minimum (ties toward the maximum) then clamps, clamps color components to 0…1; it rejects unknown IDs, wrong kinds,
    non-finite numbers and unknown enum case IDs with `ParameterStoreError`, leaving state, change
    count and observers untouched.
 3. An effective change (stored value differs) increments `changeCount` by one and then calls
