@@ -126,3 +126,35 @@ restriction; blend modes and transforms stay refused until CMP-004 and CMP-005.
 5. **Not here.** No `layer.<id>.opacity` parameter (MOD-001 IDs are catalog-stable; layer IDs are
    runtime numbers): the MOD and UIX rows expose opacity. The device cost is covered by
    CMP-002-T15.
+
+## Amendment: CMP-005 transform controls (2026-11-13)
+
+Decided by Claude under owner rule 4 (feature CMP-005, `specs/046-cmp-005-transform-controls/`,
+research CMP-005-D1 to D6, contract `contracts/layer-transform.md`). It lifts the transform
+restriction of decision 5; blend modes stay refused until CMP-004.
+
+1. **A parametric transform.** `LayerTransform` (target `Compositor`, CPU, builds on Linux) replaces
+   CMP-001's unused pixel-space placeholder: a move in output fractions, a scale per layer axis
+   (0.05…20, no mirroring), a rotation in radians (positive turns clockwise on screen) and an anchor
+   point in layer fractions (centre by default). Move and anchor clamp to −10…10. Non-finite values
+   are refused with `LayerTransformError`; finite ones are clamped (the MOD-001/CMP-003 rule);
+   −0 is stored as 0.
+2. **One exact matrix per output aspect.** `matrix(aspect:)` maps normalized layer coordinates to
+   normalized output coordinates: stretch x by the aspect, move the anchor to the origin, scale,
+   rotate, move back, un-stretch, add the move, i.e. `A = [[c·sx, −s·sy/a], [s·sx·a, c·sy]]`,
+   `b = anchor + move − A·anchor`. The anchor lands at anchor + move, rotation never skews on a
+   non-square output, and move 0, scale 1, rotation 0 is exactly the identity for any anchor.
+3. **Saved form.** `Codable`, version 1: `{"version":1,"translation":{x,y},"scale":{x,y},
+   "rotation","anchor":{x,y}}`. Every field is written; missing fields read identity values;
+   another version is refused; out-of-range values clamp. JSON numbers use Swift's shortest
+   round-trip form, so saving and reloading reproduces every value and the matrix bit for bit (the
+   roadmap acceptance). The matrix is derived, never saved. SCN-001 embeds this object unchanged.
+4. **Drawing.** Identity layers keep `cmp_over` (bit-identical to CMP-003). Other layers use
+   `cmp_over_transformed` (same blend state, one more pipeline built at init): the output pixel
+   centre goes through the inverse matrix in pixels (`D·M⁻¹·D⁻¹`, passed with `setFragmentBytes`,
+   48 bytes), the picture is sampled bilinearly with `clamp_to_zero` (transparent outside), then
+   sanitized and multiplied by opacity. Transforms act before the composite flash guard.
+5. **Apply.** A kept layer takes its entry's transform from the next frame; transform-only edits
+   create, prepare and release nothing. No transform animation in this row (MOD/UIX rows); group
+   transforms (CMP-011) compose `LayerTransformMatrix` values; aspect fitting (CMP-006) builds on
+   the matrix. The device cost is covered by CMP-002-T15.

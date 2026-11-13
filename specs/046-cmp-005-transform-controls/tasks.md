@@ -46,8 +46,8 @@ CMP-002-T15 (spec CMP-005-S6).
 
 ## Phase 6: Polish & Cross-Cutting
 
-- [ ] CMP-005-T09 [P] ADR-0013 "Amendment: CMP-005 transform controls" in `docs/adr/0013-compositor-layer-protocol.md` (and the ADR index if it lists amendments)
-- [ ] CMP-005-T10 Linux shape: `swift test --package-path Packages/Compositor --scratch-path .build/linuxshape -Xswiftc -DCOMPOSITOR_NO_METAL -Xswiftc -DVISUAL_NO_METAL -Xswiftc -DANALYSIS_NO_ACCELERATE` runs `LayerTransformTests`
+- [X] CMP-005-T09 [P] ADR-0013 "Amendment: CMP-005 transform controls" in `docs/adr/0013-compositor-layer-protocol.md` (and the ADR index if it lists amendments) — Verified 2026-11-13: ADR-0013 "Amendment: CMP-005 transform controls" and the ADR index row; `python3 scripts/validate_docs.py` OK (431 files)
+- [X] CMP-005-T10 Linux shape: `swift test --package-path Packages/Compositor --scratch-path .build/linuxshape -Xswiftc -DCOMPOSITOR_NO_METAL -Xswiftc -DVISUAL_NO_METAL -Xswiftc -DANALYSIS_NO_ACCELERATE` runs `LayerTransformTests` — Verified 2026-11-13: Linux shape: CompositorTests 55/55 (LayerTransformTests 10/10), ProceduralMaterialsTests 19/19, GeneratorGraphTests 32/32
 - [ ] CMP-005-T11 Simulator package run: `xcodebuild test -scheme Compositor` from `Packages/Compositor` on a fresh iOS 27.2 simulator (deleted afterwards); PosterBoard reports counted before and after
 - [ ] CMP-005-T12 `python3 scripts/check_compliance.py` and `python3 scripts/validate_docs.py` OK; spec status updated
 
