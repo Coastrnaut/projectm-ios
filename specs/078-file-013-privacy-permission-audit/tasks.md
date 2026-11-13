@@ -62,3 +62,13 @@ read the notice.
 
 T01 → T02-T06. T03-T06 → T07 → T08. T01 → T09 → T10. Everything → T12. T11 needs D1 and the owner.
 Parallel: T02 with T03-T06 (different files); T09 with T03-T08.
+
+## Analysis (speckit-analyze, 2026-11-13)
+
+Coverage: every requirement maps to a task (R1-R2 T01; R3 T03, T05; R4 T04, T05; R5 T02; R6 T09; R7
+T07; R8 T06-T07; R9 T11; R10 T10; R11 T08, T12) and every success criterion to a verifying task (S1
+T02, T07-T08; S2 T09; S3 T07-T08; S4 T09; S5 T08). Two fixes applied to the spec: the "who owns the
+texts" clarification now matches plan D2 (the catalog references contract-fixed texts and owns only
+the Local Network text), and FILE-013-R1's "in-app name" is the privacy policy's bullet name, as the
+check script (D10) uses it. No constitution conflicts (no new prompt, key or networking); no ambiguous
+terms left.

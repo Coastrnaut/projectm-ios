@@ -58,8 +58,10 @@ interaction); each answer is the conservative option.
   any key or text. Applied to FILE-013-R1, R6.
 - Q: Should the existing notice wording change? → A: No. The microphone and screen-capture texts are
   fixed by feature 001's contract (`contracts/ui-states.md`, checked by `test_scripts.py`), and the
-  camera and OSC texts are asserted by shipped tests. The catalog owns the denied and restricted texts
-  and the existing features read them from it; wording is unchanged. Applied to FILE-013-R2, R3.
+  camera and OSC texts are asserted by shipped tests. The catalog is the one index every feature reads
+  its denied and restricted texts from: it references the contract-fixed texts where they are defined
+  (capture UI strings, camera feed state) and owns the Local Network text, so no text is written
+  twice; wording is unchanged. Applied to FILE-013-R2, R3.
 - Q: What does "one notice style" cover? → A: The camera notice and the Local Network status in Settings
   use one shared notice (symbol, text, Open Settings when Settings can help) and one Settings opener.
   The microphone and screen-capture denials stay in the source status banner (feature 001's banner,
@@ -167,7 +169,7 @@ fails with a named finding).
 
 - **FILE-013-R1**: The app MUST have one permission catalog listing every permission it can trigger
   (microphone, camera, local network, screen capture) with: its Info.plist key, the exact usage text,
-  a short in-app name, the features that use it, when it is asked, and whether Settings can change it.
+  its name (as the privacy policy lists it), the features that use it, when it is asked, and whether Settings can change it.
   It MUST record that the Photos library needs no permission (out-of-process picker).
 - **FILE-013-R2**: The catalog MUST map each framework's status to one permission state
   (notDetermined, granted, denied, restricted) and give, for denied and restricted, the user-facing
