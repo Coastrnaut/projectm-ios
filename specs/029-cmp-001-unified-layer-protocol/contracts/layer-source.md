@@ -1,7 +1,7 @@
 # Contract: layer sources and the compositor (CMP-001)
 
 The render boundary for every later visual row (CMP-002…015, MED, CAM, OUT, REC, SCN). Package
-`Packages/Compositor`, module `Compositor` (ADR-0012; research CMP-001-D1 to D8). Swift 6, strict
+`Packages/Compositor`, module `Compositor` (ADR-0013; research CMP-001-D1 to D8). Swift 6, strict
 concurrency. Types marked *Metal* exist only when `canImport(Metal) && !COMPOSITOR_NO_METAL`.
 
 ## Pictures (CMP-001-R1, R2, R6; research CMP-001-D2)

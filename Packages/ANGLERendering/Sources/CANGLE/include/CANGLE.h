@@ -43,7 +43,7 @@ typedef void (*_Nullable __eglMustCastToProperFunctionPointerType)(void);
 #define EGL_PLATFORM_ANGLE_TYPE_ANGLE 0x3203
 #define EGL_PLATFORM_ANGLE_TYPE_METAL_ANGLE 0x3489
 
-// CMP-001 (ADR-0012): client buffers, so an ANGLE frame can be drawn into a texture Metal samples.
+// CMP-001 (ADR-0013): client buffers, so an ANGLE frame can be drawn into a texture Metal samples.
 // Constant values from ANGLE's include/EGL/egl.h and eglext_angle.h at the pinned commit; every
 // extension is queried at run time (eglQueryString) before it is used.
 typedef void *_Nullable EGLImage;

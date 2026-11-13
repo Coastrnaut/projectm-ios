@@ -1,7 +1,7 @@
 # Tasks: CMP-001 Unified Layer Protocol
 
 **Input**: Design documents in `specs/029-cmp-001-unified-layer-protocol/` (spec.md, plan.md,
-research.md, data-model.md, contracts/layer-source.md, quickstart.md); ADR-0012 (with ADR-0003,
+research.md, data-model.md, contracts/layer-source.md, quickstart.md); ADR-0013 (with ADR-0003,
 ADR-0009, ADR-0010, ADR-0011).
 
 **Tests**: test-first. Each test task comes before the code it covers; the red run (compile failure
@@ -19,7 +19,7 @@ appended. Logs go to `.build/scratch/`.
 ## Phase 1: Setup
 
 - [ ] CMP-001-T01 Record the baseline at `733c5d6`: `python3 scripts/check_compliance.py`, `scripts/validate_docs.py`, `scripts/test_scripts.py`; `swift test --package-path Packages/VisualGenerators` (the adapters' dependency, not changed) on the host; ANGLERendering tests on the simulator {sim} (the package this row extends). Evidence: counts recorded here.
-- [X] CMP-001-T02 Spike (research CMP-001-D5): declare the client-buffer EGL entry points, constants and C helpers in `Packages/ANGLERendering/Sources/CANGLE/include/CANGLE.h` and `CANGLE.c`; write `Packages/ANGLERendering/Tests/ANGLERenderingTests/ClientBufferSpikeTests.swift` (extension string, Metal-texture image round trip, IOSurface pbuffer round trip, shared-event sync) {sim}. Evidence: the printed extension string and pass/fail per path, recorded in research CMP-001-D5 and ADR-0012. — Verified 2026-11-13: 4 tests pass on the iPhone Air iOS 27.2 simulator in 0.38 s (extension string, both client-buffer paths exact, GL row 0 = Metal row 0, shared event signaled) (.build/scratch/spike1.log).
+- [X] CMP-001-T02 Spike (research CMP-001-D5): declare the client-buffer EGL entry points, constants and C helpers in `Packages/ANGLERendering/Sources/CANGLE/include/CANGLE.h` and `CANGLE.c`; write `Packages/ANGLERendering/Tests/ANGLERenderingTests/ClientBufferSpikeTests.swift` (extension string, Metal-texture image round trip, IOSurface pbuffer round trip, shared-event sync) {sim}. Evidence: the printed extension string and pass/fail per path, recorded in research CMP-001-D5 and ADR-0013. — Verified 2026-11-13: 4 tests pass on the iPhone Air iOS 27.2 simulator in 0.38 s (extension string, both client-buffer paths exact, GL row 0 = Metal row 0, shared event signaled) (.build/scratch/spike1.log).
 
 ## Phase 2: Foundational (package, CPU contract; blocks every story)
 
@@ -63,7 +63,7 @@ appended. Logs go to `.build/scratch/`.
 
 - [ ] CMP-001-T18 Check the app is unchanged (CMP-001-R14): `xcodegen generate`, build `projectM-iOS` for the simulator, run the app unit tests and `NativeVisualUITests` {sim}. Evidence: build succeeds; tests pass (known environmental failure in worktrees: `PresetTests.testBundledIncludedScopeMatchesRelease1_0`).
 - [ ] CMP-001-T19 Run every gate: `swift test --package-path Packages/Compositor` (host and Linux shape; suite < 1 min, each test ≤ 10 s); `xcodebuild test -scheme Compositor` {sim}; `python3 scripts/check_compliance.py`, `validate_docs.py`, `test_scripts.py`; count new `PosterBoard-*.ips` reports; shut the simulator down; review the per-frame paths of `Compositor.swift`, `CompositeFlashGuard.swift`, `SpectrumLayerSource.swift` and `ProjectMLayerSource.swift` for allocation (no array, string or closure creation; `setBytes` and Metal's own command objects only) (CMP-001-R15). Evidence: counts and durations recorded here.
-- [ ] CMP-001-T20 {device} On D1-D3: the spike tests and `ProjectMLayerTests` on each device, and a frame-time sample of a compositor with two spectrum layers and a projectM layer (CMP-001-S7 on hardware, the cost noted in ADR-0012). Roadmap final device phase; not run in this row.
+- [ ] CMP-001-T20 {device} On D1-D3: the spike tests and `ProjectMLayerTests` on each device, and a frame-time sample of a compositor with two spectrum layers and a projectM layer (CMP-001-S7 on hardware, the cost noted in ADR-0013). Roadmap final device phase; not run in this row.
 
 ## Dependencies
 

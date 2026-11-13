@@ -7,7 +7,7 @@
 ## Summary
 
 A layer contract and a minimal Metal compositor, the render boundary of the roadmap's architecture
-(item 2), recorded in ADR-0012. The spike (research CMP-001-D5) shows the pinned ANGLE build can
+(item 2), recorded in ADR-0013. The spike (research CMP-001-D5) shows the pinned ANGLE build can
 draw into a Metal texture on the simulator, so projectM also becomes a layer source; the app does not
 use the compositor yet (CMP-001-R14).
 
@@ -111,7 +111,7 @@ specs/029-cmp-001-unified-layer-protocol/
 ├── plan.md, research.md, data-model.md, quickstart.md, tasks.md
 ├── contracts/layer-source.md
 └── checklists/requirements.md
-docs/adr/0012-compositor-layer-protocol.md
+docs/adr/0013-compositor-layer-protocol.md
 ```
 
 ### Source Code (repository root)

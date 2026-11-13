@@ -1,4 +1,4 @@
-# ADR-0012: Compositor and the unified layer protocol
+# ADR-0013: Compositor and the unified layer protocol
 
 - **Status**: Accepted 2026-11-13 (decided by Claude under the owner's best-judgement rule, owner
   rule 4; feature CMP-001)

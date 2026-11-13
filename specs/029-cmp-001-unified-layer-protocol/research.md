@@ -1,6 +1,6 @@
 # Research: CMP-001 Unified Layer Protocol
 
-Decisions are numbered CMP-001-D1… and cited by the plan, the contract and ADR-0012.
+Decisions are numbered CMP-001-D1… and cited by the plan, the contract and ADR-0013.
 
 ## CMP-001-D1: Where the compositor lives
 

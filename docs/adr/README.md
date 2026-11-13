@@ -13,6 +13,6 @@
 | [0009](0009-native-visual-generators.md) | Native visual generators beside projectM | Accepted 2026-11-13 (VIS-001; owner rule 4) |
 | [0010](0010-post-processing-effects.md) | Post-processing effects and the effect chain | Accepted 2026-11-13 (FX-001; owner rule 4) |
 | [0011](0011-strobe-safety-envelope.md) | Strobe safety envelope | Accepted 2026-11-13 (FX-019; owner rule 4) |
-| [0012](0012-compositor-layer-protocol.md) | Compositor and the unified layer protocol | Accepted 2026-11-13 (CMP-001; owner rule 4) |
+| [0013](0013-compositor-layer-protocol.md) | Compositor and the unified layer protocol | Accepted 2026-11-13 (CMP-001; owner rule 4) |
 
 Required by Constitution X: capture API, minimum OS, renderer, dependency strategy.

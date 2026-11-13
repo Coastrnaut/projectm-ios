@@ -51,5 +51,4 @@
   types are consumed read-only; VisualGenerators/VisualEffects, FlashSafety and the app are not
   changed; SHOW-011's and MOD-001's areas (PerformanceControl, ParameterGraph, AppSettings, the
   controls overlay) are not touched; shared files: only `.github/workflows/ios-ci.yml` (package
-  loops). ADR number 0012 was the next free one at `733c5d6`; if a parallel feature also takes it,
-  the integrator renumbers one of them.
+  loops). ADR 0012 went to MOD-001 (integrator ruling 2026-11-13), so this row uses ADR-0013.

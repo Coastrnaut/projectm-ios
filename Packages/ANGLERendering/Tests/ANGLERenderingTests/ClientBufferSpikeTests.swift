@@ -1,4 +1,4 @@
-// CMP-001-T02 (spike; ADR-0012, research CMP-001-D5): can the pinned ANGLE build draw into a
+// CMP-001-T02 (spike; ADR-0013, research CMP-001-D5): can the pinned ANGLE build draw into a
 // texture that Metal samples? Queries the display's extension string at run time, then tries both
 // documented client buffers: a Metal texture as an EGLImage (EGL_ANGLE_metal_texture_client_buffer)
 // and an IOSurface as a pbuffer (EGL_ANGLE_iosurface_client_buffer). Each clears the GL bottom-left
