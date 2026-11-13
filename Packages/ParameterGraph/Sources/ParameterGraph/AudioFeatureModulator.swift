@@ -155,7 +155,29 @@ public final class AudioFeatureModulator {
     /// Contract C2, in order. Returns the target's descriptor.
     static func validate(_ binding: AudioFeatureBinding, in registry: ParameterRegistry,
                          otherBindings: Int) throws(AudioFeatureBindingError) -> ParameterDescriptor {
-        guard let descriptor = registry.descriptor(for: binding.target) else { throw .unknownTarget(binding.target) }
+        let id = binding.target
+        guard let descriptor = registry.descriptor(for: id) else { throw .unknownTarget(id) }
+        guard descriptor.kind.isNumeric else { throw .notNumeric(id, kind: descriptor.kind.name) }
+        let policy = descriptor.modulation
+        guard policy.isModulatable else { throw .notModulatable(id) }
+        guard policy.mixModes.contains(binding.mixMode) else { throw .mixModeNotAllowed(id, binding.mixMode) }
+        if case let .band(index) = binding.source, !(0...AudioFeatureSource.maximumBandIndex).contains(index) {
+            throw .bandIndexOutOfRange(id, index)
+        }
+        guard binding.inputMinimum.isFinite, binding.inputMaximum.isFinite, binding.inputMinimum < binding.inputMaximum else {
+            throw .invalidInputRange(id)
+        }
+        let range = bounds(of: descriptor.kind)
+        let allowed: (minimum: Double, maximum: Double) = switch binding.mixMode {
+        case .replace: (range.minimum, range.maximum)
+        case .add: (-(range.maximum - range.minimum), range.maximum - range.minimum)
+        case .multiply: (0, 1)
+        }
+        for end in [binding.outputStart, binding.outputEnd] where !(end.isFinite && end >= allowed.minimum && end <= allowed.maximum) {
+            throw .outputOutOfRange(id, binding.mixMode, minimum: allowed.minimum, maximum: allowed.maximum)
+        }
+        guard binding.envelope.isValid else { throw .invalidEnvelope(id) }
+        guard otherBindings < maximumBindings else { throw .tooManyBindings(id, limit: maximumBindings) }
         return descriptor
     }
 }
