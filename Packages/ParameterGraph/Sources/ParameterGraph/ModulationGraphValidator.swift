@@ -140,7 +140,8 @@ struct ModulationGraphValidator {
         for edge in selfLoops {
             let cycle = makeCycle([edge], generators: result.generators)
             result.issues.append(ModulationGraphIssue(problem: .selfLoop, edge: edge, generatorID: nil, cycle: cycle,
-                                                      message: "\"\(edge.source.id)\" drives its own input: \(cycle.path)"))
+                                                      message: "connection \(edge): \"\(edge.source.id)\" drives its own input "
+                                                          + "(feedback loop \(cycle.path))"))
         }
 
         // 4b. One shortest loop per strongly connected group, by the group's smallest node.
