@@ -1,0 +1,96 @@
+# Tasks: VIS-001 Circular Spectrum
+
+**Input**: Design documents in `specs/019-vis-001-circular-spectrum/` (spec.md, plan.md, research.md,
+data-model.md, contracts/visual-generator.md, quickstart.md), ADR-0009.
+
+**Tests**: test-first. Each test task comes before the code it covers; the red run (compile failure
+or failing assertions) is recorded before the production change.
+
+**Format**: `- [ ] ID [P?] [Story?] Description with file path`. `[P]` = can run in parallel
+(different files). Tags: `{device}` = needs a physical device, done only in the roadmap's final
+device phase; `{sim}` = needs the iOS 27.2 simulator "iPhone Air" (udid
+`77E17861-E687-4274-8A84-14224F32BE3E`).
+
+A task is ticked only when its acceptance evidence was produced, with " — Verified <date>: <how>"
+appended. Inside descriptions, "T07" is short for `VIS-001-T07`. Logs go to `.build/scratch/`.
+Story phases follow dependency order (US2 and US3 build the generator the app needs); story labels
+keep the spec's numbering.
+
+## Phase 1: Setup
+
+- [ ] VIS-001-T01 Confirm the baseline before any change: `swift test` for `Packages/AudioCore`, `Packages/CaptureKit`, `Packages/AnalysisFeatures` on the host; `python3 scripts/check_compliance.py`, `scripts/validate_docs.py`, `scripts/test_scripts.py`; record the counts here.
+- [ ] VIS-001-T02 Create `Packages/VisualGenerators/Package.swift` (tools 6.0; platforms iOS 26, macOS 15; one library product `VisualGenerators` with targets `VisualGenerators` (no dependencies) and `VisualBandFeed` (AnalysisFeatures, AudioCore); test target `VisualGeneratorsTests` depending on both plus AnalysisFeatures and AudioCore) and placeholder sources; `xcodebuild -list` in the package shows a scheme named `VisualGenerators` (CI's `-scheme "$pkg"`). Evidence: `swift build` succeeds; scheme listed.
+
+## Phase 2: Foundational (configuration, palette, buffer, tap delta; blocks every story)
+
+- [ ] VIS-001-T03 [P] Write `Packages/VisualGenerators/Tests/VisualGeneratorsTests/GeometryTestSupport.swift` (independent oracle in Double: θ(k) = start + d·(k + 0.5)·360/N + offset reduced to [0, 360); angular distance mod 360; the five output sizes 1179×2556, 2556×1179, 2064×2752, 2752×2064, 1640×2360; offsets {−90, 0, 37.5, 90, 180, 450}; impulse vector builder) and `ConfigurationTests.swift`: defaults (64 bars, innerRadius 0.3, lengthScale 0.65, gap 0.2, offset 0, start 0, clockwise, spectrum, opaque black); clamping "innerRadius 0.05…0.9", "lengthScale 0…(1 − innerRadius)", "gap 0…0.9", non-finite angles → 0; `SpectrumBarCount` raw values exactly [16, 32, 64, 128]; and `PaletteTests.swift`: sRGB↔linear round trip within 1e-6, mono = white (luminance 1), spectrum bar 0 is red (hue 0°) and bar N−1 hue 270°, ice endpoints #2EC4FF/#E8F7FF, colors independent of band values, all components in 0…1.
+- [ ] VIS-001-T04 [P] Write `Packages/VisualGenerators/Tests/VisualGeneratorsTests/BandFrameBufferTests.swift`: nothing to read before the first write; the reader gets the newest of several writes, complete (count and values match one write, never a mix); a second read with no new write returns nil and keeps the last values; a writer thread and a reader thread exchanging 10,000 frames whose values all equal their sequence number never observe a torn frame and see sequences increase (no timing assertion; waits ≤ 30 s); counts above 128 are clamped.
+- [ ] VIS-001-T05 Record the red run of T03-T04 (`swift build --build-tests` fails on missing symbols) in `.build/scratch/vis001-red-T03-T04.log`.
+- [ ] VIS-001-T06 Implement `CircularSpectrumConfiguration.swift` and `VisualPalette.swift` in `Packages/VisualGenerators/Sources/VisualGenerators/` per data-model.md. Evidence: ConfigurationTests and PaletteTests pass on the host.
+- [ ] VIS-001-T07 Implement `Packages/VisualGenerators/Sources/VisualGenerators/BandFrameBuffer.swift` (three preallocated slots, `Atomic<Int>` exchange with a fresh bit; research VIS-001-D6). Evidence: BandFrameBufferTests pass on the host.
+- [ ] VIS-001-T08 [P] AudioCore delta, test first: in `Packages/AudioCore/Tests/AudioCoreTests/` add a test that `AudioAnalyzer(sink:)` has no analysis tap (`normalizedOutput.analysisTap == nil`) and `AudioAnalyzer(sink:analysisTapCapacityFrames: 22_050)` has one that receives what the analyzer writes; record the red run; then add the parameter (default 0) to `Packages/AudioCore/Sources/AudioCore/AudioAnalyzer.swift`. Evidence: the new test and every existing AudioCore test pass on the host.
+- [ ] VIS-001-T09 [P] CaptureKit delta, test first: in `Packages/CaptureKit/Tests/CaptureKitTests/` add a test that `CaptureManager(sources:)` has `analysisTap == nil` and `CaptureManager(sources:analysisTapCapacityFrames: 22_050)` exposes a reader; record the red run; then add `analysisTapCapacityFrames` (default 0) and `public nonisolated var analysisTap: (any NormalizedPCMReader)?` to `Packages/CaptureKit/Sources/CaptureKit/CaptureManager.swift`. Evidence: the new test and every existing CaptureKit test pass on the host.
+
+## Phase 3: User Story 2 - a band impulse lights the correct angular segment (P1)
+
+**Goal**: the roadmap acceptance's first half. **Independent test**: `CircularSpectrumGeometryTests`, `CircularSpectrumRenderTests`, `BandFeedTests`.
+
+- [ ] VIS-001-T10 [US2] Write `Packages/VisualGenerators/Tests/VisualGeneratorsTests/CircularSpectrumGeometryTests.swift`: for 4 bar counts × every band (240 impulses) at the default configuration and one size: exactly one bar lit (outer > inner), its centre angle equals the oracle within 0.01°, its half-width equals (1 − gap)·180/N, its outer radius equals inner + lengthScale·radiusUnit; silence lights no bar; NaN, −1, 2, +∞ inputs read 0, 0, 1, 1; a shorter vector leaves the missing bars dark; counter-clockwise and start angle 45° follow the oracle; print one `VIS-001 matrix:` line per bar count with the worst angle error. And `TessellationTests.swift`: 24 vertices per lit bar and none for dark bars; every vertex of bar k lies at angle within its half-width (+1e-4°) of θ(k) and radius within [inner, outer] (+1e-3 px), mapped back from NDC with the test's own inverse; vertex colors are premultiplied and scaled by the gain; 128 bars fit the preallocated capacity of 3,072 vertices.
+- [ ] VIS-001-T11 [US2] Record the T10 red run, then implement `Packages/VisualGenerators/Sources/VisualGenerators/CircularSpectrumLayout.swift` (BarGeometry, layout with sanitizing (VIS-001-R8), tessellation of 4 arc segments per bar into `SpectrumVertex`, mean relative luminance; research VIS-001-D2). Evidence: T10 tests pass on the host; matrix saved to `.build/scratch/vis001-matrix.txt`.
+- [ ] VIS-001-T12 [US2] Write `Packages/VisualGenerators/Tests/VisualGeneratorsTests/CircularSpectrumRenderTests.swift` (under `#if canImport(Metal) && !VISUAL_NO_METAL`): skip with `XCTSkip("No Metal device …")` when `MTLCreateSystemDefaultDevice()` is nil, and when the pipeline fails while `CI`/`GITHUB_ACTIONS` is set; render into a 600×1200 and a 1200×600 `bgra8Unorm_srgb` texture, blit to a shared buffer; for every bar count × bands {0, N/4, N/2, N−1}: every lit sample (any channel > 32) on rays every 0.25° at radii from inner + 2 px to outer − 2 px lies within halfWidth + 1.5 px at that radius (≤ 2°) of θ(k); the centre ray of k is lit at 3 radii; the centre rays of k ± 1 are dark; silence: every sample dark; the bar's color matches the palette within 2/255 after sRGB encoding. Also `VisualFrameContext` and `TextureGenerator` conformance compile. Record the red run.
+- [ ] VIS-001-T13 [US2] Implement `Packages/VisualGenerators/Sources/VisualGenerators/VisualGenerator.swift` (context, protocol, `VisualGeneratorError`) and `CircularSpectrumGenerator.swift` (shader source constant, pipeline from `makeLibrary(source:options:)`, three vertex buffers reused only when the last command buffer that read them is `completed`, clear to background, flash gain from FlashSafetyLimiter once T27 exists (identity until then); research VIS-001-D3, D4, D8). Evidence: CircularSpectrumRenderTests pass on the host GPU (not skipped), with counts and the worst angular deviation recorded.
+- [ ] VIS-001-T14 [P] [US2] Write `Packages/VisualGenerators/Tests/VisualGeneratorsTests/BandFeedTests.swift`: AUD-016 `ToneGenerator` stereo sines at 100, 440, 1,000, 1,500 Hz (amplitude 0.5, 44.1 kHz, 1 s) through a fake `NormalizedPCMReader` into `SpectrumBandFeed` for every bar count: the largest band equals `BandReducer.layout(bandCount:size: .n2048).band(containingFrequency:)` and the layout's longest bar has that index; silence gives all-zero bands; band-count switching allocates no new feed. And `LiveBandAnalyzerTests.swift`: start/stop idempotent; after a sine is written into an `NormalizedPCMRing(analysisTapCapacityFrames:)` tap, a frame is published (expectation polled with a 30 s ceiling) whose largest band is the sine's; after `stop()` no further frame is published once the queue drained. Record the red run.
+- [ ] VIS-001-T15 [US2] Implement `Packages/VisualGenerators/Sources/VisualBandFeed/SpectrumBandFeed.swift` and `LiveBandAnalyzer.swift` (FFT 2,048, hop 512, mid, 44.1 kHz; decibels floor −80 dB; 10 ms timer on `org.projectmios.visual-analysis`; research VIS-001-D5). Evidence: BandFeedTests and LiveBandAnalyzerTests pass on the host.
+- [ ] VIS-001-T16 [US2] {sim} Run `xcodebuild test -scheme VisualGenerators` on the simulator (quickstart §2). Evidence: `** TEST SUCCEEDED **`, test count, and whether the render tests ran or skipped.
+
+## Phase 4: User Story 3 - the picture survives rotation (P1)
+
+**Goal**: the acceptance's second half. **Independent test**: `RotationTests`, the render test's two orientations, `NativeVisualUITests.testRotation`.
+
+- [ ] VIS-001-T17 [US3] Write `Packages/VisualGenerators/Tests/VisualGeneratorsTests/RotationTests.swift`: the full matrix 240 impulses × 5 sizes × 6 offsets (7,200 layouts): exactly one lit bar at the oracle angle within 0.01°; the lit angle at offset φ minus the angle at 0 equals φ mod 360; every tessellated vertex inside the output (pixel coordinates within [0, W] × [0, H]); the radius unit is min(W, H)/2 and a vertex at radius r maps to the same pixel distance r horizontally and vertically (isotropy); the same impulse at a portrait size and the swapped landscape size gives the same angles. Print the count of layouts checked. Evidence: passes on the host (red run recorded if any symbol was missing; otherwise first result recorded).
+- [ ] VIS-001-T18 [US3] Confirm the T12 render test covers portrait 600×1200 and landscape 1200×600 with the same assertions. Evidence: both sizes pass on the host and the simulator (or are reported skipped there).
+
+## Phase 5: User Story 1 - watch a circular spectrum of the music (P1)
+
+**Goal**: the observable behavior in the app. **Independent test**: `NativeVisualUITests`.
+
+- [ ] VIS-001-T19 [US1] Extend `Apps/projectM-iOS/Tests/SettingsTests.swift` (test first): `visual` defaults to `.projectM`; `.circularSpectrum` persists under `settings.visual` as "circularSpectrum"; an unknown stored string reads projectM; `circularSpectrumBars` defaults to 64, persists under `settings.circularSpectrum.bars`, a stored 24 reads 64; `allKeys` contains both keys and the "only the settings keys are written" test still holds. Add `Apps/projectM-iOS/Tests/NativeVisualTests.swift`: `AppCoordinator.nativeVisualShown(choice:hostAvailable:onVisualizer:)` truth table. Record the red run (app test target fails to compile).
+- [ ] VIS-001-T20 [US1] Implement `VisualChoice`, `visual` and `circularSpectrumBars` in `Apps/projectM-iOS/Coordinators/AppSettings.swift` (keys added to `allKeys`).
+- [ ] VIS-001-T21 [US1] Implement `Apps/projectM-iOS/Visuals/CircularSpectrumHost.swift`: `CAMetalLayer` view (`bgra8Unorm_srgb`, opaque), drawable size from bounds × scale on layout, `CADisplayLink` with `QualityGovernor`'s range, per frame: newest bands from the analyzer's `BandFrameBuffer`, generator encode into the drawable, present; `pause()/resume()`, `PresentationBoundResource` (suspend stops the link and the analyzer), `reduceFlashing`, `barCount`, `metrics`; `static func make(device:reader:)` throws on no device or pipeline failure; accessibility element "Circular Spectrum visualization".
+- [ ] VIS-001-T22 [US1] Integrate in `Apps/projectM-iOS/Coordinators/AppCoordinator.swift`: capture manager with `analysisTapCapacityFrames: NormalizedPCMRing.analysisTapDefaultCapacityFrames`; lazy host creation on first need, registered with `presentation`; `pauseActiveVisual()/resumeActiveVisual()` replace the direct renderer calls; `visualChanged()` switches without touching the source; `nativeVisualUnavailable` + announcement; DEBUG `-uitestNativeVisualFailure`; Reduce flashing and bar count forwarded.
+- [ ] VIS-001-T23 [US1] Views: `VisualizerView.swift` (host instead of `RendererHost` when shown, id `circularSpectrum`; fallback banner id `nativeVisualUnavailable`; settings changes call the coordinator), `ControlsOverlay.swift` (no Previous/Next/Random/Presets/Duplicate while shown; title "Circular Spectrum", id `currentVisual`), `SettingsView.swift` ("Visual" section: segmented `visualPicker` projectM / Circular Spectrum, `barsPicker` 16/32/64/128 when Circular Spectrum, unavailable footer id `nativeVisualUnavailableFooter`), `PerformanceOverlay.swift` (metrics of the active visual).
+- [ ] VIS-001-T24 [US1] Add `AnalysisFeatures` and `VisualGenerators` to `project.yml` packages and `VisualGenerators` to the `projectM-iOS` dependencies; `xcodegen generate`; build the app for the simulator. Evidence: `** BUILD SUCCEEDED **` with no new warnings in our files; T19 tests pass {sim}.
+- [ ] VIS-001-T25 [US1] Write `Apps/projectM-iOS/UITests/NativeVisualUITests.swift` (launch `-uitestResetNotice -uitestDiagnostics -autostart inAppPlayback -uitestUnlocked NO` as the other UI tests do): default shows `visualizer` (projectM); choosing Circular Spectrum shows `circularSpectrum`, hides `visualizer` and preset buttons, `sourceStarts` stays 1; relaunch (without reset) keeps Circular Spectrum; choosing projectM brings `visualizer` back; choosing 16 bars persists.
+- [ ] VIS-001-T26 [US1] {sim} Run NativeVisualUITests, then take a screenshot of the circular spectrum with the reference track to `.build/scratch/vis-001-circular-spectrum.png`. Evidence: tests pass; screenshot path recorded (not evidence of device behavior).
+
+## Phase 6: User Story 4 - Reduce flashing, background, failure (P2)
+
+- [ ] VIS-001-T27 [US4] Write `Packages/VisualGenerators/Tests/VisualGeneratorsTests/FlashSafetyLimiterTests.swift` (alternating all-0/all-1 bands, 600 frames at frame times 1/120, 1/60, 1/30, 0.1, 0.2 s through limiter + layout: luminance rise per frame ≤ 0.25·min(dt, 0.1) + 1e-6; per-bar change ≤ 4·min(dt, 0.1) + 1e-6; disabled = pass-through with gain 1; reset starts from the next frame); record the red run; implement `Packages/VisualGenerators/Sources/VisualGenerators/FlashSafetyLimiter.swift` and wire it into `CircularSpectrumGenerator`. Evidence: tests pass on the host; the worst observed rise reported.
+- [ ] VIS-001-T28 [US4] Add to `Apps/projectM-iOS/Tests/NativeVisualTests.swift`: a host registered with a `PresentationResourceRegistry` stops its display link and analyzer on `setCanPresent(false)` and restarts on `true` unless paused; pause/resume idempotent (skips without a Metal device). Evidence: passes {sim}.
+- [ ] VIS-001-T29 [US4] Add to `NativeVisualUITests`: rotation to landscape and back while Circular Spectrum runs keeps `circularSpectrum` on screen and `sourceStarts` at 1 (XCUIDevice orientation); `-uitestNativeVisualFailure` with Circular Spectrum stored shows `visualizer` and `nativeVisualUnavailable`. Evidence: passes {sim}.
+
+## Phase 7: Polish and cross-cutting
+
+- [ ] VIS-001-T30 Add `VisualGenerators` to the five package loops of `.github/workflows/ios-ci.yml` (Linux host, macOS host, generic iOS compile, iOS 26 simulator, iOS 27 simulator). Evidence: diff limited to the loop lines; YAML parses.
+- [ ] VIS-001-T31 Add `settings.visual` and `settings.circularSpectrum.bars` to `ALLOWED_KEYS` in `scripts/run_device_tests.py`. Evidence: `python3 scripts/test_scripts.py` passes.
+- [ ] VIS-001-T32 Linux shape: `swift test --package-path Packages/VisualGenerators -Xswiftc -DVISUAL_NO_METAL` passes with the Metal file and render tests compiled out (plus `-DANALYSIS_NO_ACCELERATE`). Linux itself runs in CI (pending CI).
+- [ ] VIS-001-T33 Gates: `python3 scripts/check_compliance.py`, `scripts/validate_docs.py`, `scripts/test_scripts.py`; host `swift test` for VisualGenerators, AudioCore, CaptureKit, AnalysisFeatures; generic iOS build of the package.
+- [ ] VIS-001-T34 {sim} App regression: all app unit tests, `VisualizerUITests`, `SettingsUITests`, `StatusUITests`, `NativeVisualUITests`. Known environmental failure: `PresetTests.testBundledIncludedScopeMatchesRelease1_0` (full library).
+- [ ] VIS-001-T35 Count new `~/Library/Logs/DiagnosticReports/PosterBoard-*.ips` since the run started (baseline 32 at 07:26) and shut the simulator down.
+- [ ] VIS-001-T36 {device} On D1, D2, D3: choose Circular Spectrum with the reference track; rotate; lock/unlock and background/return; toggle Reduce flashing; note the overlay's frame rate; confirm no crash and the fallback never shows. Final device phase only.
+
+## Dependencies
+
+- T01 → T02 → (T03, T04 ∥ T08, T09) → T05 → T06, T07 → US2 (T10-T16) → US3 (T17-T18) → US1 (T19-T26) → US4 (T27-T29) → Polish.
+- T13 needs T11; T21 needs T13 and T15; T22 needs T09 and T21; T27's wiring touches T13's file.
+
+## Parallel examples
+
+- T03 and T04 (different test files); T08 and T09 (different packages).
+- T14 can be written while T11-T13 are implemented.
+
+## Implementation strategy
+
+MVP = Phases 1-3 (a tested generator and band feed); then rotation (US3), the app (US1) and safety
+(US4). Commit after each phase-level step; the last commit of the branch carries code without
+`[skip ci]`.
