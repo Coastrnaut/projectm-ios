@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T21:03:52Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T21:17:49Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,18 +9,20 @@
 
 | State | Features |
 |---|---|
-| audited | 249 |
+| audited | 246 |
+| implementing | 2 |
+| unit_passed | 1 |
 | integrated | 76 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | integrated | skipped_existing |
-|---|---|---|---|
-| P0 | 25 | 61 | 1 |
-| P1 | 138 | 13 | 0 |
-| P2 | 77 | 2 | 0 |
-| P3 | 9 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 22 | 2 | 1 | 61 | 1 |
+| P1 | 138 | 0 | 0 | 13 | 0 |
+| P2 | 77 | 0 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -357,6 +359,13 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `b4e63d16acf1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-001/20261113T154852/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `b4e63d16acf1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-001/20261113T154852/swift-test_SceneFormat.log`)
 - `post-merge (batch with SCN-001, REC-012, SHOW-014, FILE-001 on a second iOS 27.2 iPhone 17 simulator): projectM-iOSTests 271 incl. SceneArchiveServiceTests; CaptureShareUITests, EmergencyBlackoutUITests 2, OutputBlackoutUITests; SceneFormat 31 and SceneArchive 18 on host and Linux shape`: pass at `c3886d1cb0bb` (log `.autonomous/logs/integration/batch-scn-rec12-show14-file1/app-tests.log`)
+
+### FILE-002 Archive manifest checksums (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `fd80d903f84b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-002/20261113T161716/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `fd80d903f84b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-002/20261113T161716/docs.log`)
+- `swift test --package-path Packages/LocalPortability`: pass at `fd80d903f84b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-002/20261113T161716/swift-test_LocalPortability.log`)
+- `swift test --package-path Packages/PresetLibrary`: pass at `fd80d903f84b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-002/20261113T161716/swift-test_PresetLibrary.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `fd80d903f84b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-002/20261113T161716/swift-test_SceneArchive.log`)
 
 ### FX-001 Bloom (integrated)
 - `python3 scripts/check_compliance.py`: pass at `94f4b3a6b7c3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-001/20261113T090348/compliance.log`)

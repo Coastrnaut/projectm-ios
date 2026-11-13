@@ -6,9 +6,11 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 25,
+   "audited": 22,
+   "implementing": 2,
    "integrated": 61,
-   "skipped_existing": 1
+   "skipped_existing": 1,
+   "unit_passed": 1
   },
   "P1": {
    "audited": 138,
@@ -23,9 +25,11 @@
   }
  },
  "by_state": {
-  "audited": 249,
+  "audited": 246,
+  "implementing": 2,
   "integrated": 76,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -1161,13 +1165,13 @@
   },
   "FILE-002": {
    "attempts": 0,
-   "branch": null,
-   "branch_sha": null,
+   "branch": "feature/file-002",
+   "branch_sha": "fd80d903f84b995165b5cc6a40e84906e226c3e6",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "unit_passed"
   },
   "FILE-003": {
    "attempts": 0,
@@ -2511,13 +2515,13 @@
   },
   "QA-002": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/qa-002",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "QA-003": {
    "attempts": 0,
@@ -2791,13 +2795,13 @@
   },
   "SCN-002": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/scn-002",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "SCN-003": {
    "attempts": 0,
@@ -3957,5 +3961,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T21:03:52Z"
+ "updated": "2026-11-13T21:17:49Z"
 }
