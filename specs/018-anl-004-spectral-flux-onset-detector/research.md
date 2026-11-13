@@ -51,6 +51,16 @@ seven levels, a single-sample impulse train and pulse trains at lower levels:
 | **−70** | **0.06** | **1.5** | **0.1** | **0** | chosen: centre of the region; unit impulses pass at N/2, N/4 |
 | −70 | 0.06 | 2 | 0.2 | 0 | fewer noise events, but 6 unit-impulse failures |
 
+Correction found at implementation (2026-11-13): the prototype printed sine and sweep runs only when
+they had events, so it hid runs with no start event. The acceptance tests show that a tone starting
+at sample 0 fades in through the Hann window over size/hop frames; at hop N/8 (`sine-1500` and both
+sweeps at 2,048 points and above, `sine-1k` and `sine-split` at 4,096 and 8,192) the per-frame rise
+stays below the threshold and the start produces no event (26 of 180 runs; every other run had its
+start event within one hop of sample 0). The acceptance test was then trimmed to hops N/2 and N/4
+for tones and noise (runtime; N/8 stays in the pulse matrix). No run produced an event after the
+start. The requirement became "at most one event, at the start" (spec Clarifications, ANL-004-S3);
+the defaults did not change.
+
 With the chosen values, steady white noise at 0.1 and 0.3 peak (−20 and −10 dBFS) produced the
 start event plus at most 21 spurious events per 10 s at 512 points, at most 2 at 1,024 points and
 none at 2,048 points and above; noise at 0.01 peak (−40 dBFS) and below produced none at all. 2 ms

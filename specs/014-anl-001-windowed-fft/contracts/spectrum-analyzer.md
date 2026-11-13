@@ -85,3 +85,15 @@ public var analysisTapDroppedFrames: Int { get }
 - An unsupported size cannot be expressed (`FFTSize(samples:)` returns nil).
 - `append` accepting fewer frames than offered is not an error: the caller calls `nextFrame()`
   (or uses `pull`) to make room.
+
+## Amended by ANL-004 (2026-11-13)
+
+Two additive changes; defaults keep the behavior above (`specs/018-anl-004-spectral-flux-onset-detector/contracts/onset-detector.md`):
+
+- `SpectrumFrame` carries `hop: Int`, the samples from its first sample to the next frame's (the
+  hop configured when it was produced). The public initializer gains `hop: Int? = nil` (nil =
+  size/2), so existing call sites compile unchanged.
+- `SpectrumStream.init(…, leadIn: SpectrumLeadIn = .none)` and `leadIn`: with `.silence` the FIFO
+  starts (at init and after `reset()`) with `size − hop` zeros of the configuration current then,
+  and the first frame index is `−(size − hop)`. Guarantee 6 holds; indices may be negative only
+  during the lead-in.

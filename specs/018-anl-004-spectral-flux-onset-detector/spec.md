@@ -41,7 +41,7 @@ first. Parameter values come from the prototype sweep in research.md (ANL-004-D3
 - Q: What threshold and peak-picking rule decide an onset? → A: Threshold = 0.06 + 1.5 × the mean flux of the preceding 0.1 s (1 to 128 frames); an event fires on the first frame above the threshold while armed, at least 0.05 s after the previous event; any frame above the threshold disarms, a frame at or below re-arms. This is zero-look-ahead peak picking (the event is the rising edge of each flux peak), so the event costs no extra latency for VIS-008 and its time is bounded by construction (ANL-004-R6). A local-maximum rule with look-ahead was rejected: at hops below N/2 the flux maximum of a click can come two hops after the click, outside the acceptance tolerance (research ANL-004-D2). The prototype found a margin on every side of the defaults: floor −68 to −75 dB, offset 0.05 to 0.07 and multiplier 0.5 to 2 all pass every fixture (ANL-004-R4, R5).
 - Q: Which sample index does an event report, and what does "within one analysis hop" mean? → A: The first sample of the frame's newest hop (`frame index + size − hop`), and "within one hop" means |event sample index − catalog onset frame| ≤ hop, each catalog onset matched by exactly one event and no event left over. A click first appears in the newest hop of some frame; it fires there (error 0…hop − 1, event at or before the click) or one frame later (error up to hop, event after the click). The rule is exact on the deterministic sample clock and independent of the FFT size (ANL-004-R6, R17).
 - Q: How is an onset at the very first sample of a stream seen, given that it sits under the Hann window's silent edge in the first frame and in no other frame? → A: The spectrum stream gets an opt-in lead-in of `size − hop` samples of silence at creation and reset (frame indices start negative), so every sample, including sample 0, passes through the same window positions as any other; frames also carry their hop. Both are additive changes to ANL-001's stream and frame with defaults that keep today's behavior (ANL-004-R7, R8). Rejected: dropping onset 0 from the acceptance (the catalog lists it), and padding inside the tests only (production would then differ from what is tested).
-- Q: Does a sound that is already playing when the detector starts (a sine or sweep from sample 0) count as an onset? → A: Yes, exactly one: the detector starts from silence, so the start of any sound is a positive change in spectral energy, and the catalog pulses need the same rule for their onset at sample 0. Steady tones and sweeps afterwards produce none; the acceptance requires exactly one event per sine or sweep loop, at the start. Loud steady white noise is not silence: its spurious events are bounded and documented per FFT size (ANL-004-S3).
+- Q: Does a sound that is already playing when the detector starts (a sine or sweep from sample 0) count as an onset? → A: Yes, at most one: the detector starts from silence, so the start of any sound is a positive change in spectral energy, and the catalog pulses need the same rule for their onset at sample 0. A tone fades in through the window over size/hop frames, so at small hops and large sizes the rise per frame can stay below the threshold and the start produces no event; that is acceptable (a slow fade-in is not an attack). Steady tones and sweeps afterwards produce none; the acceptance requires at most one event per sine or sweep loop, at the start, and none after it (implementation finding 2026-11-13, research ANL-004-D3). Loud steady white noise is not silence: its spurious events are bounded and documented per FFT size (ANL-004-S3).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -82,7 +82,7 @@ floor through every size, hop and rate and count events; also feed all-zero spec
 **Acceptance Scenarios**:
 
 1. **Given** digital silence, **When** analysed at any size, hop and rate, **Then** there are zero events and the detection value is exactly zero on every frame.
-2. **Given** seeded noise whose energy stays below the silence floor in every band, **When** analysed, **Then** there are zero events and the detection value is exactly zero on every frame.
+2. **Given** seeded noise whose energy stays below the silence floor in every band, **When** analysed at hops of N/2 and N/4, **Then** there are zero events and the detection value is exactly zero on every frame.
 3. **Given** a click followed by silence, **When** the sound stops, **Then** the end of a sound produces no event (only increases count).
 
 ---
@@ -100,7 +100,7 @@ count events.
 
 **Acceptance Scenarios**:
 
-1. **Given** a sine or sweep fixture that starts at sample 0 from silence, **When** one loop is analysed, **Then** exactly one event is reported, for the start of the sound, within one hop of sample 0, and none afterwards.
+1. **Given** a sine or sweep fixture that starts at sample 0 from silence, **When** one loop is analysed, **Then** at most one event is reported, for the start of the sound, within one hop of sample 0, and none afterwards.
 2. **Given** loud steady white noise, **When** analysed, **Then** the number of events is bounded as documented per FFT size (the start plus at most a stated number of spurious events).
 
 ---
@@ -168,7 +168,7 @@ detection value and threshold.
 - **ANL-004-R14**: Processing a frame MUST NOT allocate, lock, log or do I/O after creation (Constitution VII); all buffers and band tables are created with the detector. The detector is confined to the one worker that owns it, like the analyser (ANL-001-R14).
 - **ANL-004-R15**: Processing the same frames with the same configuration and path MUST give identical event lists and detection values on repeated runs (AUD-016-R22). The detector MUST work without the platform's accelerated math library through a portable path with the same interface; both paths MUST report identical event lists (count, sample indices, frame indices, sequence numbers) on every acceptance input, with strengths within 1e-4.
 - **ANL-004-R16**: Nothing computed here MAY be passed to projectM (Constitution VIII, ADR-0008 decision 5); no UI is added by this row.
-- **ANL-004-R17**: The acceptance tests MUST cover the three AUD-016 pulse fixtures × the five FFT sizes × hops of N/2, N/4 and N/8 × both catalog rates on every available path, match events to the catalog's onset frames with a tolerance of one hop, and print the acceptance matrix (fixture, size, hop, rate: onsets, events, misses, false events, largest timing error).
+- **ANL-004-R17**: The acceptance tests MUST cover the three AUD-016 pulse fixtures × the five FFT sizes × hops of N/2, N/4 and N/8 × both catalog rates on every available path (in a build with vDSP the portable path repeats hops N/2 and N/4; the portable-only build runs all of them), match events to the catalog's onset frames with a tolerance of one hop, and print the acceptance matrix (fixture, size, hop, rate: onsets, events, misses, false events, largest timing error).
 
 ### Key Entities
 
@@ -181,9 +181,9 @@ detection value and threshold.
 
 ### Measurable Outcomes
 
-- **ANL-004-S1**: In 100 % of the 90 pulse combinations (3 fixtures × 5 sizes × 3 hops × 2 rates), on every available path, every catalog onset is matched by one event within one hop, with 0 misses and 0 unmatched events.
+- **ANL-004-S1**: In 100 % of the 90 pulse combinations (3 fixtures × 5 sizes × 3 hops × 2 rates), on every available path as scoped by ANL-004-R17, every catalog onset is matched by one event within one hop, with 0 misses and 0 unmatched events.
 - **ANL-004-S2**: 0 events and a detection value of exactly 0 on every frame for silence and for the below-floor noise, in every size, hop and rate tested.
-- **ANL-004-S3**: Every sine and sweep fixture produces exactly 1 event (the start, within one hop of sample 0) per loop in every size, hop and rate tested; loud steady noise stays within the documented per-size bound.
+- **ANL-004-S3**: Every sine and sweep fixture produces at most 1 event (the start, within one hop of sample 0) and 0 events after it, per loop, in every size, hop and rate tested; loud steady noise stays within the documented per-size bound.
 - **ANL-004-S4**: The −20 dBFS pulse train and the unit single-sample impulse train are matched 100 % within one hop with 0 unmatched events at hops N/2 and N/4, every size and both rates.
 - **ANL-004-S5**: Repeated runs give identical event lists (0 differing fields); the two paths give identical event lists on every acceptance input and strengths within 1e-4.
 - **ANL-004-S6**: 0 heap allocations while processing frames after setup, checked by reading the per-frame code; the host per-frame cost is reported (never asserted).

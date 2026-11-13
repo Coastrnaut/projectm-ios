@@ -46,6 +46,7 @@ public struct OnsetDetectorConfiguration: Sendable, Hashable {
 public struct OnsetEvent: Sendable, Hashable {
     sequence: UInt64; sampleIndex: Int64; frameIndex: Int64; strength: Float; threshold: Float
     sampleRate: Double; timestampNanoseconds: UInt64
+    public init(sequence:sampleIndex:frameIndex:strength:threshold:sampleRate:timestampNanoseconds:)
     public var seconds: Double { get }                   // sampleIndex / sampleRate
 }
 public final class SpectralFluxOnsetDetector {          // not Sendable: confined to one worker
