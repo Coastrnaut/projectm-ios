@@ -11,11 +11,16 @@
 // * Glow (FX-001-R4, R11): the circular spectrum's bloom, keys `settings.circularSpectrum.glow`
 //   (Bool, absent → off), `…glowIntensity`, `…glowRadius`, `…glowThreshold` (Double; absent, NaN or
 //   not a number → the default; out of range → clamped to `BloomParameters`' ranges).
+// * Linear spectrum (VIS-002-R11): `settings.visual` may also be `linearSpectrum`; its orientation,
+//   key `settings.linearSpectrum.orientation` (`vertical`/`horizontal`; anything else → vertical),
+//   and spacing, key `settings.linearSpectrum.spacing` (0, 0.2 or 0.5; anything else → 0.2). Bars
+//   and Glow are shared by both native spectra and keep their keys (spec 025, Clarifications).
 // All keys are "user settings" in the FR-065 list of what may be stored (FR-123 adds the scope,
-// VIS-001-R11 the two visual keys, FX-001-R11 the four glow keys).
+// VIS-001-R11 the two visual keys, FX-001-R11 the four glow keys, VIS-002-R11 the two linear keys).
 import Foundation
 import Observation
 import VisualEffects
+import VisualGenerators
 
 @MainActor
 @Observable
@@ -29,8 +34,14 @@ final class AppSettings {
     static let glowIntensityKey = "settings.circularSpectrum.glowIntensity"
     static let glowRadiusKey = "settings.circularSpectrum.glowRadius"
     static let glowThresholdKey = "settings.circularSpectrum.glowThreshold"
+    static let linearSpectrumOrientationKey = "settings.linearSpectrum.orientation"
+    static let linearSpectrumSpacingKey = "settings.linearSpectrum.spacing"
     static let allKeys = [performanceOverlayKey, reduceFlashingKey, presetScopeKey, visualKey, circularSpectrumBarsKey,
-                          glowKey, glowIntensityKey, glowRadiusKey, glowThresholdKey]
+                          glowKey, glowIntensityKey, glowRadiusKey, glowThresholdKey,
+                          linearSpectrumOrientationKey, linearSpectrumSpacingKey]
+    /// VIS-002-R4: the spacings offered for the linear spectrum.
+    static let linearSpectrumSpacingChoices: [(title: String, value: Double)] = [("None", 0), ("Narrow", 0.2), ("Wide", 0.5)]
+    static let defaultLinearSpectrumSpacing = 0.2
     static let circularSpectrumBarChoices = [16, 32, 64, 128]
     static let defaultCircularSpectrumBars = 64
 
@@ -59,7 +70,24 @@ final class AppSettings {
         }
     }
 
-    /// FX-001: the circular spectrum's glow (off by default).
+    /// VIS-002: which way the linear spectrum's bars grow (vertical by default).
+    var linearSpectrumOrientation: LinearSpectrumOrientation {
+        didSet { defaults.set(linearSpectrumOrientation.rawValue, forKey: Self.linearSpectrumOrientationKey) }
+    }
+
+    /// VIS-002: the linear spectrum's bar spacing, one of `linearSpectrumSpacingChoices` (0.2 otherwise).
+    var linearSpectrumSpacing: Double {
+        didSet {
+            if !Self.isSpacingChoice(linearSpectrumSpacing) { linearSpectrumSpacing = Self.defaultLinearSpectrumSpacing }
+            defaults.set(linearSpectrumSpacing, forKey: Self.linearSpectrumSpacingKey)
+        }
+    }
+
+    private static func isSpacingChoice(_ value: Double) -> Bool {
+        linearSpectrumSpacingChoices.contains { $0.value == value }
+    }
+
+    /// FX-001: the native spectra's glow (off by default).
     var glowEnabled: Bool {
         didSet { defaults.set(glowEnabled, forKey: Self.glowKey) }
     }
@@ -116,6 +144,10 @@ final class AppSettings {
         visual = defaults.string(forKey: Self.visualKey).flatMap(VisualChoice.init(rawValue:)) ?? .projectM
         let bars = defaults.integer(forKey: Self.circularSpectrumBarsKey)
         circularSpectrumBars = Self.circularSpectrumBarChoices.contains(bars) ? bars : Self.defaultCircularSpectrumBars
+        linearSpectrumOrientation = defaults.string(forKey: Self.linearSpectrumOrientationKey)
+            .flatMap(LinearSpectrumOrientation.init(rawValue:)) ?? .vertical
+        let spacing = defaults.object(forKey: Self.linearSpectrumSpacingKey) as? Double
+        linearSpectrumSpacing = spacing.map(Self.isSpacingChoice) == true ? spacing! : Self.defaultLinearSpectrumSpacing
         glowEnabled = defaults.bool(forKey: Self.glowKey)
         glowIntensity = Self.clampedGlowValue(defaults.object(forKey: Self.glowIntensityKey) as? Double,
                                               range: BloomParameters.intensityRange, fallback: BloomParameters.defaultIntensity)
@@ -149,11 +181,17 @@ enum VisualChoice: String, CaseIterable, Sendable {
     case projectM
     /// The native circular spectrum (VIS-001).
     case circularSpectrum
+    /// The native linear spectrum (VIS-002).
+    case linearSpectrum
 
     var title: String {
         switch self {
         case .projectM: "projectM"
         case .circularSpectrum: "Circular Spectrum"
+        case .linearSpectrum: "Linear Spectrum"
         }
     }
+
+    /// Drawn by the native spectrum host instead of projectM.
+    var isNative: Bool { self != .projectM }
 }
