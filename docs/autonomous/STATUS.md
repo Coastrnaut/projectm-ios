@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T11:16:15Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T11:29:14Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -109,6 +109,7 @@ None.
 - `python3 scripts/validate_docs.py`: pass at `6412b1087980` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-003/20261113T060308/docs.log`)
 - `swift test --package-path Packages/CaptureKit`: pass at `6412b1087980` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-003/20261113T060308/swift-test_CaptureKit.log`)
 - `swift test --package-path Packages/CaptureUI`: pass at `6412b1087980` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-003/20261113T060308/swift-test_CaptureUI.log`)
+- `integration checkout, full preset library: CaptureKit 355 on iOS 27.2 sim; xcodebuild projectM-iOS test on iPhone 17 iOS 27.2: projectM-iOSTests 126 pass; UI 20 pass (PlayQueue, ImportedAudio, Transport, Interruption, Status)`: pass at `1d4d4b9` (log `.autonomous/logs/integration/aud-003/app-tests.log`)
 
 ### AUD-006 Seekable transport (integrated)
 - `python3 scripts/check_compliance.py`: pass at `383d9ab633a4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-006/20261112T174904/compliance.log`)
