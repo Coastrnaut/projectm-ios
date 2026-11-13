@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T23:34:39Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T23:35:03Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,18 +10,19 @@
 | State | Features |
 |---|---|
 | audited | 233 |
-| implementing | 2 |
+| implementing | 1 |
+| unit_passed | 1 |
 | integrated | 90 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 10 | 2 | 74 | 1 |
-| P1 | 137 | 0 | 14 | 0 |
-| P2 | 77 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 10 | 1 | 1 | 74 | 1 |
+| P1 | 137 | 0 | 0 | 14 | 0 |
+| P2 | 77 | 0 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -423,6 +424,12 @@ None.
 - `python3 scripts/test_scripts.py`: pass at `51cdfefb92f2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-012/20261113T181114/script-tests.log`)
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `51cdfefb92f2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-012/20261113T181114/autonomous-tests.log`)
 - `post-merge: NoTelemetryUITests 6 (7.6-19.5 s) on iOS 27.2 sim; check_network_symbols OK on the merged Debug app (19 images, StoreKit allowed only); script tests in the gate`: pass at `3a8ad2044000` (log `.autonomous/logs/integration/file-012/ui.log`)
+
+### FILE-013 Privacy permission audit (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `6707e9c24f98` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-013/20261113T183450/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `6707e9c24f98` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-013/20261113T183450/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `6707e9c24f98` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-013/20261113T183450/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `6707e9c24f98` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-013/20261113T183450/autonomous-tests.log`)
 
 ### FX-001 Bloom (integrated)
 - `python3 scripts/check_compliance.py`: pass at `94f4b3a6b7c3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-001/20261113T090348/compliance.log`)

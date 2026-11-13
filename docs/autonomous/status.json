@@ -7,9 +7,10 @@
  "by_priority": {
   "P0": {
    "audited": 10,
-   "implementing": 2,
+   "implementing": 1,
    "integrated": 74,
-   "skipped_existing": 1
+   "skipped_existing": 1,
+   "unit_passed": 1
   },
   "P1": {
    "audited": 137,
@@ -25,9 +26,10 @@
  },
  "by_state": {
   "audited": 233,
-  "implementing": 2,
+  "implementing": 1,
   "integrated": 90,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -1260,12 +1262,12 @@
   "FILE-013": {
    "attempts": 0,
    "branch": "feature/file-013",
-   "branch_sha": null,
+   "branch_sha": "6707e9c24f98c1d92b5cd30f614bb340a740a5e7",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "FX-001": {
    "attempts": 0,
@@ -4015,5 +4017,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T23:34:39Z"
+ "updated": "2026-11-13T23:35:03Z"
 }
