@@ -6,10 +6,11 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 43,
+   "audited": 42,
    "implementing": 1,
    "integrated": 42,
-   "skipped_existing": 1
+   "skipped_existing": 1,
+   "unit_passed": 1
   },
   "P1": {
    "audited": 139,
@@ -25,10 +26,11 @@
   }
  },
  "by_state": {
-  "audited": 268,
+  "audited": 267,
   "implementing": 2,
   "integrated": 55,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -1065,13 +1067,13 @@
   },
   "CMP-005": {
    "attempts": 0,
-   "branch": null,
-   "branch_sha": null,
+   "branch": "feature/cmp-005",
+   "branch_sha": "95bb91a901f35af837ca58f264f62543ffe42ba2",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "unit_passed"
   },
   "CMP-006": {
    "attempts": 0,
@@ -3876,5 +3878,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T17:42:31Z"
+ "updated": "2026-11-13T17:55:27Z"
 }
