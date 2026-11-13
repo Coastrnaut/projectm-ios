@@ -155,6 +155,12 @@ final class AppCoordinator: VisualizationControlling {
     let tempo: TempoCoordinator
     /// The OSC receiver (OSC-001): off by default, listens only while enabled and active.
     let osc: OSCReceiverCoordinator
+    /// REC-001: Save Frame (the shown visual's next frame, to the Files exporter).
+    @ObservationIgnored private(set) lazy var frameCapture = FrameCaptureCoordinator { [weak self] () -> FrameCaptureCoordinator.Context in
+        guard let self else { return FrameCaptureCoordinator.Context(source: nil, outputLive: false, paused: false) }
+        return FrameCaptureCoordinator.Context(source: self.activeFrameCaptureSource,
+                                               outputLive: self.externalDisplay.blackoutPhase == .live, paused: self.userPaused)
+    }
 
     private let defaults: UserDefaults
     #if DEBUG
@@ -842,6 +848,17 @@ final class AppCoordinator: VisualizationControlling {
             renderer?.resume()
             tempo.runOwnAnalysis(on: manager.analysisTap)
         }
+    }
+
+    /// REC-001: the shown visual's capture source (the same choice as `activeVisualMetrics`).
+    var activeFrameCaptureSource: (any FrameCaptureSource)? {
+        guard screen == .visualizer else { return nil }
+        if showsCameraVisual { return cameraVisual }
+        if showsPhotoVisual { return photoVisual }
+        if showsVideoVisual { return videoVisual }
+        if showsTextVisual { return textVisual }
+        if showsNativeVisual { return nativeVisual }
+        return renderer as? ANGLERenderer
     }
 
     /// Frame statistics of the shown visual (FR-048 overlay).

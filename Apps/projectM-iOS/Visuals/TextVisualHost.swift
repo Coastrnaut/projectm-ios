@@ -31,7 +31,7 @@ final class TextVisualHost: PresentationBoundResource {
     let view: NativeSpectrumLayerView
     let text: TextLayerSource
     private let spectrum: SpectrumLayerSource
-    private let compositor: Compositor
+    let compositor: Compositor   // internal for REC-001's FrameCaptureSource
     private let queue: MTLCommandQueue
     private let analyzer: LiveBandAnalyzer
     private let reader: (any NormalizedPCMReader)?
