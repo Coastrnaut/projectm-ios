@@ -95,10 +95,15 @@ Decisions for the plan; each is `FX-019-Dn`. ADR-0011 summarizes the binding one
 
 - **Decision**: `FlashSafetyLimiter` keeps VIS-001's bar slew (Reduce flashing on) and replaces
   its rise bound with `FlashEnvelope`. Levels per area come from the layout's exact geometry:
-  each bar's tessellated triangles are clipped against the 4 × 4 tiles (exact coverage); a bar's
-  flat color goes through the downstream transfer (`FrameLuminanceTransfer`, now with a redness
-  bound too). Glow light is attributed to the bar's own tiles (approximation); the whole-frame area
-  stays the FX-001 exact upper bound. The gain is found by 24 bisection steps (as FX-001-D4) over
+  each bar's tessellated segments (convex quads) are clipped against the 4 × 4 tiles (exact
+  coverage of what the GPU draws); a bar's flat color goes through the downstream transfer
+  (`FrameLuminanceTransfer`, now with a redness bound and a spread radius). The glow's added light
+  is spread over the tiles that the bar's box grown by the halo extent E overlaps, in proportion to
+  the overlap (an estimate of where the halo lands); the whole-frame area stays the FX-001 exact
+  upper bound. Measured on the Mac GPU at 64 × 64 the tile estimate's rise error is at most 0.016
+  per frame above the modeled bound (transitions stay within budget); release-build cost on the
+  M5 Max host: about 9 µs per frame for coverage and one evaluation, 1.3 µs per further
+  evaluation (at most 25 per frame). The gain is found by 24 bisection steps (as FX-001-D4) over
   all 17 areas.
 - **Alternative**: a Metal read-back of the composited frame (one frame late; rejected as in
   FX-001-D4).

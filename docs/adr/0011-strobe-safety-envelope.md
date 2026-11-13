@@ -46,5 +46,7 @@ flashes, handled red flashes or local areas, or did anything with the setting of
   passes); re-measuring is a device task. If the pass cannot be created, frames are drawn directly.
 - With Reduce flashing on, a single sustained cut to black is shown as a cut (it is one transition)
   instead of a gray fade.
-- Native glow light is attributed to the tiles of the bar that emits it (approximation); the
-  whole-frame area keeps FX-001's exact upper bound.
+- Native visuals: each bar's own light is placed in the tiles exactly; the glow's added light is
+  spread over the tiles its halo box overlaps, in proportion (an estimate: a tile's measured rise
+  may exceed the modeled one, by up to 0.016 per frame in the Mac GPU test); the whole-frame area
+  keeps FX-001's exact upper bound.

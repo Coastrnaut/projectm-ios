@@ -92,20 +92,31 @@ public final class FlashEnvelope {
     /// projectM frames, and the reference for the GPU port): the closed form min(ceiling / level).
     public func gain(inputs: UnsafeBufferPointer<FlashLevels>, frameTime: Double,
                      configuration: FlashEnvelopeConfiguration) -> Float {
+        gain(scaled: inputs, offset: nil, frameTime: frameTime, configuration: configuration)
+    }
+
+    /// The gain for a frame whose levels are `offset + g × scaled` per area (a background the gain
+    /// does not scale): closed form; 0 when an offset alone exceeds its ceiling. A missing buffer or
+    /// area reads 0.
+    public func gain(scaled: UnsafeBufferPointer<FlashLevels>, offset: UnsafeBufferPointer<FlashLevels>?,
+                     frameTime: Double, configuration: FlashEnvelopeConfiguration) -> Float {
         prepare(frameTime: frameTime, configuration: configuration)
         var g = 1.0
         for z in 0..<FlashZones.count {
-            let level = z < inputs.count ? Self.sanitized(inputs[z]) : .zero
-            for s in FlashSignal.allCases {
-                let v = level[s]
-                let c = ceilings[z * 2 + s.rawValue]
-                if v > c { g = min(g, max(c, 0) / v) }
+            let sc = z < scaled.count ? Self.sanitized(scaled[z]) : .zero
+            let off = offset.map { z < $0.count ? Self.sanitized($0[z]) : .zero } ?? .zero
+            for raw in 0..<2 {   // not `allCases`, which builds an array
+                let s = FlashSignal(rawValue: raw)!
+                let c = ceilings[z * 2 + raw]
+                if off[s] + sc[s] > c { g = min(g, sc[s] > 0 ? max(c - off[s], 0) / sc[s] : 0) }
             }
         }
         let gain = Self.floatAtMost(min(max(g, 0), 1))
         for z in 0..<FlashZones.count {
-            let level = z < inputs.count ? Self.sanitized(inputs[z]) : .zero
-            best[z] = FlashLevels(luminance: level.luminance * Double(gain), redness: level.redness * Double(gain))
+            let sc = z < scaled.count ? Self.sanitized(scaled[z]) : .zero
+            let off = offset.map { z < $0.count ? Self.sanitized($0[z]) : .zero } ?? .zero
+            best[z] = FlashLevels(luminance: off.luminance + sc.luminance * Double(gain),
+                                  redness: off.redness + sc.redness * Double(gain))
         }
         commit(best, configuration: configuration)
         lastGain = gain

@@ -64,4 +64,11 @@ float PMFlashLimiterLastGain(PMFlashLimiter *);   // tests: reads back one texel
 `FrameLuminanceTransfer.outputRedness(ofFlatColor:) -> Double` (default: the color's redness):
 an upper bound of the redness one unit of area of that color contributes after downstream stages,
 nondecreasing when the color is scaled up. `BloomLuminanceModel` returns own + intensity ×
-redness(thresholded color).
+redness(thresholded color). `spreadRadius(width:height:) -> Double` (default 0): how far, in pixels,
+the stages carry the light they add; the bloom returns its halo extent E (`BloomPlan.haloExtent`).
+`CircularSpectrumLayout.meanLevels(gain:transfer:into:)` writes the 17 area levels.
+
+## Affine closed form
+
+`FlashEnvelope.gain(scaled:offset:frameTime:configuration:)`: levels = offset + g × scaled (a
+background the gain does not scale); `gain(inputs:)` is the case offset = 0.

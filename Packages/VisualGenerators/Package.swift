@@ -2,7 +2,7 @@
 // VisualGenerators: native visuals beside projectM (VIS rows; ADR-0009,
 // specs/019-vis-001-circular-spectrum/contracts/visual-generator.md).
 //
-// * `VisualGenerators` has no package dependencies: the generator contract, CPU geometry, palettes,
+// * `VisualGenerators` depends only on FlashSafety (FX-019's envelope, pure Swift): the generator contract, CPU geometry, palettes,
 //   the Reduce-flashing limiter, the band triple buffer and, behind
 //   `#if canImport(Metal) && !VISUAL_NO_METAL`, the Metal generators. Shader source is a Swift
 //   constant compiled at runtime (research VIS-001-D3), so the package has no resources and builds on
@@ -24,12 +24,14 @@ let package = Package(
     dependencies: [
         .package(path: "../AudioCore"),
         .package(path: "../AnalysisFeatures"),
+        // FX-019: the strobe safety envelope (pure Swift; ADR-0011).
+        .package(path: "../FlashSafety"),
     ],
     targets: [
-        .target(name: "VisualGenerators"),
+        .target(name: "VisualGenerators", dependencies: ["FlashSafety"]),
         .target(name: "VisualBandFeed", dependencies: ["VisualGenerators", "AudioCore", "AnalysisFeatures"]),
         .target(name: "VisualEffects", dependencies: ["VisualGenerators"]),
         .testTarget(name: "VisualGeneratorsTests",
-                    dependencies: ["VisualGenerators", "VisualBandFeed", "VisualEffects", "AudioCore", "AnalysisFeatures"]),
+                    dependencies: ["VisualGenerators", "VisualBandFeed", "VisualEffects", "AudioCore", "AnalysisFeatures", "FlashSafety"]),
     ]
 )

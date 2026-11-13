@@ -32,14 +32,26 @@ public struct BloomPlan: Sendable, Equatable {
     /// E = (R + 2) · D pixels.
     public var haloExtent: Int { (blurRadius + 2) * downsample }
 
+    /// D and R for an output size (no allocation).
+    static func sizes(parameters: BloomParameters, width: Int, height: Int) -> (downsample: Int, blurRadius: Int) {
+        let pixels = Double(parameters.clamped().radius) * Double(min(max(width, 1), max(height, 1)))
+        var d = 2   // the first of 2, 4, 8 whose radius fits, else 8 (downsampleFactors)
+        while d < 8 && Int((pixels / Double(d)).rounded(.up)) > maxTapsPerSide { d *= 2 }
+        let r = min(max(Int((pixels / Double(d)).rounded()), 1), maxTapsPerSide)
+        return (d, r)
+    }
+
+    /// E for an output size without building the plan (FX-019's area model; no allocation).
+    public static func haloExtent(parameters: BloomParameters, width: Int, height: Int) -> Int {
+        let (d, r) = sizes(parameters: parameters, width: width, height: height)
+        return (r + 2) * d
+    }
+
     public init(parameters: BloomParameters, width: Int, height: Int) {
         let w = max(width, 1), h = max(height, 1)
         self.width = w
         self.height = h
-        let pixels = Double(parameters.clamped().radius) * Double(min(w, h))
-        let d = Self.downsampleFactors.first { Int((pixels / Double($0)).rounded(.up)) <= Self.maxTapsPerSide }
-            ?? Self.downsampleFactors[Self.downsampleFactors.count - 1]
-        let r = min(max(Int((pixels / Double(d)).rounded()), 1), Self.maxTapsPerSide)
+        let (d, r) = Self.sizes(parameters: parameters, width: w, height: h)
         downsample = d
         blurRadius = r
         reducedWidth = (w + d - 1) / d
