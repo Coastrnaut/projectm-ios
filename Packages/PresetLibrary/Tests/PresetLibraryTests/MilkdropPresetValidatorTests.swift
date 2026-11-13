@@ -253,21 +253,44 @@ final class MilkdropPresetValidatorTests: XCTestCase {
     // MARK: - The built-in corpus (S7)
 
     /// Runs when the preset packs are checked out (the main checkout, or `PRE012_CORPUS`); a
-    /// feature worktree has none.
+    /// feature worktree has none. Owner rule 7 (2026-11-13, short tests): by default it validates
+    /// the 64 largest files (the limits bite there first) and every 40th file in path order, about
+    /// 380 of the 14,500 files, in about 1 s instead of 45 s on the simulator. The full sweep runs on
+    /// demand: `PRE012_FULL_CORPUS=1 swift test --package-path Packages/PresetLibrary --filter
+    /// testNoBuiltInPresetExceedsALimit` (on a simulator, prefix the variable with `TEST_RUNNER_`).
     func testNoBuiltInPresetExceedsALimit() throws {
-        let root = ProcessInfo.processInfo.environment["PRE012_CORPUS"].map { URL(fileURLWithPath: $0) }
+        let environment = ProcessInfo.processInfo.environment
+        let root = environment["PRE012_CORPUS"].map { URL(fileURLWithPath: $0) }
             ?? URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
                 .deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Vendor/presets")
         guard FileManager.default.fileExists(atPath: root.appendingPathComponent("cream-of-the-crop/README.md").path),
-              let enumerator = FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil) else {
+              let enumerator = FileManager.default.enumerator(at: root, includingPropertiesForKeys: [.fileSizeKey]) else {
             throw XCTSkip("the preset packs are not checked out here")
         }
         let limitKinds: Set<PresetQuarantineReason.Kind> = [.binaryContent, .lineTooLong, .tooManyLines, .missingHeader, .noSettings,
                                                              .blockTooLarge, .statementTooLong, .nestingTooDeep,
                                                              .statementTooComplex, .tooMuchControlFlow]
+        var corpus: [(url: URL, size: Int)] = []
+        for case let url as URL in enumerator where url.pathExtension.lowercased() == "milk" {
+            let size: Int = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+            corpus.append((url: url, size: size))
+        }
+        XCTAssertGreaterThan(corpus.count, 12_000)
+        let selected: [URL]
+        if environment["PRE012_FULL_CORPUS"] == "1" {
+            selected = corpus.map { (entry: (url: URL, size: Int)) -> URL in entry.url }
+        } else {
+            let byPath: [URL] = corpus.map { (entry: (url: URL, size: Int)) -> URL in entry.url }
+                .sorted { (a: URL, b: URL) -> Bool in a.path < b.path }
+            let largest: [URL] = corpus.sorted { (a: (url: URL, size: Int), b: (url: URL, size: Int)) -> Bool in a.size > b.size }
+                .prefix(64).map { (entry: (url: URL, size: Int)) -> URL in entry.url }
+            var picked = Set<URL>(largest)
+            for index in stride(from: 0, to: byPath.count, by: 40) { picked.insert(byPath[index]) }
+            selected = picked.sorted { (a: URL, b: URL) -> Bool in a.path < b.path }
+        }
         var files = 0
         var other: [PresetQuarantineReason.Kind: Int] = [:]
-        for case let url as URL in enumerator where url.pathExtension.lowercased() == "milk" {
+        for url in selected {
             let bytes = [UInt8](try Data(contentsOf: url))
             files += 1
             XCTAssertLessThanOrEqual(bytes.count, L.maxFileBytes, url.lastPathComponent)
@@ -275,7 +298,6 @@ final class MilkdropPresetValidatorTests: XCTestCase {
             XCTAssertFalse(limitKinds.contains(kind), "\(url.lastPathComponent): \(kind)")
             other[kind, default: 0] += 1
         }
-        XCTAssertGreaterThan(files, 12_000)
-        print("PRE-012 corpus: \(files) files, rejected for other reasons: \(other)")
+        print("PRE-012 corpus: \(files) of \(corpus.count) files, rejected for other reasons: \(other)")
     }
 }

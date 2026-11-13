@@ -112,6 +112,8 @@ struct VisualizerView: View {
                                     set: { coordinator.presets.purchaseRequested = $0 })) { purchaseSheet }
         // PRE-015: "Duplicate to My Presets" from the controls (the browser shows its own).
         .duplicateResultAlert(coordinator.userPresets, isPresented: !coordinator.showPresetBrowser)
+        // ACC-002-R6: a flagged preset chosen after a purchase from the controls (the browser shows its own).
+        .flashWarningAlert(coordinator.presets, isPresented: !coordinator.showPresetBrowser)
         // AUD-003: the queue over the visualizer; edits never interrupt playback.
         .sheet(isPresented: $coordinator.showQueue, onDismiss: { coordinator.closeQueue() }) {
             NavigationStack {

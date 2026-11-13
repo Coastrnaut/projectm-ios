@@ -101,6 +101,8 @@ public actor UserPresetLibrary {
     private var libraryUnlocked = false
     /// Names of presets whose edit was dropped because the app ended during its check (R13).
     private var editNotices: [String] = []
+    /// ACC-002: flash risk rules by stored content hash (sha256), so each text is screened once.
+    private var flashRiskByContent: [String: [String]] = [:]
 
     public init(directory: URL,
                 now: @escaping @Sendable () -> Date = { Date() },
@@ -185,6 +187,25 @@ public actor UserPresetLibrary {
         guard let store = loaded(), !held.contains(id), let preset = store.preset(id: id), preset.state == .playable,
               !awaitsUnlock(preset), let data = store.contents(of: id), data.count == preset.byteCount else { return nil }
         return data
+    }
+
+    /// ACC-002-R4: the flash risk rules of every playable preset the screen flags (id → rule ids),
+    /// by the same rules as the bundled library (PresetFlashRisk). Unflagged presets are absent.
+    /// Each stored text is screened once (cached by its content hash; an edit changes the hash).
+    public func flashRisk() -> [String: [String]] {
+        var result: [String: [String]] = [:]
+        for preset in snapshot.playable {
+            let rules: [String]
+            if let cached = flashRiskByContent[preset.sha256] {
+                rules = cached
+            } else {
+                guard let data = data(for: preset.id) else { continue }
+                rules = PresetFlashRisk.indexField(for: String(decoding: data, as: UTF8.self)) ?? []
+                flashRiskByContent[preset.sha256] = rules
+            }
+            if !rules.isEmpty { result[preset.id] = rules }
+        }
+        return result
     }
 
     /// The full-library entitlement changed (PRE-015-R8). Copies of locked packs are held while

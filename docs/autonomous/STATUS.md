@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T15:49:22Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T16:15:44Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,30 +9,30 @@
 
 | State | Features |
 |---|---|
-| audited | 283 |
-| implementing | 2 |
-| unit_passed | 1 |
-| integrated | 39 |
+| audited | 280 |
+| implementing | 3 |
+| integrated | 42 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 53 | 2 | 1 | 30 | 1 |
-| P1 | 142 | 0 | 0 | 9 | 0 |
-| P2 | 79 | 0 | 0 | 0 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 52 | 1 | 33 | 1 |
+| P1 | 140 | 2 | 9 | 0 |
+| P2 | 79 | 0 | 0 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 286 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
+- 283 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
 
 ## Integrated
 
 | ID | Feature | Merge commit | Branch |
 |---|---|---|---|
+| ACC-002 | Reduced flash preset policy | `61c926cb8b59` | `feature/acc-002` |
 | ANL-001 | Windowed FFT | `df16f2b90397` | `feature/anl-001` |
 | ANL-002 | Log-frequency bands | `493269c77462` | `feature/anl-002` |
 | ANL-004 | Spectral flux onset detector | `e1ae49c81d34` | `feature/anl-004` |
@@ -61,8 +61,10 @@ The physical-device suite may **not** start:
 | AUTO-012 | Progress dashboard | `419cc2a999ed` | `autonomous/integration` |
 | AUTO-013 | Final device-test gate | `419cc2a999ed` | `autonomous/integration` |
 | AUTO-014 | Unattended safety budget | `419cc2a999ed` | `autonomous/integration` |
+| CMP-001 | Unified layer protocol | `ba60b9d3485a` | `feature/cmp-001` |
 | FX-001 | Bloom | `1192e0d6503e` | `feature/fx-001` |
 | FX-019 | Strobe safety envelope | `6cfcbaabc8d0` | `feature/fx-019` |
+| MOD-001 | Typed parameter registry | `304f3bce431a` | `feature/mod-001` |
 | PERF-011 | Background resource release | `6d669fcb8576` | `feature/perf-011` |
 | PRE-007 | Preset collections | `e834535cb98b` | `feature/pre-007` |
 | PRE-012 | Preset import validation | `4bf9f50d1af8` | `feature/pre-012` |
@@ -82,6 +84,15 @@ The physical-device suite may **not** start:
 None.
 
 ## Evidence by feature
+
+### ACC-002 Reduced flash preset policy (integrated)
+- `python3 scripts/check_compliance.py`: pass at `64829437c98c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-002/20261113T111136/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `64829437c98c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-002/20261113T111136/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `64829437c98c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-002/20261113T111136/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `64829437c98c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-002/20261113T111136/autonomous-tests.log`)
+- `swift test --package-path Packages/PresetLibrary`: pass at `64829437c98c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-002/20261113T111136/swift-test_PresetLibrary.log`)
+- `post-merge (main checkout, packs present): projectM-iOSTests 157 incl. FlashPolicyTests and PresetTests full-library scope, FlashPolicyUITests 14.8 s, SettingsUITests reduce flashing 15.5 s on iPhone 17 iOS 27.2 sim`: pass at `61c926cb8b59` (log `.autonomous/logs/integration/acc-002/app-tests.log`)
+- `post-merge: PresetLibrary xcodebuild test on iPhone 17 sim (201, 1 skipped)`: pass at `61c926cb8b59` (log `.autonomous/logs/integration/acc-002/presetlibrary-sim.log`)
 
 ### ANL-001 Windowed FFT (integrated)
 - `python3 scripts/check_compliance.py`: pass at `0d0eb4b9f656` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-001/20261113T061117/compliance.log`)
@@ -260,6 +271,15 @@ None.
 ### AUTO-014 Unattended safety budget (integrated)
 - `python3 scripts/autonomous/tests/test_autonomous.py (48 tests)`: pass at `419cc2a999ed`
 
+### CMP-001 Unified layer protocol (integrated)
+- `python3 scripts/check_compliance.py`: pass at `19d1bd7e65a2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-001/20261113T110629/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `19d1bd7e65a2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-001/20261113T110629/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `19d1bd7e65a2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-001/20261113T110629/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `19d1bd7e65a2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-001/20261113T110629/swift-test_Compositor.log`)
+- `post-merge: projectM-iOSTests 147 on iPhone 17 iOS 27.2 sim (app links the changed ANGLERendering)`: pass at `ba60b9d3485a` (log `.autonomous/logs/integration/cmp-001/app-tests.log`)
+- `post-merge: Compositor xcodebuild test on iPhone 17 sim (43)`: pass at `ba60b9d3485a` (log `.autonomous/logs/integration/cmp-001/compositor-sim.log`)
+- `post-merge: Compositor Linux shape on host, -DCOMPOSITOR_NO_METAL -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE (21)`: pass at `ba60b9d3485a` (log `.autonomous/logs/integration/cmp-001/compositor-linuxshape.log`)
+
 ### FX-001 Bloom (integrated)
 - `python3 scripts/check_compliance.py`: pass at `94f4b3a6b7c3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-001/20261113T090348/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `94f4b3a6b7c3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-001/20261113T090348/docs.log`)
@@ -277,11 +297,14 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `bc80d4775650` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-019/20261113T095545/swift-test_VisualGenerators.log`)
 - `integration checkout: VisualGenerators 81 on iOS 27.2 sim, 63 with -DVISUAL_NO_METAL; FlashSafety 20; app: projectM-iOSTests 133, UI 11 (NativeVisual, Visualizer); 211 s wall; 0 PosterBoard reports`: pass at `6cfcbaa` (log `.autonomous/logs/integration/fx-019/app-tests.log`)
 
-### MOD-001 Typed parameter registry (unit_passed)
+### MOD-001 Typed parameter registry (integrated)
 - `python3 scripts/check_compliance.py`: pass at `c62c162f633a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-001/20261113T104902/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `c62c162f633a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-001/20261113T104902/docs.log`)
 - `swift test --package-path Packages/ParameterGraph`: pass at `c62c162f633a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-001/20261113T104902/swift-test_ParameterGraph.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `c62c162f633a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-001/20261113T104902/swift-test_VisualGenerators.log`)
+- `post-merge: projectM-iOSTests 147 incl. ParameterCatalogAppTests on iPhone 17 iOS 27.2 sim`: pass at `304f3bce431a` (log `.autonomous/logs/integration/mod-001/app-tests.log`)
+- `post-merge: ParameterGraph xcodebuild test on iPhone 17 sim (26)`: pass at `304f3bce431a` (log `.autonomous/logs/integration/mod-001/pg-sim.log`)
+- `post-merge: VisualGenerators xcodebuild test on iPhone 17 sim (100)`: pass at `304f3bce431a` (log `.autonomous/logs/integration/mod-001/vg-sim.log`)
 
 ### PERF-011 Background resource release (integrated)
 - `python3 scripts/check_compliance.py`: pass at `e463058b1c92` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T151252/compliance.log`)

@@ -1,0 +1,14 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=2
+[preset00]
+// ACC-002 test fixture written for projectM-iOS (MIT). Not a third-party preset.
+fDecay=0.980000
+zoom=1.010000
+rot=0.000000
+wave_r=0.6
+wave_g=0.6
+wave_b=0.9
+per_frame_1=// Strobes on purpose: inverts on every strong beat and pumps gamma at frame rate.
+per_frame_2=wave_r = 0.5 + 0.5*sin(time*1.3);
+per_frame_3=invert = above(bass, 1.2);
+per_frame_4=gamma = 1 + 2*equal(frame%2, 0);

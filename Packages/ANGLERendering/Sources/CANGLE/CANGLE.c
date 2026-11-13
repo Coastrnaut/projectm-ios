@@ -107,3 +107,81 @@ void PMANGLEDeleteFramebuffer(unsigned int framebuffer, unsigned int texture) {
         deleteTextures(1, &texture);
     }
 }
+
+#define GL_SCISSOR_TEST 0x0C11
+
+unsigned int PMANGLECreateImageFramebuffer(EGLImage image, unsigned int *textureOut) {
+    typedef void (*Gen)(int, unsigned int *);
+    typedef void (*Bind)(unsigned int, unsigned int);
+    typedef void (*ImageTarget)(unsigned int, void *);
+    typedef void (*FramebufferTexture2D)(unsigned int, unsigned int, unsigned int, unsigned int, int);
+    typedef unsigned int (*CheckStatus)(unsigned int);
+    typedef unsigned int (*GetError)(void);
+    Gen genTextures = (Gen)eglGetProcAddress("glGenTextures");
+    Gen genFramebuffers = (Gen)eglGetProcAddress("glGenFramebuffers");
+    Bind bindTexture = (Bind)eglGetProcAddress("glBindTexture");
+    Bind bindFramebuffer = (Bind)eglGetProcAddress("glBindFramebuffer");
+    ImageTarget imageTarget = (ImageTarget)eglGetProcAddress("glEGLImageTargetTexture2DOES");
+    FramebufferTexture2D framebufferTexture2D = (FramebufferTexture2D)eglGetProcAddress("glFramebufferTexture2D");
+    CheckStatus checkStatus = (CheckStatus)eglGetProcAddress("glCheckFramebufferStatus");
+    GetError getError = (GetError)eglGetProcAddress("glGetError");
+    *textureOut = 0;
+    if (!image || !genTextures || !genFramebuffers || !bindTexture || !bindFramebuffer || !imageTarget ||
+        !framebufferTexture2D || !checkStatus || !getError) {
+        return 0;
+    }
+    unsigned int texture = 0, framebuffer = 0;
+    genTextures(1, &texture);
+    bindTexture(GL_TEXTURE_2D, texture);
+    imageTarget(GL_TEXTURE_2D, image);
+    if (getError() != 0) {
+        PMANGLEDeleteFramebuffer(0, texture);
+        return 0;
+    }
+    genFramebuffers(1, &framebuffer);
+    bindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    framebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
+    if (checkStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        PMANGLEDeleteFramebuffer(framebuffer, texture);
+        return 0;
+    }
+    *textureOut = texture;
+    return framebuffer;
+}
+
+void PMANGLEClearRect(unsigned int framebuffer, int x, int y, int width, int height,
+                      float red, float green, float blue, float alpha) {
+    typedef void (*BindFramebuffer)(unsigned int, unsigned int);
+    typedef void (*ClearColor)(float, float, float, float);
+    typedef void (*Clear)(unsigned int);
+    typedef void (*Toggle)(unsigned int);
+    typedef void (*Scissor)(int, int, int, int);
+    BindFramebuffer bind = (BindFramebuffer)eglGetProcAddress("glBindFramebuffer");
+    ClearColor clearColor = (ClearColor)eglGetProcAddress("glClearColor");
+    Clear clear = (Clear)eglGetProcAddress("glClear");
+    Toggle enable = (Toggle)eglGetProcAddress("glEnable");
+    Toggle disable = (Toggle)eglGetProcAddress("glDisable");
+    Scissor scissor = (Scissor)eglGetProcAddress("glScissor");
+    if (bind && clearColor && clear && enable && disable && scissor) {
+        bind(GL_FRAMEBUFFER, framebuffer);
+        enable(GL_SCISSOR_TEST);
+        scissor(x, y, width, height);
+        clearColor(red, green, blue, alpha);
+        clear(0x00004000); // GL_COLOR_BUFFER_BIT
+        disable(GL_SCISSOR_TEST);
+    }
+}
+
+void PMANGLEFlush(void) {
+    typedef void (*Flush)(void);
+    Flush flush = (Flush)eglGetProcAddress("glFlush");
+    if (flush) {
+        flush();
+    }
+}
+
+void *PMANGLECopyMetalSharedEvent(EGLDisplay dpy, EGLSync sync) {
+    typedef void *(*Copy)(EGLDisplay, EGLSync);
+    Copy copy = (Copy)eglGetProcAddress("eglCopyMetalSharedEventANGLE");
+    return copy ? copy(dpy, sync) : 0;
+}

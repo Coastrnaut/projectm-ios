@@ -155,6 +155,60 @@ class PresetIndexTests(unittest.TestCase):
         self.assertEqual(raw[start:start + length], b"B")
 
 
+FLASH_FIXTURES = Path(__file__).resolve().parent.parent / "Packages" / "PresetLibrary" / "Tests" / "PresetLibraryTests" / "FlashFixtures"
+
+
+class FlashRiskTests(unittest.TestCase):
+    """preset_flash_risk.py (ACC-002-T03, T07, T08): the shared fixtures' verdicts (the Swift twin
+    checks the same expected.json), the index field and the schema."""
+
+    def test_fixtures_match_expected(self):
+        import preset_flash_risk
+        expected = json.loads((FLASH_FIXTURES / "expected.json").read_text())
+        files = sorted(p.name for p in FLASH_FIXTURES.glob("*.milk"))
+        self.assertEqual(files, sorted(expected))
+        for name, rules in expected.items():
+            with self.subTest(name):
+                self.assertEqual(preset_flash_risk.classify((FLASH_FIXTURES / name).read_text(encoding="utf-8")), rules)
+
+    def test_known_high_flash_fixture_is_flagged_and_calm_is_not(self):
+        import preset_flash_risk
+        self.assertTrue(preset_flash_risk.may_flash((FLASH_FIXTURES / "high-flash.milk").read_text()))
+        self.assertFalse(preset_flash_risk.may_flash((FLASH_FIXTURES / "calm.milk").read_text()))
+
+    def test_index_carries_flash_only_for_flagged_records(self):
+        import build_preset_index as bpi
+        with tempfile.TemporaryDirectory() as d:
+            tmp = Path(d)
+            inc = tmp / "Presets"
+            inc.mkdir()
+            (inc / "LICENSES.md").write_text("| File | Display name | Pack | Author |\n|---|---|---|---|\n")
+            (inc / "Calm.milk").write_bytes((FLASH_FIXTURES / "calm.milk").read_bytes())
+            packs = tmp / "packs"
+            for pack in ("cream-of-the-crop", "projectm-classic", "milkdrop-original", "en-d", "milkdrop-texture-pack"):
+                (packs / pack).mkdir(parents=True)
+            (packs / "en-d" / "Fixture - Strobe.milk").write_bytes((FLASH_FIXTURES / "high-flash.milk").read_bytes())
+            out = tmp / "out"
+            with mock.patch("builtins.print"):
+                self.assertEqual(bpi.main(["--included-dir", str(inc), "--packs-dir", str(packs),
+                                           "--config", str(tmp / "none"), "--out", str(out)]), 0)
+            data = json.loads((out / "PresetIndex.json").read_text())
+            self.assertEqual(data["version"], 1)
+            by_name = {r["name"]: r for r in data["presets"]}
+            self.assertNotIn("flash", by_name["Calm"])
+            self.assertEqual(by_name["Strobe"]["flash"], ["toggle-driven", "luma-flicker"])
+            schema = json.loads((Path(__file__).resolve().parent.parent / "specs/002-preset-library-unlock/contracts/preset-index.schema.json").read_text())
+            item = schema["properties"]["presets"]["items"]
+            for record in data["presets"]:
+                self.assertTrue(set(item["required"]) <= set(record))
+                self.assertTrue(set(record) <= set(item["properties"]), record.keys())
+            self.assertEqual(sorted(item["properties"]["flash"]["items"]["enum"]), sorted(["toggle-driven", "toggle-flip", "luma-flicker"]))
+
+    def test_stamp_covers_the_classifier(self):
+        import build_preset_index as bpi
+        self.assertIn("preset_flash_risk.__file__", Path(bpi.__file__).read_text())
+
+
 class LicensesManifestTests(unittest.TestCase):
     def test_committed_manifest_is_complete(self):
         import collect_licenses
