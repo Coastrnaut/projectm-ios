@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T18:39:18Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T18:56:10Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,16 +9,16 @@
 
 | State | Features |
 |---|---|
-| audited | 263 |
-| implementing | 1 |
-| integrated | 61 |
+| audited | 261 |
+| implementing | 2 |
+| integrated | 62 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
 | Priority | audited | implementing | integrated | skipped_existing |
 |---|---|---|---|---|
-| P0 | 39 | 1 | 46 | 1 |
+| P0 | 37 | 2 | 47 | 1 |
 | P1 | 138 | 0 | 13 | 0 |
 | P2 | 77 | 0 | 2 | 0 |
 | P3 | 9 | 0 | 0 | 0 |
@@ -26,7 +26,7 @@
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 264 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
+- 263 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
 
 ## Integrated
 
@@ -70,6 +70,7 @@ The physical-device suite may **not** start:
 | FX-001 | Bloom | `1192e0d6503e` | `feature/fx-001` |
 | FX-019 | Strobe safety envelope | `6cfcbaabc8d0` | `feature/fx-019` |
 | MED-001 | Import photo layer | `dd604d0b1d51` | `feature/med-001` |
+| MED-002 | Import video layer | `e9e04eeb62a8` | `feature/med-002` |
 | MOD-001 | Typed parameter registry | `304f3bce431a` | `feature/mod-001` |
 | MOD-002 | Audio feature binding | `006678f3d7a5` | `feature/mod-002` |
 | MOD-003 | Linear mapping | `29cd3bbb1e12` | `feature/mod-003` |
@@ -356,6 +357,15 @@ None.
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `ad09298aa714` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-001/20261113T125543/sim-test_ANGLERendering.log`)
 - `swift test --package-path Packages/Compositor`: pass at `ad09298aa714` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-001/20261113T125543/swift-test_Compositor.log`)
 - `post-merge: projectM-iOSTests 193 incl. PhotoStoreTests; PhotoLayerUITests 20.2 s (renders after relaunch, Remove Photo); CameraUITests 2, SettingsUITests 4; Compositor ImageLayer tests on iPhone 17 sim`: pass at `dd604d0b1d51` (log `.autonomous/logs/integration/cmp-005-med-001/app-tests.log`)
+
+### MED-002 Import video layer (integrated)
+- `python3 scripts/check_compliance.py`: pass at `1954f853e740` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-002/20261113T134641/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `1954f853e740` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-002/20261113T134641/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `1954f853e740` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-002/20261113T134641/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `1954f853e740` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-002/20261113T134641/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `1954f853e740` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-002/20261113T134641/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `1954f853e740` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-002/20261113T134641/swift-test_Compositor.log`)
+- `post-merge: Compositor scheme on iPhone 17 sim (Compositor 154 incl. video pipeline, import and layer tests); projectM-iOSTests 210 incl. VideoStoreTests; VideoLayerUITests 22.1 s, Photo, Camera 2, ExternalDisplay; SettingsUITests 4 pass after the scroll fix`: pass at `e9e04eeb62a8` (log `.autonomous/logs/integration/med-002/app-tests.log`)
 
 ### MOD-001 Typed parameter registry (integrated)
 - `python3 scripts/check_compliance.py`: pass at `c62c162f633a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-001/20261113T104902/compliance.log`)

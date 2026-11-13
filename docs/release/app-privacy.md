@@ -55,6 +55,18 @@ App Privacy when a version with the Photo visual is submitted. The import adds n
 API (no file dates, no disk-space queries); `check_privacy_manifest.py` on the simulator Debug build
 found none on 2026-11-13, and the next Release build is checked again.
 
+MED-002 (2026-11-13; `specs/048-med-002-import-video-layer`, privacy review in its spec, ADR-0022):
+the Video visual stores one video the user picks (Photos picker with the videos filter, or Files) in
+the app's own storage as a copy of its pictures and timing only: no soundtrack, no location, date,
+device or other metadata (remuxed, not re-encoded), until the user removes it. Only the codec,
+picture size, rotation, frame rate and length are read from the file. The video's sound is never
+played or analysed. It never leaves the device through the app and no permission is added (no
+`NSPhotoLibraryUsageDescription`). Data kept only on the device is not collected, so the answers stay
+**No** and the label stays **Data Not Collected**. Owner action: confirm this in App Store Connect ›
+App Privacy when a version with the Video visual is submitted. The import adds no required-reason
+API (the file size is read with `fileSizeKey`; no file dates, no disk-space queries);
+`check_privacy_manifest.py` on the simulator Debug build is the check (MED-002-T25).
+
 ## Privacy manifest (`Apps/projectM-iOS/PrivacyInfo.xcprivacy`)
 
 - `NSPrivacyTracking`: false; `NSPrivacyTrackingDomains`: empty; `NSPrivacyCollectedDataTypes`: empty.
