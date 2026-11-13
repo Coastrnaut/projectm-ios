@@ -31,7 +31,7 @@ left to ImageIO with MED-001's checks.
 | Case | Meaning | Image mapping | Video mapping |
 |---|---|---|---|
 | `empty` | no bytes | `.notAnImage` | `.notAVideo` |
-| `unrecognized` | not this format's first bytes | (image: `other`, ImageIO decides) | `.notAVideo` |
+| `unrecognized` | not a movie container's first bytes (movies only; images return `.other` facts instead) | — | `.notAVideo` |
 | `truncated` | a length points past the end / end marker missing | `.damaged` | `.damaged` |
 | `corrupt` | a field is illegal, CRC mismatch, walk bound exceeded | `.damaged` | `.damaged` |
 | `unreadable` | the byte source failed to read | `.unreadable` | `.unreadable` |
