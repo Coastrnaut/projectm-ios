@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (CMP-005-T01-T12 verified on the Mac: host, Linux shape and iOS 27.2 simulator; device frame cost covered by CMP-002-T15 `{device}`)
 
 **Input**: User description: "Implement CMP-005 (Transform controls) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Move, scale and rotate layers
