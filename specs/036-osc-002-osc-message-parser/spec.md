@@ -30,6 +30,19 @@ The row's gap status is "Gap candidate". The audit confirms a partial gap.
 | Safety | Every read bounds-checked; no allocation sized from a packet-declared length; typed errors with stable `reason` keys; a fixed-seed 20,000-packet fuzz with re-encode round trip. | Blob sizes and bundle element sizes are packet-declared lengths: they need the same discipline. |
 | Receiver | Applies only `/projectm/test` with one numeric argument; counters per reject reason. | Must handle a bundle datagram. |
 
+## Clarifications
+
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the recommended, conservative option.
+
+- Q: What are the bundle limits? → A: Nesting depth at most 4 (the top-level bundle is level 1, so a bundle inside three nested bundles is the deepest allowed) and at most 64 elements in one datagram, counting messages and nested bundles at every level. An element size must be positive, a multiple of 4 and no larger than the bytes left in its enclosing bundle; a bundle needs its 16-byte header (`#bundle` marker and time tag). An empty bundle is valid. The message limits stay OSC-001's (16 arguments per message, address ≤ 255 bytes, datagram ≤ 1,472 bytes). Rejections: `bundleTooDeep`, `tooManyElements`, `invalidElementSize`, `truncatedBundle` (OSC-002-R5, R6).
+- Q: Which argument types does the parser accept, and which count as numbers for the receiver? → A: `i`, `f` (OSC-001), `s` string, `b` blob, `h` 64-bit integer, `d` double, and the no-payload tags `T` true, `F` false, `N` nil, `I` impulse. `h` and `d` are numbers (a controller sending a double fader reaches the test value; the store clamps it); `s`, `b`, `T`, `F`, `N`, `I` are not numbers, so `/projectm/test T` is ignored as wrong arguments. Mapping booleans or impulses to values is a routing decision for OSC-003. Arrays `[ ]`, `t`, `c`, `r`, `m`, `S` and any other tag stay `unsupportedTypeTag` (OSC-002-R4).
+- Q: How does the receiver treat a bundle's time tag in this row? → A: It decodes the whole datagram first, then applies every message in packet order (depth-first) immediately, whatever the time tag says; nothing is queued or delayed. OSC-006 owns scheduling by time tag and the late-message policy and will replace this immediate path. Counters: `received` and `rejected` stay per datagram, a new `bundles` counter counts accepted bundle datagrams, and `applied`/`ignored` count per message, so a bundle with three messages adds three. A bundle with any malformed element is rejected as a whole and applies nothing (OSC-002-R10).
+- Q: What text may a string argument hold? → A: Any bytes except NUL that form valid UTF-8 (OSC 1.0 says ASCII; UTF-8 is what current controllers send and is a superset). Invalid UTF-8 is rejected as `invalidString`, so a decoded string always re-encodes to the same bytes. Strings and blobs have no separate length cap: the datagram limit bounds them. The address rule stays printable ASCII (OSC-002-R2).
+- Q: How do the reject reasons change, and what happens to `bundleUnsupported`? → A: OSC-001's twelve keys keep their names and meanings. New keys: `invalidString`, `invalidBlobSize` (negative, or the blob plus padding does not fit in the bytes left), `truncatedBundle`, `invalidElementSize`, `bundleTooDeep`, `tooManyElements`. A blob shorter than its 4-byte size word is `truncatedArgument`, like a short number. The packet decoder never returns `bundleUnsupported`; the message-only decode entry point that OSC-001 callers use still returns it for a bundle, so those callers keep their behavior. A bundle element that does not start with `/` or `#bundle` is decoded as a message and is rejected as `invalidAddress` (OSC-002-R8, R11).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Controllers that send strings, booleans or bundles still work (Priority: P1)
@@ -131,8 +144,9 @@ except the two cases this row intentionally changes (a string argument and a bun
 - **OSC-002-R5**: The decoder MUST accept bundles: the `#bundle` marker, a 64-bit time tag and zero
   or more size-prefixed elements, each a message or a bundle, with every element size checked
   against the bytes left before the element is read.
-- **OSC-002-R6**: Bundle nesting MUST be limited (top-level bundle counts as level 1), and the total
-  number of elements in one datagram MUST be limited; each limit has its own reject reason.
+- **OSC-002-R6**: Bundle nesting MUST be at most 4 levels (the top-level bundle is level 1), and one
+  datagram MUST hold at most 64 elements at all levels; each limit has its own reject reason
+  (`bundleTooDeep`, `tooManyElements`).
 - **OSC-002-R7**: Decoding MUST never trap, never recurse deeper than the nesting limit, and never
   allocate storage sized from a packet-declared length that was not first checked against the
   bytes left; the decoded payload (addresses, strings, blobs, numbers) MUST never exceed the
@@ -142,8 +156,9 @@ except the two cases this row intentionally changes (a string argument and a bun
 - **OSC-002-R9**: The encoder MUST encode every packet the decoder accepts back to the identical
   bytes (canonical round trip).
 - **OSC-002-R10**: The receiver MUST decode a bundle completely before applying anything, then apply
-  its messages in packet order under OSC-001's rules; a malformed element rejects the whole
-  datagram.
+  its messages in packet order under OSC-001's rules, immediately and regardless of the time tag
+  (scheduling is OSC-006); a malformed element rejects the whole datagram. `64-bit integer` and
+  `double` arguments count as numbers; string, blob, true, false, nil and impulse do not.
 - **OSC-002-R11**: The message-only decode entry point MUST keep OSC-001's behavior for bundles
   (`bundleUnsupported`).
 - **OSC-002-R12**: The parser MUST stay pure and platform-independent (testable on Linux) and MUST
