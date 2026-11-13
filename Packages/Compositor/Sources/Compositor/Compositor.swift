@@ -80,6 +80,10 @@ public final class Compositor {
         for i in layers.indices where !slots[i].isAvailable { prepareLayer(i, descriptor) }
     }
 
+    /// The flash guard's gain of the last completed frame (read it after the command buffer completed;
+    /// diagnostics and tests).
+    public var lastFlashGain: Float { flashGuard.lastGain }
+
     /// Forgets the composite's flash history (a new scene; FX-019-R11). A pause must not call it.
     public func resetFlashHistory() { flashGuard.reset() }
 
