@@ -1,10 +1,11 @@
 // ExecutableSignature.swift — recognizes programs, libraries, scripts and archives by their first
-// bytes, and names the first code entry of a zip archive (SHD-011-R3; research SHD-011-D3). It only
+// bytes, and names the first code entry of a zip archive (SHD-011-R3; research SHD-011-D3). Public
+// since FILE-001 so every importer shares one list (scene archive assets). It only
 // compares bytes already in memory and limited by GraphImportLimits.maximumBytes; nothing is
 // extracted, decompressed, written or loaded. Plain Swift; builds on Linux.
 
-enum ExecutableSignature {
-    enum Verdict: Equatable {
+public enum ExecutableSignature {
+    public enum Verdict: Equatable, Sendable {
         case executable(ExecutableKind)
         case archive(codeEntry: String?)
     }
@@ -31,7 +32,7 @@ enum ExecutableSignature {
         "sh", "command", "py", "js", "wasm", "jar",
     ]
 
-    static func classify(_ bytes: [UInt8]) -> Verdict? {
+    public static func classify(_ bytes: [UInt8]) -> Verdict? {
         for (magic, kind) in executables where hasPrefix(bytes, magic) {
             return .executable(kind)
         }
