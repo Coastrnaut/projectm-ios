@@ -23,7 +23,7 @@ physical displays; left open.
 - [ ] OUT-001-T04 [US1] Scene configuration: `AppDelegate.sceneConfiguration(for:)` (external role → `ExternalDisplaySceneDelegate`, otherwise the session's configuration) and `application(_:configurationForConnecting:options:)`; `@UIApplicationDelegateAdaptor` in `Apps/projectM-iOS/ProjectMApp.swift`; `ExternalDisplaySceneDelegate` creating the window and slot and reporting connect, geometry, foreground and disconnect, in `Apps/projectM-iOS/ExternalDisplay/AppDelegate.swift` and `ExternalDisplaySceneDelegate.swift`
 - [ ] OUT-001-T05 [US1] Device side: `VisualizerView` hosts every visual through `VisualSlotHost` (identifiers unchanged) and shows `externalDisplayNote` while `showsVisualExternally`; `AppCoordinator` owns the coordinator and reports `visualizerActive` on screen changes, in `Apps/projectM-iOS/Views/VisualizerView.swift`, `Apps/projectM-iOS/Coordinators/AppCoordinator.swift`
 - [ ] OUT-001-T06 [US1] DEBUG fake external display (`-uitestExternalDisplay`: buttons `uitestConnectExternal`, `uitestDisconnectExternal`, a 1920 × 1080 off-screen window at trait display scale 1), in `Apps/projectM-iOS/Debug/UITestExternalDisplay.swift`
-- [ ] OUT-001-T07 [US1] App unit tests: the scene configuration per role; the visual moves into the external slot and back; a visual change while external goes to the external slot; not visualizing keeps it on the device; the external slot holds only the current visual; `showsVisualExternally` follows the target, in `Apps/projectM-iOS/Tests/ExternalDisplayCoordinatorTests.swift`
+- [ ] OUT-001-T07 [US1] App unit tests: the scene configuration per role; the visual moves into the external slot and back; a visual change while external goes to the external slot; not visualizing keeps it on the device; the external slot holds only the current visual; `showsVisualExternally` follows the target; each move happens inside the event call, with no later turn of the run loop (OUT-001-R6, checked without wall-clock timing), in `Apps/projectM-iOS/Tests/ExternalDisplayCoordinatorTests.swift`
 
 ## Phase 3: User Story 2 - Plugging and unplugging never interrupts the music (P1)
 
@@ -32,7 +32,7 @@ physical displays; left open.
 
 - [ ] OUT-001-T08 [US2] Camera and Photo hosts ignore scene connect and disconnect events from external display scenes (`ExternalDisplayScenes.affectsDeviceVisuals`), in `Apps/projectM-iOS/Visuals/CameraVisualHost.swift`, `PhotoVisualHost.swift`
 - [ ] OUT-001-T09 [US2] App unit tests: the Camera visual's (stub camera) drawable becomes 1920 × 1080 × renderScale in the external slot (trait scale 1) and returns to the device size after the move back, without stopping its loop or camera; the scene-role filter, in `Apps/projectM-iOS/Tests/ExternalDisplayCoordinatorTests.swift`
-- [ ] OUT-001-T10 [US2] UI test: `-autostart inAppPlayback -uitestExternalDisplay`: connect shows `externalDisplayNote`, and the controls still work (pause and resume); disconnect brings the visual back; reconnect; `sourceStarts` stays 1, in `Apps/projectM-iOS/UITests/ExternalDisplayUITests.swift`
+- [ ] OUT-001-T10 [US2] UI test: `-autostart inAppPlayback -uitestExternalDisplay`: connect shows `externalDisplayNote`, and the controls still work (pause and resume); disconnect brings the visual back; reconnect; `sourceStarts` stays 1, in `Apps/projectM-iOS/UITests/ExternalDisplayUITests.swift`. The regression run includes the existing `IdleTimerPolicyTests`, `LifecycleCoordinatorTests` and `CameraPrivacyStatusTests`, and the NativeVisual and Camera UI tests (OUT-001-R10: auto-lock, presentation loss and overlays unchanged)
 
 ## Phase 4: User Story 3 - The big screen is as flash-safe as the device (P1)
 
@@ -51,6 +51,8 @@ physical displays; left open.
 - [ ] OUT-001-T17 {device} Hot-plug during playback on D1-D3 (cable and AirPlay): source never restarts, Camera keeps running (OUT-001-S2, S6)
 - [ ] OUT-001-T18 {device} Resolution and refresh changes on the Apple TV (60 / 50 / 24 Hz): no crash; record fps for OUT-013
 
+- [ ] OUT-001-T19 Gates: `check_compliance.py` and `validate_docs.py` pass; the app builds with no new warnings on the iOS 27.2 SDK here; the iOS 26.5 SDK build runs in CI after integration (OUT-001-R11)
+
 ## Dependencies
 
 T01 → T02. T01 → T03 → T04, T05, T06, T08 → T07, T09, T10. T11 and T12 are independent. T13 and T14
@@ -64,3 +66,13 @@ T01/T02 with T11 and T12 (different packages); T07 and T09 share one test file (
 
 MVP = Phase 1 + US1 (the acceptance). US2 hardens hot-plug, and US3 proves flash safety. All three
 are P1 and ship together.
+
+## Analysis (speckit-analyze, 2026-11-13)
+
+There were no critical or high findings, and the fixes were applied here:
+- E1 (medium): OUT-001-R10 had no task. It is now covered by T10's regression run.
+- E2 (low): OUT-001-R6 (0.5 s) cannot be measured by wall clock (brief rule). T07 checks instead that the move is synchronous.
+- E3 (low): OUT-001-R11 (both SDKs) had no task. T19 covers it.
+- Terminology: "visualizing" (data model) and `visualizerActive` (contract) name the same flag.
+
+Coverage: R1-R12 each have at least one task; S1-S5 map to T07, T10, T11 and T14, and S6 maps to T15-T18.
