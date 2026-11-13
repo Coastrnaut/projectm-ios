@@ -38,3 +38,11 @@
   downsample factor, shader approach) and where the code lives are left to the plan.
 - Validation pass 1 (2026-11-13): all items pass; no [NEEDS CLARIFICATION] markers (owner rule 4:
   open choices are decided in `/speckit-clarify`).
+- `/speckit-analyze` pass (2026-11-13): 0 critical, 0 high. Fixed: FX-001-R11 now states that it
+  amends FR-065's list (as VIS-001-R11 did); FX-001-R7 states the extent formula; FX-001-R12 names the
+  CPU-only update and T10 tests it; T18 checks the sliders' VoiceOver labels and values; T26
+  reworded (the roadmap file is the main session's). Licensing: no new dependency; the bloom is
+  written for this feature (the soft-knee threshold is a widely used formula, no code copied); app
+  code stays MIT (ADR-0005). Privacy: four user-setting keys, local only. Cross-feature: no change to
+  `Packages/AnalysisFeatures` (ANL-004 in flight), CI loops or `project.yml`; CMP-001, FX-019,
+  FX-020, PERF-003, PERF-004 hooks recorded in ADR-0010.

@@ -183,7 +183,7 @@ spectrum is shown and a notice "Glow isn't available on this device." is shown a
   knee's lower end contribute nothing; a frame containing only such pixels is output equal to the
   input within 1/255 per channel.
 - **FX-001-R7**: The halo is bounded: (a) its extent from the nearest contributing pixel is at most
-  the configured radius plus the blur's support, stated in pixels by the plan; (b) no pixel outside
+  the configured radius plus the blur's support, `E = (R + 2) × D` pixels (research FX-001-D3); (b) no pixel outside
   a bright patch gets brighter than the patch's brightest pixel; (c) along a line leaving the patch
   the halo does not increase; (d) the total added brightness is at most intensity × the
   above-threshold brightness of the input.
@@ -196,11 +196,13 @@ spectrum is shown and a notice "Glow isn't available on this device." is shown a
   brightness; the bar slew limit is unchanged.
 - **FX-001-R11**: Settings: in the Visual section, for Circular Spectrum only, a "Glow" toggle and,
   while it is on, Intensity, Radius and Threshold sliders with VoiceOver labels and values (FR-070).
-  The four values are stored as user settings (FR-065) under `settings.circularSpectrum.glow`,
-  `…glowIntensity`, `…glowRadius`, `…glowThreshold`; the device privacy check's allowed list gains
-  them.
+  The four values are stored under the user-settings keys `settings.circularSpectrum.glow`,
+  `…glowIntensity`, `…glowRadius`, `…glowThreshold`. This amends FR-065's list of user settings (as
+  VIS-001-R11 did): persistence additionally includes these four glow settings; nothing else is
+  stored, and the device privacy check's allowed list gains exactly these keys.
 - **FX-001-R12**: Changing a glow setting takes effect on the running visual from the next frame,
-  does not restart the audio source and does not rebuild shaders.
+  does not restart the audio source and does not rebuild shaders (a parameter change is a CPU-only
+  update of the effect).
 - **FX-001-R13**: Failure boundary: if the glow cannot be built, the circular spectrum renders
   without it, Settings shows "Glow isn't available on this device." and VoiceOver announces it; the
   stored setting is kept. The screen is never black because of the glow.
