@@ -7,10 +7,10 @@ simulator or device task (no app code changes).
 
 ## Phase 1: Migration table (US3) — ParameterGraph
 
-- [ ] MOD-013-T01 [US3] `ModulationIDMigrations` (rules, version, structural checks incl. loop path, `resolve`) in `Packages/ParameterGraph/Sources/ParameterGraph/ModulationIDMigrations.swift` (MOD-013-R2, R3; contract M1)
-- [ ] MOD-013-T02 [US3] Registry carries the table: catalog checks (three new problems in `ParameterValidation.swift`), `resolveParameter`, `resolveAudioFeature` in `ParameterRegistry.swift` (MOD-013-R4; contract M2)
-- [ ] MOD-013-T03 [US3] `ModulationIDMigrationTests`: chaining, idempotence, retire-after-rename, loop/self/duplicate/cross-kind/version refusals, catalog checks (MOD-013-S4)
-- [ ] MOD-013-T04 [US3] `VisualParameterCatalog.migrations` (empty) passed to the registry in `Packages/VisualGenerators/Sources/VisualParameters/VisualParameterCatalog.swift`
+- [X] MOD-013-T01 [US3] `ModulationIDMigrations` (rules, version, structural checks incl. loop path, `resolve`) in `Packages/ParameterGraph/Sources/ParameterGraph/ModulationIDMigrations.swift` (MOD-013-R2, R3; contract M1) — Verified 2026-11-13: `swift test --package-path Packages/ParameterGraph` (71 + 38 tests pass; ModulationIDMigrationTests 5)
+- [X] MOD-013-T02 [US3] Registry carries the table: catalog checks (three new problems in `ParameterValidation.swift`), `resolveParameter`, `resolveAudioFeature` in `ParameterRegistry.swift` (MOD-013-R4; contract M2) — Verified 2026-11-13: ModulationIDMigrationTests.testRegistryAppliesTheTableAndTheRetiredSet, testRegistryRefusesTablesThatContradictTheCatalog
+- [X] MOD-013-T03 [US3] `ModulationIDMigrationTests`: chaining, idempotence, retire-after-rename, loop/self/duplicate/cross-kind/version refusals, catalog checks (MOD-013-S4) — Verified 2026-11-13: 5 tests pass in 0.003 s on the Mac host
+- [X] MOD-013-T04 [US3] `VisualParameterCatalog.migrations` (empty) passed to the registry in `Packages/VisualGenerators/Sources/VisualParameters/VisualParameterCatalog.swift` — Verified 2026-11-13: `swift test --package-path Packages/VisualGenerators` (103 tests pass, catalog builds with the table)
 
 ## Phase 2: Document model (US2) — SceneFormat
 
