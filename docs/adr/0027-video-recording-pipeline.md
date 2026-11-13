@@ -50,6 +50,31 @@ recovery) build on it, so the pipeline's shape and limits are recorded here.
   devices by the `{device}` tasks before any performance claim.
 - REC-004 adds an audio input to the same writer; REC-006 changes `maxFrameRate`; REC-005 changes the
   long-side cap and bit rate; REC-015 adds a free-space estimate (a required-reason API, declared
-  then).
+  then; see the amendment below).
 - A rotation ends the recording (size change); REC-014 (aspect presets) can render into a fixed size
   instead.
+
+## Amendment 2026-11-13: REC-015 disk guard
+
+Decided by Claude under the owner's best-judgement rule (owner rule 4); spec
+`specs/063-rec-015-recording-disk-guard` (clarifications and research REC-015-D1 to D7). No
+constitution default is overridden, so this amends the pipeline ADR instead of adding one.
+
+7. **Free-space guard.** `FrameRecording` estimates the write rate as the highest average bit rate of
+   the preferred codecs at the output size and frame rate, plus 25%. Record reads the volume's
+   "available capacity for important usage" once (after the other refusals) and refuses below a
+   200 MiB reserve plus 60 s at that rate. While recording, the app reads it and the file's size
+   every 5 s off the main actor (never on the frame loop or the writer queue) and stops with the new
+   reason `lowStorage` when less than the reserve plus two intervals at the larger of the estimated
+   and measured rates remains; that stop finishes and offers the file like every other stop. An
+   unreadable value never refuses or stops.
+8. **Out-of-space failures.** Writer errors whose domain/code (or any underlying error's) is Cocoa
+   640, AVFoundation -11807 or POSIX 28 become `RecordingFailure.storageFull` ("Storage is full; the
+   recording couldn't be saved."); the partial file is deleted (an `AVAssetWriter` in `.failed`
+   cannot finish a file), so no broken file is ever offered.
+9. **Privacy.** The free-space read is a required-reason API (Disk space), declared in the app's
+   privacy manifest with E174.1; the value is used only on the device and never stored or sent.
+   `check_privacy_manifest.py` now also checks each declared reason against an allowed set per
+   category.
+10. **Test seams.** `StorageProbe` (injected readings) and `RecordingWriterFault` (the writer fails
+    after N frames with an injected error); DEBUG `-uitestStorage low|dropAfter:<n>` in the app.

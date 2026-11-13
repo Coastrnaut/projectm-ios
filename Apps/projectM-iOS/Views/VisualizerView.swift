@@ -138,7 +138,8 @@ struct VisualizerView: View {
                     .accessibilityIdentifier("frameCaptureProbe")
                     .accessibilityValue(coordinator.frameCapture.probe)
             }
-            if VideoRecordingCoordinator.debugDirectoryFromArguments() != nil {   // REC-003: VideoRecordingUITests
+            if VideoRecordingCoordinator.debugDirectoryFromArguments() != nil
+                || VideoRecordingCoordinator.debugStorageRequested {   // REC-003, REC-015: recording UI tests
                 Text(coordinator.videoRecording.probe)
                     .font(.caption2)
                     .opacity(0.01)

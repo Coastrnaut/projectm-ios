@@ -144,7 +144,11 @@ the moment the recording stops.
   codec, color tags): no location, device, camera or account details. Its suggested name contains
   the date and time, and you can change it.
 - Recording stops by itself, keeping what was recorded, after 10 minutes, when the app leaves the
-  screen, when you pause, when the output is blacked out, or when the visual or its size changes.
+  screen, when you pause, when the output is blacked out, when the visual or its size changes, or when
+  your device's free storage gets low. To do this, the app checks how much free storage your device
+  has when you tap Record and every few seconds while it records; that number is used only on your
+  device and is never stored or sent. If the storage fills up anyway, the unfinished file is deleted
+  and the app says so.
   While the output is blacked out or the visualization is paused, Record does not start.
 - Nothing is uploaded or sent anywhere by the app; what happens to the file afterwards is up to you
   and the place you saved it.
