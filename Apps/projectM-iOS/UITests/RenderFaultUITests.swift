@@ -79,4 +79,35 @@ final class RenderFaultUITests: XCTestCase {
         XCTAssertEqual(value("sourceStarts"), "1", "the audio source was never restarted")
         print("PERF-014 evidence: Photo health after recovery: \(value("renderHealth")), ticks \(value("renderTicks"))")
     }
+
+    /// R9, R10: projectM's swap fails from launch; after the bounded retries the placeholder covers the
+    /// visual (ticks keep advancing); clearing the fault changes nothing until the user resumes, which
+    /// resets the budget and brings projectM back.
+    func testAPresentationFailureEndsOnThePlaceholderUntilTheUserResumes() {
+        XCUIDevice.shared.orientation = .portrait
+        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-uitestRenderFaults", "present",
+                               "-autostart", "inAppPlayback"] + Self.noStore
+        app.launch()
+        XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
+        XCTAssertTrue(poll(10) { self.value("renderHealth").contains("presentationFailed") }, value("renderHealth"))
+        // 30 + 60 + 120 + 240 display ticks after the first fault (about 7.5 s at 60 fps).
+        XCTAssertTrue(poll(15) { self.value("renderPlaceholderShown") == "yes" }, "the placeholder: \(value("renderHealth"))")
+        XCTAssertTrue(value("renderHealth").hasPrefix("placeholder presentationFailed faults 5"), value("renderHealth"))
+        let placeholder = app.descendants(matching: .any)["renderPlaceholder"].firstMatch
+        XCTAssertTrue(placeholder.appears(within: 2))
+        XCTAssertEqual(placeholder.label, "Visual unavailable")
+        assertTicksAdvance("under the placeholder")
+
+        app.buttons["faults:clear"].tap()
+        _ = poll(1) { false }   // one second with the fault cleared: nothing may change by itself
+        XCTAssertEqual(value("renderPlaceholderShown"), "yes", "no automatic return after giving up (Clarifications Q5)")
+        showControls()
+        app.buttons["pauseResume"].tap()
+        app.buttons["pauseResume"].tap()   // resume: a reset (R6)
+        XCTAssertTrue(poll(5) { self.value("renderPlaceholderShown") == "no" }, value("renderHealth"))
+        XCTAssertTrue(value("renderHealth").hasPrefix("healthy presentationFailed faults 5 recoveries 1"), value("renderHealth"))
+        let frames = number("visualFrames")
+        XCTAssertTrue(poll(5) { self.number("visualFrames") > frames }, "projectM presents frames again")
+        XCTAssertEqual(value("sourceStarts"), "1", "the audio source was never restarted")
+    }
 }
