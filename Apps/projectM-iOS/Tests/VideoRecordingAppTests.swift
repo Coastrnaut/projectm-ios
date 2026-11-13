@@ -228,6 +228,12 @@ final class VideoRecordingAppTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: file.path), "a cancelled Save… keeps the file (REC-012-R8)")
         XCTAssertEqual(recording.offered, file)
         XCTAssertNil(recording.fileToMove)
+        context.value = .init(source: nil, visualShown: true, outputLive: false, paused: true)   // REC-012-R16
+        recording.checkContext()
+        recording.appEnteredBackground()
+        XCTAssertEqual(recording.offered, file, "pause, blackout, a visual change or the background keep the offer")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: file.path))
+        context.value = .init(source: source, visualShown: true, outputLive: true, paused: false)
         recording.requestSave()
         recording.moverFinished(.failure(CocoaError(.userCancelled)))
         XCTAssertEqual(recording.offered, file)

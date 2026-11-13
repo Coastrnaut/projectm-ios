@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Clarified 2026-11-13 (9 questions answered under owner rule 4)
+**Status**: Implemented 2026-11-13 (REC-012-T01-T12 verified on the Mac: iOS 27.2 simulator; T13 `{device}` open)
 
 **Input**: User description: "Implement REC-012 (Share via Files) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Export video or image using system
