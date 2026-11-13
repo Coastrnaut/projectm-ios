@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T02:17:51Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T11:03:49Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,18 +10,19 @@
 | State | Features |
 |---|---|
 | audited | 298 |
-| implementing | 2 |
+| implementing | 1 |
+| unit_passed | 1 |
 | integrated | 25 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 63 | 1 | 22 | 1 |
-| P1 | 147 | 1 | 3 | 0 |
-| P2 | 79 | 0 | 0 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 63 | 1 | 0 | 22 | 1 |
+| P1 | 147 | 0 | 1 | 3 | 0 |
+| P2 | 79 | 0 | 0 | 0 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -91,6 +92,12 @@ None.
 - `swift test --package-path Packages/CaptureKit`: pass at `4700a64a37aa` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-002/20261112T161949/swift-test_CaptureKit.log`)
 - `swift test --package-path Packages/CaptureUI`: pass at `4700a64a37aa` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-002/20261112T161949/swift-test_CaptureUI.log`)
 - `integration checkout: xcodegen generate; xcodebuild -scheme projectM-iOS -destination id=4E32B01D (iPhone 17, iOS 27.2) test: projectM-iOSTests, ImportedAudioUITests (5)`: pass at `f886b7ce7c76` (log `.autonomous/logs/integration/aud-002/app-tests.log`)
+
+### AUD-003 Audio library queue (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `6412b1087980` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-003/20261113T060308/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `6412b1087980` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-003/20261113T060308/docs.log`)
+- `swift test --package-path Packages/CaptureKit`: pass at `6412b1087980` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-003/20261113T060308/swift-test_CaptureKit.log`)
+- `swift test --package-path Packages/CaptureUI`: pass at `6412b1087980` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-003/20261113T060308/swift-test_CaptureUI.log`)
 
 ### AUD-006 Seekable transport (integrated)
 - `python3 scripts/check_compliance.py`: pass at `383d9ab633a4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-006/20261112T174904/compliance.log`)

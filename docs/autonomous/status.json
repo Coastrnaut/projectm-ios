@@ -13,8 +13,8 @@
   },
   "P1": {
    "audited": 147,
-   "implementing": 1,
-   "integrated": 3
+   "integrated": 3,
+   "unit_passed": 1
   },
   "P2": {
    "audited": 79
@@ -25,9 +25,10 @@
  },
  "by_state": {
   "audited": 298,
-  "implementing": 2,
+  "implementing": 1,
   "integrated": 25,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -645,12 +646,12 @@
   "AUD-003": {
    "attempts": 0,
    "branch": "feature/aud-003",
-   "branch_sha": null,
+   "branch_sha": "6412b1087980a7050bebe5e5fda9aa7ffefea526",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": "specs/015-aud-003-audio-library-queue",
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "AUD-004": {
    "attempts": 0,
@@ -3755,5 +3756,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T02:17:51Z"
+ "updated": "2026-11-13T11:03:49Z"
 }
