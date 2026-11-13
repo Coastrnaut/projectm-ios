@@ -1,9 +1,12 @@
 // AVVideoProbe.swift — the import checks of a picked video (MED-002-R5; research MED-002-D7).
 //
 // In order of cost, each failure typed: the file size (`.fileSizeKey`, before the file is opened) →
-// a video track (`.notAVideo`) → its codec from the sample description (`.unsupportedCodec`) → size,
+// the container's structure (`VideoContainerCheck`, MED-014-R7, R8: boxes inside the file, a `moov`,
+// a video track, its coded size) → a video track (`.notAVideo`) → its codec from the sample description (`.unsupportedCodec`) → size,
 // rotation, nominal frame rate and length (`VideoTrackInfo.check`) → the first picture decodes
-// (`.damaged`). Only those facts are read: no metadata of the asset or the track (spec Privacy
+// (`.damaged`): one picture at most 256 px through `AVAssetImageGenerator.image(at:)`, an async API
+// that suspends instead of blocking the importing thread on AVFoundation's lower-priority decode
+// threads (MED-014-R9; research MED-014-D4: the MED-002 priority-inversion notice). Only those facts are read: no metadata of the asset or the track (spec Privacy
 // review). AVFoundation only (`#if canImport(AVFoundation)`).
 #if canImport(AVFoundation)
 import AVFoundation
@@ -22,10 +25,11 @@ public enum VideoProbe {
             throw .unreadable
         }
         guard Int64(size) <= limits.maxFileBytes else { throw .tooLarge }
+        try VideoContainerCheck.check(url, limits: limits)
         let asset = AVURLAsset(url: url, options: [AVURLAssetPreferPreciseDurationAndTimingKey: true])
-        let (track, info, _) = try await load(asset)
+        let (_, info, _) = try await load(asset)
         try info.check(limits)
-        guard decodesFirstPicture(asset, track: track) else { throw .damaged }
+        guard await decodesFirstPicture(asset) else { throw .damaged }
         return info
     }
 
@@ -65,19 +69,22 @@ public enum VideoProbe {
         return CMTimeConvertScale(time, timescale: 1_000_000_000, method: .roundTowardNegativeInfinity).value
     }
 
-    /// Reads one picture through the same reader settings as playback.
-    static func decodesFirstPicture(_ asset: AVAsset, track: AVAssetTrack) -> Bool {
-        guard let reader = try? AVAssetReader(asset: asset) else { return false }
-        let output = AVAssetReaderTrackOutput(track: track, outputSettings: AVVideoFrameReaderSettings.output)
-        output.alwaysCopiesSampleData = false
-        guard reader.canAdd(output) else { return false }
-        reader.add(output)
-        guard reader.startReading() else { return false }
-        defer { reader.cancelReading() }
-        while let sample = output.copyNextSampleBuffer() {
-            if CMSampleBufferGetImageBuffer(sample) != nil { return true }
+    /// The size the first-picture check decodes at (bounded memory whatever the video's size).
+    static let firstPictureMaximumSize = CGSize(width: 256, height: 256)
+
+    /// Decodes the first picture, at most 256 px, without blocking the calling thread.
+    static func decodesFirstPicture(_ asset: AVAsset) async -> Bool {
+        let generator = AVAssetImageGenerator(asset: asset)
+        generator.appliesPreferredTrackTransform = false
+        generator.maximumSize = firstPictureMaximumSize
+        generator.requestedTimeToleranceBefore = .zero
+        generator.requestedTimeToleranceAfter = .positiveInfinity
+        do {
+            let (image, _) = try await generator.image(at: .zero)
+            return image.width > 0 && image.height > 0
+        } catch {
+            return false
         }
-        return false
     }
 }
 

@@ -6,7 +6,10 @@
 // requested time; each picture is wrapped without a copy by a `CVMetalTextureCache` as
 // `.bgra8Unorm_srgb`, so the shader's sample is linear light. Timestamps are made relative to the
 // track's start. The asset's track facts are loaded once (async API, bridged on the decode thread,
-// never the main thread). Nothing but the facts in `VideoTrackInfo` is read.
+// never the main thread). Nothing but the facts in `VideoTrackInfo` is read. Before every open (start,
+// loop, seek) the container is checked again (`VideoContainerCheck`, MED-014-R12), so a stored copy
+// damaged or replaced while playing fails as `.damaged` at the next open instead of reaching
+// AVFoundation.
 #if canImport(AVFoundation) && canImport(Metal) && !COMPOSITOR_NO_METAL
 import AVFoundation
 import CameraLayer
@@ -46,6 +49,7 @@ public final class AVVideoFrameReader: VideoFrameReading {
     public func open(startNanoseconds: Int64) throws(VideoImportError) -> VideoTrackInfo {
         close()
         guard cache != nil else { throw .damaged }
+        try VideoContainerCheck.check(url, limits: .standard)
         let asset = self.asset ?? AVURLAsset(url: url, options: [AVURLAssetPreferPreciseDurationAndTimingKey: true])
         self.asset = asset
         if loaded == nil {

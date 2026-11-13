@@ -170,13 +170,15 @@ final class ImageImportTests: XCTestCase {
         assertRefused(Data(), .notAnImage)
     }
 
-    /// What ImageIO itself can tell is broken: half a JPEG, and a PNG whose header claims a zero
-    /// size. ImageIO decodes a PNG cut short without complaint (the missing rows come out empty and
-    /// its status reads "complete"), so that case is MED-014's (safe media decoder) to harden.
+    /// Half a JPEG, a PNG whose header claims a zero size, and (MED-014) a PNG cut short: ImageIO
+    /// alone decoded that one without complaint (blank rows, status "complete"); the structure check
+    /// now refuses it (MED-014-R2).
     func testDamagedImagesAreRefused() {
         let jpeg = ImageFixtures.jpegWithMetadata(width: 64, height: 64)
         assertRefused(jpeg.prefix(jpeg.count / 2), .damaged)
         assertRefused(ImageFixtures.zeroSizePNG(), .damaged)
+        let png = ImageFixtures.encode(ImageFixtures.solid(RGBA(r: 9, g: 9, b: 9, a: 255)), .png)
+        assertRefused(png.prefix(png.count - 20), .damaged)
     }
 
     func testTooManyPixelsIsRefused() {
