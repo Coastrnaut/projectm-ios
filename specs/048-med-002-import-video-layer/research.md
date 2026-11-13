@@ -23,11 +23,15 @@ Decisions are numbered `MED-002-D1…` and cited from code comments.
   R′G′B′; treating BT.709's transfer as sRGB is the same approximation the camera layer (CAM-001)
   uses, and needs no shader matrix code. A 4:2:0 two-plane path would halve memory but add a
   per-matrix shader; deferred (MED-014 may revisit for 4K memory).
+- **Colorimetry**: the reader's output settings ask for BT.709 primaries, transfer and matrix
+  (`AVVideoColorPropertiesKey`), so every file (BT.601, Display P3, HDR HLG/PQ) is converted the same
+  way and an HDR video is shown in standard range (highlights clipped; a device task checks it).
 - **Color test tolerance**: the fixture's solid colors pass through an H.264 encoder (lossy, 4:2:0,
   video range), so the decoded 8-bit code may differ from the written one by a few codes. S3 is
-  checked as "the layer's linear output is within 1/255 of the linear value of the code the
-  decoder produced" (the layer's own conversion), plus "within 6 codes of the written color" for the
-  codec (stated, not part of the 1/255 rule).
+  checked as "the layer's linear output in the middle 16 × 16 is within 1/255 of the linear value of
+  the code the decoder produced" (the layer's own conversion); the decoder's code is within 12 codes
+  of the written color, and the whole picture within 8/255 (4:2:0 chroma near the edges differs by a
+  few codes: the codec's rounding). Frame-index fixtures are grey (no chroma), 30 levels 8 codes apart.
 
 ## MED-002-D3 Bounded queue and dropping
 
@@ -38,6 +42,14 @@ Decisions are numbered `MED-002-D1…` and cited from code comments.
   `NSLock.try()`: if the decoder holds the lock this instant, the held picture is drawn again (no
   wait). Selection: remove every queued frame with `pts ≤ t`; the newest becomes the shown frame,
   the others count as dropped (late). A counter records the deepest the queue has been.
+- **Catch-up (found while testing)**: after a hitch shorter than the seek threshold, the queue holds
+  only pictures that are all due; the decoder would wait for frames to drain them. So a decoded
+  picture already due (≤ the last playback time the render side asked for) replaces the queued due
+  pictures it supersedes (counted as dropped, permits returned). The first frame after a hitch may
+  still show the newest already-decoded picture (older than t, never later); the next frames are
+  exact (VideoLayerTests, the 0.5 s hitch).
+- **Semaphore**: created at 0 and signalled `capacity` times, because libdispatch traps when a
+  semaphore is released with a value below its initial value (a cancelled session leaves permits out).
 - **Rationale**: The bound holds by construction (a semaphore permit per queued picture) and is
   observable (`maxDepth`), which is the row's acceptance.
 
