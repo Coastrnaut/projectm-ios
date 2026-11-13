@@ -65,6 +65,14 @@ Decisions are numbered `VIS-001-D1…` and cited from the plan, the data model a
   drop-oldest policy bounds memory while nobody reads it; projectM's ring reads are unaffected by
   construction (ANL-001-R9 tests). Hop 512 gives about 86 spectra per second, more than the frame
   rate, so the newest frame is never older than about 12 ms plus the window.
+- **Resolution note (measured 2026-11-13, VIS-001-T15)**: a 2,048-point spectrum has 21.5 Hz bins.
+  Low bands at 64 and 128 bars are narrower than that (100 Hz at 128 bars: 0.25 bins wide), so a
+  100 Hz sine lights a cluster of neighbouring sub-bin bands whose overlap-weighted values differ by
+  less than 1 %; the loudest can be the neighbour of the band containing 100 Hz. The first band-feed
+  test expected exact equality everywhere and failed for 100 Hz at 64/128 and 440 Hz at 128. The
+  acceptance was restated (VIS-001-S4) rather than changing the analysis: exact where the band is at
+  least two bins wide (11 of 16 cases), within one bin otherwise. A larger FFT for the low bands is
+  ANL work, not this row's.
 - **Alternatives**: read projectM's ring (would steal its audio); compute on the main thread in the
   frame callback (main-thread work, violates the brief); always-on tap in AudioCore (changes every
   user of the analyzer).

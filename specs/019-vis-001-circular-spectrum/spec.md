@@ -91,7 +91,7 @@ through the real spectrum and band analysis lights the band that contains its fr
 
 1. **Given** any bar count N and band k, **When** the band vector is the impulse at k, **Then** exactly one bar has non-zero length and its centre angle equals the predicted angle within 0.01°.
 2. **Given** the same impulse rendered offscreen, **When** pixels are sampled along rays from the centre, **Then** every lit pixel lies within the predicted bar's sector widened by 1.5 pixels at its radius (at most 2°; rasterization tolerance), pixels along the predicted centre ray between the inner and outer radius are lit, and the neighbouring bars' centre rays are dark.
-3. **Given** a steady sine from the AUD-016 reference tones, **When** it goes through the spectrum stream, the band reducer and the visual's input, **Then** the largest bar is the one whose band contains the sine's frequency.
+3. **Given** a steady sine from the AUD-016 reference tones, **When** it goes through the spectrum stream, the band reducer and the visual's input, **Then** the largest bar is the one whose band contains the sine's frequency (within one FFT bin where bands are narrower than the spectrum's resolution, VIS-001-S4).
 
 ---
 
@@ -188,7 +188,7 @@ analysis while suspended; force a pipeline failure in the app and check the fall
 - **VIS-001-S1**: For 100 % of impulse cases (every band of every bar count, 240 cases) × 5 output sizes × 6 rotation offsets, exactly one bar is lit and its centre angle matches the independently computed angle within 0.01°.
 - **VIS-001-S2**: For every output size checked, 100 % of geometry lies inside the output and the radius unit is equal in both axes.
 - **VIS-001-S3**: In offscreen renders at one portrait and one landscape size, for impulses at several bands of every bar count, 100 % of lit pixels found along sampled rays lie inside the predicted sector widened by 1.5 pixels at their radius (at most 2°), and the predicted centre ray is lit between the radii; where the environment has no usable GPU the render check is reported as skipped, never as passed or failed.
-- **VIS-001-S4**: A steady reference sine lights its own band as the largest bar for each of the AUD-016 sine frequencies (100, 440, 1,000, 1,500 Hz) at every bar count.
+- **VIS-001-S4**: A steady reference sine lights its own band as the largest bar for each of the AUD-016 sine frequencies (100, 440, 1,000, 1,500 Hz) at every bar count: exactly the band containing the frequency whenever that band is at least two 2,048-point bins wide; for narrower bands (below the spectrum's resolution: 100 Hz at every count, 440 Hz at 128) the largest bar's band lies within one bin (21.5 Hz) of the frequency.
 - **VIS-001-S5**: With Reduce flashing on, 0 frames exceed the luminance rise bound and 0 bars exceed the slew bound over an alternating full/empty input of 600 frames at frame times from 1/120 s to 0.2 s.
 - **VIS-001-S6**: Choosing the visual, relaunching, rotating and switching back work in UI tests with the source started exactly once; existing visualizer, settings and status UI tests pass unchanged.
 - **VIS-001-S7**: 0 changes to what projectM receives: existing AudioCore, CaptureKit and rendering tests pass unchanged, and the tap is off unless the app enables it.
