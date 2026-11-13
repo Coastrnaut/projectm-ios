@@ -37,6 +37,10 @@
 // guard's gain) a second time into a private `rgba16Float` texture and blits it into a shared buffer;
 // the handler gets linear premultiplied half floats when the command buffer completes. Frames
 // without a request are unchanged; the capture's texture and buffer are one-offs, not pooled.
+//
+// REC-003 (contracts/video-recording.md in specs/058): `encodeOutput(into:commandBuffer:)` encodes the
+// output pass of the frame just composited once more into another target (a video recorder's pixel
+// buffer texture), cropped to that target from the top left. Nothing changes for frames shown.
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import FrameCapture
 import Metal
@@ -112,6 +116,8 @@ public final class Compositor {
     public private(set) var appliedStack: LayerStack?
     /// REC-001: the handler waiting for the next frame.
     private var pendingCapture: (@Sendable (CapturedPixels?) -> Void)?
+    /// REC-003: the command buffer of the last frame whose output pass was encoded.
+    private weak var outputCommandBuffer: MTLCommandBuffer?
 
     /// An empty compositor; give it layers with `apply(_:makeLayer:)` (CMP-002).
     /// PERF-004: `texturePool` nil gives the compositor a private pool.
@@ -304,10 +310,35 @@ public final class Compositor {
         encoder.setFragmentBuffer(flashGuard.gainBuffer, offset: 0, index: 0)
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
         encoder.endEncoding()
+        outputCommandBuffer = commandBuffer   // REC-003: `encodeOutput` may follow in this command buffer
         if let handler = pendingCapture {
             pendingCapture = nil
             encodeCapture(composite: composite, size: size, commandBuffer: commandBuffer, handler: handler)
         }
+        return true
+    }
+
+    // MARK: - Recording output (REC-003)
+
+    /// Encodes the output pass of the frame `composite` just encoded into `commandBuffer` (composite ×
+    /// the flash guard's gain, as shown) once more into `target`, cropped to its size from the top
+    /// left. Returns false, encoding nothing, when no frame was composited into this command buffer,
+    /// the target is larger than the output, or its format is not in `supportedOutputFormats`.
+    public func encodeOutput(into target: MTLTexture, commandBuffer: MTLCommandBuffer) -> Bool {
+        guard let composite, let shown = outputCommandBuffer, shown === commandBuffer,
+              target.width <= composite.width, target.height <= composite.height,
+              let pipeline = outputPipeline(for: target.pixelFormat) else { return false }
+        let pass = MTLRenderPassDescriptor()
+        pass.colorAttachments[0].texture = target
+        pass.colorAttachments[0].loadAction = .dontCare
+        pass.colorAttachments[0].storeAction = .store
+        guard let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: pass) else { return false }
+        encoder.label = "REC-003 recording output"
+        encoder.setRenderPipelineState(pipeline)
+        encoder.setFragmentTexture(composite, index: 0)
+        encoder.setFragmentBuffer(flashGuard.gainBuffer, offset: 0, index: 0)
+        encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
+        encoder.endEncoding()
         return true
     }
 
