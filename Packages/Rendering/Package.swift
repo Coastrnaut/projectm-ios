@@ -10,7 +10,7 @@ let package = Package(
     platforms: [.iOS("26.0")],
     products: [
         .library(name: "Rendering", targets: ["Rendering"]),
-        // The Reduce-flashing post-pass, shared with ANGLERendering (T119).
+        // The strobe safety envelope post-pass (FX-019; Reduce flashing, T104, T119), shared with ANGLERendering.
         .library(name: "CFlashLimiter", targets: ["CFlashLimiter"]),
     ],
     dependencies: [
@@ -18,15 +18,17 @@ let package = Package(
         .package(path: "../ProjectMBridge"),
         // PERF-011: renderers are presentation-bound resources.
         .package(path: "../PresentationLifecycle"),
+        // FX-019: the strobe safety envelope's definition (ADR-0011).
+        .package(path: "../FlashSafety"),
     ],
     targets: [
         .target(name: "CFlashLimiter"),
-        .target(name: "Rendering", dependencies: ["AudioCore", "ProjectMBridge", "CFlashLimiter", "PresentationLifecycle"],
+        .target(name: "Rendering", dependencies: ["AudioCore", "ProjectMBridge", "CFlashLimiter", "PresentationLifecycle", "FlashSafety"],
                 // OpenGL ES is deprecated on iOS but is ADR-0003 Option A; the define must reach the
                 // Clang importer, so it is passed with -Xcc (a local path package may use unsafeFlags).
                 swiftSettings: [.unsafeFlags(["-Xcc", "-DGLES_SILENCE_DEPRECATION"])],
                 linkerSettings: [.linkedFramework("OpenGLES"), .linkedFramework("QuartzCore")]),
-        .testTarget(name: "RenderingTests", dependencies: ["Rendering", "AudioCore", "ProjectMBridge", "CFlashLimiter", "PresentationLifecycle"],
+        .testTarget(name: "RenderingTests", dependencies: ["Rendering", "AudioCore", "ProjectMBridge", "CFlashLimiter", "PresentationLifecycle", "FlashSafety"],
                     swiftSettings: [.unsafeFlags(["-Xcc", "-DGLES_SILENCE_DEPRECATION"])]),
     ]
 )

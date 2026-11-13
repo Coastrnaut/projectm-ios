@@ -1,25 +1,26 @@
-// FlashLimiter.c — the "Reduce flashing" post-pass (tasks T104, T119; FR-072). GPU only, no read-back.
-// Shared by ANGLERenderer (entry points from eglGetProcAddress) and the GLES fallback renderer
-// (PMAppleGLESLoadProc's static table): the caller passes the loader, and each limiter keeps its own
-// function table. Nothing here calls dlsym.
+// FlashLimiter.c — the strobe safety envelope post-pass for projectM frames (FX-019, ADR-0011;
+// research FX-019-D4, D5; Reduce flashing FR-072, tasks T104, T119). GPU only; no read-back on the
+// frame path. Shared by ANGLERenderer (entry points from eglGetProcAddress) and the GLES fallback
+// renderer (PMAppleGLESLoadProc's static table): the caller passes the loader, and each limiter
+// keeps its own function table. Nothing here calls dlsym.
 //
-// While Reduce flashing is on, the engine renders into this limiter's offscreen texture instead of
-// the window surface. Each frame:
-//   1. glBlitFramebuffer (linear) copies the frame into a 64 x 64 texture, and glGenerateMipmap on
-//      that small texture gives its mean color: about 4000 samples of the frame, enough for a mean,
-//      without building a full-resolution mip chain (that cost up to 2.5 ms per frame on D1).
-//   2. Adapt pass (1 x 1): the adapted mean luminance moves toward the frame's mean luminance by at
-//      most `maxStep` (the caller passes rate x frame time). Two 1 x 1 textures ping-pong; the value
-//      is packed into two 8-bit channels (about 1/65000 precision).
-//   3. Output pass: the frame is drawn to the target framebuffer, dimmed (gain <= 1) when it is
-//      brighter than the adapted value and lifted by a uniform gray when it is darker, so its mean
-//      luminance follows the adapted value. Rapid full-screen brightness changes become ramps; local
-//      detail and motion stay.
-// Luminance is Rec. 709 weights on squared (approximately linear) color; the mean comes from the
-// mip chain of the encoded color, an approximation that is good enough for a rate limit.
+// The engine renders into this limiter's offscreen texture on every frame (with Reduce flashing off
+// the always-on cap applies). Each frame:
+//   1. Measure (4 x 4 target): each fragment reads 16 x 16 texels of its tile of the scene (4,096
+//      in all, T104's sample budget), decodes sRGB exactly and writes the tile's mean WCAG relative
+//      luminance and redness max(R - G - B, 0), each packed in two 8-bit channels (16 bits).
+//   2. State (10 x 18 target, ping-pong): every fragment recomputes the frame's gain from the
+//      previous state and the tile means — the rule of FlashSafety's FlashEnvelope (keep the two in
+//      step; GPU tests compare them) — then writes one slot of the updated state of one area
+//      (rows 0-15 tiles, row 16 the whole frame; columns 0-4 luminance, 5-9 redness). Row 17 holds
+//      the gain.
+//   3. Output: the frame x gain in linear light (exact sRGB decode/encode), never lifted; with
+//      gain 1 the scene is copied unchanged.
+// Tile rows are counted from the bottom of the picture (GL's origin); only consistency matters.
 
-#define MEAN_SIZE 64
-#define MEAN_LOD 6   // log2(MEAN_SIZE): the 1 x 1 level
+#define TILE_SIDE 4
+#define STATE_WIDTH 10
+#define STATE_HEIGHT 18
 #include "CFlashLimiter.h"
 #include <stdlib.h>
 
@@ -33,15 +34,11 @@
 #define GL_TEXTURE_WRAP_T 0x2803
 #define GL_LINEAR 0x2601
 #define GL_NEAREST 0x2600
-#define GL_LINEAR_MIPMAP_LINEAR 0x2703
 #define GL_CLAMP_TO_EDGE 0x812F
 #define GL_RGBA 0x1908
 #define GL_RGBA8 0x8058
 #define GL_UNSIGNED_BYTE 0x1401
 #define GL_FRAMEBUFFER 0x8D40
-#define GL_READ_FRAMEBUFFER 0x8CA8
-#define GL_DRAW_FRAMEBUFFER 0x8CA9
-#define GL_COLOR_BUFFER_BIT 0x00004000
 #define GL_COLOR_ATTACHMENT0 0x8CE0
 #define GL_FRAMEBUFFER_COMPLETE 0x8CD5
 #define GL_VERTEX_SHADER 0x8B31
@@ -68,7 +65,6 @@ typedef struct GLTable {
     void (*bindTexture)(GLenum, GLuint);
     void (*texImage2D)(GLenum, GLint, GLint, GLsizei, GLsizei, GLint, GLenum, GLenum, const void *);
     void (*texParameteri)(GLenum, GLenum, GLint);
-    void (*generateMipmap)(GLenum);
     void (*activeTexture)(GLenum);
     void (*genFramebuffers)(GLsizei, GLuint *);
     void (*deleteFramebuffers)(GLsizei, const GLuint *);
@@ -97,7 +93,6 @@ typedef struct GLTable {
     void (*colorMask)(GLboolean, GLboolean, GLboolean, GLboolean);
     void (*drawArrays)(GLenum, GLint, GLsizei);
     void (*readPixels)(GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, void *);
-    void (*blitFramebuffer)(GLint, GLint, GLint, GLint, GLint, GLint, GLint, GLint, unsigned int, GLenum);
 } GLTable;
 
 #define LOAD(field, name) if ((*(void **)&gl->field = load(name, user)) == 0) return 0;
@@ -105,10 +100,10 @@ typedef struct GLTable {
 static int loadGL(GLTable *gl, PMFlashLoadProc load, void *user) {
     LOAD(genTextures, "glGenTextures") LOAD(deleteTextures, "glDeleteTextures")
     LOAD(bindTexture, "glBindTexture") LOAD(texImage2D, "glTexImage2D")
-    LOAD(texParameteri, "glTexParameteri") LOAD(generateMipmap, "glGenerateMipmap")
-    LOAD(activeTexture, "glActiveTexture") LOAD(genFramebuffers, "glGenFramebuffers")
-    LOAD(deleteFramebuffers, "glDeleteFramebuffers") LOAD(bindFramebuffer, "glBindFramebuffer")
-    LOAD(framebufferTexture2D, "glFramebufferTexture2D") LOAD(checkFramebufferStatus, "glCheckFramebufferStatus")
+    LOAD(texParameteri, "glTexParameteri") LOAD(activeTexture, "glActiveTexture")
+    LOAD(genFramebuffers, "glGenFramebuffers") LOAD(deleteFramebuffers, "glDeleteFramebuffers")
+    LOAD(bindFramebuffer, "glBindFramebuffer") LOAD(framebufferTexture2D, "glFramebufferTexture2D")
+    LOAD(checkFramebufferStatus, "glCheckFramebufferStatus")
     LOAD(createShader, "glCreateShader") LOAD(shaderSource, "glShaderSource")
     LOAD(compileShader, "glCompileShader") LOAD(getShaderiv, "glGetShaderiv")
     LOAD(deleteShader, "glDeleteShader") LOAD(createProgram, "glCreateProgram")
@@ -119,7 +114,7 @@ static int loadGL(GLTable *gl, PMFlashLoadProc load, void *user) {
     LOAD(genVertexArrays, "glGenVertexArrays") LOAD(deleteVertexArrays, "glDeleteVertexArrays")
     LOAD(bindVertexArray, "glBindVertexArray") LOAD(viewport, "glViewport")
     LOAD(disable, "glDisable") LOAD(colorMask, "glColorMask") LOAD(drawArrays, "glDrawArrays")
-    LOAD(readPixels, "glReadPixels") LOAD(blitFramebuffer, "glBlitFramebuffer")
+    LOAD(readPixels, "glReadPixels")
     return 1;
 }
 
@@ -136,53 +131,162 @@ static const char *vertexSource =
 #define COMMON \
     "#version 300 es\n" \
     "precision highp float;\n" \
-    "uniform sampler2D meanSource;\n" \
-    "float luminance(vec3 c) { return dot(c * c, vec3(0.2126, 0.7152, 0.0722)); }\n" \
-    "float decode(vec4 c) { return c.r + c.g / 255.0; }\n" \
-    "float sceneMean() { return luminance(textureLod(meanSource, vec2(0.5), 6.0).rgb); }\n"
+    "precision highp int;\n" \
+    "vec2 pack(float v) { v = clamp(v, 0.0, 1.0); float hi = floor(v * 255.0) / 255.0; return vec2(hi, (v - hi) * 255.0); }\n" \
+    "float unpack(vec2 p) { return p.x + p.y / 255.0; }\n" \
+    "vec3 decodeSRGB(vec3 c) { return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(vec3(0.04045), c)); }\n" \
+    "vec3 encodeSRGB(vec3 l) { return mix(l * 12.92, 1.055 * pow(max(l, vec3(1e-10)), vec3(1.0 / 2.4)) - 0.055, step(vec3(0.0031308), l)); }\n"
 
-static const char *adaptSource =
+static const char *measureSource =
     COMMON
-    "uniform sampler2D previous;\n"
-    "uniform float maxStep;\n"
-    "uniform float resetAdaptation;\n"
+    "uniform sampler2D scene;\n"
     "out vec4 color;\n"
     "void main() {\n"
-    "    float current = sceneMean();\n"
-    "    float before = decode(texture(previous, vec2(0.5)));\n"
-    "    float adapted = resetAdaptation > 0.5 ? current : before + clamp(current - before, -maxStep, maxStep);\n"
-    "    adapted = clamp(adapted, 0.0, 1.0);\n"
-    "    float high = floor(adapted * 255.0) / 255.0;\n"
-    "    color = vec4(high, (adapted - high) * 255.0, 0.0, 1.0);\n"
+    "    ivec2 tile = ivec2(gl_FragCoord.xy);\n"
+    "    ivec2 size = textureSize(scene, 0);\n"
+    "    float y = 0.0;\n"
+    "    float r = 0.0;\n"
+    "    for (int j = 0; j < 16; j++) {\n"
+    "        for (int i = 0; i < 16; i++) {\n"
+    "            vec2 f = (vec2(tile) + (vec2(float(i), float(j)) + 0.5) / 16.0) / 4.0;\n"
+    "            ivec2 p = min(ivec2(f * vec2(size)), size - 1);\n"
+    "            vec3 c = decodeSRGB(texelFetch(scene, p, 0).rgb);\n"
+    "            y += dot(c, vec3(0.2126, 0.7152, 0.0722));\n"
+    "            r += max(c.r - c.g - c.b, 0.0);\n"
+    "        }\n"
+    "    }\n"
+    "    color = vec4(pack(y / 256.0), pack(r / 256.0));\n"
+    "}\n";
+
+// The rule of FlashSafety's FlashEnvelope (FX-019-R1, R5, R6, R8): keep in step with FlashEnvelope.swift.
+static const char *stateSource =
+    COMMON
+    "uniform sampler2D tiles;\n"
+    "uniform sampler2D previous;\n"
+    "uniform float dt;\n"
+    "uniform float window;\n"
+    "uniform float lumThreshold;\n"
+    "uniform float redThreshold;\n"
+    "uniform float margin;\n"
+    "uniform float rise;\n"
+    "uniform float budget;\n"
+    "uniform float resetState;\n"
+    "out vec4 color;\n"
+    "const float windowTolerance = 0.002;\n"   // FlashEnvelope.windowTolerance
+    "float levels[34];\n"
+    "struct Track { float last; float low; float high; float dir; bool init; float ages[6]; };\n"
+    "void loadLevels() {\n"
+    "    float sy = 0.0; float sr = 0.0;\n"
+    "    for (int k = 0; k < 16; k++) {\n"
+    "        vec4 t = texelFetch(tiles, ivec2(k % 4, k / 4), 0);\n"
+    "        levels[k * 2] = unpack(t.rg); levels[k * 2 + 1] = unpack(t.ba);\n"
+    "        sy += levels[k * 2]; sr += levels[k * 2 + 1];\n"
+    "    }\n"
+    "    levels[32] = sy / 16.0; levels[33] = sr / 16.0;\n"
+    "}\n"
+    "float threshold(int s) { return s == 0 ? lumThreshold : redThreshold; }\n"
+    "Track readTrack(int zone, int s) {\n"
+    "    int c = s * 5;\n"
+    "    vec4 t0 = texelFetch(previous, ivec2(c, zone), 0);\n"
+    "    vec4 t1 = texelFetch(previous, ivec2(c + 1, zone), 0);\n"
+    "    vec4 t2 = texelFetch(previous, ivec2(c + 2, zone), 0);\n"
+    "    vec4 t3 = texelFetch(previous, ivec2(c + 3, zone), 0);\n"
+    "    vec4 t4 = texelFetch(previous, ivec2(c + 4, zone), 0);\n"
+    "    Track t;\n"
+    "    t.last = unpack(t0.rg); t.low = unpack(t0.ba); t.high = unpack(t1.rg);\n"
+    "    t.dir = floor(t1.b * 2.0 + 0.5); t.init = t1.a > 0.5 && resetState < 0.5;\n"
+    "    t.ages[0] = unpack(t2.rg) * 2.0; t.ages[1] = unpack(t2.ba) * 2.0;\n"
+    "    t.ages[2] = unpack(t3.rg) * 2.0; t.ages[3] = unpack(t3.ba) * 2.0;\n"
+    "    t.ages[4] = unpack(t4.rg) * 2.0; t.ages[5] = unpack(t4.ba) * 2.0;\n"
+    "    if (!t.init) { for (int k = 0; k < 6; k++) t.ages[k] = 2.0; }\n"
+    "    return t;\n"
+    "}\n"
+    "float ceilingOf(Track t, int s) {\n"
+    "    if (!t.init) return 1e9;\n"
+    "    float c = 1e9;\n"
+    "    if (rise >= 0.0) c = t.last + rise * dt;\n"
+    "    if (t.dir != 1.0) {\n"
+    "        int n = 0;\n"
+    "        for (int k = 0; k < 6; k++) { if (t.ages[k] + dt < window + windowTolerance) n++; }\n"
+    "        if (float(n) > budget - 2.0) c = min(c, t.low + threshold(s) - margin);\n"
+    "    }\n"
+    "    return c;\n"
+    "}\n"
+    "float frameGain() {\n"
+    "    float g = 1.0;\n"
+    "    for (int z = 0; z < 17; z++) {\n"
+    "        for (int s = 0; s < 2; s++) {\n"
+    "            float v = levels[z * 2 + s];\n"
+    "            float c = ceilingOf(readTrack(z, s), s);\n"
+    "            if (v > c) g = min(g, max(c, 0.0) / v);\n"
+    "        }\n"
+    "    }\n"
+    "    return clamp(g, 0.0, 1.0);\n"
+    "}\n"
+    "Track updateTrack(Track t, float v, int s) {\n"
+    "    for (int k = 0; k < 6; k++) t.ages[k] = min(t.ages[k] + dt, 2.0);\n"
+    "    if (!t.init) { t.init = true; t.last = v; t.low = v; t.high = v; t.dir = 0.0; return t; }\n"
+    "    float T = threshold(s);\n"
+    "    bool transition = false;\n"
+    "    if (t.dir == 0.0) {\n"
+    "        if (v >= t.low + T) { t.dir = 1.0; t.high = v; transition = true; }\n"
+    "        else if (v <= t.high - T) { t.dir = 2.0; t.low = v; transition = true; }\n"
+    "        else { t.low = min(t.low, v); t.high = max(t.high, v); }\n"
+    "    } else if (t.dir == 1.0) {\n"
+    "        if (v > t.high) t.high = v;\n"
+    "        else if (v <= t.high - T) { t.dir = 2.0; t.low = v; transition = true; }\n"
+    "    } else {\n"
+    "        if (v < t.low) t.low = v;\n"
+    "        else if (v >= t.low + T) { t.dir = 1.0; t.high = v; transition = true; }\n"
+    "    }\n"
+    "    t.last = v;\n"
+    "    if (transition) {\n"
+    "        int oldest = 0;\n"
+    "        for (int k = 1; k < 6; k++) { if (t.ages[k] > t.ages[oldest]) oldest = k; }\n"
+    "        t.ages[oldest] = 0.0;\n"
+    "    }\n"
+    "    return t;\n"
+    "}\n"
+    "void main() {\n"
+    "    loadLevels();\n"
+    "    ivec2 p = ivec2(gl_FragCoord.xy);\n"
+    "    float g = frameGain();\n"
+    "    if (p.y == 17) { color = vec4(pack(g), 0.0, 1.0); return; }\n"
+    "    int s = p.x / 5;\n"
+    "    int slot = p.x - s * 5;\n"
+    "    Track t = updateTrack(readTrack(p.y, s), g * levels[p.y * 2 + s], s);\n"
+    "    if (slot == 0) color = vec4(pack(t.last), pack(t.low));\n"
+    "    else if (slot == 1) color = vec4(pack(t.high), t.dir / 2.0, t.init ? 1.0 : 0.0);\n"
+    "    else if (slot == 2) color = vec4(pack(t.ages[0] / 2.0), pack(t.ages[1] / 2.0));\n"
+    "    else if (slot == 3) color = vec4(pack(t.ages[2] / 2.0), pack(t.ages[3] / 2.0));\n"
+    "    else color = vec4(pack(t.ages[4] / 2.0), pack(t.ages[5] / 2.0));\n"
     "}\n";
 
 static const char *outputSource =
     COMMON
     "uniform sampler2D scene;\n"
-    "uniform sampler2D adaptedTexture;\n"
+    "uniform sampler2D state;\n"
     "in vec2 uv;\n"
     "out vec4 color;\n"
     "void main() {\n"
-    "    float current = sceneMean();\n"
-    "    float adapted = decode(texture(adaptedTexture, vec2(0.5)));\n"
-    "    vec3 linear = texture(scene, uv).rgb;\n"
-    "    linear *= linear;\n"
-    "    float gain = min(adapted / max(current, 1e-4), 1.0);\n"
-    "    float lift = max(adapted - current * gain, 0.0);\n"
-    "    color = vec4(sqrt(clamp(linear * gain + lift, 0.0, 1.0)), 1.0);\n"
+    "    float g = unpack(texelFetch(state, ivec2(0, 17), 0).rg);\n"
+    "    vec3 c = texture(scene, uv).rgb;\n"
+    "    if (g < 1.0) c = encodeSRGB(decodeSRGB(c) * g);\n"
+    "    color = vec4(c, 1.0);\n"
     "}\n";
 
 struct PMFlashLimiter {
     GLTable gl;             // this limiter's entry points (from the caller's loader)
-    GLuint adaptProgram, outputProgram, vertexArray;
+    GLuint measureProgram, stateProgram, outputProgram, vertexArray;
     GLuint sceneTexture, sceneFramebuffer;
-    GLuint meanTexture, meanFramebuffer;
-    GLuint adaptTextures[2], adaptFramebuffers[2];
-    int current;            // index of the latest adapted value
+    GLuint tileTexture, tileFramebuffer;
+    GLuint stateTextures[2], stateFramebuffers[2];
+    int current;            // index of the latest state
     int width, height;
     int needsReset;
-    GLint adaptMean, adaptPrevious, adaptMaxStep, adaptReset;
-    GLint outputScene, outputMean, outputAdapted;
+    GLint measureScene;
+    GLint stateTiles, statePrevious, stateDt, stateWindow, stateLum, stateRed, stateMargin, stateRise, stateBudget, stateReset;
+    GLint outputScene, outputState;
 };
 
 static GLuint compile(const GLTable *gl, GLenum type, const char *source) {
@@ -198,7 +302,11 @@ static GLuint compile(const GLTable *gl, GLenum type, const char *source) {
 static GLuint link(const GLTable *gl, const char *fragmentSource) {
     GLuint vertex = compile(gl, GL_VERTEX_SHADER, vertexSource);
     GLuint fragment = compile(gl, GL_FRAGMENT_SHADER, fragmentSource);
-    if (!vertex || !fragment) return 0;
+    if (!vertex || !fragment) {
+        if (vertex) gl->deleteShader(vertex);
+        if (fragment) gl->deleteShader(fragment);
+        return 0;
+    }
     GLuint program = gl->createProgram();
     gl->attachShader(program, vertex);
     gl->attachShader(program, fragment);
@@ -211,11 +319,31 @@ static GLuint link(const GLTable *gl, const char *fragmentSource) {
     return program;
 }
 
-static void textureParameters(const GLTable *gl, GLint minFilter) {
-    gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
-    gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, minFilter == GL_NEAREST ? GL_NEAREST : GL_LINEAR);
+static void textureParameters(const GLTable *gl, GLint filter) {
+    gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
+    gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
     gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     gl->texParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+}
+
+/// A small RGBA8 render target; 0 on failure.
+static GLuint makeTarget(const GLTable *gl, GLuint *texture, int width, int height) {
+    GLuint framebuffer = 0;
+    gl->genTextures(1, texture);
+    gl->bindTexture(GL_TEXTURE_2D, *texture);
+    gl->texImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+    textureParameters(gl, GL_NEAREST);
+    gl->genFramebuffers(1, &framebuffer);
+    gl->bindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    gl->framebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *texture, 0);
+    GLenum status = gl->checkFramebufferStatus(GL_FRAMEBUFFER);
+    gl->bindFramebuffer(GL_FRAMEBUFFER, 0);
+    gl->bindTexture(GL_TEXTURE_2D, 0);
+    if (status != GL_FRAMEBUFFER_COMPLETE) {
+        gl->deleteFramebuffers(1, &framebuffer);
+        return 0;
+    }
+    return framebuffer;
 }
 
 PMFlashLimiter *PMFlashLimiterCreate(PMFlashLoadProc load, void *user) {
@@ -226,40 +354,35 @@ PMFlashLimiter *PMFlashLimiterCreate(PMFlashLoadProc load, void *user) {
         return 0;
     }
     const GLTable *gl = &limiter->gl;
-    limiter->adaptProgram = link(gl, adaptSource);
+    limiter->measureProgram = link(gl, measureSource);
+    limiter->stateProgram = link(gl, stateSource);
     limiter->outputProgram = link(gl, outputSource);
-    if (!limiter->adaptProgram || !limiter->outputProgram) {
+    if (!limiter->measureProgram || !limiter->stateProgram || !limiter->outputProgram) {
         PMFlashLimiterDestroy(limiter);
         return 0;
     }
-    limiter->adaptMean = gl->getUniformLocation(limiter->adaptProgram, "meanSource");
-    limiter->adaptPrevious = gl->getUniformLocation(limiter->adaptProgram, "previous");
-    limiter->adaptMaxStep = gl->getUniformLocation(limiter->adaptProgram, "maxStep");
-    limiter->adaptReset = gl->getUniformLocation(limiter->adaptProgram, "resetAdaptation");
+    limiter->measureScene = gl->getUniformLocation(limiter->measureProgram, "scene");
+    GLuint s = limiter->stateProgram;
+    limiter->stateTiles = gl->getUniformLocation(s, "tiles");
+    limiter->statePrevious = gl->getUniformLocation(s, "previous");
+    limiter->stateDt = gl->getUniformLocation(s, "dt");
+    limiter->stateWindow = gl->getUniformLocation(s, "window");
+    limiter->stateLum = gl->getUniformLocation(s, "lumThreshold");
+    limiter->stateRed = gl->getUniformLocation(s, "redThreshold");
+    limiter->stateMargin = gl->getUniformLocation(s, "margin");
+    limiter->stateRise = gl->getUniformLocation(s, "rise");
+    limiter->stateBudget = gl->getUniformLocation(s, "budget");
+    limiter->stateReset = gl->getUniformLocation(s, "resetState");
     limiter->outputScene = gl->getUniformLocation(limiter->outputProgram, "scene");
-    limiter->outputMean = gl->getUniformLocation(limiter->outputProgram, "meanSource");
-    limiter->outputAdapted = gl->getUniformLocation(limiter->outputProgram, "adaptedTexture");
+    limiter->outputState = gl->getUniformLocation(limiter->outputProgram, "state");
     gl->genVertexArrays(1, &limiter->vertexArray);
-    gl->genTextures(2, limiter->adaptTextures);
-    gl->genFramebuffers(2, limiter->adaptFramebuffers);
-    for (int i = 0; i < 2; i++) {
-        gl->bindTexture(GL_TEXTURE_2D, limiter->adaptTextures[i]);
-        gl->texImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-        textureParameters(gl, GL_NEAREST);
-        gl->bindFramebuffer(GL_FRAMEBUFFER, limiter->adaptFramebuffers[i]);
-        gl->framebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, limiter->adaptTextures[i], 0);
+    limiter->tileFramebuffer = makeTarget(gl, &limiter->tileTexture, TILE_SIDE, TILE_SIDE);
+    limiter->stateFramebuffers[0] = makeTarget(gl, &limiter->stateTextures[0], STATE_WIDTH, STATE_HEIGHT);
+    limiter->stateFramebuffers[1] = makeTarget(gl, &limiter->stateTextures[1], STATE_WIDTH, STATE_HEIGHT);
+    if (!limiter->tileFramebuffer || !limiter->stateFramebuffers[0] || !limiter->stateFramebuffers[1]) {
+        PMFlashLimiterDestroy(limiter);
+        return 0;
     }
-    gl->genTextures(1, &limiter->meanTexture);
-    gl->genFramebuffers(1, &limiter->meanFramebuffer);
-    gl->bindTexture(GL_TEXTURE_2D, limiter->meanTexture);
-    for (int level = 0, size = MEAN_SIZE; size >= 1; level++, size >>= 1) {
-        gl->texImage2D(GL_TEXTURE_2D, level, GL_RGBA8, size, size, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-    }
-    textureParameters(gl, GL_LINEAR_MIPMAP_LINEAR);
-    gl->bindFramebuffer(GL_FRAMEBUFFER, limiter->meanFramebuffer);
-    gl->framebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, limiter->meanTexture, 0);
-    gl->bindTexture(GL_TEXTURE_2D, 0);
-    gl->bindFramebuffer(GL_FRAMEBUFFER, 0);
     limiter->needsReset = 1;
     return limiter;
 }
@@ -269,12 +392,15 @@ void PMFlashLimiterDestroy(PMFlashLimiter *limiter) {
     const GLTable *gl = &limiter->gl;
     if (limiter->sceneFramebuffer) gl->deleteFramebuffers(1, &limiter->sceneFramebuffer);
     if (limiter->sceneTexture) gl->deleteTextures(1, &limiter->sceneTexture);
-    if (limiter->meanFramebuffer) gl->deleteFramebuffers(1, &limiter->meanFramebuffer);
-    if (limiter->meanTexture) gl->deleteTextures(1, &limiter->meanTexture);
-    if (limiter->adaptFramebuffers[0]) gl->deleteFramebuffers(2, limiter->adaptFramebuffers);
-    if (limiter->adaptTextures[0]) gl->deleteTextures(2, limiter->adaptTextures);
+    if (limiter->tileFramebuffer) gl->deleteFramebuffers(1, &limiter->tileFramebuffer);
+    if (limiter->tileTexture) gl->deleteTextures(1, &limiter->tileTexture);
+    for (int i = 0; i < 2; i++) {
+        if (limiter->stateFramebuffers[i]) gl->deleteFramebuffers(1, &limiter->stateFramebuffers[i]);
+        if (limiter->stateTextures[i]) gl->deleteTextures(1, &limiter->stateTextures[i]);
+    }
     if (limiter->vertexArray) gl->deleteVertexArrays(1, &limiter->vertexArray);
-    if (limiter->adaptProgram) gl->deleteProgram(limiter->adaptProgram);
+    if (limiter->measureProgram) gl->deleteProgram(limiter->measureProgram);
+    if (limiter->stateProgram) gl->deleteProgram(limiter->stateProgram);
     if (limiter->outputProgram) gl->deleteProgram(limiter->outputProgram);
     free(limiter);
 }
@@ -300,7 +426,7 @@ unsigned int PMFlashLimiterBegin(PMFlashLimiter *limiter, int width, int height)
         if (status != GL_FRAMEBUFFER_COMPLETE) return 0;
         limiter->width = width;
         limiter->height = height;
-        limiter->needsReset = 1;
+        // The envelope's history is kept across a resize (FX-019-R11).
     }
     return limiter->sceneFramebuffer;
 }
@@ -314,44 +440,53 @@ static void prepareState(const GLTable *gl) {
     gl->colorMask(1, 1, 1, 1);
 }
 
-void PMFlashLimiterFinish(PMFlashLimiter *limiter, unsigned int targetFramebuffer, float maxStep) {
+void PMFlashLimiterFinish(PMFlashLimiter *limiter, unsigned int targetFramebuffer, const PMFlashEnvelopeParameters *p) {
     const GLTable *gl = &limiter->gl;
     prepareState(gl);
     gl->bindVertexArray(limiter->vertexArray);
-    // Mean: scene → 64 x 64 (linear blit) → mip chain of the small texture.
-    gl->bindFramebuffer(GL_READ_FRAMEBUFFER, limiter->sceneFramebuffer);
-    gl->bindFramebuffer(GL_DRAW_FRAMEBUFFER, limiter->meanFramebuffer);
-    gl->blitFramebuffer(0, 0, limiter->width, limiter->height, 0, 0, MEAN_SIZE, MEAN_SIZE,
-                       GL_COLOR_BUFFER_BIT, GL_LINEAR);
-    gl->activeTexture(GL_TEXTURE2);
-    gl->bindTexture(GL_TEXTURE_2D, limiter->meanTexture);
-    gl->generateMipmap(GL_TEXTURE_2D);
+
+    // 1. Measure: tile means of the scene.
+    gl->bindFramebuffer(GL_FRAMEBUFFER, limiter->tileFramebuffer);
+    gl->viewport(0, 0, TILE_SIDE, TILE_SIDE);
+    gl->useProgram(limiter->measureProgram);
     gl->activeTexture(GL_TEXTURE0);
     gl->bindTexture(GL_TEXTURE_2D, limiter->sceneTexture);
+    gl->uniform1i(limiter->measureScene, 0);
+    gl->drawArrays(GL_TRIANGLES, 0, 3);
 
-    // Adapt: previous → next.
+    // 2. State: previous → next, with the frame's gain in row 17.
     int next = 1 - limiter->current;
-    gl->bindFramebuffer(GL_FRAMEBUFFER, limiter->adaptFramebuffers[next]);
-    gl->viewport(0, 0, 1, 1);
-    gl->useProgram(limiter->adaptProgram);
-    gl->uniform1i(limiter->adaptMean, 2);
+    gl->bindFramebuffer(GL_FRAMEBUFFER, limiter->stateFramebuffers[next]);
+    gl->viewport(0, 0, STATE_WIDTH, STATE_HEIGHT);
+    gl->useProgram(limiter->stateProgram);
     gl->activeTexture(GL_TEXTURE1);
-    gl->bindTexture(GL_TEXTURE_2D, limiter->adaptTextures[limiter->current]);
-    gl->uniform1i(limiter->adaptPrevious, 1);
-    gl->uniform1f(limiter->adaptMaxStep, maxStep);
-    gl->uniform1f(limiter->adaptReset, limiter->needsReset ? 1.0f : 0.0f);
+    gl->bindTexture(GL_TEXTURE_2D, limiter->tileTexture);
+    gl->uniform1i(limiter->stateTiles, 1);
+    gl->activeTexture(GL_TEXTURE2);
+    gl->bindTexture(GL_TEXTURE_2D, limiter->stateTextures[limiter->current]);
+    gl->uniform1i(limiter->statePrevious, 2);
+    gl->uniform1f(limiter->stateDt, p->frameTime > 0 ? p->frameTime : 0);
+    gl->uniform1f(limiter->stateWindow, p->window);
+    gl->uniform1f(limiter->stateLum, p->luminanceThreshold);
+    gl->uniform1f(limiter->stateRed, p->rednessThreshold);
+    gl->uniform1f(limiter->stateMargin, p->gateMargin);
+    gl->uniform1f(limiter->stateRise, p->riseRatePerSecond);
+    gl->uniform1f(limiter->stateBudget, (float)p->transitionBudget);
+    gl->uniform1f(limiter->stateReset, limiter->needsReset ? 1.0f : 0.0f);
     gl->drawArrays(GL_TRIANGLES, 0, 3);
     limiter->current = next;
     limiter->needsReset = 0;
 
-    // Output: scene, adjusted toward the adapted value, into the target.
+    // 3. Output: the scene × gain into the target.
     gl->bindFramebuffer(GL_FRAMEBUFFER, targetFramebuffer);
     gl->viewport(0, 0, limiter->width, limiter->height);
     gl->useProgram(limiter->outputProgram);
+    gl->activeTexture(GL_TEXTURE0);
+    gl->bindTexture(GL_TEXTURE_2D, limiter->sceneTexture);
     gl->uniform1i(limiter->outputScene, 0);
-    gl->uniform1i(limiter->outputMean, 2);
-    gl->bindTexture(GL_TEXTURE_2D, limiter->adaptTextures[next]);   // unit 1
-    gl->uniform1i(limiter->outputAdapted, 1);
+    gl->activeTexture(GL_TEXTURE1);
+    gl->bindTexture(GL_TEXTURE_2D, limiter->stateTextures[next]);
+    gl->uniform1i(limiter->outputState, 1);
     gl->drawArrays(GL_TRIANGLES, 0, 3);
 
     // Leave neutral bindings for the engine's next frame.
@@ -364,11 +499,11 @@ void PMFlashLimiterFinish(PMFlashLimiter *limiter, unsigned int targetFramebuffe
     gl->bindVertexArray(0);
 }
 
-float PMFlashLimiterAdaptedLuminance(PMFlashLimiter *limiter) {
+float PMFlashLimiterLastGain(PMFlashLimiter *limiter) {
     unsigned char pixel[4] = {0, 0, 0, 0};
     const GLTable *gl = &limiter->gl;
-    gl->bindFramebuffer(GL_FRAMEBUFFER, limiter->adaptFramebuffers[limiter->current]);
-    gl->readPixels(0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
+    gl->bindFramebuffer(GL_FRAMEBUFFER, limiter->stateFramebuffers[limiter->current]);
+    gl->readPixels(0, STATE_HEIGHT - 1, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
     gl->bindFramebuffer(GL_FRAMEBUFFER, 0);
     return pixel[0] / 255.0f + pixel[1] / 65025.0f;
 }

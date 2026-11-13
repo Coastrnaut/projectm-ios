@@ -22,9 +22,10 @@ public final class FlashEnvelope {
     public static let bisectionSteps = 24
     static let trackCount = FlashZones.count * 2
     static let ageSlots = FlashEnvelopeConfiguration.maxTransitionBudget
-    /// A transition this close to the window's length still counts (conservative against float
-    /// accumulation of frame times; `FlashAnalysis` uses a smaller tolerance).
-    static let windowTolerance = 1e-6
+    /// A transition up to 2 ms older than the window still counts: conservative against the
+    /// accumulation of frame times, and equal to the GPU port's tolerance, whose ages are stored
+    /// with 16-bit precision (`FlashAnalysis` uses 1e-9, so it never counts more than this).
+    public static let windowTolerance = 0.002
 
     enum Direction: UInt8 { case none, rising, falling }
 
