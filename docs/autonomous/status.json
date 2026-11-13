@@ -7,9 +7,10 @@
  "by_priority": {
   "P0": {
    "audited": 39,
-   "implementing": 2,
+   "implementing": 1,
    "integrated": 45,
-   "skipped_existing": 1
+   "skipped_existing": 1,
+   "unit_passed": 1
   },
   "P1": {
    "audited": 138,
@@ -25,9 +26,10 @@
  },
  "by_state": {
   "audited": 263,
-  "implementing": 2,
+  "implementing": 1,
   "integrated": 60,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -3050,12 +3052,12 @@
   "SHD-011": {
    "attempts": 0,
    "branch": "feature/shd-011",
-   "branch_sha": null,
+   "branch_sha": "e19f0be39822f86177a6e93903010761ed93be3e",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "SHD-012": {
    "attempts": 0,
@@ -3895,5 +3897,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T18:37:25Z"
+ "updated": "2026-11-13T18:38:53Z"
 }
