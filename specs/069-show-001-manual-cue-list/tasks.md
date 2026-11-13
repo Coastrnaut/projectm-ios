@@ -28,8 +28,8 @@ package suite < 1 min, UI test < 30 s. A task is ticked only when verified, with
 - [ ] SHOW-001-T09 [US1] `ShowCoordinator` (load at launch, step → read scene → `liveState` → apply settings, text, `visualSettingsChanged()`/`glowSettingsChanged()`; never audio or camera; notice + VoiceOver on failure; save after every change) in `Apps/projectM-iOS/Coordinators/ShowCoordinator.swift`, owned by `AppCoordinator`
 - [ ] SHOW-001-T10 [US1] Show row in the controls (Previous cue, "Cue 2 of 5 · Intro", Next cue; VoiceOver value "Cue 2 of 5, Intro"; unavailable at the ends; notice) in `Apps/projectM-iOS/Views/ShowControls.swift`, used by `ControlsOverlay.swift` and `VisualizerView.swift`
 - [ ] SHOW-001-T11 [US1] DEBUG seed `-uitestShowSeed` (five scenes with distinct visuals, five cues, standing on cue 1 applied) in `Apps/projectM-iOS/Debug/UITestShowFixture.swift` and DEBUG probe `showActiveScene` in `VisualizerView.swift`
-- [ ] SHOW-001-T12 [US1] App tests: apply switches visual and options and keeps `sourceStarts`; missing scene → notice, output unchanged; restart keeps the position in `Apps/projectM-iOS/Tests/ShowCoordinatorTests.swift`
-- [ ] SHOW-001-T13 [US1] UI test: seed → Next ×4 shows cues 2…5 (label and `showActiveScene`), Previous → cue 4, `sourceStarts` = 1, < 30 s in `Apps/projectM-iOS/UITests/ShowCueUITests.swift`
+- [ ] SHOW-001-T12 [US1] App tests: apply switches visual and options and keeps `sourceStarts`; missing scene → notice, output unchanged; unknown/camera layers left out with a notice; save failure keeps the session state; restart keeps the position in `Apps/projectM-iOS/Tests/ShowCoordinatorTests.swift`
+- [ ] SHOW-001-T13 [US1] UI test: seed → Next ×4 shows cues 2…5 (label and `showActiveScene`), Previous → cue 4, `sourceStarts` = 1, then the Right Arrow key moves to cue 5 (hardware key event), < 30 s in `Apps/projectM-iOS/UITests/ShowCueUITests.swift`
 
 ## Phase 4: User Story 2 — Build the show (P1)
 
@@ -42,7 +42,7 @@ package suite < 1 min, UI test < 30 s. A task is ticked only when verified, with
 ## Phase 5: User Story 3 — Blackout and keyboard (P2)
 
 - [ ] SHOW-001-T16 [US3] Test: a step while blacked out keeps `isOutputBlack` in `ShowCoordinatorTests.swift`
-- [ ] SHOW-001-T17 [US3] Keyboard shortcut buttons (Right Arrow, Page Down → Next; Left Arrow, Page Up → Previous; no modifiers; only with cues; not B) in `Apps/projectM-iOS/Views/ShowControls.swift` placed in `VisualizerView.swift`
+- [ ] SHOW-001-T17 [US3] Keyboard shortcut buttons (Right Arrow, Page Down → Next; Left Arrow, Page Up → Previous; no modifiers; only with cues; not B) in `Apps/projectM-iOS/Views/ShowControls.swift` placed in `VisualizerView.swift`; verified by the key step in `ShowCueUITests` (T13)
 
 ## Phase 6: Polish
 

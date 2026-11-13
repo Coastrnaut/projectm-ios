@@ -137,6 +137,8 @@ fades in. The arrow keys move the show like the buttons.
   not record a preset today).
 - **Show file damaged, too large or from a newer version**: the file is set aside unchanged (never
   deleted), the app starts with an empty show and says so once in the editor.
+- **Saving fails (disk full)**: the change stays in effect for the session, the editor says the show
+  could not be saved, and the previous files stay intact (each file is written whole).
 - **Duplicate cue IDs in a stored file**: the file is refused as damaged (above).
 - **Limits**: at most 256 cues; a label is 1 to 80 characters (trimmed); adding beyond the limit is
   refused with a message.
@@ -168,8 +170,10 @@ fades in. The arrow keys move the show like the buttons.
   for it, labelled with the visual's name. Camera records the visual chosen before Camera.
 - **SHOW-001-R8**: When a cue becomes active by Next, Previous or Go to cue, its scene MUST be read
   and validated (SCN-001) and its look applied to the live output: the visual and its options and
-  text. The audio source MUST NOT be stopped or restarted. A cue MUST NOT start the camera.
-- **SHOW-001-R9**: If a cue's scene is missing, unreadable or invalid, the show MUST still move to
+  text. The audio source MUST NOT be stopped or restarted. A cue MUST NOT start the camera. Layers
+  the app cannot draw (camera, materials, generator graphs, unknown kinds) are left out of the applied
+  look with a notice; SCN-001 warnings (for example a photo no longer stored) do not stop the apply.
+- **SHOW-001-R9**: If a cue's scene is missing, unreadable or invalid (SCN-001 errors), the show MUST still move to
   the cue, the output MUST stay unchanged, and a non-blocking notice and a VoiceOver announcement MUST
   say the cue's scene could not be shown.
 - **SHOW-001-R10**: While the output is blacked out (OUT-010, SHOW-014), stepping MUST keep the output
