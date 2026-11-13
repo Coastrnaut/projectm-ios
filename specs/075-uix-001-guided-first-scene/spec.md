@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (UIX-001-T01-T13 verified on the Mac and the iOS 27.2 simulator; T14 `{device}` open)
 
 **Input**: User description: "Implement UIX-001 (Guided first scene) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Create a complete playable scene

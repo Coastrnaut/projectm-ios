@@ -31,6 +31,8 @@ Same command with `-only-testing:projectM-iOSUITests/GuidedFirstSceneUITests`:
    no tutorial.
 3. `testEveryPrimaryButtonIsReachableAtTheLargestTextSize`: AX5 text size, every step's primary
    button revealed and hittable.
+4. `testReopenFromSettingsKeepsTheRunningSource`: `-autostart inAppPlayback`, Settings › Guided first
+   scene → Linear Spectrum → Play; the linear spectrum shows and `sourceStarts` stays 1.
 
 ## C. Regression (existing suites unaffected)
 

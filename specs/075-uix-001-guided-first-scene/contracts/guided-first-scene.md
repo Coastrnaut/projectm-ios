@@ -4,8 +4,8 @@
 
 | Element | Identifier |
 |---|---|
-| The tutorial container (modal) | `guidedFirstScene` |
-| Current step marker (value = step name: `welcome`, `sound`, `visual`, `look`, `play`) | `guide.step` |
+| The tutorial container (modal; XCUITest lists it as an alert) | `guidedFirstScene` |
+| Each step's title (a heading) | `guide.step.<step>`: `welcome`, `sound`, `visual`, `look`, `play` |
 | Primary button (Next / Play) | `guide.next` (label "Next", or "Play" on the last step) |
 | Back | `guide.back` (steps 2-5) |
 | Skip | `guide.skip` (every step) |

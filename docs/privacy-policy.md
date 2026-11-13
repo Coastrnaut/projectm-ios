@@ -255,6 +255,8 @@ collections):
   step through (a search is remembered as "All presets", never the search text), and whether the
   OSC receiver is on and its port;
 - whether you acknowledged the photosensitivity notice;
+- whether the guided first scene is still to be offered, or was finished or skipped (one value; it
+  keeps none of the choices you made in it);
 - the preset collections you create: their names, which presets are in them, and the order you
   put them in. No dates and no record of what you played are kept with them.
 
