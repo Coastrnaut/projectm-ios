@@ -6,12 +6,14 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 63,
+   "audited": 62,
+   "implementing": 1,
    "integrated": 23,
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 147,
+   "audited": 146,
+   "implementing": 1,
    "integrated": 4
   },
   "P2": {
@@ -22,7 +24,8 @@
   }
  },
  "by_state": {
-  "audited": 298,
+  "audited": 296,
+  "implementing": 2,
   "integrated": 27,
   "skipped_existing": 1
  },
@@ -469,13 +472,13 @@
   },
   "ANL-002": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/anl-002",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/016-anl-002-log-frequency-bands",
+   "state": "implementing"
   },
   "ANL-003": {
    "attempts": 0,
@@ -649,13 +652,13 @@
   },
   "AUD-004": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/aud-004",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/017-aud-004-loop-track-and-queue",
+   "state": "implementing"
   },
   "AUD-005": {
    "attempts": 0,
@@ -3760,5 +3763,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T11:41:38Z"
+ "updated": "2026-11-13T11:43:46Z"
 }
