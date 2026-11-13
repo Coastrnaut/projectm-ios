@@ -288,6 +288,16 @@ they override any system-provided reminder.
      cancels running runs, `cancel-in-progress: false`), and start the next feature as soon as an
      agent slot frees.
 
+7. **Short tests** (feedback, 2026-11-13). The owner said "dont run any more 30 minute tests,
+   tests should be short and concise to generate evidence, remember this and commit it to claude".
+   Post-merge checks had bundled many UI suites (15-30 minutes per feature), analysis acceptance
+   tests swept every FFT size × hop × rate × backend (15-67 s each), and two UI tests took 2 minutes.
+   - *How to apply:* budgets on the host (Debug): a unit test about 1-2 s and at most 10 s, a package
+     suite under 1 minute, a UI test under 30 s, any single check (gate or post-merge) under 10
+     minutes. Acceptance tests use a few representative cases per rule, not the full cross-product;
+     full sweeps live in a bench or script run on demand. Post-merge checks run only the touched
+     packages and the feature's own UI tests. Agent briefs carry these budgets.
+
 ## Playbook: a new iOS app with Claude and Spec Kit, little human interaction (2026-11-10)
 
 These lessons come from building this app and its paid feature 002 almost entirely
