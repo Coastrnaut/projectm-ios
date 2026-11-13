@@ -85,6 +85,7 @@ import Observation
 import PresentationLifecycle
 import PresetLibrary
 import Rendering
+import SceneFormat
 import ShowStorage
 import Metal
 import UIKit
@@ -187,6 +188,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let texts: TextOverlayCoordinator
     /// SHOW-001: the manual cue list.
     let show: ShowCoordinator
+    /// SCN-012: the repair report before a show cue's scene or Reopen opens.
+    let sceneRepair: SceneRepairCoordinator
     /// The Text visual (MED-009), created when Text is chosen and released when another visual is.
     private(set) var textVisual: TextVisualHost?
     /// The text layer's state while the Text visual exists (`empty` otherwise).
@@ -288,6 +291,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         }
         self.sceneAutosave = sceneAutosave
         show = ShowCoordinator.makeDefault()   // SHOW-001
+        sceneRepair = SceneRepairCoordinator(registry: try? SceneArchiveService.appRegistry())   // SCN-012
         #if DEBUG
         UITestPhotoFixture.seedIfRequested(photos)   // MED-001: PhotoLayerUITests (pickers cannot be automated)
         UITestVideoFixture.seedIfRequested(videos)   // MED-002: VideoLayerUITests
@@ -1077,9 +1081,45 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
 
     /// Reopen: the held committed scene and visual (never Camera). OSC and the camera stay off until
     /// the user turns them on. The autosave records the change.
+    /// SCN-012-R10: when the held scene has problems the user should see, the repair report comes first;
+    /// Cancel keeps the offer.
     func reopenLastScene() {
+        guard recovery.offersReopen, let held = recovery.heldScene else { return }
+        if let registry = try? SceneArchiveService.appRegistry(),
+           let report = Self.reopenReport(for: held, registry: registry, assets: storedMediaAvailability) {
+            sceneRepair.present(SceneRepairRequest(title: "Last scene", report: report, document: held.document,
+                                                   open: { [weak self] (document: SceneDocument) in
+                                                       self?.finishReopen(Self.held(document, replacing: held, registry: registry))
+                                                   }))
+            return
+        }
+        finishReopen(nil)
+    }
+
+    /// The report Reopen shows first, or nil when the held scene opens without one.
+    static func reopenReport(for held: SceneAutosaveHeldScene, registry: ParameterRegistry,
+                             assets availability: StoredMediaAvailability) -> SceneRepairReport? {
+        let report = SceneRepairReport(document: held.document, registry: registry, assets: availability)
+        return report.needsReview ? report : nil
+    }
+
+    /// The held scene for a (repaired) document; the original when it does not load (it did at launch).
+    static func held(_ document: SceneDocument, replacing held: SceneAutosaveHeldScene,
+                     registry: ParameterRegistry) -> SceneAutosaveHeldScene {
+        guard let loaded = try? document.liveState(registry: registry) else { return held }
+        return SceneAutosaveHeldScene(document: document, live: loaded.state, source: held.source)
+    }
+
+    /// Which photo and video the stores hold now (SCN-001 asset availability).
+    var storedMediaAvailability: StoredMediaAvailability {
+        StoredMediaAvailability(photos: Set([photos.photo?.id.uuidString].compactMap { $0 }),
+                                videos: Set([videos.video?.id.uuidString].compactMap { $0 }))
+    }
+
+    private func finishReopen(_ replacement: SceneAutosaveHeldScene?) {
         let visual = recovery.heldVisual
-        guard let held = recovery.markReopened() else { return }
+        guard let marked = recovery.markReopened() else { return }
+        let held = replacement ?? marked
         if let values = sceneAutosave?.reopen(held) {
             SceneAutosaveCapture.apply(values, to: settings)
             if let text = values.text { texts.spec = text }

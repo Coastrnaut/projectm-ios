@@ -36,6 +36,9 @@ struct SceneArchiveImportResult: Sendable {
     let replacedVideo: Bool
     /// SCN-001 decode and validation warnings.
     let warnings: [SceneIssue]
+    /// SCN-012-R11: the scene's repair report against the stores after the import (the SCN-014 import
+    /// screen shows it before the scene opens).
+    let repairReport: SceneRepairReport
 }
 
 /// One step of an import, in order (FILE-002-R5; contracts/archive-checksums.md C3). Only `.adopted`
@@ -263,8 +266,13 @@ struct SceneArchiveService: Sendable {
             videos.makeCurrent(adoptedVideo)
             observer?(.madeCurrent(.video))
         }
+        let decodeOnly = contents.warnings.filter { (issue: SceneIssue) -> Bool in
+            issue.code == .valueClamped || issue.code == .droppedField
+        }
+        let report = SceneRepairReport(document: document, decodeWarnings: decodeOnly, registry: registry, assets: availability())
         return SceneArchiveImportResult(document: document, photo: adoptedPhoto, video: adoptedVideo,
-                                        replacedPhoto: replacedPhoto, replacedVideo: replacedVideo, warnings: contents.warnings)
+                                        replacedPhoto: replacedPhoto, replacedVideo: replacedVideo, warnings: contents.warnings,
+                                        repairReport: report)
     }
 
     /// Which stored photo and video exist now (for validating an imported scene).
