@@ -58,7 +58,7 @@ Whoever connects modulation (the matrix UI, a saved scene being loaded, a test f
 a loop, for example a macro driving a ring gap that drives an LFO's rate that drives the macro, gets
 the connection set refused, and the reason names every step of the loop in order, starting and
 ending at the same place, for example
-`macro.a → visual.ring.gap → lfo.one.rate → macro.a`.
+`lfo.one.rate → macro.a → visual.ring.gap → lfo.one.rate` (the loop starts at its smallest stable ID, MOD-014-R3).
 
 **Why this priority**: It is the roadmap's acceptance ("Cycle fixture fails validation with
 readable path").
@@ -68,7 +68,7 @@ whose path equals the expected text character for character.
 
 **Acceptance Scenarios**:
 
-1. **Given** the acceptance fixture (macro `macro.a`, parameter `visual.ring.gap`, LFO `lfo.one` with input `rate`; edges `macro.a → visual.ring.gap`, `visual.ring.gap → lfo.one (rate)`, `lfo.one → macro.a`), **When** it is validated, **Then** it is refused with one cycle issue whose path is exactly `macro.a → visual.ring.gap → lfo.one.rate → macro.a` and whose display path uses the display names.
+1. **Given** the acceptance fixture (macro `macro.a`, parameter `visual.ring.gap`, LFO `lfo.one` with input `rate`; edges `macro.a → visual.ring.gap`, `visual.ring.gap → lfo.one (rate)`, `lfo.one → macro.a`), **When** it is validated, **Then** it is refused with one cycle issue whose path is exactly `lfo.one.rate → macro.a → visual.ring.gap → lfo.one.rate` and whose display path is exactly `LFO One (rate) → Macro A → Ring gap → LFO One (rate)`.
 2. **Given** a node connected to its own input, **When** validated, **Then** it is refused with a self-loop issue naming that node.
 3. **Given** two separate loops, **When** validated, **Then** both are reported, each once, in the same order on every run.
 4. **Given** a loop reachable only through a diamond (A → B, A → C, B → D, C → D, D → A), **When** validated, **Then** the loop is reported once with a shortest path through its first node.
@@ -108,7 +108,7 @@ incremental answer equals full validation of the graph with that connection adde
 
 **Acceptance Scenarios**:
 
-1. **Given** the acceptance fixture without its closing edge, **When** asked about adding `lfo.one → macro.a`, **Then** the answer is the path `macro.a → visual.ring.gap → lfo.one.rate → macro.a` rotated to start at the new edge's target.
+1. **Given** the acceptance fixture without its closing edge, **When** asked about adding `lfo.one → macro.a`, **Then** the answer is exactly `macro.a → visual.ring.gap → lfo.one.rate → macro.a` (the same loop, starting at the new edge's target).
 2. **Given** random acyclic graphs and connections (fixed seed), **When** checked incrementally and fully, **Then** both agree in every case.
 
 ---
@@ -169,7 +169,7 @@ test shows bit-identical modulated values.
 
 ### Measurable Outcomes
 
-- **MOD-014-S1**: The acceptance fixture is refused with exactly one cycle issue whose path equals `macro.a → visual.ring.gap → lfo.one.rate → macro.a`.
+- **MOD-014-S1**: The acceptance fixture is refused with exactly one cycle issue whose path equals `lfo.one.rate → macro.a → visual.ring.gap → lfo.one.rate`, and the incremental check for its closing connection returns `macro.a → visual.ring.gap → lfo.one.rate → macro.a`.
 - **MOD-014-S2**: Every fixture (self-loop, two disjoint loops, diamond, each issue kind) yields exactly the expected issues in the expected order on every run.
 - **MOD-014-S3**: A 1,000-node chain is accepted with the chain order; graphs over the limits are refused with one size issue.
 - **MOD-014-S4**: For 200 fixed-seed random cases, the incremental check agrees with full validation in 100 % of cases.

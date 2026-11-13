@@ -12,5 +12,6 @@ python3 scripts/check_compliance.py && python3 scripts/validate_docs.py
 ```
 
 Expected: all pass. `testAcceptanceCycleFixtureFailsWithReadablePath` asserts the path
-`macro.a → visual.ring.gap → lfo.one.rate → macro.a` exactly ([contract](contracts/modulation-graph.md) G5).
+`lfo.one.rate → macro.a → visual.ring.gap → lfo.one.rate` exactly, and
+`testIncrementalCheckReturnsTheLoopFromTheNewEdge` asserts `macro.a → visual.ring.gap → lfo.one.rate → macro.a` ([contract](contracts/modulation-graph.md) G5).
 No simulator or device step: no app code changes.
