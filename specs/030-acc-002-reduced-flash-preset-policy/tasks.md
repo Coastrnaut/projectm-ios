@@ -35,15 +35,15 @@ Format: `- [ ] ACC-002-Tnn [P?] [Story?] description`. A task is ticked only whe
 
 **Goal**: with Reduce flashing on, Next, Previous, Random, warm-up and the launch preset never pick a flagged preset. **Independent test**: `FlashPolicyTests` with a fake library of calm/flagged/calm.
 
-- [ ] ACC-002-T11 [US1] Tests in `Apps/projectM-iOS/Tests/FlashPolicyTests.swift`: policy on, Next from calm A lands on calm C (skipping flagged B), Previous likewise; 200 Random picks never B and the warm-up list never holds B; policy off, Next lands on B (unchanged); every member flagged → nothing loads and `failureMessage == "Every preset here may flash."`; the launch preset skips a flagged last preset.
+- [ ] ACC-002-T11 [US1] Tests in `Apps/projectM-iOS/Tests/FlashPolicyTests.swift`: policy on, Next from calm A lands on calm C (skipping flagged B), Previous likewise; 200 Random picks never B and the warm-up list never holds B; policy off, Next lands on B (unchanged); every member flagged → nothing loads and `failureMessage == "Every preset here may flash."`; the launch preset skips a flagged last preset; a flagged preset already on screen keeps playing when the setting turns on (Edge Cases).
 - [ ] ACC-002-T12 [US1] `PresetCoordinator`: `isFlagged`, `walkable`, the walk in `step`, `random`, `planUpcoming` and `initialPreset`, the all-flagged message (contracts/flash-policy.md); T11 passes.
 
 ## Phase 5: User Story 2 — warned before load (P1)
 
 **Goal**: an explicit flagged choice shows a warning and nothing loads until Load Anyway. **Independent test**: unit tests on the coordinator and the UI test with the imported fixture.
 
-- [ ] ACC-002-T13 [US2] Tests in `FlashPolicyTests.swift`: policy on, `choose(B)` sets `flashWarning` and the loader saw nothing; `cancelFlashWarning()` loads nothing; `confirmFlashWarning()` loads B and sets its scope; policy off, `choose(B)` loads at once; a locked flagged preset asks for the purchase first, and after the unlock it is warned instead of loaded.
-- [ ] ACC-002-T14 [US2] `PresetCoordinator.flashWarning`, `confirmFlashWarning()`, `cancelFlashWarning()`, the purchase path through `choose`; `AppCoordinator.choose` keeps the browser open while a warning is pending; the alert on `PresetBrowserView`'s stack ("May flash", Load Anyway / Cancel, identifiers `loadFlaggedAnyway`, `cancelFlagged`); T13 passes.
+- [ ] ACC-002-T13 [US2] Tests in `FlashPolicyTests.swift`: policy on, `choose(B)` sets `flashWarning` and the loader saw nothing; `cancelFlashWarning()` loads nothing; `confirmFlashWarning()` loads B and sets its scope; policy off, `choose(B)` loads at once; a locked flagged preset asks for the purchase first, and after the unlock it is warned instead of loaded; no UserDefaults key is written by a warning, Cancel or Load Anyway (ACC-002-R12).
+- [ ] ACC-002-T14 [US2] `PresetCoordinator.flashWarning`, `confirmFlashWarning()`, `cancelFlashWarning()`, the purchase path through `choose`; `AppCoordinator.choose` keeps the browser open while a warning is pending; the alert on `PresetBrowserView`'s stack ("May flash", Load Anyway / Cancel, identifiers `loadFlaggedAnyway`, `cancelFlagged`; a standard alert, so VoiceOver announces it and its text follows Dynamic Type, ACC-002-R14); closing the browser while warned cancels the warning; T13 passes.
 - [ ] ACC-002-T15 [US2] UI test `Apps/projectM-iOS/UITests/FlashPolicyUITests.swift`: launch with `-settings.reduceFlashing YES`, `-uitestUnlocked NO`, import `high-flash.milk` through `-uitestImportPreset`, open My Presets, check the row's "May flash" mark and label, choose it → the alert appears and `currentPreset` is unchanged; Cancel → unchanged; choose again → Load Anyway → `currentPreset` becomes the fixture; under 30 s (ACC-002-S2).
 
 ## Phase 6: User Story 3 — the browser marks flagged presets (P2)
@@ -52,8 +52,8 @@ Format: `- [ ] ACC-002-Tnn [P?] [Story?] description`. A task is ticked only whe
 
 ## Phase 7: Polish & cross-cutting
 
-- [ ] ACC-002-T17 Corpus count (information): build the index from the main checkout's pinned submodules into `.build/scratch/acc002-index` (quickstart §2); record flagged/total here and in research ACC-002-D3.
-- [ ] ACC-002-T18 Gates: `check_compliance.py`, `validate_docs.py`, `test_scripts.py`, `swift test --package-path Packages/PresetLibrary` (with durations).
+- [ ] ACC-002-T17 Corpus count (information): build the index from the main checkout's pinned submodules into `.build/scratch/acc002-index` (quickstart §2); record flagged/total here and in research ACC-002-D3, and the index step's time with and without the classifier (ACC-002-S4).
+- [ ] ACC-002-T18 Gates: `check_compliance.py`, `validate_docs.py`, `test_scripts.py`, `swift test --package-path Packages/PresetLibrary` (with durations); `git diff autonomous/integration --stat` shows no change under `Packages/FlashSafety`, `Packages/ANGLERendering` or `Packages/Rendering` (ACC-002-R11: the runtime limit is untouched).
 - [ ] ACC-002-T19 App on the simulator (quickstart §3): `xcodegen generate`, `projectM-iOSTests` and `FlashPolicyUITests` on iPhone 17 (4E32B01D); count new PosterBoard reports.
 - [ ] ACC-002-T20 {device} On D1 with Reduce flashing on: VoiceOver reads "may flash" on flagged rows and the alert; Random 50 times without a flagged preset; the alert at the largest text size (quickstart §4).
 
