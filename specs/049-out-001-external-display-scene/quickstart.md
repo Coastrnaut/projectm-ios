@@ -35,6 +35,9 @@ xcrun simctl io $UDID screenConfig --display external power off      # disconnec
 xcrun simctl io $UDID screenshot --display internal dev-after.png     # the visualization back on the device
 ```
 
+Run it on iOS 27.2 (the scene accessory) and on iOS 26.5 (the Info.plist role). The coordinator's
+log shows each step: `xcrun simctl spawn $UDID log show --last 1m --info --predicate 'category == "ExternalDisplay"'`.
+
 Expected: `ext.png` is a non-black visualization filling 720 × 480. `dev.png` is black except the
 note and any controls. `dev-after.png` shows the visualization. The app keeps running throughout.
 

@@ -44,7 +44,7 @@ final class ExternalDisplayCoordinatorTests: XCTestCase {
                        "the application role stays with SwiftUI")
         let entry = try XCTUnwrap(configurations[UISceneSession.Role.windowExternalDisplayNonInteractive.rawValue]?.first)
         let className = try XCTUnwrap(entry["UISceneDelegateClassName"] as? String)
-        XCTAssertTrue(NSClassFromString(className) == ExternalDisplaySceneDelegate.self, "\(className) resolves to the delegate")
+        XCTAssertEqual(className, String(reflecting: ExternalDisplaySceneDelegate.self), "names the delegate in this module")
     }
 
     func testOnlyTheDeviceScenesEventsReachTheDeviceVisuals() {

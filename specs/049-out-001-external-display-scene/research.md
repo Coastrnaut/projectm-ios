@@ -2,25 +2,40 @@
 
 All decisions below are Claude's under owner rule 4 (best judgement), 2026-11-13.
 
-## OUT-001-D1 Scene API
+## OUT-001-D1 Scene API (revised during implementation, 2026-11-13)
 
-- **Decision**: UIKit's `UIWindowSceneSessionRoleExternalDisplayNonInteractive`
-  (`UISceneSession.Role.windowExternalDisplayNonInteractive`, iOS 16+). The SwiftUI `App` gets an
-  `@UIApplicationDelegateAdaptor(AppDelegate.self)`. `AppDelegate.application(_:configurationForConnecting:options:)`
-  returns `UISceneConfiguration(name: "External display", sessionRole: role)` with
-  `delegateClass = ExternalDisplaySceneDelegate.self` for that role. For every other role it
-  returns the session's own configuration, so SwiftUI keeps its window group. No
-  `UIApplicationSceneManifest` is added, and `UIApplicationSupportsMultipleScenes` stays absent
-  (false): the non-interactive external role does not need it. This is to be confirmed on devices
-  (OUT-001-T15).
-- **Evidence**: The iOS 27.2 SDK's `UIWindowScene.h` declares the role as `API_AVAILABLE(ios(16.0))`
-  with no deprecation. The old `UIWindowSceneSessionRoleExternalDisplay` is deprecated in its favour
-  since iOS 16. The iOS 27.2 SwiftUI interface has no external display scene type: a grep for
-  "externalDisplay" finds nothing. So the UIKit role is the documented way in both SDKs, and nothing
-  newer than iOS 26 is used, so no availability guard is needed.
-- **Alternatives**: a plist scene manifest naming the delegate class (it cannot be unit-tested and
-  is harder to read than code); `UIScreen.didConnectNotification` with a manual `UIWindow` (the
-  pre-scene approach, deprecated in practice since iOS 13 and unsupported for scene-based apps).
+- **Decision**:
+  - **iOS 27 and later**: the SwiftUI scene accessory
+    `View.sceneAccessory { ExternalNonInteractiveAccessory { ExternalAccessorySlot } }`. This is
+    new in the iOS 27.0 SDK: `UISceneAccessory` / `UIViewController.registerSceneAccessory` in
+    UIKit, and `SceneAccessoryContent` / `ExternalNonInteractiveAccessory` in SwiftUI. It is
+    applied to the root view in `ProjectMApp`, compiled only with Swift ≥ 6.4 (the iOS 27 SDK),
+    and guarded at run time with `#available(iOS 27.0, *)`.
+  - **iOS 26**: `UIWindowSceneSessionRoleExternalDisplayNonInteractive` (iOS 16+). Info.plist's
+    `UIApplicationSceneManifest` names `ExternalDisplaySceneDelegate` for that role only.
+    `UIApplicationSupportsMultipleScenes` is false, and the application role is not configured, so
+    it stays with SwiftUI.
+- **Evidence**:
+  1. The iOS 27.2 SDK still declares the role with `API_AVAILABLE(ios(16.0))` and no deprecation.
+     Its headers add `UISceneAccessory.h`, which describes "supplementary content that the system
+     presents on the app's behalf when … an external display is connected". The SwiftUI interface
+     has `ExternalNonInteractiveAccessory` and `View.sceneAccessory` (`@available(iOS 27.0, *)`).
+  2. iOS 27.2 simulator, plist role only: connecting the TVOut screen
+     (`simctl io … screenConfig --display external power on`) gave the app no scene. SpringBoard
+     logged that it registered the app's "NonInteractive" presentation, dropped it within about
+     10 ms, and fell back to `mirroredDisplay`. With the accessory, the slot connected at 720 × 480
+     @1, and the external screenshot showed projectM alone.
+  3. iOS 26.5 simulator, the same build: the plist role connected `ExternalDisplaySceneDelegate`
+     ("external display scene connecting (role UIWindowSceneSessionRoleExternalDisplayNonInteractive)"),
+     and the external screenshot showed projectM alone. The accessory code does not run there.
+  4. The first attempt, a `UIApplicationDelegateAdaptor` whose `configurationForConnecting`
+     returned the session's own configuration for the application role, left SwiftUI's window empty
+     (a white screen) on the iOS 27.2 simulator. The plist manifest replaced it.
+- **Alternatives**:
+  - The accessory only: iOS 26 (D3) would mirror.
+  - The plist role only: iOS 27 mirrors (evidence 2).
+  - `UIScreen.didConnectNotification` with a manual `UIWindow`: the pre-scene approach, which
+    scene-based apps do not use.
 
 ## OUT-001-D2 Rendering: move the one visual, do not render twice
 

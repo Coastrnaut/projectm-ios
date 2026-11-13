@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (OUT-001-T01-T14, T19 verified on the Mac: host, iOS 27.2 and 26.5 simulators, simulated external display; T15-T18 `{device}` open)
 
 **Input**: User description: "Implement OUT-001 (External display scene) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Present a clean

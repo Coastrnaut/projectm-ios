@@ -6,11 +6,10 @@
 
 ## Summary
 
-The app adopts UIKit's non-interactive external display scene role
-(`UIWindowSceneSessionRoleExternalDisplayNonInteractive`, iOS 16+, current in the iOS 27.2 SDK)
-through a `UIApplicationDelegateAdaptor` whose `configurationForConnecting` returns a
-configuration with `ExternalDisplaySceneDelegate` for that role and leaves the application role to
-SwiftUI (research OUT-001-D1). The external scene's window holds one black `VisualSlotView`. The
+On iOS 27 the app registers the SwiftUI scene accessory `ExternalNonInteractiveAccessory` (new
+in the iOS 27 SDK), and on iOS 26 it declares UIKit's `UIWindowSceneSessionRoleExternalDisplayNonInteractive`
+in Info.plist for `ExternalDisplaySceneDelegate` (research OUT-001-D1, revised during implementation
+after the simulator showed that iOS 27.2 ignores the plain role for this SwiftUI app). Either way the external window holds one black `VisualSlotView`. The
 visualizer screen holds another. An `ExternalDisplayCoordinator` (app, main actor) feeds scene
 events into `ExternalDisplayRouting` (a pure value in `PresentationLifecycle`, tested on the host
 and on Linux), which decides the output target. The coordinator then moves the *one* current visual
@@ -27,7 +26,7 @@ from external display scenes (OUT-001-D4). ADR-0023 records the scene architectu
 **Language/Version**: Swift 6 (Xcode 27.2 on the build Mac; Xcode 26 / iOS SDK 26.5 in CI).
 
 **Primary Dependencies**: UIKit (scene roles, `UIWindowSceneDelegate`, `traitOverrides`), SwiftUI
-(`UIApplicationDelegateAdaptor`, `UIViewRepresentable`), the existing visual hosts, Compositor,
+(`sceneAccessory` + `ExternalNonInteractiveAccessory` on iOS 27, `UIViewRepresentable`), the existing visual hosts, Compositor,
 ANGLERendering. No new package dependency; no `Package.swift` change except new test files.
 
 **Storage**: none (no setting; the routing is session state).
@@ -47,8 +46,8 @@ disconnect, source starts); the simulator's TVOut display turned on and off with
 **Performance Goals**: one visualization drawn at a time (no double GPU cost); the move happens on
 the next main-run-loop turn after the scene event (≤ 0.5 s, OUT-001-R6); no per-frame allocation.
 
-**Constraints**: public APIs only; APIs newer than iOS 26 availability-guarded (none needed:
-everything used is iOS 16-17); explicit closure types; no main-actor mutation in
+**Constraints**: public APIs only; APIs newer than iOS 26 availability-guarded (the iOS 27 scene
+accessory: `#if compiler(>=6.4)` for the Xcode 26 CI build plus `#available(iOS 27.0, *)`); explicit closure types; no main-actor mutation in
 setUp/tearDown; no wall-clock assertions; owner rule 7 budgets; never the Simulator panel tool.
 
 **Scale/Scope**: about 450 lines of source and 450 of tests.
@@ -89,9 +88,10 @@ Packages/PresentationLifecycle/Sources/PresentationLifecycle/ExternalDisplayRout
 Packages/PresentationLifecycle/Tests/PresentationLifecycleTests/ExternalDisplayRoutingTests.swift
 Packages/Compositor/Tests/CompositorTests/ExternalOutputSizeTests.swift                    # 1920×1080, strobe across a switch
 Packages/ANGLERendering/Tests/ANGLERenderingTests/FlashLimiterTests.swift                   # + history across a resize
-Apps/projectM-iOS/ProjectMApp.swift                       # + UIApplicationDelegateAdaptor
-Apps/projectM-iOS/ExternalDisplay/AppDelegate.swift       # NEW: scene configuration per role
-Apps/projectM-iOS/ExternalDisplay/ExternalDisplaySceneDelegate.swift   # NEW: the external window
+project.yml                                               # Info.plist UIApplicationSceneManifest (external role only)
+Apps/projectM-iOS/ProjectMApp.swift                       # + .externalDisplayAccessory (iOS 27)
+Apps/projectM-iOS/ExternalDisplay/ExternalDisplayAccessory.swift       # NEW: iOS 27 scene accessory
+Apps/projectM-iOS/ExternalDisplay/ExternalDisplaySceneDelegate.swift   # NEW: iOS 26 external window
 Apps/projectM-iOS/ExternalDisplay/ExternalDisplayCoordinator.swift     # NEW: events → routing → slot moves
 Apps/projectM-iOS/ExternalDisplay/VisualSlotView.swift    # NEW: slot view + SwiftUI host
 Apps/projectM-iOS/Views/VisualizerView.swift              # visual hosted through slots; note when external

@@ -2,19 +2,19 @@
 
 ## Scene configuration
 
-| Connecting session role | Configuration returned by `AppDelegate` |
-|---|---|
-| `.windowExternalDisplayNonInteractive` | name "External display", delegate `ExternalDisplaySceneDelegate` |
-| any other (`.windowApplication`, …) | the session's own configuration (SwiftUI's window group) |
+| OS | Mechanism | External window |
+|---|---|---|
+| iOS 27+ | `RootView.externalDisplayAccessory(_:)` → `sceneAccessory { ExternalNonInteractiveAccessory { ExternalAccessorySlot } }` | the accessory's SwiftUI content: one external `VisualSlotView` |
+| iOS 26 | Info.plist `UIApplicationSceneManifest`: `UISceneConfigurations` has only `UIWindowSceneSessionRoleExternalDisplayNonInteractive` → `$(PRODUCT_MODULE_NAME).ExternalDisplaySceneDelegate`; `UIApplicationSupportsMultipleScenes` false | `UIWindow(windowScene:)` with `ExternalDisplayViewController` (its view is the slot) |
 
-## ExternalDisplaySceneDelegate → ExternalDisplayCoordinator
+## Events → ExternalDisplayCoordinator
 
-| UIKit callback | Coordinator call |
+| Source | Coordinator call |
 |---|---|
-| `scene(_:willConnectTo:options:)` | creates `UIWindow(windowScene:)`, root view a black external `VisualSlotView`, `isHidden = false`; `externalConnected(id:slot:geometry:foreground:)` |
-| `windowScene(_:didUpdateEffectiveGeometry:)` and the slot's layout | `externalResized(id:geometry:)` (points from the window bounds, scale from the screen's trait display scale) |
-| `sceneWillEnterForeground` / `sceneDidEnterBackground` | `externalForeground(id:_:)` |
-| `sceneDidDisconnect` | `externalDisconnected(id:)`; the window is released |
+| Accessory slot enters a window / delegate `scene(_:willConnectTo:options:)` | `externalConnected(id:slot:geometry:foreground:)` |
+| Slot layout or display-scale trait change | `externalResized(id:geometry:)` (points from the slot's bounds, scale from its trait display scale) |
+| The window scene's `willEnterForeground` / `didEnterBackground` (accessory: its own scene's notifications; delegate: `sceneWillEnterForeground` / `sceneDidEnterBackground`) | `externalForeground(id:_:)` |
+| Accessory slot leaves its window or is dismantled / delegate `sceneDidDisconnect` | `externalDisconnected(id:)` |
 
 ## ExternalDisplayCoordinator (app, main actor)
 
