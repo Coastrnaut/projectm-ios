@@ -168,7 +168,7 @@ not healthy.
   (content not ready, a skipped frame, an empty output size) MUST NOT count as faults.
 - **PERF-014-R2**: Every visual MUST keep one render health record: state (healthy, recovering,
   degraded, placeholder), fault count, last reason, the frame of the last fault (the visual's frame
-  clock, never wall time) and the number of recoveries.
+  ticks: frames its loop asked for, never wall time) and the number of recoveries.
 - **PERF-014-R3**: A compositor layer whose prepare fails or whose picture cannot be created MUST show
   its declared fallback while the other layers keep rendering, and MUST be prepared again only at its
   back-off frames.
