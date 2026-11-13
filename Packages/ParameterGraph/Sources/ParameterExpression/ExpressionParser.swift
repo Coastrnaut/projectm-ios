@@ -4,6 +4,9 @@
 // unary operand) first raises the nesting level and checks it against the limit, so the parser's
 // own recursion is bounded by construction; binary chains are loops. Node and binding counts are
 // checked at the token that would exceed them.
+//
+// SHD-010 (contract B4): every grammar-rule entry and token advance counts one step
+// (`ExpressionCompileWork.parserSteps`); each token is advanced over once, so the work is linear.
 
 enum UnaryOperator { case plus, minus }
 
@@ -51,9 +54,12 @@ struct ExpressionParser {
     private var index = 0
     private var nesting = 0
     private var nodes = 0
+    private var steps = 0
 
-    static func parse(_ tokens: [Token], limits: ExpressionLimits) throws(ExpressionError) -> ParsedProgram {
+    static func parse(_ tokens: [Token], limits: ExpressionLimits,
+                      work: inout ExpressionCompileWork) throws(ExpressionError) -> ParsedProgram {
         var parser = ExpressionParser(tokens: tokens, limits: limits)
+        defer { work.parserSteps += parser.steps }
         return try parser.program()
     }
 
@@ -65,6 +71,7 @@ struct ExpressionParser {
     private var current: Token { tokens[index] }
 
     private mutating func advance() {
+        steps += 1
         if index < tokens.count - 1 { index += 1 }
     }
 
@@ -92,6 +99,7 @@ struct ExpressionParser {
 
     // program = { "let" name "=" expr ";" } expr END
     private mutating func program() throws(ExpressionError) -> ParsedProgram {
+        steps += 1
         var bindings: [ParsedBinding] = []
         while case .letKeyword = current.kind {
             if bindings.count >= limits.maximumBindings {
@@ -117,6 +125,7 @@ struct ExpressionParser {
 
     // expr = term { ("+" | "-") term }
     private mutating func expression() throws(ExpressionError) -> ExpressionNode {
+        steps += 1
         var lhs = try term()
         while isPunctuation("+") || isPunctuation("-") {
             let op: BinaryOperator = isPunctuation("+") ? .add : .subtract
@@ -131,6 +140,7 @@ struct ExpressionParser {
 
     // term = unary { ("*" | "/") unary }
     private mutating func term() throws(ExpressionError) -> ExpressionNode {
+        steps += 1
         var lhs = try unary()
         while isPunctuation("*") || isPunctuation("/") {
             let op: BinaryOperator = isPunctuation("*") ? .multiply : .divide
@@ -145,6 +155,7 @@ struct ExpressionParser {
 
     // unary = ("+" | "-") unary | primary
     private mutating func unary() throws(ExpressionError) -> ExpressionNode {
+        steps += 1
         guard isPunctuation("+") || isPunctuation("-") else { return try primary() }
         let op: UnaryOperator = isPunctuation("+") ? .plus : .minus
         let position = current.position
@@ -158,6 +169,7 @@ struct ExpressionParser {
 
     // primary = number | name | name "(" [ expr { "," expr } ] ")" | "(" expr ")"
     private mutating func primary() throws(ExpressionError) -> ExpressionNode {
+        steps += 1
         let token = current
         switch token.kind {
         case let .number(value):

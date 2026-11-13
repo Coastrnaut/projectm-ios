@@ -103,9 +103,26 @@ public struct CompiledExpression: Sendable, Hashable {
 
     /// Compiles `source` (contract E1-E7); throws the first problem with its position.
     public init(source: String, limits: ExpressionLimits = .standard) throws(ExpressionError) {
-        let tokens = try ExpressionLexer.tokens(of: source, limits: limits)
-        let program = try ExpressionParser.parse(tokens, limits: limits)
-        let output = try ExpressionCompiler.compile(program, limits: limits)
+        var work = ExpressionCompileWork()
+        try self.init(source: source, limits: limits, work: &work)
+    }
+
+    /// Compiles `source` and reports the counted work (SHD-010-R5, contract B4), whether it compiled
+    /// or was refused. Compile off the frame loop; the frame loop only evaluates (contract B1).
+    public static func measure(source: String, limits: ExpressionLimits = .standard)
+        -> (result: Result<CompiledExpression, ExpressionError>, work: ExpressionCompileWork) {
+        var work = ExpressionCompileWork()
+        do {
+            return (.success(try CompiledExpression(source: source, limits: limits, work: &work)), work)
+        } catch {
+            return (.failure(error), work)
+        }
+    }
+
+    private init(source: String, limits: ExpressionLimits, work: inout ExpressionCompileWork) throws(ExpressionError) {
+        let tokens = try ExpressionLexer.tokens(of: source, limits: limits, work: &work)
+        let program = try ExpressionParser.parse(tokens, limits: limits, work: &work)
+        let output = try ExpressionCompiler.compile(program, limits: limits, work: &work)
         self.source = source
         self.limits = limits
         self.instructions = output.instructions
