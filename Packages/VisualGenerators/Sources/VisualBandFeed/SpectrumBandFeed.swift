@@ -8,8 +8,10 @@
 //
 // Real-time safety (Constitution VII): the stream, the reducer's tables and the 128-value band
 // scratch are allocated in `init`; `pull`, `setBarCount` and `reset` touch only that memory. Not
-// Sendable: confined to one queue (LiveBandAnalyzer's). Nothing computed here reaches projectM
-// (Constitution VIII, ADR-0008 decision 5).
+// Sendable: confined to the queue that owns it. Since ANL-016 the live circular spectrum takes its
+// bands from the analysis event bus (`LiveBandAnalyzer`, same analysis settings); this feed stays as
+// the synchronous reference path the VIS-001 band tests check. Nothing computed here reaches
+// projectM (Constitution VIII, ADR-0008 decision 5).
 import AnalysisFeatures
 import AudioCore
 import VisualGenerators

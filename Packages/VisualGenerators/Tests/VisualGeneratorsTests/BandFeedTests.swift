@@ -1,6 +1,6 @@
 // BandFeedTests.swift — VIS-001-T14: from an AUD-016 sine through SpectrumStream → BandReducer →
 // the generator's input, the expected band is the one lit (VIS-001-R14, S4), and LiveBandAnalyzer
-// publishes it from a real analysis tap on its own queue. Waits use a 30 s ceiling, never a frame
+// publishes it from a real analysis tap through the analysis event bus (ANL-016-R16, S6). Waits use a 30 s ceiling, never a frame
 // or time budget.
 import Foundation
 import XCTest
@@ -99,7 +99,7 @@ final class BandFeedTests: XCTestCase {
 
 final class LiveBandAnalyzerTests: XCTestCase {
     /// Polls `buffer` until a frame arrives or 30 s pass.
-    private func waitForFrame(_ buffer: BandFrameBuffer, count: Int) -> [Float]? {
+    private func waitForFrame(_ buffer: LiveBandOutput, count: Int) -> [Float]? {
         var out = [Float](repeating: 0, count: 128)
         let deadline = Date().addingTimeInterval(30)
         while Date() < deadline {
