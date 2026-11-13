@@ -36,5 +36,6 @@
 ## R4 Accessibility identifiers
 
 Sheet `sceneRepairReport`; group headers `sceneRepairGroup.<group>`; buttons
-`sceneRepairOpenRepaired`, `sceneRepairOpenAsIs`, `sceneRepairCancel`; status text
+`sceneRepairOpenRepaired`, `sceneRepairOpenAsIs`, `sceneRepairCancel` (labelled "Close" when the
+scene cannot open, "Cancel" otherwise); status text
 `sceneRepairStatus` ("Cannot open", "Needs repair", "Opens with problems").

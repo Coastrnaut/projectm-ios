@@ -149,8 +149,8 @@ naming a missing photo presents the report.
 - A scene whose errors cannot all be repaired (an invalid scene ID) shows "Cannot open"; an invalid
   name is repaired to "Untitled scene".
 - Report generation never crashes, whatever the bytes: a seeded fuzz of mutated scenes proves it.
-- A report while another sheet (Settings) is open: the report appears when the user is back on the
-  visualizer; the show's position has already moved.
+- A step from the show editor (Settings → Show → Go to Cue): the report appears over Settings; the
+  show's position has already moved.
 - Blackout: the report does not lift a blackout; an opened cue stays black until Restore.
 - The cue's scene file is absent (not damaged): SHOW-001's notice stays, there is nothing to report.
 

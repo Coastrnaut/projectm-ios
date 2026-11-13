@@ -37,11 +37,13 @@
 
 ## SCN-012-D5: Presentation in the app
 
-- **Decision**: One `.sheet(item:)` on the visualizer, driven by `SceneRepairCoordinator.pending`.
+- **Decision**: One presenter (`.sheet(item:)`) driven by `SceneRepairCoordinator.pending`, attached to
+  the visualizer and to the Settings sheet's content; only the topmost host binds it (Settings while it
+  is shown, so a show editor "Go to Cue" gets the report over Settings).
   Only one request at a time: a newer request (another step) replaces a pending one (its cancel
   closure runs). A cue that needs review leaves the output unchanged until Open.
-- **Rationale**: steps come from the visualizer controls and the keyboard; one sheet keeps the
-  performer in control. The Settings sheet's own steps (none exist today) would need their own host.
+- **Rationale**: steps come from the visualizer controls, the keyboard and the show editor in
+  Settings; one pending request keeps the performer in control.
 - **Alternatives**: an alert (no room for grouped entries); a banner (no actions).
 
 ## SCN-012-D6: Which paths show the report
