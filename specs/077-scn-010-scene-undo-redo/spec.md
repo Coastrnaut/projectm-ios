@@ -4,7 +4,12 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (SCN-010-T01-T10 verified on the Mac: host, Linux shape, own iOS
+27.2 simulator; no device claim). SceneFormat 59 tests (1.3 s; SceneHistoryTests 11 in 0.044 s,
+property test 0.028 s), projectM-iOSTests 335 (17.0 s; SceneHistoryCoordinatorTests 4 in 0.012 s),
+SceneUndoUITests 1 (19.3 s; 28.0 s on a cold launch), SceneAutosaveUITests 1, NativeVisualUITests 4,
+ShowCueUITests 2. Compliance and docs checks OK. PosterBoard reports 32 before and after. Not
+exercised by a test: ⌘Z / ⇧⌘Z from a hardware keyboard.
 
 **Input**: User description: "Implement SCN-010 (Scene undo/redo) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Maintain bounded command history

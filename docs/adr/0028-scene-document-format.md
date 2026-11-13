@@ -144,3 +144,24 @@ Decided under the owner's standing approval (owner rule 4); specs/074-scn-003-sc
 - **References.** Scene IDs are what other documents use (cues, archives, the library later): rename
   keeps them; duplicate gives a new one and never moves an existing reference. Layer instance IDs,
   asset keys and generator IDs are scene-local and stay valid in the copy.
+
+## Amendment 2026-11-13 (SCN-010, undo and redo)
+
+SCN-010 (specs/077-scn-010-scene-undo-redo) keeps a bounded history of the current scene's edits
+(research SCN-010-D1 to D7, contracts/scene-history.md). No default is overridden.
+
+- **Model.** `SceneHistory<Value>` (SceneHistory.swift, plain Swift, Linux) stores snapshots: each
+  state is the scene's canonical bytes plus the caller's value that re-creates it. Equality of states
+  is byte equality, as this ADR defines semantic equality. Snapshots, not diffs or inverse commands:
+  app scenes are a few KB and a snapshot cannot drift.
+- **Rules.** An edit whose bytes equal the current state is not recorded. Records with the same
+  non-nil key coalesce until a boundary (`endCoalescing`, undo, redo, another key); a coalesced edit
+  that returns to its starting state drops the step. A new step empties redo. At most 50 steps and
+  4 MB of stored bytes (current, undo and redo), the oldest undo steps evicted first, then the
+  farthest redo steps. No clock.
+- **App.** The value is SCN-002's `SceneInputs`; the bytes are SCN-002's capture over a carry
+  snapshot taken when the history (re)starts, so they cover the ordered layer stack and every
+  app-held parameter. Undo and redo apply through the Settings/cue path; SCN-002 then commits the
+  change under its own rules. The history is in memory only and empty at launch. A cue, Reopen and a
+  photo or video replacement restart it; the audio source, safety and accessibility settings, OSC,
+  blackout and the camera are outside scenes and never undone.
