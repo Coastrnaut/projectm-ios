@@ -24,5 +24,6 @@
 | [0022](0022-imported-video-layer.md) | Imported video layer | Accepted 2026-11-13 (MED-002; owner rule 4) |
 | [0023](0023-external-display-scene.md) | External display scene | Accepted 2026-11-13 (OUT-001; owner rule 4); 0022 left for MED-002 |
 | [0024](0024-user-content-code-execution-policy.md) | User content never runs as native code | Accepted 2026-11-13 (SHD-011; owner rule 4); 0022 and 0023 left to MED-002 and OUT-001 |
+| [0027](0027-video-recording-pipeline.md) | Video recording pipeline | Accepted 2026-11-13 (REC-003; owner rule 4); 0025 and 0026 left to PERF-014 and MED-014 |
 
 Required by Constitution X: capture API, minimum OS, renderer, dependency strategy.
