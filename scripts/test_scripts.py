@@ -325,6 +325,112 @@ class ComplianceImportKindTests(unittest.TestCase):
         self.assertEqual(self.check("// import struct ReplayKit.RPScreenRecorder\n"), [])
 
 
+class ComplianceCodeExecutionTests(unittest.TestCase):
+    """SHD-011 (ADR-0024; contracts/compliance-rules.md): no source may load bundles or libraries, run a
+    script engine or format-string expression, spawn a process, map executable memory, or compile
+    Metal outside the reviewed files. Each rule is shown firing and staying quiet."""
+
+    def check(self, source: str, name: str = "Main.swift", folder: Path | None = None) -> list[str]:
+        with tempfile.TemporaryDirectory() as d:
+            base = folder if folder is not None else Path(d)
+            base.mkdir(parents=True, exist_ok=True)
+            p = base / name
+            p.write_text(source, encoding="utf-8")
+            try:
+                return check_compliance.check_file(p)
+            finally:
+                if folder is not None:
+                    p.unlink()
+
+    def assertRule(self, rule: str, sources: list[str], name: str = "Main.swift"):
+        for src in sources:
+            found = self.check(src, name)
+            self.assertTrue(any(rule in v for v in found), f"{rule} not flagged: {src!r} -> {found}")
+
+    def assertClean(self, sources: list[str], name: str = "Main.swift"):
+        for src in sources:
+            self.assertEqual(self.check(src, name), [], src)
+
+    def test_bundle_and_library_loading(self):
+        self.assertRule("bundle or library loading (SHD-011)", [
+            'let b = Bundle(path: folder)\n', 'let b = Bundle( url : picked)\n', 'let ok = try bundle.loadAndReturnError()\n',
+            'pluginBundle.load()\n', 'Bundle.main.load()\n', 'let b = CFBundleCreate(nil, url)\n',
+            'let ok = dlopen_preflight(p)\n', 'let x = NSCreateObjectFileImageFromMemory(a, b, c)\n'])
+        self.assertRule("bundle or library loading (SHD-011)",
+                        ['NSBundle *b = [NSBundle bundleWithPath:p];\n'], "Loader.m")
+        self.assertClean(['let b = Bundle.main.url(forResource: "x", withExtension: nil)\n',
+                          'let b = Bundle(for: Self.self)\n', 'await library.load()\n', 'store.load()\n',
+                          'let s = "Bundle(path: x) and bundle.load()"\n'])
+
+    def test_script_engines_and_expression_evaluation(self):
+        self.assertRule("script engine or expression evaluation (SHD-011)", [
+            'import JavaScriptCore\n', '@preconcurrency import class JavaScriptCore.JSContext\n',
+            'let c = JSContext()\n', 'let v: JSValue? = nil\n', 'let e = NSExpression(format: text)\n',
+            'let p = NSPredicate(format: userText)\n', 'let p = NSPredicate(format:userText)\n'])
+        self.assertRule("script engine or expression evaluation (SHD-011)",
+                        ['#import <JavaScriptCore/JavaScriptCore.h>\n',
+                         'NSPredicate *p = [NSPredicate predicateWithFormat:text];\n'], "X.m")
+        self.assertClean(['let p = NSPredicate(format: "label BEGINSWITH %@", title)\n',
+                          'let p = NSPredicate(format:"value == \'2\'")\n',
+                          'let words = ["NSExpression", "JSContext", "JavaScriptCore"]\n'])
+        self.assertClean(['NSPredicate *p = [NSPredicate predicateWithFormat:@"label == %@", x];\n'], "X.m")
+
+    def test_process_spawning(self):
+        self.assertRule("process spawning (SHD-011)", [
+            'let p = Process()\n', 'posix_spawn(&pid, path, nil, nil, argv, envp)\n', 'let t = NSTask()\n',
+            'system("rm -rf /")\n', 'let r = system(command)\n', 'execv(path, argv)\n', 'let pid = fork()\n',
+            'let f = popen(cmd, "r")\n'])
+        self.assertClean(['Text("x").font(.system(.caption))\n', 'public static func system() -> OSCReceiver { x }\n',
+                          'let r = OSCReceiver.system()\n', 'let info = ProcessInfo.processInfo\n',
+                          'let list = ["Process", "system(", "posix_spawn"]\n'])
+
+    def test_executable_memory(self):
+        self.assertRule("executable memory (SHD-011)", [
+            'let p = mmap(nil, n, PROT_READ | PROT_EXEC, MAP_PRIVATE, -1, 0)\n', 'let f = MAP_JIT\n',
+            'mprotect(p, n, 7)\n', 'pthread_jit_write_protect_np(0)\n'])
+        self.assertClean(['let words = ["PROT_EXEC", "MAP_JIT"]\n'])
+
+    def test_metal_libraries_from_files_data_or_dynamic_libraries(self):
+        self.assertRule("Metal library from outside the reviewed sources (SHD-011)", [
+            'let l = try device.makeLibrary(URL: picked)\n', 'let l = try device.makeLibrary(data: bytes)\n',
+            'let l = try device.makeLibrary(filepath: p)\n', 'let l = try device.makeDefaultLibrary(bundle: b)\n',
+            'let d = try device.makeDynamicLibrary(url: u)\n', 'var d: MTLDynamicLibrary?\n',
+            'let a = try device.makeBinaryArchive(descriptor: x)\n',
+            'let l = try device.makeLibrary(source: text, options: nil)\n'])
+        self.assertRule("Metal library from outside the reviewed sources (SHD-011)",
+                        ['id<MTLLibrary> l = [device newLibraryWithURL:url error:&e];\n',
+                         'id<MTLLibrary> l = [device newLibraryWithSource:s options:nil error:&e];\n'], "X.m")
+        self.assertClean(['let l = device.makeDefaultLibrary()\n', 'let f = library.makeFunction(name: "main")\n',
+                          'XCTAssertTrue(line.contains("makeLibrary(source: Self.source,"))\n',
+                          'let forbidden = ["makeLibrary(URL", "makeLibrary(data"]\n'])
+
+    def test_metal_source_allowed_only_in_reviewed_files(self):
+        source = 'let library = try device.makeLibrary(source: Self.shaderSource, options: nil)\n'
+        for rel in sorted(check_compliance.METAL_SOURCE_ALLOWED):
+            path = check_compliance.ROOT / rel
+            self.assertTrue(path.is_file(), rel)
+            text = check_compliance.strip_strings(check_compliance.strip_comments(path.read_text(encoding="utf-8")))
+            self.assertTrue(check_compliance.METAL_SOURCE.search(text), f"{rel} no longer compiles source; drop it")
+            self.assertEqual(check_compliance.check_code_execution(path, source), [], rel)
+        outside = check_compliance.ROOT / "Packages" / "Compositor" / "Sources" / "GeneratorGraphImport" / "X.swift"
+        self.assertEqual(len(check_compliance.check_code_execution(outside, source)), 1)
+
+    def test_string_literals_are_removed_before_matching(self):
+        stripped = check_compliance.strip_strings('a("x\\"y") + """\nJSContext()\n""" + #"Process()"# + b\n')
+        self.assertNotIn("JSContext", stripped)
+        self.assertNotIn("Process", stripped)
+        self.assertIn("a(", stripped)
+        self.assertIn("+ b", stripped)
+
+    def test_fixture_flags_every_shd011_rule(self):
+        text = "\n".join(check_compliance.check_file(FIXTURES / "Violations.swift.txt"))
+        for name, _ in check_compliance.CODE_EXECUTION_RULES:
+            if name.startswith("Metal library"):
+                continue
+            self.assertIn(name, text)
+        self.assertIn("makeLibrary(source:) outside METAL_SOURCE_ALLOWED", text)
+
+
 class ComplianceProjectYmlTests(unittest.TestCase):
     """ADR-0001 owner ruling 13b and Decision 6: project.yml key forms and CODE_SIGN_ENTITLEMENTS."""
 

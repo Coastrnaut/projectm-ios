@@ -11,6 +11,13 @@ Enforces, for source under Apps/ and Packages/ (Vendor/ is upstream and excluded
   * FR-068 (amended 2026-11-12): no networking APIs (URLSession, CFNetwork, sockets, WebKit)
     anywhere; the Network framework only inside
     Packages/PerformanceControl/Sources/PerformanceControl/OSCTransport/ (local OSC, off by default).
+  * SHD-011 / ADR-0024 (user-authored shader policy): untrusted content must never run as native code
+    or make a library load, so these are forbidden everywhere (matched on code with comments and
+    string literals removed): loading bundles or libraries other than the main bundle; script
+    engines (JavaScriptCore) and expression evaluation (NSExpression, NSPredicate(format:) with a
+    non-literal format); process spawning; executable memory; and Metal libraries created from
+    source outside METAL_SOURCE_ALLOWED (eight reviewed files that compile module constants) or from
+    URLs, data, files, dynamic libraries or binary archives anywhere.
   * Research R-16: no entitlements or background modes in project.yml, in any YAML key form
     (plain, quoted, or flow style; ADR-0001 owner ruling 13). YAML comments are ignored.
   * ADR-0001 Decision 6, the one entitlement exception: project.yml may set
@@ -62,6 +69,44 @@ NETWORK_FRAMEWORK = re.compile(r"\bimport\s+Network\b|\bNW(Connection|Listener|B
                                r"ConnectionGroup|PathMonitor|Endpoint|Parameters)\b")
 OSC_ALLOWED = (ROOT / "Packages" / "PerformanceControl" / "Sources" / "PerformanceControl"
                / "OSCTransport")
+# SHD-011 / ADR-0024: code-execution rules, matched after comments and string literals are removed
+# (safety tests list forbidden names in strings). Contract:
+# specs/050-shd-011-user-authored-shader-policy/contracts/compliance-rules.md.
+CODE_EXECUTION_RULES: list[tuple[str, re.Pattern[str]]] = [
+    ("bundle or library loading (SHD-011)",
+     re.compile(r"\bBundle\s*\(\s*(?:url|path)\s*:|\bNSBundle\b|\bbundleWith(?:Path|URL)\b|"
+                r"\b(?:loadAndReturnError|preflightAndReturnError)\b|\bCFBundle(?:Create|LoadExecutable)\w*|"
+                r"\b\w*[Bb]undle\w*(?:[ \t]*\.[ \t]*\w+)*?[ \t]*\.[ \t]*load[ \t]*\([ \t]*\)|"
+                r"\bdlopen_preflight\b|\bNSCreateObjectFileImageFromMemory\b|\bNSLinkModule\b")),
+    ("script engine or expression evaluation (SHD-011)",
+     re.compile(swift_import("JavaScriptCore") + r"|<JavaScriptCore/|"
+                r"\bJS(?:Context|VirtualMachine|Value|EvaluateScript|GlobalContextCreate)\w*|\bNSExpression\b|"
+                r"\bNSPredicate\s*\(\s*format\s*:\s*[^\s\"]|\bpredicateWithFormat\s*:\s*[^\s\"@]")),
+    ("process spawning (SHD-011)",
+     re.compile(r"\bposix_spawnp?\b|\bNSTask\b|\bProcess\s*\(|(?<![\w.])(?<!func )system\s*\(|"
+                r"\bexec(?:l|lp|le|v|vp|vpe|ve)\s*\(|\bv?fork\s*\(|\bpopen\s*\(")),
+    ("executable memory (SHD-011)",
+     re.compile(r"\bPROT_EXEC\b|\bMAP_JIT\b|\bmprotect\s*\(|\bpthread_jit_write_protect_np\b")),
+    ("Metal library from outside the reviewed sources (SHD-011)",
+     re.compile(r"\bmakeLibrary\s*\(\s*(?:URL|data|filepath)\s*:|\bmakeDefaultLibrary\s*\(\s*bundle\s*:|"
+                r"\bmakeDynamicLibrary\b|\bMTLDynamicLibrary\b|\bnewDynamicLibrary\w*|"
+                r"\bnewLibraryWith(?:URL|Data|File)\b|\bmakeBinaryArchive\b")),
+]
+METAL_SOURCE = re.compile(r"\bmakeLibrary\s*\(\s*source\s*:|\bnewLibraryWithSource\b")
+# The only files that may compile Metal source; each compiles a constant of its own module (audited
+# 2026-11-13, research SHD-011-D4). Adding one is a reviewed change here and in ADR-0024.
+METAL_SOURCE_ALLOWED = frozenset({
+    "Packages/ANGLERendering/Sources/ProjectMLayer/ProjectMLayerSource.swift",
+    "Packages/Compositor/Sources/CameraLayer/CameraLayerSource.swift",
+    "Packages/Compositor/Sources/Compositor/CompositorShaders.swift",
+    "Packages/Compositor/Sources/GeneratorGraph/GeneratorGraphShaders.swift",
+    "Packages/Compositor/Sources/ProceduralMaterials/ProceduralMaterialShaders.swift",
+    "Packages/Compositor/Sources/ImageLayer/ImageLayerSource.swift",
+    "Packages/VisualGenerators/Sources/VisualGenerators/FlatShapePass.swift",
+    "Packages/VisualGenerators/Sources/VisualEffects/PostProcessEffect.swift",
+})
+# Swift multi-line and single-line literals (raw #"..."# included); Objective-C @"..." keeps its @.
+STRING_LITERAL = re.compile(r'#*"""[\s\S]*?"""#*|#+"[^\n]*?"#+|"(?:\\.|[^"\\\n])*"')
 SCK_IMPORT = re.compile(swift_import("ScreenCaptureKit") + r"|<ScreenCaptureKit/")
 
 # A YAML mapping key starts a line (optionally as a `- ` list item) or follows `{` or `,` in
@@ -94,6 +139,27 @@ def strip_comments(text: str) -> str:
     return re.sub(r"//[^\n]*", "", text)
 
 
+def strip_strings(text: str) -> str:
+    """Replace every string literal by "" so names inside strings are not read as code."""
+    return STRING_LITERAL.sub('""', text)
+
+
+def repo_relative(path: Path) -> str | None:
+    try:
+        return path.resolve().relative_to(ROOT.resolve()).as_posix()
+    except ValueError:
+        return None
+
+
+def check_code_execution(path: Path, code: str) -> list[str]:
+    """SHD-011 rules on code without comments and string literals."""
+    found = [f"{path}: {name}" for name, rx in CODE_EXECUTION_RULES if rx.search(code)]
+    if METAL_SOURCE.search(code) and repo_relative(path) not in METAL_SOURCE_ALLOWED:
+        found.append(f"{path}: Metal library from outside the reviewed sources (SHD-011): "
+                     "makeLibrary(source:) outside METAL_SOURCE_ALLOWED")
+    return found
+
+
 def source_files(paths: list[Path]) -> list[Path]:
     files: list[Path] = []
     for base in paths:
@@ -107,6 +173,7 @@ def source_files(paths: list[Path]) -> list[Path]:
 def check_file(path: Path) -> list[str]:
     text = strip_comments(path.read_text(encoding="utf-8", errors="replace"))
     found = [f"{path}: {name}" for name, rx in RULES if rx.search(text)]
+    found += check_code_execution(path, strip_strings(text))
     if NETWORK_FRAMEWORK.search(text):
         try:
             path.resolve().relative_to(OSC_ALLOWED.resolve())

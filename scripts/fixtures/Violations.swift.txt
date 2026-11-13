@@ -5,3 +5,9 @@ import ScreenCaptureKit
 let session = URLSession.shared
 let handle = dlopen("libfoo.dylib", 0)
 let cls = NSClassFromString("PrivateThing")
+// SHD-011 (ADR-0024): one line per code-execution rule.
+let plugin = Bundle(path: "/tmp/Evil.bundle")
+let context = JSContext()
+let task = Process()
+let jit = mmap(nil, 4096, PROT_EXEC, MAP_JIT, -1, 0)
+let library = try device.makeLibrary(source: userText, options: nil)
