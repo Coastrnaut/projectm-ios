@@ -7,9 +7,8 @@
  "by_priority": {
   "P0": {
    "audited": 25,
-   "integrated": 60,
-   "skipped_existing": 1,
-   "unit_passed": 1
+   "integrated": 61,
+   "skipped_existing": 1
   },
   "P1": {
    "audited": 138,
@@ -25,9 +24,8 @@
  },
  "by_state": {
   "audited": 249,
-  "integrated": 75,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "integrated": 76,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -148,7 +146,6 @@
    "MOD-010",
    "MOD-011",
    "MOD-012",
-   "MOD-013",
    "MOD-015",
    "MOD-016",
    "MOD-017",
@@ -288,7 +285,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "250 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
+   "249 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
   ]
  },
  "features": {
@@ -1877,10 +1874,10 @@
    "branch": "feature/mod-013",
    "branch_sha": "bbdb65cb39c49988bb0eaa8931b9931f5e1fdd18",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "d08b5103b0ef93971fa6e1925181bb8856ddc2b4",
    "priority": "P0",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "MOD-014": {
    "attempts": 0,
@@ -3780,6 +3777,11 @@
    "sha": "29cd3bbb1e120730aa759744facd1511a94c7c2d"
   },
   {
+   "branch": "feature/mod-013",
+   "id": "MOD-013",
+   "sha": "d08b5103b0ef93971fa6e1925181bb8856ddc2b4"
+  },
+  {
    "branch": "feature/mod-014",
    "id": "MOD-014",
    "sha": "3b3a606490253c879e6d06c08259f3896d90d326"
@@ -3955,5 +3957,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T21:03:35Z"
+ "updated": "2026-11-13T21:03:52Z"
 }

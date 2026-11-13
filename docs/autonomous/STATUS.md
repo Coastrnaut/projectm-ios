@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T21:03:35Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T21:03:52Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,23 +10,22 @@
 | State | Features |
 |---|---|
 | audited | 249 |
-| unit_passed | 1 |
-| integrated | 75 |
+| integrated | 76 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 25 | 1 | 60 | 1 |
-| P1 | 138 | 0 | 13 | 0 |
-| P2 | 77 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | integrated | skipped_existing |
+|---|---|---|---|
+| P0 | 25 | 61 | 1 |
+| P1 | 138 | 13 | 0 |
+| P2 | 77 | 2 | 0 |
+| P3 | 9 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 250 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
+- 249 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
 
 ## Integrated
 
@@ -77,6 +76,7 @@ The physical-device suite may **not** start:
 | MOD-001 | Typed parameter registry | `304f3bce431a` | `feature/mod-001` |
 | MOD-002 | Audio feature binding | `006678f3d7a5` | `feature/mod-002` |
 | MOD-003 | Linear mapping | `29cd3bbb1e12` | `feature/mod-003` |
+| MOD-013 | Modulation serialization | `d08b5103b0ef` | `feature/mod-013` |
 | MOD-014 | Modulation feedback prevention | `3b3a60649025` | `feature/mod-014` |
 | OSC-001 | OSC receiver | `13d9883531b9` | `feature/osc-001` |
 | OSC-002 | OSC message parser | `3b3a60649025` | `feature/osc-002` |
@@ -435,7 +435,7 @@ None.
 - `post-merge: projectM-iOSTests 159 + AudioFeatureBindingUITests 13.8 s on iPhone 17 iOS 27.2 sim`: pass at `29cd3bbb1e12` (log `.autonomous/logs/integration/mod-003/app-tests.log`)
 - `post-merge: ParameterGraph xcodebuild test on iPhone 17 sim (48)`: pass at `29cd3bbb1e12` (log `.autonomous/logs/integration/mod-003/pg-sim.log`)
 
-### MOD-013 Modulation serialization (unit_passed)
+### MOD-013 Modulation serialization (integrated)
 - `python3 scripts/check_compliance.py`: pass at `bbdb65cb39c4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-013/20261113T160144/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `bbdb65cb39c4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-013/20261113T160144/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `bbdb65cb39c4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-013/20261113T160144/sim-test_ANGLERendering.log`)
@@ -445,6 +445,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `bbdb65cb39c4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-013/20261113T160144/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `bbdb65cb39c4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-013/20261113T160144/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `bbdb65cb39c4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-013/20261113T160144/swift-test_VisualGenerators.log`)
+- `post-merge: ParameterGraph scheme on iOS 27.2 sim (ParameterGraph 71 incl. migration table, ParameterExpression 38); SceneFormat 37 on host incl. restore acceptance and property tests; no app code changed`: pass at `d08b5103b0ef` (log `.autonomous/logs/integration/mod-013/pg-sim.log`)
 
 ### MOD-014 Modulation feedback prevention (integrated)
 - `python3 scripts/check_compliance.py`: pass at `a08446ecdde1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-014/20261113T114626/compliance.log`)
