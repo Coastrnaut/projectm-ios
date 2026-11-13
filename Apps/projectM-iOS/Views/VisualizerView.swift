@@ -7,6 +7,8 @@
 // CAM-001: the Camera visual (camera layer under the circular spectrum) replaces the renderer's view
 // the same way; a non-blocking banner explains a denied, restricted, missing or paused camera, with
 // "Open Settings" when access is off.
+// CAM-012: while the camera runs, a "Camera on" badge with Stop camera stays at the top, with or
+// without the controls.
 // AUD-007: a route change's explanation shows above the source-and-state indicator for about 4 s.
 import CaptureKit
 import CaptureUI
@@ -59,6 +61,11 @@ struct VisualizerView: View {
                 .accessibilityLabel("Visualization")
                 .accessibilityHint("Shows or hides the controls")
             VStack(spacing: 8) {
+                let indicator = coordinator.cameraIndicator
+                if indicator.isShown {   // CAM-012-R1 to R3: never hidden with the controls
+                    CameraIndicatorBadge(indicator: indicator) { coordinator.stopCamera() }
+                        .transition(.opacity)
+                }
                 banners
                 Spacer()
                 // AUD-007: the short explanation of a route change, with or without the controls.

@@ -39,6 +39,9 @@
 //   and stops in pauseActiveVisual() (pause, Stop, background, lock) and when another visual is
 //   chosen (the host is released). `cameraState` drives the non-blocking notice. While Camera is
 //   shown the status bar is never hidden, so iOS's camera indicator stays visible (CAM-001-R10).
+// * Camera privacy status (CAM-012): `cameraIndicator` (the "Camera on" badge) follows the feed
+//   state only. `stopCamera()` stops the camera first (synchronously, in the host), then returns to
+//   the visual chosen before Camera through the usual visual switch; the audio source is untouched.
 import ANGLERendering
 import CameraLayer
 import AudioCore
@@ -574,6 +577,23 @@ final class AppCoordinator: VisualizationControlling {
         host.pause()
         cameraVisual = nil   // the presentation registry holds it weakly
         cameraState = .idle
+    }
+
+    /// CAM-012-R1, R2: the in-app camera badge, from the feed state only (hidden off the visualizer).
+    var cameraIndicator: CameraIndicator {
+        showsCameraVisual ? CameraIndicator(state: cameraState) : .hidden
+    }
+
+    /// CAM-012-R4 to R8: the user's Stop camera. The camera is stopped before anything else (the
+    /// feed reports idle, the badge goes), then the visual chosen before Camera is shown and runs;
+    /// the Camera visual is released. The audio source is not touched, nothing new is stored, and
+    /// only choosing Camera again starts the camera.
+    func stopCamera() {
+        guard let host = cameraVisual else { return }
+        host.stopCamera()
+        UIAccessibility.post(notification: .announcement, argument: CameraIndicator.stoppedAnnouncement)
+        settings.visual = settings.visualBeforeCamera
+        visualSettingsChanged()   // releases the Camera visual, resumes the fallback (VIS-001-R12)
     }
 
     private func cameraStateChanged(_ state: CameraFeedState) {

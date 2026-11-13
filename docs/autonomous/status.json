@@ -6,12 +6,14 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 49,
-   "integrated": 37,
+   "audited": 47,
+   "implementing": 1,
+   "integrated": 38,
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 140,
+   "audited": 139,
+   "implementing": 1,
    "integrated": 11
   },
   "P2": {
@@ -22,8 +24,9 @@
   }
  },
  "by_state": {
-  "audited": 277,
-  "integrated": 48,
+  "audited": 274,
+  "implementing": 2,
+  "integrated": 49,
   "skipped_existing": 1
  },
  "device_gate": {
@@ -71,7 +74,6 @@
    "CAM-009",
    "CAM-010",
    "CAM-011",
-   "CAM-012",
    "CAM-013",
    "CMP-002",
    "CMP-003",
@@ -312,7 +314,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "277 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
+   "276 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
   ]
  },
  "features": {
@@ -1008,13 +1010,13 @@
   },
   "CAM-012": {
    "attempts": 0,
-   "branch": null,
-   "branch_sha": null,
+   "branch": "feature/cam-012",
+   "branch_sha": "3e408a740a3bcab501b2ccc843fe188db9d1a26b",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "a188b049fc60834422a2fee6fe53022ab3a32f8f",
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "integrated"
   },
   "CAM-013": {
    "attempts": 0,
@@ -2008,13 +2010,13 @@
   },
   "OSC-007": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/osc-007",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "OSC-008": {
    "attempts": 0,
@@ -2958,13 +2960,13 @@
   },
   "SHD-001": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/shd-001",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "SHD-002": {
    "attempts": 0,
@@ -3729,6 +3731,11 @@
    "sha": "05ef3cb4e24b8dcbfa44afe1dc4e8cf728ed497e"
   },
   {
+   "branch": "feature/cam-012",
+   "id": "CAM-012",
+   "sha": "a188b049fc60834422a2fee6fe53022ab3a32f8f"
+  },
+  {
    "branch": "feature/cmp-001",
    "id": "CMP-001",
    "sha": "ba60b9d3485aa03e685f60186c2acd91e955589e"
@@ -3844,5 +3851,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T16:49:16Z"
+ "updated": "2026-11-13T17:02:55Z"
 }

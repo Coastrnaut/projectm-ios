@@ -50,7 +50,9 @@ The app asks for no other permission.
 
 When you choose the Camera visual, the rear camera runs only while that visual is on screen and
 the app is in the foreground; it stops when you choose another visual, pause, stop, or leave the
-app, and iOS shows its camera indicator whenever it runs. Each picture is held in memory only until
+app, and iOS shows its camera indicator whenever it runs. The app also shows its own "Camera on"
+badge while the camera runs, with a Stop camera button that turns the camera off at once and returns
+to the visual you had before (CAM-012). Each picture is held in memory only until
 the next one replaces it and is drawn on your screen. The app never records, saves, sends or
 analyses camera pictures (no face, person or scene detection), and it does not remember the Camera
 choice: after a relaunch the camera starts only when you choose it again.
