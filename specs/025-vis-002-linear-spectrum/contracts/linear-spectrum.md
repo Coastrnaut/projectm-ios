@@ -9,6 +9,9 @@ public protocol SpectrumTextureGenerator: TextureGenerator {
     var limiter: FlashSafetyLimiter { get }                         // VIS-001-R10, FX-019
     var downstreamLuminance: (any FrameLuminanceTransfer)? { get set } // FX-001-R10
     var barCount: SpectrumBarCount { get set }
+    /// The host's loop restart: bar slew (and peak caps) start from the next frame's values; the
+    /// envelope history is kept (FX-019-R11).
+    func restartLoop()
 }
 
 public protocol FlashAreaLevelSource: AnyObject {                   // FX-019-R4

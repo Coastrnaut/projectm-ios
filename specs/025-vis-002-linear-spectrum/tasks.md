@@ -35,7 +35,7 @@ appended. Logs go to `.build/scratch/`.
 ## Phase 4: User Story 3 - peak caps (P2)
 
 - [ ] VIS-002-T07 [P] [US3] Write `Packages/VisualGenerators/Tests/VisualGeneratorsTests/PeakCapTrackerTests.swift` with an injected frame clock: a value of 1 then 0 holds the cap at 1 for 0.5 s and then falls 1.0/s (cap at 0.75 after 0.75 s, 0 after 1.5 s), never below the bar; a higher value restarts the hold; a frame time of 10 s is clamped to 0.1 s; hold time used up mid-frame flows into the fall; `reset()` clears; the layout draws caps only above 0 and puts each cap at P·λ·L.
-- [ ] VIS-002-T08 [US3] Record the T07 red run; implement `PeakCapTracker.swift` and wire it into `LinearSpectrumLayout` (reset on bar count or orientation change). Evidence: T07 passes on the host and in the Linux shape.
+- [ ] VIS-002-T08 [US3] Record the T07 red run; implement `PeakCapTracker.swift` and wire it into `LinearSpectrumLayout` (reset on bar count or orientation change) and add `SpectrumTextureGenerator.restartLoop()` (bar slew and peak caps restart; the envelope history is kept, FX-019-R11), called by the app host where it called `limiter.reset()`. Evidence: T07 passes on the host and in the Linux shape.
 
 ## Phase 5: User Story 4 - flash safety and glow (P2)
 
@@ -46,7 +46,7 @@ appended. Logs go to `.build/scratch/`.
 
 - [ ] VIS-002-T11 [P] [US1] Write app unit tests: `Apps/projectM-iOS/Tests/SettingsTests.swift` (orientation and spacing defaults vertical/0.2, persistence, unknown → defaults, `allKeys` contains both keys, `VisualChoice.linearSpectrum` stored as `linearSpectrum`) and `Apps/projectM-iOS/Tests/NativeVisualTests.swift` (`nativeVisualShown` for the linear choice; a host made with the linear style switches to circular and back without failing; accessibility value "Vertical, Glow off").
 - [ ] VIS-002-T12 [US1] Implement: rename `Apps/projectM-iOS/Visuals/CircularSpectrumHost.swift` to `NativeSpectrumHost.swift` with `NativeSpectrumStyle`; `AppSettings.swift` (choice, keys, `isNative`); `AppCoordinator.swift` (style, notice per choice); `SettingsView.swift` (orientationPicker, spacingPicker; Bars and Glow for both); `VisualizerView.swift`, `ControlsOverlay.swift`; `scripts/run_device_tests.py` (two allowed keys). Evidence: `xcodegen generate`, app build, app unit tests pass `{sim}` (known environmental failure `PresetTests.testBundledIncludedScopeMatchesRelease1_0` excepted).
-- [ ] VIS-002-T13 [US1] Write `Apps/projectM-iOS/UITests/LinearSpectrumUITests.swift`: choose Linear Spectrum and Horizontal, check the visual (`linearSpectrum`, value starting "Horizontal"), relaunch and check both persisted, source started once; under 30 s `{sim}`. Then run it with `NativeVisualUITests` and `GlowUITests`. Evidence: all pass; durations recorded.
+- [ ] VIS-002-T13 [US1] Write `Apps/projectM-iOS/UITests/LinearSpectrumUITests.swift`: choose Linear Spectrum and Horizontal, check the visual (`linearSpectrum`, value starting "Horizontal"), relaunch and check both persisted, source started once; under 30 s `{sim}`. Then run it with `NativeVisualUITests` only (owner rule 7: the feature's own UI tests; `GlowUITests` is left to the post-merge check because Settings' glow rows change only in which visual shows them). Evidence: all pass; durations recorded.
 - [ ] VIS-002-T14 [US1] Take one simulator screenshot per orientation with the reference track into `.build/scratch/vis002-vertical.png` and `.build/scratch/vis002-horizontal.png` `{sim}`; count new PosterBoard reports.
 
 ## Phase 7: Polish
