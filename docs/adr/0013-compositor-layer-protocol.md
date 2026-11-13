@@ -158,3 +158,11 @@ restriction of decision 5; blend modes stay refused until CMP-004.
    create, prepare and release nothing. No transform animation in this row (MOD/UIX rows); group
    transforms (CMP-011) compose `LayerTransformMatrix` values; aspect fitting (CMP-006) builds on
    the matrix. The device cost is covered by CMP-002-T15.
+
+## Amendment 2026-11-13 (SCN-001, ADR-0028)
+
+`LayerStack.init(restoring:)` rebuilds a saved stack with its own instance IDs, bottom first; it
+refuses duplicate IDs (`LayerStackError.duplicateLayer`), more than 8 entries and kinds over their
+limit, and the next added layer gets the largest restored ID + 1, so IDs are still never reused.
+Procedural materials and generator graphs declare their layer kinds (`material`,
+`generator.graph`) beside their targets, like every other kind.

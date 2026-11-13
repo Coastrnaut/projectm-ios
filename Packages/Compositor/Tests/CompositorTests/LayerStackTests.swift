@@ -133,4 +133,31 @@ final class LayerStackTests: XCTestCase {
         XCTAssertEqual(LayerKind("x", maximumInstances: -3).maximumInstances, 0)
         XCTAssertEqual(LayerInstanceID(rawValue: 7).description, "layer#7")
     }
+
+    // SCN-001 (research SCN-001-D7): a saved stack is rebuilt with its own IDs and order.
+    func testRestoringKeepsIDsAndOrderAndNeverReusesThem() throws {
+        let camera = LayerStackEntry(id: LayerInstanceID(rawValue: 7), descriptor: LayerDescriptor(kind: .camera))
+        let ring = LayerStackEntry(id: LayerInstanceID(rawValue: 3), descriptor: LayerDescriptor(kind: .circularSpectrum, parameters: ["a": 0.5]),
+                                   settings: LayerCompositeSettings(opacity: 0.25))
+        var stack = try LayerStack(restoring: [camera, ring])
+        XCTAssertEqual(stack.entries, [camera, ring])
+        XCTAssertEqual(try stack.add(LayerDescriptor(kind: .linearSpectrum)), LayerInstanceID(rawValue: 8))
+        XCTAssertEqual(try LayerStack(restoring: []).count, 0)
+        var empty = try LayerStack(restoring: [])
+        XCTAssertEqual(try empty.add(LayerDescriptor(kind: .camera)), LayerInstanceID(rawValue: 1))
+    }
+
+    func testRestoringRefusesDuplicatesAndLimits() throws {
+        let id = LayerInstanceID(rawValue: 2)
+        let a = LayerStackEntry(id: id, descriptor: LayerDescriptor(kind: .circularSpectrum))
+        XCTAssertThrowsError(try LayerStack(restoring: [a, a])) { XCTAssertEqual($0 as? LayerStackError, .duplicateLayer(id)) }
+        let cameras = (1...2).map { (i: UInt64) -> LayerStackEntry in
+            LayerStackEntry(id: LayerInstanceID(rawValue: i), descriptor: LayerDescriptor(kind: .camera))
+        }
+        XCTAssertThrowsError(try LayerStack(restoring: cameras)) { XCTAssertEqual($0 as? LayerStackError, .kindLimitReached(.camera)) }
+        let nine = (1...9).map { (i: UInt64) -> LayerStackEntry in
+            LayerStackEntry(id: LayerInstanceID(rawValue: i), descriptor: LayerDescriptor(kind: .circularSpectrum))
+        }
+        XCTAssertThrowsError(try LayerStack(restoring: nine)) { XCTAssertEqual($0 as? LayerStackError, .stackFull(limit: 8)) }
+    }
 }
