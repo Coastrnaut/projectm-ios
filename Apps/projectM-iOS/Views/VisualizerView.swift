@@ -116,6 +116,7 @@ struct VisualizerView: View {
             if coordinator.show.hasCues && !coordinator.showSettings {   // SHOW-001-R15
                 ShowKeyCommands(coordinator: coordinator)
             }
+            if !coordinator.showSettings { SceneHistoryKeyCommands(coordinator: coordinator) }   // SCN-010-R10
             if coordinator.settings.showsPerformanceOverlay, coordinator.renderer != nil || coordinator.showsAlternateVisual {
                 VStack { HStack { Spacer(); PerformanceOverlay(metrics: { coordinator.activeVisualMetrics }, manager: coordinator.manager,
                                                                    renderHealth: { coordinator.renderHealthOverlayLine }) }; Spacer() }
@@ -290,7 +291,8 @@ struct VisualizerView: View {
                          videos: coordinator.videos, texts: coordinator.texts,
                          show: coordinator.show, addCurrentScene: { coordinator.addCurrentSceneToShow() },
                          cacheFilesInUse: { () -> Set<String> in coordinator.cacheFilesInUse() },
-                         openGuide: { coordinator.openGuidedFirstScene() })   // UIX-001
+                         openGuide: { coordinator.openGuidedFirstScene() },
+                         history: coordinator.sceneHistory)      // UIX-001, SCN-010
         }
         // REC-001: the format choice (HEIF only where it can be encoded) and the system Files exporter.
         .confirmationDialog("Save Frame", isPresented: Binding(get: { coordinator.frameCapture.showFormatChoice },

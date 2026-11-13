@@ -138,8 +138,14 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// The full-library purchase (feature 002 US2): StoreKit, or a fixed fake in UI tests.
     let entitlements: any EntitlementProviding
     var showSettings = false {
-        didSet { if oldValue && !showSettings { sceneAutosave?.commitNow() } }   // SCN-002-R3
+        didSet {
+            guard oldValue && !showSettings else { return }
+            sceneHistory.endCoalescing()   // SCN-010-R4: closing Settings is a boundary
+            sceneAutosave?.commitNow()     // SCN-002-R3
+        }
     }
+    /// SCN-010: undo and redo of scene edits (in memory only).
+    @ObservationIgnored let sceneHistory = SceneHistoryCoordinator()
     /// SCN-002: the current scene's autosave (nil only if its folder cannot be made).
     @ObservationIgnored let sceneAutosave: SceneAutosaveCoordinator?
     /// PERF-010: abnormal-exit detection, the recovery offer and its consent rules.
@@ -352,6 +358,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         if recovery.decision.isCrashLoop { sceneAutosave?.commitFreshScene() }
         recovery.startObservingLifecycle()
         connectShow()   // SHOW-001
+        connectSceneHistory()   // SCN-010: starts from the restored (or fresh) scene
         #if DEBUG
         UITestShowFixture.seedIfRequested(self)   // SHOW-001: ShowCueUITests
         #endif
@@ -1063,6 +1070,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             if let text = values.text { texts.spec = text }
         }
         if let visual { settings.visual = visual }
+        sceneHistory.restart()   // SCN-010-R9: Reopen is not an edit
         announceRecovery("Last scene reopened.")
     }
 

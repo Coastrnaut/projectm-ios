@@ -43,6 +43,8 @@ struct SettingsView: View {
     var cacheFilesInUse: @MainActor () -> Set<String> = { () -> Set<String> in [] }
     /// UIX-001: opens the guided first scene (nil hides the row, e.g. in previews).
     var openGuide: (() -> Void)?
+    /// SCN-010: Undo and Redo in the navigation bar (nil hides them, e.g. in previews).
+    var history: SceneHistoryCoordinator?
     @Environment(\.dismiss) private var dismiss
     @State private var pickedPhoto: PhotosPickerItem?
     @State private var showPhotoFileImporter = false
@@ -66,7 +68,9 @@ struct SettingsView: View {
                 Text(text).monospacedDigit().foregroundStyle(.secondary)
             }
             .accessibilityHidden(true)
-            Slider(value: value, in: Double(range.lowerBound)...Double(range.upperBound))
+            Slider(value: value, in: Double(range.lowerBound)...Double(range.upperBound)) { (editing: Bool) in
+                if !editing { history?.endCoalescing() }   // SCN-010-R4: a drag is one step
+            }
                 .accessibilityLabel(title)
                 .accessibilityValue(text)
                 .accessibilityIdentifier(id)
@@ -221,7 +225,10 @@ struct SettingsView: View {
                 #endif
             }
             .navigationTitle("Settings")
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+                if let history { ToolbarItem(placement: .topBarLeading) { SceneUndoRedoButtons(history: history) } }   // SCN-010
+            }
         }
         .accessibilityIdentifier("settings")
     }
