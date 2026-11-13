@@ -166,6 +166,14 @@ public final class AVInAppPlaybackBackend: InAppPlaybackBackend {
         graph.seek(toFrame: PlaybackPositionMath.frame(seconds: seconds, sampleRate: graph.sampleRate, length: graph.lengthFrames))
     }
 
+    /// AUD-003: applies a change of looping at once, keeping the position, without a cut.
+    public func updateLooping(_ loops: Bool) {
+        if let graph {
+            graph.updateLooping(loops)            // before `loopsCurrentTrack`, whose didSet only sets the flag
+        }
+        loopsCurrentTrack = loops
+    }
+
     public func replaceTrack(_ track: InAppPlaybackTrack) throws {
         guard let graph else { throw SourceError(.inAppPlaybackFailed) }
         do {
