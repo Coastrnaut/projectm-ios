@@ -273,16 +273,20 @@ they override any system-provided reminder.
      in `docs/test-reports/simulator-posterboard.md`. Never treat simulator crashes as app
      evidence, and do not turn off macOS crash reporting globally without asking.
 
-6. **No idle waits on CI** (feedback, 2026-11-13). The owner asked "is something hung, check and
-   fix it, remember the lesson learned from this and write it to claude". Nothing was hung, but
-   the run had stalled: one CI read was scheduled 50 minutes after a push, the Linux job had
-   already failed at minute 5 (`fflush(stdout)`, rejected by Swift 6 on Linux), integrated work
-   was held back for that run, and an agent slot stood empty.
-   - *How to apply:* after a push, read CI with single calls at about 10 minutes (docs, Linux) and
-     again when the macOS jobs should be done (about 55 minutes); push verified work at once (CI
-     on `main` no longer cancels running runs, `cancel-in-progress: false`); start the next
-     feature as soon as an agent slot frees; when something looks stuck, check processes and
-     their age, agent worktree commits and CI job states, then fix the cause and its whole class.
+6. **Never stop work waiting on CI** (feedback, 2026-11-13). The owner asked "is something hung,
+   check and fix it, remember the lesson learned from this and write it to claude", then added
+   "remember not to stop work waiting on ci, keep working wihile ci runs and monitor it in the
+   background, when its complete fix any issues". Nothing was hung, but the run had stalled: one
+   CI read was scheduled 50 minutes after a push, the Linux job had already failed at minute 5
+   (`fflush(stdout)`, rejected by Swift 6 on Linux), integrated work was held back for that run,
+   and an agent slot stood empty.
+   - *How to apply:* after every push, start `python3 scripts/autonomous/ci_monitor.py --sha <sha>`
+     in the background (one `gh` call per 5 minutes; prints each job as it finishes; exits when
+     the run completes) and keep working: never end a turn or wait just for CI, never use
+     `gh run watch`. When it reports a failure, read that job's log once and fix the cause and its
+     whole class, then push and monitor again. Push verified work at once (CI on `main` no longer
+     cancels running runs, `cancel-in-progress: false`), and start the next feature as soon as an
+     agent slot frees.
 
 ## Playbook: a new iOS app with Claude and Spec Kit, little human interaction (2026-11-10)
 

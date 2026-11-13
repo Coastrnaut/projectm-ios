@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -606,6 +607,49 @@ class ReportTests(unittest.TestCase):
             self.assertIn("may **not** start", text)
             self.assertEqual(json.loads(js.read_text())["features"]["AAA-001"]["state"],
                              "integrated")
+
+
+class CIMonitorTests(unittest.TestCase):
+    def fake(self, views):
+        calls = []
+        listing = [{"databaseId": 7, "headSha": "abc1234ffff", "status": "in_progress",
+                    "conclusion": "", "event": "push", "createdAt": "x"}]
+
+        def runner(cmd, **kw):
+            calls.append(cmd[1:3])
+            if cmd[1:3] == ["run", "list"]:
+                return SimpleNamespace(returncode=0, stdout=json.dumps(listing), stderr="")
+            return SimpleNamespace(returncode=0, stdout=json.dumps(views.pop(0)), stderr="")
+        return runner, calls
+
+    def view(self, status, conclusion, jobs):
+        return {"databaseId": 7, "headSha": "abc1234ffff", "status": status,
+                "conclusion": conclusion,
+                "jobs": [{"name": n, "status": s, "conclusion": c, "databaseId": i}
+                         for i, (n, s, c) in enumerate(jobs)]}
+
+    def test_exits_when_complete_and_reports_early_job_results(self):
+        import ci_monitor, io, contextlib
+        runner, calls = self.fake([
+            self.view("in_progress", "", [("linux", "completed", "failure"), ("mac", "in_progress", "")]),
+            self.view("completed", "failure", [("linux", "completed", "failure"), ("mac", "completed", "success")])])
+        out = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(ci_monitor, "ROOT", Path(tmp)), \
+                contextlib.redirect_stdout(out):
+            code = ci_monitor.main(["--sha", "abc1234", "--interval", "0"], runner=runner, sleep=lambda s: None)
+        self.assertEqual(code, 1)
+        text = out.getvalue()
+        self.assertIn("job linux: failure", text)
+        self.assertEqual(text.count("job linux"), 1)
+        self.assertEqual(calls.count(["run", "view"]), 2)     # one call per check, no polling burst
+
+    def test_success(self):
+        import ci_monitor, io, contextlib
+        runner, _ = self.fake([self.view("completed", "success", [("linux", "completed", "success")])])
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(ci_monitor, "ROOT", Path(tmp)), \
+                contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(ci_monitor.main(["--sha", "abc1234", "--interval", "0"], runner=runner,
+                                             sleep=lambda s: None), 0)
 
 
 class OrchestratorCommandTests(unittest.TestCase):

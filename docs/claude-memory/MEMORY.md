@@ -3,4 +3,4 @@
 - [Commit/push cadence](commit-push-cadence.md) — commit after every task, skill and fileset change; push right after
 - [Best judgement on choices](best-judgement-on-choices.md) — owner delegated product/policy choices; decide, record, report
 - [Monitor PosterBoard crashes](monitor-posterboard-crashes.md) — watch simulator PosterBoard crash reports and fix as required
-- [No idle waits on CI](no-idle-waits-on-ci.md) — read fast CI jobs early, push verified work at once, keep agent slots busy
+- [No idle waits on CI](no-idle-waits-on-ci.md) — never stop for CI: monitor it in the background, keep working, fix issues when done
