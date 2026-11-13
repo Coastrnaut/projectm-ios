@@ -34,7 +34,8 @@
   0/1 pattern for the strobe scene; no analysis events. Photos are generated RGBA gradients with
   seeded stripes, encoded to PNG in a temporary file and loaded through the photo layer. Frame 0 is a
   warm-up: after it the harness waits for photo loads (`waitUntilLoaded`) and text rasterization
-  (`waitUntilRendered`).
+  (`waitUntilRendered`), then resets the composite flash history (found on the simulator: frame 0 sometimes
+  already showed the photo, and the guard's history carried that into frame 7).
 - **Rationale**: each layer's tests already show bit-identical output for identical inputs; the only
   timing-dependent parts are the two asynchronous loaders, settled before any capture.
 

@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (QA-002-T01-T19 verified on the Mac host, the Linux shape and the iOS 27.2 and 26.5 simulators; CI pending)
 
 **Input**: User description: "Implement QA-002 (Golden render scenes) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Store small licensed test scenes
@@ -177,7 +177,7 @@ half-recorded sets.
   256 × 192), and capture the captured frames as shown (after the composite flash guard) as 8-bit sRGB
   RGBA pixels using REC-001's conversion.
 - **QA-002-R5**: Asynchronous layers MUST be settled (loaded and rasterized) before the first captured
-  frame; the first frame is a warm-up and is never captured.
+  frame; the first frame is a warm-up and is never captured, and the composite flash guard's history is reset after it (whether frame 0 showed a loading photo or text depends on timing).
 - **QA-002-R6**: Goldens MUST be stored as PNG files (REC-001 encoder, no metadata) in a dedicated
   folder per platform, with a manifest listing scene, frame index, width, height, platform, file name,
   SHA-256 of the RGBA pixels and SHA-256 of the file.

@@ -10,7 +10,7 @@ camera, video or unknown kind (the harness refuses them with `GoldenRenderError.
 ## G2 Rendering
 
 `GoldenSceneRenderer.render(run, document, resolution)` renders `frameCount` frames at
-`start + n × interval` with the run's audio and flash setting, settles asynchronous layers after
+`start + n × interval` with the run's audio and flash setting, settles asynchronous layers and resets the composite flash history after
 frame 0, and returns one `GoldenImage` per captured frame. Two calls give identical pixels.
 
 ## G3 Comparison
