@@ -58,7 +58,7 @@ public final class LiveBandAnalyzer: @unchecked Sendable {
 
     /// Takes effect at the next tick.
     public func setBarCount(_ barCount: SpectrumBarCount) {
-        queue.async { [feed] in feed.setBarCount(barCount) }
+        queue.async { [weak self] in self?.feed.setBarCount(barCount) }
     }
 
     private func tick() {

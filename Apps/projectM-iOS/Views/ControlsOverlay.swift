@@ -15,6 +15,10 @@
 //
 // PRE-015-R1: next to the current preset's name, "Duplicate to My Presets" copies a built-in
 // preset on screen into My Presets (not shown for a user preset).
+//
+// VIS-001-R13: while the native Circular Spectrum is shown there is no preset on screen, so the title
+// names the visual (`currentVisual`) and Previous, Next, Random, Presets and Duplicate are left out;
+// Stop, Pause/Resume, Settings and the transport stay.
 import CaptureKit
 import CaptureUI
 import PresetLibrary
@@ -71,7 +75,24 @@ struct ControlsOverlay: View {
             .accessibilityIdentifier("transport")
     }
 
-    private var presetName: some View {
+    @ViewBuilder private var presetName: some View {
+        if coordinator.showsNativeVisual {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(VisualChoice.circularSpectrum.title)
+                    .font(.subheadline)
+                    .lineLimit(1)
+                    .accessibilityIdentifier("currentVisual")
+                Text("Native visual")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+        } else {
+            presetRow
+        }
+    }
+
+    private var presetRow: some View {
         HStack(spacing: 8) {
             presetTitle
             if let current = coordinator.presets.current, current.source != PresetLibrary.userSource {
@@ -152,6 +173,11 @@ struct ControlsOverlay: View {
     }
 
     private var buttons: [Item] {
+        let presetIDs: Set<String> = ["previous", "next", "random", "presets"]
+        return allButtons.filter { !coordinator.showsNativeVisual || !presetIDs.contains($0.id) }
+    }
+
+    private var allButtons: [Item] {
         [
             Item(id: "stop", title: "Stop", icon: "stop.fill") { coordinator.stop() },
             Item(id: "pauseResume", title: coordinator.userPaused ? "Resume" : "Pause",

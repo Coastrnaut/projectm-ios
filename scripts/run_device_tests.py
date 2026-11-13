@@ -58,9 +58,11 @@ TARGETS = {
     "SC-104": "95% of preset switches from any pack show their first frame within 1 s (D1)",
     "SC-108": "installed size grows by no more than 40 MB over release 1.0",
 }
-# FR-065 plus FR-123: everything the app may store in its UserDefaults.
+# FR-065 plus FR-123 and VIS-001-R11 (the visual and its bar count): everything the app may store in
+# its UserDefaults.
 ALLOWED_KEYS = {"favorites", "lastPresetID", "settings.performanceOverlay", "settings.reduceFlashing",
-                "settings.presetScope", "notice.photosensitivityAcknowledged"}
+                "settings.presetScope", "notice.photosensitivityAcknowledged",
+                "settings.visual", "settings.circularSpectrum.bars"}
 # AUD-001-R22 amends FR-065: audio files the user imported are stored, and only here: the audio
 # library's content-addressed copies (assets/<sha256>[.ext]) and its imports in flight
 # (incoming/<uuid>[.ext]). An audio file anywhere else in the container is still a violation.

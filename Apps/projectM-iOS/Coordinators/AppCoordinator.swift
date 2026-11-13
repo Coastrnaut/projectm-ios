@@ -24,6 +24,12 @@
 //   Queue) and from the transport while an imported track plays; edits never move playback.
 // * Test signals (AUD-016): the chooser's Diagnostics section starts a generated reference tone as
 //   In-App Playback, alone in its play order; nothing about the choice is stored.
+// * Visual (VIS-001, ADR-0009): Settings chooses projectM (default) or the native Circular Spectrum.
+//   The capture manager's analysis tap is on so the circular spectrum's band analysis can read the
+//   normalized audio without touching projectM's reader. While the circular spectrum is shown,
+//   projectM is paused (not torn down) and its preset controls are hidden; every pause/resume goes
+//   through pauseActiveVisual()/resumeActiveVisual(). If the native visual cannot be created it
+//   falls back to projectM with a notice (VIS-001-R16).
 import ANGLERendering
 import AudioCore
 import CaptureKit
@@ -34,7 +40,9 @@ import Observation
 import PresentationLifecycle
 import PresetLibrary
 import Rendering
+import Metal
 import UIKit
+import VisualGenerators
 
 @MainActor
 @Observable
@@ -76,6 +84,11 @@ final class AppCoordinator: VisualizationControlling {
     var showSettings = false
     /// Performance overlay and Reduce flashing (T103).
     let settings: AppSettings
+    /// The native circular spectrum (VIS-001), created the first time it is needed.
+    private(set) var nativeVisual: CircularSpectrumHost?
+    /// The native visual could not be created on this launch; projectM is shown instead (VIS-001-R16).
+    private(set) var nativeVisualUnavailable = false
+    static let nativeVisualUnavailableMessage = "Circular Spectrum isn't available on this device. Showing projectM."
 
     private let defaults: UserDefaults
     #if DEBUG
@@ -117,7 +130,9 @@ final class AppCoordinator: VisualizationControlling {
             sources.append(fake)
         }
         #endif
-        let manager = CaptureManager(sources: sources, signposts: DiagnosticsLog.pipeline)   // latency stages (T062, T114)
+        // Latency stages (T062, T114); the analysis tap feeds the native visual's bands (VIS-001-R14).
+        let manager = CaptureManager(sources: sources, signposts: DiagnosticsLog.pipeline,
+                                     analysisTapCapacityFrames: NormalizedPCMRing.analysisTapDefaultCapacityFrames)
         self.manager = manager
         transport = PlaybackTransport(manager: manager, source: inAppPlayback)
         let lifecycle = LifecycleObserver()
@@ -318,7 +333,7 @@ final class AppCoordinator: VisualizationControlling {
         screen = .visualizer
         lifecycleCoordinator.visualizationStarted()
         userPaused = false
-        renderer?.resume()
+        resumeActiveVisual()
         showControls()
         updateIdleTimer()
         Task { await manager.select(mode) }
@@ -327,7 +342,7 @@ final class AppCoordinator: VisualizationControlling {
     /// Stop (FR-007): stops the source and returns to the chooser.
     func stop() {
         hideTask?.cancel()
-        renderer?.pause()
+        pauseActiveVisual()
         screen = .chooser
         lifecycleCoordinator.visualizationEnded()
         updateIdleTimer()
@@ -428,6 +443,76 @@ final class AppCoordinator: VisualizationControlling {
     /// FR-072: the renderer follows the setting (and Reduce Motion while the user has not chosen).
     func applyReduceFlashing() {
         renderer?.reduceFlashing = settings.reduceFlashing
+        nativeVisual?.reduceFlashing = settings.reduceFlashing   // VIS-001-R10
+    }
+
+    // MARK: - Visual choice (VIS-001)
+
+    /// The native visual replaces projectM only when chosen, created and on the visualizer.
+    static func nativeVisualShown(choice: VisualChoice, hostAvailable: Bool, onVisualizer: Bool) -> Bool {
+        choice == .circularSpectrum && hostAvailable && onVisualizer
+    }
+
+    var showsNativeVisual: Bool {
+        Self.nativeVisualShown(choice: settings.visual, hostAvailable: nativeVisual != nil, onVisualizer: screen == .visualizer)
+    }
+
+    private var circularSpectrumBarCount: SpectrumBarCount {
+        SpectrumBarCount(rawValue: settings.circularSpectrumBars) ?? .b64
+    }
+
+    /// Creates the circular spectrum the first time it is chosen; on failure, falls back to projectM
+    /// with a notice (VIS-001-R16). The stored choice is kept.
+    private func prepareNativeVisualIfNeeded() {
+        guard settings.visual == .circularSpectrum, nativeVisual == nil, !nativeVisualUnavailable else { return }
+        do {
+            var device = MTLCreateSystemDefaultDevice()
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("-uitestNativeVisualFailure") { device = nil }   // NativeVisualUITests
+            #endif
+            let host = try CircularSpectrumHost.make(device: device, reader: manager.analysisTap, barCount: circularSpectrumBarCount)
+            host.reduceFlashing = settings.reduceFlashing
+            presentation.register(host)   // PERF-011: starts suspended while the app cannot present
+            nativeVisual = host
+        } catch {
+            nativeVisualUnavailable = true
+            rendererError = "Circular Spectrum: \(error)"
+            UIAccessibility.post(notification: .announcement, argument: Self.nativeVisualUnavailableMessage)
+        }
+    }
+
+    /// Runs whichever visual is shown and keeps the other paused.
+    private func resumeActiveVisual() {
+        prepareNativeVisualIfNeeded()
+        if showsNativeVisual {
+            renderer?.pause()
+            nativeVisual?.resume()
+        } else {
+            nativeVisual?.pause()
+            renderer?.resume()
+        }
+    }
+
+    /// Frame statistics of the shown visual (FR-048 overlay).
+    var activeVisualMetrics: RenderMetrics {
+        showsNativeVisual ? (nativeVisual?.metrics ?? .zero) : (renderer?.metrics ?? .zero)
+    }
+
+    private func pauseActiveVisual() {
+        renderer?.pause()
+        nativeVisual?.pause()
+    }
+
+    /// Settings changed the visual or its bar count: switch without touching the audio source
+    /// (VIS-001-R12).
+    func visualSettingsChanged() {
+        nativeVisual?.barCount = circularSpectrumBarCount
+        if visualizationState == .running {
+            resumeActiveVisual()
+        } else {
+            prepareNativeVisualIfNeeded()
+            pauseActiveVisual()
+        }
     }
 
     /// The system Reduce Motion setting changed.
@@ -438,7 +523,7 @@ final class AppCoordinator: VisualizationControlling {
 
     func togglePause() {
         userPaused.toggle()
-        userPaused ? renderer?.pause() : renderer?.resume()
+        userPaused ? pauseActiveVisual() : resumeActiveVisual()
         updateIdleTimer()
         showControls()
     }
@@ -497,12 +582,12 @@ final class AppCoordinator: VisualizationControlling {
 
     func suspendVisualization() {
         Task { await userPresets.abandonProving() }   // PRE-012-R18: leaving the screen is not the preset's fault
-        renderer?.pause()
+        pauseActiveVisual()
         updateIdleTimer()
     }
 
     func resumeVisualization() {
-        renderer?.resume()
+        resumeActiveVisual()
         updateIdleTimer()
     }
 

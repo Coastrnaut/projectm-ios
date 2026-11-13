@@ -54,6 +54,11 @@ packages:
   # (pure Swift; the renderer packages depend on it too).
   PresentationLifecycle:
     path: Packages/PresentationLifecycle
+  # VIS-001 (ADR-0009): native visuals beside projectM, fed by the ANL-001/002 analysis.
+  AnalysisFeatures:
+    path: Packages/AnalysisFeatures
+  VisualGenerators:
+    path: Packages/VisualGenerators
 targets:
   CaptureLab:
     type: application
@@ -165,6 +170,7 @@ targets:
       - package: ANGLERendering
       - package: PresetLibrary
       - package: PresentationLifecycle
+      - package: VisualGenerators   # VIS-001: the circular spectrum
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.ProjectMiOS
