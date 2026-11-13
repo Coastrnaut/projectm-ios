@@ -54,6 +54,8 @@ public struct LinearColor: Sendable, Equatable {
 
     /// Relative luminance Y of the linear color (Rec. 709 / sRGB primaries).
     public var relativeLuminance: Float { 0.2126 * red + 0.7152 * green + 0.0722 * blue }
+    /// max(R − G − B, 0): WCAG's red-flash quantity on linear channels (FX-019-R3).
+    public var redness: Float { max(red - green - blue, 0) }
 
     /// Every component clamped to 0…1 (NaN → 0).
     public var clamped: LinearColor {

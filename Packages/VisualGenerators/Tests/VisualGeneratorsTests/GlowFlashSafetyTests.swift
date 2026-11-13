@@ -73,7 +73,11 @@ final class GlowFlashSafetyTests: XCTestCase {
         XCTAssertTrue(zip(withGlow, without).contains { $0 < $1 - 1e-3 }, "the glow actually lowered some gains")
     }
 
-    func testReduceFlashingOffLeavesGainOne() {
-        XCTAssertTrue(run(palette: .spectrum, frameTime: 1.0 / 60, frames: 60, enabled: false).gains.allSatisfy { $0 == 1 })
+    /// Amended by FX-019 (stricter on purpose): with Reduce flashing off the always-on cap still
+    /// applies, so frames pass at gain 1 until a strobe reaches 6 transitions per second.
+    func testReduceFlashingOffLeavesGainOneUntilTheCap() {
+        let gains = run(palette: .spectrum, frameTime: 1.0 / 60, frames: 60, enabled: false).gains
+        XCTAssertEqual(Array(gains.prefix(6)), [1, 1, 1, 1, 1, 1], "five transitions pass unchanged")
+        XCTAssertLessThan(gains[6], 1, "the 7th would leave no room for its fall")
     }
 }
