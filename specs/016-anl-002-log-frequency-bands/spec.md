@@ -28,6 +28,20 @@ This is a gap row ("Gap candidate; re-audit at implementation"). The audit confi
 | Bands | No band, octave or mel grouping exists anywhere in `Packages/`. projectM computes its own bass/mid/treble internally and exposes none of it (ANL-001 research D1). | ANL-003 (smoothing), ANL-007 (kick), ANL-009 (high transients), MOD-015 (envelope followers) and VIS-001/VIS-002 (spectrum visuals) all depend on a fixed set of perceptual bands. |
 | Fixtures | AUD-016 has single sines (100, 440, 1,000, 1,500 Hz), a stereo split, sweeps, pulses and silence at 44.1 and 48 kHz, generated deterministically. | No multi-tone fixture; nothing checks a band mapping. |
 
+## Clarifications
+
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (owner rule 4: routine decisions delegated,
+no human interaction); each answer is the conservative, local-first option, recommended option
+first.
+
+- Q: Which perceptual scale do the bands follow: logarithmic (equal ratio, like octaves), mel, or Bark? → A: Logarithmic, equal frequency ratio per band from 20 Hz to min(20 kHz, Nyquist). The roadmap names the row "Log-frequency bands"; equal ratios put the same number of bands in every octave, so musical intervals and pink noise read evenly, and the edges have a one-line closed form that later rows and tests can recompute. Mel and Bark were rejected: near-linear below 1 kHz, they disagree with the row title, and their published formulas differ between sources (ANL-002-R2).
+- Q: How is a bin shared between two bands, and what happens to a band narrower than one bin? → A: Each bin covers one bin width of frequency centred on itself and gives each band the fraction of that interval inside the band (no bin is counted twice; the DC bin is ignored, bin 1's interval starts at 0 Hz, the Nyquist bin's ends at Nyquist). A band covering less than one bin in total is scaled to one bin, so it reads the overlap-weighted mean of the bins it touches: no band is ever empty, and several narrow bands inside one bin read the same value, which is the honest resolution limit of a small FFT. Rejected: leaving narrow bands empty (visual gaps, "no empty bands" fails) and merging bands (the band count would change with the FFT size) (ANL-002-R3, R5, R6).
+- Q: How are the bins inside a band combined: energy sum, mean (RMS) or peak? → A: Energy sum (power, magnitude squared) divided by the Hann window's equivalent noise bandwidth of 1.5 bins, then the square root, so a band reads the amplitude of the sine carrying its power: a steady sine of amplitude A anywhere inside a wide band reads A, whatever its position between bins. RMS would make a tone in a wide band read low just because the band is wide; peak ignores energy spread and is not additive for ANL-007's bass energy (ANL-002-R4).
+- Q: On what scale are band values published, and how are they normalized for mappings? → A: Linear sine-equivalent amplitude (finite, ≥ 0, a full-scale sine reads 1.0), plus two pure helpers that map into 0…1: linear (value / reference, reference 1.0, clamped) and decibel (`(dBFS − floor) / −floor`, floor −80 dB, clamped). 0 maps to 0 in both, so zero input stays zero after normalization. No automatic gain or running maximum here: adaptive scaling is ANL-003's and MOD-015's (ANL-002-R8).
+- Q: What is the "known multi-tone fixture", and does the AUD-016 catalog change? → A: The catalog does not change (a new fixture would change version 1's golden hashes). The test target sums AUD-016 `ToneGenerator` sines: the catalog's four sine frequencies 100, 440, 1,000 and 1,500 Hz plus 5,000 and 12,000 Hz for the upper bands, each at amplitude 0.15 (sum at most 0.9, no clipping), at 44.1 and 48 kHz. The expected band of each tone is the band that owns the tone's nearest bin (the catalog's `nearestBin`), computed in the test from the edge formula independently of the production table (ANL-002-R14).
+
 ## User Scenarios & Testing *(mandatory)*
 
 The "users" of this row are the later analysis, modulation and visual features and the developers
