@@ -7,9 +7,8 @@
  "by_priority": {
   "P0": {
    "audited": 42,
-   "integrated": 43,
-   "skipped_existing": 1,
-   "unit_passed": 1
+   "integrated": 44,
+   "skipped_existing": 1
   },
   "P1": {
    "audited": 139,
@@ -27,9 +26,8 @@
  "by_state": {
   "audited": 267,
   "implementing": 1,
-  "integrated": 56,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "integrated": 57,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -119,7 +117,6 @@
    "FX-017",
    "FX-018",
    "FX-020",
-   "MED-001",
    "MED-002",
    "MED-003",
    "MED-004",
@@ -309,7 +306,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "269 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
+   "268 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
   ]
  },
  "features": {
@@ -1068,7 +1065,7 @@
    "branch": "feature/cmp-005",
    "branch_sha": "95bb91a901f35af837ca58f264f62543ffe42ba2",
    "error_category": null,
-   "integrated_sha": "b0f29d745e50cd656ada7aa58264d65e968a6224",
+   "integrated_sha": "dd604d0b1d5171b68a3e305291354c2de11b8f65",
    "priority": "P0",
    "spec_dir": null,
    "state": "integrated"
@@ -1508,10 +1505,10 @@
    "branch": "feature/med-001",
    "branch_sha": "ad09298aa7147556e7178c0124d7c7015c5c445b",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "dd604d0b1d5171b68a3e305291354c2de11b8f65",
    "priority": "P0",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "MED-002": {
    "attempts": 0,
@@ -3748,7 +3745,7 @@
   {
    "branch": "feature/cmp-005",
    "id": "CMP-005",
-   "sha": "b0f29d745e50cd656ada7aa58264d65e968a6224"
+   "sha": "dd604d0b1d5171b68a3e305291354c2de11b8f65"
   },
   {
    "branch": "feature/fx-001",
@@ -3759,6 +3756,11 @@
    "branch": "feature/fx-019",
    "id": "FX-019",
    "sha": "6cfcbaabc8d039e71290067a1a0cf0069c7e67de"
+  },
+  {
+   "branch": "feature/med-001",
+   "id": "MED-001",
+   "sha": "dd604d0b1d5171b68a3e305291354c2de11b8f65"
   },
   {
    "branch": "feature/mod-001",
@@ -3881,5 +3883,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T17:56:41Z"
+ "updated": "2026-11-13T17:59:23Z"
 }
