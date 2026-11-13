@@ -11,23 +11,22 @@
 |---|---|
 | audited | 293 |
 | implementing | 1 |
-| unit_passed | 1 |
-| integrated | 30 |
+| integrated | 31 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 60 | 0 | 1 | 25 | 1 |
-| P1 | 145 | 1 | 0 | 5 | 0 |
-| P2 | 79 | 0 | 0 | 0 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 60 | 0 | 26 | 1 |
+| P1 | 145 | 1 | 5 | 0 |
+| P2 | 79 | 0 | 0 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 295 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
+- 294 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
 
 ## Integrated
 
@@ -35,6 +34,7 @@ The physical-device suite may **not** start:
 |---|---|---|---|
 | ANL-001 | Windowed FFT | `df16f2b90397` | `feature/anl-001` |
 | ANL-002 | Log-frequency bands | `493269c77462` | `feature/anl-002` |
+| ANL-004 | Spectral flux onset detector | `e1ae49c81d34` | `feature/anl-004` |
 | AUD-001 | Import DRM-free audio files | `a2813ab3fa4f` | `feature/aud-001` |
 | AUD-002 | Support common audio containers | `f886b7ce7c76` | `feature/aud-002` |
 | AUD-003 | Audio library queue | `c06876d434a3` | `feature/aud-003` |
@@ -92,7 +92,7 @@ None.
 - `swift test --package-path Packages/AnalysisFeatures`: pass at `bf549085819b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-002/20261113T071424/swift-test_AnalysisFeatures.log`)
 - `integration checkout: AnalysisFeatures 46 on iOS 27.2 sim; 46 (1 skipped) with -DANALYSIS_NO_ACCELERATE on the host; 0 PosterBoard reports`: pass at `493269c` (log `.autonomous/logs/integration/anl-002/analysis-sim.log`)
 
-### ANL-004 Spectral flux onset detector (unit_passed)
+### ANL-004 Spectral flux onset detector (integrated)
 - `python3 scripts/check_compliance.py`: pass at `e1aeb82495a0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-004/20261113T082643/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `e1aeb82495a0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-004/20261113T082643/docs.log`)
 - `swift test --package-path Packages/AnalysisFeatures`: pass at `e1aeb82495a0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-004/20261113T082643/swift-test_AnalysisFeatures.log`)
