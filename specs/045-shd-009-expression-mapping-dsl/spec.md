@@ -33,7 +33,48 @@ The row's gap status is "Gap candidate". The audit confirms it.
 Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
 interaction); each answer is the conservative, local-first option.
 
-(Recorded by `/speckit-clarify`.)
+- Q: How far does this row integrate formulas into audio bindings? → A: An adapter only. A
+  compiled formula plus an output range forms an expression mapping whose result is limited to the
+  0…1 position and mapped by MOD-003's linear interpolation, exactly where a binding's linear
+  position is used today, and it lists the audio features it reads (for MOD-014 graph edges).
+  Wiring expression mappings into `AudioFeatureModulator` bindings, saving them in presets and
+  per-graph budgets are left to later rows (SHD-010 budgets, SHD-011 import policy, a modulation
+  editor row). Rejected: changing `AudioFeatureBinding` now (it would make the parameter registry
+  module depend on the language before budgets exist, and the acceptance is about the parser).
+- Q: Can a formula name intermediate values, and how is recursion ruled out? → A: Yes, with
+  `let name = expression;` bindings before the final expression. Bindings are declarative: they may
+  be written in any order and refer to one another, and the compiler orders them by dependency;
+  a binding that refers to itself or a loop of bindings is rejected as recursive with the loop as a
+  path (`a → b → a`), reported at the reference that closes it. Each binding is evaluated once per
+  evaluation. Binding names are plain names (letters, digits, `_`, starting with a letter or `_`,
+  no `.`), may not repeat, and may not shadow `time`, constants, functions, `let` or the `audio`
+  namespace. Rejected: no bindings (recursion would then be impossible to write, leaving the
+  acceptance's "recursion" untestable and long formulas repetitive) and user-defined functions
+  (they make recursion and unbounded work possible).
+- Q: What does evaluation return for undefined arithmetic? → A: Every operation's result is made
+  finite: NaN → 0, +∞ → the largest finite number, −∞ → the most negative finite number. On top of
+  that: `x / 0` → 0 (as in MilkDrop preset equations), `sqrt(x)` for `x ≤ 0` → 0,
+  `pow(x, y)` per the platform math library then made finite (a negative base with a fractional
+  exponent → 0), `smoothstep(a, a, x)` → `step(a, x)`, `clamp(x, lo, hi)` = `min(max(x, lo), hi)`
+  (so `hi` wins when `lo > hi`). Inputs are made finite too (MOD-002 already reads non-finite
+  features as 0; a non-finite time reads 0). Rejected: trapping or returning NaN (would reach the
+  render path) and saturating division (surprising jumps to ±10³⁰⁸ near a zero denominator).
+- Q: What exactly do the complexity limits count? → A: Source ≤ 512 bytes; ≤ 256 tokens; ≤ 128
+  expression nodes (numbers, names, operators, calls; parentheses are free) across all bindings;
+  nesting ≤ 16 levels, where a level is one parenthesis group, one call's arguments or one unary
+  operand (a flat chain such as `a + b + c + …` stays at one level); ≤ 16 bindings; static
+  operation cost ≤ 256, where each instruction costs 1 except `sin`, `cos`, `sqrt`, `pow` and
+  `smoothstep`, which cost 4. No constant folding, so the cost is what runs. Limits are one value
+  with these defaults; SHD-010 may lower them per graph. Rejected: counting tree depth of binary
+  chains (rejects harmless long sums) and a runtime step counter (the language has no loops, so
+  the static cost is exact).
+- Q: How are errors reported? → A: The first problem only, as `line:column: reason` with 1-based
+  line and column (bytes; only printable ASCII, spaces, tabs and line breaks are accepted). Phases
+  run in order — length; characters and numbers; token count; syntax, nesting, node and binding
+  counts; names, functions and argument counts; recursion; operation cost — and within a phase the
+  first problem in source order wins, so every source has exactly one documented error. Rejected:
+  collecting all problems (positions after a syntax error are unreliable, and one exact error per
+  source keeps the test table exact).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -158,19 +199,25 @@ system expression evaluator, a script engine, dynamic loading or shader compilat
 - **SHD-009-R3**: Functions MUST come from a closed whitelist with fixed argument counts:
   `min max clamp abs sin cos floor fract mix smoothstep step sqrt pow`. Any other function MUST be
   rejected; a wrong argument count MUST be rejected with the expected and found counts.
-- **SHD-009-R4**: Bindings MUST NOT be recursive: a binding that refers to itself or a loop of
-  bindings MUST be rejected with the loop as a readable path. Duplicate binding names and names that
-  shadow identifiers, constants, functions or the keyword MUST be rejected. There are no loops,
-  user-defined functions or assignments.
+- **SHD-009-R4**: Bindings are declarative (any order) and MUST NOT be recursive: a binding that
+  refers to itself or a loop of bindings MUST be rejected with the loop as a readable path
+  (`a → b → a`, starting at the loop's first binding in source order). Duplicate binding names and
+  names that shadow `time`, constants, functions, the keyword `let` or the `audio` namespace MUST
+  be rejected. There are no loops, user-defined functions or assignments; each binding is evaluated
+  once per evaluation.
 - **SHD-009-R5**: Complexity MUST be limited (defaults): source ≤ 512 bytes, ≤ 256 tokens, ≤ 128
-  expression nodes, nesting ≤ 16 levels, ≤ 16 bindings and a static operation cost ≤ 256. A formula
-  over any limit MUST be rejected with a message stating the limit, never truncated.
+  expression nodes, nesting ≤ 16 levels (parenthesis groups, call arguments and unary operands),
+  ≤ 16 bindings and a static operation cost ≤ 256 (1 per instruction; `sin`, `cos`, `sqrt`, `pow`,
+  `smoothstep` cost 4). A formula over any limit MUST be rejected with a message stating the limit,
+  never truncated.
 - **SHD-009-R6**: Every rejection MUST carry the line and column (1-based) where the problem was
   found and a readable reason; the message form is `line:column: reason`. Only the first problem
-  is reported, in a documented phase order.
-- **SHD-009-R7**: Evaluation MUST never trap and MUST always produce a finite result, with
-  documented results for division by zero, square roots of negatives, invalid powers, overflow and
-  non-finite inputs.
+  is reported, in the phase order of the Clarifications (length; characters and numbers; tokens;
+  syntax and size; names; recursion; operation cost).
+- **SHD-009-R7**: Evaluation MUST never trap and MUST always produce a finite result: every
+  operation's result is made finite (NaN → 0, ±∞ → ± the largest finite number), `x / 0` → 0,
+  `sqrt` of a non-positive number → 0, a negative base with a fractional exponent → 0,
+  `smoothstep(a, a, x)` → `step(a, x)`, and non-finite inputs read 0.
 - **SHD-009-R8**: Compilation and evaluation MUST be deterministic: the same source gives a
   byte-identical compiled form, and the same compiled form with the same inputs gives a
   bit-identical result.
