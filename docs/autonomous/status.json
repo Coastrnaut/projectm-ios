@@ -13,8 +13,8 @@
   },
   "P1": {
    "audited": 144,
-   "implementing": 1,
-   "integrated": 6
+   "integrated": 6,
+   "unit_passed": 1
   },
   "P2": {
    "audited": 79
@@ -25,9 +25,10 @@
  },
  "by_state": {
   "audited": 291,
-  "implementing": 2,
+  "implementing": 1,
   "integrated": 32,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -498,12 +499,12 @@
   "ANL-005": {
    "attempts": 0,
    "branch": "feature/anl-005",
-   "branch_sha": null,
+   "branch_sha": "cff52d8eb33b52ab8b15bd526627c5bb7c25c2c5",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": "specs/021-anl-005-adaptive-beat-tracker",
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "ANL-006": {
    "attempts": 0,
@@ -3783,5 +3784,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T14:12:44Z"
+ "updated": "2026-11-13T14:43:02Z"
 }
