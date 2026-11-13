@@ -619,6 +619,8 @@ class CIMonitorTests(unittest.TestCase):
             calls.append(cmd[1:3])
             if cmd[1:3] == ["run", "list"]:
                 return SimpleNamespace(returncode=0, stdout=json.dumps(listing), stderr="")
+            if cmd[1:3] == ["run", "rerun"]:
+                return SimpleNamespace(returncode=0, stdout="", stderr="")
             return SimpleNamespace(returncode=0, stdout=json.dumps(views.pop(0)), stderr="")
         return runner, calls
 
@@ -650,6 +652,35 @@ class CIMonitorTests(unittest.TestCase):
                 contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(ci_monitor.main(["--sha", "abc1234", "--interval", "0"], runner=runner,
                                              sleep=lambda s: None), 3)
+
+    def test_job_without_a_runner_is_rerun_once_then_reported(self):
+        import ci_monitor, io, contextlib
+        never = {"name": "mac", "status": "completed", "conclusion": "cancelled", "databaseId": 2, "steps": []}
+        ran = {"name": "linux", "status": "completed", "conclusion": "success", "databaseId": 1, "steps": [{}]}
+        done = {"databaseId": 7, "headSha": "abc1234ffff", "status": "completed", "conclusion": "failure",
+                "jobs": [ran, never]}
+        passed = {"databaseId": 7, "headSha": "abc1234ffff", "status": "completed", "conclusion": "success",
+                  "jobs": [ran, dict(never, conclusion="success", steps=[{}])]}
+        runner, calls = self.fake([done, passed])
+        out = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(ci_monitor, "ROOT", Path(tmp)), \
+                contextlib.redirect_stdout(out):
+            code = ci_monitor.main(["--sha", "abc1234", "--interval", "0"], runner=runner, sleep=lambda s: None)
+        self.assertEqual(code, 0)
+        self.assertIn(["run", "rerun"], calls)
+        self.assertIn("job mac: cancelled (no-runner: never started)", out.getvalue())
+        self.assertIn("job mac: success", out.getvalue())
+
+    def test_real_failure_is_not_rerun(self):
+        import ci_monitor, io, contextlib
+        failed = {"name": "mac", "status": "completed", "conclusion": "failure", "databaseId": 2, "steps": [{}]}
+        runner, calls = self.fake([{"databaseId": 7, "headSha": "abc1234ffff", "status": "completed",
+                                    "conclusion": "failure", "jobs": [failed]}])
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(ci_monitor, "ROOT", Path(tmp)), \
+                contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(ci_monitor.main(["--sha", "abc1234", "--interval", "0"], runner=runner,
+                                             sleep=lambda s: None), 1)
+        self.assertNotIn(["run", "rerun"], calls)
 
     def test_success(self):
         import ci_monitor, io, contextlib

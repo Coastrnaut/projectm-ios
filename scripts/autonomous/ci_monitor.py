@@ -9,6 +9,11 @@ failure (the Linux job finishes in about 5 minutes) can be acted on before the r
 
   python3 scripts/autonomous/ci_monitor.py --sha 81f5c65 [--interval 300] [--max-hours 3]
 
+A job that never got a runner (cancelled or failed with no steps: GitHub's "The job was not
+acquired by Runner of type hosted even after multiple attempts" under macOS arm64 capacity limits,
+2026-11-13) is reported as `no-runner` and, once per run (`--reruns`), re-run with
+`gh run rerun <id> --failed`; the monitor then keeps watching the same run.
+
 Exit status: 0 all jobs succeeded, 1 some job failed or was cancelled, 2 timed out or gh error,
 3 superseded: the run was cancelled before any job started because a newer push replaced it in
 the queue (expected with cancel-in-progress false; the newer run covers this commit).
@@ -47,13 +52,20 @@ def find_run(sha: str, runner=subprocess.run) -> dict | None:
     return None
 
 
+def no_runner(job: dict) -> bool:
+    """A job GitHub never started: completed as cancelled or failed with an empty step list."""
+    return (job.get("status") == "completed" and (job.get("conclusion") or "") in ("cancelled", "failure")
+            and "steps" in job and not job["steps"])
+
+
 def summarize(run: dict) -> dict:
     jobs = [{"name": j["name"], "status": j["status"], "conclusion": j.get("conclusion") or "",
-             "id": j.get("databaseId")} for j in run.get("jobs", [])]
+             "id": j.get("databaseId"), "no_runner": no_runner(j)} for j in run.get("jobs", [])]
     failed = [j for j in jobs if j["status"] == "completed" and j["conclusion"] not in OK]
     return {"id": run.get("databaseId"), "sha": run.get("headSha", "")[:7],
             "status": run.get("status"), "conclusion": run.get("conclusion") or "",
-            "jobs": jobs, "failed": [j["name"] for j in failed]}
+            "jobs": jobs, "failed": [j["name"] for j in failed],
+            "no_runner": [j["name"] for j in failed if j["no_runner"]]}
 
 
 def main(argv: list[str] | None = None, runner=subprocess.run, sleep=time.sleep) -> int:
@@ -61,10 +73,13 @@ def main(argv: list[str] | None = None, runner=subprocess.run, sleep=time.sleep)
     ap.add_argument("--sha", required=True)
     ap.add_argument("--interval", type=float, default=300)
     ap.add_argument("--max-hours", type=float, default=3)
+    ap.add_argument("--reruns", type=int, default=1,
+                    help="times to re-run jobs that never got a runner (0 turns it off)")
     args = ap.parse_args(argv)
     deadline = time.monotonic() + args.max_hours * 3600
     run_id = None
     reported: set[str] = set()
+    reruns_left = args.reruns
     while time.monotonic() < deadline:
         if run_id is None:
             found = find_run(args.sha, runner)
@@ -82,7 +97,19 @@ def main(argv: list[str] | None = None, runner=subprocess.run, sleep=time.sleep)
         for job in summary["jobs"]:
             if job["status"] == "completed" and job["name"] not in reported:
                 reported.add(job["name"])
-                print(f"job {job['name']}: {job['conclusion']}", flush=True)
+                reason = " (no-runner: never started)" if job["no_runner"] else ""
+                print(f"job {job['name']}: {job['conclusion']}{reason}", flush=True)
+        if (summary["status"] == "completed" and summary["no_runner"]
+                and set(summary["failed"]) <= set(summary["no_runner"]) and reruns_left > 0):
+            reruns_left -= 1
+            proc = runner(["gh", "run", "rerun", str(run_id), "--failed"], cwd=str(ROOT),
+                          capture_output=True, text=True, timeout=120)
+            print(f"rerun of {', '.join(summary['no_runner'])}: "
+                  f"{'requested' if proc.returncode == 0 else 'gh error ' + proc.stderr.strip()[:200]}", flush=True)
+            if proc.returncode == 0:
+                reported -= set(summary["failed"]) | {j["name"] for j in summary["jobs"] if j["conclusion"] == "skipped"}
+                sleep(args.interval)
+                continue
         if summary["status"] == "completed":
             out = ROOT / ".autonomous" / "logs" / f"ci-{run_id}.json"
             out.parent.mkdir(parents=True, exist_ok=True)
