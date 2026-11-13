@@ -289,7 +289,8 @@ struct VisualizerView: View {
                          glowUnavailable: coordinator.glowUnavailable, photos: coordinator.photos,
                          videos: coordinator.videos, texts: coordinator.texts,
                          show: coordinator.show, addCurrentScene: { coordinator.addCurrentSceneToShow() },
-                         cacheFilesInUse: { () -> Set<String> in coordinator.cacheFilesInUse() })
+                         cacheFilesInUse: { () -> Set<String> in coordinator.cacheFilesInUse() },
+                         openGuide: { coordinator.openGuidedFirstScene() })   // UIX-001
         }
         // REC-001: the format choice (HEIF only where it can be encoded) and the system Files exporter.
         .confirmationDialog("Save Frame", isPresented: Binding(get: { coordinator.frameCapture.showFormatChoice },
