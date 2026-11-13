@@ -47,7 +47,7 @@ final class TwoLayerCompositeTests: XCTestCase {
             XCTAssertEqual($0 as? CompositorError, .duplicateLayer(index: 1))
         }
         let faded = SolidLayer("faded", color: blue)
-        faded.settings = LayerCompositeSettings(opacity: 0.5)
+        faded.settings = LayerCompositeSettings(transform: LayerTransform(a: 2, b: 0, c: 0, d: 1, tx: 0, ty: 0))   // CMP-005
         XCTAssertThrowsError(try Compositor(device: rig.device, layers: [layer, faded])) {
             XCTAssertEqual($0 as? CompositorError, .unsupportedCompositeSettings(index: 1))
         }

@@ -27,6 +27,10 @@ final class ContractTests: XCTestCase {
         XCTAssertFalse(LayerCompositeSettings(transform: LayerTransform(a: 2, b: 0, c: 0, d: 1, tx: 0, ty: 0)).isSupportedByCMP001)
         XCTAssertEqual(LayerCompositeSettings(opacity: 3).opacity, 1, "opacity is clamped to 0…1")
         XCTAssertEqual(LayerCompositeSettings(opacity: .nan).opacity, 1, "non-finite opacity reads 1")
+        // CMP-003: the compositor draws any opacity; blend modes and transforms wait for CMP-004/005.
+        XCTAssertTrue(LayerCompositeSettings(opacity: 0).isSupportedByCompositor)
+        XCTAssertTrue(LayerCompositeSettings(opacity: 0.5).isSupportedByCompositor)
+        XCTAssertFalse(LayerCompositeSettings(transform: LayerTransform(a: 2, b: 0, c: 0, d: 1, tx: 0, ty: 0)).isSupportedByCompositor)
     }
 
     func testOutcomes() {

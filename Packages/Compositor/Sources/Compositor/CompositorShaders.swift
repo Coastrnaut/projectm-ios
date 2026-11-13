@@ -21,13 +21,15 @@ enum CompositorShaders {
 
     // One layer picture, same size as the target, drawn with premultiplied "over" blending
     // (one, oneMinusSourceAlpha). Non-finite channels read 0, color is clamped to >= 0 and alpha to
-    // 0...1, so a broken layer cannot poison the composite.
-    fragment float4 cmp_over(FullScreenOut in [[stage_in]], texture2d<float, access::read> picture [[texture(0)]]) {
+    // 0...1, so a broken layer cannot poison the composite. CMP-003: every channel × the layer's
+    // opacity (0...1; × 1.0 is exact, so opacity 1 is bit-identical to CMP-002).
+    fragment float4 cmp_over(FullScreenOut in [[stage_in]], texture2d<float, access::read> picture [[texture(0)]],
+                             constant float &opacity [[buffer(0)]]) {
         float4 c = picture.read(uint2(in.position.xy));
         c = select(c, float4(0.0), isnan(c) || isinf(c));
         c.a = clamp(c.a, 0.0, 1.0);
         c.rgb = max(c.rgb, float3(0.0));
-        return c;
+        return c * clamp(opacity, 0.0, 1.0);
     }
 
     // The composite times the flash guard's gain (RGB only; never brightens). The output's format
