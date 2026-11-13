@@ -31,6 +31,19 @@ gaps are proof, naming and the honest limit.
 | Linux | SHA-256 is plain Swift (no CryptoKit), so the packages build and test on Linux. | None; kept. |
 | Tampering with a file and its record together | Undetected: the manifest cannot carry its own digest, and nothing signs it. | Recorded honestly as out of scope. |
 
+## Clarifications
+
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the conservative, local-first option.
+
+- Q: Should the archive carry a digest of the manifest itself, or a signature? → A: Neither. The manifest cannot list its own digest, and a digest stored anywhere else in the same file can be rewritten with it; the ZIP CRC-32 of `manifest.json` already catches accidental damage. Authenticity needs a signature and a key the app trusts, which no roadmap row covers and which a local-first app with no accounts cannot distribute. Recorded as a known limit in ADR-0029 (amended) and the format stays version 1.
+- Q: How do tests prove that verification happens before the library changes? → A: The import service gains an optional step observer (nil in the app) that reports "verified", then each "staged", "adopted" and "made current" step in order. Tests import every tampered fixture with seeded stores and require zero steps plus byte-identical stores; a valid import must report "verified" before any other step. No store protocol is introduced (smallest change; the real stores stay under test).
+- Q: Should a malformed digest or size keep the generic "manifest could not be read" refusal? → A: No. A new refusal names the entry ("The manifest's record for X has an invalid size or checksum."), so every per-entry refusal names its entry (R3, R4). The size and checksum mismatches also get distinct messages ("is not the size its manifest gives" / "does not match its manifest checksum").
+- Q: Should verification stream entries from the file in chunks instead of reading them into memory? → A: No change to the reading path in this row. The archive is memory-mapped, CRC-32 and SHA-256 run in place over each entry (the SHA-256 copies at most the last 64-byte block), and the one copy per entry is FILE-001's design, bounded by the 500 MiB video limit. An incremental SHA-256 (chunks in, digest out, fixed-size state) is added and tested so file-based hashing (FILE-006, a future streaming reader) has one implementation.
+- Q: Is CryptoKit used for SHA-256? → A: No. The archive packages keep the plain-Swift SHA-256 that already serves preset archives and is tested against published vectors, so the packages build and test on Linux; the incremental hasher shares its compression function.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A damaged or altered archive is refused before anything changes (Priority: P1)
@@ -106,12 +119,14 @@ the digests equal the one-shot digest and a published test vector.
   exact byte count and SHA-256 as 64 lowercase hexadecimal characters (already true; kept).
 - **FILE-002-R2**: Reading verifies, for every entry, the ZIP CRC-32, then the listed size, then the
   SHA-256; missing, unlisted and duplicate entries are refused; any failure refuses the whole archive.
-- **FILE-002-R3**: Each refusal from R2 names the entry it concerns, in a readable message.
+- **FILE-002-R3**: Each refusal from R2 names the entry it concerns, in a readable message; a size
+  mismatch and a checksum mismatch have distinct messages.
 - **FILE-002-R4**: A manifest record whose digest is not 64 lowercase hexadecimal characters, or whose
   size is negative, is refused with its own error naming the entry.
 - **FILE-002-R5**: Import verifies the whole archive (R2, R4 and FILE-001's other checks) before the
   first media file is staged, adopted into a store or made current; when verification fails, none of
-  these steps runs and the stores' files and identifiers are byte-for-byte unchanged.
+  these steps runs and the stores' files and identifiers are byte-for-byte unchanged. The import
+  reports each step to an optional observer (absent in the shipping app) so tests can see the order.
 - **FILE-002-R6**: Verification adds no memory proportional to an entry's size beyond the entry's own
   bytes (hashing runs in place over the bytes); an incremental SHA-256 (feed chunks, then finish) gives
   the same digest as the one-shot function, for later file-based hashing.
