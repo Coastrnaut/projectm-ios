@@ -1,12 +1,19 @@
-// CircularSpectrumHost.swift — the circular spectrum on screen (VIS-001-R12 to R16, R18; research
-// VIS-001-D8; ADR-0009).
+// NativeSpectrumHost.swift — the native spectra on screen: the circular spectrum (VIS-001-R12 to R16,
+// R18; research VIS-001-D8; ADR-0009) and the linear spectrum (VIS-002-R10 to R13; research
+// VIS-002-D5). Formerly CircularSpectrumHost.swift.
+//
+// * One host, one frame loop, one analyzer and one glow chain for both visuals: the generator is
+//   `any SpectrumTextureGenerator`. `apply(style:)` swaps the generator when the kind changes (the
+//   new one's pipeline is built here on the main thread, outside the frame callback; a failure
+//   throws and the caller falls back to projectM) and only updates the configuration when the
+//   linear spectrum's orientation or spacing changes. The bar count carries over.
 //
 // * A `CAMetalLayer` view (`bgra8Unorm_srgb`, opaque). Its drawable size follows the view's bounds
 //   × display scale × QualityGovernor's render scale at every layout, so rotation and iPad sizes need
 //   nothing else: the generator lays out for whatever size it gets (VIS-001-R5).
 // * A `CADisplayLink` on the main run loop at QualityGovernor's frame-rate range (FR-049, as
 //   ANGLERenderer). Each frame takes the newest band vector from `LiveBandAnalyzer` without waiting,
-//   encodes it with `CircularSpectrumGenerator` into the next drawable and presents it.
+//   encodes it with the generator into the next drawable and presents it.
 // * `LiveBandAnalyzer` pulls the capture manager's analysis tap on its own queue (VIS-001-R14); it
 //   runs only while the frame loop runs.
 // * pause()/resume() (FR-046; also used while projectM is shown) and PERF-011 suspension are
@@ -34,10 +41,13 @@ import VisualEffects
 import VisualGenerators
 
 @MainActor
-final class CircularSpectrumHost: PresentationBoundResource {
-    let view: CircularSpectrumLayerView
-    private let generator: CircularSpectrumGenerator
+final class NativeSpectrumHost: PresentationBoundResource {
+    let view: NativeSpectrumLayerView
+    private var generator: any SpectrumTextureGenerator
+    private let device: MTLDevice
     private let queue: MTLCommandQueue
+    /// Which native spectrum is drawn (VIS-002-D5).
+    private(set) var style: NativeSpectrumStyle
     private let analyzer: LiveBandAnalyzer
     private let reader: (any NormalizedPCMReader)?
     private let bands: UnsafeMutablePointer<Float>
@@ -70,10 +80,10 @@ final class CircularSpectrumHost: PresentationBoundResource {
     var glowActive: Bool { chain != nil && !glow.isPassThrough }
 
     var barCount: SpectrumBarCount {
-        get { generator.configuration.barCount }
+        get { generator.barCount }
         set {
-            guard newValue != generator.configuration.barCount else { return }
-            generator.configuration.barCount = newValue
+            guard newValue != generator.barCount else { return }
+            generator.barCount = newValue
             analyzer.setBarCount(newValue)
             bandCount = 0   // the old vector does not match the new bars
         }
@@ -83,11 +93,11 @@ final class CircularSpectrumHost: PresentationBoundResource {
     /// (VIS-001-R16); the caller falls back to projectM.
     /// A glow that cannot be built does not throw: the host renders without it (FX-001-R13).
     /// `forceGlowFailure` simulates that failure (DEBUG UI tests).
-    static func make(device: MTLDevice?, reader: (any NormalizedPCMReader)?, barCount: SpectrumBarCount,
-                     glow: BloomParameters = BloomParameters(), forceGlowFailure: Bool = false) throws -> CircularSpectrumHost {
+    static func make(device: MTLDevice?, reader: (any NormalizedPCMReader)?, style: NativeSpectrumStyle = .circular,
+                     barCount: SpectrumBarCount, glow: BloomParameters = BloomParameters(),
+                     forceGlowFailure: Bool = false) throws -> NativeSpectrumHost {
         guard let device, let queue = device.makeCommandQueue() else { throw VisualGeneratorError.noDevice }
-        let generator = try CircularSpectrumGenerator(device: device, pixelFormat: .bgra8Unorm_srgb,
-                                                      configuration: CircularSpectrumConfiguration(barCount: barCount))
+        let generator = try makeGenerator(device: device, style: style, barCount: barCount)
         let analyzer = try LiveBandAnalyzer(barCount: barCount)
         var bloom: BloomEffect?
         var chain: EffectChain?
@@ -101,15 +111,31 @@ final class CircularSpectrumHost: PresentationBoundResource {
                 chain = nil
             }
         }
-        let host = CircularSpectrumHost(device: device, queue: queue, generator: generator, analyzer: analyzer, reader: reader,
-                                        bloom: bloom, chain: chain)
+        let host = NativeSpectrumHost(device: device, queue: queue, style: style, generator: generator, analyzer: analyzer,
+                                      reader: reader, bloom: bloom, chain: chain)
         host.glow = glow
         return host
     }
 
-    private init(device: MTLDevice, queue: MTLCommandQueue, generator: CircularSpectrumGenerator,
+    /// The generator of `style` (pipeline built here).
+    private static func makeGenerator(device: MTLDevice, style: NativeSpectrumStyle,
+                                      barCount: SpectrumBarCount) throws -> any SpectrumTextureGenerator {
+        switch style {
+        case .circular:
+            return try CircularSpectrumGenerator(device: device, pixelFormat: .bgra8Unorm_srgb,
+                                                 configuration: CircularSpectrumConfiguration(barCount: barCount))
+        case let .linear(orientation, spacing):
+            return try LinearSpectrumGenerator(device: device, pixelFormat: .bgra8Unorm_srgb,
+                                               configuration: LinearSpectrumConfiguration(barCount: barCount, orientation: orientation,
+                                                                                          spacing: spacing))
+        }
+    }
+
+    private init(device: MTLDevice, queue: MTLCommandQueue, style: NativeSpectrumStyle, generator: any SpectrumTextureGenerator,
                  analyzer: LiveBandAnalyzer, reader: (any NormalizedPCMReader)?, bloom: BloomEffect?, chain: EffectChain?) {
+        self.device = device
         self.queue = queue
+        self.style = style
         self.generator = generator
         self.analyzer = analyzer
         self.reader = reader
@@ -118,22 +144,51 @@ final class CircularSpectrumHost: PresentationBoundResource {
         glowUnavailable = chain == nil
         bands = .allocate(capacity: SpectrumBarCount.maximum)
         bands.initialize(repeating: 0, count: SpectrumBarCount.maximum)
-        view = CircularSpectrumLayerView(device: device)
+        view = NativeSpectrumLayerView(device: device)
         view.onLayout = { [weak self] in self?.layoutDrawable() }
         observeFrameRatePressure()
+        applyGlow()
+    }
+
+    /// Switches the drawn spectrum (VIS-002-D5). Another kind builds its generator (throws
+    /// `VisualGeneratorError` when its pipeline fails; the current one keeps drawing); the linear
+    /// spectrum's orientation and spacing only change its configuration. The envelope's history
+    /// starts over with a new generator (a new visual, FX-019-R11).
+    func apply(style newStyle: NativeSpectrumStyle) throws {
+        guard newStyle != style else { return }
+        if case let .linear(orientation, spacing) = newStyle, let linear = generator as? LinearSpectrumGenerator {
+            var configuration = linear.configuration
+            configuration.orientation = orientation
+            configuration.spacing = spacing
+            linear.configuration = configuration
+        } else {
+            let replacement = try Self.makeGenerator(device: device, style: newStyle, barCount: generator.barCount)
+            generator = replacement
+        }
+        style = newStyle
         applyGlow()
     }
 
     private func applyGlow() {
         bloom?.parameters = glow
         generator.downstreamLuminance = glowActive ? BloomLuminanceModel(parameters: glow) : nil
-        view.accessibilityValue = Self.glowDescription(enabled: glow.enabled, unavailable: glowUnavailable)
+        view.accessibilityLabel = "\(style.title) visualization"
+        view.accessibilityIdentifier = style.accessibilityIdentifier
+        view.accessibilityValue = Self.accessibilityValue(style: style, glowEnabled: glow.enabled, glowUnavailable: glowUnavailable)
     }
 
     /// The accessibility value naming the glow state.
     static func glowDescription(enabled: Bool, unavailable: Bool) -> String {
         guard enabled else { return "Glow off" }
         return unavailable ? "Glow unavailable" : "Glow on"
+    }
+
+    /// The visual's accessibility value: the glow state, preceded by the orientation for the linear
+    /// spectrum ("Vertical, Glow off"; VIS-002-R13).
+    static func accessibilityValue(style: NativeSpectrumStyle, glowEnabled: Bool, glowUnavailable: Bool) -> String {
+        let glow = glowDescription(enabled: glowEnabled, unavailable: glowUnavailable)
+        guard case let .linear(orientation, _) = style else { return glow }
+        return "\(orientation.title), \(glow)"
     }
 
     /// The chain's textures could not be created: continue without the glow (FX-001-R13).
@@ -167,7 +222,7 @@ final class CircularSpectrumHost: PresentationBoundResource {
     }
 
     var presentationResources: [any PresentationBoundResource] { [self] }
-    var presentationResourceName: String { "Circular spectrum frame loop and analysis" }
+    var presentationResourceName: String { "Native spectrum frame loop and analysis" }
 
     func suspendForPresentationLoss() {
         guard !isSuspended else { return }
@@ -185,9 +240,9 @@ final class CircularSpectrumHost: PresentationBoundResource {
     private func updateLoop() {
         let run = !paused && !isSuspended
         if run, displayLink == nil {
-            generator.limiter.reset()
+            generator.restartLoop()
             if let reader { analyzer.start(reader: reader) }
-            let link = CADisplayLink(target: CircularSpectrumLinkProxy(self), selector: #selector(CircularSpectrumLinkProxy.fire(_:)))
+            let link = CADisplayLink(target: NativeSpectrumLinkProxy(self), selector: #selector(NativeSpectrumLinkProxy.fire(_:)))
             link.preferredFrameRateRange = quality.frameRateRange
             link.add(to: .main, forMode: .common)
             displayLink = link
@@ -262,8 +317,9 @@ final class CircularSpectrumHost: PresentationBoundResource {
     }
 }
 
-/// The CAMetalLayer-backed view; one accessibility element (VIS-001-R18).
-final class CircularSpectrumLayerView: UIView {
+/// The CAMetalLayer-backed view; one accessibility element (VIS-001-R18, VIS-002-R13). The host sets
+/// its label, identifier and value for the shown visual.
+final class NativeSpectrumLayerView: UIView {
     override class var layerClass: AnyClass { CAMetalLayer.self }
     var metalLayer: CAMetalLayer { layer as! CAMetalLayer }
     var onLayout: (() -> Void)?
@@ -293,8 +349,38 @@ final class CircularSpectrumLayerView: UIView {
 }
 
 /// Breaks the CADisplayLink → target retain cycle.
-private final class CircularSpectrumLinkProxy: NSObject {
-    weak var host: CircularSpectrumHost?
-    init(_ host: CircularSpectrumHost) { self.host = host }
+private final class NativeSpectrumLinkProxy: NSObject {
+    weak var host: NativeSpectrumHost?
+    init(_ host: NativeSpectrumHost) { self.host = host }
     @MainActor @objc func fire(_ link: CADisplayLink) { host?.frame(link) }
+}
+
+/// Which native spectrum the host draws (VIS-002-D5).
+enum NativeSpectrumStyle: Equatable, Sendable {
+    case circular
+    case linear(LinearSpectrumOrientation, spacing: Double)
+
+    var title: String {
+        switch self {
+        case .circular: VisualChoice.circularSpectrum.title
+        case .linear: VisualChoice.linearSpectrum.title
+        }
+    }
+
+    var accessibilityIdentifier: String {
+        switch self {
+        case .circular: "circularSpectrum"
+        case .linear: "linearSpectrum"
+        }
+    }
+}
+
+extension LinearSpectrumOrientation {
+    /// Settings and VoiceOver.
+    var title: String {
+        switch self {
+        case .vertical: "Vertical"
+        case .horizontal: "Horizontal"
+        }
+    }
 }

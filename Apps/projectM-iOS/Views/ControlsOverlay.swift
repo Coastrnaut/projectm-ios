@@ -84,7 +84,7 @@ struct ControlsOverlay: View {
     @ViewBuilder private var presetName: some View {
         if coordinator.showsNativeVisual {
             VStack(alignment: .leading, spacing: 1) {
-                Text(VisualChoice.circularSpectrum.title)
+                Text(coordinator.settings.visual.title)   // VIS-001-R13, VIS-002
                     .font(.subheadline)
                     .lineLimit(1)
                     .accessibilityIdentifier("currentVisual")

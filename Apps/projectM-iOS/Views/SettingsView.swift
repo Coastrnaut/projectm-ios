@@ -1,7 +1,9 @@
-// SettingsView.swift — Settings (task T103): the visual (VIS-001-R11) and its glow (FX-001-R11),
+// SettingsView.swift — Settings (task T103): the visual (VIS-001-R11, VIS-002-R11), its options and
+// glow (FX-001-R11),
 // the performance overlay (FR-048), Reduce flashing (FR-072) and the Licenses screen (FR-067).
 import SwiftUI
 import VisualEffects
+import VisualGenerators
 
 struct SettingsView: View {
     @Bindable var settings: AppSettings
@@ -45,13 +47,27 @@ struct SettingsView: View {
                     .pickerStyle(.segmented)
                     .accessibilityLabel("Visual")
                     .accessibilityIdentifier("visualPicker")
-                    if settings.visual == .circularSpectrum {
+                    if settings.visual.isNative {
                         Picker("Bars", selection: $settings.circularSpectrumBars) {
                             ForEach(AppSettings.circularSpectrumBarChoices, id: \.self) { Text("\($0)").tag($0) }
                         }
                         .pickerStyle(.segmented)
                         .accessibilityLabel("Bars")
                         .accessibilityIdentifier("barsPicker")
+                        if settings.visual == .linearSpectrum {
+                            Picker("Orientation", selection: $settings.linearSpectrumOrientation) {
+                                ForEach(LinearSpectrumOrientation.allCases, id: \.self) { Text($0.title).tag($0) }
+                            }
+                            .pickerStyle(.segmented)
+                            .accessibilityLabel("Orientation")
+                            .accessibilityIdentifier("orientationPicker")
+                            Picker("Spacing", selection: $settings.linearSpectrumSpacing) {
+                                ForEach(AppSettings.linearSpectrumSpacingChoices, id: \.value) { Text($0.title).tag($0.value) }
+                            }
+                            .pickerStyle(.segmented)
+                            .accessibilityLabel("Spacing")
+                            .accessibilityIdentifier("spacingPicker")
+                        }
                         Toggle("Glow", isOn: $settings.glowEnabled)
                             .accessibilityIdentifier("glowToggle")
                         if settings.glowEnabled {
@@ -66,13 +82,13 @@ struct SettingsView: View {
                 } header: {
                     Text("Visual")
                 } footer: {
-                    if nativeVisualUnavailable && settings.visual == .circularSpectrum {
-                        Text("Circular Spectrum isn't available on this device, so projectM is shown.")
+                    if nativeVisualUnavailable && settings.visual.isNative {
+                        Text("\(settings.visual.title) isn't available on this device, so projectM is shown.")
                             .accessibilityIdentifier("nativeVisualUnavailableFooter")
                     } else {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top.")
-                            if settings.visual == .circularSpectrum {
+                            Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks.")
+                            if settings.visual.isNative {
                                 if glowUnavailable {
                                     Text(AppCoordinator.glowUnavailableMessage)
                                         .accessibilityIdentifier("glowUnavailableFooter")

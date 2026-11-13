@@ -75,7 +75,7 @@ func sanitizedBandValue(_ v: Float) -> Float {
     v > 0 ? min(v, 1) : 0
 }
 
-public final class CircularSpectrumLayout {
+public final class CircularSpectrumLayout: FlashAreaLevelSource {
     public static let segmentsPerBar = 4
     public static let verticesPerBar = segmentsPerBar * 6
     public static let maximumVertexCount = SpectrumBarCount.maximum * verticesPerBar
@@ -84,7 +84,7 @@ public final class CircularSpectrumLayout {
     private let values: UnsafeMutablePointer<Float>
     private let colors: UnsafeMutablePointer<LinearColor>
     /// FX-019: the strobe safety envelope's area levels (`meanLevels`).
-    private let flashAreas = SpectrumFlashAreas()
+    private let flashAreas = SpectrumFlashAreas(regionCapacity: SpectrumBarCount.maximum)
     private var generation = 0
 
     /// Always clamped; setting it recomputes the palette colors (no allocation).
@@ -253,5 +253,41 @@ public final class CircularSpectrumLayout {
     public func meanLevels<Transfer: FrameLuminanceTransfer>(gain: Float, transfer: Transfer,
                                                              into out: UnsafeMutableBufferPointer<FlashLevels>) {
         flashAreas.levels(of: self, generation: generation, gain: gain, transfer: transfer, into: out)
+    }
+}
+
+// MARK: - The envelope's region model (FX-019-R4; VIS-002-D1)
+
+extension CircularSpectrumLayout: FlashRegionLayout {
+    var flashRegionCount: Int { barCount }
+    var flashBackground: LinearColor { configuration.background }
+
+    /// The exact sector area halfWidth·(r_out² − r_in²); 0 for a dark bar.
+    func flashRegionArea(_ k: Int) -> Double {
+        let bar = bar(k)
+        guard bar.isLit else { return 0 }
+        return bar.halfWidthDegrees * .pi / 180 * (bar.outerRadius * bar.outerRadius - bar.innerRadius * bar.innerRadius)
+    }
+
+    func flashRegionColor(_ k: Int) -> LinearColor { bar(k).color }
+
+    /// The segments of `tessellate`: each segment's two triangles form the convex quad i0, o0, o1,
+    /// i1, in pixels (y down): (cx + r·sinθ, cy − r·cosθ).
+    func forEachFlashQuad(ofRegion k: Int,
+                          _ body: (Double, Double, Double, Double, Double, Double, Double, Double) -> Void) {
+        let bar = bar(k)
+        let segments = Self.segmentsPerBar
+        let start = (bar.centerDegrees - bar.halfWidthDegrees) * .pi / 180
+        let step = 2 * bar.halfWidthDegrees * .pi / 180 / Double(segments)
+        var s0 = sin(start), c0 = cos(start)
+        for s in 1...segments {
+            let a1 = start + Double(s) * step
+            let s1 = sin(a1), c1 = cos(a1)
+            body(centerX + bar.innerRadius * s0, centerY - bar.innerRadius * c0,
+                 centerX + bar.outerRadius * s0, centerY - bar.outerRadius * c0,
+                 centerX + bar.outerRadius * s1, centerY - bar.outerRadius * c1,
+                 centerX + bar.innerRadius * s1, centerY - bar.innerRadius * c1)
+            s0 = s1; c0 = c1
+        }
     }
 }

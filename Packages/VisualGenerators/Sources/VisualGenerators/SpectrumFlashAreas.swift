@@ -1,16 +1,21 @@
-// SpectrumFlashAreas.swift — the circular spectrum's levels in the strobe safety envelope's 17 areas
-// (FX-019-R4, R9; research FX-019-D6; ADR-0011 decision 4).
+// SpectrumFlashAreas.swift — a native spectrum's levels in the strobe safety envelope's 17 areas
+// (FX-019-R4, R9; research FX-019-D6, VIS-002-D1; ADR-0011 decision 4).
 //
-// * Own light: each lit bar's tessellated segments (the convex quads of the triangles the GPU draws) are clipped
-//   against the 4 × 4 tiles (Sutherland–Hodgman), giving the bar's exact area in each tile.
-// * Light added downstream (the glow, FX-001): `transfer.outputLuminance − Y` per unit of bar area,
-//   spread over the tiles that the bar's bounding box, grown by the transfer's spread radius,
-//   overlaps, in proportion to the overlap (an estimate of where the halo lands; light past the
-//   frame's edges is dropped, as the bloom's zero padding does). The whole-frame area keeps FX-001's
-//   exact upper bound (`meanLuminance(gain:transfer:)`).
+// Works on any `FlashRegionLayout`: flat-colored, non-overlapping convex regions over a flat
+// background (the circular spectrum's sectors, VIS-001; the linear spectrum's bars and caps,
+// VIS-002).
+// * Own light: each drawn region's convex quads (for the circular spectrum, the quads of the
+//   triangles the GPU draws) are clipped against the 4 × 4 tiles (Sutherland–Hodgman), giving the
+//   region's exact area in each tile.
+// * Light added downstream (the glow, FX-001): `transfer.outputLuminance − Y` per unit of region
+//   area, spread over the tiles that the region's bounding box, grown by the transfer's spread
+//   radius, overlaps, in proportion to the overlap (an estimate of where the halo lands; light past
+//   the frame's edges is dropped, as the bloom's zero padding does). The whole-frame area keeps
+//   FX-001's exact upper bound (Σ area · T(color) / A).
 // * Background: the rest of each tile, at the transfer's value of the background color.
-// Coverage is computed once per `layout` call (and spread radius), lazily on the first query; each
-// query then costs one pass over the lit bars. All storage is allocated in `init`. Not Sendable.
+// Coverage is computed once per layout generation (and spread radius), lazily on the first query;
+// each query then costs one pass over the drawn regions. All storage is allocated in `init`.
+// Not Sendable.
 #if canImport(Darwin)
 import Darwin
 #elseif canImport(Glibc)
@@ -22,7 +27,8 @@ import FlashSafety
 
 final class SpectrumFlashAreas {
     static let tiles = FlashZones.tileCount
-    private let bars = SpectrumBarCount.maximum
+    /// Regions the storage holds.
+    private let bars: Int
     /// [bar × tile]: own covered area in pixels².
     private let own: UnsafeMutablePointer<Double>
     /// [bar × tile]: share of the bar's added light that lands in the tile.
@@ -37,7 +43,8 @@ final class SpectrumFlashAreas {
     private var validGeneration = -1
     private var validSpread = -1.0
 
-    init() {
+    init(regionCapacity: Int) {
+        bars = max(regionCapacity, 1)
         own = .allocate(capacity: bars * Self.tiles)
         own.initialize(repeating: 0, count: bars * Self.tiles)
         spread = .allocate(capacity: bars * Self.tiles)
@@ -62,7 +69,8 @@ final class SpectrumFlashAreas {
     }
 
     /// Writes the 17 area levels of `layout` drawn with `gain` and passed through `transfer`.
-    func levels<Transfer: FrameLuminanceTransfer>(of layout: CircularSpectrumLayout, generation: Int, gain: Float,
+    /// `generation` changes whenever the layout's regions change.
+    func levels<Layout: FlashRegionLayout, Transfer: FrameLuminanceTransfer>(of layout: Layout, generation: Int, gain: Float,
                                                   transfer: Transfer, into out: UnsafeMutableBufferPointer<FlashLevels>) {
         guard out.count >= FlashZones.count else { return }
         let w = layout.width, h = layout.height
@@ -79,14 +87,13 @@ final class SpectrumFlashAreas {
         let total = Double(w) * Double(h)
         let tileArea = total / Double(Self.tiles)
         for i in 0..<(Self.tiles * 3) { accumulator[i] = 0 }
-        let background = layout.configuration.background
+        let background = layout.flashBackground
         var wholeY = 0.0, wholeR = 0.0, covered = 0.0
-        for k in 0..<layout.barCount {
-            let bar = layout.bar(k)
-            guard bar.isLit else { continue }
-            let area = bar.halfWidthDegrees * .pi / 180 * (bar.outerRadius * bar.outerRadius - bar.innerRadius * bar.innerRadius)
+        for k in 0..<min(layout.flashRegionCount, bars) {
+            let area = layout.flashRegionArea(k)
+            guard area > 0 else { continue }
             covered += area
-            let c = bar.color
+            let c = layout.flashRegionColor(k)
             let a = c.alpha
             let pixel = LinearColor(red: c.red * gain * a + (1 - a) * background.red,
                                     green: c.green * gain * a + (1 - a) * background.green,
@@ -130,39 +137,25 @@ final class SpectrumFlashAreas {
 
     // MARK: - Coverage
 
-    private func computeCoverage(_ layout: CircularSpectrumLayout, spreadRadius: Double) {
+    private func computeCoverage<Layout: FlashRegionLayout>(_ layout: Layout, spreadRadius: Double) {
         let w = Double(layout.width), h = Double(layout.height)
         let tw = w / 4, th = h / 4
-        let segments = CircularSpectrumLayout.segmentsPerBar
         own.update(repeating: 0, count: bars * Self.tiles)
         spread.update(repeating: 0, count: bars * Self.tiles)
         touched.update(repeating: 0, count: bars)
-        for k in 0..<layout.barCount {
-            let bar = layout.bar(k)
-            guard bar.isLit else { continue }
+        for k in 0..<min(layout.flashRegionCount, bars) {
+            guard layout.flashRegionArea(k) > 0 else { continue }
             let base = k * Self.tiles
-            let start = (bar.centerDegrees - bar.halfWidthDegrees) * .pi / 180
-            let step = 2 * bar.halfWidthDegrees * .pi / 180 / Double(segments)
             var minX = Double.infinity, maxX = -Double.infinity, minY = Double.infinity, maxY = -Double.infinity
-            var s0 = sin(start), c0 = cos(start)
-            for s in 1...segments {
-                let a1 = start + Double(s) * step
-                let s1 = sin(a1), c1 = cos(a1)
-                // Pixel space, y down: (cx + r·sinθ, cy − r·cosθ); the triangles of `tessellate`.
-                let i0x = layout.centerX + bar.innerRadius * s0, i0y = layout.centerY - bar.innerRadius * c0
-                let o0x = layout.centerX + bar.outerRadius * s0, o0y = layout.centerY - bar.outerRadius * c0
-                let i1x = layout.centerX + bar.innerRadius * s1, i1y = layout.centerY - bar.innerRadius * c1
-                let o1x = layout.centerX + bar.outerRadius * s1, o1y = layout.centerY - bar.outerRadius * c1
-                // The segment's two triangles form the convex quad i0, o0, o1, i1.
-                addQuad(i0x, i0y, o0x, o0y, o1x, o1y, i1x, i1y, base: base, tw: tw, th: th)
+            layout.forEachFlashQuad(ofRegion: k) { ax, ay, bx, by, cx, cy, dx, dy in
+                addQuad(ax, ay, bx, by, cx, cy, dx, dy, base: base, tw: tw, th: th)
                 // Pairwise min/max: the variadic forms build an array.
-                minX = min(minX, min(min(i0x, o0x), min(i1x, o1x))); maxX = max(maxX, max(max(i0x, o0x), max(i1x, o1x)))
-                minY = min(minY, min(min(i0y, o0y), min(i1y, o1y))); maxY = max(maxY, max(max(i0y, o0y), max(i1y, o1y)))
-                s0 = s1; c0 = c1
+                minX = min(minX, min(min(ax, bx), min(cx, dx))); maxX = max(maxX, max(max(ax, bx), max(cx, dx)))
+                minY = min(minY, min(min(ay, by), min(cy, dy))); maxY = max(maxY, max(max(ay, by), max(cy, dy)))
             }
             for z in 0..<Self.tiles where own[base + z] > 0 { touched[k] |= UInt16(1) << UInt16(z) }
             guard spreadRadius > 0 else { continue }
-            // The halo box: the bar's box grown by the spread radius; shares by overlap.
+            // The halo box: the region's box grown by the spread radius; shares by overlap.
             let bx0 = minX - spreadRadius, bx1 = maxX + spreadRadius
             let by0 = minY - spreadRadius, by1 = maxY + spreadRadius
             let boxArea = (bx1 - bx0) * (by1 - by0)

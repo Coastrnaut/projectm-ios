@@ -1,8 +1,9 @@
 // VisualizerView.swift — the full-screen visualization (task T084; FR-040, FR-041, FR-042, FR-083,
 // FR-085, FR-086, FR-089). The renderer's view fills the window in portrait, landscape and iPad
 // split view; a tap toggles the controls; the source-and-state indicator is always visible.
-// VIS-001: when Settings chooses Circular Spectrum, its Metal view replaces the renderer's view
-// (projectM is paused meanwhile); if it cannot be created a notice says projectM is shown instead.
+// VIS-001, VIS-002: when Settings chooses a native spectrum (Circular or Linear), its Metal view
+// replaces the renderer's view (projectM is paused meanwhile); if it cannot be created a notice says
+// projectM is shown instead.
 import CaptureKit
 import CaptureUI
 import PresetLibrary
@@ -19,10 +20,11 @@ struct VisualizerView: View {
                 NativeVisualHost(view: native.view)
                     .ignoresSafeArea()
                     .accessibilityElement()
-                    .accessibilityLabel("Circular Spectrum visualization")
-                    .accessibilityValue(CircularSpectrumHost.glowDescription(enabled: coordinator.settings.glowEnabled,
-                                                                             unavailable: coordinator.glowUnavailable))   // FX-001
-                    .accessibilityIdentifier("circularSpectrum")
+                    .accessibilityLabel("\(native.style.title) visualization")
+                    .accessibilityValue(NativeSpectrumHost.accessibilityValue(style: native.style,
+                                                                              glowEnabled: coordinator.settings.glowEnabled,
+                                                                              glowUnavailable: coordinator.glowUnavailable))   // FX-001, VIS-002-R13
+                    .accessibilityIdentifier(native.style.accessibilityIdentifier)
             } else if let renderer = coordinator.renderer {
                 RendererHost(renderer: renderer)
                     .ignoresSafeArea()
@@ -107,6 +109,8 @@ struct VisualizerView: View {
         .onChange(of: coordinator.settings.reduceFlashing) { coordinator.applyReduceFlashing() }
         .onChange(of: coordinator.settings.visual) { coordinator.visualSettingsChanged() }                 // VIS-001
         .onChange(of: coordinator.settings.circularSpectrumBars) { coordinator.visualSettingsChanged() }
+        .onChange(of: coordinator.settings.linearSpectrumOrientation) { coordinator.visualSettingsChanged() }   // VIS-002
+        .onChange(of: coordinator.settings.linearSpectrumSpacing) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.glowParameters) { coordinator.glowSettingsChanged() }          // FX-001
         .onChange(of: coordinator.manager.state) { _, state in
             SourceStatusIndicator.announce(mode: coordinator.manager.activeMode, state: state, signal: coordinator.testSignalName)   // FR-070, AUD-016-R16
@@ -139,8 +143,8 @@ struct VisualizerView: View {
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
         }
         // VIS-001-R16: the chosen native visual could not be created.
-        if coordinator.nativeVisualUnavailable && coordinator.settings.visual == .circularSpectrum {
-            Text(AppCoordinator.nativeVisualUnavailableMessage)
+        if coordinator.nativeVisualUnavailable && coordinator.settings.visual.isNative {
+            Text(AppCoordinator.nativeVisualUnavailableMessage(for: coordinator.settings.visual))
                 .padding(10)
                 .background(.regularMaterial, in: Capsule())
                 .accessibilityIdentifier("nativeVisualUnavailable")
