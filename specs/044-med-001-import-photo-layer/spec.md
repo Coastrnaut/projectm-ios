@@ -34,6 +34,19 @@ The row's gap status is "Gap candidate". The audit confirms it.
 | Layers | CMP-001's compositor draws layers; the camera (CAM-001) is the one picture-producing layer, under the circular spectrum, built through CMP-002's `LayerStack`. | No layer shows a still image. |
 | App | Settings › Visual offers projectM, Circular Spectrum, Linear Spectrum and Camera (session only). | No photo visual, no stored image, no remove action. |
 
+## Clarifications
+
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the conservative, local-first option.
+
+- Q: How is metadata removed from the stored copy: keep the original file and never read its metadata, or re-encode the pixels? → A: Re-encode. The picture is decoded upright (the orientation is applied while decoding, so no orientation tag is needed), scaled to at most 4096 px, and written as a new file with no metadata dictionaries: PNG when the picture has transparency (lossless, alpha kept for MED-010), otherwise JPEG at quality 0.9 (a 4096 px photo stays around 2-4 MB instead of about 25 MB as PNG; the loss is invisible full screen). Rejected: storing the original (its EXIF/GPS would sit in the container and in backups even if never read) and HEIC output (the encoder is not available on every simulator and older device).
+- Q: Does the photo fill the screen (cropping) or fit inside it (letterboxing)? → A: Fill by default, cropping the overflow equally on both sides, like the Camera visual (a background with black bars looks broken behind a spectrum). The layer also implements fit, with transparent bars, for later rows (MED-007, MED-010); this row offers no switch.
+- Q: Is the stored copy excluded from device backups? → A: No. It is included, like imported audio (AUD-001) and the preset copies: it is the viewer's own content, backups are the viewer's own and Apple's, and excluding it would lose the photo on a device restore. The privacy policy says so.
+- Q: Which limits apply to a picked image? → A: At most 40 MB per picked file and 100 million pixels per picture (a 63-megapixel iPhone panorama fits; decoding a larger picture risks the memory limit on D1), and the stored copy at most 4096 px on its longest side (sharper than any supported display, at most 64 MB of GPU memory). MED-014 may tighten or add checks behind the same decoder boundary.
+- Q: Is the Photo choice remembered after a relaunch, and what if its stored copy cannot be used? → A: Remembered (no sensor is involved, so CAM-001-R11's reason does not apply; it is the acceptance). A missing copy or an invalid identifier reads as "no photo" and the identifier is cleared; a copy that exists but cannot be decoded keeps its identifier, shows the transparent fallback with the notice "The photo couldn't be loaded", and Remove Photo deletes it. Relinking is MED-013.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Choose a photo and see it behind the music (Priority: P1) — MVP
@@ -160,7 +173,8 @@ photo is unchanged.
   layer MUST read only that copy. Nothing about the original (its location, its library
   identifier, its file name) is kept after the import.
 - **MED-001-R4**: The stored copy MUST contain only the image's pixels, made upright: no location,
-  camera, date, maker or other metadata. The app MUST NOT show or store the original's metadata.
+  camera, date, maker or other metadata, re-encoded as PNG when the picture has transparency and as
+  JPEG (quality 0.9) otherwise. The app MUST NOT show or store the original's metadata.
 - **MED-001-R5**: Imports MUST be refused, with a typed reason, when the picked file is larger than
   40 MB, when its picture has more than 100 million pixels, when it is not an image the system can
   decode, or when it is damaged. A picture longer than 4096 pixels on its longest side MUST be
@@ -190,7 +204,9 @@ photo is unchanged.
   (FR-068). The copy lives in the app's Application Support folder (like AUD-001-R2) and, like other
   app data, is included in the user's own device backups.
 - **MED-001-R14**: A stored identifier MUST resolve only to a file inside the app's photo folder; an
-  invalid identifier or a missing file reads as "no photo" and is cleared.
+  invalid identifier or a missing file reads as "no photo" and is cleared. A copy that exists but
+  cannot be decoded keeps its identifier, shows the transparent fallback and the notice, and can be
+  removed.
 - **MED-001-R15**: VoiceOver MUST name the visual ("Photo visualization") and its state (no photo,
   loading, shown with its size, could not be loaded); the Settings buttons MUST be labeled.
 - **MED-001-R16**: The flows MUST be testable without the system pickers: a debug-only launch flag
