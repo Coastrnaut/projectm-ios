@@ -32,6 +32,20 @@ This is a gap row ("Gap candidate; re-audit at implementation"). The audit confi
 | Glow | FX-001's bloom runs after the circular spectrum; its luminance model lets Reduce flashing bound the composited frame (FX-001-R10). | Must apply to the new visual the same way. |
 | Flash safety | FX-019's envelope bounds every native frame in 17 areas (16 tiles and the whole frame) from the circular spectrum's own area model. | The new visual needs an exact area model of its own and must go through the same envelope. |
 
+## Clarifications
+
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (owner rule 4: routine decisions delegated,
+no human interaction); each answer is the conservative, local-first option, recommended option
+first.
+
+- Q: Does the linear spectrum get its own bar count and glow settings, or share the circular spectrum's? → A: Shared. The Bars choice (`settings.circularSpectrum.bars`) and the four glow keys (`settings.circularSpectrum.glow…`) apply to whichever native spectrum is shown; their keys keep their names so nothing is migrated and stored data grows by only the two keys this row needs (`settings.linearSpectrum.orientation`, `settings.linearSpectrum.spacing`). Rejected: per-visual copies (four to five more keys for no user benefit; a rename would lose existing choices) (VIS-002-R10, R11).
+- Q: Where does band 0 go in each orientation, and does "vertical" follow the device or the screen? → A: The screen as currently held. Vertical: bars rise from the bottom edge, band 0 at the left (reading order, as hardware analyzers do). Horizontal: bars grow from the left edge, band 0 at the top (reading order). Turning the device only changes the output size: vertical bars stay on the bottom edge in landscape. Rejected: band 0 at the bottom in horizontal (a 90° turn of the vertical layout; less readable) (VIS-002-R3).
+- Q: How do peak caps behave, and what drives their clock? → A: Classic hold-then-fall: a cap jumps to any higher value, holds 0.5 s, then falls at 1.0 bar length per second, never below its bar; drawn only above 0 (silence draws nothing) in the bar's color (a white cap would add flashing light). The clock is the frame context's frame duration clamped to 0…0.1 s (the FX-019 clamp): deterministic, testable with an injected clock, and a hitch cannot make caps jump. Caps follow the displayed (Reduce-flashing slewed) values. Changing the bar count or orientation resets them (VIS-002-R6).
+- Q: What spacing and size options are offered, and how is the height bounded? → A: Spacing None 0, Narrow 0.2 (default), Wide 0.5 of a slot; other spacings (0…0.9) only through the configuration. Bar length v × λ × L with λ = 0.9 by default and cap thickness t = 0.015 × L, λ clamped to 0…(1 − t): bar plus cap always fits the output, no pixel minimum on the cap (a minimum could overlap the bar on tiny outputs). No margins: slots span the whole cross axis (VIS-002-R4, R5).
+- Q: How do glow and the flash envelope apply, and what is shared with VIS-001? → A: Exactly as for the circular spectrum: the same app host, glow chain, luminance model (FX-001-R10) and FX-019 envelope. The Metal pass (pipeline, triple-buffered vertices, runtime-compiled flat-triangle shader) and the 17-area level computation (tile clipping, halo spread, accumulation) become shared code used by both visuals; only the layouts differ. The linear spectrum's own regions are axis-aligned rectangles, so its tile areas are exact (VIS-002-R9, R10, R14).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Watch a bar spectrum of the music (Priority: P1)
