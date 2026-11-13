@@ -40,20 +40,29 @@ The app turns audio into visuals. It starts no source until you choose one.
 
 ## Permissions and why
 
-- **Microphone**: asked the first time you choose Microphone mode, after an explanation, so the
-  app can visualize sound in the room. If you decline or later turn it off in Settings › Privacy ›
-  Microphone, the other modes keep working.
-- **Screen recording (System/App Capture)**: iOS asks each time you start this mode, through its
-  own picker, so the app can receive the audio of the content you choose to share.
-- **Local Network**: asked by iOS only when you turn on "OSC receiver" in Settings, so the app can
-  receive OSC control messages from devices on your local network (see "OSC control on your local
-  network"). If you decline or later turn it off in Settings › Privacy & Security › Local Network,
-  the rest of the app keeps working.
+The app asks for four permissions, each only when you use the feature that needs it, and never at
+launch. This list matches the app's permission catalog (FILE-013), which a check keeps in step with
+the app.
 
+- **Microphone**: asked the first time you choose Microphone mode, after an explanation, so the
+  app can visualize sound in the room. If you decline, or later turn it off in Settings › Privacy &
+  Security › Microphone, choosing Microphone shows "Microphone permission denied. Enable it in
+  Settings › Privacy › Microphone." with Open Settings, and the other modes keep working. iOS reports
+  a microphone restriction (for example Screen Time) the same way.
 - **Camera**: asked the first time you choose the Camera visual in Settings, and only then, so the
   app can show the live view from your rear camera behind the visualization. If you decline, or
   later turn it off in Settings › Privacy & Security › Camera, the visualization keeps running
-  without the camera and a short notice explains how to allow it.
+  without the camera and a short notice explains how to allow it, with Open Settings. If the camera
+  is restricted on your device (Screen Time or device management), the notice says so.
+- **Local Network**: asked by iOS only when you turn on "OSC receiver" in Settings, so the app can
+  receive OSC control messages from devices on your local network (see "OSC control on your local
+  network"). If you decline, or later turn it off in Settings › Privacy & Security › Local Network,
+  the OSC section says that local network access is off, with Open Settings, and the rest of the app
+  keeps working.
+- **Screen recording (System/App Capture)**: iOS asks each time you start this mode, through its
+  own picker, so the app can receive the audio of the content you choose to share. If you decline,
+  the app shows "Screen recording not allowed" with Restart (iOS asks again) and Choose source; if
+  screen recording is not allowed on your device, System/App Capture cannot be chosen.
 
 The app asks for no other permission. Choosing a photo needs none: the Photos picker is shown by
 iOS outside the app and gives the app only the picture you pick, never access to your library.

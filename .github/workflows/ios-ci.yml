@@ -34,6 +34,8 @@ jobs:
         run: python scripts/validate_docs.py
       - name: Constitution compliance (required on every merge)
         run: python scripts/check_compliance.py
+      - name: Permission catalog (FILE-013)
+        run: python scripts/check_permission_catalog.py
       - name: Licenses screen manifest (FR-067)
         run: python scripts/collect_licenses.py --check
 

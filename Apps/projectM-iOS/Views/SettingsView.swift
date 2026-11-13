@@ -416,11 +416,16 @@ struct SettingsView: View {
                     .foregroundStyle(.red)
                     .accessibilityIdentifier("oscPortError")
             }
-            Text(osc.statusText)
-                .foregroundStyle(.secondary)
-                .accessibilityLabel("OSC status")
-                .accessibilityValue(osc.statusText)
-                .accessibilityIdentifier("oscStatus")
+            if let notice = osc.permissionNotice {
+                // FILE-013-R3, R4: Local Network denied — the catalog's notice with Open Settings.
+                PermissionNoticeView(notice: notice, symbol: "network.slash", identifierPrefix: "localNetwork")
+            } else {
+                Text(osc.statusText)
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel("OSC status")
+                    .accessibilityValue(osc.statusText)
+                    .accessibilityIdentifier("oscStatus")
+            }
             if osc.isEnabled {
                 LabeledContent("Test value", value: OSCReceiverCoordinator.testValueText(osc.testValue))
                     .accessibilityIdentifier("oscTestValue")

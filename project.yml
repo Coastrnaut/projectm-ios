@@ -126,8 +126,6 @@ targets:
         NSMicrophoneUsageDescription: "Microphone mode listens to sound in the room through your device's microphone. It does not capture audio directly from other apps."
         # FR-019: the capture key named by Apple's ScreenCaptureKit overview (RI-001, T035). It is
         # absent from Xcode 27.2's Info.plist definitions; whether iOS 27 shows it is recorded in T040.
-        # CAM-001-R4 (spec 033, ADR-0017): asked only when the user chooses the Camera visual.
-        NSCameraUsageDescription: "The Camera visual shows the live view from your rear camera behind the visualization. The picture stays on your device and is never recorded or sent."
         NSScreenCaptureUsageDescription: "Only the audio of the content you choose to share is used, and only on this device. It is not recorded or sent anywhere."
   CaptureLabUITests:
     # Simulator UI-flow tests (T034, T039, T048). Never capture evidence (Constitution X).
@@ -240,6 +238,9 @@ targets:
         # FR-019: identical to the Microphone explainer in contracts/ui-states.md
         NSMicrophoneUsageDescription: "Microphone mode listens to sound in the room through your device's microphone. It does not capture audio directly from other apps."
         NSScreenCaptureUsageDescription: "Only the audio of the content you choose to share is used, and only on this device. It is not recorded or sent anywhere."
+        # CAM-001-R4 (spec 033, ADR-0017): asked only when the user chooses the Camera visual. FILE-013
+        # moved it here from the CaptureLab target, where CAM-001 had put it (the app lacked it).
+        NSCameraUsageDescription: "The Camera visual shows the live view from your rear camera behind the visualization. The picture stays on your device and is never recorded or sent."
         # OSC-001-R17 (FR-068 amendment, ADR-0008): shown when the user turns on OSC receiver. No
         # NSBonjourServices: OSC-001 advertises and browses nothing (OSC-011 adds discovery).
         NSLocalNetworkUsageDescription: "When you turn on OSC receiver in Settings, projectM listens on your local network for OSC control messages. It never connects to the internet."
