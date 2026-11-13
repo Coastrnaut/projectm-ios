@@ -73,6 +73,13 @@ final class AppSettings {
         }
     }
 
+    /// CAM-012-R5: the visual chosen before Camera, read from the stored key (Camera never writes
+    /// it); projectM when absent, unknown or `camera`. Read only: nothing is written.
+    var visualBeforeCamera: VisualChoice {
+        let stored = defaults.string(forKey: Self.visualKey).flatMap(VisualChoice.init(rawValue:)) ?? .projectM
+        return stored.usesCamera ? .projectM : stored
+    }
+
     /// Bars of the circular spectrum: 16, 32, 64 or 128.
     var circularSpectrumBars: Int {
         didSet {
