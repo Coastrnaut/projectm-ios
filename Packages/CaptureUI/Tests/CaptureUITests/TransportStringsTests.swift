@@ -52,12 +52,12 @@ final class TransportStringsTests: XCTestCase {
 
     func testScrubberMapsATouchToATime() {
         // A 300-point scrubber: the thumb (18 points) travels 282 points.
-        XCTAssertEqual(TransportBar.value(atX: 9, travel: 282, duration: 180), 0, accuracy: 1e-9)
-        XCTAssertEqual(TransportBar.value(atX: 150, travel: 282, duration: 180), 90, accuracy: 1e-9)
-        XCTAssertEqual(TransportBar.value(atX: 291, travel: 282, duration: 180), 180, accuracy: 1e-9)
-        XCTAssertEqual(TransportBar.value(atX: -40, travel: 282, duration: 180), 0, "left of the scrubber is the start")
-        XCTAssertEqual(TransportBar.value(atX: 900, travel: 282, duration: 180), 180, "right of it is the end")
-        XCTAssertEqual(TransportBar.value(atX: 100, travel: 282, duration: 0), 0)
-        XCTAssertEqual(TransportBar.value(atX: 100, travel: 0, duration: 180), 0)
+        XCTAssertEqual(ScrubberGeometry.value(atX: 9, thumbSize: 18, travel: 282, duration: 180), 0, accuracy: 1e-9)
+        XCTAssertEqual(ScrubberGeometry.value(atX: 150, thumbSize: 18, travel: 282, duration: 180), 90, accuracy: 1e-9)
+        XCTAssertEqual(ScrubberGeometry.value(atX: 291, thumbSize: 18, travel: 282, duration: 180), 180, accuracy: 1e-9)
+        XCTAssertEqual(ScrubberGeometry.value(atX: -40, thumbSize: 18, travel: 282, duration: 180), 0, "left of the scrubber is the start")
+        XCTAssertEqual(ScrubberGeometry.value(atX: 900, thumbSize: 18, travel: 282, duration: 180), 180, "right of it is the end")
+        XCTAssertEqual(ScrubberGeometry.value(atX: 100, thumbSize: 18, travel: 282, duration: 0), 0)
+        XCTAssertEqual(ScrubberGeometry.value(atX: 100, thumbSize: 18, travel: 0, duration: 180), 0)
     }
 }

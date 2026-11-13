@@ -200,7 +200,13 @@ final class UserPresetEditingUITests: XCTestCase {
         _ = duplicateAlertMessage()
         tapControl("presets")
         XCTAssertTrue(app.buttons["node:included"].waitForExistence(timeout: 10))
-        open("node:myPresets")
+        // At this text size the row can sit half under the bottom edge, where a tap lands on the
+        // home indicator (seen in the PRE-014 run): retry until My Presets is open.
+        for _ in 0..<4 where !app.buttons["importPreset"].exists {
+            open("node:myPresets")
+            if app.buttons["importPreset"].waitForExistence(timeout: 5) { break }
+            app.swipeUp()
+        }
         let row = app.buttons.matching(NSPredicate(format: "identifier ENDSWITH ' copy'")).firstMatch
         for _ in 0..<6 where !row.waitForExistence(timeout: 2) { app.swipeUp() }
         contextMenuItem(on: row, "editUserPreset", label: "Edit").tap()

@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "manifest.json of a projectM-iOS user preset archive, format version 1 (PRE-014)",
+  "type": "object",
+  "required": ["format", "formatVersion", "appVersion", "exportedAt", "files", "presets"],
+  "additionalProperties": false,
+  "properties": {
+    "format": { "const": "org.projectmios.user-presets" },
+    "formatVersion": { "const": 1 },
+    "appVersion": { "type": "string", "maxLength": 40 },
+    "exportedAt": { "type": "string", "format": "date-time" },
+    "files": {
+      "type": "array",
+      "maxItems": 1000,
+      "items": { "$ref": "#/$defs/fileRecord" }
+    },
+    "presets": {
+      "type": "array",
+      "maxItems": 1000,
+      "items": { "$ref": "#/$defs/exportedPreset" }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "blobHash": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "fileRecord": {
+      "type": "object",
+      "required": ["path", "sha256", "byteCount"],
+      "additionalProperties": false,
+      "properties": {
+        "path": { "type": "string", "pattern": "^presets/[a-z0-9-]{1,75}\\.milk$" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "byteCount": { "type": "integer", "minimum": 1, "maximum": 524288 }
+      }
+    },
+    "warning": {
+      "type": "object",
+      "required": ["code", "detail"],
+      "additionalProperties": false,
+      "properties": {
+        "code": { "type": "string" },
+        "detail": { "type": "string", "maxLength": 200 }
+      }
+    },
+    "duplicateOf": {
+      "type": "object",
+      "required": ["presetID", "name", "packID", "packTitle", "sha256", "blobHash", "licenseStatement", "requiresLibraryUnlock"],
+      "additionalProperties": false,
+      "properties": {
+        "presetID": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "packID": { "const": "included" },
+        "packTitle": { "type": "string", "maxLength": 120 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "blobHash": { "$ref": "#/$defs/blobHash" },
+        "licenseStatement": { "type": "string", "maxLength": 1000 },
+        "requiresLibraryUnlock": { "const": false }
+      }
+    },
+    "exportedPreset": {
+      "type": "object",
+      "required": ["id", "name", "author", "authorFromFileName", "originalFileName", "path", "sha256", "blobHash",
+                   "byteCount", "origin", "rightsVerified", "licenseLines", "warnings", "importedAt"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^user/[a-z0-9-]{1,75}$" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "author": { "type": "string", "maxLength": 120 },
+        "authorFromFileName": { "type": "boolean" },
+        "originalFileName": { "type": "string", "maxLength": 255 },
+        "path": { "type": "string", "pattern": "^presets/[a-z0-9-]{1,75}\\.milk$" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "blobHash": { "$ref": "#/$defs/blobHash" },
+        "byteCount": { "type": "integer", "minimum": 1, "maximum": 524288 },
+        "origin": { "enum": ["userImport", "bundledDuplicate"] },
+        "rightsVerified": { "const": false },
+        "licenseLines": { "type": "array", "maxItems": 5, "items": { "type": "string", "maxLength": 200 } },
+        "warnings": { "type": "array", "maxItems": 50, "items": { "$ref": "#/$defs/warning" } },
+        "duplicateOf": { "$ref": "#/$defs/duplicateOf" },
+        "importedAt": { "type": "string", "format": "date-time" },
+        "modifiedAt": { "type": "string", "format": "date-time" }
+      },
+      "if": { "properties": { "origin": { "const": "bundledDuplicate" } } },
+      "then": { "required": ["duplicateOf"] },
+      "else": { "not": { "required": ["duplicateOf"] } }
+    }
+  }
+}

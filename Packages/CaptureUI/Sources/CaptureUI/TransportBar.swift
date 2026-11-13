@@ -153,8 +153,8 @@ public struct TransportBar: View {
 
     /// The time at horizontal position `x` of a scrubber whose thumb can travel `travel` points.
     static func value(atX x: CGFloat, travel: CGFloat, duration: Double) -> Double {
-        guard travel > 0, duration > 0 else { return 0 }
-        return Double(min(max((x - thumbSize / 2) / travel, 0), 1)) * duration
+        ScrubberGeometry.value(atX: Double(x), thumbSize: Double(thumbSize), travel: Double(travel),
+                               duration: duration)
     }
 
     private func button(_ title: String, icon: String, id: String, action: @escaping () -> Void) -> some View {
@@ -166,3 +166,14 @@ public struct TransportBar: View {
     }
 }
 #endif
+
+/// The scrubber's touch-to-time mapping, outside the SwiftUI guard so it builds and is tested on
+/// every platform, Linux included (CI run 43346221995 failed to compile the test there).
+enum ScrubberGeometry {
+    /// The time for a touch at `x` on a scrubber whose thumb (`thumbSize` wide) travels `travel`
+    /// points; touches left or right of the track clamp to the start or the end.
+    static func value(atX x: Double, thumbSize: Double, travel: Double, duration: Double) -> Double {
+        guard travel > 0, duration > 0 else { return 0 }
+        return min(max((x - thumbSize / 2) / travel, 0), 1) * duration
+    }
+}

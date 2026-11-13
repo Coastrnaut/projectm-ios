@@ -29,6 +29,11 @@
 //   6. A refused or failing edit changes no stored byte; an edit's text is tried before it is
 //      stored, with `edit.json` on disk during the trial. That record found at `load()` means
 //      the app ended during the check: the edit is dropped, the preset stays as it was (R13).
+//
+// PRE-014 (specs/012-pre-014-bulk-preset-export) adds `exportPlan()` and `export(ids:…)`: an
+// archive of playable presets that were imported or copied from Included presets, written to a
+// file the app chose; the store is only read (ADR-0008: copies of full-library presets never
+// leave).
 import Foundation
 
 /// What an import is compared against. Supplied by the app once the built-in library is loaded.
@@ -358,6 +363,82 @@ public actor UserPresetLibrary {
         } catch {
             return false
         }
+    }
+
+    // MARK: - Export (PRE-014-R2-R6; ADR-0008)
+
+    /// What the Export sheet lists: playable, not held, imported or copied from an Included
+    /// preset; and how many records are left out, by reason. Empty while the record is from a
+    /// newer app version.
+    public func exportPlan() -> UserPresetExportPlan {
+        guard let store = loaded(), store.availability == .available else { return .empty }
+        var exportable: [UserPreset] = []
+        var excluded: [UserPresetExportExclusion: Int] = [:]
+        for preset in store.presets {
+            if let reason = UserPresetExportPlan.exclusion(of: preset, held: held.contains(preset.id)) {
+                excluded[reason, default: 0] += 1
+            } else {
+                exportable.append(preset)
+            }
+        }
+        return UserPresetExportPlan(exportable: Self.alphabetical(exportable), excluded: excluded)
+    }
+
+    /// Writes the archive of the selected presets to `url` (created or replaced). The plan is
+    /// applied again here, so an id that is not exportable is never written; an id that no
+    /// longer exists is counted as unavailable. On any failure the file is deleted. The store is
+    /// only read. Never throws.
+    public func export(ids: [String], appVersion: String, exportedAt: Date, to url: URL) -> Result<UserPresetExportSummary, UserPresetExportError> {
+        export(ids: ids, appVersion: appVersion, exportedAt: exportedAt, to: url, failAfterWrites: nil)
+    }
+
+    /// `failAfterWrites`: tests make the file fail after that many writes (a full disk).
+    func export(ids: [String], appVersion: String, exportedAt: Date, to url: URL,
+                failAfterWrites: Int?) -> Result<UserPresetExportSummary, UserPresetExportError> {
+        guard let store = loaded() else { return .failure(.libraryUnavailable) }
+        if case .newerFormat = store.availability { return .failure(.libraryUnavailable) }
+        let plan = exportPlan()
+        let exportable = Set(plan.exportable.map(\.id))
+        var excluded = plan.excluded
+        var selected: [UserPreset] = []
+        var seen: Set<String> = []
+        for id in ids where seen.insert(id).inserted {
+            if let preset = store.preset(id: id) {
+                if exportable.contains(id) { selected.append(preset) }   // otherwise already counted by the plan
+            } else {
+                excluded[.unavailable, default: 0] += 1
+            }
+        }
+        guard !selected.isEmpty else { return .failure(.nothingSelected) }
+
+        let files = FileManager.default
+        guard files.createFile(atPath: url.path, contents: nil), let handle = try? FileHandle(forWritingTo: url) else {
+            try? files.removeItem(at: url)
+            return .failure(.writeFailed)
+        }
+        var writes = 0
+        let failure: UserPresetExportError?
+        do {
+            try UserPresetArchiveWriter.write(selected, appVersion: appVersion, exportedAt: exportedAt,
+                                              contents: { store.contents(of: $0.id) },
+                                              sink: { data in
+                                                  if let limit = failAfterWrites, writes >= limit { throw CocoaError(.fileWriteOutOfSpace) }
+                                                  writes += 1
+                                                  try handle.write(contentsOf: data)
+                                              })
+            try handle.synchronize()
+            failure = nil
+        } catch is UserPresetArchiveWriter.WriteError {
+            failure = .contentMismatch
+        } catch {
+            failure = .writeFailed
+        }
+        try? handle.close()
+        if let failure {
+            try? files.removeItem(at: url)
+            return .failure(failure)
+        }
+        return .success(UserPresetExportSummary(exported: selected.count, excluded: excluded, fileName: url.lastPathComponent))
     }
 
     // MARK: - Duplicating a built-in preset (PRE-015-R2-R7)

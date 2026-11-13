@@ -12,6 +12,8 @@
 //   locked-pack presets are listed under "Needs the full library" while the library is not
 //   unlocked (tap: the purchase sheet; Information; Remove; R8); an edit dropped because the app
 //   closed during its check is reported once (R13). Information shows a copy's origin (US4).
+// * PRE-014 (specs/012-pre-014-bulk-preset-export): "Export…" opens the Export Presets sheet;
+//   closing it deletes any archive still waiting to be shared.
 import PresetLibrary
 import SwiftUI
 import UniformTypeIdentifiers
@@ -30,6 +32,7 @@ struct UserPresetsView: View {
     let onDone: () -> Void
 
     @State private var importing = false
+    @State private var exporting = false
     @State private var showingInfo: UserPreset?
     @State private var removing: UserPreset?
 
@@ -148,8 +151,18 @@ struct UserPresetsView: View {
                     Label("Import Preset…", systemImage: "square.and.arrow.down")
                         .labelStyle(.titleAndIcon)
                 }
-                .disabled(userPresets.isImporting || userPresets.unavailableMessage != nil)
+                .disabled(userPresets.isImporting || userPresets.isExporting || userPresets.unavailableMessage != nil)
                 .accessibilityIdentifier("importPreset")
+            }
+            ToolbarItem(placement: .bottomBar) {
+                Button {
+                    exporting = true
+                } label: {
+                    Label("Export…", systemImage: "square.and.arrow.up")
+                        .labelStyle(.titleAndIcon)
+                }
+                .disabled(!userPresets.canExport)
+                .accessibilityIdentifier("exportPresets")
             }
         }
         .fileImporter(isPresented: $importing, allowedContentTypes: Self.pickerTypes, allowsMultipleSelection: false) { result in
@@ -159,6 +172,9 @@ struct UserPresetsView: View {
             Task { await userPresets.importPicked(picked) }
         }
         .importResultAlert(userPresets)
+        .sheet(isPresented: $exporting, onDismiss: { userPresets.finishSharing() }) {
+            UserPresetExportView(userPresets: userPresets)
+        }
         .sheet(item: $showingInfo) { preset in UserPresetInfoView(preset: preset) }
         .alert("Remove “\(removing?.name ?? "")”?",
                isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }),

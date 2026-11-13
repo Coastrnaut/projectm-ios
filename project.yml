@@ -47,6 +47,9 @@ packages:
   # Feature 002: the preset library index, tree, scopes and search (Foundation only).
   PresetLibrary:
     path: Packages/PresetLibrary
+  # PRE-014: archive container, CRC-32 and SHA-256 (Foundation only; PresetLibrary depends on it).
+  LocalPortability:
+    path: Packages/LocalPortability
   # PERF-011: presentation availability and the registry of presentation-bound resources
   # (pure Swift; the renderer packages depend on it too).
   PresentationLifecycle:
