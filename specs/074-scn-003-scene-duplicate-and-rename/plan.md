@@ -96,7 +96,7 @@ Packages/ShowControl/Sources/ShowStorage/ShowStore.swift            duplicateSce
 Packages/ShowControl/Tests/ShowControlTests/ShowSceneEditTests.swift (new) acceptance, references, media
 Apps/projectM-iOS/Coordinators/ShowCoordinator.swift                duplicateScene(of:), renameScene(of:to:), names
 Apps/projectM-iOS/Views/ShowEditorView.swift                        menu items, alert, caption
-Apps/projectM-iOS/Tests/ShowCoordinatorTests.swift                  coordinator cases
+Apps/projectM-iOS/Tests/ShowSceneEditCoordinatorTests.swift          (new) coordinator cases
 Apps/projectM-iOS/UITests/SceneDuplicateUITests.swift               (new) UI test with -uitestShowSeed
 docs/adr/0028-scene-document-format.md, docs/adr/0033-show-cue-list-document.md   amendments
 ```

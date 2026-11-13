@@ -9,6 +9,9 @@
 //   applied again at launch (Clarifications). A scene that is missing or has SCN-001 errors leaves the
 //   output unchanged: the position still moves, a notice shows for about 4 s and VoiceOver announces it.
 // * Edits (add, remove, move, rename) never apply anything (SHOW-001-R6).
+// * SCN-003: Duplicate Scene stores a copy of a cue's scene under a new scene ID and inserts a cue for
+//   it right after that cue; Rename Scene renames the scene itself (every cue showing it), never a
+//   label or an ID. `sceneNames` caches each stored scene's name for the editor.
 // Main actor; file I/O is small (≤ 1 MiB per file, typically a few KB) and only on user action.
 import Foundation
 import Observation
@@ -24,6 +27,7 @@ final class ShowCoordinator {
     static let noticeDuration: Duration = .seconds(4)
     static let setAsideMessage = "The saved show could not be read and was set aside."
     static let saveFailedMessage = "The show could not be saved."
+    static let sceneUnreadableMessage = "The scene could not be read."
 
     private(set) var list: ShowCueList
     /// Scene IDs whose files cannot be read (cues flagged "Scene missing").
@@ -34,6 +38,8 @@ final class ShowCoordinator {
     private(set) var editorMessage: String?
     /// The scene last applied by a step (DEBUG probe `showAppliedScene`).
     private(set) var appliedSceneID: String?
+    /// Stored scenes' names by scene ID (SCN-003: the editor shows a name that differs from the label).
+    private(set) var sceneNames: [String: String] = [:]
 
     @ObservationIgnored let store: ShowStore?
     @ObservationIgnored private let registry: ParameterRegistry?
@@ -42,6 +48,8 @@ final class ShowCoordinator {
     /// Which photo and video are stored now (SCN-001 asset availability).
     @ObservationIgnored var availability: () -> StoredMediaAvailability = { StoredMediaAvailability(photos: [], videos: []) }
     @ObservationIgnored private var noticeTask: Task<Void, Never>?
+    /// A new scene ID for Duplicate Scene (tests pass fixed IDs).
+    @ObservationIgnored var makeSceneID: () -> String = { () -> String in UUID().uuidString }
     @ObservationIgnored var announce: (String) -> Void = { (message: String) in
         UIAccessibility.post(notification: .announcement, argument: message)
     }
@@ -58,6 +66,7 @@ final class ShowCoordinator {
             list = ShowCueList()
             unreadableScenes = []
         }
+        refreshSceneNames()
     }
 
     static func makeDefault() -> ShowCoordinator {
@@ -79,6 +88,18 @@ final class ShowCoordinator {
     var accessibilityValue: String { statusText.replacingOccurrences(of: " · ", with: ", ") }
 
     func isSceneMissing(_ cue: ShowCue) -> Bool { unreadableScenes.contains(cue.sceneID) }
+
+    /// The cue's scene name, when it is stored and readable.
+    func sceneName(of cue: ShowCue) -> String? { sceneNames[cue.sceneID] }
+
+    private func refreshSceneNames() {
+        guard let store else { return }
+        var names: [String: String] = [:]
+        for id in list.sceneIDs {
+            if let document = try? store.scene(id).document { names[id] = document.name }
+        }
+        sceneNames = names
+    }
 
     // MARK: - Stepping (contract S3, S4)
 
@@ -159,8 +180,74 @@ final class ShowCoordinator {
             return false
         }
         unreadableScenes.remove(document.id)
+        sceneNames[document.id] = document.name
         save()
         return true
+    }
+
+    // MARK: - Duplicate and rename scenes (SCN-003-R6: never applies anything, the position stays)
+
+    /// Stores a copy of the cue's scene under a new scene ID ("<name> copy") and inserts a cue for it
+    /// ("<label> copy") right after the cue. Returns the new cue, or nil with an editor message.
+    @discardableResult
+    func duplicateScene(of cueID: UUID) -> ShowCue? {
+        guard let cue = list.cues.first(where: { (c: ShowCue) -> Bool in c.id == cueID }) else { return nil }
+        guard let store else { editorMessage = Self.saveFailedMessage; return nil }
+        // The limit first, so a refused duplicate writes no scene file.
+        guard list.cues.count < ShowCueList.maximumCues else {
+            editorMessage = ShowEditError.tooManyCues(limit: ShowCueList.maximumCues).description
+            return nil
+        }
+        let original: SceneDocument
+        do {
+            original = try store.scene(cue.sceneID).document
+        } catch {
+            unreadableScenes.insert(cue.sceneID)
+            editorMessage = Self.sceneUnreadableMessage
+            return nil
+        }
+        let copy: SceneDocument
+        do throws(ShowSceneEditError) {
+            copy = try store.duplicateScene(cue.sceneID, newID: makeSceneID(), name: SceneDocument.copyName(original.name))
+        } catch {
+            editorMessage = Self.message(for: error)
+            return nil
+        }
+        let inserted: ShowCue
+        do throws(ShowEditError) {
+            inserted = try list.insert(sceneID: copy.id, label: ShowCueList.copyLabel(cue.label), after: cue.id)
+        } catch {
+            editorMessage = error.description   // the copy's file is removed by the next save (unreferenced)
+            return nil
+        }
+        sceneNames[copy.id] = copy.name
+        save()
+        return inserted
+    }
+
+    /// Renames the cue's scene (every cue showing it); the scene ID, the cues and their labels are
+    /// unchanged. False with an editor message when the name is invalid or the scene cannot be read.
+    @discardableResult
+    func renameScene(of cueID: UUID, to name: String) -> Bool {
+        guard let cue = list.cues.first(where: { (c: ShowCue) -> Bool in c.id == cueID }) else { return false }
+        guard let store else { editorMessage = Self.saveFailedMessage; return false }
+        do throws(ShowSceneEditError) {
+            let renamed = try store.renameScene(cue.sceneID, to: name)
+            sceneNames[renamed.id] = renamed.name
+            return true
+        } catch {
+            if case .unreadable = error { unreadableScenes.insert(cue.sceneID) }
+            editorMessage = Self.message(for: error)
+            return false
+        }
+    }
+
+    static func message(for error: ShowSceneEditError) -> String {
+        switch error {
+        case .unreadable: sceneUnreadableMessage
+        case let .invalid(edit): edit.description
+        case .sceneIDTaken, .writeFailed: saveFailedMessage
+        }
     }
 
     func remove(_ cueID: UUID) {
@@ -198,6 +285,7 @@ final class ShowCoordinator {
     func replaceForUITests(_ list: ShowCueList) {
         self.list = list
         unreadableScenes = Set(list.sceneIDs.filter { (id: String) -> Bool in !(store?.sceneIsReadable(id) ?? false) })
+        refreshSceneNames()
         save()
     }
 

@@ -51,7 +51,8 @@ extension ShowStore {
 ## D4 — App (Settings → Show)
 
 Per cue: context menu "Duplicate Scene", "Rename Scene…" (alert "Rename Scene", field
-`showSceneNameField`, button "Rename"), next to SHOW-001's "Rename…" (cue label). VoiceOver actions of
+`showSceneNameField`, button "Rename"), and the same two as leading swipe actions "Duplicate" and "Name"
+(after SHOW-001's "Go"; identifiers `showDuplicateScene`, `showRenameScene`), next to SHOW-001's "Rename…" (cue label). VoiceOver actions of
 the same names. A row whose scene name differs from its label shows "Scene: <name>" and its value ends
 ", scene <name>". Refusals set the editor message: "The scene could not be read.", "A scene name is 1
 to 120 characters without control characters.", SHOW-001's limit and save-failed messages.

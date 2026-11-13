@@ -4,7 +4,13 @@
 
 **Created**: 2026-11-13
 
-**Status**: Clarified 2026-11-13
+**Status**: Implemented 2026-11-13 (SCN-003-T01-T14 verified on the Mac: host, Linux shape, own iOS
+27.2 simulator; no device claim). SceneFormat 48 tests (1.7 s; SceneEditingTests 7 in 0.31 s,
+property test 0.30 s), ShowControl 25 tests (0.19 s; ShowSceneEditTests 6), projectM-iOSTests 327
+(35.3 s; ShowSceneEditCoordinatorTests 3 in 0.04 s), SceneDuplicateUITests 1 (23-28 s) and
+ShowCueUITests 2 (12 s, 15 s). Compliance check (no networking APIs, SCN-003-R10) and docs check OK.
+PosterBoard reports 32 before and after. Pre-existing over budget, not this feature:
+SceneArchiveServiceTests.testASuccessfulImportReplacesTheStoredPhotoAndVideo at 10.9 s.
 
 **Input**: User description: "Implement SCN-003 (Scene duplicate and rename) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Duplicate scene under new ID and
@@ -144,7 +150,7 @@ everything but the ID and name exactly, and renaming keeps everything but the na
   the other, and the two give equal live states.
 - **SCN-003-R6**: The show editor (Settings → Show) MUST offer, on each cue, Duplicate Scene (store a
   copy under a new ID and insert a cue for it right after the cue) and Rename Scene (rename the cue's
-  scene), next to the existing Rename (cue label). Neither changes the output or the show's position.
+  scene), next to the existing Rename (cue label). Both are in the cue's context menu and its leading swipe actions. Neither changes the output or the show's position.
 - **SCN-003-R7**: The editor MUST show a cue's scene name when it differs from the cue's label, and
   VoiceOver MUST read it in the cue's value (FR-070).
 - **SCN-003-R8**: Every file written by duplicate or rename MUST be written whole (never half
