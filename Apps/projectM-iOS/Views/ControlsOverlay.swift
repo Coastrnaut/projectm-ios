@@ -30,6 +30,8 @@
 // REC-003: "Record" / "Stop recording" records the visual's frames into a video for Files.
 // REC-001: "Save Frame" asks for PNG or HEIF and saves the visual's next frame through the Files
 // exporter (REC-001-R1); shown for every visual.
+// SHOW-001: when the show has cues, its row (Previous cue, "Cue 2 of 5 · Intro", Next cue) sits above
+// the buttons in both layouts (ShowCueRow).
 import CaptureKit
 import CaptureUI
 import PresentationLifecycle
@@ -46,6 +48,10 @@ struct ControlsOverlay: View {
         VStack(spacing: 10) {
             if coordinator.transport.isAvailable {
                 transport
+                Divider()
+            }
+            if coordinator.show.hasCues {   // SHOW-001-R13
+                ShowCueRow(coordinator: coordinator)
                 Divider()
             }
             // Accessibility text sizes use the one-row icon layout too: seven labeled buttons in a

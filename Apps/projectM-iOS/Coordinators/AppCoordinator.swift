@@ -59,6 +59,8 @@
 // * Text (MED-009): Settings' persisted "Text" choice shows `TextVisualHost` (the circular spectrum
 //   with the text layer over it) with the same create/release and run rules as Photo. `texts`
 //   (TextOverlayCoordinator) owns the saved message and style; its changes set the layer's spec.
+// * Show (SHOW-001): `show` (ShowCoordinator) owns the manual cue list; a step applies the cue's scene
+//   through the Settings path (AppCoordinator+Show.swift), never touching the audio source.
 import ANGLERendering
 import CameraLayer
 import ImageLayer
@@ -74,6 +76,7 @@ import Observation
 import PresentationLifecycle
 import PresetLibrary
 import Rendering
+import ShowStorage
 import Metal
 import UIKit
 import VisualGenerators
@@ -148,6 +151,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     private(set) var videoState: VideoLayerState = .empty
     /// The Text visual's message and style (MED-009): the editor's model and the saved value.
     let texts: TextOverlayCoordinator
+    /// SHOW-001: the manual cue list.
+    let show: ShowCoordinator
     /// The Text visual (MED-009), created when Text is chosen and released when another visual is.
     private(set) var textVisual: TextVisualHost?
     /// The text layer's state while the Text visual exists (`empty` otherwise).
@@ -215,6 +220,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             try? FileManager.default.removeItem(at: UserPresetStore.defaultDirectory())         // PRE-012: and without imported presets
             if let photos = try? PhotoStore.defaultDirectory() { try? FileManager.default.removeItem(at: photos) }   // MED-001: no photo
             if let videos = try? VideoStore.defaultDirectory() { try? FileManager.default.removeItem(at: videos) }   // MED-002: no video
+            if let shows = try? ShowStore.defaultDirectory() { try? FileManager.default.removeItem(at: shows) }   // SHOW-001: no show
         }
         settings = AppSettings(defaults: defaults, systemReduceMotion: UIAccessibility.isReduceMotionEnabled)
         self.externalDisplay.reduceFlashing = settings.reduceFlashing   // OUT-010-R6
@@ -222,6 +228,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         photos = PhotoCoordinator.makeDefault(defaults: defaults)
         videos = VideoCoordinator.makeDefault(defaults: defaults)
         texts = TextOverlayCoordinator.makeDefault(defaults: defaults)
+        show = ShowCoordinator.makeDefault()   // SHOW-001
         #if DEBUG
         UITestPhotoFixture.seedIfRequested(photos)   // MED-001: PhotoLayerUITests (pickers cannot be automated)
         UITestVideoFixture.seedIfRequested(videos)   // MED-002: VideoLayerUITests
@@ -296,6 +303,10 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         if ProcessInfo.processInfo.arguments.contains(UITestMemoryPanel.argument) {
             SharedTexturePool.relaxIdleEvictionForUITests()   // MemoryPressureUITests (research PERF-006-D7)
         }
+        #endif
+        connectShow()   // SHOW-001
+        #if DEBUG
+        UITestShowFixture.seedIfRequested(self)   // SHOW-001: ShowCueUITests
         #endif
         loadLibrary()
         loadAudioLibrary()
