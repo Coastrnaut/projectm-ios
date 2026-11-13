@@ -643,6 +643,14 @@ class CIMonitorTests(unittest.TestCase):
         self.assertEqual(text.count("job linux"), 1)
         self.assertEqual(calls.count(["run", "view"]), 2)     # one call per check, no polling burst
 
+    def test_a_run_replaced_in_the_queue_is_superseded_not_failed(self):
+        import ci_monitor, io, contextlib
+        runner, _ = self.fake([self.view("completed", "cancelled", [])])
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(ci_monitor, "ROOT", Path(tmp)), \
+                contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(ci_monitor.main(["--sha", "abc1234", "--interval", "0"], runner=runner,
+                                             sleep=lambda s: None), 3)
+
     def test_success(self):
         import ci_monitor, io, contextlib
         runner, _ = self.fake([self.view("completed", "success", [("linux", "completed", "success")])])

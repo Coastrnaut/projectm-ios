@@ -3,6 +3,8 @@
 // grouping and cap, Included-only playback, and a locked tap opening the purchase sheet. Unlocked
 // (`-uitestUnlocked YES`, no StoreKit): the Fractal › Nested Spiral scope, Next wrapping, Random
 // staying inside, and the scope line. Simulator results are never device evidence (Constitution X).
+// Shortened 2026-11-13 under owner rule 7: `-autostart inAppPlayback` replaces the notice and chooser
+// taps, and waits poll every 0.1 s (UITestWaits.swift) instead of about once a second.
 import XCTest
 
 @MainActor
@@ -13,17 +15,13 @@ final class PresetLibraryUITests: XCTestCase {
         continueAfterFailure = false
     }
 
+    /// `-autostart inAppPlayback` (Debug) starts the reference track as the chooser's row does.
     private func start(unlocked: Bool) {
         XCUIDevice.shared.orientation = .portrait
-        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-uitestUnlocked", unlocked ? "YES" : "NO"]
+        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-uitestUnlocked", unlocked ? "YES" : "NO",
+                               "-autostart", "inAppPlayback"]
         app.launch()
-        let acknowledge = app.buttons["acknowledgeNotice"]
-        XCTAssertTrue(acknowledge.waitForExistence(timeout: 10))
-        acknowledge.tap()
-        let inApp = app.buttons["In-App Playback"]
-        XCTAssertTrue(inApp.waitForExistence(timeout: 10))
-        inApp.tap()
-        XCTAssertTrue(scopeLine.waitForExistence(timeout: 10))
+        XCTAssertTrue(scopeLine.appears(within: 15))
     }
 
     private var scopeLine: XCUIElement { app.staticTexts["scopeLine"] }
@@ -32,26 +30,28 @@ final class PresetLibraryUITests: XCTestCase {
     /// Shows the controls if they auto-hid, then taps one.
     private func tapControl(_ id: String) {
         let button = app.buttons[id]
-        if !button.waitForExistence(timeout: 1) { app.otherElements["visualizerTapArea"].firstMatch.tap() }
-        XCTAssertTrue(button.waitForExistence(timeout: 3), id)
+        if !button.appears(within: 0.5) { app.otherElements["visualizerTapArea"].firstMatch.tap() }
+        XCTAssertTrue(button.appears(within: 3), id)
         button.tap()
     }
 
     private func openBrowser() {
         tapControl("presets")
-        XCTAssertTrue(app.buttons["node:included"].waitForExistence(timeout: 10), "library home")
+        XCTAssertTrue(app.buttons["node:included"].appears(within: 10), "library home")
     }
 
     /// Scrolls the list until a row is on screen (lists build rows lazily).
     private func scrollTo(_ element: XCUIElement) {
-        for _ in 0..<10 where !(element.exists && element.isHittable) { app.swipeUp() }
-        XCTAssertTrue(element.waitForExistence(timeout: 3), element.debugDescription)
+        _ = element.appears(within: 2)
+        var swipes = 0
+        while swipes < 10 && !(element.exists && element.isHittable) { app.swipeUp(); swipes += 1 }
+        XCTAssertTrue(element.appears(within: 3), element.debugDescription)
     }
 
-    private func waitForScopeLine(_ text: String) {
-        let predicate = NSPredicate(format: "label == %@", text)
-        expectation(for: predicate, evaluatedWith: scopeLine)
-        waitForExpectations(timeout: 5)
+    private func waitForScopeLine(_ text: String, file: StaticString = #filePath, line: UInt = #line) {
+        if !poll(5, { self.scopeLine.exists && self.scopeLine.label == text }) {
+            XCTFail("scope line “\(scopeLine.exists ? scopeLine.label : "<missing>")”, expected “\(text)”", file: file, line: line)
+        }
     }
 
     // MARK: - T223 (before purchase)
@@ -72,20 +72,20 @@ final class PresetLibraryUITests: XCTestCase {
         start(unlocked: false)
         openBrowser()
         app.buttons["node:cream-of-the-crop"].tap()
-        XCTAssertTrue(app.buttons["unlockBanner"].waitForExistence(timeout: 5), "locked pack offers the unlock")
+        XCTAssertTrue(app.buttons["unlockBanner"].appears(within: 5), "locked pack offers the unlock")
         let fractal = app.buttons["node:cream-of-the-crop/Fractal"]
         scrollTo(fractal)
         fractal.tap()
         let spiral = app.buttons["node:cream-of-the-crop/Fractal/Nested Spiral"]
-        XCTAssertTrue(app.buttons["node:cream-of-the-crop/Fractal/Blobby"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["node:cream-of-the-crop/Fractal/Blobby"].appears(within: 5))
         scrollTo(spiral)
         spiral.tap()
         let row = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'preset:'")).firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        XCTAssertTrue(row.appears(within: 5))
         XCTAssertTrue(row.label.hasSuffix(", locked"), row.label)
         let before = current.label
         row.tap()
-        XCTAssertTrue(app.otherElements["purchaseSheet"].waitForExistence(timeout: 5) || app.collectionViews["purchaseSheet"].exists,
+        XCTAssertTrue(app.otherElements["purchaseSheet"].appears(within: 5) || app.collectionViews["purchaseSheet"].exists,
                       "a locked preset opens the purchase sheet (FR-106)")
         XCTAssertTrue(app.buttons["buyLibrary"].exists)
         XCTAssertTrue(app.buttons["restorePurchases"].exists)
@@ -97,12 +97,12 @@ final class PresetLibraryUITests: XCTestCase {
         start(unlocked: false)
         openBrowser()
         let field = app.searchFields.firstMatch
-        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        XCTAssertTrue(field.appears(within: 5))
         field.tap()
         field.typeText("a")
-        XCTAssertTrue(app.staticTexts["refineSearch"].waitForExistence(timeout: 5), "a broad query is capped (FR-113)")
+        XCTAssertTrue(app.staticTexts["refineSearch"].appears(within: 5), "a broad query is capped (FR-113)")
         let header = NSPredicate(format: "label ==[c] %@", "Included")
-        XCTAssertTrue(app.staticTexts.matching(header).firstMatch.waitForExistence(timeout: 5),
+        XCTAssertTrue(app.staticTexts.matching(header).firstMatch.appears(within: 5),
                       "results are grouped by pack, Included first")
     }
 
@@ -127,12 +127,12 @@ final class PresetLibraryUITests: XCTestCase {
         scrollTo(fractal)
         fractal.tap()
         let spiral = app.buttons["node:cream-of-the-crop/Fractal/Nested Spiral"]
-        XCTAssertTrue(app.buttons["node:cream-of-the-crop/Fractal/Blobby"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["node:cream-of-the-crop/Fractal/Blobby"].appears(within: 5))
         scrollTo(spiral)
         XCTAssertEqual(spiral.label, "Nested Spiral, 178 presets")
         spiral.tap()
         let rows = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'preset:'"))
-        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(rows.firstMatch.appears(within: 5))
         let first = String(rows.firstMatch.identifier.dropFirst("preset:".count))
         rows.firstMatch.tap()   // choosing a preset closes the browser
         waitForScopeLine("Fractal › Nested Spiral · 178")

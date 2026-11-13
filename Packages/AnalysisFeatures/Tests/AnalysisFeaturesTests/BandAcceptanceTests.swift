@@ -86,7 +86,9 @@ final class BandAcceptanceTests: XCTestCase {
         let silence = try XCTUnwrap(ReferenceToneCatalog.fixture(id: "silence"))
         var frames = 0
         for rate in ReferenceToneCatalog.variantRates {
-            let stereo = try silence.loop(sampleRate: rate, channels: 2)
+            // The first 2 s of the loop: every sample is zero, so the rest adds only time
+            // (shortened 2026-11-13 under owner rule 7; every rate, size, count, scale and backend kept).
+            let stereo = Array(try silence.loop(sampleRate: rate, channels: 2)[0..<(2 * 2 * rate)])
             let reducers = try TestSupport.backends.map { try BandReducer(sampleRate: Double(rate), backend: $0) }
             var output = [Float](repeating: -1, count: 128)
             for size in FFTSize.allCases {
@@ -118,7 +120,7 @@ final class BandAcceptanceTests: XCTestCase {
                 XCTAssertEqual(nonZero, 0, "R=\(rate) N=\(size.rawValue)")
             }
         }
-        XCTAssertGreaterThan(frames, 6_000)
+        XCTAssertGreaterThan(frames, 1_200)
     }
 
     // MARK: US3 — switching size and count between frames
@@ -176,42 +178,41 @@ final class BandAcceptanceTests: XCTestCase {
         return (bands, magnitudes)
     }
 
+    /// Representative cases (shortened 2026-11-13 under owner rule 7): the multi-tone fixture at
+    /// 44.1 kHz and N = 512 (most frames) and the log sweep at 48 kHz and N = 8,192 (most bins), each
+    /// run twice on every backend in the build except that, where vDSP exists, the portable backend
+    /// repeats only the multi-tone case; vDSP and portable reductions of the same magnitudes are
+    /// compared on both cases (every 4th frame, every count).
     func testRepeatedRunsAreBitIdenticalAndBackendsAgree() throws {
         var compared = 0
         var largestRelative: Float = 0
-        for rate in ReferenceToneCatalog.variantRates {
-            var signals: [(String, [Float])] = [("multi-tone", try BandOracle.multiTone(sampleRate: rate, frames: 10 * rate))]
-            for id in ["sweep-log", "sweep-linear"] {
-                signals.append((id, try XCTUnwrap(ReferenceToneCatalog.fixture(id: id)).loop(sampleRate: rate, channels: 1)))
-            }
-            for (name, samples) in signals {
-                for size in [FFTSize.n512, .n8192] {
-                    for backend in TestSupport.backends {
-                        // The portable FFT is slow in Debug: where vDSP exists it repeats only the
-                        // multi-tone fixture (vDSP covers the sweeps); without vDSP it runs everything.
-                        if backend == .portable && SpectrumBackend.isAcceleratedAvailable && name != "multi-tone" { continue }
-                        let first = try bandFrames(samples, size: size, rate: rate, backend: backend)
-                        let second = try bandFrames(samples, size: size, rate: rate, backend: backend)
-                        XCTAssertFalse(first.bands.isEmpty)
-                        XCTAssertEqual(first.bands.map(\.bitPattern), second.bands.map(\.bitPattern), "\(name) \(backend) R=\(rate) N=\(size.rawValue)")
-                        XCTAssertTrue(first.bands.allSatisfy { $0.isFinite && $0 >= 0 })
-                        guard backend == .accelerated else { continue }
-                        // The same magnitudes through both reduction paths.
-                        let accelerated = try BandReducer(sampleRate: Double(rate), backend: .accelerated)
-                        let portable = try BandReducer(sampleRate: Double(rate), backend: .portable)
-                        for magnitudes in first.magnitudes.enumerated().filter({ $0.offset % 4 == 0 }).map(\.element) {
-                            for count in BandCount.allCases {
-                                let a = accelerated.reduce(magnitudes, size: size, bandCount: count)
-                                let p = portable.reduce(magnitudes, size: size, bandCount: count)
-                                let peak = a.max() ?? 0
-                                for i in a.indices {
-                                    let difference = abs(a[i] - p[i])
-                                    if difference > 1e-5 * peak + 1e-7 { XCTFail("\(name) R=\(rate) N=\(size.rawValue) B=\(count.rawValue) band \(i): \(a[i]) vs \(p[i])") }
-                                    if peak > 0 { largestRelative = max(largestRelative, difference / peak) }
-                                }
-                                compared += 1
-                            }
+        let cases: [(String, Int, FFTSize, [Float])] = [
+            ("multi-tone", 44_100, .n512, try BandOracle.multiTone(sampleRate: 44_100, frames: 10 * 44_100)),
+            ("sweep-log", 48_000, .n8192, try XCTUnwrap(ReferenceToneCatalog.fixture(id: "sweep-log")).loop(sampleRate: 48_000, channels: 1)),
+        ]
+        for (name, rate, size, samples) in cases {
+            for backend in TestSupport.backends {
+                if backend == .portable && SpectrumBackend.isAcceleratedAvailable && name != "multi-tone" { continue }
+                let first = try bandFrames(samples, size: size, rate: rate, backend: backend)
+                let second = try bandFrames(samples, size: size, rate: rate, backend: backend)
+                XCTAssertFalse(first.bands.isEmpty)
+                XCTAssertEqual(first.bands.map(\.bitPattern), second.bands.map(\.bitPattern), "\(name) \(backend) R=\(rate) N=\(size.rawValue)")
+                XCTAssertTrue(first.bands.allSatisfy { $0.isFinite && $0 >= 0 })
+                guard backend == .accelerated else { continue }
+                // The same magnitudes through both reduction paths.
+                let accelerated = try BandReducer(sampleRate: Double(rate), backend: .accelerated)
+                let portable = try BandReducer(sampleRate: Double(rate), backend: .portable)
+                for magnitudes in first.magnitudes.enumerated().filter({ $0.offset % 4 == 0 }).map(\.element) {
+                    for count in BandCount.allCases {
+                        let a = accelerated.reduce(magnitudes, size: size, bandCount: count)
+                        let p = portable.reduce(magnitudes, size: size, bandCount: count)
+                        let peak = a.max() ?? 0
+                        for i in a.indices {
+                            let difference = abs(a[i] - p[i])
+                            if difference > 1e-5 * peak + 1e-7 { XCTFail("\(name) R=\(rate) N=\(size.rawValue) B=\(count.rawValue) band \(i): \(a[i]) vs \(p[i])") }
+                            if peak > 0 { largestRelative = max(largestRelative, difference / peak) }
                         }
+                        compared += 1
                     }
                 }
             }

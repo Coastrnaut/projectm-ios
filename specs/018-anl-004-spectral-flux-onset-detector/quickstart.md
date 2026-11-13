@@ -11,8 +11,10 @@ swift test --package-path Packages/AnalysisFeatures --filter OnsetAcceptanceTest
 ```
 
 Expected: all pass. `OnsetAcceptanceTests` prints `ANL-004 matrix:` lines (fixture, rate, size,
-hop: onsets, events, misses, false events, largest |error| in samples) for every pulse
-combination; silence and below-floor noise give 0 events and a detection value of exactly 0;
+hop: onsets, events, misses, false events, largest |error| in samples) for its representative pulse
+cases (owner rule 7, 2026-11-13; the full 90-combination matrix per backend, with the tone and
+silence sweeps, runs on demand:
+`swift run -c release --package-path Packages/AnalysisFeatures/Bench AnalysisBench --anl004-sweep`); silence and below-floor noise give 0 events and a detection value of exactly 0;
 every sine and sweep gives exactly 1 event at the start; repeated runs are identical; with vDSP
 available both paths give identical events.
 
