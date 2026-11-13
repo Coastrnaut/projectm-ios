@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Planned (analysis fixes applied 2026-11-13)
 
 **Input**: User description: "Implement MED-002 (Import video layer) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Choose compatible local video
@@ -193,7 +193,7 @@ the importer and the player and expect typed errors and the transparent fallback
 - **MED-002-R5**: Imports MUST be refused, with a typed reason, when the picked file is larger than
   500 MB; when it has no video pictures; when its codec is not H.264 or HEVC; when its picture is
   longer than 4096 pixels on its longest side; when its nominal frame rate is above 60 frames per
-  second; or when it is damaged (its first picture cannot be decoded).
+  second (rates up to 60.5 are read as 60, so 59.94 and rounded 60.0x headers pass); or when it is damaged (its first picture cannot be decoded).
 - **MED-002-R6**: The app MUST keep one video at a time. Its identifier MUST be stored in the app's
   settings; a new import replaces the previous video, whose copy is deleted only after the new copy
   is saved. A failed import MUST leave the previous video and identifier unchanged.

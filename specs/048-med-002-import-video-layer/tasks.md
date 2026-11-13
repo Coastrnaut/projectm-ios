@@ -65,7 +65,7 @@ cannot be automated; simulator results are never device evidence); left open by 
 
 - [ ] MED-002-T23 ADR (next free number) for the imported video layer (decoder choice, queue, clock, remux, audio dropped), `docs/adr/README.md` row
 - [ ] MED-002-T24 [P] Privacy docs: `docs/privacy-policy.md` (imported videos) and `docs/release/app-privacy.md` (Data Not Collected; owner confirms in App Store Connect)
-- [ ] MED-002-T25 Checks: `python3 scripts/check_compliance.py`, `python3 scripts/validate_docs.py`, `python3 scripts/check_privacy_manifest.py` on the Debug simulator app; Linux shape of the package; `xcodebuild test -scheme Compolsitor` once on the simulator; test report `docs/test-reports/video-layer.md`
+- [ ] MED-002-T25 Checks: `python3 scripts/check_compliance.py`, `python3 scripts/validate_docs.py`, `python3 scripts/check_privacy_manifest.py` on the Debug simulator app; Linux shape of the package; `xcodebuild test -scheme Compositor` once on the simulator; regression run of `projectM-iOSUITests/PhotoLayerUITests` and `projectM-iOSUITests/CameraUITests` with the app unit tests and `VideoLayerUITests`; the built app's Info.plist has no `NSPhotoLibraryUsageDescription` (S8); PosterBoard report count before and after; test report `docs/test-reports/video-layer.md`
 - [ ] MED-002-T26 {device} Photos and Files picks on D1 and D3 (HEVC from the camera, an H.264 file), no permission prompt, Remove Video, relaunch
 - [ ] MED-002-T27 {device} 4K60 HEVC and a long (≥ 10 min) file play at their rate on D1 and D3; memory stays bounded (Xcode memory gauge)
 - [ ] MED-002-T28 {device} Thermal state over 3 minutes of 4K playback on D1 and D3 (`ProcessInfo.thermalState` stays below serious), frame rate recorded

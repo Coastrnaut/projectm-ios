@@ -102,8 +102,7 @@ Packages/Compositor/
 │   ├── AVVideoFrameReader.swift          # AVAssetReader → CVMetalTexture (AVFoundation + Metal)
 │   └── VideoLayerSource.swift            # the CMP-001 layer (Metal)
 └── Tests/CompositorTests/
-    ├── VideoFrameQueueTests.swift        # fake reader + fake clock (Linux too)
-    ├── VideoPlaybackClockTests.swift     # (Linux too)
+    ├── VideoPipelineTests.swift          # queue, clock, limits; fake reader + fake clock (Linux too)
     ├── VideoFixtures.swift               # AVAssetWriter fixture generator
     ├── VideoImportTests.swift            # probe, limits, remux privacy (AVFoundation)
     └── VideoLayerTests.swift             # through the real compositor (Metal)
