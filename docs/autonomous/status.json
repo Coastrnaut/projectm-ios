@@ -7,9 +7,9 @@
  "by_priority": {
   "P0": {
    "audited": 45,
-   "implementing": 1,
    "integrated": 40,
-   "skipped_existing": 1
+   "skipped_existing": 1,
+   "unit_passed": 1
   },
   "P1": {
    "audited": 139,
@@ -25,9 +25,10 @@
  },
  "by_state": {
   "audited": 271,
-  "implementing": 2,
+  "implementing": 1,
   "integrated": 52,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -2028,12 +2029,12 @@
   "OSC-009": {
    "attempts": 0,
    "branch": "feature/osc-009",
-   "branch_sha": null,
+   "branch_sha": "f4291322e4b6517d73bd1c68bd173d9499e067f0",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "OSC-010": {
    "attempts": 0,
@@ -3863,5 +3864,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T17:26:25Z"
+ "updated": "2026-11-13T17:26:36Z"
 }
