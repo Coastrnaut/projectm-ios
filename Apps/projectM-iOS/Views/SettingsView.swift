@@ -7,8 +7,12 @@
 // photo's size and the import notice.
 // MED-002: with Video chosen, a Video section offers the same for one video (Photos picker with the
 // videos filter, Files with movie types), Remove Video, the playing size and the import notice.
+// MED-009: with Text chosen, a Text section edits the message (multi-line field), font, weight, size,
+// color, alignment, vertical position, outline, background box and Reset Text; every change is saved
+// and drawn at once. It is a standard List section, so Dynamic Type and VoiceOver apply.
 import PhotosUI
 import SwiftUI
+import TextLayer
 import VisualEffects
 import VisualGenerators
 
@@ -27,6 +31,8 @@ struct SettingsView: View {
     var photos: PhotoCoordinator?
     /// MED-002: the imported video (nil hides the Video section).
     var videos: VideoCoordinator?
+    /// MED-009: the Text visual's message and style (nil hides the Text section).
+    var texts: TextOverlayCoordinator?
     @Environment(\.dismiss) private var dismiss
     @State private var pickedPhoto: PhotosPickerItem?
     @State private var showPhotoFileImporter = false
@@ -122,7 +128,7 @@ struct SettingsView: View {
                             .accessibilityIdentifier("nativeVisualUnavailableFooter")
                     } else {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Camera shows your rear camera behind a circular spectrum, only while it is on screen; the picture is never recorded or sent. Photo shows a picture you choose behind a circular spectrum. Video plays a video you choose, without its sound, behind a circular spectrum.")
+                            Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Camera shows your rear camera behind a circular spectrum, only while it is on screen; the picture is never recorded or sent. Photo shows a picture you choose behind a circular spectrum. Video plays a video you choose, without its sound, behind a circular spectrum. Text shows your own words over a circular spectrum.")
                             if settings.visual.isNative {
                                 if glowUnavailable {
                                     Text(AppCoordinator.glowUnavailableMessage)
@@ -139,6 +145,9 @@ struct SettingsView: View {
                 }
                 if settings.visual.usesVideo, let videos {
                     videoSection(videos)
+                }
+                if settings.visual.usesText, let texts {
+                    textSection(texts)
                 }
                 Section {
                     Toggle("Reduce flashing", isOn: $settings.reduceFlashing)
@@ -253,6 +262,80 @@ struct SettingsView: View {
         }
         .fileImporter(isPresented: $showVideoFileImporter, allowedContentTypes: [.movie]) { (result: Result<URL, any Error>) in
             Task { await videos.filePicked(result) }
+        }
+    }
+
+    // MARK: Text (MED-009-R2, R12, R13)
+
+    /// A binding to one field of the spec; each change is saved and drawn at once.
+    private func field<Value>(_ texts: TextOverlayCoordinator, _ path: WritableKeyPath<TextOverlaySpec, Value>) -> Binding<Value> {
+        Binding(get: { texts.spec[keyPath: path] }, set: { (value: Value) in texts.spec[keyPath: path] = value })
+    }
+
+    /// A SwiftUI color for a stored sRGB color, and back (extended values are clamped).
+    private func color(_ texts: TextOverlayCoordinator, _ path: WritableKeyPath<TextOverlaySpec, TextColor>) -> Binding<Color> {
+        Binding(get: {
+            let c = texts.spec[keyPath: path]
+            return Color(.sRGB, red: c.red, green: c.green, blue: c.blue, opacity: c.alpha)
+        }, set: { (value: Color) in
+            let r = value.resolve(in: EnvironmentValues())
+            texts.spec[keyPath: path] = TextColor(red: Double(r.red), green: Double(r.green), blue: Double(r.blue), alpha: Double(r.opacity))
+        })
+    }
+
+    private func textSection(_ texts: TextOverlayCoordinator) -> some View {
+        Section {
+            TextField("Message", text: Binding(get: { texts.spec.message }, set: { (value: String) in texts.setMessage(value) }),
+                      axis: .vertical)
+                .lineLimit(1...4)
+                .accessibilityLabel("Message")
+                .accessibilityIdentifier("textMessageField")
+            if texts.messageWasCut {
+                Text(TextOverlayCoordinator.cutNote)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("textCutNote")
+            }
+            Picker("Font", selection: field(texts, \.font)) {
+                ForEach(TextFontFamily.allCases, id: \.self) { Text($0.title).tag($0) }
+            }
+            .accessibilityIdentifier("textFontPicker")
+            Picker("Weight", selection: field(texts, \.weight)) {
+                ForEach(TextFontWeight.allCases, id: \.self) { Text($0.title).tag($0) }
+            }
+            .accessibilityIdentifier("textWeightPicker")
+            glowSlider("Size", value: field(texts, \.size), range: Float(TextOverlaySpec.sizeRange.lowerBound)...Float(TextOverlaySpec.sizeRange.upperBound),
+                       text: Self.percent(texts.spec.size), id: "textSizeSlider")
+            ColorPicker("Color", selection: color(texts, \.color), supportsOpacity: true)
+                .accessibilityIdentifier("textColorPicker")
+            Picker("Alignment", selection: field(texts, \.alignment)) {
+                ForEach(TextAlignmentChoice.allCases, id: \.self) { Text($0.title).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityLabel("Alignment")
+            .accessibilityIdentifier("textAlignmentPicker")
+            Picker("Position", selection: field(texts, \.verticalPosition)) {
+                ForEach(TextVerticalPosition.allCases, id: \.self) { Text($0.title).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityLabel("Position")
+            .accessibilityIdentifier("textPositionPicker")
+            glowSlider("Outline", value: field(texts, \.outlineWidth),
+                       range: Float(TextOverlaySpec.outlineWidthRange.lowerBound)...Float(TextOverlaySpec.outlineWidthRange.upperBound),
+                       text: Self.percent(texts.spec.outlineWidth), id: "textOutlineSlider")
+            ColorPicker("Outline color", selection: color(texts, \.outlineColor), supportsOpacity: true)
+                .accessibilityIdentifier("textOutlineColorPicker")
+            Toggle("Background box", isOn: field(texts, \.showsBox))
+                .accessibilityIdentifier("textBoxToggle")
+            if texts.spec.showsBox {
+                ColorPicker("Box color", selection: color(texts, \.boxColor), supportsOpacity: true)
+                    .accessibilityIdentifier("textBoxColorPicker")
+            }
+            Button("Reset Text", role: .destructive) { texts.reset() }
+                .accessibilityIdentifier("resetText")
+        } header: {
+            Text("Text")
+        } footer: {
+            Text("Size is a share of the picture's height, so the text looks the same on any screen. Leading and trailing follow the text's own direction (right to left for Arabic and Hebrew). The text is saved on this device only.")
         }
     }
 
