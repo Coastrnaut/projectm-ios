@@ -5,6 +5,7 @@
 import XCTest
 import AudioCore
 import PresentationLifecycle
+import FlashSafety
 import ProjectMBridge
 @testable import Rendering
 
@@ -31,20 +32,44 @@ final class GLESRendererTests: XCTestCase {
         stride(from: 0, to: pixels.count, by: 4).filter { pixels[$0] > 8 || pixels[$0 + 1] > 8 || pixels[$0 + 2] > 8 }.count
     }
 
-    /// T119: the fallback runs the same Reduce-flashing post-pass as ANGLERenderer (CFlashLimiter
-    /// through PMAppleGLESLoadProc). Off by default, the limiter is not created; on, frames go through it.
-    func testTheFallbackLimitsFlashingWhenOn() async throws {
+    /// T119, amended by FX-019-T10: the fallback runs the same strobe safety envelope as
+    /// ANGLERenderer (CFlashLimiter through PMAppleGLESLoadProc), with Reduce flashing off (the
+    /// always-on cap, FX-019-R7) and on.
+    func testTheFallbackAlwaysRunsTheEnvelope() async throws {
         let renderer = try makeLaidOut()
         XCTAssertTrue(renderer.supportsReduceFlashing)
         try await renderer.setPreset(preset("001-line.milk"))
         XCTAssertTrue(renderer.renderFrame())
-        XCTAssertNil(renderer.flashLimiterAdaptedLuminance, "off by default")
+        let off = try XCTUnwrap(renderer.flashLimiterGain, "the pass runs with Reduce flashing off")
+        XCTAssertTrue(off >= 0 && off <= 1)
         renderer.reduceFlashing = true
         for _ in 0..<5 { XCTAssertTrue(renderer.renderFrame()) }
-        let adapted = try XCTUnwrap(renderer.flashLimiterAdaptedLuminance, "the limiter ran")
-        XCTAssertGreaterThanOrEqual(adapted, 0)
-        XCTAssertLessThanOrEqual(adapted, 1)
+        let on = try XCTUnwrap(renderer.flashLimiterGain)
+        XCTAssertTrue(on >= 0 && on <= 1)
         XCTAssertFalse(renderer.readPixels().isEmpty)
+    }
+
+    /// FX-019-T10: white/black at 60 Hz through the fallback's pass, Reduce flashing on, 2 s:
+    /// measured on read-back pixels, at most 4 transitions per window and rises within the rate.
+    func testTheFallbackHoldsAWhiteBlackStrobe() throws {
+        let renderer = try makeLaidOut()
+        renderer.reduceFlashing = true
+        let size = renderer.currentDrawableSize
+        var outputs: [[FlashLevels]] = []
+        for n in 0..<120 {
+            let v: Float = n % 2 == 0 ? 1 : 0
+            XCTAssertNotNil(renderer.limitedSolidFrame(v, frameTime: 1.0 / 60))
+            outputs.append(FlashColor.tileLevels(rgba: renderer.readPixels(), width: size.width, height: size.height, bottomRowFirst: true))
+        }
+        let times = [Double](repeating: 1.0 / 60, count: outputs.count)
+        var worst = 0
+        for z in 0..<FlashZones.count {
+            let r = FlashAnalysis.analyze(outputs.map { $0[z].luminance }, frameTimes: times, threshold: 0.1)
+            worst = max(worst, r.maxTransitionsPerWindow)
+            XCTAssertLessThanOrEqual(r.maxRise, 0.25 / 60 + 0.004, "area \(z)")
+        }
+        XCTAssertLessThanOrEqual(worst, 4)
+        print("FX-019 projectM pass (GLES fallback, simulator, \(size.width) × \(size.height)): white/black 60 Hz on: 61 → \(worst) transitions per window (limit 4)")
     }
 
     func testDrawableFollowsTheViewSizeAtDisplayScale() throws {

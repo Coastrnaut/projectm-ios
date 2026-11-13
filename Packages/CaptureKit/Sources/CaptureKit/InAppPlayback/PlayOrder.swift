@@ -77,6 +77,27 @@ public protocol MutablePlayOrder: PlayOrder {
     var onOrderChange: (@MainActor () -> Void)? { get set }
     /// The transport selected `id` (prepare, Next, Previous, the end of a track).
     func playbackDidMove(to id: PlaybackItem.ID)
+    /// The same, with how playback got there (AUD-005, research AUD-005-D3): a shuffled queue moves
+    /// back and forth through its play history by it. The default ignores the reason.
+    func playbackDidMove(to id: PlaybackItem.ID, by move: PlaybackMove)
+}
+
+extension MutablePlayOrder {
+    public func playbackDidMove(to id: PlaybackItem.ID, by move: PlaybackMove) {
+        playbackDidMove(to: id)
+    }
+}
+
+/// How the transport moved to a track (AUD-005).
+public enum PlaybackMove: Sendable, Equatable {
+    /// `prepare` before a session: a track the user picked, or Play Queue.
+    case start
+    /// Next track.
+    case next
+    /// Previous track (only when it selects another track or restarts at the start of the order).
+    case previous
+    /// The end of a track continued with this one, or cued it (AUD-004 Off).
+    case endOfTrack
 }
 
 /// A fixed list that wraps around: after the last item comes the first, before the first the last.

@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T14:47:41Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T15:11:34Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,24 +9,25 @@
 
 | State | Features |
 |---|---|
-| audited | 291 |
-| implementing | 1 |
-| integrated | 33 |
+| audited | 288 |
+| implementing | 2 |
+| unit_passed | 1 |
+| integrated | 34 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 59 | 1 | 26 | 1 |
-| P1 | 144 | 0 | 7 | 0 |
-| P2 | 79 | 0 | 0 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 57 | 2 | 0 | 27 | 1 |
+| P1 | 143 | 0 | 1 | 7 | 0 |
+| P2 | 79 | 0 | 0 | 0 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 292 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
+- 291 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
 
 ## Integrated
 
@@ -58,6 +59,7 @@ The physical-device suite may **not** start:
 | AUTO-013 | Final device-test gate | `419cc2a999ed` | `autonomous/integration` |
 | AUTO-014 | Unattended safety budget | `419cc2a999ed` | `autonomous/integration` |
 | FX-001 | Bloom | `1192e0d6503e` | `feature/fx-001` |
+| FX-019 | Strobe safety envelope | `6cfcbaabc8d0` | `feature/fx-019` |
 | PERF-011 | Background resource release | `6d669fcb8576` | `feature/perf-011` |
 | PRE-007 | Preset collections | `e834535cb98b` | `feature/pre-007` |
 | PRE-012 | Preset import validation | `4bf9f50d1af8` | `feature/pre-012` |
@@ -146,6 +148,12 @@ None.
 - `swift test --package-path Packages/CaptureUI`: pass at `489f122c1431` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-004/20261113T071949/swift-test_CaptureUI.log`)
 - `integration checkout: CaptureKit 395 on iOS 27.2 sim; xcodebuild projectM-iOS test: projectM-iOSTests 126 pass; UI 15 pass (RepeatMode, PlayQueue, Transport, ImportedAudio, Interruption); 0 PosterBoard reports`: pass at `8d96030` (log `.autonomous/logs/integration/aud-004/app-tests.log`)
 
+### AUD-005 Shuffle with history (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `8b729cdfa06d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-005/20261113T101054/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `8b729cdfa06d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-005/20261113T101054/docs.log`)
+- `swift test --package-path Packages/CaptureKit`: pass at `8b729cdfa06d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-005/20261113T101054/swift-test_CaptureKit.log`)
+- `swift test --package-path Packages/CaptureUI`: pass at `8b729cdfa06d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-005/20261113T101054/swift-test_CaptureUI.log`)
+
 ### AUD-006 Seekable transport (integrated)
 - `python3 scripts/check_compliance.py`: pass at `383d9ab633a4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-006/20261112T174904/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `383d9ab633a4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-006/20261112T174904/docs.log`)
@@ -230,6 +238,15 @@ None.
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `94f4b3a6b7c3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-001/20261113T090348/autonomous-tests.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `94f4b3a6b7c3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-001/20261113T090348/swift-test_VisualGenerators.log`)
 - `integration checkout: VisualGenerators 76 on iOS 27.2 sim (GPU tests ran) and 59 with -DVISUAL_NO_METAL; app: projectM-iOSTests 133 pass, UI 16 pass (Glow, NativeVisual, Settings, Visualizer); 0 PosterBoard reports`: pass at `1192e0d` (log `.autonomous/logs/integration/fx-001/app-tests.log`)
+
+### FX-019 Strobe safety envelope (integrated)
+- `python3 scripts/check_compliance.py`: pass at `bc80d4775650` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-019/20261113T095545/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `bc80d4775650` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-019/20261113T095545/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=77E17861-E687-4274-8A84-14224F32BE3E CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `bc80d4775650` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-019/20261113T095545/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/FlashSafety`: pass at `bc80d4775650` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-019/20261113T095545/swift-test_FlashSafety.log`)
+- `xcodebuild -scheme Rendering-Package -destination id=77E17861-E687-4274-8A84-14224F32BE3E CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `bc80d4775650` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-019/20261113T095545/sim-test_Rendering.log`)
+- `swift test --package-path Packages/VisualGenerators`: pass at `bc80d4775650` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-019/20261113T095545/swift-test_VisualGenerators.log`)
+- `integration checkout: VisualGenerators 81 on iOS 27.2 sim, 63 with -DVISUAL_NO_METAL; FlashSafety 20; app: projectM-iOSTests 133, UI 11 (NativeVisual, Visualizer); 211 s wall; 0 PosterBoard reports`: pass at `6cfcbaa` (log `.autonomous/logs/integration/fx-019/app-tests.log`)
 
 ### PERF-011 Background resource release (integrated)
 - `python3 scripts/check_compliance.py`: pass at `e463058b1c92` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T151252/compliance.log`)

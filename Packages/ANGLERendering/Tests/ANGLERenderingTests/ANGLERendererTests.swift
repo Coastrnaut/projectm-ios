@@ -273,13 +273,13 @@ final class ANGLERendererTests: XCTestCase {
         renderer.reduceFlashing = true
         for _ in 0..<5 { XCTAssertTrue(renderer.renderFrame(present: false)) }
         XCTAssertTrue(renderer.hasFlashLimiter)
-        // Leave the limiter adapted to white, so a stale value would be visible after the resume.
-        XCTAssertEqual(try XCTUnwrap(renderer.limitedSolidFrame(1, maxStep: 1)), 1, accuracy: 0.01)
+        // Leave the envelope's history at white, so a stale state would be visible after the resume.
+        XCTAssertNotNil(renderer.limitedSolidFrame(1, 1.0 / 60))
 
         renderer.suspendForPresentationLoss()
         XCTAssertFalse(renderer.hasFlashLimiter, "R6: the Reduce-flashing target is released")
-        XCTAssertNil(renderer.flashLimiterAdaptedLuminance)
-        XCTAssertNil(renderer.limitedSolidFrame(1, maxStep: 1), "nothing is drawn while suspended")
+        XCTAssertNil(renderer.flashLimiterGain)
+        XCTAssertNil(renderer.limitedSolidFrame(1, 1.0 / 60), "nothing is drawn while suspended")
         XCTAssertFalse(renderer.hasFlashLimiter, "and nothing recreates the target")
         renderer.reduceFlashing = false   // toggled in the background: nothing to reset, no crash
         renderer.reduceFlashing = true
@@ -288,35 +288,37 @@ final class ANGLERendererTests: XCTestCase {
         // The engine's frames go through a new limiter onto the new surface.
         for _ in 0..<5 { XCTAssertTrue(renderer.renderFrame(present: false)) }
         XCTAssertTrue(renderer.hasFlashLimiter, "recreated on the first limited frame")
-        let adapted = try XCTUnwrap(renderer.flashLimiterAdaptedLuminance)
-        XCTAssertGreaterThanOrEqual(adapted, 0)
-        XCTAssertLessThanOrEqual(adapted, 1)
+        let gain = try XCTUnwrap(renderer.flashLimiterGain)
+        XCTAssertGreaterThanOrEqual(gain, 0)
+        XCTAssertLessThanOrEqual(gain, 1)
         let size = renderer.currentSurfaceSize
         XCTAssertEqual(renderer.readPixels().count, size.width * size.height * 4, "the output reaches the new surface")
 
-        // And it limits: black, then a cut to white becomes a ramp of at most maxStep per frame,
-        // visible on the surface.
-        XCTAssertEqual(try XCTUnwrap(renderer.limitedSolidFrame(0, maxStep: 1)), 0, accuracy: 0.01)
+        // And it limits (FX-019: amended from T104's ramp): black, then a cut to white rises at
+        // 0.25 per second (0.025 per 0.1 s frame), visible on the surface.
+        XCTAssertEqual(try XCTUnwrap(renderer.limitedSolidFrame(0, 0.1)), 1, accuracy: 0.01, "black needs no gain")
         XCTAssertEqual(litPixels(renderer.readPixels()), 0)
-        XCTAssertEqual(try XCTUnwrap(renderer.limitedSolidFrame(1, maxStep: 0.25)), 0.25, accuracy: 0.01)
-        XCTAssertEqual(try XCTUnwrap(renderer.limitedSolidFrame(1, maxStep: 0.25)), 0.5, accuracy: 0.01)
+        XCTAssertEqual(try XCTUnwrap(renderer.limitedSolidFrame(1, 0.1)), 0.025, accuracy: 0.002)
+        XCTAssertEqual(try XCTUnwrap(renderer.limitedSolidFrame(1, 0.1)), 0.05, accuracy: 0.002)
         let pixels = renderer.readPixels()
         XCTAssertEqual(litPixels(pixels), size.width * size.height, "every pixel shows the limited frame")
-        // Mean luminance 0.5 is an encoded value of sqrt(0.5) = 181 of 255.
-        XCTAssertEqual(Double(pixels[0]), 181, accuracy: 4)
+        // Relative luminance 0.05 is an sRGB-encoded value of 63 of 255.
+        XCTAssertEqual(Double(pixels[0]), 63, accuracy: 3)
     }
 
     /// A new limiter starts from its first frame's brightness, also after a suspension: no ramp up
-    /// from black and no value left over from before.
+    /// from black and no value left over from before. (FX-019: a following black frame stays
+    /// black; T104 lifted it with gray.)
     func testTheLimiterStartsOverAfterASuspension() throws {
         let renderer = try makeLaidOut()
         renderer.reduceFlashing = true
-        XCTAssertEqual(try XCTUnwrap(renderer.limitedSolidFrame(0, maxStep: 0.01)), 0, accuracy: 0.01)
+        XCTAssertEqual(try XCTUnwrap(renderer.limitedSolidFrame(0, 1.0 / 60)), 1, accuracy: 0.01)
         renderer.suspendForPresentationLoss()
         renderer.resumeForPresentation()
-        XCTAssertEqual(try XCTUnwrap(renderer.limitedSolidFrame(1, maxStep: 0.01)), 1, accuracy: 0.01,
+        XCTAssertEqual(try XCTUnwrap(renderer.limitedSolidFrame(1, 1.0 / 60)), 1, accuracy: 0.01,
                        "the first frame after the resume is shown at its own brightness")
-        XCTAssertEqual(try XCTUnwrap(renderer.limitedSolidFrame(0, maxStep: 0.01)), 0.99, accuracy: 0.01)
+        renderer.limitedSolidFrame(0, 1.0 / 60)
+        XCTAssertEqual(litPixels(renderer.readPixels()), 0, "never brighter than the input")
     }
 
     func testTenFlipsEndInAWorkingRenderer() async throws {

@@ -47,9 +47,13 @@ final class GlowFlashSafetyTests: XCTestCase {
 
     func testAlternatingFramesWithTheStrongestGlowObeyTheRiseBound() {
         var report: [String] = []
-        for palette in VisualPalette.allCases {
-            for dt in frameTimes {
-                let r = run(palette: palette, frameTime: dt)
+        // Owner rule 7 (2026-11-13): every palette at the typical 60 Hz frame time, plus the
+        // extreme frame times on one palette, 240 frames each (4 s at 60 Hz, 4 one-second windows),
+        // instead of every palette at every frame time for 600 frames (10.1 s after FX-019).
+        let cases = VisualPalette.allCases.map { ($0, 1.0 / 60) } + frameTimes.map { (VisualPalette.spectrum, $0) }
+        for (palette, dt) in cases {
+            do {
+                let r = run(palette: palette, frameTime: dt, frames: 240)
                 XCTAssertLessThanOrEqual(r.rise, 1, "\(palette) dt=\(dt): composited luminance rose too fast")
                 report.append("\(palette) dt=\(String(format: "%.4f", dt)) rise=\(String(format: "%.3f", r.rise)) peak=\(String(format: "%.4f", r.peak))")
             }
@@ -58,10 +62,10 @@ final class GlowFlashSafetyTests: XCTestCase {
     }
 
     func testTurningTheGlowOnMidRunObeysTheSameBound() {
-        for palette in VisualPalette.allCases {
-            for dt in frameTimes {
-                XCTAssertLessThanOrEqual(run(palette: palette, frameTime: dt, transferFrom: 301).rise, 1, "\(palette) dt=\(dt)")
-            }
+        // Owner rule 7: two representative cases (typical and slowest frame time) on 240 frames,
+        // switching the glow on mid-run, instead of every palette × frame time on 600 frames.
+        for (palette, dt) in [(VisualPalette.mono, 1.0 / 60), (VisualPalette.spectrum, frameTimes.max() ?? 0.2)] {
+            XCTAssertLessThanOrEqual(run(palette: palette, frameTime: dt, frames: 240, transferFrom: 121).rise, 1, "\(palette) dt=\(dt)")
         }
     }
 
@@ -73,7 +77,11 @@ final class GlowFlashSafetyTests: XCTestCase {
         XCTAssertTrue(zip(withGlow, without).contains { $0 < $1 - 1e-3 }, "the glow actually lowered some gains")
     }
 
-    func testReduceFlashingOffLeavesGainOne() {
-        XCTAssertTrue(run(palette: .spectrum, frameTime: 1.0 / 60, frames: 60, enabled: false).gains.allSatisfy { $0 == 1 })
+    /// Amended by FX-019 (stricter on purpose): with Reduce flashing off the always-on cap still
+    /// applies, so frames pass at gain 1 until a strobe reaches 6 transitions per second.
+    func testReduceFlashingOffLeavesGainOneUntilTheCap() {
+        let gains = run(palette: .spectrum, frameTime: 1.0 / 60, frames: 60, enabled: false).gains
+        XCTAssertEqual(Array(gains.prefix(6)), [1, 1, 1, 1, 1, 1], "five transitions pass unchanged")
+        XCTAssertLessThan(gains[6], 1, "the 7th would leave no room for its fall")
     }
 }

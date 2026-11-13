@@ -10,6 +10,9 @@
 //
 // AUD-004-R13: a "Repeat" section lists Off, One Track and All Tracks as rows; the queue's mode is
 // checked and carries the selected trait; a tap sets it (stored at once, never moves playback).
+// AUD-005-R12: a "Shuffle" toggle in its own section after "Up Next" (so the rows above keep their
+// places), with a footer; a change is
+// stored at once, announced to VoiceOver, and never moves playback.
 #if canImport(SwiftUI)
 import CaptureKit
 import SwiftUI
@@ -70,6 +73,7 @@ public struct PlayQueueView: View {
             } footer: {
                 Text(UIStrings.queueFooter)
             }
+            shuffleSection
             if !others.isEmpty {
                 Section {
                     ForEach(others) { item in
@@ -103,6 +107,22 @@ public struct PlayQueueView: View {
         .confirmationDialog(UIStrings.clearQueueConfirm, isPresented: $confirmingClear, titleVisibility: .visible) {
             Button(UIStrings.clearQueue, role: .destructive) { queue.clear() }
                 .accessibilityIdentifier("confirmClearQueue")
+        }
+    }
+
+    /// AUD-005: Shuffle on or off. The binding goes through the queue, which stores the change.
+    private var shuffleSection: some View {
+        Section {
+            Toggle(isOn: Binding(get: { queue.isShuffled }, set: { on in
+                guard on != queue.isShuffled else { return }
+                queue.setShuffle(on)
+                announce(UIStrings.shuffleAnnouncement(on))
+            })) {
+                Label(UIStrings.shuffleLabel, systemImage: UIStrings.shuffleIcon)
+            }
+            .accessibilityIdentifier("shuffleToggle")
+        } footer: {
+            Text(UIStrings.shuffleFooter)
         }
     }
 
