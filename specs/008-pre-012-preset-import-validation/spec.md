@@ -52,6 +52,11 @@ time limit; and a persistent record so a preset that killed or hung the app is n
 
 ## Clarifications
 
+### Owner rulings 2026-11-12
+
+- Owner ruling 2026-11-12 ("all recommended for policy choices"): an imported copy of a built-in preset is refused, locked or not, so bundled content stays out of user storage and no import works around the purchase.
+- Owner ruling 2026-11-12 ("all recommended for policy choices"): an incomplete shader (unbalanced braces or parentheses, or no `shader_body`) stays a quarantine reason, not a warning, although it rejects 2 of 14,576 pack-style presets the engine would play without the shader.
+
 ### Session 2026-11-12
 
 Answered under the standing delegation (recommended option first; no owner question was needed).

@@ -55,6 +55,10 @@ struct VisualizerView: View {
                 VStack { HStack { FakeSourcePanel(fake: fake); Spacer() }; Spacer() }
                     .padding(.top, 2)
             }
+            if UITestSessionEventPanel.isRequested {   // AUD-014: InterruptionUITests
+                VStack { HStack { UITestSessionEventPanel(); Spacer() }; Spacer() }
+                    .padding(.top, 2)
+            }
             #endif
             if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {
                 Text("\(coordinator.sourceStarts)")
@@ -83,6 +87,13 @@ struct VisualizerView: View {
         .onChange(of: coordinator.settings.reduceFlashing) { coordinator.applyReduceFlashing() }
         .onChange(of: coordinator.manager.state) { _, state in
             SourceStatusIndicator.announce(mode: coordinator.manager.activeMode, state: state)   // FR-070
+        }
+        .onChange(of: coordinator.manager.stopReason) { _, reason in
+            // AUD-014-R18: In-App Playback went on hold (interrupted, or the output was disconnected).
+            let manager = coordinator.manager
+            if let text = SourceStatusIndicator.holdAnnouncement(mode: manager.activeMode, state: manager.state, reason: reason) {
+                UIAccessibility.post(notification: .announcement, argument: text)
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: UIAccessibility.reduceMotionStatusDidChangeNotification)) { _ in
             coordinator.systemReduceMotionChanged(UIAccessibility.isReduceMotionEnabled)

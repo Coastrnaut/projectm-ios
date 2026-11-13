@@ -33,6 +33,14 @@ public struct StatusBanner: View {
             if let message = detail {
                 Text(message).font(.subheadline)
             }
+            // AUD-014-R17: why In-App Playback is on hold, and how it continues.
+            if let explanation = UIStrings.playbackHoldDetail(mode: mode, reason: reason) {
+                Text(explanation)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("playbackHoldDetail")
+            }
             if let reason {
                 HStack {
                     ForEach(BannerAction.actions(for: reason), id: \.self) { action in

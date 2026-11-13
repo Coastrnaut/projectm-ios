@@ -341,13 +341,10 @@ enum AutomationRunner {
     /// The scripted sequence: the notifications iOS posts for each event.
     private static func lifecycleSteps(_ mode: AudioSourceMode) -> [(String, () -> Void)] {
         let center = NotificationCenter.default
-        let session = AVAudioSession.sharedInstance()
+        // The session notifications are SyntheticSessionEvents' (AUD-014-T21): the same names,
+        // object and user info as before.
         func interruption(_ type: AVAudioSession.InterruptionType, resume: Bool = false) -> () -> Void {
-            {
-                var info: [AnyHashable: Any] = [AVAudioSessionInterruptionTypeKey: type.rawValue]
-                if resume { info[AVAudioSessionInterruptionOptionKey] = AVAudioSession.InterruptionOptions.shouldResume.rawValue }
-                center.post(name: AVAudioSession.interruptionNotification, object: session, userInfo: info)
-            }
+            { SyntheticSessionEvents.postInterruption(type, shouldResume: resume) }
         }
         return [
             ("background", { center.post(name: UIApplication.didEnterBackgroundNotification, object: nil) }),
@@ -356,10 +353,7 @@ enum AutomationRunner {
             ("unlock", { center.post(name: UIApplication.protectedDataDidBecomeAvailableNotification, object: nil) }),
             ("interruptionBegan", interruption(.began)),
             ("interruptionEndedResume", interruption(.ended, resume: true)),
-            ("routeChangeOldDeviceUnavailable", {
-                center.post(name: AVAudioSession.routeChangeNotification, object: session,
-                            userInfo: [AVAudioSessionRouteChangeReasonKey: AVAudioSession.RouteChangeReason.oldDeviceUnavailable.rawValue])
-            }),
+            ("routeChangeOldDeviceUnavailable", { SyntheticSessionEvents.postOutputRouteLost() }),
         ]
     }
 

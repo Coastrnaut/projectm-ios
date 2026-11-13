@@ -20,6 +20,11 @@ one explicitly.
 
 ## Clarifications
 
+### Owner rulings 2026-11-12
+
+- Owner ruling 2026-11-12 ("all recommended for policy choices"): the sample-rate limit stays 8 kHz to 192 kHz (AUD-002-R16); 352.8 and 384 kHz files stay refused because nothing above 192 kHz could be tested.
+- Owner ruling 2026-11-12 ("all recommended for policy choices"): the message wording of AUD-002-R8 stands: non-audio bytes with an audio extension read as an unsupported format, an empty file as containing no audio.
+
 ### Session 2026-11-12
 
 Answered by Claude under the owner's standing approval (routine decisions delegated, no human

@@ -675,6 +675,28 @@ class UIStringsTransportContractTests(unittest.TestCase):
                 self.assertIn(part, swift, name)
 
 
+class UIStringsInterruptionContractTests(unittest.TestCase):
+    """AUD-014: every string in specs/009's ui-strings contract is in CaptureUI's UIStrings.swift."""
+
+    ROOT = Path(__file__).resolve().parent.parent
+    CONTRACT = ROOT / "specs" / "009-aud-014-audio-session-interruption-recovery" / "contracts" / "ui-strings.md"
+    SWIFT = ROOT / "Packages" / "CaptureUI" / "Sources" / "CaptureUI" / "UIStrings.swift"
+
+    def test_every_contract_string_is_in_swift(self):
+        rows = []
+        for line in self.CONTRACT.read_text(encoding="utf-8").splitlines():
+            if not line.startswith("|"):
+                continue
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            if len(cells) != 2 or set(cells[0]) <= set("-: ") or cells[1] == "String":
+                continue
+            rows.append(cells)
+        self.assertEqual([name for name, _ in rows], ["interrupted", "audioRouteChanged"])
+        swift = self.SWIFT.read_text(encoding="utf-8")
+        for name, text in rows:
+            self.assertIn(f'"{text}"', swift, name)
+
+
 class CaptureLabExportCheckTests(unittest.TestCase):
     """scripts/check_capturelab_export.py on small exports written to a fake CoreSimulator tree."""
 
@@ -1050,7 +1072,9 @@ class SetupMacTests(unittest.TestCase):
     def test_restore_memory_copies_the_export_and_never_overwrites(self):
         exported = sorted(p.name for p in setup_mac.MEMORY_EXPORT.glob("*.md") if p.name != "README.md")
         self.assertIn("MEMORY.md", exported)
-        self.assertEqual(len(exported), 4)
+        # The index plus one file per memory it lists (a fixed count broke when a memory was added).
+        listed = re.findall(r"\]\(([^)]+\.md)\)", (setup_mac.MEMORY_EXPORT / "MEMORY.md").read_text())
+        self.assertEqual(sorted(listed + ["MEMORY.md"]), exported)
         with tempfile.TemporaryDirectory() as tmp:
             home = Path(tmp)
             target = setup_mac.memory_dir(setup_mac.ROOT, home)

@@ -24,6 +24,17 @@
 // * Pause reads the position, stops the player and pauses the engine; resume starts the engine
 //   and cuts in at the held frame. Nothing depends on the player's timeline across a pause.
 //
+// Holding the position without the player's clock (AUD-014-R10): when iOS stops the engine for an
+// interruption or a hardware change, the player's time can no longer be read. The position is
+// then the schedule's start frame plus what is known to have been played: the larger of the last
+// successful read and the frames the tap has delivered since the last cut (PlaybackTapGate's
+// counter, converted to the track's rate). The tap hands over 100 ms blocks, so this is at most
+// one block behind the audio heard and never depends on the controls having asked for the
+// position. `pause()` uses it, so an interruption holds the right frame; `resume()` then starts
+// the engine again and cuts in there, also when it is a different engine state than before
+// (`AVAudioEngineConfigurationChange`). After a media-services reset the backend builds a new
+// graph with `start(atFrame:held:)`.
+//
 // Real-time safety (Constitution VII): the tap closure only passes the gate (two atomic stores,
 // one load) and writes to PCMSink. File reads happen on AVAudioPlayerNode's own scheduling
 // thread, never on the render thread. Cuts run on the main actor.
@@ -118,9 +129,11 @@ final class InAppPlaybackGraph {
     private var playedToEnd = false
     /// `silence()` was called: nothing is scheduled until another track replaces this one.
     private var silenced = false
-    /// The last position read from the player in the current schedule. Used when the player's time
-    /// cannot be read (the engine was stopped by an interruption): better than the start frame.
-    private var lastReadFrame: AVAudioFramePosition?
+    /// The player's time at the last successful read in the current schedule, in track frames
+    /// since the schedule's start. Used with the tap's count when the player's time cannot be read.
+    private var lastReadElapsed: AVAudioFramePosition?
+    /// The sample rate of the installed tap (the mixer's output), for the tap's frame count.
+    private var tapSampleRate: Double = 0
     /// Whether the current schedule loops (`loops` at the time it was made).
     private var scheduledLoops = true
     /// Passes queued in the current schedule (loop): picks the file handle and the first frame.
@@ -157,16 +170,24 @@ final class InAppPlaybackGraph {
         var elapsed: AVAudioFramePosition = 0
         // `playerTime(forNodeTime:)` raises an exception for a node time with neither a sample time
         // nor a host time (seen right after a cut, before the next render); nothing was rendered then.
-        if !atEnd, player.isPlaying, let nodeTime = player.lastRenderTime,
-           nodeTime.isSampleTimeValid || nodeTime.isHostTimeValid,
-           let playerTime = player.playerTime(forNodeTime: nodeTime), playerTime.isSampleTimeValid {
+        if atEnd {
+            elapsed = 0
+        } else if engine.isRunning, player.isPlaying, let nodeTime = player.lastRenderTime,
+                  nodeTime.isSampleTimeValid || nodeTime.isHostTimeValid,
+                  let playerTime = player.playerTime(forNodeTime: nodeTime), playerTime.isSampleTimeValid {
             elapsed = max(0, playerTime.sampleTime)
-        } else if let lastReadFrame {
-            return lastReadFrame
+            lastReadElapsed = elapsed
+        } else {
+            // The player's clock cannot be read (iOS stopped the engine): what is known to have played.
+            elapsed = max(lastReadElapsed ?? 0, deliveredTrackFrames)
         }
-        let frame = PlaybackPositionMath.frame(start: startFrame, elapsed: elapsed, length: content.length, loops: scheduledLoops)
-        lastReadFrame = frame
-        return frame
+        return PlaybackPositionMath.frame(start: startFrame, elapsed: elapsed, length: content.length, loops: scheduledLoops)
+    }
+
+    /// The frames the tap delivered since the last cut, in the track's sample rate.
+    private var deliveredTrackFrames: AVAudioFramePosition {
+        guard tapSampleRate > 0 else { return 0 }
+        return AVAudioFramePosition((Double(gate.deliveredFrames) * content.sampleRate / tapSampleRate).rounded(.down))
     }
 
     // MARK: - Setup
@@ -196,6 +217,7 @@ final class InAppPlaybackGraph {
         // iOS Simulator (crash reports fault in this closure); AVMicrophoneBackend's input tap
         // had the same pattern and got the same fix.
         let layout = ChannelLayoutTag(rawValue: tapFormat.channelLayout?.layoutTag ?? 0)
+        tapSampleRate = tapFormat.sampleRate
         warmUp(tapFormat)   // no first-call method-cache allocation in the tap (T063)
         engine.mainMixerNode.installTap(onBus: 0, bufferSize: 1024, format: tapFormat) { @Sendable tapBuffer, when in
             // AUD-006: a tap from before the last cut must not write (PlaybackTapGate).
@@ -205,6 +227,7 @@ final class InAppPlaybackGraph {
                     ? UInt64(AVAudioTime.seconds(forHostTime: when.hostTime) * 1_000_000_000) : 0
                 sink.write(tapBuffer.audioBufferList, format: format, frameCount: Int(tapBuffer.frameLength),
                            layout: layout, captureTimeNs: captureNs)
+                gate.count(Int(tapBuffer.frameLength))   // AUD-014: the position without the player's clock
             }
             gate.leave()
         }
@@ -214,7 +237,15 @@ final class InAppPlaybackGraph {
     // MARK: - Transport
 
     /// Starts the engine and playback from the start of the track. On failure the graph is stopped.
-    func start() throws {
+    ///
+    /// AUD-014: with `held`, the graph starts paused at `frame` instead (a graph rebuilt after a
+    /// media-services reset). The engine is not started then; `resume()` starts it.
+    func start(atFrame frame: AVAudioFramePosition = 0, held: Bool = false) throws {
+        if held {
+            isRunning = true
+            heldFrame = normalized(frame)
+            return
+        }
         engine.prepare()
         do {
             try engine.start()
@@ -225,7 +256,7 @@ final class InAppPlaybackGraph {
         isRunning = true
         heldFrame = nil
         cut()
-        schedule(from: 0, play: true)
+        schedule(from: frame, play: true)
         warmUp(engine.mainMixerNode.outputFormat(forBus: 0))   // again: starting the engine can reset the caches
     }
 
@@ -345,7 +376,7 @@ final class InAppPlaybackGraph {
     /// Queues the track from `frame` in the current generation and, if `play`, starts the player.
     private func schedule(from frame: AVAudioFramePosition, play: Bool) {
         playedToEnd = false
-        lastReadFrame = nil
+        lastReadElapsed = nil
         startFrame = normalized(frame)
         passCount = 0
         atEnd = false
@@ -417,6 +448,17 @@ final class InAppPlaybackGraph {
         #if os(iOS)
         AVAudioTapWarmUp.run(format: format)
         #endif
+    }
+
+    // MARK: - The engine (AUD-014)
+
+    /// The object `AVAudioEngineConfigurationChange` is posted for.
+    var notificationObject: AnyObject { engine }
+
+    /// Tests: stops the engine behind the graph's back, as iOS does for an interruption, a
+    /// hardware change and a media-services reset.
+    func stopEngineForTesting() {
+        engine.stop()
     }
 
     // MARK: - Offline rendering (tests)

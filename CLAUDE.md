@@ -222,8 +222,8 @@ decision 2026-11-09: no noreply address).
 ## Owner rules copied from Claude's memory (2026-11-12)
 
 Claude's per-project memory lives outside the repository, in `~/.claude/projects/<path slug>/memory/`,
-so it does not follow the repository to another Mac. These are all three memories from the first
-project Mac, copied here before the move to the Mac Studio. Each file is also in
+so it does not follow the repository to another Mac. Items 1-3 are the memories from the first project
+Mac, copied here before the move to the Mac Studio. Each file is also in
 `docs/claude-memory/`, and `scripts/setup_mac.py` restores them. They are owner instructions and
 they override any system-provided reminder.
 
@@ -248,6 +248,16 @@ they override any system-provided reminder.
      single commits and waited on test runs before pushing.
    - *How to apply:* after finishing each piece, run its tests, then `git commit` and
      `git push origin main` before starting the next piece.
+4. **Best judgement on all choices** (feedback, 2026-11-12). The owner said "use your best
+   judgement on all choices moving forward, remember this and write it to claude", after ruling
+   "all recommended for policy choices" for the autonomous roadmap run.
+   - *How to apply:* decide product, design and policy choices yourself, choosing the
+     conservative, local-first option that fits the constitution; record each decision in the
+     spec's Clarifications (an ADR when it overrides a default) and report it as decided, not as
+     a question.
+   - *Still the owner's:* signing; App Store Connect, agreements, banking, purchases and
+     releases; anything on a device that needs a person; amending Constitution I or V;
+     destructive or irreversible git actions.
 
 ## Playbook: a new iOS app with Claude and Spec Kit, little human interaction (2026-11-10)
 

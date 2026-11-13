@@ -58,6 +58,17 @@ The owner ruled: "amend FR-068 for OSC, one-folder exception, off by default".
   app's Info.plist through `project.yml`. The privacy policy and the App Store privacy answers
   are updated in the feature that first ships a listener.
 
+## Owner ruling: feature policy choices (2026-11-12)
+
+The owner ruled "all recommended for policy choices". The choices the feature agents made and
+reported as recommended stand, and each is recorded in its spec's Clarifications:
+
+- AUD-002: sample rates limited to 8 kHz to 192 kHz; the new import messages stand.
+- AUD-006: the end of a track advances to the next imported track (repeat modes are AUD-004).
+- PRE-012: imported copies of built-in presets are refused; an incomplete shader is quarantined.
+- AUD-014: no automatic resume after an interruption that ends in the background; the
+  deprecated iOS interruption notification stays until device task T29 shows otherwise.
+
 ## Consequences
 
 - The integration branch can be reviewed and merged, or discarded, as a whole; `main` and
