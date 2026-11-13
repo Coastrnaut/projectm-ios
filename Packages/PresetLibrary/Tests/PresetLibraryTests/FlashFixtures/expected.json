@@ -1,0 +1,14 @@
+{
+  "audio-variable-toggle.milk": ["toggle-driven"],
+  "calm.milk": [],
+  "close-if.milk": [],
+  "comment-and-init.milk": [],
+  "damped-idiom.milk": [],
+  "dead-toggle.milk": [],
+  "fast-sine.milk": ["luma-flicker"],
+  "high-flash.milk": ["toggle-driven", "luma-flicker"],
+  "rand-gamma.milk": ["luma-flicker"],
+  "slow-time-toggle.milk": [],
+  "split-statement.milk": ["toggle-driven"],
+  "toggle-flip.milk": ["toggle-flip"]
+}

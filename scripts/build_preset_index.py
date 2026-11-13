@@ -7,7 +7,9 @@ PresetBlocklist.json and PresetExclusions.txt in Apps/projectM-iOS/Resources. Ou
 to --out by the app's build (research R-30: generated, never committed, to keep the repository
 small):
 
-  PresetIndex.json      one record per unique preset (contracts/preset-index.schema.json)
+  PresetIndex.json      one record per unique preset (contracts/preset-index.schema.json); a record
+                        whose text the flash risk screen flags carries "flash": [rule ids]
+                        (ACC-002, scripts/preset_flash_risk.py, ADR-0014)
   PresetPacks.json      one record per source
   PresetArchive.bin     the pack presets, raw-deflate compressed in chunks of 64
   PresetTextures/<pack>/...   the packs' texture images, relative paths kept
@@ -36,6 +38,8 @@ import sys
 import unicodedata
 import zlib
 from pathlib import Path
+
+import preset_flash_risk
 
 ROOT = Path(__file__).resolve().parent.parent
 RESOURCES = ROOT / "Apps/projectM-iOS/Resources"
@@ -97,6 +101,15 @@ def license_text(pack_dir: Path) -> str:
     return NO_LICENSE
 
 
+def flag(record: dict, data: bytes) -> dict:
+    """Adds "flash" to a record whose text the flash risk screen flags (ACC-002-R1); unflagged
+    records get no field (ACC-002-R13)."""
+    rules = preset_flash_risk.classify(data.decode("utf-8", errors="replace"))
+    if rules:
+        record["flash"] = rules
+    return record
+
+
 def build(included_dir: Path, packs_dir: Path, blocklist: set[str], exclusions: set[str]):
     """Returns (index records, pack records, archive entries [(record, bytes)])."""
     seen: set[str] = set()
@@ -109,8 +122,8 @@ def build(included_dir: Path, packs_dir: Path, blocklist: set[str], exclusions: 
         h = blob_hash(data)
         seen.add(h)
         name, author = rows.get(rel, (f.stem, split_author(f.stem)[0]))
-        records.append({"id": rel, "name": name, "author": author, "source": "included",
-                        "folder": [], "path": f"Presets/{rel}", "hash": h})
+        records.append(flag({"id": rel, "name": name, "author": author, "source": "included",
+                             "folder": [], "path": f"Presets/{rel}", "hash": h}, data))
     pack_records = [{"id": "included", "title": "Included", "sourceURL": "https://github.com/Coastrnaut/frontend-uwp",
                      "commit": "82c468ee11a535c8fb4e864cd556fc8a59bdbaf3",
                      "license": "Per preset: Resources/Presets/LICENSES.md (LicenseRef-Milkdrop-PublicDomain-Assumed)",
@@ -135,8 +148,8 @@ def build(included_dir: Path, packs_dir: Path, blocklist: set[str], exclusions: 
             if pack == "milkdrop-original" and folder == ["Milkdrop-Original"]:
                 folder = []
             author, name = split_author(f.stem)
-            rec = {"id": rid, "name": name, "author": author, "source": pack, "folder": folder,
-                   "path": rid, "hash": h}
+            rec = flag({"id": rid, "name": name, "author": author, "source": pack, "folder": folder,
+                        "path": rid, "hash": h}, data)
             added.append(rec)
             payload[rid] = data
         records.extend(added)
@@ -237,6 +250,7 @@ def copy_textures(packs_dir: Path, out: Path) -> int:
 def stamp(args, blocklist_file: Path, exclusions_file: Path) -> str:
     """Changes when anything that shapes the output changes (incremental builds)."""
     h = hashlib.sha256(Path(__file__).read_bytes())
+    h.update(Path(preset_flash_risk.__file__).read_bytes())   # ACC-002: a rule change rebuilds the index
     for f in [args.included_dir / "LICENSES.md", blocklist_file, exclusions_file]:
         h.update(f.read_bytes() if f.exists() else b"-")
     for f in sorted(args.included_dir.rglob("*.milk")):

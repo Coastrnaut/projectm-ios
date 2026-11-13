@@ -68,6 +68,9 @@ struct PresetBrowserView: View {
         }
         // PRE-015: on the stack itself, so it shows over whichever list the row is in.
         .duplicateResultAlert(userPresets, isPresented: true)
+        // ACC-002-R6: likewise the warning before a flagged preset loads; Load Anyway closes the browser.
+        .flashWarningAlert(presets, isPresented: true) { dismiss() }
+        .onDisappear { presets.cancelFlashWarning() }   // closing the browser answers Cancel
         .environment(userPresets)   // PRE-015: rows duplicate and edit through it
         .accessibilityIdentifier("presetBrowser")
     }
@@ -140,6 +143,29 @@ struct PresetBrowserView: View {
 }
 
 extension View {
+    /// ACC-002-R6, R14: the warning before a flagged preset loads, with Load Anyway and Cancel. A
+    /// standard alert, so VoiceOver announces it and its text follows Dynamic Type. `isPresented`
+    /// lets the visualizer show it only while the browser, which shows its own, is closed.
+    func flashWarningAlert(_ presets: PresetCoordinator, isPresented: Bool, afterLoad: @escaping () -> Void = {}) -> some View {
+        let warning = presets.flashWarning
+        return alert(PresetCoordinator.flashWarningTitle,
+                     isPresented: Binding(get: { isPresented && presets.flashWarning != nil },
+                                          set: { if !$0 && presets.flashWarning == warning { presets.cancelFlashWarning() } }),
+                     presenting: warning) { shown in
+            Button("Load Anyway") {
+                Task { @MainActor in
+                    await presets.confirmFlashWarning(shown)
+                    afterLoad()
+                }
+            }
+            .accessibilityIdentifier("loadFlaggedAnyway")
+            Button("Cancel", role: .cancel) { presets.cancelFlashWarning() }
+                .accessibilityIdentifier("cancelFlagged")
+        } message: { shown in
+            Text(PresetCoordinator.flashWarningMessage(shown.preset.name))
+        }
+    }
+
     /// The result of "Duplicate to My Presets" (PRE-015). `isPresented` lets the visualizer show
     /// it only while the browser, which shows its own, is closed.
     func duplicateResultAlert(_ userPresets: UserPresetsCoordinator, isPresented: Bool) -> some View {
@@ -227,6 +253,13 @@ struct PresetRow: View {
                         Text(subtitle).font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer()
+                    if presets.isFlagged(preset) {
+                        // ACC-002-R7: a symbol and words, never color alone.
+                        Label("May flash", systemImage: "exclamationmark.triangle")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .accessibilityIdentifier("mayFlash:\(preset.name)")
+                    }
                     if locked {
                         Image(systemName: "lock.fill").foregroundStyle(.secondary)
                     } else if preset == presets.current {
@@ -234,7 +267,7 @@ struct PresetRow: View {
                     }
                 }
             }
-            .accessibilityLabel("\(preset.name), by \(preset.author)\(locked ? ", locked" : "")\(preset == presets.current ? ", current preset" : "")")
+            .accessibilityLabel(presets.rowLabel(preset, locked: locked))
             .accessibilityIdentifier("preset:\(preset.name)")
             .accessibilityAction(named: "Add to Collection") { addingToCollection = true }
             .modifier(CollectionMoveActions(presets: presets, preset: preset, collection: collection))

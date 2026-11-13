@@ -63,6 +63,19 @@
           "hash": {
             "type": "string",
             "pattern": "^[0-9a-f]{40}$"
+          },
+          "flash": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "enum": [
+                "toggle-driven",
+                "toggle-flip",
+                "luma-flicker"
+              ]
+            },
+            "description": "ACC-002 (specs/030-acc-002-reduced-flash-preset-policy, ADR-0014): the flash risk rules that flag this preset's text, in this order. Present only on flagged records; absent means not flagged. Optional and additive, so version stays 1."
           }
         }
       }

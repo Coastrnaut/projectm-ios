@@ -606,7 +606,8 @@ final class AppCoordinator: VisualizationControlling {
         showControls()
         Task {
             await presets.choose(preset, from: scope)
-            if !presets.purchaseRequested { showPresetBrowser = false }
+            // ACC-002: the browser stays open while a flagged preset's warning waits for an answer.
+            if !presets.purchaseRequested && presets.flashWarning == nil { showPresetBrowser = false }
         }
     }
 
