@@ -28,13 +28,12 @@ opens and closes, Restore → `live`, `visualRunning` = `yes`, `sourceStarts` = 
 
 ## C. Simulator: the real external screen (headless, not a unit test)
 
-1. Boot the simulator, install and launch the app with `-autostart inAppPlayback`.
+1. Boot the simulator and install the Debug app.
 2. `xcrun simctl io <udid> screenConfig --display external power on`
-3. Show the controls and tap Black out (an XCUITest or the fake is not needed: use the UI test's
-   steps, or `-uitestStartBlackedOut` is not provided; drive it with the UI test while the external
-   screen is on).
-4. `xcrun simctl io <udid> screenshot --display external out.png`: every pixel black.
-5. Restore, wait 2 s, screenshot again: the visualization.
+3. Launch with `-autostart inAppPlayback -uitestStartBlackedOut` (DEBUG only: the coordinator
+   starts blacked out, as if Black out had been tapped).
+4. After 5 s, `xcrun simctl io <udid> screenshot --display external black.png`: every pixel black.
+5. Relaunch with `-autostart inAppPlayback` (live), after 5 s screenshot again: the visualization.
 6. `xcrun simctl io <udid> screenConfig --display external power off`
 
 ## D. Physical displays (`{device}`, owner)
