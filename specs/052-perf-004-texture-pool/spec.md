@@ -38,7 +38,11 @@ The row's gap status is "Gap candidate". The audit confirms it.
 Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
 interaction); each answer is the conservative, local-first option.
 
-(Filled by `/speckit-clarify`.)
+- Q: What are the default caps for idle pictures? → A: Idle and waiting bytes are capped at the smaller of 128 MiB and one eighth of the GPU's recommended working set, and a picture idle for 300 pool frames (about 5 s at 60 fps) is freed; both are configurable per pool. 128 MiB holds about five full-screen 16-bit pictures of an iPhone 15 (1179 × 2556, about 24 MB each), enough to serve one whole visual switch from reuse. Rejected: an uncapped pool (a leak by design); a cap of zero (no reuse across switches); a time-based age (wall-clock dependent, untestable without sleeping).
+- Q: How does the pool know that the GPU no longer uses a returned picture? → A: Each return carries a completion signal: the last command buffer the returning compositor encoded with. The picture waits until that command buffer reports completed (or failed); a return made before any frame was encoded is reusable at once. The pool polls the signal when it looks for a picture, so nothing is allocated per frame. Rejected: a fixed latency of N frames (unsafe when the GPU stalls); a completion handler added to every frame's command buffer (a closure allocated per frame, against CMP-001-R9).
+- Q: Which visuals share one pool? → A: One pool per GPU device in the app, used by every compositor the app builds (today the Camera and Photo visuals). The native spectra and projectM do not draw through the compositor and keep their own resources. Tests and harnesses that build a compositor without a pool get a private one, so existing behaviour and counters are unchanged. Rejected: a pool per visual (no reuse across switches, which is the row's point); a process-wide global hidden in the Compositor package (shared state the package cannot reason about).
+- Q: Are the effect-chain and bloom images (VisualGenerators) and layers' own content textures pooled too? → A: No, not in this row. They are created once per size in a layer's `prepare` and released with the layer, so they cannot grow across switches; pooling them would make VisualGenerators depend on the Compositor package (or move the pool to a new package) for a small gain. The acceptance test also measures the GPU device's whole allocated size across the 100 switches, so growth there would be caught; a debug-only tally of textures created outside the pool is not built (it would need wrappers in five packages to see releases). Rejected for now: a shared lower-level pool package (revisit with PERF-006).
+- Q: What triggers a purge? → A: The system memory warning that the app already receives (`UIApplication.didReceiveMemoryWarningNotification`): the app purges its shared pool on it. A purge also happens implicitly when the pool is released. No separate memory-pressure source is added (one signal is enough; PERF-006 owns broader recovery). Rejected: purging on every visual switch (defeats reuse); a dispatch memory-pressure source (duplicate signal on iOS).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -131,12 +135,16 @@ first; pictures idle longer than the age limit are evicted; a purge empties the 
   full description (pixel format, width, height, usage, storage, mip levels, sample count, kind) and
   reuses a returned picture only for an identical description.
 - **PERF-004-R2**: A returned picture MUST NOT be handed out again until the last GPU work that may use
-  it has completed.
-- **PERF-004-R3**: Idle and waiting pictures MUST be capped by total bytes (configurable; a fixed
-  default); past the cap, the least recently returned are freed first.
-- **PERF-004-R4**: Idle pictures MUST be freed after a configurable number of frames without use.
-- **PERF-004-R5**: A purge MUST free every idle and waiting picture at once, and the app MUST purge on
-  a system memory warning; pictures in use are not affected.
+  it has completed: each return carries the last command buffer its owner encoded with, and the
+  picture waits until that buffer reports completed or failed (a return before any frame is
+  reusable at once). Checking this MUST allocate nothing.
+- **PERF-004-R3**: Idle and waiting pictures MUST be capped by total bytes (configurable; default the
+  smaller of 128 MiB and one eighth of the GPU's recommended working set); past the cap, the least
+  recently returned are freed first, and a single picture larger than the cap is freed at once.
+- **PERF-004-R4**: Idle pictures MUST be freed after a configurable number of pool frames without use
+  (default 300).
+- **PERF-004-R5**: A purge MUST free every idle and waiting picture at once, and the app MUST purge its
+  shared pool on the system memory warning; pictures in use are not affected.
 - **PERF-004-R6**: The pool MUST count live pictures and bytes (in use plus pooled), pooled pictures
   and bytes, hits, misses, evictions and purges, readable by tests and diagnostics, and allocate
   nothing per frame at a steady size.
@@ -144,7 +152,8 @@ first; pictures idle longer than the age limit are evicted; a purge empties the 
   them when a layer is removed, when the output size changes and when the compositor is released;
   CMP-001-R9 (no picture created per frame at a steady size) MUST still hold.
 - **PERF-004-R8**: The app's compositor visuals (Camera, Photo) MUST share one pool per GPU device, so a
-  visual switch reuses the previous visual's pictures.
+  visual switch reuses the previous visual's pictures. A compositor built without a pool uses a
+  private one.
 - **PERF-004-R9**: The pool MUST be safe to use from more than one thread (visuals sharing it), with
   short, bounded critical sections.
 - **PERF-004-R10**: The pool's bookkeeping (keys, caps, eviction order, completion rule, counters)
