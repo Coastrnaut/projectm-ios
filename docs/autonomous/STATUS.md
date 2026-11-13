@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T18:38:53Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T18:39:18Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 263 |
 | implementing | 1 |
-| unit_passed | 1 |
-| integrated | 60 |
+| integrated | 61 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 39 | 1 | 1 | 45 | 1 |
-| P1 | 138 | 0 | 0 | 13 | 0 |
-| P2 | 77 | 0 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 39 | 1 | 46 | 1 |
+| P1 | 138 | 0 | 13 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 265 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
+- 264 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
 
 ## Integrated
 
@@ -90,6 +89,7 @@ The physical-device suite may **not** start:
 | SHD-002 | Node-based generator graph | `e91692538b99` | `feature/shd-002` |
 | SHD-009 | Expression mapping DSL | `d84b02f95a85` | `feature/shd-009` |
 | SHD-010 | Expression sandbox budgets | `e906db183292` | `feature/shd-010` |
+| SHD-011 | User-authored shader policy | `26de54ff2c0b` | `feature/shd-011` |
 | SHOW-011 | Tap tempo | `11329d52e6dc` | `feature/show-011` |
 | VIS-001 | Circular spectrum | `48285d49c422` | `feature/vis-001` |
 | VIS-002 | Linear spectrum | `c2b2f75c11bb` | `feature/vis-002` |
@@ -531,13 +531,14 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `25cbb7570db7` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-010/20261113T131643/swift-test_VisualGenerators.log`)
 - `post-merge: ParameterGraph scheme on iPhone 17 sim (ParameterGraph 66, ParameterExpression 38 with the on-demand bench skipped); no app code changed`: pass at `e906db183292` (log `.autonomous/logs/integration/shd-010/pg-sim.log`)
 
-### SHD-011 User-authored shader policy (unit_passed)
+### SHD-011 User-authored shader policy (integrated)
 - `python3 scripts/check_compliance.py`: pass at `e19f0be39822` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-011/20261113T133733/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `e19f0be39822` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-011/20261113T133733/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `e19f0be39822` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-011/20261113T133733/script-tests.log`)
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `e19f0be39822` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-011/20261113T133733/autonomous-tests.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `e19f0be39822` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-011/20261113T133733/sim-test_ANGLERendering.log`)
 - `swift test --package-path Packages/Compositor`: pass at `e19f0be39822` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-011/20261113T133733/swift-test_Compositor.log`)
+- `post-merge: check_compliance OK with the new code-execution rules over the whole repository; Compositor scheme on iPhone 17 sim incl. GeneratorGraphImportTests`: pass at `26de54ff2c0b` (log `.autonomous/logs/integration/shd-011/compositor-sim.log`)
 
 ### SHOW-011 Tap tempo (integrated)
 - `python3 scripts/check_compliance.py`: pass at `725551081f5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-011/20261113T104510/compliance.log`)
