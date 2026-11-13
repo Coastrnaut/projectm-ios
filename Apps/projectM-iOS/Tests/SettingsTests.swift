@@ -55,6 +55,8 @@ final class SettingsTests: XCTestCase {
         settings.glowThreshold = 0.5
         settings.linearSpectrumOrientation = .horizontal   // VIS-002-R11
         settings.linearSpectrumSpacing = 0.5
+        settings.oscEnabled = true             // OSC-001-R15
+        settings.oscPort = 8000
         let keys = Set(defaults.persistentDomain(forName: suite)?.keys ?? [:].keys)
         XCTAssertEqual(keys, Set(AppSettings.allKeys), "FR-065")
     }
@@ -110,6 +112,24 @@ final class SettingsTests: XCTestCase {
         XCTAssertTrue(AppSettings.allKeys.contains("settings.linearSpectrum.spacing"))
         XCTAssertEqual(VisualChoice.allCases.filter(\.isNative), [.circularSpectrum, .linearSpectrum])
         XCTAssertEqual(VisualChoice.linearSpectrum.title, "Linear Spectrum")
+    }
+
+    /// OSC-001-T16 (OSC-001-R1, R15): off by default (a fresh install opens no listener), port 9000,
+    /// both persisted; an invalid stored or assigned port reads as 9000.
+    func testOSCReceiverDefaultsPersistAndReadSafely() {
+        let settings = AppSettings(defaults: defaults, systemReduceMotion: false)
+        XCTAssertFalse(settings.oscEnabled)
+        XCTAssertEqual(settings.oscPort, 9000)
+        settings.oscEnabled = true
+        settings.oscPort = 8000
+        var reread = AppSettings(defaults: defaults, systemReduceMotion: false)
+        XCTAssertTrue(reread.oscEnabled)
+        XCTAssertEqual(reread.oscPort, 8000)
+        reread.oscPort = 80
+        XCTAssertEqual(reread.oscPort, 9000)
+        defaults.set(70000, forKey: AppSettings.oscPortKey)
+        reread = AppSettings(defaults: defaults, systemReduceMotion: false)
+        XCTAssertEqual(reread.oscPort, 9000)
     }
 
     func testTheBundledLicenseManifestIsComplete() throws {
