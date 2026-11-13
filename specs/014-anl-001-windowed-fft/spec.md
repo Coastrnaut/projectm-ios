@@ -48,6 +48,9 @@ recommended option first.
 - Q: What happens with invalid input (NaN, infinity, huge values, denormals)? → A: Every input sample is sanitized before windowing: NaN and ±infinity become 0, values below the smallest normal float become 0, and finite values are clamped to ±64 (+36 dBFS). Output values are therefore always finite and never negative (ANL-001-R8).
 - Q: Does the analysis go into projectM or onto the screen in this row? → A: No. Nothing it computes is passed to projectM (ADR-0008 decision 5) and no UI or diagnostics readout is added; consumers arrive with ANL-002 and the VIS rows (ANL-001-R12).
 - Q: Must the platform-accelerated path and the portable path give the same numbers? → A: Each path is bit-identical with itself on repeated runs. Across paths, every bin agrees within 1e-5 of the frame's largest magnitude (plus 1e-6 absolute), and the peak bin is the same (ANL-001-R10, R11).
+- Q: When the FFT size or hop changes while audio is buffered, where does the next frame start? → A: At the stream's next frame position, using the audio already buffered: the change takes effect from the next frame, no buffered audio is thrown away, and frame indices keep counting (the next frame starts at the previous frame's start plus the old hop). If fewer samples than the new size are buffered, the frame waits for more (ANL-001-R6, R17).
+- Q: Do frame indices count audio the analysis tap dropped while nobody read it? → A: No. The index counts the samples the analyser actually received since its last reset; tap overflow is reported separately by the tap's dropped-frame counter, and the consumer resets the analyser after an overflow or a discard if it needs indices aligned with the source (ANL-001-R7, R9).
+- Q: What do the tests require of the sweep fixtures beyond identical repeated runs? → A: Finite values in every frame, and at the default size 2,048 the peak of a frame centred at each of the catalog's sweep check times (1.25, 2.5, 5 and 7.5 s) lies within two bins of the catalog's instantaneous frequency at that time (the sweep moves during a window, so one bin is too strict) (ANL-001-R16).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -110,7 +113,7 @@ frequencies and frame indices; check that analysing a frame performs no memory a
 
 **Acceptance Scenarios**:
 
-1. **Given** a running analysis at 2,048, **When** the size is changed to 512, **Then** the next frame has 257 bins of 86.13 Hz each at 44.1 kHz and starts at the next whole window of audio.
+1. **Given** a running analysis at 2,048, **When** the size is changed to 512, **Then** the next frame has 257 bins of 86.13 Hz each at 44.1 kHz, starts where the next 2,048 frame would have started, and no buffered audio is discarded.
 2. **Given** an unsupported size (for example 1,000 or 16,384), **When** it is requested, **Then** the request is rejected with a clear error and the analysis keeps its previous size.
 3. **Given** a configured analyser, **When** frames are analysed, **Then** no memory is allocated, no lock is taken and nothing is written to disk during the analysis of a frame.
 
@@ -162,7 +165,8 @@ the same fixtures; compare both with the test-only reference DFT for small sizes
 - **ANL-001-R13**: Analysing a frame MUST NOT allocate memory, take locks, perform I/O or log (Constitution VII). All buffers, windows and transform setups MUST be created when the analyser is created, for every supported size, so changing the size later allocates nothing.
 - **ANL-001-R14**: The analysis MUST run off the real-time audio callback and off the main thread; the analyser is confined to the one worker that owns it (the worker itself is ANL-016's).
 - **ANL-001-R15**: Bin helpers MUST give the centre frequency of a bin (`k·R/N`), the bin width (`R/N`), the nearest bin of a frequency and the bin count.
-- **ANL-001-R16**: The acceptance tests MUST run over every sine and sweep fixture of the AUD-016 catalog at both catalog rates and every supported size: peaks at the catalog's documented bins for sines (first window), within one bin of the documented bin for every frame of a loop, finite values everywhere, bit-identical repeated runs (AUD-016-R22).
+- **ANL-001-R16**: The acceptance tests MUST run over every sine and sweep fixture of the AUD-016 catalog at both catalog rates and every supported size: peaks at the catalog's documented bins for sines (first window), within one bin of the documented bin for every frame of a loop, finite values everywhere, bit-identical repeated runs (AUD-016-R22). For sweeps at size 2,048, the peak of the frame centred at each catalog check time is within two bins of the documented instantaneous frequency.
+- **ANL-001-R17**: Changing the FFT size or hop of a running stream MUST take effect at the next frame without discarding buffered audio and without allocating; frame indices keep counting from the last frame.
 
 ### Key Entities
 
