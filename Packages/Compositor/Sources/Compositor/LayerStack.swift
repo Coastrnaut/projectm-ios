@@ -4,8 +4,8 @@
 // A plain value, CPU only (builds on Linux): callers edit it and hand it to
 // `Compositor.apply(_:makeLayer:)`, which diffs it by instance ID. Index 0 is the BOTTOM layer;
 // the last index is drawn on top. Every operation either succeeds or throws and leaves the stack
-// unchanged. Room is left for later rows: opacity (CMP-003), blend modes (CMP-004) and transforms
-// (CMP-005) live in each entry's `LayerCompositeSettings`; groups, masks and solo/mute will add
+// unchanged. Opacity (CMP-003), transforms (CMP-005) and blend modes (CMP-004, not yet)
+// live in each entry's `LayerCompositeSettings`; groups, masks and solo/mute will add
 // fields to the entry.
 
 /// The stable identity of one stack entry. Unique within a stack and never reused by it, so the
@@ -51,7 +51,8 @@ public struct LayerDescriptor: Equatable, Sendable {
 public struct LayerStackEntry: Equatable, Sendable {
     public let id: LayerInstanceID
     public var descriptor: LayerDescriptor
-    /// Until CMP-003/004/005 the compositor accepts only the identity values (CMP-002-R11).
+    /// Any opacity (CMP-003; the target a layer settles at) and transform (CMP-005; shown from the
+    /// next frame); blend stays normal until CMP-004 (CMP-002-R11).
     public var settings: LayerCompositeSettings
 
     public init(id: LayerInstanceID, descriptor: LayerDescriptor, settings: LayerCompositeSettings = LayerCompositeSettings()) {
@@ -130,6 +131,13 @@ public struct LayerStack: Equatable, Sendable {
         guard from != index else { return }
         let entry = entries.remove(at: from)
         entries.insert(entry, at: index)
+    }
+
+    /// Replaces the layer's composite settings (CMP-003: its opacity is the target the compositor
+    /// fades to at the next apply).
+    public mutating func setSettings(_ settings: LayerCompositeSettings, of id: LayerInstanceID) throws(LayerStackError) {
+        guard let i = index(of: id) else { throw .unknownLayer(id) }
+        entries[i].settings = settings
     }
 
     private func checkRoom(for kind: LayerKind) throws(LayerStackError) {

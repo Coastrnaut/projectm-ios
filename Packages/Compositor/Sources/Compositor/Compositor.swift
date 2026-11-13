@@ -15,6 +15,15 @@
 // CMP-002 (contracts/layer-stack.md in specs/040): the layer list is a `LayerStack` applied between
 // frames with `apply(_:makeLayer:)`. Index 0 is the bottom. Kept IDs keep their pictures and state,
 // new IDs are created and prepared at apply (the third allocation point), removed IDs are released.
+//
+// CMP-003 (contracts/layer-opacity.md in specs/043): each layer has an opacity animator; per frame it
+// advances by the frame duration and the shown picture is drawn × its value (skipped at exactly 0,
+// while the layer keeps rendering). `apply(_:opacityTransition:makeLayer:)` fades changed opacities.
+//
+// CMP-005 (contracts/layer-transform.md in specs/046): each layer has a `LayerTransform`. Identity
+// layers keep the exact per-pixel "over"; the others are drawn by `cmp_over_transformed`, which
+// samples the picture bilinearly through the inverse placement matrix in pixels (transparent
+// outside). A transform change at apply is shown from the next frame; nothing is re-created.
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import Metal
 
@@ -23,7 +32,7 @@ public enum CompositorError: Error, Equatable, Sendable {
     case pipelineUnavailable(String)
     /// The same layer object appears twice (at this index).
     case duplicateLayer(index: Int)
-    /// The layer at this index asks for opacity, blend or transform values CMP-001 does not support.
+    /// The layer at this index asks for a blend mode the compositor does not support yet (CMP-004).
     case unsupportedCompositeSettings(index: Int)
     /// The factory could not create the layer of the stack entry at this index (CMP-002-R9).
     case layerCreationFailed(index: Int, LayerSourceError)
@@ -49,11 +58,17 @@ public final class Compositor {
         var prepareError: LayerSourceError?
         /// Picture shown this frame (−1: none).
         var shown = -1
+        /// CMP-003: the shown opacity and its fade.
+        var opacity: LayerOpacityAnimator
+        /// CMP-005: the placement shown from the next frame.
+        var transform: LayerTransform
 
-        init(id: LayerInstanceID?, layer: any LayerSource) {
+        init(id: LayerInstanceID?, layer: any LayerSource, settings: LayerCompositeSettings) {
             self.id = id
             self.layer = layer
             slots = LayerSlots(fallback: layer.fallback)
+            opacity = LayerOpacityAnimator(opacity: settings.opacity)
+            transform = settings.transform
         }
     }
 
@@ -65,6 +80,7 @@ public final class Compositor {
     private let library: MTLLibrary
     private let fullScreen: MTLFunction
     private let overPipeline: MTLRenderPipelineState
+    private let transformedPipeline: MTLRenderPipelineState
     private var outputPipelines: [(format: MTLPixelFormat, state: MTLRenderPipelineState)] = []
     private let flashGuard: CompositeFlashGuard
 
@@ -72,6 +88,8 @@ public final class Compositor {
     public private(set) var pictureAllocations = 0
     /// Calls to layers' `prepare` so far (tests, diagnostics; CMP-002-S3).
     public private(set) var layerPreparations = 0
+    /// Draws through the transformed path in the last frame (CMP-005; tests, diagnostics).
+    public private(set) var transformedDraws = 0
     /// The stack last applied (nil before the first `apply`, and for `init(device:layers:)`).
     public private(set) var appliedStack: LayerStack?
 
@@ -85,16 +103,22 @@ public final class Compositor {
     public init(device: MTLDevice, layers: [any LayerSource]) throws(CompositorError) {
         for (i, layer) in layers.enumerated() {
             if layers[..<i].contains(where: { $0 === layer }) { throw .duplicateLayer(index: i) }
-            if !layer.compositeSettings.isSupportedByCMP001 { throw .unsupportedCompositeSettings(index: i) }
+            if !layer.compositeSettings.isSupportedByCompositor { throw .unsupportedCompositeSettings(index: i) }
         }
         self.device = device
-        records = layers.map { (layer: any LayerSource) -> LayerRecord in LayerRecord(id: nil, layer: layer) }
+        records = layers.map { (layer: any LayerSource) -> LayerRecord in
+            LayerRecord(id: nil, layer: layer, settings: layer.compositeSettings)
+        }
         library = try CompositorShaders.library(device: device, source: CompositorShaders.source)
         fullScreen = try CompositorShaders.function(library, "cmp_fullscreen")
         overPipeline = try CompositorShaders.pipeline(device: device, vertex: fullScreen,
                                                       fragment: try CompositorShaders.function(library, "cmp_over"),
                                                       format: LayerPictureDescriptor.metalPixelFormat, blendOver: true,
                                                       label: "CMP-001 over")
+        transformedPipeline = try CompositorShaders.pipeline(device: device, vertex: fullScreen,
+                                                             fragment: try CompositorShaders.function(library, "cmp_over_transformed"),
+                                                             format: LayerPictureDescriptor.metalPixelFormat, blendOver: true,
+                                                             label: "CMP-005 transformed over")
         flashGuard = try CompositeFlashGuard(device: device)
     }
 
@@ -102,6 +126,12 @@ public final class Compositor {
 
     /// What happened to layer `index` (bottom first) in the last frame.
     public func outcome(ofLayer index: Int) -> LayerOutcome { records[index].outcome }
+
+    /// The opacity layer `index` was drawn with in the last frame (CMP-003; tests, diagnostics).
+    public func shownOpacity(ofLayer index: Int) -> Double { records[index].opacity.value }
+
+    /// The transform layer `index` is drawn with (CMP-005; tests, diagnostics).
+    public func shownTransform(ofLayer index: Int) -> LayerTransform { records[index].transform }
 
     /// The stack ID of layer `index` (nil for a layer given to `init(device:layers:)`).
     public func layerID(at index: Int) -> LayerInstanceID? { records[index].id }
@@ -113,17 +143,25 @@ public final class Compositor {
     /// is known (else with the first frame); layers whose IDs are gone are released (nothing is
     /// called on them). On any error the previous stack stays applied. The flash guard's history is
     /// kept: a stack edit is not a new scene.
-    public func apply(_ stack: LayerStack, makeLayer: LayerFactory) throws(CompositorError) {
+    /// CMP-003: a kept layer whose entry opacity changed fades to it with `opacityTransition` (from
+    /// the opacity shown last); a new layer starts at its entry's opacity.
+    /// CMP-005: every layer is drawn with its entry's transform from the next frame (no animation).
+    public func apply(_ stack: LayerStack, opacityTransition: LayerOpacityTransition = .immediate,
+                      makeLayer: LayerFactory) throws(CompositorError) {
         if let appliedStack, appliedStack == stack { return }
         let entries = stack.entries
-        for (i, entry) in entries.enumerated() where !entry.settings.isSupportedByCMP001 {
+        for (i, entry) in entries.enumerated() where !entry.settings.isSupportedByCompositor {
             throw .unsupportedCompositeSettings(index: i)
         }
         var next: [LayerRecord] = []
         next.reserveCapacity(entries.count)
         var created: [Int] = []
         for (i, entry) in entries.enumerated() {
-            if let kept = records.first(where: { (r: LayerRecord) -> Bool in r.id == entry.id }) {
+            if var kept = records.first(where: { (r: LayerRecord) -> Bool in r.id == entry.id }) {
+                if appliedStack?.entry(entry.id)?.settings.opacity != entry.settings.opacity {
+                    kept.opacity.setOpacity(entry.settings.opacity, transition: opacityTransition)
+                }
+                kept.transform = entry.settings.transform
                 next.append(kept)
                 continue
             }
@@ -133,7 +171,7 @@ public final class Compositor {
             } catch {
                 throw .layerCreationFailed(index: i, error)
             }
-            next.append(LayerRecord(id: entry.id, layer: layer))
+            next.append(LayerRecord(id: entry.id, layer: layer, settings: entry.settings))
             created.append(i)
         }
         for i in next.indices where next[..<i].contains(where: { (r: LayerRecord) -> Bool in r.layer === next[i].layer }) {
@@ -176,6 +214,7 @@ public final class Compositor {
 
         for i in records.indices {
             records[i].shown = -1
+            records[i].opacity.advance(by: frame.frameDuration)
             guard records[i].slots.isAvailable else {
                 records[i].outcome = .unavailable(records[i].prepareError ?? .notReady)
                 continue
@@ -198,9 +237,22 @@ public final class Compositor {
         pass.colorAttachments[0].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
         guard let over = commandBuffer.makeRenderCommandEncoder(descriptor: pass) else { return false }
         over.label = "CMP-001 composite"
+        var plain = true
         over.setRenderPipelineState(overPipeline)
-        for i in records.indices where records[i].shown >= 0 {
+        transformedDraws = 0
+        for i in records.indices where records[i].shown >= 0 && records[i].opacity.value > 0 {
+            let transform = records[i].transform
             over.setFragmentTexture(records[i].pictures[records[i].shown], index: 0)
+            if transform.isIdentity {
+                if !plain { over.setRenderPipelineState(overPipeline); plain = true }
+                var opacity = Float(records[i].opacity.value)
+                over.setFragmentBytes(&opacity, length: MemoryLayout<Float>.size, index: 0)
+            } else {
+                guard var draw = Self.transformedDraw(transform, size: size, opacity: records[i].opacity.value) else { continue }
+                if plain { over.setRenderPipelineState(transformedPipeline); plain = false }
+                over.setFragmentBytes(&draw, length: MemoryLayout<TransformedDraw>.stride, index: 0)
+                transformedDraws += 1
+            }
             over.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
         }
         over.endEncoding()
@@ -220,6 +272,27 @@ public final class Compositor {
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
         encoder.endEncoding()
         return true
+    }
+
+    // MARK: - Transforms (CMP-005)
+
+    /// `CMPTransformedDraw` in the shader: the inverse placement matrix in pixels (rows, xyz) and the
+    /// opacity (`params.x`). 48 bytes, copied by `setFragmentBytes` (no buffer per frame).
+    private struct TransformedDraw {
+        var row0: SIMD4<Float>
+        var row1: SIMD4<Float>
+        var params: SIMD4<Float>
+    }
+
+    /// Output pixel → layer pixel: `D·M⁻¹·D⁻¹` with `D = diag(W, H)` (pictures are output-sized).
+    /// nil only for a non-invertible matrix, which the scale bounds rule out.
+    private static func transformedDraw(_ transform: LayerTransform, size: LayerPictureDescriptor,
+                                        opacity: Double) -> TransformedDraw? {
+        guard let inv = transform.matrix(outputWidth: size.width, outputHeight: size.height).inverse else { return nil }
+        let w = Double(size.width), h = Double(size.height)
+        return TransformedDraw(row0: SIMD4<Float>(Float(inv.m00), Float(inv.m01 * w / h), Float(inv.m02 * w), 0),
+                               row1: SIMD4<Float>(Float(inv.m10 * h / w), Float(inv.m11), Float(inv.m12 * h), 0),
+                               params: SIMD4<Float>(Float(opacity), 0, 0, 0))
     }
 
     // MARK: - Resources
