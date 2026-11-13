@@ -18,6 +18,19 @@ of feature 001 (`specs/001-ios-projectm-visualizer/spec.md`, in particular FR-00
 FR-069 and FR-070), of AUD-001 (`specs/003-…`), AUD-006 (`specs/007-…`) and AUD-014 (`specs/009-…`)
 stay in force. This feature cites them and adds to them.
 
+## Clarifications
+
+### Session 2026-11-12
+
+Answered by Claude under the owner's standing approval (routine decisions delegated, no human
+interaction); each answer is the conservative, local-first option using public APIs only.
+
+- Q: Where does the user find the test signals: in the source chooser or in Settings? → A: In the source chooser, as a "Diagnostics" section after "Your Audio" whose single row opens the signal list. Every source starts from the chooser and Settings is reachable only while a source already runs; a separate list keeps the signals out of the way of music and imported tracks (AUD-016-R13).
+- Q: At what sample rate does a picked signal play? → A: At the catalog's canonical rate, 48 kHz, always. The played samples are then exactly a catalog variant with a known golden hash; when the output runs at another rate iOS converts, and the analysis sees the converted signal within the documented tolerance. Generating at whatever rate the device reports would make the played samples depend on the route (AUD-016-R23, R20).
+- Q: How loud may a test signal be? → A: No sample above −6 dBFS (0.5 of full scale): steady tones and sweeps at 0.25 (−12.04 dBFS), pulse peaks at 0.5. The list's footer asks the user to lower the volume first. Full-scale clicks like the reference track's are not needed for analysis and are unpleasant on headphones (AUD-016-R7, R13).
+- Q: Is the picked signal remembered, for example as the next launch's source? → A: No. Nothing about the Diagnostics list is stored; each relaunch starts at the chooser with no signal selected, and no new stored data is added, so the privacy policy and privacy manifest do not change (AUD-016-R14).
+- Q: May the generator use the platform's sine, exponential and logarithm functions if the golden hashes happen to match on this Mac? → A: No. The generator uses only correctly rounded basic arithmetic (addition, subtraction, multiplication, division, exact scaling by powers of two and rounding to whole numbers) and its own fixed polynomial approximations of sine, exponential and logarithm, because platform math libraries may differ between macOS, iOS and Linux in the last bit. The golden hashes on the Mac host and the iOS Simulator are the check (AUD-016-R3).
+
 ## Baseline: what exists today (audit of 2026-11-12, commit `97d7949`)
 
 This is an extension row ("Extension (existing reference playback)").
@@ -177,7 +190,8 @@ resume, deliver a synthetic interruption, and check positions and delivered fram
   range inside a longer generation.
 - **AUD-016-R3**: Generator output MUST be bit-identical on every run and on every supported host
   (macOS host tests, iOS Simulator, iOS devices, and the Linux package build). It MUST NOT depend on
-  the platform's math library for any value that reaches a sample.
+  the platform's math library for any value that reaches a sample: only correctly rounded basic
+  arithmetic and the generator's own fixed approximations are used (Clarifications).
 - **AUD-016-R4**: Sine: frequency, amplitude and per-channel settings (each channel of a stereo
   signal may have its own frequency, or be silent).
 - **AUD-016-R5**: Sweep: start and end frequency, duration, amplitude, logarithmic or linear; phase
@@ -186,7 +200,8 @@ resume, deliver a synthetic interruption, and check positions and delivered fram
   amplitude, an optional accent pattern of per-beat amplitude factors; onset `k` starts at the sample
   nearest to `k × 60 / BPM` seconds.
 - **AUD-016-R7**: Every parameter MUST be bounded and validated (Edge Cases); invalid parameters
-  return a typed error naming the parameter.
+  return a typed error naming the parameter. Catalog fixtures never exceed 0.5 of full scale
+  (−6 dBFS); steady tones and sweeps use 0.25.
 - **AUD-016-R8**: The generator MUST be able to write into caller-provided storage without
   allocating, so a consumer may stream it on a real-time path (Constitution VII).
 
@@ -218,7 +233,9 @@ resume, deliver a synthetic interruption, and check positions and delivered fram
   for testing, are not music, and that the user may want to lower the volume.
 - **AUD-016-R14**: Nothing plays until the user picks a signal. The choice MUST NOT be stored: after
   a relaunch the app behaves as if no signal had ever been picked. No test signal is ever the
-  default source.
+  default source. The feature adds no stored data of any kind.
+- **AUD-016-R23**: A picked signal plays at the catalog's canonical rate of 48 kHz in stereo, so
+  the played samples are exactly the catalog's 48 kHz stereo variant.
 - **AUD-016-R15**: A picked signal MUST play as In-App Playback through the same playback path as
   every other In-App track (the AUD-006 transport and the AUD-014 interruption policy apply), and it
   is never labeled System/App Capture or Microphone (Constitution IV).
@@ -306,7 +323,7 @@ analysis, identical results from the analysis that exists today). The remaining 
 
 - The loop length of 10 seconds keeps each signal's memory under 4 MB (stereo, 48 kHz, 32-bit) and is
   long enough for a 20-beat pulse loop and a readable sweep.
-- Signals play at 48 kHz, the usual output rate of the test devices; when the output rate differs,
+- Signals play at 48 kHz (AUD-016-R23), the usual output rate of the test devices; when the output rate differs,
   iOS converts and the analysis sees the converted signal (US3 scenario 2).
 - Seeded noise is not part of this row (the roadmap names sine, sweep, pulse and silence); QA-001 or
   ANL-006/ANL-012 add it.
