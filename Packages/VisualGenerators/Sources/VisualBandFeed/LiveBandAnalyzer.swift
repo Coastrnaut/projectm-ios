@@ -1,70 +1,78 @@
-// LiveBandAnalyzer.swift — the native visual's analysis worker (VIS-001-R14, R15; research
-// VIS-001-D5).
+// LiveBandAnalyzer.swift — the native visual's analysis, on the analysis event bus (VIS-001-R14,
+// R15; ANL-016-R16; research ANL-016-D6).
 //
-// A serial queue (`org.projectmios.visual-analysis`, user-interactive QoS) runs a 10 ms timer only
-// while started. Each tick pulls the analysis tap through `SpectrumBandFeed` and, when a new spectrum
-// was reduced, publishes the band vector into `output`, a wait-free triple buffer the frame loop
-// reads. Nothing runs on the audio callback or the main thread. `start`/`stop` are idempotent and
-// synchronous: when `stop` returns, the timer is cancelled and no further frame is published. The
-// analysis event bus (ANL-016) will replace the timer.
+// The analyzer owns an `AnalysisPipeline` (ANL-016: one serial worker with a 10 ms timer, 2,048-point
+// spectra at hop 512, mid channel, bands = the bar count, −80 dB floor) and one subscription. The
+// frame loop reads the newest band vector through `output.readLatest(into:capacity:)` without
+// waiting for analysis (the subscription's lock guards only a 128-float copy). Nothing runs on the
+// audio callback or the main thread. `start`/`stop` are idempotent and synchronous: when `stop`
+// returns, the worker's timer is cancelled, the session ended and no further frame is published.
+// A capture restart (the normalized ring's reset) starts a new bus session by itself.
+//
+// Nothing computed here reaches projectM (Constitution VIII, ADR-0008 decision 5).
+import AnalysisFeatures
 import AudioCore
 import Dispatch
 import VisualGenerators
 
-public final class LiveBandAnalyzer: @unchecked Sendable {
-    public static let interval: DispatchTimeInterval = .milliseconds(10)
+/// What `LiveBandOutput.readLatest` returns besides the values.
+public struct LiveBandFrameInfo: Sendable, Equatable {
+    /// Values copied (at most the reader's capacity and 128).
+    public var count: Int
+    /// The bus's host time of the frame (monotonic nanoseconds).
+    public var timestampNanoseconds: UInt64
+    /// The bus item ID of the frame (strictly increasing).
+    public var sequence: UInt64
+}
+
+/// The frame loop's view of the analyzer's bus subscription.
+public final class LiveBandOutput: Sendable {
+    private let subscription: AnalysisSubscription
+
+    init(subscription: AnalysisSubscription) { self.subscription = subscription }
+
+    /// Copies the newest band vector into `destination` (room for `capacity` values) when one arrived
+    /// since the last read; nil otherwise (the caller keeps its last values). Allocation-free.
+    public func readLatest(into destination: UnsafeMutablePointer<Float>, capacity: Int) -> LiveBandFrameInfo? {
+        guard let frame = subscription.latestFrame(into: destination, capacity: capacity) else { return nil }
+        return LiveBandFrameInfo(count: min(frame.bandCount, max(capacity, 0)), timestampNanoseconds: frame.time.hostNanoseconds,
+                                 sequence: frame.id)
+    }
+}
+
+public final class LiveBandAnalyzer: Sendable {
+    public static let interval: DispatchTimeInterval = AnalysisPipeline.workerInterval
 
     /// Newest band frames, for the frame loop.
-    public let output = BandFrameBuffer()
-
-    // Everything below is touched only on `queue`.
-    private let queue = DispatchQueue(label: "org.projectmios.visual-analysis", qos: .userInteractive)
-    private let feed: SpectrumBandFeed
-    private var timer: DispatchSourceTimer?
-    private var reader: (any NormalizedPCMReader)?
+    public let output: LiveBandOutput
+    private let pipeline: AnalysisPipeline
 
     public init(barCount: SpectrumBarCount) throws {
-        feed = try SpectrumBandFeed(barCount: barCount)
+        let configuration = try AnalysisPipelineConfiguration(spectrum: AnalysisPipelineConfiguration.defaultSpectrum,
+                                                              bandCount: BandCount(rawValue: barCount.rawValue)!,
+                                                              bandFloorDecibels: SpectrumBandFeed.floorDecibels)
+        pipeline = AnalysisPipeline(configuration: configuration)
+        output = LiveBandOutput(subscription: try pipeline.subscribe())
     }
 
     deinit {
-        timer?.cancel()
+        pipeline.stop()
     }
 
-    /// Starts pulling `reader` (an analysis tap: one consumer only, never projectM's ring).
+    /// Starts analysing `reader` (an analysis tap: one consumer only, never projectM's ring).
     public func start(reader: any NormalizedPCMReader) {
-        queue.sync {
-            guard timer == nil else { return }
-            self.reader = reader
-            feed.reset()
-            let t = DispatchSource.makeTimerSource(queue: queue)
-            t.schedule(deadline: .now(), repeating: Self.interval, leeway: .milliseconds(2))
-            t.setEventHandler { [weak self] in self?.tick() }
-            timer = t
-            t.resume()
-        }
+        pipeline.start(reader: reader)
     }
 
-    /// Stops; returns after the timer is cancelled on the queue.
+    /// Stops; returns after the worker's timer is cancelled and the session ended.
     public func stop() {
-        queue.sync {
-            timer?.cancel()
-            timer = nil
-            reader = nil
-        }
+        pipeline.stop()
     }
 
-    public var isRunning: Bool { queue.sync { timer != nil } }
+    public var isRunning: Bool { pipeline.isRunning }
 
-    /// Takes effect at the next tick.
+    /// Takes effect at the next spectrum.
     public func setBarCount(_ barCount: SpectrumBarCount) {
-        queue.async { [weak self] in self?.feed.setBarCount(barCount) }
-    }
-
-    private func tick() {
-        guard timer != nil, let reader else { return }
-        if feed.pull(from: reader) {
-            output.write(feed.bands, timestampNanoseconds: feed.timestampNanoseconds)
-        }
+        pipeline.setBandCount(BandCount(rawValue: barCount.rawValue)!)
     }
 }

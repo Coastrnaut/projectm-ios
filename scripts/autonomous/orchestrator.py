@@ -186,6 +186,13 @@ def cmd_worktree(args) -> int:
                 exclude.read_text() if exclude.exists() else ""):
             with exclude.open("a") as f:
                 f.write("/Build\n")
+    engine = path / "Vendor" / "projectM"
+    if not (engine / "CMakeLists.txt").exists() and (ROOT / "Vendor" / "projectM" / "CMakeLists.txt").exists():
+        # The ANGLE and Rendering tests load test presets from the engine sources; a gate that runs
+        # them in a worktree without the submodule fails on every preset load (ANL-016, 2026-11-13).
+        subprocess.run(["git", "-c", "protocol.file.allow=always", "submodule", "update", "--init",
+                        "--depth", "1", "--reference", str(ROOT / "Vendor" / "projectM"),
+                        "Vendor/projectM"], cwd=str(path), capture_output=True, text=True, timeout=600)
     store.set_state(args.id, store.feature(args.id)["state"], worktree=str(path),
                     branch=branch_name(args.id), note="worktree ready")
     print(path)

@@ -7,14 +7,15 @@
  "by_priority": {
   "P0": {
    "audited": 57,
-   "implementing": 2,
+   "implementing": 1,
    "integrated": 27,
-   "skipped_existing": 1
+   "skipped_existing": 1,
+   "unit_passed": 1
   },
   "P1": {
-   "audited": 143,
-   "integrated": 7,
-   "unit_passed": 1
+   "audited": 142,
+   "implementing": 1,
+   "integrated": 8
   },
   "P2": {
    "audited": 79
@@ -24,9 +25,9 @@
   }
  },
  "by_state": {
-  "audited": 288,
+  "audited": 287,
   "implementing": 2,
-  "integrated": 34,
+  "integrated": 35,
   "skipped_existing": 1,
   "unit_passed": 1
  },
@@ -60,7 +61,6 @@
    "ANL-014",
    "ANL-015",
    "ANL-016",
-   "AUD-005",
    "AUD-007",
    "AUD-008",
    "AUD-009",
@@ -330,7 +330,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "291 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
+   "290 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
   ]
  },
  "features": {
@@ -605,14 +605,14 @@
    "state": "audited"
   },
   "ANL-016": {
-   "attempts": 0,
+   "attempts": 1,
    "branch": "feature/anl-016",
-   "branch_sha": null,
+   "branch_sha": "1e9e7eec69b86bb860821afd1f36118eed1cb948",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": "specs/024-anl-016-analysis-event-bus",
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "AUD-001": {
    "attempts": 1,
@@ -659,10 +659,10 @@
    "branch": null,
    "branch_sha": "8b729cdfa06db803b45981b937d5ebb95efe5b1e",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "bf010e1ee1e6f749e1203c477e7693dd8767d943",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "AUD-006": {
    "attempts": 0,
@@ -676,13 +676,13 @@
   },
   "AUD-007": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/aud-007",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/026-aud-007-audio-output-route-indicator",
+   "state": "implementing"
   },
   "AUD-008": {
    "attempts": 0,
@@ -3637,6 +3637,11 @@
    "sha": "8d96030954ff1ece93fb4f39cad7f27ea8668f8b"
   },
   {
+   "branch": null,
+   "id": "AUD-005",
+   "sha": "bf010e1ee1e6f749e1203c477e7693dd8767d943"
+  },
+  {
    "branch": "feature/aud-006",
    "id": "AUD-006",
    "sha": "03b23a8ae6a0aad7e0f09d81dd1bfe960b5e795a"
@@ -3792,5 +3797,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T15:11:34Z"
+ "updated": "2026-11-13T15:19:14Z"
 }

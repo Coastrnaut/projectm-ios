@@ -19,7 +19,20 @@
 // has its own consumer (the analysis worker), drop-oldest overflow and counter, and no freshness
 // rule, so reading it (or never reading it) leaves the main ring's reads unchanged. Without a tap
 // (the default) the ring behaves exactly as before. Nothing read from the tap goes to projectM.
+//
+// Session generation (ANL-016-R9; research ANL-016-D1): `reset()` (a new capture session: the
+// capture manager's start, restart or source switch) empties both rings and only then increases an
+// atomic generation with release ordering; `discardBuffered()` (a seek inside a session) does not.
+// The tap's consumer (the analysis event bus) reads it with acquire ordering before and after each
+// chunk it reads: a change during the read means the chunk may hold audio of either session.
 import Synchronization
+
+/// Reports capture-session restarts to an analysis consumer (ANL-016-R9).
+public protocol AnalysisSessionReporting: Sendable {
+    /// Increases each time the source ring is reset for a new capture session, after its analysis
+    /// tap was emptied. Starts at 0.
+    var analysisSessionGeneration: UInt64 { get }
+}
 
 /// Reads normalized audio (Float32 interleaved stereo at 44.1 kHz). Consumed by the renderer.
 public protocol NormalizedPCMReader: Sendable {
@@ -51,14 +64,18 @@ public final class NormalizedPCMRing: NormalizedPCMReader, @unchecked Sendable {
     /// `tapRing.droppedSamples` at the last `reset()`.
     private let tapOverflowBaseline = Atomic<Int>(0)
     private let tapReader: AnalysisTapReader?
+    /// Increased by `reset()` after the drains (release); read by the tap's consumer (acquire).
+    private let sessionGeneration: SessionGeneration
 
     /// `analysisTapCapacityFrames` > 0 adds an analysis tap of that many stereo frames; 0 (the
     /// default) or less means no tap.
     public init(analysisTapCapacityFrames: Int = 0) {
+        let generation = SessionGeneration()
+        sessionGeneration = generation
         if analysisTapCapacityFrames > 0 {
             let tap = SPSCRingBuffer(capacity: analysisTapCapacityFrames * NormalizedPCMRing.channelCount)
             tapRing = tap
-            tapReader = AnalysisTapReader(ring: tap)
+            tapReader = AnalysisTapReader(ring: tap, generation: generation)
         } else {
             tapRing = nil
             tapReader = nil
@@ -137,15 +154,32 @@ public final class NormalizedPCMRing: NormalizedPCMReader, @unchecked Sendable {
         }
         freshnessDropped.store(0, ordering: .relaxed)
         lastBacklog.store(0, ordering: .relaxed)
+        sessionGeneration.advance()   // after the drains (ANL-016-R9)
     }
+
+    /// Capture sessions begun since creation (ANL-016-R9): increased by every `reset()`.
+    public var analysisSessionGeneration: UInt64 { sessionGeneration.value }
+}
+
+/// The ring's session counter, shared with its tap reader.
+final class SessionGeneration: Sendable {
+    private let counter = Atomic<UInt64>(0)
+    func advance() { counter.add(1, ordering: .releasing) }
+    var value: UInt64 { counter.load(ordering: .acquiring) }
 }
 
 /// The consumer side of a `NormalizedPCMRing`'s analysis tap (ANL-001-R9): reads every buffered
 /// stereo frame in order, without the main ring's freshness rule. Real-time safe like the ring.
-final class AnalysisTapReader: NormalizedPCMReader, @unchecked Sendable {
+final class AnalysisTapReader: NormalizedPCMReader, AnalysisSessionReporting, @unchecked Sendable {
     private let ring: SPSCRingBuffer
+    private let generation: SessionGeneration
 
-    init(ring: SPSCRingBuffer) { self.ring = ring }
+    init(ring: SPSCRingBuffer, generation: SessionGeneration) {
+        self.ring = ring
+        self.generation = generation
+    }
+
+    var analysisSessionGeneration: UInt64 { generation.value }
 
     func read(into dst: UnsafeMutablePointer<Float>, maxFrames: Int) -> Int {
         guard maxFrames > 0 else { return 0 }
