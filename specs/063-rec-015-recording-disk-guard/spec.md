@@ -34,6 +34,19 @@ The row's gap status is "Gap candidate". The audit confirms it.
 | Temporary files | `<tmp>/Recordings` is emptied at launch (REC-003-R13); `<tmp>/Sharing` likewise (REC-012-R6). | None (verified, not duplicated). |
 | Privacy manifest | Declares user defaults, system boot time and file timestamp. No disk-space API is used. | A free-space read is a required-reason API (Disk space) and must be declared. |
 
+## Clarifications
+
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the conservative, local-first option.
+
+- Q: How much free storage must remain, and how much recording must fit before Record starts? → A: A fixed safety reserve of 200 MiB (209,715,200 bytes) that the recording never eats into, plus room for 60 seconds at the estimated rate before Record starts. While recording, the stop comes when less than the reserve plus two check intervals (10 s) of writing remains. The reserve leaves room to finish the file (its index) and for the system, which misbehaves when the device is completely full. Rejected: a percentage of the device's capacity (meaningless across 64 GB and 2 TB devices); stopping only at the reserve (a write burst between two checks could cross it).
+- Q: Which free-storage figure is read? → A: The system's "available capacity for important usage" of the volume holding the temporary recording folder: the figure Apple documents for user-initiated work, which counts space the system can purge for it. It is a required-reason API (Disk space), declared with reason E174.1 (check there is enough space to write files). Rejected: the "opportunistic" figure (too pessimistic for a user-started recording); the raw available capacity (ignores purgeable space, refusing recordings that would fit); file-system attribute dictionaries and `statfs` (same category, more than needed).
+- Q: What happens when the free-storage value cannot be read? → A: The recording starts or continues; the sample is skipped. The guard is a safety net, not a gate the system's silence should close, and real out-of-space errors are still caught (REC-015-R7). Rejected: refuse to record (a transient read failure would block the feature).
+- Q: Is a recording stopped for low storage kept or discarded? → A: Kept: the file is finished like every REC-003 stop and offered in the "Recording ready" panel (Save…, Share…, Discard; REC-012). Only an out-of-space writer failure, which leaves a file that cannot be finished, deletes the partial file and says "Storage is full; the recording couldn't be saved.". Rejected: discard on low storage (loses the user's work, which the acceptance's "finalizes" forbids); offer a partial, unfinished file (it would not play).
+- Q: Should the app warn ahead of the stop (for example "1 minute of storage left")? → A: No. This row stops cleanly and says why; an ongoing storage warning in the recording overlay is REC-009 ("storage warnings only in UI"). Rejected: a countdown notice now (duplicates REC-009 and adds UI churn during recording).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Record refuses when there is no room (Priority: P1)
