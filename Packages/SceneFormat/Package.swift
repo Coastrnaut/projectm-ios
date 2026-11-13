@@ -1,6 +1,6 @@
 // swift-tools-version: 6.0
 // SceneFormat: the versioned scene document (SCN-001, specs/059-scn-001-versioned-scene-format,
-// contracts/scene-document.md; ADR-0025 or the next free number, see docs/adr/README.md).
+// contracts/scene-document.md; ADR-0028).
 //
 // One local document holds a whole scene: the ordered layer stack (CMP-002) with saved instance IDs,
 // composite settings and CMP-005 transforms, per-kind content, MOD-001 parameter values, MOD-002

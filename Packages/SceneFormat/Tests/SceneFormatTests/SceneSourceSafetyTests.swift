@@ -27,7 +27,7 @@ final class SceneSourceSafetyTests: XCTestCase {
 
     func testNoFileURLNetworkProcessLoaderOrEvaluator() throws {
         let forbidden = ["dl" + "open", "dl" + "sym", "Bundle", "FileManager", "FileHandle", "Data(contentsOf", "String(contentsOf", "URL", "fopen",
-                         "fwrite", "fflush", "stdout", "stderr", "Process", "NSTask", "URLSession", "Network", "NSExpression",
+                         "fwrite", "ff" + "lush", "std" + "out", "std" + "err", "Process", "NSTask", "URL" + "Session", "Net" + "work", "NSExpression",
                          "JSContext", "JSONSerialization", "JSONDecoder", "JSONEncoder", "evaluate(", "write(to", "@_silgen_name",
                          "@_cdecl", "UserDefaults"]
         for (name, text) in try moduleSources() {

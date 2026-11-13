@@ -54,8 +54,8 @@ except `Data` at the MED-009/SHD-011 edge; no wall-clock assertions; no C stdio
 | Security: untrusted input | Size before parsing, depth while parsing, counts before typed decoding, duplicate keys refused, no paths, nothing executed (SHD-011, ADR-0024 rules). Pass. |
 | Privacy | No user media in the document (identifiers only), no telemetry. Pass. |
 
-No deviations; Complexity Tracking empty. ADR: a new ADR records the scene format and version
-policy (the next free number at commit time).
+No deviations; Complexity Tracking empty. ADR-0028 records the scene format and version
+policy (0025 and 0026 are reserved by the REC-003 ADR for other rows).
 
 ## Project Structure
 
@@ -88,7 +88,7 @@ Packages/Compositor/Sources/Compositor/LayerStack.swift          # init(restorin
 Packages/Compositor/Sources/ProceduralMaterials/MaterialLayerKind.swift
 Packages/Compositor/Sources/GeneratorGraph/GeneratorGraphLayerKind.swift
 .github/workflows/ios-ci.yml                                     # SceneFormat in the 5 package loops
-docs/adr/00NN-scene-document-format.md
+docs/adr/0028-scene-document-format.md
 docs/test-reports/scene-format.md
 ```
 

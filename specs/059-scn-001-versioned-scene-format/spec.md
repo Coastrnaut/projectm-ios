@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (SCN-001-T01-T22 verified on the Mac host and the Linux shape; no app change, no simulator or device task)
 
 **Input**: User description: "Implement SCN-001 (Versioned scene format) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Save all layers, parameters, asset
