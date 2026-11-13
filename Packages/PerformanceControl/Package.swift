@@ -9,6 +9,8 @@
 //   estimates and owns a pipeline for when no other pipeline reads the analysis tap.
 // * OSC (OSC-001, specs/032-osc-001-osc-receiver/contracts/osc-receiver.md): the OSC decoder,
 //   local-address scope, dispatcher and receiver lifecycle are pure Swift in `PerformanceControl`
+//   (OSC-002, specs/036-osc-002-osc-message-parser/contracts/osc-parser.md: strings, blobs, 64-bit
+//   numbers, T/F/N/I and bundles with bounded nesting and element count)
 //   (`Sources/PerformanceControl/OSC/`) and apply values through ParameterGraph's store. The
 //   Network framework is allowed ONLY in `Sources/PerformanceControl/OSCTransport/` (FR-068 as
 //   amended 2026-11-12, ADR-0008; scripts/check_compliance.py) and compiles out where the framework
