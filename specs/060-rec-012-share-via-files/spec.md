@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Clarified 2026-11-13 (9 questions answered under owner rule 4)
 
 **Input**: User description: "Implement REC-012 (Share via Files) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Export video or image using system
@@ -45,6 +45,9 @@ interaction); each answer is the conservative, local-first option.
 - Q: Which share sheet activities are offered? → A: Everything the system offers for a file (AirDrop, Messages, Mail, Save to Files, other apps the user has), except Save Image/Save Video to Photos and Assign to Contact, which the app excludes. Saving to Photos needs a Photos add permission and its own rules (REC-011); assigning a frame to a contact writes into Contacts. The app requests no new permission. Rejected: allow Save to Photos now (a permission prompt and a usage string this row does not need; REC-011 owns it).
 - Q: Which share sheet API? → A: The system activity view controller (`UIActivityViewController`) with its completion handler, which says whether the share completed or was cancelled and so tells the app when to delete the copy. SwiftUI's `ShareLink` gives no completion, so the copy could only be swept at launch. Rejected: `ShareLink`.
 - Q: Can a new recording start while a recording is still offered? → A: No. Record refuses with "Save, share or discard the last recording first." so a recording is never deleted without the user's choice. A new Save Frame replaces an offered still (the user asked for a new picture; a still is quick to make again). Rejected: replace an offered recording (could lose up to 10 minutes of work silently).
+- Q: What does the user see after the share sheet closes? → A: After a completed share, the notice "Shared." (an accessible element like the other notices, FR-070); after a cancel, nothing new: the ready panel simply stays. After an error, "The file couldn't be shared.". The panel stays in every case. Rejected: a notice on cancel too (noise for a deliberate action); hiding the panel after a completed share (the user may want to save it or share it again).
+- Q: Does an offered result survive changing the visual, pausing, blacking out the output or the app going to the background? → A: Yes, all of them: the result was made before and is not the live picture, so Save…, Share… and Discard keep working (sharing never shows the current screen). Only the end of the app process ends it (a still is in memory; a recording's file is deleted at the next launch). Rejected: discard on blackout (the blackout hides the screen, not results the user already made; discarding would lose work).
+- Q: Can a still and a recording be offered at the same time? → A: Yes; each kind has its own ready panel ("Frame ready", "Recording ready") with its own buttons and identifiers, and one share sheet at a time (the sheet is modal). Rejected: one shared panel (a new capture would hide the recording's buttons).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -122,6 +125,8 @@ temporary file is deleted.
 - **REC-012-R8**: The result stays offered until Save… completes, the user taps Discard, or (stills only) a new Save Frame replaces it. A cancelled Save… keeps it.
 - **REC-012-R9**: Discard of a recording MUST delete its temporary file; a completed Save… moves it (REC-003); nothing is kept beyond the session (FR-065).
 - **REC-012-R10**: While a recording is offered, Record MUST refuse with "Save, share or discard the last recording first." and start nothing.
+- **REC-012-R15**: After a completed share the notice reads "Shared."; a cancel adds no notice; an error reads "The file couldn't be shared.". The ready panel stays in all three cases.
+- **REC-012-R16**: An offered result MUST stay offered when the visual changes, the user pauses, the output is blacked out or the app goes to the background; a still and a recording can be offered at the same time, each in its own panel.
 - **REC-012-R11**: If the copy cannot be made, no sheet opens, the notice reads "The file couldn't be shared." and the result stays offered.
 - **REC-012-R12**: The app itself MUST NOT use the network; a share leaves the device only through the activity the user picks.
 - **REC-012-R13**: The ready panel and its buttons MUST have accessibility labels (FR-070); on iPad the share sheet is anchored to the Share… button.
