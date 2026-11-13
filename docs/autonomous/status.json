@@ -7,11 +7,12 @@
  "by_priority": {
   "P0": {
    "audited": 66,
-   "implementing": 1,
-   "integrated": 20
+   "integrated": 20,
+   "unit_passed": 1
   },
   "P1": {
-   "audited": 149,
+   "audited": 148,
+   "implementing": 1,
    "integrated": 2
   },
   "P2": {
@@ -22,9 +23,10 @@
   }
  },
  "by_state": {
-  "audited": 303,
+  "audited": 302,
   "implementing": 1,
-  "integrated": 22
+  "integrated": 22,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -776,12 +778,12 @@
   "AUD-016": {
    "attempts": 0,
    "branch": "feature/aud-016",
-   "branch_sha": null,
+   "branch_sha": "a7e38976d177449b7e11281bad49aaa2b96c6a11",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": "specs/011-aud-016-reference-tone-suite",
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "AUTO-001": {
    "attempts": 0,
@@ -2505,13 +2507,13 @@
   },
   "PRE-014": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/pre-014",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/012-pre-014-bulk-preset-export",
+   "state": "implementing"
   },
   "PRE-015": {
    "attempts": 0,
@@ -3723,5 +3725,5 @@
  "run_id": "cb545c51cf0b",
  "skipped_existing": [],
  "total": 326,
- "updated": "2026-11-13T00:57:47Z"
+ "updated": "2026-11-13T01:24:02Z"
 }
