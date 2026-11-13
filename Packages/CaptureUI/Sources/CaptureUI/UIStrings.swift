@@ -239,6 +239,19 @@ public enum UIStrings {
     /// The SF Symbol for the mode; Off and All Tracks share `repeat` and differ by color.
     public static func repeatIcon(_ mode: RepeatMode) -> String { mode == .one ? "repeat.1" : "repeat" }
 
+    // MARK: Shuffle (AUD-005; specs/023-aud-005-shuffle-with-history/contracts/ui-strings.md)
+    public static let shuffleLabel = "Shuffle"
+    public static let shuffleFooter =
+        "Shuffle plays the queue in a random order without changing it. Previous goes back through the tracks you played."
+    /// The SF Symbol for both values; On and Off differ by style (a filled background for On).
+    public static let shuffleIcon = "shuffle"
+
+    /// The Shuffle control's accessibility value.
+    public static func shuffleValue(_ on: Bool) -> String { on ? "On" : "Off" }
+
+    /// What VoiceOver announces after Shuffle changed.
+    public static func shuffleAnnouncement(_ on: Bool) -> String { "\(shuffleLabel): \(shuffleValue(on))" }
+
     // MARK: Transport (AUD-006; specs/007-aud-006-seekable-transport/contracts/ui-strings.md)
     public static let transportPlay = "Play"
     public static let transportPause = "Pause playback"

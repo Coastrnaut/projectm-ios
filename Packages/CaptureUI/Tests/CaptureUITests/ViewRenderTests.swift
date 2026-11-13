@@ -146,6 +146,18 @@ final class ViewRenderTests: XCTestCase {
         }
     }
 
+    // MARK: - AUD-005 shuffle
+
+    func testTransportBarWithTheShuffleButtonSmokeRendersBothValues() {
+        for on in [false, true] {
+            let bar = TransportBar(title: "Track", isPlaying: true, position: { PlaybackPosition(seconds: 5, durationSeconds: 60) },
+                                   onPlayPause: {}, onStop: {}, onPrevious: {}, onNext: {}, onSeek: { _ in }, onShowQueue: {},
+                                   repeatMode: .all, onCycleRepeat: {}, isShuffled: on, onToggleShuffle: {})
+            assertSmokeRenders(bar, name: "transport with Shuffle \(on)")
+            assertSmokeRenders(bar.dynamicTypeSize(.accessibility5), name: "transport with Shuffle \(on), largest text")
+        }
+    }
+
     // PlayQueueView is a List, which ImageRenderer cannot draw (see the file header);
     // PlayQueueUITests checks it in the running app (AUD-003-T17).
 

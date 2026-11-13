@@ -69,6 +69,12 @@ struct ControlsOverlay: View {
                             onCycleRepeat: {
                                 coordinator.showControls()
                                 coordinator.audioLibrary.queue.cycleRepeatMode()
+                            },
+                            // AUD-005: Shuffle, for imported audio only.
+                            isShuffled: coordinator.transportShowsQueue ? coordinator.audioLibrary.queue.isShuffled : nil,
+                            onToggleShuffle: {
+                                coordinator.showControls()
+                                coordinator.audioLibrary.queue.toggleShuffle()
                             })
             .frame(maxWidth: 560)
             .accessibilityElement(children: .contain)

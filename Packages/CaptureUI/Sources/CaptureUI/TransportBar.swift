@@ -13,6 +13,10 @@
 // AUD-004: with a repeat mode and a cycle action (imported audio only), a Repeat button follows Next
 // track: label "Repeat", value the mode, `repeat.1` for One Track and `repeat` dimmed for Off or in
 // the accent color for All Tracks; a tap moves to the next mode and VoiceOver announces it.
+//
+// AUD-005: with a shuffle value and a toggle action (imported audio only), a Shuffle button comes
+// before Repeat: label "Shuffle", value "On" or "Off", `shuffle` on a filled accent capsule when On
+// and dimmed when Off (not color alone); a tap toggles and VoiceOver announces the new value.
 #if canImport(SwiftUI)
 import CaptureKit
 import Foundation
@@ -35,6 +39,10 @@ public struct TransportBar: View {
     public let repeatMode: RepeatMode?
     /// AUD-004: moves the queue to the next repeat mode.
     public let onCycleRepeat: (() -> Void)?
+    /// AUD-005: whether the queue is shuffled; nil (or no `onToggleShuffle`) hides the Shuffle button.
+    public let isShuffled: Bool?
+    /// AUD-005: turns Shuffle on or off.
+    public let onToggleShuffle: (() -> Void)?
 
     /// The scrubber's value while it is touched; nil otherwise.
     @State private var dragValue: Double?
@@ -44,7 +52,8 @@ public struct TransportBar: View {
     public init(title: String, isPlaying: Bool, position: @escaping @MainActor () -> PlaybackPosition,
                 onPlayPause: @escaping () -> Void, onStop: @escaping () -> Void, onPrevious: @escaping () -> Void,
                 onNext: @escaping () -> Void, onSeek: @escaping (Double) -> Void, onShowQueue: (() -> Void)? = nil,
-                repeatMode: RepeatMode? = nil, onCycleRepeat: (() -> Void)? = nil) {
+                repeatMode: RepeatMode? = nil, onCycleRepeat: (() -> Void)? = nil,
+                isShuffled: Bool? = nil, onToggleShuffle: (() -> Void)? = nil) {
         self.title = title
         self.isPlaying = isPlaying
         self.position = position
@@ -56,6 +65,8 @@ public struct TransportBar: View {
         self.onShowQueue = onShowQueue
         self.repeatMode = repeatMode
         self.onCycleRepeat = onCycleRepeat
+        self.isShuffled = isShuffled
+        self.onToggleShuffle = onToggleShuffle
     }
 
     public var body: some View {
@@ -96,6 +107,9 @@ public struct TransportBar: View {
                        id: "transportPlayPause", action: onPlayPause)
                 button(UIStrings.transportStop, icon: "stop.circle", id: "transportStop", action: onStop)
                 button(UIStrings.nextTrack, icon: "forward.end.fill", id: "transportNext", action: onNext)
+                if let isShuffled, let onToggleShuffle {
+                    shuffleButton(isShuffled, toggle: onToggleShuffle)
+                }
                 if let repeatMode, let onCycleRepeat {
                     repeatButton(repeatMode, cycle: onCycleRepeat)
                 }
@@ -190,6 +204,26 @@ public struct TransportBar: View {
         .accessibilityLabel(Text(UIStrings.repeatLabel))
         .accessibilityValue(Text(UIStrings.repeatValue(mode)))
         .accessibilityIdentifier("transportRepeat")
+    }
+
+    /// AUD-005-R11: the Shuffle control. On is a filled capsule behind the icon, so it does not rely
+    /// on color alone; Off is dimmed.
+    private func shuffleButton(_ on: Bool, toggle: @escaping () -> Void) -> some View {
+        Button {
+            toggle()
+            AccessibilityNotification.Announcement(UIStrings.shuffleAnnouncement(!on)).post()
+        } label: {
+            Image(systemName: UIStrings.shuffleIcon)
+                .font(.title3)
+                .foregroundStyle(on ? AnyShapeStyle(Color.white) : AnyShapeStyle(.secondary))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Capsule().fill(on ? Color.accentColor : Color.clear))
+                .frame(maxWidth: .infinity, minHeight: 36)
+        }
+        .accessibilityLabel(Text(UIStrings.shuffleLabel))
+        .accessibilityValue(Text(UIStrings.shuffleValue(on)))
+        .accessibilityIdentifier("transportShuffle")
     }
 
     private func button(_ title: String, icon: String, id: String, action: @escaping () -> Void) -> some View {
