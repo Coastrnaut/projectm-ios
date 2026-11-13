@@ -29,7 +29,7 @@ stage and stay open until a person runs them on D1-D3.
 - [ ] CAM-001-T11 [US1] `VisualChoice.camera` ("Camera", `isNative` false, `replacesProjectM`, `usesCamera`), not written to UserDefaults and a stored `camera` read as projectM, in `Apps/projectM-iOS/Coordinators/AppSettings.swift`
 - [ ] CAM-001-T12 [US1] `CameraVisualHost` (CAMetalLayer view `cameraVisual`, display link, `LiveBandAnalyzer`, `Compositor` [camera, circular spectrum with transparent background], `resume`/`pause`, PERF-011 suspension, scene-disconnect stop, `feedState`, `framesShown`, tempo reader) in `Apps/projectM-iOS/Visuals/CameraVisualHost.swift`; DEBUG `-uitestCamera <scenario>` selects the stub
 - [ ] CAM-001-T13 [US1] Wire Camera in `Apps/projectM-iOS/Coordinators/AppCoordinator.swift` (create on choice, resume/pause with the active visual, release on another visual, fall back to projectM with the unavailable notice if it cannot be built, `hidesSystemOverlays` false while shown), `Views/VisualizerView.swift` (host view, accessibility, diagnostics counter `cameraFramesShown`), `Views/ControlsOverlay.swift` (visual name, preset controls hidden) and `Views/SettingsView.swift` (picker entry, footer text)
-- [ ] CAM-001-T14 [US1] App unit tests `Apps/projectM-iOS/Tests/CameraVisualTests.swift`: Camera not persisted (R11), stored `camera` reads projectM, host with granted stub shows frames, `replacesProjectM`/`isNative` sets
+- [ ] CAM-001-T14 [US1] App unit tests `Apps/projectM-iOS/Tests/CameraVisualTests.swift`: Camera not persisted (R11), stored `camera` reads projectM, host with granted stub shows frames, `replacesProjectM`/`isNative` sets; `CameraVisualHost.make(device: nil)` throws so the coordinator falls back to projectM with the unavailable notice (spec Edge Cases)
 - [ ] CAM-001-T15 [US1] UI test `testGrantedCameraShowsFrames` in `Apps/projectM-iOS/UITests/CameraUITests.swift` (`-uitestCamera granted`): choose Camera, `cameraVisual` value "Live", `cameraFramesShown` grows, source started once
 
 ## Phase 4: User Story 2 - Denied or unavailable camera never blocks (P1)
@@ -46,7 +46,7 @@ stage and stay open until a person runs them on D1-D3.
 **Independent test**: with the stub, the provider is running only while Camera is shown, running and presentable.
 
 - [ ] CAM-001-T20 [US3] Package tests: `stop()` drops the picture (`latestFrame()` nil, next render `.notReady`); interruption → fallback, end → frames again; failure → fallback (R8, S5) in `CameraLayerTests.swift`
-- [ ] CAM-001-T21 [US3] App unit tests in `CameraVisualTests.swift`: host `pause()`, `suspendForPresentationLoss()`, scene disconnect each stop the provider before returning; `resume()`/`resumeForPresentation()` restart it; coordinator stops it on another visual (S3)
+- [ ] CAM-001-T21 [US3] App unit tests in `CameraVisualTests.swift`: host `pause()`, `suspendForPresentationLoss()`, scene disconnect each stop the provider before returning; `resume()`/`resumeForPresentation()` restart it; coordinator stops it on another visual (S3); `AppCoordinator.systemOverlaysHidden` is false whenever the camera visual is shown (R10)
 
 ## Phase 6: Polish & cross-cutting
 
