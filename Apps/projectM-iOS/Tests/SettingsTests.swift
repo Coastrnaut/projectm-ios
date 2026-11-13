@@ -47,8 +47,33 @@ final class SettingsTests: XCTestCase {
         settings.showsPerformanceOverlay = true
         settings.reduceFlashing = true
         settings.presetScope = "all"
+        settings.visual = .circularSpectrum
+        settings.circularSpectrumBars = 32
         let keys = Set(defaults.persistentDomain(forName: suite)?.keys ?? [:].keys)
         XCTAssertEqual(keys, Set(AppSettings.allKeys), "FR-065")
+    }
+
+    /// VIS-001-T19 (VIS-001-R11): the visual choice and the bar count, with safe readings of bad values.
+    func testVisualChoiceDefaultsToProjectMAndPersists() {
+        let settings = AppSettings(defaults: defaults, systemReduceMotion: false)
+        XCTAssertEqual(settings.visual, .projectM, "projectM stays the default")
+        settings.visual = .circularSpectrum
+        XCTAssertEqual(defaults.string(forKey: "settings.visual"), "circularSpectrum")
+        XCTAssertEqual(AppSettings(defaults: defaults, systemReduceMotion: false).visual, .circularSpectrum, "persisted")
+        defaults.set("kaleidoscope", forKey: AppSettings.visualKey)
+        XCTAssertEqual(AppSettings(defaults: defaults, systemReduceMotion: false).visual, .projectM, "unknown → projectM")
+    }
+
+    func testCircularSpectrumBarsDefaultTo64AndPersist() {
+        let settings = AppSettings(defaults: defaults, systemReduceMotion: false)
+        XCTAssertEqual(settings.circularSpectrumBars, 64)
+        settings.circularSpectrumBars = 16
+        XCTAssertEqual(defaults.integer(forKey: "settings.circularSpectrum.bars"), 16)
+        XCTAssertEqual(AppSettings(defaults: defaults, systemReduceMotion: false).circularSpectrumBars, 16)
+        defaults.set(24, forKey: AppSettings.circularSpectrumBarsKey)
+        XCTAssertEqual(AppSettings(defaults: defaults, systemReduceMotion: false).circularSpectrumBars, 64, "not a band count → 64")
+        XCTAssertTrue(AppSettings.allKeys.contains("settings.visual"))
+        XCTAssertTrue(AppSettings.allKeys.contains("settings.circularSpectrum.bars"))
     }
 
     func testTheBundledLicenseManifestIsComplete() throws {

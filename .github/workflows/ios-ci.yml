@@ -48,7 +48,7 @@ jobs:
         run: swift --version
       - name: Package tests (Linux host)
         run: |
-          for pkg in AudioCore CaptureKit Diagnostics CaptureUI LocalPortability PresetLibrary PresentationLifecycle AnalysisFeatures; do
+          for pkg in AudioCore CaptureKit Diagnostics CaptureUI LocalPortability PresetLibrary PresentationLifecycle AnalysisFeatures VisualGenerators; do
             echo "::group::swift test $pkg"
             swift test --package-path "Packages/$pkg"
             echo "::endgroup::"
@@ -124,14 +124,14 @@ jobs:
           fi
       - name: Package tests (macOS host)
         run: |
-          for pkg in AudioCore CaptureKit Diagnostics CaptureUI LocalPortability PresetLibrary PresentationLifecycle AnalysisFeatures; do
+          for pkg in AudioCore CaptureKit Diagnostics CaptureUI LocalPortability PresetLibrary PresentationLifecycle AnalysisFeatures VisualGenerators; do
             echo "::group::swift test $pkg"
             swift test --package-path "Packages/$pkg"
             echo "::endgroup::"
           done
       - name: Compile packages for iOS (device SDK, includes Apple-only code)
         run: |
-          for pkg in AudioCore CaptureKit Diagnostics CaptureUI LocalPortability PresetLibrary PresentationLifecycle AnalysisFeatures; do
+          for pkg in AudioCore CaptureKit Diagnostics CaptureUI LocalPortability PresetLibrary PresentationLifecycle AnalysisFeatures VisualGenerators; do
             echo "::group::xcodebuild $pkg (generic iOS)"
             (cd "Packages/$pkg" && xcodebuild -quiet -scheme "$pkg" -destination 'generic/platform=iOS' \
               -derivedDataPath "$RUNNER_TEMP/dd-$pkg" -skipPackagePluginValidation \
@@ -190,7 +190,7 @@ jobs:
         if: steps.sim.outputs.udid != ''
         run: |
           set -o pipefail
-          for pkg in AudioCore CaptureKit Diagnostics CaptureUI LocalPortability PresetLibrary PresentationLifecycle AnalysisFeatures; do
+          for pkg in AudioCore CaptureKit Diagnostics CaptureUI LocalPortability PresetLibrary PresentationLifecycle AnalysisFeatures VisualGenerators; do
             echo "::group::xcodebuild test $pkg (iOS Simulator)"
             (cd "Packages/$pkg" && xcodebuild -scheme "$pkg" -destination "id=${{ steps.sim.outputs.udid }}" \
               -derivedDataPath "$RUNNER_TEMP/dds-$pkg" CODE_SIGNING_ALLOWED=NO test 2>&1 \
@@ -392,7 +392,9 @@ jobs:
     # run on any simulator and is tested only on devices.
     needs: [docs-and-compliance, angle-xcframeworks]
     runs-on: xcode-27
-    timeout-minutes: 40
+    # 90 minutes, like build-and-test-apple: run 43419354416 spent 38 minutes in the package tests
+    # on the iOS 27 simulator and hit the old 40-minute limit after the suites grew.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v5
       - name: Select the newest Xcode 27 that can build for iOS devices
@@ -506,7 +508,7 @@ jobs:
       - name: Package tests on the iOS 27 Simulator
         run: |
           set -o pipefail
-          for pkg in AudioCore CaptureKit Diagnostics CaptureUI LocalPortability PresetLibrary PresentationLifecycle AnalysisFeatures; do
+          for pkg in AudioCore CaptureKit Diagnostics CaptureUI LocalPortability PresetLibrary PresentationLifecycle AnalysisFeatures VisualGenerators; do
             echo "::group::xcodebuild test $pkg (iOS 27 Simulator)"
             (cd "Packages/$pkg" && xcodebuild -scheme "$pkg" -destination "id=${{ steps.sim27.outputs.udid }}" \
               -derivedDataPath "$RUNNER_TEMP/dds27-$pkg" CODE_SIGNING_ALLOWED=NO test 2>&1 \

@@ -1,6 +1,8 @@
 // VisualizerView.swift — the full-screen visualization (task T084; FR-040, FR-041, FR-042, FR-083,
 // FR-085, FR-086, FR-089). The renderer's view fills the window in portrait, landscape and iPad
 // split view; a tap toggles the controls; the source-and-state indicator is always visible.
+// VIS-001: when Settings chooses Circular Spectrum, its Metal view replaces the renderer's view
+// (projectM is paused meanwhile); if it cannot be created a notice says projectM is shown instead.
 import CaptureKit
 import CaptureUI
 import PresetLibrary
@@ -13,7 +15,13 @@ struct VisualizerView: View {
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-            if let renderer = coordinator.renderer {
+            if coordinator.showsNativeVisual, let native = coordinator.nativeVisual {
+                NativeVisualHost(view: native.view)
+                    .ignoresSafeArea()
+                    .accessibilityElement()
+                    .accessibilityLabel("Circular Spectrum visualization")
+                    .accessibilityIdentifier("circularSpectrum")
+            } else if let renderer = coordinator.renderer {
                 RendererHost(renderer: renderer)
                     .ignoresSafeArea()
                     .accessibilityIdentifier("visualizer")
@@ -46,8 +54,8 @@ struct VisualizerView: View {
             }
             .padding()
             .animation(.easeInOut(duration: 0.2), value: coordinator.controlsVisible)
-            if coordinator.settings.showsPerformanceOverlay, let renderer = coordinator.renderer {
-                VStack { HStack { Spacer(); PerformanceOverlay(renderer: renderer, manager: coordinator.manager) }; Spacer() }
+            if coordinator.settings.showsPerformanceOverlay, coordinator.renderer != nil || coordinator.showsNativeVisual {
+                VStack { HStack { Spacer(); PerformanceOverlay(metrics: { coordinator.activeVisualMetrics }, manager: coordinator.manager) }; Spacer() }
                     .padding(.top, 2)
                     .padding(.trailing, 8)
             }
@@ -90,9 +98,12 @@ struct VisualizerView: View {
         }
         .sheet(isPresented: $coordinator.showSettings) {
             SettingsView(settings: coordinator.settings,
-                         reduceFlashingAvailable: coordinator.renderer?.supportsReduceFlashing ?? true)
+                         reduceFlashingAvailable: coordinator.renderer?.supportsReduceFlashing ?? true,
+                         nativeVisualUnavailable: coordinator.nativeVisualUnavailable)
         }
         .onChange(of: coordinator.settings.reduceFlashing) { coordinator.applyReduceFlashing() }
+        .onChange(of: coordinator.settings.visual) { coordinator.visualSettingsChanged() }                 // VIS-001
+        .onChange(of: coordinator.settings.circularSpectrumBars) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.manager.state) { _, state in
             SourceStatusIndicator.announce(mode: coordinator.manager.activeMode, state: state, signal: coordinator.testSignalName)   // FR-070, AUD-016-R16
         }
@@ -123,6 +134,13 @@ struct VisualizerView: View {
                 .padding(12)
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
         }
+        // VIS-001-R16: the chosen native visual could not be created.
+        if coordinator.nativeVisualUnavailable && coordinator.settings.visual == .circularSpectrum {
+            Text(AppCoordinator.nativeVisualUnavailableMessage)
+                .padding(10)
+                .background(.regularMaterial, in: Capsule())
+                .accessibilityIdentifier("nativeVisualUnavailable")
+        }
         if let failure = coordinator.presets.failureMessage {
             Text(failure)
                 .padding(10)
@@ -130,6 +148,13 @@ struct VisualizerView: View {
                 .accessibilityIdentifier("presetFailedBanner")
         }
     }
+}
+
+/// Hosts the native visual's UIView (VIS-001).
+struct NativeVisualHost: UIViewRepresentable {
+    let view: UIView
+    func makeUIView(context: Context) -> UIView { view }
+    func updateUIView(_ uiView: UIView, context: Context) {}
 }
 
 /// Hosts the renderer's UIView.

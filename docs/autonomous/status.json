@@ -6,12 +6,14 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 62,
-   "integrated": 24,
+   "audited": 60,
+   "implementing": 1,
+   "integrated": 25,
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 146,
+   "audited": 145,
+   "implementing": 1,
    "integrated": 5
   },
   "P2": {
@@ -22,8 +24,9 @@
   }
  },
  "by_state": {
-  "audited": 296,
-  "integrated": 29,
+  "audited": 293,
+  "implementing": 2,
+  "integrated": 30,
   "skipped_existing": 1
  },
  "device_gate": {
@@ -308,7 +311,6 @@
    "UIX-013",
    "UIX-014",
    "UIX-015",
-   "VIS-001",
    "VIS-002",
    "VIS-003",
    "VIS-004",
@@ -331,7 +333,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "296 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
+   "295 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
   ]
  },
  "features": {
@@ -487,13 +489,13 @@
   },
   "ANL-004": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/anl-004",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/018-anl-004-spectral-flux-onset-detector",
+   "state": "implementing"
   },
   "ANL-005": {
    "attempts": 0,
@@ -1327,13 +1329,13 @@
   },
   "FX-001": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/fx-001",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/020-fx-001-bloom",
+   "state": "implementing"
   },
   "FX-002": {
    "attempts": 0,
@@ -3397,13 +3399,13 @@
   },
   "VIS-001": {
    "attempts": 0,
-   "branch": null,
-   "branch_sha": null,
+   "branch": "feature/vis-001",
+   "branch_sha": "7fa6d4e0f3c1a64f156861f044b0590991c3f3bc",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "48285d49c422576ac32986029ee731b214fcde63",
    "priority": "P0",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/019-vis-001-circular-spectrum",
+   "state": "integrated"
   },
   "VIS-002": {
    "attempts": 0,
@@ -3741,6 +3743,11 @@
    "branch": "feature/qa-007",
    "id": "QA-007",
    "sha": "32172fdd5795d12b9a6386c3f56d1d33936b5344"
+  },
+  {
+   "branch": "feature/vis-001",
+   "id": "VIS-001",
+   "sha": "48285d49c422576ac32986029ee731b214fcde63"
   }
  ],
  "integration_branch": "autonomous/integration",
@@ -3768,5 +3775,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T12:20:33Z"
+ "updated": "2026-11-13T13:22:03Z"
 }
