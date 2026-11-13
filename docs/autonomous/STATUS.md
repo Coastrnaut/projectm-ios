@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T00:57:47Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T01:36:49Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,23 +9,23 @@
 
 | State | Features |
 |---|---|
-| audited | 303 |
+| audited | 302 |
 | implementing | 1 |
-| integrated | 22 |
+| integrated | 23 |
 
 ## Counts by priority
 
 | Priority | audited | implementing | integrated |
 |---|---|---|---|
-| P0 | 66 | 1 | 20 |
-| P1 | 149 | 0 | 2 |
+| P0 | 66 | 0 | 21 |
+| P1 | 148 | 1 | 2 |
 | P2 | 79 | 0 | 0 |
 | P3 | 9 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 304 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
+- 303 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
 
 ## Integrated
 
@@ -35,6 +35,7 @@ The physical-device suite may **not** start:
 | AUD-002 | Support common audio containers | `f886b7ce7c76` | `feature/aud-002` |
 | AUD-006 | Seekable transport | `03b23a8ae6a0` | `feature/aud-006` |
 | AUD-014 | Audio session interruption recovery | `c4f03aa5e3d8` | `feature/aud-014` |
+| AUD-016 | Reference tone suite | `f69525cf0e8d` | `feature/aud-016` |
 | AUTO-001 | Roadmap parser | `419cc2a999ed` | `autonomous/integration` |
 | AUTO-002 | Implementation inventory gate | `419cc2a999ed` | `autonomous/integration` |
 | AUTO-003 | Dependency scheduler | `419cc2a999ed` | `autonomous/integration` |
@@ -109,6 +110,19 @@ None.
 - `swift test --package-path Packages/CaptureKit`: pass at `8d270f3cbeed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-014/20261112T185431/swift-test_CaptureKit.log`)
 - `swift test --package-path Packages/CaptureUI`: pass at `8d270f3cbeed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-014/20261112T185431/swift-test_CaptureUI.log`)
 - `integration checkout, full preset library: xcodebuild projectM-iOS test on iPhone 17 iOS 27.2: projectM-iOSTests 102 pass; UI 25 pass (Interruption, Transport, ImportedAudio, Status, Visualizer)`: pass at `b96d30cfbd82` (log `.autonomous/logs/integration/aud-014/app-tests.log`)
+
+### AUD-016 Reference tone suite (integrated)
+- `python3 scripts/check_compliance.py`: pass at `a7e38976d177` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-016/20261112T202048/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `a7e38976d177` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-016/20261112T202048/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `a7e38976d177` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-016/20261112T202048/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `a7e38976d177` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-016/20261112T202048/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=4E32B01D-7911-4A64-A944-877DDD445BC0 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `a7e38976d177` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-016/20261112T202048/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/AudioCore`: pass at `a7e38976d177` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-016/20261112T202048/swift-test_AudioCore.log`)
+- `swift test --package-path Packages/CaptureKit`: pass at `a7e38976d177` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-016/20261112T202048/swift-test_CaptureKit.log`)
+- `swift test --package-path Packages/CaptureUI`: pass at `a7e38976d177` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-016/20261112T202048/swift-test_CaptureUI.log`)
+- `swift test --package-path Packages/Diagnostics`: pass at `a7e38976d177` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-016/20261112T202048/swift-test_Diagnostics.log`)
+- `xcodebuild -scheme Rendering-Package -destination id=4E32B01D-7911-4A64-A944-877DDD445BC0 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `a7e38976d177` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-016/20261112T202048/sim-test_Rendering.log`)
+- `integration checkout, full preset library: CaptureKit 287 host / 291 iOS 27.2 sim; xcodebuild projectM-iOS test on iPhone 17 iOS 27.2: projectM-iOSTests 111 pass; UI 25 pass (TestSignals, Interruption, Transport, ImportedAudio, Status, Settings)`: pass at `25617b630dbb` (log `.autonomous/logs/integration/aud-016/app-tests.log`)
 
 ### AUTO-001 Roadmap parser (integrated)
 - `python3 scripts/autonomous/tests/test_autonomous.py (48 tests)`: pass at `419cc2a999ed`

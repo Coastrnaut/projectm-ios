@@ -1,7 +1,7 @@
 // InAppPlaybackSource.swift — deterministic In-App Playback fallback (task T046; FR-006, FR-051, FR-069).
 //
-// Plays the bundled reference track (scripts/generate_reference_audio.py), or a track from the
-// user's imported library (AUD-001), audibly through the current output, and taps the app's own
+// Plays the bundled reference track (scripts/generate_reference_audio.py), a track from the
+// user's imported library (AUD-001), or a generated reference tone (AUD-016), audibly through the current output, and taps the app's own
 // mix. Without a transport a track repeats until stopped; PlaybackTransport (AUD-006) adds pause,
 // seek and track changes through the members at the end of this file. Never opens an input. Every track is In-App Playback: the mode and
 // its label do not change with the track (Constitution IV, AUD-001-R18).
@@ -15,6 +15,9 @@ public enum InAppPlaybackTrack: Sendable, Hashable {
     /// A file in the app's own audio library (`AudioLibrary.fileURL(for:)`). Never a picked or
     /// security-scoped URL, and never persisted (AUD-001-R3).
     case file(URL)
+    /// A reference-tone fixture, generated in memory at 48 kHz stereo when it is loaded and played
+    /// as a 10 s loop (AUD-016-R15, R19, R23). Never written to disk and never persisted.
+    case tone(ReferenceToneFixture)
 }
 
 /// Platform seam (AVAudioEngine + AVAudioPlayerNode in production, a fake in tests).

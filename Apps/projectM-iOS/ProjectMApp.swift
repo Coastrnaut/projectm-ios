@@ -1,6 +1,7 @@
 // ProjectMApp.swift — the visualizer app (Stage 2; tasks T080, T082). The screen follows
 // AppCoordinator: photosensitivity notice (first launch) → source chooser → full-screen visualizer.
-// The chooser also lists the user's imported audio and opens the Files picker for it (AUD-001).
+// The chooser also lists the user's imported audio and opens the Files picker for it (AUD-001),
+// and offers generated test signals under Diagnostics (AUD-016).
 import CaptureUI
 import SwiftUI
 import UniformTypeIdentifiers
@@ -36,6 +37,8 @@ struct RootView: View {
                                          onImport: { coordinator.importAudio() },
                                          onPlay: { coordinator.play($0) },
                                          onRemove: { coordinator.removeImported($0) })
+                    // AUD-016: generated test signals, one level down; nothing plays until one is tapped.
+                    TestSignalsSection { coordinator.playTestSignal($0) }
                 })
                 .navigationTitle("Choose source")
             }

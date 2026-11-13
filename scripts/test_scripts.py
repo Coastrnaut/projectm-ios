@@ -1099,5 +1099,14 @@ class SetupMacTests(unittest.TestCase):
         self.assertNotIn("DEVELOPMENT_TEAM =", source.replace("`DEVELOPMENT_TEAM = <team ID>`", ""))
 
 
+class ReferenceToneGoldensTests(unittest.TestCase):
+    """AUD-016: an independent Python port reproduces the Swift generator's golden hashes."""
+
+    def test_python_port_matches_the_swift_goldens(self):
+        import check_reference_tone_goldens as crtg
+        with mock.patch("builtins.print"):
+            self.assertEqual(crtg.main(), 0)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
