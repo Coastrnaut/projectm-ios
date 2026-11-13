@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T16:49:16Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T17:01:40Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,18 +9,20 @@
 
 | State | Features |
 |---|---|
-| audited | 277 |
+| audited | 274 |
+| implementing | 2 |
+| unit_passed | 1 |
 | integrated | 48 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | integrated | skipped_existing |
-|---|---|---|---|
-| P0 | 49 | 37 | 1 |
-| P1 | 140 | 11 | 0 |
-| P2 | 79 | 0 | 0 |
-| P3 | 9 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 47 | 1 | 1 | 37 | 1 |
+| P1 | 139 | 1 | 0 | 11 | 0 |
+| P2 | 79 | 0 | 0 | 0 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -283,6 +285,10 @@ None.
 - `swift test --package-path Packages/Compositor`: pass at `88b2544a2588` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-001/20261113T113607/swift-test_Compositor.log`)
 - `post-merge (with the VIS-002-F1 picker rows): projectM-iOSTests 172 incl. CameraVisualTests, CameraUITests 2 (10.0 s, 11.2 s), NativeVisual 4, Glow 2, LinearSpectrum 1, OSC 1 UI tests on iPhone 17 iOS 27.2 sim; SettingsUITests 4 pass after the scroll fix`: pass at `05ef3cb4e24b` (log `.autonomous/logs/integration/cam-001/app-tests.log`)
 - `post-merge: Compositor xcodebuild test on iPhone 17 sim (61)`: pass at `05ef3cb4e24b` (log `.autonomous/logs/integration/cam-001/compositor-sim.log`)
+
+### CAM-012 Camera privacy status (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `3e408a740a3b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-012/20261113T120140/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `3e408a740a3b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-012/20261113T120140/docs.log`)
 
 ### CMP-001 Unified layer protocol (integrated)
 - `python3 scripts/check_compliance.py`: pass at `19d1bd7e65a2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-001/20261113T110629/compliance.log`)
