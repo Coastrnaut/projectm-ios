@@ -202,6 +202,20 @@ public struct ShowCueList: Sendable, Hashable {
         return cue
     }
 
+    /// Inserts a cue right after the cue `after` (SCN-003 Duplicate Scene). The label is trimmed; the
+    /// position keeps its cue.
+    @discardableResult
+    public mutating func insert(sceneID: String, label: String, after: UUID, cueID: UUID = UUID()) throws(ShowEditError) -> ShowCue {
+        guard let index = cues.firstIndex(where: { (cue: ShowCue) -> Bool in cue.id == after }) else { throw .unknownCue(after) }
+        guard cues.count < Self.maximumCues else { throw .tooManyCues(limit: Self.maximumCues) }
+        guard Self.isSceneID(sceneID) else { throw .invalidSceneID(sceneID) }
+        guard let label = Self.normalizedLabel(label) else { throw .invalidLabel }
+        guard !cues.contains(where: { (cue: ShowCue) -> Bool in cue.id == cueID }) else { throw .duplicateCueID(cueID) }
+        let cue = ShowCue(id: cueID, sceneID: sceneID, label: label)
+        cues.insert(cue, at: index + 1)
+        return cue
+    }
+
     /// Removes a cue. Removing the active cue makes the cue before it active without showing it
     /// (Standby if it was first), so Next plays the cue that followed the removed one.
     @discardableResult
@@ -233,6 +247,16 @@ public struct ShowCueList: Sendable, Hashable {
     }
 
     // MARK: - Rules
+
+    /// "<label> copy" for a duplicated scene's cue, the label shortened so it fits 80 characters
+    /// (SCN-003).
+    public static func copyLabel(_ label: String) -> String {
+        let suffix = " copy"
+        let base = normalizedLabel(label) ?? "Cue"
+        let room = maximumLabelLength - suffix.count
+        let shortened = base.count > room ? (normalizedLabel(String(base.prefix(room))) ?? "Cue") : base
+        return shortened + suffix
+    }
 
     /// Trimmed text of 1…80 characters with no line breaks, or nil.
     public static func normalizedLabel(_ text: String) -> String? {

@@ -8,6 +8,8 @@
 // the show that refers to them; after the show is saved, scene files no cue refers to are removed.
 // A scene file that is missing, unreadable or whose document id differs from its name is reported
 // per scene, never fatal for the show. No networking; nothing read is executed.
+// SCN-003: Duplicate writes a copy under a new ID (never over another file) and Rename rewrites a scene
+// under its own ID; scenes share stored photos and videos by store ID (`referencedMediaIDs`).
 import Foundation
 import SceneFormat
 import ShowControl
@@ -29,6 +31,35 @@ public enum ShowSceneReadError: Error, Sendable, Hashable, CustomStringConvertib
         case let .unreadable(error): "The scene could not be read: \(error)"
         case let .mismatchedID(found): "The scene file holds scene \(found)."
         }
+    }
+}
+
+/// Why a duplicate or rename was refused (SCN-003; nothing was written).
+public enum ShowSceneEditError: Error, Sendable, Hashable, CustomStringConvertible {
+    case unreadable(ShowSceneReadError)
+    case invalid(SceneEditError)
+    /// A scene file with the copy's ID already exists.
+    case sceneIDTaken(String)
+    case writeFailed
+
+    public var description: String {
+        switch self {
+        case let .unreadable(error): error.description
+        case let .invalid(error): error.description
+        case let .sceneIDTaken(id): "A scene \(id) is already stored."
+        case .writeFailed: "The scene could not be saved."
+        }
+    }
+}
+
+/// Stored photo and video IDs that scenes refer to (SCN-003-R9).
+public struct StoredMediaReferences: Sendable, Hashable {
+    public var photos: Set<String>
+    public var videos: Set<String>
+
+    public init(photos: Set<String> = [], videos: Set<String> = []) {
+        self.photos = photos
+        self.videos = videos
     }
 }
 
@@ -135,6 +166,76 @@ public struct ShowStore: Sendable {
             let id = String(name.dropLast(Self.sceneFileSuffix.count))
             return ShowCueList.isSceneID(id) ? id : nil
         })
+    }
+
+    // MARK: - Duplicate and rename (SCN-003; contract D3)
+
+    /// Reads `sceneID`, stores a copy under `newID` named `name` (written whole), and returns it. The
+    /// original's file is never written. Refuses an unreadable original, an invalid name or ID, and an
+    /// ID that already has a file (a duplicate never replaces another scene). Call before saving the
+    /// show whose new cue refers to the copy.
+    @discardableResult
+    public func duplicateScene(_ sceneID: String, newID: String, name: String) throws(ShowSceneEditError) -> SceneDocument {
+        let original = try readForEdit(sceneID)
+        let copy: SceneDocument
+        do {
+            copy = try original.duplicated(newID: newID, name: name)
+        } catch {
+            throw .invalid(error)
+        }
+        guard !FileManager.default.fileExists(atPath: sceneFile(newID).path) else { throw .sceneIDTaken(newID) }
+        do throws(ShowStoreError) {
+            try saveScene(copy)
+        } catch {
+            throw .writeFailed
+        }
+        return copy
+    }
+
+    /// Rewrites `sceneID`'s file (written whole) with the new name and returns the scene; its ID, file
+    /// name and every cue that refers to it are unchanged. An invalid name leaves the file as it was.
+    @discardableResult
+    public func renameScene(_ sceneID: String, to name: String) throws(ShowSceneEditError) -> SceneDocument {
+        let original = try readForEdit(sceneID)
+        let renamed: SceneDocument
+        do {
+            renamed = try original.renamed(to: name)
+        } catch {
+            throw .invalid(error)
+        }
+        do throws(ShowStoreError) {
+            try saveScene(renamed)
+        } catch {
+            throw .writeFailed
+        }
+        return renamed
+    }
+
+    /// Every photo and video store ID named by a readable stored scene, read from the files on each
+    /// call (never a stored count, so it cannot drift). Scenes share stored media by ID (SCN-003-R9):
+    /// whatever deletes stored media (FILE-011 erase) must keep the IDs listed here or accept the
+    /// "no longer stored" notice on those scenes. Removing a scene file never deletes media.
+    public func referencedMediaIDs() -> StoredMediaReferences {
+        var references = StoredMediaReferences()
+        for id in storedSceneIDs() {
+            guard let document = try? scene(id).document else { continue }
+            for asset in document.assets.values {
+                switch asset.kind {
+                case let .photo(storeID): references.photos.insert(storeID)
+                case let .video(storeID): references.videos.insert(storeID)
+                default: break
+                }
+            }
+        }
+        return references
+    }
+
+    private func readForEdit(_ sceneID: String) throws(ShowSceneEditError) -> SceneDocument {
+        do {
+            return try scene(sceneID).document
+        } catch {
+            throw .unreadable(error)
+        }
     }
 
     // MARK: - Private

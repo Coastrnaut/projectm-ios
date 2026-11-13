@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T22:17:59Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T22:44:02Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,23 +9,24 @@
 
 | State | Features |
 |---|---|
-| audited | 242 |
-| integrated | 83 |
+| audited | 238 |
+| implementing | 2 |
+| integrated | 85 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | integrated | skipped_existing |
-|---|---|---|---|
-| P0 | 19 | 67 | 1 |
-| P1 | 137 | 14 | 0 |
-| P2 | 77 | 2 | 0 |
-| P3 | 9 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 15 | 2 | 69 | 1 |
+| P1 | 137 | 0 | 14 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 242 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
+- 240 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
 
 ## Integrated
 
@@ -97,6 +98,7 @@ The physical-device suite may **not** start:
 | PRE-014 | Bulk preset export | `a20ba4bafb5e` | `feature/pre-014` |
 | PRE-015 | User preset duplication | `c6cce9988587` | `feature/pre-015` |
 | QA-002 | Golden render scenes | `dffa2be908f5` | `feature/qa-002` |
+| QA-005 | Import fuzz suite | `d7faef231370` | `feature/qa-005` |
 | QA-007 | Audio source contract suite | `32172fdd5795` | `feature/qa-007` |
 | REC-001 | Still frame capture | `5666cc2332ff` | `feature/rec-001` |
 | REC-003 | Video recording | `bf82b49836a5` | `feature/rec-003` |
@@ -104,6 +106,7 @@ The physical-device suite may **not** start:
 | REC-015 | Recording disk guard | `d1a76394fab1` | `feature/rec-015` |
 | SCN-001 | Versioned scene format | `c3886d1cb0bb` | `feature/scn-001` |
 | SCN-002 | Scene autosave | `1aa354c0b623` | `feature/scn-002` |
+| SCN-003 | Scene duplicate and rename | `4936d8fcd1d3` | `feature/scn-003` |
 | SHD-001 | Procedural material catalog | `ade4dfec39a5` | `feature/shd-001` |
 | SHD-002 | Node-based generator graph | `e91692538b99` | `feature/shd-002` |
 | SHD-009 | Expression mapping DSL | `d84b02f95a85` | `feature/shd-009` |
@@ -628,6 +631,12 @@ None.
 - `swift test --package-path Packages/RenderGoldens`: pass at `494ac9eeb8d4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-002/20261113T162728/swift-test_RenderGoldens.log`)
 - `post-merge: RenderGoldens on iOS 27.2 sim (35, 7 scenes x 2 sizes against the simulator goldens), host in the gate, Linux shape (GPU compiled out)`: pass at `dffa2be908f5` (log `.autonomous/logs/integration/qa-002/goldens-sim.log`)
 
+### QA-005 Import fuzz suite (integrated)
+- `python3 scripts/check_compliance.py`: pass at `e4bdc6cdaf96` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-005/20261113T174006/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `e4bdc6cdaf96` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-005/20261113T174006/docs.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `e4bdc6cdaf96` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-005/20261113T174006/swift-test_ImportFuzz.log`)
+- `post-merge: ImportFuzz 15 suites on host (gate) and Linux shape; 12,040 default inputs, 0 violations; larger on-demand runs 155,200 inputs, 0 violations (agent)`: pass at `d7faef231370` (log `.autonomous/logs/integration/qa-005/linux.log`)
+
 ### QA-007 Audio source contract suite (integrated)
 - `python3 scripts/check_compliance.py`: pass at `1985f0c1e666` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-007/20261112T210720/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `1985f0c1e666` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-007/20261112T210720/docs.log`)
@@ -680,6 +689,16 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `ce5c83d6d82a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-002/20261113T163028/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `ce5c83d6d82a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-002/20261113T163028/swift-test_SceneFormat.log`)
 - `post-merge: projectM-iOSTests 297 incl. 20 autosave tests; SceneAutosaveUITests kill-and-relaunch 19.9 s, NativeVisual 4, TextOverlay, LinearSpectrum UI tests on iOS 27.2 sim`: pass at `1aa354c0b623` (log `.autonomous/logs/integration/scn-002/app-tests.log`)
+
+### SCN-003 Scene duplicate and rename (integrated)
+- `python3 scripts/check_compliance.py`: pass at `0186ee96ba05` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-003/20261113T174126/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `0186ee96ba05` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-003/20261113T174126/docs.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `0186ee96ba05` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-003/20261113T174126/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `0186ee96ba05` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-003/20261113T174126/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `0186ee96ba05` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-003/20261113T174126/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `0186ee96ba05` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-003/20261113T174126/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `0186ee96ba05` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-003/20261113T174126/swift-test_ShowControl.log`)
+- `post-merge: projectM-iOSTests incl. ShowSceneEditCoordinatorTests; SceneDuplicateUITests, ShowCueUITests 2 on iOS 27.2 sim; SceneFormat 48 and ShowControl 25 in the gate`: pass at `4936d8fcd1d3` (log `.autonomous/logs/integration/scn-003/app-tests.log`)
 
 ### SHD-001 Procedural material catalog (integrated)
 - `python3 scripts/check_compliance.py`: pass at `67186e7fa06d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-001/20261113T120524/compliance.log`)

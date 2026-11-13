@@ -45,6 +45,21 @@ extension SceneLayerContent {
 }
 
 extension SceneDocument {
+    /// The SCN-001 name rule, shared with SCN-003's rename and duplicate (SceneEditing.swift): 1…120
+    /// characters (grapheme clusters) once white space is trimmed from both ends, and no control
+    /// characters (which also excludes line breaks and tabs).
+    public static func isValidName(_ name: String) -> Bool {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed.count <= SceneLimits.maximumNameLength else { return false }
+        return !name.unicodeScalars.contains { (s: Unicode.Scalar) -> Bool in s.properties.generalCategory == .control }
+    }
+
+    /// The text to store for a typed name: trimmed, or nil when it breaks the rule.
+    public static func normalizedName(_ text: String) -> String? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return isValidName(trimmed) ? trimmed : nil
+    }
+
     /// Every issue, in contract C5 order. Decode warnings are returned by `decode` separately.
     public func validate(registry: ParameterRegistry, assets availability: (any SceneAssetAvailability)? = nil) -> [SceneIssue] {
         var issues: [SceneIssue] = []
@@ -60,9 +75,7 @@ extension SceneDocument {
         if !Self.isCanonicalUUID(id) {
             issues.append(SceneIssue(.invalidSceneID, path: "$.id", "The scene ID \"\(id)\" is not an uppercase UUID."))
         }
-        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        let hasControl = name.unicodeScalars.contains { (s: Unicode.Scalar) -> Bool in s.properties.generalCategory == .control }
-        if trimmed.isEmpty || trimmed.count > SceneLimits.maximumNameLength || hasControl {
+        if !Self.isValidName(name) {   // one rule with SCN-003's rename and duplicate (SceneEditing.swift)
             issues.append(SceneIssue(.invalidName, path: "$.name",
                                      "The scene name must be 1…\(SceneLimits.maximumNameLength) characters without control characters."))
         }
