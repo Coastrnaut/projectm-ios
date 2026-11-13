@@ -122,9 +122,9 @@ stores' files and identifiers byte-for-byte unchanged afterwards.
 - **FILE-001-R10**: Import MUST import each asset through the stores' normal import checks (sanitizer, size caps, MED-014), into a staging folder first.
 - **FILE-001-R11**: Import MUST replace the photo/video assets' store IDs with the new store IDs and change nothing else in the scene; the result MUST validate with every reference resolving in the stores.
 - **FILE-001-R12**: Import MUST be all-or-nothing: on any failure, the stores' files and identifiers are unchanged and staged files are removed; on success, the previous photo/video (of the imported types only) are deleted after the switch, and the result names which were replaced.
+- **FILE-001-R13**: The format code (manifest, paths, content checks, remapping, reading and writing) MUST be plain Swift, read no files, use no network, and build and pass its tests on Linux.
 - **FILE-001-R14**: Every asset record's path MUST be exactly `assets/<key>.<ext>` (photo `png`/`jpg`, video `mov`); the PRE-014 reader MUST refuse ZIP entries marked as symbolic links or any non-regular file type.
 - **FILE-001-R15**: The exported file MUST be named `projectM-iOS Scene <local date>.pmscene` and its media bytes MUST be the stored copies unchanged.
-- **FILE-001-R13**: The format code (manifest, paths, content checks, remapping, reading and writing) MUST be plain Swift, read no files, use no network, and build and pass its tests on Linux.
 
 ### Key Entities
 
