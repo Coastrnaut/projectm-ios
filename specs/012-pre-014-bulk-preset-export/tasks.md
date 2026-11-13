@@ -20,9 +20,9 @@ Paths: `LP` = `Packages/LocalPortability`, `UP` =
   iOS 26 / macOS 15, library `LocalPortability`, test target `LocalPortabilityTests`, no
   dependencies; Foundation only) and add `.package(path: "../LocalPortability")` to
   `Packages/PresetLibrary/Package.swift`. Evidence: `swift build` of both packages. — Verified 2026-11-12: `swift build` of LocalPortability and PresetLibrary (with the new dependency) succeeded; PresetLibrary 166 tests still pass.
-- [ ] PRE-014-T02 [P] {mac} Wire the package: `project.yml` `packages:` entry, and
+- [X] PRE-014-T02 [P] {mac} Wire the package: `project.yml` `packages:` entry, and
   `LocalPortability` in every package loop of `.github/workflows/ios-ci.yml` (Linux, macOS host,
-  generic iOS compile, both simulator loops). Evidence: `xcodegen generate` succeeds; diff review.
+  generic iOS compile, both simulator loops). Evidence: `xcodegen generate` succeeds; diff review. — Verified 2026-11-12: `xcodegen generate` succeeded with the new package entry; the app builds and its tests run against it; every `for pkg in` loop of ios-ci.yml (5) lists LocalPortability (diff reviewed); `xcodebuild test` of the package on the iOS 27.2 simulator: 51 tests pass. CI itself not run (no push from this worktree).
 
 ## Phase 2: Foundational (container, checksums, paths; blocks every story)
 
@@ -89,9 +89,9 @@ Independent test: `swift test --package-path Packages/PresetLibrary --filter Use
   (`UserPresetArchiveFormat`, `ExportedUserPreset`, `UserPresetArchiveManifest`,
   `UserPresetArchive`, `UserPresetArchiveWriter`, `UserPresetArchiveReader`,
   `UserPresetArchiveError` with the contract's words). Evidence: T11 passes. — Verified 2026-11-12: UserPresetArchiveTests 19 pass (1 skipped by design: the interoperability writer without EXPORT_FIXTURE_OUT); golden SHA-256 ad40f883…3794; the golden manifest matches the schema's keys, required fields, patterns and constants (Python key check; no jsonschema module on this Mac).
-- [ ] PRE-014-T13 [US2] {mac} Interoperability: write the golden archive to a file and check it
+- [X] PRE-014-T13 [US2] {mac} Interoperability: write the golden archive to a file and check it
   with `unzip -t` and Python's `zipfile` (`testzip()` is `None`, names as expected). Evidence:
-  the command output in `docs/test-reports/preset-export.md`.
+  the command output in `docs/test-reports/preset-export.md`. — Verified 2026-11-12: golden archive checked with `unzip -t` (no errors) and Python zipfile (`testzip()` None, method 0, flag 0x0800, mode 0644); output in docs/test-reports/preset-export.md.
 
 ## Phase 4: User Story 3 - Paid and unsafe content never leaves (P1)
 
@@ -120,46 +120,46 @@ Independent test: `swift test --package-path Packages/PresetLibrary --filter Use
 Goal: select, export, summary, share sheet, cleanup.
 Independent test: app unit tests and `UserPresetExportUITests` on the simulator.
 
-- [ ] PRE-014-T16 [US1] {sim} Write `APP/Tests/UserPresetExportAppTests.swift`: the coordinator
+- [X] PRE-014-T16 [US1] {sim} Write `APP/Tests/UserPresetExportAppTests.swift`: the coordinator
   with a temporary library: `prepareExport()` lists the exportable presets all selected with the
   exclusion words; `export(ids:)` writes a file under `<tmp>/PresetExport/` that
   `UserPresetArchiveReader` reads with the selected presets only; `finishSharing()` deletes it
   (S5); `load()` deletes leftovers; Export is unavailable while importing and for a newer record;
-  the summary is announced. Record the red run.
-- [ ] PRE-014-T17 [US1] {sim} Implement the export section of
+  the summary is announced. Record the red run. — Verified 2026-11-12: red run: `xcodebuild build-for-testing` failed (`UserPresetsCoordinator` has no `prepareExport`, `export`, `exportPlan`, `finishSharing`, `exportFile`, `canExport`); 8 tests.
+- [X] PRE-014-T17 [US1] {sim} Implement the export section of
   `APP/Coordinators/UserPresetsCoordinator.swift` (state, temporary folder, cleanup, DEBUG hook
-  `-uitestExportPresetTo`, app version from the bundle). Evidence: T16 passes.
-- [ ] PRE-014-T18 [US1] {sim} Implement `APP/Views/UserPresetExportView.swift` (selection sheet,
+  `-uitestExportPresetTo`, app version from the bundle). Evidence: T16 passes. — Verified 2026-11-12: UserPresetExportAppTests 8 pass on the iOS 27.2 simulator (runs 1-3).
+- [X] PRE-014-T18 [US1] {sim} Implement `APP/Views/UserPresetExportView.swift` (selection sheet,
   Select All / None, count, exclusions footer, Export, summary, share sheet representable with
   completion → `finishSharing`) and the "Export…" toolbar button in `APP/Views/UserPresetsView.swift`;
-  accessibility identifiers and labels per the contract; Dynamic Type safe (labels wrap).
-- [ ] PRE-014-T19 [US1] {sim} Write `APP/UITests/UserPresetExportUITests.swift`: import a preset
+  accessibility identifiers and labels per the contract; Dynamic Type safe (labels wrap). — Verified 2026-11-12: built with no new warnings; exercised by UserPresetExportUITests (selection, Select All/None, summary, share sheet screenshot) and the XXXL test.
+- [X] PRE-014-T19 [US1] {sim} Write `APP/UITests/UserPresetExportUITests.swift`: import a preset
   (`-uitestImportPreset`), open My Presets → Export…, the row is selected, Select None disables
   Export, Select All enables it, Export → the summary says "Exported 1 preset" and the share sheet
   appears; the archive copied by `-uitestExportPresetTo` starts with `PK\u{3}\u{4}` and contains
   `manifest.json` and the preset name; a second launch at the accessibility text size
   (`-UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityXXXL`) still shows a
-  hittable Export button and row (R17). Evidence: the test passes; red run recorded before T18.
+  hittable Export button and row (R17). Evidence: the test passes; red run recorded before T18. — Verified 2026-11-12: 2 tests pass in runs 2 and 3; the archive copied by `-uitestExportPresetTo` is checked; the red run was NOT recorded before T18 (the view was written first).
 
 ## Phase 6: User Story 4 - Hostile archives refused (P2)
 
-- [ ] PRE-014-T20 [US4] {mac} Confirm coverage: every refusal in contract §3-4 has a test in T07,
+- [X] PRE-014-T20 [US4] {mac} Confirm coverage: every refusal in contract §3-4 has a test in T07,
   T09 or T11 (table in `docs/test-reports/preset-export.md`); add any missing test. Evidence:
-  the table with test names.
+  the table with test names. — Verified 2026-11-12: refusal table with test names in docs/test-reports/preset-export.md; no case was missing.
 
 ## Phase 7: Polish
 
-- [ ] PRE-014-T21 [P] {mac} `docs/privacy-policy.md`: one sentence in the PRE-012 paragraph
-  (export leaves only through the user's share action; no purchase data). Evidence: diff.
-- [ ] PRE-014-T22 {mac} `docs/test-reports/preset-export.md`: commands, counts, golden hash,
-  interoperability output, the refusal table, what is not verified.
-- [ ] PRE-014-T23 {mac} Gates: `python3 scripts/check_compliance.py`, `python3
+- [X] PRE-014-T21 [P] {mac} `docs/privacy-policy.md`: one sentence in the PRE-012 paragraph
+  (export leaves only through the user's share action; no purchase data). Evidence: diff. — Verified 2026-11-12: one passage added to the PRE-012 paragraph of docs/privacy-policy.md (diff reviewed).
+- [X] PRE-014-T22 {mac} `docs/test-reports/preset-export.md`: commands, counts, golden hash,
+  interoperability output, the refusal table, what is not verified. — Verified 2026-11-12: docs/test-reports/preset-export.md written.
+- [X] PRE-014-T23 {mac} Gates: `python3 scripts/check_compliance.py`, `python3
   scripts/validate_docs.py`, `python3 scripts/test_scripts.py`; `swift test` for `LP` and
   `PresetLibrary` twice; `grep` shows no `print`, `Logger` or `os_log` call in the export files
-  (R20). Evidence: outputs in the report.
-- [ ] PRE-014-T24 {sim} App unit tests, `UserPresetsUITests`, `UserPresetEditingUITests`,
+  (R20). Evidence: outputs in the report. — Verified 2026-11-12: check_compliance OK, validate_docs OK, test_scripts 97 tests OK; LocalPortability 51 and PresetLibrary 194 (2 skipped) pass twice; grep finds no print/Logger/os_log/NSLog in the export files.
+- [X] PRE-014-T24 {sim} App unit tests, `UserPresetsUITests`, `UserPresetEditingUITests`,
   `UserPresetExportUITests` on the simulator, twice. Evidence: `Executed N tests` lines in the
-  report (known environmental failure `PresetTests.testBundledIncludedScopeMatchesRelease1_0`).
+  report (known environmental failure `PresetTests.testBundledIncludedScopeMatchesRelease1_0`). — Verified 2026-11-12: app unit tests 116 (1 known environmental failure) in runs 1-3; the 8 user-preset UI tests pass in runs 2 and 3 after fixing the XXXL tap retry (run 1 failures diagnosed in the report).
 - [ ] PRE-014-T25 {device} Final device phase: on D1 export three presets (two imports, an
   Included copy) with a pack copy present, Save to Files, open the ZIP in Files, check the pack
   copy is absent; repeat on D3 (iPadOS 26.5, popover share sheet). Not run here (ADR-0008
