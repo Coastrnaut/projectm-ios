@@ -6,6 +6,8 @@
 // Roadmap PRE-007: the home also leads to the user's collections, and every preset row offers
 // "Add to Collection" (touch and hold, or swipe right).
 // Roadmap PRE-012: the home leads to My Presets (imported presets, Import Preset…, Quarantine).
+// Roadmap PRE-015: every built-in preset row offers "Duplicate to My Presets", every playable
+// user preset row offers "Edit" (context menu, VoiceOver action; PRE-015-R1, R9).
 import PresetLibrary
 import SwiftUI
 
@@ -64,6 +66,9 @@ struct PresetBrowserView: View {
             }
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         }
+        // PRE-015: on the stack itself, so it shows over whichever list the row is in.
+        .duplicateResultAlert(userPresets, isPresented: true)
+        .environment(userPresets)   // PRE-015: rows duplicate and edit through it
         .accessibilityIdentifier("presetBrowser")
     }
 
@@ -134,6 +139,20 @@ struct PresetBrowserView: View {
     }
 }
 
+extension View {
+    /// The result of "Duplicate to My Presets" (PRE-015). `isPresented` lets the visualizer show
+    /// it only while the browser, which shows its own, is closed.
+    func duplicateResultAlert(_ userPresets: UserPresetsCoordinator, isPresented: Bool) -> some View {
+        alert("Duplicate to My Presets",
+              isPresented: Binding(get: { isPresented && userPresets.duplicateMessage != nil },
+                                   set: { if !$0 { userPresets.duplicateMessage = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(userPresets.duplicateMessage ?? "")
+        }
+    }
+}
+
 struct FolderRow: View {
     let title: String
     let count: Int
@@ -174,9 +193,31 @@ struct PresetRow: View {
     var user: UserActions?
     let onChoose: () -> Void
     @State private var addingToCollection = false
+    /// PRE-015: duplicating and editing; absent outside the browser.
+    @Environment(UserPresetsCoordinator.self) private var userPresets: UserPresetsCoordinator?
+    @State private var editing: UserPreset?
+
+    private var isBundled: Bool { preset.source != PresetLibrary.userSource }
+
+    private func duplicate() {
+        guard let userPresets else { return }
+        Task { await userPresets.duplicate(preset) }
+    }
+
+    private func edit() {
+        editing = userPresets?.editableRecord(for: preset)
+    }
+
+    private var duplicateAction: (() -> Void)? {
+        guard isBundled, userPresets != nil else { return nil }
+        return { duplicate() }
+    }
+
+    private var editAction: () -> Void { { edit() } }
 
     var body: some View {
         let locked = presets.isLocked(preset)
+        let editable = userPresets?.editableRecord(for: preset) != nil
         let favorite = presets.isFavorite(preset)
         HStack {
             Button(action: onChoose) {
@@ -198,6 +239,7 @@ struct PresetRow: View {
             .accessibilityAction(named: "Add to Collection") { addingToCollection = true }
             .modifier(CollectionMoveActions(presets: presets, preset: preset, collection: collection))
             .modifier(UserPresetActions(user: user))
+            .modifier(CopyActions(duplicate: duplicateAction, edit: editable ? editAction : nil))
             Button {
                 presets.toggleFavorite(preset)
             } label: {
@@ -231,10 +273,23 @@ struct PresetRow: View {
                     .accessibilityIdentifier("removeUserPreset")
                 Button(action: user.info) { Label("Info", systemImage: "info.circle") }
                     .accessibilityIdentifier("userPresetInfo")
+                if editable {
+                    Button(action: edit) { Label("Edit", systemImage: "pencil") }
+                        .tint(.blue)
+                        .accessibilityIdentifier("editUserPresetSwipe")
+                }
             }
         }
         .contextMenu {
             Button { addingToCollection = true } label: { Label("Add to Collection…", systemImage: "folder.badge.plus") }
+            if isBundled && userPresets != nil {
+                Button(action: duplicate) { Label("Duplicate to My Presets", systemImage: "plus.square.on.square") }
+                    .accessibilityIdentifier("duplicatePreset")
+            }
+            if editable {
+                Button(action: edit) { Label("Edit", systemImage: "pencil") }
+                    .accessibilityIdentifier("editUserPreset")
+            }
             if let user {
                 Button(action: user.info) { Label("Information", systemImage: "info.circle") }
                 Button(role: .destructive, action: user.remove) { Label("Remove from My Presets", systemImage: "trash") }
@@ -252,6 +307,25 @@ struct PresetRow: View {
             }
         }
         .sheet(isPresented: $addingToCollection) { AddToCollectionSheet(presets: presets, preset: preset) }
+        .sheet(item: $editing) { record in
+            if let userPresets { UserPresetEditorView(preset: record, userPresets: userPresets) }
+        }
+    }
+
+    /// VoiceOver actions for duplicating a built-in preset and editing a user preset (PRE-015-R1, R9).
+    private struct CopyActions: ViewModifier {
+        let duplicate: (() -> Void)?
+        let edit: (() -> Void)?
+
+        func body(content: Content) -> some View {
+            if let duplicate {
+                content.accessibilityAction(named: "Duplicate to My Presets", duplicate)
+            } else if let edit {
+                content.accessibilityAction(named: "Edit", edit)
+            } else {
+                content
+            }
+        }
     }
 
     /// VoiceOver actions for reordering and removing inside a collection (PRE-007-R18).

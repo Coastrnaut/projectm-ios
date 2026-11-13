@@ -7,6 +7,7 @@
 //   files/<sha256>.milk        copies of waiting and playable presets
 //   quarantine/<sha256>.milk   copies of quarantined files; nothing that plays presets reads here
 //   trial.json, proving.json   which preset is being tried / first shown (crash-loop protection)
+//   edit.json                  which preset's edited text is being tried (PRE-015-R13)
 //
 // * Stored names come from the content hash only; nothing from the picked file's name or
 //   location is ever used as a path (R4).
@@ -15,6 +16,11 @@
 // * A record from a newer app version is never interpreted or written; an unreadable one is set
 //   aside, not deleted.
 // * Files no record names are left alone.
+// * PRE-015-R19: every create, write, move, copy and delete goes through `perform`, which refuses a
+//   path that is not inside `directory` (after resolving `..` and symbolic links). Nothing here
+//   can touch the app bundle or the preset archive.
+// * PRE-015-R14, R22: texts stay content-addressed; `replaceContents` writes the new text, then
+//   the record, and deletes the old text last.
 // Not Sendable: owned by the `UserPresetLibrary` actor.
 import Foundation
 
@@ -40,19 +46,29 @@ public final class UserPresetStore {
         case trial
         /// The preset is on the visible renderer for the first time (R18).
         case proving
+        /// An edited text of the preset is being tried; the stored text is unchanged (PRE-015-R13).
+        case editCheck
 
-        var fileName: String { rawValue + ".json" }
+        var fileName: String { self == .editCheck ? "edit.json" : rawValue + ".json" }
     }
 
     public struct LeftoverRecord: Equatable, Sendable {
         public let phase: Phase
         public let presetID: String
+        /// For `editCheck`: the hash of the text that was being tried.
+        public var candidateSHA256: String?
     }
 
     private struct TrialRecord: Codable {
         var schemaVersion = 1
         var presetID: String
         var phase: Phase
+        var candidateSHA256: String?
+    }
+
+    /// What `perform` did (PRE-015-T04).
+    public enum FileOperation: Equatable, Sendable {
+        case createDirectory, write, move, copy, remove
     }
 
     public static let directoryName = "UserPresets"
@@ -76,15 +92,19 @@ public final class UserPresetStore {
     private let directory: URL
     private let indexURL: URL
     private let write: (Data, URL) throws -> Void
+    /// Sees every file operation before it is performed (tests, PRE-015-S3).
+    var fileOperationObserver: ((FileOperation, URL) -> Void)?
     private var migrationBackup: URL?
     /// An unreadable record could not be moved aside: saving would destroy it.
     private var savingBlocked = false
 
     public init(directory: URL,
                 write: @escaping (Data, URL) throws -> Void = { try $0.write(to: $1, options: .atomic) },
-                migrations: [Int: UserPresetsFile.Migration] = UserPresetsFile.migrations) {
+                migrations: [Int: UserPresetsFile.Migration] = UserPresetsFile.migrations,
+                observer: ((FileOperation, URL) -> Void)? = nil) {
         self.directory = directory
         self.write = write
+        fileOperationObserver = observer
         indexURL = directory.appendingPathComponent(Self.indexFileName)
         let files = FileManager.default
         guard files.fileExists(atPath: indexURL.path) else {
@@ -101,9 +121,9 @@ public final class UserPresetStore {
         } catch {
             availability = .available
             let aside = directory.appendingPathComponent(Self.unreadableFileName)
-            try? files.removeItem(at: aside)
+            try? removeFile(at: aside)
             loadNotice = .unreadableSetAside
-            if (try? files.moveItem(at: indexURL, to: aside)) == nil { savingBlocked = true }
+            if (try? moveFile(indexURL, to: aside)) == nil { savingBlocked = true }
         }
     }
 
@@ -128,16 +148,15 @@ public final class UserPresetStore {
             throw StoreError.saveFailed
         }
         let url = fileURL(preset)
-        let files = FileManager.default
-        let existed = files.fileExists(atPath: url.path)
+        let existed = FileManager.default.fileExists(atPath: url.path)
         do {
-            try files.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-            if !existed { try contents.write(to: url, options: .atomic) }
+            try createDirectory(url.deletingLastPathComponent())
+            if !existed { try writeFile(contents, to: url) }
         } catch {
             throw StoreError.saveFailed
         }
         guard save(presets + [preset]) else {
-            if !existed { try? files.removeItem(at: url) }
+            if !existed { try? removeFile(at: url) }
             removeIfEmpty(url.deletingLastPathComponent())
             throw StoreError.saveFailed
         }
@@ -156,13 +175,12 @@ public final class UserPresetStore {
         guard new != old else { return }
         guard new.isWellFormed else { throw StoreError.saveFailed }
         let from = fileURL(old), to = fileURL(new)
-        let files = FileManager.default
         var moved = false
         if from != to {
             do {
-                try files.createDirectory(at: to.deletingLastPathComponent(), withIntermediateDirectories: true)
-                try? files.removeItem(at: to)
-                try files.moveItem(at: from, to: to)
+                try createDirectory(to.deletingLastPathComponent())
+                try? removeFile(at: to)
+                try moveFile(from, to: to)
                 moved = true
             } catch {
                 throw StoreError.saveFailed
@@ -172,12 +190,42 @@ public final class UserPresetStore {
         draft[index] = new
         guard save(draft) else {
             if moved {
-                try? files.moveItem(at: to, to: from)
+                try? moveFile(to, to: from)
                 removeIfEmpty(to.deletingLastPathComponent())
             }
             throw StoreError.saveFailed
         }
         presets = draft
+    }
+
+    /// Replaces a waiting or playable preset's text (PRE-015-R14). `new` keeps the id and
+    /// describes `contents` (hashes, size). Order: new text, record, then the old text is
+    /// deleted. If the record cannot be saved the new text is removed and nothing changed.
+    public func replaceContents(_ id: String, with new: UserPreset, contents: Data) throws {
+        try requireWritable()
+        guard let index = presets.firstIndex(where: { $0.id == id }) else { throw StoreError.unknownPreset }
+        let old = presets[index]
+        let bytes = [UInt8](contents)
+        guard new.id == id, new.isWellFormed, old.state != .quarantined, new.state != .quarantined,
+              new.sha256 != old.sha256, preset(sha256: new.sha256) == nil,
+              new.byteCount == bytes.count, new.sha256 == ContentHash.sha256Hex(bytes),
+              new.blobHash == ContentHash.gitBlobSHA1Hex(bytes) else { throw StoreError.saveFailed }
+        let from = fileURL(old), to = fileURL(new)
+        let existed = FileManager.default.fileExists(atPath: to.path)
+        do {
+            try createDirectory(to.deletingLastPathComponent())
+            if !existed { try writeFile(contents, to: to) }
+        } catch {
+            throw StoreError.saveFailed
+        }
+        var draft = presets
+        draft[index] = new
+        guard save(draft) else {
+            if !existed { try? removeFile(at: to) }
+            throw StoreError.saveFailed
+        }
+        presets = draft
+        try? removeFile(at: from)   // no record names it any more
     }
 
     /// Removes the record, then its copy.
@@ -190,7 +238,7 @@ public final class UserPresetStore {
         guard save(draft) else { throw StoreError.saveFailed }
         presets = draft
         let url = fileURL(preset)
-        try? FileManager.default.removeItem(at: url)
+        try? removeFile(at: url)
         removeIfEmpty(url.deletingLastPathComponent())
     }
 
@@ -198,19 +246,20 @@ public final class UserPresetStore {
 
     /// Durably notes that `presetID` is being tried or first shown. Throws when it cannot be
     /// written: the caller must then not start.
-    public func writeRecord(_ phase: Phase, presetID: String) throws {
+    public func writeRecord(_ phase: Phase, presetID: String, candidateSHA256: String? = nil) throws {
         try requireWritable()
         do {
-            let data = try JSONEncoder().encode(TrialRecord(presetID: presetID, phase: phase))
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            try data.write(to: recordURL(phase), options: .atomic)
+            let data = try JSONEncoder().encode(TrialRecord(presetID: presetID, phase: phase, candidateSHA256: candidateSHA256))
+            try createDirectory(directory)
+            try writeFile(data, to: recordURL(phase))
         } catch {
             throw StoreError.saveFailed
         }
     }
 
     public func clearRecord(_ phase: Phase) {
-        try? FileManager.default.removeItem(at: recordURL(phase))
+        guard FileManager.default.fileExists(atPath: recordURL(phase).path) else { return }
+        try? removeFile(at: recordURL(phase))
         removeIfEmpty(directory)
     }
 
@@ -232,7 +281,7 @@ public final class UserPresetStore {
                 clearRecord(phase)
                 continue
             }
-            found.append(LeftoverRecord(phase: phase, presetID: record.presetID))
+            found.append(LeftoverRecord(phase: phase, presetID: record.presetID, candidateSHA256: record.candidateSHA256))
         }
         return found
     }
@@ -253,21 +302,20 @@ public final class UserPresetStore {
     private func recordURL(_ phase: Phase) -> URL { directory.appendingPathComponent(phase.fileName) }
 
     private func removeIfEmpty(_ folder: URL) {
-        let files = FileManager.default
-        if let items = try? files.contentsOfDirectory(atPath: folder.path), items.isEmpty { try? files.removeItem(at: folder) }
+        if let items = try? FileManager.default.contentsOfDirectory(atPath: folder.path), items.isEmpty { try? removeFile(at: folder) }
     }
 
     private func save(_ list: [UserPreset]) -> Bool {
         do {
             let data = try UserPresetsFile(presets: list).encode()
             guard data.count <= PresetImportLimits.maxIndexBytes else { return false }
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            try write(data, indexURL)
+            try createDirectory(directory)
+            try perform(.write, indexURL) { try write(data, indexURL) }
         } catch {
             return false
         }
         if let backup = migrationBackup {
-            try? FileManager.default.removeItem(at: backup)
+            try? removeFile(at: backup)
             migrationBackup = nil
         }
         return true
@@ -275,16 +323,64 @@ public final class UserPresetStore {
 
     /// Keeps the original until the migrated record is on disk (the PRE-007 rule).
     private func saveMigrated(from version: Int) {
-        let files = FileManager.default
         let backup = directory.appendingPathComponent("index.v\(version).backup.json")
-        try? files.removeItem(at: backup)
+        if FileManager.default.fileExists(atPath: backup.path) { try? removeFile(at: backup) }
         do {
-            try files.copyItem(at: indexURL, to: backup)
+            try perform(.copy, backup, also: indexURL) { try FileManager.default.copyItem(at: indexURL, to: backup) }
         } catch {
             savingBlocked = true
             return
         }
         migrationBackup = backup
         _ = save(presets)
+    }
+
+    // MARK: - The path guard (PRE-015-R19)
+
+    /// `url` as an absolute path with `.`, `..` and symbolic links of its existing part resolved.
+    static func canonicalPath(_ url: URL) -> String {
+        var existing = url.standardizedFileURL
+        var tail: [String] = []
+        let files = FileManager.default
+        while !files.fileExists(atPath: existing.path), existing.pathComponents.count > 1 {
+            tail.insert(existing.lastPathComponent, at: 0)
+            existing = existing.deletingLastPathComponent()
+        }
+        var path = existing.resolvingSymlinksInPath().standardizedFileURL.path
+        for component in tail { path = (path as NSString).appendingPathComponent(component) }
+        return (path as NSString).standardizingPath
+    }
+
+    /// True when `url` is the directory or inside it.
+    func contains(_ url: URL) -> Bool {
+        let root = Self.canonicalPath(directory)
+        let path = Self.canonicalPath(url)
+        return path == root || path.hasPrefix(root.hasSuffix("/") ? root : root + "/")
+    }
+
+    /// The one place a file operation happens. Refuses (`saveFailed`, nothing performed) when a
+    /// path is outside the directory.
+    private func perform(_ operation: FileOperation, _ url: URL, also other: URL? = nil, _ body: () throws -> Void) throws {
+        guard contains(url), other.map(contains) ?? true else { throw StoreError.saveFailed }
+        fileOperationObserver?(operation, url)
+        if let other { fileOperationObserver?(operation, other) }
+        try body()
+    }
+
+    func writeFile(_ data: Data, to url: URL) throws {
+        try perform(.write, url) { try data.write(to: url, options: .atomic) }
+    }
+
+    func removeFile(at url: URL) throws {
+        try perform(.remove, url) { try FileManager.default.removeItem(at: url) }
+    }
+
+    private func moveFile(_ from: URL, to: URL) throws {
+        try perform(.move, to, also: from) { try FileManager.default.moveItem(at: from, to: to) }
+    }
+
+    private func createDirectory(_ url: URL) throws {
+        guard !FileManager.default.fileExists(atPath: url.path) else { return }
+        try perform(.createDirectory, url) { try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true) }
     }
 }

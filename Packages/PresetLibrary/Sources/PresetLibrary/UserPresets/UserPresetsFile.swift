@@ -6,13 +6,22 @@
 import Foundation
 
 public struct UserPresetsFile: Codable, Sendable, Equatable {
-    public static let currentVersion = 1
+    /// Version 2 (PRE-015-R21): optional `duplicateOf` and `modifiedAt`, origin `bundledDuplicate`.
+    public static let currentVersion = 2
 
     public typealias Migration = @Sendable (Data) throws -> Data
 
-    /// Keyed by the version a step reads. Version 1 is the first format, so there are none yet;
-    /// a format change adds a step here and a golden fixture in the tests.
-    public static let migrations: [Int: Migration] = [:]
+    /// Keyed by the version a step reads. Each format change adds a step here and a golden
+    /// fixture in the tests (`Golden/user-presets-v<N>.json`).
+    public static let migrations: [Int: Migration] = [1: migrateVersion1]
+
+    /// 1 → 2: the new fields are optional and absent, so only the version changes. Pure.
+    @Sendable static func migrateVersion1(_ data: Data) throws -> Data {
+        guard var object = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              object["schemaVersion"] as? Int == 1 else { throw ReadError.unreadable }
+        object["schemaVersion"] = 2
+        return try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
+    }
 
     public enum ReadError: Error, Equatable, Sendable {
         case newerVersion(Int)
