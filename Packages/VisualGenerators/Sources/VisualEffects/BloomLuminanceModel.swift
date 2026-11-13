@@ -22,4 +22,16 @@ public struct BloomLuminanceModel: FrameLuminanceTransfer {
         guard gain > 0 else { return own }
         return own + gain * Double(parameters.thresholded(color).relativeLuminance)
     }
+
+    /// FX-019: own redness + k · redness(P(c)) bounds the composited redness (redness is subadditive).
+    public func outputRedness(ofFlatColor color: LinearColor) -> Double {
+        let own = Double(color.redness)
+        guard gain > 0 else { return own }
+        return own + gain * Double(parameters.thresholded(color).redness)
+    }
+
+    /// FX-019: the halo extent E = (R + 2) · D pixels (FX-001-D3), with no allocation.
+    public func spreadRadius(width: Int, height: Int) -> Double {
+        gain > 0 ? Double(BloomPlan.haloExtent(parameters: parameters, width: width, height: height)) : 0
+    }
 }

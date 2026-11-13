@@ -155,6 +155,15 @@ The heaviest preset (`Martin - The Beast Mandala Chaser FX H`, 24 ms per frame w
 costs 1.55 ms more with it. The limit: mean luminance changes at most 0.3 per second
 (`ANGLERenderer.flashLimitPerSecond`). The GLES fallback renderer has no post-pass.
 
+**FX-019 (2026-11-13, not measured on devices yet):** the pass above was replaced by the strobe
+safety envelope (ADR-0011, `specs/022-fx-019-strobe-safety-envelope/`): a 4 × 4 measure pass
+(4,096 exact sRGB samples, the same budget as the 64 × 64 mean), a 10 × 18 state pass and the
+output pass (exact sRGB, gain ≤ 1, no gray lift). It now runs on **every** frame, with Reduce
+flashing off too (the always-on cap), and the rise rate is 0.25 per second. The T104 figures above
+describe the old pass; RendererLab's `flashcost` mode still compares the pass with a bypassed
+baseline, and the device re-measurement on D1 is FX-019-T22 `{device}`. (The GLES fallback also
+runs the pass since T119.)
+
 ## Stage 2 success criteria (Gate 4)
 
 **Gate 4 waived by the owner on 2026-11-10 (T102 not required).** SC-005, SC-008, SC-013 and

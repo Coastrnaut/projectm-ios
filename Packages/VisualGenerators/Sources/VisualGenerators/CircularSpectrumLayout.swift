@@ -21,6 +21,7 @@ import Glibc
 #elseif canImport(Musl)
 import Musl
 #endif
+import FlashSafety
 
 /// One bar's geometry in pixels.
 public struct BarGeometry: Sendable, Equatable {
@@ -82,6 +83,9 @@ public final class CircularSpectrumLayout {
     private let bars: UnsafeMutablePointer<BarGeometry>
     private let values: UnsafeMutablePointer<Float>
     private let colors: UnsafeMutablePointer<LinearColor>
+    /// FX-019: the strobe safety envelope's area levels (`meanLevels`).
+    private let flashAreas = SpectrumFlashAreas()
+    private var generation = 0
 
     /// Always clamped; setting it recomputes the palette colors (no allocation).
     public var configuration: CircularSpectrumConfiguration {
@@ -145,6 +149,7 @@ public final class CircularSpectrumLayout {
         let inner = c.innerRadius * radiusUnit
         let length = c.lengthScale * radiusUnit
         let half = c.halfWidthDegrees
+        generation &+= 1
         for k in 0..<n {
             let v = k < bands.count ? sanitizedBandValue(bands[k]) : 0
             values[k] = v
@@ -239,5 +244,14 @@ public final class CircularSpectrumLayout {
         }
         sum += max(0, total - covered) * transfer.outputLuminance(ofFlatColor: background)
         return sum / total
+    }
+
+    /// The frame's levels in the strobe safety envelope's 17 areas (tiles 0…15 row-major from the
+    /// top, then the whole frame) when drawn with `gain` and passed through `transfer` (FX-019-R4;
+    /// SpectrumFlashAreas.swift). The whole frame equals `meanLuminance(gain:transfer:)`. Writes
+    /// `FlashZones.count` values; no allocation.
+    public func meanLevels<Transfer: FrameLuminanceTransfer>(gain: Float, transfer: Transfer,
+                                                             into out: UnsafeMutableBufferPointer<FlashLevels>) {
+        flashAreas.levels(of: self, generation: generation, gain: gain, transfer: transfer, into: out)
     }
 }

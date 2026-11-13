@@ -6,15 +6,14 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 59,
-   "implementing": 1,
-   "integrated": 26,
+   "audited": 57,
+   "implementing": 2,
+   "integrated": 27,
    "skipped_existing": 1
   },
   "P1": {
    "audited": 144,
-   "implementing": 1,
-   "integrated": 6
+   "integrated": 7
   },
   "P2": {
    "audited": 79
@@ -24,9 +23,9 @@
   }
  },
  "by_state": {
-  "audited": 291,
+  "audited": 289,
   "implementing": 2,
-  "integrated": 32,
+  "integrated": 34,
   "skipped_existing": 1
  },
  "device_gate": {
@@ -48,7 +47,6 @@
    "ACC-011",
    "ACC-012",
    "ANL-003",
-   "ANL-005",
    "ANL-006",
    "ANL-007",
    "ANL-008",
@@ -127,7 +125,6 @@
    "FX-016",
    "FX-017",
    "FX-018",
-   "FX-019",
    "FX-020",
    "MED-001",
    "MED-002",
@@ -331,7 +328,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "293 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
+   "291 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
   ]
  },
  "features": {
@@ -498,12 +495,12 @@
   "ANL-005": {
    "attempts": 0,
    "branch": "feature/anl-005",
-   "branch_sha": null,
+   "branch_sha": "cff52d8eb33b52ab8b15bd526627c5bb7c25c2c5",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "18a7b93483d6f967dbd5aac8efd9e378932959e5",
    "priority": "P1",
    "spec_dir": "specs/021-anl-005-adaptive-beat-tracker",
-   "state": "implementing"
+   "state": "integrated"
   },
   "ANL-006": {
    "attempts": 0,
@@ -607,13 +604,13 @@
   },
   "ANL-016": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/anl-016",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/024-anl-016-analysis-event-bus",
+   "state": "implementing"
   },
   "AUD-001": {
    "attempts": 1,
@@ -1508,12 +1505,12 @@
   "FX-019": {
    "attempts": 0,
    "branch": "feature/fx-019",
-   "branch_sha": null,
+   "branch_sha": "bc80d4775650339bf278d7d377ba8c4802689e75",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "6cfcbaabc8d039e71290067a1a0cf0069c7e67de",
    "priority": "P0",
    "spec_dir": "specs/022-fx-019-strobe-safety-envelope",
-   "state": "implementing"
+   "state": "integrated"
   },
   "FX-020": {
    "attempts": 0,
@@ -3407,13 +3404,13 @@
   },
   "VIS-002": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/vis-002",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/025-vis-002-linear-spectrum",
+   "state": "implementing"
   },
   "VIS-003": {
    "attempts": 0,
@@ -3613,6 +3610,11 @@
    "sha": "e1ae49c81d348731e7af056c400ae2610f50adf6"
   },
   {
+   "branch": "feature/anl-005",
+   "id": "ANL-005",
+   "sha": "18a7b93483d6f967dbd5aac8efd9e378932959e5"
+  },
+  {
    "branch": "feature/aud-001",
    "id": "AUD-001",
    "sha": "a2813ab3fa4f2cd2b8fb8597ca8f7b87943a9dea"
@@ -3723,6 +3725,11 @@
    "sha": "1192e0d6503e390abc9485e6e9382553b034a80a"
   },
   {
+   "branch": "feature/fx-019",
+   "id": "FX-019",
+   "sha": "6cfcbaabc8d039e71290067a1a0cf0069c7e67de"
+  },
+  {
    "branch": "feature/perf-011",
    "id": "PERF-011",
    "sha": "6d669fcb857695767ec2b785f74feb29f98d5978"
@@ -3783,5 +3790,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T14:12:44Z"
+ "updated": "2026-11-13T15:02:06Z"
 }

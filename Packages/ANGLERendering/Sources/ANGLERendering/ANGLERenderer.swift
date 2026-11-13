@@ -8,8 +8,10 @@
 // * Same frame loop as GLESRenderer: a CADisplayLink at up to 60 fps (30 under Low Power Mode or
 //   serious thermal state, FR-049), one NormalizedPCMReader read per frame, render to the window
 //   surface's default framebuffer (0), then eglSwapBuffers.
-// * Reduce flashing (FR-072, T104): the engine renders into FlashLimiter's offscreen texture and the
-//   limiter draws the frame with its mean luminance changing at most `flashLimitPerSecond`.
+// * Strobe safety envelope (FX-019, ADR-0011; Reduce flashing FR-072, T104): the engine renders into
+//   CFlashLimiter's offscreen texture on every frame and the pass draws it dimmed by the envelope's
+//   gain: `FlashEnvelopeConfiguration.reduceFlashing` while Reduce flashing is on, the always-on cap
+//   while it is off.
 // * Everything runs on the main thread, the engine's render thread, except PresetPrewarmer
 //   (feature 002 SC-104), which warms upcoming presets on its own thread and context, and
 //   PresetTrialRunner (PRE-012), which tries imported presets on a thread, context and engine of
@@ -22,6 +24,7 @@
 import AudioCore
 import CANGLE
 import CFlashLimiter
+import FlashSafety
 import Foundation
 import PresentationLifecycle
 import ProjectMBridge
@@ -41,15 +44,14 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     public var view: UIView { layerView }
     public private(set) var metrics = RenderMetrics.zero
     public private(set) var presentedFrameCount = 0
-    /// FR-072: limit rapid full-screen brightness changes (FlashLimiter.c). Turning it on starts from
-    /// the current brightness.
-    public var reduceFlashing = false {
-        didSet { if reduceFlashing != oldValue, let flashLimiter { PMFlashLimiterReset(flashLimiter) } }
-    }
-    /// While Reduce flashing is on, the frame's mean luminance (0-1, approximately linear) changes by
-    /// at most this much per second: a 10% full-screen change takes at least 1/3 s, so opposing
-    /// changes of that size stay well under 3 per second.
-    public static let flashLimitPerSecond: Float = 0.3
+    /// FR-072: selects the stricter envelope (FlashLimiter.c, FX-019). Toggling keeps the envelope's
+    /// history, so a strobe cannot restart its budget (FX-019-R11).
+    public var reduceFlashing = false
+    /// While Reduce flashing is on, every area's mean relative luminance rises at most this much per
+    /// second (FlashEnvelopeConfiguration.reduceFlashing; a 0.10 rise takes at least 0.4 s).
+    public static let flashLimitPerSecond = Float(FlashEnvelopeConfiguration.reduceFlashing.riseRatePerSecond ?? 0)
+    /// RendererLab's T104 baseline: frames bypass the pass (`timedFrames(_:reduceFlashing: false)`).
+    private var envelopeBypassed = false
     public let supportsReduceFlashing = true
     private var flashLimiter: OpaquePointer?
 
@@ -216,12 +218,12 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
                 engine.addPCMInterleavedStereo(pcm, frames: UInt(frames))
             }
         }
-        if reduceFlashing, let limiter = flashLimiterForFrame() {
+        if !envelopeBypassed, let limiter = flashLimiterForFrame() {
             let framebuffer = PMFlashLimiterBegin(limiter, Int32(surfaceSize.width), Int32(surfaceSize.height))
             if framebuffer != 0 {
                 engine.renderFrame(toFramebuffer: framebuffer)
-                let step = Self.flashLimitPerSecond * Float(min(max(frameTime, 0), 0.1))
-                PMFlashLimiterFinish(limiter, 0, step)
+                var parameters = FlashEnvelopeConfiguration.forReduceFlashing(reduceFlashing).limiterParameters(frameTime: frameTime)
+                PMFlashLimiterFinish(limiter, 0, &parameters)
             } else {
                 engine.renderFrame(toFramebuffer: 0)
             }
@@ -360,11 +362,17 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
 
     /// Renders `frames` frames back to back without presenting, waiting for the GPU after each
     /// (glFinish), and returns each frame's wall time in milliseconds. RendererLab compares runs with
-    /// Reduce flashing on and off to measure the post-pass cost (T104). Pause the display link first.
+    /// the pass (`reduceFlashing: true`, the Reduce-flashing envelope) and without it (`false`: the
+    /// pass is bypassed, a measurement baseline only; the app always runs the pass, FX-019) to
+    /// measure the post-pass cost (T104, FX-019-T22). Pause the display link first.
     public func timedFrames(_ frames: Int, reduceFlashing: Bool) -> [Double] {
         let saved = self.reduceFlashing
         self.reduceFlashing = reduceFlashing
-        defer { self.reduceFlashing = saved }
+        envelopeBypassed = !reduceFlashing
+        defer {
+            self.reduceFlashing = saved
+            envelopeBypassed = false
+        }
         var times: [Double] = []
         times.reserveCapacity(frames)
         for _ in 0..<frames {
@@ -393,25 +401,27 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
         eglMakeCurrent(display, surface, surface, context)
     }
 
-    /// The limiter's adapted mean luminance after the last frame, or nil while it is unused (tests).
-    var flashLimiterAdaptedLuminance: Float? {
+    /// The envelope's gain of the last frame, or nil while the pass was never created (tests).
+    var flashLimiterGain: Float? {
         guard let flashLimiter, let surface else { return nil }
         eglMakeCurrent(display, surface, surface, context)
-        return PMFlashLimiterAdaptedLuminance(flashLimiter)
+        return PMFlashLimiterLastGain(flashLimiter)
     }
 
-    /// One frame of a solid gray `value` through the renderer's own Reduce-flashing limiter onto
-    /// the window surface (not presented); returns the adapted luminance, or nil without a surface
-    /// or limiter. Tests use it for exact luminance values, which the engine's picture cannot give.
-    func limitedSolidFrame(_ value: Float, maxStep: Float) -> Float? {
+    /// One frame of a solid gray `value` (encoded) through the renderer's own envelope pass onto the
+    /// window surface (not presented), with the current setting; returns the gain, or nil without a
+    /// surface or pass. Tests use it for exact levels, which the engine's picture cannot give.
+    @discardableResult
+    func limitedSolidFrame(_ value: Float, _ frameTime: Double) -> Float? {
         guard !presentationSuspended, let surface else { return nil }
         eglMakeCurrent(display, surface, surface, context)
         guard let limiter = flashLimiterForFrame() else { return nil }
         let framebuffer = PMFlashLimiterBegin(limiter, Int32(surfaceSize.width), Int32(surfaceSize.height))
         guard framebuffer != 0 else { return nil }
         PMANGLEClearFramebuffer(framebuffer, value, value, value)
-        PMFlashLimiterFinish(limiter, 0, maxStep)
-        return PMFlashLimiterAdaptedLuminance(limiter)
+        var parameters = FlashEnvelopeConfiguration.forReduceFlashing(reduceFlashing).limiterParameters(frameTime: frameTime)
+        PMFlashLimiterFinish(limiter, 0, &parameters)
+        return PMFlashLimiterLastGain(limiter)
     }
 
     /// Reads back the default framebuffer of the current surface as RGBA bytes (tests).

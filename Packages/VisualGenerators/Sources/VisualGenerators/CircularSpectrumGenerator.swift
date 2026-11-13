@@ -1,8 +1,9 @@
 // CircularSpectrumGenerator.swift — the circular spectrum on Metal (VIS-001-R1 to R10, R17;
 // research VIS-001-D2 to D4, D7, D8).
 //
-// Per frame: Reduce-flashing slew → CPU layout for the target's size → luminance gain (against the
-// composited luminance when `downstreamLuminance` is set, FX-001-R10) → tessellate
+// Per frame: Reduce-flashing slew → CPU layout for the target's size → the strobe safety envelope's
+// gain over 17 areas (FX-019; against the composited levels when `downstreamLuminance` is set,
+// FX-001-R10) → tessellate
 // into a preallocated vertex buffer → one render pass that clears to the background and draws flat,
 // premultiplied triangles. The GPU only passes positions through.
 //
@@ -30,8 +31,8 @@ public final class CircularSpectrumGenerator: TextureGenerator {
     /// The Reduce-flashing gain of the last frame (1 when not limited).
     public private(set) var lastGain: Float = 1
     /// How stages after this generator change the frame's brightness (FX-001-R10: the bloom's
-    /// `BloomLuminanceModel`). Nil (the default) keeps the VIS-001 computation exactly; set, the
-    /// Reduce-flashing gain bounds the composited frame. Set it whenever those stages change.
+    /// `BloomLuminanceModel`). Nil (the default): the bars' own light; set, the envelope bounds the
+    /// composited frame. Set it whenever those stages change.
     public var downstreamLuminance: (any FrameLuminanceTransfer)?
 
     private let pipeline: MTLRenderPipelineState
@@ -110,13 +111,14 @@ public final class CircularSpectrumGenerator: TextureGenerator {
         guard target.pixelFormat == pixelFormat, let slot = freeBuffer() else { return false }
         let shown = limiter.limitValues(bands, frameTime: context.frameDuration, enabled: context.reduceFlashing)
         layout.layout(values: shown, width: target.width, height: target.height)
+        // FX-019: every frame goes through the strobe safety envelope (17 areas, both signals), with
+        // the downstream stages' light when set (FX-001-R10).
         let gain: Float
         if let downstream = downstreamLuminance {
             gain = limiter.gain(for: layout, transfer: downstream, frameTime: context.frameDuration, enabled: context.reduceFlashing)
         } else {
-            let parts = layout.luminanceComponents()
-            gain = limiter.gain(barsLuminance: parts.bars, backgroundLuminance: parts.background,
-                                frameTime: context.frameDuration, enabled: context.reduceFlashing)
+            gain = limiter.gain(for: layout, transfer: IdentityLuminanceTransfer(), frameTime: context.frameDuration,
+                                enabled: context.reduceFlashing)
         }
         lastGain = gain
         let buffer = buffers[slot]

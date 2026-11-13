@@ -16,6 +16,8 @@ let package = Package(
         .package(path: "../Rendering"),
         // PERF-011: the renderer and the preset warm-up are presentation-bound resources.
         .package(path: "../PresentationLifecycle"),
+        // FX-019: the strobe safety envelope's definition (ADR-0011).
+        .package(path: "../FlashSafety"),
     ],
     targets: [
         .binaryTarget(name: "libEGL", path: "../../Build/ANGLEFrameworks/libEGL.xcframework"),
@@ -23,11 +25,11 @@ let package = Package(
         .binaryTarget(name: "libGLESv2", path: "../../Build/ANGLEFrameworks/libGLESv2.xcframework"),
         .target(name: "CANGLE", dependencies: ["libEGL", "libGLESv2"]),
         .target(name: "ANGLERendering",
-                dependencies: ["CANGLE", "AudioCore", "ProjectMBridge", "Rendering", "PresentationLifecycle",
+                dependencies: ["CANGLE", "AudioCore", "ProjectMBridge", "Rendering", "PresentationLifecycle", "FlashSafety",
                                .product(name: "CFlashLimiter", package: "Rendering")],
                 linkerSettings: [.linkedFramework("QuartzCore"), .linkedFramework("Metal")]),
         .testTarget(name: "ANGLERenderingTests",
-                    dependencies: ["ANGLERendering", "CANGLE", "Rendering", "AudioCore", "ProjectMBridge", "PresentationLifecycle",
+                    dependencies: ["ANGLERendering", "CANGLE", "Rendering", "AudioCore", "ProjectMBridge", "PresentationLifecycle", "FlashSafety",
                                    .product(name: "CFlashLimiter", package: "Rendering")]),
     ]
 )

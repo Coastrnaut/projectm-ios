@@ -34,7 +34,8 @@ AREA_LOCKS: dict[str, tuple[str, ...]] = {
     "AUD": ("Packages/CaptureKit", "Packages/AudioCore"),
     "ANL": ("Packages/AnalysisFeatures",),
     "VIS": ("Packages/VisualGenerators",),
-    "FX": ("Packages/Compositor",),
+    # FX-001 put effects in Packages/VisualGenerators (ADR-0010); FX-019 also edits Rendering.
+    "FX": ("Packages/VisualGenerators", "Packages/Compositor", "Packages/Rendering"),
     "CMP": ("Packages/Compositor",),
     "MED": ("Packages/MediaSources",),
     "CAM": ("Packages/MediaSources",),

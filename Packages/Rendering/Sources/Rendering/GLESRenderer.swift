@@ -13,6 +13,7 @@
 //   decision once the device measurements (T075) are in.
 import AudioCore
 import CFlashLimiter
+import FlashSafety
 import Foundation
 import OpenGLES
 import PresentationLifecycle
@@ -30,14 +31,14 @@ public final class GLESRenderer: NSObject, VisualizerRenderer {
     public var view: UIView { layerView }
     public private(set) var metrics = RenderMetrics.zero
     public private(set) var presentedFrameCount = 0
-    /// FR-072: limit rapid full-screen brightness changes with the same post-pass as ANGLERenderer
-    /// (CFlashLimiter, T119; this renderer is the fallback when no EGL context can be created).
-    public var reduceFlashing = false {
-        didSet { if reduceFlashing != oldValue, let flashLimiter { PMFlashLimiterReset(flashLimiter) } }
-    }
+    /// FR-072 and FX-019: every frame goes through the same strobe safety envelope as ANGLERenderer
+    /// (CFlashLimiter, T119; this renderer is the fallback when no EGL context can be created):
+    /// `FlashEnvelopeConfiguration.reduceFlashing` while this is on, the always-on cap while off.
+    /// Toggling keeps the envelope's history (FX-019-R11).
+    public var reduceFlashing = false
     public let supportsReduceFlashing = true
-    /// Mean-luminance rate limit while Reduce flashing is on (the same value as ANGLERenderer).
-    public static let flashLimitPerSecond: Float = 0.3
+    /// The rise rate while Reduce flashing is on (FlashEnvelopeConfiguration.reduceFlashing).
+    public static let flashLimitPerSecond = Float(FlashEnvelopeConfiguration.reduceFlashing.riseRatePerSecond ?? 0)
     private var flashLimiter: OpaquePointer?
 
     private let layerView: GLESLayerView
@@ -143,11 +144,13 @@ public final class GLESRenderer: NSObject, VisualizerRenderer {
                 engine.addPCMInterleavedStereo(pcm, frames: UInt(frames))
             }
         }
-        if reduceFlashing, let limiter = flashLimiterForFrame(),
+        if let limiter = flashLimiterForFrame(),
            case let scene = PMFlashLimiterBegin(limiter, drawableSize.width, drawableSize.height), scene != 0 {
             engine.renderFrame(toFramebuffer: scene)
-            PMFlashLimiterFinish(limiter, UInt32(framebuffer), Self.flashLimitPerSecond * Float(min(max(frameTime, 0), 0.1)))
+            var parameters = FlashEnvelopeConfiguration.forReduceFlashing(reduceFlashing).limiterParameters(frameTime: frameTime)
+            PMFlashLimiterFinish(limiter, UInt32(framebuffer), &parameters)
         } else {
+            // The pass could not be created (FX-019 edge case): frames are drawn directly.
             engine.renderFrame(toFramebuffer: UInt32(framebuffer))
         }
         glBindRenderbuffer(GLenum(GL_RENDERBUFFER), colorRenderbuffer)
@@ -259,11 +262,29 @@ public final class GLESRenderer: NSObject, VisualizerRenderer {
     var isDisplayLinkPaused: Bool? { displayLink?.isPaused }
     var currentDrawableSize: (width: Int, height: Int) { (Int(drawableSize.width), Int(drawableSize.height)) }
 
-    /// The limiter's adapted mean luminance after the last frame, or nil while it is unused (tests).
-    var flashLimiterAdaptedLuminance: Float? {
+    /// The envelope's gain of the last frame, or nil while the pass was never created (tests).
+    var flashLimiterGain: Float? {
         guard let flashLimiter else { return nil }
         EAGLContext.setCurrent(context)
-        return PMFlashLimiterAdaptedLuminance(flashLimiter)
+        return PMFlashLimiterLastGain(flashLimiter)
+    }
+
+    /// One frame of a solid gray `value` (encoded) through the renderer's own envelope pass onto the
+    /// framebuffer (not presented), with the current setting; returns the gain, or nil without a
+    /// framebuffer or pass. Tests use it for exact levels, which the engine's picture cannot give.
+    func limitedSolidFrame(_ value: Float, frameTime: Double) -> Float? {
+        guard !presentationSuspended, framebuffer != 0 else { return nil }
+        EAGLContext.setCurrent(context)
+        guard let limiter = flashLimiterForFrame() else { return nil }
+        let scene = PMFlashLimiterBegin(limiter, drawableSize.width, drawableSize.height)
+        guard scene != 0 else { return nil }
+        glBindFramebuffer(GLenum(GL_FRAMEBUFFER), scene)
+        glViewport(0, 0, drawableSize.width, drawableSize.height)
+        glClearColor(value, value, value, 1)
+        glClear(GLbitfield(GL_COLOR_BUFFER_BIT))
+        var parameters = FlashEnvelopeConfiguration.forReduceFlashing(reduceFlashing).limiterParameters(frameTime: frameTime)
+        PMFlashLimiterFinish(limiter, UInt32(framebuffer), &parameters)
+        return PMFlashLimiterLastGain(limiter)
     }
 
     /// Reads back the framebuffer as RGBA bytes (tests).
