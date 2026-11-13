@@ -111,6 +111,10 @@ struct VisualizerView: View {
                 VStack { HStack { UITestModulationPanel(coordinator: coordinator); Spacer() }; Spacer() }
                     .padding(.top, 70)
             }
+            if UITestMemoryPanel.isRequested {         // PERF-006: MemoryPressureUITests
+                VStack { HStack { UITestMemoryPanel(coordinator: coordinator); Spacer() }; Spacer() }
+                    .padding(.top, 130)
+            }
             if UITestExternalDisplay.isRequested {     // OUT-001: ExternalDisplayUITests
                 VStack { HStack { UITestExternalDisplayPanel(coordinator: coordinator.externalDisplay); Spacer() }; Spacer() }
                     .padding(.top, 100)
