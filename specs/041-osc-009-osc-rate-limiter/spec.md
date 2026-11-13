@@ -38,7 +38,7 @@ interaction); each answer is the conservative, local-first option.
 - Q: What is a "target"? → A: One routed parameter (today only `osc.receiver.testValue`; OSC-003 adds more). Messages to unknown addresses are not targets: they are counted as ignored and never take a target slot (OSC-009-R4).
 - Q: Which rates? → A: Per source 200 datagrams/s with a burst of 50; all sources together 500 datagrams/s with a burst of 100; per target 60 applied updates/s with a burst of 10. Controllers such as TouchOSC send roughly 30-100 messages/s per fader while dragged, so a normal user never meets the source limit; 60 updates/s matches the fastest frame rate the visualizer renders at (60 fps), so a target never changes more than once per frame on average; the global cap bounds the work of eight flooding peers (8 × 200 = 1,600/s) to 500 datagrams/s. The numbers are one configuration value with these defaults, so tests and later rows can set others (OSC-009-R1, R2, R5).
 - Q: What happens to a datagram over the source or global rate? → A: It is dropped before decoding (so a flood costs no decoding work) and counted as `rateLimited` (OSC-009-R6).
-- Q: What happens to an update over the target rate: coalesce or drop? → A: Coalesce. The newest value for that target is held (one slot per target, later values replace it) and applied at the target's next allowed slot, so the final state always equals the last value sent; superseded values are counted as `coalesced`. Dropping would leave a fader at a stale value when the user stops moving it (OSC-009-R7, R8).
+- Q: What happens to an update over the target rate: coalesce or drop? → A: Coalesce. The newest value for that target is held (one slot per target, later values replace it) and applied at the target's next allowed slot, so the final state always equals the last value that passed the datagram limits; every held update is counted as `coalesced`. Dropping would leave a fader at a stale value when the user stops moving it (OSC-009-R7, R8).
 - Q: How does a held value get applied when no more messages arrive? → A: The receiver schedules one deferred flush for the earliest due target (never more than one pending flush), run off the main thread on the receiver's side; the flush applies held values whose slot has come (OSC-009-R8).
 - Q: How much memory may the limiter use? → A: Fixed caps: at most 16 source buckets (twice the transport's 8 peers, so recently cycled peers keep their state) with least-recently-used eviction; target buckets at most 64 with the same eviction, and an evicted target's held value is applied first so nothing is lost. Memory never grows with traffic (OSC-009-R9).
 - Q: How is the render loop protected? → A: Two rules. (1) Per datagram, the transport side does bounded work: O(1) limiter checks, then at most one bounded decode and at most 64 applied messages; it never waits for the main thread. (2) The app copies OSC state onto the main thread at most about 30 times a second, however many messages arrive: one pending main-thread refresh at a time, started no sooner than 1/30 s after the previous one. 30 Hz is enough for a status line and a number in Settings and leaves the main thread's frame budget to rendering (OSC-009-R10, R11).
@@ -142,8 +142,8 @@ fast is explained rather than mysterious.
   counted as `rateLimited`.
 - **OSC-009-R7**: Updates to one target MUST be applied at most at the configured target rate and
   burst (defaults 60/s, burst 10).
-- **OSC-009-R8**: An update over its target's rate MUST be held (newest replaces older, counted as
-  `coalesced`) and applied at the target's next allowed slot by a deferred flush, so the final
+- **OSC-009-R8**: An update over its target's rate MUST be held (newest replaces older; every held
+  update counted as `coalesced`) and applied at the target's next allowed slot by a deferred flush, so the final
   applied value equals the last value accepted; at most one flush MUST be pending at a time.
 - **OSC-009-R9**: Limiter memory MUST be bounded: at most 16 source buckets and 64 target buckets,
   least recently used evicted; an evicted target's held value MUST be applied before eviction.
@@ -171,7 +171,9 @@ fast is explained rather than mysterious.
 - **OSC-009-S1**: In the flood fixture (100,000 datagrams from 3 sources, clock advancing 1 ms per
   50 datagrams), applied updates to the target never exceed burst + rate × window length in any
   window, and decoded datagrams never exceed the global allowance.
-- **OSC-009-S2**: In the flood fixture, the final applied value equals the last value sent.
+- **OSC-009-S2**: In the flood fixture, the final applied value equals the last value that passed
+  the datagram limits (a datagram dropped at the source or global limit carries no value), and a
+  value sent after the flood ends is applied.
 - **OSC-009-S3**: In the flood fixture, the work done is bounded by counts: decoded datagrams ≤ the
   global allowance for the fixture's simulated duration, and every other datagram costs only the
   limiter's constant-time check.
