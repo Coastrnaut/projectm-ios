@@ -6,10 +6,10 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 52,
-   "integrated": 33,
-   "skipped_existing": 1,
-   "unit_passed": 1
+   "audited": 51,
+   "implementing": 1,
+   "integrated": 34,
+   "skipped_existing": 1
   },
   "P1": {
    "audited": 140,
@@ -24,11 +24,10 @@
   }
  },
  "by_state": {
-  "audited": 280,
-  "implementing": 2,
-  "integrated": 42,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "audited": 279,
+  "implementing": 3,
+  "integrated": 43,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -150,7 +149,6 @@
    "MIDI-011",
    "MIDI-012",
    "MIDI-013",
-   "MOD-002",
    "MOD-003",
    "MOD-004",
    "MOD-005",
@@ -322,7 +320,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "283 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
+   "282 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
   ]
  },
  "features": {
@@ -1801,20 +1799,20 @@
    "branch": "feature/mod-002",
    "branch_sha": "65676d7730a5001118c2602ce70aa0bbb095c9c9",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "006678f3d7a51319e515689db416df574c45d4db",
    "priority": "P0",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "MOD-003": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/mod-003",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "MOD-004": {
    "attempts": 0,
@@ -3754,6 +3752,11 @@
    "sha": "304f3bce431a7f6f0a1719bdced6b55b910c9668"
   },
   {
+   "branch": "feature/mod-002",
+   "id": "MOD-002",
+   "sha": "006678f3d7a51319e515689db416df574c45d4db"
+  },
+  {
    "branch": "feature/perf-011",
    "id": "PERF-011",
    "sha": "6d669fcb857695767ec2b785f74feb29f98d5978"
@@ -3824,5 +3827,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T16:17:15Z"
+ "updated": "2026-11-13T16:19:08Z"
 }
