@@ -64,7 +64,8 @@ Decided by Claude under the owner's standing approval (owner rule 4), conservati
   `liveState(registry:assets:)` (errors refuse; warnings kept). If the main file fails, try the backup;
   if that fails, restore nothing. Events: `mainUnreadable(reason)`, `restoredFromBackup`,
   `backupUnreadable(reason)`, `nothingRestored`. A newer-version file (main or backup) is refused and
-  moved once to `current.scene.newer` (left alone if that name exists), never written and never read
+  moved once to `<its name>.newer` (`current.scene.newer` or `current.scene.bak.newer`; left alone if
+  that name exists), never written and never read
   again (event `setAsideNewer`), so a later save cannot overwrite another version's scene (analysis I1).
 - **Main known good**: set after a good read of the main file or a successful save; while false, saves
   skip the `link` step so a damaged main file never replaces a good backup.

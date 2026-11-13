@@ -24,8 +24,8 @@ every step.
 
 Remove `current.scene.tmp`; read main (≤ 1 MiB + 1 byte), `SceneDocument.decode`, `liveState(registry:
 VisualParameterCatalog registry + material catalog, assets: stored photo/video)`; on any refusal try the
-backup; else nothing. A `newerVersion` refusal moves that file to `current.scene.newer` (unless it
-exists). Events per D5. Loading never throws and never presents UI.
+backup; else nothing. A `newerVersion` refusal moves that file to `<its name>.newer` (`current.scene.newer`,
+`current.scene.bak.newer`; left alone if that name exists). Events per D5. Loading never throws and never presents UI.
 
 ## A4 Triggers
 
