@@ -28,6 +28,19 @@ The row's gap status is "Gap candidate". The audit confirms it.
 | Scenes | No scene file yet (SCN-001 is a later row). | A transform needs a stable saved form that a scene file can embed later. |
 | App | The Camera visual uses identity transforms. | Nothing to change; a user-facing transform editor belongs to the layer inspector (CMP-015). |
 
+## Clarifications
+
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the conservative, local-first option.
+
+- Q: Is scale uniform only, or per axis, and is mirroring (negative scale) allowed? → A: Per axis, each clamped to 0.05…20; no mirroring in this row (a negative or too small finite scale clamps to 0.05). Per-axis scale costs nothing extra in the matrix, and aspect fitting (CMP-006: stretch) needs it next; scale is applied in the layer's own axes before rotation, so a rotated non-uniform scale never shears. The lower bound keeps the matrix invertible (the compositor samples through its inverse). Rejected: uniform only (CMP-006 would change the saved form at once); allowing mirroring (a flip control is a separate, visible decision and would make "scale 0" reachable through a sign change).
+- Q: In which coordinates and order is the matrix defined, and which way does a positive angle turn? → A: The matrix maps the layer's normalized picture coordinates (0…1 across, 0…1 down, row 0 at the top as in ADR-0013) to the output's normalized coordinates, for a given output aspect (width ÷ height in pixels). Order: x-axis stretched to square units (× aspect), move the anchor to the origin, scale, rotate, move back, un-stretch, then add the move (in output fractions). A positive angle turns from +x towards +y, i.e. clockwise as seen on screen (the same as UIKit's y-down rotation). Rejected: pixel units (the saved value would depend on the drawable size, which changes with device and rotation); rotation in un-stretched normalized units (skews on every non-square output).
+- Q: How is a transform saved so that reloading reproduces the matrix exactly? → A: As JSON-ready named fields with a format version: `{"version":1,"translation":{"x","y"},"scale":{"x","y"},"rotation","anchor":{"x","y"}}` (translation in output fractions, scale factors, rotation in radians, anchor in layer fractions). Numbers are written as plain JSON numbers with Swift's shortest round-trip representation, which reads back to the identical double; the matrix is recomputed from the loaded values, so equal values give a bit-identical matrix. The matrix itself is not saved (it depends on the output's aspect, and saving it would create two sources of truth). Version 1 is required; another version is refused; missing fields read identity defaults; out-of-range values clamp. Rejected: saving the six matrix numbers (output-dependent, cannot be edited as move/scale/rotate); hexadecimal bit patterns (exact but unreadable in a scene file).
+- Q: Do transform changes animate like opacity fades? → A: Not in this row. A transform change in an applied stack is shown from the next frame. Interpolating move, scale and rotation (shortest-arc angle, log-space scale) is a separate design that belongs with the modulation and keyframe rows (MOD, UIX); recorded for later. Rejected: a transform animator now (it would roughly double the row's size for behaviour no caller needs yet).
+- Q: How is the transformed picture sampled, and what is shown outside it? → A: Bilinear sampling through the inverse matrix, with everything outside the layer's picture reading fully transparent (premultiplied zero), so edges are at most one pixel soft and never smear the border colour. A layer whose transform is the identity takes the existing exact per-pixel path, so its output is bit-identical to before. Rejected: nearest-neighbour (jagged rotation, visible shimmer while moving); sampling the identity case through the new path (half-pixel filtering risks bit differences against CMP-003).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A saved transform reloads to the same matrix (Priority: P1)
@@ -127,7 +140,7 @@ creations across transform-only applies and steady frames.
 - **CMP-005-R2**: The transform MUST define one exact placement matrix for a given output size, in a
   documented order: scale and rotate about the anchor point, then move. The anchor point MUST land at
   its own position plus the move. Rotation MUST be measured in square output pixels, so a rotation
-  never skews on a non-square output.
+  never skews on a non-square output; a positive angle turns clockwise as seen on screen.
 - **CMP-005-R3**: A transform with no move, unit scale and no rotation MUST be the identity
   whatever its anchor point.
 - **CMP-005-R4**: Non-finite values MUST be refused with a typed reason and change nothing; finite
