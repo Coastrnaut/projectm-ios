@@ -273,6 +273,17 @@ they override any system-provided reminder.
      in `docs/test-reports/simulator-posterboard.md`. Never treat simulator crashes as app
      evidence, and do not turn off macOS crash reporting globally without asking.
 
+6. **No idle waits on CI** (feedback, 2026-11-13). The owner asked "is something hung, check and
+   fix it, remember the lesson learned from this and write it to claude". Nothing was hung, but
+   the run had stalled: one CI read was scheduled 50 minutes after a push, the Linux job had
+   already failed at minute 5 (`fflush(stdout)`, rejected by Swift 6 on Linux), integrated work
+   was held back for that run, and an agent slot stood empty.
+   - *How to apply:* after a push, read CI with single calls at about 10 minutes (docs, Linux) and
+     again when the macOS jobs should be done (about 55 minutes); push verified work at once (CI
+     on `main` no longer cancels running runs, `cancel-in-progress: false`); start the next
+     feature as soon as an agent slot frees; when something looks stuck, check processes and
+     their age, agent worktree commits and CI job states, then fix the cause and its whole class.
+
 ## Playbook: a new iOS app with Claude and Spec Kit, little human interaction (2026-11-10)
 
 These lessons come from building this app and its paid feature 002 almost entirely

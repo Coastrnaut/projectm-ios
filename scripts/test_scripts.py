@@ -1099,6 +1099,24 @@ class SetupMacTests(unittest.TestCase):
         self.assertNotIn("DEVELOPMENT_TEAM =", source.replace("`DEVELOPMENT_TEAM = <team ID>`", ""))
 
 
+class LinuxPortabilityTests(unittest.TestCase):
+    """Swift package code must build on CI's Linux runner, where Swift 6 rejects the C stdio
+    globals (`stdout`, `stderr`, `stdin`) as not concurrency-safe. macOS accepts them, so only CI
+    caught `fflush(stdout)` in a test (run 43432992539). Use print() or FileHandle.standardError."""
+
+    def test_no_c_stdio_globals_in_package_swift(self):
+        pattern = re.compile(r"\b(stdout|stderr|stdin)\b")
+        found = []
+        for path in sorted((check_compliance.ROOT / "Packages").rglob("*.swift")):
+            if ".build" in path.parts:
+                continue
+            for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+                code = line.split("//", 1)[0]
+                if pattern.search(code.replace("FileHandle.standard", "")):
+                    found.append(f"{path.relative_to(check_compliance.ROOT)}:{number}")
+        self.assertEqual(found, [], "C stdio globals break the Linux build")
+
+
 class ReferenceToneGoldensTests(unittest.TestCase):
     """AUD-016: an independent Python port reproduces the Swift generator's golden hashes."""
 
