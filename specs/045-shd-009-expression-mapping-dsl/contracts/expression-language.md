@@ -64,7 +64,7 @@ Non-finite audio readings are 0 (MOD-002-R6).
 | `sin(x)`, `cos(x)` | 1 | 4 | platform C math library, radians |
 | `floor(x)` | 1 | 1 | largest whole number ≤ x |
 | `fract(x)` | 1 | 1 | `x − floor(x)` |
-| `mix(a, b, t)` | 3 | 1 | `a + (b − a) · t` (t not clamped) |
+| `mix(a, b, t)` | 3 | 1 | `a + (b − a) · t` (t not clamped; each step made finite, so `mix(-1e308, 1e308, 2)` = `-1e308 + max`) |
 | `smoothstep(e0, e1, x)` | 3 | 4 | `t = clamp((x − e0)/(e1 − e0), 0, 1)`, `t·t·(3 − 2t)`; `e0 = e1` → `step(e0, x)` |
 | `step(edge, x)` | 2 | 1 | 0 when `x < edge`, else 1 |
 | `sqrt(x)` | 1 | 4 | 0 when `x ≤ 0`, else the square root |

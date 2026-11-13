@@ -62,7 +62,7 @@ compares the literal's bit pattern.
 | `operationCost` | static weighted cost (≤ the limit) |
 | `audioSources` | MOD-002 features read, first-use order, no duplicates |
 | `readsTime` | whether `time` is read |
-| `bytes` | byte form: `"PMX"`, version 1, slot count, max stack, instruction count (UInt16 LE), then per instruction opcode (1), index (UInt16 LE), literal bit pattern (UInt64 LE) |
+| `bytes` | byte form: `"PMX"`, version 1, slot count, max stack and instruction count (UInt16 LE each), then per instruction opcode (1), index (UInt16 LE), literal bit pattern (UInt64 LE) |
 
 Created by `CompiledExpression(source:limits:) throws(ExpressionError)`.
 `evaluate(_ inputs: ExpressionInputs) -> Double` (always finite).
