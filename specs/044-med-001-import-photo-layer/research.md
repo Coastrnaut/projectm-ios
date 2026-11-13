@@ -46,6 +46,13 @@ choice, the reason and what was rejected (IDs `MED-001-D1…`).
   and `CGImageSourceGetType` conform to `UTType.image`, `CGImageSourceGetCount` ≥ 1; (3) pixel size
   from `CGImageSourceCopyPropertiesAtIndex` width × height ≤ 100 000 000 (only the two numbers are
   read); (4) thumbnail creation non-nil, else `.damaged`. Each failure is an `ImageImportError`.
+- **Finding (2026-11-13)**: ImageIO reports a PNG cut short as complete and decodes it with the
+  missing rows empty (`CGImageSourceGetStatus` and the incremental source both say complete), so
+  MED-001 detects only what ImageIO detects (a truncated JPEG, an impossible header). Detecting a
+  short PNG (checking for its IEND chunk, a decode-time error count) is left to MED-014.
+- **Finding (2026-11-13)**: ImageIO's JPEG writer always writes three technical EXIF fields of the
+  new pixels (pixel width, height, color space). They describe the copy, not the original; the
+  tests allow exactly those and check that no original value is anywhere in the stored bytes.
 - **Rationale**: cheap checks first; no full decode of an oversized picture.
 
 ## MED-001-D5 Decoder boundary for MED-014
