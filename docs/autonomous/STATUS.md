@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T16:36:55Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T16:45:54Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 277 |
 | implementing | 2 |
-| unit_passed | 1 |
-| integrated | 45 |
+| integrated | 46 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 49 | 2 | 0 | 35 | 1 |
-| P1 | 140 | 0 | 1 | 10 | 0 |
-| P2 | 79 | 0 | 0 | 0 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 49 | 2 | 35 | 1 |
+| P1 | 140 | 0 | 11 | 0 |
+| P2 | 79 | 0 | 0 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 280 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
+- 279 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
 
 ## Integrated
 
@@ -62,6 +61,7 @@ The physical-device suite may **not** start:
 | AUTO-012 | Progress dashboard | `419cc2a999ed` | `autonomous/integration` |
 | AUTO-013 | Final device-test gate | `419cc2a999ed` | `autonomous/integration` |
 | AUTO-014 | Unattended safety budget | `419cc2a999ed` | `autonomous/integration` |
+| CAM-001 | Rear camera layer | `05ef3cb4e24b` | `feature/cam-001` |
 | CMP-001 | Unified layer protocol | `ba60b9d3485a` | `feature/cmp-001` |
 | FX-001 | Bloom | `1192e0d6503e` | `feature/fx-001` |
 | FX-019 | Strobe safety envelope | `6cfcbaabc8d0` | `feature/fx-019` |
@@ -275,11 +275,13 @@ None.
 ### AUTO-014 Unattended safety budget (integrated)
 - `python3 scripts/autonomous/tests/test_autonomous.py (48 tests)`: pass at `419cc2a999ed`
 
-### CAM-001 Rear camera layer (unit_passed)
+### CAM-001 Rear camera layer (integrated)
 - `python3 scripts/check_compliance.py`: pass at `88b2544a2588` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-001/20261113T113607/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `88b2544a2588` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-001/20261113T113607/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `88b2544a2588` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-001/20261113T113607/sim-test_ANGLERendering.log`)
 - `swift test --package-path Packages/Compositor`: pass at `88b2544a2588` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-001/20261113T113607/swift-test_Compositor.log`)
+- `post-merge (with the VIS-002-F1 picker rows): projectM-iOSTests 172 incl. CameraVisualTests, CameraUITests 2 (10.0 s, 11.2 s), NativeVisual 4, Glow 2, LinearSpectrum 1, OSC 1 UI tests on iPhone 17 iOS 27.2 sim; SettingsUITests 4 pass after the scroll fix`: pass at `05ef3cb4e24b` (log `.autonomous/logs/integration/cam-001/app-tests.log`)
+- `post-merge: Compositor xcodebuild test on iPhone 17 sim (61)`: pass at `05ef3cb4e24b` (log `.autonomous/logs/integration/cam-001/compositor-sim.log`)
 
 ### CMP-001 Unified layer protocol (integrated)
 - `python3 scripts/check_compliance.py`: pass at `19d1bd7e65a2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-001/20261113T110629/compliance.log`)
