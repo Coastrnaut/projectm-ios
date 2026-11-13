@@ -111,7 +111,7 @@ Apps/projectM-iOS/UITests/ShuffleUITests.swift (new)
 ```
 
 **Structure Decision**: extend the existing packages; no new package, no `project.yml` change (the UI
-test folder is already a source glob — checked in tasks).
+test target takes every file under `Apps/projectM-iOS/UITests`, project.yml `projectM-iOSUITests`).
 
 ## Rollback
 
@@ -122,3 +122,10 @@ test folder is already a source glob — checked in tasks).
 ## Complexity Tracking
 
 None.
+
+## Analysis (speckit-analyze, 2026-11-13)
+
+- Coverage: AUD-005-R1 to R14 each map to at least one task (R13 added to AUD-005-T04 (l)); R15 is AUD-005-T17 `{device}`.
+- Licensing: SplitMix64 and FNV-1a are public-domain algorithms implemented here; no code copied, no dependency (Constitution IX).
+- Privacy: the record gains only identifiers already stored, a seed and counters; no titles, times or listening log beyond the current cycle; nothing leaves the device.
+- Cross-feature: amendments to AUD-006-R15/R16, AUD-004-R5 and AUD-003-R13 apply only while Shuffle is on; AUD-003-R19 (room for shuffle) is fulfilled. No constitution conflict.
