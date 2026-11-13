@@ -1,12 +1,16 @@
 // UITestVideoFixture.swift — DEBUG only (MED-002-R20; research MED-002-D9). System pickers cannot be
 // automated, so `-uitestSeedVideo counter` writes a 64 × 48, 30 fps, 2 s H.264 movie (each picture a
 // different grey) with `AVAssetWriter` in the temporary folder and imports it through the same path
-// as a picked file (VideoStore: bounded copy, checks, remux, identifier) right after launch. Not
+// as a picked file (VideoStore: bounded copy, checks, remux, identifier) right after launch.
+// `-uitestSeedVideo corrupt` (MED-014-R14) then replaces the stored copy with a movie whose index
+// (`moov`) runs past the end of the file, as if it had been damaged on disk: the video layer's
+// container check must fail with the "couldn't be loaded" notice while the app keeps running. Not
 // compiled into Release builds.
 #if DEBUG
 import AVFoundation
 import CoreVideo
 import Foundation
+import MediaSniffing
 
 @MainActor
 enum UITestVideoFixture {
@@ -23,6 +27,9 @@ enum UITestVideoFixture {
             guard written else { return }
             await videos.importNow(at: url)
             try? FileManager.default.removeItem(at: url)
+            if arguments[i + 1] == "corrupt", let stored = videos.video?.url {
+                try? Data(MediaFixtureBytes.movieWithOverrunningMoov()).write(to: stored, options: .atomic)
+            }
         }
     }
 

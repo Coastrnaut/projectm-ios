@@ -57,7 +57,8 @@ final class VideoImportTests: XCTestCase {
         let truncated = directory.appendingPathComponent("truncated.mov")
         try data.prefix(data.count / 2).write(to: truncated)
         let truncatedRefusal = await refusal(truncated)
-        XCTAssertEqual(truncatedRefusal, .notAVideo, "a movie cut before its index (moov) has no readable track")
+        // MED-014-R8: the container check sees the cut (mdat runs past the end) before AVFoundation does.
+        XCTAssertEqual(truncatedRefusal, .damaged, "a movie cut short is damaged (MED-014; MED-002 read it as .notAVideo)")
         // Pictures overwritten, index intact: the track is there, its pictures do not decode.
         var scrambled = data
         let picturesStart = scrambled.range(of: Data("mdat".utf8))!.upperBound

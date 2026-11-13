@@ -63,3 +63,26 @@ decoder (MED-014).
   later one); the following frames are exact.
 - Device behaviour (real pickers, HEVC from the camera, 4K60, long files, thermal state over 3 min)
   is verified by the owner on D1 and D3 (MED-002-T26 to T28).
+
+## Amendment 2026-11-13: MED-014 safe media decoder
+
+Decided by Claude under the owner's best-judgement rule (owner rule 4); `specs/056-med-014-safe-media-decoder`.
+
+- **Container check before AVFoundation.** `VideoContainerCheck` walks the movie's boxes through a
+  `FileByteSource` (headers and two small boxes only; ≤ 4,096 boxes, 8 levels, 64 tracks; every size
+  checked against its parent; 64-bit and to-the-end sizes handled; exactly one `moov`; tracks by
+  `hdlr`; the first video sample description's codec and coded size; no sample table read). Not a
+  movie → `.notAVideo`; a box past the end or a bound exceeded → `.damaged`; no video track →
+  `.notAVideo`; coded size over 4096 px → `.pictureTooLarge`. It runs in the import probe and before
+  every open of the playback reader (start, loop, seek), so a stored copy damaged while playing fails
+  at its next open. A movie cut short is now `.damaged` (MED-002 reported `.notAVideo`).
+- **First-picture check without blocking (the MED-002 priority-inversion notice).** The probe's
+  blocking `AVAssetReader.copyNextSampleBuffer` waited on AVFoundation's utility-QoS threads from the
+  user-initiated import thread; it is replaced by `AVAssetImageGenerator.image(at:)` (async, at most
+  256 px). The app's store tests went from 2 Thread Performance Checker inversion warnings to 0. The
+  coordinated file read was investigated and does not trigger the checker; it is unchanged.
+- **Remaining:** the playback decode thread (decision 1, user-initiated, pulling with the blocking
+  `copyNextSampleBuffer`) still produces one inversion notice in the video UI test. It is kept by
+  design (a dedicated pull thread with a hard queue bound); lowering its QoS is a device question
+  (frame pacing on D1/D3) recorded for MED-002's device tasks, not changed blind.
+- A failed video layer stays failed until its content changes (no retry loop).
