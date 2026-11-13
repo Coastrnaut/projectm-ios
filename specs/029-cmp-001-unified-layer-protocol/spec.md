@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (T01-T19 verified; CMP-001-T20 {device} open)
 
 **Input**: User description: "Implement CMP-001 (Unified layer protocol) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Expose render-to-texture sources
