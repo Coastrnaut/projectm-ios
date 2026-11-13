@@ -16,6 +16,9 @@ struct ProjectMApp: App {
     var body: some Scene {
         WindowGroup {
             RootView(coordinator: coordinator)
+                // OUT-001: the visualization-only window on a connected display (iOS 27 scene
+                // accessory; iOS 26 uses the Info.plist external display role).
+                .externalDisplayAccessory(coordinator.externalDisplay)
                 .onChange(of: scenePhase) { _, phase in coordinator.sceneBecame(active: phase == .active) }
         }
     }
