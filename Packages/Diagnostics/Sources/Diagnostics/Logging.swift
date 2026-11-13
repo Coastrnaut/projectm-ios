@@ -53,6 +53,15 @@ public enum DiagnosticsLog {
         "\(canPresent ? "available" : "unavailable") active \(activeBefore) -> \(activeAfter) of \(registered)"
     }
 
+    /// PERF-006-R14: one Points of Interest event and one app log line per memory recovery. The
+    /// summary (`MemoryPressureReport.summary`) carries the level, step names and byte counts only;
+    /// private like every dynamic value.
+    public static func memoryRecovery(_ summary: String) {
+        assertNotRealtime()
+        signposter.emitEvent("Memory recovery", "\(summary, privacy: .private)")
+        app.info("memory recovery \(summary, privacy: .private)")
+    }
+
     /// Debug-only guard: real-time audio threads run at elevated priority with a
     /// "real-time" thread name in our sources; logging there is a bug (Constitution VII).
     static func assertNotRealtime() {

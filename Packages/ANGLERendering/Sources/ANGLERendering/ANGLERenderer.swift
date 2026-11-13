@@ -367,6 +367,8 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     /// Registration order: the frame loop and surface first, then the warm-up. The registry
     /// suspends in reverse (warm-up first) and resumes in this order.
     public var presentationResources: [any PresentationBoundResource] { [self, warmUp] }
+    /// PERF-006: the warm-up's context (cache) and the warm-up itself (optional).
+    public var memoryPressureResponders: [any MemoryPressureResponder] { warmUp.memoryPressureResponders }
 
     public var presentationResourceName: String { "ANGLE frame loop and surface" }
 

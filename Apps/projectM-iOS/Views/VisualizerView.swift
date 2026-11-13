@@ -116,6 +116,10 @@ struct VisualizerView: View {
                 VStack { HStack { UITestModulationPanel(coordinator: coordinator); Spacer() }; Spacer() }
                     .padding(.top, 70)
             }
+            if UITestMemoryPanel.isRequested {         // PERF-006: MemoryPressureUITests
+                VStack { HStack { UITestMemoryPanel(coordinator: coordinator); Spacer() }; Spacer() }
+                    .padding(.top, 130)
+            }
             if FrameCaptureCoordinator.debugDirectoryFromArguments() != nil {   // REC-001: FrameCaptureUITests
                 Text(coordinator.frameCapture.probe)
                     .font(.caption2)
