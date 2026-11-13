@@ -24,7 +24,7 @@ public protocol TextureGenerator: AnyObject {
 Guarantees:
 1. **Ownership**: the caller owns the texture and the command buffer and commits it; the generator
    owns its pipeline and vertex buffers. One thread drives a generator (not Sendable).
-2. **Format**: `target.pixelFormat == pixelFormat` (precondition). Supported: `bgra8Unorm_srgb`
+2. **Format**: a target whose pixel format differs from `pixelFormat` is refused (`encode` returns false, nothing encoded; never a crash). Supported: `bgra8Unorm_srgb`
    (default) and `rgba16Float`. Colors are linear, premultiplied alpha; the background is written
    premultiplied (opaque black by default).
 3. **Size**: any `target.width × target.height ≥ 1`; geometry is laid out for that size every frame,
@@ -41,11 +41,13 @@ Guarantees:
 ## Circular spectrum
 
 `CircularSpectrumGenerator(device:pixelFormat:configuration:)`, `configuration` settable between
-frames (bar count changes without allocation). Geometry contract: data-model.md
+frames (bar count changes without allocation). Shader source: the `shaderSource` constant, compiled by
+`makeLibrary(source:options:)` in `init` (ADR-0009 decision 3). Geometry contract: data-model.md
 (`CircularSpectrumLayout`), angle formula VIS-001-R3, radius unit VIS-001-R5.
 
 ## Band feed (target VisualBandFeed)
 
-`LiveBandAnalyzer(bandCount:)` → `start(reader: any NormalizedPCMReader)`, `stop()`,
-`setBandCount(_:)`, `output: BandFrameBuffer`. The reader must be an analysis tap (one consumer),
+`LiveBandAnalyzer(barCount:)` → `start(reader: any NormalizedPCMReader)`, `stop()` (synchronous: the
+timer is cancelled when it returns), `setBarCount(_:)`, `isRunning`, `output: BandFrameBuffer`;
+`SpectrumBandFeed(barCount:)` → `pull(from:)`, `bands`, `setBarCount(_:)`, `reset()`. The reader must be an analysis tap (one consumer),
 never projectM's ring. Runs only on its own queue.

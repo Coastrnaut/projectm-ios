@@ -65,9 +65,9 @@ Preallocated `BarGeometry` × 128 and vertex scratch. State: configuration, outp
 
 State: `displayed[128]`, `previousLuminance`, `hasPrevious`. Constants: `maxBarStepPerSecond = 4.0`,
 `maxLuminanceRisePerSecond = 0.25`, `maxFrameTime = 0.1`.
-- `limitValues(targets:count:frameTime:enabled:) -> UnsafeBufferPointer<Float>`: slew when enabled,
+- `limitValues(_:frameTime:enabled:) -> UnsafeBufferPointer<Float>`: slew when enabled,
   copy when not.
-- `gain(forLuminance:frameTime:enabled:) -> Float`: when enabled and the unlimited luminance rises
+- `gain(barsLuminance:backgroundLuminance:frameTime:enabled:) -> Float`: when enabled and the unlimited luminance rises
   more than the step, `gain = (previous + step) / luminance`, else 1; records the displayed
   luminance. `reset()` restarts from the next frame.
 
@@ -83,13 +83,13 @@ Three slots of `[Float]` capacity 128 (allocated in init), `count`, `timestampNa
 
 Owns `SpectrumStream` (2,048, hop 512, mid, 44.1 kHz), `BandReducer` (44.1 kHz), a 128-Float band
 scratch, the band count. `pull(from: NormalizedPCMReader) -> Bool` (true when at least one new
-spectrum was reduced; the newest is in `bands`), `setBandCount`, `reset()`. Scale: decibels, floor
+spectrum was reduced; the newest is in `bands`), `setBarCount`, `reset()`. Scale: decibels, floor
 `BandMath.defaultFloorDecibels` (−80 dB).
 
 ## LiveBandAnalyzer (final class, Sendable via confinement) — target VisualBandFeed
 
 Serial queue, `DispatchSourceTimer` (10 ms) created on `start(reader:)`, cancelled on `stop()`;
-`setBandCount(_:)` takes effect at the next tick; output `BandFrameBuffer`. States: stopped ⇄
+`setBarCount(_:)` takes effect at the next tick; output `BandFrameBuffer`. States: stopped ⇄
 running; `start` while running and `stop` while stopped do nothing.
 
 ## App (Apps/projectM-iOS)
