@@ -62,6 +62,15 @@ public enum DiagnosticsLog {
         app.info("memory recovery \(summary, privacy: .private)")
     }
 
+    /// PERF-014-R13: one Points of Interest event and one app log line per counted render fault or
+    /// recovery. The summary (`RenderHealth.summary(visual:)`) carries the visual kind, the state, the
+    /// reason identifier and counts only; private like every dynamic value.
+    public static func renderFault(_ summary: String) {
+        assertNotRealtime()
+        signposter.emitEvent("Render fault", "\(summary, privacy: .private)")
+        app.info("render fault \(summary, privacy: .private)")
+    }
+
     /// Debug-only guard: real-time audio threads run at elevated priority with a
     /// "real-time" thread name in our sources; logging there is a bug (Constitution VII).
     static func assertNotRealtime() {
