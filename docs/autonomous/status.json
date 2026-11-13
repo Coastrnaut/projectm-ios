@@ -7,9 +7,9 @@
  "by_priority": {
   "P0": {
    "audited": 25,
-   "implementing": 1,
    "integrated": 60,
-   "skipped_existing": 1
+   "skipped_existing": 1,
+   "unit_passed": 1
   },
   "P1": {
    "audited": 138,
@@ -25,9 +25,9 @@
  },
  "by_state": {
   "audited": 249,
-  "implementing": 1,
   "integrated": 75,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -1875,12 +1875,12 @@
   "MOD-013": {
    "attempts": 0,
    "branch": "feature/mod-013",
-   "branch_sha": null,
+   "branch_sha": "bbdb65cb39c49988bb0eaa8931b9931f5e1fdd18",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "MOD-014": {
    "attempts": 0,
@@ -3955,5 +3955,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T21:01:40Z"
+ "updated": "2026-11-13T21:03:35Z"
 }

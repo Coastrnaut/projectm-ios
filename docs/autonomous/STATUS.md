@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T21:01:40Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T21:03:35Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,13 +10,13 @@
 | State | Features |
 |---|---|
 | audited | 249 |
-| implementing | 1 |
+| unit_passed | 1 |
 | integrated | 75 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
+| Priority | audited | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|
 | P0 | 25 | 1 | 60 | 1 |
 | P1 | 138 | 0 | 13 | 0 |
@@ -434,6 +434,17 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `8d9618afc5c4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-003/20261113T112510/swift-test_VisualGenerators.log`)
 - `post-merge: projectM-iOSTests 159 + AudioFeatureBindingUITests 13.8 s on iPhone 17 iOS 27.2 sim`: pass at `29cd3bbb1e12` (log `.autonomous/logs/integration/mod-003/app-tests.log`)
 - `post-merge: ParameterGraph xcodebuild test on iPhone 17 sim (48)`: pass at `29cd3bbb1e12` (log `.autonomous/logs/integration/mod-003/pg-sim.log`)
+
+### MOD-013 Modulation serialization (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `bbdb65cb39c4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-013/20261113T160144/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `bbdb65cb39c4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-013/20261113T160144/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `bbdb65cb39c4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-013/20261113T160144/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `bbdb65cb39c4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-013/20261113T160144/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ParameterGraph`: pass at `bbdb65cb39c4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-013/20261113T160144/swift-test_ParameterGraph.log`)
+- `swift test --package-path Packages/PerformanceControl`: pass at `bbdb65cb39c4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-013/20261113T160144/swift-test_PerformanceControl.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `bbdb65cb39c4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-013/20261113T160144/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `bbdb65cb39c4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-013/20261113T160144/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/VisualGenerators`: pass at `bbdb65cb39c4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-013/20261113T160144/swift-test_VisualGenerators.log`)
 
 ### MOD-014 Modulation feedback prevention (integrated)
 - `python3 scripts/check_compliance.py`: pass at `a08446ecdde1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-014/20261113T114626/compliance.log`)
