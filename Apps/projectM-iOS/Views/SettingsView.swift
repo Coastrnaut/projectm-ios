@@ -10,6 +10,7 @@
 // MED-009: with Text chosen, a Text section edits the message (multi-line field), font, weight, size,
 // color, alignment, vertical position, outline, background box and Reset Text; every change is saved
 // and drawn at once. It is a standard List section, so Dynamic Type and VoiceOver apply.
+// FILE-009: a Storage row (StorageUsageView: the space the app's data takes, read-only).
 import PhotosUI
 import SwiftUI
 import TextLayer
@@ -175,6 +176,8 @@ struct SettingsView: View {
                 }
                 oscSection
                 Section {
+                    NavigationLink("Storage") { StorageUsageView() }   // FILE-009
+                        .accessibilityIdentifier("storageLink")
                     NavigationLink("Licenses") { LicensesView() }
                         .accessibilityIdentifier("licensesLink")
                     LabeledContent("Version",

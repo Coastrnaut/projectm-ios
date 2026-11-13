@@ -8,7 +8,9 @@
 // Every other key belongs to the caller and is returned untouched as the manifest bytes.
 //
 // Reading checks, in order: the ZIP (StoredZipReader, with limits that give the manifest its own
-// size limit, and every entry's CRC-32); a `manifest.json` entry; format name; version (newer →
+// size limit, and every entry's CRC-32); a `manifest.json` entry; the manifest's shape against its
+// schema's limits before any decoding (FILE-007: depth, string, number and element limits, no
+// duplicate keys, strict UTF-8 → `manifestRejected`); format name; version (newer →
 // `newerVersion`, so an old app can say "update the app"); the file list; per record in manifest
 // order: safe path, well-formed digest and size (`invalidRecord`, FILE-002), unique, present, the
 // listed length, then the SHA-256 (hashed in place, no copy); no entry that is not listed. Every
@@ -65,6 +67,8 @@ public enum PortableArchiveError: Error, Equatable, Sendable {
     case unsafePath(String)
     /// The record's digest is not 64 lowercase hex characters, or its size is negative (FILE-002-R4).
     case invalidRecord(String)
+    /// `manifest.json` failed the bounded structural check before any decoding (FILE-007-R6).
+    case manifestRejected(JSONShapeError)
 
     public var message: String {
         switch self {
@@ -80,6 +84,12 @@ public enum PortableArchiveError: Error, Equatable, Sendable {
         case .checksumMismatch(let path): return "\(path) in the archive does not match its manifest checksum."
         case .invalidRecord(let path): return "The manifest's record for \(path) has an invalid size or checksum."
         case .unsafePath(let path): return StoredZipError.unsafePath(path).message
+        case .manifestRejected(let error):
+            switch error.family {
+            case .grammar: return "The archive's manifest is not valid JSON."
+            case .limit: return "The archive's manifest is too large or too deeply nested to read."
+            case .duplicateKey: return "The archive's manifest lists the same field twice."
+            }
         }
     }
 }
@@ -106,7 +116,21 @@ public enum PortableArchive {
         let files: [PortableFileRecord]
     }
 
+    /// The manifest limits used when a caller gives only a format name and version: generous
+    /// structural bounds, the archive's own manifest byte limit.
+    public static func defaultManifestSchema(format: String, supportedVersion: Int, limits: PortableArchiveLimits) -> DocumentSchema {
+        DocumentSchema(name: format, oldestReadableVersion: 1, currentVersion: supportedVersion,
+                       limits: JSONLimits(maxBytes: limits.maxManifestBytes, maxDepth: 16, maxStringBytes: 65_536,
+                                          maxNumberBytes: 32, maxElements: 65_536))
+    }
+
     public static func read(_ data: Data, format: String, supportedVersion: Int, limits: PortableArchiveLimits) throws -> PortableArchiveContents {
+        try read(data, schema: defaultManifestSchema(format: format, supportedVersion: supportedVersion, limits: limits), limits: limits)
+    }
+
+    /// Reads with the manifest's declared schema (FILE-007-R5, R6): its shape is checked with the
+    /// schema's limits (bytes capped by `limits.maxManifestBytes`) before anything is decoded.
+    public static func read(_ data: Data, schema: DocumentSchema, limits: PortableArchiveLimits) throws -> PortableArchiveContents {
         let entries: [StoredZipEntry]
         do {
             entries = try StoredZipReader.read(data, limits: limits.zip)
@@ -114,11 +138,20 @@ public enum PortableArchive {
             throw PortableArchiveError.zip(error)
         }
         guard let manifest = entries.first(where: { $0.path == manifestPath })?.data else { throw PortableArchiveError.missingManifest }
+        do {
+            try schema.capped(atBytes: limits.maxManifestBytes).validate(manifest)
+        } catch {
+            throw PortableArchiveError.manifestRejected(error)
+        }
         let decoder = JSONDecoder()
         guard let header = try? decoder.decode(Header.self, from: manifest) else { throw PortableArchiveError.malformedManifest }
-        guard header.format == format else { throw PortableArchiveError.wrongFormat }
+        guard header.format == schema.name else { throw PortableArchiveError.wrongFormat }
         guard header.formatVersion >= 1 else { throw PortableArchiveError.malformedManifest }
-        guard header.formatVersion <= supportedVersion else { throw PortableArchiveError.newerVersion(header.formatVersion) }
+        switch schema.verdict(for: header.formatVersion) {
+        case .current, .older: break
+        case .newer: throw PortableArchiveError.newerVersion(header.formatVersion)
+        case .unsupported: throw PortableArchiveError.malformedManifest
+        }
         guard let list = try? decoder.decode(FileList.self, from: manifest), list.files.count <= limits.maxFiles else {
             throw PortableArchiveError.malformedManifest
         }

@@ -191,6 +191,7 @@ targets:
       - package: Compositor           # CAM-001: the Camera visual (camera and spectrum layers)
       - package: SceneFormat          # FILE-001: scene documents in scene archives
       - package: SceneArchive         # FILE-001: SceneArchiveService
+      - package: LocalPortability     # FILE-009: StorageUsageCalculator
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.ProjectMiOS

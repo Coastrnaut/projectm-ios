@@ -6,14 +6,14 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 20,
+   "audited": 19,
    "implementing": 2,
-   "integrated": 64,
+   "integrated": 65,
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 138,
-   "integrated": 13
+   "audited": 137,
+   "integrated": 14
   },
   "P2": {
    "audited": 77,
@@ -24,9 +24,9 @@
   }
  },
  "by_state": {
-  "audited": 244,
+  "audited": 242,
   "implementing": 2,
-  "integrated": 79,
+  "integrated": 81,
   "skipped_existing": 1
  },
  "device_gate": {
@@ -90,9 +90,7 @@
    "FILE-004",
    "FILE-005",
    "FILE-006",
-   "FILE-007",
    "FILE-008",
-   "FILE-009",
    "FILE-010",
    "FILE-011",
    "FILE-012",
@@ -284,7 +282,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "246 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
+   "244 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
   ]
  },
  "features": {
@@ -1211,12 +1209,12 @@
   "FILE-007": {
    "attempts": 0,
    "branch": "feature/file-007",
-   "branch_sha": null,
+   "branch_sha": "d9f90f1e1d0fa00da71fc8b239cd5a388e4534bf",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "d8e359893ae702d66b050d65ab08bfe646337f7a",
    "priority": "P0",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "integrated"
   },
   "FILE-008": {
    "attempts": 0,
@@ -1230,13 +1228,13 @@
   },
   "FILE-009": {
    "attempts": 0,
-   "branch": null,
-   "branch_sha": null,
+   "branch": "feature/file-009",
+   "branch_sha": "d7df58dcb6e768cb999e8b61f1723b8c1cb9ecf8",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "efddbc04183788f7982c87c94267c8a589ad90da",
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "integrated"
   },
   "FILE-010": {
    "attempts": 0,
@@ -2270,13 +2268,13 @@
   },
   "PERF-010": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/perf-010",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "PERF-011": {
    "attempts": 2,
@@ -3736,6 +3734,16 @@
    "sha": "77fcfa3f1e56aa54bf1f495ee49d68fc8b0cd767"
   },
   {
+   "branch": "feature/file-007",
+   "id": "FILE-007",
+   "sha": "d8e359893ae702d66b050d65ab08bfe646337f7a"
+  },
+  {
+   "branch": "feature/file-009",
+   "id": "FILE-009",
+   "sha": "efddbc04183788f7982c87c94267c8a589ad90da"
+  },
+  {
    "branch": "feature/fx-001",
    "id": "FX-001",
    "sha": "1192e0d6503e390abc9485e6e9382553b034a80a"
@@ -3971,5 +3979,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T21:33:09Z"
+ "updated": "2026-11-13T22:09:04Z"
 }

@@ -39,10 +39,13 @@ struct VideoStore: @unchecked Sendable {
         self.limits = limits
     }
 
+    /// The folder's name in Application Support (FILE-009 measures it).
+    static let folderName = "Videos"
+
     /// `Library/Application Support/Videos`.
     static func defaultDirectory() throws -> URL {
         try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-            .appendingPathComponent("Videos", isDirectory: true)
+            .appendingPathComponent(folderName, isDirectory: true)
     }
 
     /// The stored video, or nil (clearing an invalid identifier or one whose file is gone).
