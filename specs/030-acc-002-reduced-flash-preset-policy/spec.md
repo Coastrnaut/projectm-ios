@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (ACC-002-T01-T19 verified on the Mac; T20 `{device}` open)
 
 **Input**: User description: "Implement ACC-002 (Reduced flash preset policy) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Warn or filter scenes exceeding

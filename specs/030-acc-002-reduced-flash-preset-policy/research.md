@@ -52,8 +52,11 @@ small amplitude: any change inverts or doubles the whole picture.
 
 - All pack files (14,576, before de-duplication and exclusions): 92 flagged (toggle-driven 81,
   luma-flicker 11); Included (28): 0 flagged, so release 1.0's default scope is unchanged.
-- The deduplicated index the app ships: the count is recorded by ACC-002-T15 in tasks.md (built
-  from the main checkout's submodules into a scratch directory).
+- The deduplicated index the app ships (12,847 presets, built from the pinned submodules by
+  ACC-002-T17): **83 flagged (0.65 %)**: cream-of-the-crop 63, projectm-classic 19,
+  milkdrop-original 1, en-d 0, Included 0; by rule toggle-driven 73, luma-flicker 10, toggle-flip 0
+  (no pinned preset flips a toggle from itself; the rule stays for imported presets). The screen adds about 5 s to a full index rebuild (8.1 s against 2.9 s).
+- The Swift twin and the Python module agree on all 14,576 pack files (0 differences).
 - Name check: of 100 files whose names contain "strobe", "seizure", "epilep", "flash" or "flicker",
   4 are flagged. Several of those names are jokes, and others flash through warp, zoom or shader
   code that the rules do not read. This is the screen's recall limit, recorded honestly.

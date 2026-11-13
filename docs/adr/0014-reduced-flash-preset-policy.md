@@ -37,7 +37,7 @@ flashing did not change which scenes the app picks.
 ## Consequences
 
 - 92 of the 14,576 pack files (before de-duplication) are flagged; none of the 28 Included
-  presets, so the pre-purchase experience is unchanged. The shipped index's count is recorded in
-  the feature's tasks.md.
+  presets, so the pre-purchase experience is unchanged. In the shipped index 83 of 12,847 presets
+  (0.65 %) are flagged; the screen adds about 5 s to a full index rebuild.
 - Rule changes rebuild the index (the stamp hashes the classifier) and must update the fixtures.
 - ACC-012 (sensory safety profile) can reuse the verdict and rule ids for finer per-user limits.
