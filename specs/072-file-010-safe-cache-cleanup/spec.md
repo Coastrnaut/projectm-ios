@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (FILE-010-T01-T10 verified on the Mac host and an iOS 27.2 simulator; T11 `{device}` open)
 
 **Input**: User description: "Implement FILE-010 (Safe cache cleanup) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Clear generated previews and

@@ -33,7 +33,7 @@ Simulator results are never device evidence.
 
 ## Phase 5: Polish
 
-- [ ] FILE-010-T10 Gates: `check_compliance.py`, `validate_docs.py`, `swift test` for LocalPortability on the host, `xcodebuild test` (projectM-iOSTests, CacheCleanupUITests, StorageUsageUITests, SettingsUITests) on an own iOS 27.2 simulator, `check_privacy_manifest.py` on the Debug app, PosterBoard report count unchanged (FILE-010-R7, S5)
+- [X] FILE-010-T10 Gates: `check_compliance.py`, `validate_docs.py`, `swift test` for LocalPortability on the host, `xcodebuild test` (projectM-iOSTests, CacheCleanupUITests, StorageUsageUITests, SettingsUITests) on an own iOS 27.2 simulator, `check_privacy_manifest.py` on the Debug app, PosterBoard report count unchanged (FILE-010-R7, S5) — Verified 2026-11-13: check_compliance OK; validate_docs OK; LocalPortability 93 tests on the Mac host (3.4 s; Linux lane runs in CI after push, not run locally: no Linux host); projectM-iOSTests 328 pass (15.3 s) and projectM-iOSUITests CacheCleanupUITests (17.4 s) + StorageUsageUITests + SettingsUITests (4) = 6 pass (140.7 s) on the FILE10 iPhone 17 iOS 27.2 simulator (SettingsUITests.testLicensesScreen took 30.6 s, a pre-existing test); check_privacy_manifest OK on the Debug app with the manifest unchanged; PosterBoard reports 32 before and after
 - [ ] FILE-010-T11 {device} D1: after preset switches and a shared recording, Clear Caches frees the Caches size; the app plays and the current scene and show load after relaunch (quickstart, Device)
 
 ## Dependencies
