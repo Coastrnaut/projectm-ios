@@ -84,6 +84,9 @@ public final class ParameterStore: Sendable {
 
     public func value(for id: ParameterID) -> ParameterValue? { state.withLock { $0.values[id] } }
 
+    /// Every value, read under one lock (a consistent snapshot).
+    func allValues() -> [ParameterID: ParameterValue] { state.withLock { $0.values } }
+
     public func double(_ id: ParameterID) -> Double? { value(for: id)?.doubleValue }
     public func int(_ id: ParameterID) -> Int? { value(for: id)?.intValue }
     public func bool(_ id: ParameterID) -> Bool? { value(for: id)?.boolValue }
