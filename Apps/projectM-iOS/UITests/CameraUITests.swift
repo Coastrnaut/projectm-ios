@@ -47,9 +47,9 @@ final class CameraUITests: XCTestCase {
 
     private func choose(_ title: String) {
         openSettings()
-        let picker = app.segmentedControls["visualPicker"]
-        XCTAssertTrue(picker.appears(within: 5))
-        picker.buttons[title].tap()
+        let row = app.visualRow(title)
+        XCTAssertTrue(row.appears(within: 5))
+        row.tap()
         closeSettings()
     }
 

@@ -22,3 +22,13 @@ extension XCUIElement {
     /// True as soon as the element is gone (at once when it already is); false after `timeout`.
     func disappears(within timeout: TimeInterval = 10) -> Bool { poll(timeout) { !self.exists } }
 }
+
+extension XCUIApplication {
+    /// The Settings row for a visual, by its title (VIS-002-F1: rows replaced the segmented
+    /// `visualPicker`). Identifiers are `visual.<VisualChoice raw value>`.
+    func visualRow(_ title: String) -> XCUIElement {
+        let raw = ["projectM": "projectM", "Circular Spectrum": "circularSpectrum",
+                   "Linear Spectrum": "linearSpectrum", "Camera": "camera"][title] ?? title
+        return buttons["visual.\(raw)"]
+    }
+}

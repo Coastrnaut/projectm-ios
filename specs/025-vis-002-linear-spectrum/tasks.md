@@ -72,8 +72,8 @@ the app choice, and polish; each phase is a commit.
 
 ## Follow-up found during integration (2026-11-13)
 
-- [ ] VIS-002-F1 The Settings Visual picker is a three-segment control ("projectM", "Circular
+- [X] VIS-002-F1 The Settings Visual picker is a three-segment control ("projectM", "Circular
   Spectrum", "Linear Spectrum"). Check it on the narrowest iPhone (iPhone 13 mini, iOS 26.5
   simulator) and at accessibility text sizes; if labels truncate, switch to a picker style that
   does not (a menu or a list of rows) and update the UI tests that tap its segments
-  (`NativeVisualUITests`, `GlowUITests`, `LinearSpectrumUITests`) after the test-speed pass lands.
+  (`NativeVisualUITests`, `GlowUITests`, `LinearSpectrumUITests`) after the test-speed pass lands. — Verified 2026-11-13: CAM-001 added a fourth choice (Camera), so the segmented control was replaced by one row per visual (`visual.<raw>` identifiers, checkmark and the selected trait); rows wrap instead of truncating at any width or text size. NativeVisual, Glow, LinearSpectrum, Camera and Settings UI tests pass on the iPhone 17 iOS 27.2 simulator; not re-checked visually on the iPhone 13 mini.

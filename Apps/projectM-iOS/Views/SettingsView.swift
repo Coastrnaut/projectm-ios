@@ -46,13 +46,28 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section {
-                    Picker("Visual", selection: $settings.visual) {
-                        ForEach(VisualChoice.allCases, id: \.self) { Text($0.title).tag($0) }
+                // VIS-002-F1 (2026-11-13): one row per visual instead of a segmented control. Four
+                // segments ("projectM", "Circular Spectrum", "Linear Spectrum", "Camera") truncate on
+                // narrow iPhones and at large text sizes; rows never do. Row identifiers: `visual.<raw>`.
+                Section("Visual") {
+                    ForEach(VisualChoice.allCases, id: \.self) { choice in
+                        Button {
+                            settings.visual = choice
+                        } label: {
+                            HStack {
+                                Text(choice.title).foregroundStyle(.primary)
+                                Spacer(minLength: 8)
+                                if settings.visual == choice {
+                                    Image(systemName: "checkmark").foregroundStyle(.tint).accessibilityHidden(true)
+                                }
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .accessibilityAddTraits(settings.visual == choice ? .isSelected : [])
+                        .accessibilityIdentifier("visual.\(choice.rawValue)")
                     }
-                    .pickerStyle(.segmented)
-                    .accessibilityLabel("Visual")
-                    .accessibilityIdentifier("visualPicker")
+                }
+                Section {
                     if settings.visual.isNative {
                         Picker("Bars", selection: $settings.circularSpectrumBars) {
                             ForEach(AppSettings.circularSpectrumBarChoices, id: \.self) { Text("\($0)").tag($0) }
