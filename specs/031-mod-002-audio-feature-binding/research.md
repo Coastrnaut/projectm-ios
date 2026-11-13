@@ -84,7 +84,7 @@ Each decision: what was chosen, why, and what was rejected. Decided by Claude un
 ## MOD-002-D8: App scope and the Debug test path
 
 - **Decision**: no editor and no persistence. The host owns the modulator; the Debug launch argument
-  `-uitestBindGlowToBass` binds `audio.band.0` → `effect.bloom.intensity` (replace 0…1, no
+  `-uitestBindGlowToLevel` binds `audio.bandMean` → `effect.bloom.intensity` (replace 0…1, no
   envelope). A DEBUG panel shows `glowModulation` ("bound, manual 0.50, effective 0.73", refreshed 4
   times a second) and a `glowModulationUnbind` button. The UI test sets the visual and glow through
   launch-argument defaults (`-settings.visual circularSpectrum -settings.circularSpectrum.glow YES`)

@@ -11,7 +11,7 @@ sources, a validated binding (input range → output range, mix mode, optional a
 envelope) and a single-owner, allocation-free modulator that resolves a parameter's effective value
 from its manual value each frame on a caller-supplied clock. The app evaluates bindings in the
 native spectra's frame loop and applies a bound glow intensity to the bloom and to the Reduce-
-flashing luminance model; a Debug-only launch argument binds the lowest band to the glow intensity
+flashing luminance model; a Debug-only launch argument binds the mean band level to the glow intensity
 for a simulator UI test. No user-visible UI, setting or stored data. No ADR: the model follows
 ADR-0012's modulation policy and overrides no default (research MOD-002-D1 to D8 record the
 choices).
@@ -34,7 +34,7 @@ choices).
      bands and display time and applies the effective glow intensity to the bloom and to a
      reference-typed luminance model (`ModulatedGlowLuminance`) set once as the generator's
      downstream luminance. Without bindings the frame loop is unchanged (MOD-002-R11).
-   - `Coordinators/AppCoordinator.swift`: under `#if DEBUG`, `-uitestBindGlowToBass` binds band 0
+   - `Coordinators/AppCoordinator.swift`: under `#if DEBUG`, `-uitestBindGlowToLevel` binds band 0
      to `effect.bloom.intensity` (replace, full range) after the host is created; `unbindGlowTest()`.
    - `Debug/UITestModulationPanel.swift` (DEBUG only): the readout and an Unbind button.
    - Tests: `Tests/AudioFeatureBindingAppTests.swift` (host-level, deterministic) and

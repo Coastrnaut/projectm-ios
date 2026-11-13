@@ -516,7 +516,7 @@ final class AppCoordinator: VisualizationControlling {
                                                    forceGlowFailure: forceGlowFailure)
             host.reduceFlashing = settings.reduceFlashing
             #if DEBUG
-            bindGlowToBassIfRequested(host)   // MOD-002: AudioFeatureBindingUITests
+            bindGlowToLevelIfRequested(host)   // MOD-002: AudioFeatureBindingUITests
             #endif
             presentation.register(host)   // PERF-011: starts suspended while the app cannot present
             nativeVisual = host
@@ -594,12 +594,13 @@ final class AppCoordinator: VisualizationControlling {
     #if DEBUG
     // MARK: - Audio feature binding test path (MOD-002-R12; DEBUG only)
 
-    /// Launch argument of AudioFeatureBindingUITests: bind the lowest band to the glow intensity.
-    static let bindGlowToBassArgument = "-uitestBindGlowToBass"
+    /// Launch argument of AudioFeatureBindingUITests: bind the mean band level to the glow intensity
+    /// (track-independent: the reference track leaves the lowest band below the floor).
+    static let bindGlowToLevelArgument = "-uitestBindGlowToLevel"
 
-    private func bindGlowToBassIfRequested(_ host: NativeSpectrumHost) {
-        guard ProcessInfo.processInfo.arguments.contains(Self.bindGlowToBassArgument) else { return }
-        try? host.bind(AudioFeatureBinding(source: .band(0), target: VisualParameterIDs.bloomIntensity,
+    private func bindGlowToLevelIfRequested(_ host: NativeSpectrumHost) {
+        guard ProcessInfo.processInfo.arguments.contains(Self.bindGlowToLevelArgument) else { return }
+        try? host.bind(AudioFeatureBinding(source: .bandMean, target: VisualParameterIDs.bloomIntensity,
                                            outputStart: 0, outputEnd: 1))
     }
 

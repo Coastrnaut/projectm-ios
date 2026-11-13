@@ -45,7 +45,7 @@ A valid binding for an already bound target replaces it (signal 0, clock reset).
 
 ## C5 App (Debug only)
 
-- Launch argument `-uitestBindGlowToBass`: binds `audio.band.0` → `effect.bloom.intensity`, replace
+- Launch argument `-uitestBindGlowToLevel`: binds `audio.bandMean` → `effect.bloom.intensity`, replace
   0…1, no envelope, when the native host is created.
 - Accessibility: `glowModulation` (static text; label and value "bound|unbound, manual X.XX,
   effective Y.YY"), `glowModulationUnbind` (button).

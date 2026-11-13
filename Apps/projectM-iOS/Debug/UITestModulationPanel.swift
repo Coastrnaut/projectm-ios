@@ -1,6 +1,6 @@
 // UITestModulationPanel.swift — the glow modulation readout and Unbind button for
 // AudioFeatureBindingUITests (MOD-002-T12, T13; MOD-002-R12). DEBUG builds only, and only with the
-// launch argument `-uitestBindGlowToBass`; Release builds contain none of this.
+// launch argument `-uitestBindGlowToLevel`; Release builds contain none of this.
 //
 // The readout ("bound, manual 0.50, effective 0.73") is refreshed four times a second from the
 // native host; the frame loop itself never formats text. Simulator results are never device
@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct UITestModulationPanel: View {
-    static var isRequested: Bool { ProcessInfo.processInfo.arguments.contains(AppCoordinator.bindGlowToBassArgument) }
+    static var isRequested: Bool { ProcessInfo.processInfo.arguments.contains(AppCoordinator.bindGlowToLevelArgument) }
 
     let coordinator: AppCoordinator
 

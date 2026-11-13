@@ -88,8 +88,8 @@ struct VisualizerView: View {
                     .padding(.top, 40)
             }
             if UITestModulationPanel.isRequested {     // MOD-002: AudioFeatureBindingUITests
-                VStack { Spacer(); HStack { UITestModulationPanel(coordinator: coordinator); Spacer() } }
-                    .padding(.bottom, 2)
+                VStack { HStack { UITestModulationPanel(coordinator: coordinator); Spacer() }; Spacer() }
+                    .padding(.top, 70)
             }
             #endif
             if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {
