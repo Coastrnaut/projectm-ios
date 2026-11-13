@@ -199,6 +199,32 @@ final class BloomRenderTests: XCTestCase {
         }
     }
 
+    // MOD-002-T09 (research MOD-002-D6): a modulated intensity changes only the uniforms. The plan
+    // is not rebuilt (no allocation per frame), and the result equals a bloom built at that intensity.
+    func testIntensityOnlyChangeKeepsThePlanAndRendersTheNewIntensity() throws {
+        let rig = try RenderRig()
+        let input = PixelImage.patch(width: 96, height: 72, x0: 40, y0: 30, size: 12, color: Pixel(1, 1, 1, 1))
+        let format = MTLPixelFormat.rgba16Float
+        let start = BloomParameters(enabled: true, intensity: 0.5, radius: 0.03, threshold: 0.5)
+        let effect = try rig.build { try BloomEffect(device: rig.device, pixelFormat: format, parameters: start) }
+        try effect.prepare(width: input.width, height: input.height)
+        let builds = effect.planBuildCount
+        effect.parameters.intensity = 0.9
+        XCTAssertEqual(effect.planBuildCount, builds, "an intensity-only change does not rebuild the plan")
+        let source = try rig.upload(input, format: format)
+        let output = try rig.makeTexture(width: input.width, height: input.height, format: format)
+        let commands = try XCTUnwrap(rig.queue.makeCommandBuffer())
+        XCTAssertTrue(effect.encode(input: source, output: output, commandBuffer: commands))
+        let buffer = try rig.encodeReadBack(output, commands: commands)
+        commands.commit()
+        commands.waitUntilCompleted()
+        var fresh = start
+        fresh.intensity = 0.9
+        XCTAssertEqual(RenderRig.bytes(of: buffer), try render(rig, input, format: format, parameters: fresh).bytes)
+        effect.parameters.radius = 0.05
+        XCTAssertEqual(effect.planBuildCount, builds + 1, "another field still rebuilds the plan")
+    }
+
     // (g) Contract: unsupported formats throw; mismatched sizes or formats encode nothing.
     func testContractViolationsAreRefused() throws {
         let rig = try RenderRig()

@@ -30,8 +30,17 @@
 // * Per frame, this file's code allocates nothing: the band scratch is preallocated; the chain's
 //   textures are created only when the drawable size changes; Metal's command buffer and drawable
 //   are the system's.
+// * Audio feature bindings (MOD-002; research MOD-002-D6, D8): the host owns an
+//   `AudioFeatureModulator` over the visual catalog. With no binding nothing below changes. With a
+//   binding, each frame advances it with the frame's bands and display time and resolves the
+//   effective glow from the manual `glow` (which modulation never writes): the bloom gets the
+//   effective intensity (an intensity-only change updates its uniforms, no plan rebuild) and the
+//   generator's downstream luminance is a `ModulatedGlowLuminance` reference whose model follows
+//   the effective glow, so Reduce flashing (FX-019) bounds the frame actually shown. No allocation
+//   per frame. Unbinding returns to the manual glow at once.
 import AudioCore
 import Metal
+import ParameterGraph
 import PerformanceControlAnalysis
 import PresentationLifecycle
 import QuartzCore
@@ -40,6 +49,7 @@ import UIKit
 import VisualBandFeed
 import VisualEffects
 import VisualGenerators
+import VisualParameters
 
 @MainActor
 final class NativeSpectrumHost: PresentationBoundResource {
@@ -77,8 +87,16 @@ final class NativeSpectrumHost: PresentationBoundResource {
         didSet { applyGlow() }
     }
 
-    /// The bloom runs (available and not pass-through).
-    var glowActive: Bool { chain != nil && !glow.isPassThrough }
+    /// The bloom runs (available and the effective glow not pass-through).
+    var glowActive: Bool { chain != nil && !effectiveGlow.isPassThrough }
+
+    /// MOD-002: the glow actually rendered, `glow` with any bound intensity applied.
+    private(set) var effectiveGlow = BloomParameters()
+    /// MOD-002: audio feature bindings over the visual catalog (nil only if the catalog failed to
+    /// validate, which `VisualParameterCatalogTests` rules out in CI).
+    private let modulator: AudioFeatureModulator? = (try? VisualParameterCatalog.makeRegistry()).map(AudioFeatureModulator.init(registry:))
+    /// MOD-002: the luminance model the generator sees while the glow intensity is bound.
+    private let glowLuminance = ModulatedGlowLuminance()
 
     var barCount: SpectrumBarCount {
         get { generator.barCount }
@@ -171,12 +189,68 @@ final class NativeSpectrumHost: PresentationBoundResource {
     }
 
     private func applyGlow() {
-        bloom?.parameters = glow
-        generator.downstreamLuminance = glowActive ? BloomLuminanceModel(parameters: glow) : nil
+        resolveEffectiveGlow()
         view.accessibilityLabel = "\(style.title) visualization"
         view.accessibilityIdentifier = style.accessibilityIdentifier
         view.accessibilityValue = Self.accessibilityValue(style: style, glowEnabled: glow.enabled, glowUnavailable: glowUnavailable)
     }
+
+    // MARK: - Audio feature bindings (MOD-002)
+
+    private var glowIntensityIsBound: Bool { modulator?.isBound(VisualParameterIDs.bloomIntensity) ?? false }
+
+    /// Applies `glow` with any bound intensity to the bloom and the luminance model. Unbound, this is
+    /// exactly the FX-001 path.
+    private func resolveEffectiveGlow() {
+        var resolved = glow
+        if let modulator, glowIntensityIsBound {
+            resolved.intensity = Float(modulator.value(for: VisualParameterIDs.bloomIntensity, manual: Double(glow.intensity)))
+        }
+        effectiveGlow = resolved
+        bloom?.parameters = resolved
+        if glowIntensityIsBound {
+            glowLuminance.model = BloomLuminanceModel(parameters: resolved)
+            generator.downstreamLuminance = glowActive ? glowLuminance : nil   // a class reference: no allocation
+        } else {
+            generator.downstreamLuminance = glowActive ? BloomLuminanceModel(parameters: resolved) : nil
+        }
+    }
+
+    /// Binds an audio feature to a catalog parameter (validated, MOD-002 contract C2); effective
+    /// from the next frame.
+    func bind(_ binding: AudioFeatureBinding) throws(AudioFeatureBindingError) {
+        guard let modulator else { throw .unknownTarget(binding.target) }
+        try modulator.bind(binding)
+        resolveEffectiveGlow()
+    }
+
+    /// Removes a binding; the parameter returns to its manual value at once.
+    @discardableResult
+    func unbind(_ target: ParameterID) -> Bool {
+        let removed = modulator?.unbind(target) ?? false
+        resolveEffectiveGlow()
+        return removed
+    }
+
+    /// Advances the bindings with one frame's bands at the frame's display time and applies the
+    /// result. Does nothing without bindings. Called by `frame(_:)`; tests call it directly.
+    func applyModulation(bands: UnsafeBufferPointer<Float>, timeNanoseconds: UInt64) {
+        guard let modulator, modulator.hasBindings else { return }
+        modulator.advance(frame: AudioFeatureFrame(bands: bands), timeNanoseconds: timeNanoseconds)
+        resolveEffectiveGlow()
+    }
+
+    /// "bound, manual 0.50, effective 0.73" (MOD-002-R12; the Debug readout and tests).
+    var glowModulationReadout: String {
+        let state = glowIntensityIsBound ? "bound" : "unbound"
+        return "\(state), manual \(String(format: "%.2f", Double(glow.intensity))), effective \(String(format: "%.2f", Double(effectiveGlow.intensity)))"
+    }
+
+    /// The bloom's current parameters (nil without a bloom).
+    var bloomParameters: BloomParameters? { bloom?.parameters }
+
+    /// The luminance model Reduce flashing applies to the generator's output.
+    var downstreamLuminance: (any FrameLuminanceTransfer)? { generator.downstreamLuminance }
 
     /// The accessibility value naming the glow state.
     static func glowDescription(enabled: Bool, unavailable: Bool) -> String {
@@ -273,6 +347,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         let context = VisualFrameContext(timeNanoseconds: UInt64(max(link.targetTimestamp, 0) * 1e9),
                                          frameDuration: link.targetTimestamp - link.timestamp, reduceFlashing: reduceFlashing)
         let input = UnsafeBufferPointer(start: bands, count: bandCount)
+        applyModulation(bands: input, timeNanoseconds: context.timeNanoseconds)   // MOD-002; no-op without bindings
         let target = drawable.texture
         var drawn = false
         if let chain, glowActive {
@@ -360,6 +435,17 @@ private final class NativeSpectrumLinkProxy: NSObject {
     weak var host: NativeSpectrumHost?
     init(_ host: NativeSpectrumHost) { self.host = host }
     @MainActor @objc func fire(_ link: CADisplayLink) { host?.frame(link) }
+}
+
+/// MOD-002 (research MOD-002-D6): the bloom's luminance model behind a class reference, so the frame
+/// loop can follow a modulated intensity without boxing a new existential every frame. Mutated and
+/// read only on the main thread (the frame loop encodes there), hence `@unchecked Sendable`.
+final class ModulatedGlowLuminance: FrameLuminanceTransfer, @unchecked Sendable {
+    var model = BloomLuminanceModel(parameters: BloomParameters())
+
+    func outputLuminance(ofFlatColor color: LinearColor) -> Double { model.outputLuminance(ofFlatColor: color) }
+    func outputRedness(ofFlatColor color: LinearColor) -> Double { model.outputRedness(ofFlatColor: color) }
+    func spreadRadius(width: Int, height: Int) -> Double { model.spreadRadius(width: width, height: height) }
 }
 
 /// Which native spectrum the host draws (VIS-002-D5).
