@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T13:31:08Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T13:42:49Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -97,6 +97,7 @@ None.
 - `python3 scripts/validate_docs.py`: pass at `e1aeb82495a0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-004/20261113T082643/docs.log`)
 - `swift test --package-path Packages/AnalysisFeatures`: pass at `e1aeb82495a0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-004/20261113T082643/swift-test_AnalysisFeatures.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `e1aeb82495a0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-004/20261113T082643/swift-test_VisualGenerators.log`)
+- `integration checkout: AnalysisFeatures 73 on iOS 27.2 sim (213 s) and 73 (1 skipped) with -DANALYSIS_NO_ACCELERATE (318 s); VisualGenerators 40 on sim; app: projectM-iOSTests 131, NativeVisualUITests 4 pass; 0 PosterBoard reports`: pass at `e1ae49c` (log `.autonomous/logs/integration/anl-004/app-tests.log`)
 
 ### AUD-001 Import DRM-free audio files (integrated)
 - `python3 scripts/check_compliance.py`: pass at `d9a60b2a6692` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-001/20261112T153538/compliance.log`)
