@@ -25,7 +25,7 @@ A task is ticked `[X]` only when verified, with " — Verified <date>: <how>".
 
 ## Phase 4: User Story 2 — backups (P1)
 
-- [ ] SCN-013-T07 [US2] ShowStore: back up a migrated stored scene once before `saveScene` replaces it; refuse the save if the backup fails; remove backups with unreferenced scenes, in Packages/ShowControl/Sources/ShowStorage/ShowStore.swift; tests in Packages/ShowControl/Tests/ShowControlTests/ShowStoreMigrationBackupTests.swift with a test-only migrator seam (R8, R9, R15)
+- [X] SCN-013-T07 [US2] ShowStore: back up a migrated stored scene once before `saveScene` replaces it; refuse the save if the backup fails; remove backups with unreferenced scenes, in Packages/ShowControl/Sources/ShowStorage/ShowStore.swift; tests in Packages/ShowControl/Tests/ShowControlTests/ShowStoreMigrationBackupTests.swift with a test-only migrator seam (R8, R9, R15) — Verified 2026-11-13: `swift test --package-path Packages/ShowControl` 30/30 (0.19 s); ShowStoreMigrationBackupTests 5/5 (read writes nothing, backup once and never overwritten, failed backup refuses the save, backups removed with the scene, names)
 - [ ] SCN-013-T08 [US2] [US3] SceneAutosaveStore: remember migrated originals at load, write `<name>.v<N>.backup` before the save that replaces or removes them, `keepOriginal` step on failure, `migrated` and `keptOriginal` events without content, in Apps/projectM-iOS/Coordinators/SceneAutosaveStore.swift; app unit tests in Apps/projectM-iOS/Tests/SceneAutosaveMigrationTests.swift (temporary folder; load alone writes no file) (R7-R10, S2, S4)
 
 ## Phase 5: Polish

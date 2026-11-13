@@ -154,6 +154,25 @@ public struct SceneMigrationRecord: Sendable, Hashable {
     public var stepCount: Int { targetVersion - sourceVersion }
     /// Changes the steps recorded (the migrator's version entries are not counted).
     public var changeCount: Int { log.filter { (e: SceneMigrationLogEntry) -> Bool in e.change.kind != .version }.count }
+
+    /// SCN-013-R8: the name of the original's backup next to a stored file (`current.scene.v1.backup`).
+    public func backupName(for fileName: String) -> String { Self.backupName(for: fileName, version: sourceVersion) }
+
+    public static func backupName(for fileName: String, version: Int) -> String { fileName + ".v\(version).backup" }
+
+    /// Whether `name` is a backup of `fileName` (any version).
+    public static func isBackup(_ name: String, of fileName: String) -> Bool {
+        let prefix = fileName + ".v"
+        let suffix = ".backup"
+        guard name.hasPrefix(prefix), name.hasSuffix(suffix), name.count > prefix.count + suffix.count else { return false }
+        let digits = name.dropFirst(prefix.count).dropLast(suffix.count)
+        return digits.allSatisfy { (c: Character) -> Bool in c.isASCII && c.isNumber }
+    }
+
+    /// Diagnostics text without scene content (SCN-013-R10).
+    public var summary: String {
+        "migrated scene from version \(sourceVersion) to \(targetVersion) (\(stepCount) steps, \(changeCount) changes)"
+    }
 }
 
 public struct SceneMigrationResult: Sendable {
