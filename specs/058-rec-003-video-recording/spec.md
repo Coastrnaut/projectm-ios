@@ -34,6 +34,19 @@ The row's gap status is "Gap candidate". The audit confirms it.
 | Native spectra (Circular, Linear) | Draw into the drawable; REC-001 reads one drawable back. | No continuous per-frame output. |
 | projectM (ANGLE) | Draws through GL into the window surface; REC-001 reads one frame with a GL read-back. | No continuous output; a per-frame GL read-back stalls the GPU. |
 
+## Clarifications
+
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the conservative, local-first option.
+
+- Q: Should projectM (the ANGLE visual) be recordable in this row, given its only frame path today is a CPU read-back that stalls the GPU? → A: No. Record covers the compositor visuals (Camera, Photo, Video, Text) and the native spectra (Circular, Linear), whose frames can be copied on the GPU into the encoder's buffers without a CPU read-back; for projectM, Record is shown unavailable with a reason. A per-frame GL read-back would cut the frame rate of the app's main visual unmeasured (Constitution X), and a GPU-side path out of ANGLE's surface is a separate piece of work (ADR follow-up). Rejected: per-frame read-back at a reduced rate (an unmeasured stall on the main visual, and a jerky video); waiting with the whole row until projectM is solved (blocks REC-004 to REC-016).
+- Q: When the user pauses or blacks out the output during a recording, should the recording pause (and resume later in the same file) or stop and finish the file? → A: Stop and finish the file, keep what was recorded and offer it, with a notice. One rule for every interruption (pause, blackout, background, visual or size change, presentation loss) is predictable, never records what the user chose to hide, and leaves no half-open file across long gaps. Resuming in the same file needs timeline offsets and a held writer; REC-016 (interruption recovery) can add it. Rejected: pause and resume in one file (more state; a blackout could silently resume recording); discard the recording (loses the user's work).
+- Q: What frame rate, codec and size should the video have, before REC-005 (quality profiles) and REC-006 (frame rate choice) exist? → A: At most 30 frames per second with each frame's real presentation time (frames closer than the interval are skipped), HEVC when the device can encode it and H.264 otherwise, the drawable's pixel size cropped to even dimensions and scaled down to fit 1920 pixels on the long side, 8-bit SDR tagged Rec. 709. 30 fps halves the encoder's load against a 60 Hz loop and matches the visuals' usual rate under the quality governor; a 1080p-class cap keeps files and thermal load moderate on every device including the A16 iPad; HEVC halves file size where supported. Rejected: 60 fps (twice the load, unmeasured on devices); the full drawable size (2752 px on iPad Pro; heavier encoding and files); a constant frame rate with duplicated frames (invents frames the screen never showed).
+- Q: What happens to a recording when the app goes to the background? → A: The recording stops at once and the file is finished while the app still runs (with a short background-task grant from the system); the Files sheet is offered when the app returns to the foreground. The visuals stop drawing in the background anyway, and an unfinished file is unreadable. Rejected: keep the writer open across the background (the system may suspend or end the app with an unreadable file); discard the recording (loses the user's work).
+- Q: Should Record check free storage before starting? → A: No storage estimate in this row: the disk-space query is a required-reason API (privacy manifest) and REC-015 (recording disk guard) owns estimates and low-space stops. A writer failure (including a full disk) stops the recording, deletes the partial file and shows "The recording couldn't be finished." The 10-minute cap bounds a file to about 0.5-1 GB at the chosen size. Rejected: query free space now (a new required-reason declaration without the row that needs it); no cap (an unbounded file).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Record the visual to a video file (Priority: P1)
@@ -136,7 +149,7 @@ background event decodes.
 ### Edge Cases
 
 - The writer fails (storage full, encoder error): recording stops, the partial file is deleted, a
-  notice says the recording failed.
+  notice says "The recording couldn't be finished." No free-space estimate is made (REC-015).
 - Fewer than 2 frames were written before stop: no file is offered; a notice says nothing was
   recorded.
 - The drawable has an odd width or height: the recording drops the last pixel column or row so the
