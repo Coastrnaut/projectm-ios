@@ -53,6 +53,9 @@ interaction); each answer is the conservative, local-first option.
 - Q: Is there a hardware keyboard shortcut, and which key? → A: Yes: B, with no modifier, toggles the blackout (blacks out while live or fading in; restores while blacked out), the convention of presentation apps (Keynote and PowerPoint use B for a black screen and B again to return). It is attached to the emergency button and to the badge's Restore, so it works exactly when those buttons are shown, and only on the visualizer; a text field with focus keeps its typing. Escape is rejected (it dismisses sheets and means "cancel"); a ⌘ combination is rejected (two keys in an emergency).
 - Q: What does "restore resumes the previous scene" mean exactly, and how is it proved? → A: After restore, the same visual is shown (the same visual choice and, for projectM, the same preset), the visual's view was never replaced or moved (no placement change), the visual kept drawing while black, its settings (glow, spectrum options) are unchanged, and the audio source was started once. Proved by a coordinator unit test with a real visual and by a UI test that compares the preset name and the probes before and after. A frame counter is not added: the existing `visualRunning` probe (frames per second above 0 while black and after restore) shows that frames continued. Rejected: a new per-visual frame counter (touches every visual for the same evidence).
 - Q: How do recording and Save Frame behave with the emergency blackout? → A: Exactly as with OUT-010's Black out, because the emergency button and the B key call the same blackout: an active recording stops and keeps what was recorded with a notice (REC-003 Clarifications: never record what the user chose to hide), and Save Frame is refused while blacked out, waiting or fading in (REC-001). Restore never restarts a recording. Rejected: pausing a recording across the blackout (REC-003 rejected it).
+- Q: When the device screen itself is what the audience sees (no external display), should the emergency button hide or dim so it is not seen in the show? → A: It stays shown at full contrast, like the source-and-state indicator that is already always visible (FR-040): an emergency control that disappears is no emergency control, and a dimmed one fails contrast for low-vision users (FR-070). It is small (44 × 44 pt, an icon on the same material as the other badges). Performers who need a clean device picture use an external display, where the button never appears (R4). Rejected: auto-dim after a delay (contrast, and it hides the control exactly when it is not being looked at); hide without a display (removes the emergency path on the device).
+- Q: Does the B key work while a sheet (Settings, preset browser, queue) is open? → A: No. A presented sheet takes the keyboard, and its text fields need B; the external display keeps showing the visualization meanwhile (OUT-001-R1), and the sheet's Done returns to the visualizer, where B and the button work again. This is stated, not worked around. Rejected: an app-wide key command (would steal B from text fields such as the text overlay editor and preset names).
+- Q: Is the emergency blackout logged or counted separately from OUT-010's Black out? → A: No new record: OUT-010 already logs each phase change (no user data, nothing stored, FR-065), and both entry points produce the same phases. A separate entry-point log adds nothing a performer needs. Rejected: a counter in Diagnostics (stores usage; not needed for any criterion).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -133,9 +136,10 @@ has one.
   its hint says the output goes black at once and Restore is at the top.
 - Large accessibility text sizes: the button keeps its size and place (an icon), so it never
   pushes the controls off screen.
-- Sheets (Settings, preset browser) cover the visualizer: the emergency button is under the sheet;
-  the sheet's own content is not the show output (OUT-001-R1 keeps the external display showing the
-  visualization), and closing the sheet returns to the button.
+- Sheets (Settings, preset browser) cover the visualizer: the emergency button is under the sheet
+  and the B key goes to the sheet; the sheet's own content is not the show output (OUT-001-R1 keeps
+  the external display showing the visualization), and closing the sheet returns to the button.
+- No external display (the device screen is the output): the button stays shown at full contrast.
 
 ## Requirements *(mandatory)*
 
@@ -156,13 +160,15 @@ has one.
   the screen's middle, with an accessibility label "Emergency black out", a hint, and an identifier
   (FR-070).
 - **SHOW-014-R6**: The B key on a hardware keyboard, with no modifier, MUST black out while the
-  emergency button is shown and restore while the badge's Restore is shown.
+  emergency button is shown and restore while the badge's Restore is shown; it does nothing while a
+  sheet is presented over the visualizer.
 - **SHOW-014-R7**: Restore MUST resume the previous scene: the same visual choice, the same preset,
   the same visual view in the same slot with no new placement, the visual's settings unchanged, frames
   drawn throughout, and the audio source started once.
 - **SHOW-014-R8**: During an emergency blackout, a recording MUST stop and keep its file (REC-003),
   and Save Frame MUST be refused (REC-001); restore MUST NOT restart a recording.
-- **SHOW-014-R9**: The emergency control MUST store nothing (FR-065); a launch starts live.
+- **SHOW-014-R9**: The emergency control MUST store nothing and add no log or counter beyond
+  OUT-010's phase log (FR-065); a launch starts live.
 - **SHOW-014-R10**: Only public, documented platform APIs (Constitution I); builds for iOS 26 and 27.
 
 ### Key Entities
