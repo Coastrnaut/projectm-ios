@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import math
 import re
@@ -22,6 +23,8 @@ import build_angle_xcframework as bax  # noqa: E402
 import build_projectm_xcframework as bpx  # noqa: E402
 import check_compliance  # noqa: E402
 import check_privacy_manifest as cpm  # noqa: E402
+import check_network_symbols as cns  # noqa: E402
+import observe_app_network as oan  # noqa: E402
 import generate_gles_loader as ggl  # noqa: E402
 import generate_reference_audio as gra  # noqa: E402
 import run_device_tests as rdt  # noqa: E402
@@ -1336,6 +1339,183 @@ class ReferenceToneGoldensTests(unittest.TestCase):
         import check_reference_tone_goldens as crtg
         with mock.patch("builtins.print"):
             self.assertEqual(crtg.main(), 0)
+
+
+class NetworkSymbolScanTests(unittest.TestCase):
+    """check_network_symbols.py (FILE-012-T02; FILE-012-R2 to R4, S2): rules from recorded tool output."""
+
+    OTOOL = ("/tmp/x.app/x:\n"
+             "\t/System/Library/Frameworks/Foundation.framework/Foundation (compatibility version 300.0.0)\n"
+             "\t/System/Library/Frameworks/StoreKit.framework/StoreKit (compatibility version 1.0.0)\n"
+             "\t/usr/lib/libresolv.9.dylib (compatibility version 1.0.0)\n")
+    NM = ("                 (undefined) external _$s7Network10NWListenerC5startyy...(from Network)\n"
+          "                 (undefined) weak external _socket (from libSystem)\n"
+          "                 (undefined) external _OBJC_CLASS_$_NSURLSession (from Foundation)\n"
+          "0000000000001000 (__TEXT,__text) external _main\n")
+
+    def findings(self, imports, demangled=None, defined=frozenset(), libraries=()):
+        return cns.evaluate_image("img", "arm64", list(libraries), imports, demangled or {}, set(defined))
+
+    def test_parsers_read_otool_and_nm_output(self):
+        libraries = cns.parse_otool_libraries(self.OTOOL)
+        self.assertEqual([cns.library_name(path) for path in libraries], ["Foundation", "StoreKit", "libresolv"])
+        imports = cns.parse_nm_imports(self.NM)
+        self.assertEqual(imports[1], ("_socket", "libSystem"))
+        self.assertEqual(imports[2], ("_OBJC_CLASS_$_NSURLSession", "Foundation"))
+        self.assertEqual(len(imports), 3, "defined symbols are not imports")
+
+    def test_forbidden_libraries_fail_and_storekit_is_allowed(self):
+        found = self.findings([], libraries=["/System/Library/Frameworks/StoreKit.framework/StoreKit",
+                                             "/System/Library/Frameworks/CFNetwork.framework/CFNetwork",
+                                             "/System/Library/Frameworks/WebKit.framework/WebKit",
+                                             "/usr/lib/libresolv.9.dylib"])
+        self.assertEqual({(f.name, f.allowed) for f in found},
+                         {("StoreKit", True), ("CFNetwork", False), ("WebKit", False), ("libresolv", False)})
+
+    def test_each_forbidden_symbol_class_fails(self):
+        symbols = ["_socket", "_connect", "_getaddrinfo", "_sendto", "_OBJC_CLASS_$_NSURLSession",
+                   "_$sSo12NSURLSessionC10FoundationE4data3for8delegate", "_CFSocketCreate",
+                   "_CFStreamCreatePairWithSocketToHost", "_SCNetworkReachabilityCreateWithName",
+                   "_OBJC_CLASS_$_NSNetServiceBrowser", "_OBJC_CLASS_$_WKWebView", "_DNSServiceBrowse",
+                   "_connect$UNIX2003"]
+        found = self.findings([(s, "") for s in symbols])
+        self.assertEqual(len(found), len(symbols))
+        self.assertTrue(all(not f.allowed for f in found))
+
+    def test_harmless_lookalikes_pass(self):
+        self.assertEqual(self.findings([("_socketpair", ""), ("_OBJC_CLASS_$_NSURL", ""), ("_connectionCount", "")]), [])
+
+    def test_network_symbols_need_the_osc_image_and_the_allowlist(self):
+        imports = [("_$sListenerStart", "Network"), ("_$sConnOut", "Network"), ("_$sBrowser", "Network"),
+                   ("_nw_connection_create", "Network")]
+        demangled = {"_$sListenerStart": "NWListener.start(queue:)",
+                     "_$sConnOut": "NWConnection.__allocating_init(host:port:using:)",
+                     "_$sBrowser": "type metadata accessor for NWBrowser"}
+        outside = self.findings(imports, demangled)
+        self.assertTrue(all(not f.allowed for f in outside), "Network outside the OSC image fails")
+        release = {f.name: f.allowed for f in self.findings(imports, demangled, {"_$s18PerformanceControl24NetworkDatagramTransportC"})}
+        self.assertTrue(release["NWListener.start(queue:)"])
+        self.assertFalse(release["NWConnection.__allocating_init(host:port:using:)"], "outbound without the DEBUG sender")
+        self.assertFalse(release["type metadata accessor for NWBrowser"])
+        self.assertFalse(release["_nw_connection_create"], "C-level nw_* is never allowed")
+        debug = {f.name: f.allowed for f in self.findings(imports, demangled, {"NetworkDatagramTransport", "OSCLoopbackSender"})}
+        self.assertTrue(debug["NWConnection.__allocating_init(host:port:using:)"], "the DEBUG loopback sender")
+        self.assertFalse(debug["type metadata accessor for NWBrowser"])
+
+    def test_network_linkage_outside_the_osc_image_fails(self):
+        path = "/System/Library/Frameworks/Network.framework/Network"
+        self.assertFalse(self.findings([], libraries=[path])[0].allowed)
+        self.assertTrue(self.findings([], defined={"NetworkDatagramTransport"}, libraries=[path])[0].allowed)
+
+    def test_api_names_strip_descriptor_prefixes(self):
+        self.assertEqual(cns.network_api_name("enum case for NWConnection.State.ready(_:)"), "NWConnection.State.ready(_:)")
+        self.assertEqual(cns.network_api_name("static NWParameters.udp.getter"), "NWParameters.udp.getter")
+        self.assertEqual(cns.network_api_name("protocol conformance descriptor for NWError"), "NWError")
+
+    def test_release_flag_rejects_the_loopback_sender(self):
+        self.assertEqual(len(cns.release_findings("img", "arm64", {"_$s18PerformanceControl17OSCLoopbackSenderO"})), 1)
+        self.assertEqual(cns.release_findings("img", "arm64", {"NetworkDatagramTransport"}), [])
+
+    @unittest.skipUnless(sys.platform == "darwin", "macOS only: builds a real binary with clang (FILE-012-R4)")
+    def test_positive_control_a_real_binary_calling_socket_fails(self):
+        import subprocess
+        with tempfile.TemporaryDirectory() as tmp:
+            app = Path(tmp) / "Probe.app"
+            app.mkdir()
+            (app / "Info.plist").write_bytes(b'<?xml version="1.0"?><plist version="1.0"><dict></dict></plist>')
+            source = Path(tmp) / "probe.c"
+            source.write_text("#include <sys/socket.h>\n#include <netdb.h>\n"
+                              "int main(void) { struct addrinfo *r; getaddrinfo(\"example.invalid\", 0, 0, &r);\n"
+                              "  int s = socket(AF_INET, SOCK_STREAM, 0); return connect(s, 0, 0); }\n")
+            subprocess.run(["xcrun", "clang", "-o", str(app / "Probe"), str(source)], check=True, capture_output=True)
+            clean = Path(tmp) / "Clean.app"
+            clean.mkdir()
+            (clean / "Info.plist").write_bytes((app / "Info.plist").read_bytes())
+            (Path(tmp) / "clean.c").write_text("int main(void) { return 0; }\n")
+            subprocess.run(["xcrun", "clang", "-o", str(clean / "Clean"), str(Path(tmp) / "clean.c")], check=True, capture_output=True)
+            out = io.StringIO()
+            with mock.patch("sys.stdout", out):
+                bad, good = cns.main([str(app)]), cns.main([str(clean)])
+            self.assertEqual((bad, good), (1, 0), out.getvalue())
+            for name in ("socket", "connect", "getaddrinfo"):
+                self.assertIn(f"socket or resolver function {name}", out.getvalue())
+
+
+class AppNetworkObserverTests(unittest.TestCase):
+    """observe_app_network.py (FILE-012-T06; FILE-012-R6, R7): classification from recorded output."""
+
+    UDID = "8D04FF0C-A557-42C6-BFB6-80F5BCC39BD0"
+
+    def test_expectation_parsing(self):
+        self.assertIsNone(oan.parse_expect("none"))
+        self.assertEqual(oan.parse_expect("osc:47131"), 47131)
+        for bad in ("osc:0", "osc:70000", "all", "osc:"):
+            with self.assertRaises(ValueError):
+                oan.parse_expect(bad)
+
+    def test_only_the_apps_processes_in_this_simulator_are_found(self):
+        base = "/Users/x/Library/Developer/CoreSimulator/Devices/{}/data/Containers/Bundle/Application/A-B/projectM-iOS.app/"
+        ps = (f" 101 {base.format(self.UDID)}projectM-iOS -uitestUnlocked NO\n"
+              f" 102 {base.format('OTHER-UDID')}projectM-iOS\n"
+              f" 103 {base.format(self.UDID)}PlugIns/x.xctest/projectM-iOSUITests-Runner\n"
+              f" 104 /usr/bin/lsof -p 101\n")
+        self.assertEqual(oan.app_pids_from_ps(ps, self.UDID, "projectM-iOS"), [101])
+
+    def test_lsof_fields_parse(self):
+        sockets = oan.parse_lsof_fields("p4647\nf4\ntIPv6\nPUDP\nn*:47129\nf15\ntIPv6\nPUDP\nn127.0.0.1:47129->127.0.0.1:55802\n")
+        self.assertEqual([(s["pid"], s["protocol"], s["name"]) for s in sockets],
+                         [(4647, "UDP", "*:47129"), (4647, "UDP", "127.0.0.1:47129->127.0.0.1:55802")])
+
+    def sockets(self, *names, protocol="UDP"):
+        return [{"pid": 1, "fd": "4", "type": "IPv6", "protocol": protocol, "name": n} for n in names]
+
+    def report(self, sockets=(), events=(), osc=None, probe=False, ports=frozenset(), pids=(1,), ready=True, status=0):
+        return oan.evaluate(command_status=status, pids=list(pids), log_ready=ready, sockets=list(sockets),
+                            events=list(events), osc_port=osc, probe=probe, probe_ports=set(ports))
+
+    BOOKKEEPING = [{"category": "activity", "eventMessage": "Create activity from XPC object <nw_activity 50:1>"},
+                   {"category": "", "eventMessage": "networkd_settings_read_from_file_locked initialized networkd settings"}]
+    LISTENER = [{"category": "listener", "eventMessage": "nw_listener_set_state_on_queue [L1] waiting -> ready"}]
+    PROBE_PEER = [{"category": "connection", "eventMessage": "[C1 2B22 IPv4#37e29c21:55802 udp, server, prohibit joining protocols, definite]"},
+                  {"category": "connection", "eventMessage": "nw_connection_report_state_with_handler_on_nw_queue [C1] reporting state ready"}]
+
+    def test_none_passes_only_with_no_socket_and_no_relevant_event(self):
+        self.assertTrue(self.report(events=self.BOOKKEEPING)["ok"])
+        self.assertFalse(self.report(sockets=self.sockets("192.168.1.2:50000->17.1.2.3:443"), events=self.BOOKKEEPING)["ok"])
+        self.assertFalse(self.report(events=self.LISTENER)["ok"], "any network event fails with OSC off")
+
+    def test_blind_observers_fail(self):
+        self.assertIn("blind: no app process was seen in the simulator", self.report(pids=())["problems"])
+        self.assertIn("blind: the simulator log stream never became ready", self.report(ready=False)["problems"])
+        self.assertIn("the observed command failed (exit 65)", self.report(status=65)["problems"])
+
+    def test_osc_allows_the_listener_and_the_probe_peer_only(self):
+        good = self.report(self.sockets("*:47131", "127.0.0.1:47131->127.0.0.1:55802"), self.LISTENER + self.PROBE_PEER,
+                           osc=47131, probe=True, ports={55802})
+        self.assertTrue(good["ok"], good["problems"])
+        self.assertEqual(good["log"]["serverConnections"], ["1"])
+        outbound = self.report(self.sockets("*:47131", "127.0.0.1:50001->127.0.0.1:9000"), self.LISTENER, osc=47131)
+        self.assertFalse(outbound["ok"])
+        stranger = self.report(self.sockets("*:47131", "192.168.1.5:47131->192.168.1.9:4000"), self.LISTENER, osc=47131)
+        self.assertFalse(stranger["ok"], "an inbound peer that is not the probe")
+        tcp = self.report(self.sockets("*:47131", protocol="TCP"), osc=47131)
+        self.assertFalse(tcp["ok"])
+
+    def test_osc_rejects_client_connections_and_resolver_events(self):
+        client = [{"category": "connection", "eventMessage": "[C2 Hostname#abc:443 tcp, url: https://x, definite, attribution: developer]"}]
+        report = self.report(self.sockets("*:47131"), self.LISTENER + client, osc=47131)
+        self.assertIn("log: connection C2 was never described as server-side (inbound)", report["problems"])
+        resolver = [{"category": "resolver", "eventMessage": "nw_resolver_start_query_timer [C3] starting DNS"}]
+        self.assertFalse(self.report(self.sockets("*:47131"), self.LISTENER + resolver, osc=47131)["ok"])
+
+    def test_osc_probe_must_be_seen_in_both_layers(self):
+        unseen = self.report(self.sockets("*:47131"), self.LISTENER, osc=47131, probe=True, ports={55802})
+        self.assertIn("blind: the probe's peer socket was not seen in lsof", unseen["problems"])
+        self.assertIn("blind: no server-side connection event for the probe in the log", unseen["problems"])
+        never = self.report(self.sockets("*:47131"), self.LISTENER, osc=47131, probe=True)
+        self.assertIn("blind: the probe was never sent", never["problems"])
+        no_listener = self.report((), (), osc=47131)
+        self.assertIn("the OSC listener on port 47131 was never seen", no_listener["problems"])
 
 
 if __name__ == "__main__":
