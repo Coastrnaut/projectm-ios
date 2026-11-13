@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (CAM-001-T01-T23 verified on the Mac with the stand-in camera; device tasks T24-T27 `{device}` open)
 
 **Input**: User description: "Implement CAM-001 (Rear camera layer) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Display live rear camera feed as
