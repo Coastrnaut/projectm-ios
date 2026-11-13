@@ -13,6 +13,10 @@
 // * `CameraLayer` (CAM-001, ADR-0017) draws the newest picture of a `CameraFrameProvider` (a stub,
 //   or the iOS `AVCaptureSession` provider) as a layer. Its feed states and geometry are plain Swift
 //   and build on Linux; the Metal layer, the stub and the AVFoundation provider compile out there.
+// * `ProceduralMaterials` (SHD-001, ADR-0018) is the catalog of curated procedural materials: five
+//   materials whose parameters are MOD-001 descriptors (ParameterGraph, pure Swift) and whose layer
+//   draws them under the contract. The shader source is a constant in the module (no external code);
+//   the catalog, values and motion build on Linux, the layer and shaders compile out there.
 // Nothing here imports projectM, ANGLE, capture or the app (Constitution VI). The projectM layer is
 // target `ProjectMLayer` in Packages/ANGLERendering.
 // One library product, so CI's `-scheme Compositor` builds and tests every target.
@@ -21,18 +25,23 @@ import PackageDescription
 let package = Package(
     name: "Compositor",
     platforms: [.iOS("26.0"), .macOS(.v15)],
-    products: [.library(name: "Compositor", targets: ["Compositor", "SpectrumLayers", "CameraLayer"])],
+    products: [.library(name: "Compositor", targets: ["Compositor", "SpectrumLayers", "CameraLayer", "ProceduralMaterials"])],
     dependencies: [
         .package(path: "../AnalysisFeatures"),
         .package(path: "../FlashSafety"),
         .package(path: "../VisualGenerators"),
+        // SHD-001: material parameters are MOD-001 descriptors (pure Swift; ADR-0012).
+        .package(path: "../ParameterGraph"),
     ],
     targets: [
         .target(name: "Compositor", dependencies: ["AnalysisFeatures", "FlashSafety"]),
         .target(name: "SpectrumLayers", dependencies: ["Compositor", .product(name: "VisualGenerators", package: "VisualGenerators")]),
         .target(name: "CameraLayer", dependencies: ["Compositor"]),
+        .target(name: "ProceduralMaterials", dependencies: ["Compositor", "ParameterGraph"]),
         .testTarget(name: "CompositorTests",
                     dependencies: ["Compositor", "SpectrumLayers", "CameraLayer", "AnalysisFeatures", "FlashSafety",
                                    .product(name: "VisualGenerators", package: "VisualGenerators")]),
+        .testTarget(name: "ProceduralMaterialsTests",
+                    dependencies: ["ProceduralMaterials", "Compositor", "ParameterGraph", "FlashSafety", "AnalysisFeatures"]),
     ]
 )
