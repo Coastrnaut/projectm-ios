@@ -63,12 +63,12 @@ cannot be automated; simulator results are never device evidence); left open by 
 
 ## Phase 7: Polish & cross-cutting
 
-- [ ] MED-002-T23 ADR (next free number) for the imported video layer (decoder choice, queue, clock, remux, audio dropped), `docs/adr/README.md` row
-- [ ] MED-002-T24 [P] Privacy docs: `docs/privacy-policy.md` (imported videos) and `docs/release/app-privacy.md` (Data Not Collected; owner confirms in App Store Connect)
-- [ ] MED-002-T25 Checks: `python3 scripts/check_compliance.py`, `python3 scripts/validate_docs.py`, `python3 scripts/check_privacy_manifest.py` on the Debug simulator app; Linux shape of the package; `xcodebuild test -scheme Compositor` once on the simulator; regression run of `projectM-iOSUITests/PhotoLayerUITests` and `projectM-iOSUITests/CameraUITests` with the app unit tests and `VideoLayerUITests`; the built app's Info.plist has no `NSPhotoLibraryUsageDescription` (S8); PosterBoard report count before and after; test report `docs/test-reports/video-layer.md`
-- [ ] MED-002-T26 {device} Photos and Files picks on D1 and D3 (HEVC from the camera, an H.264 file), no permission prompt, Remove Video, relaunch
-- [ ] MED-002-T27 {device} 4K60 HEVC and a long (≥ 10 min) file play at their rate on D1 and D3; memory stays bounded (Xcode memory gauge)
-- [ ] MED-002-T28 {device} Thermal state over 3 minutes of 4K playback on D1 and D3 (`ProcessInfo.thermalState` stays below serious), frame rate recorded
+- [X] MED-002-T23 ADR (next free number) for the imported video layer (decoder choice, queue, clock, remux, audio dropped), `docs/adr/README.md` row — Verified 2026-11-13: `docs/adr/0022-imported-video-layer.md` (0022 was left for MED-002 by OUT-001 and SHD-011) and its README row; `validate_docs.py` OK
+- [X] MED-002-T24 [P] Privacy docs: `docs/privacy-policy.md` (imported videos) and `docs/release/app-privacy.md` (Data Not Collected; owner confirms in App Store Connect) — Verified 2026-11-13: `docs/privacy-policy.md` ("A video you choose", summary, permissions, stored data, traceability row) and `docs/release/app-privacy.md` (MED-002 paragraph); `validate_docs.py` OK
+- [X] MED-002-T25 Checks: `python3 scripts/check_compliance.py`, `python3 scripts/validate_docs.py`, `python3 scripts/check_privacy_manifest.py` on the Debug simulator app; Linux shape of the package; `xcodebuild test -scheme Compositor` once on the simulator; regression run of `projectM-iOSUITests/PhotoLayerUITests` and `projectM-iOSUITests/CameraUITests` with the app unit tests and `VideoLayerUITests`; the built app's Info.plist has no `NSPhotoLibraryUsageDescription` (S8); PosterBoard report count before and after; test report `docs/test-reports/video-layer.md` — Verified 2026-11-13: check_compliance OK, validate_docs OK, check_privacy_manifest OK on the Debug simulator app, no NSPhotoLibraryUsageDescription; Linux shape 83/83; `xcodebuild test -scheme Compositor` 151/151 on the simulator; app unit 200/201 (known PresetTests) and Video, Photo, Camera UI tests pass; PosterBoard 32 → 32; `docs/test-reports/video-layer.md`
+- [ ] MED-002-T26 {device} (open: needs D1/D3 and the owner) Photos and Files picks on D1 and D3 (HEVC from the camera, an H.264 file), no permission prompt, Remove Video, relaunch
+- [ ] MED-002-T27 {device} (open: needs D1/D3 and the owner) 4K60 HEVC and a long (≥ 10 min) file play at their rate on D1 and D3; memory stays bounded (Xcode memory gauge)
+- [ ] MED-002-T28 {device} (open: needs D1/D3 and the owner) Thermal state over 3 minutes of 4K playback on D1 and D3 (`ProcessInfo.thermalState` stays below serious), frame rate recorded
 
 ## Dependencies
 

@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Planned (analysis fixes applied 2026-11-13)
+**Status**: Implemented 2026-11-13 (MED-002-T01-T25 verified on the Mac: host, Linux shape and iOS 27.2 simulator; device tasks T26-T28 `{device}` open)
 
 **Input**: User description: "Implement MED-002 (Import video layer) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Choose compatible local video
