@@ -35,7 +35,11 @@ The row's gap status is "Gap candidate". The audit confirms it.
 Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
 interaction); each answer is the conservative, local-first option.
 
-- (filled by /speckit-clarify)
+- Q: Should the policy warn, filter, or both? → A: Both, by intent. Automatic and sequential choices (Next, Previous, Random, warm-up, the launch preset) skip flagged presets silently, because the user did not name a scene; an explicit choice of a flagged preset is the user's to make, so it is warned about and never silently refused (ACC-002-R5, R6, R10). Refusing explicit choices outright was rejected: it would hide part of the library the user paid for with no way to see it.
+- Q: How is "exceeding the user's flash-safety preference" decided without rendering 12,847 presets? → A: A deterministic text screen of each preset's per-frame equations, run at build time for the bundled library and in the app for imported presets, by one rule set kept in two implementations that must agree on a shared fixture set (ACC-002-R1 to R4; research ACC-002-D1, D2; ADR-0014). The preference is the existing Reduce flashing setting: on means the policy applies, off means behavior is unchanged. Rendering every preset through the FX-019 analysis at build time was rejected (needs the engine and a GPU in the build, minutes per build, and audio-dependent results); a per-preset numeric score was rejected for a yes/no flag with named reasons, which is explainable and testable.
+- Q: Is the warning's answer remembered? → A: No. Nothing is stored; the warning appears each time a flagged preset is chosen explicitly with Reduce flashing on (ACC-002-R12). A "don't ask again" switch would quietly weaken a safety setting; turning Reduce flashing off is the explicit way to stop the warnings.
+- Q: What happens to a flagged preset already on screen when Reduce flashing is turned on, and to a flagged last preset at launch? → A: The one on screen keeps playing (FX-019 already dims it; switching scenes under the user would be surprising). At launch with Reduce flashing on, a flagged last preset is not restored; the scope's first unflagged preset plays instead (ACC-002-R10, Edge Cases).
+- Q: Is the "May flash" mark shown when Reduce flashing is off? → A: No. Off means the user accepted flashing scenes, and the row stays exactly as before (ACC-002-R7, R8). The mark is a symbol plus the words "May flash", never color alone (ACC-003's rule), and is read by VoiceOver.
 
 ## User Scenarios & Testing *(mandatory)*
 
