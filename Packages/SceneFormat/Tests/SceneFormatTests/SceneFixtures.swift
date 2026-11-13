@@ -81,7 +81,7 @@ enum SceneFixtures {
         ]
         let modulation = SceneModulation(
             generators: [ModulationGenerator(id: "lfo.one", displayName: "LFO One", inputs: ["rate"])],
-            connections: [ModulationEdge(source: .generator("lfo.one"), target: .parameter(VisualParameterIDs.bloomRadius))])
+            edges: [ModulationEdge(source: .generator("lfo.one"), target: .parameter(VisualParameterIDs.bloomRadius))])
         let assets: [String: SceneAsset] = [
             "photo1": .photo(storeID: photoID),
             "clip": SceneAsset(.video(storeID: videoID), extra: ["futureNote": .string("kept")]),

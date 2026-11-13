@@ -57,8 +57,10 @@ final class SceneDecodeErrorTests: XCTestCase {
              "$.parameters[\"a.b\"].kind: unknown parameter value kind \"vector\"."),
             ("mix", minimal("bindings", "[{\"mix\":\"blend\",\"output\":{\"end\":1,\"start\":0},\"source\":\"audio.onset\",\"target\":\"a.b\"}]").bytes,
              "$.bindings[0].mix: unknown mix mode \"blend\"."),
-            ("source", minimal("bindings", "[{\"output\":{\"end\":1,\"start\":0},\"source\":\"audio.band.128\",\"target\":\"a.b\"}]").bytes,
-             "$.bindings[0].source: unknown audio source \"audio.band.128\"."),
+            // An unknown audio source (`audio.band.128`) is kept and flagged orphaned since MOD-013
+            // (SceneModulationRestoreTests); a missing one is still refused.
+            ("source", minimal("bindings", "[{\"output\":{\"end\":1,\"start\":0},\"target\":\"a.b\"}]").bytes,
+             "$.bindings[0]: \"source\" is required."),
             ("node", minimal("modulation", "{\"connections\":[{\"source\":{\"id\":\"x\",\"kind\":\"lfo\"},\"target\":{\"id\":\"a.b\",\"kind\":\"parameter\"}}]}").bytes,
              "$.modulation.connections[0].source.kind: unknown node kind \"lfo\"."),
             ("asset type missing", minimal("assets", "{\"a\":{\"storeID\":\"x\"}}").bytes, "$.assets.a: \"type\" is required."),

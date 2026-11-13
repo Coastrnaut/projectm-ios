@@ -165,7 +165,7 @@ public struct ModulationIDMigrations: Sendable, Hashable {
 
     /// Parameter IDs: MOD-001 syntax. Audio feature IDs: `audio.` then dot-separated segments of
     /// ASCII letters and digits.
-    static func idProblem(_ id: String) -> String? {
+    public static func idProblem(_ id: String) -> String? {
         guard isAudioFeatureID(id) else { return ParameterID(id).syntaxProblem }
         let rest = id.dropFirst(audioFeaturePrefix.count)
         if rest.isEmpty { return "the audio feature ID has no name after \"audio.\"" }

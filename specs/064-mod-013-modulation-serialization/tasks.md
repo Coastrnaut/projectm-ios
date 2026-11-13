@@ -14,15 +14,15 @@ simulator or device task (no app code changes).
 
 ## Phase 2: Document model (US2) — SceneFormat
 
-- [ ] MOD-013-T05 [US2] `SceneBinding.sourceID`, `SceneNodeRef`, `SceneConnection`, `SceneModulation.connections` in `SceneDocument.swift`; decode keeps unknown audio IDs, encode writes them (MOD-013-R1, R11; research MOD-013-D5)
-- [ ] MOD-013-T06 [US2] Update SCN-001 tests for the model change (decode error table: unknown audio source is no longer an error; fixtures, property generator)
+- [X] MOD-013-T05 [US2] `SceneBinding.sourceID`, `SceneNodeRef`, `SceneConnection`, `SceneModulation.connections` in `SceneDocument.swift`; decode keeps unknown audio IDs, encode writes them (MOD-013-R1, R11; research MOD-013-D5) — Verified 2026-11-13: `swift test --package-path Packages/SceneFormat` (31 tests pass; round-trip and property tests unchanged)
+- [X] MOD-013-T06 [US2] Update SCN-001 tests for the model change (decode error table: unknown audio source is no longer an error; fixtures, property generator) — Verified 2026-11-13: SceneDecodeErrorTests, SceneFixtures, ScenePropertyTests, SceneSourceSafetyTests updated; 31 tests pass
 
 ## Phase 3: Per-edge restore (US1, US2, US4) — SceneFormat
 
 - [ ] MOD-013-T07 [US1] `SceneModulationRestore.swift`: outcomes, report, preserved edges, issues, greedy loop rejection (MOD-013-R5, R7, R8; research MOD-013-D2, D3)
-- [ ] MOD-013-T08 [US4] New issue codes and severities in `SceneIssue.swift`; `validate` uses the restore (contract M4)
+- [X] MOD-013-T08 [US4] New issue codes and severities in `SceneIssue.swift`; `validate` uses the restore (contract M4) — Verified 2026-11-13: SceneValidationTests.testBindingExpressionAndModulationIssues (severity per code, cycle at its connection path, generator duplicate still an error)
 - [ ] MOD-013-T09 [US1] `SceneLiveState`: applied edges, `preserved`, `modulationReport`, `apply(to:)`, `validatedGraph(registry:)`; capture order (MOD-013-R6, R9, R10; contract M5, M6)
-- [ ] MOD-013-T10 [US4] Update SCN-001 validation/live tests for per-edge severities and paths
+- [X] MOD-013-T10 [US4] Update SCN-001 validation/live tests for per-edge severities and paths — Verified 2026-11-13: SceneValidationTests and SceneLiveAdapterTests pass with per-edge severities (31 tests)
 
 ## Phase 4: Acceptance and properties
 

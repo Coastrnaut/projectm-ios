@@ -163,13 +163,26 @@ final class SceneValidationTests: XCTestCase {
         // A feedback loop: the LFO drives the glow radius and the radius drives the LFO's rate.
         let loop = SceneModulation(
             generators: [ModulationGenerator(id: "lfo.one", displayName: "LFO One", inputs: ["rate"])],
-            connections: [ModulationEdge(source: .generator("lfo.one"), target: .parameter(VisualParameterIDs.bloomRadius)),
-                          ModulationEdge(source: .parameter(VisualParameterIDs.bloomRadius), target: .generator("lfo.one"), input: "rate")])
-        let graphIssues = ModulationGraph(generators: loop.generators, edges: loop.connections).validate(in: try SceneFixtures.registry())
+            edges: [ModulationEdge(source: .generator("lfo.one"), target: .parameter(VisualParameterIDs.bloomRadius)),
+                    ModulationEdge(source: .parameter(VisualParameterIDs.bloomRadius), target: .generator("lfo.one"), input: "rate")])
+        let graphIssues = ModulationGraph(generators: loop.generators, edges: loop.connections.compactMap(\.edge))
+            .validate(in: try SceneFixtures.registry())
         XCTAssertEqual(graphIssues.map(\.problem), [.cycle])
         let cycleMessage = try XCTUnwrap(graphIssues.first?.message)
         XCTAssertTrue(cycleMessage.contains("effect.bloom.radius → lfo.one.rate"), cycleMessage)
-        try check("cycle", [(.invalidModulation, "$.modulation", "Modulation: \(cycleMessage)")]) { $0.modulation = loop }
+        // MOD-013: the connection that closes the loop is rejected at its own path; the rest is live.
+        try check("cycle", [(.rejectedConnection, "$.modulation.connections[1]",
+                             "Connection 1 (effect.bloom.radius → lfo.one.rate): \(cycleMessage); it is kept but not applied.")]) {
+            $0.modulation = loop
+        }
+        // A contradictory generator declaration still refuses the document.
+        try check("generators", [(.invalidModulation, "$.modulation.generators[1]",
+                                  "Modulation: " + (ModulationGraph(generators: [loop.generators[0], loop.generators[0]])
+                                      .validate(in: try SceneFixtures.registry()).first?.message ?? "")),
+                                 (.rejectedConnection, "$.modulation.connections[0]",
+                                  "Connection 0 (lfo.one → effect.bloom.radius): the modulation section's generators are invalid; it is kept but not applied.")]) {
+            $0.modulation.generators.append($0.modulation.generators[0])
+        }
     }
 
     func testErrorsBlockOpeningAndWarningsDoNot() throws {

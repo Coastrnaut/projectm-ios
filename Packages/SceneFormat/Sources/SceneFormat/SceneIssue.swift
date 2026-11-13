@@ -80,11 +80,25 @@ public struct SceneIssue: Sendable, Hashable, CustomStringConvertible {
         case duplicateBindingTarget
         case invalidExpression
         case invalidModulation
+        /// MOD-013: an edge applied after the migration table rewrote an ID.
+        case migratedReference
+        /// MOD-013: an edge with a retired end; dropped and not saved again.
+        case retiredReference
+        /// MOD-013: a binding whose audio feature or target this version does not know; kept.
+        case orphanedBinding
+        /// MOD-013: a connection with an end this version does not know; kept.
+        case orphanedConnection
+        /// MOD-013: a connection refused by MOD-014 (a feedback loop included); kept.
+        case rejectedConnection
 
+        /// MOD-013 (ADR-0028 amendment): every per-edge modulation problem is a warning, so one edge
+        /// never refuses the scene; `invalidModulation` (generator declarations) stays an error.
         public var severity: Severity {
             switch self {
             case .unknownLayerKind, .unsupportedBlendMode, .valueClamped, .droppedField, .unknownAssetType, .unusedAsset,
-                 .missingAsset, .orphanedParameter, .rejectedParameter, .parameterClamped:
+                 .missingAsset, .orphanedParameter, .rejectedParameter, .parameterClamped,
+                 .invalidBinding, .duplicateBindingTarget, .invalidExpression, .migratedReference, .retiredReference,
+                 .orphanedBinding, .orphanedConnection, .rejectedConnection:
                 .warning
             default:
                 .error

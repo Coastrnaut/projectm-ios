@@ -76,7 +76,7 @@ enum SceneEncoder {
 
     static func binding(_ b: SceneBinding) -> SceneJSON {
         var o = b.extra
-        o["source"] = .string(b.source.id)
+        o["source"] = .string(b.sourceID)
         o["target"] = .string(b.target.rawValue)
         o["input"] = .object(["minimum": .double(b.mapping.inputMinimum), "maximum": .double(b.mapping.inputMaximum)])
         o["output"] = .object(["start": .double(b.mapping.outputStart), "end": .double(b.mapping.outputEnd)])
@@ -92,19 +92,14 @@ enum SceneEncoder {
                 .object(["id": .string(g.id), "name": .string(g.displayName),
                          "inputs": .array(g.inputs.map { (i: String) -> SceneJSON in .string(i) })])
             }),
-            "connections": .array(m.connections.map { (e: ModulationEdge) -> SceneJSON in
+            "connections": .array(m.connections.map { (e: SceneConnection) -> SceneJSON in
                 .object(["source": node(e.source), "target": node(e.target), "input": .string(e.input)])
             }),
         ])
     }
 
-    static func node(_ n: ModulationNode) -> SceneJSON {
-        let kind = switch n {
-        case .audio: "audio"
-        case .parameter: "parameter"
-        case .generator: "generator"
-        }
-        return .object(["kind": .string(kind), "id": .string(n.id)])
+    static func node(_ n: SceneNodeRef) -> SceneJSON {
+        .object(["kind": .string(n.kindName), "id": .string(n.id)])
     }
 
     static func asset(_ a: SceneAsset) -> SceneJSON {

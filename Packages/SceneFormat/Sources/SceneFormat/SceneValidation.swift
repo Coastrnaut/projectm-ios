@@ -198,39 +198,9 @@ extension SceneDocument {
         }
     }
 
-    /// MOD-002 contract C2 per binding, SHD-009 compile per expression, then MOD-014 over the valid
-    /// bindings' edges plus the modulation section (research SCN-001-D6).
+    /// MOD-013 per-edge restore (contract M3, M4): bindings, generator declarations, connections.
     private func validateModulation(_ registry: ParameterRegistry, into issues: inout [SceneIssue]) {
-        let modulator = AudioFeatureModulator(registry: registry)
-        var firstIndexByTarget: [ParameterID: Int] = [:]
-        var edges: [ModulationEdge] = []
-        for (i, binding) in bindings.enumerated() {
-            let path = "$.bindings[\(i)]"
-            if let j = firstIndexByTarget[binding.target] {
-                issues.append(SceneIssue(.duplicateBindingTarget, path: path + ".target",
-                                         "Binding \(i) targets \"\(binding.target)\", already bound by binding \(j)."))
-            } else {
-                firstIndexByTarget[binding.target] = i
-                do {
-                    try modulator.bind(binding.audioFeatureBinding)
-                    edges.append(ModulationEdge(source: .audio(binding.source), target: .parameter(binding.target)))
-                } catch {
-                    issues.append(SceneIssue(.invalidBinding, path: path, "Binding \(i): \(error.description)."))
-                }
-            }
-            if let source = binding.expression {
-                do {
-                    _ = try CompiledExpression(source: source)
-                } catch {
-                    issues.append(SceneIssue(.invalidExpression, path: path + ".expression", "Binding \(i) expression: \(error)."))
-                }
-            }
-        }
-        guard !modulation.isEmpty else { return }
-        let graph = ModulationGraph(generators: modulation.generators, edges: edges + modulation.connections)
-        for issue in graph.validate(in: registry) {
-            issues.append(SceneIssue(.invalidModulation, path: "$.modulation", "Modulation: \(issue.message)"))
-        }
+        issues += restoreModulation(registry: registry).issues
     }
 }
 
