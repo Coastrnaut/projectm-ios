@@ -28,7 +28,9 @@ let package = Package(
         .target(name: "CANGLE", dependencies: ["libEGL", "libGLESv2"]),
         .target(name: "ANGLERendering",
                 dependencies: ["CANGLE", "AudioCore", "ProjectMBridge", "Rendering", "PresentationLifecycle", "FlashSafety",
-                               .product(name: "CFlashLimiter", package: "Rendering")],
+                               .product(name: "CFlashLimiter", package: "Rendering"),
+                               // PERF-014: the render fault model (RenderHealth, back-off, injection).
+                               .product(name: "Compositor", package: "Compositor")],
                 linkerSettings: [.linkedFramework("QuartzCore"), .linkedFramework("Metal")]),
         // CMP-001: projectM as a compositor layer (EGL image over a Metal texture, shared-event sync).
         // Knows the layer contract, the bridge and ANGLE's EGL; nothing of other layers or analysis.
