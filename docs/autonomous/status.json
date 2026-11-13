@@ -8,9 +8,8 @@
   "P0": {
    "audited": 43,
    "implementing": 1,
-   "integrated": 41,
-   "skipped_existing": 1,
-   "unit_passed": 1
+   "integrated": 42,
+   "skipped_existing": 1
   },
   "P1": {
    "audited": 139,
@@ -28,9 +27,8 @@
  "by_state": {
   "audited": 268,
   "implementing": 2,
-  "integrated": 54,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "integrated": 55,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -78,7 +76,6 @@
    "CAM-010",
    "CAM-011",
    "CAM-013",
-   "CMP-003",
    "CMP-004",
    "CMP-005",
    "CMP-006",
@@ -312,7 +309,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "271 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
+   "270 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
   ]
  },
  "features": {
@@ -1051,10 +1048,10 @@
    "branch": "feature/cmp-003",
    "branch_sha": "e105dc91fb5042c5332fffff1d60c504eeaa528e",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "65caf9e9e6ec9a0474218068a468a1768f6bc74f",
    "priority": "P0",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "CMP-004": {
    "attempts": 0,
@@ -3744,6 +3741,11 @@
    "sha": "4c8340e68244fb10cf952a6b8bf20b804e79086a"
   },
   {
+   "branch": "feature/cmp-003",
+   "id": "CMP-003",
+   "sha": "65caf9e9e6ec9a0474218068a468a1768f6bc74f"
+  },
+  {
    "branch": "feature/fx-001",
    "id": "FX-001",
    "sha": "1192e0d6503e390abc9485e6e9382553b034a80a"
@@ -3874,5 +3876,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T17:41:15Z"
+ "updated": "2026-11-13T17:42:31Z"
 }
