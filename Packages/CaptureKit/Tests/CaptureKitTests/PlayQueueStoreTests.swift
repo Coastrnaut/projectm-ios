@@ -104,6 +104,49 @@ final class PlayQueueStoreTests: XCTestCase {
         XCTAssertEqual(PlayQueueStore(directory: directory).load(), .record(record))
     }
 
+    // MARK: - Shuffle (AUD-005-T03; AUD-005-R10, research AUD-005-D2, data-model.md)
+
+    func testShuffleOffWritesNothingNewSoAUD004BytesStay() throws {
+        let off = PlayQueueRecord(trackIDs: [idC, idA, idB], currentTrackID: idA)
+        XCTAssertNil(off.shuffle)
+        XCTAssertEqual(String(decoding: try off.encoded(), as: UTF8.self), goldenVersion1)
+        let one = PlayQueueRecord(trackIDs: [idA, idB], currentTrackID: idB, repeatMode: .one)
+        XCTAssertEqual(String(decoding: try one.encoded(), as: UTF8.self),
+                       #"{"currentTrackID":"\#(idB)","repeatMode":"one","schemaVersion":1,"trackIDs":["\#(idA)","\#(idB)"]}"#)
+    }
+
+    /// The golden of data-model.md, byte for byte.
+    func testAShuffledRecordEncodesTheGoldenAndRoundTrips() throws {
+        let one = "00000000-0000-0000-0000-000000000001", two = "00000000-0000-0000-0000-000000000002"
+        let record = PlayQueueRecord(trackIDs: [one, two], currentTrackID: two,
+                                     shuffle: .init(seed: 42, cycle: 0, order: [two, one], played: 1))
+        let text = String(decoding: try record.encoded(), as: UTF8.self)
+        XCTAssertEqual(text, #"{"currentTrackID":"\#(two)","schemaVersion":1,"shuffle":true,"shuffleCycle":0,"shuffleOrder":["\#(two)","\#(one)"],"shufflePlayed":1,"shuffleSeed":"000000000000002a","trackIDs":["\#(one)","\#(two)"]}"#)
+        XCTAssertEqual(try PlayQueueRecord.decode(Data(text.utf8)), .record(record))
+        let big = PlayQueueRecord(trackIDs: [one], currentTrackID: nil,
+                                  shuffle: .init(seed: .max, cycle: 7, order: [one], played: 0))
+        XCTAssertEqual(try PlayQueueRecord.decode(try big.encoded()), .record(big), "a 64-bit seed keeps every bit")
+    }
+
+    func testMalformedShuffleKeysReadConservatively() throws {
+        func decoded(_ extra: String) throws -> PlayQueueRecord? {
+            let json = #"{"schemaVersion":1,"trackIDs":["\#(idA)","\#(idB)"],\#(extra)}"#
+            guard case .record(let record) = try PlayQueueRecord.decode(Data(json.utf8)) else { return nil }
+            return record
+        }
+        // Shuffle off: `shuffle` not true, or the seed unusable.
+        for extra in [#""shuffle":false,"shuffleSeed":"2a""#, #""shuffle":"yes","shuffleSeed":"2a""#,
+                      #""shuffle":true"#, #""shuffle":true,"shuffleSeed":"xyz""#,
+                      #""shuffle":true,"shuffleSeed":"00000000000000001""#, #""shuffle":true,"shuffleSeed":42"#] {
+            XCTAssertNil(try decoded(extra)?.shuffle, extra)
+        }
+        // Shuffle on with repairable details: bad cycle and played read 0, bad entries are dropped.
+        let record = try XCTUnwrap(decoded(#""shuffle":true,"shuffleSeed":"2A","shuffleCycle":-3,"shufflePlayed":"x","shuffleOrder":["\#(idB)","nope",7,"\#(idB)"]"#))
+        XCTAssertEqual(record.shuffle, .init(seed: 42, cycle: 0, order: [idB], played: 0))
+        XCTAssertEqual(try XCTUnwrap(decoded(#""shuffle":true,"shuffleSeed":"2a""#)).shuffle,
+                       .init(seed: 42, cycle: 0, order: [], played: 0))
+    }
+
     // MARK: - The store
 
     func testAMissingFileIsMissing() {

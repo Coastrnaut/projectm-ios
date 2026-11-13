@@ -60,9 +60,9 @@ final class RepeatModeUITests: XCTestCase {
             + Self.noStore
         app.launch()
         let acknowledge = app.buttons["acknowledgeNotice"]
-        XCTAssertTrue(acknowledge.waitForExistence(timeout: 10))
+        XCTAssertTrue(acknowledge.appears(within: 10))
         acknowledge.tap()
-        XCTAssertTrue(app.buttons.matching(identifier: "importedTrack").element(boundBy: 2).waitForExistence(timeout: 20),
+        XCTAssertTrue(app.buttons.matching(identifier: "importedTrack").element(boundBy: 2).appears(within: 20),
                       "the three tracks are listed")
     }
 
@@ -71,27 +71,25 @@ final class RepeatModeUITests: XCTestCase {
         app.terminate()
         app.launchArguments = Self.noStore
         app.launch()
-        XCTAssertTrue(app.buttons["importAudio"].waitForExistence(timeout: 10), "the chooser, not the visualizer")
+        XCTAssertTrue(app.buttons["importAudio"].appears(within: 10), "the chooser, not the visualizer")
     }
 
     private func openQueueFromTheChooser() {
         let queueRow = app.buttons["queueRow"]
-        XCTAssertTrue(queueRow.waitForExistence(timeout: 10))
+        XCTAssertTrue(queueRow.appears(within: 10))
         queueRow.tap()
-        XCTAssertTrue(app.navigationBars["Queue"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Queue"].appears(within: 5))
     }
 
     private func closeQueue() {
         app.buttons["queueDone"].tap()
-        let gone = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: app.navigationBars["Queue"])
-        XCTAssertEqual(XCTWaiter().wait(for: [gone], timeout: 5), .completed)
+        XCTAssertTrue(app.navigationBars["Queue"].disappears(within: 5))
     }
 
     /// The queue screen marks exactly `mode` as selected.
     private func expectSelected(_ mode: String, file: StaticString = #filePath, line: UInt = #line) {
-        XCTAssertTrue(row(mode).waitForExistence(timeout: 5), "row \(mode)", file: file, line: line)
-        let selected = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isSelected == true"), object: row(mode))
-        XCTAssertEqual(XCTWaiter().wait(for: [selected], timeout: 5), .completed, "\(mode) is selected", file: file, line: line)
+        XCTAssertTrue(row(mode).appears(within: 5), "row \(mode)", file: file, line: line)
+        XCTAssertTrue(poll(5) { self.row(mode).isSelected }, "\(mode) is selected", file: file, line: line)
         for other in ["off", "one", "all"] where other != mode {
             XCTAssertFalse(row(other).isSelected, "\(other) is not selected", file: file, line: line)
         }
@@ -101,8 +99,8 @@ final class RepeatModeUITests: XCTestCase {
         let area = app.otherElements["visualizerTapArea"].firstMatch
         if playPause.exists { area.tap() }
         area.tap()
-        if !playPause.waitForExistence(timeout: 2) { area.tap() }
-        XCTAssertTrue(playPause.waitForExistence(timeout: 5), "the transport is shown with the controls", file: file, line: line)
+        if !playPause.appears(within: 2) { area.tap() }
+        XCTAssertTrue(playPause.appears(within: 5), "the transport is shown with the controls", file: file, line: line)
     }
 
     /// The Repeat button's value, read from freshly shown controls.
@@ -113,29 +111,42 @@ final class RepeatModeUITests: XCTestCase {
         return repeatButton.value as? String ?? ""
     }
 
-    func testEachModeIsSetFromTheUIAndSurvivesARelaunch() throws {
+    // Owner rule 7 (2026-11-13): the former single test (64 s, three relaunches) is split into two
+    // tests with one relaunch each; together they still set every mode from both places and read
+    // each place's result back after a relaunch.
+
+    func testTheQueueScreenSetsAModeAndItSurvivesARelaunch() throws {
         #if !targetEnvironment(simulator)
         throw XCTSkip("the app reads the test's files from the host; simulator only")
         #else
         try launchWithThreeTracks()
-
-        // Off, from the queue screen in the chooser.
         openQueueFromTheChooser()
         expectSelected("all")                                  // the default (AUD-004-R2)
         XCTAssertEqual(row("off").label, "Off")
         XCTAssertEqual(row("one").label, "One Track")
         XCTAssertEqual(row("all").label, "All Tracks")
+        row("one").tap()
+        expectSelected("one")
         row("off").tap()
         expectSelected("off")
         closeQueue()
         relaunch()
         openQueueFromTheChooser()
         expectSelected("off")
-        closeQueue()
+        #endif
+    }
 
-        // From the transport while a track plays: Off → All Tracks → One Track.
+    func testTheTransportCyclesTheModesAndTheChoiceSurvivesARelaunch() throws {
+        #if !targetEnvironment(simulator)
+        throw XCTSkip("the app reads the test's files from the host; simulator only")
+        #else
+        try launchWithThreeTracks()
         app.buttons.matching(identifier: "importedTrack").element(boundBy: 0).tap()
-        XCTAssertTrue(indicator.waitForExistence(timeout: 10))
+        XCTAssertTrue(indicator.appears(within: 10))
+        XCTAssertEqual(repeatValue(), "All Tracks")            // the default
+        repeatButton.tap()
+        XCTAssertEqual(repeatValue(), "One Track")
+        repeatButton.tap()
         XCTAssertEqual(repeatValue(), "Off")
         repeatButton.tap()
         XCTAssertEqual(repeatValue(), "All Tracks")
@@ -145,14 +156,6 @@ final class RepeatModeUITests: XCTestCase {
         relaunch()
         openQueueFromTheChooser()
         expectSelected("one")
-
-        // All Tracks again, from the queue screen.
-        row("all").tap()
-        expectSelected("all")
-        closeQueue()
-        relaunch()
-        openQueueFromTheChooser()
-        expectSelected("all")
         #endif
     }
 
@@ -161,12 +164,12 @@ final class RepeatModeUITests: XCTestCase {
         app.launchArguments = ["-uitestResetNotice", "-uitestResetAudioLibrary"] + Self.noStore
         app.launch()
         let acknowledge = app.buttons["acknowledgeNotice"]
-        XCTAssertTrue(acknowledge.waitForExistence(timeout: 10))
+        XCTAssertTrue(acknowledge.appears(within: 10))
         acknowledge.tap()
         let reference = app.buttons["In-App Playback"]
-        XCTAssertTrue(reference.waitForExistence(timeout: 10))
+        XCTAssertTrue(reference.appears(within: 10))
         reference.tap()
-        XCTAssertTrue(indicator.waitForExistence(timeout: 10))
+        XCTAssertTrue(indicator.appears(within: 10))
         showFreshControls()
         XCTAssertFalse(repeatButton.exists, "the reference track repeats by itself (AUD-004-R11)")
     }

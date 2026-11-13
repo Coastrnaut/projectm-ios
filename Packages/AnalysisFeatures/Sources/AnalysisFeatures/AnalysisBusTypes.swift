@@ -1,0 +1,101 @@
+// AnalysisBusTypes.swift — the items of the analysis event bus (ANL-016-R2 to R5; data-model.md;
+// contracts/analysis-event-bus.md).
+//
+// Every type here is a value type with no references, so the worker copies items into preallocated
+// subscriber storage without ARC traffic or allocation (Constitution VII). Nothing here is passed to
+// projectM (Constitution VIII, ADR-0008 decision 5).
+
+/// When an item became known, on the pipeline's one clock (ANL-016-R5, R6; research ANL-016-D2).
+public struct AnalysisTimestamp: Sendable, Hashable {
+    /// 1, 2, 3… per pipeline; never reused.
+    public let session: UInt64
+    /// Input samples consumed in the session up to the end of the window that produced the item
+    /// (markers: 0 at a session start, the samples consumed at its end).
+    public let sessionSample: Int64
+    /// Session base + `sessionSample`; never decreases in ID order, across sessions too.
+    public let timelineSample: Int64
+    /// Monotonic nanoseconds: the session's anchor + `sessionSample` at the sample rate.
+    public let hostNanoseconds: UInt64
+
+    public init(session: UInt64, sessionSample: Int64, timelineSample: Int64, hostNanoseconds: UInt64) {
+        self.session = session
+        self.sessionSample = sessionSample
+        self.timelineSample = timelineSample
+        self.hostNanoseconds = hostNanoseconds
+    }
+}
+
+/// Why a session started or ended (ANL-016-R8).
+public enum AnalysisSessionChange: Sendable, Hashable {
+    /// A reader was attached (or replaced by another attach).
+    case attached
+    /// The reader was detached (or the pipeline stopped).
+    case detached
+    /// The analysis tap reported a new capture session (the normalized ring was reset).
+    case sourceRestarted
+    /// The owner asked for a restart.
+    case restarted
+}
+
+/// A discrete event's payload (ANL-016-R3).
+public enum AnalysisEventKind: Sendable, Hashable {
+    /// ANL-004 onset: detection value and the threshold it crossed.
+    case onset(strength: Float, threshold: Float)
+    /// ANL-005 beat: tempo, period in samples and the estimate's confidence.
+    case beat(bpm: Double, periodSamples: Double, confidence: Double)
+    case sessionStarted(AnalysisSessionChange)
+    case sessionEnded(AnalysisSessionChange)
+}
+
+/// A discrete event (ANL-016-R3, R4, R7).
+public struct AnalysisEvent: Sendable, Hashable {
+    /// Unique and strictly increasing per pipeline (shared with frames).
+    public let id: UInt64
+    /// When the event became known (the end of the window that produced it).
+    public let time: AnalysisTimestamp
+    /// The event's own position on the session's sample clock: the onset's sample index, the
+    /// beat's predicted sample, or `time.sessionSample` for markers. At most `time.sessionSample`.
+    public let eventSample: Int64
+    public let kind: AnalysisEventKind
+
+    public init(id: UInt64, time: AnalysisTimestamp, eventSample: Int64, kind: AnalysisEventKind) {
+        self.id = id
+        self.time = time
+        self.eventSample = eventSample
+        self.kind = kind
+    }
+}
+
+/// A feature frame's metadata (ANL-016-R2); its bands are copied separately.
+public struct AnalysisFrame: Sendable, Hashable {
+    public let id: UInt64
+    public let time: AnalysisTimestamp
+    /// Bands in this frame (16, 32, 64 or 128), each normalized 0…1 (ANL-002 decibel scale).
+    public let bandCount: Int
+    /// ANL-004's detection value for this frame, 0…1.
+    public let onsetFlux: Float
+    /// ANL-005's tempo; nil without an estimate.
+    public let bpm: Double?
+    /// ANL-005's confidence, 0…1 (0 without an estimate).
+    public let beatConfidence: Double
+
+    public init(id: UInt64, time: AnalysisTimestamp, bandCount: Int, onsetFlux: Float, bpm: Double?, beatConfidence: Double) {
+        self.id = id
+        self.time = time
+        self.bandCount = bandCount
+        self.onsetFlux = onsetFlux
+        self.bpm = bpm
+        self.beatConfidence = beatConfidence
+    }
+}
+
+public enum AnalysisBusError: Error, Equatable, Sendable {
+    /// Event queue capacity outside 1…1,024.
+    case invalidEventCapacity(Int)
+    /// Already `AnalysisPipeline.maximumSubscribers` subscribers.
+    case tooManySubscribers
+    /// The spectrum, onset and beat configurations disagree on the sample rate.
+    case sampleRateMismatch
+    /// The band floor must be finite and below 0 dB.
+    case invalidBandFloor(Float)
+}

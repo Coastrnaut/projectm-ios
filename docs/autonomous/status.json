@@ -6,15 +6,16 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 58,
+   "audited": 57,
    "implementing": 1,
-   "integrated": 26,
+   "integrated": 27,
    "skipped_existing": 1,
    "unit_passed": 1
   },
   "P1": {
-   "audited": 144,
-   "integrated": 7
+   "audited": 142,
+   "implementing": 1,
+   "integrated": 8
   },
   "P2": {
    "audited": 79
@@ -24,9 +25,9 @@
   }
  },
  "by_state": {
-  "audited": 290,
-  "implementing": 1,
-  "integrated": 33,
+  "audited": 287,
+  "implementing": 2,
+  "integrated": 35,
   "skipped_existing": 1,
   "unit_passed": 1
  },
@@ -60,7 +61,6 @@
    "ANL-014",
    "ANL-015",
    "ANL-016",
-   "AUD-005",
    "AUD-007",
    "AUD-008",
    "AUD-009",
@@ -127,7 +127,6 @@
    "FX-016",
    "FX-017",
    "FX-018",
-   "FX-019",
    "FX-020",
    "MED-001",
    "MED-002",
@@ -331,7 +330,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "292 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
+   "290 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
   ]
  },
  "features": {
@@ -606,14 +605,14 @@
    "state": "audited"
   },
   "ANL-016": {
-   "attempts": 0,
+   "attempts": 1,
    "branch": "feature/anl-016",
-   "branch_sha": null,
+   "branch_sha": "1e9e7eec69b86bb860821afd1f36118eed1cb948",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": "specs/024-anl-016-analysis-event-bus",
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "AUD-001": {
    "attempts": 1,
@@ -658,12 +657,12 @@
   "AUD-005": {
    "attempts": 0,
    "branch": null,
-   "branch_sha": null,
+   "branch_sha": "8b729cdfa06db803b45981b937d5ebb95efe5b1e",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "bf010e1ee1e6f749e1203c477e7693dd8767d943",
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "integrated"
   },
   "AUD-006": {
    "attempts": 0,
@@ -677,13 +676,13 @@
   },
   "AUD-007": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/aud-007",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/026-aud-007-audio-output-route-indicator",
+   "state": "implementing"
   },
   "AUD-008": {
    "attempts": 0,
@@ -1510,10 +1509,10 @@
    "branch": "feature/fx-019",
    "branch_sha": "bc80d4775650339bf278d7d377ba8c4802689e75",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "6cfcbaabc8d039e71290067a1a0cf0069c7e67de",
    "priority": "P0",
    "spec_dir": "specs/022-fx-019-strobe-safety-envelope",
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "FX-020": {
    "attempts": 0,
@@ -3407,13 +3406,13 @@
   },
   "VIS-002": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/vis-002",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/025-vis-002-linear-spectrum",
+   "state": "implementing"
   },
   "VIS-003": {
    "attempts": 0,
@@ -3638,6 +3637,11 @@
    "sha": "8d96030954ff1ece93fb4f39cad7f27ea8668f8b"
   },
   {
+   "branch": null,
+   "id": "AUD-005",
+   "sha": "bf010e1ee1e6f749e1203c477e7693dd8767d943"
+  },
+  {
    "branch": "feature/aud-006",
    "id": "AUD-006",
    "sha": "03b23a8ae6a0aad7e0f09d81dd1bfe960b5e795a"
@@ -3728,6 +3732,11 @@
    "sha": "1192e0d6503e390abc9485e6e9382553b034a80a"
   },
   {
+   "branch": "feature/fx-019",
+   "id": "FX-019",
+   "sha": "6cfcbaabc8d039e71290067a1a0cf0069c7e67de"
+  },
+  {
    "branch": "feature/perf-011",
    "id": "PERF-011",
    "sha": "6d669fcb857695767ec2b785f74feb29f98d5978"
@@ -3788,5 +3797,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T14:57:42Z"
+ "updated": "2026-11-13T15:19:14Z"
 }

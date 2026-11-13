@@ -22,7 +22,15 @@
 //   is never repeated; in Off its former place past the end is the end of the queue (AUD-004-R10).
 //   The mode is stored with the queue and a change notifies `onOrderChange` like an edit, so the
 //   transport re-evaluates repetition at once without a cut (AUD-004-R9, R14).
-// * Shuffle with history (AUD-005) can be added on top of `ids` the same way (R19).
+// * Shuffle with history (AUD-005; specs/023-aud-005-shuffle-with-history; fulfils AUD-003-R19):
+//   while `isShuffled`, a `ShuffleState` on top of `ids` answers Next (`item(after:)`), Previous
+//   (`item(before:)`), the end of a track and `startItem`: a seeded shuffled order with a bounded play
+//   history, never the same track twice in a row. `ids` (the queue order the user sees) never changes
+//   by it. Every edit also updates the shuffled order so that it stays a permutation of `ids`;
+//   reorders leave it alone (AUD-005-R7). The repeat mode still decides only the end of a track
+//   (AUD-005-R6). Toggling Shuffle is stored and reported like an edit: the transport only
+//   re-evaluates looping, so audio is never cut (AUD-005-R9). The transport reports how it moved
+//   (`playbackDidMove(to:by:)`), which is how Previous walks back through the history.
 import Foundation
 import Observation
 
@@ -35,6 +43,8 @@ public final class PlayQueue: MutablePlayOrder {
     public private(set) var currentID: PlaybackItem.ID?
     /// How the queue continues at the end of a track (stored; AUD-004). All Tracks by default.
     public private(set) var repeatMode: RepeatMode = .all
+    /// AUD-005: the shuffled order and play history; nil while Shuffle is off (stored).
+    public private(set) var shuffle: ShuffleState?
     /// False when no store was given, or the stored record is newer than this app: edits then
     /// work for this launch and are not stored.
     public private(set) var isPersistent: Bool
@@ -50,15 +60,22 @@ public final class PlayQueue: MutablePlayOrder {
 
     @ObservationIgnored public var onOrderChange: (@MainActor () -> Void)?
     @ObservationIgnored private let store: PlayQueueStore?
+    /// Where a new shuffle's seed comes from: the system generator in the app, a fixed value in tests.
+    @ObservationIgnored private let seedSource: @MainActor () -> UInt64
 
     /// Reads the stored queue at once (a small file). `store` nil: a queue in memory only.
-    public init(store: PlayQueueStore?) {
+    public init(store: PlayQueueStore?, seedSource: @escaping @MainActor () -> UInt64 = { UInt64.random(in: .min ... .max) }) {
         self.store = store
+        self.seedSource = seedSource
         switch store?.load() {
         case .record(let record)?:
             ids = record.trackIDs
             currentID = record.currentTrackID
             repeatMode = record.repeatMode
+            if let stored = record.shuffle {
+                shuffle = ShuffleState(seed: stored.seed, cycle: stored.cycle, order: stored.order, played: stored.played,
+                                       queue: record.trackIDs, current: record.currentTrackID)
+            }
             isPersistent = true
             needsSeed = false
         case .newerFormat?:
@@ -85,10 +102,38 @@ public final class PlayQueue: MutablePlayOrder {
 
     public func contains(_ id: PlaybackItem.ID) -> Bool { ids.contains(id) }
 
-    /// What "Play Queue" starts: the current track when it is queued, otherwise the first.
+    /// What "Play Queue" starts: the current track when it is queued, otherwise the first (with
+    /// Shuffle on, the next track of the shuffled order; AUD-005-R13).
     public var startItem: PlaybackItem? {
         if let currentID, ids.contains(currentID), let item = catalogByID[currentID] { return item }
+        if let shuffle, let id = shuffle.upcoming(queue: ids), let item = catalogByID[id] { return item }
         return items.first
+    }
+
+    // MARK: - Shuffle (AUD-005)
+
+    public var isShuffled: Bool { shuffle != nil }
+    /// The seed of the current shuffle; nil while Shuffle is off.
+    public var shuffleSeed: UInt64? { shuffle?.seed }
+    /// The cycle's shuffled order (empty while Shuffle is off).
+    public var shuffledItems: [PlaybackItem] { shuffle?.order.compactMap { catalogByID[$0] } ?? [] }
+
+    /// Turns Shuffle on (with a new seed from `seedSource`) or off. The same value again does nothing.
+    public func setShuffle(_ on: Bool) {
+        guard on != isShuffled else { return }
+        setShuffle(on, seed: on ? seedSource() : 0)
+    }
+
+    /// Turns Shuffle on with `seed` (reproducible), or off. Stored and reported like an edit; never
+    /// moves playback (AUD-005-R9). Turning it off forgets the history.
+    public func setShuffle(_ on: Bool, seed: UInt64) {
+        guard on != isShuffled else { return }
+        shuffle = on ? ShuffleState(seed: seed, queue: ids, current: currentID) : nil
+        changed()
+    }
+
+    public func toggleShuffle() {
+        setShuffle(!isShuffled)
     }
 
     // MARK: - The library
@@ -126,6 +171,7 @@ public final class PlayQueue: MutablePlayOrder {
         var added = false
         for id in imported where catalogByID[id] != nil && !ids.contains(id) {
             insert(id, at: 0)
+            shuffle?.imported(id)
             added = true
         }
         if added { changed() }
@@ -142,10 +188,11 @@ public final class PlayQueue: MutablePlayOrder {
             // The detached current track queued again, in its place.
             insert(id, at: min(detachedIndex, ids.count))
             self.detachedIndex = nil
+            shuffle?.insertNext(id)
             changed()
             return
         }
-        if ids.contains(id) { removeID(id) }
+        if ids.contains(id) { removeKeepingShuffle(id) }     // `insertNext` moves it in the shuffle
         let position: Int
         if let currentID, let index = ids.firstIndex(of: currentID) {
             position = index + 1
@@ -155,6 +202,7 @@ public final class PlayQueue: MutablePlayOrder {
             position = 0
         }
         insert(id, at: position)
+        shuffle?.insertNext(id)
         changed()
     }
 
@@ -162,8 +210,10 @@ public final class PlayQueue: MutablePlayOrder {
     public func addToEnd(_ id: PlaybackItem.ID) {
         guard catalogByID[id] != nil else { return }
         if ids.last == id { return }
-        if ids.contains(id) { removeID(id) }
+        let wasQueued = ids.contains(id)
+        if wasQueued { removeKeepingShuffle(id) }            // a reorder: the shuffled order stays (AUD-005-R7)
         insert(id, at: ids.count)
+        if !wasQueued { shuffle?.append(queued: id) }
         if id == currentID { detachedIndex = nil }
         changed()
     }
@@ -205,21 +255,30 @@ public final class PlayQueue: MutablePlayOrder {
         guard !ids.isEmpty else { return }
         if let currentID, ids.contains(currentID) || detachedIndex != nil { detachedIndex = 0 }
         ids = []
+        shuffle?.clear()
         changed()
     }
 
     // MARK: - PlayOrder
 
     public func item(after id: PlaybackItem.ID) -> PlaybackItem? {
-        neighbour(of: id, step: 1)
+        if let shuffle {
+            return shuffle.upcoming(queue: ids).flatMap { catalogByID[$0] }
+        }
+        return neighbour(of: id, step: 1)
     }
 
     public func item(before id: PlaybackItem.ID) -> PlaybackItem? {
-        neighbour(of: id, step: -1)
+        if let shuffle {
+            return catalogByID[shuffle.previous ?? id]
+        }
+        return neighbour(of: id, step: -1)
     }
 
-    /// What follows when `id` plays to its end, by repeat mode (AUD-004; data-model.md table).
+    /// What follows when `id` plays to its end, by repeat mode (AUD-004; data-model.md table), and
+    /// while shuffled by the shuffled order (AUD-005-R6).
     public func endOfTrack(after id: PlaybackItem.ID) -> EndOfTrackStep {
+        if let shuffle { return shuffledEndOfTrack(after: id, shuffle) }
         let queued = items
         guard let first = queued.first else { return .stop(cue: nil) }
         let index = queued.firstIndex(where: { $0.id == id })
@@ -234,6 +293,16 @@ public final class PlayQueue: MutablePlayOrder {
             return .stop(cue: first)                   // the removed track was last: the end of the queue
         }
         return item(after: id).map(EndOfTrackStep.play) ?? .stop(cue: nil)
+    }
+
+    /// AUD-005-R6: One Track repeats a queued current track; otherwise forward history or the next
+    /// unplayed track; after a complete cycle, the next cycle's first track (Off: stop and cue it).
+    private func shuffledEndOfTrack(after id: PlaybackItem.ID, _ shuffle: ShuffleState) -> EndOfTrackStep {
+        guard !ids.isEmpty else { return .stop(cue: nil) }
+        if repeatMode == .one, ids.contains(id), let item = catalogByID[id] { return .play(item) }
+        if let next = shuffle.continuation().flatMap({ catalogByID[$0] }) { return .play(next) }
+        guard let first = shuffle.nextCycleFirst(queue: ids).flatMap({ catalogByID[$0] }) else { return .stop(cue: nil) }
+        return repeatMode == .off ? .stop(cue: first) : .play(first)
     }
 
     // MARK: - Repeat mode (AUD-004)
@@ -252,8 +321,13 @@ public final class PlayQueue: MutablePlayOrder {
     }
 
     public func playbackDidMove(to id: PlaybackItem.ID) {
+        playbackDidMove(to: id, by: .start)
+    }
+
+    public func playbackDidMove(to id: PlaybackItem.ID, by move: PlaybackMove) {
         if id != currentID || ids.contains(id) { detachedIndex = nil }
         currentID = id
+        shuffle?.didMove(to: id, by: move, queue: ids)
         save()
     }
 
@@ -279,11 +353,19 @@ public final class PlayQueue: MutablePlayOrder {
         if let detachedIndex, index < detachedIndex { self.detachedIndex = detachedIndex + 1 }
     }
 
+    /// `removeID` for a track that stays queued (a move): the shuffle and its history are kept.
+    private func removeKeepingShuffle(_ id: PlaybackItem.ID) {
+        let kept = shuffle
+        removeID(id)
+        shuffle = kept
+    }
+
     /// Removes `id`; the current track detaches at its index, and a detached index before which an
     /// entry was removed moves with it.
     private func removeID(_ id: PlaybackItem.ID) {
         guard let index = ids.firstIndex(of: id) else { return }
         ids.remove(at: index)
+        shuffle?.remove(id)
         if id == currentID {
             detachedIndex = index
         } else if let detachedIndex, index < detachedIndex {
@@ -300,6 +382,13 @@ public final class PlayQueue: MutablePlayOrder {
         guard isPersistent, let store else { return }
         try? store.save(PlayQueueRecord(trackIDs: ids.compactMap(PlayQueueRecord.canonicalID),
                                         currentTrackID: currentID.flatMap(PlayQueueRecord.canonicalID),
-                                        repeatMode: repeatMode))
+                                        repeatMode: repeatMode,
+                                        shuffle: shuffle.map(Self.record)))
+    }
+
+    /// The stored form of the shuffle state (identifiers canonical, as the queue's).
+    private static func record(_ shuffle: ShuffleState) -> PlayQueueRecord.Shuffle {
+        PlayQueueRecord.Shuffle(seed: shuffle.seed, cycle: shuffle.cycle,
+                                order: shuffle.order.compactMap(PlayQueueRecord.canonicalID), played: shuffle.played)
     }
 }

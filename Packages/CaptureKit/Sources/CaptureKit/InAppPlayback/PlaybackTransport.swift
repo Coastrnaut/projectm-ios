@@ -29,6 +29,8 @@
 //   reports every track it selects. A queue edit is not a transport command: it never moves
 //   playback and does not count as a user change for interruption recovery (AUD-003-R7, R12); only
 //   whether the current track repeats is re-evaluated, and applied at once (AUD-003-R8).
+// * AUD-005: every move is reported with how it happened (`PlaybackMove`), so that a shuffled queue
+//   walks its play history; Shuffle itself is a queue change like an edit, never a command.
 import AudioCore
 import Observation
 
@@ -96,7 +98,7 @@ public final class PlaybackTransport {
         source.loopsCurrentTrack = loops(item)
         if let queue = order as? any MutablePlayOrder {
             queue.onOrderChange = { [weak self] in self?.orderDidChange() }
-            queue.playbackDidMove(to: item.id)
+            queue.playbackDidMove(to: item.id, by: .start)
         }
     }
 
@@ -168,7 +170,7 @@ public final class PlaybackTransport {
     public func next() async {
         guard isAvailable, let current, let item = order?.item(after: current.id) else { return }
         manager.noteUserTransportChange()
-        change(to: item)
+        change(to: item, by: .next)
     }
 
     public func previous() async {
@@ -180,7 +182,7 @@ public final class PlaybackTransport {
             return
         }
         guard let item = order?.item(before: current.id) else { return }
-        change(to: item)
+        change(to: item, by: .previous)
     }
 
     // MARK: - Track changes
@@ -188,19 +190,19 @@ public final class PlaybackTransport {
     /// Selects `item` at its start, keeping playing, paused or stopped (AUD-006-R18).
     /// False when the track could not be loaded; the session is then ending.
     @discardableResult
-    private func change(to item: PlaybackItem) -> Bool {
+    private func change(to item: PlaybackItem, by move: PlaybackMove) -> Bool {
         positionRevision += 1
         if item.id == current?.id {
             source.loopsCurrentTrack = loops(item)
             source.seek(to: 0)                     // the only track in the order: start it again
-            (order as? any MutablePlayOrder)?.playbackDidMove(to: item.id)
+            (order as? any MutablePlayOrder)?.playbackDidMove(to: item.id, by: move)
             return true
         }
         source.loopsCurrentTrack = loops(item)
         do {
             try source.replaceTrack(item.track)
             current = item
-            (order as? any MutablePlayOrder)?.playbackDidMove(to: item.id)
+            (order as? any MutablePlayOrder)?.playbackDidMove(to: item.id, by: move)
             return true
         } catch {
             // No other track is played in its place: the session ends as "In-App Playback failed".
@@ -223,9 +225,9 @@ public final class PlaybackTransport {
         let step = order?.endOfTrack(after: current.id) ?? .stop(cue: nil)
         switch step {
         case .play(let item):
-            return change(to: item)
+            return change(to: item, by: .endOfTrack)
         case .stop(let cue?) where resuming:
-            return change(to: cue)                 // AUD-004-R6: Play at the end starts the queue again
+            return change(to: cue, by: .endOfTrack)                 // AUD-004-R6: Play at the end starts the queue again
         case .stop(let cue):
             Task { await self.stopAtEnd(cueing: cue) }
             return false
@@ -248,7 +250,7 @@ public final class PlaybackTransport {
         guard isAvailable, state == .playing, current?.id == ending else { return }
         await manager.pause(asStop: true)
         guard isAvailable else { return }
-        if let cue, !change(to: cue) { return }    // could not be loaded: the session is ending
+        if let cue, !change(to: cue, by: .endOfTrack) { return }    // could not be loaded: the session is ending
         stoppedSession = source.sessionCount
     }
 }
