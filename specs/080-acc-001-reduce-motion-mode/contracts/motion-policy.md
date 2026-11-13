@@ -16,6 +16,6 @@
 
 | Hook | Kind | Contract |
 |---|---|---|
-| `-uitestReduceMotion YES\|NO` | launch argument | Starting Reduce Motion state instead of the system's; the system notification is then ignored. |
-| `simulateReduceMotionToggle` | hidden button (only with the argument) | Flips the override and calls `systemReduceMotionChanged`, exactly as the system notification does. |
-| `motionProbe` | accessibility value (with `-uitestDiagnostics`) | `reduce=<on\|off> controls=<seconds\|none>`; seconds is the last controls transition's duration with two decimals (`0.00`, `0.20`), `none` before the first one. |
+| `-uitestReduceMotion YES\|NO\|system` | launch argument | YES/NO: starting Reduce Motion state instead of the system's; the system notification is then ignored. `system`: the real setting, panel shown (research D5). |
+| `simulateReduceMotionToggle` | small test button (only with the argument) | Flips the override and calls `systemReduceMotionChanged`, exactly as the system notification does. |
+| `motionProbe` | accessibility value (beside the toggle, only with the argument) | `reduce=<on\|off> controls=<seconds\|none>`; seconds is the last controls transition's duration with two decimals (`0.00`, `0.20`), `none` before the first one. |

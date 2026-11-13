@@ -44,9 +44,17 @@ animation, governed by Reduce flashing). Already instant: A6, A7. System-owned: 
 - **Rationale**: XCUITest cannot change system accessibility settings. The probe reports the
   duration the view was given (the same `MotionPolicy` value), not a measured time, so no wall-clock
   assertion is needed.
-- **Real path tried**: whether `xcrun simctl spawn <udid> defaults write com.apple.Accessibility
-  ReduceMotionEnabled -bool YES` reaches a running app on the iOS 27.2 simulator is tried during
-  implementation (ACC-001-T07) and the result is recorded here.
+- **Real path tried (ACC-001-T07, 2026-11-13, own iOS 27.2 simulator "ACC1 iPhone 17")**: the app
+  was launched with `-uitestReduceMotion system` (no override; the probe panel only) and read with
+  `xcrun simctl io <udid> screenshot`. `xcrun simctl spawn <udid> defaults write com.apple.Accessibility
+  ReduceMotionEnabled -bool YES` changed the running app's probe from `reduce=off` to `reduce=on`, and
+  `-bool NO` back to `reduce=off`, at once, with no `notifyutil` post (a later
+  `notifyutil -p com.apple.accessibility.reduce.motion.status` changed nothing). So the real system
+  notification reaches the root observer on the simulator. Not done on that path: a controls
+  transition after the change (it needs a tap, and XCUITest cannot set the system value; the
+  transition durations come from the injected path in ReduceMotionUITests, which goes through the
+  same `syncSystemReduceMotion` handler). The simulator default was left at NO. Simulator results are
+  not device evidence; ACC-001-T12 is the device check.
 
 ## D6 — Static check
 

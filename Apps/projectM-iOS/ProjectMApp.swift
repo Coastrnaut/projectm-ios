@@ -7,6 +7,7 @@
 import CaptureKit
 import CaptureUI
 import SwiftUI
+import UIKit
 import UniformTypeIdentifiers
 
 @main
@@ -36,6 +37,10 @@ struct RootView: View {
                 GuidedFirstSceneView(guide: coordinator.guide, soundIsPlaying: coordinator.screen == .visualizer,
                                      onPlay: { coordinator.finishGuidedFirstScene() })
             }
+        }
+        // ACC-001-R3 (moved from VisualizerView): every screen, so a change on the chooser is not missed.
+        .onReceive(NotificationCenter.default.publisher(for: UIAccessibility.reduceMotionStatusDidChangeNotification)) { _ in
+            coordinator.syncSystemReduceMotion()
         }
     }
 

@@ -10,27 +10,27 @@ A task is ticked `[X]` only when verified, with " — Verified <date>: <how>".
 
 ## Phase 1: Setup
 
-- [ ] ACC-001-T01 Confirm the worktree builds: `git submodule update --init --depth 1 Vendor/presets/*`, `xcodegen generate`, own simulator "ACC1 iPhone 17" (iOS 27.2); count PosterBoard reports before
+- [X] ACC-001-T01 Confirm the worktree builds: `git submodule update --init --depth 1 Vendor/presets/*`, `xcodegen generate`, own simulator "ACC1 iPhone 17" (iOS 27.2); count PosterBoard reports before — Verified 2026-11-13: preset submodules initialized, `xcodegen generate`, own simulator ACC1 iPhone 17 (iOS 27.2) created; PosterBoard reports 32 before
 
 ## Phase 2: Foundational (blocks every story)
 
-- [ ] ACC-001-T02 `MotionPolicy` (decoration, seconds, controls animation and seconds, safetyFade) and `View.reduceMotionAware(_:value:)` in Apps/projectM-iOS/Views/MotionPolicy.swift (contract C1; R2, R4, R7)
-- [ ] ACC-001-T03 [P] Unit tests Apps/projectM-iOS/Tests/MotionPolicyTests.swift: reduce on → nil animation and 0 s; off → the animation and 0.2 s; safetyFade unaffected either way; the coordinator's `motion` follows `systemReduceMotionChanged` at once and Reduce flashing still follows when set to "Follow system" (S1, S2, S3)
+- [X] ACC-001-T02 `MotionPolicy` (decoration, seconds, controls animation and seconds, safetyFade) and `View.reduceMotionAware(_:value:)` in Apps/projectM-iOS/Views/MotionPolicy.swift (contract C1; R2, R4, R7) — Verified 2026-11-13: build-for-testing on ACC1 iPhone 17 succeeded with no new warnings; MotionPolicyTests 5/5
+- [X] ACC-001-T03 [P] Unit tests Apps/projectM-iOS/Tests/MotionPolicyTests.swift: reduce on → nil animation and 0 s; off → the animation and 0.2 s; safetyFade unaffected either way; the coordinator's `motion` follows `systemReduceMotionChanged` at once and Reduce flashing still follows when set to "Follow system" (S1, S2, S3) — Verified 2026-11-13: MotionPolicyTests 5/5 (0.008 s total) on ACC1 iPhone 17
 
 ## Phase 3: User Stories 1 + 2 — Controls without motion; system change applies at once (P1)
 
 **Goal**: the controls and badges transition instantly with Reduce Motion on; a system change applies to the next transition.
 **Independent test**: ReduceMotionUITests.
 
-- [ ] ACC-001-T04 [US1] [US2] Apps/projectM-iOS/Coordinators/AppCoordinator.swift: `motion`, `currentSystemReduceMotion()` (DEBUG override `-uitestReduceMotion`), re-read on activation, DEBUG `lastControlsTransitionSeconds` recorded when `controlsVisible` changes, DEBUG `simulateSystemReduceMotionToggle()` (R1, R3, R9)
-- [ ] ACC-001-T05 [US1] [US2] Apps/projectM-iOS/Views/VisualizerView.swift: overlay stack through `reduceMotionAware`; remove the visualizer-only observer; DEBUG `motionProbe` and `simulateReduceMotionToggle`; Apps/projectM-iOS/ProjectMApp.swift: root observer (R2, R3, R8, R9)
-- [ ] ACC-001-T06 [US1] [US2] UI test Apps/projectM-iOS/UITests/ReduceMotionUITests.swift: launch with Reduce Motion on; show/hide controls → `controls=0.00`; open and close Settings; simulate the system toggle → `reduce=off`, next transition `controls=0.20`; toggle back → `0.00`; `visualRunning` stays yes; the controls' identifiers (`settingsButton`, `nextButton`) exist in both states (S1, S2, S4, R8; < 30 s)
-- [ ] ACC-001-T07 [US2] Try the real simulator path (`xcrun simctl spawn <udid> defaults write com.apple.Accessibility ReduceMotionEnabled -bool YES` with the app running, read `motionProbe`); record the result in research D5
+- [X] ACC-001-T04 [US1] [US2] Apps/projectM-iOS/Coordinators/AppCoordinator.swift: `motion`, `currentSystemReduceMotion()` (DEBUG override `-uitestReduceMotion`), re-read on activation, DEBUG `lastControlsTransitionSeconds` recorded when `controlsVisible` changes, DEBUG `simulateSystemReduceMotionToggle()` (R1, R3, R9) — Verified 2026-11-13: ReduceMotionUITests 1/1 (18.2 s): probe follows the simulated toggle through `syncSystemReduceMotion`; build clean
+- [X] ACC-001-T05 [US1] [US2] Apps/projectM-iOS/Views/VisualizerView.swift: overlay stack through `reduceMotionAware`; remove the visualizer-only observer; DEBUG `motionProbe` and `simulateReduceMotionToggle`; Apps/projectM-iOS/ProjectMApp.swift: root observer (R2, R3, R8, R9) — Verified 2026-11-13: ReduceMotionUITests 1/1 (18.2 s); `python3 scripts/check_motion_policy.py` OK (overlay goes through `reduceMotionAware`)
+- [X] ACC-001-T06 [US1] [US2] UI test Apps/projectM-iOS/UITests/ReduceMotionUITests.swift: launch with Reduce Motion on; show/hide controls → `controls=0.00`; open and close Settings; simulate the system toggle → `reduce=off`, next transition `controls=0.20`; toggle back → `0.00`; `visualRunning` stays yes; the controls' identifiers (`settings`, `stop`, `pauseResume`) exist in both states (S1, S2, S4, R8; < 30 s) — Verified 2026-11-13: ReduceMotionUITests 1/1 (18.2 s) on ACC1 iPhone 17
+- [X] ACC-001-T07 [US2] Try the real simulator path (`xcrun simctl spawn <udid> defaults write com.apple.Accessibility ReduceMotionEnabled -bool YES` with the app running, read `motionProbe`); record the result in research D5 — Verified 2026-11-13: real `simctl spawn … defaults write com.apple.Accessibility ReduceMotionEnabled` flipped the running app's probe both ways at once (screenshots); recorded in research D5
 
 ## Phase 4: User Story 3 — Safety fades and the visualization stay (P2)
 
-- [ ] ACC-001-T08 [US3] Apps/projectM-iOS/Visuals/RenderPlaceholder.swift: mark the 0.5 s fade with `MotionPolicy.safetyFade`; confirm OUT-010's restore fade reads only Reduce flashing (R4, R5)
-- [ ] ACC-001-T09 [P] Static check scripts/check_motion_policy.py and `MotionPolicyCheckTests` in scripts/test_scripts.py (flags a bare `withAnimation`/`.animation(`/`UIView.animate`; passes policy and safety lines, comments, tests; the real tree is clean) (R7, S5)
+- [X] ACC-001-T08 [US3] Apps/projectM-iOS/Visuals/RenderPlaceholder.swift: mark the 0.5 s fade with `MotionPolicy.safetyFade`; confirm OUT-010's restore fade reads only Reduce flashing (R4, R5) — Verified 2026-11-13: MotionPolicyTests.testSafetyFadeIsNeverShortened; OUT-010's restore fade reads only `reduceFlashing` (AppCoordinator `externalDisplay.reduceFlashing`, unchanged)
+- [X] ACC-001-T09 [P] Static check scripts/check_motion_policy.py and `MotionPolicyCheckTests` in scripts/test_scripts.py (flags a bare `withAnimation`/`.animation(`/`UIView.animate`; passes policy and safety lines, comments, tests; the real tree is clean) (R7, S5) — Verified 2026-11-13: `python3 scripts/test_scripts.py` 138 tests OK (MotionPolicyCheckTests 4/4, 0.019 s); `python3 scripts/check_motion_policy.py` OK
 
 ## Phase 5: Polish
 

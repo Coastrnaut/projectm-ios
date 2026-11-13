@@ -30,7 +30,8 @@ struct RenderPlaceholderView: View {
         }
         .ignoresSafeArea()
         .opacity(shown ? 1 : 0)
-        .animation(.linear(duration: RenderPlaceholder.fadeSeconds), value: shown)
+        // ACC-001-R4: a safety fade, kept with Reduce Motion on.
+        .animation(MotionPolicy.safetyFade(.linear(duration: RenderPlaceholder.fadeSeconds)), value: shown)
         .allowsHitTesting(false)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(RenderPlaceholder.note)
