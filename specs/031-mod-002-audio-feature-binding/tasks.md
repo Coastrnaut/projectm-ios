@@ -16,12 +16,12 @@ this row's own iOS 27.2 simulator "MOD2 iPhone 17". Inside descriptions "T07" is
 
 ## Phase 1: Setup
 
-- [ ] MOD-002-T01 Record the baseline: `swift test --package-path Packages/ParameterGraph` on the host; count `~/Library/Logs/DiagnosticReports/PosterBoard-*.ips`. Evidence: counts recorded here.
+- [X] MOD-002-T01 Record the baseline: `swift test --package-path Packages/ParameterGraph` on the host; count `~/Library/Logs/DiagnosticReports/PosterBoard-*.ips`. Evidence: counts recorded here. — Verified 2026-11-13: at 88f90cb, ParameterGraph 26 tests on the host, 0 failures (0.006 s of tests, 6.7 s wall; .build/scratch/mod002-T01.log); PosterBoard reports: 32.
 
 ## Phase 2: Foundational (sources and frames)
 
-- [ ] MOD-002-T02 [P] Write `Packages/ParameterGraph/Tests/ParameterGraphTests/AudioFeatureSourceTests.swift`: IDs `audio.band.0`, `audio.band.127`, `audio.bandMean`, `audio.onset`, `audio.beatConfidence` round-trip through `AudioFeatureSource(id:)`; `audio.band.01`, `audio.band.-1`, `audio.band.128`, `audio.band.`, `audio.level` → nil; `value(in:)` reads a band, a band beyond the frame (0), the mean of `[0.2, 0.4, 0.6]` (0.4), the mean of no bands (0), onset and beat confidence present and absent (0), and a NaN band (0).
-- [ ] MOD-002-T03 Record the T02 red run; implement `Packages/ParameterGraph/Sources/ParameterGraph/AudioFeatureSource.swift` (`AudioFeatureSource` with `maximumBandIndex = 127`, `id`, `init?(id:)`, `value(in:)`; `AudioFeatureFrame` with `bands: UnsafeBufferPointer<Float>`, `onset: Float?`, `beatConfidence: Double?`, `.silent`). Evidence: T02 passes on the host.
+- [X] MOD-002-T02 [P] Write `Packages/ParameterGraph/Tests/ParameterGraphTests/AudioFeatureSourceTests.swift`: IDs `audio.band.0`, `audio.band.127`, `audio.bandMean`, `audio.onset`, `audio.beatConfidence` round-trip through `AudioFeatureSource(id:)`; `audio.band.01`, `audio.band.-1`, `audio.band.128`, `audio.band.`, `audio.level` → nil; `value(in:)` reads a band, a band beyond the frame (0), the mean of `[0.2, 0.4, 0.6]` (0.4), the mean of no bands (0), onset and beat confidence present and absent (0), and a NaN band (0). — Verified 2026-11-13: written before the source type; AudioFeatureSourceTests 4 tests.
+- [X] MOD-002-T03 Record the T02 red run; implement `Packages/ParameterGraph/Sources/ParameterGraph/AudioFeatureSource.swift` (`AudioFeatureSource` with `maximumBandIndex = 127`, `id`, `init?(id:)`, `value(in:)`; `AudioFeatureFrame` with `bands: UnsafeBufferPointer<Float>`, `onset: Float?`, `beatConfidence: Double?`, `.silent`). Evidence: T02 passes on the host. — Verified 2026-11-13: red run `cannot find type 'AudioFeatureSource' in scope` (.build/scratch/mod002-red-T02.log); after the change AudioFeatureSourceTests 4 tests pass on the host in 0.001 s (one expectation corrected: the mean is summed in Double, as specified) (.build/scratch/mod002-T03.log).
 
 ## Phase 3: User Story 1 - a band level drives a parameter; unbind restores manual control (P1) MVP
 
