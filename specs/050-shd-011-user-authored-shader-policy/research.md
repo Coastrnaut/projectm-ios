@@ -23,8 +23,10 @@
   skipped); top level must be an object.
 - **Rationale**: SHD-002 caps a graph at 64 nodes, 128 connections, 32-byte IDs, 64-byte names. The
   largest document the limits allow (64 nodes, 32-character IDs, every connection, every value) is
-  measured by `GraphImportLimitTests.testLargestValidGraphFitsTheLimit` (figure recorded in
-  tasks.md T08 on verification). A document needs nesting 5.
+  bounded by `GraphImportLimitTests.testLargestDocumentWithinSHD002LimitsFitsTheByteLimit` (64 nodes of
+  the widest kind, every input a full-width literal with the longest number text, every setting, 32-character
+  IDs, a 64-character name): 27,911 bytes pretty-printed, 17,578 compact, measured 2026-11-13, so the
+  limit leaves more than 2× headroom over any document SHD-002 can accept. A document needs nesting 5.
 - **Alternatives**: 1 MiB (no need); trusting the decoder's depth limit (recursive, platform
   dependent: Darwin's swift-foundation and Linux's corelibs differ).
 
