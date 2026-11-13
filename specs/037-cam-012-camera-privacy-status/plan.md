@@ -49,7 +49,7 @@ about 1-2 s (≤10 s), UI test under 30 s (owner rule 7).
 | VI. Modular boundaries | App-only; CameraLayer package unchanged | Pass |
 | VII. Real-time audio safety | No audio path change; Stop never touches the source | Pass |
 | VIII. Upstream fidelity | projectM untouched | Pass |
-| X. Evidence | Simulator tests with the stub only; the real camera indicator is `{device}` task CAM-012-T10, left open | Pass |
+| X. Evidence | Simulator tests with the stub only; the real camera indicator is `{device}` task CAM-012-T13, left open | Pass |
 | Security | No credentials, no signing change | Pass |
 | Privacy (capture stops when the user stops it) | Stop camera is exactly that control for the camera; spec "Privacy review" | Pass |
 | FR-068 (no networking) | None added | Pass |

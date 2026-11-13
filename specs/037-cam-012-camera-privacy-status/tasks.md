@@ -32,7 +32,7 @@ Format: `- [ ] CAM-012-Tnn [P?] [Story?] Description`.
 
 - [ ] CAM-012-T07 [US2] `CameraVisualHost.stopCamera()` (synchronous provider stop, `cameraStoppedByUser` blocks any restart in `updateLoop()`), `framesComposited` counter (no allocation) in `Apps/projectM-iOS/Visuals/CameraVisualHost.swift`
 - [ ] CAM-012-T08 [US2] `AppCoordinator.stopCamera()`: host `stopCamera()`, announce "Camera off", `settings.visual = settings.visualBeforeCamera`, `visualSettingsChanged()`; never touches the audio source; wired to the badge's button in `Apps/projectM-iOS/Coordinators/AppCoordinator.swift`
-- [ ] CAM-012-T09 [P] [US2] Unit tests: Stop calls the stub's stop exactly once (`stopCount == 1` also after release), drops the picture, reports idle, and resume/foreground/scene/presentation never restart it; `visualBeforeCamera` returns the stored visual and writes nothing; the frame loop keeps compositing after Stop with no deadlock (expectation, 10 s ceiling) (S2, S4) in `Apps/projectM-iOS/Tests/CameraPrivacyStatusTests.swift`
+- [ ] CAM-012-T09 [P] [US2] Unit tests: Stop calls the stub's stop exactly once (`stopCount == 1` also after release), drops the picture, reports idle, also when tapped while starting (spec Edge Cases), and resume/foreground/scene/presentation never restart it; `visualBeforeCamera` returns the stored visual and writes nothing; the frame loop keeps compositing after Stop with no deadlock (expectation, 10 s ceiling) (S2, S4) in `Apps/projectM-iOS/Tests/CameraPrivacyStatusTests.swift`
 - [ ] CAM-012-T10 [US2] UI test: `-uitestCamera granted`; choose Circular Spectrum then Camera; badge appears with value "Live"; tap Stop camera; badge and camera visual disappear, circular spectrum shown, `sourceStarts` stays "1", pause/resume works and the camera does not return (S1-S4) in `Apps/projectM-iOS/UITests/CameraPrivacyStatusUITests.swift`
 
 ## Phase 5: Polish
@@ -40,6 +40,10 @@ Format: `- [ ] CAM-012-Tnn [P?] [Story?] Description`.
 - [ ] CAM-012-T11 [P] One sentence on the in-app badge and Stop camera in `docs/privacy-policy.md` ("The camera picture stays on your screen")
 - [ ] CAM-012-T12 Gates: `python3 scripts/check_compliance.py`, `python3 scripts/validate_docs.py`, app unit tests (`projectM-iOSTests`) and `CameraUITests` + `CameraPrivacyStatusUITests` on the CAM12 simulator; PosterBoard reports counted before/after; delete the CAM12 simulator
 - [ ] CAM-012-T13 {device} On D1: choose Camera, tap Stop camera; iOS's camera indicator turns off within one second, the previous visual keeps animating, music continues; pause/resume and lock/unlock do not restart the camera (S5; quickstart "Device")
+
+## Analysis (speckit-analyze, 2026-11-13)
+
+Applied: plan.md named the device task T10 instead of T13 (fixed); the "Stop while starting" edge case had no test (added to T09). Accepted: the "Camera off" VoiceOver announcement (R9) is checked by reading the diff, not by a test (UI tests cannot observe announcements). Coverage: R1-R10 and S1-S5 each map to at least one task; no constitution conflict.
 
 ## Dependencies
 
