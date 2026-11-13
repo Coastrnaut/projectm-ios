@@ -23,6 +23,12 @@ public struct ParameterValidationIssue: Sendable, Hashable, CustomStringConverti
         case unknownEnumDefault
         case colorOutOfRange
         case invalidModulationPolicy
+        /// MOD-013: a migration rule's old ID is still registered (or is an audio feature this version knows).
+        case migrationFromRegistered
+        /// MOD-013: a renamed or retired parameter ID is not in the retired set.
+        case migrationFromNotRetired
+        /// MOD-013: a rename chain ends at an ID that is neither registered nor retired (or an unknown audio feature).
+        case migrationTargetUnknown
     }
 
     /// The parameter concerned.

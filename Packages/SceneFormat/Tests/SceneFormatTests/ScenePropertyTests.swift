@@ -162,7 +162,7 @@ struct SceneGenerator {
             modulation.generators.append(ModulationGenerator(id: string(), displayName: string(),
                                                              inputs: (0..<int(0...2)).map { (_: Int) -> String in string() }))
         }
-        for _ in 0..<int(0...3) { modulation.connections.append(ModulationEdge(source: node(), target: node(), input: string())) }
+        for _ in 0..<int(0...3) { modulation.connections.append(SceneConnection(ModulationEdge(source: node(), target: node(), input: string()))) }
         var assets: [String: SceneAsset] = [:]
         for _ in 0..<int(0...5) {
             let kind: SceneAssetKind = switch int(0...4) {

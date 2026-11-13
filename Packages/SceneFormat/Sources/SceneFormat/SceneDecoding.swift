@@ -265,10 +265,8 @@ struct SceneDecoder {
 
     private mutating func binding(_ value: SceneJSON, _ path: String) throws(SceneDecodeError) -> SceneBinding {
         let o = try object(value, path)
-        let sourceText = try string(o, "source", path)
-        guard let source = AudioFeatureSource(id: sourceText) else {
-            throw .malformed(path: ScenePath.key(path, "source"), reason: "unknown audio source \"\(sourceText)\"")
-        }
+        // An unknown audio feature is kept; validation flags the binding orphaned (MOD-013-R11).
+        let sourceID = try string(o, "source", path)
         let target = ParameterID(try string(o, "target", path))
         var mapping = LinearMapping(outputStart: 0, outputEnd: 1)
         if let input = o["input"] {
@@ -307,7 +305,7 @@ struct SceneDecoder {
             try string(e, ScenePath.key(path, "expression"))
         }
         let known: Set<String> = ["source", "target", "input", "output", "mix", "envelope", "expression"]
-        return SceneBinding(source: source, target: target, mapping: mapping, mix: mix, envelope: envelope, expression: expression,
+        return SceneBinding(sourceID: sourceID, target: target, mapping: mapping, mix: mix, envelope: envelope, expression: expression,
                             extra: o.filter { (key: String, _: SceneJSON) -> Bool in !known.contains(key) })
     }
 
@@ -343,24 +341,20 @@ struct SceneDecoder {
                 let input = try co["input"].map { (v: SceneJSON) throws(SceneDecodeError) -> String in
                     try string(v, ScenePath.key(p, "input"))
                 } ?? ModulationEdge.valueInput
-                result.connections.append(ModulationEdge(source: try node(s, ScenePath.key(p, "source")),
-                                                         target: try node(t, ScenePath.key(p, "target")), input: input))
+                result.connections.append(SceneConnection(source: try node(s, ScenePath.key(p, "source")),
+                                                          target: try node(t, ScenePath.key(p, "target")), input: input))
             }
         }
         return result
     }
 
-    private mutating func node(_ value: SceneJSON, _ path: String) throws(SceneDecodeError) -> ModulationNode {
+    private mutating func node(_ value: SceneJSON, _ path: String) throws(SceneDecodeError) -> SceneNodeRef {
         let o = try object(value, path)
         dropUnknown(o, known: ["kind", "id"], path: path)
         let kind = try string(o, "kind", path)
         let id = try string(o, "id", path)
         switch kind {
-        case "audio":
-            guard let source = AudioFeatureSource(id: id) else {
-                throw .malformed(path: ScenePath.key(path, "id"), reason: "unknown audio source \"\(id)\"")
-            }
-            return .audio(source)
+        case "audio": return .audio(id)   // unknown features are kept (MOD-013-R11)
         case "parameter": return .parameter(ParameterID(id))
         case "generator": return .generator(id)
         default: throw .malformed(path: ScenePath.key(path, "kind"), reason: "unknown node kind \"\(kind)\"")

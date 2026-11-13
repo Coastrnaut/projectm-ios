@@ -12,7 +12,7 @@
 // parameter), angles and ring direction (no documented range), palettes and background colors.
 //
 // IDs are permanent: never rename, reuse or re-kind one. To retire an ID, remove its descriptor
-// and add it to `retiredIDs`.
+// and add it to `retiredIDs`; to replace one, also append a rule to `migrations` (MOD-013).
 import ParameterGraph
 import VisualEffects
 import VisualGenerators
@@ -43,10 +43,15 @@ public enum VisualParameterCatalog {
     /// IDs that shipped once and may never be registered again (none yet).
     public static let retiredIDs: Set<ParameterID> = []
 
+    /// How retired IDs map to their replacements (MOD-013, ADR-0012): append rules here, never edit
+    /// or remove one. To replace an ID, retire it above, register the new one and append
+    /// `.renamed("old.id", to: "new.id", since: migrations.version + 1)`. Empty: nothing renamed yet.
+    public static let migrations = ModulationIDMigrations.none
+
     /// The catalog, validated (MOD-001-R5). Throws only if a descriptor below is malformed, which
     /// `VisualParameterCatalogTests` rules out in CI.
     public static func makeRegistry() throws(ParameterRegistryError) -> ParameterRegistry {
-        try ParameterRegistry(descriptors: descriptors, retiredIDs: retiredIDs)
+        try ParameterRegistry(descriptors: descriptors, retiredIDs: retiredIDs, migrations: migrations)
     }
 
     /// Every descriptor, in registration order.

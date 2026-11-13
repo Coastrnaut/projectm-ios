@@ -177,7 +177,9 @@ public struct SceneComposite: Sendable, Hashable {
 
 /// One MOD-002 binding as stored.
 public struct SceneBinding: Sendable, Hashable {
-    public var source: AudioFeatureSource
+    /// The audio feature's stable ID as written; an ID this version does not know is kept
+    /// (MOD-013-R11) and the binding is orphaned.
+    public var sourceID: String
     public var target: ParameterID
     public var mapping: LinearMapping
     public var mix: ModulationMixMode
@@ -186,9 +188,9 @@ public struct SceneBinding: Sendable, Hashable {
     public var expression: String?
     public var extra: [String: SceneJSON]
 
-    public init(source: AudioFeatureSource, target: ParameterID, mapping: LinearMapping, mix: ModulationMixMode = .replace,
+    public init(sourceID: String, target: ParameterID, mapping: LinearMapping, mix: ModulationMixMode = .replace,
                 envelope: AudioFeatureEnvelope = .none, expression: String? = nil, extra: [String: SceneJSON] = [:]) {
-        self.source = source
+        self.sourceID = sourceID
         self.target = target
         self.mapping = mapping
         self.mix = mix
@@ -197,16 +199,35 @@ public struct SceneBinding: Sendable, Hashable {
         self.extra = extra
     }
 
+    public init(source: AudioFeatureSource, target: ParameterID, mapping: LinearMapping, mix: ModulationMixMode = .replace,
+                envelope: AudioFeatureEnvelope = .none, expression: String? = nil, extra: [String: SceneJSON] = [:]) {
+        self.init(sourceID: source.id, target: target, mapping: mapping, mix: mix, envelope: envelope, expression: expression,
+                  extra: extra)
+    }
+
     public init(_ binding: AudioFeatureBinding, expression: String? = nil) {
         self.init(source: binding.source, target: binding.target, mapping: binding.mapping, mix: binding.mixMode,
                   envelope: binding.envelope, expression: expression)
     }
 
-    /// The MOD-002 binding (the expression is carried separately).
-    public var audioFeatureBinding: AudioFeatureBinding {
+    /// The audio feature, when this version knows `sourceID`.
+    public var source: AudioFeatureSource? {
+        get { AudioFeatureSource(id: sourceID) }
+        set { if let newValue { sourceID = newValue.id } }
+    }
+
+    /// The MOD-002 binding (the expression is carried separately), or nil for an unknown source.
+    public var audioFeatureBinding: AudioFeatureBinding? {
+        source.map { (s: AudioFeatureSource) -> AudioFeatureBinding in audioFeatureBinding(source: s, target: target) }
+    }
+
+    func audioFeatureBinding(source: AudioFeatureSource, target: ParameterID) -> AudioFeatureBinding {
         AudioFeatureBinding(source: source, target: target, inputMinimum: mapping.inputMinimum, inputMaximum: mapping.inputMaximum,
                             outputStart: mapping.outputStart, outputEnd: mapping.outputEnd, mixMode: mix, envelope: envelope)
     }
+
+    /// `audio.band.2 → visual.circularSpectrum.gap`.
+    public var edgeText: String { sourceID + " → " + target.rawValue }
 
     public static func == (lhs: SceneBinding, rhs: SceneBinding) -> Bool {
         SceneEncoder.binding(lhs) == SceneEncoder.binding(rhs)
@@ -215,14 +236,88 @@ public struct SceneBinding: Sendable, Hashable {
     public func hash(into hasher: inout Hasher) { hasher.combine(SceneEncoder.binding(self)) }
 }
 
+/// One end of a stored modulation connection: its kind and stable ID as written. Unlike
+/// `ModulationNode`, an audio feature this version does not know is kept (MOD-013-R11).
+public enum SceneNodeRef: Sendable, Hashable, CustomStringConvertible {
+    case audio(String)
+    case parameter(ParameterID)
+    case generator(String)
+
+    public init(_ node: ModulationNode) {
+        switch node {
+        case let .audio(source): self = .audio(source.id)
+        case let .parameter(id): self = .parameter(id)
+        case let .generator(id): self = .generator(id)
+        }
+    }
+
+    public var kindName: String {
+        switch self {
+        case .audio: "audio"
+        case .parameter: "parameter"
+        case .generator: "generator"
+        }
+    }
+
+    public var id: String {
+        switch self {
+        case let .audio(id), let .generator(id): id
+        case let .parameter(id): id.rawValue
+        }
+    }
+
+    /// The live node, or nil for an audio feature this version does not know.
+    public var node: ModulationNode? {
+        switch self {
+        case let .audio(id): AudioFeatureSource(id: id).map { (s: AudioFeatureSource) -> ModulationNode in .audio(s) }
+        case let .parameter(id): .parameter(id)
+        case let .generator(id): .generator(id)
+        }
+    }
+
+    public var description: String { id }
+}
+
+/// One stored modulation connection: `source` drives `input` of `target`.
+public struct SceneConnection: Sendable, Hashable, CustomStringConvertible {
+    public var source: SceneNodeRef
+    public var target: SceneNodeRef
+    public var input: String
+
+    public init(source: SceneNodeRef, target: SceneNodeRef, input: String = ModulationEdge.valueInput) {
+        self.source = source
+        self.target = target
+        self.input = input
+    }
+
+    public init(_ edge: ModulationEdge) {
+        self.init(source: SceneNodeRef(edge.source), target: SceneNodeRef(edge.target), input: edge.input)
+    }
+
+    /// The live connection, or nil when an end is an unknown audio feature.
+    public var edge: ModulationEdge? {
+        guard let s = source.node, let t = target.node else { return nil }
+        return ModulationEdge(source: s, target: t, input: input)
+    }
+
+    /// As `ModulationEdge` writes it: `lfo.one → effect.bloom.radius`, `x → lfo.one.rate`.
+    public var description: String {
+        source.id + " → " + (input == ModulationEdge.valueInput ? target.id : target.id + "." + input)
+    }
+}
+
 /// Generators and connections beyond the bindings (MOD-014 types; MOD-013 wires them).
 public struct SceneModulation: Sendable, Hashable {
     public var generators: [ModulationGenerator]
-    public var connections: [ModulationEdge]
+    public var connections: [SceneConnection]
 
-    public init(generators: [ModulationGenerator] = [], connections: [ModulationEdge] = []) {
+    public init(generators: [ModulationGenerator] = [], connections: [SceneConnection] = []) {
         self.generators = generators
         self.connections = connections
+    }
+
+    public init(generators: [ModulationGenerator] = [], edges: [ModulationEdge]) {
+        self.init(generators: generators, connections: edges.map { (e: ModulationEdge) -> SceneConnection in SceneConnection(e) })
     }
 
     public var isEmpty: Bool { generators.isEmpty && connections.isEmpty }

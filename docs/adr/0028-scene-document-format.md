@@ -65,3 +65,30 @@ rules). The format must add none of its own definitions of validity.
   list of drawn blend names.
 - Procedural material values are registry parameters shared by layers of the same material until a
   later row adds per-instance values.
+
+## Amendment 2026-11-13 (MOD-013, modulation serialization)
+
+Decided under the owner's standing approval (owner rule 4); specs/064-mod-013-modulation-serialization
+(research MOD-013-D2 to D5, contract M3 to M6).
+
+- **Per-edge restore narrows decision 7 for modulation.** Each binding and modulation connection is
+  judged on its own and gets one outcome: restored, rewritten (IDs migrated by ADR-0012's table),
+  dropped (an end is retired), orphaned (an end is well-formed but unknown) or rejected (malformed,
+  invalid binding, duplicate target, expression that does not compile, MOD-014 problem, a feedback
+  loop included). `invalidBinding`, `duplicateBindingTarget` and `invalidExpression` become warnings;
+  new warnings `migratedReference`, `retiredReference`, `orphanedBinding`, `orphanedConnection`,
+  `rejectedConnection`. One bad edge no longer refuses the scene. Invalid generator declarations
+  stay `invalidModulation` errors (the document contradicts itself).
+- **Loops**: connections are accepted greedily in document order; the one that closes a loop is
+  rejected at its own path with the loop's readable path.
+- **Preserved edges**: orphaned and rejected edges are kept verbatim in the live state and written
+  back on capture; dropped edges are not (a retired ID never returns); rewritten edges are written
+  with their new IDs. Capture writes live edges first (live order), then preserved edges (document
+  order), so a document that interleaves them is reordered once and capture → encode → decode →
+  restore → capture is byte-identical afterwards. Unknown fields of *applied* bindings are still not
+  carried through the live state.
+- **Unknown audio features** (`audio.band.128`, a future feature) are decoded and kept instead of
+  refusing the file; unknown node kinds remain decode errors.
+- `liveState` returns the per-edge `modulationReport`; `SceneLiveState.apply(to:)` and
+  `validatedGraph(registry:)` wire the modulator and the MOD-014 graph. Parameter values keep
+  decision 7's orphan handling; migrating stored values is SCN-013's.
