@@ -78,6 +78,17 @@ interaction); each answer is the conservative option.
   permission), cannot script Local Network, and cannot set restricted for anything; those states use
   the existing DEBUG stand-ins (camera scenario, fake source) and a new DEBUG OSC failure stand-in.
   Restricted on D1 via Screen Time is a `{device}` task. Applied to FILE-013-R7, R8, R9.
+- Q: How does a UI test prove that Open Settings works? → A: One test taps the camera notice's Open
+  Settings and asserts that iOS Settings (`com.apple.Preferences`) comes to the foreground, then
+  returns to the app; the other notices assert the button exists and uses the same opener (unit-tested
+  routing). Applied to FILE-013-R8.
+- Q: How does VoiceOver read the shared notice? → A: As today's camera notice: one container holding
+  the text and a separate Open Settings button; the decorative symbol is hidden; existing identifiers
+  stay and new ones follow `<feature>Notice`, `<feature>OpenSettings`. No new announcement. Applied to
+  FILE-013-R3.
+- Q: Does the OSC listener badge change when Local Network is denied? → A: No. The badge shows only
+  while the listener is open (OSC-007); the denial is shown where the user turned OSC on (Settings).
+  Applied to Edge Cases.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -145,6 +156,8 @@ fails with a named finding).
 - Open Settings opens the app's own page in iOS Settings; the app does not need to be in any state.
 - A permission prompt is never shown at launch: every prompt stays at its point of use (Constitution
   Privacy). This feature adds no prompt.
+- A Local Network denial never shows the listener badge (it shows only while listening, OSC-007);
+  the denial appears in Settings' OSC section.
 - Interrupted or unavailable camera states (not permission states) keep their notices without Open
   Settings.
 
@@ -160,8 +173,8 @@ fails with a named finding).
   (notDetermined, granted, denied, restricted) and give, for denied and restricted, the user-facing
   notice text and actions. Texts stay identical to today's (Clarifications).
 - **FILE-013-R3**: The camera notice and the Local Network status MUST read their denied and
-  restricted texts from the catalog and use one shared notice presentation; existing accessibility
-  identifiers stay.
+  restricted texts from the catalog and use one shared notice presentation (one container, the text,
+  a separate Open Settings button, decorative symbol hidden); existing accessibility identifiers stay.
 - **FILE-013-R4**: Every Open Settings action (microphone banner, camera notice, Local Network) MUST
   use one opener that opens the app's page in iOS Settings. Local Network's denial MUST offer Open
   Settings. Screen capture MUST NOT offer it.
@@ -176,7 +189,7 @@ fails with a named finding).
   revoked.
 - **FILE-013-R8**: UI tests MUST show denied and restricted behaviour for camera (stand-in), local
   network (DEBUG failure stand-in) and screen capture (fake source and fake availability), each under
-  30 s.
+  30 s; one of them proves Open Settings brings iOS Settings to the foreground.
 - **FILE-013-R9**: `{device}`: on D1, deny and restrict (Screen Time) microphone, camera and local
   network in Settings, then use each feature; the notices match the catalog.
 - **FILE-013-R10**: `docs/privacy-policy.md`'s permission section MUST match the catalog exactly.
