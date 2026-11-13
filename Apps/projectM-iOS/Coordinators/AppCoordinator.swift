@@ -46,6 +46,10 @@ import Rendering
 import Metal
 import UIKit
 import VisualGenerators
+#if DEBUG
+import ParameterGraph
+import VisualParameters
+#endif
 
 @MainActor
 @Observable
@@ -511,6 +515,9 @@ final class AppCoordinator: VisualizationControlling {
                                                    barCount: circularSpectrumBarCount, glow: settings.glowParameters,
                                                    forceGlowFailure: forceGlowFailure)
             host.reduceFlashing = settings.reduceFlashing
+            #if DEBUG
+            bindGlowToBassIfRequested(host)   // MOD-002: AudioFeatureBindingUITests
+            #endif
             presentation.register(host)   // PERF-011: starts suspended while the app cannot present
             nativeVisual = host
         } catch {
@@ -583,6 +590,24 @@ final class AppCoordinator: VisualizationControlling {
             UIAccessibility.post(notification: .announcement, argument: Self.glowUnavailableMessage)
         }
     }
+
+    #if DEBUG
+    // MARK: - Audio feature binding test path (MOD-002-R12; DEBUG only)
+
+    /// Launch argument of AudioFeatureBindingUITests: bind the lowest band to the glow intensity.
+    static let bindGlowToBassArgument = "-uitestBindGlowToBass"
+
+    private func bindGlowToBassIfRequested(_ host: NativeSpectrumHost) {
+        guard ProcessInfo.processInfo.arguments.contains(Self.bindGlowToBassArgument) else { return }
+        try? host.bind(AudioFeatureBinding(source: .band(0), target: VisualParameterIDs.bloomIntensity,
+                                           outputStart: 0, outputEnd: 1))
+    }
+
+    /// "bound, manual 0.50, effective 0.73", or a note when no native visual exists.
+    var glowModulationReadout: String { nativeVisual?.glowModulationReadout ?? "no native visual" }
+
+    func unbindGlowTest() { nativeVisual?.unbind(VisualParameterIDs.bloomIntensity) }
+    #endif
 
     /// The system Reduce Motion setting changed.
     func systemReduceMotionChanged(_ enabled: Bool) {

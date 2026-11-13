@@ -87,6 +87,10 @@ struct VisualizerView: View {
                 VStack { HStack { UITestRoutePanel(); Spacer() }; Spacer() }
                     .padding(.top, 40)
             }
+            if UITestModulationPanel.isRequested {     // MOD-002: AudioFeatureBindingUITests
+                VStack { Spacer(); HStack { UITestModulationPanel(coordinator: coordinator); Spacer() } }
+                    .padding(.bottom, 2)
+            }
             #endif
             if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {
                 Text("\(coordinator.sourceStarts)")
