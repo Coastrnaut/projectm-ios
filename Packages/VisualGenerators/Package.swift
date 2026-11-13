@@ -14,24 +14,31 @@
 // * `VisualEffects` (FX-001, ADR-0010) holds post-processing effects and the effect chain; it
 //   depends only on `VisualGenerators`. CPU parts (parameters, plans, the chain description) build
 //   everywhere; the Metal effects compile out like the generators.
+// * `VisualParameters` (MOD-001, ADR-0012) is the app's parameter catalog: stable IDs, ranges,
+//   units and defaults of the spectra and the bloom, read from the types above (ParameterGraph,
+//   pure Swift). Builds everywhere.
 // One library product, so CI's `-scheme VisualGenerators` builds and tests every target.
 import PackageDescription
 
 let package = Package(
     name: "VisualGenerators",
     platforms: [.iOS("26.0"), .macOS(.v15)],
-    products: [.library(name: "VisualGenerators", targets: ["VisualGenerators", "VisualBandFeed", "VisualEffects"])],
+    products: [.library(name: "VisualGenerators", targets: ["VisualGenerators", "VisualBandFeed", "VisualEffects", "VisualParameters"])],
     dependencies: [
         .package(path: "../AudioCore"),
         .package(path: "../AnalysisFeatures"),
         // FX-019: the strobe safety envelope (pure Swift; ADR-0011).
         .package(path: "../FlashSafety"),
+        // MOD-001: the typed parameter registry (pure Swift; ADR-0012).
+        .package(path: "../ParameterGraph"),
     ],
     targets: [
         .target(name: "VisualGenerators", dependencies: ["FlashSafety"]),
         .target(name: "VisualBandFeed", dependencies: ["VisualGenerators", "AudioCore", "AnalysisFeatures"]),
         .target(name: "VisualEffects", dependencies: ["VisualGenerators"]),
+        .target(name: "VisualParameters", dependencies: ["VisualGenerators", "VisualEffects", "ParameterGraph"]),
         .testTarget(name: "VisualGeneratorsTests",
-                    dependencies: ["VisualGenerators", "VisualBandFeed", "VisualEffects", "AudioCore", "AnalysisFeatures", "FlashSafety"]),
+                    dependencies: ["VisualGenerators", "VisualBandFeed", "VisualEffects", "VisualParameters", "AudioCore",
+                                   "AnalysisFeatures", "FlashSafety", "ParameterGraph"]),
     ]
 )

@@ -141,13 +141,16 @@ final class OnsetAcceptanceTests: XCTestCase {
         for (id, c) in cases {
             let fixture = try XCTUnwrap(ReferenceToneCatalog.fixture(id: id))
             let stereo = try fixture.loop(sampleRate: c.rate, channels: 2)
-            let mid = (0..<(stereo.count / 2)).map { (stereo[2 * $0] + stereo[2 * $0 + 1]) * 0.5 }
+            // Explicit types and a plain loop: CI's Xcode 26 could not type-check the one-line map in
+            // reasonable time (run 43440579991, build-and-test-apple).
+            var mid = [Float](repeating: 0, count: stereo.count / 2)
+            for i in 0..<mid.count { mid[i] = (stereo[2 * i] + stereo[2 * i + 1]) * 0.5 }
             let run = try OnsetTestSupport.run(mid, size: c.size, hop: c.hop, rate: c.rate, backend: backend)
             let label = "\(id) \(c)"
             // At most the start of the sound; never anything later (a sweep is not an onset).
             // A tone fades in through the window over size/hop frames, so at small hops and
             // large sizes its start may stay below the threshold (research ANL-004-D3).
-            XCTAssertLessThanOrEqual(run.events.count, 1, "\(label): \(run.events.map(\.sampleIndex))")
+            XCTAssertLessThanOrEqual(run.events.count, 1, "\(label): \(run.events.map { (event: OnsetEvent) -> Int64 in event.sampleIndex })")
             if let event = run.events.first { XCTAssertLessThanOrEqual(abs(event.sampleIndex), Int64(c.hop), label) }
             summary.append("\(label): \(run.events.count)")
         }

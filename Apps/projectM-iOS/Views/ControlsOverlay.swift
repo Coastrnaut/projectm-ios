@@ -19,6 +19,11 @@
 // VIS-001-R13: while the native Circular Spectrum is shown there is no preset on screen, so the title
 // names the visual (`currentVisual`) and Previous, Next, Random, Presets and Duplicate are left out;
 // Stop, Pause/Resume, Settings and the transport stay.
+//
+// SHOW-011: the tap tempo group (TempoControls: readout, Tap, Reset tempo) sits beside the indicator
+// in the compact layout and after the buttons in the regular one, for both visuals.
+// AUD-007: the audio route indicator ("Output: Speaker", "Input: iPhone Microphone") sits next to
+// the source-and-state indicator (its own row in compact width) while In-App Playback or Microphone runs.
 import CaptureKit
 import CaptureUI
 import PresetLibrary
@@ -131,12 +136,21 @@ struct ControlsOverlay: View {
         }
     }
 
+    /// AUD-007: the audio route while In-App Playback or Microphone runs; never for System/App Capture.
+    private var routeIndicator: AudioRouteIndicator? {
+        coordinator.routeContext.map { AudioRouteIndicator(route: coordinator.routes.route, context: $0) }
+    }
+
     /// One row of icon buttons (FR-087).
     private var compact: some View {
         VStack(spacing: 8) {
             HStack {
                 SourceStatusIndicator(coordinator: coordinator)
                 Spacer(minLength: 0)
+                TempoControls(coordinator: coordinator, compact: true)   // SHOW-011
+            }
+            if let route = routeIndicator {   // AUD-007: own row, the iPhone is narrow
+                HStack { route; Spacer(minLength: 0) }
             }
             presetName.frame(maxWidth: .infinity, alignment: .leading)
             HStack(spacing: 0) {
@@ -156,6 +170,7 @@ struct ControlsOverlay: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 SourceStatusIndicator(coordinator: coordinator)
+                routeIndicator          // AUD-007
                 Spacer()
                 presetName
             }
@@ -167,6 +182,7 @@ struct ControlsOverlay: View {
                     .buttonStyle(.bordered)
                     .accessibilityIdentifier(item.id)
                 }
+                TempoControls(coordinator: coordinator)   // SHOW-011
             }
         }
     }

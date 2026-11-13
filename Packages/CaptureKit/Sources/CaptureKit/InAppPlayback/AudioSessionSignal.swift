@@ -49,8 +49,9 @@ extension AudioSessionSignal {
                 return nil
             }
         case AVAudioSession.routeChangeNotification:
-            let reason = (note.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt).flatMap(AVAudioSession.RouteChangeReason.init)
-            return reason == .oldDeviceUnavailable ? .outputRouteLost : nil
+            // AUD-007-R9: one shared definition of the reason that pauses (old device unavailable).
+            let reason = AudioRouteChangeReason(rawReason: note.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt ?? 0)
+            return reason.pausesInAppPlayback ? .outputRouteLost : nil
         case AVAudioSession.mediaServicesWereResetNotification:
             return .mediaServicesReset
         default:

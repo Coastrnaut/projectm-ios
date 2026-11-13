@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T15:32:57Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T15:56:30Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,24 +9,24 @@
 
 | State | Features |
 |---|---|
-| audited | 285 |
+| audited | 282 |
 | implementing | 3 |
-| integrated | 37 |
+| integrated | 40 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
 | Priority | audited | implementing | integrated | skipped_existing |
 |---|---|---|---|---|
-| P0 | 55 | 2 | 29 | 1 |
-| P1 | 142 | 1 | 8 | 0 |
+| P0 | 52 | 3 | 31 | 1 |
+| P1 | 142 | 0 | 9 | 0 |
 | P2 | 79 | 0 | 0 | 0 |
 | P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 288 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
+- 285 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
 
 ## Integrated
 
@@ -43,6 +43,7 @@ The physical-device suite may **not** start:
 | AUD-004 | Loop track and queue | `8d96030954ff` | `feature/aud-004` |
 | AUD-005 | Shuffle with history | `bf010e1ee1e6` | `None` |
 | AUD-006 | Seekable transport | `03b23a8ae6a0` | `feature/aud-006` |
+| AUD-007 | Audio output route indicator | `902d1734d42a` | `feature/aud-007` |
 | AUD-014 | Audio session interruption recovery | `c4f03aa5e3d8` | `feature/aud-014` |
 | AUD-016 | Reference tone suite | `f69525cf0e8d` | `feature/aud-016` |
 | AUTO-001 | Roadmap parser | `419cc2a999ed` | `autonomous/integration` |
@@ -61,12 +62,14 @@ The physical-device suite may **not** start:
 | AUTO-014 | Unattended safety budget | `419cc2a999ed` | `autonomous/integration` |
 | FX-001 | Bloom | `1192e0d6503e` | `feature/fx-001` |
 | FX-019 | Strobe safety envelope | `6cfcbaabc8d0` | `feature/fx-019` |
+| MOD-001 | Typed parameter registry | `304f3bce431a` | `feature/mod-001` |
 | PERF-011 | Background resource release | `6d669fcb8576` | `feature/perf-011` |
 | PRE-007 | Preset collections | `e834535cb98b` | `feature/pre-007` |
 | PRE-012 | Preset import validation | `4bf9f50d1af8` | `feature/pre-012` |
 | PRE-014 | Bulk preset export | `a20ba4bafb5e` | `feature/pre-014` |
 | PRE-015 | User preset duplication | `c6cce9988587` | `feature/pre-015` |
 | QA-007 | Audio source contract suite | `32172fdd5795` | `feature/qa-007` |
+| SHOW-011 | Tap tempo | `11329d52e6dc` | `feature/show-011` |
 | VIS-001 | Circular spectrum | `48285d49c422` | `feature/vis-001` |
 | VIS-002 | Linear spectrum | `c2b2f75c11bb` | `feature/vis-002` |
 
@@ -186,6 +189,13 @@ None.
 - `xcodebuild -scheme Rendering-Package -destination id=4E32B01D-7911-4A64-A944-877DDD445BC0 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `383d9ab633a4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-006/20261112T174904/sim-test_Rendering.log`)
 - `integration checkout, full preset library: xcodebuild -scheme projectM-iOS -destination id=4E32B01D (iPhone 17, iOS 27.2) test: projectM-iOSTests 87 pass; UI tests 22 pass (Transport 3, ImportedAudio 5, Status 7, Visualizer 7)`: pass at `e40e5780bb27` (log `.autonomous/logs/integration/aud-006/app-tests.log`)
 
+### AUD-007 Audio output route indicator (integrated)
+- `python3 scripts/check_compliance.py`: pass at `6fdff3fc48ef` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-007/20261113T103522/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `6fdff3fc48ef` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-007/20261113T103522/docs.log`)
+- `swift test --package-path Packages/CaptureKit`: pass at `6fdff3fc48ef` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-007/20261113T103522/swift-test_CaptureKit.log`)
+- `swift test --package-path Packages/CaptureUI`: pass at `6fdff3fc48ef` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-007/20261113T103522/swift-test_CaptureUI.log`)
+- `integration checkout (after the VisualizerView merge with VIS-002): CaptureKit 449 on iOS 27.2 sim; app: projectM-iOSTests 140; UI 9 (RouteIndicator, Status, LinearSpectrum); 239 s wall; 0 PosterBoard reports`: pass at `902d173` (log `.autonomous/logs/integration/aud-007/app-tests.log`)
+
 ### AUD-014 Audio session interruption recovery (integrated)
 - `python3 scripts/check_compliance.py`: pass at `8d270f3cbeed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-014/20261112T185431/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `8d270f3cbeed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-014/20261112T185431/docs.log`)
@@ -267,6 +277,15 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `bc80d4775650` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-019/20261113T095545/swift-test_VisualGenerators.log`)
 - `integration checkout: VisualGenerators 81 on iOS 27.2 sim, 63 with -DVISUAL_NO_METAL; FlashSafety 20; app: projectM-iOSTests 133, UI 11 (NativeVisual, Visualizer); 211 s wall; 0 PosterBoard reports`: pass at `6cfcbaa` (log `.autonomous/logs/integration/fx-019/app-tests.log`)
 
+### MOD-001 Typed parameter registry (integrated)
+- `python3 scripts/check_compliance.py`: pass at `c62c162f633a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-001/20261113T104902/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `c62c162f633a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-001/20261113T104902/docs.log`)
+- `swift test --package-path Packages/ParameterGraph`: pass at `c62c162f633a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-001/20261113T104902/swift-test_ParameterGraph.log`)
+- `swift test --package-path Packages/VisualGenerators`: pass at `c62c162f633a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-001/20261113T104902/swift-test_VisualGenerators.log`)
+- `post-merge: projectM-iOSTests 147 incl. ParameterCatalogAppTests on iPhone 17 iOS 27.2 sim`: pass at `304f3bce431a` (log `.autonomous/logs/integration/mod-001/app-tests.log`)
+- `post-merge: ParameterGraph xcodebuild test on iPhone 17 sim (26)`: pass at `304f3bce431a` (log `.autonomous/logs/integration/mod-001/pg-sim.log`)
+- `post-merge: VisualGenerators xcodebuild test on iPhone 17 sim (100)`: pass at `304f3bce431a` (log `.autonomous/logs/integration/mod-001/vg-sim.log`)
+
 ### PERF-011 Background resource release (integrated)
 - `python3 scripts/check_compliance.py`: pass at `e463058b1c92` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T151252/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `e463058b1c92` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T151252/docs.log`)
@@ -332,6 +351,14 @@ None.
 - `swift test --package-path Packages/CaptureKit`: pass at `1985f0c1e666` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-007/20261112T210720/swift-test_CaptureKit.log`)
 - `swift test --package-path Packages/CaptureUI`: pass at `1985f0c1e666` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-007/20261112T210720/swift-test_CaptureUI.log`)
 - `integration checkout: CaptureKit 309 on iOS 27.2 sim; xcodebuild projectM-iOS test on iPhone 17 iOS 27.2: projectM-iOSTests 119 pass; UI 22 pass (Interruption, Status, Transport, ImportedAudio, TestSignals)`: pass at `df432e31de46` (log `.autonomous/logs/integration/qa-007/app-tests.log`)
+
+### SHOW-011 Tap tempo (integrated)
+- `python3 scripts/check_compliance.py`: pass at `725551081f5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-011/20261113T104510/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `725551081f5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-011/20261113T104510/docs.log`)
+- `swift test --package-path Packages/PerformanceControl`: pass at `725551081f5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-011/20261113T104510/swift-test_PerformanceControl.log`)
+- `swift test --package-path Packages/VisualGenerators`: pass at `725551081f5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-011/20261113T104510/swift-test_VisualGenerators.log`)
+- `post-merge: xcodebuild test projectM-iOSTests (146) + TapTempo/RouteIndicator/NativeVisual UI tests (6) on iPhone 17 iOS 27.2 sim`: pass at `11329d52e6dc` (log `.autonomous/logs/integration/show-011/app-tests.log`)
+- `post-merge: PerformanceControl xcodebuild test on iPhone 17 sim (25)`: pass at `11329d52e6dc` (log `.autonomous/logs/integration/show-011/perf-sim.log`)
 
 ### VIS-001 Circular spectrum (integrated)
 - `python3 scripts/check_compliance.py`: pass at `7fa6d4e0f3c1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-001/20261113T080701/compliance.log`)
