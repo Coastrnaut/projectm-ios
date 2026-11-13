@@ -26,7 +26,7 @@ A task is ticked `[X]` only when verified, with " — Verified <date>: <how>".
 - [ ] SCN-003-T04 [US1] `ShowCueList.insert(sceneID:label:after:cueID:)` (position unchanged; errors as `append` plus `unknownCue`) and `copyLabel` ("<label> copy" within 80) in Packages/ShowControl/Sources/ShowControl/ShowCueList.swift
 - [ ] SCN-003-T05 [US1] `ShowSceneEditError`, `ShowStore.duplicateScene(_:newID:name:)` (read, `duplicated`, refuse an ID that has a file, atomic write; original file untouched) and `referencedMediaIDs()` (`StoredMediaReferences`) in Packages/ShowControl/Sources/ShowStorage/ShowStore.swift
 - [ ] SCN-003-T06 [P] [US1] Tests in Packages/ShowControl/Tests/ShowControlTests/ShowSceneEditTests.swift: acceptance (two files, distinct IDs, each loads with the other file deleted, equal `liveState`, original's cues still resolve after save and load); insert placement and position; missing scene and taken ID refused with nothing written; shared media: both scenes reference the same photo/video IDs, removing the original's cues removes only the original's file and `referencedMediaIDs` still lists the media
-- [ ] SCN-003-T07 [US1] `ShowCoordinator.duplicateScene(of:)` (new ID injectable for tests, editor messages for refusals, save) and the scene-name cache in Apps/projectM-iOS/Coordinators/ShowCoordinator.swift
+- [ ] SCN-003-T07 [US1] `ShowCoordinator.duplicateScene(of:)` (check the 256-cue limit before any file is written; new ID injectable for tests; editor messages for refusals; save) and the scene-name cache in Apps/projectM-iOS/Coordinators/ShowCoordinator.swift
 - [ ] SCN-003-T08 [US1] Duplicate Scene in the cue's context menu and as a VoiceOver action; "Scene: <name>" caption and ", scene <name>" value when the name differs from the label, in Apps/projectM-iOS/Views/ShowEditorView.swift
 
 ## Phase 4: User Story 2 — Rename a scene (P1)
@@ -34,9 +34,9 @@ A task is ticked `[X]` only when verified, with " — Verified <date>: <how>".
 **Goal**: Rename Scene… changes the scene's name, never its ID or any cue.
 **Independent test**: SCN-003-S2 in ShowSceneEditTests and ShowCoordinatorTests.
 
-- [ ] SCN-003-T09 [US2] `ShowStore.renameScene(_:to:)` (read, `renamed`, atomic rewrite of the same file; invalid name refused, file unchanged) in Packages/ShowControl/Sources/ShowStorage/ShowStore.swift, with tests in Packages/ShowControl/Tests/ShowControlTests/ShowSceneEditTests.swift (ID, file name and every cue reference unchanged; two cues sharing the scene both see the new name; labels unchanged)
+- [ ] SCN-003-T09 [US2] `ShowStore.renameScene(_:to:)` (read, `renamed`, atomic rewrite of the same file; invalid name refused, file unchanged) in Packages/ShowControl/Sources/ShowStorage/ShowStore.swift, with tests in Packages/ShowControl/Tests/ShowControlTests/ShowSceneEditTests.swift (ID, file name and every cue reference unchanged; two cues sharing the scene both see the new name; labels unchanged; a missing scene is refused and nothing is written)
 - [ ] SCN-003-T10 [US2] `ShowCoordinator.renameScene(of:to:)` and the Rename Scene… alert (`showSceneNameField`) in Apps/projectM-iOS/Coordinators/ShowCoordinator.swift and Apps/projectM-iOS/Views/ShowEditorView.swift
-- [ ] SCN-003-T11 [US1] [US2] Coordinator tests in Apps/projectM-iOS/Tests/ShowCoordinatorTests.swift: duplicate inserts after the source with a new ID and leaves the position and applied scene alone; stepping applies both scenes with distinct IDs; rename keeps the ID; refusals set the editor message
+- [ ] SCN-003-T11 [US1] [US2] Coordinator tests in Apps/projectM-iOS/Tests/ShowCoordinatorTests.swift: duplicate inserts after the source with a new ID and leaves the position and applied scene alone; stepping applies both scenes with distinct IDs; rename keeps the ID; refusals (missing scene, invalid name, full show with no scene file written) set the editor message
 - [ ] SCN-003-T12 [US1] [US2] UI test in Apps/projectM-iOS/UITests/SceneDuplicateUITests.swift (`-uitestShowSeed`): Settings → Show, Duplicate Scene on cue 2, Rename Scene… "Build B", back; Next from cue 1 applies scene 2 then the copy (distinct ID, same visual) (S5, < 30 s)
 
 ## Phase 5: User Story 3 — Shared rule for later rows (P2)
@@ -45,7 +45,14 @@ A task is ticked `[X]` only when verified, with " — Verified <date>: <how>".
 
 ## Phase 6: Polish
 
-- [ ] SCN-003-T14 Run `python3 scripts/check_compliance.py`, `python3 scripts/validate_docs.py`, both packages on the host and in the Linux shape, the app tests and UI tests on the own simulator; count PosterBoard reports before and after; record results in spec.md's Status
+- [ ] SCN-003-T14 Run `python3 scripts/check_compliance.py`, `python3 scripts/validate_docs.py`, both packages on the host and in the Linux shape, the app tests and UI tests on the own simulator; count PosterBoard reports before and after; record pass counts and durations against the S6 budgets and the no-network check (SCN-003-R10) in spec.md's Status
+
+## Analysis fixes (speckit-analyze, 2026-11-13)
+
+- U1 (MEDIUM): the full-show refusal must write no scene file (spec Edge Cases) → T07 checks the limit first, T11 tests it.
+- U2 (MEDIUM): Rename Scene on a missing scene (spec Edge Cases) had no test → T09.
+- C1 (LOW): SCN-003-R10 (no network) and S6 (budgets) had no explicit task → T14.
+- No constitution conflicts; coverage after fixes: R1-R10 and S1-S6 each map to at least one task.
 
 ## Dependencies
 
