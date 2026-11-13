@@ -79,7 +79,10 @@ final class GraphCompilerTests: XCTestCase {
     func testDerivedLimitsOfTheExamples() throws {
         let pi = Double.pi, sqrt2 = 2.0.squareRoot()
         let ember = try GeneratorGraphCompiler.compile(GeneratorGraphExamples.emberDrift)
-        let noise = 3 * 3 * (1 + 1.015 + 1.015 * 1.015 + 1.015 * 1.015 * 1.015) / 1.875
+        // Typed steps: as one untyped literal expression it took Linux's Swift past its type-check limit (CI, bc435fb).
+        let lacunarity: Double = 1.015
+        let octaveSum: Double = 1 + lacunarity + lacunarity * lacunarity + lacunarity * lacunarity * lacunarity
+        let noise: Double = 9 * octaveSum / 1.875
         XCTAssertEqual(ember.timeRateBound, 0.3 * noise, accuracy: 1e-9)
         XCTAssertEqual(ember.speedCap, pi / (0.3 * noise), accuracy: 1e-9)
         XCTAssertEqual(ember.musicRate, 1)
