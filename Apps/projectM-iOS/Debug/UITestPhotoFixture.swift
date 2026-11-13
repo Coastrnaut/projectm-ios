@@ -1,7 +1,9 @@
 // UITestPhotoFixture.swift — DEBUG only (MED-001-R16; research MED-001-D11). System pickers cannot be
-// automated, so `-uitestSeedPhoto <solid|alpha>` makes a 64 × 48 PNG in the temporary folder and
-// imports it through the same path as a picked file (PhotoStore: bounded read, sanitize, atomic
-// write, identifier) before the first screen. Not compiled into Release builds.
+// automated, so `-uitestSeedPhoto <solid|alpha|corrupt>` makes a 64 × 48 PNG in the temporary folder
+// and imports it through the same path as a picked file (PhotoStore: bounded read, sanitize, atomic
+// write, identifier) before the first screen. `corrupt` (MED-014-R14) then cuts the stored copy
+// short in place, as if it had been damaged on disk: the photo layer's load must fail with the
+// "couldn't be loaded" notice while the app keeps running. Not compiled into Release builds.
 #if DEBUG
 import CoreGraphics
 import Foundation
@@ -20,6 +22,9 @@ enum UITestPhotoFixture {
         guard (try? data.write(to: url)) != nil else { return }
         photos.importNow(at: url)
         try? FileManager.default.removeItem(at: url)
+        if arguments[i + 1] == "corrupt", let stored = photos.photo?.url, let copy = try? Data(contentsOf: stored) {
+            try? copy.prefix(copy.count / 2).write(to: stored)
+        }
     }
 
     /// A 64 × 48 orange picture (half transparent with `alpha`).
