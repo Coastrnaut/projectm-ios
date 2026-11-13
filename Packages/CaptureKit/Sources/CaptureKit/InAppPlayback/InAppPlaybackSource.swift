@@ -51,6 +51,17 @@ public protocol InAppPlaybackBackend: AnyObject {
     /// `SourceError(.inAppPlaybackFailed)` when it cannot be loaded; the old track is then silent
     /// and no other track is played (AUD-006-R19).
     func replaceTrack(_ track: InAppPlaybackTrack) throws
+    /// AUD-003: the current track now repeats (`loops` true) or ends, at once: the position is
+    /// kept, nothing is cut and the playing, paused or held state stays. While paused or held only
+    /// the flag changes.
+    func updateLooping(_ loops: Bool)
+}
+
+extension InAppPlaybackBackend {
+    /// For backends without a live update (scripted test backends): the flag only.
+    public func updateLooping(_ loops: Bool) {
+        loopsCurrentTrack = loops
+    }
 }
 
 @MainActor
@@ -125,6 +136,12 @@ public final class InAppPlaybackSource: AudioSource {
     public var onTrackEnded: (@MainActor () -> Void)? {
         get { backend.onTrackEnded }
         set { backend.onTrackEnded = newValue }
+    }
+
+    /// AUD-003: the play order changed whether the current track repeats; takes effect at once,
+    /// keeping the position and without a cut (`InAppPlaybackBackend.updateLooping`).
+    public func updateLooping(_ loops: Bool) {
+        if running { backend.updateLooping(loops) } else { backend.loopsCurrentTrack = loops }
     }
 
     public var playbackPosition: PlaybackPosition {

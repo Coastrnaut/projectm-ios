@@ -25,6 +25,8 @@ public struct TransportBar: View {
     public let onNext: () -> Void
     /// Seek to this many seconds (already limited to the track).
     public let onSeek: (Double) -> Void
+    /// AUD-003: opens the queue; nil hides the button (reference track, test signals).
+    public let onShowQueue: (() -> Void)?
 
     /// The scrubber's value while it is touched; nil otherwise.
     @State private var dragValue: Double?
@@ -33,7 +35,7 @@ public struct TransportBar: View {
 
     public init(title: String, isPlaying: Bool, position: @escaping @MainActor () -> PlaybackPosition,
                 onPlayPause: @escaping () -> Void, onStop: @escaping () -> Void, onPrevious: @escaping () -> Void,
-                onNext: @escaping () -> Void, onSeek: @escaping (Double) -> Void) {
+                onNext: @escaping () -> Void, onSeek: @escaping (Double) -> Void, onShowQueue: (() -> Void)? = nil) {
         self.title = title
         self.isPlaying = isPlaying
         self.position = position
@@ -42,6 +44,7 @@ public struct TransportBar: View {
         self.onPrevious = onPrevious
         self.onNext = onNext
         self.onSeek = onSeek
+        self.onShowQueue = onShowQueue
     }
 
     public var body: some View {
@@ -82,6 +85,9 @@ public struct TransportBar: View {
                        id: "transportPlayPause", action: onPlayPause)
                 button(UIStrings.transportStop, icon: "stop.circle", id: "transportStop", action: onStop)
                 button(UIStrings.nextTrack, icon: "forward.end.fill", id: "transportNext", action: onNext)
+                if let onShowQueue {
+                    button(UIStrings.queue, icon: "list.bullet", id: "transportQueue", action: onShowQueue)
+                }
             }
             .font(.title2)
         }

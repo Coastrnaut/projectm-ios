@@ -1,6 +1,7 @@
 // VisualizerView.swift — the full-screen visualization (task T084; FR-040, FR-041, FR-042, FR-083,
 // FR-085, FR-086, FR-089). The renderer's view fills the window in portrait, landscape and iPad
 // split view; a tap toggles the controls; the source-and-state indicator is always visible.
+import CaptureKit
 import CaptureUI
 import PresetLibrary
 import Rendering
@@ -80,6 +81,13 @@ struct VisualizerView: View {
                                     set: { coordinator.presets.purchaseRequested = $0 })) { purchaseSheet }
         // PRE-015: "Duplicate to My Presets" from the controls (the browser shows its own).
         .duplicateResultAlert(coordinator.userPresets, isPresented: !coordinator.showPresetBrowser)
+        // AUD-003: the queue over the visualizer; edits never interrupt playback.
+        .sheet(isPresented: $coordinator.showQueue, onDismiss: { coordinator.closeQueue() }) {
+            NavigationStack {
+                PlayQueueView(queue: coordinator.audioLibrary.queue, isPlaying: coordinator.transport.state == .playing,
+                              onDone: { coordinator.closeQueue() })
+            }
+        }
         .sheet(isPresented: $coordinator.showSettings) {
             SettingsView(settings: coordinator.settings,
                          reduceFlashingAvailable: coordinator.renderer?.supportsReduceFlashing ?? true)

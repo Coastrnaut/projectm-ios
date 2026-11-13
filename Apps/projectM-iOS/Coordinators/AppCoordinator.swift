@@ -17,9 +17,11 @@
 //   tracks. Tapping one selects that file on the In-App Playback source and starts it; the In-App
 //   Playback row itself always plays the reference track.
 // * Transport (AUD-006): `transport` controls In-App Playback while it is the active source: play,
-//   pause, stop playback, seek, next and previous track. Its play order is the "Your Audio" list
-//   as shown when the track was started; the reference track is an order of one. The existing
-//   Stop (back to the chooser) and Pause (freeze the picture) are unchanged.
+//   pause, stop playback, seek, next and previous track. The reference track is an order of one.
+//   The existing Stop (back to the chooser) and Pause (freeze the picture) are unchanged.
+// * Queue (AUD-003): imported tracks play in the user's queue (`audioLibrary.queue`), which the
+//   transport follows as it is edited. The queue opens as a sheet from "Your Audio" (with Play
+//   Queue) and from the transport while an imported track plays; edits never move playback.
 // * Test signals (AUD-016): the chooser's Diagnostics section starts a generated reference tone as
 //   In-App Playback, alone in its play order; nothing about the choice is stored.
 import ANGLERendering
@@ -49,6 +51,8 @@ final class AppCoordinator: VisualizationControlling {
     /// The user's imported audio (AUD-001) and the Files picker for it.
     let audioLibrary: AudioLibraryCoordinator
     var showAudioImporter = false
+    /// The queue sheet (AUD-003), over the chooser or the visualizer.
+    var showQueue = false
     @ObservationIgnored private let inAppPlayback: InAppPlaybackSource
     /// Play, pause, stop playback, seek, next and previous for In-App Playback (AUD-006).
     let transport: PlaybackTransport
@@ -207,12 +211,46 @@ final class AppCoordinator: VisualizationControlling {
     func play(_ track: ImportedTrack) {
         Task {
             guard screen == .chooser, await audioLibrary.playbackURL(for: track) != nil, screen == .chooser else { return }
-            // The play order is the list as shown now (AUD-006-R14).
-            let items = await audioLibrary.playbackItems()
-            guard screen == .chooser, let item = items.first(where: { $0.id == track.id.uuidString }) else { return }
-            transport.prepare(order: ListPlayOrder(items), current: item)
-            start(.inAppPlayback)
+            // The play order is the queue (AUD-003-R4): a track that is not queued joins at the end.
+            let queue = audioLibrary.queue
+            let id = track.id.uuidString
+            if !queue.contains(id) { queue.addToEnd(id) }
+            guard let item = queue.items.first(where: { $0.id == id }) else { return }
+            playQueued(item)
         }
+    }
+
+    // MARK: - Queue (AUD-003)
+
+    /// Opens the queue sheet; over the visualizer the controls stay while it is open.
+    func openQueue() {
+        showControls()
+        showQueue = true
+    }
+
+    func closeQueue() {
+        showQueue = false
+        if screen == .visualizer { showControls() }
+    }
+
+    /// "Play Queue": the stored current track (or the first queued one) at 0:00 (AUD-003-R15).
+    func playQueue() {
+        guard let item = audioLibrary.queue.startItem else { return }
+        playQueued(item)
+    }
+
+    /// Plays a queued track from the chooser, with the queue as the order.
+    func playQueued(_ item: PlaybackItem) {
+        guard screen == .chooser else { return }
+        showQueue = false
+        transport.prepare(order: audioLibrary.queue, current: item)
+        start(.inAppPlayback)
+    }
+
+    /// The transport offers the queue while an imported track is the current item.
+    var transportShowsQueue: Bool {
+        guard case .file = transport.current?.track else { return false }
+        return transport.isAvailable
     }
 
     // MARK: - Test signals (AUD-016)
@@ -445,7 +483,7 @@ final class AppCoordinator: VisualizationControlling {
 
     private func hideControls() {
         hideTask?.cancel()
-        guard !showPresetBrowser, !showSettings else { return }
+        guard !showPresetBrowser, !showSettings, !showQueue else { return }
         controlsVisible = false
     }
 

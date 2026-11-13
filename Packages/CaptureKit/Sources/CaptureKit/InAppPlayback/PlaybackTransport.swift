@@ -20,7 +20,11 @@
 // * The end of a track continues with the item after it in the order. When that is the same item
 //   (one track), the backend loops it without a gap and never reports an end (AUD-006-R17).
 // * A track that cannot be loaded ends the session as "In-App Playback failed" (AUD-006-R19).
-// * Nothing is persisted (AUD-006-R30).
+// * The transport persists nothing itself (AUD-006-R30). The queue of imported audio (AUD-003) is a
+//   `MutablePlayOrder` that stores its own order: the transport hooks its change notification and
+//   reports every track it selects. A queue edit is not a transport command: it never moves
+//   playback and does not count as a user change for interruption recovery (AUD-003-R7, R12); only
+//   whether the current track repeats is re-evaluated, and applied at once (AUD-003-R8).
 import AudioCore
 import Observation
 
@@ -80,11 +84,25 @@ public final class PlaybackTransport {
     /// Call before starting an In-App Playback session: `current` is what the session plays and
     /// `order` what Next track, Previous track and the end of a track move through.
     public func prepare(order: any PlayOrder, current item: PlaybackItem) {
+        if let previous = self.order as? any MutablePlayOrder { previous.onOrderChange = nil }
         self.order = order
         current = item
         stoppedSession = nil
         source.track = item.track
         source.loopsCurrentTrack = loops(item)
+        if let queue = order as? any MutablePlayOrder {
+            queue.onOrderChange = { [weak self] in self?.orderDidChange() }
+            queue.playbackDidMove(to: item.id)
+        }
+    }
+
+    /// The order changed (AUD-003): only whether the current track repeats can follow from that.
+    /// Applied at once, keeping the position, without a cut and without a transport command.
+    public func orderDidChange() {
+        guard let current else { return }
+        let shouldLoop = loops(current)
+        guard shouldLoop != source.loopsCurrentTrack else { return }
+        source.updateLooping(shouldLoop)
     }
 
     /// One track in the order repeats by itself; the backend then never reports its end.
@@ -167,13 +185,16 @@ public final class PlaybackTransport {
     private func change(to item: PlaybackItem) -> Bool {
         positionRevision += 1
         if item.id == current?.id {
+            source.loopsCurrentTrack = loops(item)
             source.seek(to: 0)                     // the only track in the order: start it again
+            (order as? any MutablePlayOrder)?.playbackDidMove(to: item.id)
             return true
         }
         source.loopsCurrentTrack = loops(item)
         do {
             try source.replaceTrack(item.track)
             current = item
+            (order as? any MutablePlayOrder)?.playbackDidMove(to: item.id)
             return true
         } catch {
             // No other track is played in its place: the session ends as "In-App Playback failed".

@@ -2,8 +2,9 @@
 // R17; specs/007-aud-006-seekable-transport/contracts/transport.md).
 //
 // `PlayOrder` is the seam for the queue of AUD-003 and the repeat and shuffle modes of AUD-004 and
-// AUD-005: the transport only asks what comes after and before an item. In this feature the order
-// is the "Your Audio" list as shown, wrapping around at both ends (`ListPlayOrder`).
+// AUD-005: the transport only asks what comes after and before an item. `ListPlayOrder` is a fixed
+// list that wraps around (the reference track and test signals, each alone). Imported audio plays
+// in the user's queue, `PlayQueue` (AUD-003), a `MutablePlayOrder` that can change while it plays.
 import AudioCore
 import Foundation
 
@@ -46,11 +47,22 @@ public struct PlaybackItem: Sendable, Equatable, Identifiable {
 }
 
 /// Answers what follows and what precedes an item. nil means nothing does (not produced by
-/// `ListPlayOrder`; reserved for repeat "off", AUD-004).
+/// `ListPlayOrder`; an empty `PlayQueue` gives it, and repeat "off" will, AUD-004).
 @MainActor
 public protocol PlayOrder: AnyObject {
     func item(after id: PlaybackItem.ID) -> PlaybackItem?
     func item(before id: PlaybackItem.ID) -> PlaybackItem?
+}
+
+/// An order that can change while it plays (AUD-003). The transport sets `onOrderChange` when it
+/// takes the order and clears it when another order replaces it; the order calls it after every
+/// change, and the transport then re-evaluates only whether the current track repeats
+/// (AUD-003-R8). An edit never moves playback by itself (AUD-003-R7).
+@MainActor
+public protocol MutablePlayOrder: PlayOrder {
+    var onOrderChange: (@MainActor () -> Void)? { get set }
+    /// The transport selected `id` (prepare, Next, Previous, the end of a track).
+    func playbackDidMove(to id: PlaybackItem.ID)
 }
 
 /// A fixed list that wraps around: after the last item comes the first, before the first the last.
