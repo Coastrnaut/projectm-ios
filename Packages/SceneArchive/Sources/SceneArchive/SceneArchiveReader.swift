@@ -1,7 +1,8 @@
 // SceneArchiveReader.swift — archive bytes → scene + media, or one refusal (FILE-001-R6 to R9, R14;
 // contract §4, §6).
 //
-// Order: size → PortableArchive (ZIP checks, manifest header, every file's length and SHA-256,
+// Order: size → PortableArchive (ZIP checks, the manifest's shape against
+// `SceneArchiveFormat.manifestSchema` before any decoding (FILE-007), manifest header, every file's length and SHA-256,
 // unlisted files) → the manifest's `scene` and `assets` (types, unique keys, at most one photo and
 // one video, exact `assets/<key>.<ext>` paths) → files (scene present, every asset file listed,
 // nothing else) → SCN-001 decode and validation (errors refuse; no store availability here) →
@@ -26,8 +27,8 @@ public enum SceneArchiveReader {
         guard data.count <= limits.maxArchiveBytes else { throw .archiveTooLarge(limit: limits.maxArchiveBytes) }
         let contents: PortableArchiveContents
         do {
-            contents = try PortableArchive.read(data, format: SceneArchiveFormat.formatName,
-                                                supportedVersion: SceneArchiveFormat.currentVersion, limits: limits.portable)
+            contents = try PortableArchive.read(data, schema: SceneArchiveFormat.manifestSchema.capped(atBytes: limits.maxManifestBytes),
+                                                limits: limits.portable)
         } catch let error as PortableArchiveError {
             throw .archive(error)
         } catch {

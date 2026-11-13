@@ -84,3 +84,26 @@ FILE-002-D1 to D5). No default is overridden and the format stays version 1.
    `PortableSHA256.Hasher` (incremental, fixed-size state, same compression function) exists for
    file-based hashing later (FILE-006). No CryptoKit: the plain-Swift SHA-256 keeps Linux CI.
 
+
+## Amendment 2026-11-13: FILE-007 document schema validator
+
+Decided by Claude under owner rule 4 (`specs/068-file-007-document-schema-validator`, research
+FILE-007-D1 to D6). No default is overridden and the format stays version 1; no new ADR number.
+
+1. **Manifest shape before decoding.** `manifest.json` is checked by `BoundedJSON` (LocalPortability:
+   one forward pass, no recursion, no values built) against the format's declared `DocumentSchema`
+   before the platform decoder sees it: strict UTF-8, RFC 8259 grammar, an object at the top, depth,
+   string, number and per-container element limits, and no key twice in one object (the platform
+   decoder would keep one silently, so two `files` lists could hide an entry). A refusal is
+   `PortableArchiveError.manifestRejected(JSONShapeError)` with one of three readable sentences
+   (not valid JSON; too large or too deeply nested; the same field twice); the typed reason carries
+   the byte offset. Scene archive manifests: 64 KiB, depth 8, strings 4,096 bytes, numbers 32
+   characters, 256 elements. Preset archive manifests (same layer): 4 MiB, depth 8, 16,384, 32, 4,096.
+2. **Shape first, then version.** The format name and version are read only after the shape check;
+   a newer version within the limits is still refused as `newerVersion` ("update the app").
+3. **One schema per document.** Each format declares its name, oldest readable and current version
+   and limits once (`SceneArchiveFormat.manifestSchema`, `UserPresetArchiveFormat.manifestSchema`,
+   `PresetCollectionsFile.schema`, `UserPresetsFile.schema`); readers take both their limits and their
+   version verdict from it. The scene document (`scene.json`) keeps SCN-001's own bounded reader
+   (1 MiB, depth 32, duplicate keys refused), which is equivalent, and SHD-011's graph import keeps its
+   pre-checks (64 KiB, depth 8 before decoding).
