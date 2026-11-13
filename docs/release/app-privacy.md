@@ -67,6 +67,18 @@ App Privacy when a version with the Video visual is submitted. The import adds n
 API (the file size is read with `fileSizeKey`; no file dates, no disk-space queries);
 `check_privacy_manifest.py` on the simulator Debug build is the check (MED-002-T25).
 
+REC-001 (2026-11-13; `specs/055-rec-001-still-frame-capture`, privacy review in its spec): Save Frame
+saves one picture of the visualization only when the user taps it and chooses a format, through the
+system Files exporter to a location the user picks. No photo library access is requested (no
+`NSPhotoLibraryAddUsageDescription`; Photos export is REC-011), no permission is added, the file
+carries only the pixels and the sRGB profile (ImageIO's own pixel-size and color-space description;
+no location, date, device or camera metadata), and the app keeps no copy. A user exporting their own
+file to a place they choose is not collection by the app: nothing is transmitted by the app, so the
+answers stay **No** and the label stays **Data Not Collected**. Owner action: confirm this in App
+Store Connect › App Privacy when a version with Save Frame is submitted. Encoding (ImageIO) and
+readback (Metal, ANGLE) add no required-reason API; `check_privacy_manifest.py` on the simulator
+Debug build is the check (REC-001-T18).
+
 ## Privacy manifest (`Apps/projectM-iOS/PrivacyInfo.xcprivacy`)
 
 - `NSPrivacyTracking`: false; `NSPrivacyTrackingDomains`: empty; `NSPrivacyCollectedDataTypes`: empty.
