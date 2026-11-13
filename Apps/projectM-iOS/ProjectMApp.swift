@@ -53,6 +53,12 @@ struct RootView: View {
             }
             // OSC-007-R2: an enabled listener already runs on the chooser, so its badge is shown here too.
             .safeAreaInset(edge: .bottom) { OSCListenerBadge(osc: coordinator.osc).padding(.bottom, 4) }
+            // PERF-010-R4: the recovery offer after an abnormal exit, above the chooser (non-blocking).
+            .safeAreaInset(edge: .top) {
+                SessionRecoveryOfferCard(recovery: coordinator.recovery, onReopen: { coordinator.reopenLastScene() },
+                                         onStartFresh: { coordinator.startFresh() })
+                    .padding(.horizontal)
+            }
             .onAppear { automationChooserAppeared() }
             // AUD-001-R1: the system Files picker, audio types only. The picked URLs are used once,
             // to copy the files into the app's library, and are not kept.

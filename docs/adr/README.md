@@ -28,5 +28,6 @@
 | [0028](0028-scene-document-format.md) | Scene document format, version 1 | Accepted 2026-11-13 (SCN-001; owner rule 4) |
 | [0029](0029-scene-archive-format.md) | Scene archive format, version 1 | Accepted 2026-11-13 (FILE-001; owner rule 4) |
 | [0030](0030-golden-render-scenes.md) | Golden render scenes | Accepted 2026-11-13 (QA-002; owner rule 4) |
+| [0032](0032-crash-recovery-consent.md) | Crash recovery never reopens sensors or the network without consent | Accepted 2026-11-13 (PERF-010; owner rule 4) |
 
 Required by Constitution X: capture API, minimum OS, renderer, dependency strategy.

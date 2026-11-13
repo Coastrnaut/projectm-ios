@@ -183,6 +183,15 @@ struct SettingsView: View {
                     LabeledContent("Version",
                                    value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")
                 }
+                #if DEBUG
+                // PERF-010-T15 ({device}): a real crash for the recovery check on D1. Debug builds only.
+                Section {
+                    Button("Crash now (DEBUG)", role: .destructive) { fatalError("PERF-010 DEBUG crash button") }
+                        .accessibilityIdentifier("debugCrashButton")
+                } footer: {
+                    Text("Debug builds only: ends the app abnormally to test session recovery.")
+                }
+                #endif
             }
             .navigationTitle("Settings")
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }

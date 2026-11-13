@@ -71,6 +71,9 @@ struct VisualizerView: View {
                 // Top status stack. OSC-007-R2, R6: the OSC listener badge, with or without the
                 // controls; then CAM-012's "Camera on" badge.
                 OSCListenerBadge(osc: coordinator.osc)
+                // PERF-010-R4: the recovery offer after an abnormal exit (non-blocking).
+                SessionRecoveryOfferCard(recovery: coordinator.recovery, onReopen: { coordinator.reopenLastScene() },
+                                         onStartFresh: { coordinator.startFresh() })
                 let indicator = coordinator.cameraIndicator
                 if indicator.isShown {   // CAM-012-R1 to R3: never hidden with the controls
                     CameraIndicatorBadge(indicator: indicator) { coordinator.stopCamera() }
@@ -214,6 +217,14 @@ struct VisualizerView: View {
                     }
                 }
                 #if DEBUG
+                // PERF-010-R12: the recovery decision and whether the OSC transport listens.
+                let recoveryProbe = coordinator.recovery.probe(oscListening: coordinator.osc.isListenerOpen)
+                Text(recoveryProbe)
+                    .font(.caption2)
+                    .opacity(0.01)
+                    .allowsHitTesting(false)
+                    .accessibilityIdentifier("sessionRecovery")
+                    .accessibilityValue(recoveryProbe)
                 if let autosave = coordinator.sceneAutosave {   // SCN-002-R12: the committed revision
                     Text(autosave.probe)
                         .font(.caption2)
