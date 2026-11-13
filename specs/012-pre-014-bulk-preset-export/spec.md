@@ -82,6 +82,16 @@ no owner question needed). Each answer is the conservative, local-first choice.
 - Q: Selection? → A: The Export sheet lists every exportable preset, all selected; the user can
   deselect some, select all or none. Export is disabled with nothing selected.
 - Q: File name? → A: `projectM-iOS Presets <yyyy-MM-dd>.zip` (local date), no device or user name.
+- Q: (clarify pass) When is the summary shown? → A: As soon as the archive is written, before the
+  share sheet opens: it is announced to VoiceOver and shown as text at the top of the Export sheet;
+  the sheet stays open under the share sheet so the summary is still readable after sharing.
+- Q: (clarify pass) Can Export run during an import, a duplicate or another export? → A: No.
+  Export is disabled while an import, a duplicate or an export runs, and Import is disabled while
+  an export is written; the library actor serializes the reads anyway.
+- Q: (clarify pass) Which app version goes into the manifest? → A: The short version and the
+  build, as `"1.1 (2)"`; it is informational only and never used to accept or refuse an archive.
+- Q: (clarify pass) Is anything logged? → A: No preset names, ids or paths are logged; only the
+  outcome kind (exported, failed) may appear in the existing unified log category.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -207,7 +217,8 @@ entry size: each is refused with its reason.
 - **PRE-014-R4**: The archive MUST be written in a private temporary folder of the app and
   deleted when the share sheet closes (completed or cancelled); leftovers from an earlier launch
   are deleted at the next export or launch.
-- **PRE-014-R5**: After the export the app MUST show and announce a summary: the number exported
+- **PRE-014-R5**: When the archive is written, before the share sheet opens, the app MUST show (at
+  the top of the Export sheet) and announce a summary: the number exported
   and, per excluded group, the count and the reason (copies of full-library presets: part of the
   purchase, stay on this device; quarantined: failed a check; waiting: not checked yet;
   unavailable: could not be read).
@@ -258,7 +269,9 @@ entry size: each is refused with its reason.
 - **PRE-014-R17**: Every control and the summary MUST have accessibility labels and work at all
   Dynamic Type sizes.
 - **PRE-014-R18**: While the saved record is from a newer app version, Export MUST be
-  unavailable.
+  unavailable. Export MUST be disabled while an import, duplicate or export runs, and Import while
+  an export is written.
+- **PRE-014-R20**: Preset names, ids and paths MUST NOT be logged by the export.
 - **PRE-014-R19**: The privacy policy MUST say that an export leaves the device only through the
   user's own share action.
 
