@@ -27,6 +27,7 @@
 // OUT-010: "Black out output" / "Restore output" blacks out the current output (the external display
 // while the visualization is on one, else the device's visualization) with one tap; its
 // accessibility value says the output's state (OUT-010-R1, R10). Shown for every visual.
+// REC-003: "Record" / "Stop recording" records the visual's frames into a video for Files.
 // REC-001: "Save Frame" asks for PNG or HEIF and saves the visual's next frame through the Files
 // exporter (REC-001-R1); shown for every visual.
 import CaptureKit
@@ -219,6 +220,17 @@ struct ControlsOverlay: View {
         }
     }
 
+    /// REC-003: Record / Stop recording; for projectM a tap refuses with the reason (REC-003-R12).
+    private var recordItem: Item {
+        let recording = coordinator.videoRecording
+        let active = recording.state == .recording
+        return Item(id: "record", title: active ? "Stop recording" : "Record", icon: active ? "stop.circle" : "record.circle",
+                    value: active ? "Recording, \(recording.elapsedText)" : (recording.isRecordable ? nil : "Unavailable for projectM")) {
+            coordinator.showControls()
+            recording.toggle()
+        }
+    }
+
     private var allButtons: [Item] {
         [
             Item(id: "stop", title: "Stop", icon: "stop.fill") { coordinator.stop() },
@@ -229,6 +241,7 @@ struct ControlsOverlay: View {
                 coordinator.showControls()
                 coordinator.frameCapture.requestSave()
             },
+            recordItem,
             Item(id: "previous", title: "Previous", icon: "backward.fill") { coordinator.previous() },
             Item(id: "next", title: "Next", icon: "forward.fill") { coordinator.next() },
             Item(id: "random", title: "Random", icon: "shuffle") { coordinator.random() },

@@ -24,6 +24,7 @@
 | [0022](0022-imported-video-layer.md) | Imported video layer | Accepted 2026-11-13 (MED-002; owner rule 4); amended 2026-11-13 by MED-014 (container check, async first-picture probe) |
 | [0023](0023-external-display-scene.md) | External display scene | Accepted 2026-11-13 (OUT-001; owner rule 4); 0022 left for MED-002 |
 | [0024](0024-user-content-code-execution-policy.md) | User content never runs as native code | Accepted 2026-11-13 (SHD-011; owner rule 4); 0022 and 0023 left to MED-002 and OUT-001 |
+| [0027](0027-video-recording-pipeline.md) | Video recording pipeline | Accepted 2026-11-13 (REC-003; owner rule 4); 0015, 0016, 0025 and 0026 are unused (reserved during parallel work, not taken) |
 | [0028](0028-scene-document-format.md) | Scene document format, version 1 | Accepted 2026-11-13 (SCN-001; owner rule 4) |
 
 Required by Constitution X: capture API, minimum OS, renderer, dependency strategy.
