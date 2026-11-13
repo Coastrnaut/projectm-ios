@@ -43,6 +43,44 @@ typedef void (*_Nullable __eglMustCastToProperFunctionPointerType)(void);
 #define EGL_PLATFORM_ANGLE_TYPE_ANGLE 0x3203
 #define EGL_PLATFORM_ANGLE_TYPE_METAL_ANGLE 0x3489
 
+// CMP-001 (ADR-0012): client buffers, so an ANGLE frame can be drawn into a texture Metal samples.
+// Constant values from ANGLE's include/EGL/egl.h and eglext_angle.h at the pinned commit; every
+// extension is queried at run time (eglQueryString) before it is used.
+typedef void *_Nullable EGLImage;
+typedef void *_Nullable EGLSync;
+typedef void *_Nullable EGLClientBuffer;
+#define EGL_VENDOR 0x3053
+#define EGL_VERSION 0x3054
+#define EGL_EXTENSIONS 0x3055
+#define EGL_BIND_TO_TEXTURE_RGBA 0x303A
+#define EGL_TEXTURE_RGBA 0x305E
+#define EGL_TEXTURE_2D 0x305F
+#define EGL_TEXTURE_FORMAT 0x3080
+#define EGL_TEXTURE_TARGET 0x3081
+// EGL_ANGLE_iosurface_client_buffer
+#define EGL_IOSURFACE_ANGLE 0x3454
+#define EGL_IOSURFACE_PLANE_ANGLE 0x345A
+#define EGL_TEXTURE_TYPE_ANGLE 0x345C
+#define EGL_TEXTURE_INTERNAL_FORMAT_ANGLE 0x345D
+#define EGL_BIND_TO_TEXTURE_TARGET_ANGLE 0x348D
+// EGL_ANGLE_metal_texture_client_buffer
+#define EGL_METAL_TEXTURE_ANGLE 0x34A7
+// EGL_ANGLE_metal_shared_event_sync
+#define EGL_SYNC_METAL_SHARED_EVENT_ANGLE 0x34D8
+#define EGL_SYNC_METAL_SHARED_EVENT_OBJECT_ANGLE 0x34D9
+#define EGL_SYNC_METAL_SHARED_EVENT_SIGNAL_VALUE_LO_ANGLE 0x34DA
+#define EGL_SYNC_METAL_SHARED_EVENT_SIGNAL_VALUE_HI_ANGLE 0x34DB
+
+const char *_Nullable eglQueryString(EGLDisplay dpy, EGLint name);
+EGLBoolean eglGetConfigAttrib(EGLDisplay dpy, EGLConfig config, EGLint attribute, EGLint *_Nonnull value);
+EGLSurface eglCreatePbufferFromClientBuffer(EGLDisplay dpy, EGLenum buftype, EGLClientBuffer buffer, EGLConfig config,
+                                            const EGLint *_Nullable attrib_list);
+EGLImage eglCreateImage(EGLDisplay dpy, EGLContext ctx, EGLenum target, EGLClientBuffer buffer,
+                        const EGLAttrib *_Nullable attrib_list);
+EGLBoolean eglDestroyImage(EGLDisplay dpy, EGLImage image);
+EGLSync eglCreateSync(EGLDisplay dpy, EGLenum type, const EGLAttrib *_Nullable attrib_list);
+EGLBoolean eglDestroySync(EGLDisplay dpy, EGLSync sync);
+
 EGLDisplay eglGetPlatformDisplay(EGLenum platform, void *_Nullable native_display, const EGLAttrib *_Nullable attrib_list);
 EGLBoolean eglInitialize(EGLDisplay dpy, EGLint *_Nullable major, EGLint *_Nullable minor);
 EGLBoolean eglTerminate(EGLDisplay dpy);
@@ -77,6 +115,24 @@ void PMANGLEClearFramebuffer(unsigned int framebuffer, float red, float green, f
 /// glFinish through eglGetProcAddress: waits for the GPU (RendererLab timing).
 void PMANGLEFinish(void);
 
+
+
+/// CMP-001: a GL texture bound to `image` (glEGLImageTargetTexture2DOES, GL_OES_EGL_image) attached
+/// to a new framebuffer. Returns the framebuffer (0 on failure) and writes the texture. Needs a
+/// current context.
+unsigned int PMANGLECreateImageFramebuffer(EGLImage image, unsigned int *_Nonnull textureOut);
+
+/// CMP-001: clears the rectangle (x, y, width, height; GL's bottom-left origin) of `framebuffer` to a
+/// color with alpha (scissored), then disables the scissor test (tests and the spike).
+void PMANGLEClearRect(unsigned int framebuffer, int x, int y, int width, int height,
+                      float red, float green, float blue, float alpha);
+
+/// glFlush through eglGetProcAddress: submits the context's work without waiting.
+void PMANGLEFlush(void);
+
+/// eglCopyMetalSharedEventANGLE (EGL_ANGLE_metal_shared_event_sync) through eglGetProcAddress: the
+/// MTLSharedEvent of a sync, retained (+1), or NULL when unavailable.
+void *_Nullable PMANGLECopyMetalSharedEvent(EGLDisplay dpy, EGLSync sync);
 
 #endif
 
