@@ -221,7 +221,8 @@ every run; the informational measurement runs only on request.
 ### Measurable Outcomes
 
 - **SHD-010-S1**: 100% of the pathological fixture table gives its documented outcome (exact
-  refusal message, or acceptance with its documented cost), with 0 evaluations of a refused fixture.
+  refusal message, or acceptance with its documented cost), with 0 evaluations of a refused fixture
+  (a refused source yields no compiled formula, and the frame set stays unchanged).
 - **SHD-010-S2**: Budget accounting: the formula that would cross the cost budget or the count
   budget is refused with its exact message in 100% of the accounting tests; removal frees exactly
   the removed cost.

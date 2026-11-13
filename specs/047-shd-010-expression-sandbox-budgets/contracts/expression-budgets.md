@@ -62,9 +62,11 @@ No API of the frame set or the snapshot takes source text.
 | 52 × `audio.bandMean` joined by `+` | `1:<pos>: operation cost over 256` (52 × 4 + 51 = 259) |
 | A 16-binding ring `let a0 = a1; … let a15 = a0; a0` | `recursive binding: a0 → a1 → … → a15 → a0` |
 | Doubling chain `let a0 = audio.onset; let a1 = a0 + a0; … a15` | accepted; cost linear (16 stores, 15 adds, 30 loads, 1 read, 1 final load = 63); value 2¹⁵ × onset |
-| A cost-256 formula compiled with `maximumOperationCost: 100000` and cost 300 | compiles; refused by the frame set with the loosened-limit message |
+| A cost-300 formula compiled with `maximumOperationCost: 100000` | compiles; refused by the frame set: `the formula was compiled with an operation cost limit of 100000; the standard limit is 256` |
 
-Exact positions are fixed by the tests (`ExpressionPathologicalTests`).
+A refused source never yields a `CompiledExpression`, so it cannot be admitted or evaluated; the
+tests also check that the frame set is unchanged. Exact positions are fixed by the tests
+(`ExpressionPathologicalTests`) and copied here (SHD-010-T07).
 
 ## B4 Compile work bounds
 
