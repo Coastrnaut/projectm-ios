@@ -43,6 +43,11 @@ All open questions were settled in the spec's Clarifications; these are the desi
   (FX-019-D6). The generator calls the same `FlashSafetyLimiter` path as the circular spectrum.
 - **Rationale**: FX-019-R9 requires native visuals to feed the envelope after every effect; using
   the shared code path guarantees it.
+- **Measured during implementation (VIS-002-T09)**: with fractional cross-axis edges the GPU
+  covered whole pixels (a 1.6 px bar rasterized 2 px wide), so the whole-frame level measured 25 %
+  above the model (0.863 vs 0.693) and the envelope under-limited. Cross-axis edges are therefore
+  rounded to whole pixels; after that the measured whole frame matches the model within 0.004.
+  Lengths stay continuous (at most half a pixel per bar end).
 
 ## VIS-002-D5 App host
 

@@ -23,7 +23,7 @@ Pixels, y down; C = cross-axis size, L = length-axis size; p = C/N.
 
 | Field | Rule |
 |---|---|
-| crossStart, crossEnd | k·p + s·p/2, crossStart + (1 − s)·p |
+| crossStart, crossEnd | round(k·p + s·p/2), round(k·p + s·p/2 + (1 − s)·p) (whole pixels) |
 | length | v·λ·L (v sanitized, VIS-001-R8) |
 | capStart, capEnd | P·λ·L, capStart + t·L (P = peak; empty when P = 0) |
 | color | palette.color(bar: k, of: N) |

@@ -24,7 +24,8 @@ final class LinearSpectrumLayoutTests: XCTestCase {
         let vertical = c.orientation == .vertical
         let cross = Double(vertical ? width : height), length = Double(vertical ? height : width)
         let p = cross / Double(n)
-        let c0 = Double(k) * p + c.spacing * p / 2, c1 = c0 + (1 - c.spacing) * p
+        // Cross-axis edges rounded to whole pixels (VIS-002-R4).
+        let c0 = (Double(k) * p + c.spacing * p / 2).rounded(), c1 = (Double(k) * p + c.spacing * p / 2 + (1 - c.spacing) * p).rounded()
         let l = v * c.lengthScale * length
         return vertical ? (c0, length - l, c1, length) : (0, c0, l, c1)
     }
@@ -123,7 +124,7 @@ final class LinearSpectrumLayoutTests: XCTestCase {
         for spacing in [0.0, 0.2, 0.5] {
             let layout = LinearSpectrumLayout(configuration: LinearSpectrumConfiguration(barCount: .b16, spacing: spacing))
             layout.layout([Float](repeating: 0.5, count: 16), frameTime: 0, width: 320, height: 200)
-            let pitch = 320.0 / 16
+            let pitch = 320.0 / 16   // 20 px: every edge already falls on a whole pixel
             for k in 0..<16 {
                 let bar = try! XCTUnwrap(layout.rectangles(ofBar: k).bar)
                 XCTAssertEqual(bar.width, (1 - spacing) * pitch, accuracy: 1e-9, "width (1 − s)·p")
@@ -150,7 +151,9 @@ final class LinearSpectrumLayoutTests: XCTestCase {
         empty.layout([Float](repeating: 1, count: 64), frameTime: 0, width: 0, height: 0)
         XCTAssertEqual(empty.tessellate(into: vertices, capacity: LinearSpectrumLayout.maximumVertexCount, gain: 1), 0, "zero size")
         empty.layout([Float](repeating: 1, count: 64), frameTime: 0, width: 1, height: 1)
-        XCTAssertTrue(empty.rectangles(ofBar: 63).bar.map { $0.maxX <= 1 && $0.maxY <= 1 && $0.minX >= 0 } ?? false, "tiny output")
+        // 1 × 1: slots narrower than a pixel round to nothing or to the one pixel; never outside.
+        let drawn = (0..<64).compactMap { empty.rectangles(ofBar: $0).bar }
+        XCTAssertTrue(drawn.allSatisfy { $0.minX >= 0 && $0.minY >= 0 && $0.maxX <= 1 && $0.maxY <= 1 }, "tiny output stays inside")
     }
 
     func testTessellationStaysInsideAndScalesColors() {

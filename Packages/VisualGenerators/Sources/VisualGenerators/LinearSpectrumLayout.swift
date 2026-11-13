@@ -7,8 +7,9 @@
 // horizontal x = length, y = cross (bars grow from the left edge, band 0 at the top). Turning the
 // device changes W and H only.
 //
-// Bar k (displayed value v ∈ 0…1) occupies the centred (1 − s) of slot k = [k·C/N, (k+1)·C/N) and
-// runs from 0 to v·λ·L along the length axis. Its cap, drawn only when the peak P > 0 and t > 0,
+// Bar k (displayed value v ∈ 0…1) occupies the centred (1 − s) of slot k = [k·C/N, (k+1)·C/N), its
+// two cross-axis edges rounded to whole pixels (research VIS-002-D4), and runs from 0 to v·λ·L along
+// the length axis. Its cap, drawn only when the peak P > 0 and t > 0,
 // runs from P·λ·L to P·λ·L + t·L. With λ ≤ 1 − t and P ≥ v, bar and cap never overlap and always
 // fit the output (bounded height). Every rectangle is drawn as two triangles (6 vertices) in
 // normalized device coordinates with premultiplied colors; caps have their bar's color.
@@ -152,9 +153,12 @@ public final class LinearSpectrumLayout: FlashAreaLevelSource {
         let cap = c.capThickness * axis
         generation &+= 1
         for k in 0..<n {
-            let start = Double(k) * pitch + inset
+            // Cross-axis edges on whole pixels: the GPU then covers exactly the modeled area, which the
+            // strobe safety envelope relies on (a 1.6 px bar would rasterize 2 px wide, +25 %).
+            let start = (Double(k) * pitch + inset).rounded()
+            let end = (Double(k) * pitch + inset + (1 - c.spacing) * pitch).rounded()
             let peakStart = peaks.peak(k) * full
-            bars[k] = LinearBarGeometry(crossStart: start, crossEnd: start + (1 - c.spacing) * pitch,
+            bars[k] = LinearBarGeometry(crossStart: start, crossEnd: end,
                                         length: Double(values[k]) * full, capStart: peakStart,
                                         capEnd: peaks.peak(k) > 0 ? peakStart + cap : peakStart, color: colors[k])
         }
