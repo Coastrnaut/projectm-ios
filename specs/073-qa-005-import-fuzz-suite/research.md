@@ -55,7 +55,7 @@ Decisions are numbered `QA-005-D1…`. Findings (crashes or hangs the suites fou
 
 `FUZZ_ITERATIONS=n` replaces every suite's default with `n` (the file-import suite uses `n / 25`, at
 least 1), ceiling 100,000. The per-run byte budget is inputs × cap. Final numbers are set after
-measuring on the Mac host (tasks QA-005-T12) and recorded here.
+measuring on the Mac host (task QA-005-T14) and recorded here.
 
 ## QA-005-D5: Mutation strategies
 
@@ -79,4 +79,4 @@ written as files and checked in. A test checks the size budget and per-format co
 
 ## Findings
 
-Recorded by QA-005-T13 after the first full default run and one `FUZZ_ITERATIONS=5000` run.
+Recorded by QA-005-T15 after the first full default run and one `FUZZ_ITERATIONS=5000` run.

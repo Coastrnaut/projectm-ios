@@ -45,7 +45,7 @@ Format: `- [ ] QA-005-Tnn [P?] [Story?] description (requirements; contract)`
 
 ## Phase 6: Polish
 
-- [ ] QA-005-T16 [Mac] Append `ImportFuzz` to the five package loops in `.github/workflows/ios-ci.yml`; run `swift test` for ImportFuzz on the host and in the Linux shape, `python3 scripts/check_compliance.py`, `python3 scripts/validate_docs.py` (QA-005-R10)
+- [ ] QA-005-T16 [Mac] Append `ImportFuzz` to the five package loops in `.github/workflows/ios-ci.yml`; run `swift test` for ImportFuzz on the host and in the Linux shape, `python3 scripts/check_compliance.py`, `python3 scripts/validate_docs.py`; confirm with `git diff autonomous/integration --stat` that no parser source changed except for a recorded finding (QA-005-R10, R11)
 - [ ] QA-005-T17 Update the spec status, the roadmap row's status note if the roadmap tracks it, and the feature report in research.md (findings, budgets, durations) (QA-005-S1-S6)
 
 ## Dependencies
