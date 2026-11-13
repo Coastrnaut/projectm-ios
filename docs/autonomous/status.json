@@ -6,9 +6,9 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 33,
-   "implementing": 1,
-   "integrated": 52,
+   "audited": 31,
+   "implementing": 2,
+   "integrated": 53,
    "skipped_existing": 1
   },
   "P1": {
@@ -24,9 +24,9 @@
   }
  },
  "by_state": {
-  "audited": 257,
-  "implementing": 1,
-  "integrated": 67,
+  "audited": 255,
+  "implementing": 2,
+  "integrated": 68,
   "skipped_existing": 1
  },
  "device_gate": {
@@ -127,7 +127,6 @@
    "MED-011",
    "MED-012",
    "MED-013",
-   "MED-014",
    "MIDI-001",
    "MIDI-002",
    "MIDI-003",
@@ -296,7 +295,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "258 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
+   "257 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
   ]
  },
  "features": {
@@ -1623,12 +1622,12 @@
   "MED-014": {
    "attempts": 0,
    "branch": "feature/med-014",
-   "branch_sha": null,
+   "branch_sha": "0f694e45ec38dc9613fc6fe566dcee3ac567d2ab",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "31e16534f057b12cf870f7a854464076a0c39955",
    "priority": "P0",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "integrated"
   },
   "MIDI-001": {
    "attempts": 0,
@@ -2322,13 +2321,13 @@
   },
   "PERF-014": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/perf-014",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "PRE-001": {
    "attempts": 0,
@@ -2652,13 +2651,13 @@
   },
   "REC-003": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/rec-003",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "REC-004": {
    "attempts": 0,
@@ -3763,6 +3762,11 @@
    "sha": "beca43d66718242bb6ba638c09213dfdeeceb612"
   },
   {
+   "branch": "feature/med-014",
+   "id": "MED-014",
+   "sha": "31e16534f057b12cf870f7a854464076a0c39955"
+  },
+  {
    "branch": "feature/mod-001",
    "id": "MOD-001",
    "sha": "304f3bce431a7f6f0a1719bdced6b55b910c9668"
@@ -3923,5 +3927,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T19:36:59Z"
+ "updated": "2026-11-13T19:59:33Z"
 }
