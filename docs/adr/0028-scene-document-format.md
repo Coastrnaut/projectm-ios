@@ -122,3 +122,25 @@ the app uses the format.
   section and MOD-013's preserved edges.
 - **Later rows.** The scene library (SCN-004…006) stores named copies of this document; SCN-003
   duplicates under a new ID; SCN-010 keeps its history over the same capture; SCN-015 locks edits.
+
+## Amendment 2026-11-13 (SCN-003, duplicate and rename)
+
+Decided under the owner's standing approval (owner rule 4); specs/074-scn-003-scene-duplicate-and-rename
+(research SCN-003-D1 to D7, contracts/scene-duplicate-rename.md). No default is overridden.
+
+- **Operations.** `SceneDocument.duplicated(newID:name:)` and `renamed(to:)` (SceneEditing.swift) copy
+  the value and set only `name`, and `id` for a duplicate. "Kept exactly" is defined on canonical
+  bytes: the result's `encoded()` with the original's `id` and `name` put back equals the original's.
+  So layers and their instance IDs, parameters, bindings, modulation generators and connections,
+  assets (store IDs shared, embedded text and graph documents copied with the value) and unknown
+  content at every level are unchanged. Neither validates the rest (a copy keeps the original's
+  warnings).
+- **IDs.** A duplicate needs a canonical uppercase UUID different from the original's; callers pass
+  `UUID().uuidString`, tests fixed IDs. Collisions with other stored scenes are the store's check.
+- **Name rule.** One function, `isValidName` (in SceneValidation.swift, the module's only Foundation
+  file), used by the validator and by editing: 1…120 characters once white space is trimmed from both
+  ends, no control characters. Edited names are stored trimmed (`normalizedName`); decoded names are
+  still stored exactly as written. A copy is named `copyName(_:)`: "<name> copy" within 120.
+- **References.** Scene IDs are what other documents use (cues, archives, the library later): rename
+  keeps them; duplicate gives a new one and never moves an existing reference. Layer instance IDs,
+  asset keys and generator IDs are scene-local and stay valid in the copy.
