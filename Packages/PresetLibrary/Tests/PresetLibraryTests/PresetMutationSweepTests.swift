@@ -6,7 +6,13 @@ import XCTest
 
 final class PresetMutationSweepTests: XCTestCase {
     private typealias F = UserPresetFixtures
-    static let variants = 600
+    /// The default run checks 60 seeded variants: six of each of the ten mutation kinds
+    /// (`index % 10`). Shortened from 600 on 2026-11-13 under owner rule 7 (18 s on the Mac Studio,
+    /// 155 s on CI); the generator and seed are unchanged, so these are the first 60 of the full
+    /// sweep. PRE-012-S2's full sweep (600 variants, at least 500) runs on demand:
+    ///   PRESET_MUTATION_SWEEP_FULL=1 swift test --package-path Packages/PresetLibrary --filter PresetMutationSweepTests
+    static let isFull = ProcessInfo.processInfo.environment["PRESET_MUTATION_SWEEP_FULL"] == "1"
+    static let variants = isFull ? 600 : 60
 
     /// SplitMix64: small, well known, and the same everywhere.
     /// Only `next()` and the two helpers are used, never the standard library's random functions,
@@ -128,9 +134,10 @@ final class PresetMutationSweepTests: XCTestCase {
         XCTAssertEqual(counts.values.reduce(0, +), Self.variants)
         // The same seed gives the same sweep: these counts are part of the test.
         print("PRE-012 sweep: \(counts.sorted { $0.key < $1.key }), slowest validation \(String(format: "%.3f", slowest)) s")
-        XCTAssertEqual(counts, Self.expectedCounts)
+        XCTAssertEqual(counts, Self.isFull ? Self.expectedFullCounts : Self.expectedCounts)
     }
 
-    /// Recorded from the first run; a change means the generator or the validator changed.
-    static let expectedCounts: [String: Int] = ["added": 98, "quarantined": 468, "refused": 34]
+    /// Recorded from the first runs; a change means the generator or the validator changed.
+    static let expectedCounts: [String: Int] = ["added": 11, "quarantined": 47, "refused": 2]
+    static let expectedFullCounts: [String: Int] = ["added": 98, "quarantined": 468, "refused": 34]
 }

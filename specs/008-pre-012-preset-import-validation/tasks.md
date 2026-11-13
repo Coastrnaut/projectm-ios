@@ -164,7 +164,7 @@ is playable, the picture keeps drawing.
   refused; after a refusal the directory listing and every file's bytes equal the snapshot taken
   before; after a quarantine the set of playable ids and the bytes under `files/` are unchanged;
   at the end `data(for:)` is nil for every quarantined id. Evidence: passes twice with the same
-  counts per outcome (deterministic). — Verified 2026-11-12: `swift test --filter PresetMutationSweepTests` three times with identical output: 98 accepted, 468 quarantined, 34 refused; slowest validation 0.17 s. The generator uses its own arithmetic only, so the counts do not depend on the Swift version.
+  counts per outcome (deterministic). — Verified 2026-11-12: `swift test --filter PresetMutationSweepTests` three times with identical output: 98 accepted, 468 quarantined, 34 refused; slowest validation 0.17 s. The generator uses its own arithmetic only, so the counts do not depend on the Swift version. Shortened 2026-11-13 under owner rule 7: the default run checks the first 60 variants (six of each of the ten mutation kinds, same seed; 11 added, 47 quarantined, 2 refused; 1.5 s instead of 18 s here and 155 s on CI) with the same hang guard and the same refusal/quarantine byte checks; the full 600-variant S2 sweep stays on demand with `PRESET_MUTATION_SWEEP_FULL=1 swift test --package-path Packages/PresetLibrary --filter PresetMutationSweepTests` (rerun 2026-11-13: 98/468/34, 18.5 s).
 - [X] PRE-012-T20 [US2] {sim} Extend `PresetTrialRunnerTests.swift` (S3) with the real engine: a
   preset whose per-frame equations do not compile fails with a message containing "compile"; a
   preset that passes static validation at the limits (64 nested parentheses; an 8,192-byte
