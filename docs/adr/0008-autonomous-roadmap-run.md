@@ -69,6 +69,15 @@ reported as recommended stand, and each is recorded in its spec's Clarifications
 - AUD-014: no automatic resume after an interruption that ends in the background; the
   deprecated iOS interruption notification stays until device task T29 shows otherwise.
 
+## Decision for PRE-014 (export), taken under the owner's best-judgement rule (2026-11-12)
+
+PRE-015 asked whether user copies of locked-pack presets may be exported. Decision: PRE-014
+exports a copy of a bundled preset only when its source is an Included preset; copies whose
+source is in a pack that the purchase unlocks are left out of every export, edited or not, and
+the export summary lists how many were left out and why. Exported copies keep `duplicateOf`,
+`rightsVerified = false` and the pack's statement. Reason: the purchase sells access to the
+bundled packs (ADR-0007), and an export must never become a way to hand that content on.
+
 ## Consequences
 
 - The integration branch can be reviewed and merged, or discarded, as a whole; `main` and
