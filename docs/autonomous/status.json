@@ -6,11 +6,10 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 54,
-   "implementing": 2,
-   "integrated": 29,
-   "skipped_existing": 1,
-   "unit_passed": 1
+   "audited": 53,
+   "implementing": 3,
+   "integrated": 30,
+   "skipped_existing": 1
   },
   "P1": {
    "audited": 142,
@@ -24,11 +23,10 @@
   }
  },
  "by_state": {
-  "audited": 284,
-  "implementing": 2,
-  "integrated": 38,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "audited": 283,
+  "implementing": 3,
+  "integrated": 39,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -285,7 +283,6 @@
    "SHOW-008",
    "SHOW-009",
    "SHOW-010",
-   "SHOW-011",
    "SHOW-012",
    "SHOW-013",
    "SHOW-014",
@@ -326,7 +323,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "287 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
+   "286 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
   ]
  },
  "features": {
@@ -342,13 +339,13 @@
   },
   "ACC-002": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/acc-002",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "ACC-003": {
    "attempts": 0,
@@ -3195,10 +3192,10 @@
    "branch": "feature/show-011",
    "branch_sha": "725551081f5cb51dc2b299fe38071c751e9ab1d5",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "11329d52e6dc05d820e8ee931de4167b14b3d1ab",
    "priority": "P0",
    "spec_dir": "specs/027-show-011-tap-tempo",
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "SHOW-012": {
    "attempts": 0,
@@ -3773,6 +3770,11 @@
    "sha": "32172fdd5795d12b9a6386c3f56d1d33936b5344"
   },
   {
+   "branch": "feature/show-011",
+   "id": "SHOW-011",
+   "sha": "11329d52e6dc05d820e8ee931de4167b14b3d1ab"
+  },
+  {
    "branch": "feature/vis-001",
    "id": "VIS-001",
    "sha": "48285d49c422576ac32986029ee731b214fcde63"
@@ -3808,5 +3810,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T15:45:33Z"
+ "updated": "2026-11-13T15:47:53Z"
 }

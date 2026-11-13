@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T15:45:33Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T15:47:53Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,25 +9,24 @@
 
 | State | Features |
 |---|---|
-| audited | 284 |
-| implementing | 2 |
-| unit_passed | 1 |
-| integrated | 38 |
+| audited | 283 |
+| implementing | 3 |
+| integrated | 39 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 54 | 2 | 1 | 29 | 1 |
-| P1 | 142 | 0 | 0 | 9 | 0 |
-| P2 | 79 | 0 | 0 | 0 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 53 | 3 | 30 | 1 |
+| P1 | 142 | 0 | 9 | 0 |
+| P2 | 79 | 0 | 0 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 287 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
+- 286 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)
 
 ## Integrated
 
@@ -69,6 +68,7 @@ The physical-device suite may **not** start:
 | PRE-014 | Bulk preset export | `a20ba4bafb5e` | `feature/pre-014` |
 | PRE-015 | User preset duplication | `c6cce9988587` | `feature/pre-015` |
 | QA-007 | Audio source contract suite | `32172fdd5795` | `feature/qa-007` |
+| SHOW-011 | Tap tempo | `11329d52e6dc` | `feature/show-011` |
 | VIS-001 | Circular spectrum | `48285d49c422` | `feature/vis-001` |
 | VIS-002 | Linear spectrum | `c2b2f75c11bb` | `feature/vis-002` |
 
@@ -342,11 +342,13 @@ None.
 - `swift test --package-path Packages/CaptureUI`: pass at `1985f0c1e666` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-007/20261112T210720/swift-test_CaptureUI.log`)
 - `integration checkout: CaptureKit 309 on iOS 27.2 sim; xcodebuild projectM-iOS test on iPhone 17 iOS 27.2: projectM-iOSTests 119 pass; UI 22 pass (Interruption, Status, Transport, ImportedAudio, TestSignals)`: pass at `df432e31de46` (log `.autonomous/logs/integration/qa-007/app-tests.log`)
 
-### SHOW-011 Tap tempo (unit_passed)
+### SHOW-011 Tap tempo (integrated)
 - `python3 scripts/check_compliance.py`: pass at `725551081f5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-011/20261113T104510/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `725551081f5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-011/20261113T104510/docs.log`)
 - `swift test --package-path Packages/PerformanceControl`: pass at `725551081f5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-011/20261113T104510/swift-test_PerformanceControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `725551081f5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-011/20261113T104510/swift-test_VisualGenerators.log`)
+- `post-merge: xcodebuild test projectM-iOSTests (146) + TapTempo/RouteIndicator/NativeVisual UI tests (6) on iPhone 17 iOS 27.2 sim`: pass at `11329d52e6dc` (log `.autonomous/logs/integration/show-011/app-tests.log`)
+- `post-merge: PerformanceControl xcodebuild test on iPhone 17 sim (25)`: pass at `11329d52e6dc` (log `.autonomous/logs/integration/show-011/perf-sim.log`)
 
 ### VIS-001 Circular spectrum (integrated)
 - `python3 scripts/check_compliance.py`: pass at `7fa6d4e0f3c1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-001/20261113T080701/compliance.log`)
