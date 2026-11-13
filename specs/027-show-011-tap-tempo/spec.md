@@ -36,7 +36,7 @@ Answered by Claude under the owner's standing approval (owner rule 4: best judge
 interaction); each answer is the conservative, local-first option.
 
 - Q: Where does the app's estimate come from, given that the normalized ring's analysis tap has exactly one reader and only the circular spectrum runs a pipeline today? → A: Whichever visual is shown owns the one analysis. While the circular spectrum is shown, the tempo reads a second subscription on that visual's existing pipeline (a small hook on its analyzer; the analyzer's behavior is unchanged). While projectM is shown, the coordinator runs its own ANL-016 pipeline on the analysis tap. Exactly one pipeline reads the tap at any time, and each runs only while its visual runs, so the tempo analysis stops with pause, background, lock and Stop (PERF-011) like the rest of the presentation, and its estimate is cleared when it stops (SHOW-011-R14). A second tap or a shared app-wide pipeline would change AudioCore or the circular spectrum's ownership, which this row does not need.
-- Q: Which taps make a sequence, and what are the limits? → A: The supported range is ANL-005's, 60-200 BPM: an interval below 300 ms is a "too fast" rejection (the tap is ignored, so a double-tap bounce cannot break a sequence); an interval over 1 s up to 2 s is "too slow" and restarts the sequence at that tap; over 2 s is a pause and restarts silently. The tempo is 60 s over the median of the last (up to) 8 intervals: four taps give three intervals, and the median ignores one mistimed tap, which a mean would not (SHOW-011-R2 to R6).
+- Q: Which taps make a sequence, and what are the limits? → A: The supported range is ANL-005's, 60-200 BPM: an interval below 300 ms is a "too fast" rejection (the tap is ignored, so a double-tap bounce cannot break a sequence); an interval over 1 s up to 2 s is "too slow" and restarts the sequence at that tap; over 2 s is a pause and restarts silently. The tempo is 60 s over the period of a least-squares line through the last (up to) 8 tap times (tap time against tap number). Evenly spaced taps give their exact interval; timing errors average out over every tap instead of depending on two neighbours, so ±20 ms of error per tap moves the period by at most 16 ms at four taps (about ±4 BPM at 120) and at most 7.6 ms at eight (about ±1.9 BPM). A median of intervals was rejected: with four taps it uses a single interval, so it carries the full ±40 ms interval error. A tempo change without a pause is followed fully once eight new taps are in (SHOW-011-R2 to R6, S1).
 - Q: Does a manual tempo survive leaving the visualizer or relaunching? → A: It survives Stop, source switches, pause and background within a launch (the performer set it on purpose) and is never stored: a relaunch starts with no manual tempo. Nothing about tempo is written to disk (SHOW-011-R16).
 - Q: Where does the tempo model live, and how is it tested without real tap timing? → A: A new package `Packages/PerformanceControl` (the roadmap's package for live-performance rows) holds the pure model with no clock of its own (every call takes a monotonic time in nanoseconds), plus a small reader that turns ANL-016 frames and beat events into estimates. Tests pass times explicitly. The app's UI test uses a DEBUG-only launch argument that makes each tap advance a synthetic clock by a fixed interval, because UI taps are not precisely timed (SHOW-011-R11, S6).
 - Q: Where do the controls go, and when is Reset offered? → A: In the visualizer controls overlay, in both layouts, as one tempo group: the readout, the Tap button and a Reset tempo button that appears only while a manual tempo is set. They are shown for both visuals; the Tap control's accessibility value is the progress ("2 of 4 taps") or the tempo. Announcements use the system's VoiceOver announcement (SHOW-011-R12, R13).
@@ -61,7 +61,8 @@ uses it from then on, with its beats lined up on the last tap.
    120 BPM from the fourth tap, its source is manual, and its beats fall on the last tap and every
    500 ms after it.
 2. **Given** taps 500 ms apart with up to ±20 ms of timing error each, **When** the fourth tap
-   arrives, **Then** the tempo is within ±1 BPM of 120.
+   arrives, **Then** the tempo is within ±4 BPM of 120, and by the eighth tap within ±1 BPM for the
+   alternating ±20 ms pattern of the test (the worst case of ±20 ms errors at eight taps is ±1.9 BPM).
 3. **Given** three taps, **When** no fourth follows, **Then** there is no manual tempo and the
    source shown is unchanged; the Tap control shows how many taps it has (3 of 4).
 4. **Given** a manual tempo, **When** the user keeps tapping, **Then** each further tap refines the
@@ -171,8 +172,9 @@ gets the documented fields; snapshots encode and decode unchanged.
   estimate and report exactly one current state: manual, estimated or none.
 - **SHOW-011-R2**: A manual tempo MUST be established by the fourth accepted tap of a sequence;
   fewer than four taps MUST NOT change the current tempo.
-- **SHOW-011-R3**: The manual tempo MUST be 60 seconds divided by the median of the sequence's most
-  recent intervals (at most 8), so a single mistimed tap does not move it.
+- **SHOW-011-R3**: The manual tempo MUST be 60 seconds divided by the period of the least-squares
+  line through the sequence's most recent tap times (at most 8), so timing errors average out over
+  all of them.
 - **SHOW-011-R4**: Each further accepted tap MUST refine the manual tempo by the same rule and move
   its beat phase to that tap.
 - **SHOW-011-R5**: Supported tempos MUST be 60 to 200 BPM (ANL-005's range). An interval shorter
@@ -206,7 +208,7 @@ gets the documented fields; snapshots encode and decode unchanged.
 
 ### Key Entities
 
-- **Tap sequence**: the accepted tap times of the current attempt (at most 9 kept), their intervals.
+- **Tap sequence**: the accepted tap times of the current attempt (the last 8 kept).
 - **Manual tempo**: BPM, period and the anchor tap; exists from the fourth tap until reset.
 - **Tempo estimate**: BPM, confidence and the most recent beat time from the analysis.
 - **Tempo snapshot**: source, BPM, confidence, period, anchor beat; what consumers read.
@@ -218,7 +220,8 @@ gets the documented fields; snapshots encode and decode unchanged.
 ### Measurable Outcomes
 
 - **SHOW-011-S1**: Four taps 500 ms apart give 120 BPM exactly, manual, from the fourth tap; with
-  ±20 ms jitter the tempo is within ±1 BPM of 120.
+  alternating ±20 ms timing errors the tempo is within ±4 BPM of 120 at the fourth tap and within
+  ±1 BPM at the eighth.
 - **SHOW-011-S2**: Three taps never produce a manual tempo; a pause over 2 s always restarts the
   count.
 - **SHOW-011-S3**: Taps outside 60-200 BPM never produce a tempo outside 60-200 BPM.
