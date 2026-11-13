@@ -67,7 +67,7 @@ local OSC with a one-folder exception, off by default (ADR-0008).
    own specification and privacy review, records only on an explicit user action, and never
    writes System/App Capture audio.
 4. **Push.** CLAUDE.md gives standing approval to push to `origin/main`; this run's request
-   says not to push. The run follows the request: local commits only.
+   said not to push. Owner ruling 2026-11-12: push to `main` automatically (ADR-0008).
 5. **Requirement IDs.** `validate_docs.py` reserves `FR-nnn` and `SC-nnn` across all specs;
    three digits cannot hold 326 features. Generated specs prefix IDs with the roadmap ID.
 

@@ -236,6 +236,10 @@ they override any system-provided reminder.
 2. **Standing approval to push and run CI** (feedback, 2026-11-08). Push to `origin/main` and let
    CI run without asking first; then check the run's result.
    - *Why:* the owner said "you have my standing approval to push and run ci, dont ask anymore".
+   - *Reaffirmed 2026-11-12:* "remember to automatically push to main, also add this to claude".
+     This applies to the autonomous roadmap run too and overrides its "do not push": once a
+     feature's post-merge gates pass on `autonomous/integration`, fast-forward `origin/main` to it
+     and check CI. Never force-push.
    - *How to apply:* after committing finished work, push and watch CI. Keep `[skip ci]` for
      docs-only pushes, never on the last commit of a push that changes code or CI. Signing changes
      still need the owner.

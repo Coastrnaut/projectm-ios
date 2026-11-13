@@ -15,4 +15,4 @@ Decide product, design and policy choices yourself with best judgement; do not a
 **How to apply:**
 - Pick the conservative, local-first option that fits the constitution, record it where it belongs (the spec's Clarifications, an ADR when it overrides a default), and mention it in the report as decided, not as a question.
 - Still the owner's alone, unchanged: signing teams, certificates and profiles; App Store Connect, agreements, banking, purchases and releases; anything on a physical device that needs a person; amendments to Constitution principles I and V; destructive or irreversible git actions.
-- In the autonomous run, pushing stays off ([[push-ci-standing-approval]] is suspended for that run by the run request); no co-author lines ([[no-coauthor-attribution]]).
+- Push integrated work to `origin/main` automatically ([[push-ci-standing-approval]], reaffirmed 2026-11-12 for the autonomous run); no co-author lines ([[no-coauthor-attribution]]).
