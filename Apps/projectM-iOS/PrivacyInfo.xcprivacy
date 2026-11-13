@@ -7,7 +7,10 @@
      * System boot time, mach_absolute_time (35F9.1): audio timestamps in CaptureKit and frame
        timing in ANGLE (libGLESv2), elapsed time between events inside the app.
      * File timestamp, stat (C617.1): ANGLE (libEGL) checks its own framework files inside the app
-       bundle when it loads libGLESv2. -->
+       bundle when it loads libGLESv2.
+     * Disk space, volumeAvailableCapacityForImportantUsage (E174.1): REC-015 checks there is enough
+       free storage to write a video recording before and while recording; the value stays on the
+       device and is never stored or sent. -->
 <plist version="1.0">
 <dict>
 	<key>NSPrivacyTracking</key>
@@ -40,6 +43,14 @@
 			<key>NSPrivacyAccessedAPITypeReasons</key>
 			<array>
 				<string>C617.1</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryDiskSpace</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>E174.1</string>
 			</array>
 		</dict>
 	</array>

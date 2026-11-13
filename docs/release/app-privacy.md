@@ -105,6 +105,18 @@ Connect › App Privacy when a version with Share… is submitted. No required-r
 and the cleanup use plain file operations and a directory listing); `check_privacy_manifest.py` on the
 simulator Debug build is the check (REC-012-T12).
 
+REC-015 (2026-11-13; `specs/063-rec-015-recording-disk-guard`, privacy review in its plan): the
+recording disk guard reads the free storage available for important use on the volume of the app's
+temporary folder, once when the user taps Record and every 5 seconds while a recording runs, and the
+size of the app's own recording file. The value is used only on the device to refuse or stop a
+recording before storage runs out; it is not stored, logged or sent, and the app has no network
+code. This is a required-reason API (Disk space), now declared in the privacy manifest with reason
+**E174.1** (check whether there is enough space to write files; the value is not sent off the
+device). Nothing leaves the device, so the answers stay **No** and the label stays **Data Not
+Collected**. Owner action: confirm in App Store Connect › App Privacy when a version with the disk
+guard is submitted. `check_privacy_manifest.py` on the simulator Debug build is the check
+(REC-015-T16); it now also rejects any declared reason outside the allowed set per category.
+
 ## Privacy manifest (`Apps/projectM-iOS/PrivacyInfo.xcprivacy`)
 
 - `NSPrivacyTracking`: false; `NSPrivacyTrackingDomains`: empty; `NSPrivacyCollectedDataTypes`: empty.
@@ -115,6 +127,7 @@ simulator Debug build is the check (REC-012-T12).
 | User defaults | App (`NSUserDefaults`) | CA92.1 | Settings (including the preset scope, feature 002), favorites, last preset and the notice flag, read and written only by the app |
 | System boot time | App (`mach_absolute_time`, CaptureKit audio timestamps); ANGLE `libGLESv2` (frame timing) | 35F9.1 | Elapsed time between events inside the app; never sent off the device |
 | File timestamp | ANGLE `libEGL` (`stat`) | C617.1 | Checks its own framework files inside the app bundle when it loads `libGLESv2` (`src/common/system_utils_posix.cpp`) |
+| Disk space | App (`NSURLVolumeAvailableCapacityForImportantUsageKey`, REC-015 recording disk guard) | E174.1 | Checks there is enough free storage to write a video recording, before and while recording; the value stays on the device |
 
 The engine framework (`projectM-4`) imports none of these APIs.
 

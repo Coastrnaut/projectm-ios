@@ -48,6 +48,18 @@ private final class FakeRecordingSource: VideoRecordingSource {
     }
 }
 
+/// REC-015: a free-storage value the test sets (nil = unknown).
+private final class SettableStorageProbe: StorageProbe, @unchecked Sendable {
+    private let lock = NSLock()
+    private var value: Int64?
+    init(_ value: Int64?) { self.value = value }
+    var available: Int64? {
+        get { lock.withLock { () -> Int64? in value } }
+        set { lock.withLock { () -> Void in value = newValue } }
+    }
+    func availableBytes(at directory: URL) -> Int64? { available }
+}
+
 @MainActor
 private final class RecordingContextBox {
     var value: VideoRecordingCoordinator.Context
@@ -264,6 +276,112 @@ final class VideoRecordingAppTests: XCTestCase {
         XCTAssertNil(recording.offered)
         XCTAssertFalse(recording.showMover)
         XCTAssertEqual(recording.notice, "Recording saved.")
+    }
+
+    // MARK: - REC-015 disk guard
+
+    private let plenty: Int64 = 64_000_000_000
+    private let low: Int64 = 50_000_000
+
+    private func makeGuarded(_ context: RecordingContextBox, probe: SettableStorageProbe, fault: RecordingWriterFault? = nil,
+                             debug: Bool = true) -> VideoRecordingCoordinator {
+        VideoRecordingCoordinator(directory: tempDirectory("work"), debugDirectory: debug ? tempDirectory("out") : nil,
+                                  checkInterval: nil, storageProbe: probe, storageCheckInterval: nil, writerFault: fault) {
+            context.value
+        }
+    }
+
+    /// REC-015-S1: below the reserve plus one minute, Record refuses and nothing starts; enough space
+    /// starts; an unknown value starts (REC-015-R9).
+    func testLowStorageRefusesRecord() throws {
+        let source = try FakeRecordingSource(device: try device())
+        let context = RecordingContextBox(.init(source: source, visualShown: true, outputLive: true, paused: false))
+        let probe = SettableStorageProbe(low)
+        let recording = makeGuarded(context, probe: probe)
+        recording.toggle()
+        XCTAssertEqual(recording.state, .idle)
+        XCTAssertEqual(recording.notice, "There isn't enough free storage to record. Free up space and try again.")
+        XCTAssertEqual(recording.probe, "refused: lowStorage")
+        XCTAssertNil(source.videoRecording)
+        probe.available = nil
+        recording.toggle()
+        XCTAssertEqual(recording.state, .recording, "an unknown value never refuses")
+        recording.toggle()
+        waitUntil("stopped") { recording.state == .idle }
+        probe.available = plenty
+        recording.toggle()
+        XCTAssertEqual(recording.state, .recording)
+        XCTAssertNil(recording.notice)
+    }
+
+    /// REC-015-R5, R6: a drop below the stop threshold stops with `.lowStorage`; the file is finished
+    /// and reads back (3 frames); a rise, or an unknown value, keeps recording.
+    func testLowStorageStopFinishesTheFile() async throws {
+        let source = try FakeRecordingSource(device: try device())
+        let context = RecordingContextBox(.init(source: source, visualShown: true, outputLive: true, paused: false))
+        let probe = SettableStorageProbe(plenty)
+        let recording = makeGuarded(context, probe: probe)
+        recording.toggle()
+        for _ in 0..<3 { try source.feed() }
+        await recording.checkStorage()
+        XCTAssertEqual(recording.state, .recording, "plenty of space")
+        probe.available = nil
+        await recording.checkStorage()
+        XCTAssertEqual(recording.state, .recording, "unknown: no stop")
+        probe.available = low
+        await recording.checkStorage()
+        XCTAssertEqual(recording.lastStopReason, .lowStorage)
+        let done = expectation(description: "finished")
+        Task { @MainActor in
+            while !(recording.state == .idle && recording.probe.hasPrefix("video")) { try? await Task.sleep(for: .milliseconds(20)) }
+            done.fulfill()
+        }
+        await fulfillment(of: [done], timeout: 10)
+        XCTAssertEqual(recording.notice, "Recording stopped because storage is almost full.")
+        XCTAssertTrue(recording.probe.hasSuffix("64x48 frames=3 duration=0.10 audio=0"), recording.probe)
+    }
+
+    /// REC-015-R6: outside the DEBUG folder mode, the low-storage recording is offered (REC-012).
+    func testLowStorageRecordingIsOffered() async throws {
+        let source = try FakeRecordingSource(device: try device())
+        let context = RecordingContextBox(.init(source: source, visualShown: true, outputLive: true, paused: false))
+        let probe = SettableStorageProbe(plenty)
+        let recording = makeGuarded(context, probe: probe, debug: false)
+        recording.toggle()
+        for _ in 0..<3 { try source.feed() }
+        probe.available = low
+        await recording.checkStorage()
+        let done = expectation(description: "offered")
+        Task { @MainActor in
+            while recording.offered == nil { try? await Task.sleep(for: .milliseconds(20)) }
+            done.fulfill()
+        }
+        await fulfillment(of: [done], timeout: 10)
+        let file = try XCTUnwrap(recording.offered)
+        defer { recording.discardOffered() }
+        XCTAssertTrue(FileManager.default.fileExists(atPath: file.path))
+        XCTAssertEqual(recording.notice, RecordingStopReason.lowStorage.notice)
+    }
+
+    /// REC-015-S3: an out-of-space writer failure ends as `storageFull`: exact notice, nothing offered,
+    /// no file left in the recording folder.
+    func testDiskFullDeletesThePartialFile() throws {
+        let source = try FakeRecordingSource(device: try device())
+        let context = RecordingContextBox(.init(source: source, visualShown: true, outputLive: true, paused: false))
+        let directory = tempDirectory("diskfull")
+        let recording = VideoRecordingCoordinator(directory: directory, debugDirectory: nil, checkInterval: nil,
+                                                  storageProbe: SettableStorageProbe(plenty), storageCheckInterval: nil,
+                                                  writerFault: .diskFull(afterFrames: 2)) {
+            context.value
+        }
+        recording.toggle()
+        for _ in 0..<4 { try source.feed() }   // the third append fails; the tap reports it on the next frame
+        waitUntil("failed") { recording.state == .idle && recording.probe.hasPrefix("failed") }
+        XCTAssertEqual(recording.probe, "failed: storageFull")
+        XCTAssertEqual(recording.notice, "Storage is full; the recording couldn't be saved.")
+        XCTAssertEqual(recording.lastStopReason, .writerFailed)
+        XCTAssertNil(recording.offered)
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: directory.path), [], "no partial file")
     }
 
     func testElapsedText() {

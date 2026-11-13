@@ -57,12 +57,18 @@ public final class MetalFrameRecorder: @unchecked Sendable {
     private var timeline: RecordingTimeline
 
     /// A recorder writing to `url` at the drawable's (even-cropped) size, scaled to fit the settings.
+    /// `fault` (REC-015 tests) makes the writer fail after some frames.
     public convenience init(device: MTLDevice, url: URL, drawableWidth: Int, drawableHeight: Int,
-                            settings: RecordingSettings = .standard, realTime: Bool = true) throws(RecordingFailure) {
+                            settings: RecordingSettings = .standard, realTime: Bool = true,
+                            fault: RecordingWriterFault? = nil) throws(RecordingFailure) {
         guard let geometry = RecordingGeometry(drawableWidth: drawableWidth, drawableHeight: drawableHeight,
                                                maxLongSide: settings.maxLongSide) else { throw .pixelBufferUnavailable }
         let writer = try VideoFileWriter.make(url: url, geometry: geometry, settings: settings, realTime: realTime)
-        try self.init(device: device, url: url, geometry: geometry, settings: settings, sink: writer)
+        // REC-015-R12: tests may make the writer fail after N frames (nil in the app's normal use).
+        let sink: any RecordingSampleSink = fault.map { (f: RecordingWriterFault) -> any RecordingSampleSink in
+            FaultInjectingSink(wrapping: writer, fault: f)
+        } ?? writer
+        try self.init(device: device, url: url, geometry: geometry, settings: settings, sink: sink)
     }
 
     /// Tests: any sink (a stalled writer).

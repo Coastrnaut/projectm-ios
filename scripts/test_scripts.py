@@ -21,6 +21,7 @@ import make_diagnostic_project  # noqa: E402
 import build_angle_xcframework as bax  # noqa: E402
 import build_projectm_xcframework as bpx  # noqa: E402
 import check_compliance  # noqa: E402
+import check_privacy_manifest as cpm  # noqa: E402
 import generate_gles_loader as ggl  # noqa: E402
 import generate_reference_audio as gra  # noqa: E402
 import run_device_tests as rdt  # noqa: E402
@@ -29,6 +30,57 @@ import validate_docs  # noqa: E402
 import verify_environment  # noqa: E402
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
+
+
+class PrivacyManifestTests(unittest.TestCase):
+    """check_privacy_manifest.py (REC-015-T13): reasons per category; undeclared uses flagged."""
+
+    def manifest(self, entries):
+        return {"NSPrivacyTracking": False, "NSPrivacyTrackingDomains": [], "NSPrivacyCollectedDataTypes": [],
+                "NSPrivacyAccessedAPITypes": [{"NSPrivacyAccessedAPIType": c, "NSPrivacyAccessedAPITypeReasons": r}
+                                              for c, r in entries]}
+
+    def test_app_manifest_declares_disk_space_e174(self):
+        import plistlib
+        path = Path(__file__).resolve().parent.parent / "Apps" / "projectM-iOS" / "PrivacyInfo.xcprivacy"
+        manifest = plistlib.loads(path.read_bytes())
+        used = {"projectM-iOS": {"NSPrivacyAccessedAPICategoryDiskSpace", "NSPrivacyAccessedAPICategoryUserDefaults",
+                                 "NSPrivacyAccessedAPICategorySystemBootTime"},
+                "libEGL": {"NSPrivacyAccessedAPICategoryFileTimestamp"}}
+        self.assertEqual(cpm.manifest_problems(manifest, used), [])
+
+    def test_disk_space_with_e174_is_accepted(self):
+        m = self.manifest([("NSPrivacyAccessedAPICategoryDiskSpace", ["E174.1"])])
+        self.assertEqual(cpm.manifest_problems(m, {"app": {"NSPrivacyAccessedAPICategoryDiskSpace"}}), [])
+
+    def test_undeclared_disk_space_is_flagged(self):
+        m = self.manifest([("NSPrivacyAccessedAPICategoryUserDefaults", ["CA92.1"])])
+        problems = cpm.manifest_problems(m, {"app": {"NSPrivacyAccessedAPICategoryDiskSpace"}})
+        self.assertEqual(problems, ["app uses NSPrivacyAccessedAPICategoryDiskSpace but the manifest has no reason for it"])
+
+    def test_other_disk_space_reasons_are_flagged(self):
+        m = self.manifest([("NSPrivacyAccessedAPICategoryDiskSpace", ["E174.1", "85F4.1"])])
+        problems = cpm.manifest_problems(m, {"app": {"NSPrivacyAccessedAPICategoryDiskSpace"}})
+        self.assertEqual(len(problems), 1)
+        self.assertIn("85F4.1", problems[0])
+
+    def test_debug_dylib_is_scanned(self):
+        import plistlib
+        with tempfile.TemporaryDirectory() as tmp:
+            app = Path(tmp) / "X.app"
+            app.mkdir()
+            (app / "Info.plist").write_bytes(plistlib.dumps({"CFBundleExecutable": "X"}))
+            (app / "X").write_bytes(b"stub")
+            self.assertEqual([p.name for p in cpm.binaries(app)], ["X"])
+            (app / "X.debug.dylib").write_bytes(b"code")
+            self.assertEqual([p.name for p in cpm.binaries(app)], ["X", "X.debug.dylib"])
+
+    def test_empty_reasons_and_tracking_are_flagged(self):
+        m = self.manifest([("NSPrivacyAccessedAPICategoryDiskSpace", [])])
+        m["NSPrivacyTracking"] = True
+        problems = cpm.manifest_problems(m, {"app": {"NSPrivacyAccessedAPICategoryDiskSpace"}})
+        self.assertIn("NSPrivacyTracking must be false", problems)
+        self.assertTrue(any("has no reason" in p for p in problems))
 
 
 class ValidateDocsTests(unittest.TestCase):
