@@ -43,7 +43,7 @@ Paths: `LP` = `Packages/LocalPortability`, `UP` =
   passes.
 - [ ] PRE-014-T07 {mac} Write `LP/Tests/LocalPortabilityTests/StoredZipTests.swift`: round trip
   of 3 entries (bytes and names identical); identical input → identical bytes; writer refuses an
-  unsafe or duplicate path and an entry over 4 GiB markers; reader refuses: empty data, random
+  unsafe or duplicate path; reader refuses: empty data, random
   bytes (`notAZip`), every truncation of a small archive (`truncated` or `malformed`, never a
   crash), a flipped data byte (`checksumMismatch`), a compressed method, the encryption flag,
   an archive comment, ZIP64 sentinels, a local/central name mismatch, overlapping entries, more
@@ -104,7 +104,8 @@ Independent test: `swift test --package-path Packages/PresetLibrary --filter Use
   lists exactly the first two and counts `fullLibraryCopy` 2, `quarantined` 1, `notChecked` 1;
   `export(ids:)` given every id writes exactly two presets (S2); the summary message names each
   group; a stored text changed on disk → `contentMismatch`, the output file is deleted; a write
-  failure (sink throws) → `writeFailed`, file deleted; no ids → `nothingSelected`; a newer-format
+  failure (sink throws) → `writeFailed`, file deleted; an id removed meanwhile is counted
+  `unavailable`; 1,000 small presets export in under 10 s (S6); no ids → `nothingSelected`; a newer-format
   record → `libraryUnavailable`; the store directory is byte-identical before and after (export
   only reads). Record the red run.
 - [ ] PRE-014-T15 [US3] {mac} Implement `UP/UserPresetExport.swift` (`UserPresetExportPlan`,
@@ -136,7 +137,9 @@ Independent test: app unit tests and `UserPresetExportUITests` on the simulator.
   (`-uitestImportPreset`), open My Presets → Export…, the row is selected, Select None disables
   Export, Select All enables it, Export → the summary says "Exported 1 preset" and the share sheet
   appears; the archive copied by `-uitestExportPresetTo` starts with `PK\u{3}\u{4}` and contains
-  `manifest.json` and the preset name. Evidence: the test passes; red run recorded before T18.
+  `manifest.json` and the preset name; a second launch at the accessibility text size
+  (`-UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityXXXL`) still shows a
+  hittable Export button and row (R17). Evidence: the test passes; red run recorded before T18.
 
 ## Phase 6: User Story 4 - Hostile archives refused (P2)
 
@@ -152,7 +155,8 @@ Independent test: app unit tests and `UserPresetExportUITests` on the simulator.
   interoperability output, the refusal table, what is not verified.
 - [ ] PRE-014-T23 {mac} Gates: `python3 scripts/check_compliance.py`, `python3
   scripts/validate_docs.py`, `python3 scripts/test_scripts.py`; `swift test` for `LP` and
-  `PresetLibrary` twice. Evidence: outputs in the report.
+  `PresetLibrary` twice; `grep` shows no `print`, `Logger` or `os_log` call in the export files
+  (R20). Evidence: outputs in the report.
 - [ ] PRE-014-T24 {sim} App unit tests, `UserPresetsUITests`, `UserPresetEditingUITests`,
   `UserPresetExportUITests` on the simulator, twice. Evidence: `Executed N tests` lines in the
   report (known environmental failure `PresetTests.testBundledIncludedScopeMatchesRelease1_0`).

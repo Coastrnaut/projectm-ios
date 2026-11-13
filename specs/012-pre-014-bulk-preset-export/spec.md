@@ -296,8 +296,8 @@ entry size: each is refused with its reason.
   crash.
 - **PRE-014-S4**: Exporting the same input twice gives the same SHA-256 for the archive.
 - **PRE-014-S5**: After the share sheet closes, 0 temporary archive files remain.
-- **PRE-014-S6**: Exporting 1,000 small presets finishes in under 10 seconds on the simulator
-  (indicative; device timing belongs to the final device phase).
+- **PRE-014-S6**: Exporting 1,000 small presets finishes in under 10 seconds in the package tests
+  (Mac host and simulator; indicative, device timing belongs to the final device phase).
 
 ## Assumptions
 

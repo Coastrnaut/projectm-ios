@@ -26,7 +26,8 @@ Schema: [contracts/preset-archive-manifest-v1.schema.json](contracts/preset-arch
 | `presets` | array of ExportedPreset | ≤ 1,000; sorted by id |
 
 **FileRecord** (`LocalPortability.PortableFileRecord`): `path` (safe relative path), `sha256`
-(64 lowercase hex), `byteCount` (≥ 0, ≤ the entry limit).
+(64 lowercase hex), `byteCount` (≥ 0 and ≤ the entry limit in the generic layer; the preset format requires ≥ 1, as
+the schema says).
 
 **ExportedPreset** (`PresetLibrary.ExportedUserPreset`):
 
