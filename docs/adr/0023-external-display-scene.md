@@ -72,6 +72,28 @@ variants, warp, calibration, blackout, diagnostics and per-output pacing on top.
    - Frame pacing stays on the visual's own display link (OUT-013).
    - The drawable takes the external display's native size and scale with no cap (OUT-003).
    - There is no live device preview (OUT-006, OUT-012).
+8. **Output blackout (amendment 2026-11-13, OUT-010; `specs/051-out-010-output-blackout-isolation`).**
+   Decided by Claude under owner rule 4; no default is overridden, so this amends the ADR.
+   - *Mechanism*: every slot has an opaque black cover layer above the visual. Black out sets every
+     slot's cover opaque inside the tap's call with implicit animations off, so the current Core
+     Animation transaction makes the next composited frame black, whatever the visual's own frame
+     loop is doing. `place()` covers every slot before it moves the visual, so connect, disconnect,
+     background, a visual change or re-entering the visualizer never reveals the picture.
+   - *No device preview, keeps rendering*: the visual stays in its slot and keeps running hidden
+     (one render, OUT-001-R3; no drawable resize at restore; the envelope's history continues). The
+     device keeps its controls, shows a persistent "Output blacked out" badge with Restore and, while
+     external, "External display blacked out".
+   - *Restore*: a fade of the output's luminance factor over 1 s of frame time (4 s with Reduce
+     flashing on: a white picture rises at most 0.25 per second), with the cover's opacity
+     `1 − sRGBEncode(f)` because Core Animation blends encoded values (checked on the simulator).
+     A restore starts at least 1 s of frame time after the previous one; an earlier request waits,
+     black. On a white picture the blackout alone then stays within 4 transitions per 1 s window
+     (measured with `FlashAnalysis`), inside both budgets.
+   - *Recorded limitation*: the cover sits above each visual's envelope, so the content's
+     transitions and the cover's are not counted together. The combination could exceed the budget
+     only if the content strobes at its own limit while the user toggles faster than once a second.
+     Routing the cover through every envelope is left to ACC-012 (sensory safety profile).
+   - The state is session-only and never stored (FR-065).
 
 ## Consequences
 

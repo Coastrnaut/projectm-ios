@@ -18,8 +18,11 @@
 // OUT-001: every visual is hosted through a `VisualSlotHost`; while a connected external display shows
 // the visualization, the device's slot is empty (black) with a short note, and everything else here
 // (controls, badges, banners, sheets) stays on the device.
+// OUT-010: while the output is blacked out (or restoring) a persistent badge with Restore stays at
+// the top, with or without the controls, and the external display note says the display is black.
 import CaptureKit
 import CaptureUI
+import PresentationLifecycle
 import PresetLibrary
 import Rendering
 import SwiftUI
@@ -59,6 +62,10 @@ struct VisualizerView: View {
                 let indicator = coordinator.cameraIndicator
                 if indicator.isShown {   // CAM-012-R1 to R3: never hidden with the controls
                     CameraIndicatorBadge(indicator: indicator) { coordinator.stopCamera() }
+                        .transition(.opacity)
+                }
+                if coordinator.externalDisplay.blackoutPhase != .live {   // OUT-010-R9: never hidden with the controls
+                    OutputBlackoutBadge(external: coordinator.externalDisplay)
                         .transition(.opacity)
                 }
                 banners
@@ -115,6 +122,22 @@ struct VisualizerView: View {
                     .opacity(0.01)
                     .accessibilityIdentifier("sourceStarts")
                     .accessibilityValue("\(coordinator.sourceStarts)")
+                // OUT-010: whether the slot holding the visual is black, and whether the visual still draws.
+                TimelineView(.periodic(from: .now, by: 0.25)) { _ in
+                    let external = coordinator.externalDisplay
+                    let state = external.isOutputBlack ? "black" : external.blackoutPhase.rawValue
+                    let running = coordinator.activeVisualMetrics.framesPerSecond > 0 ? "yes" : "no"
+                    Text(state)
+                        .font(.caption2)
+                        .opacity(0.01)
+                        .accessibilityIdentifier("outputBlackout")
+                        .accessibilityValue(state)
+                    Text(running)
+                        .font(.caption2)
+                        .opacity(0.01)
+                        .accessibilityIdentifier("visualRunning")
+                        .accessibilityValue(running)
+                }
                 if let camera = coordinator.cameraVisual {   // CAM-001: frames that showed a camera picture
                     TimelineView(.periodic(from: .now, by: 0.5)) { _ in
                         Text("\(camera.framesShown)")
@@ -246,14 +269,16 @@ struct VisualizerView: View {
         }
     }
 
-    /// OUT-001: shown on the device while the visualization is on the external display.
+    /// OUT-001: shown on the device while the visualization is on the external display; OUT-010-R9:
+    /// it says when that display is blacked out.
     private var externalDisplayNote: some View {
-        Label("Showing on external display", systemImage: "tv")
+        let black = coordinator.externalDisplay.isBlackoutRequested
+        return Label(black ? "External display blacked out" : "Showing on external display", systemImage: black ? "tv.slash" : "tv")
             .font(.callout)
             .foregroundStyle(.white.opacity(0.8))
             .allowsHitTesting(false)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("The visualization is showing on the external display")
+            .accessibilityLabel(black ? "The external display is blacked out" : "The visualization is showing on the external display")
             .accessibilityIdentifier("externalDisplayNote")
     }
 
@@ -336,3 +361,44 @@ struct VisualizerView: View {
     }
 }
 
+
+/// OUT-010-R9, R10: the output blackout's persistent badge: "Output blacked out" with Restore, or
+/// "Restoring output" while the restore waits or fades in.
+struct OutputBlackoutBadge: View {
+    let external: ExternalDisplayCoordinator
+
+    var body: some View {
+        let requested = external.isBlackoutRequested
+        HStack(spacing: 10) {
+            Label(requested && external.blackoutPhase == .blackedOut ? "Output blacked out" : "Restoring output",
+                  systemImage: "eye.slash")
+                .font(.footnote.bold())
+                .accessibilityIdentifier("blackoutBadgeText")
+            if external.blackoutPhase == .blackedOut {
+                Button("Restore") { external.setBlackout(false) }
+                    .font(.footnote)
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityLabel("Restore output")
+                    .accessibilityIdentifier("blackoutRestore")
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(.regularMaterial, in: Capsule())
+        .accessibilityElement(children: .contain)
+        .accessibilityValue(external.blackoutPhase.accessibilityValue)
+        .accessibilityIdentifier("blackoutBadge")
+    }
+}
+
+extension OutputBlackout.Phase {
+    /// OUT-010-R10: the output's state for VoiceOver.
+    var accessibilityValue: String {
+        switch self {
+        case .live: "Live"
+        case .blackedOut: "Blacked out"
+        case .restoreWaiting: "Restore waiting"
+        case .fadingIn: "Fading in"
+        }
+    }
+}
