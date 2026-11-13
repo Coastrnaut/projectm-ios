@@ -141,7 +141,11 @@ class Scheduler:
                 continue
             if all(states.get(d) in DONE_STATES for d in self.roadmap.features[fid].depends_on):
                 out.append(fid)
-        return out
+        # Highest effective priority first, then schedule order (2026-11-13: the plain schedule
+        # order put a P2 row whose dependencies finished early ahead of a P0 row whose last
+        # dependency had just been integrated, and the P2 row took the shared area lock).
+        position = {fid: i for i, fid in enumerate(self.order)}
+        return sorted(out, key=lambda fid: (PRIORITIES.index(self.priority[fid]), position[fid]))
 
     def select(self, states: dict[str, str], running: set[str]) -> Selection:
         held: set[str] = set()

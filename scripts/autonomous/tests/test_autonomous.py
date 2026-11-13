@@ -126,6 +126,12 @@ class SchedulerTests(unittest.TestCase):
         self.assertEqual(selection.start, ("AAA-001", "BBB-001"))
         self.assertEqual(selection.waiting_on_slot, ("CCC-001",))
 
+    def test_ready_puts_higher_priority_first(self):
+        roadmap = roadmap_from(row("AAA-001", priority="P2") + row("BBB-001", priority="P0")
+                               + row("BBB-002", deps="BBB-001", priority="P0"))
+        s = sched.Scheduler(roadmap, max_concurrency=3)
+        self.assertEqual(s.ready({"BBB-001": "integrated"}, set()), ["BBB-002", "AAA-001"])
+
     def test_shared_lock_serializes(self):
         s = sched.Scheduler(self.roadmap, max_concurrency=3,
                             lock_overrides={"AAA-001": ("x",), "BBB-001": ("x",)})
@@ -180,6 +186,17 @@ class StateTests(unittest.TestCase):
         self.assertEqual(again.in_flight(), [])
         with self.assertRaises(st.StateError):      # a second init must not wipe the run
             st.StateStore(self.path).init("a" * 64, "x", [], "main", "int")
+
+    def test_requeue_only_untouched_implementing_features(self):
+        self.store.set_state("AAA-001", "implementing", branch="feature/aaa-001")
+        rec = self.store.requeue("AAA-001", "give the lock to a P0 row")
+        self.assertEqual((rec["state"], rec["branch"]), ("audited", None))
+        with self.assertRaises(st.StateError):         # not implementing any more
+            self.store.requeue("AAA-001", "again")
+        self.store.set_state("AAA-001", "implementing")
+        self.store.add_evidence("AAA-001", "swift test", 0)
+        with self.assertRaises(st.StateError):         # work exists
+            self.store.requeue("AAA-001", "too late")
 
     def test_changed_roadmap_refuses_to_resume(self):
         with self.assertRaises(st.StateError):

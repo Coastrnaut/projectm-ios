@@ -160,6 +160,22 @@ class StateStore:
         self.save()
         return rec
 
+    def requeue(self, feature_id: str, note: str) -> dict:
+        """Send a feature that was marked `implementing` but never worked on back to `audited`
+        (for example to give its slot or area lock to a higher-priority feature). Refused once any
+        evidence or attempt is recorded: then the work exists and must finish or be blocked."""
+        rec = self.feature(feature_id)
+        if rec["state"] != "implementing":
+            raise StateError(f"{feature_id}: only an implementing feature can be requeued")
+        if rec["evidence"] or rec["attempts"]:
+            raise StateError(f"{feature_id}: has evidence or attempts; it cannot be requeued")
+        rec["history"].append({"at": now(), "from": rec["state"], "to": "audited", "note": note})
+        rec["state"] = "audited"
+        for key in ("branch", "worktree"):
+            rec[key] = None
+        self.save()
+        return rec
+
     def add_evidence(self, feature_id: str, command: str, exit_code: int,
                      log: str | None = None, sha: str | None = None) -> None:
         self.feature(feature_id)["evidence"].append(
