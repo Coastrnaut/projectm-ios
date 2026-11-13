@@ -41,6 +41,31 @@ FILE-009's Storage screen measures these folders. FILE-010 classifies each one.
 "Generated previews" in the roadmap row are the share copies and exports made for the share sheet;
 the app keeps no thumbnail or preview files on disk (previews are drawn in memory).
 
+## Clarifications
+
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the conservative, local-first option.
+
+- Q: Does Clear Caches empty `Library/Caches`, which only the system writes (compiled shaders)? →
+  A: Yes. Apple documents it as purgeable at any time, it is the "Caches" row the person sees, and the
+  cost is a shader recompile on the next preset switch; the confirmation says nothing about speed
+  because the effect is a one-time short delay. Applied to FILE-010-R1 and the baseline.
+- Q: Are leftover recordings in `tmp/Recordings` cleared? → A: Yes, unless in use: everything in
+  Recordings is kept while a recording is being made or finished, and the offered recording (and one
+  handed to the Save mover) is kept file by file, so a result the person has not yet saved, shared or
+  discarded never disappears. Other files there are leftovers. Applied to FILE-010-R5.
+- Q: Which number does the confirmation state? → A: The space used by the items to be removed
+  (allocated blocks), the same measure the Storage screen shows (FILE-009 clarification), formatted
+  the same way; "about" when the plan hit a walk limit. Applied to FILE-010-R2.
+- Q: Is cleaned data recoverable (a trash or undo)? → A: No. Only caches and intermediates are
+  removed, which the app or the system recreates; a trash would keep the space the person wants back.
+  The confirmation is the safeguard. Applied to FILE-010-R2.
+- Q: Should the app clear caches on its own (at launch or under storage pressure)? → A: No. Only on
+  the person's request from the Storage screen; the existing launch-time cleanup of Recordings and
+  Sharing by their owners is unchanged. Applied to Scope.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Free the space caches take (Priority: P1)
@@ -117,7 +142,7 @@ written is never removed.
   intermediate folders named in the baseline (Recordings, the three share and export folders, and
   Caches).
 - **FILE-010-R2**: Before clearing, the screen MUST ask for confirmation, stating the space to be freed
-  (the space used by the items to be removed) and that photos, videos, scenes, the show, presets,
+  (the space used by the items to be removed, prefixed "about" when a walk limit was reached) and that photos, videos, scenes, the show, presets,
   imported audio and settings are kept; Cancel removes nothing. With nothing to clear it MUST say so
   and offer no Clear button.
 - **FILE-010-R3**: Cleanup MUST use an allowlist: it removes items only inside the cache and
@@ -177,4 +202,5 @@ written is never removed.
 | In this row | Later rows / follow-ups |
 |---|---|
 | Clear Caches on the Storage screen, allowlist plan, in-use protection, tests | FILE-011 erases selected user data |
+| On request only | No automatic clearing at launch or under storage pressure (clarification) |
 | | Device check on D1 with a real shader cache (`{device}` task, left open) |
