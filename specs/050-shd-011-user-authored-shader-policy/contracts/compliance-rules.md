@@ -15,5 +15,11 @@ literals**. Each violation line ends with the rule name in parentheses.
 Allowlist (`METAL_SOURCE_ALLOWED`, paths relative to the repository root): the eight files in
 research SHD-011-D4. Adding a file is a reviewed change to the script and to ADR-0024.
 
+Allowed and not matched: `Bundle.main`, `Bundle(for:)` (returns a bundle that is already loaded),
+`Bundle.module`, and `.load()` on receivers whose name does not contain "bundle" (stores, libraries).
+The `.load()` pattern is a name heuristic; the guarantee rests on the rule that no non-main bundle can
+be constructed (`Bundle(url:)`, `Bundle(path:)`, `NSBundle`, `CFBundleCreate` are all forbidden), so
+nothing exists to load.
+
 Existing rules (`dlsym`/`dlopen`, class and selector lookup by string, private frameworks, ReplayKit,
 ScreenCaptureKit placement, networking, project.yml, entitlements) are unchanged.
