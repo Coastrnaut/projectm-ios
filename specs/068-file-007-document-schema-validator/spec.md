@@ -56,6 +56,8 @@ interaction); each answer is the conservative, local-first option.
 - Q: How is "versioned semantic constraints" declared? → A: A small `DocumentSchema` value per document type (format name, oldest readable and current version, structural limits), declared once next to each format; readers take version and limits from it, and every reader refuses a newer version with its existing "update the app" message. Semantic checks stay in each reader after decoding (record checks, counts, ids).
 - Q: A new package for the validator? → A: No. `LocalPortability` already is the shared import/export package with no dependencies and a Linux test lane, so no CI or project change is needed (recorded in the plan).
 - Q: How is "rejected safely" proven? → A: Each refusal is a typed error with a byte offset; the validator counts the bytes it examines and tests assert the count stays at or below the offset of the refusal (no rescans, no recursion), plus a fixed-seed fuzz that only ever returns a typed result.
+- Q: What does the person see when a manifest is refused by the validator? → A: One sentence per reason family, never raw offsets: "The archive's manifest is not valid JSON." for grammar and encoding errors, "The archive's manifest is too large or too deeply nested to read." for limit errors, and "The archive's manifest lists the same field twice." for duplicate keys; the typed reason with its offset stays available to tests and diagnostics. Applied to FILE-007-R6.
+- Q: What happens to a local library file (collections, user presets) that the validator refuses? → A: The existing "unreadable" path, unchanged: the store sets the file aside and starts empty, never deleting it, exactly as for any other unreadable file today (PRE-007-R15, PRE-012-R26). Applied to FILE-007-R7.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -144,10 +146,10 @@ as unreadable; existing golden files still decode.
   oldest readable version, current version and limits. Readers take their version policy and limits
   from it; a newer version is refused with the reader's existing "made by a newer version" error.
 - **FILE-007-R6**: The shared archive layer MUST validate `manifest.json` against its schema's limits
-  before any decoding, refusing with a new error that carries the validator's reason; the scene archive
+  before any decoding, refusing with a new error that carries the validator's reason and shows one of three readable sentences (Clarifications); the scene archive
   and the preset archive readers declare their manifest schemas.
 - **FILE-007-R7**: The collections and user presets files MUST be validated before their version is
-  read (and before any migration step); a refusal is the existing "unreadable" outcome.
+  read (and before any migration step); a refusal is the existing "unreadable" outcome (the store sets the file aside; nothing is deleted).
 - **FILE-007-R8**: The scene document reader (SCN-001-R8) and the generator-graph importer (SHD-011)
   keep their existing equivalent bounds; tests prove both refuse deep and oversize input before decoding.
 - **FILE-007-R9**: Valid documents written by the app MUST be accepted unchanged (no behaviour change for
