@@ -25,11 +25,11 @@
   SOS needs an earlier SOF, then its entropy data is scanned for the next marker (`FF00` and RSTn are
   data); EOI `FFD9` ends the walk (trailing bytes ignored). Missing EOI → `.truncated`.
 - **HEIF/AVIF**: first box `ftyp` (size ≥ 16 and within the data) whose major or compatible brands
-  include one of `heic heix heim heis hevc hevx mif1 msf1 avif avis`; every top-level box fits;
+  include one of `heic heix heim heis hevc hevx mif1 msf1 avif avis` (brands that are not legible
+  four-character codes → `.corrupt`; legible brands without an image brand → `.other`, ImageIO
+  decides); every top-level box fits;
   `meta` (a full box) required; inside `meta/iprp/ipco` each `ispe` gives width and height; the
-  largest are the header size (spec Clarifications). A file starting with an `ftyp` that names no
-  image brand but a movie brand is "other" for images (ImageIO decides), unless its brands are empty
-  or the box is malformed → `.corrupt`.
+  largest are the header size (spec Clarifications).
 - **Movie (ISO BMFF / QuickTime)**: box header = 32-bit size + type; size 1 → 64-bit size follows;
   size 0 → box extends to the end of its parent; size < header → `.corrupt`; end > parent end →
   `.truncated`. The first top-level box must have a known type (`ftyp moov mdat free skip wide pnot
@@ -58,14 +58,18 @@
   coordination machinery) and, in `VideoProbe.decodesFirstPicture`, `AVAssetReader.startReading` +
   `copyNextSampleBuffer` (waits on AVFoundation's decode threads, which run at lower QoS).
 - **Decision**: (a) the first-picture check uses `AVAssetImageGenerator.image(at:)`, an async API that
-  suspends instead of blocking a thread, with `maximumSize` 256 × 256 and tolerances infinite so the
-  first decodable picture is taken; (b) the picked-file reads in `PhotoStore` and `VideoStore` use
-  `NSFileCoordinator.coordinate(with: [.readingIntent(with:options:)], queue:, byAccessor:)`, whose
-  accessor runs on an `OperationQueue` and whose completion resumes a continuation, so no thread
-  waits. `PhotoStore.importImage` becomes async (its DEBUG `importNow` UI-test seed awaits it).
-  (c) The playback decode thread keeps its blocking `AVAssetReader` reads by design (MED-002 D1: a
-  dedicated pull thread); if the checker still reports an inversion from it, it is recorded, not
-  hidden. Verified by grepping the test logs for the checker's message before and after.
+  suspends instead of blocking a thread, with `maximumSize` 256 × 256 and tolerance after infinite so
+  the first decodable picture is taken; (b) the coordinated picked-file reads are changed only if the
+  checker attributes a warning to them; (c) the playback decode thread keeps its blocking
+  `AVAssetReader` reads by design (MED-002 D1: a dedicated pull thread); if the checker still reports
+  an inversion from it, it is recorded, not hidden.
+- **Measured (2026-11-13, iOS 27.2 simulator, the checker's runtime warnings in the `.xcresult`)**:
+  `PhotoStoreTests` + `VideoStoreTests` (15 tests) with the old probe: 2 inversion warnings (one
+  attributed to `VideoStoreTests.swift`); with the new probe: 0. The store tests run the whole import
+  including the coordinated read, so (b) is not a source and the stores are unchanged. Remaining: 1
+  warning in `VideoLayerUITests` alone (playback), 0 in `PhotoLayerUITests` alone and 0 in
+  `SafeMediaUITests` (seed writer, import, failing reader open), so it comes from (c): recorded in
+  ADR-0022's amendment as a device question, not changed blind.
 - **Alternatives**: lowering the import task to `.utility` (slower imports, hides rather than fixes);
   keeping `AVAssetReader` for the probe (the blocking call is the cause).
 

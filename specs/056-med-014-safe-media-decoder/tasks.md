@@ -51,14 +51,14 @@ Format: `- [ ] MED-014-Tnn [P?] [Story?] Description with file path`
 
 ## Phase 7: User Story 5 — No priority inversion from the import (P2)
 
-- [ ] MED-014-T18 [US5] Asynchronous coordinated reads in `Apps/projectM-iOS/Coordinators/PhotoStore.swift` (`importImage` async; `NSFileCoordinator.coordinate(with:queue:byAccessor:)`) and `Apps/projectM-iOS/Coordinators/VideoStore.swift`; callers in `PhotoCoordinator.swift` and the app tests updated (R10)
-- [ ] MED-014-T19 [US5] Record the before/after checker output (grep "priority inversion" in the app test logs) in `docs/test-reports/safe-media-decoder.md` (S6)
+- [X] MED-014-T18 [US5] Investigate the coordinated picked-file reads in `Apps/projectM-iOS/Coordinators/PhotoStore.swift` and `Apps/projectM-iOS/Coordinators/VideoStore.swift` as an inversion source and change them only if they are one (R10; the plan first assumed an async rewrite) — Verified 2026-11-13: the store tests (whole import incl. the coordinated read) show 0 checker inversion warnings with the new probe vs 2 with the old one (`.xcresult` runtime warnings, iOS 27.2 simulator), so the reads are not a source and the stores are unchanged
+- [X] MED-014-T19 [US5] Record the before/after checker output (the runtime warnings of each run's `.xcresult`; the checker does not print to the xcodebuild log) in `docs/test-reports/safe-media-decoder.md` and ADR-0022's amendment (S6) — Verified 2026-11-13: report and ADR written from runs: store tests 2 → 0; VideoLayerUITests alone 1 (playback decode thread, recorded), PhotoLayerUITests alone 0, SafeMediaUITests 0
 
 ## Phase 8: Polish
 
-- [ ] MED-014-T20 ADR: amend ADR-0020 and ADR-0022 with a MED-014 section (or a new ADR at the next free number) in `docs/adr/`
-- [ ] MED-014-T21 Test report `docs/test-reports/safe-media-decoder.md`: commands, counts, durations, fixture outcomes; roadmap row MED-014 status in `docs/FEATURE_ROADMAP_AUTONOMOUS.md` if rows carry a status
-- [ ] MED-014-T22 Runs: `swift test --package-path Packages/Compositor`, Linux shape, `xcodebuild test -scheme Compositor` on the simulator, app unit tests + SafeMediaUITests + PhotoLayerUITests + VideoLayerUITests; `check_compliance.py`, `validate_docs.py`, `test_scripts.py`; PosterBoard reports counted
+- [X] MED-014-T20 ADR: amend ADR-0020 and ADR-0022 with a MED-014 section (or a new ADR at the next free number) in `docs/adr/` — Verified 2026-11-13: amendments appended to ADR-0020 and ADR-0022 and their README rows; no new number used; `validate_docs.py` OK
+- [X] MED-014-T21 Test report `docs/test-reports/safe-media-decoder.md`: commands, counts, durations, fixture outcomes; roadmap row MED-014 status in `docs/FEATURE_ROADMAP_AUTONOMOUS.md` if rows carry a status — Verified 2026-11-13: report written; roadmap rows carry no implementation status (MED-001/002/009 rows still read "Gap candidate"), so the roadmap is unchanged; `validate_docs.py` OK
+- [X] MED-014-T22 Runs: `swift test --package-path Packages/Compositor`, Linux shape, `xcodebuild test -scheme Compositor` on the simulator, app unit tests + SafeMediaUITests + PhotoLayerUITests + VideoLayerUITests; `check_compliance.py`, `validate_docs.py`, `test_scripts.py`; PosterBoard reports counted — Verified 2026-11-13: host Compositor package all pass (CompositorTests 179, MediaSniffingTests 20; 9.4 s), Linux shape all pass (CompositorTests 100, MediaSniffingTests 20), `xcodebuild test -scheme Compositor` on iOS 27.2 all pass, app 223/223 unit + SafeMedia/Photo/Video UI tests pass; `check_compliance.py` OK, `validate_docs.py` OK, `test_scripts.py` 111 OK (1 skipped); PosterBoard reports 32 → 32
 - [ ] MED-014-T23 {device} Import a real HEIC, a ProRAW DNG, a panorama and an HDR video on D1 and D3: each imports and renders as before (no false refusal); quickstart step 5
 
 ## Dependencies

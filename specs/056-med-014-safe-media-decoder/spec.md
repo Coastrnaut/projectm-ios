@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (MED-014-T01-T22 verified on the Mac: host, Linux shape and iOS 27.2 simulator; device task T23 `{device}` open)
 
 **Input**: User description: "Implement MED-014 (Safe media decoder) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Reject malformed or oversized
@@ -151,7 +151,7 @@ longer show the inversion notice attributed to the import path (or the remaining
 - An animated PNG: accepted (first picture, as MED-001); its frame chunks are ancillary.
 - A 64-bit box size (`size == 1`) and a last box running to the end of the file (`size == 0`): accepted when they fit.
 - A movie with the index (`moov`) after the media data (`mdat`): accepted.
-- A HEIF whose `ftyp` box is cut or names no image brand: refused as damaged.
+- A HEIF whose `ftyp` box is cut or whose brands are not legible: refused as damaged. Legible brands without an image brand (an MP4 picked as a photo) go to ImageIO, which refuses it as "not an image".
 - Random bytes that start with a PNG signature: refused as damaged (not "not an image": they claim to be one).
 - A file removed between launch and load: the existing "couldn't be loaded" path (unreadable).
 
@@ -168,7 +168,7 @@ longer show the inversion notice attributed to the import path (or the remaining
 - **MED-014-R7**: Before AVFoundation opens a movie (import and every reader open), its container MUST be checked: top-level boxes walked with every size fitting the file (`size 1` 64-bit and `size 0` to-end-of-file handled), at most 4,096 box headers and 8 levels; exactly one `moov`; inside it, tracks found by their handler, and for the first video track the first sample description's codec and coded size read. No sample table is read.
 - **MED-014-R8**: Container outcomes: not a recognizable container → `.notAVideo`; a box that does not fit, a missing or duplicated `moov`, or nesting/box count over the bound → `.damaged`; no video track → `.notAVideo`; a coded size over 4096 px → `.pictureTooLarge`. AVFoundation's checks (MED-002-R5) still follow.
 - **MED-014-R9**: The import's first-picture check MUST use the system's asynchronous image generation with a maximum size of 256 px (one picture, bounded memory), not a blocking sample read on the importing thread.
-- **MED-014-R10**: The picked-file reads of the photo and video imports MUST NOT block a user-initiated thread on file coordination (asynchronous coordination, or the work runs at the coordinator's priority); the finding and its resolution MUST be recorded in the test report.
+- **MED-014-R10**: The import path MUST NOT block a user-initiated thread on lower-priority work as reported by the Thread Performance Checker; each suspected call (first-picture read, coordinated file read) MUST be investigated, changed only when it is a source, and the finding and its resolution recorded in the test report and ADR-0022.
 - **MED-014-R11**: Every decode failure MUST surface as one of the existing typed errors (`ImageImportError`, `VideoImportError`); no new user-visible messages are added. The import refuses with the existing notice and keeps the stored copy (MED-001-R11, MED-002-R14).
 - **MED-014-R12**: A layer whose stored file fails at load (photo) or at any reader open or read (video) MUST report `.failed(<typed error>)`, draw its transparent fallback, and MUST NOT stop the compositor or affect other layers (CMP-001-R3); the app shows the existing "couldn't be loaded" notice. A failed video layer does not retry until its content changes or the visual is chosen again; nothing new is logged.
 - **MED-014-R13**: The structural checks MUST be plain Swift (no ImageIO, AVFoundation or Metal) so they build and are tested on Linux, and MUST never read outside the given bytes or allocate in proportion to a length field.

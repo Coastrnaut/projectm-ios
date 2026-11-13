@@ -45,7 +45,11 @@ every reopen. `VideoImportError` is unchanged.
 
 ## App
 
-- `PhotoStore.importImage(at:) async throws(ImageImportError)`; `VideoStore` copy uses asynchronous
-  file coordination. Notices and strings unchanged.
-- DEBUG: `-uitestSeedPhoto corrupt` imports a truncated PNG; `-uitestSeedVideo corrupt` imports a movie
-  whose `moov` overruns the file. Both are refused with the existing notices.
+- `PhotoStore` and `VideoStore` are unchanged (research D4: the coordinated read is not an inversion
+  source). Notices and strings unchanged.
+- DEBUG: `-uitestSeedPhoto corrupt` imports the valid seed and then cuts the stored copy to half;
+  `-uitestSeedVideo corrupt` imports the valid seed and then replaces the stored copy with a movie
+  whose `moov` overruns the file. Choosing each visual shows "The photo couldn't be loaded." / "The
+  video couldn't be played." (the existing load-failure notices).
+- `VideoContainerCheck.check(_ url:limits:)` / `check(_ source:limits:)` (plain Swift) and
+  `ImageStructureCheck.check(_:limits:)` (plain Swift) are the mapping entry points.

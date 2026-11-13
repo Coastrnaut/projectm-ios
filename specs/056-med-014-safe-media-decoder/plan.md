@@ -21,8 +21,8 @@ size), then its existing ImageIO steps (type, status, properties, bounded thumbn
 `VideoProbe.check` and `AVVideoFrameReader.open` run the container sniffer first (`.notAVideo`,
 `.damaged`, `.pictureTooLarge`), then AVFoundation. The probe's first-picture check moves from a
 blocking `AVAssetReader.copyNextSampleBuffer` to `AVAssetImageGenerator.image(at:)` (async, max 256 px).
-The picked-file reads use `NSFileCoordinator.coordinate(with:queue:byAccessor:)` (asynchronous
-coordination), so no user-initiated thread waits on the file-coordination daemon.
+The coordinated picked-file reads were investigated as the other suspect and do not trigger the
+checker (research D4), so they are unchanged.
 
 Failure isolation is already structural (CMP-001-R3: a layer that throws shows its fallback); this
 row proves it with a running compositor holding a photo layer, a video layer and a solid layer whose
@@ -86,14 +86,15 @@ Packages/Compositor/
 │   ├── ByteSource.swift                            # random-access bytes (Data, FileHandle), bounded reads
 │   ├── ImageHeaderSniffer.swift                    # PNG, JPEG, HEIF structure → ImageHeaderFacts
 │   ├── MovieContainerSniffer.swift                 # ISO BMFF / QuickTime box walk → MovieContainerFacts
-│   └── CRC32.swift                                 # PNG CRC-32 (table)
+│   ├── CRC32.swift                                 # PNG CRC-32 (table)
+│   └── MediaFixtureBytes.swift                     # fixture builders shared by tests and DEBUG seeds
+├── Sources/VideoLayer/VideoContainerCheck.swift    # sniff → VideoImportError
 ├── Sources/ImageLayer/ImageDecoding.swift          # sniff first; header pixel check
 ├── Sources/VideoLayer/AVVideoProbe.swift           # container sniff; async first picture
 ├── Sources/VideoLayer/AVVideoFrameReader.swift     # container sniff before each open
 ├── Tests/MediaSniffingTests/                       # fixture builders, table, fuzz (Linux shape)
 └── Tests/CompositorTests/SafeDecoderTests.swift    # ImageIO/AVFoundation table + isolation acceptance
 Apps/projectM-iOS/
-├── Coordinators/PhotoStore.swift, VideoStore.swift # asynchronous coordinated reads
 ├── Debug/UITestPhotoFixture.swift, UITestVideoFixture.swift   # `corrupt` variants
 └── UITests/SafeMediaUITests.swift
 ```
@@ -115,7 +116,7 @@ Linux CI tests it without ImageIO/AVFoundation; the layer targets only call it.
 | F8 | zero bytes | `.empty` | `.notAnImage` |
 | F9 | PNG signature + 4 KB of seeded random bytes | `.corrupt` or `.truncated` | `.damaged` |
 | F10 | HEIF: `ftyp` box whose size runs past the file | `.truncated` | `.damaged` |
-| F11 | HEIF: `ftyp` naming no image brand | `.corrupt` | `.damaged` |
+| F11 | HEIF: `ftyp` whose brands are not legible (zero bytes) | `.corrupt` | `.damaged` |
 | F12 | minimal movie, `moov` size beyond the file | `.truncated` | `.damaged` |
 | F13 | minimal movie, one sound track only | facts: no video | `.notAVideo` |
 | F14 | valid H.264 movie (AVAssetWriter, 64 × 48) | facts: `avc1` 64 × 48 | imports |
