@@ -14,7 +14,7 @@
 | [0010](0010-post-processing-effects.md) | Post-processing effects and the effect chain | Accepted 2026-11-13 (FX-001; owner rule 4) |
 | [0011](0011-strobe-safety-envelope.md) | Strobe safety envelope | Accepted 2026-11-13 (FX-019; owner rule 4) |
 | [0012](0012-typed-parameter-registry.md) | Typed parameter registry | Accepted 2026-11-13 (MOD-001; owner rule 4) |
-| [0013](0013-compositor-layer-protocol.md) | Compositor and the unified layer protocol | Accepted 2026-11-13 (CMP-001; owner rule 4); amended by CMP-002 (layer stack) |
+| [0013](0013-compositor-layer-protocol.md) | Compositor and the unified layer protocol | Accepted 2026-11-13 (CMP-001; owner rule 4); amended by CMP-002 (layer stack) and CMP-003 (opacity) |
 | [0014](0014-reduced-flash-preset-policy.md) | Reduced flash preset policy | Accepted 2026-11-13 (ACC-002; owner rule 4) |
 | [0017](0017-rear-camera-layer.md) | Rear camera layer | Accepted 2026-11-13 (CAM-001; owner rule 4) |
 | [0018](0018-procedural-material-shaders.md) | Procedural material shaders | Accepted 2026-11-13 (SHD-001; owner rule 4) |

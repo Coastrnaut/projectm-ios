@@ -47,8 +47,8 @@ public enum LayerOutcome: Sendable, Equatable {
     public var isShown: Bool { self == .rendered }
 }
 
-/// How a layer is combined with what is below it. CMP-001 composites with the identity values only;
-/// CMP-003 (opacity), CMP-004 (blend modes) and CMP-005 (transforms) extend the compositor.
+/// How a layer is combined with what is below it. CMP-003 adds opacity (premultiplied channels ×
+/// opacity before "over"); CMP-004 (blend modes) and CMP-005 (transforms) extend the compositor.
 public enum LayerBlendMode: Sendable, Equatable {
     /// Premultiplied "over".
     case normal
@@ -81,6 +81,12 @@ public struct LayerCompositeSettings: Sendable, Equatable {
     public var isSupportedByCMP001: Bool {
         opacity == 1 && blendMode == .normal && transform == .identity
     }
+
+    /// What the compositor draws today: any opacity (CMP-003), normal blending and the identity
+    /// transform (until CMP-004 and CMP-005).
+    public var isSupportedByCompositor: Bool {
+        blendMode == .normal && transform == .identity
+    }
 }
 
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
@@ -90,7 +96,7 @@ public protocol LayerSource: AnyObject {
     var layerName: String { get }
     /// Read once when the compositor is built.
     var fallback: LayerFallback { get }
-    /// Read once when the compositor is built; CMP-001 accepts only the identity values.
+    /// Read once when the compositor is built; any opacity, normal blend and identity transform.
     var compositeSettings: LayerCompositeSettings { get }
     /// Called once before the first frame and once per size change. The only place a source may
     /// create its own working resources.
