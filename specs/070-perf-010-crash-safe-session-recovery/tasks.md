@@ -33,7 +33,8 @@ the owner's device and stay open until run.
   held visual and values; camera visual never chosen.
 - [ ] PERF-010-T08 Acceptance UI test `Apps/projectM-iOS/UITests/SessionRecoveryUITests.swift`: OSC on
   and Camera (stub) → `terminate()` → relaunch: offer, no OSC badge, probe `osc=off`, no camera badge
-  or frames; Reopen → Circular Spectrum 16 bars, still no OSC or camera (PERF-010-S1-S3).
+  or frames; the controls and Settings work with the offer shown (S5); Reopen → Circular Spectrum
+  16 bars, still no OSC or camera (PERF-010-S1-S3, S5).
 - [ ] PERF-010-T09 Clean-exit UI test: Home then terminate → no offer, OSC listening again (then
   stopped to leave no state) (PERF-010-R10, S2).
 
@@ -52,6 +53,13 @@ the owner's device and stay open until run.
 - [ ] PERF-010-T14 Roadmap/status notes: spec Status, tasks verified.
 - [ ] PERF-010-T15 `{device}` D1: real crash with the DEBUG "Crash now" button, relaunch from the home
   screen (quickstart, Device).
+
+## Analysis (speckit-analyze, 2026-11-13)
+
+Coverage: R1 T01-T03; R2 T05, T07, T08; R3 T07, T08; R4 T06, T08; R5 T05, T07; R6 T05, T07, T08;
+R7 T05, T07; R8 T03, T07; R9 T01, T02, T10; R10 T05, T09; R11 T03; R12 T01, T03, T06, T12; R13 T11.
+S1 T08; S2 T08, T09; S3 T08; S4 T02, T10; S5 T08 (fixed: S5 had no task). No constitution conflict;
+terminology aligned ("abnormal exit", "offer", "held scene"). No other findings.
 
 ## Dependencies
 
