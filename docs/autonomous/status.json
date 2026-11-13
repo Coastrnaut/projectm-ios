@@ -7,9 +7,10 @@
  "by_priority": {
   "P0": {
    "audited": 57,
-   "implementing": 2,
+   "implementing": 1,
    "integrated": 27,
-   "skipped_existing": 1
+   "skipped_existing": 1,
+   "unit_passed": 1
   },
   "P1": {
    "audited": 142,
@@ -25,9 +26,10 @@
  },
  "by_state": {
   "audited": 287,
-  "implementing": 3,
+  "implementing": 2,
   "integrated": 35,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -605,12 +607,12 @@
   "ANL-016": {
    "attempts": 1,
    "branch": "feature/anl-016",
-   "branch_sha": null,
+   "branch_sha": "1e9e7eec69b86bb860821afd1f36118eed1cb948",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": "specs/024-anl-016-analysis-event-bus",
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "AUD-001": {
    "attempts": 1,
@@ -3795,5 +3797,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T15:15:18Z"
+ "updated": "2026-11-13T15:19:14Z"
 }
