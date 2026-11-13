@@ -7,9 +7,8 @@
  "by_priority": {
   "P0": {
    "audited": 49,
-   "integrated": 36,
-   "skipped_existing": 1,
-   "unit_passed": 1
+   "integrated": 37,
+   "skipped_existing": 1
   },
   "P1": {
    "audited": 140,
@@ -24,9 +23,8 @@
  },
  "by_state": {
   "audited": 277,
-  "integrated": 47,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "integrated": 48,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -160,7 +158,6 @@
    "MOD-015",
    "MOD-016",
    "MOD-017",
-   "OSC-002",
    "OSC-003",
    "OSC-004",
    "OSC-005",
@@ -315,7 +312,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "278 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
+   "277 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
   ]
  },
  "features": {
@@ -1914,7 +1911,7 @@
    "branch": "feature/mod-014",
    "branch_sha": "a08446ecdde1081af304e1f05bc48487591a92b7",
    "error_category": null,
-   "integrated_sha": "09a831b48364261759adc865d0c5399134a40030",
+   "integrated_sha": "3b3a606490253c879e6d06c08259f3896d90d326",
    "priority": "P0",
    "spec_dir": null,
    "state": "integrated"
@@ -1964,10 +1961,10 @@
    "branch": "feature/osc-002",
    "branch_sha": "e0b3e36021ba4ab03691c6fb76c1f78b67a4bf99",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "3b3a606490253c879e6d06c08259f3896d90d326",
    "priority": "P0",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "OSC-003": {
    "attempts": 0,
@@ -3764,12 +3761,17 @@
   {
    "branch": "feature/mod-014",
    "id": "MOD-014",
-   "sha": "09a831b48364261759adc865d0c5399134a40030"
+   "sha": "3b3a606490253c879e6d06c08259f3896d90d326"
   },
   {
    "branch": "feature/osc-001",
    "id": "OSC-001",
    "sha": "13d9883531b90718c4b9f8d5558a18269420f39f"
+  },
+  {
+   "branch": "feature/osc-002",
+   "id": "OSC-002",
+   "sha": "3b3a606490253c879e6d06c08259f3896d90d326"
   },
   {
    "branch": "feature/perf-011",
@@ -3842,5 +3844,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T16:47:57Z"
+ "updated": "2026-11-13T16:49:16Z"
 }
