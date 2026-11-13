@@ -83,7 +83,7 @@ specs/042-shd-002-node-generator-graph/
 ├── spec.md, plan.md, research.md, data-model.md, quickstart.md, tasks.md
 ├── contracts/generator-graph.md
 └── checklists/requirements.md
-docs/adr/00NN-generator-graph-interpreter.md   (next free number, re-checked at commit)
+docs/adr/0019-generator-graph-interpreter.md   (0019 checked free across branches and worktrees at commit)
 ```
 
 ### Source Code (repository root)

@@ -37,7 +37,14 @@ Decisions taken by Claude under owner rule 4 (best judgement), 2026-11-13.
 
 ### Host measurement (SHD-002-T21)
 
-Filled in by SHD-002-T21.
+2026-11-13, Mac Studio host GPU (Apple M5 Max), `SHD002_BENCH=1 swift test --package-path
+Packages/Compositor --filter GraphCostBench`, GPU time per frame at 1179 × 2556 over 60 frames after
+10 warm-up frames: the 12-node bench graph (`GraphBenchGraphs.twelveNodes`: drift, 4-octave noise,
+spin, ring, box, multiply, add, HSV, oscillate, mix; 11 instructions) median 0.556 ms, max 0.732 ms;
+SHD-001 Noise Flow median 0.183 ms, max 0.325 ms. The interpreter costs about 3 times a
+hand-written material of similar content on this GPU, well inside a 16.7 ms frame, with no
+intermediate memory. Host numbers are not device evidence; the device cost is SHD-002-T24
+`{device}`.
 
 ## SHD-002-D3: Cycle detection and ordering
 
