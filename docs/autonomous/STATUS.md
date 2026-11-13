@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T02:05:40Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T02:07:57Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,12 +10,12 @@
 | State | Features |
 |---|---|
 | audited | 301 |
-| implementing | 1 |
+| unit_passed | 1 |
 | integrated | 24 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated |
+| Priority | audited | unit_passed | integrated |
 |---|---|---|---|
 | P0 | 65 | 1 | 21 |
 | P1 | 148 | 0 | 3 |
@@ -225,3 +225,9 @@ None.
 - `python3 scripts/validate_docs.py`: pass at `f4a06e68c3fe` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-015/20261112T194121/docs.log`)
 - `swift test --package-path Packages/PresetLibrary`: pass at `f4a06e68c3fe` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-015/20261112T194121/swift-test_PresetLibrary.log`)
 - `integration checkout, full preset library: xcodebuild projectM-iOS test on iPhone 17 iOS 27.2: projectM-iOSTests 108 pass; UI 24 pass (UserPresetEditing, UserPresets, PresetCollections, PresetLibrary, Purchase, Visualizer)`: pass at `41836f305bad` (log `.autonomous/logs/integration/pre-015/app-tests.log`)
+
+### QA-007 Audio source contract suite (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `1985f0c1e666` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-007/20261112T210720/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `1985f0c1e666` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-007/20261112T210720/docs.log`)
+- `swift test --package-path Packages/CaptureKit`: pass at `1985f0c1e666` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-007/20261112T210720/swift-test_CaptureKit.log`)
+- `swift test --package-path Packages/CaptureUI`: pass at `1985f0c1e666` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-007/20261112T210720/swift-test_CaptureUI.log`)

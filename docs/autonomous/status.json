@@ -7,8 +7,8 @@
  "by_priority": {
   "P0": {
    "audited": 65,
-   "implementing": 1,
-   "integrated": 21
+   "integrated": 21,
+   "unit_passed": 1
   },
   "P1": {
    "audited": 148,
@@ -23,8 +23,8 @@
  },
  "by_state": {
   "audited": 301,
-  "implementing": 1,
-  "integrated": 24
+  "integrated": 24,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -2614,12 +2614,12 @@
   "QA-007": {
    "attempts": 0,
    "branch": "feature/qa-007",
-   "branch_sha": null,
+   "branch_sha": "1985f0c1e6665179cc8a15262abae4c7191f5508",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": "specs/013-qa-007-audio-source-contract-suite",
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "QA-008": {
    "attempts": 0,
@@ -3731,5 +3731,5 @@
  "run_id": "cb545c51cf0b",
  "skipped_existing": [],
  "total": 326,
- "updated": "2026-11-13T02:05:40Z"
+ "updated": "2026-11-13T02:07:57Z"
 }
