@@ -10,6 +10,8 @@
 //   builds on Linux, where only the Metal files compile out. `-Xswiftc -DCOMPOSITOR_NO_METAL` (with
 //   `-DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE`) gives that shape on the Mac. CMP-002 adds the
 //   `LayerStack` value (CPU) that `Compositor.apply` takes between frames (ADR-0013 amendment).
+//   PERF-004 (specs/052-perf-004-texture-pool) adds the `TexturePool` the compositor takes its pictures
+//   from: plain-Swift bookkeeping (`TexturePoolCore`, Linux-testable) and a locked Metal wrapper.
 // * `SpectrumLayers` adapts the native spectra (VIS-001, VIS-002, FX-001 glow) to the contract.
 // * `CameraLayer` (CAM-001, ADR-0017) draws the newest picture of a `CameraFrameProvider` (a stub,
 //   or the iOS `AVCaptureSession` provider) as a layer. Its feed states and geometry are plain Swift
@@ -25,6 +27,10 @@
 //   metadata) and draws one still image as a layer. Limits, errors and geometry are plain Swift and
 //   build on Linux; the ImageIO decoder/sanitizer and the Metal layer compile out there. The
 //   `ImageDecoding` protocol is the seam MED-014 (safe media decoder) hardens.
+// * `VideoLayer` (MED-002, specs/048-med-002-import-video-layer) imports (remux without soundtrack or
+//   metadata) and plays one video as a layer at its own rate through a bounded decode queue. Limits,
+//   errors, the playback clock and the queue are plain Swift and build on Linux; AVFoundation reading
+//   and the Metal layer compile out there. It reuses CameraLayer's rotation and aspect-fill geometry.
 // * `GeneratorGraphImport` (SHD-011, ADR-0024) turns the bytes of an imported file into a validated,
 //   compiled generator graph or one typed refusal: size limit before decoding, executables, scripts
 //   and archives refused by their first bytes, `JSONDecoder` into the SHD-002 document. It reads no
@@ -37,7 +43,7 @@ import PackageDescription
 let package = Package(
     name: "Compositor",
     platforms: [.iOS("26.0"), .macOS(.v15)],
-    products: [.library(name: "Compositor", targets: ["Compositor", "SpectrumLayers", "CameraLayer", "ProceduralMaterials", "GeneratorGraph", "GeneratorGraphImport", "ImageLayer"])],
+    products: [.library(name: "Compositor", targets: ["Compositor", "SpectrumLayers", "CameraLayer", "ProceduralMaterials", "GeneratorGraph", "GeneratorGraphImport", "ImageLayer", "VideoLayer"])],
     dependencies: [
         .package(path: "../AnalysisFeatures"),
         .package(path: "../FlashSafety"),
@@ -52,9 +58,10 @@ let package = Package(
         .target(name: "ProceduralMaterials", dependencies: ["Compositor", "ParameterGraph"]),
         .target(name: "GeneratorGraph", dependencies: ["Compositor"]),
         .target(name: "ImageLayer", dependencies: ["Compositor"]),
+        .target(name: "VideoLayer", dependencies: ["Compositor", "CameraLayer"]),
         .target(name: "GeneratorGraphImport", dependencies: ["GeneratorGraph"]),
         .testTarget(name: "CompositorTests",
-                    dependencies: ["Compositor", "SpectrumLayers", "CameraLayer", "ImageLayer", "AnalysisFeatures", "FlashSafety",
+                    dependencies: ["Compositor", "SpectrumLayers", "CameraLayer", "ImageLayer", "VideoLayer", "AnalysisFeatures", "FlashSafety",
                                    .product(name: "VisualGenerators", package: "VisualGenerators")]),
         .testTarget(name: "ProceduralMaterialsTests",
                     dependencies: ["ProceduralMaterials", "Compositor", "ParameterGraph", "FlashSafety", "AnalysisFeatures"]),

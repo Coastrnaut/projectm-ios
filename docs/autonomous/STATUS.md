@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T18:39:18Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T19:01:20Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,16 +9,16 @@
 
 | State | Features |
 |---|---|
-| audited | 263 |
-| implementing | 1 |
-| integrated | 61 |
+| audited | 260 |
+| implementing | 2 |
+| integrated | 63 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
 | Priority | audited | implementing | integrated | skipped_existing |
 |---|---|---|---|---|
-| P0 | 39 | 1 | 46 | 1 |
+| P0 | 36 | 2 | 48 | 1 |
 | P1 | 138 | 0 | 13 | 0 |
 | P2 | 77 | 0 | 2 | 0 |
 | P3 | 9 | 0 | 0 | 0 |
@@ -26,7 +26,7 @@
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 264 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
+- 262 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
 
 ## Integrated
 
@@ -70,6 +70,7 @@ The physical-device suite may **not** start:
 | FX-001 | Bloom | `1192e0d6503e` | `feature/fx-001` |
 | FX-019 | Strobe safety envelope | `6cfcbaabc8d0` | `feature/fx-019` |
 | MED-001 | Import photo layer | `dd604d0b1d51` | `feature/med-001` |
+| MED-002 | Import video layer | `e9e04eeb62a8` | `feature/med-002` |
 | MOD-001 | Typed parameter registry | `304f3bce431a` | `feature/mod-001` |
 | MOD-002 | Audio feature binding | `006678f3d7a5` | `feature/mod-002` |
 | MOD-003 | Linear mapping | `29cd3bbb1e12` | `feature/mod-003` |
@@ -79,6 +80,7 @@ The physical-device suite may **not** start:
 | OSC-007 | OSC network access switch | `ade4dfec39a5` | `feature/osc-007` |
 | OSC-009 | OSC rate limiter | `1ee3a05d25fb` | `feature/osc-009` |
 | OUT-001 | External display scene | `dfd5757fccd4` | `feature/out-001` |
+| PERF-004 | Texture pool | `ea0ee43e0f04` | `feature/perf-004` |
 | PERF-011 | Background resource release | `6d669fcb8576` | `feature/perf-011` |
 | PRE-007 | Preset collections | `e834535cb98b` | `feature/pre-007` |
 | PRE-012 | Preset import validation | `4bf9f50d1af8` | `feature/pre-012` |
@@ -357,6 +359,15 @@ None.
 - `swift test --package-path Packages/Compositor`: pass at `ad09298aa714` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-001/20261113T125543/swift-test_Compositor.log`)
 - `post-merge: projectM-iOSTests 193 incl. PhotoStoreTests; PhotoLayerUITests 20.2 s (renders after relaunch, Remove Photo); CameraUITests 2, SettingsUITests 4; Compositor ImageLayer tests on iPhone 17 sim`: pass at `dd604d0b1d51` (log `.autonomous/logs/integration/cmp-005-med-001/app-tests.log`)
 
+### MED-002 Import video layer (integrated)
+- `python3 scripts/check_compliance.py`: pass at `1954f853e740` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-002/20261113T134641/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `1954f853e740` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-002/20261113T134641/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `1954f853e740` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-002/20261113T134641/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `1954f853e740` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-002/20261113T134641/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `1954f853e740` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-002/20261113T134641/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `1954f853e740` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-002/20261113T134641/swift-test_Compositor.log`)
+- `post-merge: Compositor scheme on iPhone 17 sim (Compositor 154 incl. video pipeline, import and layer tests); projectM-iOSTests 210 incl. VideoStoreTests; VideoLayerUITests 22.1 s, Photo, Camera 2, ExternalDisplay; SettingsUITests 4 pass after the scroll fix`: pass at `e9e04eeb62a8` (log `.autonomous/logs/integration/med-002/app-tests.log`)
+
 ### MOD-001 Typed parameter registry (integrated)
 - `python3 scripts/check_compliance.py`: pass at `c62c162f633a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-001/20261113T104902/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `c62c162f633a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-001/20261113T104902/docs.log`)
@@ -430,6 +441,13 @@ None.
 - `swift test --package-path Packages/PresentationLifecycle`: pass at `a95a4a96502a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-001/20261113T133155/swift-test_PresentationLifecycle.log`)
 - `xcodebuild -scheme Rendering-Package -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `a95a4a96502a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-001/20261113T133155/sim-test_Rendering.log`)
 - `post-merge: projectM-iOSTests 202 incl. ExternalDisplayCoordinatorTests; UI tests ExternalDisplay, NativeVisual 4, Camera 2, CameraPrivacyStatus, Photo, OSCNetworkAccess (9.1-20.4 s); PresentationLifecycle 32 on iPhone 17 iOS 27.2 sim`: pass at `dfd5757fccd4` (log `.autonomous/logs/integration/out-001/app-tests.log`)
+
+### PERF-004 Texture pool (integrated)
+- `python3 scripts/check_compliance.py`: pass at `b32cc31f34e8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-004/20261113T135753/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `b32cc31f34e8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-004/20261113T135753/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `b32cc31f34e8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-004/20261113T135753/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `b32cc31f34e8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-004/20261113T135753/swift-test_Compositor.log`)
+- `post-merge (with VideoVisualHost on the shared pool): Compositor scheme on iPhone 17 sim (Compositor 175 incl. 100-switch plateau, 211 total in the run); projectM-iOSTests incl. TexturePoolAppTests; Video, Photo, Camera UI tests`: pass at `ea0ee43e0f04` (log `.autonomous/logs/integration/perf-004/compositor-sim.log`)
 
 ### PERF-011 Background resource release (integrated)
 - `python3 scripts/check_compliance.py`: pass at `e463058b1c92` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T151252/compliance.log`)

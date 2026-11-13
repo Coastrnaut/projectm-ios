@@ -97,7 +97,8 @@ struct ControlsOverlay: View {
                     .font(.subheadline)
                     .lineLimit(1)
                     .accessibilityIdentifier("currentVisual")
-                Text(coordinator.showsCameraVisual ? "Rear camera" : coordinator.showsPhotoVisual ? "Your photo" : "Native visual")   // CAM-001, MED-001
+                Text(coordinator.showsCameraVisual ? "Rear camera" : coordinator.showsPhotoVisual ? "Your photo"
+                     : coordinator.showsVideoVisual ? "Your video" : "Native visual")   // CAM-001, MED-001, MED-002
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)

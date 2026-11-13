@@ -46,9 +46,14 @@
 //   layer under the circular spectrum layer) with the same create/release and run rules as Camera,
 //   without a sensor. `photos` (PhotoCoordinator) owns the stored copy; its changes set the layer's
 //   content. A stored copy that cannot be loaded shows the photo notice.
+// * Video (MED-002): Settings' persisted "Video" choice shows `VideoVisualHost` (the imported video
+//   layer under the circular spectrum layer) with the same create/release and run rules as Photo.
+//   `videos` (VideoCoordinator) owns the stored copy; its changes set the layer's content. A copy
+//   that cannot be played shows the video notice. The video's soundtrack is never played (R16).
 import ANGLERendering
 import CameraLayer
 import ImageLayer
+import VideoLayer
 import AudioCore
 import CaptureKit
 import CaptureUI
@@ -124,6 +129,12 @@ final class AppCoordinator: VisualizationControlling {
     private(set) var photoVisual: PhotoVisualHost?
     /// The photo layer's state while the Photo visual exists (`empty` otherwise).
     private(set) var photoState: ImageLayerState = .empty
+    /// The imported video (MED-002): the store, the pickers' results and the notice.
+    let videos: VideoCoordinator
+    /// The Video visual (MED-002), created when Video is chosen and released when another visual is.
+    private(set) var videoVisual: VideoVisualHost?
+    /// The video layer's state while the Video visual exists (`empty` otherwise).
+    private(set) var videoState: VideoLayerState = .empty
     /// The native visual could not be created on this launch; projectM is shown instead (VIS-001-R16).
     private(set) var nativeVisualUnavailable = false
     /// The notice naming the chosen native visual (VIS-001-R16, VIS-002-R12).
@@ -157,13 +168,16 @@ final class AppCoordinator: VisualizationControlling {
             try? FileManager.default.removeItem(at: PresetCollectionStore.defaultDirectory())   // PRE-007: UI tests start without collections
             try? FileManager.default.removeItem(at: UserPresetStore.defaultDirectory())         // PRE-012: and without imported presets
             if let photos = try? PhotoStore.defaultDirectory() { try? FileManager.default.removeItem(at: photos) }   // MED-001: no photo
+            if let videos = try? VideoStore.defaultDirectory() { try? FileManager.default.removeItem(at: videos) }   // MED-002: no video
         }
         settings = AppSettings(defaults: defaults, systemReduceMotion: UIAccessibility.isReduceMotionEnabled)
         self.externalDisplay.reduceFlashing = settings.reduceFlashing   // OUT-010-R6
         osc = OSCReceiverCoordinator(settings: settings)
         photos = PhotoCoordinator.makeDefault(defaults: defaults)
+        videos = VideoCoordinator.makeDefault(defaults: defaults)
         #if DEBUG
         UITestPhotoFixture.seedIfRequested(photos)   // MED-001: PhotoLayerUITests (pickers cannot be automated)
+        UITestVideoFixture.seedIfRequested(videos)   // MED-002: VideoLayerUITests
         #endif
         screen = defaults.bool(forKey: Self.noticeKey) ? .chooser : .notice
         microphone = MicrophoneSource(backend: AVMicrophoneBackend())
@@ -224,6 +238,7 @@ final class AppCoordinator: VisualizationControlling {
             for await event in lifecycle.events { await lifecycleCoordinator.handle(event) }
         }
         photos.onPhotoChange = { [weak self] (stored: StoredPhoto?) in self?.photoVisual?.content = Self.photoContent(stored) }
+        videos.onVideoChange = { [weak self] (stored: StoredVideo?) in self?.videoVisual?.content = Self.videoContent(stored) }
         routes.context = { [weak self] in self?.routeContext }   // AUD-007
         routes.isActive = { [weak self] in self?.appIsActive ?? true }
         loadLibrary()
@@ -512,6 +527,7 @@ final class AppCoordinator: VisualizationControlling {
         cameraVisual?.reduceFlashing = settings.reduceFlashing   // CAM-001: the composite flash guard
         photoVisual?.reduceFlashing = settings.reduceFlashing    // MED-001
         externalDisplay.reduceFlashing = settings.reduceFlashing // OUT-010-R6: the restore fade's length
+        videoVisual?.reduceFlashing = settings.reduceFlashing    // MED-002
     }
 
     // MARK: - Visual choice (VIS-001)
@@ -535,8 +551,13 @@ final class AppCoordinator: VisualizationControlling {
         settings.visual.usesPhoto && photoVisual != nil && screen == .visualizer
     }
 
-    /// A native spectrum, the Camera or the Photo visual is shown instead of projectM (preset controls hidden).
-    var showsAlternateVisual: Bool { showsNativeVisual || showsCameraVisual || showsPhotoVisual }
+    /// The Video visual replaces projectM only when chosen, created and on the visualizer (MED-002).
+    var showsVideoVisual: Bool {
+        settings.visual.usesVideo && videoVisual != nil && screen == .visualizer
+    }
+
+    /// A native spectrum, the Camera, Photo or Video visual is shown instead of projectM (preset controls hidden).
+    var showsAlternateVisual: Bool { showsNativeVisual || showsCameraVisual || showsPhotoVisual || showsVideoVisual }
 
     private var circularSpectrumBarCount: SpectrumBarCount {
         SpectrumBarCount(rawValue: settings.circularSpectrumBars) ?? .b64
@@ -643,6 +664,49 @@ final class AppCoordinator: VisualizationControlling {
         }
     }
 
+    /// The video layer's content for a stored video.
+    static func videoContent(_ stored: StoredVideo?) -> VideoLayerContent {
+        stored.map { .file($0.url) } ?? .none
+    }
+
+    /// Creates the Video visual when Video is chosen (MED-002-R1); on failure, falls back to projectM
+    /// with the same notice as the native visuals. Its content is the stored video.
+    private func prepareVideoVisualIfNeeded() {
+        guard settings.visual.usesVideo, videoVisual == nil, !nativeVisualUnavailable else { return }
+        do {
+            var device = MTLCreateSystemDefaultDevice()
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("-uitestNativeVisualFailure") { device = nil }
+            #endif
+            let host = try VideoVisualHost.make(device: device, reader: manager.analysisTap, barCount: circularSpectrumBarCount)
+            host.reduceFlashing = settings.reduceFlashing
+            host.onVideoStateChange = { [weak self] (state: VideoLayerState) in self?.videoStateChanged(state) }
+            host.content = Self.videoContent(videos.video)
+            presentation.register(host)   // PERF-011: starts suspended while the app cannot present
+            videoVisual = host
+        } catch {
+            markNativeVisualUnavailable(error)
+        }
+    }
+
+    /// Drops the Video visual (another visual was chosen): its decoder stops; the stored video stays.
+    private func releaseVideoVisual() {
+        guard let host = videoVisual else { return }
+        host.pause()
+        host.content = .none
+        videoVisual = nil   // the presentation registry holds it weakly
+        videoState = .empty
+    }
+
+    private func videoStateChanged(_ state: VideoLayerState) {
+        videoState = state
+        switch state {
+        case .playing(let width, let height): videos.playingSize = (width, height)
+        case .failed: videos.storedCopyFailed()   // MED-002-R14, R18
+        case .empty, .loading: videos.playingSize = nil
+        }
+    }
+
     /// Stops the camera and drops the Camera visual (another visual was chosen; CAM-001-R7, R9).
     private func releaseCameraVisual() {
         guard let host = cameraVisual else { return }
@@ -678,28 +742,40 @@ final class AppCoordinator: VisualizationControlling {
         prepareNativeVisualIfNeeded()
         prepareCameraVisualIfNeeded()
         preparePhotoVisualIfNeeded()
+        prepareVideoVisualIfNeeded()
         if showsCameraVisual {
             renderer?.pause()
             nativeVisual?.pause()
             photoVisual?.pause()
+            videoVisual?.pause()
             cameraVisual?.resume()   // starts the camera (CAM-001-R7)
             if let reader = cameraVisual?.tempoReader { tempo.follow(reader) } else { tempo.stopAnalysis() }
         } else if showsPhotoVisual {
             renderer?.pause()
             nativeVisual?.pause()
             cameraVisual?.pause()
+            videoVisual?.pause()
             photoVisual?.resume()
             if let reader = photoVisual?.tempoReader { tempo.follow(reader) } else { tempo.stopAnalysis() }
+        } else if showsVideoVisual {
+            renderer?.pause()
+            nativeVisual?.pause()
+            cameraVisual?.pause()
+            photoVisual?.pause()
+            videoVisual?.resume()
+            if let reader = videoVisual?.tempoReader { tempo.follow(reader) } else { tempo.stopAnalysis() }
         } else if showsNativeVisual {
             renderer?.pause()
             cameraVisual?.pause()
             photoVisual?.pause()
+            videoVisual?.pause()
             nativeVisual?.resume()
             if let reader = nativeVisual?.tempoReader { tempo.follow(reader) } else { tempo.stopAnalysis() }
         } else {
             nativeVisual?.pause()
             cameraVisual?.pause()
             photoVisual?.pause()
+            videoVisual?.pause()
             renderer?.resume()
             tempo.runOwnAnalysis(on: manager.analysisTap)
         }
@@ -709,6 +785,7 @@ final class AppCoordinator: VisualizationControlling {
     var activeVisualMetrics: RenderMetrics {
         if showsCameraVisual { return cameraVisual?.metrics ?? .zero }
         if showsPhotoVisual { return photoVisual?.metrics ?? .zero }
+        if showsVideoVisual { return videoVisual?.metrics ?? .zero }
         return showsNativeVisual ? (nativeVisual?.metrics ?? .zero) : (renderer?.metrics ?? .zero)
     }
 
@@ -717,6 +794,7 @@ final class AppCoordinator: VisualizationControlling {
         nativeVisual?.pause()
         cameraVisual?.pause()   // stops the camera (CAM-001-R7)
         photoVisual?.pause()
+        videoVisual?.pause()
         tempo.stopAnalysis()   // SHOW-011: the estimate's analysis runs only while a visual runs
     }
 
@@ -730,9 +808,11 @@ final class AppCoordinator: VisualizationControlling {
     func visualSettingsChanged() {
         if !settings.visual.usesCamera { releaseCameraVisual() }   // CAM-001-R7: leaving Camera stops it
         if !settings.visual.usesPhoto { releasePhotoVisual() }     // MED-001
+        if !settings.visual.usesVideo { releaseVideoVisual() }     // MED-002: leaving Video stops its decoder
         nativeVisual?.barCount = circularSpectrumBarCount
         cameraVisual?.barCount = circularSpectrumBarCount
         photoVisual?.barCount = circularSpectrumBarCount
+        videoVisual?.barCount = circularSpectrumBarCount
         if settings.visual.isNative, let host = nativeVisual {
             do {
                 try host.apply(style: nativeSpectrumStyle)
@@ -748,6 +828,7 @@ final class AppCoordinator: VisualizationControlling {
             prepareNativeVisualIfNeeded()
             prepareCameraVisualIfNeeded()
             preparePhotoVisualIfNeeded()
+            prepareVideoVisualIfNeeded()
             pauseActiveVisual()
         }
     }

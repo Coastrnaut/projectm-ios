@@ -55,7 +55,7 @@ final class SettingsUITests: XCTestCase {
         XCTAssertFalse(overlayElement.exists, "off by default (FR-048)")
         openSettings()
         let toggle = app.switches["performanceOverlayToggle"]
-        XCTAssertTrue(toggle.appears(within: 5))
+        XCTAssertTrue(toggle.appears(within: 2) || scrollTo(toggle), "below the visual rows as Settings grows")
         XCTAssertFalse(isOn(toggle))
         flip(toggle)
         XCTAssertTrue(isOn(toggle))
@@ -70,7 +70,7 @@ final class SettingsUITests: XCTestCase {
         launch(reset: true)
         openSettings()
         let toggle = app.switches["reduceFlashingToggle"]
-        XCTAssertTrue(toggle.appears(within: 5))
+        XCTAssertTrue(toggle.appears(within: 2) || scrollTo(toggle), "below the visual rows as Settings grows")
         XCTAssertFalse(isOn(toggle), "Reduce Motion is off on the simulator, so Reduce flashing starts off")
         XCTAssertFalse(app.buttons["reduceFlashingFollowSystem"].exists)
         flip(toggle)
@@ -80,7 +80,7 @@ final class SettingsUITests: XCTestCase {
         app.terminate()
         launch(reset: false)
         openSettings()
-        XCTAssertTrue(app.switches["reduceFlashingToggle"].appears(within: 5))
+        XCTAssertTrue(app.switches["reduceFlashingToggle"].appears(within: 2) || scrollTo(app.switches["reduceFlashingToggle"]))
         XCTAssertTrue(isOn(app.switches["reduceFlashingToggle"]), "the choice persists")
         app.buttons["reduceFlashingFollowSystem"].tap()
         XCTAssertFalse(isOn(app.switches["reduceFlashingToggle"]), "back to following Reduce Motion")

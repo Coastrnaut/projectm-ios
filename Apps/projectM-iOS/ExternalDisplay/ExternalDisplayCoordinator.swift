@@ -6,7 +6,7 @@
 //   and the visualizer state from AppCoordinator go into `ExternalDisplayRouting`
 //   (PresentationLifecycle), which decides the target.
 // * `place()` moves the current visual's own view (the ANGLE renderer's view, or the native spectrum,
-//   Camera or Photo host's view) into the target's `VisualSlotView`, inside the call. Every visual
+//   Camera, Photo or Video host's view) into the target's `VisualSlotView`, inside the call. Every visual
 //   lays out its drawable from its view's bounds and trait display scale, so it then renders at the
 //   external screen's size and scale with the same renderer or compositor and the same flash
 //   limiting. Nothing is drawn twice and no second context or engine exists (OUT-001-R3).
@@ -256,7 +256,7 @@ final class BlackoutFrameDriver {
     }
 }
 
-/// OUT-001-D4: scene events that concern the device's visuals. The Camera and Photo hosts observe
+/// OUT-001-D4: scene events that concern the device's visuals. The Camera, Photo and Video hosts observe
 /// every scene's connect and disconnect; an external display scene's must not stop or start them.
 enum ExternalDisplayScenes {
     nonisolated static func affectsDeviceVisuals(role: UISceneSession.Role) -> Bool {

@@ -61,6 +61,8 @@ be enforced on code that does not exist yet, and say honestly where untrusted te
    | Networking | existing FR-068 rule |
 
    The eight files are listed in the script (`METAL_SOURCE_ALLOWED`) and in research SHD-011-D4;
+   MED-002 (ADR-0022, 2026-11-13) added a ninth reviewed file, `VideoLayer/VideoLayerSource.swift`,
+   whose shader is a module constant like the image layer's;
    adding one is a reviewed change to the script and to this ADR. Executable file types never get
    an import path: importers refuse them by name and by first bytes (Decision 4).
 
