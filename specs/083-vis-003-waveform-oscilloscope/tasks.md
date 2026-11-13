@@ -42,7 +42,7 @@ Logs go to `.build/scratch/`.
 
 ## Phase 4: User Story 1 - choose it in the app (P1)
 
-- [ ] VIS-003-T12 [P] [US1] Write app unit tests: `Apps/projectM-iOS/Tests/SettingsTests.swift` (line/window defaults medium/20, persistence, unknown → defaults, `allKeys` contains both keys, `VisualChoice.oscilloscope` stored as `oscilloscope`, `isNative`) and `Apps/projectM-iOS/Tests/NativeVisualTests.swift` (an oscilloscope host names itself "Oscilloscope visualization", identifier `oscilloscope`, value "20 ms, Glow off"; switches to circular and back; the unavailable notice names "Oscilloscope"). Record the red run.
+- [ ] VIS-003-T12 [P] [US1] Write app unit tests: `Apps/projectM-iOS/Tests/SettingsTests.swift` (line/window defaults medium/20, persistence, unknown → defaults, `allKeys` contains both keys, `VisualChoice.oscilloscope` stored as `oscilloscope`, `isNative`) and `Apps/projectM-iOS/Tests/NativeVisualTests.swift` (an oscilloscope host names itself "Oscilloscope visualization", identifier `oscilloscope`, value "20 ms, Glow off"; switches to circular and back; the unavailable notice names "Oscilloscope"; a scene captured while the oscilloscope is shown has no native layer, VIS-003-R12). Record the red run.
 - [ ] VIS-003-T13 [US1] Implement: `AppSettings.swift`, `NativeSpectrumHost.swift` (style, `WaveformTap`, sample scratch), `AppCoordinator.swift` (style), `SettingsView.swift` (Line, Window; Bars hidden), `VisualizerView.swift` (onChange), `ShowSceneSnapshot.swift` and `SceneAutosaveCapture.swift` (no layer), `scripts/run_device_tests.py` (two allowed keys). Evidence: `xcodegen generate`, app build, T12 and the app unit tests pass `{sim}`; `test_scripts.py` passes.
 - [ ] VIS-003-T14 [US1] Write `Apps/projectM-iOS/UITests/OscilloscopeUITests.swift`: choose Oscilloscope, Thick and 40 ms, check the visual (`oscilloscope`, value starting "40 ms"), Bars absent, relaunch and check all persisted, source started once; under 30 s `{sim}`. Then run it with `NativeVisualUITests` and `GlowUITests`. Evidence: all pass; durations recorded.
 - [ ] VIS-003-T15 [US1] One simulator screenshot with the reference track into `.build/scratch/vis003-oscilloscope.png` `{sim}`; count new PosterBoard reports.
@@ -51,6 +51,10 @@ Logs go to `.build/scratch/`.
 
 - [ ] VIS-003-T16 Run `xcodebuild test -scheme VisualGenerators` on the simulator `{sim}`; `check_compliance.py`, `validate_docs.py`, `check_motion_policy.py`, `test_scripts.py`, `check_privacy_manifest.py <Debug .app>`; amend ADR-0009 (third native visual, the sample path); delete the feature's simulator. Evidence: logs.
 - [ ] VIS-003-T17 `{device}` On D1 under Instruments (Allocations, Metal System Trace): 60 s of the oscilloscope with the reference track, no allocation growth in the frame loop and frame time within the VIS-001 budget; D2 and D3 render it. Final device phase only.
+
+## Analysis (speckit-analyze, 2026-11-13)
+
+Coverage: every requirement maps to a task (R1-R2, R15 → T04-T05, T09; R3-R6 → T02-T03; R7-R8 → T06-T08; R9 → T11; R10-R11, R13 → T12-T14; R12 → T12-T13; R14 → T10). One gap fixed: R12 had no test (added to T12). Terminology checked across spec, research, data model and contract (window samples 441/882/1,764; thickness 0.001…0.05; amplitude 0.9; tolerance 1.05 × best + 1e-4). Constitution: no conflict (plan, Constitution Check). No CRITICAL or HIGH findings.
 
 ## Dependencies
 
