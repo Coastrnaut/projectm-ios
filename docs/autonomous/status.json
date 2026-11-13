@@ -7,9 +7,10 @@
  "by_priority": {
   "P0": {
    "audited": 52,
-   "implementing": 2,
+   "implementing": 1,
    "integrated": 32,
-   "skipped_existing": 1
+   "skipped_existing": 1,
+   "unit_passed": 1
   },
   "P1": {
    "audited": 141,
@@ -25,9 +26,10 @@
  },
  "by_state": {
   "audited": 281,
-  "implementing": 3,
+  "implementing": 2,
   "integrated": 41,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -339,12 +341,12 @@
   "ACC-002": {
    "attempts": 0,
    "branch": "feature/acc-002",
-   "branch_sha": null,
+   "branch_sha": "64829437c98c2255af7e796c5a295d936604cac3",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "ACC-003": {
    "attempts": 0,
@@ -3819,5 +3821,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T16:08:36Z"
+ "updated": "2026-11-13T16:12:11Z"
 }
