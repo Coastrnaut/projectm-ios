@@ -6,10 +6,11 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 33,
-   "implementing": 1,
+   "audited": 31,
+   "implementing": 2,
    "integrated": 52,
-   "skipped_existing": 1
+   "skipped_existing": 1,
+   "unit_passed": 1
   },
   "P1": {
    "audited": 138,
@@ -24,10 +25,11 @@
   }
  },
  "by_state": {
-  "audited": 257,
-  "implementing": 1,
+  "audited": 255,
+  "implementing": 2,
   "integrated": 67,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -1623,12 +1625,12 @@
   "MED-014": {
    "attempts": 0,
    "branch": "feature/med-014",
-   "branch_sha": null,
+   "branch_sha": "0f694e45ec38dc9613fc6fe566dcee3ac567d2ab",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "MIDI-001": {
    "attempts": 0,
@@ -2322,13 +2324,13 @@
   },
   "PERF-014": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/perf-014",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "PRE-001": {
    "attempts": 0,
@@ -2652,13 +2654,13 @@
   },
   "REC-003": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/rec-003",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "REC-004": {
    "attempts": 0,
@@ -3923,5 +3925,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T19:36:59Z"
+ "updated": "2026-11-13T19:57:04Z"
 }
