@@ -39,6 +39,8 @@ struct SettingsView: View {
     /// SHOW-001: the show (nil hides the Show row) and Add Current Scene.
     var show: ShowCoordinator?
     var addCurrentScene: () -> Void = {}
+    /// FILE-010: the files Clear Caches must keep (absolute paths).
+    var cacheFilesInUse: @MainActor () -> Set<String> = { () -> Set<String> in [] }
     /// UIX-001: opens the guided first scene (nil hides the row, e.g. in previews).
     var openGuide: (() -> Void)?
     @Environment(\.dismiss) private var dismiss
@@ -201,7 +203,7 @@ struct SettingsView: View {
                     }
                 }
                 Section {
-                    NavigationLink("Storage") { StorageUsageView() }   // FILE-009
+                    NavigationLink("Storage") { StorageUsageView(filesInUse: cacheFilesInUse) }   // FILE-009, FILE-010
                         .accessibilityIdentifier("storageLink")
                     NavigationLink("Licenses") { LicensesView() }
                         .accessibilityIdentifier("licensesLink")

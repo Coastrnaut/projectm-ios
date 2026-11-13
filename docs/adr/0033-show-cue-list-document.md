@@ -56,6 +56,30 @@ transition overrides (SHOW-004), hold and skip (SHOW-005), notes (SHOW-012), OSC
 - **Photo and video**: the app stores one photo and one video (MED-001, MED-002), referenced by store
   ID; a cue whose photo was replaced shows the current one with a notice until stores keep several.
 
+## Amendment 2026-11-13 (SCN-003, duplicate and rename)
+
+Decided under the owner's standing approval (owner rule 4); specs/074-scn-003-scene-duplicate-and-rename.
+No default is overridden.
+
+- **Actions.** Settings → Show offers, per cue, Duplicate Scene (`ShowStore.duplicateScene`: the copy
+  under a new scene ID is written whole, never over an existing file, then a cue "<label> copy" is
+  inserted right after its source with `ShowCueList.insert(after:)` and the show saved) and Rename
+  Scene… (`ShowStore.renameScene`: the scene file is rewritten whole under the same ID; `show.json` is
+  not touched). SHOW-001's Rename… stays the cue label. Neither applies anything or moves the position.
+  A full show (256 cues) or an unreadable scene is refused before any file is written.
+- **References.** Cue → scene by ID: a rename keeps every cue's reference (all cues showing a scene see
+  its new name); a duplicate leaves existing cues on the original. Deleting the original's last cue
+  removes only its file (decision 3's cleanup); the copy is independent.
+- **Media.** Scenes share the stored photo and video by store ID; nothing is copied and nothing is
+  counted in a file. `ShowStore.referencedMediaIDs()` reads the stored scenes and lists every photo and
+  video ID they name. Removing a scene file never deletes media. Obligations for later rows: FILE-010
+  (cache cleanup) never deletes stored photos or videos; FILE-011 (erase) consults
+  `referencedMediaIDs()` (and the library's equivalent) before deleting media a remaining scene names.
+  Replacing the stored photo or video (MED-001-R6) is unchanged: every scene naming the old one shows
+  the "no longer stored" notice.
+- **Editor.** A row whose scene name differs from its label shows "Scene: <name>", and VoiceOver
+  appends ", scene <name>" to the value.
+
 ## Consequences
 
 - Deterministic stepping is provable by unit tests on any platform (`ShowAcceptanceTests`,
