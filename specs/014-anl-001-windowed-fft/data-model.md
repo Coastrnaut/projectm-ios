@@ -54,8 +54,8 @@ at bin 0. Relation to the raw DFT: `m[k] = |X[k]|·4/N` (0 < k < N/2), `|X[k]|·
 - `binCount = N/2 + 1`
 - `binWidth(sampleRate:) = R/N`
 - `frequency(ofBin: k, sampleRate:) = k·R/N`
-- `nearestBin(toFrequency: f, sampleRate:) = clamp(round(f·N/R), 0, N/2)` (ties away from zero, like
-  the catalog's `nearestBin`)
+- `nearestBin(toFrequency: f, sampleRate:) = clamp(floor(f·N/R + 0.5), 0, N/2)` (half up, like the
+  catalog's `nearestBin`)
 
 ## Analysis tap (AudioCore, `NormalizedPCMRing`)
 

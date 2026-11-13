@@ -150,9 +150,10 @@ hiding real bugs (a wrong twiddle or scale gives errors of order 1e-1).
 
 **Decision**: `process`/`nextFrame` use only preallocated pointers; no Array, closure capture or
 class allocation in the per-frame path. Evidence: (1) code review of the per-frame path; (2) a
-benchmark executable `AnalysisBench` (`swift run -c release AnalysisBench`) that times every size at
-the default hop on the host and, run under Instruments' Allocations template, shows no allocations
-during the timed loop. Tests never assert timing.
+benchmark executable `AnalysisBench` (separate package `Packages/AnalysisFeatures/Bench`) that
+times every size at the default hop on the host; run with full malloc stack logging
+(`MallocStackLoggingNoCompact=1`) and read with `malloc_history -allEvents`, it shows no allocation or
+free event in the per-frame paths. Tests never assert timing.
 
 **Rationale**: transient allocations (allocate then free within a frame) cannot be detected from
 in-process heap statistics with public APIs; Instruments can, and the bench gives it a clean

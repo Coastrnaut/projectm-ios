@@ -34,6 +34,7 @@ public final class SpectrumStream {            // not Sendable: confined to one 
     public init(configuration: SpectrumConfiguration, backend: SpectrumBackend = .automatic,
                 clock: @escaping @Sendable () -> UInt64 = { MonotonicClock.nowNanoseconds() })
     public private(set) var configuration: SpectrumConfiguration
+    public var resolvedBackend: SpectrumBackend { get }
     public var bufferedSamples: Int { get }
     public func setConfiguration(_: SpectrumConfiguration)      // no allocation, keeps FIFO
     public func reset()

@@ -85,11 +85,11 @@ Packages/AnalysisFeatures/
     FFTSize.swift  SpectrumConfiguration.swift  HannWindow.swift
     PortableRealFFT.swift  AcceleratedRealFFT.swift
     SpectrumAnalyzer.swift  SpectrumStream.swift  SpectrumMath.swift
-  Sources/AnalysisBench/main.swift
   Tests/AnalysisFeaturesTests/
-    FFTSizeTests.swift  SpectrumAnalyzerTests.swift  BackendAgreementTests.swift
-    ReferenceDFTTests.swift  FixtureAcceptanceTests.swift  SpectrumStreamTests.swift
-    TestSupport.swift
+    FFTSizeTests.swift  SpectrumAnalyzerTests.swift  BackendAgreementTests.swift (with the
+    reference-DFT test)  FixtureAcceptanceTests.swift  SpectrumStreamTests.swift  TestSupport.swift
+  Bench/Package.swift  Bench/Sources/AnalysisBench/main.swift   (separate package: an executable
+    target in AnalysisFeatures would take the test action off its `AnalysisFeatures` scheme)
 Packages/AudioCore/Sources/AudioCore/NormalizedPCMReader.swift   (analysis tap)
 Packages/AudioCore/Tests/AudioCoreTests/AnalysisTapTests.swift
 .github/workflows/ios-ci.yml   (AnalysisFeatures in the five package loops)

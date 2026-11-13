@@ -36,12 +36,15 @@ for p in CaptureKit CaptureUI Diagnostics; do swift test --package-path Packages
 ## 4. CPU per frame (reported, never asserted)
 
 ```bash
-swift run -c release --package-path Packages/AnalysisFeatures AnalysisBench
+swift run -c release --package-path Packages/AnalysisFeatures/Bench AnalysisBench
 ```
 
-Prints, per size and backend, nanoseconds per frame and the share of real time at the default hop
-(44.1 kHz). Under Instruments (`xcrun xctrace record --template Allocations --launch -- <bench>`), the
-timed loop shows no allocations.
+Prints, per size and backend, nanoseconds per frame and the share of one core at the default hop
+(44.1 kHz), plus the streaming path at 2,048. Allocation check: run the bench with
+`MallocStackLoggingNoCompact=1 <bench> --loop-seconds 8` and, while it runs,
+`malloc_history <pid> -allEvents`; no ALLOC or FREE event has `magnitudes(of`, `rawMagnitudes`,
+`nextFrame` or `append(` in its stack. (Instruments could not attach to the bench on the build Mac,
+2026-11-13.)
 
 ## 5. Repository gates
 
