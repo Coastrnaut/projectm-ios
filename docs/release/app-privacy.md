@@ -25,6 +25,15 @@ the label stays **Data Not Collected**. The owner confirms this when the in-app 
 in App Store Connect (T242). Apple counts data as "collected" only when it leaves the device, and
 nothing does.
 
+CAM-001 (2026-11-13; `specs/033-cam-001-rear-camera-layer`, privacy review in its spec): the Camera
+visual adds the camera permission (`NSCameraUsageDescription`). Camera pictures are used only on the
+device, only while the Camera visual is on screen, and are never recorded, stored, sent or
+analysed, so nothing is collected: the answers stay **No** and the label stays **Data Not
+Collected**. Apple treats data processed only on the device as not collected. The owner reviews
+the answers in App Store Connect when a version with the Camera visual is submitted; this note only
+documents them. The camera path adds no required-reason API (AVFoundation capture and CoreVideo
+are not in Apple's list); `check_privacy_manifest.py` on the next Release build confirms it.
+
 ## Privacy manifest (`Apps/projectM-iOS/PrivacyInfo.xcprivacy`)
 
 - `NSPrivacyTracking`: false; `NSPrivacyTrackingDomains`: empty; `NSPrivacyCollectedDataTypes`: empty.
