@@ -8,9 +8,12 @@
 // Every other key belongs to the caller and is returned untouched as the manifest bytes.
 //
 // Reading checks, in order: the ZIP (StoredZipReader, with limits that give the manifest its own
-// size limit); a `manifest.json` entry; format name; version (newer → `newerVersion`, so an old
-// app can say "update the app"); the file list (safe unique paths, lowercase SHA-256); every
-// listed file present with the listed length and SHA-256; no entry that is not listed.
+// size limit, and every entry's CRC-32); a `manifest.json` entry; format name; version (newer →
+// `newerVersion`, so an old app can say "update the app"); the file list; per record in manifest
+// order: safe path, well-formed digest and size (`invalidRecord`, FILE-002), unique, present, the
+// listed length, then the SHA-256 (hashed in place, no copy); no entry that is not listed. Every
+// per-entry refusal names the entry. Checksums give integrity, not authenticity: a file changed
+// together with its record and CRC-32 is not detected (FILE-002-R7, ADR-0029).
 import Foundation
 
 public struct PortableFileRecord: Codable, Sendable, Equatable {
@@ -60,6 +63,8 @@ public enum PortableArchiveError: Error, Equatable, Sendable {
     case lengthMismatch(String)
     case checksumMismatch(String)
     case unsafePath(String)
+    /// The record's digest is not 64 lowercase hex characters, or its size is negative (FILE-002-R4).
+    case invalidRecord(String)
 
     public var message: String {
         switch self {
@@ -71,7 +76,9 @@ public enum PortableArchiveError: Error, Equatable, Sendable {
         case .unlistedFile(let path): return "\(path) in the archive is not listed in its manifest."
         case .missingFile(let path): return "\(path) is listed in the manifest but missing from the archive."
         case .duplicateListing(let path): return "The manifest lists \(path) more than once."
-        case .lengthMismatch(let path), .checksumMismatch(let path): return "\(path) in the archive does not match its manifest."
+        case .lengthMismatch(let path): return "\(path) in the archive is not the size its manifest gives."
+        case .checksumMismatch(let path): return "\(path) in the archive does not match its manifest checksum."
+        case .invalidRecord(let path): return "The manifest's record for \(path) has an invalid size or checksum."
         case .unsafePath(let path): return StoredZipError.unsafePath(path).message
         }
     }
@@ -112,9 +119,7 @@ public enum PortableArchive {
         guard header.format == format else { throw PortableArchiveError.wrongFormat }
         guard header.formatVersion >= 1 else { throw PortableArchiveError.malformedManifest }
         guard header.formatVersion <= supportedVersion else { throw PortableArchiveError.newerVersion(header.formatVersion) }
-        guard let list = try? decoder.decode(FileList.self, from: manifest),
-              list.files.count <= limits.maxFiles,
-              list.files.allSatisfy({ isLowercaseHex($0.sha256, count: 64) && $0.byteCount >= 0 }) else {
+        guard let list = try? decoder.decode(FileList.self, from: manifest), list.files.count <= limits.maxFiles else {
             throw PortableArchiveError.malformedManifest
         }
         var byPath: [String: Data] = [:]
@@ -123,6 +128,7 @@ public enum PortableArchive {
         var files: [String: Data] = [:]
         for record in list.files {
             guard ArchivePath.isSafe(record.path), record.path != manifestPath else { throw PortableArchiveError.unsafePath(record.path) }
+            guard isLowercaseHex(record.sha256, count: 64), record.byteCount >= 0 else { throw PortableArchiveError.invalidRecord(record.path) }
             guard listed.insert(ArchivePath.collisionKey(record.path)).inserted else { throw PortableArchiveError.duplicateListing(record.path) }
             guard let bytes = byPath[record.path] else { throw PortableArchiveError.missingFile(record.path) }
             guard bytes.count == record.byteCount else { throw PortableArchiveError.lengthMismatch(record.path) }

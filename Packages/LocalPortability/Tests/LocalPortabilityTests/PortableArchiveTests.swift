@@ -87,10 +87,57 @@ final class PortableArchiveTests: XCTestCase {
         assertRefused(out, .malformedManifest)
 
         let badHash = try archive([("a", "1")]) { $0.files[0].sha256 = "ABC" }
-        assertRefused(badHash, .malformedManifest)
+        assertRefused(badHash, .invalidRecord("a"))   // FILE-002-R4: named, no longer generic
 
         let zeroVersion = try archive([("a", "1")], version: 0)
         assertRefused(zeroVersion, .malformedManifest)
+    }
+
+    // FILE-002-T02: a malformed record is refused naming its entry (FILE-002-R4).
+    func testMalformedRecordsAreRefusedNamingTheEntry() throws {
+        let good = PortableSHA256.hex(Data("1".utf8))
+        let digests = [good.uppercased(), String(good.dropLast()), good + "0", String(good.dropLast()) + "g", "", String(repeating: " ", count: 64)]
+        for digest in digests {
+            assertRefused(try archive([("a", "1"), ("b", "2")]) { $0.files[1].sha256 = digest }, .invalidRecord("b"))
+        }
+        assertRefused(try archive([("a", "1"), ("b", "2")]) { $0.files[1].byteCount = -1 }, .invalidRecord("b"))
+    }
+
+    // FILE-002-T02: every per-entry message names the entry; size and checksum differ (FILE-002-R3).
+    func testPerEntryMessagesNameTheEntry() {
+        let path = "assets/clip.mov"
+        let errors: [PortableArchiveError] = [.unlistedFile(path), .missingFile(path), .duplicateListing(path), .lengthMismatch(path),
+                                              .checksumMismatch(path), .unsafePath(path), .invalidRecord(path), .zip(.checksumMismatch(path))]
+        for error in errors { XCTAssertTrue(error.message.contains(path), "\(error)") }
+        XCTAssertNotEqual(PortableArchiveError.lengthMismatch(path).message, PortableArchiveError.checksumMismatch(path).message)
+    }
+
+    // FILE-002-T09: a 4 MiB entry verifies; its last byte changed with the CRC-32 repaired is caught by
+    // the SHA-256 (FILE-002-S3).
+    func testALargeEntryVerifiesAndItsTamperIsCaught() throws {
+        let size = 4 * 1_024 * 1_024
+        var big = Data(count: size)
+        big.withUnsafeMutableBytes { (raw: UnsafeMutableRawBufferPointer) in
+            for i in 0..<size { raw[i] = UInt8(truncatingIfNeeded: i &* 31 &+ (i >> 9)) }
+        }
+        let largeLimits = PortableArchiveLimits(maxFiles: 2, maxFileBytes: size, maxManifestBytes: 8_192)
+        var out = Data()
+        let writer = PortableArchiveWriter(modified: date) { out.append($0) }
+        let record = try writer.add(path: "big.bin", data: big)
+        try writer.finish(manifest: try manifestData(Manifest(format: format, formatVersion: 1, files: [record], note: nil)))
+        let contents = try PortableArchive.read(out, format: format, supportedVersion: 1, limits: largeLimits)
+        XCTAssertEqual(contents.files["big.bin"], big)
+        XCTAssertEqual(record.byteCount, size)
+
+        var tampered = out
+        tampered[tampered.startIndex + ZipBytes.dataStart(tampered, entry: 0) + size - 1] ^= 0x01
+        XCTAssertThrowsError(try PortableArchive.read(tampered, format: format, supportedVersion: 1, limits: largeLimits)) { (error: Error) in
+            XCTAssertEqual(error as? PortableArchiveError, .zip(.checksumMismatch("big.bin")), "CRC-32 stale: the ZIP layer catches it")
+        }
+        ZipBytes.repairCRC(&tampered, entry: 0)
+        XCTAssertThrowsError(try PortableArchive.read(tampered, format: format, supportedVersion: 1, limits: largeLimits)) { (error: Error) in
+            XCTAssertEqual(error as? PortableArchiveError, .checksumMismatch("big.bin"), "CRC-32 repaired: the SHA-256 catches it")
+        }
     }
 
     func testRefusesAnotherFormat() throws {
@@ -138,7 +185,7 @@ final class PortableArchiveTests: XCTestCase {
     func testErrorsHaveWords() {
         for error in [PortableArchiveError.missingManifest, .malformedManifest, .wrongFormat, .newerVersion(2), .unlistedFile("a"),
                       .missingFile("a"), .duplicateListing("a"), .lengthMismatch("a"), .checksumMismatch("a"), .unsafePath("a"),
-                      .zip(.truncated)] {
+                      .invalidRecord("a"), .zip(.truncated)] {
             XCTAssertFalse(error.message.isEmpty, "\(error)")
         }
         XCTAssertEqual(PortableArchiveError.zip(.truncated).message, StoredZipError.truncated.message)
