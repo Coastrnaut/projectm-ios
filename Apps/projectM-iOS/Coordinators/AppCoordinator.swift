@@ -514,6 +514,14 @@ final class RendererPresetLoader: PresetLoading {
         try await renderer.setPreset(playable)
     }
 
+    /// A built-in preset's bytes, read-only, for "Duplicate to My Presets" (PRE-015-R2): Included
+    /// presets from their bundle file, pack presets from PresetArchive.bin.
+    func bundledData(for preset: IndexedPreset) throws -> Data {
+        guard preset.source != PresetLibrary.userSource, let resources = Bundle.main.resourceURL else { throw CocoaError(.featureUnsupported) }
+        if preset.isIncluded { return try Data(contentsOf: resources.appendingPathComponent(preset.path)) }
+        return try packArchive(resources).contents(of: preset.id)
+    }
+
     /// SC-104: hands upcoming presets (with their archive data) to the renderer's warm-up.
     func prewarm(_ presets: [IndexedPreset]) {
         guard let renderer, let resources = Bundle.main.resourceURL else { return }

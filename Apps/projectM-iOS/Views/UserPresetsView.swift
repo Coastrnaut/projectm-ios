@@ -8,6 +8,10 @@
 // * Playable presets are ordinary preset rows: tap to play (My Presets becomes the scope), star,
 //   add to a collection; plus Information and Remove.
 // * Presets waiting for their check and quarantined files are listed apart and cannot be played.
+// * PRE-015 (specs/010-pre-015-user-preset-duplication): playable presets offer Edit; copies of
+//   locked-pack presets are listed under "Needs the full library" while the library is not
+//   unlocked (tap: the purchase sheet; Information; Remove; R8); an edit dropped because the app
+//   closed during its check is reported once (R13). Information shows a copy's origin (US4).
 import PresetLibrary
 import SwiftUI
 import UniformTypeIdentifiers
@@ -46,6 +50,12 @@ struct UserPresetsView: View {
                     Button("Dismiss") { userPresets.dismissNotice() }
                 }
             }
+            if let notice = userPresets.editNotice {
+                Section {
+                    Text(notice).accessibilityIdentifier("editNotice")
+                    Button("Dismiss") { userPresets.dismissEditNotice() }
+                }
+            }
             if userPresets.isImporting {
                 HStack(spacing: 12) {
                     ProgressView()
@@ -66,6 +76,37 @@ struct UserPresetsView: View {
                         onChoose(row.indexed, .user)
                     }
                 }
+            }
+            if !userPresets.needsUnlock.isEmpty {
+                Section {
+                    ForEach(userPresets.needsUnlock) { preset in
+                        Button { userPresets.chooseHeld(preset) } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(preset.name).foregroundStyle(.primary)
+                                    Text(preset.duplicateOf.map(UserPresetsCoordinator.originText) ?? "")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Image(systemName: "lock.fill").foregroundStyle(.secondary)
+                            }
+                        }
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(UserPresetsCoordinator.heldLabel(name: preset.name))
+                        .accessibilityIdentifier("heldPreset:\(preset.name)")
+                        .accessibilityAction(named: "Information") { showingInfo = preset }
+                        .accessibilityAction(named: "Remove from My Presets") { removing = preset }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button { removing = preset } label: { Label("Remove", systemImage: "trash") }.tint(.red)
+                            Button { showingInfo = preset } label: { Label("Info", systemImage: "info.circle") }
+                        }
+                    }
+                } header: {
+                    Text("Needs the full library")
+                } footer: {
+                    Text("Copies of presets from the full library play again when it is unlocked. Nothing is deleted.")
+                }
+                .accessibilityIdentifier("needsUnlockSection")
             }
             if !userPresets.pending.isEmpty {
                 Section(UserPresetText.pending) {
@@ -213,12 +254,31 @@ struct UserPresetInfoView: View {
                     row("Name", preset.name)
                     row("File name", preset.originalFileName)
                     row("Size", UserPresetsCoordinator.byteCountText(preset.byteCount))
-                    row("Imported", preset.importedAt.formatted(date: .abbreviated, time: .shortened))
+                    row(preset.duplicateOf == nil ? "Imported" : "Copied", preset.importedAt.formatted(date: .abbreviated, time: .shortened))
+                }
+                if let modified = preset.modifiedAt {
+                    Section("Edited") {
+                        row("Last saved", modified.formatted(date: .abbreviated, time: .shortened))
+                    }
+                }
+                if let origin = preset.duplicateOf {
+                    // PRE-015 US4: where the copy came from, and the pack's own statement.
+                    Section("Copied from") {
+                        Text(UserPresetsCoordinator.originText(origin))
+                            .accessibilityIdentifier("presetOrigin")
+                        row("Pack's statement", origin.licenseStatement.isEmpty ? "None" : origin.licenseStatement)
+                        Text(UserPresetsCoordinator.duplicateRightsText)
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 Section("Author and license") {
-                    row("Author", preset.author.isEmpty ? "Unknown" : "\(preset.author) (from the file name)")
-                    Text(PresetLicenseMetadata.rightsText)
-                        .accessibilityIdentifier("presetRights")
+                    if preset.duplicateOf != nil {
+                        row("Author", preset.author.isEmpty ? "Unknown" : preset.author)
+                    } else {
+                        row("Author", preset.author.isEmpty ? "Unknown" : "\(preset.author) (from the file name)")
+                        Text(PresetLicenseMetadata.rightsText)
+                            .accessibilityIdentifier("presetRights")
+                    }
                     if preset.license.linesFound.isEmpty {
                         Text(PresetLicenseMetadata.noLicenseText)
                             .foregroundStyle(.secondary)

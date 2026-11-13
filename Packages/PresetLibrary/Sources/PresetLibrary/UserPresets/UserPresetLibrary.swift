@@ -19,6 +19,16 @@
 //      preset is on disk; it is removed when that step ends. A record found at `load()` means
 //      the app ended inside the step: the preset is quarantined and never tried again (R17, R18).
 //   4. One trial at a time.
+//
+// PRE-015 (specs/010-pre-015-user-preset-duplication) adds:
+//   bundled ──duplicate──▶ pending ──(the same trial)──▶ playable | quarantined
+//   playable ──edit──▶ playable with the new text, only after the new text passed the checks
+//   copy of a locked pack, entitlement absent ──▶ awaiting unlock (listed, never handed out)
+// Invariants (tested):
+//   5. `data(for:)` and `editorText(for:)` return nothing for a copy awaiting the unlock (R8).
+//   6. A refused or failing edit changes no stored byte; an edit's text is tried before it is
+//      stored, with `edit.json` on disk during the trial. That record found at `load()` means
+//      the app ended during the check: the edit is dropped, the preset stays as it was (R13).
 import Foundation
 
 /// What an import is compared against. Supplied by the app once the built-in library is loaded.
@@ -55,8 +65,17 @@ public struct UserPresetSnapshot: Sendable, Equatable {
     public var pending: [UserPreset]
     /// Newest first.
     public var quarantined: [UserPreset]
+    /// Copies of locked-pack presets while the full library is not unlocked (PRE-015-R8);
+    /// alphabetical. Neither playable nor editable.
+    public var needsUnlock: [UserPreset]
     public var availability: UserPresetStore.Availability
     public var notice: UserPresetStore.LoadNotice
+
+    public init(playable: [UserPreset], pending: [UserPreset], quarantined: [UserPreset], needsUnlock: [UserPreset] = [],
+                availability: UserPresetStore.Availability, notice: UserPresetStore.LoadNotice) {
+        self.playable = playable; self.pending = pending; self.quarantined = quarantined; self.needsUnlock = needsUnlock
+        self.availability = availability; self.notice = notice
+    }
 
     public static let empty = UserPresetSnapshot(playable: [], pending: [], quarantined: [], availability: .available, notice: .none)
 }
@@ -73,6 +92,10 @@ public actor UserPresetLibrary {
     private var trialInFlight = false
     /// Presets a leftover record names whose quarantine could not be saved: unplayable anyway.
     private var held: Set<String> = []
+    /// The full-library entitlement (PRE-015-R8). Copies of locked packs wait for it.
+    private var libraryUnlocked = false
+    /// Names of presets whose edit was dropped because the app ended during its check (R13).
+    private var editNotices: [String] = []
 
     public init(directory: URL,
                 now: @escaping @Sendable () -> Date = { Date() },
@@ -96,6 +119,12 @@ public actor UserPresetLibrary {
             for record in created.leftoverRecords() {
                 guard let preset = created.preset(id: record.presetID) else {
                     created.clearRecord(record.phase)
+                    continue
+                }
+                if record.phase == .editCheck {
+                    // The stored text never changed: only the unchecked edit is dropped (R13).
+                    editNotices.append(preset.name)
+                    created.clearRecord(.editCheck)
                     continue
                 }
                 if preset.state == .quarantined {
@@ -122,23 +151,46 @@ public actor UserPresetLibrary {
     public var snapshot: UserPresetSnapshot {
         guard let store else { return .empty }
         let visible = store.presets.filter { !held.contains($0.id) }
-        let playable = visible.filter { $0.state == .playable }.sorted {
+        let waiting = visible.filter { $0.state != .quarantined && awaitsUnlock($0) }
+        let usable = visible.filter { !awaitsUnlock($0) }
+        return UserPresetSnapshot(playable: Self.alphabetical(usable.filter { $0.state == .playable }),
+                                  pending: usable.filter { $0.state == .pending },
+                                  quarantined: visible.filter { $0.state == .quarantined }.reversed(),
+                                  needsUnlock: Self.alphabetical(waiting),
+                                  availability: store.availability, notice: store.loadNotice)
+    }
+
+    private static func alphabetical(_ presets: [UserPreset]) -> [UserPreset] {
+        presets.sorted {
             switch $0.name.localizedStandardCompare($1.name) {
             case .orderedAscending: return true
             case .orderedDescending: return false
             case .orderedSame: return $0.id < $1.id
             }
         }
-        return UserPresetSnapshot(playable: playable, pending: visible.filter { $0.state == .pending },
-                                  quarantined: visible.filter { $0.state == .quarantined }.reversed(),
-                                  availability: store.availability, notice: store.loadNotice)
     }
 
-    /// The stored bytes of a playable preset, and of nothing else (R20).
+    /// A copy of a locked-pack preset while the full library is not unlocked (PRE-015-R8).
+    private func awaitsUnlock(_ preset: UserPreset) -> Bool {
+        preset.duplicateOf?.requiresLibraryUnlock == true && !libraryUnlocked
+    }
+
+    /// The stored bytes of a playable preset, and of nothing else (R20; PRE-015-R8).
     public func data(for id: String) -> Data? {
         guard let store = loaded(), !held.contains(id), let preset = store.preset(id: id), preset.state == .playable,
-              let data = store.contents(of: id), data.count == preset.byteCount else { return nil }
+              !awaitsUnlock(preset), let data = store.contents(of: id), data.count == preset.byteCount else { return nil }
         return data
+    }
+
+    /// The full-library entitlement changed (PRE-015-R8). Copies of locked packs are held while
+    /// it is absent and come back when it returns; nothing is deleted.
+    public func setLibraryUnlocked(_ unlocked: Bool) { libraryUnlocked = unlocked }
+
+    /// Names of presets whose edit was dropped because the app ended while checking it (R13).
+    /// Each name is returned once.
+    public func takeEditNotices() -> [String] {
+        defer { editNotices = [] }
+        return editNotices
     }
 
     // MARK: - Import
@@ -218,7 +270,7 @@ public actor UserPresetLibrary {
     /// Tries every waiting preset, oldest first, until one cannot be tried now.
     public func runPendingTrials() async {
         guard let store = loaded() else { return }
-        for id in store.presets.filter({ $0.state == .pending }).map(\.id) {
+        for id in store.presets.filter({ $0.state == .pending && !awaitsUnlock($0) }).map(\.id) {
             await runTrial(of: id)
             if store.preset(id: id)?.state == .pending { break }
         }
@@ -226,7 +278,7 @@ public actor UserPresetLibrary {
 
     private func runTrial(of id: String) async {
         guard let store, let trial, !trialInFlight, !held.contains(id),
-              let preset = store.preset(id: id), preset.state == .pending,
+              let preset = store.preset(id: id), preset.state == .pending, !awaitsUnlock(preset),
               let data = store.contents(of: id), data.count == preset.byteCount else { return }
         // The record must be on disk before an engine sees the preset; without it, no trial.
         guard (try? store.writeRecord(.trial, presetID: id)) != nil else { return }
@@ -306,6 +358,149 @@ public actor UserPresetLibrary {
         } catch {
             return false
         }
+    }
+
+    // MARK: - Duplicating a built-in preset (PRE-015-R2-R7)
+
+    /// Copies a built-in preset into the library. `contents` are the bytes the app read from its
+    /// bundle or archive; they must be the preset the index describes. Never throws.
+    public func duplicate(_ source: BundledPresetSource, contents: Data) async -> PresetDuplicateOutcome {
+        guard let store = loaded() else { return .refused(.libraryUnavailable) }
+        if case .newerFormat = store.availability { return .refused(.libraryUnavailable) }
+        if source.requiresLibraryUnlock && !libraryUnlocked { return .refused(.locked) }
+        let bytes = [UInt8](contents)
+        guard !bytes.isEmpty, ContentHash.gitBlobSHA1Hex(bytes) == source.blobHash.lowercased() else {
+            return .refused(.sourceMismatch)
+        }
+        let blobHash = source.blobHash.lowercased()
+        if context.blockedHashes.contains(blobHash) { return .refused(.blocked) }
+        let sha256 = ContentHash.sha256Hex(bytes)
+        if let existing = store.preset(sha256: sha256) {
+            if existing.state == .quarantined {
+                return .refused(.alreadyInQuarantine(name: existing.name, reason: existing.quarantine?.message ?? ""))
+            }
+            return .refused(.alreadyCopied(name: existing.name))
+        }
+        guard bytes.count <= PresetImportLimits.maxFileBytes else { return .refused(.invalid(reason: PresetImportRefusal.tooLarge.message)) }
+        let validation = MilkdropPresetValidator.validate(bytes, knownTextures: context.knownTextures)
+        if let rejection = validation.rejection { return .refused(.invalid(reason: rejection.message)) }
+        let quarantinedCount = store.presets.filter { $0.state == .quarantined }.count
+        guard store.presets.count - quarantinedCount < PresetImportLimits.maxUserPresets else { return .refused(.libraryFull) }
+
+        let name = UserPresetName.copyName(of: UserPresetName.cleanedName(source.name), taken: store.presets.map(\.name))
+        let origin = PresetDuplicateOrigin(
+            presetID: String(source.id.prefix(PresetDuplicateOrigin.maxIDCharacters)),
+            name: String(UserPresetName.cleanedName(source.name).prefix(PresetImportLimits.maxNameCharacters)).isEmpty
+                ? "Preset" : UserPresetName.cleanedName(source.name),
+            packID: String(source.packID.prefix(PresetImportLimits.maxNameCharacters)),
+            packTitle: String(source.packTitle.prefix(PresetImportLimits.maxNameCharacters)),
+            sha256: sha256, blobHash: blobHash, licenseStatement: source.licenseStatement,
+            requiresLibraryUnlock: source.requiresLibraryUnlock)
+        let preset = UserPreset(id: UserPreset.idPrefix + makeID(), name: name,
+                                author: UserPresetName.cleanedName(source.author),
+                                originalFileName: UserPresetName.cleanedFileName(source.fileName), sha256: sha256, blobHash: blobHash,
+                                byteCount: bytes.count, importedAt: now(), state: .pending, warnings: validation.warnings,
+                                license: PresetLicenseMetadata(origin: .bundledDuplicate, rightsVerified: false, authorFromFileName: false,
+                                                               linesFound: validation.licenseLines),
+                                duplicateOf: origin)
+        do {
+            try store.add(preset, contents: contents)
+        } catch {
+            return .refused(.saveFailed)
+        }
+        await runTrial(of: preset.id)
+        guard let current = store.preset(id: preset.id) else { return .waiting(preset) }
+        switch current.state {
+        case .playable: return .added(current)
+        case .quarantined: return .quarantined(current)
+        case .pending: return .waiting(current)
+        }
+    }
+
+    // MARK: - Editing (PRE-015-R9-R15)
+
+    /// The current text of a preset the user can edit: playable, not awaiting the unlock.
+    public func editorText(for id: String) -> PresetEditorText? {
+        guard let preset = loaded()?.preset(id: id), let data = data(for: id) else { return nil }
+        return PresetEditorText.decode(data, sha256: preset.sha256)
+    }
+
+    /// Saves a new name and, when `text` is not nil, a new text. `expectedSHA256` is the text the
+    /// editor opened. A new text is checked statically and tried on the off-screen engine
+    /// before it replaces the stored one; nothing is stored otherwise. Never throws.
+    public func edit(_ id: String, name: String, text: String?, expectedSHA256: String) async -> PresetEditOutcome {
+        guard let store = loaded() else { return .refused(.libraryUnavailable) }
+        if case .newerFormat = store.availability { return .refused(.libraryUnavailable) }
+        guard let preset = store.preset(id: id), preset.state == .playable, !held.contains(id) else { return .refused(.notEditable) }
+        if awaitsUnlock(preset) { return .refused(.needsUnlock) }
+        guard preset.sha256 == expectedSHA256 else { return .refused(.changedMeanwhile) }
+        let newName = UserPresetName.cleanedName(name)
+        guard !newName.isEmpty else { return .refused(.emptyName) }
+
+        var newBytes: [UInt8]?
+        if let text {
+            guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return .refused(.emptyText) }
+            let bytes = Array(text.utf8)
+            guard bytes.count <= PresetImportLimits.maxFileBytes else { return .refused(.tooLarge) }
+            if let stored = store.contents(of: id), [UInt8](stored) == bytes {
+                newBytes = nil
+            } else {
+                newBytes = bytes
+            }
+        }
+        guard let bytes = newBytes else {
+            guard newName != preset.name else { return .unchanged }
+            let stamp = now()
+            do {
+                try store.update(id) { $0.name = newName; $0.modifiedAt = stamp }   // a rename is not tried (R15)
+            } catch {
+                return .refused(.saveFailed)
+            }
+            return store.preset(id: id).map { .saved($0) } ?? .refused(.changedMeanwhile)
+        }
+
+        let blobHash = ContentHash.gitBlobSHA1Hex(bytes)
+        let sha256 = ContentHash.sha256Hex(bytes)
+        if context.blockedHashes.contains(blobHash) { return .refused(.blocked) }
+        if let builtIn = context.builtIn[blobHash], blobHash != preset.duplicateOf?.blobHash {
+            return .refused(.sameAsBuiltIn(name: builtIn.name, pack: builtIn.pack))
+        }
+        if let other = store.preset(sha256: sha256), other.id != id {
+            return .refused(.sameAsUserPreset(name: other.state == .quarantined ? other.originalFileName : other.name))
+        }
+        let validation = MilkdropPresetValidator.validate(bytes, knownTextures: context.knownTextures)
+        if let rejection = validation.rejection { return .refused(.invalid(reason: rejection.message)) }
+        guard let trial, !trialInFlight else { return .refused(.checkUnavailable) }
+        // The record must be on disk before an engine sees the new text (R13).
+        guard (try? store.writeRecord(.editCheck, presetID: id, candidateSHA256: sha256)) != nil else { return .refused(.saveFailed) }
+        trialInFlight = true
+        let result = await trial.run(Data(bytes), timeout: PresetImportLimits.trialTimeout)
+        trialInFlight = false
+        defer { store.clearRecord(.editCheck) }
+
+        guard let current = store.preset(id: id), current.sha256 == expectedSHA256, current.state == .playable,
+              !held.contains(id) else { return .refused(.changedMeanwhile) }
+        switch result {
+        case .passed: break
+        case .failed(let message): return .refused(.checkFailed(message: Self.oneLine(message)))
+        case .timedOut: return .refused(.checkTimedOut)
+        case .unavailable: return .refused(.checkUnavailable)
+        }
+        var updated = current
+        updated.name = newName
+        updated.sha256 = sha256
+        updated.blobHash = blobHash
+        updated.byteCount = bytes.count
+        updated.warnings = validation.warnings
+        updated.license.linesFound = validation.licenseLines
+        updated.provenOnScreen = false
+        updated.modifiedAt = now()
+        do {
+            try store.replaceContents(id, with: updated, contents: Data(bytes))
+        } catch {
+            return .refused(.saveFailed)
+        }
+        return .saved(updated)
     }
 
     // MARK: - Helpers

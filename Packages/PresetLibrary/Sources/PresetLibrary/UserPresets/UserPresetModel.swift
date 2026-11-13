@@ -108,7 +108,11 @@ public struct PresetImportWarning: Codable, Sendable, Hashable {
 /// What is known about the rights to an imported preset (R12). Nothing here is ever guessed
 /// except the author, which is marked as a guess.
 public struct PresetLicenseMetadata: Codable, Sendable, Hashable {
-    public enum Origin: String, Codable, Sendable { case userImport }
+    public enum Origin: String, Codable, Sendable {
+        case userImport
+        /// A copy of a preset built into the app (PRE-015-R4).
+        case bundledDuplicate
+    }
 
     public var origin: Origin
     /// Always false in this feature: the app verifies nothing.
@@ -136,7 +140,45 @@ public enum UserPresetState: String, Codable, Sendable {
     case quarantined
 }
 
-/// One imported file (data-model.md).
+/// The built-in preset a user preset was copied from (PRE-015-R4; data-model.md). Recorded at
+/// copy time and never changed; the pack's license statement is carried verbatim.
+public struct PresetDuplicateOrigin: Codable, Sendable, Hashable {
+    public static let maxIDCharacters = 300
+    public static let maxLicenseCharacters = 1_000
+
+    /// The bundled preset's id (`<source>/<path>`).
+    public var presetID: String
+    public var name: String
+    public var packID: String
+    public var packTitle: String
+    /// Hashes of the bundled bytes at copy time; `blobHash` equals the index's hash.
+    public var sha256: String
+    public var blobHash: String
+    /// The pack's license statement as the app's pack metadata states it.
+    public var licenseStatement: String
+    /// The pack needs the full-library unlock (PRE-015-R8).
+    public var requiresLibraryUnlock: Bool
+
+    public init(presetID: String, name: String, packID: String, packTitle: String, sha256: String, blobHash: String,
+                licenseStatement: String, requiresLibraryUnlock: Bool) {
+        self.presetID = presetID; self.name = name; self.packID = packID; self.packTitle = packTitle
+        self.sha256 = sha256; self.blobHash = blobHash
+        self.licenseStatement = String(licenseStatement.prefix(Self.maxLicenseCharacters))
+        self.requiresLibraryUnlock = requiresLibraryUnlock
+    }
+
+    var isWellFormed: Bool {
+        !presetID.isEmpty && presetID.count <= Self.maxIDCharacters
+            && !name.isEmpty && name.count <= PresetImportLimits.maxNameCharacters
+            && !packID.isEmpty && packID.count <= PresetImportLimits.maxNameCharacters
+            && packTitle.count <= PresetImportLimits.maxNameCharacters
+            && ContentHash.isHex(sha256, count: 64) && ContentHash.isHex(blobHash, count: 40)
+            && licenseStatement.count <= Self.maxLicenseCharacters
+    }
+}
+
+/// One user preset: an imported file (PRE-012) or a copy of a built-in preset (PRE-015)
+/// (data-model.md).
 public struct UserPreset: Codable, Sendable, Hashable, Identifiable {
     public static let idPrefix = "user/"
 
@@ -156,14 +198,21 @@ public struct UserPreset: Codable, Sendable, Hashable, Identifiable {
     public var quarantine: PresetQuarantineReason?
     public var warnings: [PresetImportWarning]
     public var license: PresetLicenseMetadata
+    /// Set for a copy of a built-in preset (PRE-015); present exactly when the license origin is
+    /// `bundledDuplicate`. Absent in version-1 records.
+    public var duplicateOf: PresetDuplicateOrigin?
+    /// When the text or the name was last saved from the editor (PRE-015-R14).
+    public var modifiedAt: Date?
 
     public init(id: String, name: String, author: String, originalFileName: String, sha256: String, blobHash: String,
                 byteCount: Int, importedAt: Date, state: UserPresetState, provenOnScreen: Bool = false,
-                quarantine: PresetQuarantineReason? = nil, warnings: [PresetImportWarning] = [], license: PresetLicenseMetadata) {
+                quarantine: PresetQuarantineReason? = nil, warnings: [PresetImportWarning] = [], license: PresetLicenseMetadata,
+                duplicateOf: PresetDuplicateOrigin? = nil, modifiedAt: Date? = nil) {
         self.id = id; self.name = name; self.author = author; self.originalFileName = originalFileName
         self.sha256 = sha256; self.blobHash = blobHash; self.byteCount = byteCount; self.importedAt = importedAt
         self.state = state; self.provenOnScreen = provenOnScreen; self.quarantine = quarantine
         self.warnings = warnings; self.license = license
+        self.duplicateOf = duplicateOf; self.modifiedAt = modifiedAt
     }
 
     /// The stored copy's file name.
@@ -186,6 +235,8 @@ public struct UserPreset: Codable, Sendable, Hashable, Identifiable {
             && (state == .quarantined) == (quarantine != nil)
             && warnings.count <= PresetImportLimits.maxWarnings
             && license.linesFound.count <= PresetImportLimits.maxLicenseLines
+            && (license.origin == .bundledDuplicate) == (duplicateOf != nil)
+            && (duplicateOf?.isWellFormed ?? true)
     }
 }
 
@@ -216,7 +267,7 @@ public enum UserPresetName {
         return (String(name.prefix(PresetImportLimits.maxNameCharacters)), String(author.prefix(PresetImportLimits.maxNameCharacters)))
     }
 
-    private static func clean(_ raw: String) -> String {
+    static func clean(_ raw: String) -> String {
         var out = String.UnicodeScalarView()
         for scalar in raw.unicodeScalars {
             switch scalar.properties.generalCategory {

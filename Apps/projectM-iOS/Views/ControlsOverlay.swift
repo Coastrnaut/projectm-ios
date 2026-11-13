@@ -9,9 +9,14 @@
 // AUD-006: while In-App Playback is the active source, the transport (CaptureUI's TransportBar:
 // track title, scrubber and times, Previous track, Play or Pause playback, Stop playback, Next
 // track) sits above those rows in both layouts. It is not shown for Microphone or System/App
+// track) sits above those rows in both layouts. It is not shown for Microphone or System/App
 // Capture, and it appears and hides with the rest of the controls (AUD-006-R24, R25).
+//
+// PRE-015-R1: next to the current preset's name, "Duplicate to My Presets" copies a built-in
+// preset on screen into My Presets (not shown for a user preset).
 import CaptureKit
 import CaptureUI
+import PresetLibrary
 import SwiftUI
 
 struct ControlsOverlay: View {
@@ -59,6 +64,23 @@ struct ControlsOverlay: View {
     }
 
     private var presetName: some View {
+        HStack(spacing: 8) {
+            presetTitle
+            if let current = coordinator.presets.current, current.source != PresetLibrary.userSource {
+                Button {
+                    coordinator.showControls()
+                    Task { await coordinator.userPresets.duplicate(current) }
+                } label: {
+                    Image(systemName: "plus.square.on.square")
+                }
+                .disabled(coordinator.userPresets.isDuplicating)
+                .accessibilityLabel("Duplicate to My Presets")
+                .accessibilityIdentifier("duplicateCurrent")
+            }
+        }
+    }
+
+    private var presetTitle: some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(coordinator.presets.current?.name ?? "No preset")
                 .font(.subheadline)

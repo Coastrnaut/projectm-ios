@@ -21,6 +21,11 @@ force. This feature cites them and adds to them; where it narrows how one applie
 
 ## Clarifications
 
+### Owner rulings 2026-11-12
+
+- Owner ruling 2026-11-12 ("all recommended for policy choices"): when an interruption ends while the app is in the background, or iOS never reports its end, nothing resumes by itself; the user presses Play.
+- Owner ruling 2026-11-12 ("all recommended for policy choices"): the feature keeps using `AVAudioSession.interruptionNotification`, deprecated in the iOS 27 SDK but the only notification on iOS 26; moving to the iOS 27 notifications is decided after device task T29.
+
 ### Session 2026-11-12
 
 Answered by Claude under the owner's standing approval (routine decisions delegated, no human

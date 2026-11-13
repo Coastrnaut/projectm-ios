@@ -6,9 +6,9 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 67,
+   "audited": 66,
    "implementing": 1,
-   "integrated": 19
+   "integrated": 20
   },
   "P1": {
    "audited": 149,
@@ -22,9 +22,9 @@
   }
  },
  "by_state": {
-  "audited": 304,
+  "audited": 303,
   "implementing": 1,
-  "integrated": 21
+  "integrated": 22
  },
  "device_gate": {
   "blocked": [],
@@ -228,7 +228,6 @@
    "PRE-011",
    "PRE-013",
    "PRE-014",
-   "PRE-015",
    "PRE-016",
    "PRE-017",
    "PRE-018",
@@ -340,7 +339,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "305 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
+   "304 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
   ]
  },
  "features": {
@@ -776,13 +775,13 @@
   },
   "AUD-016": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/aud-016",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/011-aud-016-reference-tone-suite",
+   "state": "implementing"
   },
   "AUTO-001": {
    "attempts": 0,
@@ -2517,12 +2516,12 @@
   "PRE-015": {
    "attempts": 0,
    "branch": "feature/pre-015",
-   "branch_sha": null,
+   "branch_sha": "f4a06e68c3fe93426838ab46cb450a25f63dd75c",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "c6cce9988587b09d1c791c173ab511ee50fb2f26",
    "priority": "P0",
    "spec_dir": "specs/010-pre-015-user-preset-duplication",
-   "state": "implementing"
+   "state": "integrated"
   },
   "PRE-016": {
    "attempts": 0,
@@ -3710,6 +3709,11 @@
    "branch": "feature/pre-012",
    "id": "PRE-012",
    "sha": "4bf9f50d1af88eaf7b40aa3523c59c9b2d8c4bf6"
+  },
+  {
+   "branch": "feature/pre-015",
+   "id": "PRE-015",
+   "sha": "c6cce9988587b09d1c791c173ab511ee50fb2f26"
   }
  ],
  "integration_branch": "autonomous/integration",
@@ -3719,5 +3723,5 @@
  "run_id": "cb545c51cf0b",
  "skipped_existing": [],
  "total": 326,
- "updated": "2026-11-13T00:04:03Z"
+ "updated": "2026-11-13T00:57:47Z"
 }

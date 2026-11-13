@@ -1072,7 +1072,9 @@ class SetupMacTests(unittest.TestCase):
     def test_restore_memory_copies_the_export_and_never_overwrites(self):
         exported = sorted(p.name for p in setup_mac.MEMORY_EXPORT.glob("*.md") if p.name != "README.md")
         self.assertIn("MEMORY.md", exported)
-        self.assertEqual(len(exported), 4)
+        # The index plus one file per memory it lists (a fixed count broke when a memory was added).
+        listed = re.findall(r"\]\(([^)]+\.md)\)", (setup_mac.MEMORY_EXPORT / "MEMORY.md").read_text())
+        self.assertEqual(sorted(listed + ["MEMORY.md"]), exported)
         with tempfile.TemporaryDirectory() as tmp:
             home = Path(tmp)
             target = setup_mac.memory_dir(setup_mac.ROOT, home)

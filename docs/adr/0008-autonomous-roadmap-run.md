@@ -15,10 +15,12 @@ dependency graph and the audit of `main` at `029d90c`.
 
 ## Decisions
 
-1. **Branches.** `main` is not changed and nothing is pushed (the run request overrides the
-   standing push approval in `CLAUDE.md` for this run). All work lands on the local branch
-   `autonomous/integration`; each feature is built on `feature/<id>` in its own worktree under
-   `.autonomous/worktrees/` and merged with a non-fast-forward merge by one integration writer.
+1. **Branches.** Features are built on `feature/<id>` in their own worktrees under
+   `.autonomous/worktrees/` and merged into `autonomous/integration` with a non-fast-forward merge
+   by one integration writer. Owner ruling 2026-11-12 ("remember to automatically push to main"):
+   once a merged feature passes its post-merge gates, `origin/main` is fast-forwarded to
+   `autonomous/integration` and CI is checked; nothing is ever force-pushed. (Until that ruling
+   the run request's "do not push" applied and `main` was untouched.)
 2. **Who executes a feature.** The orchestrator's unattended loop (`orchestrator.py run`) needs a
    logged-in Claude CLI. The CLI on this Mac is not logged in, and logging in is the owner's
    action. Until then the Claude session executes features itself: one agent per feature in that
@@ -58,7 +60,26 @@ The owner ruled: "amend FR-068 for OSC, one-folder exception, off by default".
   app's Info.plist through `project.yml`. The privacy policy and the App Store privacy answers
   are updated in the feature that first ships a listener.
 
+## Owner ruling: feature policy choices (2026-11-12)
+
+The owner ruled "all recommended for policy choices". The choices the feature agents made and
+reported as recommended stand, and each is recorded in its spec's Clarifications:
+
+- AUD-002: sample rates limited to 8 kHz to 192 kHz; the new import messages stand.
+- AUD-006: the end of a track advances to the next imported track (repeat modes are AUD-004).
+- PRE-012: imported copies of built-in presets are refused; an incomplete shader is quarantined.
+- AUD-014: no automatic resume after an interruption that ends in the background; the
+  deprecated iOS interruption notification stays until device task T29 shows otherwise.
+
+## Decision for PRE-014 (export), taken under the owner's best-judgement rule (2026-11-12)
+
+PRE-015 asked whether user copies of locked-pack presets may be exported. Decision: PRE-014
+exports a copy of a bundled preset only when its source is an Included preset; copies whose
+source is in a pack that the purchase unlocks are left out of every export, edited or not, and
+the export summary lists how many were left out and why. Exported copies keep `duplicateOf`,
+`rightsVerified = false` and the pack's statement. Reason: the purchase sells access to the
+bundled packs (ADR-0007), and an export must never become a way to hand that content on.
+
 ## Consequences
 
-- The integration branch can be reviewed and merged, or discarded, as a whole; `main` and
-  `origin` stay as they were.
+- Each integrated feature reaches `origin/main` after its post-merge gates, so CI runs on it.
