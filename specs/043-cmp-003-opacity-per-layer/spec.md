@@ -81,8 +81,9 @@ host including Linux), plus one GPU test that a fade shows the expected intermed
 
 **Acceptance Scenarios**:
 
-1. **Given** a layer at opacity 0, **When** opacity 1 is set with a 1 s linear fade, **Then** the
-   shown opacity is 0 at the first frame, rises monotonically and is exactly 1 from 1 s on.
+1. **Given** a layer at opacity 0, **When** opacity 1 is applied with a 1 s linear fade, **Then**
+   the fade starts from 0 (each frame shows the progress of the frame times summed since the
+   change), rises monotonically and is exactly 1 from the frame where 1 s has been summed on.
 2. **Given** a fade in progress at 0.4, **When** a new target is set, **Then** the next frame
    starts from 0.4 (no jump) towards the new target.
 3. **Given** any opacity, **When** a new one is set with duration 0, **Then** the next frame shows
@@ -150,7 +151,7 @@ flashing on.
 - **CMP-003-R5**: A caller MUST be able to change a layer's opacity with a duration and a curve
   (linear and ease-in-out) when applying a stack; the stack entry's opacity is the target. The fade
   MUST be driven only by the frame clock's frame durations (CMP-001-R3, clamped to 0.1 s; no wall
-  clock), start from the currently shown opacity at the first frame after the change, be monotonic
+  clock), start from the opacity shown at the last frame before the change, be monotonic
   between its ends, and reach the target exactly on the first frame whose summed frame durations
   reach the fade's duration. New layers appear at their opacity at once.
 - **CMP-003-R6**: A change during a fade MUST start from the opacity shown last (continuity); a

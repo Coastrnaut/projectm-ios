@@ -28,7 +28,7 @@ All types are in the `Compositor` target; the CPU ones build on Linux.
 |---|---|
 | `value` (read) | The opacity shown at the last `advance` (or set by `init` / immediate change) |
 | `target` (read) | Where the current segment ends |
-| `isAnimating` (read) | `value != target` while a segment runs |
+| `isAnimating` (read) | true while the current segment's elapsed time is below its duration |
 | start, duration, curve, elapsed (private) | The current segment |
 
 Transitions:

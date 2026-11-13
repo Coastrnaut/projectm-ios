@@ -42,7 +42,7 @@ CMP-002-T15 (spec CMP-003-S6).
 **Goal**: reuse, no allocation, flash safety (CMP-003-R8, R9; S4, S5).
 **Independent test**: the remaining `LayerOpacityCompositeTests`.
 
-- [ ] CMP-003-T08 [US3] Tests: an opacity-only apply calls no factory and prepares nothing (`layerPreparations`, factory calls); 60 frames of a fade at a steady size create no pictures (`pictureAllocations`); a layer at opacity 0 keeps rendering (its render count grows) and reappears at once when set to 1; an equal stack does not restart a fade; a 30 Hz 0↔1 opacity strobe (white over black, opacity flipped every 2 frames at 60 fps, 2 s, Reduce flashing on) stays within 4 transitions per 1 s window in every area and a rise per frame ≤ 0.25/60 + 1e-3 (FlashAnalysis) in `Packages/Compositor/Tests/CompositorTests/LayerOpacityCompositeTests.swift`
+- [ ] CMP-003-T08 [US3] Tests: an opacity-only apply calls no factory and prepares nothing (`layerPreparations`, factory calls); 60 frames of a fade at a steady size create no pictures (`pictureAllocations`); a layer at opacity 0 keeps rendering (its render count grows) and reappears at once when set to 1; an equal stack does not restart a fade; an opacity-only apply keeps the flash guard's history (after black frames with Reduce flashing on, a 0 → 1 jump of a white layer is held below gain 1 on its first frame; CMP-003-R9); a 30 Hz 0↔1 opacity strobe (white over black, opacity flipped every 2 frames at 60 fps, 2 s, Reduce flashing on) stays within 4 transitions per 1 s window in every area and a rise per frame ≤ 0.25/60 + 1e-3 (FlashAnalysis) in `Packages/Compositor/Tests/CompositorTests/LayerOpacityCompositeTests.swift`
 
 ## Phase 6: Polish & Cross-Cutting
 
