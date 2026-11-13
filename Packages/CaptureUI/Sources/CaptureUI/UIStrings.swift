@@ -168,6 +168,55 @@ public enum UIStrings {
         return (total / 3600, (total % 3600) / 60, total % 60)
     }
 
+    // MARK: Queue (AUD-003; specs/015-aud-003-audio-library-queue/contracts/ui-strings.md)
+    public static let queue = "Queue"
+    public static let queueHint = "Shows and edits the order of imported tracks."
+    public static let upNext = "Up Next"
+    public static let notInQueue = "Not in Queue"
+    public static let queueEmpty = "Nothing is queued. Add tracks below."
+    public static let queueFooter = "Next track and the end of a track follow this order. Removing a track from the queue keeps it in Your Audio."
+    public static let nowPlaying = "Now Playing"
+    public static let currentTrack = "Current"
+    public static let playQueue = "Play Queue"
+    public static let playNext = "Play Next"
+    public static let addToQueue = "Add to Queue"
+    public static let removeFromQueue = "Remove from Queue"
+    public static let moveUp = "Move Up"
+    public static let moveDown = "Move Down"
+    public static let clearQueue = "Clear Queue"
+    public static let clearQueueConfirm = "Clear the queue? Tracks stay in Your Audio."
+    public static let done = "Done"
+
+    /// The chooser's queue row: "Queue, 3 tracks".
+    public static func queueRowLabel(count: Int) -> String {
+        switch count {
+        case 0: return "Queue, empty"
+        case 1: return "Queue, 1 track"
+        default: return "Queue, \(count) tracks"
+        }
+    }
+
+    /// A queued track's place: "2 of 3".
+    public static func queuePosition(_ position: Int, of count: Int) -> String {
+        "\(position) of \(count)"
+    }
+
+    /// What VoiceOver reads for a queue row: "Song, 1 minute 5 seconds, 2 of 3, Now Playing".
+    public static func queueRowAccessibilityLabel(title: String, durationSeconds: Double, position: Int, count: Int,
+                                                  marker: String?) -> String {
+        var parts = [title, spokenDuration(durationSeconds), queuePosition(position, of: count)]
+        if let marker { parts.append(marker) }
+        return parts.joined(separator: ", ")
+    }
+
+    public static func queueMovedAnnouncement(title: String, position: Int, count: Int) -> String {
+        "\(title), now \(queuePosition(position, of: count))"
+    }
+
+    public static func queueAddedAnnouncement(title: String) -> String { "\(title) added to the queue" }
+    public static func playNextAnnouncement(title: String) -> String { "\(title) plays next" }
+    public static func queueRemovedAnnouncement(title: String) -> String { "\(title) removed from the queue" }
+
     // MARK: Transport (AUD-006; specs/007-aud-006-seekable-transport/contracts/ui-strings.md)
     public static let transportPlay = "Play"
     public static let transportPause = "Pause playback"

@@ -61,8 +61,10 @@ jobs:
     # review 2026-11-08 (ADR-0002 ruling 2) so it keeps the iOS 26 SDK when GitHub moves
     # macos-latest to Xcode 27, and it selects an Xcode 26. The iOS 27 path is compiled and
     # simulator-tested by the build-ios27 job below; System/App Capture is tested only on devices.
+    # 90 minutes: the autonomous roadmap run grew the package suites (CaptureKit ~80 -> 350+ tests
+    # with offline audio rendering); run 43349673457 hit the old 45-minute limit in its simulator tests.
     runs-on: macos-26
-    timeout-minutes: 45
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v5
         # The ProjectM submodule is not needed until Plan Phase C (engine build); skip it to

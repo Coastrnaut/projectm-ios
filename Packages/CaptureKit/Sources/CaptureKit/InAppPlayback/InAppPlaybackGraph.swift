@@ -162,6 +162,8 @@ final class InAppPlaybackGraph {
     /// The player's time at the last successful read in the current schedule, in track frames
     /// since the schedule's start. Used with the tap's count when the player's time cannot be read.
     private var lastReadElapsed: AVAudioFramePosition?
+    /// Track frames rendered since the last cut by schedules that `updateLooping` replaced.
+    private var deliveredBeforeSchedule: AVAudioFramePosition = 0
     /// The sample rate of the installed tap (the mixer's output), for the tap's frame count.
     private var tapSampleRate: Double = 0
     /// Whether the current schedule loops (`loops` at the time it was made).
@@ -197,27 +199,33 @@ final class InAppPlaybackGraph {
     var positionFrame: AVAudioFramePosition {
         if let heldFrame { return heldFrame }
         guard isRunning else { return 0 }
-        var elapsed: AVAudioFramePosition = 0
-        // `playerTime(forNodeTime:)` raises an exception for a node time with neither a sample time
-        // nor a host time (seen right after a cut, before the next render); nothing was rendered then.
-        if atEnd {
-            elapsed = 0
-        } else if engine.isRunning, player.isPlaying, let nodeTime = player.lastRenderTime,
-                  nodeTime.isSampleTimeValid || nodeTime.isHostTimeValid,
-                  let playerTime = player.playerTime(forNodeTime: nodeTime), playerTime.isSampleTimeValid {
-            elapsed = max(0, playerTime.sampleTime)
-            lastReadElapsed = elapsed
-        } else {
-            // The player's clock cannot be read (iOS stopped the engine): what is known to have played.
-            elapsed = max(lastReadElapsed ?? 0, deliveredTrackFrames)
-        }
-        return PlaybackPositionMath.frame(start: startFrame, elapsed: elapsed, length: content.length, loops: scheduledLoops)
+        return PlaybackPositionMath.frame(start: startFrame, elapsed: elapsedFrames(), length: content.length,
+                                          loops: scheduledLoops)
     }
 
-    /// The frames the tap delivered since the last cut, in the track's sample rate.
+    /// Track frames rendered since the current schedule started (not wrapped).
+    private func elapsedFrames() -> AVAudioFramePosition {
+        // `playerTime(forNodeTime:)` raises an exception for a node time with neither a sample time
+        // nor a host time (seen right after a cut, before the next render); nothing was rendered then.
+        if atEnd { return 0 }
+        if engine.isRunning, player.isPlaying, let nodeTime = player.lastRenderTime,
+           nodeTime.isSampleTimeValid || nodeTime.isHostTimeValid,
+           let playerTime = player.playerTime(forNodeTime: nodeTime), playerTime.isSampleTimeValid {
+            let elapsed = max(0, playerTime.sampleTime)
+            lastReadElapsed = elapsed
+            return elapsed
+        }
+        // The player's clock cannot be read (iOS stopped the engine): what is known to have played.
+        return max(lastReadElapsed ?? 0, deliveredTrackFrames)
+    }
+
+    /// The frames the tap delivered since the current schedule started, in the track's sample rate:
+    /// the tap's count since the last cut, less what earlier schedules without a cut rendered
+    /// (AUD-003 `updateLooping`). At most one tap block behind the audio heard.
     private var deliveredTrackFrames: AVAudioFramePosition {
         guard tapSampleRate > 0 else { return 0 }
-        return AVAudioFramePosition((Double(gate.deliveredFrames) * content.sampleRate / tapSampleRate).rounded(.down))
+        let delivered = AVAudioFramePosition((Double(gate.deliveredFrames) * content.sampleRate / tapSampleRate).rounded(.down))
+        return max(0, delivered - deliveredBeforeSchedule)
     }
 
     // MARK: - Setup
@@ -372,6 +380,22 @@ final class InAppPlaybackGraph {
         }
     }
 
+    /// AUD-003: the play order changed whether this track is alone in it. Takes effect now and keeps
+    /// the position: when playing, the player is re-queued at the frame it has reached, with the new
+    /// mode, so a lone track that loops plays on to its end once (and the reverse). This is not a cut:
+    /// the tap, the gate and everything downstream stay, nothing is discarded. Held (paused, an
+    /// interruption), at the end or silenced, only the flag changes; the next cut applies it.
+    func updateLooping(_ newValue: Bool) {
+        loops = newValue
+        guard isRunning, heldFrame == nil, !atEnd, !silenced, scheduledLoops != newValue else { return }
+        let elapsed = elapsedFrames()
+        let frame = PlaybackPositionMath.frame(start: startFrame, elapsed: elapsed, length: content.length, loops: scheduledLoops)
+        deliveredBeforeSchedule += elapsed
+        generation += 1                            // the old schedule's completions are ignored
+        player.stop()
+        schedule(from: frame, play: true)
+    }
+
     /// Stops the current track for good (the track that should replace it could not be loaded):
     /// nothing of it is delivered or scheduled again, also not by a later seek or resume.
     func silence() {
@@ -394,6 +418,7 @@ final class InAppPlaybackGraph {
         player.stop()
         playedToEnd = false
         let token = gate.close()
+        deliveredBeforeSchedule = 0
         guard let sink else { return }
         if tapInstalled {
             engine.mainMixerNode.removeTap(onBus: 0)

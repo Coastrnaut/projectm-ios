@@ -57,7 +57,8 @@ struct ControlsOverlay: View {
                             position: { model.position },
                             onPlayPause: { coordinator.transportPlayPause() }, onStop: { coordinator.transportStop() },
                             onPrevious: { coordinator.transportPrevious() }, onNext: { coordinator.transportNext() },
-                            onSeek: { coordinator.transportSeek(to: $0) })
+                            onSeek: { coordinator.transportSeek(to: $0) },
+                            onShowQueue: coordinator.transportShowsQueue ? { coordinator.openQueue() } : nil)   // AUD-003
             .frame(maxWidth: 560)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("transport")

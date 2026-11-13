@@ -125,6 +125,18 @@ final class ViewRenderTests: XCTestCase {
                                         seconds: 3_700, duration: 7_300), name: "transport long title, hours")
     }
 
+    // MARK: - AUD-003 queue
+
+    func testTransportBarWithTheQueueButtonSmokeRenders() {
+        let bar = TransportBar(title: "Track", isPlaying: true, position: { PlaybackPosition(seconds: 5, durationSeconds: 60) },
+                               onPlayPause: {}, onStop: {}, onPrevious: {}, onNext: {}, onSeek: { _ in }, onShowQueue: {})
+        assertSmokeRenders(bar, name: "transport with Queue")
+        assertSmokeRenders(bar.dynamicTypeSize(.accessibility5), name: "transport with Queue, largest text")
+    }
+
+    // PlayQueueView is a List, which ImageRenderer cannot draw (see the file header);
+    // PlayQueueUITests checks it in the running app (AUD-003-T17).
+
     func testTransportBarLaysOutAtTheLargestTextSize() throws {
         let regular = try height(transportBar(isPlaying: true))
         let large = try height(transportBar(isPlaying: true).dynamicTypeSize(.accessibility5))

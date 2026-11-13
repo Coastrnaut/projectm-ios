@@ -6,13 +6,14 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 64,
+   "audited": 63,
+   "implementing": 1,
    "integrated": 22,
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 148,
-   "integrated": 3
+   "audited": 147,
+   "integrated": 4
   },
   "P2": {
    "audited": 79
@@ -22,8 +23,9 @@
   }
  },
  "by_state": {
-  "audited": 300,
-  "integrated": 25,
+  "audited": 298,
+  "implementing": 1,
+  "integrated": 26,
   "skipped_existing": 1
  },
  "device_gate": {
@@ -60,7 +62,6 @@
    "ANL-014",
    "ANL-015",
    "ANL-016",
-   "AUD-003",
    "AUD-004",
    "AUD-005",
    "AUD-007",
@@ -335,7 +336,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "300 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
+   "299 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
   ]
  },
  "features": {
@@ -461,13 +462,13 @@
   },
   "ANL-001": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/anl-001",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/014-anl-001-windowed-fft",
+   "state": "implementing"
   },
   "ANL-002": {
    "attempts": 0,
@@ -641,13 +642,13 @@
   },
   "AUD-003": {
    "attempts": 0,
-   "branch": null,
-   "branch_sha": null,
+   "branch": "feature/aud-003",
+   "branch_sha": "6412b1087980a7050bebe5e5fda9aa7ffefea526",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "c06876d434a3570a4fbc45ddd890d735964fe0eb",
    "priority": "P1",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/015-aud-003-audio-library-queue",
+   "state": "integrated"
   },
   "AUD-004": {
    "attempts": 0,
@@ -3612,6 +3613,11 @@
    "sha": "f886b7ce7c761f4659f9937d7e4e44ef7e1f2199"
   },
   {
+   "branch": "feature/aud-003",
+   "id": "AUD-003",
+   "sha": "c06876d434a3570a4fbc45ddd890d735964fe0eb"
+  },
+  {
    "branch": "feature/aud-006",
    "id": "AUD-006",
    "sha": "03b23a8ae6a0aad7e0f09d81dd1bfe960b5e795a"
@@ -3752,5 +3758,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T02:17:24Z"
+ "updated": "2026-11-13T11:03:50Z"
 }
