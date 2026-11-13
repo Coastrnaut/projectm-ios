@@ -28,6 +28,19 @@ The row's gap status is "Gap candidate". The audit confirms it.
 | Manual tempo | None. | No way to set a tempo by hand or to clear it. |
 | Consumers | None yet. SHOW-003 (beat-quantized cues), SHOW-010 (beat grid), UIX-005 (performance controls), MOD-009 (tempo-synced LFO) and MIDI-010 (MIDI clock) will need one tempo to follow. | No single tempo source that says where its tempo came from. |
 
+## Clarifications
+
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the conservative, local-first option.
+
+- Q: Where does the app's estimate come from, given that the normalized ring's analysis tap has exactly one reader and only the circular spectrum runs a pipeline today? → A: Whichever visual is shown owns the one analysis. While the circular spectrum is shown, the tempo reads a second subscription on that visual's existing pipeline (a small hook on its analyzer; the analyzer's behavior is unchanged). While projectM is shown, the coordinator runs its own ANL-016 pipeline on the analysis tap. Exactly one pipeline reads the tap at any time, and each runs only while its visual runs, so the tempo analysis stops with pause, background, lock and Stop (PERF-011) like the rest of the presentation, and its estimate is cleared when it stops (SHOW-011-R14). A second tap or a shared app-wide pipeline would change AudioCore or the circular spectrum's ownership, which this row does not need.
+- Q: Which taps make a sequence, and what are the limits? → A: The supported range is ANL-005's, 60-200 BPM: an interval below 300 ms is a "too fast" rejection (the tap is ignored, so a double-tap bounce cannot break a sequence); an interval over 1 s up to 2 s is "too slow" and restarts the sequence at that tap; over 2 s is a pause and restarts silently. The tempo is 60 s over the median of the last (up to) 8 intervals: four taps give three intervals, and the median ignores one mistimed tap, which a mean would not (SHOW-011-R2 to R6).
+- Q: Does a manual tempo survive leaving the visualizer or relaunching? → A: It survives Stop, source switches, pause and background within a launch (the performer set it on purpose) and is never stored: a relaunch starts with no manual tempo. Nothing about tempo is written to disk (SHOW-011-R16).
+- Q: Where does the tempo model live, and how is it tested without real tap timing? → A: A new package `Packages/PerformanceControl` (the roadmap's package for live-performance rows) holds the pure model with no clock of its own (every call takes a monotonic time in nanoseconds), plus a small reader that turns ANL-016 frames and beat events into estimates. Tests pass times explicitly. The app's UI test uses a DEBUG-only launch argument that makes each tap advance a synthetic clock by a fixed interval, because UI taps are not precisely timed (SHOW-011-R11, S6).
+- Q: Where do the controls go, and when is Reset offered? → A: In the visualizer controls overlay, in both layouts, as one tempo group: the readout, the Tap button and a Reset tempo button that appears only while a manual tempo is set. They are shown for both visuals; the Tap control's accessibility value is the progress ("2 of 4 taps") or the tempo. Announcements use the system's VoiceOver announcement (SHOW-011-R12, R13).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Set the tempo by tapping (Priority: P1)
