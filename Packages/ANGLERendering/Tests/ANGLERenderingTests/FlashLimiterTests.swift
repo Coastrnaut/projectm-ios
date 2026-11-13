@@ -161,4 +161,20 @@ final class FlashLimiterTests: XCTestCase {
         XCTAssertFalse(renderer.readPixels().isEmpty)
         XCTAssertEqual(ANGLERenderer.flashLimitPerSecond, 0.25)
     }
+
+    /// OUT-001-T12 (OUT-001-R8, S5): moving projectM's view to an external display re-lays out its
+    /// window surface at the display's size. The envelope's history survives the new surface and size,
+    /// so a strobe in progress gets no fresh budget on the external display.
+    func testStrobeHistorySurvivesAnExternalResize() throws {
+        var gain: Float = 1
+        for n in 0..<7 { gain = try XCTUnwrap(renderer.limitedSolidFrame(n % 2 == 0 ? 1 : 0, 1.0 / 60)) }
+        XCTAssertEqual(gain, 0.095, accuracy: 0.002, "the 7th transition is refused at the device size")
+        let before = renderer.currentSurfaceSize
+        renderer.view.frame = CGRect(x: 0, y: 0, width: 64, height: 36)   // a 16:9 external window
+        renderer.view.layoutIfNeeded()
+        XCTAssertNotEqual(renderer.currentSurfaceSize.width, before.width, "a new surface at the external size")
+        renderer.limitedSolidFrame(0, 1.0 / 60)
+        let after = try XCTUnwrap(renderer.limitedSolidFrame(1, 1.0 / 60))
+        XCTAssertLessThan(after, 0.1, "the next rise is still held after the resize")
+    }
 }

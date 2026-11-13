@@ -207,6 +207,15 @@ targets:
         # networking is OSC-001's local UDP listener (unencrypted, no internet), so this stays false.
         ITSAppUsesNonExemptEncryption: false
         UIApplicationSupportsIndirectInputEvents: true
+        # OUT-001 (research OUT-001-D1, ADR-0023): a connected display gets a visualization-only window
+        # instead of the system's mirror. Only the external display role is configured; the application
+        # role stays with SwiftUI's window group, and multiple windows stay off.
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+          UISceneConfigurations:
+            UIWindowSceneSessionRoleExternalDisplayNonInteractive:
+              - UISceneConfigurationName: External display
+                UISceneDelegateClassName: $(PRODUCT_MODULE_NAME).ExternalDisplaySceneDelegate
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationLandscapeLeft

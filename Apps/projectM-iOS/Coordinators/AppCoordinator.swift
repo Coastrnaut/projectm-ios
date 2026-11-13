@@ -74,7 +74,11 @@ final class AppCoordinator: VisualizationControlling {
     static let noticeKey = "notice.photosensitivityAcknowledged"
     static let controlsAutoHide: Duration = .seconds(5)
 
-    private(set) var screen: Screen
+    private(set) var screen: Screen {
+        didSet { externalDisplay.visualizerActive(screen == .visualizer) }   // OUT-001: only the visualizer is shown externally
+    }
+    /// OUT-001: where the visualization is drawn (the device, or a connected external display).
+    @ObservationIgnored let externalDisplay: ExternalDisplayCoordinator
     let manager: CaptureManager
     let microphone: MicrophoneSource
     var showMicrophoneExplainer = false
@@ -142,8 +146,9 @@ final class AppCoordinator: VisualizationControlling {
     @ObservationIgnored let presentation = PresentationResourceRegistry()
     @ObservationIgnored private var lifecycleCoordinator: LifecycleCoordinator!
 
-    init(defaults: UserDefaults = .standard) {
+    init(defaults: UserDefaults = .standard, externalDisplay: ExternalDisplayCoordinator? = nil) {
         self.defaults = defaults
+        self.externalDisplay = externalDisplay ?? .shared
         if ProcessInfo.processInfo.arguments.contains("-uitestResetNotice") {
             defaults.removeObject(forKey: Self.noticeKey)
             defaults.removeObject(forKey: FavoritesStore.favoritesKey)
