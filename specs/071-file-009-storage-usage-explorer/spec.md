@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (FILE-009-T01-T11 verified on the Mac host and an iOS 27.2 simulator; T12 `{device}` open)
 
 **Input**: User description: "Implement FILE-009 (Storage usage explorer) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Show storage consumed by media,
