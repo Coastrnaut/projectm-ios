@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T19:32:32Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T19:35:04Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,18 +10,19 @@
 | State | Features |
 |---|---|
 | audited | 257 |
-| implementing | 2 |
+| implementing | 1 |
+| unit_passed | 1 |
 | integrated | 66 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 33 | 2 | 51 | 1 |
-| P1 | 138 | 0 | 13 | 0 |
-| P2 | 77 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 33 | 1 | 1 | 51 | 1 |
+| P1 | 138 | 0 | 0 | 13 | 0 |
+| P2 | 77 | 0 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -466,6 +467,14 @@ None.
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `b32cc31f34e8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-004/20261113T135753/sim-test_ANGLERendering.log`)
 - `swift test --package-path Packages/Compositor`: pass at `b32cc31f34e8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-004/20261113T135753/swift-test_Compositor.log`)
 - `post-merge (with VideoVisualHost on the shared pool): Compositor scheme on iPhone 17 sim (Compositor 175 incl. 100-switch plateau, 211 total in the run); projectM-iOSTests incl. TexturePoolAppTests; Video, Photo, Camera UI tests`: pass at `ea0ee43e0f04` (log `.autonomous/logs/integration/perf-004/compositor-sim.log`)
+
+### PERF-006 Memory warning recovery (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `fd72d08eab5d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-006/20261113T143303/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `fd72d08eab5d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-006/20261113T143303/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `fd72d08eab5d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-006/20261113T143303/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Diagnostics`: pass at `fd72d08eab5d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-006/20261113T143303/swift-test_Diagnostics.log`)
+- `swift test --package-path Packages/PresentationLifecycle`: pass at `fd72d08eab5d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-006/20261113T143303/swift-test_PresentationLifecycle.log`)
+- `xcodebuild -scheme Rendering-Package -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `fd72d08eab5d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-006/20261113T143303/sim-test_Rendering.log`)
 
 ### PERF-011 Background resource release (integrated)
 - `python3 scripts/check_compliance.py`: pass at `e463058b1c92` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T151252/compliance.log`)
