@@ -29,6 +29,19 @@ The row's gap status is "Gap candidate". The audit confirms it.
 | Layers | Spectra (VIS-001, VIS-002), the rear camera (CAM-001) and five procedural materials (SHD-001) are layers; projectM is a layer in ANGLERendering. | Nothing describes a layer independently of its live object, so a stack cannot be edited, compared or (later) saved. |
 | App | The Camera visual (CAM-001) builds a fixed two-layer list: camera at the bottom, circular spectrum on top. Its notes say CMP-002 takes this over. | The app has no stack model. |
 
+## Clarifications
+
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the conservative, local-first option.
+
+- Q: What happens when a caller duplicates the camera layer or adds a second camera? → A: The stack refuses it with "kind limit reached": a layer kind declares how many instances a stack may hold and the camera kind allows one, so the app never asks for a second capture session (one rear camera, one session, one privacy indicator; CAM-001, CAM-012). Rejected: sharing one capture session between two camera layers (two views of the same picture add nothing until transforms and masks exist, and the camera's start/stop and Stop camera would need reference counting across layers); a later row can lift the limit to one session shared by several layers.
+- Q: How many layers may a stack hold? → A: At most 8 (CMP-002-R5). Each layer holds one or two full-size pictures (a half-float picture at iPhone 15's full drawable is about 24 MB) and costs a render pass plus a composite draw per frame; 8 bounds that memory and the per-frame work while leaving room for typical scenes (projectM or a material at the bottom, camera, spectra, overlays). The roadmap's performance check uses a 4-layer stack. Rejected: no limit (unbounded GPU memory) and 4 (too tight for groups and masks later).
+- Q: Where does a duplicate go and what does it copy? → A: Directly above the original, with a new instance ID and an equal description (kind and parameters) and composite settings; the duplicate's live layer is a new object made by the caller's factory, prepared like any new layer. It does not copy the original's last picture.
+- Q: Does changing the stack reset the composite flash guard's history? → A: No. A stack edit is not a new scene: the guard keeps its history, so removing or reordering layers that changes the picture abruptly is still limited by the strobe envelope (FX-019-R11 applies the reset only to a new scene).
+- Q: Does this row add a layer editor that people can use? → A: No. The stack is exposed to code only and the app's one stack (the Camera visual) is built through it unchanged. Editing by hand belongs to the layer inspector (CMP-015) and the editing UI rows; saving stacks belongs to the scene rows.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Reorder changes what is on top (Priority: P1)
@@ -124,6 +137,8 @@ the circular spectrum on top, the camera indicator and Stop camera working as be
 - An entry asks for composite settings CMP-001 cannot draw yet (opacity below 1): the apply is
   refused (CMP-003 lifts this).
 - Moving a layer to its own index is a no-op.
+- A stack edit makes the picture change abruptly (a bright layer removed or moved to the top): the
+  composite flash guard keeps its history and limits it as for any other change.
 
 ## Requirements *(mandatory)*
 
@@ -157,6 +172,7 @@ the circular spectrum on top, the camera indicator and Stop camera working as be
 - **CMP-002-R13**: The Camera visual MUST build its layers through the stack (camera bottom,
   circular spectrum top) with unchanged appearance and camera behaviour (CAM-001-R7, CAM-012-R4,
   R6).
+- **CMP-002-R15**: Applying a stack MUST NOT reset the composite flash guard's history.
 - **CMP-002-R14**: The per-layer frame cost of a 4-layer stack MUST be measured on D1-D3 (device
   stage).
 
