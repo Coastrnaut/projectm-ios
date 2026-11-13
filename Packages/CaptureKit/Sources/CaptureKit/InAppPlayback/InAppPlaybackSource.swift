@@ -76,6 +76,8 @@ public final class InAppPlaybackSource: AudioSource {
     public var isStarted: Bool { running }
 
     public func start(into sink: PCMSink) async throws -> AsyncStream<SourceEvent> {
+        // Start on a started source ends the current session first (Constitution VII; QA-007-R2).
+        if running { await stop() }
         let (stream, continuation) = AsyncStream.makeStream(of: SourceEvent.self)
         do {
             try backend.start(track: track, sink: sink) { continuation.yield($0) }
