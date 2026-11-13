@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T16:17:15Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T16:19:08Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,25 +9,24 @@
 
 | State | Features |
 |---|---|
-| audited | 280 |
-| implementing | 2 |
-| unit_passed | 1 |
-| integrated | 42 |
+| audited | 279 |
+| implementing | 3 |
+| integrated | 43 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 52 | 0 | 1 | 33 | 1 |
-| P1 | 140 | 2 | 0 | 9 | 0 |
-| P2 | 79 | 0 | 0 | 0 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 51 | 1 | 34 | 1 |
+| P1 | 140 | 2 | 9 | 0 |
+| P2 | 79 | 0 | 0 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 283 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
+- 282 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
 
 ## Integrated
 
@@ -66,6 +65,7 @@ The physical-device suite may **not** start:
 | FX-001 | Bloom | `1192e0d6503e` | `feature/fx-001` |
 | FX-019 | Strobe safety envelope | `6cfcbaabc8d0` | `feature/fx-019` |
 | MOD-001 | Typed parameter registry | `304f3bce431a` | `feature/mod-001` |
+| MOD-002 | Audio feature binding | `006678f3d7a5` | `feature/mod-002` |
 | PERF-011 | Background resource release | `6d669fcb8576` | `feature/perf-011` |
 | PRE-007 | Preset collections | `e834535cb98b` | `feature/pre-007` |
 | PRE-012 | Preset import validation | `4bf9f50d1af8` | `feature/pre-012` |
@@ -307,13 +307,16 @@ None.
 - `post-merge: ParameterGraph xcodebuild test on iPhone 17 sim (26)`: pass at `304f3bce431a` (log `.autonomous/logs/integration/mod-001/pg-sim.log`)
 - `post-merge: VisualGenerators xcodebuild test on iPhone 17 sim (100)`: pass at `304f3bce431a` (log `.autonomous/logs/integration/mod-001/vg-sim.log`)
 
-### MOD-002 Audio feature binding (unit_passed)
+### MOD-002 Audio feature binding (integrated)
 - `python3 scripts/check_compliance.py`: pass at `65676d7730a5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-002/20261113T111554/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `65676d7730a5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-002/20261113T111554/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `65676d7730a5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-002/20261113T111554/sim-test_ANGLERendering.log`)
 - `swift test --package-path Packages/Compositor`: pass at `65676d7730a5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-002/20261113T111554/swift-test_Compositor.log`)
 - `swift test --package-path Packages/ParameterGraph`: pass at `65676d7730a5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-002/20261113T111554/swift-test_ParameterGraph.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `65676d7730a5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-002/20261113T111554/swift-test_VisualGenerators.log`)
+- `post-merge: projectM-iOSTests 159, AudioFeatureBindingUITests 13.8 s, GlowUITests 2 (11.6 s, 20.6 s) on iPhone 17 iOS 27.2 sim`: pass at `006678f3d7a5` (log `.autonomous/logs/integration/mod-002/app-tests.log`)
+- `post-merge: ParameterGraph xcodebuild test on iPhone 17 sim (42)`: pass at `006678f3d7a5` (log `.autonomous/logs/integration/mod-002/pg-sim.log`)
+- `post-merge: VisualGenerators xcodebuild test on iPhone 17 sim (103)`: pass at `006678f3d7a5` (log `.autonomous/logs/integration/mod-002/vg-sim.log`)
 
 ### PERF-011 Background resource release (integrated)
 - `python3 scripts/check_compliance.py`: pass at `e463058b1c92` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T151252/compliance.log`)
