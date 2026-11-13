@@ -49,9 +49,17 @@ public final class AnalysisSubscription: @unchecked Sendable {
     public func latestFrame(into bands: UnsafeMutablePointer<Float>, capacity: Int) -> AnalysisFrame?
     public func nextEvent() -> AnalysisEvent?                       // oldest queued, allocation-free
     public func drainEvents() -> [AnalysisEvent]                    // convenience (allocates)
-    public var droppedEvents: Int; public var overwrittenFrames: Int; public var isCancelled: Bool
+    public var droppedEvents: Int; public var overwrittenFrames: Int; public var pendingEvents: Int
+    public var isCancelled: Bool
 }
 ```
+
+## VisualBandFeed (ANL-016-R16)
+
+`LiveBandAnalyzer` (VIS-001) owns one `AnalysisPipeline` (bands = bar count, floor −80 dB) and one
+subscription. Its `output` is a `LiveBandOutput` with
+`readLatest(into:capacity:) -> LiveBandFrameInfo?` (`count`, `timestampNanoseconds` = the frame's
+host time, `sequence` = the frame's item ID), the call shape the frame loop already used.
 
 ## Guarantees
 
