@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T20:42:33Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T20:51:18Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,17 +9,17 @@
 
 | State | Features |
 |---|---|
-| audited | 250 |
+| audited | 249 |
 | implementing | 2 |
 | unit_passed | 1 |
-| integrated | 72 |
+| integrated | 73 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
 | Priority | audited | implementing | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|
-| P0 | 26 | 2 | 1 | 57 | 1 |
+| P0 | 25 | 2 | 1 | 58 | 1 |
 | P1 | 138 | 0 | 0 | 13 | 0 |
 | P2 | 77 | 0 | 0 | 2 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
@@ -27,7 +27,7 @@
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 253 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
+- 252 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
 
 ## Integrated
 
@@ -103,6 +103,7 @@ The physical-device suite may **not** start:
 | SHD-010 | Expression sandbox budgets | `e906db183292` | `feature/shd-010` |
 | SHD-011 | User-authored shader policy | `26de54ff2c0b` | `feature/shd-011` |
 | SHOW-011 | Tap tempo | `11329d52e6dc` | `feature/show-011` |
+| SHOW-014 | Emergency blackout | `768a3b18a3b3` | `feature/show-014` |
 | VIS-001 | Circular spectrum | `48285d49c422` | `feature/vis-001` |
 | VIS-002 | Linear spectrum | `c2b2f75c11bb` | `feature/vis-002` |
 
@@ -344,6 +345,16 @@ None.
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `95bb91a901f3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-005/20261113T125428/sim-test_ANGLERendering.log`)
 - `swift test --package-path Packages/Compositor`: pass at `95bb91a901f3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-005/20261113T125428/swift-test_Compositor.log`)
 - `post-merge: Compositor xcodebuild test on iPhone 17 sim (Compositor 134 incl. transform save/reload acceptance and transformed GPU tests, GeneratorGraph 46 with 1 bench skipped, ProceduralMaterials 31)`: pass at `dd604d0b1d51` (log `.autonomous/logs/integration/cmp-005-med-001/compositor-sim.log`)
+
+### FILE-001 Portable scene archive (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `b4e63d16acf1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-001/20261113T154852/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `b4e63d16acf1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-001/20261113T154852/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `b4e63d16acf1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-001/20261113T154852/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `b4e63d16acf1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-001/20261113T154852/swift-test_Compositor.log`)
+- `swift test --package-path Packages/LocalPortability`: pass at `b4e63d16acf1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-001/20261113T154852/swift-test_LocalPortability.log`)
+- `swift test --package-path Packages/PresetLibrary`: pass at `b4e63d16acf1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-001/20261113T154852/swift-test_PresetLibrary.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `b4e63d16acf1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-001/20261113T154852/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `b4e63d16acf1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-001/20261113T154852/swift-test_SceneFormat.log`)
 
 ### FX-001 Bloom (integrated)
 - `python3 scripts/check_compliance.py`: pass at `94f4b3a6b7c3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-001/20261113T090348/compliance.log`)
@@ -640,7 +651,7 @@ None.
 - `post-merge: xcodebuild test projectM-iOSTests (146) + TapTempo/RouteIndicator/NativeVisual UI tests (6) on iPhone 17 iOS 27.2 sim`: pass at `11329d52e6dc` (log `.autonomous/logs/integration/show-011/app-tests.log`)
 - `post-merge: PerformanceControl xcodebuild test on iPhone 17 sim (25)`: pass at `11329d52e6dc` (log `.autonomous/logs/integration/show-011/perf-sim.log`)
 
-### SHOW-014 Emergency blackout (unit_passed)
+### SHOW-014 Emergency blackout (integrated)
 - `python3 scripts/check_compliance.py`: pass at `081b69a69a42` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-014/20261113T154000/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `081b69a69a42` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-014/20261113T154000/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `081b69a69a42` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-014/20261113T154000/sim-test_ANGLERendering.log`)

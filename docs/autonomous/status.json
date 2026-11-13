@@ -6,9 +6,9 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 26,
+   "audited": 25,
    "implementing": 2,
-   "integrated": 57,
+   "integrated": 58,
    "skipped_existing": 1,
    "unit_passed": 1
   },
@@ -25,9 +25,9 @@
   }
  },
  "by_state": {
-  "audited": 250,
+  "audited": 249,
   "implementing": 2,
-  "integrated": 72,
+  "integrated": 73,
   "skipped_existing": 1,
   "unit_passed": 1
  },
@@ -255,7 +255,6 @@
    "SHOW-010",
    "SHOW-012",
    "SHOW-013",
-   "SHOW-014",
    "SHOW-015",
    "UIX-001",
    "UIX-002",
@@ -293,7 +292,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "253 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
+   "252 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
   ]
  },
  "features": {
@@ -1160,12 +1159,12 @@
   "FILE-001": {
    "attempts": 0,
    "branch": "feature/file-001",
-   "branch_sha": null,
+   "branch_sha": "b4e63d16acf1b5bd9eaca088ac02492d14cfcbbc",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "FILE-002": {
    "attempts": 0,
@@ -1879,13 +1878,13 @@
   },
   "MOD-013": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/mod-013",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "MOD-014": {
    "attempts": 0,
@@ -3192,10 +3191,10 @@
    "branch": "feature/show-014",
    "branch_sha": "081b69a69a42b52ae9a94d0e042e73ba46b7aa81",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "768a3b18a3b3fef02c0ec067715f7ca4ef534f1b",
    "priority": "P0",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "SHOW-015": {
    "attempts": 0,
@@ -3910,6 +3909,11 @@
    "sha": "11329d52e6dc05d820e8ee931de4167b14b3d1ab"
   },
   {
+   "branch": "feature/show-014",
+   "id": "SHOW-014",
+   "sha": "768a3b18a3b3fef02c0ec067715f7ca4ef534f1b"
+  },
+  {
    "branch": "feature/vis-001",
    "id": "VIS-001",
    "sha": "48285d49c422576ac32986029ee731b214fcde63"
@@ -3945,5 +3949,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T20:42:33Z"
+ "updated": "2026-11-13T20:51:18Z"
 }
