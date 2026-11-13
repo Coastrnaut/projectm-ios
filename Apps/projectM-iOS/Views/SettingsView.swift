@@ -5,6 +5,8 @@
 // MED-001: with Photo chosen, a Photo section offers Choose from Photos… (the out-of-process Photos
 // picker: no library permission), Choose from Files… (images only), Remove Photo, the stored
 // photo's size and the import notice.
+// MED-002: with Video chosen, a Video section offers the same for one video (Photos picker with the
+// videos filter, Files with movie types), Remove Video, the playing size and the import notice.
 import PhotosUI
 import SwiftUI
 import VisualEffects
@@ -23,9 +25,13 @@ struct SettingsView: View {
     var glowUnavailable = false
     /// MED-001: the imported photo (nil hides the Photo section, e.g. in previews).
     var photos: PhotoCoordinator?
+    /// MED-002: the imported video (nil hides the Video section).
+    var videos: VideoCoordinator?
     @Environment(\.dismiss) private var dismiss
     @State private var pickedPhoto: PhotosPickerItem?
     @State private var showPhotoFileImporter = false
+    @State private var pickedVideo: PhotosPickerItem?
+    @State private var showVideoFileImporter = false
     /// The port being typed; applied on submit or when the field loses focus (OSC-001-R2).
     @State private var portText = ""
     @FocusState private var portFieldFocused: Bool
@@ -116,7 +122,7 @@ struct SettingsView: View {
                             .accessibilityIdentifier("nativeVisualUnavailableFooter")
                     } else {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Camera shows your rear camera behind a circular spectrum, only while it is on screen; the picture is never recorded or sent. Photo shows a picture you choose behind a circular spectrum.")
+                            Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Camera shows your rear camera behind a circular spectrum, only while it is on screen; the picture is never recorded or sent. Photo shows a picture you choose behind a circular spectrum. Video plays a video you choose, without its sound, behind a circular spectrum.")
                             if settings.visual.isNative {
                                 if glowUnavailable {
                                     Text(AppCoordinator.glowUnavailableMessage)
@@ -130,6 +136,9 @@ struct SettingsView: View {
                 }
                 if settings.visual.usesPhoto, let photos {
                     photoSection(photos)
+                }
+                if settings.visual.usesVideo, let videos {
+                    videoSection(videos)
                 }
                 Section {
                     Toggle("Reduce flashing", isOn: $settings.reduceFlashing)
@@ -205,6 +214,45 @@ struct SettingsView: View {
         }
         .fileImporter(isPresented: $showPhotoFileImporter, allowedContentTypes: [.image]) { (result: Result<URL, any Error>) in
             Task { await photos.filePicked(result) }
+        }
+    }
+
+    // MARK: Video (MED-002-R2, R7, R14, R19)
+
+    private func videoSection(_ videos: VideoCoordinator) -> some View {
+        Section {
+            LabeledContent("Video", value: videos.summary)
+                .accessibilityIdentifier("videoSummary")
+            PhotosPicker(selection: $pickedVideo, matching: .videos, preferredItemEncoding: .automatic) {
+                Text("Choose from Photos…")
+            }
+            .disabled(videos.isImporting)
+            .accessibilityIdentifier("chooseVideoFromPhotos")
+            Button("Choose from Files…") { showVideoFileImporter = true }
+                .disabled(videos.isImporting)
+                .accessibilityIdentifier("chooseVideoFromFiles")
+            if videos.video != nil {
+                Button("Remove Video", role: .destructive) { videos.remove() }
+                    .disabled(videos.isImporting)
+                    .accessibilityIdentifier("removeVideo")
+            }
+            if let notice = videos.notice {
+                Text(notice)
+                    .foregroundStyle(.red)
+                    .accessibilityIdentifier("videoNotice")
+            }
+        } header: {
+            Text("Video")
+        } footer: {
+            Text("H.264 or HEVC, up to 4K, 60 frames per second and 500 MB. The video is copied into the app on this device without its sound, location or other details, and is never uploaded. It plays without sound; the music comes from your chosen source. Remove Video deletes the copy.")
+        }
+        .onChange(of: pickedVideo) { _, item in
+            guard let item else { return }
+            pickedVideo = nil
+            Task { await videos.videoPicked(item) }
+        }
+        .fileImporter(isPresented: $showVideoFileImporter, allowedContentTypes: [.movie]) { (result: Result<URL, any Error>) in
+            Task { await videos.filePicked(result) }
         }
     }
 

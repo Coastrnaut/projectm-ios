@@ -5,13 +5,15 @@ library purchase (feature 002 T240; FR-122, FR-123) and for importing your own a
 (AUD-001-T30; AUD-001-R22, in app versions that offer "Import Audio…"), for the optional OSC
 receiver (OSC-001-R18, in app versions that offer "OSC receiver" in Settings), and for the Camera
 visual (CAM-001; `specs/033-cam-001-rear-camera-layer`, in app versions that offer it), and for the
-Photo visual (MED-001; `specs/044-med-001-import-photo-layer`, in app versions that offer it). Applies to the projectM app for
+Photo visual (MED-001; `specs/044-med-001-import-photo-layer`, in app versions that offer it), and for
+the Video visual (MED-002; `specs/048-med-002-import-video-layer`, in app versions that offer it). Applies to the projectM app for
 iPhone and iPad published by Robert Pancoast.
 
 **Summary: the app collects no data. Audio is processed only in memory on your device, and nothing
 is recorded or sent anywhere. The only audio the app stores is audio files you choose to import,
 which stay on your device until you remove them, and the one photo you may choose for the Photo
-visual, which also stays on your device until you remove it. If you choose the Camera visual, the rear camera's
+visual and the one video you may choose for the Video visual, which also stay on your device until
+you remove them (a video's own sound is removed and never played or analysed). If you choose the Camera visual, the rear camera's
 picture is shown on screen while that visual is on; it is never recorded, stored, sent or analysed. The only network traffic is Apple's own App Store traffic
 when you buy or restore the full preset library, and, only if you turn it on, OSC control messages
 that devices on your own local network send to the app.**
@@ -48,6 +50,7 @@ The app turns audio into visuals. It starts no source until you choose one.
 
 The app asks for no other permission. Choosing a photo needs none: the Photos picker is shown by
 iOS outside the app and gives the app only the picture you pick, never access to your library.
+Choosing a video needs none either, for the same reason.
 
 ## The camera picture stays on your screen
 
@@ -75,6 +78,25 @@ also after you reopen the app.
   own device backups if you use them.
 - "Remove Photo" in Settings deletes the copy; choosing another photo replaces it; deleting the
   app deletes it.
+
+## A video you choose
+
+If you choose the Video visual and tap "Choose from Photos…" or "Choose from Files…", the app copies
+the one video you pick into its own storage on your device and plays its pictures, without sound,
+behind the visualization, also after you reopen the app.
+
+- The copy holds only the video's pictures and their timing: the app leaves out the video's sound,
+  location, date, device and other details while copying (the pictures themselves are copied
+  unchanged, not re-compressed), and shows none of them. To check that the video can be played, the
+  app reads only its format, picture size, rotation, frame rate and length.
+- The video's sound is never played, recorded or analysed; the music always comes from the audio
+  source you chose.
+- Nothing is uploaded or sent anywhere. The app does not keep where the video came from, its file
+  name, which item of your library it was, or where you stopped watching.
+- The copy never leaves your device through the app. Like other app data, it is included in your
+  own device backups if you use them.
+- "Remove Video" in Settings deletes the copy; choosing another video replaces it; deleting the app
+  deletes it.
 
 ## Audio stays in memory on your device
 
@@ -134,6 +156,10 @@ import").
 And, only if you choose a photo, one copy of it without its details, and a setting that says which
 copy is yours (see "A photo you choose"). The Photo visual choice is remembered with your other
 settings.
+
+And, only if you choose a video, one copy of its pictures without its sound or details, and a setting
+that says which copy is yours (see "A video you choose"). The Video visual choice is remembered with
+your other settings.
 
 And, only if you import presets: a copy of each preset file you imported, including files the app
 put in Quarantine because they failed a check, and a list of them with each file's name, size,
@@ -202,4 +228,5 @@ issue in that repository.
 | OSC-001-R18 (`specs/032-osc-001-osc-receiver/spec.md`, under the FR-068 amendment): the optional local-network OSC receiver, its permission and its two settings | Permissions and why; OSC control on your local network; What is stored on your device; No analytics, tracking or network use |
 | CAM-001-R16 (`specs/033-cam-001-rear-camera-layer/spec.md`): the camera permission and on-device use of camera pictures | Permissions and why; The camera picture stays on your screen |
 | MED-001-R17 (`specs/044-med-001-import-photo-layer/spec.md`, amends FR-065): the photo the user chooses, stored on the device without metadata, removable | Summary; Permissions and why; A photo you choose; What is stored on your device |
+| MED-002-R21 (`specs/048-med-002-import-video-layer/spec.md`, amends FR-065): the video the user chooses, stored on the device without soundtrack or metadata, removable | Summary; Permissions and why; A video you choose; What is stored on your device |
 | PRE-012-R30 (`specs/008-pre-012-preset-import-validation/spec.md`, amends FR-065): preset files the user imports, quarantined ones included, and their record; extended by PRE-015-R23 (`specs/010-pre-015-user-preset-duplication/spec.md`): copies of built-in presets, their origin, and edited preset text | What is stored on your device |

@@ -16,7 +16,8 @@ Enforces, for source under Apps/ and Packages/ (Vendor/ is upstream and excluded
     string literals removed): loading bundles or libraries other than the main bundle; script
     engines (JavaScriptCore) and expression evaluation (NSExpression, NSPredicate(format:) with a
     non-literal format); process spawning; executable memory; and Metal libraries created from
-    source outside METAL_SOURCE_ALLOWED (eight reviewed files that compile module constants) or from
+    source outside METAL_SOURCE_ALLOWED (nine reviewed files that compile module constants; the ninth,
+    VideoLayerSource.swift, added by MED-002 / ADR-0022) or from
     URLs, data, files, dynamic libraries or binary archives anywhere.
   * Research R-16: no entitlements or background modes in project.yml, in any YAML key form
     (plain, quoted, or flow style; ADR-0001 owner ruling 13). YAML comments are ignored.
@@ -102,6 +103,7 @@ METAL_SOURCE_ALLOWED = frozenset({
     "Packages/Compositor/Sources/GeneratorGraph/GeneratorGraphShaders.swift",
     "Packages/Compositor/Sources/ProceduralMaterials/ProceduralMaterialShaders.swift",
     "Packages/Compositor/Sources/ImageLayer/ImageLayerSource.swift",
+    "Packages/Compositor/Sources/VideoLayer/VideoLayerSource.swift",   # MED-002 (ADR-0022): module-constant shader
     "Packages/VisualGenerators/Sources/VisualGenerators/FlatShapePass.swift",
     "Packages/VisualGenerators/Sources/VisualEffects/PostProcessEffect.swift",
 })
