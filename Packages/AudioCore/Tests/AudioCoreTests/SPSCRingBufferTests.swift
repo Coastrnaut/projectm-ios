@@ -51,19 +51,22 @@ final class SPSCRingBufferTests: XCTestCase {
         XCTAssertEqual(ring.availableToRead, 0)
     }
 
-    /// Two threads for ~10 s: values are a strictly increasing sequence, so the consumer must
-    /// only ever see increasing values; gaps are allowed only where drops were counted.
+    /// Two threads: the producer writes a fixed count of strictly increasing values in 256-sample
+    /// chunks while the consumer reads, so the consumer must only ever see increasing values, gaps
+    /// must add up exactly to the counted drops, and every value is either read or counted as
+    /// dropped. Nothing depends on how the threads are scheduled: whether the consumer keeps up or
+    /// falls behind (drop-oldest), the accounting holds. Shortened 2026-11-13 under owner rule 7:
+    /// it ran for a 10 s wall-clock deadline; now a fixed 2,048,000 values (about 0.3 s in Debug).
     func testConcurrentProducerConsumerKeepsOrdering() {
         let ring = SPSCRingBuffer(capacity: 4096)
-        let duration: TimeInterval = ProcessInfo.processInfo.environment["CI_SHORT"] == nil ? 10 : 2
-        let deadline = Date().addingTimeInterval(duration)
+        let total = 2_048_000                         // a multiple of the chunk size; below Float's 2^24 exact range
         let producerFinished = UnsafeSendableFlag()
 
         Thread.detachNewThread {
             var next: Float = 0
             var chunk = [Float](repeating: 0, count: 256)
-            while Date() < deadline {
-                for i in 0..<chunk.count { chunk[i] = next; next += 1; if next > 16_000_000 { next = 0 } }
+            for _ in 0..<(total / chunk.count) {
+                for i in 0..<chunk.count { chunk[i] = next; next += 1 }
                 chunk.withUnsafeBufferPointer { ring.write($0.baseAddress!, count: $0.count) }
             }
             producerFinished.set()
@@ -72,18 +75,21 @@ final class SPSCRingBufferTests: XCTestCase {
         var last: Float = -1
         var received = 0
         var violations = 0
+        var gaps = 0
         var buffer = [Float](repeating: 0, count: 1024)
         while !producerFinished.value || ring.availableToRead > 0 {
             let n = buffer.withUnsafeMutableBufferPointer { ring.read(into: $0.baseAddress!, maxCount: 1024) }
             for i in 0..<n {
                 let v = buffer[i]
-                if v <= last && !(last > 15_000_000 && v < 1_000_000) { violations += 1 }
+                if v <= last { violations += 1 } else { gaps += Int(v - last) - 1 }
                 last = v
             }
             received += n
         }
         XCTAssertEqual(violations, 0, "ordering violated")
-        XCTAssertGreaterThan(received, 0)
+        XCTAssertEqual(last, Float(total - 1), "the newest value is never dropped")
+        XCTAssertEqual(gaps, ring.droppedSamples, "every gap is a counted drop")
+        XCTAssertEqual(received + ring.droppedSamples, total, "every value is read or counted as dropped")
     }
 }
 

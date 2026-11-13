@@ -64,7 +64,8 @@ ALLOWED_KEYS = {"favorites", "lastPresetID", "settings.performanceOverlay", "set
                 "settings.presetScope", "notice.photosensitivityAcknowledged",
                 "settings.visual", "settings.circularSpectrum.bars",
                 "settings.circularSpectrum.glow", "settings.circularSpectrum.glowIntensity",
-                "settings.circularSpectrum.glowRadius", "settings.circularSpectrum.glowThreshold"}
+                "settings.circularSpectrum.glowRadius", "settings.circularSpectrum.glowThreshold",
+                "settings.linearSpectrum.orientation", "settings.linearSpectrum.spacing"}   # VIS-002-R11
 # AUD-001-R22 amends FR-065: audio files the user imported are stored, and only here: the audio
 # library's content-addressed copies (assets/<sha256>[.ext]) and its imports in flight
 # (incoming/<uuid>[.ext]). An audio file anywhere else in the container is still a violation.

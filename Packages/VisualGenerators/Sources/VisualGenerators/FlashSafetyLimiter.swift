@@ -106,10 +106,10 @@ public final class FlashSafetyLimiter {
         }
     }
 
-    /// The gain for a circular spectrum laid out in `layout` whose frame then passes through
-    /// downstream stages described by `transfer` (FX-001-R10): all 17 areas, both signals
-    /// (FX-019-R4). The closure is non-escaping: no allocation.
-    public func gain<Transfer: FrameLuminanceTransfer>(for layout: CircularSpectrumLayout, transfer: Transfer,
+    /// The gain for a spectrum laid out in `layout` (circular, VIS-001; linear, VIS-002) whose frame
+    /// then passes through downstream stages described by `transfer` (FX-001-R10): all 17 areas,
+    /// both signals (FX-019-R4). The closure is non-escaping: no allocation.
+    public func gain<Source: FlashAreaLevelSource, Transfer: FrameLuminanceTransfer>(for layout: Source, transfer: Transfer,
                                                        frameTime: Double, enabled: Bool) -> Float {
         envelope.gain(frameTime: frameTime, configuration: .forReduceFlashing(enabled)) { g, out in
             layout.meanLevels(gain: g, transfer: transfer, into: out)

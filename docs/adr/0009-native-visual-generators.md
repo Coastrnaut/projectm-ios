@@ -49,3 +49,23 @@ stand alone while leaving an interface the compositor can adopt.
 - CMP-001 can wrap a `TextureGenerator` as a layer without changing it.
 - Two more user-setting keys exist; the device privacy check's allowed list includes them.
 - The first selection of a native visual pays a one-time shader compile.
+
+## Amendment 2026-11-13: the second native visual (VIS-002)
+
+VIS-002 (`specs/025-vis-002-linear-spectrum/`) adds the linear spectrum and moves what the two
+spectra share out of the circular one, without changing its behavior (VIS-001, FX-001 and FX-019
+tests unchanged):
+
+- `FlatShapePass`: the runtime-compiled flat-triangle pipeline (decision 3), the three vertex
+  buffers and the clear-and-draw pass.
+- `SpectrumFlashAreas` works on any `FlashRegionLayout` (flat convex regions over a background), and
+  `FlashSafetyLimiter.gain(for:)` takes any `FlashAreaLevelSource`, so every native visual feeds the
+  FX-019 envelope through the same code (ADR-0011).
+- `SpectrumTextureGenerator` is what the app host drives; `CircularSpectrumHost` became
+  `NativeSpectrumHost`, which swaps generators when the visual changes and keeps one frame loop,
+  analyzer and glow chain. Bars and Glow settings are shared; the linear spectrum adds two keys
+  (`settings.linearSpectrum.orientation`, `settings.linearSpectrum.spacing`).
+- Rectangular visuals put their cross-axis edges on whole pixels so the GPU covers exactly the
+  area the envelope models (research VIS-002-D4).
+
+VIS-003 and VIS-020 can add a layout that adopts `FlashRegionLayout` and reuse the rest.
