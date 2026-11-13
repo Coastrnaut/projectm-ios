@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (SHOW-014-T01-T11, T13 verified on the Mac: host and iOS 27.2 simulator; T12 `{device}` open)
 
 **Input**: User description: "Implement SHOW-014 (Emergency blackout) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Provide persistent one-tap black
@@ -167,6 +167,12 @@ has one.
   drawn throughout, and the audio source started once.
 - **SHOW-014-R8**: During an emergency blackout, a recording MUST stop and keep its file (REC-003),
   and Save Frame MUST be refused (REC-001); restore MUST NOT restart a recording.
+  Satisfied by construction (SHOW-014-T13): the emergency button and the B key call the same
+  `ExternalDisplayCoordinator.setBlackout(true)`, and both gates read `blackoutPhase == .live` in
+  AppCoordinator's `frameCapture` and `videoRecording` contexts. Covered by
+  `FrameCaptureAppTests.testRefusalsCaptureNothing`, `testAVisualChangeOrBlackoutCancelsThePendingCapture`,
+  `VideoRecordingAppTests.testBlackoutStops`, `FrameColorConversionTests.testGateRefusalsInPriorityOrder`
+  and `RecordingRulesTests.testRefusalOrder`.
 - **SHOW-014-R9**: The emergency control MUST store nothing and add no log or counter beyond
   OUT-010's phase log (FR-065); a launch starts live.
 - **SHOW-014-R10**: Only public, documented platform APIs (Constitution I); builds for iOS 26 and 27.

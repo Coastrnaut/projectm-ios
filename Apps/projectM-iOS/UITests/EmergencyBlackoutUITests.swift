@@ -37,15 +37,30 @@ final class EmergencyBlackoutUITests: XCTestCase {
 
     /// The shown preset's name, read from the controls; leaves the controls hidden.
     private func presetNameThenHideControls() -> String {
-        if !controls.exists { area.tap() }
-        XCTAssertTrue(controls.appears(within: 5), "the controls are shown")
+        showControls()
         let preset = app.staticTexts["currentPreset"]
         XCTAssertTrue(preset.appears(within: 5))
         XCTAssertTrue(poll(10) { preset.label != "No preset" }, "a preset is loaded")
         let name = preset.label
-        area.tap()
-        XCTAssertTrue(controls.disappears(within: 5), "the controls are hidden")
+        hideControls()
         return name
+    }
+
+    /// Shows the controls with a fresh 5 s auto-hide (as OutputBlackoutUITests.showControls).
+    private func showControls() {
+        if controls.exists { area.tap() }
+        area.tap()
+        if !controls.appears(within: 2) { area.tap() }
+        XCTAssertTrue(controls.appears(within: 5), "the controls are shown")
+    }
+
+    /// Hides the controls; a tap that races the 5 s auto-hide (and shows them again) is retried.
+    private func hideControls() {
+        for _ in 0..<4 {
+            if controls.exists { area.tap() }
+            if controls.disappears(within: 1.5), !controls.appears(within: 0.5) { return }
+        }
+        XCTFail("the controls stay shown")
     }
 
     /// The emergency path with the controls hidden, then restore from the badge.
