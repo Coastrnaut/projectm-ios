@@ -19,23 +19,23 @@ simulator or device task (no app code changes).
 
 ## Phase 3: Per-edge restore (US1, US2, US4) — SceneFormat
 
-- [ ] MOD-013-T07 [US1] `SceneModulationRestore.swift`: outcomes, report, preserved edges, issues, greedy loop rejection (MOD-013-R5, R7, R8; research MOD-013-D2, D3)
+- [X] MOD-013-T07 [US1] `SceneModulationRestore.swift`: outcomes, report, preserved edges, issues, greedy loop rejection (MOD-013-R5, R7, R8; research MOD-013-D2, D3) — Verified 2026-11-13: SceneModulationRestoreTests.testEveryCategoryIsReportedWithItsPath, testMalformedIDsAreRejectedNeverOrphaned
 - [X] MOD-013-T08 [US4] New issue codes and severities in `SceneIssue.swift`; `validate` uses the restore (contract M4) — Verified 2026-11-13: SceneValidationTests.testBindingExpressionAndModulationIssues (severity per code, cycle at its connection path, generator duplicate still an error)
-- [ ] MOD-013-T09 [US1] `SceneLiveState`: applied edges, `preserved`, `modulationReport`, `apply(to:)`, `validatedGraph(registry:)`; capture order (MOD-013-R6, R9, R10; contract M5, M6)
+- [X] MOD-013-T09 [US1] `SceneLiveState`: applied edges, `preserved`, `modulationReport`, `apply(to:)`, `validatedGraph(registry:)`; capture order (MOD-013-R6, R9, R10; contract M5, M6) — Verified 2026-11-13: SceneModulationRestoreTests (apply(to:), validatedGraph(registry:), capture order and fixed point)
 - [X] MOD-013-T10 [US4] Update SCN-001 validation/live tests for per-edge severities and paths — Verified 2026-11-13: SceneValidationTests and SceneLiveAdapterTests pass with per-edge severities (31 tests)
 
 ## Phase 4: Acceptance and properties
 
-- [ ] MOD-013-T11 [US1] Acceptance: one document with every category → report outcomes and paths exact; scene opens; orphans and rejected preserved on re-save; dropped not (MOD-013-S1)
-- [ ] MOD-013-T12 [US1] Restored edges evaluate like the original: 64 frames, fixed clock, bit-identical (MOD-013-S2)
-- [ ] MOD-013-T13 [US3] Migration through a scene: twice-renamed target rewritten, re-saved with the new ID; retired-after-rename dropped
-- [ ] MOD-013-T14 Seeded property test: 200 documents, fixed point after one capture, preserved edges survive, < 1 s (MOD-013-S3)
+- [X] MOD-013-T11 [US1] Acceptance: one document with every category → report outcomes and paths exact; scene opens; orphans and rejected preserved on re-save; dropped not (MOD-013-S1) — Verified 2026-11-13: SceneModulationRestoreTests.testEveryCategoryIsReportedWithItsPath and testReSavingKeepsOrphansWritesMigratedIDsAndReachesAFixedPoint
+- [X] MOD-013-T12 [US1] Restored edges evaluate like the original: 64 frames, fixed clock, bit-identical (MOD-013-S2) — Verified 2026-11-13: SceneModulationRestoreTests.testRestoredEdgesEvaluateLikeTheOriginal (64 frames, 256 bit-identical values)
+- [X] MOD-013-T13 [US3] Migration through a scene: twice-renamed target rewritten, re-saved with the new ID; retired-after-rename dropped — Verified 2026-11-13: SceneModulationRestoreTests.testMigrationThroughAScene
+- [X] MOD-013-T14 Seeded property test: 200 documents, fixed point after one capture, preserved edges survive, < 1 s (MOD-013-S3) — Verified 2026-11-13: SceneModulationPropertyTests (200 seeded documents, 0.12 s, every outcome > 10 times)
 
 ## Phase 5: Verification and docs
 
-- [ ] MOD-013-T15 Mac host: `swift test` for ParameterGraph, SceneFormat, VisualGenerators; record counts and durations
-- [ ] MOD-013-T16 Linux shape for the same three packages (MOD-013-R12)
-- [ ] MOD-013-T17 Amend ADR-0028 (per-edge restore, severities, preserved edges) and ADR-0012 (migration table); spec status; `validate_docs.py`, `check_compliance.py`
+- [X] MOD-013-T15 Mac host: `swift test` for ParameterGraph, SceneFormat, VisualGenerators; record counts and durations — Verified 2026-11-13: Mac host: ParameterGraph 71 + 38 tests (3.4 s wall), SceneFormat 37 tests (0.70 s, 2.7 s wall), VisualGenerators 103 tests (14.8 s)
+- [X] MOD-013-T16 Linux shape for the same three packages (MOD-013-R12) — Verified 2026-11-13: Linux shape (`-DCOMPOSITOR_NO_METAL -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE`, `.build/linuxshape`): ParameterGraph 71 + 38, SceneFormat 37, VisualGenerators 81, all pass
+- [X] MOD-013-T17 Amend ADR-0028 (per-edge restore, severities, preserved edges) and ADR-0012 (migration table); spec status; `validate_docs.py`, `check_compliance.py` — Verified 2026-11-13: ADR-0028 and ADR-0012 amended; `validate_docs.py` OK, `check_compliance.py` OK
 
 ## Dependencies
 

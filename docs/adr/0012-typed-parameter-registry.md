@@ -66,3 +66,21 @@ constants, and the app stored a subset under `settings.*` keys.
   touches three tested types for no behavior change).
 - A main-actor or actor-isolated store (forces hops for MIDI and render consumers).
 - UUID or integer IDs (unreadable in scenes, collide across features).
+
+## Amendment 2026-11-13 (MOD-013, ID migration table)
+
+Decided under the owner's standing approval (owner rule 4); specs/064-mod-013-modulation-serialization
+(research MOD-013-D1, contract M1, M2).
+
+- The registry carries an append-only `ModulationIDMigrations` table (format version 1): rules
+  "old renamed to new" or "old retired", each tagged with the table version that added it. Rules are
+  never edited or removed; renames chain and resolution is idempotent; loops, self-renames,
+  duplicate rules, cross-kind renames (parameter ↔ audio feature) and decreasing versions are refused
+  when the table is built.
+- Identity rules are unchanged: a shipped ID is still never reused. Replacing a parameter means
+  retiring the old ID, registering a new one and appending a rename rule; the registry refuses a rule
+  whose old ID is registered or not retired, and a chain that ends at an ID neither registered nor
+  retired. Audio feature IDs (`audio.` prefix) have no registry, so retiring one needs a rule.
+- `resolveParameter` applies the rules, then the retired set; consumers that store IDs (scenes now,
+  MIDI and OSC maps later) resolve through it. `VisualParameterCatalog.migrations` is empty: nothing
+  has been renamed yet.

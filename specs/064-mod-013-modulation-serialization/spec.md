@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (MOD-013-T01-T17 verified on the Mac host and the Linux shape; no app change, no simulator or device task)
 
 **Input**: User description: "Implement MOD-013 (Modulation serialization) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Persist graph connections by stable
