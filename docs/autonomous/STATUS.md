@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T23:35:03Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T23:38:01Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 233 |
 | implementing | 1 |
-| unit_passed | 1 |
-| integrated | 90 |
+| integrated | 91 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 10 | 1 | 1 | 74 | 1 |
-| P1 | 137 | 0 | 0 | 14 | 0 |
-| P2 | 77 | 0 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 10 | 1 | 75 | 1 |
+| P1 | 137 | 0 | 14 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 235 features are not implemented yet (first: ACC-003, ACC-004, ACC-005, ACC-006, ACC-007)
+- 234 features are not implemented yet (first: ACC-003, ACC-004, ACC-005, ACC-006, ACC-007)
 
 ## Integrated
 
@@ -75,6 +74,7 @@ The physical-device suite may **not** start:
 | FILE-009 | Storage usage explorer | `efddbc041837` | `feature/file-009` |
 | FILE-010 | Safe cache cleanup | `f65b410a8d7c` | `feature/file-010` |
 | FILE-012 | No-telemetry verification | `3a8ad2044000` | `feature/file-012` |
+| FILE-013 | Privacy permission audit | `b5e4bd0` | `feature/file-013` |
 | FX-001 | Bloom | `1192e0d6503e` | `feature/fx-001` |
 | FX-019 | Strobe safety envelope | `6cfcbaabc8d0` | `feature/fx-019` |
 | MED-001 | Import photo layer | `dd604d0b1d51` | `feature/med-001` |
@@ -425,11 +425,12 @@ None.
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `51cdfefb92f2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-012/20261113T181114/autonomous-tests.log`)
 - `post-merge: NoTelemetryUITests 6 (7.6-19.5 s) on iOS 27.2 sim; check_network_symbols OK on the merged Debug app (19 images, StoreKit allowed only); script tests in the gate`: pass at `3a8ad2044000` (log `.autonomous/logs/integration/file-012/ui.log`)
 
-### FILE-013 Privacy permission audit (unit_passed)
+### FILE-013 Privacy permission audit (integrated)
 - `python3 scripts/check_compliance.py`: pass at `6707e9c24f98` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-013/20261113T183450/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `6707e9c24f98` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-013/20261113T183450/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `6707e9c24f98` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-013/20261113T183450/script-tests.log`)
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `6707e9c24f98` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-013/20261113T183450/autonomous-tests.log`)
+- `post-merge: projectM-iOSTests + PermissionAudit/Camera/OSCReceiver/ReduceMotion UI tests; built Info.plist has NSCameraUsageDescription`: pass at `b5e4bd0` (log `.autonomous/logs/integration/file-013/app-tests.log`)
 
 ### FX-001 Bloom (integrated)
 - `python3 scripts/check_compliance.py`: pass at `94f4b3a6b7c3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-001/20261113T090348/compliance.log`)
