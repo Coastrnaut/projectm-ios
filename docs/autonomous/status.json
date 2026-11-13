@@ -6,10 +6,11 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 16,
+   "audited": 15,
    "implementing": 2,
    "integrated": 68,
-   "skipped_existing": 1
+   "skipped_existing": 1,
+   "unit_passed": 1
   },
   "P1": {
    "audited": 137,
@@ -24,10 +25,11 @@
   }
  },
  "by_state": {
-  "audited": 239,
+  "audited": 238,
   "implementing": 2,
   "integrated": 84,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -2796,12 +2798,12 @@
   "SCN-003": {
    "attempts": 0,
    "branch": "feature/scn-003",
-   "branch_sha": null,
+   "branch_sha": "0186ee96ba05c10e47ec86ea79d268c1d7a89498",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "SCN-004": {
    "attempts": 0,
@@ -3195,13 +3197,13 @@
   },
   "UIX-001": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/uix-001",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "UIX-002": {
    "attempts": 0,
@@ -3991,5 +3993,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T22:40:44Z"
+ "updated": "2026-11-13T22:42:29Z"
 }

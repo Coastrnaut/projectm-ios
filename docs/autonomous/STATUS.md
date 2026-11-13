@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T22:40:44Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T22:42:29Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,19 +9,20 @@
 
 | State | Features |
 |---|---|
-| audited | 239 |
+| audited | 238 |
 | implementing | 2 |
+| unit_passed | 1 |
 | integrated | 84 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 16 | 2 | 68 | 1 |
-| P1 | 137 | 0 | 14 | 0 |
-| P2 | 77 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 15 | 2 | 1 | 68 | 1 |
+| P1 | 137 | 0 | 0 | 14 | 0 |
+| P2 | 77 | 0 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -688,6 +689,15 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `ce5c83d6d82a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-002/20261113T163028/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `ce5c83d6d82a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-002/20261113T163028/swift-test_SceneFormat.log`)
 - `post-merge: projectM-iOSTests 297 incl. 20 autosave tests; SceneAutosaveUITests kill-and-relaunch 19.9 s, NativeVisual 4, TextOverlay, LinearSpectrum UI tests on iOS 27.2 sim`: pass at `1aa354c0b623` (log `.autonomous/logs/integration/scn-002/app-tests.log`)
+
+### SCN-003 Scene duplicate and rename (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `0186ee96ba05` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-003/20261113T174126/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `0186ee96ba05` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-003/20261113T174126/docs.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `0186ee96ba05` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-003/20261113T174126/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `0186ee96ba05` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-003/20261113T174126/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `0186ee96ba05` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-003/20261113T174126/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `0186ee96ba05` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-003/20261113T174126/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `0186ee96ba05` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-003/20261113T174126/swift-test_ShowControl.log`)
 
 ### SHD-001 Procedural material catalog (integrated)
 - `python3 scripts/check_compliance.py`: pass at `67186e7fa06d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-001/20261113T120524/compliance.log`)
