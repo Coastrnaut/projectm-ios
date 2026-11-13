@@ -52,7 +52,7 @@ with " — Verified <date>: <how>" appended. Logs go to `.build/scratch/`.
 
 ## Phase 7: Polish
 
-- [ ] MOD-014-T12 Run the quickstart commands: ParameterGraph and VisualGenerators on the host, VisualGenerators in the Linux build shape, `check_compliance.py`, `validate_docs.py`; record counts and suite durations here; confirm no file uses Foundation-only or C stdio APIs that Linux lacks.
+- [X] MOD-014-T12 Run the quickstart commands: ParameterGraph and VisualGenerators on the host, VisualGenerators in the Linux build shape, `check_compliance.py`, `validate_docs.py`; record counts and suite durations here; confirm no file uses Foundation-only or C stdio APIs that Linux lacks. — Verified 2026-11-13 on the Mac Studio host at 77e9690: ParameterGraph 66 tests, 0 failures (0.066 s of tests, about 1 s wall); VisualGenerators 103 tests, 0 failures (14.7 s of tests, 23 s wall); VisualGenerators Linux build shape (`-DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE`, `.build/linuxshape`) 81 tests, 0 failures (8.2 s, 16 s wall); `check_compliance.py` OK; `validate_docs.py` OK (335 files). The new files import nothing (standard library only: no Foundation, no C stdio). Logs .build/scratch/mod014-T12-*.log. Not run here: real Linux (CI) and Xcode 26 (CI); no simulator or device run (no app code changed).
 
 ## Dependencies
 
