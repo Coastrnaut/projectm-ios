@@ -7,9 +7,10 @@
  "by_priority": {
   "P0": {
    "audited": 53,
-   "implementing": 3,
+   "implementing": 2,
    "integrated": 30,
-   "skipped_existing": 1
+   "skipped_existing": 1,
+   "unit_passed": 1
   },
   "P1": {
    "audited": 142,
@@ -24,9 +25,10 @@
  },
  "by_state": {
   "audited": 283,
-  "implementing": 3,
+  "implementing": 2,
   "integrated": 39,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -1790,12 +1792,12 @@
   "MOD-001": {
    "attempts": 0,
    "branch": "feature/mod-001",
-   "branch_sha": null,
+   "branch_sha": "c62c162f633a6c19539fd95f93ccc7a452ed6eab",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": "specs/028-mod-001-typed-parameter-registry",
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "MOD-002": {
    "attempts": 0,
@@ -3810,5 +3812,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T15:47:53Z"
+ "updated": "2026-11-13T15:49:22Z"
 }
