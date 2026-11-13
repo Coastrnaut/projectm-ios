@@ -213,4 +213,31 @@ public final class CircularSpectrumLayout {
         let parts = luminanceComponents()
         return parts.bars * Double(gain) + parts.background
     }
+
+    /// Mean relative luminance of the frame drawn with `gain` after downstream stages described by
+    /// `transfer` (FX-001-R10). Each lit bar is a flat region of its pixel color (the bar's color
+    /// × gain composited "over" the background); the rest is background. With the identity
+    /// transfer this equals `meanRelativeLuminance(gain:)` for opaque palettes. No allocation.
+    public func meanLuminance<Transfer: FrameLuminanceTransfer>(gain: Float, transfer: Transfer) -> Double {
+        guard width > 0, height > 0 else { return 0 }
+        let total = Double(width) * Double(height)
+        let background = configuration.background
+        var covered = 0.0
+        var sum = 0.0
+        for k in 0..<barCount {
+            let bar = bars[k]
+            guard bar.isLit else { continue }
+            let area = bar.halfWidthDegrees * .pi / 180 * (bar.outerRadius * bar.outerRadius - bar.innerRadius * bar.innerRadius)
+            covered += area
+            let c = bar.color
+            let a = c.alpha
+            let pixel = LinearColor(red: c.red * gain * a + (1 - a) * background.red,
+                                    green: c.green * gain * a + (1 - a) * background.green,
+                                    blue: c.blue * gain * a + (1 - a) * background.blue,
+                                    alpha: a + (1 - a) * background.alpha)
+            sum += area * transfer.outputLuminance(ofFlatColor: pixel)
+        }
+        sum += max(0, total - covered) * transfer.outputLuminance(ofFlatColor: background)
+        return sum / total
+    }
 }

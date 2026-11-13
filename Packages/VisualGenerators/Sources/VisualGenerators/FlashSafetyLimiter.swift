@@ -7,7 +7,10 @@
 // 2. the frame's mean relative luminance (computed exactly from bar areas and linear colors by
 //    `CircularSpectrumLayout.luminanceComponents()`) rises by at most `maxLuminanceRisePerSecond`
 //    × frame time; a uniform gain ≤ 1 on the bars' colors enforces it.
-// Frame time is clamped to 0…`maxFrameTime`, so a stall never permits a jump. A rise of 0.1 (WCAG's
+// When stages after the generator add light (FX-001 bloom), the generator passes their
+// `FrameLuminanceTransfer` and the gain is solved against the composited luminance by bisection
+// (`gain(frameTime:enabled:luminanceAtGain:)`; research FX-001-D4), so the bound holds on the final
+// picture. Frame time is clamped to 0…`maxFrameTime`, so a stall never permits a jump. A rise of 0.1 (WCAG's
 // flash threshold) therefore takes at least 0.4 s. Falls are only slew-limited; the two-sided
 // envelope across every effect is FX-019's. With the setting off, values pass through (sanitized)
 // and the gain is 1, but the state keeps tracking, so turning it on continues from the current
@@ -83,5 +86,46 @@ public final class FlashSafetyLimiter {
         previousLuminance = bars * gain + background
         hasPreviousLuminance = true
         return Float(gain)
+    }
+
+    /// Bisection steps of `gain(frameTime:enabled:luminanceAtGain:)`: precision 2⁻²⁴ ≈ 6e-8.
+    public static let bisectionSteps = 24
+
+    /// The gain (0…1) for a frame whose mean luminance at gain g is `luminanceAtGain(g)`,
+    /// nondecreasing in g (for example the composited luminance with a glow, FX-001-R10; research
+    /// FX-001-D4): the largest g whose luminance stays within the rise bound, found by a fixed
+    /// number of bisection steps. Records the luminance actually shown. No allocation.
+    public func gain(frameTime: Double, enabled: Bool, luminanceAtGain: (Float) -> Double) -> Float {
+        @inline(__always) func sanitized(_ v: Double) -> Double { v.isFinite ? max(v, 0) : 0 }
+        var gain: Float = 1
+        var shown = sanitized(luminanceAtGain(1))
+        if enabled && hasPreviousLuminance {
+            let ceiling = previousLuminance + Self.maxLuminanceRisePerSecond * Self.clampedFrameTime(frameTime)
+            if shown > ceiling {
+                var lo: Float = 0
+                var hi: Float = 1
+                var loLuminance = sanitized(luminanceAtGain(0))
+                if loLuminance <= ceiling {
+                    for _ in 0..<Self.bisectionSteps {
+                        let mid = (lo + hi) / 2
+                        let l = sanitized(luminanceAtGain(mid))
+                        if l <= ceiling { lo = mid; loLuminance = l } else { hi = mid }
+                    }
+                }
+                gain = lo
+                shown = loLuminance
+            }
+        }
+        previousLuminance = shown
+        hasPreviousLuminance = true
+        return gain
+    }
+
+    /// The gain for a circular spectrum laid out in `layout` whose frame then passes through
+    /// downstream stages described by `transfer` (FX-001-R10). The closure is non-escaping: no
+    /// allocation.
+    public func gain<Transfer: FrameLuminanceTransfer>(for layout: CircularSpectrumLayout, transfer: Transfer,
+                                                       frameTime: Double, enabled: Bool) -> Float {
+        gain(frameTime: frameTime, enabled: enabled) { g in layout.meanLuminance(gain: g, transfer: transfer) }
     }
 }

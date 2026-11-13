@@ -8,10 +8,14 @@
 // * Visual (VIS-001-R11): projectM (default) or the native Circular Spectrum, key `settings.visual`
 //   (unknown → projectM), and the circular spectrum's bar count, key `settings.circularSpectrum.bars`
 //   (16/32/64/128; anything else → 64).
+// * Glow (FX-001-R4, R11): the circular spectrum's bloom, keys `settings.circularSpectrum.glow`
+//   (Bool, absent → off), `…glowIntensity`, `…glowRadius`, `…glowThreshold` (Double; absent, NaN or
+//   not a number → the default; out of range → clamped to `BloomParameters`' ranges).
 // All keys are "user settings" in the FR-065 list of what may be stored (FR-123 adds the scope,
-// VIS-001-R11 the two visual keys).
+// VIS-001-R11 the two visual keys, FX-001-R11 the four glow keys).
 import Foundation
 import Observation
+import VisualEffects
 
 @MainActor
 @Observable
@@ -21,7 +25,12 @@ final class AppSettings {
     static let presetScopeKey = "settings.presetScope"
     static let visualKey = "settings.visual"
     static let circularSpectrumBarsKey = "settings.circularSpectrum.bars"
-    static let allKeys = [performanceOverlayKey, reduceFlashingKey, presetScopeKey, visualKey, circularSpectrumBarsKey]
+    static let glowKey = "settings.circularSpectrum.glow"
+    static let glowIntensityKey = "settings.circularSpectrum.glowIntensity"
+    static let glowRadiusKey = "settings.circularSpectrum.glowRadius"
+    static let glowThresholdKey = "settings.circularSpectrum.glowThreshold"
+    static let allKeys = [performanceOverlayKey, reduceFlashingKey, presetScopeKey, visualKey, circularSpectrumBarsKey,
+                          glowKey, glowIntensityKey, glowRadiusKey, glowThresholdKey]
     static let circularSpectrumBarChoices = [16, 32, 64, 128]
     static let defaultCircularSpectrumBars = 64
 
@@ -50,6 +59,49 @@ final class AppSettings {
         }
     }
 
+    /// FX-001: the circular spectrum's glow (off by default).
+    var glowEnabled: Bool {
+        didSet { defaults.set(glowEnabled, forKey: Self.glowKey) }
+    }
+
+    /// 0…1.
+    var glowIntensity: Double {
+        didSet {
+            let clamped = Self.clampedGlowValue(glowIntensity, range: BloomParameters.intensityRange, fallback: BloomParameters.defaultIntensity)
+            if clamped != glowIntensity { glowIntensity = clamped }
+            defaults.set(clamped, forKey: Self.glowIntensityKey)
+        }
+    }
+
+    /// Fraction of the output's shorter side, 0.005…0.06.
+    var glowRadius: Double {
+        didSet {
+            let clamped = Self.clampedGlowValue(glowRadius, range: BloomParameters.radiusRange, fallback: BloomParameters.defaultRadius)
+            if clamped != glowRadius { glowRadius = clamped }
+            defaults.set(clamped, forKey: Self.glowRadiusKey)
+        }
+    }
+
+    /// 0.1…1.
+    var glowThreshold: Double {
+        didSet {
+            let clamped = Self.clampedGlowValue(glowThreshold, range: BloomParameters.thresholdRange, fallback: BloomParameters.defaultThreshold)
+            if clamped != glowThreshold { glowThreshold = clamped }
+            defaults.set(clamped, forKey: Self.glowThresholdKey)
+        }
+    }
+
+    /// What the circular spectrum's bloom uses.
+    var glowParameters: BloomParameters {
+        BloomParameters(enabled: glowEnabled, intensity: Float(glowIntensity), radius: Float(glowRadius),
+                        threshold: Float(glowThreshold))
+    }
+
+    private static func clampedGlowValue(_ value: Double?, range: ClosedRange<Float>, fallback: Float) -> Double {
+        guard let value, !value.isNaN else { return Double(fallback) }
+        return min(max(value, Double(range.lowerBound)), Double(range.upperBound))
+    }
+
     /// The user's choice; nil follows Reduce Motion.
     private(set) var reduceFlashingChoice: Bool?
 
@@ -64,6 +116,13 @@ final class AppSettings {
         visual = defaults.string(forKey: Self.visualKey).flatMap(VisualChoice.init(rawValue:)) ?? .projectM
         let bars = defaults.integer(forKey: Self.circularSpectrumBarsKey)
         circularSpectrumBars = Self.circularSpectrumBarChoices.contains(bars) ? bars : Self.defaultCircularSpectrumBars
+        glowEnabled = defaults.bool(forKey: Self.glowKey)
+        glowIntensity = Self.clampedGlowValue(defaults.object(forKey: Self.glowIntensityKey) as? Double,
+                                              range: BloomParameters.intensityRange, fallback: BloomParameters.defaultIntensity)
+        glowRadius = Self.clampedGlowValue(defaults.object(forKey: Self.glowRadiusKey) as? Double,
+                                           range: BloomParameters.radiusRange, fallback: BloomParameters.defaultRadius)
+        glowThreshold = Self.clampedGlowValue(defaults.object(forKey: Self.glowThresholdKey) as? Double,
+                                              range: BloomParameters.thresholdRange, fallback: BloomParameters.defaultThreshold)
     }
 
     /// What the renderer uses.

@@ -470,7 +470,12 @@ final class AppCoordinator: VisualizationControlling {
             #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("-uitestNativeVisualFailure") { device = nil }   // NativeVisualUITests
             #endif
-            let host = try CircularSpectrumHost.make(device: device, reader: manager.analysisTap, barCount: circularSpectrumBarCount)
+            var forceGlowFailure = false
+            #if DEBUG
+            forceGlowFailure = ProcessInfo.processInfo.arguments.contains("-uitestGlowFailure")   // GlowUITests (FX-001-R13)
+            #endif
+            let host = try CircularSpectrumHost.make(device: device, reader: manager.analysisTap, barCount: circularSpectrumBarCount,
+                                                     glow: settings.glowParameters, forceGlowFailure: forceGlowFailure)
             host.reduceFlashing = settings.reduceFlashing
             presentation.register(host)   // PERF-011: starts suspended while the app cannot present
             nativeVisual = host
@@ -512,6 +517,21 @@ final class AppCoordinator: VisualizationControlling {
         } else {
             prepareNativeVisualIfNeeded()
             pauseActiveVisual()
+        }
+    }
+
+    // MARK: - Glow (FX-001)
+
+    static let glowUnavailableMessage = "Glow isn't available on this device."
+
+    /// The circular spectrum's glow could not be built; it renders without it (FX-001-R13).
+    var glowUnavailable: Bool { nativeVisual?.glowUnavailable ?? false }
+
+    /// A glow setting changed: the running visual uses it from the next frame (FX-001-R12).
+    func glowSettingsChanged() {
+        nativeVisual?.glow = settings.glowParameters
+        if settings.glowEnabled && glowUnavailable {
+            UIAccessibility.post(notification: .announcement, argument: Self.glowUnavailableMessage)
         }
     }
 
