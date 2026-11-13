@@ -163,7 +163,8 @@ final class PresetTrialRunnerTests: XCTestCase {
         XCTAssertEqual(renderer.presentedFrameCount, framesBefore + presentedDuringTrial)
         // The visible engine still draws its own preset: there is a picture.
         var lit = 0
-        for _ in 0..<300 where lit == 0 {
+        let deadline = ContinuousClock.now + .seconds(30)   // time-bounded, not frame-bounded
+        while lit == 0 && ContinuousClock.now < deadline {
             XCTAssertTrue(renderer.renderFrame(present: false))
             lit = litPixels(renderer.readPixels())
             if lit == 0 { try await Task.sleep(for: .milliseconds(10)) }

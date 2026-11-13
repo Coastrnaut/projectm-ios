@@ -6,7 +6,10 @@ import XCTest
 
 @MainActor
 final class PlayQueueTests: XCTestCase {
-    private var directory: URL!
+    // nonisolated(unsafe): Linux's XCTest calls setUpWithError and tearDownWithError outside the
+    // main actor, so a main-actor property could not be set there (CI run 43415519311). XCTest
+    // runs setUp, the test and tearDown one after another, never concurrently.
+    nonisolated(unsafe) private var directory: URL!
 
     override func setUpWithError() throws {
         directory = FileManager.default.temporaryDirectory.appendingPathComponent("aud003-queue-\(UUID().uuidString)",

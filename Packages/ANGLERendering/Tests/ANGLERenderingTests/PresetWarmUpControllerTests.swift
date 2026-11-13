@@ -165,7 +165,9 @@ final class PresetWarmUpControllerTests: XCTestCase {
     }
 
     private func waitUntil(_ condition: () -> Bool) async throws {
-        for _ in 0..<400 where !condition() { try await Task.sleep(for: .milliseconds(25)) }
+        // A 90 s ceiling, not a speed target: CI's simulator has no GPU (run 43415519311).
+        let deadline = ContinuousClock.now + .seconds(90)
+        while !condition() && ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(25)) }
     }
 
     func testStopReleasesTheThreadAndContextAndTheWorkerRestarts() async throws {

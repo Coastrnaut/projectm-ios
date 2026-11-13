@@ -35,7 +35,9 @@ final class ANGLERendererTests: XCTestCase {
     /// drawn picture drive frames until there is one, for at most 3 s. Returns the lit-pixel count.
     @discardableResult
     private func renderUntilLit(_ renderer: ANGLERenderer) async throws -> Int {
-        for _ in 0..<300 {
+        // Bounded by time (30 s), not by a frame count that assumed the Mac's GPU speed.
+        let deadline = ContinuousClock.now + .seconds(30)
+        while ContinuousClock.now < deadline {
             XCTAssertTrue(renderer.renderFrame(present: false))
             let lit = litPixels(renderer.readPixels())
             if lit > 0 { return lit }
@@ -78,7 +80,11 @@ final class ANGLERendererTests: XCTestCase {
         renderer.prewarmDelay = .zero
         try await renderer.setPreset(preset("100-square.milk"))
         renderer.prewarm([preset("110-per_pixel.milk"), preset("200-wave.milk")])
-        for _ in 0..<200 where renderer.prewarmedCount < 2 {
+        // Wait for the warm-up with a 90 s ceiling. It took well under 5 s on the Mac Studio, but CI's
+        // simulator has no GPU and warmed nothing within 5 s (run 43415519311), so the old 200 x 25 ms
+        // budget failed there without a defect. The test checks that warming happens, not its speed.
+        let deadline = ContinuousClock.now + .seconds(90)
+        while renderer.prewarmedCount < 2 && ContinuousClock.now < deadline {
             renderer.renderFrame(present: false)   // the visible engine keeps drawing meanwhile
             try await Task.sleep(for: .milliseconds(25))
         }
@@ -99,7 +105,8 @@ final class ANGLERendererTests: XCTestCase {
         renderer.prewarm([preset("200-wave.milk")])
         try await Task.sleep(for: .milliseconds(150))
         XCTAssertEqual(renderer.prewarmedCount, 0, "nothing before the delay")
-        for _ in 0..<100 where renderer.prewarmedCount < 1 { try await Task.sleep(for: .milliseconds(30)) }
+        let deadline = ContinuousClock.now + .seconds(90)   // a ceiling, not a speed target (CI has no GPU)
+        while renderer.prewarmedCount < 1 && ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(30)) }
         try await Task.sleep(for: .milliseconds(300))
         XCTAssertEqual(renderer.prewarmedCount, 1, "only the newer request")
     }
