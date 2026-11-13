@@ -50,7 +50,8 @@ public final class TexturePool: @unchecked Sendable {
         let created = device.makeTexture(descriptor: descriptor)
         Self.signposter.endInterval("PERF-004 texture allocation", signpost)
         guard let created else { return nil }
-        lock.withLock { core.adopt(created, key: key, bytes: created.allocatedSize) }
+        let bytes = created.allocatedSize > 0 ? created.allocatedSize : Self.estimatedBytes(descriptor)
+        lock.withLock { core.adopt(created, key: key, bytes: bytes) }
         return created
     }
 
@@ -82,6 +83,21 @@ public final class TexturePool: @unchecked Sendable {
 
     /// True when `texture` is checked out of this pool (tests, diagnostics).
     public func isCheckedOut(_ texture: MTLTexture) -> Bool { lock.withLock { core.isCheckedOut(texture) } }
+
+    /// Bytes of a texture of `d` when Metal reports no `allocatedSize` (the iOS Simulator reports 0):
+    /// pixels × bytes per pixel × samples × slices, plus a third for a mip chain.
+    public static func estimatedBytes(_ d: MTLTextureDescriptor) -> Int {
+        let bytesPerPixel: Int
+        switch d.pixelFormat {
+        case .r8Unorm, .a8Unorm: bytesPerPixel = 1
+        case .rg8Unorm, .r16Float: bytesPerPixel = 2
+        case .rgba16Float, .rg32Float: bytesPerPixel = 8
+        case .rgba32Float: bytesPerPixel = 16
+        default: bytesPerPixel = 4
+        }
+        let base = d.width * d.height * max(1, d.depth) * max(1, d.arrayLength) * max(1, d.sampleCount) * bytesPerPixel
+        return d.mipmapLevelCount > 1 ? base + base / 3 : base
+    }
 
     public static func key(for d: MTLTextureDescriptor) -> TexturePoolKey {
         TexturePoolKey(pixelFormat: d.pixelFormat.rawValue, width: d.width, height: d.height, depth: d.depth,

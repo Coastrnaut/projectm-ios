@@ -65,7 +65,7 @@ final class TexturePoolSwitchTests: XCTestCase {
         XCTAssertFalse(pool.makeTexture(descriptor: other) === a, "another usage misses")
         XCTAssertFalse(pool.makeTexture(descriptor: pictureDescriptor(width: 65)) === a, "another size misses")
         XCTAssertEqual(pool.counters.retiredTextures, 1)
-        XCTAssertGreaterThanOrEqual(pool.counters.retiredBytes, 64 * 48 * 8, "bytes from allocatedSize")
+        XCTAssertGreaterThanOrEqual(pool.counters.retiredBytes, 64 * 48 * 8, "bytes from allocatedSize, or the estimate where it is 0")
         pool.purge()
         XCTAssertEqual(pool.counters.retiredTextures, 0)
         XCTAssertEqual(pool.counters.purged, 1)
@@ -141,6 +141,7 @@ final class TexturePoolSwitchTests: XCTestCase {
         XCTAssertEqual(run.liveBytes[19], run.liveBytes[99], "plateau in bytes")
         XCTAssertEqual(run.misses[19], run.misses[99], "no texture created after warm-up: \(run.misses)")
         // Whole device (layers' own resources included): no growth after warm-up beyond 1 MiB of driver noise.
+        // (The iOS Simulator reports 0 here; the Mac host and devices report real sizes.)
         XCTAssertLessThanOrEqual(run.allocated[99], run.allocated[19] + (1 << 20),
                                  "device allocation at switch 20 \(run.allocated[19]) and 100 \(run.allocated[99])")
         print("PERF-004 acceptance: live textures \(run.live[99]) (max \(run.live.max() ?? 0)), live bytes \(run.liveBytes[99]), "
@@ -209,7 +210,8 @@ final class TexturePoolSwitchTests: XCTestCase {
     func testCapAgeAndPurgeThroughTheCompositor() throws {
         let rig = try GPURig()
         let probe = try XCTUnwrap(rig.device.makeTexture(descriptor: pictureDescriptor()))
-        let pool = TexturePool(device: rig.device, limits: TexturePoolLimits(maxRetiredBytes: probe.allocatedSize, maxIdleFrames: 5))
+        let pictureBytes = probe.allocatedSize > 0 ? probe.allocatedSize : TexturePool.estimatedBytes(pictureDescriptor())   // simulator: 0
+        let pool = TexturePool(device: rig.device, limits: TexturePoolLimits(maxRetiredBytes: pictureBytes, maxIdleFrames: 5))
         let compositor = try Compositor(device: rig.device, texturePool: pool)
         var stack = LayerStack()
         try switchScene(&stack, colors: [Pixel(1, 0, 0, 1)], lastGood: [false])
