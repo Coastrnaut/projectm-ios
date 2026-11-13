@@ -46,6 +46,7 @@ final class OSCNetworkAccessUITests: XCTestCase {
 
     private func status() -> String {
         let element = app.staticTexts["oscStatus"]
+        app.reveal(element)   // below the fold as Settings grows (UI sweep 2026-11-13)
         return (element.value as? String) ?? element.label
     }
 
