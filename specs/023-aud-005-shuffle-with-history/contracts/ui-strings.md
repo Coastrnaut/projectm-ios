@@ -16,5 +16,7 @@ Controls:
 - Transport button: identifier `transportShuffle`, label "Shuffle", value "On"/"Off", shown with a
   value and an action (imported audio only), placed before Repeat; a tap toggles and announces
   `shuffleAnnouncement(newValue)`.
-- Queue screen: a `Toggle` labelled "Shuffle" (identifier `shuffleToggle`) in its own section above
-  Repeat, with `shuffleFooter`; a change announces the same.
+- Queue screen: a `Toggle` labelled "Shuffle" (identifier `shuffleToggle`) in its own section right
+  after "Up Next", with `shuffleFooter`; a change announces the same. (First placed above Repeat; that
+  pushed the queue rows down so far that `PlayQueueUITests`' long-press on the third row met the
+  bottom toolbar, 2026-11-13; after the list, every existing row keeps its place.)

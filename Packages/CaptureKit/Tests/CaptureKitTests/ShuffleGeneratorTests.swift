@@ -1,6 +1,6 @@
 // ShuffleGeneratorTests.swift — the documented generator behind the shuffled order (AUD-005-T02;
 // research AUD-005-D1). Golden values come from the published SplitMix64 and FNV-1a 64 algorithms,
-// computed independently (`.build/scratch/oracle.py` during AUD-005). Foundation only, Linux too.
+// computed independently (`specs/023-aud-005-shuffle-with-history/oracle.py`). Foundation only, Linux too.
 import Foundation
 import XCTest
 @testable import CaptureKit

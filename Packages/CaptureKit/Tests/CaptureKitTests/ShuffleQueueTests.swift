@@ -2,7 +2,7 @@
 // R10, R13; the roadmap acceptance AUD-005-S1 to S4; data-model.md). No audio: Linux too.
 //
 // The literal sequences for seed 42 were computed by an independent Python model of research
-// AUD-005-D1/D4/D5 (`.build/scratch/oracle.py` during AUD-005), not by the code under test. Each test
+// AUD-005-D1/D4/D5 (`specs/023-aud-005-shuffle-with-history/oracle.py`), not by the code under test. Each test
 // drives the queue as the transport does: it asks `item(after:)` or `item(before:)` for the current
 // track, then reports the move with its reason.
 import Foundation
