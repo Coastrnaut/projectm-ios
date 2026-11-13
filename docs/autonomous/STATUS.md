@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T17:59:23Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T18:00:53Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,13 +10,13 @@
 | State | Features |
 |---|---|
 | audited | 267 |
-| implementing | 1 |
+| unit_passed | 1 |
 | integrated | 57 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
+| Priority | audited | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|
 | P0 | 42 | 0 | 44 | 1 |
 | P1 | 139 | 0 | 12 | 0 |
@@ -497,6 +497,15 @@ None.
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `094e008fa7bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-002/20261113T123540/sim-test_ANGLERendering.log`)
 - `swift test --package-path Packages/Compositor`: pass at `094e008fa7bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-002/20261113T123540/swift-test_Compositor.log`)
 - `post-merge: Compositor xcodebuild test on iPhone 17 sim (GeneratorGraph 46 with the on-demand bench skipped, ProceduralMaterials 31, Compositor 79); projectM-iOSTests 186`: pass at `e91692538b99` (log `.autonomous/logs/integration/shd-002/compositor-sim.log`)
+
+### SHD-009 Expression mapping DSL (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `269a293b8d9d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-009/20261113T125934/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `269a293b8d9d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-009/20261113T125934/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `269a293b8d9d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-009/20261113T125934/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `269a293b8d9d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-009/20261113T125934/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ParameterGraph`: pass at `269a293b8d9d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-009/20261113T125934/swift-test_ParameterGraph.log`)
+- `swift test --package-path Packages/PerformanceControl`: pass at `269a293b8d9d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-009/20261113T125934/swift-test_PerformanceControl.log`)
+- `swift test --package-path Packages/VisualGenerators`: pass at `269a293b8d9d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-009/20261113T125934/swift-test_VisualGenerators.log`)
 
 ### SHOW-011 Tap tempo (integrated)
 - `python3 scripts/check_compliance.py`: pass at `725551081f5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-011/20261113T104510/compliance.log`)
