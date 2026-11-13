@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Clarified 2026-11-13
 
 **Input**: User description: "Implement PERF-006 (Memory warning recovery) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Evict caches and optional layers
@@ -38,7 +38,11 @@ The row's gap status is "Gap candidate". The audit confirms it.
 Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
 interaction); each answer is the conservative, local-first option.
 
-(Filled by `/speckit-clarify`.)
+- Q: Which system signal starts a recovery: UIKit's memory warning, a dispatch memory-pressure source, or both? → A: UIKit's memory warning only (`UIApplication.didReceiveMemoryWarningNotification`), observed once by the coordinator; the dispatch source is not added. On iOS both are driven by the same kernel pressure event, so observing both would deliver every warning twice and the second copy would always look like a repeat and escalate falsely (PERF-004's clarification rejected the dispatch source for the same reason). The core still accepts a `critical` level, used by tests and the DEBUG probe, so a later signal can be added without changing the steps. Rejected: both sources with time-based de-duplication (guesswork about delivery order); the dispatch source alone (UIKit's warning is the documented app-level signal and what Xcode's Simulate Memory Warning sends).
+- Q: How long are the repeat window and the cool-down? → A: A warning within 30 s of the previous one escalates; optional work stays shed for 60 s after the last escalating signal, then is restored once. Both are parameters of the coordinator (tests use a test clock and short values). 30 s separates a burst of pressure from unrelated warnings minutes apart; 60 s keeps the warm-up off long enough for the system to settle but returns preset-switch smoothness within a minute. Rejected: escalate on every warning (sheds work for an isolated warning); shed until relaunch (silently loses SC-104's smooth switches for the rest of the session).
+- Q: Which optional layers may be shed on escalation: the background preset warm-up only, or also the glow (bloom) and the circular spectrum drawn over Camera, Photo and Video? → A: The background preset warm-up only. The glow and the spectrum over Camera, Photo and Video are part of the visual the user chose; shedding them changes the picture without a user action, and their images are in use every frame, so freeing them would mean recreating them on restore (an allocation burst under pressure). The roadmap's "optional layers" is read as layers of work the user never sees: the warm-up engine. A spectrum that is not the chosen visual is freed as a cache (PERF-006-R12). Rejected: disabling glow temporarily with a notice (visible change, setting-like behaviour without consent); dropping the overlay spectrum (changes the chosen scene, against the acceptance "retains playable scene").
+- Q: Should the user see a notice when the app recovers from a memory warning? → A: No. Nothing visible changes (only invisible caches and background work are released), so a notice would be noise during a performance and could not be acted on. Recoveries are reported in the system log and, in DEBUG builds, in a hidden readout. Rejected: a non-blocking banner (no user action exists); an accessibility announcement (interrupts VoiceOver for an invisible event).
+- Q: Where does the recovery logic live: in the app, or in a package testable on Linux? → A: The ordering, idempotence bookkeeping, escalation, cool-down and report live in the `PresentationLifecycle` package as `MemoryPressureRecovery` (pure Swift, no dependencies, tested on the macOS host and on Linux), next to PERF-011's presentation registry, which it mirrors (weak owner-registered resources, main actor). The app's `MemoryPressureCoordinator` only observes the system warning, owns the restore timer, registers the app's steps and logs through Diagnostics. The steps live with their owners (Compositor's pool via the app's `SharedTexturePool`, ANGLERendering's warm-up, the app's archive and visuals). Rejected: a new package (one small type); everything in the app (escalation logic would be testable only in the simulator).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -147,8 +151,8 @@ byte counts and nothing else; the debug readout shows the last freed bytes and t
 - **PERF-006-R4**: A step MUST be idempotent: running it when nothing is held frees 0 bytes and does
   not fail.
 - **PERF-006-R5**: The coordinator MUST escalate (also run the optional-tier steps) when the signal is
-  critical or a warning arrives within the repeat window after the previous one; optional steps stay
-  shed for the cool-down, which each further escalating signal extends; at the end of the cool-down
+  critical or a warning arrives within the repeat window (30 s) after the previous one; optional steps
+  stay shed for the cool-down (60 s after the last escalating signal), which each further escalating signal extends; at the end of the cool-down
   each shed step is restored exactly once.
 - **PERF-006-R6**: Recovery MUST NOT stop, restart or change the audio source, MUST NOT change the
   chosen visual or the preset playing, and MUST NOT change stored settings or files.
@@ -205,8 +209,10 @@ byte counts and nothing else; the debug readout shows the last freed bytes and t
 
 ## Assumptions
 
-- The system memory warning that UIKit delivers to the app is the signal; a separate dispatch
-  memory-pressure source is decided in the Clarifications.
+- The system memory warning that UIKit delivers to the app is the only system signal (Clarifications:
+  no dispatch memory-pressure source); the critical level is reachable from tests and the DEBUG probe.
+- No notice is shown to the user for a recovery (Clarifications); the glow and the spectrum over
+  Camera, Photo and Video are never shed.
 - Freed bytes are measured where the owner knows them (pool retired bytes, the archive chunk's size)
   and estimated otherwise (the warm-up target's size; the spectrum's glow images are counted as items,
   not bytes). The report says which.
