@@ -8,13 +8,12 @@
   "P0": {
    "audited": 52,
    "implementing": 1,
-   "integrated": 32,
-   "skipped_existing": 1,
-   "unit_passed": 1
+   "integrated": 33,
+   "skipped_existing": 1
   },
   "P1": {
-   "audited": 141,
-   "implementing": 1,
+   "audited": 140,
+   "implementing": 2,
    "integrated": 9
   },
   "P2": {
@@ -25,11 +24,10 @@
   }
  },
  "by_state": {
-  "audited": 281,
-  "implementing": 2,
-  "integrated": 41,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "audited": 280,
+  "implementing": 3,
+  "integrated": 42,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -38,7 +36,6 @@
   "infeasible": [],
   "pending": [
    "ACC-001",
-   "ACC-002",
    "ACC-003",
    "ACC-004",
    "ACC-005",
@@ -324,7 +321,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "284 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
+   "283 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
   ]
  },
  "features": {
@@ -343,10 +340,10 @@
    "branch": "feature/acc-002",
    "branch_sha": "64829437c98c2255af7e796c5a295d936604cac3",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "61c926cb8b59869ba551d8e31ca369b560f649c9",
    "priority": "P0",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "ACC-003": {
    "attempts": 0,
@@ -910,13 +907,13 @@
   },
   "CAM-001": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/cam-001",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "CAM-002": {
    "attempts": 0,
@@ -3591,6 +3588,11 @@
  },
  "integrated": [
   {
+   "branch": "feature/acc-002",
+   "id": "ACC-002",
+   "sha": "61c926cb8b59869ba551d8e31ca369b560f649c9"
+  },
+  {
    "branch": "feature/anl-001",
    "id": "ANL-001",
    "sha": "df16f2b90397a087cda6aa8fccb2d831e94e1d78"
@@ -3821,5 +3823,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T16:12:11Z"
+ "updated": "2026-11-13T16:15:44Z"
 }
