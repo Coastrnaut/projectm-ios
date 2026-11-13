@@ -173,9 +173,11 @@ system expression evaluator, a script engine, dynamic loading or shader compilat
 ### Edge Cases
 
 - Empty or whitespace-only source: rejected ("expected an expression").
-- Non-ASCII bytes, control characters, tabs and line breaks: tabs and line breaks are whitespace
-  (positions count lines); any other control or non-ASCII byte is rejected at its position.
-- `audio.band.128`, `audio.band.07`, `audio.band.-1`: unknown identifiers (MOD-002 names only).
+- Non-ASCII bytes, control characters, tabs and line breaks: tabs, carriage returns and line
+  feeds are whitespace (line feeds count lines); any other control or non-ASCII byte is rejected at
+  its position.
+- `audio.band.128`, `audio.band.07`: unknown identifiers (MOD-002 names only); `audio.band.-1`
+  reads as `audio.band - 1`, so `audio.band` is reported as unknown.
 - A function name used without a call (`sin + 1`) or a value called as a function (`time(1)`):
   rejected with a message saying which.
 - A binding that shadows a known name (`let time = 1`) or is defined twice: rejected.
@@ -221,8 +223,10 @@ system expression evaluator, a script engine, dynamic loading or shader compilat
 - **SHD-009-R8**: Compilation and evaluation MUST be deterministic: the same source gives a
   byte-identical compiled form, and the same compiled form with the same inputs gives a
   bit-identical result.
-- **SHD-009-R9**: After compilation, evaluation MUST NOT allocate memory and MUST do work bounded
-  by the static operation cost (no loops in the language).
+- **SHD-009-R9**: After compilation, evaluation MUST NOT allocate heap memory (its scratch values
+  live in a fixed-size, stack-placed buffer sized at compile time; checked by code review of the
+  evaluator, not by an allocation counter) and MUST do work bounded by the static operation cost
+  (no loops in the language).
 - **SHD-009-R10**: A compiled formula MUST be usable as an audio mapping: its result, limited to the
   0…1 position, feeds a MOD-003 linear output range, so values reach parameters only through the
   existing MOD-001/MOD-002 clamping. The formula MUST report which audio features it reads.
