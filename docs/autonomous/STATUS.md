@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T15:27:29Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T15:31:19Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -127,6 +127,7 @@ None.
 - `xcodebuild -scheme Rendering-Package -destination id=4E32B01D-7911-4A64-A944-877DDD445BC0 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `1e9e7eec69b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-016/20261113T101505/sim-test_Rendering.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `1e9e7eec69b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-016/20261113T101505/swift-test_VisualGenerators.log`)
 - `integration checkout: AnalysisFeatures 106 on iOS 27.2 sim; app: projectM-iOSTests 133; NativeVisualUITests 3 of 4 (fallback test fails in openSettings, a test-helper race; fix pending from the test pass)`: exit 1 at `97e498d` (log `.autonomous/logs/integration/anl-016/app-tests.log`)
+- `integration checkout after the NativeVisualUITests fix (facfd46): NativeVisualUITests 4/4 (fallback test 13.2 s), 79 s wall; agent's 5 runs 20/20`: pass at `facfd46` (log `.autonomous/logs/integration/flaky-fix/ui.log`)
 
 ### AUD-001 Import DRM-free audio files (integrated)
 - `python3 scripts/check_compliance.py`: pass at `d9a60b2a6692` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-001/20261112T153538/compliance.log`)
