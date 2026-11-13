@@ -2,6 +2,7 @@
 // (`projectM-iOS.storekit`, SKTestSession): purchase unlocks; cancel, failure and Ask to Buy unlock
 // nothing; a later approval unlocks; a refund locks; restore unlocks; no UserDefaults key is written
 // (FR-105-FR-110). Simulator results are not device evidence (T239 covers a device).
+import StoreKit
 import StoreKitTest
 import XCTest
 @testable import projectM_iOS
@@ -23,8 +24,29 @@ final class LibraryStoreTests: XCTestCase {
         session.clearTransactions()
     }
 
+    /// Every store a test makes buys through the session instead of `Product.purchase()`: in
+    /// StoreKit's local test environment the real call sometimes never returns, and on a freshly
+    /// created simulator it hung `testNoUnlockFlagIsStored` past the 3-minute limit (2026-11-13,
+    /// CAM-012's run), as it did the failure test before. `buyProduct` completes the same signed
+    /// transaction without the purchase UI path; the store's own result handling, entitlement check
+    /// and `Transaction.updates` are unchanged. The real call is one line in production, covered on a
+    /// device by T239. Tests that inject a cancel or a failure replace this closure again.
     private func startedStore() async -> LibraryStore {
         let store = LibraryStore()
+        let session = self.session!
+        store.performPurchase = { (product: Product) async throws -> Product.PurchaseResult in
+            // The signed result of exactly this purchase: `Transaction.latest(for:)` can still name
+            // an earlier test's (refunded) transaction at this point.
+            // It can reach `Transaction.all` a moment after `buyProduct` returns, so look for up to 3 s.
+            let bought = try await session.buyProduct(identifier: product.id)
+            for _ in 0..<30 {
+                for await result in Transaction.all {
+                    if case .verified(let transaction) = result, transaction.id == bought.id { return .success(result) }
+                }
+                try await Task.sleep(for: .milliseconds(100))
+            }
+            throw StoreKitError.unknown
+        }
         await store.start()
         await store.loadProduct()
         return store
