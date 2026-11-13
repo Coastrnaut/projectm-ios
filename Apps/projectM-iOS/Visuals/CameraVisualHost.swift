@@ -5,7 +5,10 @@
 //   at the bottom and the circular spectrum (`SpectrumLayerSource`, transparent background) on top,
 //   composited into a `CAMetalLayer` (`bgra8Unorm_srgb`) by one `CADisplayLink` on the main run loop.
 //   The composite flash guard applies Reduce flashing to the whole picture, camera included.
-//   Until CMP-002 (layer stack) this fixed stack is the only way the app shows a layer stack.
+//   CMP-002: the two layers are a `LayerStack` (camera bottom, spectrum top) applied to the
+//   compositor; the camera kind allows one instance, so no stack can open a second capture
+//   session. The stack is fixed here: editing layers by hand belongs to the layer inspector
+//   (CMP-015) and the editing UI rows.
 // * The camera runs only while the frame loop runs: resumed (the coordinator calls `resume()` only
 //   while Camera is shown on the visualizer and not paused), not suspended for presentation loss
 //   (PERF-011), the app not in the background and the scene connected. Whenever one of these stops
@@ -92,7 +95,7 @@ final class CameraVisualHost: PresentationBoundResource {
         #endif
     }
 
-    /// Throws `VisualGeneratorError` or `CompositorError` when there is no Metal device or a pipeline
+    /// Throws `VisualGeneratorError`, `LayerStackError` or `CompositorError` when there is no Metal device or a pipeline
     /// cannot be built; the caller falls back to projectM with a notice (spec Edge Cases).
     static func make(device: MTLDevice?, reader: (any NormalizedPCMReader)?, barCount: SpectrumBarCount,
                      provider: ((MTLDevice) -> any CameraFrameProvider)? = nil) throws -> CameraVisualHost {
@@ -102,7 +105,18 @@ final class CameraVisualHost: PresentationBoundResource {
                                                       configuration: CircularSpectrumConfiguration(barCount: barCount, background: transparent))
         let spectrum = try SpectrumLayerSource(device: device, generator: generator, name: "spectrum")
         let camera = CameraLayerSource(provider: (provider ?? makeProvider)(device))
-        let compositor = try Compositor(device: device, layers: [camera, spectrum])
+        // CMP-002: the stack, bottom first: the camera (one per stack), then the circular spectrum.
+        var stack = LayerStack()
+        try stack.add(LayerDescriptor(kind: .camera))
+        try stack.add(LayerDescriptor(kind: .circularSpectrum))
+        let compositor = try Compositor(device: device)
+        try compositor.apply(stack) { (entry: LayerStackEntry) throws(LayerSourceError) -> any LayerSource in
+            switch entry.descriptor.kind {
+            case .camera: return camera
+            case .circularSpectrum: return spectrum
+            default: throw .notReady
+            }
+        }
         let analyzer = try LiveBandAnalyzer(barCount: barCount)
         return CameraVisualHost(device: device, queue: queue, camera: camera, spectrum: spectrum, compositor: compositor,
                                 analyzer: analyzer, reader: reader)

@@ -69,3 +69,32 @@ Metal can sample, unproven for the pinned build.
   1 for a frame the layer already bounded unless other layers add light.
 - Simulator evidence only so far; the client-buffer paths and shared-event sync must be rechecked on
   D1-D3 before the app composites projectM.
+
+## Amendment: CMP-002 ordered layer stack (2026-11-13)
+
+Decided by Claude under owner rule 4 (feature CMP-002, `specs/040-cmp-002-ordered-layer-stack/`,
+research CMP-002-D1 to D8, contract `contracts/layer-stack.md`). It replaces this ADR's "fixed list
+of layers" with an editable stack; every other decision stands.
+
+1. **A value stack.** `LayerStack` (target `Compositor`, CPU, builds on Linux) holds ordered
+   entries, **index 0 the bottom**: a stable `LayerInstanceID` (from a per-stack counter, never
+   reused), a `LayerDescriptor` (a `LayerKind` and numeric parameters) and the entry's
+   `LayerCompositeSettings`. Add at an index, remove, duplicate (directly above, new ID, equal
+   descriptor and settings) and move either succeed or throw a typed `LayerStackError` and leave
+   the stack unchanged. Equality compares entries.
+2. **Limits.** At most 8 layers (each holds one or two drawable-size pictures and costs two draws
+   per frame). A kind may cap its instances: `.camera` allows one, so no stack opens a second
+   capture session (sharing one session between camera layers was rejected for now).
+3. **Kinds live with their layers.** `.camera` in `CameraLayer`, `.circularSpectrum` and
+   `.linearSpectrum` in `SpectrumLayers`; Compositor names none of them. The caller's factory maps
+   kinds to live layers.
+4. **Apply between frames.** `Compositor.apply(_:makeLayer:)`: an equal stack is a no-op; layers
+   whose ID remains keep their object, pictures, slots and last good frame at their new index; the
+   factory runs only for new IDs and new layers are prepared at apply when the size is known (a
+   third allocation point beside the first frame and a resize); removed IDs are released with
+   nothing called on them (owners stop outside resources such as the camera). Any refusal
+   (non-identity settings until CMP-003/004/005, a factory error, one object for two entries)
+   leaves the previous stack applied. The flash guard's history survives an apply.
+5. **App.** The Camera visual builds its camera + circular spectrum stack through `LayerStack`;
+   behaviour is unchanged. No user-facing editor: CMP-015 (layer inspector) and the editing UI rows.
+   Per-layer frame cost of a 4-layer stack on D1-D3 is CMP-002-T15 `{device}`.
