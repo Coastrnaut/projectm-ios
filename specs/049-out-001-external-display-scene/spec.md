@@ -33,6 +33,17 @@ The row's gap status is "Gap candidate". The audit confirms it.
 
 ## Clarifications
 
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the conservative, local-first option.
+
+- Q: While the visualization is on the external display, does the device also draw a live preview of it? → A: No. The device shows the controls over a black background with a short note ("Showing on external display"); the one visualization is drawn once, on the external display. Drawing twice would double the GPU cost on the busiest path (projectM on ANGLE already uses about half of D1's frame budget) and would need a second projectM engine and EGL context whose picture drifts from the first (presets, blends and beat state are engine-internal and cannot be shared between contexts), or a GPU copy between ANGLE's and the app's Metal devices. A live preview belongs with OUT-006 (output variants) and OUT-012 (rehearsal). Rejected: render twice (cost, divergence); a mirrored screenshot of the device picture (not the external display's resolution).
+- Q: Does anything other than the visualization appear on the external display (a small status, a logo, the paused label)? → A: Nothing. The window is the visualization alone; the paused state shows as the frozen last frame (FR-085's dimming and "Paused" text stay on the device). Rejected: a tiny status corner (it would be projected to a whole room and is what OUT-011 diagnostics on the device are for).
+- Q: What does the external display show while no visualization runs (notice, source chooser)? → A: Black. Menus and the photosensitivity notice are never projected. Rejected: mirroring the device (shows controls on stage, the row's opposite); the last frame (stale, and the visualizer's resources are released when it stops).
+- Q: When the external display's scene goes to the background, has no size yet, or a second external scene connects, where does the visualization go? → A: Background or zero size: back to the device until the scene is foreground with a size again. A second external scene: the first connected one keeps the visualization until it disconnects, then the next connected one (if any) takes it. Rejected: keeping the visualization on a backgrounded external scene (nothing would be visible anywhere).
+- Q: Which frame loop paces the external output? → A: The visual's existing frame loop (at most 60 fps, FR-049) keeps running unchanged; the external display shows each frame when it is presented. Per-output pacing (a frame loop tied to the external display's refresh, for example 50 Hz or 24 Hz televisions) is OUT-013; the cost of the mismatch is measured on devices (`{device}` task). Rejected: switching to the external display's own frame timing now (it would change every visual's loop in this row).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - The connected display shows only the visualization (Priority: P1)
@@ -135,7 +146,8 @@ stays within the envelope across the switch, and the envelope's history is not r
 
 - **OUT-001-R1**: The app MUST provide a window for a connected non-interactive external display
   that shows only the visualization, filling the display, with no controls, badges, banners, text or
-  status indicators over it.
+  status indicators over it. While the user has paused, it shows the last frame (the dimming and
+  "Paused" text stay on the device); while no visualization runs, it is black.
 - **OUT-001-R2**: While a usable external display is connected and the visualizer runs, the
   visualization MUST be drawn on the external display at the display's own size and scale (not a
   copy of the device picture), and the device MUST keep the controls, badges, banners and sheets and
