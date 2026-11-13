@@ -34,8 +34,8 @@ A task is ticked `[X]` only when verified, with " — Verified <date>: <how>".
 
 ## Phase 5: Polish
 
-- [ ] ACC-001-T10 Run `python3 scripts/check_compliance.py`, `python3 scripts/validate_docs.py`, `python3 scripts/test_scripts.py`
-- [ ] ACC-001-T11 Run projectM-iOSTests, ReduceMotionUITests, NativeVisualUITests, SettingsUITests, EmergencyBlackoutUITests, GuidedFirstSceneUITests on the own simulator; count PosterBoard reports after; delete the simulator; record results in spec Status
+- [X] ACC-001-T10 Run `python3 scripts/check_compliance.py`, `python3 scripts/validate_docs.py`, `python3 scripts/test_scripts.py` — Verified 2026-11-13: check_compliance OK, validate_docs OK, test_scripts 138 OK (1 skipped), check_motion_policy OK
+- [X] ACC-001-T11 Run projectM-iOSTests, ReduceMotionUITests, NativeVisualUITests, SettingsUITests, EmergencyBlackoutUITests, GuidedFirstSceneUITests on the own simulator; count PosterBoard reports after; delete the simulator; record results in spec Status — Verified 2026-11-13: one xcodebuild test run on ACC1 iPhone 17 (281 s): projectM-iOSTests 351/351 (14.1 s), ReduceMotionUITests 1/1 (9.1 s), NativeVisualUITests 4/4 (8.9-17.7 s), SettingsUITests 4/4 (13.9-27.3 s), EmergencyBlackoutUITests 2/2 (14.0, 14.4 s), GuidedFirstSceneUITests 4/4 (11.5-21.2 s); PosterBoard reports 32 after; simulator deleted
 - [ ] ACC-001-T12 {device} On D1: toggle Reduce Motion while the app runs; controls transition changes at once; VoiceOver behavior unchanged (quickstart Scenario 3; S6) — open, needs the owner
 
 ## Dependencies

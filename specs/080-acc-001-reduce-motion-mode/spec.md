@@ -4,7 +4,14 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (ACC-001-T01-T11 verified on the Mac, own iOS 27.2 simulator; no
+device claim). projectM-iOSTests 351/351 (14.1 s; MotionPolicyTests 5 in 0.008 s), ReduceMotionUITests
+1/1 (9.1 s; 18.2 s on a cold first launch), NativeVisualUITests 4/4, SettingsUITests 4/4,
+EmergencyBlackoutUITests 2/2, GuidedFirstSceneUITests 4/4 (one run, 281 s). Script tests 138 OK
+(MotionPolicyCheckTests 4); motion policy, compliance and docs checks OK. PosterBoard reports 32
+before and after. Open: ACC-001-T12 `{device}` (D1). Real simulator setting: changing
+`com.apple.Accessibility ReduceMotionEnabled` reached the running app at once (research D5); the
+transition durations themselves were proven through the injected DEBUG path.
 
 **Input**: User description: "Implement ACC-001 (Reduce motion mode) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Disable nonessential UI animations
