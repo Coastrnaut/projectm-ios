@@ -323,6 +323,91 @@ public enum UIStrings {
         return "\(label) · \(UIStrings.state(state))"
     }
 
+    // MARK: Audio route (AUD-007; specs/026-aud-007-audio-output-route-indicator/contracts/ui-strings.md)
+    // The app's own wording never names a source mode, a capture or an app (AUD-007-R11); port
+    // names are iOS's, verbatim, or a generic name when iOS gives none (AUD-007-R5).
+
+    /// The generic name of a kind, used only when iOS gives a port no name.
+    public static func routeGenericName(_ kind: RoutePortKind) -> String {
+        switch kind {
+        case .builtInSpeaker: return "Speaker"
+        case .builtInReceiver: return "Receiver"
+        case .wiredHeadphones: return "Headphones"
+        case .bluetoothA2DP, .bluetoothLE, .bluetoothHFP: return "Bluetooth device"
+        case .airPlay: return "AirPlay device"
+        case .hdmi: return "HDMI"
+        case .usbAudio: return "USB audio device"
+        case .carAudio: return "Car audio"
+        case .lineOut: return "Line out"
+        case .builtInMic: return "Built-in mic"
+        case .headsetMic: return "Headset mic"
+        case .lineIn: return "Line in"
+        case .other, .otherInput: return "Audio device"
+        }
+    }
+
+    /// iOS's name for the port, or the generic name when it is blank.
+    public static func routePortName(_ port: RoutePort) -> String {
+        port.name.allSatisfy(\.isWhitespace) ? routeGenericName(port.kind) : port.name
+    }
+
+    private static func routeNames(_ route: AudioRoute, _ context: AudioRouteContext) -> String {
+        let ports = route.ports(context.direction)
+        return ports.isEmpty ? "None" : ports.map(routePortName).joined(separator: ", ")
+    }
+
+    /// The indicator: "Output: AirPods Pro" (In-App Playback) or "Input: iPhone Microphone" (Microphone).
+    public static func routeIndicator(_ route: AudioRoute, context: AudioRouteContext) -> String {
+        "\(context.direction == .output ? "Output" : "Input"): \(routeNames(route, context))"
+    }
+
+    /// The indicator's VoiceOver label: "Audio output: AirPods Pro" / "Audio input: …".
+    public static func routeAccessibilityLabel(_ route: AudioRoute, context: AudioRouteContext) -> String {
+        "\(context.direction == .output ? "Audio output" : "Audio input"): \(routeNames(route, context))"
+    }
+
+    /// The SF Symbol for the first port shown (decorative; hidden from VoiceOver).
+    public static func routeSymbol(_ route: AudioRoute, context: AudioRouteContext) -> String {
+        guard let kind = route.ports(context.direction).first?.kind else {
+            return context.direction == .output ? "speaker.slash" : "mic.slash"
+        }
+        switch kind {
+        case .builtInSpeaker: return "speaker.wave.2"
+        case .builtInReceiver: return "iphone"
+        case .wiredHeadphones: return "headphones"
+        case .bluetoothA2DP, .bluetoothLE, .bluetoothHFP: return "wave.3.right"
+        case .airPlay: return "airplayaudio"
+        case .carAudio: return "car"
+        case .hdmi, .usbAudio, .lineOut, .other: return "hifispeaker"
+        case .builtInMic, .headsetMic, .lineIn, .otherInput: return "mic"
+        }
+    }
+
+    /// The short explanation of a change (AUD-007-R7, R8); nil when there is nothing to explain.
+    public static func routeExplanation(_ change: AudioRouteChange, context: AudioRouteContext) -> String? {
+        guard let summary = change.summary(context.direction) else { return nil }
+        switch summary {
+        case .lost(let port):
+            let name = routePortName(port)
+            return change.pausesPlayback(in: context) ? "\(name) disconnected — paused" : "\(name) disconnected"
+        case .noneLeft:
+            return context.direction == .output ? "No audio output available" : "No audio input available"
+        case .switched(let port):
+            let name = routePortName(port)
+            switch context {
+            case .playback(heldByUser: false): return "Now playing through \(name)"
+            case .playback(heldByUser: true): return "Audio output is now \(name)"
+            case .microphone: return "Now listening through \(name)"
+            }
+        }
+    }
+
+    /// What VoiceOver announces for a change: the explanation, except when the change paused
+    /// playback, which AUD-014-R18 already announces (AUD-007-R10).
+    public static func routeAnnouncement(_ change: AudioRouteChange, context: AudioRouteContext) -> String? {
+        change.pausesPlayback(in: context) ? nil : routeExplanation(change, context: context)
+    }
+
     // MARK: Actions
     public static let chooseSource = "Choose source"
     public static let chooseAudioSource = "Choose Audio Source"

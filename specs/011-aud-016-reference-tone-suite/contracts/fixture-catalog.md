@@ -109,7 +109,7 @@ bit; `scripts/test_scripts.py` runs it.
 
 ## Golden SHA-256 (version 1)
 
-Recorded by AUD-016-T09 from the generator's output on the Mac host (2026-11-12); `ReferenceToneCatalogTests.testGoldenHashesOnRepeatedRuns` asserts each value on every host. — = layout not published.
+Recorded by AUD-016-T09 from the generator's output on the Mac host (2026-11-12); `ReferenceToneCatalogTests.testGoldenHashesOnRepeatedRuns44100` and `…48000` assert each value on every host (split by rate 2026-11-13, owner rule 7). — = layout not published.
 
 | Fixture | 44.1 kHz mono | 44.1 kHz stereo | 48 kHz mono | 48 kHz stereo |
 |---|---|---|---|---|

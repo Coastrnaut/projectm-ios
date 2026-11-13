@@ -1,8 +1,15 @@
 // TestSHA256.swift — SHA-256 (FIPS 180-4) for the reference-tone golden hashes (AUD-016-T04;
 // research AUD-016-D8). Test target only: AudioCore must build and test on Linux, where CryptoKit
-// does not exist, and no dependency is added for it.
+// does not exist, and no dependency is added for it. Where CryptoKit exists (the Mac host and the
+// iOS Simulator), `hex` hashes with it: the portable implementation below runs at about 7 MB/s in a
+// Debug build and the 38 goldens hash 107 MB (owner rule 7, 2026-11-13). The portable digest stays
+// the Linux path and is checked against CryptoKit on fixture audio by `testPortableMatchesPlatform`.
 import Foundation
 import XCTest
+@testable import AudioCore
+#if canImport(CryptoKit)
+import CryptoKit
+#endif
 
 enum TestSHA256 {
     private static let k: [UInt32] = [
@@ -21,6 +28,18 @@ enum TestSHA256 {
         bytes.withUnsafeBytes { digest($0) }
     }
 
+    /// The portable FIPS 180-4 digest, whichever hasher `hex` uses on this platform.
+    static func portableHex(_ data: UnsafeRawBufferPointer) -> String { portableDigest(data) }
+
+    /// True when `hex` uses CryptoKit rather than the portable digest.
+    static var usesPlatformHasher: Bool {
+        #if canImport(CryptoKit)
+        true
+        #else
+        false
+        #endif
+    }
+
     /// The hex digest of the little-endian bytes of `samples` (the catalog's hash input). Apple
     /// platforms and the Linux CI host are little-endian, so the samples' memory is that byte string.
     static func hex(samples: [Float]) -> String {
@@ -29,6 +48,17 @@ enum TestSHA256 {
     }
 
     private static func digest(_ data: UnsafeRawBufferPointer) -> String {
+        #if canImport(CryptoKit)
+        return SHA256.hash(data: data).map { byte in
+            let s = String(byte, radix: 16)
+            return s.count == 1 ? "0" + s : s
+        }.joined()
+        #else
+        return portableDigest(data)
+        #endif
+    }
+
+    private static func portableDigest(_ data: UnsafeRawBufferPointer) -> String {
         var h: [UInt32] = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19]
         // The final one or two blocks: the tail of the data, 0x80, zeros, the bit length.
         let fullBlocks = data.count / 64
@@ -41,9 +71,11 @@ enum TestSHA256 {
         w.withUnsafeMutableBufferPointer { w in
             k.withUnsafeBufferPointer { k in
                 h.withUnsafeMutableBufferPointer { h in
-                    for block in 0..<fullBlocks { compress(data.baseAddress! + block * 64, &w, k, h) }
+                    // Plain pointers: buffer-pointer subscripts are bounds-checked in Debug builds.
+                    let w = w.baseAddress!, k = k.baseAddress!, h = h.baseAddress!
+                    for block in 0..<fullBlocks { compress(data.baseAddress! + block * 64, w, k, h) }
                     tail.withUnsafeBytes { t in
-                        for block in 0..<(t.count / 64) { compress(t.baseAddress! + block * 64, &w, k, h) }
+                        for block in 0..<(t.count / 64) { compress(t.baseAddress! + block * 64, w, k, h) }
                     }
                 }
             }
@@ -54,8 +86,8 @@ enum TestSHA256 {
         }.joined()
     }
 
-    private static func compress(_ block: UnsafeRawPointer, _ w: inout UnsafeMutableBufferPointer<UInt32>,
-                                 _ k: UnsafeBufferPointer<UInt32>, _ h: UnsafeMutableBufferPointer<UInt32>) {
+    private static func compress(_ block: UnsafeRawPointer, _ w: UnsafeMutablePointer<UInt32>,
+                                 _ k: UnsafePointer<UInt32>, _ h: UnsafeMutablePointer<UInt32>) {
         for i in 0..<16 { w[i] = UInt32(bigEndian: block.loadUnaligned(fromByteOffset: i * 4, as: UInt32.self)) }
         for i in 16..<64 {
             let s0 = rotr(w[i - 15], 7) ^ rotr(w[i - 15], 18) ^ (w[i - 15] >> 3)
@@ -92,5 +124,20 @@ final class TestSHA256Tests: XCTestCase {
     func testSampleBytesAreLittleEndianFloat32() {
         // 1.0f is 0x3F800000: bytes 00 00 80 3F.
         XCTAssertEqual(TestSHA256.hex(samples: [1]), TestSHA256.hex([0x00, 0x00, 0x80, 0x3F]))
+    }
+
+    /// The portable digest (the Linux path) and `hex` (CryptoKit where it exists) agree on the
+    /// known answers and on 1 MB of fixture audio, at lengths that end in every tail case.
+    func testPortableMatchesPlatform() throws {
+        let fixture = try XCTUnwrap(ReferenceToneCatalog.fixture(id: "sweep-log"))
+        let samples = try fixture.generator(sampleRate: 48_000, channels: 2).interleaved(frames: 131_072)
+        samples.withUnsafeBytes { all in
+            for count in [0, 3, 55, 56, 63, 64, 65, 119, 120, all.count - 1, all.count] {
+                let part = UnsafeRawBufferPointer(rebasing: all[0..<count])
+                XCTAssertEqual(TestSHA256.portableHex(part), TestSHA256.hex([UInt8](part)), "\(count) bytes")
+            }
+        }
+        let abc = Array("abc".utf8)
+        abc.withUnsafeBytes { XCTAssertEqual(TestSHA256.portableHex($0), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad") }
     }
 }

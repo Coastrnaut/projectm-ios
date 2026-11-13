@@ -3,7 +3,8 @@
 // projectM, the bar count, and the fallback notice (VIS-001 User Stories 1, 3, 4). Simulator results
 // are never device evidence (Constitution X). Waits use generous ceilings, never frame budgets.
 // Shortened 2026-11-13 under owner rule 7: `-autostart inAppPlayback` replaces the notice and chooser
-// taps, and waits poll every 0.1 s (UITestWaits.swift) instead of about once a second.
+// taps, and waits poll every 0.1 s (UITestWaits.swift) instead of about once a second. Every tap on a
+// control follows `showControls()`, which restarts the controls' 5 s auto-hide (see there).
 import XCTest
 
 @MainActor
@@ -29,8 +30,7 @@ final class NativeVisualUITests: XCTestCase {
     private var starts: String? { app.staticTexts["sourceStarts"].value as? String }
 
     private func openSettings() {
-        if !app.buttons["settings"].appears(within: 1) { app.otherElements["visualizerTapArea"].firstMatch.tap() }
-        XCTAssertTrue(app.buttons["settings"].appears(within: 5))
+        showControls()
         app.buttons["settings"].tap()
         XCTAssertTrue(app.navigationBars["Settings"].appears(within: 5))
     }
@@ -51,9 +51,17 @@ final class NativeVisualUITests: XCTestCase {
     /// Polls `condition` on the main actor for up to 30 s.
     private func waitUntil(_ condition: () -> Bool) -> Bool { poll(30, condition) }
 
+    /// Shows the controls with a fresh 5 s auto-hide (AppCoordinator.controlsAutoHide), so the next
+    /// read or tap cannot race the timer. A tap on the visualization toggles the controls, so when
+    /// they are shown this hides and shows them again; every path ends on a tap that shows them and
+    /// restarts the timer. (Flake fixed 2026-11-13: "controls exist, then tap" failed with "settings"
+    /// not found when the 5 s hide from launch fired between the check and the tap.)
     private func showControls() {
-        if !app.otherElements["controls"].appears(within: 0.5) { app.otherElements["visualizerTapArea"].firstMatch.tap() }
-        XCTAssertTrue(app.otherElements["controls"].appears(within: 5))
+        let controls = app.otherElements["controls"], area = app.otherElements["visualizerTapArea"].firstMatch
+        if controls.exists { area.tap() }
+        area.tap()
+        if !controls.appears(within: 2) { area.tap() }
+        XCTAssertTrue(controls.appears(within: 5), "the controls are shown")
     }
 
     func testProjectMIsTheDefaultAndCircularSpectrumReplacesIt() {
