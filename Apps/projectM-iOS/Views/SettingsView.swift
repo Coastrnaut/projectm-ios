@@ -1,6 +1,7 @@
-// SettingsView.swift — Settings (task T103): the visual (VIS-001-R11), the performance overlay
-// (FR-048), Reduce flashing (FR-072) and the Licenses screen (FR-067).
+// SettingsView.swift — Settings (task T103): the visual (VIS-001-R11) and its glow (FX-001-R11),
+// the performance overlay (FR-048), Reduce flashing (FR-072) and the Licenses screen (FR-067).
 import SwiftUI
+import VisualEffects
 
 struct SettingsView: View {
     @Bindable var settings: AppSettings
@@ -9,7 +10,30 @@ struct SettingsView: View {
     var reduceFlashingAvailable = true
     /// VIS-001-R16: the circular spectrum could not be created on this device.
     var nativeVisualUnavailable = false
+    /// FX-001-R13: the glow could not be built on this device.
+    var glowUnavailable = false
     @Environment(\.dismiss) private var dismiss
+
+    /// "50%", or "2.0%" with one decimal.
+    static func percent(_ value: Double, decimals: Int = 0) -> String {
+        String(format: "%.\(decimals)f%%", value * 100)
+    }
+
+    /// A labeled glow slider; VoiceOver reads the label and the percentage (FR-070).
+    private func glowSlider(_ title: String, value: Binding<Double>, range: ClosedRange<Float>, text: String, id: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack {
+                Text(title)
+                Spacer()
+                Text(text).monospacedDigit().foregroundStyle(.secondary)
+            }
+            .accessibilityHidden(true)
+            Slider(value: value, in: Double(range.lowerBound)...Double(range.upperBound))
+                .accessibilityLabel(title)
+                .accessibilityValue(text)
+                .accessibilityIdentifier(id)
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -28,6 +52,16 @@ struct SettingsView: View {
                         .pickerStyle(.segmented)
                         .accessibilityLabel("Bars")
                         .accessibilityIdentifier("barsPicker")
+                        Toggle("Glow", isOn: $settings.glowEnabled)
+                            .accessibilityIdentifier("glowToggle")
+                        if settings.glowEnabled {
+                            glowSlider("Intensity", value: $settings.glowIntensity, range: BloomParameters.intensityRange,
+                                       text: Self.percent(settings.glowIntensity), id: "glowIntensitySlider")
+                            glowSlider("Radius", value: $settings.glowRadius, range: BloomParameters.radiusRange,
+                                       text: Self.percent(settings.glowRadius, decimals: 1), id: "glowRadiusSlider")
+                            glowSlider("Threshold", value: $settings.glowThreshold, range: BloomParameters.thresholdRange,
+                                       text: Self.percent(settings.glowThreshold), id: "glowThresholdSlider")
+                        }
                     }
                 } header: {
                     Text("Visual")
@@ -36,7 +70,17 @@ struct SettingsView: View {
                         Text("Circular Spectrum isn't available on this device, so projectM is shown.")
                             .accessibilityIdentifier("nativeVisualUnavailableFooter")
                     } else {
-                        Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top.")
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top.")
+                            if settings.visual == .circularSpectrum {
+                                if glowUnavailable {
+                                    Text(AppCoordinator.glowUnavailableMessage)
+                                        .accessibilityIdentifier("glowUnavailableFooter")
+                                } else {
+                                    Text("Glow adds a soft halo around the bright parts; dark areas stay dark.")
+                                }
+                            }
+                        }
                     }
                 }
                 Section {

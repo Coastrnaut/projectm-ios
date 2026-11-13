@@ -20,6 +20,8 @@ struct VisualizerView: View {
                     .ignoresSafeArea()
                     .accessibilityElement()
                     .accessibilityLabel("Circular Spectrum visualization")
+                    .accessibilityValue(CircularSpectrumHost.glowDescription(enabled: coordinator.settings.glowEnabled,
+                                                                             unavailable: coordinator.glowUnavailable))   // FX-001
                     .accessibilityIdentifier("circularSpectrum")
             } else if let renderer = coordinator.renderer {
                 RendererHost(renderer: renderer)
@@ -99,11 +101,13 @@ struct VisualizerView: View {
         .sheet(isPresented: $coordinator.showSettings) {
             SettingsView(settings: coordinator.settings,
                          reduceFlashingAvailable: coordinator.renderer?.supportsReduceFlashing ?? true,
-                         nativeVisualUnavailable: coordinator.nativeVisualUnavailable)
+                         nativeVisualUnavailable: coordinator.nativeVisualUnavailable,
+                         glowUnavailable: coordinator.glowUnavailable)
         }
         .onChange(of: coordinator.settings.reduceFlashing) { coordinator.applyReduceFlashing() }
         .onChange(of: coordinator.settings.visual) { coordinator.visualSettingsChanged() }                 // VIS-001
         .onChange(of: coordinator.settings.circularSpectrumBars) { coordinator.visualSettingsChanged() }
+        .onChange(of: coordinator.settings.glowParameters) { coordinator.glowSettingsChanged() }          // FX-001
         .onChange(of: coordinator.manager.state) { _, state in
             SourceStatusIndicator.announce(mode: coordinator.manager.activeMode, state: state, signal: coordinator.testSignalName)   // FR-070, AUD-016-R16
         }

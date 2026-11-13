@@ -49,6 +49,10 @@ final class SettingsTests: XCTestCase {
         settings.presetScope = "all"
         settings.visual = .circularSpectrum
         settings.circularSpectrumBars = 32
+        settings.glowEnabled = true            // FX-001-R11
+        settings.glowIntensity = 0.8
+        settings.glowRadius = 0.03
+        settings.glowThreshold = 0.5
         let keys = Set(defaults.persistentDomain(forName: suite)?.keys ?? [:].keys)
         XCTAssertEqual(keys, Set(AppSettings.allKeys), "FR-065")
     }
@@ -88,5 +92,50 @@ final class SettingsTests: XCTestCase {
         XCTAssertTrue(catalog.lgplNote.text.contains("github.com/Coastrnaut/projectm"))
         let engine = try XCTUnwrap(catalog.components.first { $0.id == "projectm" })
         XCTAssertTrue(LicenseCatalog.text(of: engine).contains("GNU LESSER GENERAL PUBLIC LICENSE"))
+    }
+
+    /// FX-001-T17 (FX-001-R4, R11): the glow settings, their defaults, persistence and safe readings.
+    func testGlowSettingsDefaultPersistAndClamp() {
+        let settings = AppSettings(defaults: defaults, systemReduceMotion: false)
+        XCTAssertFalse(settings.glowEnabled, "Glow is off by default")
+        XCTAssertEqual(settings.glowIntensity, 0.5, accuracy: 1e-6)
+        XCTAssertEqual(settings.glowRadius, 0.02, accuracy: 1e-6)
+        XCTAssertEqual(settings.glowThreshold, 0.7, accuracy: 1e-6)
+        XCTAssertTrue(settings.glowParameters.isPassThrough)
+
+        settings.glowEnabled = true
+        settings.glowIntensity = 0.9
+        settings.glowRadius = 0.05
+        settings.glowThreshold = 0.4
+        XCTAssertTrue(defaults.bool(forKey: "settings.circularSpectrum.glow"))
+        XCTAssertEqual(defaults.double(forKey: "settings.circularSpectrum.glowIntensity"), 0.9, accuracy: 1e-6)
+        XCTAssertEqual(defaults.double(forKey: "settings.circularSpectrum.glowRadius"), 0.05, accuracy: 1e-6)
+        XCTAssertEqual(defaults.double(forKey: "settings.circularSpectrum.glowThreshold"), 0.4, accuracy: 1e-6)
+        let reloaded = AppSettings(defaults: defaults, systemReduceMotion: false)
+        XCTAssertTrue(reloaded.glowEnabled)
+        let p = reloaded.glowParameters
+        XCTAssertTrue(p.enabled)
+        XCTAssertEqual(p.intensity, 0.9, accuracy: 1e-6)
+        XCTAssertEqual(p.radius, 0.05, accuracy: 1e-6)
+        XCTAssertEqual(p.threshold, 0.4, accuracy: 1e-6)
+        XCTAssertEqual(p.knee, 0.5, accuracy: 1e-6, "the knee is not a setting")
+
+        // Out of range and NaN.
+        settings.glowIntensity = 7
+        XCTAssertEqual(settings.glowIntensity, 1, accuracy: 1e-6)
+        settings.glowRadius = -1
+        XCTAssertEqual(settings.glowRadius, 0.005, accuracy: 1e-6)
+        defaults.set(Double.nan, forKey: AppSettings.glowThresholdKey)
+        defaults.set(42.0, forKey: AppSettings.glowRadiusKey)
+        defaults.set("x", forKey: AppSettings.glowIntensityKey)
+        let bad = AppSettings(defaults: defaults, systemReduceMotion: false)
+        XCTAssertEqual(bad.glowThreshold, 0.7, accuracy: 1e-6, "NaN reads the default")
+        XCTAssertEqual(bad.glowRadius, 0.06, accuracy: 1e-6, "clamped")
+        XCTAssertEqual(bad.glowIntensity, 0.5, accuracy: 1e-6, "not a number reads the default")
+
+        for key in ["settings.circularSpectrum.glow", "settings.circularSpectrum.glowIntensity",
+                    "settings.circularSpectrum.glowRadius", "settings.circularSpectrum.glowThreshold"] {
+            XCTAssertTrue(AppSettings.allKeys.contains(key), key)
+        }
     }
 }

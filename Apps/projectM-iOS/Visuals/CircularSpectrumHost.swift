@@ -13,8 +13,16 @@
 //   independent, like ANGLERenderer: the loop runs only when neither applies. Suspension stops the
 //   display link and the analyzer before it returns and drops nothing else; resuming restarts the
 //   Reduce-flashing limiter from the next frame (no ramp from a stale picture).
-// * Per frame, this file's code allocates nothing: the band scratch is preallocated; Metal's command
-//   buffer and drawable are the system's.
+// * Glow (FX-001, ADR-0010): a `BloomEffect` in an `EffectChain` built with the host. While the glow
+//   is pass-through (off or intensity 0) the generator draws straight into the drawable, exactly as
+//   VIS-001; otherwise it draws into the chain's image and the bloom composites into the drawable.
+//   The generator's `downstreamLuminance` is the bloom's luminance model, so Reduce flashing bounds
+//   the composited frame (FX-001-R10). If the bloom cannot be built (or its textures cannot be
+//   created later) the visual keeps rendering without it and `glowUnavailable` is set (FX-001-R13).
+//   The view's accessibility value names the glow state.
+// * Per frame, this file's code allocates nothing: the band scratch is preallocated; the chain's
+//   textures are created only when the drawable size changes; Metal's command buffer and drawable
+//   are the system's.
 import AudioCore
 import Metal
 import PresentationLifecycle
@@ -22,6 +30,7 @@ import QuartzCore
 import Rendering
 import UIKit
 import VisualBandFeed
+import VisualEffects
 import VisualGenerators
 
 @MainActor
@@ -46,6 +55,20 @@ final class CircularSpectrumHost: PresentationBoundResource {
     /// FR-072: the app's Reduce flashing setting.
     var reduceFlashing = false
 
+    /// FX-001: the bloom and the chain that runs it; nil when the glow is unavailable.
+    private let bloom: BloomEffect?
+    private var chain: EffectChain?
+    /// The glow could not be built on this device (FX-001-R13); the visual renders without it.
+    private(set) var glowUnavailable: Bool
+
+    /// The glow settings; applied from the next frame (no shader rebuild, FX-001-R12).
+    var glow = BloomParameters() {
+        didSet { applyGlow() }
+    }
+
+    /// The bloom runs (available and not pass-through).
+    var glowActive: Bool { chain != nil && !glow.isPassThrough }
+
     var barCount: SpectrumBarCount {
         get { generator.configuration.barCount }
         set {
@@ -58,25 +81,66 @@ final class CircularSpectrumHost: PresentationBoundResource {
 
     /// Throws `VisualGeneratorError` when there is no Metal device or the pipeline cannot be built
     /// (VIS-001-R16); the caller falls back to projectM.
-    static func make(device: MTLDevice?, reader: (any NormalizedPCMReader)?, barCount: SpectrumBarCount) throws -> CircularSpectrumHost {
+    /// A glow that cannot be built does not throw: the host renders without it (FX-001-R13).
+    /// `forceGlowFailure` simulates that failure (DEBUG UI tests).
+    static func make(device: MTLDevice?, reader: (any NormalizedPCMReader)?, barCount: SpectrumBarCount,
+                     glow: BloomParameters = BloomParameters(), forceGlowFailure: Bool = false) throws -> CircularSpectrumHost {
         guard let device, let queue = device.makeCommandQueue() else { throw VisualGeneratorError.noDevice }
         let generator = try CircularSpectrumGenerator(device: device, pixelFormat: .bgra8Unorm_srgb,
                                                       configuration: CircularSpectrumConfiguration(barCount: barCount))
         let analyzer = try LiveBandAnalyzer(barCount: barCount)
-        return CircularSpectrumHost(device: device, queue: queue, generator: generator, analyzer: analyzer, reader: reader)
+        var bloom: BloomEffect?
+        var chain: EffectChain?
+        if !forceGlowFailure {
+            do {
+                let effect = try BloomEffect(device: device, pixelFormat: .bgra8Unorm_srgb, parameters: glow)
+                chain = try EffectChain(device: device, pixelFormat: .bgra8Unorm_srgb, effects: [effect])
+                bloom = effect
+            } catch {
+                bloom = nil
+                chain = nil
+            }
+        }
+        let host = CircularSpectrumHost(device: device, queue: queue, generator: generator, analyzer: analyzer, reader: reader,
+                                        bloom: bloom, chain: chain)
+        host.glow = glow
+        return host
     }
 
     private init(device: MTLDevice, queue: MTLCommandQueue, generator: CircularSpectrumGenerator,
-                 analyzer: LiveBandAnalyzer, reader: (any NormalizedPCMReader)?) {
+                 analyzer: LiveBandAnalyzer, reader: (any NormalizedPCMReader)?, bloom: BloomEffect?, chain: EffectChain?) {
         self.queue = queue
         self.generator = generator
         self.analyzer = analyzer
         self.reader = reader
+        self.bloom = bloom
+        self.chain = chain
+        glowUnavailable = chain == nil
         bands = .allocate(capacity: SpectrumBarCount.maximum)
         bands.initialize(repeating: 0, count: SpectrumBarCount.maximum)
         view = CircularSpectrumLayerView(device: device)
         view.onLayout = { [weak self] in self?.layoutDrawable() }
         observeFrameRatePressure()
+        applyGlow()
+    }
+
+    private func applyGlow() {
+        bloom?.parameters = glow
+        generator.downstreamLuminance = glowActive ? BloomLuminanceModel(parameters: glow) : nil
+        view.accessibilityValue = Self.glowDescription(enabled: glow.enabled, unavailable: glowUnavailable)
+    }
+
+    /// The accessibility value naming the glow state.
+    static func glowDescription(enabled: Bool, unavailable: Bool) -> String {
+        guard enabled else { return "Glow off" }
+        return unavailable ? "Glow unavailable" : "Glow on"
+    }
+
+    /// The chain's textures could not be created: continue without the glow (FX-001-R13).
+    private func dropGlow() {
+        chain = nil
+        glowUnavailable = true
+        applyGlow()
     }
 
     isolated deinit {
@@ -146,8 +210,22 @@ final class CircularSpectrumHost: PresentationBoundResource {
         guard let drawable = layer.nextDrawable(), let commands = queue.makeCommandBuffer() else { return }
         let context = VisualFrameContext(timeNanoseconds: UInt64(max(link.targetTimestamp, 0) * 1e9),
                                          frameDuration: link.targetTimestamp - link.timestamp, reduceFlashing: reduceFlashing)
-        let drawn = generator.encode(into: drawable.texture, commandBuffer: commands,
-                                     bands: UnsafeBufferPointer(start: bands, count: bandCount), context: context)
+        let input = UnsafeBufferPointer(start: bands, count: bandCount)
+        let target = drawable.texture
+        var drawn = false
+        if let chain, glowActive {
+            do {
+                try chain.prepare(width: target.width, height: target.height)   // creates textures only on a size change
+                drawn = chain.encode(output: target, commandBuffer: commands) { image in
+                    generator.encode(into: image, commandBuffer: commands, bands: input, context: context)
+                }
+            } catch {
+                dropGlow()
+            }
+        }
+        if !drawn && !glowActive {
+            drawn = generator.encode(into: target, commandBuffer: commands, bands: input, context: context)
+        }
         guard drawn else { return }
         commands.present(drawable)
         commands.commit()
