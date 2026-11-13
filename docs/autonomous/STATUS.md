@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T00:04:06Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T00:41:57Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,17 +10,18 @@
 | State | Features |
 |---|---|
 | audited | 303 |
-| implementing | 2 |
+| implementing | 1 |
+| unit_passed | 1 |
 | integrated | 21 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated |
-|---|---|---|---|
-| P0 | 66 | 2 | 19 |
-| P1 | 149 | 0 | 2 |
-| P2 | 79 | 0 | 0 |
-| P3 | 9 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated |
+|---|---|---|---|---|
+| P0 | 66 | 1 | 1 | 19 |
+| P1 | 149 | 0 | 0 | 2 |
+| P2 | 79 | 0 | 0 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -196,3 +197,8 @@ None.
 - `swift test --package-path Packages/PresetLibrary`: pass at `6d4ada96b86c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-012/20261112T182006/swift-test_PresetLibrary.log`)
 - `xcodebuild -scheme Rendering-Package -destination id=4E32B01D-7911-4A64-A944-877DDD445BC0 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `6d4ada96b86c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-012/20261112T182006/sim-test_Rendering.log`)
 - `integration checkout, full packs: PRE012_CORPUS swift test PresetLibrary 133 pass (14576 pack files, 0 over a limit, 2 incompleteShader); xcodebuild projectM-iOS test on iPhone 17 iOS 27.2: unit and UI suites pass (UserPresets 2, PresetCollections 3, PresetLibrary, Purchase, Visualizer); PresetBlocklist.json in the app bundle`: pass at `9e78b94c8ee1` (log `.autonomous/logs/integration/pre-012/app-tests.log`)
+
+### PRE-015 User preset duplication (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `f4a06e68c3fe` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-015/20261112T194121/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `f4a06e68c3fe` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-015/20261112T194121/docs.log`)
+- `swift test --package-path Packages/PresetLibrary`: pass at `f4a06e68c3fe` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-015/20261112T194121/swift-test_PresetLibrary.log`)

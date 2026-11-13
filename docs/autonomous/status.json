@@ -7,8 +7,9 @@
  "by_priority": {
   "P0": {
    "audited": 66,
-   "implementing": 2,
-   "integrated": 19
+   "implementing": 1,
+   "integrated": 19,
+   "unit_passed": 1
   },
   "P1": {
    "audited": 149,
@@ -23,8 +24,9 @@
  },
  "by_state": {
   "audited": 303,
-  "implementing": 2,
-  "integrated": 21
+  "implementing": 1,
+  "integrated": 21,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -2517,12 +2519,12 @@
   "PRE-015": {
    "attempts": 0,
    "branch": "feature/pre-015",
-   "branch_sha": null,
+   "branch_sha": "f4a06e68c3fe93426838ab46cb450a25f63dd75c",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": "specs/010-pre-015-user-preset-duplication",
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "PRE-016": {
    "attempts": 0,
@@ -3719,5 +3721,5 @@
  "run_id": "cb545c51cf0b",
  "skipped_existing": [],
  "total": 326,
- "updated": "2026-11-13T00:04:06Z"
+ "updated": "2026-11-13T00:41:57Z"
 }
