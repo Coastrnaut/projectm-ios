@@ -4,6 +4,10 @@
 // A separate file beside AUD-001's `index.json` (research AUD-003-D2): the library record keeps its
 // version, and a queue problem can never make the library unusable. The record holds only track
 // identifiers (AUD-001 `ImportedTrack.id`) — no titles, paths, positions or audio (AUD-003-R13).
+//
+// AUD-004 adds the repeat mode as an optional field of version 1 (research AUD-004-D2, as AUD-003-D8
+// planned): written only for "off" and "one", so an All Tracks record is byte-identical to AUD-003's;
+// missing, not a string or unknown reads as All Tracks. An AUD-003 app ignores the field.
 import Foundation
 
 /// The stored queue: identifiers in queue order and the current track.
@@ -14,10 +18,13 @@ public struct PlayQueueRecord: Sendable, Equatable {
     public var trackIDs: [String]
     /// The track playback last moved to, if any.
     public var currentTrackID: String?
+    /// AUD-004: how the queue continues at the end of a track.
+    public var repeatMode: RepeatMode
 
-    public init(trackIDs: [String], currentTrackID: String?) {
+    public init(trackIDs: [String], currentTrackID: String?, repeatMode: RepeatMode = .all) {
         self.trackIDs = trackIDs
         self.currentTrackID = currentTrackID
+        self.repeatMode = repeatMode
     }
 
     public enum Decoded: Sendable, Equatable {
@@ -34,11 +41,13 @@ public struct PlayQueueRecord: Sendable, Equatable {
     private struct Version1: Decodable {
         var trackIDs: [Lossy<String>]
         var currentTrackID: Lossy<String>?
+        var repeatMode: Lossy<String>?
     }
     private struct Envelope: Encodable {
         var schemaVersion: Int
         var trackIDs: [String]
         var currentTrackID: String?
+        var repeatMode: String?
     }
 
     /// The canonical form of a track identifier, or nil when it is not a UUID.
@@ -61,14 +70,16 @@ public struct PlayQueueRecord: Sendable, Equatable {
         var seen = Set<String>()
         let ids = stored.trackIDs.compactMap { $0.value.flatMap(canonicalID) }.filter { seen.insert($0).inserted }
         let current = stored.currentTrackID?.value.flatMap(canonicalID)
-        return .record(PlayQueueRecord(trackIDs: ids, currentTrackID: current))
+        let mode = stored.repeatMode?.value.flatMap(RepeatMode.init(rawValue:)) ?? .all
+        return .record(PlayQueueRecord(trackIDs: ids, currentTrackID: current, repeatMode: mode))
     }
 
-    /// Canonical encoding: current version, sorted keys; no current track is omitted.
+    /// Canonical encoding: current version, sorted keys; no current track, and All Tracks, are omitted.
     public func encoded() throws -> Data {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
         return try encoder.encode(Envelope(schemaVersion: Self.currentSchemaVersion, trackIDs: trackIDs,
-                                           currentTrackID: currentTrackID))
+                                           currentTrackID: currentTrackID,
+                                           repeatMode: repeatMode == .all ? nil : repeatMode.rawValue))
     }
 }

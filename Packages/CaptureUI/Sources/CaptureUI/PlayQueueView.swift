@@ -7,6 +7,9 @@
 // (touch and hold), or the same VoiceOver actions. Swipe or "Remove from Queue" takes a track out
 // of the queue; it stays in Your Audio. "Not in Queue" lists the other library tracks with Add to
 // Queue and Play Next. Edits go to `PlayQueue` and never touch playback (AUD-003-R7).
+//
+// AUD-004-R13: a "Repeat" section lists Off, One Track and All Tracks as rows; the queue's mode is
+// checked and carries the selected trait; a tap sets it (stored at once, never moves playback).
 #if canImport(SwiftUI)
 import CaptureKit
 import SwiftUI
@@ -47,6 +50,7 @@ public struct PlayQueueView: View {
                     .accessibilityIdentifier("playQueueButton")
                 }
             }
+            repeatSection
             Section {
                 if items.isEmpty {
                     Text(UIStrings.queueEmpty)
@@ -99,6 +103,39 @@ public struct PlayQueueView: View {
         .confirmationDialog(UIStrings.clearQueueConfirm, isPresented: $confirmingClear, titleVisibility: .visible) {
             Button(UIStrings.clearQueue, role: .destructive) { queue.clear() }
                 .accessibilityIdentifier("confirmClearQueue")
+        }
+    }
+
+    /// AUD-004: the three repeat modes; rows grow with Dynamic Type.
+    private var repeatSection: some View {
+        Section {
+            ForEach(UIStrings.repeatChoices, id: \.self) { mode in
+                let selected = mode == queue.repeatMode
+                Button {
+                    guard !selected else { return }
+                    queue.setRepeatMode(mode)
+                    announce(UIStrings.repeatAnnouncement(mode))
+                } label: {
+                    HStack {
+                        Text(UIStrings.repeatValue(mode))
+                            .foregroundStyle(Color.primary)
+                        Spacer(minLength: 12)
+                        if selected {
+                            Image(systemName: "checkmark")
+                                .foregroundStyle(Color.accentColor)
+                                .accessibilityHidden(true)
+                        }
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(selected ? .isSelected : [])
+                .accessibilityIdentifier("repeatMode.\(mode.rawValue)")
+            }
+        } header: {
+            Text(UIStrings.repeatLabel)
+        } footer: {
+            Text(UIStrings.repeatFooter)
         }
     }
 

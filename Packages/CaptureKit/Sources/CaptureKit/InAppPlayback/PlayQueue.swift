@@ -15,8 +15,14 @@
 // * Every edit and every move of playback is stored at once (`PlayQueueStore`, atomic), unless the
 //   stored record was written by a newer app (R13, R14). A failed write keeps the queue in memory
 //   and the previous file; the next change tries again.
-// * Repeat modes (AUD-004) and shuffle with history (AUD-005) can be added on top of `ids`: both
-//   change only what the neighbour functions answer, not the stored order (R19).
+// * Repeat modes (AUD-004): `repeatMode` decides only `endOfTrack(after:)` — what happens when a
+//   track plays to its end — never the stored order and never Next or Previous, which wrap in every
+//   mode (AUD-004-R7). All Tracks wraps (the default, today's behavior); One Track repeats a queued
+//   current track; Off stops after the last queued track and cues the first. A detached current track
+//   is never repeated; in Off its former place past the end is the end of the queue (AUD-004-R10).
+//   The mode is stored with the queue and a change notifies `onOrderChange` like an edit, so the
+//   transport re-evaluates repetition at once without a cut (AUD-004-R9, R14).
+// * Shuffle with history (AUD-005) can be added on top of `ids` the same way (R19).
 import Foundation
 import Observation
 
@@ -27,6 +33,8 @@ public final class PlayQueue: MutablePlayOrder {
     public private(set) var ids: [PlaybackItem.ID] = []
     /// The track playback last moved to (stored); nil before any.
     public private(set) var currentID: PlaybackItem.ID?
+    /// How the queue continues at the end of a track (stored; AUD-004). All Tracks by default.
+    public private(set) var repeatMode: RepeatMode = .all
     /// False when no store was given, or the stored record is newer than this app: edits then
     /// work for this launch and are not stored.
     public private(set) var isPersistent: Bool
@@ -50,6 +58,7 @@ public final class PlayQueue: MutablePlayOrder {
         case .record(let record)?:
             ids = record.trackIDs
             currentID = record.currentTrackID
+            repeatMode = record.repeatMode
             isPersistent = true
             needsSeed = false
         case .newerFormat?:
@@ -209,6 +218,39 @@ public final class PlayQueue: MutablePlayOrder {
         neighbour(of: id, step: -1)
     }
 
+    /// What follows when `id` plays to its end, by repeat mode (AUD-004; data-model.md table).
+    public func endOfTrack(after id: PlaybackItem.ID) -> EndOfTrackStep {
+        let queued = items
+        guard let first = queued.first else { return .stop(cue: nil) }
+        let index = queued.firstIndex(where: { $0.id == id })
+        if let index {
+            switch repeatMode {
+            case .one: return .play(queued[index])
+            case .off where index == queued.count - 1: return .stop(cue: first)
+            case .off, .all: return .play(queued[(index + 1) % queued.count])
+            }
+        }
+        if id == currentID, let detachedIndex, repeatMode == .off, detachedIndex >= queued.count {
+            return .stop(cue: first)                   // the removed track was last: the end of the queue
+        }
+        return item(after: id).map(EndOfTrackStep.play) ?? .stop(cue: nil)
+    }
+
+    // MARK: - Repeat mode (AUD-004)
+
+    /// Sets the repeat mode: stored at once and reported like an edit, so that the transport applies
+    /// it to the playing track without moving it (AUD-004-R9). The same mode again does nothing.
+    public func setRepeatMode(_ mode: RepeatMode) {
+        guard mode != repeatMode else { return }
+        repeatMode = mode
+        changed()
+    }
+
+    /// The Repeat control's tap: Off → All Tracks → One Track → Off (AUD-004-R12).
+    public func cycleRepeatMode() {
+        setRepeatMode(repeatMode.next)
+    }
+
     public func playbackDidMove(to id: PlaybackItem.ID) {
         if id != currentID || ids.contains(id) { detachedIndex = nil }
         currentID = id
@@ -257,6 +299,7 @@ public final class PlayQueue: MutablePlayOrder {
     private func save() {
         guard isPersistent, let store else { return }
         try? store.save(PlayQueueRecord(trackIDs: ids.compactMap(PlayQueueRecord.canonicalID),
-                                        currentTrackID: currentID.flatMap(PlayQueueRecord.canonicalID)))
+                                        currentTrackID: currentID.flatMap(PlayQueueRecord.canonicalID),
+                                        repeatMode: repeatMode))
     }
 }

@@ -55,6 +55,9 @@ public protocol InAppPlaybackBackend: AnyObject {
     /// kept, nothing is cut and the playing, paused or held state stays. While paused or held only
     /// the flag changes.
     func updateLooping(_ loops: Bool)
+    /// AUD-004: false while a track that played to its end may still have frames on their way to the
+    /// sink (at most one tap block); the transport waits for it before stopping at the end.
+    var hasDeliveredTrackEnd: Bool { get }
 }
 
 extension InAppPlaybackBackend {
@@ -62,6 +65,9 @@ extension InAppPlaybackBackend {
     public func updateLooping(_ loops: Bool) {
         loopsCurrentTrack = loops
     }
+
+    /// For backends whose tap delivers at once (scripted test backends).
+    public var hasDeliveredTrackEnd: Bool { true }
 }
 
 @MainActor
@@ -142,6 +148,11 @@ public final class InAppPlaybackSource: AudioSource {
     /// keeping the position and without a cut (`InAppPlaybackBackend.updateLooping`).
     public func updateLooping(_ loops: Bool) {
         if running { backend.updateLooping(loops) } else { backend.loopsCurrentTrack = loops }
+    }
+
+    /// AUD-004: whether the end of a track that played to its end has reached the sink.
+    public var hasDeliveredTrackEnd: Bool {
+        running ? backend.hasDeliveredTrackEnd : true
     }
 
     public var playbackPosition: PlaybackPosition {

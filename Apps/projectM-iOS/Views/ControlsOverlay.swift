@@ -10,7 +10,8 @@
 // track title, scrubber and times, Previous track, Play or Pause playback, Stop playback, Next
 // track) sits above those rows in both layouts. It is not shown for Microphone or System/App
 // track) sits above those rows in both layouts. It is not shown for Microphone or System/App
-// Capture, and it appears and hides with the rest of the controls (AUD-006-R24, R25).
+// Capture, and it appears and hides with the rest of the controls (AUD-006-R24, R25). For imported
+// audio it also offers the queue (AUD-003) and the Repeat control (AUD-004).
 //
 // PRE-015-R1: next to the current preset's name, "Duplicate to My Presets" copies a built-in
 // preset on screen into My Presets (not shown for a user preset).
@@ -58,7 +59,13 @@ struct ControlsOverlay: View {
                             onPlayPause: { coordinator.transportPlayPause() }, onStop: { coordinator.transportStop() },
                             onPrevious: { coordinator.transportPrevious() }, onNext: { coordinator.transportNext() },
                             onSeek: { coordinator.transportSeek(to: $0) },
-                            onShowQueue: coordinator.transportShowsQueue ? { coordinator.openQueue() } : nil)   // AUD-003
+                            onShowQueue: coordinator.transportShowsQueue ? { coordinator.openQueue() } : nil,   // AUD-003
+                            // AUD-004: the queue's repeat mode, for imported audio only.
+                            repeatMode: coordinator.transportShowsQueue ? coordinator.audioLibrary.queue.repeatMode : nil,
+                            onCycleRepeat: {
+                                coordinator.showControls()
+                                coordinator.audioLibrary.queue.cycleRepeatMode()
+                            })
             .frame(maxWidth: 560)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("transport")

@@ -217,6 +217,28 @@ public enum UIStrings {
     public static func playNextAnnouncement(title: String) -> String { "\(title) plays next" }
     public static func queueRemovedAnnouncement(title: String) -> String { "\(title) removed from the queue" }
 
+    // MARK: Repeat (AUD-004; specs/017-aud-004-loop-track-and-queue/contracts/ui-strings.md)
+    public static let repeatLabel = "Repeat"
+    public static let repeatFooter =
+        "Off stops after the last track. One Track repeats the current track. All Tracks starts the queue again after the last track."
+    /// The queue screen's rows, in this order.
+    public static let repeatChoices: [RepeatMode] = [.off, .one, .all]
+
+    /// The mode's name: the Repeat control's accessibility value and the queue screen's row title.
+    public static func repeatValue(_ mode: RepeatMode) -> String {
+        switch mode {
+        case .off: return "Off"
+        case .one: return "One Track"
+        case .all: return "All Tracks"
+        }
+    }
+
+    /// What VoiceOver announces after the mode changed.
+    public static func repeatAnnouncement(_ mode: RepeatMode) -> String { "\(repeatLabel): \(repeatValue(mode))" }
+
+    /// The SF Symbol for the mode; Off and All Tracks share `repeat` and differ by color.
+    public static func repeatIcon(_ mode: RepeatMode) -> String { mode == .one ? "repeat.1" : "repeat" }
+
     // MARK: Transport (AUD-006; specs/007-aud-006-seekable-transport/contracts/ui-strings.md)
     public static let transportPlay = "Play"
     public static let transportPause = "Pause playback"

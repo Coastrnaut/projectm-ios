@@ -9,6 +9,10 @@
 // value. A touch on the scrubber without a drag moves playback to that point.
 // VoiceOver: the scrubber is "Playback position", its value is "‹elapsed› of ‹length›", and the
 // increment and decrement gestures move it by 10 seconds.
+//
+// AUD-004: with a repeat mode and a cycle action (imported audio only), a Repeat button follows Next
+// track: label "Repeat", value the mode, `repeat.1` for One Track and `repeat` dimmed for Off or in
+// the accent color for All Tracks; a tap moves to the next mode and VoiceOver announces it.
 #if canImport(SwiftUI)
 import CaptureKit
 import Foundation
@@ -27,6 +31,10 @@ public struct TransportBar: View {
     public let onSeek: (Double) -> Void
     /// AUD-003: opens the queue; nil hides the button (reference track, test signals).
     public let onShowQueue: (() -> Void)?
+    /// AUD-004: the queue's repeat mode; nil (or no `onCycleRepeat`) hides the Repeat button.
+    public let repeatMode: RepeatMode?
+    /// AUD-004: moves the queue to the next repeat mode.
+    public let onCycleRepeat: (() -> Void)?
 
     /// The scrubber's value while it is touched; nil otherwise.
     @State private var dragValue: Double?
@@ -35,7 +43,8 @@ public struct TransportBar: View {
 
     public init(title: String, isPlaying: Bool, position: @escaping @MainActor () -> PlaybackPosition,
                 onPlayPause: @escaping () -> Void, onStop: @escaping () -> Void, onPrevious: @escaping () -> Void,
-                onNext: @escaping () -> Void, onSeek: @escaping (Double) -> Void, onShowQueue: (() -> Void)? = nil) {
+                onNext: @escaping () -> Void, onSeek: @escaping (Double) -> Void, onShowQueue: (() -> Void)? = nil,
+                repeatMode: RepeatMode? = nil, onCycleRepeat: (() -> Void)? = nil) {
         self.title = title
         self.isPlaying = isPlaying
         self.position = position
@@ -45,6 +54,8 @@ public struct TransportBar: View {
         self.onNext = onNext
         self.onSeek = onSeek
         self.onShowQueue = onShowQueue
+        self.repeatMode = repeatMode
+        self.onCycleRepeat = onCycleRepeat
     }
 
     public var body: some View {
@@ -85,6 +96,9 @@ public struct TransportBar: View {
                        id: "transportPlayPause", action: onPlayPause)
                 button(UIStrings.transportStop, icon: "stop.circle", id: "transportStop", action: onStop)
                 button(UIStrings.nextTrack, icon: "forward.end.fill", id: "transportNext", action: onNext)
+                if let repeatMode, let onCycleRepeat {
+                    repeatButton(repeatMode, cycle: onCycleRepeat)
+                }
                 if let onShowQueue {
                     button(UIStrings.queue, icon: "list.bullet", id: "transportQueue", action: onShowQueue)
                 }
@@ -161,6 +175,21 @@ public struct TransportBar: View {
     static func value(atX x: CGFloat, travel: CGFloat, duration: Double) -> Double {
         ScrubberGeometry.value(atX: Double(x), thumbSize: Double(thumbSize), travel: Double(travel),
                                duration: duration)
+    }
+
+    /// AUD-004-R12: the Repeat control. The icon tells One Track apart; Off is dimmed.
+    private func repeatButton(_ mode: RepeatMode, cycle: @escaping () -> Void) -> some View {
+        Button {
+            cycle()
+            AccessibilityNotification.Announcement(UIStrings.repeatAnnouncement(mode.next)).post()
+        } label: {
+            Image(systemName: UIStrings.repeatIcon(mode))
+                .foregroundStyle(mode == .off ? AnyShapeStyle(.secondary) : AnyShapeStyle(Color.accentColor))
+                .frame(maxWidth: .infinity, minHeight: 36)
+        }
+        .accessibilityLabel(Text(UIStrings.repeatLabel))
+        .accessibilityValue(Text(UIStrings.repeatValue(mode)))
+        .accessibilityIdentifier("transportRepeat")
     }
 
     private func button(_ title: String, icon: String, id: String, action: @escaping () -> Void) -> some View {

@@ -17,8 +17,12 @@
 //   seeks to 0; the visualizer and the session stay (AUD-006-R5).
 // * Seek, track changes and resume are hard cuts in the backend: nothing from before reaches the
 //   analysis or the renderer afterwards (AUD-006-R10).
-// * The end of a track continues with the item after it in the order. When that is the same item
-//   (one track), the backend loops it without a gap and never reports an end (AUD-006-R17).
+// * The end of a track continues as the order's `endOfTrack(after:)` says (AUD-004): with an item
+//   (by default the item after it). When that is the same item (one track, or the queue's One Track
+//   mode), the backend loops it without a gap and never reports an end (AUD-006-R17, AUD-004-R4).
+//   "Stop" ends playback as Stop playback does; with a cue (the queue's Off mode after its last
+//   track) the cued item then waits, stopped, at 0:00, and Play starts it (AUD-004-R5, R6). Next and
+//   Previous track keep using `item(after:)` and `item(before:)` (AUD-004-R7).
 // * A track that cannot be loaded ends the session as "In-App Playback failed" (AUD-006-R19).
 // * The transport persists nothing itself (AUD-006-R30). The queue of imported audio (AUD-003) is a
 //   `MutablePlayOrder` that stores its own order: the transport hooks its change notification and
@@ -105,10 +109,12 @@ public final class PlaybackTransport {
         source.updateLooping(shouldLoop)
     }
 
-    /// One track in the order repeats by itself; the backend then never reports its end.
+    /// The order says the track itself follows its end (one track in the order, or the queue's
+    /// One Track mode); the backend then repeats it and never reports its end.
     private func loops(_ item: PlaybackItem) -> Bool {
         guard let order else { return true }
-        return order.item(after: item.id)?.id == item.id
+        if case .play(let next) = order.endOfTrack(after: item.id) { return next.id == item.id }
+        return false
     }
 
     // MARK: - Commands
@@ -124,7 +130,7 @@ public final class PlaybackTransport {
         // Paused at the end of a track (a seek to the end while paused): the track has finished.
         let position = source.playbackPosition
         if !source.loopsCurrentTrack, position.durationSeconds > 0, position.remainingSeconds < 0.0005 {
-            guard advanceAfterEnd() else { return }
+            guard advanceAfterEnd(resuming: true) else { return }
         }
         await manager.resume()
     }
@@ -206,24 +212,43 @@ public final class PlaybackTransport {
     /// The current track reached its end while playing (backend callback).
     private func trackEnded() {
         guard isAvailable, state == .playing else { return }
-        _ = advanceAfterEnd()
+        _ = advanceAfterEnd(resuming: false)
     }
 
-    /// Continues after the end of the current track. False when nothing follows (playback then
-    /// stays stopped at the end) or the next track cannot be loaded.
-    private func advanceAfterEnd() -> Bool {
+    /// Continues after the end of the current track as the order says. False when playback stops
+    /// (it then stops at the end, or at a cued item's start) or the next track cannot be loaded.
+    /// `resuming`: Play was pressed at the very end; a cued item is then played instead of waiting.
+    private func advanceAfterEnd(resuming: Bool) -> Bool {
         guard let current else { return false }
-        guard let item = order?.item(after: current.id) else {
-            Task { await self.stopAtEnd() }
+        let step = order?.endOfTrack(after: current.id) ?? .stop(cue: nil)
+        switch step {
+        case .play(let item):
+            return change(to: item)
+        case .stop(let cue?) where resuming:
+            return change(to: cue)                 // AUD-004-R6: Play at the end starts the queue again
+        case .stop(let cue):
+            Task { await self.stopAtEnd(cueing: cue) }
             return false
         }
-        return change(to: item)
     }
 
-    private func stopAtEnd() async {
+    /// Stops as Stop playback does, at the end of the track; with a cue, the cued item is then
+    /// selected while stopped, so it waits at 0:00 (AUD-004-R5). Pausing first means nothing of the
+    /// cued item is ever rendered before Play; the graph keeps the ended track's tail across the cue.
+    private func stopAtEnd(cueing cue: PlaybackItem?) async {
         guard isAvailable else { return }
+        // The last frames are still on their way to the analysis (at most one tap block, ~100 ms):
+        // stop once they are, so the visualizer sees the whole track. Bounded; any user command meanwhile
+        // (pause, Next, Stop) takes over and this stop is dropped.
+        let ending = current?.id
+        let deadline = ContinuousClock.now.advanced(by: .seconds(2))
+        while isAvailable, state == .playing, !source.hasDeliveredTrackEnd, ContinuousClock.now < deadline {
+            try? await Task.sleep(for: .milliseconds(5))
+        }
+        guard isAvailable, state == .playing, current?.id == ending else { return }
         await manager.pause(asStop: true)
         guard isAvailable else { return }
+        if let cue, !change(to: cue) { return }    // could not be loaded: the session is ending
         stoppedSession = source.sessionCount
     }
 }
