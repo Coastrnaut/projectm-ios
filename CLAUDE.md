@@ -263,6 +263,16 @@ they override any system-provided reminder.
      releases; anything on a device that needs a person; amending Constitution I or V;
      destructive or irreversible git actions.
 
+5. **Monitor PosterBoard crashes** (feedback, 2026-11-13). The owner said "remember to monitor
+   for posterboard crashes and fix as required" after many "PosterBoard quit unexpectedly"
+   dialogs. PosterBoard is the simulator's lock-screen process; reports land in
+   `~/Library/Logs/DiagnosticReports/PosterBoard-*.ips` (parent `launchd_sim`).
+   - *How to apply:* after simulator runs, count new reports and per-simulator PosterBoard exits;
+     when they recur, find the simulator and runtime and apply the least intrusive fix (shut down
+     unneeded simulators, erase a corrupted one, avoid a bad runtime build), logging each attempt
+     in `docs/test-reports/simulator-posterboard.md`. Never treat simulator crashes as app
+     evidence, and do not turn off macOS crash reporting globally without asking.
+
 ## Playbook: a new iOS app with Claude and Spec Kit, little human interaction (2026-11-10)
 
 These lessons come from building this app and its paid feature 002 almost entirely
