@@ -73,6 +73,8 @@ struct RootView: View {
                     .padding(.horizontal)
             }
             .onAppear { automationChooserAppeared() }
+            // SCN-012: Reopen's repair report when the offer is answered on the chooser.
+            .sceneRepairSheet(coordinator.sceneRepair, active: !coordinator.showQueue && !coordinator.showMicrophoneExplainer)
             // AUD-001-R1: the system Files picker, audio types only. The picked URLs are used once,
             // to copy the files into the app's library, and are not kept.
             .fileImporter(isPresented: $coordinator.showAudioImporter, allowedContentTypes: [.audio],

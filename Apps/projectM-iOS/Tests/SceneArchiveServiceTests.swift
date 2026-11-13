@@ -149,6 +149,9 @@ final class SceneArchiveServiceTests: XCTestCase {
         let issues = result.document.validate(registry: registry, assets: try target.service().availability())
         XCTAssertTrue(issues.allSatisfy { (i: SceneIssue) -> Bool in !i.isError && i.code != .missingAsset }, "\(issues)")
         XCTAssertNoThrow(try result.document.liveState(registry: registry, assets: try target.service().availability()))
+        // SCN-012-R11: the result carries the scene's repair report (nothing for the user to review here).
+        XCTAssertFalse(result.repairReport.needsReview, "\(result.repairReport.entries)")
+        XCTAssertTrue(result.repairReport.canOpenAsIs)
 
         // The media decode.
         let source0 = try XCTUnwrap(CGImageSourceCreateWithURL(photo.url as CFURL, nil))

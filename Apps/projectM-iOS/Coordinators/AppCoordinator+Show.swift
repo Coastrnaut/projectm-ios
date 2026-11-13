@@ -35,8 +35,12 @@ extension AppCoordinator {
             self?.applyShowScene(document, warnings: warnings, refresh: true) ?? []
         }
         show.availability = { [weak self] () -> StoredMediaAvailability in
-            StoredMediaAvailability(photos: Set([self?.photos.photo?.id.uuidString].compactMap { $0 }),
-                                    videos: Set([self?.videos.video?.id.uuidString].compactMap { $0 }))
+            self?.storedMediaAvailability ?? StoredMediaAvailability(photos: [], videos: [])
+        }
+        // SCN-012: a cue's scene that needs review shows the repair report first.
+        show.requestRepair = { [weak self] (request: SceneRepairRequest) in self?.sceneRepair.present(request) }
+        sceneRepair.availability = { [weak self] () -> StoredMediaAvailability in
+            self?.storedMediaAvailability ?? StoredMediaAvailability(photos: [], videos: [])
         }
     }
 

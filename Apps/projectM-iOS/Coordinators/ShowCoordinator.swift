@@ -6,8 +6,12 @@
 // * A step that moves (Next, Previous, Go to) reads the active cue's scene, validates it (SCN-001
 //   `liveState` with the app's registry and the stored photo/video) and hands it to `applyScene`, which
 //   AppCoordinator sets to its settings path (no audio source change, no camera). The cue is not
-//   applied again at launch (Clarifications). A scene that is missing or has SCN-001 errors leaves the
-//   output unchanged: the position still moves, a notice shows for about 4 s and VoiceOver announces it.
+//   applied again at launch (Clarifications). A scene that is missing leaves the output unchanged: the
+//   position still moves, a notice shows for about 4 s and VoiceOver announces it.
+// * SCN-012: a scene that cannot be decoded, has SCN-001 errors or user-relevant warnings (missing
+//   media, invalid mappings, unknown layers) goes to `requestRepair` (the repair report) before
+//   anything is applied; the position still moves and the output stays until the user opens it.
+//   The stored file is never written. Without `requestRepair` (tests of SHOW-001 alone) the old notice.
 // * Edits (add, remove, move, rename) never apply anything (SHOW-001-R6).
 // * SCN-003: Duplicate Scene stores a copy of a cue's scene under a new scene ID and inserts a cue for
 //   it right after that cue; Rename Scene renames the scene itself (every cue showing it), never a
@@ -45,6 +49,8 @@ final class ShowCoordinator {
     @ObservationIgnored private let registry: ParameterRegistry?
     /// Applies a validated scene to the live output; returns notices (parts left out). Set by AppCoordinator.
     @ObservationIgnored var applyScene: ((SceneDocument, [SceneIssue]) -> [String])?
+    /// SCN-012: shows the repair report for a cue's scene (set by AppCoordinator).
+    @ObservationIgnored var requestRepair: ((SceneRepairRequest) -> Void)?
     /// Which photo and video are stored now (SCN-001 asset availability).
     @ObservationIgnored var availability: () -> StoredMediaAvailability = { StoredMediaAvailability(photos: [], videos: []) }
     @ObservationIgnored private var noticeTask: Task<Void, Never>?
@@ -120,34 +126,64 @@ final class ShowCoordinator {
         return step
     }
 
-    /// Reads, validates and applies the cue's scene (SHOW-001-R8, R9).
+    /// Reads, validates and applies the cue's scene (SHOW-001-R8, R9); SCN-012: the repair report first
+    /// when the scene needs review.
     private func show(_ cue: ShowCue) {
         let number = (list.activeIndex ?? 0) + 1
-        let failure = "Cue \(number): the scene could not be shown."
-        guard let store, let registry else { return post(failure) }
+        guard let store, let registry else { return post(Self.failure(number)) }
+        let title = "Cue \(number) · \(cue.label)"
         let decoded: SceneDecodeResult
         do {
             decoded = try store.scene(cue.sceneID)
         } catch {
             unreadableScenes.insert(cue.sceneID)
-            return post(failure)
+            if case let .unreadable(refusal) = error, let requestRepair {
+                clearNotice()
+                return requestRepair(SceneRepairRequest(title: title, report: SceneRepairReport(refusal: refusal), document: nil))
+            }
+            return post(Self.failure(number))
         }
+        let report = SceneRepairReport(document: decoded.document, decodeWarnings: decoded.warnings, registry: registry,
+                                       assets: availability())
+        guard report.needsReview, let requestRepair else {
+            return apply(decoded.document, decodeWarnings: decoded.warnings, sceneID: cue.sceneID, number: number)
+        }
+        if !report.canOpenAsIs { unreadableScenes.insert(cue.sceneID) }
+        clearNotice()
+        let sceneID = cue.sceneID
+        let warnings = decoded.warnings
+        requestRepair(SceneRepairRequest(title: title, report: report, document: decoded.document,
+                                         open: { [weak self] (document: SceneDocument) in
+                                             self?.apply(document, decodeWarnings: warnings, sceneID: sceneID, number: number)
+                                         }))
+    }
+
+    static func failure(_ number: Int) -> String { "Cue \(number): the scene could not be shown." }
+
+    /// Validates and applies a document for the cue (as stored, or repaired by SCN-012); errors leave
+    /// the output unchanged with the notice.
+    private func apply(_ document: SceneDocument, decodeWarnings: [SceneIssue], sceneID: String, number: Int) {
+        guard let registry else { return post(Self.failure(number)) }
         let loaded: SceneLoadResult
         do {
-            loaded = try decoded.document.liveState(registry: registry, assets: availability())
+            loaded = try document.liveState(registry: registry, assets: availability())
         } catch {
-            unreadableScenes.insert(cue.sceneID)
-            return post(failure)
+            unreadableScenes.insert(sceneID)
+            return post(Self.failure(number))
         }
-        unreadableScenes.remove(cue.sceneID)
-        let notes = applyScene?(decoded.document, decoded.warnings + loaded.warnings) ?? []
-        appliedSceneID = cue.sceneID
+        unreadableScenes.remove(sceneID)
+        let notes = applyScene?(document, decodeWarnings + loaded.warnings) ?? []
+        appliedSceneID = sceneID
         if let first = notes.first {
             post("Cue \(number): \(first)")
         } else {
-            noticeTask?.cancel()
-            notice = nil
+            clearNotice()
         }
+    }
+
+    private func clearNotice() {
+        noticeTask?.cancel()
+        notice = nil
     }
 
     private func post(_ message: String) {
