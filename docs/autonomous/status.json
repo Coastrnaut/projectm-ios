@@ -7,9 +7,10 @@
  "by_priority": {
   "P0": {
    "audited": 60,
-   "implementing": 2,
+   "implementing": 1,
    "integrated": 24,
-   "skipped_existing": 1
+   "skipped_existing": 1,
+   "unit_passed": 1
   },
   "P1": {
    "audited": 146,
@@ -24,9 +25,10 @@
  },
  "by_state": {
   "audited": 294,
-  "implementing": 2,
+  "implementing": 1,
   "integrated": 29,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -3400,12 +3402,12 @@
   "VIS-001": {
    "attempts": 0,
    "branch": "feature/vis-001",
-   "branch_sha": null,
+   "branch_sha": "7fa6d4e0f3c1a64f156861f044b0590991c3f3bc",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": "specs/019-vis-001-circular-spectrum",
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "VIS-002": {
    "attempts": 0,
@@ -3770,5 +3772,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T12:28:24Z"
+ "updated": "2026-11-13T13:12:18Z"
 }
