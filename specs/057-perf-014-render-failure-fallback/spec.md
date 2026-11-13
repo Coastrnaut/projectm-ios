@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (PERF-014-T01-T21 verified on the Mac: macOS host and iOS 27.2 simulator; T22 `{device}` open)
 
 **Input**: User description: "Implement PERF-014 (Render failure fallback) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Recover from invalid shader or

@@ -51,13 +51,40 @@ physical devices; left open.
 
 ## Phase 5: Polish and cross-cutting
 
-- [ ] PERF-014-T20 Regression runs: Compositor (`swift test` host, Linux shape, `xcodebuild test -scheme Compositor` once), Diagnostics, ANGLERendering (fault and existing suites) on the simulator, app `-only-testing:projectM-iOSTests` + RenderFaultUITests, NativeVisualUITests, CameraUITests, GlowUITests; `check_compliance.py`, `validate_docs.py`; PosterBoard reports counted before and after
-- [ ] PERF-014-T21 Docs: spec status and an Evidence section in this file (what is real vs injected, counts, durations)
+- [X] PERF-014-T20 Regression runs: Compositor (`swift test` host, Linux shape, `xcodebuild test -scheme Compositor` once), Diagnostics, ANGLERendering (fault and existing suites) on the simulator, app `-only-testing:projectM-iOSTests` + RenderFaultUITests, NativeVisualUITests, CameraUITests, GlowUITests; `check_compliance.py`, `validate_docs.py`; PosterBoard reports counted before and after — Verified 2026-11-13: Compositor: `swift test` host 328 tests (1 skipped) 0 failures, Linux shape (`-DCOMPOSITOR_NO_METAL -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE`) 105 tests 0 failures, `xcodebuild test -scheme Compositor` on the iOS 27.2 simulator TEST SUCCEEDED (RenderFaultRecoveryTests 10/10 there); Diagnostics 12/12; ANGLERendering 70/70 (41 s); app `-only-testing:projectM-iOSTests` 239/239 (12 s) + RenderFaultUITests 2/2 (14.5 s, 18.3 s), NativeVisualUITests 4/4, CameraUITests 2/2; GlowUITests 0/2 — fails identically with this feature's app changes stashed (pre-existing on this "iPhone 17" simulator, not caused by PERF-014; reported); Release simulator build succeeds and its binary has no `faultInjection` property or probe symbols (only the plain `RenderFaultInjection` type, by design D5); `check_compliance.py` OK, `validate_docs.py` OK; PosterBoard reports 32 before and 32 after
+- [X] PERF-014-T21 Docs: spec status and an Evidence section in this file (what is real vs injected, counts, durations) — Verified 2026-11-13: this file's Evidence section and the spec status
 - [ ] PERF-014-T22 {device} D1 (iOS 27) and D3 (iPadOS 26.5), Debug build with `-uitestRenderFaults prepare:photo,preset:1,gpu:gpuTimeout`: no hang, controls respond, overlay shows the reason, "Render fault" events in Console, the placeholder fades in after the GPU retries and goes after pause/resume with the fault cleared (quickstart E)
 
 ## Analysis (speckit-analyze, 2026-11-13)
 
 No CRITICAL or HIGH finding; constitution aligned (I, VI, VII, X, privacy). Applied: R12 (no work outside retry ticks) made testable in T05 (allocation and prepare counters); R2's "frame clock" made precise as the visual's frame ticks (research D1) in the spec. Coverage: R1 T01/T02; R2 T01/T04/T06; R3-R5 T04/T05; R6 T04/T05/T12/T13/T14; R7 T11/T12; R8 T06/T09; R9 T13/T14; R10 T15/T16; R11 T08/T10; R12 T05/T12/T19; R13 T03/T08; R14 T17/T18; R15 T04/T06/T11/T13/T18; R16 T12. S1-S6 each have a task; S7 is T22 `{device}`. Low: the native spectrum's runtime GPU errors are out of scope by decision (Clarifications Q4), recorded, not a gap.
+
+## Evidence (2026-11-13, macOS host, iOS 27.2 simulator; not device evidence)
+
+- **Real vs injected**: every fault is injected at the point the app reads it (a layer's prepare or
+  picture creation, a layer's render, a command buffer's finished status, a preset load, the swap
+  result) through DEBUG-only `faultInjection`; the recovery, back-off, health record, logging, overlay
+  and placeholder paths are the app's real ones. A real unloadable preset was also tried
+  (`testARealUnloadablePresetRecordsTheSameReason`). Real GPU errors cannot be produced on demand on
+  the simulator; device runs are T22 `{device}`.
+- **Back-off measured in ticks**: layer prepare retries at ticks 31, 91, 211, 451 (first fault at
+  tick 1), none in the following 1,000 ticks; preparations and picture creations happen only at retry
+  ticks. In the UI run the Photo layer failed at tick 1 and at its retries, and recovered at tick 211
+  after `faults:clear` (`healthy layerPrepareFailed faults 3 recoveries 1 tick 91`); Settings opened
+  and closed within the 5 s ceiling twice while faulted; `sourceStarts` stayed 1.
+- **Placeholder**: projectM with a failing swap gave up after 5 counted faults and showed the
+  placeholder ("Visual unavailable"); display ticks kept advancing; it stayed after the fault was
+  cleared and went at Pause/Resume. Fade: 2 transitions over fade-in, 1 s hold and fade-out, ≤ 1 per
+  1 s window, at most 1/30 of the range per frame.
+- **Flash**: a white layer switching to its transparent fallback and back after its retry: 2
+  transitions, ≤ 1 per 1 s window in the read-back output. Finding: under a persistent GPU error,
+  each visual-level retry shows the layers for the 1-3 frames until the error is read back (statuses
+  are polled, never waited for); with retries ≥ 30 ticks apart these are at most 3 transitions in any
+  1 s window, within both envelopes' budgets (6, Reduce flashing 4), and the composite flash guard
+  dims anything beyond (seen in `testAPersistentGPUFaultEndsInThePlaceholderStateUntilAReset` with a
+  2-tick test policy).
+- **Not verified here**: device behaviour (T22); real GPU error codes from a device; the native
+  spectrum's runtime GPU errors (out of scope, Clarifications Q4).
 
 ## Dependencies
 
