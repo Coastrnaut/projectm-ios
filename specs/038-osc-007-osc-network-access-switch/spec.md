@@ -37,7 +37,7 @@ and tests; only the gaps are in scope.
 Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
 interaction); each answer is the conservative, local-first option.
 
-- Q: Where is the listener status shown outside Settings? → A: A small "OSC listening on port N" badge on the visualizer, at the top, shown with or without the controls and never hidden by the controls' hide timer (OSC-007-R2). It shares the top status area with CAM-012's "Camera on" badge (built in parallel); the two are separate views stacked in one place, so neither covers the other (OSC-007-R6).
+- Q: Where is the listener status shown outside Settings? → A: A small badge on the visualizer, at the top, shown with or without the controls and never hidden by the controls' hide timer (OSC-007-R2). It shares the top status area with CAM-012's "Camera on" badge (built in parallel); the two are separate views stacked in one place, so neither covers the other (OSC-007-R6).
 - Q: What drives the badge: the toggle or the listener? → A: The listener. The badge is shown only while the receiver reports `listening`, which follows the system's "ready" for the socket; it is not shown while starting, stopping, off, paused in the background, or after a failure (the failure stays explained in Settings, OSC-001-R16) (OSC-007-R2, R3).
 - Q: What does Stop do? → A: A "Stop" button on the badge turns the OSC receiver setting off (the same stored setting as the Settings toggle, so Settings then shows the toggle off) and closes the listener the same way the toggle does: OSC-001's confirmed cancel, "Off" only after the system confirms (OSC-007-R4). It does not wait on the main thread. Turning OSC back on is only possible in Settings (no "start" on the visualizer: enabling network access is a deliberate choice made where the port and the explanation are).
 - Q: Is a confirmation asked before Stop? → A: No. Stopping can only reduce network exposure and is undone from Settings; one tap is the point of a stop control.
@@ -46,12 +46,20 @@ interaction); each answer is the conservative, local-first option.
 - Q: How is "toggle on/off changes socket state" proved in the app? → A: An app unit test on the simulator drives the coordinator's toggle against the real system UDP transport on a free high port: on → the state becomes `listening` (the system reported the socket ready); off → `off` (reported only after the system confirmed the cancel); then an independent second listener binds the same port, proving the socket was released. If the sandbox refuses the port, the test is skipped, never passed (OSC-007-S2).
 - Q: Is an ADR needed? → A: No. No default is overridden; this row adds a status badge and a stop control on top of OSC-001's switch, inside ADR-0008's ruling.
 
+### Session 2026-11-13 (speckit-clarify)
+
+Same delegation (owner rule 4); recommended option taken each time.
+
+- Q: What exact words does the badge show? → A: "OSC listening on port N" (recommended over a terse "OSC · port N": a user who never opened the OSC settings still understands that the app is listening on the network). Updated in R2, US1 and S4.
+- Q: The source chooser is shown on every launch and an enabled listener already runs there; is the badge shown only on the visualizer? → A: No: the same badge with Stop is shown on the chooser too (at the bottom, above the safe area), so the status is visible on every screen where the listener can run. The photosensitivity notice is shown only before first use, when OSC cannot have been turned on in the app, so it gets no badge (OSC-007-R2).
+- Q: How is the badge placed relative to the visualizer's other overlays? → A: At the top centre, as the first row of the top status stack, above the audio status banners; the performance overlay keeps the top-right corner and the debug panels the top-left. CAM-012's camera badge joins the same stack next to it (OSC-007-R6); the expected merge point is the top of the visualizer's status `VStack`.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - See that OSC is listening (Priority: P1)
 
 A performer turned on "OSC receiver" in Settings earlier. Back on the visualizer, with the controls
-hidden, a small badge "OSC · port 9000" at the top tells them the app is listening on the network.
+hidden, a small badge "OSC listening on port 9000" at the top tells them the app is listening on the network.
 
 **Why this priority**: Network access must never be invisible; this is the "visible listener
 status" half of the row.
@@ -61,7 +69,7 @@ port is shown; turn OSC off in Settings: the badge is gone.
 
 **Acceptance Scenarios**:
 
-1. **Given** OSC is on and the listener is ready on port N, **When** the visualizer is shown (controls shown or hidden), **Then** the badge reads "OSC · port N".
+1. **Given** OSC is on and the listener is ready on port N, **When** the visualizer is shown (controls shown or hidden), **Then** the badge reads "OSC listening on port N".
 2. **Given** OSC is off (fresh install or turned off), **When** the visualizer is shown, **Then** no badge is shown.
 3. **Given** OSC is on but the port could not be opened (in use, permission denied), **When** the visualizer is shown, **Then** no badge is shown and Settings explains the failure.
 
@@ -106,6 +114,7 @@ is never asked to open.
 - Stop tapped while the controls are hidden: the badge's button works without showing the controls first.
 - The app leaves the foreground while listening: the badge disappears with the listener (OSC-001-R3) and returns when the listener is ready again; the setting stays on.
 - The port changes in Settings while listening: the badge shows the new port only once the new listener is ready.
+- OSC is on at launch: the listener opens while the source chooser is shown, and the chooser shows the badge with Stop.
 - CAM-012's camera badge is shown at the same time: both badges are visible, stacked, neither covers the other.
 
 ## Requirements *(mandatory)*
@@ -113,7 +122,7 @@ is never asked to open.
 ### Functional Requirements
 
 - **OSC-007-R1**: A fresh install (no stored OSC setting) MUST open no network listener at launch, nor when the app leaves and returns to the foreground (restates OSC-001-R1 as this row's acceptance; tested here for the foreground return).
-- **OSC-007-R2**: While the OSC receiver reports that its listener is ready, the visualizer MUST show a badge naming the port ("OSC · port N"), whether or not the controls are shown; the controls' hide timer MUST NOT hide it.
+- **OSC-007-R2**: While the OSC receiver reports that its listener is ready, the visualizer and the source chooser MUST show a badge naming the port ("OSC listening on port N"); on the visualizer it is shown whether or not the controls are shown, and the controls' hide timer MUST NOT hide it.
 - **OSC-007-R3**: The badge MUST NOT be shown in any other receiver state (off, starting, stopping, failed, paused in the background).
 - **OSC-007-R4**: The badge MUST offer a "Stop" button that turns the OSC receiver setting off and closes the listener with OSC-001's confirmed cancel; afterwards Settings MUST show the toggle off.
 - **OSC-007-R5**: Stop MUST NOT change the audio source, the visual, the port or the test value, and MUST NOT add a stored key.
