@@ -98,7 +98,7 @@ and compare it with the golden image.
 2. **Given** square and sawtooth fixtures, **When** triggered the same way, **Then** they are as stable.
 3. **Given** a sine with a DC offset of +0.3, **When** triggered, **Then** it still triggers and is as stable.
 4. **Given** silence or white noise, **When** triggered, **Then** the stabilizer reports free-run and shows the newest samples.
-5. **Given** 1,000 frames of trigger, layout and tessellation, **When** run, **Then** no storage is created after setup (fixed capacities and buffer addresses are unchanged).
+5. **Given** 1,000 frames of the trigger and 300 of trigger, layout, tessellation and area levels, **When** run, **Then** no storage is created after setup (fixed capacities and buffer addresses are unchanged).
 6. **Given** the sine fixture rendered offscreen at the golden resolutions, **When** compared with the committed golden for this platform class, **Then** it passes QA-002's rule.
 
 ---
@@ -168,7 +168,7 @@ app.
 
 - **VIS-003-S1**: For sines at 110 Hz, 440 Hz and 1 kHz (44.1 kHz) and 440 Hz at 48 kHz, square and sawtooth at 220 Hz and a sine with +0.3 offset, 60 frames with varying advances give a start-phase spread below 0.01 cycle.
 - **VIS-003-S2**: Silence and white noise free-run in 100 % of frames; the free-run window is the newest one.
-- **VIS-003-S3**: Over 1,000 frames the stabilizer's and the layout's storage capacities and addresses never change, and the hand-off delivers complete histories (no torn frame) under a concurrent writer.
+- **VIS-003-S3**: Over 1,000 frames (the stabilizer) and 300 frames (the whole layout with its area levels) the storage capacities and addresses never change, and the hand-off delivers complete histories (no torn frame) under a concurrent writer.
 - **VIS-003-S4**: The sine fixture passes QA-002's golden comparison on the macOS host and the iOS Simulator; where no GPU exists the check is reported as skipped.
 - **VIS-003-S5**: A 60 Hz loud/silent alternation yields at most 4 transitions per 1 s window in every area with Reduce flashing on and at most 6 with it off.
 - **VIS-003-S6**: Choosing Oscilloscope, Thick and 40 ms, relaunching, and finding them restored works in one UI test of at most 30 s with the source started exactly once; the existing native-visual and glow UI tests pass unchanged.
