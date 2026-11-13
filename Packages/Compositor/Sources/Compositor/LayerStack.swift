@@ -6,7 +6,8 @@
 // the last index is drawn on top. Every operation either succeeds or throws and leaves the stack
 // unchanged. Opacity (CMP-003), transforms (CMP-005) and blend modes (CMP-004, not yet)
 // live in each entry's `LayerCompositeSettings`; groups, masks and solo/mute will add
-// fields to the entry.
+// fields to the entry. SCN-001 adds `init(restoring:)`: a saved scene's stack is rebuilt with its
+// own instance IDs (specs/059-scn-001-versioned-scene-format, research SCN-001-D7).
 
 /// The stable identity of one stack entry. Unique within a stack and never reused by it, so the
 /// compositor can keep a live layer per ID across edits.
@@ -69,6 +70,8 @@ public enum LayerStackError: Error, Equatable, Sendable {
     case stackFull(limit: Int)
     /// The kind's `maximumInstances` is reached (`.camera`: one capture session).
     case kindLimitReached(LayerKind)
+    /// `init(restoring:)` was given two entries with the same ID (SCN-001).
+    case duplicateLayer(LayerInstanceID)
 }
 
 public struct LayerStack: Equatable, Sendable {
@@ -82,6 +85,22 @@ public struct LayerStack: Equatable, Sendable {
     private var nextRawID: UInt64 = 1
 
     public init() {}
+
+    /// Rebuilds a saved stack with its own instance IDs, bottom first (SCN-001, research
+    /// SCN-001-D7; CMP-002 amendment). Refuses duplicate IDs, more than `maximumLayerCount` entries
+    /// and kinds over their `maximumInstances`. The next added layer gets the largest restored ID + 1,
+    /// so restored IDs are never reused.
+    public init(restoring entries: [LayerStackEntry]) throws(LayerStackError) {
+        var seen: Set<LayerInstanceID> = []
+        var largest: UInt64 = 0
+        for entry in entries {
+            guard seen.insert(entry.id).inserted else { throw .duplicateLayer(entry.id) }
+            try checkRoom(for: entry.descriptor.kind)
+            self.entries.append(entry)
+            largest = max(largest, entry.id.rawValue)
+        }
+        nextRawID = largest == UInt64.max ? largest : largest + 1
+    }
 
     public var count: Int { entries.count }
     public var isEmpty: Bool { entries.isEmpty }

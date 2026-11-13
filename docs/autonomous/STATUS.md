@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T20:12:17Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T20:26:34Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,24 +9,25 @@
 
 | State | Features |
 |---|---|
-| audited | 254 |
+| audited | 252 |
 | implementing | 2 |
-| integrated | 69 |
+| unit_passed | 1 |
+| integrated | 70 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 30 | 2 | 54 | 1 |
-| P1 | 138 | 0 | 13 | 0 |
-| P2 | 77 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 28 | 2 | 1 | 55 | 1 |
+| P1 | 138 | 0 | 0 | 13 | 0 |
+| P2 | 77 | 0 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 256 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
+- 255 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
 
 ## Integrated
 
@@ -86,6 +87,7 @@ The physical-device suite may **not** start:
 | PERF-004 | Texture pool | `ea0ee43e0f04` | `feature/perf-004` |
 | PERF-006 | Memory warning recovery | `b4281645619e` | `feature/perf-006` |
 | PERF-011 | Background resource release | `6d669fcb8576` | `feature/perf-011` |
+| PERF-014 | Render failure fallback | `76a8cbf21e15` | `feature/perf-014` |
 | PRE-007 | Preset collections | `e834535cb98b` | `feature/pre-007` |
 | PRE-012 | Preset import validation | `4bf9f50d1af8` | `feature/pre-012` |
 | PRE-014 | Bulk preset export | `a20ba4bafb5e` | `feature/pre-014` |
@@ -515,6 +517,14 @@ None.
 - `xcodebuild -scheme Rendering-Package -destination id=4E32B01D-7911-4A64-A944-877DDD445BC0 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `685f31acc792` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-011/20261112T152635/sim-test_Rendering.log`)
 - `integration checkout: xcodegen generate; xcodebuild -scheme projectM-iOS -destination id=4E32B01D (iPhone 17, iOS 27.2) -only-testing:projectM-iOSTests test`: pass at `6d669fcb8576` (log `.autonomous/logs/integration/perf-011/app-unit-tests.log`)
 
+### PERF-014 Render failure fallback (integrated)
+- `python3 scripts/check_compliance.py`: pass at `ab7e0c1b4872` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-014/20261113T151631/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `ab7e0c1b4872` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-014/20261113T151631/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `ab7e0c1b4872` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-014/20261113T151631/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `ab7e0c1b4872` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-014/20261113T151631/swift-test_Compositor.log`)
+- `swift test --package-path Packages/Diagnostics`: pass at `ab7e0c1b4872` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-014/20261113T151631/swift-test_Diagnostics.log`)
+- `post-merge: projectM-iOSTests 252 incl. RenderFaultAppTests; RenderFaultUITests 2, VideoRecording 2, Camera 2 UI tests; Compositor scheme 374 test cases pass on iPhone 17 iOS 27.2 sim; GlowUITests 2 pass twice after the shared reveal fix`: pass at `76a8cbf21e15` (log `.autonomous/logs/integration/perf-014/app-tests.log`)
+
 ### PRE-007 Preset collections (integrated)
 - `python3 scripts/check_compliance.py`: pass at `20a56625dc20` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-007/20261112T163454/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `20a56625dc20` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-007/20261112T163454/docs.log`)
@@ -565,6 +575,13 @@ None.
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `482f39d4b03f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-003/20261113T150813/sim-test_ANGLERendering.log`)
 - `swift test --package-path Packages/Compositor`: pass at `482f39d4b03f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-003/20261113T150813/swift-test_Compositor.log`)
 - `post-merge: Compositor scheme on iPhone 17 sim (CompositorTests 185, FrameRecordingTests 21 incl. 10 s fixture with monotonic timestamps); projectM-iOSTests; VideoRecordingUITests 2, FrameCapture 2, SafeMedia UI tests`: pass at `bf82b49836a5` (log `.autonomous/logs/integration/rec-003/compositor-sim.log`)
+
+### SCN-001 Versioned scene format (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `65ce45cdc91d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-001/20261113T152510/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `65ce45cdc91d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-001/20261113T152510/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `65ce45cdc91d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-001/20261113T152510/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `65ce45cdc91d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-001/20261113T152510/swift-test_Compositor.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `65ce45cdc91d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-001/20261113T152510/swift-test_SceneFormat.log`)
 
 ### SHD-001 Procedural material catalog (integrated)
 - `python3 scripts/check_compliance.py`: pass at `67186e7fa06d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-001/20261113T120524/compliance.log`)

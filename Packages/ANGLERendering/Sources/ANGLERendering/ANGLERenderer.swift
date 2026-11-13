@@ -25,9 +25,17 @@
 //   the next rendered frame back with glReadPixels after the FX-019 post-pass wrote framebuffer 0 and
 //   before eglSwapBuffers (the swap leaves the buffer undefined), i.e. the frame as shown. One
 //   synchronous read on the render thread, only for a request; frames without one are unchanged.
+// * PERF-014 (specs/057-perf-014-render-failure-fallback, contracts/render-health.md): `health` is
+//   projectM's render health record. A preset that fails to load (an invalid shader included) is
+//   recorded as `presetLoadFailed` and the error is rethrown (FR-045 keeps the previous preset). A
+//   failed swap is a counted `presentationFailed` fault: no frame is rendered until the back-off's
+//   retry tick (30, 60, 120, 240 display ticks), each retry recreates the window surface, and after
+//   the last failed retry the state is `placeholder` until `resume()` or `resumeForPresentation()`.
+//   DEBUG builds can arm `faultInjection` (preset loads, swap results).
 import AudioCore
 import CANGLE
 import CFlashLimiter
+import Compositor
 import FlashSafety
 import Foundation
 import PresentationLifecycle
@@ -105,6 +113,18 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     /// PRE-012: tries imported presets on a separate engine before they may be played.
     let trialRunner: PresetTrialRunner
     public var presetTrial: (any PresetTrialing)? { trialRunner }
+
+    /// PERF-014-R2: projectM's render health record; `onRenderHealthChange` hears every update.
+    public private(set) var health = RenderHealth()
+    public var onRenderHealthChange: ((RenderHealth) -> Void)?
+    /// PERF-014-D1: display-link ticks (the back-off's time base).
+    public private(set) var displayTicks: UInt64 = 0
+    public var recoveryPolicy = RenderRecoveryPolicy.standard
+    private var presentationRetry = RenderRetryState()
+    #if DEBUG
+    /// PERF-014-R15: faults to force (DEBUG builds only).
+    public var faultInjection = RenderFaultInjection()
+    #endif
 
     private init(display: EGLDisplay, config: EGLConfig, context: EGLContext, placeholder: EGLSurface,
                  engine: ProjectMEngine) {
@@ -185,10 +205,21 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     public func setPreset(_ preset: Preset) async throws {
         guard let engine else { return }
         makeCurrent()
-        if let data = preset.data {
-            try engine.loadPresetData(data, smooth: true)
-        } else {
-            try engine.loadPreset(atPath: preset.fileURL.path, smooth: true)
+        do {
+            #if DEBUG
+            if faultInjection.failPresetLoads > 0 {   // PERF-014-R15: as a shader that does not compile
+                faultInjection.failPresetLoads -= 1
+                throw PMEngineError(.presetLoadFailed, userInfo: [NSLocalizedDescriptionKey: "Preset shader failed to compile (injected)"])
+            }
+            #endif
+            if let data = preset.data {
+                try engine.loadPresetData(data, smooth: true)
+            } else {
+                try engine.loadPreset(atPath: preset.fileURL.path, smooth: true)
+            }
+        } catch {
+            updateHealth { (health: inout RenderHealth) in health.recordFault(.presetLoadFailed, atTick: displayTicks) }   // PERF-014-R8
+            throw error
         }
     }
 
@@ -216,6 +247,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     public func resume() {
         paused = false
         displayLink?.isPaused = false
+        resetPresentationHealth()
     }
 
     // MARK: - Frames
@@ -251,10 +283,64 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
             eglMakeCurrent(display, surface, surface, context)
         }
         if present {
-            eglSwapBuffers(display, surface)
+            var swapped = eglSwapBuffers(display, surface) == EGL_TRUE
+            #if DEBUG
+            if faultInjection.failPresentation { swapped = false }
+            #endif
+            presentationResult(swapped)
+            guard swapped else { return false }
             presentedFrameCount += 1
         }
         return true
+    }
+
+    // MARK: - Render health (PERF-014)
+
+    /// One display tick (PERF-014-R9): no frame while the presentation part backs off; at its retry
+    /// tick the window surface is recreated first. Returns true when a frame was presented.
+    @discardableResult
+    func presentationTick(frameTime: Double = 1.0 / 60) -> Bool {
+        displayTicks &+= 1
+        if presentationRetry.isRetryDue(atTick: displayTicks) {
+            presentationRetry.beginRetry(atTick: displayTicks)
+            recreateSurface()
+        }
+        guard !presentationRetry.isHolding else { return false }
+        return renderFrame(frameTime: frameTime)
+    }
+
+    private func presentationResult(_ swapped: Bool) {
+        updateHealth { (health: inout RenderHealth) in
+            if swapped {
+                if presentationRetry.succeeded(encodedAtTick: displayTicks) { health.recordRecovery() }
+            } else if presentationRetry.fault(atTick: displayTicks, policy: recoveryPolicy) {
+                health.recordFault(.presentationFailed, atTick: displayTicks)
+            }
+        }
+    }
+
+    /// PERF-014-R6: a fresh budget; a faulted presentation is tried again from the next tick.
+    private func resetPresentationHealth() {
+        guard presentationRetry.isFaulted else { return }
+        updateHealth { (_: inout RenderHealth) in presentationRetry.reset(atTick: displayTicks &+ 1) }
+    }
+
+    /// Applies `change`, derives the state from the presentation part, and reports a changed record.
+    private func updateHealth(_ change: (inout RenderHealth) -> Void) {
+        let revision = health.revision
+        change(&health)
+        health.setState(presentationRetry.hasGivenUp ? .placeholder : (presentationRetry.isFaulted ? .recovering : .healthy))
+        if health.revision != revision { onRenderHealthChange?(health) }
+    }
+
+    /// A retry's fresh window surface at the view's size.
+    private func recreateSurface() {
+        guard !presentationSuspended else { return }
+        eglMakeCurrent(display, placeholder, placeholder, context)
+        if let surface { eglDestroySurface(display, surface) }
+        surface = nil
+        surfaceSize = (0, 0)
+        layoutSurface()
     }
 
     // MARK: - Frame capture (REC-001)
@@ -283,7 +369,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     }
 
     @objc fileprivate func displayLinkFired(_ link: CADisplayLink) {
-        guard renderFrame(frameTime: link.targetTimestamp - link.timestamp) else { return }
+        guard presentationTick(frameTime: link.targetTimestamp - link.timestamp) else { return }
         if meter.record(presentedAt: link.timestamp) {
             metrics = meter.metrics
         }
@@ -396,6 +482,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
         guard presentationSuspended else { return }
         presentationSuspended = false
         trialRunner.setSuspended(false)
+        resetPresentationHealth()
         layoutSurface()
         if inWindow { startDisplayLink() }
     }
