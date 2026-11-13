@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T20:09:35Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T20:12:17Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 254 |
 | implementing | 2 |
-| unit_passed | 1 |
-| integrated | 68 |
+| integrated | 69 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 30 | 2 | 1 | 53 | 1 |
-| P1 | 138 | 0 | 0 | 13 | 0 |
-| P2 | 77 | 0 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 30 | 2 | 54 | 1 |
+| P1 | 138 | 0 | 13 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 257 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
+- 256 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)
 
 ## Integrated
 
@@ -93,6 +92,7 @@ The physical-device suite may **not** start:
 | PRE-015 | User preset duplication | `c6cce9988587` | `feature/pre-015` |
 | QA-007 | Audio source contract suite | `32172fdd5795` | `feature/qa-007` |
 | REC-001 | Still frame capture | `5666cc2332ff` | `feature/rec-001` |
+| REC-003 | Video recording | `bf82b49836a5` | `feature/rec-003` |
 | SHD-001 | Procedural material catalog | `ade4dfec39a5` | `feature/shd-001` |
 | SHD-002 | Node-based generator graph | `e91692538b99` | `feature/shd-002` |
 | SHD-009 | Expression mapping DSL | `d84b02f95a85` | `feature/shd-009` |
@@ -559,11 +559,12 @@ None.
 - `swift test --package-path Packages/Compositor`: pass at `08830385f564` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-001/20261113T142938/swift-test_Compositor.log`)
 - `post-merge (Text visual added as a capture source in the merge; compiled, shares the tested compositor path, no Text-specific capture test): projectM-iOSTests 230 incl. FrameCaptureAppTests; FrameCaptureUITests 2, TextOverlay, OutputBlackout, Camera 2 UI tests on iPhone 17 iOS 27.2 sim`: pass at `5666cc2332ff` (log `.autonomous/logs/integration/rec-001/app-tests.log`)
 
-### REC-003 Video recording (unit_passed)
+### REC-003 Video recording (integrated)
 - `python3 scripts/check_compliance.py`: pass at `482f39d4b03f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-003/20261113T150813/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `482f39d4b03f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-003/20261113T150813/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `482f39d4b03f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-003/20261113T150813/sim-test_ANGLERendering.log`)
 - `swift test --package-path Packages/Compositor`: pass at `482f39d4b03f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-003/20261113T150813/swift-test_Compositor.log`)
+- `post-merge: Compositor scheme on iPhone 17 sim (CompositorTests 185, FrameRecordingTests 21 incl. 10 s fixture with monotonic timestamps); projectM-iOSTests; VideoRecordingUITests 2, FrameCapture 2, SafeMedia UI tests`: pass at `bf82b49836a5` (log `.autonomous/logs/integration/rec-003/compositor-sim.log`)
 
 ### SHD-001 Procedural material catalog (integrated)
 - `python3 scripts/check_compliance.py`: pass at `67186e7fa06d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-001/20261113T120524/compliance.log`)
