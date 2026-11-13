@@ -29,6 +29,19 @@ The row's gap status is "Gap candidate; re-audit at implementation". The audit c
 | History | Nothing. No undo in Settings, no keyboard shortcut, no UIKit undo manager use. |
 | Scene changes that are not edits | Launch restore (SCN-002), Reopen/Start fresh (PERF-010), cue application (SHOW-001), photo or video import and removal (MED-001/002), choosing Camera (session only, CAM-001-R11). |
 
+## Clarifications
+
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the recommended, conservative, local-first option.
+
+- Q: Should the history store whole scene states or the differences between them? → A: Whole states (snapshots): the canonical bytes of each state plus the app values that produce it. Scene documents are small, equality is byte equality (ADR-0028), and a snapshot cannot drift the way a chain of diffs can; the 4 MB budget bounds memory. Rejected: structural diffs (more code, harder to prove correct, savings irrelevant at this size); command objects with inverse operations (every future editor would need its own inverse).
+- Q: Is applying a cue (or stepping through the show) an undoable edit? → A: No. Cue navigation is performance control, not editing; undoing it would fight the show's position. A cue application, launch restore, Reopen/Start fresh and a photo or video import or removal restart the history from the scene they produce (`SCN-010-R9`). Rejected: recording cue applications as steps (Undo would silently leave the show's cue); keeping the old steps across a cue (Undo would jump back to a look from another cue).
+- Q: When do slider and typing changes stop merging into one step, given no wall-clock rule is allowed? → A: Consecutive changes to the same continuous control merge until a boundary: a different control changes, an undo or redo, Settings closes, or the slider drag ends. Discrete controls never merge. Rejected: a time window (non-deterministic, not testable without a clock); one step per value (a drag would need dozens of undos).
+- Q: Where do the Undo and Redo controls live, and is shake to undo offered? → A: Buttons in Settings' navigation bar (where every scene edit is made; the compact visualizer controls already wrap), plus ⌘Z / ⇧⌘Z on a hardware keyboard both in Settings and on the visualizer. Shake to undo is not offered: an accidental shake during a performance must never change the look, and the history does not use the system undo manager. Rejected: buttons in the visualizer controls (crowds the grid, accidental taps on stage); system shake to undo.
+- Q: How does undo interact with autosave, and does the history survive a relaunch? → A: An undo or redo changes the scene like any edit, so SCN-002 commits it under its own rules; the history lives in memory only and is empty after launch. Rejected: persisting the history (new stored data and a format to migrate for little benefit; SCN-002 already keeps the latest scene).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Undo a look change (Priority: P1)
