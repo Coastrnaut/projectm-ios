@@ -1,6 +1,6 @@
 // swift-tools-version: 6.0
 // ShowControl: the manual cue list (roadmap SHOW-001, specs/069-show-001-manual-cue-list,
-// contracts/show-document.md; ADR-0031).
+// contracts/show-document.md; ADR-0033).
 //
 // * `ShowControl` is the pure model: a versioned show document with stable cue IDs, ordered cues that
 //   refer to SCN-001 scenes by scene ID, and a position (Standby or the active cue). Next, Previous and

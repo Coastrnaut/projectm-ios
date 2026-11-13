@@ -46,8 +46,8 @@ package suite < 1 min, UI test < 30 s. A task is ticked only when verified, with
 
 ## Phase 6: Polish
 
-- [ ] SHOW-001-T18 ADR (next free number) for the show document and scene reference rule, `docs/adr/README.md`, privacy policy "Shows" paragraph (`docs/privacy-policy.md`), FR-065 note in spec
-- [ ] SHOW-001-T19 Checks: `check_compliance.py`, `validate_docs.py`, `check_privacy_manifest.py` on the Debug app, package tests on host and Linux shape, app tests and UI tests on the iOS 27.2 simulator (with EmergencyBlackoutUITests and NativeVisualUITests), PosterBoard report count before and after
+- [X] SHOW-001-T18 ADR (next free number) for the show document and scene reference rule, `docs/adr/README.md`, privacy policy "Shows" paragraph (`docs/privacy-policy.md`), FR-065 note in spec — Verified 2026-11-13: docs/adr/0033-show-cue-list-document.md (0031 left free, 0032 is PERF-010's on feature/perf-010), README row, privacy policy "Shows", spec R16 FR-065 note; `validate_docs.py` OK (633 files)
+- [X] SHOW-001-T19 Checks: `check_compliance.py`, `validate_docs.py`, `check_privacy_manifest.py` on the Debug app, package tests on host and Linux shape, app tests and UI tests on the iOS 27.2 simulator (with EmergencyBlackoutUITests and NativeVisualUITests), PosterBoard report count before and after — Verified 2026-11-13: `check_compliance.py` OK; `validate_docs.py` OK; `check_privacy_manifest.py` on the Debug simulator app OK; `test_scripts.py` OK; ShowControl 19 tests on host (0.23 s), Linux shape (0.21 s) and iOS 27.2 simulator (`xcodebuild test -scheme ShowControl`, 0.24 s); projectM-iOSTests 285 pass (10.1 s) with ShowCueUITests (2: 11.0 s, 13.3 s), EmergencyBlackoutUITests (2) and NativeVisualUITests (4) on the iOS 27.2 simulator; PosterBoard reports 32 before and 32 after. Linux itself not run here (no container runtime on this Mac): CI's Linux job runs it
 
 ## Dependencies
 

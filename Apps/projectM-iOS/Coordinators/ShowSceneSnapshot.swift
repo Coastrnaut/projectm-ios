@@ -11,7 +11,7 @@
 //   draw — camera, materials, generator graphs, unknown kinds — are left out and named), the app-held
 //   MOD-001 values that are present (clamped through a scratch store), and the first text layer's spec.
 // * This is a minimal path because SCN-002's restore was not integrated when SHOW-001 was built;
-//   unify the two (same layer mapping, same seven values) once it is (ADR-0031 follow-up).
+//   unify the two (same layer mapping, same seven values) once it is (ADR-0033 follow-up).
 // Pure functions; no files.
 import Foundation
 import ParameterGraph

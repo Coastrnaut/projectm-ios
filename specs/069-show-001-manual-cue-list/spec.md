@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (SHOW-001-T01-T19 verified on the Mac: host, Linux shape, iOS 27.2 simulator; no device claim)
 
 **Input**: User description: "Implement SHOW-001 (Manual cue list) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Arrange scenes into a sequential
@@ -197,7 +197,9 @@ fades in. The arrow keys move the show like the buttons.
   has at least one cue. They MUST NOT use B (SHOW-014) and do nothing while a sheet is open.
 - **SHOW-001-R16**: The show stays on the device: no network use, nothing leaves the app except as
   the user's own device backups; it stores only cue labels, scene settings and references to the
-  app's stored photo and video (FR-065 is extended by this feature and the privacy policy updated).
+  app's stored photo and video. FR-065's list of what the app stores on the device is extended by
+  this feature with the show (cue labels, scene settings, the active cue); the privacy policy's
+  "Shows" section says so.
 
 ### Key Entities
 

@@ -25,13 +25,16 @@ final class ShowCueUITests: XCTestCase {
     private var controls: XCUIElement { app.otherElements["controls"] }
     private var area: XCUIElement { app.otherElements["visualizerTapArea"].firstMatch }
 
-    /// The cue's label in the row and the probe's applied scene and visual.
-    private func expectCue(_ n: Int, file: StaticString = #filePath, line: UInt = #line) {
+    /// The probe's applied scene and visual; with `row`, first the row's VoiceOver value (read right
+    /// after a tap on the row, which restarts the controls' 5 s hide delay).
+    private func expectCue(_ n: Int, row: Bool = false, file: StaticString = #filePath, line: UInt = #line) {
+        if row {
+            let value = "Cue \(n) of 5, \(Self.labels[n - 1])"
+            XCTAssertTrue(poll(2) { self.status.exists && (self.status.value as? String) == value }, "row shows cue \(n)",
+                          file: file, line: line)
+        }
         let expected = "\(Self.sceneID(n))|\(Self.visuals[n - 1])"
         XCTAssertTrue(poll(3) { self.applied == expected }, "cue \(n) applied: \(applied ?? "nil")", file: file, line: line)
-        if status.exists {
-            XCTAssertEqual(status.value as? String, "Cue \(n) of 5, \(Self.labels[n - 1])", file: file, line: line)
-        }
     }
 
     private func showControls() {
@@ -57,12 +60,12 @@ final class ShowCueUITests: XCTestCase {
         for n in 2...5 {
             showControls()   // the controls hide after 5 s; a step's tap restarts that delay
             next.tap()
-            expectCue(n)
+            expectCue(n, row: true)
         }
         showControls()
         XCTAssertFalse(next.isEnabled, "the show stops at its end (no wrap)")
         previous.tap()
-        expectCue(4)
+        expectCue(4, row: true)
         XCTAssertEqual(starts, "1", "the audio source was never restarted")
 
         // SHOW-001-R10, R15: black out (B), step with the Right Arrow key: the output stays black.

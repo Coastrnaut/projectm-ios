@@ -18,8 +18,8 @@ document) and applies a cue's scene by validating it (`liveState`) and setting t
 Settings screen sets, then the coordinator's existing `visualSettingsChanged()` and
 `glowSettingsChanged()`: the audio source is never touched, the camera is never started, and the
 OUT-010 cover keeps a blackout black. UI: a show row in the controls, keyboard shortcuts (arrows,
-Page Up/Down) on the visualizer, an editor in Settings → Show. ADR-0031 (or the next free number at
-commit time) records the show document and the scene reference rule.
+Page Up/Down) on the visualizer, an editor in Settings → Show. ADR-0033 (0031 is left free and 0032 is PERF-010's,
+parallel work) records the show document and the scene reference rule.
 
 ## Technical Context
 
@@ -95,7 +95,7 @@ Apps/projectM-iOS/
 ├── Debug/UITestShowFixture.swift           DEBUG seed of a five-cue show
 ├── Tests/ShowCoordinatorTests.swift
 └── UITests/ShowCueUITests.swift
-docs/adr/0031-show-cue-list-document.md
+docs/adr/0033-show-cue-list-document.md
 ```
 
 Shared files touched minimally: `AppCoordinator.swift` (own a `ShowCoordinator`, seed, wire apply),
