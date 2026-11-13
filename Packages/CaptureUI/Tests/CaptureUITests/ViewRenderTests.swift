@@ -134,6 +134,18 @@ final class ViewRenderTests: XCTestCase {
         assertSmokeRenders(bar.dynamicTypeSize(.accessibility5), name: "transport with Queue, largest text")
     }
 
+    // MARK: - AUD-004 repeat
+
+    func testTransportBarWithTheRepeatButtonSmokeRendersEveryMode() {
+        for mode in RepeatMode.allCases {
+            let bar = TransportBar(title: "Track", isPlaying: true, position: { PlaybackPosition(seconds: 5, durationSeconds: 60) },
+                                   onPlayPause: {}, onStop: {}, onPrevious: {}, onNext: {}, onSeek: { _ in }, onShowQueue: {},
+                                   repeatMode: mode, onCycleRepeat: {})
+            assertSmokeRenders(bar, name: "transport with Repeat \(mode)")
+            assertSmokeRenders(bar.dynamicTypeSize(.accessibility5), name: "transport with Repeat \(mode), largest text")
+        }
+    }
+
     // PlayQueueView is a List, which ImageRenderer cannot draw (see the file header);
     // PlayQueueUITests checks it in the running app (AUD-003-T17).
 

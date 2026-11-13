@@ -9,6 +9,7 @@
 | `UIStrings.repeatAnnouncement(mode)` | Repeat: ‹value› |
 | `UIStrings.repeatFooter` | Off stops after the last track. One Track repeats the current track. All Tracks starts the queue again after the last track. |
 | `UIStrings.repeatIcon(mode)` | `repeat` (off, all), `repeat.1` (one) |
+| `UIStrings.repeatChoices` | Off, One Track, All Tracks (the queue screen's row order) |
 
 ## TransportBar
 
@@ -19,6 +20,6 @@ for One and All. A tap calls `onCycleRepeat` and announces `repeatAnnouncement` 
 
 ## PlayQueueView
 
-A first section "Repeat" (header `repeatLabel`, footer `repeatFooter`) with three rows in the order
+A section "Repeat" (after "Play Queue", before "Up Next") (header `repeatLabel`, footer `repeatFooter`) with three rows in the order
 Off, One Track, All Tracks; identifier `repeatMode.<raw value>`; the current one has a checkmark and
 the `.isSelected` trait; a tap calls `queue.setRepeatMode` and announces. Rows grow with Dynamic Type.
