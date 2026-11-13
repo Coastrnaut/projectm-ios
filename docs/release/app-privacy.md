@@ -79,6 +79,19 @@ Store Connect › App Privacy when a version with Save Frame is submitted. Encod
 readback (Metal, ANGLE) add no required-reason API; `check_privacy_manifest.py` on the simulator
 Debug build is the check (REC-001-T18).
 
+REC-003 (2026-11-13; `specs/058-rec-003-video-recording`, privacy review in its spec): Record makes a
+silent video of the visualization only between the user's Record and the stop, written to a
+temporary file in the app's temporary folder and then handed to the system file mover (the user
+picks the location; a cancel deletes the file; leftovers are deleted at launch). No audio track (no
+microphone or captured audio; REC-004 owns audio and needs its own review), no photo library access,
+no permission or usage description added, no metadata items (only the container's required fields),
+and the app keeps no copy. A user exporting their own file to a place they choose is not collection
+by the app: the answers stay **No** and the label stays **Data Not Collected**. Owner action: confirm
+this in App Store Connect › App Privacy when a version with Record is submitted. The writer
+(AVFoundation, CoreVideo) and the leftover cleanup (a directory listing, no file dates, no disk-space
+query: REC-015 owns that) add no required-reason API; `check_privacy_manifest.py` on the simulator
+Debug build is the check (REC-003-T22).
+
 ## Privacy manifest (`Apps/projectM-iOS/PrivacyInfo.xcprivacy`)
 
 - `NSPrivacyTracking`: false; `NSPrivacyTrackingDomains`: empty; `NSPrivacyCollectedDataTypes`: empty.
