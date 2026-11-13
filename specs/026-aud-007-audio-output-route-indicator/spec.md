@@ -20,6 +20,20 @@ them. In particular AUD-014-R14 (a disconnected output pauses In-App Playback wi
 route changed", FR-051), AUD-014-R17 and R18 (the on-hold explanation and its announcement) and
 AUD-014-R19 (Microphone and System/App Capture texts do not change) are unchanged.
 
+## Clarifications
+
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (CLAUDE.md owner rule 4: best judgement on
+all choices, no human interaction); each answer is the recommended, conservative, local-first option
+using public APIs only.
+
+- Q: In Microphone mode, should the indicator show the output route, the input route, or both? → A: The input route only ("Input: <name>"). Microphone mode plays no sound and its audio session uses the record-only category, which has no output ports at all, so an output indicator would always read "None"; the input port is what changes when a headset with a microphone is plugged in, and it is the truthful answer to "what is the app listening to". Showing both was rejected: two routes next to the source label invite reading one as a capture source. The input wording avoids the word "Microphone" (a source-mode label) so that no route text names a mode (AUD-007-R4, R11).
+- Q: Where does the short explanation appear when the controls are hidden, and does a route change bring the controls back? → A: The explanation appears just above the always-visible source-and-state indicator, whether the controls are shown or not, for about 4 seconds; a route change does not show the controls (FR-042's auto-hide is unchanged). The route indicator itself lives in the controls, next to the source-and-state indicator (AUD-007-R4, R7).
+- Q: When an unplug pauses In-App Playback, should VoiceOver hear the route explanation as well as AUD-014's hold announcement? → A: No: the "— paused" explanation is shown but not announced, because AUD-014-R18 already announces the pause with its explanation and a second announcement right after would cut the first off. Every other explanation is announced. The indicator's own VoiceOver label always carries the current route (AUD-007-R10).
+- Q: How does the app decide that a lost output paused playback, given that the route observer and AUD-014's observer receive the same notification in an unspecified order? → A: By rule, not by observing the pause: the reason "old device unavailable" pauses In-App Playback unless the user already holds it paused. The rule (which reason pauses) is one shared definition used by AUD-014's signal parsing and by the explanation, so they cannot disagree; no explanation reads the transport state after the notification (AUD-007-R9).
+- Q: Is the route recorded anywhere: diagnostics export, logs, settings? → A: No. The route is held in memory only while the app runs, is never stored, logged with device names, or exported; the diagnostics export vocabulary (AUD-014-R23) is unchanged (AUD-007-R14).
+
 ## Baseline: what exists today (audit of 2026-11-13)
 
 | Capability | Today |
