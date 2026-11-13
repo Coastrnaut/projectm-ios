@@ -12,7 +12,8 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 146,
+   "audited": 145,
+   "implementing": 1,
    "integrated": 5
   },
   "P2": {
@@ -23,8 +24,8 @@
   }
  },
  "by_state": {
-  "audited": 294,
-  "implementing": 1,
+  "audited": 293,
+  "implementing": 2,
   "integrated": 30,
   "skipped_existing": 1
  },
@@ -1328,13 +1329,13 @@
   },
   "FX-001": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/fx-001",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/020-fx-001-bloom",
+   "state": "implementing"
   },
   "FX-002": {
    "attempts": 0,
@@ -3774,5 +3775,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T13:21:46Z"
+ "updated": "2026-11-13T13:22:03Z"
 }
