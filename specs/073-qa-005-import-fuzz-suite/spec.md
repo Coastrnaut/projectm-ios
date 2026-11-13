@@ -56,6 +56,9 @@ interaction); each answer is the conservative, local-first option.
 - Q: What happens when the fuzz finds a crash or hang? → A: The parser is fixed with the smallest change, a regression test is added next to the parser's own tests, the input joins the corpus, and the finding is listed in the feature report (research).
 - Q: Does the user preset import path write files? → A: Yes, into a fresh temporary directory per test (as PRE-012's own tests do) with no trial runner, so imports end quarantined, waiting or refused; the budget for this suite is the smallest because each input costs file writes.
 - Q: Simulator? → A: Not needed: no app code changes and every parser builds and tests on the macOS host and in the Linux shape. Simulator runs of this package are therefore not required (recorded as such, not as passed).
+- Q: Should an input that a parser accepts be checked for more than "no crash"? → A: Yes, but only with an invariant the parser already promises, so no new behaviour is invented: an accepted scene re-encodes to bytes that decode again; an accepted graph's canonical bytes import again; an accepted expression compiles to the same bytes twice; an accepted BoundedJSON input reports `bytesExamined` equal to its length. A violation is a finding (QA-005-R9). Applied to QA-005-R6.
+- Q: How large may `FUZZ_ITERATIONS` go? → A: Capped at 100,000 inputs per suite (a hard ceiling in the harness); 0, negative or non-numeric values are ignored and the default is used. Applied to QA-005-R7.
+- Q: Can a developer explore a different input stream without editing code? → A: Yes: an optional `FUZZ_SEED` (decimal or `0x` hex) is mixed into every suite's fixed seed; unset, CI always uses the fixed seeds. Applied to QA-005-R1.
 
 ## User Scenarios & Testing *(mandatory)*
 
