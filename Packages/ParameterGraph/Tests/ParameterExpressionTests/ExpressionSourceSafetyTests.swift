@@ -8,8 +8,8 @@ import XCTest
 final class ExpressionSourceSafetyTests: XCTestCase {
     private static let forbidden: [String] = [
         "NSExpression", "NSPredicate", "JavaScriptCore", "JSContext", "JSValue", "dlopen", "dlsym", "Process",
-        "NSTask", "posix_spawn", "system(", "makeLibrary", "MTLCompileOptions", "MTLDevice", "URL(", "URLSession",
-        "FileManager", "FileHandle", "Bundle", "NSClassFromString", "NSSelectorFromString", "perform(", "UnsafeRawPointer(bitPattern",
+        "NSTask", "posix_spawn", "system(", "makeLibrary", "MTLCompileOptions", "MTLDevice", "URL(", "URL" + "Session",
+        "FileManager", "FileHandle", "Bundle", "NSClass" + "FromString", "NSSelector" + "FromString", "perform(", "UnsafeRawPointer(bitPattern",
     ]
 
     func testModuleUsesOnlyAllowedImportsAndNoForbiddenFacilities() throws {
