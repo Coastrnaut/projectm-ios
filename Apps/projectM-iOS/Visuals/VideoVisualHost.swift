@@ -106,7 +106,7 @@ final class VideoVisualHost: PresentationBoundResource {
         var stack = LayerStack()
         try stack.add(LayerDescriptor(kind: .video))
         try stack.add(LayerDescriptor(kind: .circularSpectrum))
-        let compositor = try Compositor(device: device)
+        let compositor = try Compositor(device: device, texturePool: SharedTexturePool.pool(for: device))   // PERF-004
         try compositor.apply(stack) { (entry: LayerStackEntry) throws(LayerSourceError) -> any LayerSource in
             switch entry.descriptor.kind {
             case .video: return video
