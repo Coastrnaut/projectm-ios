@@ -25,15 +25,24 @@
 - **Decision**: 32 formulas (= `AudioFeatureModulator.maximumBindings`), 2,048 cost units per frame,
   per-formula limits no looser than `ExpressionLimits.standard`.
 - **Rationale**: 2,048 = 8 maximal formulas, a quarter of the unchecked worst case (32 × 256 =
-  8,192); the host measurement (quickstart step 4) gives the time per unit as information; D1's
-  figure is a `{device}` task.
+  8,192). Host measurement (information only, quickstart step 4, Apple M5 Max, Release, 2026-11-13):
+  a full-budget snapshot takes 0.8-1.7 µs per frame (0.39-0.85 ns per cost unit by instruction
+  mix: add 0.75, sin 0.61, pow 0.85, band mean 0.39, mixed full budget 0.62), about 0.01% of a
+  16.7 ms frame. D1's figure is the `{device}` task SHD-010-T13.
 - **Alternatives**: 8,192 (never refuses); 1,024 (would refuse 32 formulas of modest cost 33+).
 
 ## SHD-010-D4 `audio.bandMean` weight
 
-- **Decision**: 4.
-- **Rationale**: it sums up to 128 floats (MOD-002); on the host a band mean over 128 bands costs
-  about as much as one `pow`/`sin`, the existing weight-4 instructions (informational measurement).
+- **Decision**: 4, and the mean is summed at most once per evaluation (and once per frame in the
+  snapshot), so a read is a load.
+- **Rationale**: the first measurement contradicted the planned rationale ("about a `pow`"): with a
+  sum over 128 bands on every read, band-mean formulas took 10.73 ns per cost unit against
+  0.6-0.85 for every other instruction, so cost would not have tracked work (about 53 ns per read).
+  Weighting a read about 75 would have allowed only three reads per formula. Instead the evaluator
+  caches the mean (same value, bit-identical results), which brought band-mean formulas to 0.39 ns
+  per unit; weight 4 is kept as a conservative per-read charge. The one remaining sum (about 50 ns on
+  the host for 128 bands) is a fixed per-frame overhead of the snapshot, outside the cost budget; a
+  formula evaluated alone, outside a snapshot, pays one sum per evaluation.
 - **Alternatives**: 1 (understates it, ADR-0021 Consequences); 128 (overstates it: one read would be
   half a formula).
 

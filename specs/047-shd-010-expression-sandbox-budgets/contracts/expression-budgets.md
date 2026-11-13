@@ -58,12 +58,13 @@ set and never reused there; a handle is meaningful only for the set that issued 
 | 17 nested `abs(` | `1:68: nesting deeper than 16 levels` |
 | `1+1+…` (256 ones, 511 bytes) | `1:257: more than 256 tokens` |
 | 400-digit literal | `1:1: number '1…1' is out of range` |
-| 17 `let` bindings | `1:<offset>: more than 16 bindings` |
+| 17 `let` bindings (`let a0 = 0;` … `let a16 = 16;a16`) | `1:189: more than 16 bindings` |
 | 43 × `sin(1)` joined by `+` | `1:294: operation cost over 256` |
-| 52 × `audio.bandMean` joined by `+` | `1:<pos>: operation cost over 256` (52 × 4 + 51 = 259) |
-| A 16-binding ring `let a0 = a1; … let a15 = a0; a0` | `recursive binding: a0 → a1 → … → a15 → a0` |
+| 34 × `audio.bandMean` joined by `+` (509 bytes; 52 would exceed the byte limit) | accepted, cost 34 × 4 + 33 = 169 |
+| `1 + ` then byte 0x07 | `1:5: unexpected byte 0x07` |
+| A 16-binding ring `let a0 = a1; … let a15 = a0; a0` | `1:202: recursive binding: a0 → a1 → … → a15 → a0` |
 | Doubling chain `let a0 = audio.onset; let a1 = a0 + a0; … a15` | accepted; cost linear (16 stores, 15 adds, 30 loads, 1 read, 1 final load = 63); value 2¹⁵ × onset |
-| A cost-300 formula compiled with `maximumOperationCost: 100000` | compiles; refused by the frame set: `the formula was compiled with an operation cost limit of 100000; the standard limit is 256` |
+| 43 × `sin(1)` (cost 257) compiled with `maximumOperationCost: 100000` | compiles; refused by the frame set: `the formula was compiled with an operation cost limit of 100000; the standard limit is 256` |
 
 A refused source never yields a `CompiledExpression`, so it cannot be admitted or evaluated; the
 tests also check that the frame set is unchanged. Exact positions are fixed by the tests
@@ -79,7 +80,11 @@ token advances; compiler = nodes resolved + bindings named + dependency visits +
 - `lexerSteps ≤ 2b + 1`
 - `parserSteps ≤ 6t + 6`
 - `compilerSteps ≤ 5t`
-- at the standard limits, `total ≤ 4096` for every source of any length.
+- at the standard limits, `total ≤ 3858` (`ExpressionCompileWork.ceiling`, contract ceiling 4096) for
+  every source of any length.
+
+Evaluation: `CompiledExpression.evaluate` sums `audio.bandMean` at most once per evaluation and the
+snapshot at most once per call, so every read after the first is a load.
 
 ## B5 Cost equals work
 

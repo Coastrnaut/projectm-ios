@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (SHD-010-T01-T12, T14 verified on the Mac host and in the Linux build shape; SHD-010-T13 `{device}` open)
 
 **Input**: User description: "Implement SHD-010 (Expression sandbox budgets) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Enforce operation and evaluation
@@ -62,8 +62,10 @@ interaction); each answer is the conservative, local-first option.
 - Q: Does `audio.bandMean` get a higher weight? → A: Yes, 4, like the other instructions that do
   more than one arithmetic step: it sums up to 128 bands (MOD-002). This changes SHD-009's cost
   table (ADR-0021 Decision 5 amended); formulas using `audio.bandMean` near the 256 limit may now be
-  refused. Rejected: a weight of 128 (it would make a single read cost half a formula; the host
-  measurement shows a band mean takes about the time of a `pow`).
+  refused. The host measurement showed that summing 128 bands on every read made a read about 15×
+  more expensive than its weight, so the evaluator now sums the mean at most once per evaluation (and
+  once per frame for all formulas) and a read is a load (research SHD-010-D4). Rejected: a weight
+  of about 75 (only three reads per formula).
 - Q: How is "before it can block the render thread" guaranteed? → A: By the API shape and by
   measured compile-work bounds. (1) The only way to put a formula into the per-frame set is a
   compiled formula: the frame set never accepts source text, so parsing and compiling cannot run in
