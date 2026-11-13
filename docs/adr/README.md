@@ -11,5 +11,6 @@
 | [0007](0007-preset-library-licensing.md) | Preset library licensing and the paid unlock | Accepted 2026-11-10 (feature 002) |
 | [0008](0008-autonomous-roadmap-run.md) | Autonomous roadmap run | Accepted 2026-11-12 (run decisions; owner ruling: FR-068 amended for local OSC, one folder, off by default) |
 | [0009](0009-native-visual-generators.md) | Native visual generators beside projectM | Accepted 2026-11-13 (VIS-001; owner rule 4) |
+| [0010](0010-post-processing-effects.md) | Post-processing effects and the effect chain | Accepted 2026-11-13 (FX-001; owner rule 4) |
 
 Required by Constitution X: capture API, minimum OS, renderer, dependency strategy.
