@@ -20,6 +20,11 @@ Decisions are numbered `QA-005-D1…`. Findings (crashes or hangs the suites fou
   `mix(suiteSeed ^ FUZZ_SEED) + i`, so any input can be rebuilt from (seed, iteration) alone and
   suites do not depend on each other's order. A 64-bit FNV-1a digest of all inputs proves
   byte-identical runs (QA-005-S3).
+- **Host note**: the byte strategies use only the generator and are identical on every host. The
+  value-level JSON mutation (`FuzzJSON`, D5) re-serializes with Foundation's `JSONSerialization`,
+  whose number formatting can differ between Darwin and Linux, so the suites that use it (scene JSON,
+  scene archive, graph import, BoundedJSON) are byte-identical run to run on one host and may differ
+  between hosts. A finding is reproduced on the host that reported it.
 - **Alternatives**: the standard library's `SystemRandomNumberGenerator` (not reproducible);
   `RandomNumberGenerator`-driven `Int.random(in:using:)` (its algorithm may change between Swift
   versions).
@@ -42,20 +47,24 @@ Decisions are numbered `QA-005-D1…`. Findings (crashes or hangs the suites fou
 
 ## QA-005-D4: Budgets
 
-| Suite | Default inputs | Input cap | Why |
-|---|---|---|---|
-| BoundedJSON | 3,000 | 4 KiB | Pure scan; cheap |
-| Expression | 3,000 | 520 B (limit 512 + 8) | Cheap compile |
-| OSC decoder + dispatcher | 4,000 | 1,473 B (limit + 1) | Cheap; two calls per input |
-| Graph import | 600 | 8 KiB | `JSONDecoder` per accepted shape |
-| Scene JSON | 800 | 16 KiB | Own reader + validation + restore |
-| Scene archive | 300 | 64 KiB | SHA-256 per file, full reader |
-| Preset validator | 300 | 16 KiB | Line/shader scans |
-| Preset import (files) | 12 | 16 KiB | File writes per input |
+| Suite | Default inputs | Input cap | Mac host (Debug) | Linux shape | iOS 27.2 simulator |
+|---|---|---|---|---|---|
+| BoundedJSON | 3,000 | 4 KiB | 0.30 s | — | 2.18 s |
+| Expression | 3,000 | 520 B (limit 512 + 8) | 0.19 s | — | 0.60 s |
+| OSC decoder + dispatcher | 4,000 | 1,473 B (limit + 1) | 0.19 s | — | 0.37 s |
+| Graph import | 600 | 8 KiB | 0.21 s | — | 0.94 s |
+| Scene JSON (+ validation, restore) | 800 | 16 KiB | 0.81 s | — | 2.76 s |
+| Scene archive | 300 | 64 KiB | 0.47 s | — | 1.13 s |
+| Preset validator | 300 | 16 KiB | 0.32 s | — | 0.92 s |
+| Preset import (files) | 40 | 16 KiB | 0.21 s | — | 0.79 s |
+| **Package (15 tests)** | | | **2.7-2.8 s** | **3.3 s** | **10.1 s** |
 
-`FUZZ_ITERATIONS=n` replaces every suite's default with `n` (the file-import suite uses `n / 25`, at
-least 1), ceiling 100,000. The per-run byte budget is inputs × cap. Final numbers are set after
-measuring on the Mac host (task QA-005-T14) and recorded here.
+Measured 2026-11-13 on the Mac Studio (`swift test`; Linux shape with the three `-D` flags and its
+own scratch path; simulator: `xcodebuild test` on a temporary iPhone 17 / iOS 27.2 simulator, deleted
+afterwards, no new PosterBoard reports: 32 before and after). The import subset went from 12 to 40
+inputs after measuring (0.08 s at 12). `FUZZ_ITERATIONS=n` replaces every suite's default with `n`
+(the file-import suite uses `n / 25`, at least 1), ceiling 100,000. The per-run byte budget is
+inputs × cap.
 
 ## QA-005-D5: Mutation strategies
 
@@ -66,7 +75,11 @@ cap), `splice` (prefix of one corpus item + suffix of another), `lengthField` (a
 field at an aligned offset set to 0, 1, max, size±1 or a random value — hits ZIP headers and OSC
 sizes), `jsonStructure` (insert `[`/`{` runs, delete a quote, replace a number/literal token, swap
 `:`/`,`), `oscStructure` (rewrite a type-tag byte to another tag, break 4-byte padding, set a blob
-size). Each input applies 1-4 stacked strategies to a corpus item (or, 1 in 16, to random bytes).
+size). Each input applies one strategy half the time, otherwise 2-4 stacked, to a corpus item (or,
+1 in 16, to random bytes); the corpus items themselves come first, unchanged. Byte strategies mostly
+break the grammar, so `FuzzJSON` adds value-level mutations (replace, delete, duplicate, wrap or copy
+one value, key or element of a parsed document, then re-serialize): with them the scene suite's
+accepted share rose from 8 of 800 inputs to 133.
 Suites choose the strategies that apply to their format; the archive suite adds a suite-local
 "re-zip" strategy (mutate `manifest.json` or `scene.json`, then rewrite a checksum-valid archive) so
 mutations reach the manifest and scene layers behind the ZIP checks.
@@ -79,4 +92,20 @@ written as files and checked in. A test checks the size budget and per-format co
 
 ## Findings
 
-Recorded by QA-005-T15 after the first full default run and one `FUZZ_ITERATIONS=5000` run.
+**No crash, trap, hang-bound violation or broken invariant was found** (2026-11-13), so no parser
+changed (QA-005-R9 had nothing to fix; `git diff autonomous/integration -- Packages ':!Packages/ImportFuzz'`
+is empty). Runs:
+
+| Run | Inputs | Result |
+|---|---|---|
+| Default budget (CI), Mac host | 12,040 across 8 suites | 0 violations |
+| `FUZZ_ITERATIONS=5000` (all suites; import subset 200) | 35,200 | 0 violations; 21.5 s |
+| `FUZZ_SEED=0xABCDEF FUZZ_ITERATIONS=20000` (all but archive and import) | 120,000 | 0 violations; 50.9 s |
+
+Observed bounds: BoundedJSON never examined more bytes than its input (max 4,096 = the cap);
+expression compile work peaked at 1,243 steps (ceiling 3,858, contract B4 ≤ 4,096). Accepted inputs at
+the 5,000 run: scene JSON 769, archive 192 (40 distinct refusal kinds, from ZIP structure through
+manifest, checksums, scene decode, validation and asset content), graph 249, OSC 294 (15 distinct
+decode refusals; dispatcher counters always matched the outcomes), preset 1,414.
+
+Because nothing was found, the corpus holds no reproducer yet; `quickstart.md` says where one goes.
