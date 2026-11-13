@@ -4,12 +4,16 @@
 // VIS-001, VIS-002: when Settings chooses a native spectrum (Circular or Linear), its Metal view
 // replaces the renderer's view (projectM is paused meanwhile); if it cannot be created a notice says
 // projectM is shown instead.
+// CAM-001: the Camera visual (camera layer under the circular spectrum) replaces the renderer's view
+// the same way; a non-blocking banner explains a denied, restricted, missing or paused camera, with
+// "Open Settings" when access is off.
 // AUD-007: a route change's explanation shows above the source-and-state indicator for about 4 s.
 import CaptureKit
 import CaptureUI
 import PresetLibrary
 import Rendering
 import SwiftUI
+import UIKit
 
 struct VisualizerView: View {
     @Bindable var coordinator: AppCoordinator
@@ -17,7 +21,14 @@ struct VisualizerView: View {
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-            if coordinator.showsNativeVisual, let native = coordinator.nativeVisual {
+            if coordinator.showsCameraVisual, let camera = coordinator.cameraVisual {
+                NativeVisualHost(view: camera.view)
+                    .ignoresSafeArea()
+                    .accessibilityElement()
+                    .accessibilityLabel("Camera visualization")
+                    .accessibilityValue(coordinator.cameraState.accessibilityValue)   // CAM-001-R14
+                    .accessibilityIdentifier("cameraVisual")
+            } else if coordinator.showsNativeVisual, let native = coordinator.nativeVisual {
                 NativeVisualHost(view: native.view)
                     .ignoresSafeArea()
                     .accessibilityElement()
@@ -69,7 +80,7 @@ struct VisualizerView: View {
             }
             .padding()
             .animation(.easeInOut(duration: 0.2), value: coordinator.controlsVisible)
-            if coordinator.settings.showsPerformanceOverlay, coordinator.renderer != nil || coordinator.showsNativeVisual {
+            if coordinator.settings.showsPerformanceOverlay, coordinator.renderer != nil || coordinator.showsAlternateVisual {
                 VStack { HStack { Spacer(); PerformanceOverlay(metrics: { coordinator.activeVisualMetrics }, manager: coordinator.manager) }; Spacer() }
                     .padding(.top, 2)
                     .padding(.trailing, 8)
@@ -94,6 +105,15 @@ struct VisualizerView: View {
                     .opacity(0.01)
                     .accessibilityIdentifier("sourceStarts")
                     .accessibilityValue("\(coordinator.sourceStarts)")
+                if let camera = coordinator.cameraVisual {   // CAM-001: frames that showed a camera picture
+                    TimelineView(.periodic(from: .now, by: 0.5)) { _ in
+                        Text("\(camera.framesShown)")
+                            .font(.caption2)
+                            .opacity(0.01)
+                            .accessibilityIdentifier("cameraFramesShown")
+                            .accessibilityValue("\(camera.framesShown)")
+                    }
+                }
             }
         }
         .statusBarHidden(coordinator.hidesSystemOverlays)
@@ -161,11 +181,32 @@ struct VisualizerView: View {
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
         }
         // VIS-001-R16: the chosen native visual could not be created.
-        if coordinator.nativeVisualUnavailable && coordinator.settings.visual.isNative {
+        if coordinator.nativeVisualUnavailable && coordinator.settings.visual.replacesProjectM {
             Text(AppCoordinator.nativeVisualUnavailableMessage(for: coordinator.settings.visual))
                 .padding(10)
                 .background(.regularMaterial, in: Capsule())
                 .accessibilityIdentifier("nativeVisualUnavailable")
+        }
+        // CAM-001-R5, R6, R8: never blocks; stays while the camera cannot show pictures.
+        if coordinator.showsCameraVisual, let notice = coordinator.cameraState.notice {
+            HStack(spacing: 10) {
+                Image(systemName: "video.slash")
+                    .accessibilityHidden(true)
+                Text(notice)
+                    .font(.footnote)
+                    .accessibilityIdentifier("cameraNoticeText")
+                if coordinator.cameraState.offersSettings {
+                    Button("Open Settings") {
+                        if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
+                    }
+                    .font(.footnote.bold())
+                    .accessibilityIdentifier("cameraOpenSettings")
+                }
+            }
+            .padding(10)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("cameraNotice")
         }
         if let failure = coordinator.presets.failureMessage {
             Text(failure)

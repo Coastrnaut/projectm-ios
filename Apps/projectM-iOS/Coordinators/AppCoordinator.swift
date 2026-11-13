@@ -33,7 +33,14 @@
 // * Tap tempo (SHOW-011): `tempo` owns the manual tempo and the estimate. Its analysis follows the
 //   shown visual (own pipeline for projectM, the circular spectrum's pipeline otherwise) through
 //   resumeActiveVisual()/pauseActiveVisual(), and PERF-011 through `presentation`.
+// * Camera (CAM-001, ADR-0017): Settings' session-only "Camera" choice shows `CameraVisualHost` (the
+//   camera layer under the circular spectrum layer). The host is created when Camera is chosen; the
+//   camera runs only through resumeActiveVisual() while Camera is shown on the running visualizer,
+//   and stops in pauseActiveVisual() (pause, Stop, background, lock) and when another visual is
+//   chosen (the host is released). `cameraState` drives the non-blocking notice. While Camera is
+//   shown the status bar is never hidden, so iOS's camera indicator stays visible (CAM-001-R10).
 import ANGLERendering
+import CameraLayer
 import AudioCore
 import CaptureKit
 import CaptureUI
@@ -91,6 +98,10 @@ final class AppCoordinator: VisualizationControlling {
     let settings: AppSettings
     /// The native spectra (VIS-001 circular, VIS-002 linear), created the first time one is needed.
     private(set) var nativeVisual: NativeSpectrumHost?
+    /// The Camera visual (CAM-001), created when Camera is chosen and released when another visual is.
+    private(set) var cameraVisual: CameraVisualHost?
+    /// The camera feed's state while the Camera visual exists (`idle` otherwise; CAM-001-R5 to R8).
+    private(set) var cameraState: CameraFeedState = .idle
     /// The native visual could not be created on this launch; projectM is shown instead (VIS-001-R16).
     private(set) var nativeVisualUnavailable = false
     /// The notice naming the chosen native visual (VIS-001-R16, VIS-002-R12).
@@ -465,6 +476,7 @@ final class AppCoordinator: VisualizationControlling {
     func applyReduceFlashing() {
         renderer?.reduceFlashing = settings.reduceFlashing
         nativeVisual?.reduceFlashing = settings.reduceFlashing   // VIS-001-R10
+        cameraVisual?.reduceFlashing = settings.reduceFlashing   // CAM-001: the composite flash guard
     }
 
     // MARK: - Visual choice (VIS-001)
@@ -477,6 +489,14 @@ final class AppCoordinator: VisualizationControlling {
     var showsNativeVisual: Bool {
         Self.nativeVisualShown(choice: settings.visual, hostAvailable: nativeVisual != nil, onVisualizer: screen == .visualizer)
     }
+
+    /// The Camera visual replaces projectM only when chosen, created and on the visualizer (CAM-001).
+    var showsCameraVisual: Bool {
+        settings.visual.usesCamera && cameraVisual != nil && screen == .visualizer
+    }
+
+    /// A native spectrum or the Camera visual is shown instead of projectM (preset controls hidden).
+    var showsAlternateVisual: Bool { showsNativeVisual || showsCameraVisual }
 
     private var circularSpectrumBarCount: SpectrumBarCount {
         SpectrumBarCount(rawValue: settings.circularSpectrumBars) ?? .b64
@@ -518,15 +538,56 @@ final class AppCoordinator: VisualizationControlling {
         }
     }
 
-    /// Runs whichever visual is shown and keeps the other paused.
+    /// Creates the Camera visual when Camera is chosen (CAM-001-R1); on failure, falls back to
+    /// projectM with the same notice as the native visuals (spec Edge Cases). The camera does not
+    /// start here: only resumeActiveVisual() starts it.
+    private func prepareCameraVisualIfNeeded() {
+        guard settings.visual.usesCamera, cameraVisual == nil, !nativeVisualUnavailable else { return }
+        do {
+            var device = MTLCreateSystemDefaultDevice()
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("-uitestNativeVisualFailure") { device = nil }
+            #endif
+            let host = try CameraVisualHost.make(device: device, reader: manager.analysisTap, barCount: circularSpectrumBarCount)
+            host.reduceFlashing = settings.reduceFlashing
+            host.onFeedStateChange = { [weak self] state in self?.cameraStateChanged(state) }
+            presentation.register(host)   // PERF-011: starts suspended while the app cannot present
+            cameraVisual = host
+        } catch {
+            markNativeVisualUnavailable(error)
+        }
+    }
+
+    /// Stops the camera and drops the Camera visual (another visual was chosen; CAM-001-R7, R9).
+    private func releaseCameraVisual() {
+        guard let host = cameraVisual else { return }
+        host.pause()
+        cameraVisual = nil   // the presentation registry holds it weakly
+        cameraState = .idle
+    }
+
+    private func cameraStateChanged(_ state: CameraFeedState) {
+        cameraState = state
+        if let notice = state.notice { UIAccessibility.post(notification: .announcement, argument: notice) }   // CAM-001-R14
+    }
+
+    /// Runs whichever visual is shown and keeps the others paused.
     private func resumeActiveVisual() {
         prepareNativeVisualIfNeeded()
-        if showsNativeVisual {
+        prepareCameraVisualIfNeeded()
+        if showsCameraVisual {
             renderer?.pause()
+            nativeVisual?.pause()
+            cameraVisual?.resume()   // starts the camera (CAM-001-R7)
+            if let reader = cameraVisual?.tempoReader { tempo.follow(reader) } else { tempo.stopAnalysis() }
+        } else if showsNativeVisual {
+            renderer?.pause()
+            cameraVisual?.pause()
             nativeVisual?.resume()
             if let reader = nativeVisual?.tempoReader { tempo.follow(reader) } else { tempo.stopAnalysis() }
         } else {
             nativeVisual?.pause()
+            cameraVisual?.pause()
             renderer?.resume()
             tempo.runOwnAnalysis(on: manager.analysisTap)
         }
@@ -534,12 +595,14 @@ final class AppCoordinator: VisualizationControlling {
 
     /// Frame statistics of the shown visual (FR-048 overlay).
     var activeVisualMetrics: RenderMetrics {
-        showsNativeVisual ? (nativeVisual?.metrics ?? .zero) : (renderer?.metrics ?? .zero)
+        if showsCameraVisual { return cameraVisual?.metrics ?? .zero }
+        return showsNativeVisual ? (nativeVisual?.metrics ?? .zero) : (renderer?.metrics ?? .zero)
     }
 
     private func pauseActiveVisual() {
         renderer?.pause()
         nativeVisual?.pause()
+        cameraVisual?.pause()   // stops the camera (CAM-001-R7)
         tempo.stopAnalysis()   // SHOW-011: the estimate's analysis runs only while a visual runs
     }
 
@@ -551,7 +614,9 @@ final class AppCoordinator: VisualizationControlling {
     /// Settings changed the visual, its bar count or the linear spectrum's options: switch without
     /// touching the audio source (VIS-001-R12, VIS-002-R12).
     func visualSettingsChanged() {
+        if !settings.visual.usesCamera { releaseCameraVisual() }   // CAM-001-R7: leaving Camera stops it
         nativeVisual?.barCount = circularSpectrumBarCount
+        cameraVisual?.barCount = circularSpectrumBarCount
         if settings.visual.isNative, let host = nativeVisual {
             do {
                 try host.apply(style: nativeSpectrumStyle)
@@ -565,6 +630,7 @@ final class AppCoordinator: VisualizationControlling {
             resumeActiveVisual()
         } else {
             prepareNativeVisualIfNeeded()
+            prepareCameraVisualIfNeeded()
             pauseActiveVisual()
         }
     }
@@ -682,8 +748,14 @@ final class AppCoordinator: VisualizationControlling {
     /// FR-086 / FR-089: hide the status bar and home indicator with the controls, except while
     /// System/App Capture or Microphone runs, so the system's capture or microphone indicator stays visible.
     var hidesSystemOverlays: Bool {
-        guard screen == .visualizer, !controlsVisible else { return false }
-        return manager.activeMode == .inAppPlayback
+        Self.systemOverlaysHidden(onVisualizer: screen == .visualizer, controlsVisible: controlsVisible,
+                                  mode: manager.activeMode, cameraShown: showsCameraVisual)
+    }
+
+    /// CAM-001-R10: never hidden while the Camera visual is shown, so iOS's camera indicator stays.
+    static func systemOverlaysHidden(onVisualizer: Bool, controlsVisible: Bool, mode: AudioSourceMode?, cameraShown: Bool) -> Bool {
+        guard onVisualizer, !controlsVisible, !cameraShown else { return false }
+        return mode == .inAppPlayback
     }
 }
 
