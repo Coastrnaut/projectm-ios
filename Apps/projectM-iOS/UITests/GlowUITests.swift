@@ -51,9 +51,9 @@ final class GlowUITests: XCTestCase {
     private func waitUntil(_ condition: () -> Bool) -> Bool { poll(30, condition) }
 
     private func chooseCircularSpectrum() {
-        let picker = app.segmentedControls["visualPicker"]
-        XCTAssertTrue(picker.appears(within: 5))
-        picker.buttons["Circular Spectrum"].tap()
+        let row = app.visualRow("Circular Spectrum")
+        XCTAssertTrue(row.appears(within: 5))
+        row.tap()
     }
 
     func testGlowControlsAppearOnlyForTheCircularSpectrumAndPersist() {

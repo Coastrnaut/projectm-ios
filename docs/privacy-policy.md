@@ -2,13 +2,17 @@
 
 Effective: before the first App Store release (task T107; FR-063). Updated for the full preset
 library purchase (feature 002 T240; FR-122, FR-123) and for importing your own audio files
-(AUD-001-T30; AUD-001-R22, in app versions that offer "Import Audio…"). Applies to the projectM app for
+(AUD-001-T30; AUD-001-R22, in app versions that offer "Import Audio…"), for the optional OSC
+receiver (OSC-001-R18, in app versions that offer "OSC receiver" in Settings), and for the Camera
+visual (CAM-001; `specs/033-cam-001-rear-camera-layer`, in app versions that offer it). Applies to the projectM app for
 iPhone and iPad published by Robert Pancoast.
 
 **Summary: the app collects no data. Audio is processed only in memory on your device, and nothing
 is recorded or sent anywhere. The only audio the app stores is audio files you choose to import,
-which stay on your device until you remove them. The only network traffic is Apple's own App Store traffic
-when you buy or restore the full preset library.**
+which stay on your device until you remove them. If you choose the Camera visual, the rear camera's
+picture is shown on screen while that visual is on; it is never recorded, stored, sent or analysed. The only network traffic is Apple's own App Store traffic
+when you buy or restore the full preset library, and, only if you turn it on, OSC control messages
+that devices on your own local network send to the app.**
 
 ## The three audio sources and what each captures
 
@@ -30,8 +34,26 @@ The app turns audio into visuals. It starts no source until you choose one.
   Microphone, the other modes keep working.
 - **Screen recording (System/App Capture)**: iOS asks each time you start this mode, through its
   own picker, so the app can receive the audio of the content you choose to share.
+- **Local Network**: asked by iOS only when you turn on "OSC receiver" in Settings, so the app can
+  receive OSC control messages from devices on your local network (see "OSC control on your local
+  network"). If you decline or later turn it off in Settings › Privacy & Security › Local Network,
+  the rest of the app keeps working.
+
+- **Camera**: asked the first time you choose the Camera visual in Settings, and only then, so the
+  app can show the live view from your rear camera behind the visualization. If you decline, or
+  later turn it off in Settings › Privacy & Security › Camera, the visualization keeps running
+  without the camera and a short notice explains how to allow it.
 
 The app asks for no other permission.
+
+## The camera picture stays on your screen
+
+When you choose the Camera visual, the rear camera runs only while that visual is on screen and
+the app is in the foreground; it stops when you choose another visual, pause, stop, or leave the
+app, and iOS shows its camera indicator whenever it runs. Each picture is held in memory only until
+the next one replaces it and is drawn on your screen. The app never records, saves, sends or
+analyses camera pictures (no face, person or scene detection), and it does not remember the Camera
+choice: after a relaunch the camera starts only when you choose it again.
 
 ## Audio stays in memory on your device
 
@@ -53,6 +75,22 @@ played or when.
 - Copy-protected (DRM) files are refused; the app never removes copy protection.
 - Removing a track in the app deletes its copy. Deleting the app deletes all of them.
 
+## OSC control on your local network
+
+"OSC receiver" in Settings lets an OSC controller (an app or device on the same Wi-Fi or wired
+network) send control messages to the app. It is off until you turn it on.
+
+- While it is on and the app is open in the foreground, the app listens on the port you choose
+  (9000 unless you change it) for OSC messages. It stops listening when you turn it off or the app
+  leaves the foreground.
+- It accepts messages only from addresses on your local network (and from the device itself), never
+  over cellular data, and it never connects to anything: it only receives.
+- In this version a received message can change only a test value shown in Settings, so you can
+  check that your controller reaches the app.
+- Nothing it receives is recorded, stored or sent anywhere. The app keeps only counts of received
+  messages in memory while it runs, never their contents or who sent them.
+- The app stores two settings for it: whether it is on, and the port.
+
 ## What is stored on your device
 
 Only these, in the app's own storage on your device (its settings, and one file for your
@@ -60,8 +98,9 @@ collections):
 
 - your favorite presets;
 - the last preset you selected;
-- your settings: the performance overlay, Reduce flashing, and which preset list Next and Random
-  step through (a search is remembered as "All presets", never the search text);
+- your settings: the performance overlay, Reduce flashing, which preset list Next and Random
+  step through (a search is remembered as "All presets", never the search text), and whether the
+  OSC receiver is on and its port;
 - whether you acknowledged the photosensitivity notice;
 - the preset collections you create: their names, which presets are in them, and the order you
   put them in. No dates and no record of what you played are kept with them.
@@ -101,7 +140,9 @@ by hand; they contain audio levels, formats and timing, never audio.
 ## No analytics, tracking or network use
 
 The app makes no network connections of its own. The only network traffic is the App Store's,
-through iOS, when you buy the full preset library, restore it, or when iOS checks your purchases.
+through iOS, when you buy the full preset library, restore it, or when iOS checks your purchases,
+and, only while you have the OSC receiver turned on, OSC messages that devices on your local network
+send to the app (it receives them and sends nothing back).
 The app contains no analytics, advertising, accounts, servers, tracking or third-party SDKs, and it
 does not track you across apps or websites.
 
@@ -131,4 +172,6 @@ issue in that repository.
 | Feature 002 FR-123: the preset scope setting | What is stored on your device |
 | AUD-001-R22 (amends FR-065): files the user imports are stored on the device | Audio files you import; What is stored on your device |
 | PRE-007-R17 (`specs/005-pre-007-preset-collections/spec.md`): the user's preset collections | What is stored on your device |
+| OSC-001-R18 (`specs/032-osc-001-osc-receiver/spec.md`, under the FR-068 amendment): the optional local-network OSC receiver, its permission and its two settings | Permissions and why; OSC control on your local network; What is stored on your device; No analytics, tracking or network use |
+| CAM-001-R16 (`specs/033-cam-001-rear-camera-layer/spec.md`): the camera permission and on-device use of camera pictures | Permissions and why; The camera picture stays on your screen |
 | PRE-012-R30 (`specs/008-pre-012-preset-import-validation/spec.md`, amends FR-065): preset files the user imports, quarantined ones included, and their record; extended by PRE-015-R23 (`specs/010-pre-015-user-preset-duplication/spec.md`): copies of built-in presets, their origin, and edited preset text | What is stored on your device |

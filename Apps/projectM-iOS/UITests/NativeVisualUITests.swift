@@ -42,9 +42,9 @@ final class NativeVisualUITests: XCTestCase {
 
     private func choose(_ title: String) {
         openSettings()
-        let picker = app.segmentedControls["visualPicker"]
-        XCTAssertTrue(picker.appears(within: 5))
-        picker.buttons[title].tap()
+        let row = app.visualRow(title)
+        XCTAssertTrue(row.appears(within: 5))
+        row.tap()
         closeSettings()
     }
 
@@ -90,7 +90,7 @@ final class NativeVisualUITests: XCTestCase {
     func testChoiceAndBarsPersistAcrossRelaunch() {
         launch(reset: true)
         openSettings()
-        app.segmentedControls["visualPicker"].buttons["Circular Spectrum"].tap()
+        app.visualRow("Circular Spectrum").tap()
         let bars = app.segmentedControls["barsPicker"]
         XCTAssertTrue(bars.appears(within: 5), "Bars offered for the circular spectrum")
         XCTAssertTrue(bars.buttons["64"].isSelected, "64 bars by default")
@@ -102,7 +102,7 @@ final class NativeVisualUITests: XCTestCase {
         launch(reset: false)
         XCTAssertTrue(circularSpectrum.appears(within: 10), "the choice persisted")
         openSettings()
-        XCTAssertTrue(app.segmentedControls["visualPicker"].buttons["Circular Spectrum"].isSelected)
+        XCTAssertTrue(app.visualRow("Circular Spectrum").isSelected)
         XCTAssertTrue(app.segmentedControls["barsPicker"].buttons["16"].isSelected, "the bar count persisted")
         closeSettings()
     }

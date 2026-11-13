@@ -87,13 +87,13 @@ struct ControlsOverlay: View {
     }
 
     @ViewBuilder private var presetName: some View {
-        if coordinator.showsNativeVisual {
+        if coordinator.showsAlternateVisual {
             VStack(alignment: .leading, spacing: 1) {
                 Text(coordinator.settings.visual.title)   // VIS-001-R13, VIS-002
                     .font(.subheadline)
                     .lineLimit(1)
                     .accessibilityIdentifier("currentVisual")
-                Text("Native visual")
+                Text(coordinator.showsCameraVisual ? "Rear camera" : "Native visual")   // CAM-001
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -196,7 +196,7 @@ struct ControlsOverlay: View {
 
     private var buttons: [Item] {
         let presetIDs: Set<String> = ["previous", "next", "random", "presets"]
-        return allButtons.filter { !coordinator.showsNativeVisual || !presetIDs.contains($0.id) }
+        return allButtons.filter { !coordinator.showsAlternateVisual || !presetIDs.contains($0.id) }
     }
 
     private var allButtons: [Item] {

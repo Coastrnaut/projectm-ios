@@ -15,10 +15,16 @@
 //   key `settings.linearSpectrum.orientation` (`vertical`/`horizontal`; anything else → vertical),
 //   and spacing, key `settings.linearSpectrum.spacing` (0, 0.2 or 0.5; anything else → 0.2). Bars
 //   and Glow are shared by both native spectra and keep their keys (spec 025, Clarifications).
+// * Camera (CAM-001-R1, R11): `visual` may be `.camera` for the session only. It is never written,
+//   so the key keeps the visual chosen before it, and a stored `camera` (never written by the app)
+//   reads as projectM: the camera starts only from the user's choice in the running session.
+// * OSC receiver (OSC-001-R15): key `settings.osc.enabled` (Bool, absent → off, so a fresh install
+//   opens no listener) and `settings.osc.port` (Int, absent or outside 1024-65535 → 9000).
 // All keys are "user settings" in the FR-065 list of what may be stored (FR-123 adds the scope,
 // VIS-001-R11 the two visual keys, FX-001-R11 the four glow keys, VIS-002-R11 the two linear keys).
 import Foundation
 import Observation
+import PerformanceControl
 import VisualEffects
 import VisualGenerators
 
@@ -36,9 +42,11 @@ final class AppSettings {
     static let glowThresholdKey = "settings.circularSpectrum.glowThreshold"
     static let linearSpectrumOrientationKey = "settings.linearSpectrum.orientation"
     static let linearSpectrumSpacingKey = "settings.linearSpectrum.spacing"
+    static let oscEnabledKey = "settings.osc.enabled"
+    static let oscPortKey = "settings.osc.port"
     static let allKeys = [performanceOverlayKey, reduceFlashingKey, presetScopeKey, visualKey, circularSpectrumBarsKey,
                           glowKey, glowIntensityKey, glowRadiusKey, glowThresholdKey,
-                          linearSpectrumOrientationKey, linearSpectrumSpacingKey]
+                          linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey]
     /// VIS-002-R4: the spacings offered for the linear spectrum.
     static let linearSpectrumSpacingChoices: [(title: String, value: Double)] = [("None", 0), ("Narrow", 0.2), ("Wide", 0.5)]
     static let defaultLinearSpectrumSpacing = 0.2
@@ -59,7 +67,10 @@ final class AppSettings {
 
     /// Which visual the visualizer shows (VIS-001-R11).
     var visual: VisualChoice {
-        didSet { defaults.set(visual.rawValue, forKey: Self.visualKey) }
+        didSet {
+            guard !visual.usesCamera else { return }   // CAM-001-R11: session only
+            defaults.set(visual.rawValue, forKey: Self.visualKey)
+        }
     }
 
     /// Bars of the circular spectrum: 16, 32, 64 or 128.
@@ -130,6 +141,19 @@ final class AppSettings {
         return min(max(value, Double(range.lowerBound)), Double(range.upperBound))
     }
 
+    /// OSC-001: the OSC receiver (off by default; OSC-001-R1).
+    var oscEnabled: Bool {
+        didSet { defaults.set(oscEnabled, forKey: Self.oscEnabledKey) }
+    }
+
+    /// OSC-001: the UDP port, 1024-65535 (9000 otherwise).
+    var oscPort: Int {
+        didSet {
+            if !OSCPort.isValid(oscPort) { oscPort = Int(OSCPort.defaultPort) }
+            defaults.set(oscPort, forKey: Self.oscPortKey)
+        }
+    }
+
     /// The user's choice; nil follows Reduce Motion.
     private(set) var reduceFlashingChoice: Bool?
 
@@ -141,7 +165,8 @@ final class AppSettings {
         self.systemReduceMotion = systemReduceMotion
         showsPerformanceOverlay = defaults.bool(forKey: Self.performanceOverlayKey)
         reduceFlashingChoice = defaults.object(forKey: Self.reduceFlashingKey) as? Bool
-        visual = defaults.string(forKey: Self.visualKey).flatMap(VisualChoice.init(rawValue:)) ?? .projectM
+        let storedVisual = defaults.string(forKey: Self.visualKey).flatMap(VisualChoice.init(rawValue:)) ?? .projectM
+        visual = storedVisual.usesCamera ? .projectM : storedVisual   // CAM-001-R11
         let bars = defaults.integer(forKey: Self.circularSpectrumBarsKey)
         circularSpectrumBars = Self.circularSpectrumBarChoices.contains(bars) ? bars : Self.defaultCircularSpectrumBars
         linearSpectrumOrientation = defaults.string(forKey: Self.linearSpectrumOrientationKey)
@@ -149,6 +174,9 @@ final class AppSettings {
         let spacing = defaults.object(forKey: Self.linearSpectrumSpacingKey) as? Double
         linearSpectrumSpacing = spacing.map(Self.isSpacingChoice) == true ? spacing! : Self.defaultLinearSpectrumSpacing
         glowEnabled = defaults.bool(forKey: Self.glowKey)
+        oscEnabled = defaults.bool(forKey: Self.oscEnabledKey)
+        let port = defaults.integer(forKey: Self.oscPortKey)
+        oscPort = OSCPort.isValid(port) ? port : Int(OSCPort.defaultPort)
         glowIntensity = Self.clampedGlowValue(defaults.object(forKey: Self.glowIntensityKey) as? Double,
                                               range: BloomParameters.intensityRange, fallback: BloomParameters.defaultIntensity)
         glowRadius = Self.clampedGlowValue(defaults.object(forKey: Self.glowRadiusKey) as? Double,
@@ -183,15 +211,24 @@ enum VisualChoice: String, CaseIterable, Sendable {
     case circularSpectrum
     /// The native linear spectrum (VIS-002).
     case linearSpectrum
+    /// The rear camera with the circular spectrum over it (CAM-001; session only).
+    case camera
 
     var title: String {
         switch self {
         case .projectM: "projectM"
         case .circularSpectrum: "Circular Spectrum"
         case .linearSpectrum: "Linear Spectrum"
+        case .camera: "Camera"
         }
     }
 
     /// Drawn by the native spectrum host instead of projectM.
-    var isNative: Bool { self != .projectM }
+    var isNative: Bool { self == .circularSpectrum || self == .linearSpectrum }
+
+    /// Shown instead of projectM (a native spectrum or the camera visual).
+    var replacesProjectM: Bool { self != .projectM }
+
+    /// The camera visual (CAM-001): uses the rear camera while shown.
+    var usesCamera: Bool { self == .camera }
 }

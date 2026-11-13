@@ -16,5 +16,6 @@
 | [0012](0012-typed-parameter-registry.md) | Typed parameter registry | Accepted 2026-11-13 (MOD-001; owner rule 4) |
 | [0013](0013-compositor-layer-protocol.md) | Compositor and the unified layer protocol | Accepted 2026-11-13 (CMP-001; owner rule 4) |
 | [0014](0014-reduced-flash-preset-policy.md) | Reduced flash preset policy | Accepted 2026-11-13 (ACC-002; owner rule 4) |
+| [0017](0017-rear-camera-layer.md) | Rear camera layer | Accepted 2026-11-13 (CAM-001; owner rule 4) |
 
 Required by Constitution X: capture API, minimum OS, renderer, dependency strategy.
