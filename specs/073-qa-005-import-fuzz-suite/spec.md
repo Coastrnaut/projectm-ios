@@ -134,7 +134,8 @@ respects the size cap; the budget stops a run at its limits; `FUZZ_ITERATIONS` c
 
 - **QA-005-R1**: A shared fuzz harness MUST generate inputs deterministically from a 64-bit seed so the
   same seed gives the same inputs on every supported host; the generator MUST NOT use the standard
-  library's random sources.
+  library's random sources. An optional `FUZZ_SEED` environment value is mixed into every suite's
+  fixed seed for on-demand exploration; unset, the fixed seeds are used.
 - **QA-005-R2**: The harness MUST offer these mutation strategies: bit flip, byte overwrite, byte
   insert, byte delete, truncation, repetition of a slice, splice of two corpus items, length-field
   tweaks (little- and big-endian 16/32-bit fields set to edge values), and structural mutations for
@@ -152,10 +153,12 @@ respects the size cap; the budget stops a run at its limits; `FUZZ_ITERATIONS` c
   path for a subset), OSC (decoder and dispatcher), scene JSON (decode, validation, modulation
   restore), scene archives (the full archive reader including ZIP parsing), generator graph import,
   the expression language, and BoundedJSON. Each suite MUST assert that every input yields a typed
-  result.
+  result, and that an accepted input keeps the invariant its parser already promises (scene: re-encode
+  decodes again; graph: canonical bytes import again; expression: compiles to the same bytes twice;
+  BoundedJSON: an accepted input was examined to its last byte).
 - **QA-005-R7**: Default budgets MUST keep each suite at about 2 s or less and the whole package under
-  10 s on the Mac host in Debug; `FUZZ_ITERATIONS` MUST raise or lower the inputs per suite, capped by
-  a hard ceiling, and invalid values MUST be ignored.
+  10 s on the Mac host in Debug; `FUZZ_ITERATIONS` MUST raise or lower the inputs per suite, capped at
+  100,000, and zero, negative or non-numeric values MUST be ignored.
 - **QA-005-R8**: A failure MUST report the suite, seed, iteration, strategy and input size, so the
   input can be rebuilt exactly.
 - **QA-005-R9**: Any crash or hang the suites find MUST be fixed in the parser with the smallest
