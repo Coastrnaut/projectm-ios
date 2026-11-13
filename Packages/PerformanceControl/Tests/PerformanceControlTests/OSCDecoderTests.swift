@@ -1,4 +1,5 @@
 // OSC-001-T03: the bounded OSC decoder (OSC-001-R8 to R11; contract C1; research OSC-001-D3, D4).
+// OSC-002-T14: regression suite; only the `,s` case changed (strings are supported since OSC-002).
 @testable import PerformanceControl
 import XCTest
 
@@ -81,6 +82,7 @@ final class OSCDecoderTests: XCTestCase {
         expectError(padded(long) + padded(",f") + floatBytes(1), .invalidAddress)
     }
 
+    /// The message-only entry point keeps OSC-001's contract (OSC-002-R11); `decodePacket` decodes bundles.
     func testBundleIsUnsupported() {
         expectError(padded("#bundle") + [UInt8](repeating: 0, count: 8), .bundleUnsupported)
     }
@@ -88,7 +90,8 @@ final class OSCDecoderTests: XCTestCase {
     func testMissingTypeTagsAndUnsupportedTag() {
         expectError(padded("/a"), .missingTypeTags)                                // nothing after the address
         expectError(padded("/a") + padded("f") + floatBytes(1), .missingTypeTags)  // no comma
-        expectError(padded("/a") + padded(",s") + padded("hi"), .unsupportedTypeTag(UInt8(ascii: "s")))
+        // OSC-002 accepts `s`; `c` (character) is still unsupported.
+        expectError(padded("/a") + padded(",c") + intBytes(65), .unsupportedTypeTag(UInt8(ascii: "c")))
     }
 
     func testTooManyArguments() {
@@ -106,8 +109,15 @@ final class OSCDecoderTests: XCTestCase {
     func testEveryReasonHasADistinctStableKey() {
         let errors: [OSCDecodeError] = [.oversized(byteCount: 2000), .empty, .notAligned, .unterminatedString, .badPadding,
                                         .invalidAddress, .missingTypeTags, .tooManyArguments, .unsupportedTypeTag(0x73),
-                                        .truncatedArgument, .trailingBytes, .bundleUnsupported]
+                                        .truncatedArgument, .trailingBytes, .bundleUnsupported,
+                                        .invalidString, .invalidBlobSize, .truncatedBundle, .invalidElementSize,
+                                        .bundleTooDeep, .tooManyElements]
         XCTAssertEqual(Set(errors.map(\.reason)).count, errors.count)
+        // OSC-001's keys are stable (OSC-002-R8).
+        XCTAssertEqual(errors.prefix(12).map(\.reason),
+                       ["oversized", "empty", "notAligned", "unterminatedString", "badPadding", "invalidAddress",
+                        "missingTypeTags", "tooManyArguments", "unsupportedTypeTag", "truncatedArgument",
+                        "trailingBytes", "bundleUnsupported"])
     }
 
     // MARK: Fuzz (research OSC-001-D4; OSC-001-S3)
