@@ -6,9 +6,9 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 37,
-   "implementing": 2,
-   "integrated": 47,
+   "audited": 36,
+   "implementing": 1,
+   "integrated": 49,
    "skipped_existing": 1
   },
   "P1": {
@@ -24,9 +24,9 @@
   }
  },
  "by_state": {
-  "audited": 261,
-  "implementing": 2,
-  "integrated": 62,
+  "audited": 260,
+  "implementing": 1,
+  "integrated": 64,
   "skipped_existing": 1
  },
  "device_gate": {
@@ -171,7 +171,6 @@
    "OUT-007",
    "OUT-008",
    "OUT-009",
-   "OUT-010",
    "OUT-011",
    "OUT-012",
    "OUT-013",
@@ -179,7 +178,6 @@
    "PERF-001",
    "PERF-002",
    "PERF-003",
-   "PERF-004",
    "PERF-005",
    "PERF-006",
    "PERF-007",
@@ -301,7 +299,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "263 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
+   "261 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
   ]
  },
  "features": {
@@ -1577,13 +1575,13 @@
   },
   "MED-009": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/med-009",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "MED-010": {
    "attempts": 0,
@@ -2148,12 +2146,12 @@
   "OUT-010": {
    "attempts": 0,
    "branch": "feature/out-010",
-   "branch_sha": null,
+   "branch_sha": "e7b40368ae98b44472a6dab3d1ac3d0c3554f658",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "1def5a80ab64db55c0f41a52b830700ae9c2c9b3",
    "priority": "P0",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "integrated"
   },
   "OUT-011": {
    "attempts": 0,
@@ -2228,12 +2226,12 @@
   "PERF-004": {
    "attempts": 0,
    "branch": "feature/perf-004",
-   "branch_sha": null,
+   "branch_sha": "b32cc31f34e8263e241f86907775d354b3c19a81",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "ea0ee43e0f04f2b66596b10b89bd93be24387842",
    "priority": "P0",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "integrated"
   },
   "PERF-005": {
    "attempts": 0,
@@ -3808,6 +3806,16 @@
    "sha": "dfd5757fccd46237db48dd55ce788f447a09b3c9"
   },
   {
+   "branch": "feature/out-010",
+   "id": "OUT-010",
+   "sha": "1def5a80ab64db55c0f41a52b830700ae9c2c9b3"
+  },
+  {
+   "branch": "feature/perf-004",
+   "id": "PERF-004",
+   "sha": "ea0ee43e0f04f2b66596b10b89bd93be24387842"
+  },
+  {
    "branch": "feature/perf-011",
    "id": "PERF-011",
    "sha": "6d669fcb857695767ec2b785f74feb29f98d5978"
@@ -3903,5 +3911,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T18:56:10Z"
+ "updated": "2026-11-13T19:05:24Z"
 }

@@ -181,6 +181,7 @@ final class AppCoordinator: VisualizationControlling {
             if let videos = try? VideoStore.defaultDirectory() { try? FileManager.default.removeItem(at: videos) }   // MED-002: no video
         }
         settings = AppSettings(defaults: defaults, systemReduceMotion: UIAccessibility.isReduceMotionEnabled)
+        self.externalDisplay.reduceFlashing = settings.reduceFlashing   // OUT-010-R6
         osc = OSCReceiverCoordinator(settings: settings)
         photos = PhotoCoordinator.makeDefault(defaults: defaults)
         videos = VideoCoordinator.makeDefault(defaults: defaults)
@@ -538,6 +539,7 @@ final class AppCoordinator: VisualizationControlling {
         nativeVisual?.reduceFlashing = settings.reduceFlashing   // VIS-001-R10
         cameraVisual?.reduceFlashing = settings.reduceFlashing   // CAM-001: the composite flash guard
         photoVisual?.reduceFlashing = settings.reduceFlashing    // MED-001
+        externalDisplay.reduceFlashing = settings.reduceFlashing // OUT-010-R6: the restore fade's length
         videoVisual?.reduceFlashing = settings.reduceFlashing    // MED-002
         textVisual?.reduceFlashing = settings.reduceFlashing     // MED-009
     }

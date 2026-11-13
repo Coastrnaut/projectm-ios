@@ -39,7 +39,8 @@ final class CameraVisualHost: PresentationBoundResource {
     let view: NativeSpectrumLayerView
     let camera: CameraLayerSource
     private let spectrum: SpectrumLayerSource
-    private let compositor: Compositor
+    /// Internal for PERF-004's app tests (offscreen frames through the shared pool).
+    let compositor: Compositor
     private let queue: MTLCommandQueue
     private let analyzer: LiveBandAnalyzer
     private let reader: (any NormalizedPCMReader)?
@@ -109,7 +110,7 @@ final class CameraVisualHost: PresentationBoundResource {
         var stack = LayerStack()
         try stack.add(LayerDescriptor(kind: .camera))
         try stack.add(LayerDescriptor(kind: .circularSpectrum))
-        let compositor = try Compositor(device: device)
+        let compositor = try Compositor(device: device, texturePool: SharedTexturePool.pool(for: device))   // PERF-004
         try compositor.apply(stack) { (entry: LayerStackEntry) throws(LayerSourceError) -> any LayerSource in
             switch entry.descriptor.kind {
             case .camera: return camera

@@ -13,6 +13,12 @@
 // * SwiftUI owns only the slots, never a visual view (OUT-001-D3).
 // * Nothing here touches the audio source, the renderer's pause state or the presentation registry
 //   (OUT-001-R4, R10): a move is a view moving between windows.
+// * OUT-010 (spec specs/051-out-010-output-blackout-isolation; research OUT-010-D1 to D5): the output
+//   blackout. `OutputBlackout` (PresentationLifecycle) holds the state; every slot's black cover
+//   follows its `coverOpacity`. Black out sets the covers inside the call with animations off, so
+//   the next composited frame is black; `place()` covers every slot before it moves the visual, so a
+//   connect, disconnect or visual change never reveals it. The visual stays in its slot and keeps
+//   running. A display link runs only while the restore fade or the restore spacing needs frames.
 import OSLog
 import PresentationLifecycle
 import SwiftUI
@@ -33,6 +39,25 @@ final class ExternalDisplayCoordinator {
     @ObservationIgnored private weak var deviceSlot: VisualSlotView?
     @ObservationIgnored private var externalSlots: [String: WeakSlot] = [:]
     @ObservationIgnored private weak var visual: UIView?
+
+    // OUT-010: output blackout.
+    /// The blackout's phase (controls, badge, note).
+    private(set) var blackoutPhase: OutputBlackout.Phase = .live
+    @ObservationIgnored private(set) var blackout = OutputBlackout()
+    /// Reduce flashing (FR-072), set by AppCoordinator; read at each fade frame (OUT-010-R6).
+    @ObservationIgnored var reduceFlashing = false
+    /// Tests drive `advanceFrame` themselves and turn the display link off.
+    @ObservationIgnored var usesDisplayLink = true
+    @ObservationIgnored private var frameDriver: BlackoutFrameDriver?
+
+    init() {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-uitestStartBlackedOut") {   // quickstart C
+            blackout.blackOut()
+            blackoutPhase = blackout.phase
+        }
+        #endif
+    }
 
     var target: VisualOutputTarget { routing.target }
     /// Connection and routing changes (no user data), for diagnostics and the simulator check.
@@ -96,11 +121,72 @@ final class ExternalDisplayCoordinator {
         place()
     }
 
+    // MARK: - Output blackout (OUT-010)
+
+    /// The user wants the output black (the control offers Restore).
+    var isBlackoutRequested: Bool { blackoutPhase == .blackedOut || blackoutPhase == .restoreWaiting }
+
+    /// `true`: every slot is black before this returns (OUT-010-R2). `false`: the fade starts, or
+    /// waits for the restore spacing (OUT-010-R6, R7). Never touches the source or the visual.
+    func setBlackout(_ on: Bool) {
+        if on { blackout.blackOut() } else { blackout.restore() }
+        blackoutChanged()
+    }
+
+    func toggleBlackout() {
+        setBlackout(!blackout.isBlackoutRequested)
+    }
+
+    /// One presented frame (the display link's tick; tests call it with fake frame times).
+    func advanceFrame(frameTime: Double) {
+        blackout.advance(frameTime: frameTime, reduceFlashing: reduceFlashing)
+        blackoutChanged()
+    }
+
+    /// The slot holding the visual shows only black (tests, DEBUG probe).
+    var isOutputBlack: Bool {
+        guard let slot = visual?.superview as? VisualSlotView else { return blackout.isBlack }
+        return slot.isOutputBlack
+    }
+
+    /// A display link is delivering frames to the blackout (tests).
+    var drivesBlackoutFrames: Bool { frameDriver != nil }
+
+    private func blackoutChanged() {
+        applyCovers()
+        if blackoutPhase != blackout.phase {
+            blackoutPhase = blackout.phase
+            log.info("output blackout: \(self.blackoutPhase.rawValue, privacy: .public)")
+        }
+        updateFrameDriver()
+    }
+
+    private func applyCovers() {
+        let opacity = blackout.coverOpacity
+        deviceSlot?.coverOpacity = opacity
+        for slot in externalSlots.values.compactMap({ (w: WeakSlot) -> VisualSlotView? in w.slot }) {
+            slot.coverOpacity = opacity
+        }
+    }
+
+    private func updateFrameDriver() {
+        if blackout.needsFrames, usesDisplayLink {
+            if frameDriver == nil {
+                frameDriver = BlackoutFrameDriver { [weak self] (frameTime: Double) in self?.advanceFrame(frameTime: frameTime) }
+            }
+        } else if let driver = frameDriver {
+            driver.stop()
+            frameDriver = nil
+        }
+    }
+
     // MARK: - Placement
 
     /// Puts the visual in the target's slot (or in none when that slot is missing) and empties
-    /// every other slot, inside this call (OUT-001-R6).
+    /// every other slot, inside this call (OUT-001-R6). OUT-010: every slot is covered first, so
+    /// the visual never appears uncovered while the output is blacked out.
     func place() {
+        applyCovers()
         let targetSlot: VisualSlotView?
         switch routing.target {
         case .device: targetSlot = deviceSlot
@@ -125,6 +211,48 @@ final class ExternalDisplayCoordinator {
 
     private struct WeakSlot {
         weak var slot: VisualSlotView?
+    }
+}
+
+/// OUT-010-D4: a display link that runs only while the blackout needs frames. The link retains a
+/// proxy that holds the driver weakly, so a dropped driver ends the link at its next tick.
+@MainActor
+final class BlackoutFrameDriver {
+    private let link: CADisplayLink
+    private let proxy: Proxy
+    private var last: CFTimeInterval?
+    private let onFrame: (Double) -> Void
+
+    init(onFrame: @escaping (Double) -> Void) {
+        self.onFrame = onFrame
+        let proxy = Proxy()
+        self.proxy = proxy
+        link = CADisplayLink(target: proxy, selector: #selector(Proxy.tick(_:)))
+        proxy.driver = self
+        link.add(to: .main, forMode: .common)
+    }
+
+    func stop() {
+        link.invalidate()
+    }
+
+    fileprivate func tick(_ link: CADisplayLink) {
+        let frameTime = last.map { (previous: CFTimeInterval) -> Double in link.timestamp - previous } ?? link.duration
+        last = link.timestamp
+        onFrame(frameTime)
+    }
+
+    @MainActor
+    private final class Proxy: NSObject {
+        weak var driver: BlackoutFrameDriver?
+
+        @objc func tick(_ link: CADisplayLink) {
+            guard let driver else {
+                link.invalidate()
+                return
+            }
+            driver.tick(link)
+        }
     }
 }
 

@@ -24,6 +24,13 @@
 // layers keep the exact per-pixel "over"; the others are drawn by `cmp_over_transformed`, which
 // samples the picture bilinearly through the inverse placement matrix in pixels (transparent
 // outside). A transform change at apply is shown from the next frame; nothing is re-created.
+//
+// PERF-004 (contracts/texture-pool.md in specs/052): the composite and every picture come from a
+// `TexturePool` (given, e.g. the app's shared pool, or private) and go back to it when a layer is
+// removed, when the output size changes and when the compositor is released, each with the last command
+// buffer this compositor encoded as its fence, so no picture is reused while a frame may still use it.
+// The pool is ticked once per frame (idle-age eviction). `pictureAllocations` counts pictures taken;
+// `texturePool.counters.misses` counts the ones Metal actually created.
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import Metal
 
@@ -83,6 +90,10 @@ public final class Compositor {
     private let transformedPipeline: MTLRenderPipelineState
     private var outputPipelines: [(format: MTLPixelFormat, state: MTLRenderPipelineState)] = []
     private let flashGuard: CompositeFlashGuard
+    /// PERF-004: where pictures come from and go back to.
+    public let texturePool: TexturePool
+    /// PERF-004: the last command buffer this compositor encoded with (the fence of returned pictures).
+    private var lastCommandBuffer: MTLCommandBuffer?
 
     /// Pictures (and composites) created so far (tests, diagnostics).
     public private(set) var pictureAllocations = 0
@@ -94,18 +105,20 @@ public final class Compositor {
     public private(set) var appliedStack: LayerStack?
 
     /// An empty compositor; give it layers with `apply(_:makeLayer:)` (CMP-002).
-    public convenience init(device: MTLDevice) throws(CompositorError) {
-        try self.init(device: device, layers: [])
+    /// PERF-004: `texturePool` nil gives the compositor a private pool.
+    public convenience init(device: MTLDevice, texturePool: TexturePool? = nil) throws(CompositorError) {
+        try self.init(device: device, layers: [], texturePool: texturePool)
     }
 
     /// A compositor with a fixed list of layers, bottom first (CMP-001). The layers have no stack
     /// ID; the first `apply` releases them.
-    public init(device: MTLDevice, layers: [any LayerSource]) throws(CompositorError) {
+    public init(device: MTLDevice, layers: [any LayerSource], texturePool: TexturePool? = nil) throws(CompositorError) {
         for (i, layer) in layers.enumerated() {
             if layers[..<i].contains(where: { $0 === layer }) { throw .duplicateLayer(index: i) }
             if !layer.compositeSettings.isSupportedByCompositor { throw .unsupportedCompositeSettings(index: i) }
         }
         self.device = device
+        self.texturePool = texturePool ?? TexturePool(device: device)
         records = layers.map { (layer: any LayerSource) -> LayerRecord in
             LayerRecord(id: nil, layer: layer, settings: layer.compositeSettings)
         }
@@ -120,6 +133,12 @@ public final class Compositor {
                                                              format: LayerPictureDescriptor.metalPixelFormat, blendOver: true,
                                                              label: "CMP-005 transformed over")
         flashGuard = try CompositeFlashGuard(device: device)
+    }
+
+    /// PERF-004: every picture goes back to the pool, reusable once the last frame completed.
+    deinit {
+        if let composite { texturePool.recycle(composite, after: lastCommandBuffer) }
+        for record in records { texturePool.recycle(record.pictures, after: lastCommandBuffer) }
     }
 
     public var layerCount: Int { records.count }
@@ -177,6 +196,9 @@ public final class Compositor {
         for i in next.indices where next[..<i].contains(where: { (r: LayerRecord) -> Bool in r.layer === next[i].layer }) {
             throw .duplicateLayer(index: i)
         }
+        for old in records where !next.contains(where: { (r: LayerRecord) -> Bool in r.layer === old.layer }) {
+            texturePool.recycle(old.pictures, after: lastCommandBuffer)   // PERF-004: back to the pool
+        }
         records = next   // records no longer listed are released here
         appliedStack = stack
         if let descriptor {
@@ -209,6 +231,8 @@ public final class Compositor {
             guard allocate(size) else { return false }
         }
         guard let composite else { return false }
+        texturePool.tick()
+        lastCommandBuffer = commandBuffer   // PERF-004: from here on this frame may use every picture
         let frame = clock.next(presentationTimeNanoseconds: presentationTimeNanoseconds, outputWidth: size.width,
                                outputHeight: size.height, contentScale: contentScale, reduceFlashing: reduceFlashing)
 
@@ -300,7 +324,9 @@ public final class Compositor {
     /// Creates the composite and every picture for `size`, and prepares every layer (once per size).
     private func allocate(_ size: LayerPictureDescriptor) -> Bool {
         let d = size.textureDescriptor()
-        guard let newComposite = device.makeTexture(descriptor: d) else { return false }
+        if let composite { texturePool.recycle(composite, after: lastCommandBuffer) }   // PERF-004
+        composite = nil
+        guard let newComposite = texturePool.makeTexture(descriptor: d) else { return false }
         newComposite.label = "CMP-001 composite"
         composite = newComposite
         pictureAllocations += 1
@@ -313,9 +339,11 @@ public final class Compositor {
     /// a new layer applied).
     private func allocatePictures(_ i: Int, _ size: LayerPictureDescriptor) {
         let d = size.textureDescriptor()
+        texturePool.recycle(records[i].pictures, after: lastCommandBuffer)   // PERF-004: the old size's pictures
+        records[i].pictures = []
         var created: [MTLTexture] = []
         for k in 0..<records[i].slots.pictureCount {
-            guard let t = device.makeTexture(descriptor: d) else { break }
+            guard let t = texturePool.makeTexture(descriptor: d) else { break }
             t.label = "CMP-001 \(records[i].layer.layerName) picture \(k)"
             created.append(t)
             pictureAllocations += 1
