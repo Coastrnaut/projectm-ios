@@ -122,7 +122,7 @@ struct VisualizerView: View {
             }
         }
         .sheet(isPresented: $coordinator.showSettings) {
-            SettingsView(settings: coordinator.settings,
+            SettingsView(settings: coordinator.settings, osc: coordinator.osc,
                          reduceFlashingAvailable: coordinator.renderer?.supportsReduceFlashing ?? true,
                          nativeVisualUnavailable: coordinator.nativeVisualUnavailable,
                          glowUnavailable: coordinator.glowUnavailable)

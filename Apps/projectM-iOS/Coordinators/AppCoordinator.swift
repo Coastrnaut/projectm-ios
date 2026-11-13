@@ -103,6 +103,8 @@ final class AppCoordinator: VisualizationControlling {
     }
     /// Tap tempo and the tempo estimate (SHOW-011).
     let tempo: TempoCoordinator
+    /// The OSC receiver (OSC-001): off by default, listens only while enabled and active.
+    let osc: OSCReceiverCoordinator
 
     private let defaults: UserDefaults
     #if DEBUG
@@ -126,6 +128,7 @@ final class AppCoordinator: VisualizationControlling {
             try? FileManager.default.removeItem(at: UserPresetStore.defaultDirectory())         // PRE-012: and without imported presets
         }
         settings = AppSettings(defaults: defaults, systemReduceMotion: UIAccessibility.isReduceMotionEnabled)
+        osc = OSCReceiverCoordinator(settings: settings)
         screen = defaults.bool(forKey: Self.noticeKey) ? .chooser : .notice
         microphone = MicrophoneSource(backend: AVMicrophoneBackend())
         let inAppPlayback = InAppPlaybackSource(backend: AVInAppPlaybackBackend())
@@ -677,6 +680,7 @@ final class AppCoordinator: VisualizationControlling {
     /// Scene activity drives the idle timer (FR-084); rendering follows the lifecycle events.
     func sceneBecame(active: Bool) {
         appIsActive = active
+        osc.sceneBecame(active: active)   // OSC-001-R3: no listener outside the foreground
         updateIdleTimer()
     }
 

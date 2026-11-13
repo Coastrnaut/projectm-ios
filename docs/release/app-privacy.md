@@ -25,6 +25,17 @@ the label stays **Data Not Collected**. The owner confirms this when the in-app 
 in App Store Connect (T242). Apple counts data as "collected" only when it leaves the device, and
 nothing does.
 
+OSC-001 (2026-11-13; `specs/032-osc-001-osc-receiver/spec.md`, OSC-001-R18): the optional OSC
+receiver does not change the answers. It is off by default; when the user turns it on, the app
+listens for OSC messages from the local network while in the foreground. Received values change an
+in-memory test value only; nothing is stored, logged with its contents or sender, or sent, and the app
+never connects out. Apple counts data as collected only when it is transmitted off the device by the
+app, and the receiver transmits nothing, so the answer stays **No** and the label **Data Not
+Collected**. Owner action: confirm this in App Store Connect › App Privacy when the version with the
+receiver is submitted, and keep the privacy policy URL current (`docs/privacy-policy.md` now describes
+the receiver and the Local Network permission). The receiver adds no required-reason API and no
+tracking domain; `NSLocalNetworkUsageDescription` is in the app's Info.plist (`project.yml`).
+
 ## Privacy manifest (`Apps/projectM-iOS/PrivacyInfo.xcprivacy`)
 
 - `NSPrivacyTracking`: false; `NSPrivacyTrackingDomains`: empty; `NSPrivacyCollectedDataTypes`: empty.
