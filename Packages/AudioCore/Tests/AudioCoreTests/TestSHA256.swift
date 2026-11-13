@@ -18,35 +18,35 @@ enum TestSHA256 {
 
     /// The hex digest of `bytes`.
     static func hex(_ bytes: [UInt8]) -> String {
+        bytes.withUnsafeBytes { digest($0) }
+    }
+
+    /// The hex digest of the little-endian bytes of `samples` (the catalog's hash input). Apple
+    /// platforms and the Linux CI host are little-endian, so the samples' memory is that byte string.
+    static func hex(samples: [Float]) -> String {
+        precondition(1.littleEndian == 1, "hashing assumes a little-endian host")
+        return samples.withUnsafeBytes { digest($0) }
+    }
+
+    private static func digest(_ data: UnsafeRawBufferPointer) -> String {
         var h: [UInt32] = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19]
-        var message = bytes
-        let bitLength = UInt64(bytes.count) * 8
-        message.append(0x80)
-        while message.count % 64 != 56 { message.append(0) }
-        for shift in stride(from: 56, through: 0, by: -8) { message.append(UInt8(truncatingIfNeeded: bitLength >> UInt64(shift))) }
+        // The final one or two blocks: the tail of the data, 0x80, zeros, the bit length.
+        let fullBlocks = data.count / 64
+        var tail = [UInt8](data[(fullBlocks * 64)...])
+        tail.append(0x80)
+        while tail.count % 64 != 56 { tail.append(0) }
+        let bitLength = UInt64(data.count) * 8
+        for shift in stride(from: 56, through: 0, by: -8) { tail.append(UInt8(truncatingIfNeeded: bitLength >> UInt64(shift))) }
         var w = [UInt32](repeating: 0, count: 64)
-        for chunk in stride(from: 0, to: message.count, by: 64) {
-            for i in 0..<16 {
-                let b = chunk + i * 4
-                w[i] = UInt32(message[b]) << 24 | UInt32(message[b + 1]) << 16 | UInt32(message[b + 2]) << 8 | UInt32(message[b + 3])
+        w.withUnsafeMutableBufferPointer { w in
+            k.withUnsafeBufferPointer { k in
+                h.withUnsafeMutableBufferPointer { h in
+                    for block in 0..<fullBlocks { compress(data.baseAddress! + block * 64, &w, k, h) }
+                    tail.withUnsafeBytes { t in
+                        for block in 0..<(t.count / 64) { compress(t.baseAddress! + block * 64, &w, k, h) }
+                    }
+                }
             }
-            for i in 16..<64 {
-                let s0 = rotr(w[i - 15], 7) ^ rotr(w[i - 15], 18) ^ (w[i - 15] >> 3)
-                let s1 = rotr(w[i - 2], 17) ^ rotr(w[i - 2], 19) ^ (w[i - 2] >> 10)
-                w[i] = w[i - 16] &+ s0 &+ w[i - 7] &+ s1
-            }
-            var a = h[0], b = h[1], c = h[2], d = h[3], e = h[4], f = h[5], g = h[6], hh = h[7]
-            for i in 0..<64 {
-                let s1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)
-                let ch = (e & f) ^ (~e & g)
-                let t1 = hh &+ s1 &+ ch &+ k[i] &+ w[i]
-                let s0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22)
-                let maj = (a & b) ^ (a & c) ^ (b & c)
-                let t2 = s0 &+ maj
-                hh = g; g = f; f = e; e = d &+ t1; d = c; c = b; b = a; a = t1 &+ t2
-            }
-            h[0] = h[0] &+ a; h[1] = h[1] &+ b; h[2] = h[2] &+ c; h[3] = h[3] &+ d
-            h[4] = h[4] &+ e; h[5] = h[5] &+ f; h[6] = h[6] &+ g; h[7] = h[7] &+ hh
         }
         return h.map { word in
             let s = String(word, radix: 16)
@@ -54,18 +54,26 @@ enum TestSHA256 {
         }.joined()
     }
 
-    /// The hex digest of the little-endian bytes of `samples` (the catalog's hash input).
-    static func hex(samples: [Float]) -> String {
-        var bytes = [UInt8]()
-        bytes.reserveCapacity(samples.count * 4)
-        for sample in samples {
-            let bits = sample.bitPattern.littleEndian
-            bytes.append(UInt8(truncatingIfNeeded: bits))
-            bytes.append(UInt8(truncatingIfNeeded: bits >> 8))
-            bytes.append(UInt8(truncatingIfNeeded: bits >> 16))
-            bytes.append(UInt8(truncatingIfNeeded: bits >> 24))
+    private static func compress(_ block: UnsafeRawPointer, _ w: inout UnsafeMutableBufferPointer<UInt32>,
+                                 _ k: UnsafeBufferPointer<UInt32>, _ h: UnsafeMutableBufferPointer<UInt32>) {
+        for i in 0..<16 { w[i] = UInt32(bigEndian: block.loadUnaligned(fromByteOffset: i * 4, as: UInt32.self)) }
+        for i in 16..<64 {
+            let s0 = rotr(w[i - 15], 7) ^ rotr(w[i - 15], 18) ^ (w[i - 15] >> 3)
+            let s1 = rotr(w[i - 2], 17) ^ rotr(w[i - 2], 19) ^ (w[i - 2] >> 10)
+            w[i] = w[i - 16] &+ s0 &+ w[i - 7] &+ s1
         }
-        return hex(bytes)
+        var a = h[0], b = h[1], c = h[2], d = h[3], e = h[4], f = h[5], g = h[6], hh = h[7]
+        for i in 0..<64 {
+            let s1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)
+            let ch = (e & f) ^ (~e & g)
+            let t1 = hh &+ s1 &+ ch &+ k[i] &+ w[i]
+            let s0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22)
+            let maj = (a & b) ^ (a & c) ^ (b & c)
+            let t2 = s0 &+ maj
+            hh = g; g = f; f = e; e = d &+ t1; d = c; c = b; b = a; a = t1 &+ t2
+        }
+        h[0] = h[0] &+ a; h[1] = h[1] &+ b; h[2] = h[2] &+ c; h[3] = h[3] &+ d
+        h[4] = h[4] &+ e; h[5] = h[5] &+ f; h[6] = h[6] &+ g; h[7] = h[7] &+ hh
     }
 
     private static func rotr(_ x: UInt32, _ n: UInt32) -> UInt32 { (x >> n) | (x << (32 - n)) }

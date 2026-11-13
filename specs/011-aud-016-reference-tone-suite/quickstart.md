@@ -15,6 +15,10 @@ Expected: `ToneMathTests`, `ToneGeneratorTests`, `ReferenceToneCatalogTests` (go
 runs), `ReferenceToneOracleTests` (reference DFT bins, onset scan, sweep frequency) and
 `ToneAnalyzerDeterminismTests` pass in both runs.
 
+```bash
+python3 scripts/check_reference_tone_goldens.py   # independent CPython port, 18 mono goldens
+```
+
 ## B. The same hashes in the iOS Simulator (AUD-016-S1)
 
 ```bash
@@ -52,5 +56,5 @@ and relaunch: the chooser, nothing playing.
 ## E. Device phase `{device}` (AUD-016-S8, final phase only)
 
 On D1, D2 and D3: each signal kind audible on the speaker and on headphones; status "Active audio"
-(silence: "Audio received — silent"); a phone call or Siri interruption and unplugging headphones
+(pulses and silence: "Audio received — silent"); a phone call or Siri interruption and unplugging headphones
 behave as for an imported track (AUD-014). Record results in `docs/test-reports/`.

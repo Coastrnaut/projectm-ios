@@ -23,7 +23,8 @@ Decisions are numbered `AUD-016-D1…` (the three-digit `R-nn` space belongs to 
   source yields the same operations on arm64 and x86_64.
 - **Verification**: golden SHA-256 hashes per fixture and variant, checked by the same test on the
   macOS host (`swift test`), with `-Xswiftc -DAUDIOCORE_NO_AVFAUDIO`, and on the iOS 27.2 Simulator
-  (`xcodebuild test`). Accuracy against Foundation's functions is checked separately (≤ 2e-15
+  (`xcodebuild test`), and an independent CPython port of the same formulas
+  (`scripts/check_reference_tone_goldens.py`) reproduces the mono goldens bit for bit. Accuracy against Foundation's functions is checked separately (≤ 2e-15
   absolute for sine on [0, 1) cycles, ≤ 4 ulp relative for exp and log on their tested ranges); the
   accuracy check is a tolerance test, never an equality test.
 - **Alternatives considered**: Foundation `sin` (rejected: not guaranteed identical across hosts);

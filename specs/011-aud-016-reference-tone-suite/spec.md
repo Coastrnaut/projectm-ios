@@ -174,6 +174,10 @@ resume, deliver a synthetic interruption, and check positions and delivered fram
 - The output rate differs from the fixture's rate: iOS converts; analysis then sees a converted
   signal, documented with a tolerance, not bit-exact.
 - VoiceOver: every Diagnostics row has a label (the signal's name) and a hint (what it plays).
+- A pulse train is mostly silence between 2 ms clicks: today's classifier (FR-011: −50 dBFS held for
+  250 ms) reports it as "Audio received — silent" although the clicks are audible. This is the
+  truthful reading of the existing rule, documented in the fixture catalog and in each pulse row's
+  summary; the rule is not changed by this feature.
 
 ## Requirements *(mandatory)*
 
@@ -298,7 +302,8 @@ resume, deliver a synthetic interruption, and check positions and delivered fram
 - **AUD-016-S7**: A user can start any test signal from the chooser in at most 2 taps after the
   chooser opens, and no test signal starts without a tap.
 - **AUD-016-S8** `{device}`: On D1, D2 and D3, each signal kind plays audibly on the built-in speaker
-  and on headphones, the status reaches "Active audio" (silence: "Audio received — silent"), and an
+  and on headphones, the status reaches "Active audio" for sines and sweeps and "Audio received —
+  silent" for pulse trains and silence (the classifier's FR-011 rule; see the fixture catalog), and an
   interruption and a route change behave as for an imported track (final device phase).
 
 ## Hand-off to ANL-001, ANL-002, ANL-004, ANL-005, ANL-016 and QA-001
