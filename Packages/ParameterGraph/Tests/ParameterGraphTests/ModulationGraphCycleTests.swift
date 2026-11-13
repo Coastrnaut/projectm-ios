@@ -123,4 +123,45 @@ final class ModulationGraphCycleTests: XCTestCase {
         XCTAssertEqual(graph.validate(in: try F.registry()), [])
         XCTAssertEqual(ModulationGraph().validate(in: try F.registry()), [], "the empty graph is accepted")
     }
+
+    // MOD-014-T05: a long chain needs no deep recursion; limits are enforced first.
+    static func chainID(_ i: Int) -> String {
+        let digits = String(i)
+        return "c.n" + String(repeating: "0", count: max(0, 4 - digits.count)) + digits
+    }
+
+    func testThousandNodeChainValidatesInChainOrder() throws {
+        // c.n0999 → c.n0998 → … → c.n0000: the evaluation order is the reverse of the ID order.
+        let ids = (0..<1_000).map { (i: Int) -> String in Self.chainID(i) }
+        let edges = (1..<1_000).map { (i: Int) -> ModulationEdge in F.edge(Self.chainID(i), Self.chainID(i - 1)) }
+        let graph = ModulationGraph(generators: F.generators(ids), edges: edges)
+        let validated = try ValidatedModulationGraph(graph, registry: try F.registry())
+        XCTAssertEqual(validated.evaluationOrder, ids.reversed().map { (id: String) -> ModulationNode in .generator(id) })
+
+        // Closing the chain makes one loop through all 1,000 nodes.
+        var closed = graph
+        closed.edges.append(F.edge(Self.chainID(0), Self.chainID(999)))
+        let issues = closed.validate(in: try F.registry())
+        XCTAssertEqual(issues.map(\.problem), [.cycle])
+        XCTAssertEqual(issues.first?.cycle?.edges.count, 1_000)
+        XCTAssertTrue(issues.first?.cycle?.path.hasPrefix("c.n0000 → c.n0999 → c.n0998") ?? false)
+    }
+
+    func testLimitsAreRejectedBeforeAnyOtherCheck() throws {
+        let registry = try F.registry()
+        let tooManyEdges = ModulationGraph(edges: Array(repeating: F.edge("x.unknown", "x.unknown"), count: 4_097))
+        let edgeIssues = tooManyEdges.validate(in: registry)
+        XCTAssertEqual(edgeIssues.map(\.problem), [.tooManyEdges])
+        XCTAssertTrue(edgeIssues.first?.message.contains("4096") ?? false, edgeIssues.first?.message ?? "")
+
+        let ids = (0..<1_025).map { (i: Int) -> String in Self.chainID(i) }
+        XCTAssertEqual(ModulationGraph(generators: F.generators(ids)).validate(in: registry).map(\.problem), [.tooManyNodes])
+        XCTAssertEqual(ModulationGraph(generators: F.generators(Array(ids.prefix(1_024)))).validate(in: registry), [],
+                       "exactly 1,024 nodes are accepted")
+        // Nodes named only by connections count too.
+        let named = (0..<1_025).map { (i: Int) -> ModulationEdge in
+            ModulationEdge(source: .audio(.band(i % 128)), target: F.gen(Self.chainID(i)))
+        }
+        XCTAssertEqual(ModulationGraph(edges: named).validate(in: registry).map(\.problem), [.tooManyNodes])
+    }
 }
