@@ -191,6 +191,7 @@ final class VideoRecordingAppTests: XCTestCase {
         XCTAssertEqual(recording.notice, "Nothing was recorded.")
         XCTAssertEqual(recording.probe, "failed: tooFewFrames")
         XCTAssertNil(recording.fileToMove)
+        XCTAssertNil(recording.offered)
     }
 
     /// REC-003-R13: leftovers from an earlier run are deleted when the coordinator starts.
@@ -204,8 +205,9 @@ final class VideoRecordingAppTests: XCTestCase {
         XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: directory.path), [])
     }
 
-    /// The mover's cancel deletes the temporary file (REC-003-R13).
-    func testMoverCancelDeletesTheFile() throws {
+    /// REC-012-R1, R8-R10: the finished recording is offered (nothing opens by itself); a cancelled
+    /// Save… keeps the file offered; Record refuses while it is offered; Discard deletes the file.
+    func testOfferedRecordingSurvivesAMoverCancelAndDiscardDeletesIt() throws {
         let source = try FakeRecordingSource(device: try device())
         let context = RecordingContextBox(.init(source: source, visualShown: true, outputLive: true, paused: false))
         let recording = VideoRecordingCoordinator(directory: tempDirectory("work"), debugDirectory: nil, checkInterval: nil) {
@@ -214,14 +216,48 @@ final class VideoRecordingAppTests: XCTestCase {
         recording.toggle()
         for _ in 0..<3 { try source.feed() }
         recording.toggle()
-        waitUntil("mover shown") { recording.showMover }
-        let file = try XCTUnwrap(recording.fileToMove)
-        XCTAssertTrue(FileManager.default.fileExists(atPath: file.path))
+        waitUntil("offered") { recording.offered != nil }
+        XCTAssertFalse(recording.showMover, "nothing opens by itself (REC-012-R1)")
+        let file = try XCTUnwrap(recording.offered)
         XCTAssertTrue(file.lastPathComponent.hasPrefix("Visualizer Recording "))
         XCTAssertEqual(file.pathExtension, "mp4")
+        recording.requestSave()
+        XCTAssertTrue(recording.showMover)
+        XCTAssertEqual(recording.fileToMove, file)
         recording.moverCancelled()
-        XCTAssertFalse(FileManager.default.fileExists(atPath: file.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: file.path), "a cancelled Save… keeps the file (REC-012-R8)")
+        XCTAssertEqual(recording.offered, file)
         XCTAssertNil(recording.fileToMove)
+        recording.requestSave()
+        recording.moverFinished(.failure(CocoaError(.userCancelled)))
+        XCTAssertEqual(recording.offered, file)
+        recording.toggle()
+        XCTAssertEqual(recording.state, .idle, "Record refuses while a recording is offered (REC-012-R10)")
+        XCTAssertEqual(recording.notice, "Save, share or discard the last recording first.")
+        XCTAssertEqual(recording.probe, "refused: resultOffered")
+        recording.discardOffered()
+        XCTAssertFalse(FileManager.default.fileExists(atPath: file.path), "Discard deletes the file (REC-012-R9)")
+        XCTAssertNil(recording.offered)
+    }
+
+    /// REC-012-R8: a successful Save… ends the offer (the mover moved the file).
+    func testSuccessfulSaveEndsTheOffer() throws {
+        let source = try FakeRecordingSource(device: try device())
+        let context = RecordingContextBox(.init(source: source, visualShown: true, outputLive: true, paused: false))
+        let recording = VideoRecordingCoordinator(directory: tempDirectory("work"), debugDirectory: nil, checkInterval: nil) {
+            context.value
+        }
+        recording.toggle()
+        for _ in 0..<3 { try source.feed() }
+        recording.toggle()
+        waitUntil("offered") { recording.offered != nil }
+        let file = try XCTUnwrap(recording.offered)
+        defer { try? FileManager.default.removeItem(at: file) }
+        recording.requestSave()
+        recording.moverFinished(.success(URL(fileURLWithPath: "/tmp/moved.mp4")))
+        XCTAssertNil(recording.offered)
+        XCTAssertFalse(recording.showMover)
+        XCTAssertEqual(recording.notice, "Recording saved.")
     }
 
     func testElapsedText() {
