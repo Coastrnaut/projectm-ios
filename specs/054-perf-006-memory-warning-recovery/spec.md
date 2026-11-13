@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Clarified 2026-11-13
+**Status**: Implemented 2026-11-13 (PERF-006-T01-T16 verified on the Mac: macOS host and iOS 27.2 simulator; T17 `{device}` open)
 
 **Input**: User description: "Implement PERF-006 (Memory warning recovery) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Evict caches and optional layers
