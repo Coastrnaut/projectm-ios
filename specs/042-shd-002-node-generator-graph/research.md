@@ -56,7 +56,7 @@ Filled in by SHD-002-T21.
 
 ## SHD-002-D4: Node set
 
-- **Decision**: 24 kinds in six groups (sources: coordinates, time, musicLevel; time: oscillate,
+- **Decision**: 26 kinds in seven groups (sources: coordinates, time, musicLevel; time: oscillate,
   spin, drift; transforms: scale, rotate, translate, polar; shapes and noise: circle, ring, box,
   noise; math: add, multiply, clamp, smoothstep, wave, component; color: gradient, palette, hsv,
   mixColor, scaleColor; plus output). Types scalar, point, color, phase; unconnected point inputs

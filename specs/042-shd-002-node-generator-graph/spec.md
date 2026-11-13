@@ -264,7 +264,7 @@ a kind outside the list is refused.
 - **SHD-002-S3**: 100% of cyclic fixtures are rejected, each with the expected readable path.
 - **SHD-002-S4**: Every validation problem kind in the table is rejected with exactly its documented
   message (one fixture per kind).
-- **SHD-002-S5**: 200 generated valid graphs (fixed seed) all compile or are refused only for speed,
+- **SHD-002-S5**: 200 generated valid graphs (fixed seed) all compile or are refused only for speed or the live-value limit,
   and every compiled one draws finite, valid pixels.
 - **SHD-002-S6**: Example graphs at defaults: 0 flash areas over 2 transitions per window and the
   guard's gain stays 1; strobe attempts are refused or stay within 6 transitions per window.

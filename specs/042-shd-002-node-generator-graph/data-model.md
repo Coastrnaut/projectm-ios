@@ -15,7 +15,7 @@
 | Field | Type | Rule |
 |---|---|---|
 | `id` | String | `[A-Za-z][A-Za-z0-9_-]{0,31}`, unique |
-| `kind` | String | one of the 24 kind names (raw values of `GraphNodeKind`) |
+| `kind` | String | one of the 26 kind names (raw values of `GraphNodeKind`) |
 | `inputs` | [String: String] | input name → source node ID; omitted when empty |
 | `values` | [String: GraphValue] | input or setting name → literal; omitted when empty |
 

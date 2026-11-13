@@ -8,7 +8,7 @@
 
 Add a `GeneratorGraph` target to `Packages/Compositor`. A graph is a Codable, versioned document
 (`GeneratorGraphDocument`: format `projectm-ios.generator-graph`, version 1, name, speed, nodes)
-whose nodes come from a closed set of 24 built-in kinds (`GraphNodeKind`) with typed inputs
+whose nodes come from a closed set of 26 built-in kinds (`GraphNodeKind`) with typed inputs
 (scalar, point, color, phase), settings with ranges, and one output type. `GeneratorGraphCompiler`
 validates the document (readable `GeneratorGraphIssue`s; limits 64 nodes, 128 connections, depth
 32, 16 live registers; cycles found with an iterative Tarjan pass and reported as paths) and
@@ -54,7 +54,7 @@ wall clock; deterministic output; no shader source built from documents (ADR-001
 tests within owner rule 7 (unit ≤ 10 s, suite < 1 min); CI's Xcode 26 type-checker (explicit
 closure types).
 
-**Scale/Scope**: 24 node kinds, 3 example graphs, about 1,800 lines of source and 1,200 of tests.
+**Scale/Scope**: 26 node kinds, 3 example graphs, about 1,800 lines of source and 1,200 of tests.
 
 ## Constitution Check
 

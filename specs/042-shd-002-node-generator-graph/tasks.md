@@ -18,7 +18,7 @@ this row.
 ## Phase 2: Foundational (blocks every story)
 
 - [ ] SHD-002-T02 [P] `GeneratorGraphDocument` (format `projectm-ios.generator-graph`, version 1, name, speed default 0.2, nodes), `GraphNode` (id, kind, inputs, values; empty maps omitted when encoding), `GraphValue` (number or array of numbers; Codable) in `Packages/Compositor/Sources/GeneratorGraph/GeneratorGraphDocument.swift`
-- [ ] SHD-002-T03 [P] `GraphPortType` (scalar, point, color, phase) and `GraphNodeKind` (the 24 kinds of data-model.md with each kind's inputs: name, type, range, default or required; settings: name, range, default, whole-number flag; output type; opcode) in `Packages/Compositor/Sources/GeneratorGraph/GraphNodeKind.swift`
+- [ ] SHD-002-T03 [P] `GraphPortType` (scalar, point, color, phase) and `GraphNodeKind` (the 26 kinds of data-model.md with each kind's inputs: name, type, range, default or required; settings: name, range, default, whole-number flag; output type; opcode) in `Packages/Compositor/Sources/GeneratorGraph/GraphNodeKind.swift`
 - [ ] SHD-002-T04 [P] `GeneratorGraphIssue` with every case of the contract table and its exact `message`, number formatting (whole numbers as integers), `GeneratorGraphValidationError` in `Packages/Compositor/Sources/GeneratorGraph/GeneratorGraphIssue.swift`
 
 ## Phase 3: User Story 1 - Describe a picture as connected nodes (P1) MVP
@@ -33,7 +33,7 @@ this row.
 - [ ] SHD-002-T09 [US1] The interpreter constant `GeneratorGraphShaders.source` (full-screen vertex, one fragment `graph_main` looping ≤ 64 instructions over 16 registers; output clamped 0…1, alpha 1, non-finite → 0) and `makeLibrary(device:)`, the module's only library compile, in `Packages/Compositor/Sources/GeneratorGraph/GeneratorGraphShaders.swift`
 - [ ] SHD-002-T10 [US1] `GeneratorGraphPipeline` (shared per device) and `GeneratorGraphLayer` (CMP-001 `LayerSource`, transparent fallback, plan buffer made in `prepare`, `render` advances motion and draws with `setFragmentBytes`; `speed` clamps to ±speedCap) in `Packages/Compositor/Sources/GeneratorGraph/GeneratorGraphLayer.swift`
 - [ ] SHD-002-T11 [P] [US1] Three example documents (Ember Drift, Hue Rings, Soft Orbs) in `Packages/Compositor/Sources/GeneratorGraph/GeneratorGraphExamples.swift`
-- [ ] SHD-002-T12 [P] [US1] Document tests: JSON round-trip of every example (encode, decode, equal; compile equal), decoding the contract's example JSON, kind catalog (24 kinds, unique opcodes, defaults inside ranges, required inputs only phase/color as documented) in `Packages/Compositor/Tests/GeneratorGraphTests/GraphDocumentTests.swift`
+- [ ] SHD-002-T12 [P] [US1] Document tests: JSON round-trip of every example (encode, decode, equal; compile equal), decoding the contract's example JSON, kind catalog (26 kinds, unique opcodes, defaults inside ranges, required inputs only phase/color as documented) in `Packages/Compositor/Tests/GeneratorGraphTests/GraphDocumentTests.swift`
 - [ ] SHD-002-T13 [US1] GPU rig and render tests: every example draws a non-blank, finite, opaque, premultiplied-valid 64 × 64 frame, also through the `Compositor`; 1 × 1 and 97 × 13 draw; bad bands still valid; golden signatures (frame 30 at 60 Hz, no music: mean, peak, pixels (32,32), (8,8), (56,16), (16,56); tolerance 0.02) in `Packages/Compositor/Tests/GeneratorGraphTests/GraphGPURig.swift` and `Packages/Compositor/Tests/GeneratorGraphTests/GraphRenderTests.swift`
 
 ## Phase 4: User Story 2 - Compilation is deterministic (P1)
