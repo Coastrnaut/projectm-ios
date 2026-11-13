@@ -24,6 +24,8 @@
 // * Video (MED-002-R8): `visual` may be `video`, stored like Photo. The chosen video's identifier is
 //   `settings.video.id` (VideoStore.idKey); the copy lives in Application Support/Videos. The playback
 //   position is never stored.
+// * Text (MED-009-R10, R11): `visual` may be `text`, stored like Photo. The message and its style are
+//   one versioned JSON value, key `settings.text.overlay` (TextOverlayStore.key).
 // * OSC receiver (OSC-001-R15): key `settings.osc.enabled` (Bool, absent → off, so a fresh install
 //   opens no listener) and `settings.osc.port` (Int, absent or outside 1024-65535 → 9000).
 // All keys are "user settings" in the FR-065 list of what may be stored (FR-123 adds the scope,
@@ -54,9 +56,12 @@ final class AppSettings {
     static let photoIDKey = PhotoStore.idKey
     /// MED-002: the stored video's identifier (written by VideoStore).
     static let videoIDKey = VideoStore.idKey
+    /// MED-009: the Text visual's message and style (written by TextOverlayStore).
+    static let textOverlayKey = TextOverlayStore.key
     static let allKeys = [performanceOverlayKey, reduceFlashingKey, presetScopeKey, visualKey, circularSpectrumBarsKey,
                           glowKey, glowIntensityKey, glowRadiusKey, glowThresholdKey,
-                          linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey, videoIDKey]
+                          linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey, videoIDKey,
+                          textOverlayKey]
     /// VIS-002-R4: the spacings offered for the linear spectrum.
     static let linearSpectrumSpacingChoices: [(title: String, value: Double)] = [("None", 0), ("Narrow", 0.2), ("Wide", 0.5)]
     static let defaultLinearSpectrumSpacing = 0.2
@@ -234,6 +239,8 @@ enum VisualChoice: String, CaseIterable, Sendable {
     case photo
     /// The imported video with the circular spectrum over it (MED-002; persisted).
     case video
+    /// The circular spectrum with the user's text over it (MED-009; persisted).
+    case text
 
     var title: String {
         switch self {
@@ -243,6 +250,7 @@ enum VisualChoice: String, CaseIterable, Sendable {
         case .camera: "Camera"
         case .photo: "Photo"
         case .video: "Video"
+        case .text: "Text"
         }
     }
 
@@ -260,4 +268,7 @@ enum VisualChoice: String, CaseIterable, Sendable {
 
     /// The video visual (MED-002).
     var usesVideo: Bool { self == .video }
+
+    /// The text visual (MED-009).
+    var usesText: Bool { self == .text }
 }

@@ -7,6 +7,7 @@ receiver (OSC-001-R18, in app versions that offer "OSC receiver" in Settings), a
 visual (CAM-001; `specs/033-cam-001-rear-camera-layer`, in app versions that offer it), and for the
 Photo visual (MED-001; `specs/044-med-001-import-photo-layer`, in app versions that offer it), and for
 the Video visual (MED-002; `specs/048-med-002-import-video-layer`, in app versions that offer it), and for
+the Text visual (MED-009; `specs/053-med-009-text-overlay`, in app versions that offer it), and for
 Save Frame (REC-001; `specs/055-rec-001-still-frame-capture`, in app versions that offer it). Applies to the projectM app for
 iPhone and iPad published by Robert Pancoast.
 
@@ -179,6 +180,10 @@ settings.
 And, only if you choose a video, one copy of its pictures without its sound or details, and a setting
 that says which copy is yours (see "A video you choose"). The Video visual choice is remembered with
 your other settings.
+
+And, only if you use the Text visual, the text you type for it and its style (font, size, colors,
+alignment, outline), kept with your other settings on your device, never sent anywhere, until you
+clear it, tap Reset Text or delete the app.
 
 And, only if you import presets: a copy of each preset file you imported, including files the app
 put in Quarantine because they failed a check, and a list of them with each file's name, size,

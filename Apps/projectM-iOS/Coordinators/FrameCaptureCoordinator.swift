@@ -284,6 +284,12 @@ extension VideoVisualHost: FrameCaptureSource {
     func cancelCapture() { compositor.cancelFrameCapture() }
 }
 
+/// MED-009's Text visual composites like Photo and Video (merged after REC-001 branched).
+extension TextVisualHost: FrameCaptureSource {
+    func captureFrame(_ handler: @escaping @MainActor (CapturedPixels?) -> Void) { compositor.captureFrame(on: handler) }
+    func cancelCapture() { compositor.cancelFrameCapture() }
+}
+
 /// projectM: the frame after the FX-019 post-pass, read before the swap (bottom-up RGBA).
 extension ANGLERenderer: FrameCaptureSource {
     func captureFrame(_ handler: @escaping @MainActor (CapturedPixels?) -> Void) {

@@ -75,13 +75,15 @@ final class SettingsUITests: XCTestCase {
         XCTAssertFalse(app.buttons["reduceFlashingFollowSystem"].exists)
         flip(toggle)
         XCTAssertTrue(isOn(toggle))
-        XCTAssertTrue(app.buttons["reduceFlashingFollowSystem"].appears(within: 3))
+        XCTAssertTrue(app.buttons["reduceFlashingFollowSystem"].appears(within: 3) || scrollTo(app.buttons["reduceFlashingFollowSystem"]),
+                      "below the toggle; off screen once MED-009 added the Text row")
 
         app.terminate()
         launch(reset: false)
         openSettings()
         XCTAssertTrue(app.switches["reduceFlashingToggle"].appears(within: 2) || scrollTo(app.switches["reduceFlashingToggle"]))
         XCTAssertTrue(isOn(app.switches["reduceFlashingToggle"]), "the choice persists")
+        XCTAssertTrue(scrollTo(app.buttons["reduceFlashingFollowSystem"]))
         app.buttons["reduceFlashingFollowSystem"].tap()
         XCTAssertFalse(isOn(app.switches["reduceFlashingToggle"]), "back to following Reduce Motion")
     }
@@ -134,8 +136,8 @@ final class SettingsUITests: XCTestCase {
     @discardableResult
     private func scrollTo(_ element: XCUIElement, down: Bool = false) -> Bool {
         let window = app.windows.firstMatch
-        let top = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3))
-        let bottom = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8))
+        let top = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.18))   // 70 % of the screen per drag: fewer drags as Settings grows
+        let bottom = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.88))
         // Scrolling down (back to the top) also waits until the row clears the navigation bar: a row
         // under the bar counts as hittable, but a tap there lands on the bar.
         let bar = app.navigationBars.firstMatch
