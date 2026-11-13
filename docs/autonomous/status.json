@@ -7,9 +7,10 @@
  "by_priority": {
   "P0": {
    "audited": 58,
-   "implementing": 2,
+   "implementing": 1,
    "integrated": 26,
-   "skipped_existing": 1
+   "skipped_existing": 1,
+   "unit_passed": 1
   },
   "P1": {
    "audited": 144,
@@ -24,9 +25,10 @@
  },
  "by_state": {
   "audited": 290,
-  "implementing": 2,
+  "implementing": 1,
   "integrated": 33,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -1506,12 +1508,12 @@
   "FX-019": {
    "attempts": 0,
    "branch": "feature/fx-019",
-   "branch_sha": null,
+   "branch_sha": "bc80d4775650339bf278d7d377ba8c4802689e75",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": "specs/022-fx-019-strobe-safety-envelope",
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "FX-020": {
    "attempts": 0,
@@ -3786,5 +3788,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T14:48:27Z"
+ "updated": "2026-11-13T14:57:42Z"
 }
