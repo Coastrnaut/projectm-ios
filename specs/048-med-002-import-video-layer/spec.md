@@ -34,6 +34,19 @@ The row's gap status is "Gap candidate". The audit confirms it.
 | Layers | CMP-001's compositor draws layers; the camera and the photo are picture layers under the circular spectrum, built through CMP-002's `LayerStack`. | No layer shows moving pictures from a file, so nothing paces frames to a file's own timeline. |
 | App | Settings › Visual offers projectM, Circular Spectrum, Linear Spectrum, Camera and Photo. | No video visual, no stored video, no remove action. |
 
+## Clarifications
+
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the conservative, local-first option.
+
+- Q: Should the app keep the picked video file as it is (and never read its metadata), or store a new copy without metadata? → A: A new copy without metadata, made without re-compressing: the video pictures are copied sample for sample (a "remux") into a new movie file that has only the video track and its timing, so location, creation date, device and any other metadata, and the soundtrack, never reach the app's storage. Re-encoding was rejected (minutes of work and battery for a long 4K file, and a quality loss); keeping the original was rejected (its location would sit in the container and in backups even if never read). If the copy cannot be written this way the import fails with "couldn't be saved"; nothing else is stored.
+- Q: What happens at the end of the video: loop from the start, or hold the last picture? → A: Loop the whole video, with the playback timeline continuing so there is no gap and no frozen picture (a background video is expected to keep moving). Holding the last picture was rejected (the layer would look broken after a short clip). MED-003 replaces "the whole video" with a saved region.
+- Q: Is the imported video's own sound played or analysed? → A: Neither, and it is not stored: the soundtrack is dropped when the copy is made. The visualizer's audio source stays the viewer's chosen source (music app, file, microphone). Mixing the video's sound into the source belongs to a later, separate decision.
+- Q: Which videos are accepted? → A: H.264 or HEVC video, a picture at most 4096 pixels on its longest side (4K UHD and DCI fit; 8K is refused), a nominal frame rate of at most 60 frames per second (59.94 fits; 120 and 240 fps slow-motion masters are refused), and a picked file of at most 500 MB. ProRes, AV1 and other codecs are refused as "not supported". MED-014 may tighten or add checks behind the same decoder boundary.
+- Q: After a relaunch, does the video continue where it was or start from the beginning? → A: From the beginning. Only the chosen video is remembered (like the photo); the playback position is not stored, so nothing about viewing is kept. Within a session a pause or the background continues from the picture it stopped at (R9, R13).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Choose a video and see it play behind the music (Priority: P1) — MVP
@@ -104,7 +117,8 @@ video". Unit tests check the store (copy, replace, remove, invalid identifiers).
 
 **Acceptance Scenarios**:
 
-1. **Given** an imported video, **When** the app is opened again, **Then** the same stored copy plays.
+1. **Given** an imported video, **When** the app is opened again, **Then** the same stored copy plays,
+   from its beginning (the playback position is not stored).
 2. **Given** an imported video, **When** the viewer taps Remove Video, **Then** the copy no longer
    exists and the next frame shows no video.
 
@@ -186,7 +200,7 @@ the importer and the player and expect typed errors and the transparent fallback
 - **MED-002-R7**: "Remove Video" MUST delete the stored copy and the identifier; the video layer then
   shows nothing from the next frame on.
 - **MED-002-R8**: The Video visual choice MUST persist across launches; after a relaunch the stored
-  copy MUST play without any new choice.
+  copy MUST play from its beginning without any new choice. The playback position MUST NOT be stored.
 - **MED-002-R9**: Playback MUST follow the video's own timeline at its intended rate (1×), driven by
   the display's presentation time: at playback time t the layer shows the latest picture whose
   timestamp is at or before t, never a later one. Playback time advances by the display time between
