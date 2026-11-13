@@ -126,6 +126,13 @@ public struct RenderRetryState: Sendable, Equatable {
         return true
     }
 
+    /// True for work encoded before the running retry began: its result decides nothing (a GPU error
+    /// from a frame submitted during the back-off is not a failed retry).
+    public func isStale(encodedAtTick tick: UInt64) -> Bool {
+        if case .retrying(let since) = phase { return tick < since }
+        return false
+    }
+
     /// PERF-014-R6: a fresh budget; a faulted part is retried from `tick` at once.
     public mutating func reset(atTick tick: UInt64) {
         retriesUsed = 0
@@ -258,6 +265,16 @@ extension RenderFaultReason {
         switch self {
         case .gpuTimeout, .gpuPageFault, .gpuNotPermitted, .gpuOutOfMemory, .gpuError: true
         default: false
+        }
+    }
+}
+
+extension LayerSourceError {
+    /// PERF-014-D4: errors that count as render faults. "Not ready" and "frame skipped" are routine.
+    public var isRenderFault: Bool {
+        switch self {
+        case .notReady, .frameSkipped: false
+        case .unsupportedPicture, .resourceUnavailable, .engineFailure: true
         }
     }
 }

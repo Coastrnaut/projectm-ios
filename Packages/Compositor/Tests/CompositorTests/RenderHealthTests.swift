@@ -47,6 +47,19 @@ final class RenderHealthTests: XCTestCase {
         XCTAssertFalse(state.succeeded(encodedAtTick: 41), "healthy work is not a recovery")
     }
 
+    func testWorkEncodedBeforeARetryIsStale() {
+        var state = RenderRetryState()
+        state.fault(atTick: 0, policy: policy)
+        XCTAssertFalse(state.isStale(encodedAtTick: 5), "only a running retry makes older work stale")
+        state.beginRetry(atTick: 30)
+        XCTAssertTrue(state.isStale(encodedAtTick: 29))
+        XCTAssertFalse(state.isStale(encodedAtTick: 30))
+        XCTAssertFalse(LayerSourceError.notReady.isRenderFault)
+        XCTAssertFalse(LayerSourceError.frameSkipped.isRenderFault)
+        XCTAssertTrue(LayerSourceError.engineFailure("x").isRenderFault)
+        XCTAssertTrue(LayerSourceError.resourceUnavailable("x").isRenderFault)
+    }
+
     func testResetRetriesAtOnceWithAFreshBudget() {
         var state = retryTicks(until: 500).state
         XCTAssertTrue(state.hasGivenUp)

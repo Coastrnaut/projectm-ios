@@ -37,6 +37,16 @@
 // guard's gain) a second time into a private `rgba16Float` texture and blits it into a shared buffer;
 // the handler gets linear premultiplied half floats when the command buffer completes. Frames
 // without a request are unchanged; the capture's texture and buffer are one-offs, not pooled.
+//
+// PERF-014 (contracts/render-health.md in specs/057): every call with a usable output is a frame tick.
+// A layer whose prepare fails, whose pictures cannot be created or whose render throws a serious
+// error (not "not ready" or "frame skipped") is a counted fault: it shows its fallback and is touched
+// again only at its back-off ticks (`recoveryPolicy`: 30, 60, 120, 240), then stays on its fallback
+// until `resetRenderHealth()`. The visual's own part covers GPU errors (the last three command
+// buffers' `status`, polled at the start of each tick: no handler, no wait, no allocation) and a
+// composite texture that cannot be created; while it backs off no layer renders and the frame is
+// black. `health` is the visual's record. DEBUG builds can arm `faultInjection`, which makes creation
+// or the status check fail (no faulty shader exists).
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import FrameCapture
 import Metal
@@ -76,6 +86,9 @@ public final class Compositor {
         var opacity: LayerOpacityAnimator
         /// CMP-005: the placement shown from the next frame.
         var transform: LayerTransform
+        /// PERF-014: the layer's back-off, and the render error shown while it holds.
+        var retry = RenderRetryState()
+        var heldError: LayerSourceError?
 
         init(id: LayerInstanceID?, layer: any LayerSource, settings: LayerCompositeSettings) {
             self.id = id
@@ -112,6 +125,26 @@ public final class Compositor {
     public private(set) var appliedStack: LayerStack?
     /// REC-001: the handler waiting for the next frame.
     private var pendingCapture: (@Sendable (CapturedPixels?) -> Void)?
+
+    /// PERF-014: the visual's render health record (PERF-014-R2).
+    public private(set) var health = RenderHealth()
+    /// PERF-014-R5: how often and how far apart failing parts are tried again.
+    public var recoveryPolicy = RenderRecoveryPolicy.standard
+    /// PERF-014-D1: `composite` calls with a usable output (the time base of every back-off).
+    public private(set) var frameTicks: UInt64 = 0
+    /// PERF-014: the visual's own part (GPU errors, a missing composite texture).
+    private var visualRetry = RenderRetryState()
+    /// PERF-014-D2: the last command buffers encoded and their tick; a fixed ring read on this thread.
+    private struct WatchedBuffer {
+        let buffer: MTLCommandBuffer
+        let tick: UInt64
+    }
+    private var watched: [WatchedBuffer?] = [nil, nil, nil]
+    private var watchCursor = 0
+    #if DEBUG
+    /// PERF-014-R15: faults to force (DEBUG builds only).
+    public var faultInjection = RenderFaultInjection()
+    #endif
 
     /// An empty compositor; give it layers with `apply(_:makeLayer:)` (CMP-002).
     /// PERF-004: `texturePool` nil gives the compositor a private pool.
@@ -216,10 +249,21 @@ public final class Compositor {
     }
 
     /// Prepares every unavailable layer again at the current size (it reappears from the next frame
-    /// if its `prepare` now succeeds).
-    public func retryUnavailableLayers() {
-        guard let descriptor else { return }
-        for i in records.indices where !records[i].slots.isAvailable { prepareLayer(i, descriptor) }
+    /// if its `prepare` now succeeds). PERF-014: the same as `resetRenderHealth()`.
+    public func retryUnavailableLayers() { resetRenderHealth() }
+
+    /// PERF-014-R6: a fresh retry budget for every part; failed layers are prepared again now (at the
+    /// current size), a held layer or GPU back-off runs again from the next frame. The counters are
+    /// kept. Call between frames (the frame loop starting, the user changing or resuming the visual).
+    public func resetRenderHealth() {
+        let next = frameTicks &+ 1   // work from the next tick decides the retry
+        visualRetry.reset(atTick: next)
+        for i in records.indices {
+            records[i].retry.reset(atTick: next)
+            records[i].heldError = nil
+            if let descriptor, !records[i].slots.isAvailable { rebuildLayer(i, descriptor) }
+        }
+        updateHealthState()
     }
 
     /// The flash guard's gain of the last completed frame (read it after the command buffer completed;
@@ -236,8 +280,18 @@ public final class Compositor {
                           contentScale: Double, reduceFlashing: Bool, audio: LayerAudioContext) -> Bool {
         guard let size = LayerPictureDescriptor(width: output.width, height: output.height),
               let outputPipeline = outputPipeline(for: output.pixelFormat) else { return false }
+        frameTicks &+= 1   // PERF-014-D1
+        let tick = frameTicks
+        defer { updateHealthState() }
+        observeFinishedCommandBuffers()
+        if visualRetry.isRetryDue(atTick: tick) { visualRetry.beginRetry(atTick: tick) }
         if size != descriptor {
-            guard allocate(size) else { return false }
+            // PERF-014: a composite that could not be created is tried again only at its retry.
+            if composite == nil, visualRetry.isHolding { return false }
+            guard allocate(size) else {
+                recordVisualFault(.missingTexture)
+                return false
+            }
         }
         guard let composite else { return false }
         texturePool.tick()
@@ -245,21 +299,43 @@ public final class Compositor {
         let frame = clock.next(presentationTimeNanoseconds: presentationTimeNanoseconds, outputWidth: size.width,
                                outputHeight: size.height, contentScale: contentScale, reduceFlashing: reduceFlashing)
 
+        // PERF-014-D3: while the visual's own part backs off, no layer renders (a black frame).
+        let visualHolds = visualRetry.isHolding
         for i in records.indices {
             records[i].shown = -1
             records[i].opacity.advance(by: frame.frameDuration)
+            if visualHolds {
+                records[i].outcome = .notRendered
+                continue
+            }
+            if records[i].retry.isRetryDue(atTick: tick) {   // PERF-014-R3, R4: only at back-off ticks
+                records[i].retry.beginRetry(atTick: tick)
+                records[i].heldError = nil
+                if let descriptor, !records[i].slots.isAvailable { rebuildLayer(i, descriptor) }
+            }
             guard records[i].slots.isAvailable else {
                 records[i].outcome = .unavailable(records[i].prepareError ?? .notReady)
                 continue
             }
+            if records[i].retry.isHolding {   // a held render failure: its fallback, no render call
+                showFallback(i, records[i].heldError ?? .notReady)
+                continue
+            }
             let target = records[i].pictures[records[i].slots.renderIndex]
-            do {
+            do throws(LayerSourceError) {
+                #if DEBUG
+                if faultInjection.failingRender.contains(records[i].layer.layerName) { throw .engineFailure("injected") }
+                #endif
                 try records[i].layer.render(into: target, commandBuffer: commandBuffer, frame: frame, audio: audio)
                 records[i].shown = records[i].slots.frameSucceeded()
                 records[i].outcome = .rendered
+                if records[i].retry.succeeded(encodedAtTick: tick) { health.recordRecovery() }
             } catch {
-                if let good = records[i].slots.frameFailed() { records[i].shown = good }
-                records[i].outcome = records[i].slots.fallback == .lastGoodFrame ? .fallbackLastGood(error) : .fallbackTransparent(error)
+                showFallback(i, error)
+                if error.isRenderFault {   // PERF-014-D4: routine errors keep CMP-001's per-frame behaviour
+                    records[i].heldError = error
+                    recordLayerFault(i, .layerRenderFailed)
+                }
             }
         }
 
@@ -308,7 +384,70 @@ public final class Compositor {
             pendingCapture = nil
             encodeCapture(composite: composite, size: size, commandBuffer: commandBuffer, handler: handler)
         }
+        watch(commandBuffer, tick: tick)
         return true
+    }
+
+    // MARK: - Render health (PERF-014)
+
+    private func showFallback(_ i: Int, _ error: LayerSourceError) {
+        if let good = records[i].slots.frameFailed() { records[i].shown = good }
+        records[i].outcome = records[i].slots.fallback == .lastGoodFrame ? .fallbackLastGood(error) : .fallbackTransparent(error)
+    }
+
+    private func recordLayerFault(_ i: Int, _ reason: RenderFaultReason) {
+        if records[i].retry.fault(atTick: frameTicks, policy: recoveryPolicy) { health.recordFault(reason, atTick: frameTicks) }
+    }
+
+    private func recordVisualFault(_ reason: RenderFaultReason) {
+        if visualRetry.fault(atTick: frameTicks, policy: recoveryPolicy) { health.recordFault(reason, atTick: frameTicks) }
+    }
+
+    private func updateHealthState() {
+        health.setState(RenderHealth.state(layers: records.lazy.map { (r: LayerRecord) -> RenderRetryState in r.retry },
+                                           visual: visualRetry))
+    }
+
+    /// Remembers this tick's command buffer: a free slot, else the oldest (dropped unobserved).
+    private func watch(_ buffer: MTLCommandBuffer, tick: UInt64) {
+        var slot = watched.firstIndex { (entry: WatchedBuffer?) -> Bool in entry == nil }
+        if slot == nil {
+            slot = watchCursor
+            watchCursor = (watchCursor + 1) % watched.count
+        }
+        if let slot { watched[slot] = WatchedBuffer(buffer: buffer, tick: tick) }
+    }
+
+    /// PERF-014-D2: reads the finished command buffers (completed or failed) and forgets them.
+    private func observeFinishedCommandBuffers() {
+        for k in watched.indices {
+            guard let entry = watched[k] else { continue }
+            let status = entry.buffer.status
+            guard status == .completed || status == .error else { continue }
+            watched[k] = nil
+            var reason: RenderFaultReason? = status == .error ? Self.renderFaultReason(for: entry.buffer.error) : nil
+            #if DEBUG
+            if let injected = faultInjection.gpuFault { reason = injected }
+            #endif
+            if visualRetry.isStale(encodedAtTick: entry.tick) { continue }   // encoded before the running retry
+            if let reason {
+                recordVisualFault(reason)
+            } else if visualRetry.succeeded(encodedAtTick: entry.tick) {
+                health.recordRecovery()
+            }
+        }
+    }
+
+    /// `MTLCommandBufferError` codes → reasons (PERF-014-R1).
+    public static func renderFaultReason(for error: (any Error)?) -> RenderFaultReason {
+        guard let error = error as? MTLCommandBufferError else { return .gpuError }
+        switch error.code {
+        case .timeout: return .gpuTimeout
+        case .pageFault: return .gpuPageFault
+        case .notPermitted: return .gpuNotPermitted
+        case .outOfMemory: return .gpuOutOfMemory
+        default: return .gpuError
+        }
     }
 
     // MARK: - Frame capture (REC-001)
@@ -401,11 +540,19 @@ public final class Compositor {
         let d = size.textureDescriptor()
         if let composite { texturePool.recycle(composite, after: lastCommandBuffer) }   // PERF-004
         composite = nil
-        guard let newComposite = texturePool.makeTexture(descriptor: d) else { return false }
+        var starved = false
+        #if DEBUG
+        starved = faultInjection.missingPictures.contains("composite")
+        #endif
+        guard !starved, let newComposite = texturePool.makeTexture(descriptor: d) else { return false }
         newComposite.label = "CMP-001 composite"
         composite = newComposite
         pictureAllocations += 1
-        for i in records.indices { allocatePictures(i, size) }
+        for i in records.indices {
+            records[i].retry.reset(atTick: frameTicks)   // PERF-014-R6: a new size is a fresh start
+            records[i].heldError = nil
+            allocatePictures(i, size)
+        }
         descriptor = size
         return true
     }
@@ -417,8 +564,12 @@ public final class Compositor {
         texturePool.recycle(records[i].pictures, after: lastCommandBuffer)   // PERF-004: the old size's pictures
         records[i].pictures = []
         var created: [MTLTexture] = []
+        var starved = false
+        #if DEBUG
+        starved = faultInjection.missingPictures.contains(records[i].layer.layerName)
+        #endif
         for k in 0..<records[i].slots.pictureCount {
-            guard let t = texturePool.makeTexture(descriptor: d) else { break }
+            guard !starved, let t = texturePool.makeTexture(descriptor: d) else { break }
             t.label = "CMP-001 \(records[i].layer.layerName) picture \(k)"
             created.append(t)
             pictureAllocations += 1
@@ -429,19 +580,35 @@ public final class Compositor {
         } else {
             records[i].slots.prepared(ok: false)
             records[i].prepareError = .resourceUnavailable("layer picture \(size.width)×\(size.height)")
+            recordLayerFault(i, .missingTexture)
+        }
+    }
+
+    /// PERF-014: a failed layer's retry: its pictures again if they are missing, else `prepare` again.
+    private func rebuildLayer(_ i: Int, _ size: LayerPictureDescriptor) {
+        if records[i].pictures.count == records[i].slots.pictureCount {
+            prepareLayer(i, size)
+        } else {
+            allocatePictures(i, size)
         }
     }
 
     private func prepareLayer(_ i: Int, _ size: LayerPictureDescriptor) {
         guard records[i].pictures.count == records[i].slots.pictureCount else { return }
         layerPreparations += 1
-        do {
+        do throws(LayerSourceError) {
+            #if DEBUG
+            if faultInjection.failingPrepare.contains(records[i].layer.layerName) {
+                throw .resourceUnavailable("injected pipeline failure")
+            }
+            #endif
             try records[i].layer.prepare(picture: size, device: device)
             records[i].slots.prepared(ok: true)
             records[i].prepareError = nil
         } catch {
             records[i].slots.prepared(ok: false)
             records[i].prepareError = error
+            recordLayerFault(i, .layerPrepareFailed)
         }
     }
 
