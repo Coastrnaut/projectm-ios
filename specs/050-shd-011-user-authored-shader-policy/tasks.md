@@ -30,8 +30,8 @@ roadmap ID (`SHD-011-T01…`). No `{device}` task: no import UI in this row (Cla
 
 **Goal**: static rules of contracts/compliance-rules.md. **Independent test**: script tests both ways; repository passes.
 
-- [ ] SHD-011-T10 [US2] Add `strip_strings`, the five SHD-011 rules and `METAL_SOURCE_ALLOWED` (eight files of research SHD-011-D4) to `scripts/check_compliance.py`; update its docstring
-- [ ] SHD-011-T11 [US2] Script tests `ComplianceCodeExecutionTests`: one violating and one allowed example per rule (including `.system(` and `func system(` allowed, literal `NSPredicate(format:` allowed, forbidden words inside string literals allowed, `makeLibrary(source:` allowed only in an allowlisted path), the allowlist files exist, and the repository passes, in `scripts/test_scripts.py`; extend `scripts/fixtures/Violations.swift.txt` with one SHD-011 line per rule
+- [X] SHD-011-T10 [US2] Add `strip_strings`, the five SHD-011 rules and `METAL_SOURCE_ALLOWED` (eight files of research SHD-011-D4) to `scripts/check_compliance.py`; update its docstring — Verified 2026-11-13: `python3 scripts/check_compliance.py` → OK on the repository (14 literal `NSPredicate(format:` uses in UI tests stay allowed; the eight allowlisted files pass)
+- [X] SHD-011-T11 [US2] Script tests `ComplianceCodeExecutionTests`: one violating and one allowed example per rule (including `.system(` and `func system(` allowed, literal `NSPredicate(format:` allowed, forbidden words inside string literals allowed, `makeLibrary(source:` allowed only in an allowlisted path), the allowlist files exist, and the repository passes, in `scripts/test_scripts.py`; extend `scripts/fixtures/Violations.swift.txt` with one SHD-011 line per rule — Verified 2026-11-13: `python3 scripts/test_scripts.py` → 111 tests OK in 7.2 s (ComplianceCodeExecutionTests, 8 tests: each rule fires and stays quiet; every allowlisted file still compiles source; fixture lines flag all five rules)
 
 ## Phase 5: User Story 3 - The policy is written down (P2)
 
