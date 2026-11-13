@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T17:38:18Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T17:41:15Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,19 +9,20 @@
 
 | State | Features |
 |---|---|
-| audited | 269 |
+| audited | 268 |
 | implementing | 2 |
+| unit_passed | 1 |
 | integrated | 54 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 43 | 2 | 41 | 1 |
-| P1 | 139 | 0 | 12 | 0 |
-| P2 | 78 | 0 | 1 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 43 | 1 | 1 | 41 | 1 |
+| P1 | 139 | 0 | 0 | 12 | 0 |
+| P2 | 77 | 1 | 0 | 1 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -311,6 +312,12 @@ None.
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `85425ca7d2ee` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-002/20261113T122331/sim-test_ANGLERendering.log`)
 - `swift test --package-path Packages/Compositor`: pass at `85425ca7d2ee` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-002/20261113T122331/swift-test_Compositor.log`)
 - `post-merge: Compositor xcodebuild test on iPhone 17 sim (CompositorTests 79 incl. red/blue reorder acceptance, ProceduralMaterials 31); projectM-iOSTests 184, CameraUITests 2, CameraPrivacyStatusUITests 1`: pass at `4c8340e68244` (log `.autonomous/logs/integration/cmp-002/compositor-sim.log`)
+
+### CMP-003 Opacity per layer (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `e105dc91fb50` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-003/20261113T124019/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `e105dc91fb50` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-003/20261113T124019/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `e105dc91fb50` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-003/20261113T124019/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `e105dc91fb50` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-003/20261113T124019/swift-test_Compositor.log`)
 
 ### FX-001 Bloom (integrated)
 - `python3 scripts/check_compliance.py`: pass at `94f4b3a6b7c3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-001/20261113T090348/compliance.log`)
