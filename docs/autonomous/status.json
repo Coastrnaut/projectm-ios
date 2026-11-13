@@ -7,9 +7,10 @@
  "by_priority": {
   "P0": {
    "audited": 54,
-   "implementing": 3,
+   "implementing": 2,
    "integrated": 29,
-   "skipped_existing": 1
+   "skipped_existing": 1,
+   "unit_passed": 1
   },
   "P1": {
    "audited": 142,
@@ -24,9 +25,10 @@
  },
  "by_state": {
   "audited": 284,
-  "implementing": 3,
+  "implementing": 2,
   "integrated": 38,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -3191,12 +3193,12 @@
   "SHOW-011": {
    "attempts": 0,
    "branch": "feature/show-011",
-   "branch_sha": null,
+   "branch_sha": "725551081f5cb51dc2b299fe38071c751e9ab1d5",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": "specs/027-show-011-tap-tempo",
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "SHOW-012": {
    "attempts": 0,
@@ -3806,5 +3808,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T15:40:16Z"
+ "updated": "2026-11-13T15:45:33Z"
 }
