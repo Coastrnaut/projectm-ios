@@ -7,9 +7,8 @@
  "by_priority": {
   "P0": {
    "audited": 62,
-   "integrated": 23,
-   "skipped_existing": 1,
-   "unit_passed": 1
+   "integrated": 24,
+   "skipped_existing": 1
   },
   "P1": {
    "audited": 146,
@@ -26,9 +25,8 @@
  "by_state": {
   "audited": 296,
   "implementing": 1,
-  "integrated": 27,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "integrated": 28,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -48,7 +46,6 @@
    "ACC-010",
    "ACC-011",
    "ACC-012",
-   "ANL-002",
    "ANL-003",
    "ANL-004",
    "ANL-005",
@@ -337,7 +334,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "298 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
+   "297 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
   ]
  },
  "features": {
@@ -476,10 +473,10 @@
    "branch": "feature/anl-002",
    "branch_sha": "bf549085819bea27e8c7b5051594af81acd4a702",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "493269c774625de485c726c55aa7a1b7b8f6eb74",
    "priority": "P0",
    "spec_dir": "specs/016-anl-002-log-frequency-bands",
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "ANL-003": {
    "attempts": 0,
@@ -3609,6 +3606,11 @@
    "sha": "df16f2b90397a087cda6aa8fccb2d831e94e1d78"
   },
   {
+   "branch": "feature/anl-002",
+   "id": "ANL-002",
+   "sha": "493269c774625de485c726c55aa7a1b7b8f6eb74"
+  },
+  {
    "branch": "feature/aud-001",
    "id": "AUD-001",
    "sha": "a2813ab3fa4f2cd2b8fb8597ca8f7b87943a9dea"
@@ -3764,5 +3766,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T12:16:23Z"
+ "updated": "2026-11-13T12:16:24Z"
 }
