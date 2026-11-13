@@ -12,7 +12,7 @@ frame loop and a pure-Swift trigger stabilizer. No new package, target or depend
 
 1. **Package `Packages/VisualGenerators`**:
    - Target `VisualGenerators` (pure Swift parts build on Linux):
-     - `WaveformTrigger` — the stabilizer (research VIS-003-D2): mean level, hysteresis, fractional
+     - `WaveformTrigger` — the stabilizer (research VIS-003-D2): midpoint level, hysteresis, fractional
        rising crossings, interval spread test, 64-point match against the previous window, free-run.
        All storage (crossings, scores, reference) allocated in `init`.
      - `WaveformFrameBuffer` — wait-free triple buffer of 4,096-sample histories (as

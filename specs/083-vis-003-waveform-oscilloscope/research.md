@@ -19,15 +19,17 @@
 ## VIS-003-D2: Trigger stabilization
 
 - **Decision**: per frame, over the span the trigger may use (history positions 0 … H − W, plus the
-  window): level = mean, range = max − min. Silence if range < 0.002. Hysteresis h = 0.05 × range:
+  window): level = (max + min)/2 (not the mean: see the spec's Clarifications), range = max − min. Silence if range < 0.002. Hysteresis h = 0.05 × range:
   scan the candidate span, arm when x < level − h, and on the first sample ≥ level after arming
   record a crossing at the interpolated fraction, disarm; keep ≤ 32 crossings (the newest ones win
-  when more occur; the scan runs from the oldest sample and keeps the newest 32 in a ring). With ≥ 3
-  crossings, intervals' standard deviation / mean > 0.35 → aperiodic. Choose: if a 64-point reference
+  when more occur; the scan runs from the oldest sample and keeps the newest 32 in a ring). Periodicity: for
+  k = 1…4 (needing k + 2 crossings), the intervals c[i + k] − c[i] must have standard deviation ≤ 0.1 ×
+  mean for some k, else aperiodic (white noise fails every k; a wave with k crossings per period passes
+  at that k); the period is the mean interval of the smallest passing k. Choose: if a 64-point reference
   of the previous window exists, score each crossing by SSD between the reference and the 64-point
   resample of its window and take the newest within 1.05 × best + 1e-4; else the newest. Store the
   chosen window's 64 points as the next reference. Free-run: start = H − W, reference cleared.
-- **Rationale**: a rising crossing of the mean with hysteresis is the classic scope trigger and
+- **Rationale**: a rising crossing of the range midpoint with hysteresis is the classic scope trigger and
   handles DC offsets and moderate noise; the match criterion makes the choice among same-phase
   crossings of complex periodic waves consistent frame to frame (the "previous phase" requirement)
   in O(candidates × 64). For pure periodic signals every crossing has the same phase, so the newest
@@ -37,10 +39,10 @@
 
 ## VIS-003-D3: Drawing the line
 
-- **Decision**: P = min(W, 1,024) points; segment quads extended by T/2 at both ends (square caps),
+- **Decision**: P = min(W, 1,024) points; segment rectangles with butt ends plus a bevel triangle on the outer side of each turn,
   flat color per segment from the palette by index; drawn by the shared `FlatShapePass`; each
-  segment is one `FlashRegionLayout` region, so the envelope's 17-area levels come from the shared
-  `SpectrumFlashAreas` (overlapping caps double-count a few pixels: conservative).
+  rectangle and each bevel is one `FlashRegionLayout` region, so the envelope's 17-area levels come from the shared
+  `SpectrumFlashAreas` (regions overlapping on a turn's inner side are counted twice: conservative).
 - **Rationale**: reuses the pass, the area model, the glow and the limiter unchanged; Metal has no
   wide lines.
 - **Alternatives**: a new shader with a geometry expansion in the vertex stage (new shader code, and

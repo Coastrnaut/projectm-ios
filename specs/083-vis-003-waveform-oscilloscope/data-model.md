@@ -35,8 +35,8 @@ sample first, newest last; before 4,096 samples arrived the leading part is 0.
 ## OscilloscopeLayout (state, fixed storage)
 
 - `points`: ≤ 1,024 (x, y) pixel positions.
-- `segments`: ≤ 1,023 quads (4 corners each) and their colors.
-- The FX-019 area model: `SpectrumFlashAreas(regionCapacity: 1,023)`.
+- `segments`: ≤ 1,023 rectangles (4 corners each) and ≤ 1,022 bevel triangles, and their colors.
+- The FX-019 area model: `SpectrumFlashAreas(regionCapacity: 2,045)` (rectangles, then bevels).
 
 ## User settings
 
