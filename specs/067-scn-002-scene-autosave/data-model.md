@@ -39,7 +39,7 @@ From the restored document (or empty): `id`, `name`, `extra`, `layers` (all, wit
 ## SceneAutosaveEvent (app)
 
 `mainUnreadable(String)`, `backupUnreadable(String)`, `restoredFromBackup`, `nothingRestored`,
-`writeFailed(String)`, `droppedLayers(Int)`, `renumberedLayer(UInt64)`.
+`setAsideNewer`, `writeFailed(String)`, `droppedLayers(Int)`, `renumberedLayer(UInt64)`.
 
 ## Revisions
 

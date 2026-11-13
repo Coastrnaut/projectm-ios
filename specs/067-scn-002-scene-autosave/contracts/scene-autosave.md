@@ -3,7 +3,8 @@
 ## A1 Files
 
 `Library/Application Support/Scenes/`: `current.scene` (main), `current.scene.bak` (backup, the
-previous committed scene), `current.scene.tmp` (only during a save). Contents: SCN-001 canonical bytes
+previous committed scene), `current.scene.tmp` (only during a save), `current.scene.newer` (a newer-version file set aside once,
+never written or read). Contents: SCN-001 canonical bytes
 (`SceneDocument.encoded()`), format `projectm-ios.scene`, version 1.
 
 ## A2 Save sequence (each step may fail; failure throws, removes the temporary file, keeps the rest)
@@ -23,7 +24,8 @@ every step.
 
 Remove `current.scene.tmp`; read main (≤ 1 MiB + 1 byte), `SceneDocument.decode`, `liveState(registry:
 VisualParameterCatalog registry + material catalog, assets: stored photo/video)`; on any refusal try the
-backup; else nothing. Events per D5. Loading never throws and never presents UI.
+backup; else nothing. A `newerVersion` refusal moves that file to `current.scene.newer` (unless it
+exists). Events per D5. Loading never throws and never presents UI.
 
 ## A4 Triggers
 

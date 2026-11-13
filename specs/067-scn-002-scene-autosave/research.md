@@ -63,9 +63,9 @@ Decided by Claude under the owner's standing approval (owner rule 4), conservati
   handle, at most `SceneLimits.maximumBytes + 1` bytes (no attribute or timestamp reads); decode; then
   `liveState(registry:assets:)` (errors refuse; warnings kept). If the main file fails, try the backup;
   if that fails, restore nothing. Events: `mainUnreadable(reason)`, `restoredFromBackup`,
-  `backupUnreadable(reason)`, `nothingRestored`. A newer-version file is refused like a damaged one and
-  never written over before the user's next edit (then it becomes the backup only if it was good, which
-  it was not: the backup is left alone).
+  `backupUnreadable(reason)`, `nothingRestored`. A newer-version file (main or backup) is refused and
+  moved once to `current.scene.newer` (left alone if that name exists), never written and never read
+  again (event `setAsideNewer`), so a later save cannot overwrite another version's scene (analysis I1).
 - **Main known good**: set after a good read of the main file or a successful save; while false, saves
   skip the `link` step so a damaged main file never replaces a good backup.
 

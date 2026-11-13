@@ -11,7 +11,7 @@ quickstart). Tests are required by the spec (SCN-002-S1…S6). Budgets (owner ru
 ## Phase 2: Foundational
 
 - [ ] SCN-002-T02 [P] Debouncer (quiet 1 s, maximum latency 5 s, injected clock; `deadline = min(lastEdit + quiet, firstPending + maximumLatency)`) in Apps/projectM-iOS/Coordinators/SceneAutosaveDebouncer.swift
-- [ ] SCN-002-T03 [P] Store: files `current.scene`, `current.scene.bak`, `current.scene.tmp` in Application Support/Scenes; save sequence A2 with a per-step fault hook and `mainIsGood`; load A3 (leftover temporary removed, bounded read, decode + `liveState`, main → backup → none, events) in Apps/projectM-iOS/Coordinators/SceneAutosaveStore.swift
+- [ ] SCN-002-T03 [P] Store: files `current.scene`, `current.scene.bak`, `current.scene.tmp` in Application Support/Scenes; save sequence A2 with a per-step fault hook and `mainIsGood`; load A3 (leftover temporary removed, bounded read, decode + `liveState`, main → backup → none, newer-version file set aside as `current.scene.newer`, events) in Apps/projectM-iOS/Coordinators/SceneAutosaveStore.swift
 - [ ] SCN-002-T04 [P] Capture: `SceneInputs`, `SceneAutosaveCarry`, inputs → document (layers per research D1, seven parameters, assets `photo`/`video`/`text`, bindings), merge D6 (unknown layers at their index, renumbering, 8-layer cap, matched known layers, carried assets, parameters, modulation, ID, name, extra), document → restored values in Apps/projectM-iOS/Coordinators/SceneAutosaveCapture.swift
 
 ## Phase 3: User Story 1 — the last committed look survives a kill (P1) 🎯 MVP
@@ -35,7 +35,7 @@ quickstart). Tests are required by the spec (SCN-002-S1…S6). Budgets (owner ru
 
 **Independent test**: truncated main → backup; both damaged → nothing restored and an event.
 
-- [ ] SCN-002-T12 [US3] Store tests: truncated, non-JSON, newer-version and error-bearing main files fall back to the backup with `mainUnreadable` + `restoredFromBackup`; both damaged → `nothingRestored`; a save after a fallback never replaces the good backup with the damaged main file in Apps/projectM-iOS/Tests/SceneAutosaveStoreTests.swift
+- [ ] SCN-002-T12 [US3] Store tests: truncated, non-JSON, newer-version and error-bearing main files fall back to the backup with `mainUnreadable` + `restoredFromBackup`; both damaged → `nothingRestored`; a newer-version main file is moved to `current.scene.newer` and never overwritten; a save after a fallback never replaces the good backup with the damaged main file in Apps/projectM-iOS/Tests/SceneAutosaveStoreTests.swift
 
 ## Phase 6: User Story 4 — content this version does not understand is kept (P3)
 

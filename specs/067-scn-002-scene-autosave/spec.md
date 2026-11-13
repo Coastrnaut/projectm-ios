@@ -121,7 +121,8 @@ current settings and a diagnostics event is recorded.
 2. **Given** both files damaged, **When** the app launches, **Then** nothing is restored, the current
    settings stay, an event is recorded, and the next commit writes a good file.
 3. **Given** a scene from a newer app version, **When** the app launches, **Then** nothing is restored
-   and the file is never overwritten by this version.
+   from it, and it is set aside once, unchanged, as `current.scene.newer` (never overwritten by this
+   version and never read again); autosaving then continues.
 
 ### User Story 4 - Content this version does not understand is kept (Priority: P3)
 
@@ -185,7 +186,8 @@ orphaned binding is restored; after the next edit the saved file still contains 
 - **SCN-002-R12**: UI tests reset the scene files with the other stored state; a DEBUG-only probe
   reports the last committed revision so a test can wait for a commit.
 - **SCN-002-R13**: The files are `current.scene` (main), `current.scene.bak` (backup) and a transient
-  `current.scene.tmp` in `Library/Application Support/Scenes`; at most two committed copies exist.
+  `current.scene.tmp` in `Library/Application Support/Scenes`; at most two committed copies exist, plus
+  `current.scene.newer`, a newer-version file set aside once and never written.
 
 ### Key Entities
 
@@ -199,7 +201,8 @@ orphaned binding is restored; after the next edit the saved file still contains 
 ### Measurable Outcomes
 
 - **SCN-002-S1**: In the kill-and-relaunch test, the relaunched app shows the last committed edit and
-  never the uncommitted one (simulator UI test; on device, a force quit from the app switcher).
+  never the uncommitted one (simulator UI test). On a device, a force quit from the app switcher shows a
+  committed value (the switcher passes through the background, which commits), never the defaults.
 - **SCN-002-S2**: A save interrupted between writing and replacing leaves the previous scene readable
   in 100 % of the injected-failure cases tested.
 - **SCN-002-S3**: A truncated or corrupt main file falls back to the backup, and two damaged files fall
