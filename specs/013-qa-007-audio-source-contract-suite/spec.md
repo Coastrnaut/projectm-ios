@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-12
 
-**Status**: Draft
+**Status**: Implemented 2026-11-12 (QA-007-T23 {device} open for the final device stage)
 
 **Input**: User description: "Implement QA-007 (Audio source contract suite) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Exercise start, stop, permission
