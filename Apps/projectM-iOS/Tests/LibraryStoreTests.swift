@@ -49,9 +49,13 @@ final class LibraryStoreTests: XCTestCase {
         XCTAssertTrue(relaunched.isUnlocked, "read from StoreKit at launch (FR-107)")
     }
 
+    /// A purchase call that fails unlocks nothing and reports the failure. The failure is injected:
+    /// a real purchase with `failTransactionsEnabled` sometimes never returns in StoreKit's local
+    /// test environment (the test hung past 3 minutes three times on 2026-11-12/13). The product,
+    /// the entitlement check and the error handling are the real ones; T239 covers a device.
     func testFailureUnlocksNothing() async {
-        session.failTransactionsEnabled = true
         let store = await startedStore()
+        store.performPurchase = { _ in throw StoreKitError.networkError(URLError(.notConnectedToInternet)) }
         await store.purchase()
         XCTAssertFalse(store.isUnlocked)
         if case .failed = store.state {} else { XCTFail("state \(store.state)") }

@@ -53,6 +53,13 @@ final class LibraryStore: EntitlementProviding {
     @ObservationIgnored var onEntitlementChange: ((Bool) -> Void)?
     @ObservationIgnored private var product: Product?
     @ObservationIgnored private var updates: Task<Void, Never>?
+    /// The App Store purchase call. Tests replace it: in StoreKit's local test environment a
+    /// purchase with failing transactions turned on sometimes never returns (it hung
+    /// LibraryStoreTests.testFailureUnlocksNothing past 3 minutes three times on 2026-11-12/13),
+    /// so the failure path is tested by making this call throw. Production always uses StoreKit.
+    @ObservationIgnored var performPurchase: (Product) async throws -> Product.PurchaseResult = {
+        try await $0.purchase()
+    }
 
     isolated deinit { updates?.cancel() }
 
@@ -86,7 +93,7 @@ final class LibraryStore: EntitlementProviding {
         guard let product else { state = .unavailable; return }
         state = .purchasing
         do {
-            await handle(try await product.purchase())
+            await handle(try await performPurchase(product))
         } catch {
             state = .failed(error.localizedDescription)
         }
