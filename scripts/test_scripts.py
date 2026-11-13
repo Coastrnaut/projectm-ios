@@ -1101,6 +1101,21 @@ class DeviceTestRunnerTests(unittest.TestCase):
                          ["key not allowed: unlocked", "unexpected file: Documents/recording.wav",
                           "audio file: Documents/recording.wav", "unexpected file: tmp/x.bin"])
 
+    def test_every_stored_defaults_key_is_allowed(self):
+        # The app's UserDefaults keys are `static let <name>Key = "<key>"` constants (plus
+        # `static let key = ...` in single-key stores). The privacy check must allow each one, or a
+        # device privacy run fails on a key the app is meant to store.
+        app = Path(__file__).resolve().parent.parent / "Apps" / "projectM-iOS"
+        pattern = re.compile(r'static let (?:[A-Za-z]*Key|key) = "([^"]+)"')
+        not_defaults = {"photo", "video", "text"}   # scene snapshot field names, not defaults keys
+        found = set()
+        for path in app.rglob("*.swift"):
+            if "Tests" in path.parts or "UITests" in path.parts:
+                continue
+            found.update(pattern.findall(path.read_text(encoding="utf-8")))
+        self.assertIn("settings.visual", found, "the scan finds the app's keys")
+        self.assertEqual(sorted(found - not_defaults - rdt.ALLOWED_KEYS), [])
+
     def test_privacy_allows_only_the_imported_audio_library(self):
         # AUD-001-R22: audio the user imported lives in the library's own folders, nowhere else.
         digest = "ab" * 32

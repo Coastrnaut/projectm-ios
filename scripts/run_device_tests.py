@@ -65,7 +65,14 @@ ALLOWED_KEYS = {"favorites", "lastPresetID", "settings.performanceOverlay", "set
                 "settings.visual", "settings.circularSpectrum.bars",
                 "settings.circularSpectrum.glow", "settings.circularSpectrum.glowIntensity",
                 "settings.circularSpectrum.glowRadius", "settings.circularSpectrum.glowThreshold",
-                "settings.linearSpectrum.orientation", "settings.linearSpectrum.spacing"}   # VIS-002-R11
+                "settings.linearSpectrum.orientation", "settings.linearSpectrum.spacing",   # VIS-002-R11
+                "settings.osc.enabled", "settings.osc.port",   # OSC-001 (off by default)
+                "settings.photo.id", "settings.video.id", "settings.text.overlay",   # MED-001, MED-008, MED-009
+                "guide.firstScene",   # UIX-001
+                "session.recovery.open", "session.recovery.sessionsSinceReopen",
+                "session.recovery.heldVisual"}   # PERF-010
+# Every key the app stores must be listed above; test_scripts.py checks this against the app's
+# `static let ...Key = "..."` constants.
 # AUD-001-R22 amends FR-065: audio files the user imported are stored, and only here: the audio
 # library's content-addressed copies (assets/<sha256>[.ext]) and its imports in flight
 # (incoming/<uuid>[.ext]). An audio file anywhere else in the container is still a violation.
