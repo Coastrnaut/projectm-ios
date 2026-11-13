@@ -105,24 +105,52 @@ final class FrameCaptureAppTests: XCTestCase {
         XCTAssertTrue(files[0].hasPrefix("Visualizer Frame ") && files[0].hasSuffix(".png"), files[0])
     }
 
-    func testExporterGetsTheDocumentAndReleasesIt() {
+    /// REC-012-R1, R8: the still is offered (nothing opens by itself); Save… gives the exporter its
+    /// document; a cancelled Save… keeps the still offered, a successful one releases it.
+    func testOfferedStillGoesToTheExporterOnSave() {
         let source = FakeCaptureSource()
         let capture = FrameCaptureCoordinator(debugDirectory: nil, formats: [.png]) {
             FrameCaptureCoordinator.Context(source: source, outputLive: true, paused: false)
         }
         capture.save(.png)
         source.deliver(Self.opaquePixels)
-        waitUntil("exporter") { capture.showExporter }
+        waitUntil("offered") { capture.offered != nil }
+        XCTAssertFalse(capture.showExporter, "nothing opens by itself (REC-012-R1)")
+        XCTAssertTrue(capture.offeredBaseName.hasPrefix("Visualizer Frame "))
+        capture.requestExport()
+        XCTAssertTrue(capture.showExporter)
         XCTAssertEqual(capture.document?.frame.summary, "png 2x1 opaque")
         XCTAssertEqual(capture.document?.contentType, .png)
         capture.exportDismissed()
-        XCTAssertNil(capture.document, "no copy is kept after a cancel (REC-001-R10)")
-        capture.save(.png)
-        source.deliver(Self.opaquePixels)
-        waitUntil("exporter again") { capture.showExporter }
+        XCTAssertNil(capture.document, "the document is released after a cancel")
+        XCTAssertEqual(capture.offered?.summary, "png 2x1 opaque", "the still stays offered (REC-012-R8)")
+        capture.requestExport()
+        capture.exportFinished(.failure(CocoaError(.userCancelled)))
+        XCTAssertNotNil(capture.offered)
+        XCTAssertNil(capture.notice)
+        capture.requestExport()
         capture.exportFinished(.success(URL(fileURLWithPath: "/tmp/x.png")))
         XCTAssertNil(capture.document)
+        XCTAssertNil(capture.offered)
         XCTAssertEqual(capture.notice, "Frame saved.")
+    }
+
+    /// REC-012-R8: a new capture replaces the offered still; Discard releases it.
+    func testANewCaptureReplacesTheOfferedStillAndDiscardReleasesIt() {
+        let source = FakeCaptureSource()
+        let capture = FrameCaptureCoordinator(debugDirectory: nil, formats: [.png]) {
+            FrameCaptureCoordinator.Context(source: source, outputLive: true, paused: false)
+        }
+        capture.save(.png)
+        source.deliver(Self.opaquePixels)
+        waitUntil("offered") { capture.offered != nil }
+        let wide = CapturedPixels(width: 1, height: 2, layout: .sRGBBGRA8TopDown([0, 0, 255, 0, 255, 0, 0, 0]))!
+        XCTAssertNil(capture.save(.png), "an offered still never blocks a new capture")
+        source.deliver(wide)
+        waitUntil("replaced") { capture.offered?.summary == "png 1x2 opaque" }
+        capture.discardOffered()
+        XCTAssertNil(capture.offered)
+        XCTAssertFalse(capture.showExporter)
     }
 
     func testNoFrameTimesOutAndALateFrameIsDropped() {

@@ -166,7 +166,10 @@ display.
   present, and the encoded bytes; or a typed failure with a user-visible reason.
 - **REC-001-R10**: The file MUST be handed to the system Files exporter; the user chooses the
   location. The app MUST NOT write to the photo library in this row, and MUST keep no copy after the
-  exporter finishes or is cancelled.
+  exporter finishes or is cancelled. *Superseded in part by REC-012 (2026-11-13,
+  `specs/060-rec-012-share-via-files`, REC-012-R1, R8): the still is offered with Save…, Share… and
+  Discard and held in memory until Save… succeeds, Discard or a new capture; a cancelled Save… keeps
+  it. Still never written to the photo library, never kept beyond the session.*
 - **REC-001-R11**: The file MUST carry no metadata beyond the image and its sRGB color profile: no
   location, date, device, camera, user or app identifiers. The suggested file name is
   "Visualizer Frame" plus the local date and time; the user may change it in the Files sheet.

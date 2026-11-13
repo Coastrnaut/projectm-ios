@@ -6,9 +6,9 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 28,
+   "audited": 26,
    "implementing": 2,
-   "integrated": 55,
+   "integrated": 57,
    "skipped_existing": 1,
    "unit_passed": 1
   },
@@ -25,9 +25,9 @@
   }
  },
  "by_state": {
-  "audited": 252,
+  "audited": 250,
   "implementing": 2,
-  "integrated": 70,
+  "integrated": 72,
   "skipped_existing": 1,
   "unit_passed": 1
  },
@@ -218,12 +218,10 @@
    "REC-009",
    "REC-010",
    "REC-011",
-   "REC-012",
    "REC-013",
    "REC-014",
    "REC-015",
    "REC-016",
-   "SCN-001",
    "SCN-002",
    "SCN-003",
    "SCN-004",
@@ -295,7 +293,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "255 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
+   "253 features are not implemented yet (first: ACC-001, ACC-003, ACC-004, ACC-005, ACC-006)"
   ]
  },
  "features": {
@@ -1161,13 +1159,13 @@
   },
   "FILE-001": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/file-001",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "FILE-002": {
    "attempts": 0,
@@ -2742,12 +2740,12 @@
   "REC-012": {
    "attempts": 0,
    "branch": "feature/rec-012",
-   "branch_sha": null,
+   "branch_sha": "8909040fb290fca28c167b211637c6f3a7f84c45",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "edf30a04455e3ad14dcbf25366ac184af9dbae19",
    "priority": "P0",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "integrated"
   },
   "REC-013": {
    "attempts": 0,
@@ -2771,13 +2769,13 @@
   },
   "REC-015": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/rec-015",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "REC-016": {
    "attempts": 0,
@@ -2794,10 +2792,10 @@
    "branch": "feature/scn-001",
    "branch_sha": "65ce45cdc91dcad0c59f01353dbe610f305b1516",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "241b39b75cf8a1e56c9c78cbf0ff66f09a013730",
    "priority": "P0",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "SCN-002": {
    "attempts": 0,
@@ -3192,12 +3190,12 @@
   "SHOW-014": {
    "attempts": 0,
    "branch": "feature/show-014",
-   "branch_sha": null,
+   "branch_sha": "081b69a69a42b52ae9a94d0e042e73ba46b7aa81",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "SHOW-015": {
    "attempts": 0,
@@ -3872,6 +3870,16 @@
    "sha": "bf82b49836a5e22aaad71259e373ef54d7b77d30"
   },
   {
+   "branch": "feature/rec-012",
+   "id": "REC-012",
+   "sha": "edf30a04455e3ad14dcbf25366ac184af9dbae19"
+  },
+  {
+   "branch": "feature/scn-001",
+   "id": "SCN-001",
+   "sha": "241b39b75cf8a1e56c9c78cbf0ff66f09a013730"
+  },
+  {
    "branch": "feature/shd-001",
    "id": "SHD-001",
    "sha": "ade4dfec39a538b841b105a67ff5545b1a6675e6"
@@ -3937,5 +3945,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T20:26:34Z"
+ "updated": "2026-11-13T20:42:33Z"
 }

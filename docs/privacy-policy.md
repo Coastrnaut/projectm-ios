@@ -9,7 +9,8 @@ Photo visual (MED-001; `specs/044-med-001-import-photo-layer`, in app versions t
 the Video visual (MED-002; `specs/048-med-002-import-video-layer`, in app versions that offer it), and for
 the Text visual (MED-009; `specs/053-med-009-text-overlay`, in app versions that offer it), and for
 Save Frame (REC-001; `specs/055-rec-001-still-frame-capture`, in app versions that offer it), and for
-Record (REC-003; `specs/058-rec-003-video-recording`, in app versions that offer it). Applies to the projectM app for
+Record (REC-003; `specs/058-rec-003-video-recording`, in app versions that offer it), and for Share…
+(REC-012; `specs/060-rec-012-share-via-files`, in app versions that offer it). Applies to the projectM app for
 iPhone and iPad published by Robert Pancoast.
 
 **Summary: the app collects no data. Audio is processed only in memory on your device, and nothing
@@ -19,7 +20,8 @@ visual and the one video you may choose for the Video visual, which also stay on
 you remove them (a video's own sound is removed and never played or analysed). If you choose the Camera visual, the rear camera's
 picture is shown on screen while that visual is on; it is never recorded, stored, sent or analysed
 unless you yourself tap Save Frame or Record. Record makes a silent video of the visualization only
-while you record and hands it to Files; the app keeps no copy. The only network traffic is Apple's own App Store traffic
+while you record; you then save it to Files, share it or discard it, and the app keeps nothing after
+the session. Share… sends a picture or video only to the app or person you pick in the share sheet. The only network traffic is Apple's own App Store traffic
 when you buy or restore the full preset library, and, only if you turn it on, OSC control messages
 that devices on your own local network send to the app.**
 
@@ -132,13 +134,14 @@ it and choose PNG or HEIF.
 - The picture is the next frame of the visualization as it is shown, after the app's flash
   limiting; the controls are not in it. If you use the Camera visual, the picture includes what
   the camera shows at that moment, exactly like a screenshot you take yourself.
-- iOS shows its own Files sheet, and you choose where the file goes (for example On My iPhone or
+- The picture is then offered with Save…, Share… and Discard (see "Sharing a picture or video").
+  Save… shows iOS's own Files sheet, and you choose where the file goes (for example On My iPhone or
   iCloud Drive) or cancel. The app never saves it to your photo library and asks for no permission.
 - The file holds only the picture and its color profile: no location, date, device, camera or
   account details. Its suggested name contains the date and time, and you can change it.
-- The app keeps no copy: the picture is held in memory only until the Files sheet closes. Nothing
-  is uploaded or sent anywhere by the app; what happens to the file afterwards is up to you and the
-  place you saved it.
+- The app keeps no copy on its own: the picture is held in memory only until you save it to Files,
+  tap Discard, save a new frame, or the app closes. Nothing is uploaded or sent anywhere by the app;
+  what happens to the file afterwards is up to you and the place you saved or shared it.
 - While the output is blacked out, or the visualization is paused, Save Frame saves nothing and
   says why.
 
@@ -153,9 +156,10 @@ the moment the recording stops.
   camera shows while you record, exactly like a screen recording you make yourself.
 - The video has no sound: no microphone, app or system audio is recorded.
 - While it records, the video is written to a temporary file inside the app on your device. When the
-  recording stops, iOS shows its own Files sheet and you choose where the video goes (for example On
-  My iPhone or iCloud Drive) or cancel. If you cancel, the app deletes the temporary file; any
-  temporary file left by an interrupted run is deleted the next time the app starts. The app never
+  recording stops, the video is offered with Save…, Share… and Discard. Save… shows iOS's own Files
+  sheet and you choose where the video goes (for example On My iPhone or iCloud Drive); the file is
+  moved there. Discard deletes the temporary file; if you cancel, it stays offered until you decide.
+  Any temporary file left when the app closes is deleted the next time the app starts. The app never
   saves to your photo library and asks for no permission.
 - The file holds only the video and the technical details a video file needs (size, frame times,
   codec, color tags): no location, device, camera or account details. Its suggested name contains
@@ -165,6 +169,23 @@ the moment the recording stops.
   While the output is blacked out or the visualization is paused, Record does not start.
 - Nothing is uploaded or sent anywhere by the app; what happens to the file afterwards is up to you
   and the place you saved it.
+
+## Sharing a picture or video
+
+After Save Frame or a recording, "Share…" opens iOS's own share sheet with that one file, only when you
+tap it.
+
+- The app gives the share sheet a temporary copy of the file, with a name containing the date and
+  time; the copy holds the same picture or video and nothing else. The app deletes the copy as soon
+  as the share sheet closes, whether you shared or cancelled, and deletes any copy left over the next
+  time it starts. Your picture or video stays offered after a cancel, so you can still save or share
+  it.
+- The file goes only to what you pick in the sheet: for example AirDrop to a nearby device,
+  Messages, Mail, Save to Files, or another app. What that app or service does with the file (sending
+  it over the internet, for example) is up to you and it, under its own privacy policy. The app
+  itself sends nothing.
+- The app removes "Save to Photos" and "Assign to Contact" from the sheet: it does not write to your
+  photo library or contacts and asks for no Photos or Contacts permission.
 
 ## Audio stays in memory on your device
 

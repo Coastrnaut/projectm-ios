@@ -22,9 +22,12 @@
 // (controls, badges, banners, sheets) stays on the device.
 // OUT-010: while the output is blacked out (or restoring) a persistent badge with Restore stays at
 // the top, with or without the controls, and the external display note says the display is black.
+// SHOW-014: the persistent emergency Black out button (bottom trailing, with or without the
+// controls) and the B key on it and on the badge's Restore.
 // REC-001: Save Frame's format choice, the Files exporter and its notice; DEBUG `frameCaptureProbe`.
 // REC-003: the recording indicator, the system file mover for a finished recording, its notice;
 // DEBUG `videoRecordingProbe`.
+// REC-012: the ready panels (Save…, Share…, Discard) and the share notice (`CaptureResultPanels`).
 import CaptureKit
 import CaptureUI
 import FrameCapture
@@ -88,6 +91,10 @@ struct VisualizerView: View {
                         .background(.regularMaterial, in: Capsule())
                         .transition(.opacity)
                         .accessibilityIdentifier("routeExplanation")
+                }
+                if coordinator.externalDisplay.blackoutPhase.offersEmergencyBlackout {   // SHOW-014-R1: with or without the controls
+                    HStack { Spacer(); EmergencyBlackoutButton(external: coordinator.externalDisplay) }
+                        .transition(.opacity)
                 }
                 if coordinator.controlsVisible {
                     ControlsOverlay(coordinator: coordinator)
@@ -264,7 +271,7 @@ struct VisualizerView: View {
                                            }),
                       document: coordinator.frameCapture.document,
                       contentType: coordinator.frameCapture.document?.contentType ?? .png,
-                      defaultFilename: CapturedFrameDocument.baseName(date: Date())) { (result: Result<URL, any Error>) in
+                      defaultFilename: coordinator.frameCapture.offeredBaseName) { (result: Result<URL, any Error>) in
             coordinator.frameCapture.exportFinished(result)
         }
         // REC-003: the finished recording is moved (not copied) to the folder the user picks in Files.
@@ -463,6 +470,9 @@ struct VisualizerView: View {
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("frameCaptureNotice")
         }
+        // REC-012: "Frame ready" / "Recording ready" with Save…, Share…, Discard; the share notice.
+        CaptureResultPanels(frameCapture: coordinator.frameCapture, videoRecording: coordinator.videoRecording,
+                            share: coordinator.captureShare)
         // REC-003: the recording indicator (app UI, never part of the recorded picture; REC-003-R16).
         if coordinator.videoRecording.state != .idle {
             let finishing = coordinator.videoRecording.state == .finishing
@@ -517,10 +527,12 @@ struct OutputBlackoutBadge: View {
                   systemImage: "eye.slash")
                 .font(.footnote.bold())
                 .accessibilityIdentifier("blackoutBadgeText")
-            if external.blackoutPhase == .blackedOut {
+            if external.blackoutPhase.offersRestore {
                 Button("Restore") { external.setBlackout(false) }
                     .font(.footnote)
                     .buttonStyle(.borderedProminent)
+                    .keyboardShortcut("b", modifiers: [])   // SHOW-014-R6: B again restores
+
                     .accessibilityLabel("Restore output")
                     .accessibilityIdentifier("blackoutRestore")
             }

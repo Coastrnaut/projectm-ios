@@ -10,9 +10,12 @@
 //   out, the visual changed or stopped drawing; the app going to the background stops it inside a
 //   background-task grant; the tap reports size changes, the 10-minute limit and writer failures.
 //   Every stop finishes the file off the main thread and keeps what was recorded (REC-003-R11).
-// * The file goes to the system file mover (`fileMover`: the user picks the folder; the temporary
-//   file is moved, never copied), never to the photo library; a cancelled move deletes it, and
-//   leftovers in `<tmp>/Recordings` are deleted at launch (REC-003-R13). Nothing else is stored.
+// * The finished file is offered (REC-012-R1: "Recording ready" with Save…, Share… and Discard) until
+//   Save… moves it or Discard deletes it; while it is offered, Record refuses (REC-012-R10). Save…
+//   opens the system file mover (`fileMover`: the user picks the folder; the temporary file is moved,
+//   never copied), never the photo library; a cancelled move keeps it offered (REC-012 supersedes
+//   REC-003-R13's delete on cancel). Leftovers in `<tmp>/Recordings` are deleted at launch
+//   (REC-003-R13), so nothing outlives the session. Nothing else is stored.
 // * DEBUG: `-uitestRecordingDirectory <name>` moves the file into `<tmp>/<name>/` instead of showing
 //   the mover, and `probe` reports what AVFoundation reads back ("video hvc1 1178x2556 frames=58
 //   duration=1.93 audio=0").
@@ -95,6 +98,8 @@ final class VideoRecordingCoordinator {
     /// The system file mover is shown with `fileToMove`.
     var showMover = false
     private(set) var fileToMove: URL?
+    /// REC-012: the finished recording, offered with Save…, Share… and Discard (a temporary file).
+    private(set) var offered: URL?
     /// The reason of the last stop (tests, diagnostics).
     private(set) var lastStopReason: RecordingStopReason?
     /// DEBUG probe: what the last recording reads back as, or the last refusal or failure.
@@ -183,23 +188,39 @@ final class VideoRecordingCoordinator {
 
     func clearNotice() { notice = nil }
 
-    /// The mover finished: the file was moved (success) or is deleted now (cancel, failure).
+    /// The notice while a recording is offered and the user taps Record (REC-012-R10).
+    static let resultOfferedNotice = "Save, share or discard the last recording first."
+
+    /// Save… on the offered recording: the file mover gets it (REC-012-R1).
+    func requestSave() {
+        guard let offered else { return }
+        fileToMove = offered
+        showMover = true
+    }
+
+    /// Discard: the offered recording's temporary file is deleted (REC-012-R9).
+    func discardOffered() {
+        if let offered { try? FileManager.default.removeItem(at: offered) }
+        offered = nil
+        fileToMove = nil
+        showMover = false
+    }
+
+    /// The mover finished: the file was moved (success: nothing is offered any more); a cancel or a
+    /// failure keeps the recording offered (REC-012-R8).
     func moverFinished(_ result: Result<URL, any Error>) {
         if case .success = result {
             notice = "Recording saved."
+            offered = nil
         } else if let error = result.failureValue, (error as? CocoaError)?.code != .userCancelled {
             notice = RecordingFailure.writerFailed("").notice
         }
-        discardFileToMove()
+        fileToMove = nil
+        showMover = false
     }
 
-    /// The mover was cancelled or dismissed without a result: the temporary file is deleted.
+    /// The mover was cancelled or dismissed without a result: the recording stays offered.
     func moverCancelled() {
-        discardFileToMove()
-    }
-
-    private func discardFileToMove() {
-        if let fileToMove { try? FileManager.default.removeItem(at: fileToMove) }
         fileToMove = nil
         showMover = false
     }
@@ -211,6 +232,11 @@ final class VideoRecordingCoordinator {
         if let refusal = RecordingGate.refusal(visualAvailable: c.visualShown, recordable: c.source != nil, outputLive: c.outputLive,
                                                paused: c.paused, busy: state != .idle || fileToMove != nil) {
             refuse(refusal)
+            return
+        }
+        if offered != nil {   // REC-012-R10: never delete an offered recording without the user's choice
+            notice = Self.resultOfferedNotice
+            probe = "refused: resultOffered"
             return
         }
         guard let source = c.source else { return }
@@ -298,8 +324,7 @@ final class VideoRecordingCoordinator {
             if let debugDirectory {
                 moveForTests(video, into: debugDirectory)
             } else {
-                fileToMove = video.url
-                showMover = true
+                offered = video.url   // REC-012-R1: offered, nothing opens by itself
             }
         }
         endBackgroundTask()

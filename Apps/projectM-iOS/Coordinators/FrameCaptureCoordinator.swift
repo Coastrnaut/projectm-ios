@@ -9,9 +9,11 @@
 // * A request lasts at most `timeout` (1 s); a frame that arrives after the visual changed, the user
 //   paused or the output was blacked out is dropped as cancelled (REC-001-R14). A token makes late
 //   frames of an older request harmless.
-// * Conversion and encoding run on a detached task (REC-001-R8); the result goes to the system Files
-//   exporter (`fileExporter`), never to the photo library, and the document is released when the
-//   exporter finishes or is cancelled (REC-001-R10). Nothing is stored (FR-065).
+// * Conversion and encoding run on a detached task (REC-001-R8); the result is offered (REC-012-R1:
+//   "Frame ready" with Save…, Share… and Discard) and held in memory until Save… succeeds, the user
+//   discards it or a new capture replaces it (REC-012-R8). Save… goes to the system Files exporter
+//   (`fileExporter`), never to the photo library; a cancelled Save… keeps the result (REC-012
+//   supersedes REC-001-R10's release on cancel). Nothing is stored (FR-065).
 // * DEBUG: `-uitestCaptureDirectory <name>` writes the file into `<tmp>/<name>/` instead of opening
 //   the exporter, and `probe` reports what ImageIO reads back ("png 1179x2556 opaque").
 import ANGLERendering
@@ -47,6 +49,10 @@ final class FrameCaptureCoordinator {
     /// The Files exporter is shown with `document`.
     var showExporter = false
     private(set) var document: CapturedFrameDocument?
+    /// REC-012: the still the user just made, offered with Save…, Share… and Discard; memory only.
+    private(set) var offered: CapturedFrame?
+    /// The capture time of `offered` (names the saved and shared file).
+    private(set) var offeredDate = Date()
     private(set) var isCapturing = false
     /// The latest user-visible notice (refusal, failure, "Frame saved."), nil when none.
     private(set) var notice: String?
@@ -121,18 +127,38 @@ final class FrameCaptureCoordinator {
         return nil
     }
 
-    /// The Files exporter finished (saved, cancelled or failed): the document is released (R10).
+    /// "Visualizer Frame <date> at <time>" for the offered still (the exporter adds the extension).
+    var offeredBaseName: String { CapturedFrameDocument.baseName(date: offeredDate) }
+
+    /// Save… on the offered still: the Files exporter gets it (REC-012-R1).
+    func requestExport() {
+        guard let offered else { return }
+        document = CapturedFrameDocument(frame: offered)
+        showExporter = true
+    }
+
+    /// Discard: the offered still is released (REC-012-R8).
+    func discardOffered() {
+        offered = nil
+        document = nil
+        showExporter = false
+    }
+
+    /// The Files exporter finished (saved, cancelled or failed): the document is released; only a
+    /// successful save releases the offered still (REC-012-R8).
     func exportFinished(_ result: Result<URL, any Error>) {
         document = nil
         showExporter = false
         switch result {
-        case .success: notice = "Frame saved."
+        case .success:
+            offered = nil
+            notice = "Frame saved."
         case .failure(let error):
             if (error as? CocoaError)?.code == .userCancelled { notice = nil } else { notice = FrameCaptureFailure.encodingFailed.notice }
         }
     }
 
-    /// The exporter was dismissed without a result (cancel).
+    /// The exporter was dismissed without a result (cancel): the still stays offered.
     func exportDismissed() {
         document = nil
     }
@@ -190,8 +216,8 @@ final class FrameCaptureCoordinator {
             if let debugDirectory {
                 writeForTests(frame, into: debugDirectory)
             } else {
-                document = CapturedFrameDocument(frame: frame)
-                showExporter = true
+                offered = frame   // REC-012-R1: offered, nothing opens by itself; replaces an earlier still
+                offeredDate = Date()
             }
         }
     }

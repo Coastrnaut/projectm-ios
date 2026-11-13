@@ -203,7 +203,9 @@ background event decodes.
 - **REC-003-R13**: The finished file MUST be handed to the system Files exporter; the user chooses
   the location. The app MUST NOT write to the photo library in this row, and MUST delete its
   temporary file when the exporter finishes or is cancelled, and any leftover temporary recordings at
-  launch.
+  launch. *Superseded in part by REC-012 (2026-11-13, `specs/060-rec-012-share-via-files`,
+  REC-012-R1, R8, R9): the recording is offered with Save…, Share… and Discard; a cancelled Save…
+  keeps the temporary file offered, Discard deletes it, and the launch cleanup is unchanged.*
 - **REC-003-R14**: The timestamp, frame-rate, size and bounded-queue rules MUST be testable without a
   device or the simulator, and build on Linux; the encoding acceptance runs on the Mac host.
 - **REC-003-R15**: Only public, documented platform APIs (Constitution I); no new Metal shader source;
