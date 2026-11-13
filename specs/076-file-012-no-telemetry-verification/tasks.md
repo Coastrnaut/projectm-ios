@@ -26,12 +26,12 @@ are never device evidence. No app behaviour changes (FILE-012-R11).
 
 ## Phase 3: US4 — the record (P2)
 
-- [ ] FILE-012-T10 [US4] `docs/test-reports/no-telemetry.md` (layers, what each proves and does not, commands, results, dates) and a FILE-012 paragraph in `docs/release/app-privacy.md` (FILE-012-R9)
+- [X] FILE-012-T10 [US4] `docs/test-reports/no-telemetry.md` (layers, what each proves and does not, commands, results, dates) and a FILE-012 paragraph in `docs/release/app-privacy.md` (FILE-012-R9) — Verified 2026-11-13: report written with the commands and results above; app-privacy.md FILE-012 paragraph cites it; `validate_docs.py` OK
 - [ ] FILE-012-T11 {device} D1: App Privacy Report (or the owner's Mac proxy) during the quickstart session with OSC off, then with OSC on; expected: no app network activity with OSC off, only local-network listening with it on (FILE-012-R10)
 
 ## Phase 4: Polish
 
-- [ ] FILE-012-T12 Gates: `check_compliance.py`, `validate_docs.py`, `test_scripts.py`, `check_privacy_manifest.py` on the Debug app, the existing OSC UI tests still pass (FILE-012-R11)
+- [X] FILE-012-T12 Gates: `check_compliance.py`, `validate_docs.py`, `test_scripts.py`, `check_privacy_manifest.py` on the Debug app, the existing OSC UI tests still pass (FILE-012-R11) — Verified 2026-11-13: `check_compliance.py` OK, `validate_docs.py` OK, `test_scripts.py` 134 tests OK (7.5 s), `check_privacy_manifest.py` OK on the Debug simulator app, OSCReceiverUITests (17.6 s) and OSCNetworkAccessUITests (16.5 s) pass; no app source changed (only a UI test file added)
 
 ## Dependencies
 

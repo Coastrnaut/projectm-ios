@@ -117,6 +117,17 @@ Collected**. Owner action: confirm in App Store Connect › App Privacy when a v
 guard is submitted. `check_privacy_manifest.py` on the simulator Debug build is the check
 (REC-015-T16); it now also rejects any declared reason outside the allowed set per category.
 
+FILE-012 (2026-11-13; `specs/076-file-012-no-telemetry-verification`, report
+`docs/test-reports/no-telemetry.md`): the claim above that "the app makes no network connections of
+its own" now has evidence beyond the source rule. `scripts/check_network_symbols.py` finds no socket,
+resolver, URL-loading, web-view or browser code in any image of the Debug and Release builds
+(including ANGLE and projectM); the only network-capable code is the OSC listener (Network framework,
+listener-side APIs only in Release) and StoreKit linkage. On the iOS 27.2 simulator, an observer of the
+app's sockets and network log events saw nothing during a scripted session of normal use with OSC off,
+and only the local UDP listener (plus the observer's own probe) with OSC turned on. This changes no
+answer: **No** data collected, label **Data Not Collected**, no tracking. Not yet shown on a device;
+that is `{device}` FILE-012-T11 (App Privacy Report on D1).
+
 ## Privacy manifest (`Apps/projectM-iOS/PrivacyInfo.xcprivacy`)
 
 - `NSPrivacyTracking`: false; `NSPrivacyTrackingDomains`: empty; `NSPrivacyCollectedDataTypes`: empty.

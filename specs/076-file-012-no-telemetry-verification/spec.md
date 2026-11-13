@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (FILE-012-T01-T03, T05-T10, T12 verified on the Mac and an iOS 27.2 simulator; T04's CI run pending a push; T11 `{device}` open)
 
 **Input**: User description: "Implement FILE-012 (No-telemetry verification) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Test that normal app use makes no
