@@ -16,53 +16,53 @@ Paths: `LP` = `Packages/LocalPortability`, `UP` =
 
 ## Phase 1: Setup
 
-- [ ] PRE-014-T01 {mac} Create the package `LP` (`LP/Package.swift`, swift-tools 6.0, platforms
+- [X] PRE-014-T01 {mac} Create the package `LP` (`LP/Package.swift`, swift-tools 6.0, platforms
   iOS 26 / macOS 15, library `LocalPortability`, test target `LocalPortabilityTests`, no
   dependencies; Foundation only) and add `.package(path: "../LocalPortability")` to
-  `Packages/PresetLibrary/Package.swift`. Evidence: `swift build` of both packages.
+  `Packages/PresetLibrary/Package.swift`. Evidence: `swift build` of both packages. — Verified 2026-11-12: `swift build` of LocalPortability and PresetLibrary (with the new dependency) succeeded; PresetLibrary 166 tests still pass.
 - [ ] PRE-014-T02 [P] {mac} Wire the package: `project.yml` `packages:` entry, and
   `LocalPortability` in every package loop of `.github/workflows/ios-ci.yml` (Linux, macOS host,
   generic iOS compile, both simulator loops). Evidence: `xcodegen generate` succeeds; diff review.
 
 ## Phase 2: Foundational (container, checksums, paths; blocks every story)
 
-- [ ] PRE-014-T03 [P] {mac} Write `LP/Tests/LocalPortabilityTests/CRC32Tests.swift` (IEEE vector
+- [X] PRE-014-T03 [P] {mac} Write `LP/Tests/LocalPortabilityTests/CRC32Tests.swift` (IEEE vector
   "123456789" → `0xCBF43926`, empty → 0, incremental equals one-shot) and
   `PortableSHA256Tests.swift` (FIPS 180 vectors "", "abc", the 448-bit message, 1,000,000 × "a").
-  Record the red run.
-- [ ] PRE-014-T04 {mac} Implement `LP/Sources/LocalPortability/CRC32.swift` and
+  Record the red run. — Verified 2026-11-12: red run: `swift build --build-tests` failed (target `LocalPortability` empty, `CRC32`/`PortableSHA256` undefined); 8 tests now.
+- [X] PRE-014-T04 {mac} Implement `LP/Sources/LocalPortability/CRC32.swift` and
   `PortableSHA256.swift` (the SHA-256 code moved from `UP/ContentHash.swift`); make
   `ContentHash.sha256Hex` delegate (signature unchanged). Evidence: T03 passes;
-  `ContentHashTests` still pass.
-- [ ] PRE-014-T05 [P] {mac} Write `LP/Tests/LocalPortabilityTests/ArchivePathTests.swift`
+  `ContentHashTests` still pass. — Verified 2026-11-12: CRC32Tests 5 and PortableSHA256Tests 3 pass; `ContentHashTests` pass inside the PresetLibrary run (166 tests, 0 failures).
+- [X] PRE-014-T05 [P] {mac} Write `LP/Tests/LocalPortabilityTests/ArchivePathTests.swift`
   (research D5): accepted `presets/a.milk`, `manifest.json`, non-Latin names; refused "",
   `/x`, `../x`, `a/../x`, `./x`, `a//b`, `a\b`, `C:x`, control characters, 256-byte path,
   9 components, trailing `/`; collision key equal for `A.milk`/`a.milk` and NFC/NFD forms.
-  Record the red run.
-- [ ] PRE-014-T06 {mac} Implement `LP/Sources/LocalPortability/ArchivePath.swift`. Evidence: T05
-  passes.
-- [ ] PRE-014-T07 {mac} Write `LP/Tests/LocalPortabilityTests/StoredZipTests.swift`: round trip
+  Record the red run. — Verified 2026-11-12: red run recorded with T07/T09: `swift build --build-tests` 62 errors (`ArchivePath`, `StoredZipWriter`, `PortableArchive` not found).
+- [X] PRE-014-T06 {mac} Implement `LP/Sources/LocalPortability/ArchivePath.swift`. Evidence: T05
+  passes. — Verified 2026-11-12: ArchivePathTests 4 tests pass.
+- [X] PRE-014-T07 {mac} Write `LP/Tests/LocalPortabilityTests/StoredZipTests.swift`: round trip
   of 3 entries (bytes and names identical); identical input → identical bytes; writer refuses an
   unsafe or duplicate path; reader refuses: empty data, random
   bytes (`notAZip`), every truncation of a small archive (`truncated` or `malformed`, never a
   crash), a flipped data byte (`checksumMismatch`), a compressed method, the encryption flag,
   an archive comment, ZIP64 sentinels, a local/central name mismatch, overlapping entries, more
   entries than `maxEntries`, an entry over `maxEntryBytes` (refused before its bytes are read),
-  `../x` and absolute names, case-insensitive duplicates. Record the red run.
-- [ ] PRE-014-T08 {mac} Implement `LP/Sources/LocalPortability/StoredZip.swift`
+  `../x` and absolute names, case-insensitive duplicates. Record the red run. — Verified 2026-11-12: red run: the same 62-error build; 24 StoredZipTests.
+- [X] PRE-014-T08 {mac} Implement `LP/Sources/LocalPortability/StoredZip.swift`
   (`StoredZipWriter`, `StoredZipReader`, `StoredZipLimits`, `StoredZipError` with the contract's
-  messages). Evidence: T07 passes.
-- [ ] PRE-014-T09 {mac} Write `LP/Tests/LocalPortabilityTests/PortableArchiveTests.swift`: a
+  messages). Evidence: T07 passes. — Verified 2026-11-12: StoredZipTests 24 pass (`swift test --package-path Packages/LocalPortability`).
+- [X] PRE-014-T09 {mac} Write `LP/Tests/LocalPortabilityTests/PortableArchiveTests.swift`: a
   manifest with `format`, `formatVersion`, `files` round-trips; refused: missing manifest,
   manifest over its limit, malformed JSON, wrong format, newer version (`newerVersion(2)`),
   unlisted entry, listed-but-missing file, length and SHA-256 mismatches, duplicate listed path;
   and `NoNetworkingTests.swift` scanning the sources of `LP` and the export files of `UP` for
   networking API names (tokens built by concatenation so the compliance script does not flag the
-  test). Record the red run.
-- [ ] PRE-014-T10 {mac} Implement `LP/Sources/LocalPortability/PortableArchive.swift`
+  test). Record the red run. — Verified 2026-11-12: red run: the same build; PortableArchiveTests 14 and NoNetworkingTests 1 (failed until the PresetLibrary export files existed).
+- [X] PRE-014-T10 {mac} Implement `LP/Sources/LocalPortability/PortableArchive.swift`
   (`PortableFileRecord`, `PortableArchiveLimits`, `PortableArchiveWriter`, `PortableArchive.read`,
   `PortableArchiveContents`, `PortableArchiveError`). Evidence: T09 passes; `swift test
-  --package-path Packages/LocalPortability` all pass.
+  --package-path Packages/LocalPortability` all pass. — Verified 2026-11-12: `swift test --package-path Packages/LocalPortability`: 51 tests, 0 failures.
 
 **Checkpoint**: container ready; commit.
 
@@ -71,7 +71,7 @@ Paths: `LP` = `Packages/LocalPortability`, `UP` =
 Goal: an archive of user presets reads back with identical ids, metadata and texts.
 Independent test: `swift test --package-path Packages/PresetLibrary --filter UserPresetArchiveTests`.
 
-- [ ] PRE-014-T11 [US2] {mac} Write `PKGT/UserPresetArchiveTests.swift`: build a fixture library
+- [X] PRE-014-T11 [US2] {mac} Write `PKGT/UserPresetArchiveTests.swift`: build a fixture library
   through `UserPresetLibrary` (injected clock, id maker, `FakeTrial`): an imported preset with
   license lines and an author from the file name, an imported preset with warnings and emoji in
   its name, an edited copy of an Included preset (`duplicateOf`, `modifiedAt`, `rightsVerified`
@@ -84,11 +84,11 @@ Independent test: `swift test --package-path Packages/PresetLibrary --filter Use
   golden SHA-256 twice (S4); tamper cases (S3): flipped text byte, manifest `path` `../x` and
   `/x`, a text that differs from `blobHash`, duplicate ids, `rightsVerified` true, a
   `duplicateOf` with `requiresLibraryUnlock` true or `packID` not `included`, 1,001 presets,
-  formatVersion 2 → `newerVersion`, truncated archive. Record the red run.
-- [ ] PRE-014-T12 [US2] {mac} Implement `UP/UserPresetArchive.swift`
+  formatVersion 2 → `newerVersion`, truncated archive. Record the red run. — Verified 2026-11-12: red run: with UserPresetArchive.swift, UserPresetExport.swift and the library methods set aside, `swift build --build-tests` failed (10 errors: no `exportPlan`, `export`, archive types); 19 tests in UserPresetArchiveTests.
+- [X] PRE-014-T12 [US2] {mac} Implement `UP/UserPresetArchive.swift`
   (`UserPresetArchiveFormat`, `ExportedUserPreset`, `UserPresetArchiveManifest`,
   `UserPresetArchive`, `UserPresetArchiveWriter`, `UserPresetArchiveReader`,
-  `UserPresetArchiveError` with the contract's words). Evidence: T11 passes.
+  `UserPresetArchiveError` with the contract's words). Evidence: T11 passes. — Verified 2026-11-12: UserPresetArchiveTests 19 pass (1 skipped by design: the interoperability writer without EXPORT_FIXTURE_OUT); golden SHA-256 ad40f883…3794; the golden manifest matches the schema's keys, required fields, patterns and constants (Python key check; no jsonschema module on this Mac).
 - [ ] PRE-014-T13 [US2] {mac} Interoperability: write the golden archive to a file and check it
   with `unzip -t` and Python's `zipfile` (`testzip()` is `None`, names as expected). Evidence:
   the command output in `docs/test-reports/preset-export.md`.
@@ -98,7 +98,7 @@ Independent test: `swift test --package-path Packages/PresetLibrary --filter Use
 Goal: ADR-0008 and the safety exclusions in the export plan and the export itself.
 Independent test: `swift test --package-path Packages/PresetLibrary --filter UserPresetExportTests`.
 
-- [ ] PRE-014-T14 [US3] {mac} Write `PKGT/UserPresetExportTests.swift`: a library with an
+- [X] PRE-014-T14 [US3] {mac} Write `PKGT/UserPresetExportTests.swift`: a library with an
   imported playable preset, an Included copy, a locked-pack copy with the library unlocked and
   then edited, the same while locked, a quarantined file and a waiting preset: `exportPlan()`
   lists exactly the first two and counts `fullLibraryCopy` 2, `quarantined` 1, `notChecked` 1;
@@ -107,11 +107,11 @@ Independent test: `swift test --package-path Packages/PresetLibrary --filter Use
   failure (sink throws) → `writeFailed`, file deleted; an id removed meanwhile is counted
   `unavailable`; 1,000 small presets export in under 10 s (S6); no ids → `nothingSelected`; a newer-format
   record → `libraryUnavailable`; the store directory is byte-identical before and after (export
-  only reads). Record the red run.
-- [ ] PRE-014-T15 [US3] {mac} Implement `UP/UserPresetExport.swift` (`UserPresetExportPlan`,
+  only reads). Record the red run. — Verified 2026-11-12: red run: the same build as T11; 9 tests in UserPresetExportTests.
+- [X] PRE-014-T15 [US3] {mac} Implement `UP/UserPresetExport.swift` (`UserPresetExportPlan`,
   `UserPresetExportExclusion`, `UserPresetExportSummary`, `UserPresetExportError`) and
   `UserPresetLibrary.exportPlan()` / `export(ids:appVersion:exportedAt:to:)` in
-  `UP/UserPresetLibrary.swift`. Evidence: T14 and T11 pass; full `PresetLibrary` suite passes.
+  `UP/UserPresetLibrary.swift`. Evidence: T14 and T11 pass; full `PresetLibrary` suite passes. — Verified 2026-11-12: UserPresetExportTests 9 and UserPresetArchiveTests 19 pass; full PresetLibrary suite 194 tests, 2 skipped, 0 failures.
 
 **Checkpoint**: library complete; commit.
 

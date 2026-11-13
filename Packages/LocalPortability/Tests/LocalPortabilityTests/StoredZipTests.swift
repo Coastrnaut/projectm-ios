@@ -207,15 +207,15 @@ final class StoredZipTests: XCTestCase {
 
     func testRefusesUnsafeNamesInTheArchive() throws {
         // A safe name of the same length is written, then replaced in both headers.
-        for unsafe in ["../../../a.mi", "/etc/passwd.x", "presets\\a.milk", "C:/presets/a.m"] {
-            var data = try archive([(String(repeating: "n", count: unsafe.utf8.count), "x")])
+        for badPath in ["../../../a.mi", "/etc/passwd.x", "presets\\a.milk", "C:/presets/a.m"] {
+            var data = try archive([(String(repeating: "n", count: badPath.utf8.count), "x")])
             let central = ZipBytes.centralHeaders(data)[0]
             let local = ZipBytes.localHeader(data, entry: 0)
-            for (index, byte) in unsafe.utf8.enumerated() {
+            for (index, byte) in badPath.utf8.enumerated() {
                 data[central + 46 + index] = byte
                 data[local + 30 + index] = byte
             }
-            assertRefused(data, .unsafePath(unsafe))
+            assertRefused(data, .unsafePath(badPath))
         }
     }
 

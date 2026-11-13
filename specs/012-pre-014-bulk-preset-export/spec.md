@@ -252,8 +252,8 @@ entry size: each is refused with its reason.
   multi-disk entries; local and central headers that disagree; overlapping or out-of-bounds
   entries; a CRC-32, SHA-256 or length mismatch; an unsafe path (empty, absolute, `.` or `..`
   components, backslash, colon, control characters, longer than 255 bytes, more than 8 levels);
-  two names equal ignoring case; an entry the manifest does not list or a listed file that is
-  missing; more than 1,001 entries; an entry over its limit (512 KiB per preset, 4 MiB manifest);
+  two names equal ignoring case; an entry the manifest does not list, or a listed file that is
+  missing or that no preset uses; more than 1,001 entries; an entry over its limit (512 KiB per preset, 4 MiB manifest);
   an archive over the total limit; an unknown format; a newer format version (its own reason); a
   malformed manifest or preset record; duplicate ids or texts; a git blob hash that does not match
   the text; a `duplicateOf` whose source needs the unlock or is not Included; `rightsVerified =

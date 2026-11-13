@@ -86,15 +86,18 @@ public struct PortableArchiveContents { manifest: Data; files: [String: Data]; r
 
 ```swift
 public enum UserPresetArchiveFormat { static let name = "org.projectmios.user-presets"; static let version = 1
-                                      static var limits: PortableArchiveLimits }
+                                      static let limits: PortableArchiveLimits
+                                      static func path(for id: String) -> String? }
 public struct ExportedUserPreset: Codable, Equatable { … see data-model.md …
     init(_ preset: UserPreset); func userPreset(state: UserPresetState = .pending) -> UserPreset }
 public struct UserPresetArchiveManifest: Codable, Equatable { format; formatVersion; appVersion; exportedAt; files; presets }
-public struct UserPresetArchive: Equatable { manifest; texts: [String: Data] }   // keyed by preset id
+public struct UserPresetArchive: Equatable { manifest; manifestData: Data; texts: [String: Data] }   // keyed by preset id
 public enum UserPresetArchiveReader { static func read(_ data: Data) throws -> UserPresetArchive }  // UserPresetArchiveError
 public enum UserPresetArchiveWriter {
-    static func write(_ items: [(UserPreset, Data)], appVersion: String, exportedAt: Date,
-                      sink: @escaping (Data) throws -> Void) throws
+    // `contents` is called once per preset; the text must match the record's SHA-256 and size
+    // (else WriteError.contentMismatch(id)). Sink errors are passed on.
+    static func write(_ presets: [UserPreset], appVersion: String, exportedAt: Date,
+                      contents: (UserPreset) throws -> Data?, sink: @escaping (Data) throws -> Void) throws
 }
 public struct UserPresetExportPlan: Equatable { exportable: [UserPreset]; excluded: [UserPresetExportExclusion: Int] }
 public struct UserPresetExportSummary: Equatable { exported: Int; excluded: …; fileName: String; message: String }
@@ -103,13 +106,22 @@ extension UserPresetLibrary {
     func export(ids: [String], appVersion: String, exportedAt: Date, to url: URL)
         -> Result<UserPresetExportSummary, UserPresetExportError>
 }
+public enum UserPresetExportExclusion { fullLibraryCopy, quarantined, notChecked, unavailable
+    func phrase(count:) -> String; static func sentence(_:) -> String? }
 ```
 
 `UserPresetArchiveError` cases and words: `archive(PortableArchiveError)` (its message),
 `tooManyPresets`, `invalidPreset(id)` "A preset in the archive is not valid (<id>).",
 `duplicatePreset(id)`, `pathMismatch(id)`, `contentMismatch(id)` "The text of <id> does not
 match its manifest.", `fullLibraryCopy(id)` "The archive contains a copy of a preset from the
-full library, which cannot be exported or imported.", `rightsClaimed(id)`.
+full library, which cannot be exported or imported.", `rightsClaimed(id)`,
+`unreferencedFile(path)` "<path> in the archive belongs to no preset.".
+
+Reader check order per preset: id names a path (`invalidPreset`), id unique (`duplicatePreset`),
+`rightsVerified` false (`rightsClaimed`), origin rule (`fullLibraryCopy`), record well-formed
+(`invalidPreset`), path equals the id's path (`pathMismatch`), file record, length, SHA-256 and git
+blob hash agree (`contentMismatch`), text unique (`duplicatePreset`); then no listed file may be
+left unused (`unreferencedFile`).
 
 Export rules (ADR-0008): `exportPlan` lists only playable, not held presets that are imported or
 copies of Included presets; `export(ids:)` re-applies the plan, so an id that is not exportable
