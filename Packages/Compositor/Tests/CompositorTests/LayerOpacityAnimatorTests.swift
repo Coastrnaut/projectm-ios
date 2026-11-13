@@ -100,6 +100,22 @@ final class LayerOpacityAnimatorTests: XCTestCase {
         XCTAssertEqual(a.advance(by: 0.25), 0.25, accuracy: 1e-12)
     }
 
+    func testStackSetSettingsChangesOnlyThatEntry() throws {
+        let kind = LayerKind("test.opacity")
+        var stack = LayerStack()
+        let a = try stack.add(LayerDescriptor(kind: kind))
+        let b = try stack.add(LayerDescriptor(kind: kind))
+        try stack.setSettings(LayerCompositeSettings(opacity: 0.3), of: b)
+        XCTAssertEqual(stack.entry(b)?.settings.opacity, 0.3)
+        XCTAssertEqual(stack.entry(a)?.settings, LayerCompositeSettings())
+        XCTAssertEqual(stack.ids, [a, b], "order unchanged")
+        let before = stack
+        XCTAssertThrowsError(try stack.setSettings(LayerCompositeSettings(), of: LayerInstanceID(rawValue: 99))) {
+            XCTAssertEqual($0 as? LayerStackError, .unknownLayer(LayerInstanceID(rawValue: 99)))
+        }
+        XCTAssertEqual(stack, before, "a refusal leaves the stack unchanged")
+    }
+
     func testAStallAdvancesByAtMostTheClockClamp() throws {
         // The compositor feeds the frame clock's durations, which clamp a stall to 0.1 s (CMP-001-R3).
         var clock = LayerFrameClock()

@@ -133,6 +133,13 @@ public struct LayerStack: Equatable, Sendable {
         entries.insert(entry, at: index)
     }
 
+    /// Replaces the layer's composite settings (CMP-003: its opacity is the target the compositor
+    /// fades to at the next apply).
+    public mutating func setSettings(_ settings: LayerCompositeSettings, of id: LayerInstanceID) throws(LayerStackError) {
+        guard let i = index(of: id) else { throw .unknownLayer(id) }
+        entries[i].settings = settings
+    }
+
     private func checkRoom(for kind: LayerKind) throws(LayerStackError) {
         guard entries.count < Self.maximumLayerCount else { throw .stackFull(limit: Self.maximumLayerCount) }
         if let limit = kind.maximumInstances {
