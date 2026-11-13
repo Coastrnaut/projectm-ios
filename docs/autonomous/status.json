@@ -6,8 +6,9 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 65,
-   "integrated": 22
+   "audited": 64,
+   "integrated": 22,
+   "skipped_existing": 1
   },
   "P1": {
    "audited": 148,
@@ -21,8 +22,9 @@
   }
  },
  "by_state": {
-  "audited": 301,
-  "integrated": 25
+  "audited": 300,
+  "integrated": 25,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -227,7 +229,6 @@
    "PRE-016",
    "PRE-017",
    "PRE-018",
-   "QA-001",
    "QA-002",
    "QA-003",
    "QA-004",
@@ -334,7 +335,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "301 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
+   "300 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
   ]
  },
  "features": {
@@ -2556,7 +2557,7 @@
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "skipped_existing"
   },
   "QA-002": {
    "attempts": 0,
@@ -3731,7 +3732,25 @@
  "repo_head_at_start": "419cc2a999edbc771333eb97968590802bc490fe",
  "roadmap_sha256": "77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37",
  "run_id": "cb545c51cf0b",
- "skipped_existing": [],
+ "skipped_existing": [
+  {
+   "audit": {
+    "code_paths": [
+     "Packages/AudioCore/Sources/AudioCore/ReferenceTones/ReferenceToneCatalog.swift (catalog version 1, 10 fixtures, expected FFT bins, onsets, tempo, sweep frequencies)",
+     "Packages/AudioCore/Sources/AudioCore/ReferenceTones/ToneGenerator.swift and ToneMath.swift (frame-index generator, own sin/exp/log)",
+     "specs/011-aud-016-reference-tone-suite/contracts/fixture-catalog.md (38 golden SHA-256 values)"
+    ],
+    "note": "Delivered by AUD-016 (merge f69525c): a versioned audio fixture generator with known expected feature values whose hashes are identical on the macOS host, the iOS simulator and Linux. QA-001's acceptance ('Generated fixture hashes are stable across supported hosts') is met; no separate implementation.",
+    "test_evidence": [
+     "ReferenceToneCatalogTests.testGoldenHashesOnRepeatedRuns and ReferenceToneOracleTests passed on Linux in CI run 43349673457, job 131638159151 (commit 073f92c)",
+     "same suites passed on the macOS host and the iOS 27.2 simulator in the AUD-016 gates and post-merge run (.autonomous/logs/integration/aud-016/)",
+     "scripts/check_reference_tone_goldens.py: independent CPython port reproduces 18 mono hashes (test_scripts.py)"
+    ],
+    "verdict": "skipped_existing"
+   },
+   "id": "QA-001"
+  }
+ ],
  "total": 326,
- "updated": "2026-11-13T02:07:57Z"
+ "updated": "2026-11-13T02:17:24Z"
 }
