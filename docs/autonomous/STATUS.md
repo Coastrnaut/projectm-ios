@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-13T21:33:09Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-13T21:40:11Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,19 +9,20 @@
 
 | State | Features |
 |---|---|
-| audited | 244 |
+| audited | 243 |
 | implementing | 2 |
+| unit_passed | 1 |
 | integrated | 79 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 20 | 2 | 64 | 1 |
-| P1 | 138 | 0 | 13 | 0 |
-| P2 | 77 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 19 | 2 | 1 | 64 | 1 |
+| P1 | 138 | 0 | 0 | 13 | 0 |
+| P2 | 77 | 0 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -369,6 +370,17 @@ None.
 - `swift test --package-path Packages/PresetLibrary`: pass at `fd80d903f84b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-002/20261113T161716/swift-test_PresetLibrary.log`)
 - `swift test --package-path Packages/SceneArchive`: pass at `fd80d903f84b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-002/20261113T161716/swift-test_SceneArchive.log`)
 - `post-merge: projectM-iOSTests incl. SceneArchiveTamperImportTests on iOS 27.2 sim; LocalPortability 58, SceneArchive 21, PresetLibrary in the gate`: pass at `77fcfa3f1e56` (log `.autonomous/logs/integration/file-002/app-tests.log`)
+
+### FILE-007 Document schema validator (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `d9f90f1e1d0f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-007/20261113T163821/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `d9f90f1e1d0f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-007/20261113T163821/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `d9f90f1e1d0f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-007/20261113T163821/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `d9f90f1e1d0f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-007/20261113T163821/swift-test_Compositor.log`)
+- `swift test --package-path Packages/LocalPortability`: pass at `d9f90f1e1d0f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-007/20261113T163821/swift-test_LocalPortability.log`)
+- `swift test --package-path Packages/PresetLibrary`: pass at `d9f90f1e1d0f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-007/20261113T163821/swift-test_PresetLibrary.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `d9f90f1e1d0f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-007/20261113T163821/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `d9f90f1e1d0f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-007/20261113T163821/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `d9f90f1e1d0f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-007/20261113T163821/swift-test_SceneFormat.log`)
 
 ### FX-001 Bloom (integrated)
 - `python3 scripts/check_compliance.py`: pass at `94f4b3a6b7c3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-001/20261113T090348/compliance.log`)
