@@ -8,9 +8,8 @@
   "P0": {
    "audited": 60,
    "implementing": 1,
-   "integrated": 24,
-   "skipped_existing": 1,
-   "unit_passed": 1
+   "integrated": 25,
+   "skipped_existing": 1
   },
   "P1": {
    "audited": 146,
@@ -26,9 +25,8 @@
  "by_state": {
   "audited": 294,
   "implementing": 1,
-  "integrated": 29,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "integrated": 30,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -312,7 +310,6 @@
    "UIX-013",
    "UIX-014",
    "UIX-015",
-   "VIS-001",
    "VIS-002",
    "VIS-003",
    "VIS-004",
@@ -335,7 +332,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "296 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
+   "295 features are not implemented yet (first: ACC-001, ACC-002, ACC-003, ACC-004, ACC-005)"
   ]
  },
  "features": {
@@ -3404,10 +3401,10 @@
    "branch": "feature/vis-001",
    "branch_sha": "7fa6d4e0f3c1a64f156861f044b0590991c3f3bc",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "48285d49c422576ac32986029ee731b214fcde63",
    "priority": "P0",
    "spec_dir": "specs/019-vis-001-circular-spectrum",
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "VIS-002": {
    "attempts": 0,
@@ -3745,6 +3742,11 @@
    "branch": "feature/qa-007",
    "id": "QA-007",
    "sha": "32172fdd5795d12b9a6386c3f56d1d33936b5344"
+  },
+  {
+   "branch": "feature/vis-001",
+   "id": "VIS-001",
+   "sha": "48285d49c422576ac32986029ee731b214fcde63"
   }
  ],
  "integration_branch": "autonomous/integration",
@@ -3772,5 +3774,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T13:12:18Z"
+ "updated": "2026-11-13T13:12:19Z"
 }
