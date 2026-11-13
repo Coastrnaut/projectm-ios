@@ -28,6 +28,36 @@ VIS-001/VIS-002 (native spectra), CAM-001 (camera, session only), FILE-001 (scen
 | Persistence | Each setting is written to UserDefaults at once (AppSettings, TextOverlayStore, PhotoStore/VideoStore identifiers). No scene file, no backup, no corruption fallback. | A crash-safe, atomic, validated scene file with a fallback. |
 | Restore | Settings are read back from UserDefaults at launch. | The last committed scene restores the visual's parameters, text and bindings on launch, never blocking launch on a bad file. |
 
+## Clarifications
+
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the conservative, local-first option.
+
+- Q: When the committed scene and the individually saved settings disagree at launch (an edit was
+  saved as a setting but not yet committed as a scene), which one is shown? → A: The committed scene
+  (when it is valid): its values are applied over the settings, so a kill never shows a mix of
+  committed and uncommitted state (SCN-002-R10). Settings stay where they are today (other features
+  read them); closing Settings commits at once, so in normal use both agree.
+- Q: How many earlier copies are kept, and how? → A: One backup, the previous committed scene: before
+  a new main file replaces the old one, the old one is linked as the backup (the old backup removed
+  first); the backup is never refreshed from a main file that failed to read. Two files bound the
+  storage (2 × at most 1 MiB, in practice a few KB) and always leave one complete scene.
+- Q: How hard does a commit push the bytes to storage? → A: The temporary file is flushed with a full
+  storage flush (Apple's `F_FULLFSYNC`; plain `fsync` if that is refused) before the rename, and the
+  folder is flushed after it. At most one commit per second keeps the cost (milliseconds, on a
+  background queue) away from the frame loop. `Data.write(options: .atomic)` is not used: it renames
+  but does not document a storage flush.
+- Q: Does restoring a scene switch the stored photo or video when it refers to another one? → A: No.
+  The stores keep a single current photo and video (MED-001/MED-002); a reference that is not the
+  stored one is a `missingAsset` warning, kept in the document, and the stores are never changed by a
+  restore. Switching stored media is FILE-001's import (all or nothing).
+- Q: Where do the files live and are they backed up? → A: `Library/Application Support/Scenes`
+  (`current.scene`, `current.scene.bak`, transient `current.scene.tmp`), private to the app and
+  included in the user's own device backups like the stored photo and video. No file timestamps are
+  read (required-reason API).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - My last committed look survives a crash or a forced quit (Priority: P1)
@@ -154,6 +184,8 @@ orphaned binding is restored; after the next edit the saved file still contains 
   no device or account data. The privacy policy's list of stored data names them.
 - **SCN-002-R12**: UI tests reset the scene files with the other stored state; a DEBUG-only probe
   reports the last committed revision so a test can wait for a commit.
+- **SCN-002-R13**: The files are `current.scene` (main), `current.scene.bak` (backup) and a transient
+  `current.scene.tmp` in `Library/Application Support/Scenes`; at most two committed copies exist.
 
 ### Key Entities
 
