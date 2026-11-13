@@ -68,23 +68,23 @@ Paths: `UP` = `Packages/PresetLibrary/Sources/PresetLibrary/UserPresets`, `PKGT`
   their words; `UserPresetName.copyName`; `BundledPresetSource`) and
   `UserPresetLibrary.duplicate(_:contents:)` in `UP/UserPresetLibrary.swift`. Evidence: T06
   passes. — Verified 2026-11-12: `swift test --package-path Packages/PresetLibrary`: 166 tests, 0 failures, 1 skipped.
-- [ ] PRE-015-T08 [US1] {sim} Write `APP/Tests/UserPresetDuplicationAppTests.swift` (S1, S2,
+- [X] PRE-015-T08 [US1] {sim} Write `APP/Tests/UserPresetDuplicationAppTests.swift` (S1, S2,
   R2, R20): with the app's real bundle and `PresetLibrary.load(from: .main)`, for each of the 28
   Included presets: bundled bytes' git blob hash equals the index hash before; duplicate through
   `UserPresetsCoordinator.duplicate` (scripted trial); equal again after; the bundled preset
   loads into a fake renderer with its bundle `fileURL` and no `data`; a favorite and a collection
   naming the bundled id still resolve to the bundled preset; a locked pack preset (synthetic
-  pack) is refused with the purchase requested and nothing stored. Record the red run.
-- [ ] PRE-015-T09 [US1] {sim} Implement the app side: `RendererPresetLoader.bundledData(for:)`
+  pack) is refused with the purchase requested and nothing stored. Record the red run. — Verified 2026-11-12: red run recorded (build-for-testing with the PRE-012 coordinators: `duplicate`, `duplicateMessage`, `editorText`, `saveEdit`, `needsUnlock` did not exist); `UserPresetDuplicationAppTests` 6 tests pass on the iOS 27.2 simulator; 28 of 28 Included presets duplicated with bundle bytes and index hash unchanged.
+- [X] PRE-015-T09 [US1] {sim} Implement the app side: `RendererPresetLoader.bundledData(for:)`
   in `APP/Coordinators/AppCoordinator.swift` (read-only, shared with `load`);
   `UserPresetsCoordinator.duplicate(_:)`, `duplicateMessage`; `PresetCoordinator`
   purchase request for a locked source and refusal for one excluded this session. Evidence: T08
-  passes.
-- [ ] PRE-015-T10 [US1] {sim} UI: "Duplicate to My Presets" in `PresetRow`'s context menu and as
+  passes. — Verified 2026-11-12: T08 passes (2 runs).
+- [X] PRE-015-T10 [US1] {sim} UI: "Duplicate to My Presets" in `PresetRow`'s context menu and as
   a VoiceOver action for bundled rows (`APP/Views/PresetBrowserView.swift`, environment action);
   a "Duplicate to My Presets" button by the current preset name in
   `APP/Views/ControlsOverlay.swift` (only when the current preset is bundled); result alerts in
-  `PresetBrowserView` and `APP/Views/VisualizerView.swift`. Evidence: T15's UI tests.
+  `PresetBrowserView` and `APP/Views/VisualizerView.swift`. Evidence: T15's UI tests. — Verified 2026-11-12: `UserPresetEditingUITests` duplicate from a row and from the controls pass (2 runs). The browser result alert sits on the NavigationStack so it shows over pushed lists.
 
 ## Phase 4: User Story 2 - Edit my copy (P1)
 
@@ -106,23 +106,23 @@ Paths: `UP` = `Packages/PresetLibrary/Sources/PresetLibrary/UserPresets`, `PKGT`
 - [X] PRE-015-T12 [US2] {mac} Implement `UserPresetStore.replaceContents`, the `editCheck` record
   (`UP/UserPresetStore.swift`), `UserPresetLibrary.edit`, `editorText`, `takeEditNotices`
   (`UP/UserPresetLibrary.swift`). Evidence: T11 passes. — Verified 2026-11-12: `replaceContents` and the `editCheck` record landed with T05 (commit 98c0c0c), `edit`/`editorText`/`takeEditNotices` here; 166 package tests pass.
-- [ ] PRE-015-T13 [US2] {sim} Write app tests in `APP/Tests/UserPresetDuplicationAppTests.swift`
+- [X] PRE-015-T13 [US2] {sim} Write app tests in `APP/Tests/UserPresetDuplicationAppTests.swift`
   for editing: for each Included preset, duplicate then save an edit through
   `UserPresetsCoordinator.saveEdit`; the bundled hash and bytes equal the index before and after
   (S1); the copy's stored file changed (S2); when the copy is on screen it is reloaded with the
-  new text. Record the red run.
-- [ ] PRE-015-T14 [US2] {sim} Implement `UserPresetsCoordinator.editorText`, `saveEdit`,
+  new text. Record the red run. — Verified 2026-11-12: red with T08 (same build); for each of the 28 Included presets the copy was edited and saved, the copy file changed, bundled bytes and hash unchanged; `testASavedEditOfThePresetOnScreenIsReloaded` passes.
+- [X] PRE-015-T14 [US2] {sim} Implement `UserPresetsCoordinator.editorText`, `saveEdit`,
   `editNotice`, reload of the current preset (`PresetCoordinator.reloadIfCurrent`), and the
   editor sheet `APP/Views/UserPresetEditorView.swift` (name field, monospaced `TextEditor`,
   Cancel/Save, checking progress, error section announced, Latin-1 note,
   `interactiveDismissDisabled` while dirty, Discard Changes / Keep Editing). Add "Edit" to user
-  rows in `APP/Views/UserPresetsView.swift` and `PresetBrowserView.swift`. Evidence: T13 passes.
-- [ ] PRE-015-T15 [US2] {sim} Write `APP/UITests/UserPresetEditingUITests.swift`: duplicate an
+  rows in `APP/Views/UserPresetsView.swift` and `PresetBrowserView.swift`. Evidence: T13 passes. — Verified 2026-11-12: T13 and T15 pass. The discard question is an alert (a confirmation dialog hid its Keep Editing button on iOS 27); swiping down is blocked while dirty (spec R16 amended).
+- [X] PRE-015-T15 [US2] {sim} Write `APP/UITests/UserPresetEditingUITests.swift`: duplicate an
   Included preset from the browser row → "<name> copy" listed; duplicate the current preset from
   the controls; open Edit, break the header and Save → error shown, editor stays; Cancel →
   discard prompt → Discard; Edit, change the text validly and Save → editor closes; the editor at
   the largest accessibility text size: fields and buttons exist and are hittable (S6). Evidence:
-  the tests pass on the simulator.
+  the tests pass on the simulator. — Verified 2026-11-12: 4 UI tests pass on the iOS 27.2 simulator with the real off-screen engine, twice; the XXXL screenshot is kept in the xcresult.
 
 ## Phase 5: User Story 3 - Purchase boundary (P1)
 
@@ -135,37 +135,37 @@ Paths: `UP` = `Packages/PresetLibrary/Sources/PresetLibrary/UserPresets`, `PKGT`
   unlock → playable again; Included copies unaffected; nothing deleted. Record the red run. — Verified 2026-11-12: red run recorded with T06; 3 hold tests in `UserPresetDuplicationTests` pass.
 - [X] PRE-015-T17 [US3] {mac} Implement `setLibraryUnlocked`, `needsUnlock` and the hold in
   `UP/UserPresetLibrary.swift`. Evidence: T16 passes. — Verified 2026-11-12: 166 package tests pass, including the hold tests.
-- [ ] PRE-015-T18 [US3] {sim} App: `UserPresetGuarding.libraryUnlockChanged`, called by
+- [X] PRE-015-T18 [US3] {sim} App: `UserPresetGuarding.libraryUnlockChanged`, called by
   `PresetCoordinator.setUnlocked` before the scope changes; "Needs the full library" section in
   `UserPresetsView` (tap → purchase sheet; Information; Remove). Test in
   `APP/Tests/UserPresetDuplicationAppTests.swift`: unlock, duplicate a pack preset, revoke →
   not in the library or My Presets scope, choose → purchase requested; a favorite naming the
   copy survives a relaunch while held (`PresetCoordinator.attach` keeps favorites of known user
-  preset ids); restore → playable. Record the red run, then make it pass.
+  preset ids); restore → playable. Record the red run, then make it pass. — Verified 2026-11-12: `testCopiesOfLockedPacksAreHeldAfterARefundAndComeBack` (red with T08, then passes): held after revocation, purchase on tap, favorite survives a relaunch, playable after restore.
 
 ## Phase 6: User Story 4 - Origin information (P2)
 
-- [ ] PRE-015-T19 [US4] {sim} `UserPresetInfoView`: for a copy, show "Duplicated from" (name and
+- [X] PRE-015-T19 [US4] {sim} `UserPresetInfoView`: for a copy, show "Duplicated from" (name and
   pack), the pack's statement verbatim, the not-verified sentence, and "Edited" when
   `modifiedAt` is set (`presetOrigin` identifier). Test: words in
-  `APP/Tests/UserPresetDuplicationAppTests.swift` and an info check in T15's UI test.
+  `APP/Tests/UserPresetDuplicationAppTests.swift` and an info check in T15's UI test. — Verified 2026-11-12: `testOriginWords` passes; info view shows origin, pack statement, rights sentence and last-saved date (`presetOrigin`). Not separately checked in a UI test.
 
 ## Phase 7: Polish & cross-cutting
 
-- [ ] PRE-015-T20 Extend the PRE-012 row of `docs/privacy-policy.md` and its "What is stored on
-  your device" text for R23. Evidence: `python3 scripts/validate_docs.py` OK.
-- [ ] PRE-015-T21 {mac} Run `swift test --package-path Packages/PresetLibrary` twice and once
-  with `PRE012_CORPUS` if the validator changed (it is not planned to). Evidence: counts.
-- [ ] PRE-015-T22 {sim} Run `Rendering-Package` and `ANGLERendering` simulator tests (unchanged
-  packages, regression) twice. Evidence: counts.
-- [ ] PRE-015-T23 {sim} Run all app unit tests and `UserPresetsUITests`,
+- [X] PRE-015-T20 Extend the PRE-012 row of `docs/privacy-policy.md` and its "What is stored on
+  your device" text for R23. Evidence: `python3 scripts/validate_docs.py` OK. — Verified 2026-11-12: `validate_docs.py` OK; the PRE-012 paragraph and table row were extended (no new row).
+- [X] PRE-015-T21 {mac} Run `swift test --package-path Packages/PresetLibrary` twice and once
+  with `PRE012_CORPUS` if the validator changed (it is not planned to). Evidence: counts. — Verified 2026-11-12: `swift test --package-path Packages/PresetLibrary` twice: 166 tests, 0 failures, 1 skipped (corpus) each. The validator did not change, so the corpus run was not repeated.
+- [X] PRE-015-T22 {sim} Run `Rendering-Package` and `ANGLERendering` simulator tests (unchanged
+  packages, regression) twice. Evidence: counts. — Verified 2026-11-12: `Rendering-Package` 28 tests and `ANGLERendering` 51 tests, 0 failures, twice each, on the iOS 27.2 simulator.
+- [X] PRE-015-T23 {sim} Run all app unit tests and `UserPresetsUITests`,
   `PresetCollectionsUITests`, `VisualizerUITests`, `UserPresetEditingUITests` twice. Evidence:
-  counts; known environmental failure `PresetTests.testBundledIncludedScopeMatchesRelease1_0`.
-- [ ] PRE-015-T24 Run `python3 scripts/check_compliance.py`, `python3 scripts/test_scripts.py`,
-  `python3 scripts/validate_docs.py`. Evidence: all OK.
-- [ ] PRE-015-T25 Write `docs/test-reports/preset-duplication.md` with commands, counts and what
-  is not verified.
-- [ ] PRE-015-T26 {device} S7 on D1: the editor opens a 524,288-byte preset in under 2 s; VoiceOver
+  counts; known environmental failure `PresetTests.testBundledIncludedScopeMatchesRelease1_0`. — Verified 2026-11-12: twice: app unit tests 106 run, 1 failure each time (the known `PresetTests.testBundledIncludedScopeMatchesRelease1_0`, full library not checked out); UI tests 16 run (UserPresetEditing 4, UserPresets 3, PresetCollections 7, Visualizer 2), 0 failures.
+- [X] PRE-015-T24 Run `python3 scripts/check_compliance.py`, `python3 scripts/test_scripts.py`,
+  `python3 scripts/validate_docs.py`. Evidence: all OK. — Verified 2026-11-12: `check_compliance.py` OK, `test_scripts.py` 96 tests OK (1 skipped), `validate_docs.py` OK.
+- [X] PRE-015-T25 Write `docs/test-reports/preset-duplication.md` with commands, counts and what
+  is not verified. — Verified 2026-11-12: `docs/test-reports/preset-duplication.md`.
+- [ ] PRE-015-T26 {device} (open: final device stage) S7 on D1: the editor opens a 524,288-byte preset in under 2 s; VoiceOver
   pass over the editor. Final device stage; not run here.
 
 ## Dependencies
