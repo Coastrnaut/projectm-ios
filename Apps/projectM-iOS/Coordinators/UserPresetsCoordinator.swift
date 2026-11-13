@@ -425,7 +425,9 @@ final class UserPresetsCoordinator: UserPresetGuarding {
             notice = UserPresetText.unreadable
             noticeShown = true
         }
-        presets?.setUserPresets(snapshot.playable.map(\.indexed))
+        // ACC-002-R4: imported presets carry the same flash risk flag as the bundled library.
+        let flashRisk = await library.flashRisk()
+        presets?.setUserPresets(snapshot.playable.map { (preset: UserPreset) -> IndexedPreset in preset.indexed(flash: flashRisk[preset.id]) })
     }
 
     @ObservationIgnored private var noticeShown = false
