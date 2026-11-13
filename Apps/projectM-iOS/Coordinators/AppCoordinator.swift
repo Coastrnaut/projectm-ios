@@ -64,6 +64,8 @@ final class AppCoordinator: VisualizationControlling {
     @ObservationIgnored private let inAppPlayback: InAppPlaybackSource
     /// Play, pause, stop playback, seek, next and previous for In-App Playback (AUD-006).
     let transport: PlaybackTransport
+    /// AUD-007: the audio route indicator and its explanations.
+    let routes = RouteCoordinator.makeDefault()
     private(set) var renderer: (any VisualizerRenderer)?
     private(set) var rendererError: String?
     /// Preset browsing and switching (T090, T091).
@@ -161,6 +163,8 @@ final class AppCoordinator: VisualizationControlling {
         lifecycleForwarding = Task { @MainActor in
             for await event in lifecycle.events { await lifecycleCoordinator.handle(event) }
         }
+        routes.context = { [weak self] in self?.routeContext }   // AUD-007
+        routes.isActive = { [weak self] in self?.appIsActive ?? true }
         loadLibrary()
         loadAudioLibrary()
         #if DEBUG || PROJECTM_AUTOMATION
@@ -567,6 +571,12 @@ final class AppCoordinator: VisualizationControlling {
     func restorePurchases() { Task { await entitlements.restore() } }
 
     // MARK: - Controls and lifecycle
+
+    /// AUD-007: what the route indicator shows (outputs for In-App Playback, inputs for
+    /// Microphone); nil hides it.
+    var routeContext: AudioRouteContext? {
+        AudioRouteContext.make(mode: manager.activeMode, state: manager.state, isPausedByUser: manager.isPausedByUser)
+    }
 
     /// A tap on the visualization (FR-042).
     func toggleControls() {
