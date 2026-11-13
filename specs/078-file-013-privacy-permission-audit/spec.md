@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (FILE-013-T01-T10, T12 verified on the Mac and an own iOS 27.2 simulator; T11 `{device}` open)
 
 **Input**: User description: "Implement FILE-013 (Privacy permission audit) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Centralize descriptions of mic,
@@ -43,6 +43,25 @@ of scope). Findings:
 3. Restricted is tested only for the camera's state text; no UI test shows a restricted state, and
    no test documents that microphone and local network have no restricted state of their own.
 4. The privacy policy's permission list is hand-written and not checked against the app.
+5. **Found while implementing (2026-11-13): the app had no `NSCameraUsageDescription`.** CAM-001-T02
+   had added it to the CaptureLab target's Info.plist properties in `project.yml`, not to
+   `projectM-iOS`; the built app's Info.plist had three usage keys. On a device iOS ends an app that
+   asks for camera access without the key, so choosing the Camera visual would have crashed the app.
+   The CAM-001 UI tests use a stand-in camera and the simulator has no rear camera, so no test reached
+   the real request. Released versions 1.0 and 1.1 predate CAM-001. FILE-013 moved the key to the
+   app target (CaptureLab does not use the camera); the catalog's unit test against the built
+   Info.plist and the check script now fail on such a gap. Not a new permission: CAM-001 specified
+   it (FILE-013-R11).
+
+### After FILE-013
+
+| Permission | Denied | Restricted | Tested |
+|---|---|---|---|
+| Microphone | Unchanged banner text and actions; Open Settings through the catalog's opener | Same as denied (iOS has no restricted record permission) | Real denial on the simulator (`simctl privacy revoke`), UI; mapping and notice, unit |
+| Camera | Shared notice (`PermissionNoticeView`), catalog text, Open Settings | Shared notice, catalog's restricted text, Open Settings | Denied (CameraUITests) and restricted (PermissionAuditUITests, Open Settings brings iOS Settings forward) with the stand-in; unit |
+| Local Network | Shared notice replaces the OSC status, catalog text, **Open Settings added** | Same as denied (no restricted state, no query API) | Denied with the DEBUG failing transport, UI; unit |
+| Screen capture | Unchanged banner: Restart, Choose source, no Open Settings | Chooser row disabled with "Screen recording not allowed" | Denied and restricted with the fake source, UI; unit |
+| Photos library | No permission, no key | — | Unit (built Info.plist) and the check script |
 
 ## Clarifications
 
@@ -91,6 +110,10 @@ interaction); each answer is the conservative option.
 - Q: Does the OSC listener badge change when Local Network is denied? → A: No. The badge shows only
   while the listener is open (OSC-007); the denial is shown where the user turned OSC on (Settings).
   Applied to Edge Cases.
+- Q: The audit found the app without `NSCameraUsageDescription` (audit finding 5). Fix it here or
+  leave it to CAM-001? → A: Fix it here, by moving the key CAM-001 specified from the CaptureLab
+  target to the app target: the missing key would crash the app on a device, and the catalog check
+  exists to catch exactly this. It is not a new permission. Applied to FILE-013-R11.
 
 ## User Scenarios & Testing *(mandatory)*
 

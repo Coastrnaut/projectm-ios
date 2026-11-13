@@ -9,7 +9,7 @@ stage and stay open until a person runs them on D1-D3.
 ## Phase 1: Setup
 
 - [X] CAM-001-T01 Add target `CameraLayer` (dependencies: `Compositor`) to `Packages/Compositor/Package.swift`, include it in the `Compositor` library product, and add it to `CompositorTests`' dependencies; header comment names CAM-001 and the Linux shape — Verified 2026-11-13: `swift test --package-path Packages/Compositor` (61 tests, 0 failures, 0.62 s; CameraGeometryTests 8, CameraLayerTests 10) and the Linux shape (29 tests, 0 failures)
-- [X] CAM-001-T02 [P] Add package `Compositor` to `project.yml` (`packages:` and the `projectM-iOS` target's dependencies) and `NSCameraUsageDescription: "The Camera visual shows the live view from your rear camera behind the visualization. The picture stays on your device and is never recorded or sent."` to the app's Info.plist properties — Verified 2026-11-13: `xcodegen generate` and the simulator build (`** TEST BUILD SUCCEEDED **`); project.yml carries the Compositor package and NSCameraUsageDescription
+- [X] CAM-001-T02 [P] Add package `Compositor` to `project.yml` (`packages:` and the `projectM-iOS` target's dependencies) and `NSCameraUsageDescription: "The Camera visual shows the live view from your rear camera behind the visualization. The picture stays on your device and is never recorded or sent."` to the app's Info.plist properties — Verified 2026-11-13: `xcodegen generate` and the simulator build (`** TEST BUILD SUCCEEDED **`); project.yml carries the Compositor package and NSCameraUsageDescription — Corrected 2026-11-13 by FILE-013: the key had landed in the CaptureLab target, not `projectM-iOS`; moved to the app (FILE-013 spec, audit finding 5)
 
 ## Phase 2: Foundational (blocks every story)
 
