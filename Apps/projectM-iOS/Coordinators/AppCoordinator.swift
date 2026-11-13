@@ -159,6 +159,7 @@ final class AppCoordinator: VisualizationControlling {
             if let photos = try? PhotoStore.defaultDirectory() { try? FileManager.default.removeItem(at: photos) }   // MED-001: no photo
         }
         settings = AppSettings(defaults: defaults, systemReduceMotion: UIAccessibility.isReduceMotionEnabled)
+        self.externalDisplay.reduceFlashing = settings.reduceFlashing   // OUT-010-R6
         osc = OSCReceiverCoordinator(settings: settings)
         photos = PhotoCoordinator.makeDefault(defaults: defaults)
         #if DEBUG
@@ -510,6 +511,7 @@ final class AppCoordinator: VisualizationControlling {
         nativeVisual?.reduceFlashing = settings.reduceFlashing   // VIS-001-R10
         cameraVisual?.reduceFlashing = settings.reduceFlashing   // CAM-001: the composite flash guard
         photoVisual?.reduceFlashing = settings.reduceFlashing    // MED-001
+        externalDisplay.reduceFlashing = settings.reduceFlashing // OUT-010-R6: the restore fade's length
     }
 
     // MARK: - Visual choice (VIS-001)

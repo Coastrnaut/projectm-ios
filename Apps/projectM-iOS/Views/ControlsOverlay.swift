@@ -24,8 +24,12 @@
 // in the compact layout and after the buttons in the regular one, for both visuals.
 // AUD-007: the audio route indicator ("Output: Speaker", "Input: iPhone Microphone") sits next to
 // the source-and-state indicator (its own row in compact width) while In-App Playback or Microphone runs.
+// OUT-010: "Black out output" / "Restore output" blacks out the current output (the external display
+// while the visualization is on one, else the device's visualization) with one tap; its
+// accessibility value says the output's state (OUT-010-R1, R10). Shown for every visual.
 import CaptureKit
 import CaptureUI
+import PresentationLifecycle
 import PresetLibrary
 import SwiftUI
 
@@ -159,6 +163,7 @@ struct ControlsOverlay: View {
                         Image(systemName: item.icon).frame(maxWidth: .infinity, minHeight: 36)
                     }
                     .accessibilityLabel(item.title)
+                    .accessibilityValue(item.value ?? "")
                     .accessibilityIdentifier(item.id)
                 }
             }
@@ -180,6 +185,7 @@ struct ControlsOverlay: View {
                         Label(item.title, systemImage: item.icon)
                     }
                     .buttonStyle(.bordered)
+                    .accessibilityValue(item.value ?? "")
                     .accessibilityIdentifier(item.id)
                 }
                 TempoControls(coordinator: coordinator)   // SHOW-011
@@ -191,6 +197,7 @@ struct ControlsOverlay: View {
         let id: String
         let title: String
         let icon: String
+        var value: String? = nil
         let action: () -> Void
     }
 
@@ -199,11 +206,22 @@ struct ControlsOverlay: View {
         return allButtons.filter { !coordinator.showsAlternateVisual || !presetIDs.contains($0.id) }
     }
 
+    /// OUT-010: one tap blacks out, one tap restores (spec Clarifications: no confirmation).
+    private var blackoutItem: Item {
+        let external = coordinator.externalDisplay
+        let requested = external.isBlackoutRequested
+        return Item(id: "blackout", title: requested ? "Restore output" : "Black out output",
+                    icon: requested ? "eye" : "eye.slash", value: external.blackoutPhase.accessibilityValue) {
+            external.toggleBlackout()
+        }
+    }
+
     private var allButtons: [Item] {
         [
             Item(id: "stop", title: "Stop", icon: "stop.fill") { coordinator.stop() },
             Item(id: "pauseResume", title: coordinator.userPaused ? "Resume" : "Pause",
                  icon: coordinator.userPaused ? "play.fill" : "pause.fill") { coordinator.togglePause() },
+            blackoutItem,
             Item(id: "previous", title: "Previous", icon: "backward.fill") { coordinator.previous() },
             Item(id: "next", title: "Next", icon: "forward.fill") { coordinator.next() },
             Item(id: "random", title: "Random", icon: "shuffle") { coordinator.random() },
