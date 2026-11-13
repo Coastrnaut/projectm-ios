@@ -6,13 +6,14 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 66,
+   "audited": 65,
+   "implementing": 1,
    "integrated": 21
   },
   "P1": {
    "audited": 148,
-   "implementing": 1,
-   "integrated": 2
+   "integrated": 2,
+   "unit_passed": 1
   },
   "P2": {
    "audited": 79
@@ -22,9 +23,10 @@
   }
  },
  "by_state": {
-  "audited": 302,
+  "audited": 301,
   "implementing": 1,
-  "integrated": 23
+  "integrated": 23,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -2505,12 +2507,12 @@
   "PRE-014": {
    "attempts": 0,
    "branch": "feature/pre-014",
-   "branch_sha": null,
+   "branch_sha": "10193f697212d3c5062cdd00012bf10761d8c1c7",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": "specs/012-pre-014-bulk-preset-export",
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "PRE-015": {
    "attempts": 0,
@@ -2614,13 +2616,13 @@
   },
   "QA-007": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/qa-007",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/013-qa-007-audio-source-contract-suite",
+   "state": "implementing"
   },
   "QA-008": {
    "attempts": 0,
@@ -3727,5 +3729,5 @@
  "run_id": "cb545c51cf0b",
  "skipped_existing": [],
  "total": 326,
- "updated": "2026-11-13T01:36:49Z"
+ "updated": "2026-11-13T01:53:00Z"
 }
