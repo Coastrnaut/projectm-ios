@@ -31,7 +31,14 @@
 // buffer this compositor encoded as its fence, so no picture is reused while a frame may still use it.
 // The pool is ticked once per frame (idle-age eviction). `pictureAllocations` counts pictures taken;
 // `texturePool.counters.misses` counts the ones Metal actually created.
+//
+// REC-001 (contracts/frame-capture.md in specs/055): `requestFrameCapture` asks for the next frame as
+// shown. The next successful `composite` encodes the same output pipeline (composite × the flash
+// guard's gain) a second time into a private `rgba16Float` texture and blits it into a shared buffer;
+// the handler gets linear premultiplied half floats when the command buffer completes. Frames
+// without a request are unchanged; the capture's texture and buffer are one-offs, not pooled.
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
+import FrameCapture
 import Metal
 
 public enum CompositorError: Error, Equatable, Sendable {
@@ -103,6 +110,8 @@ public final class Compositor {
     public private(set) var transformedDraws = 0
     /// The stack last applied (nil before the first `apply`, and for `init(device:layers:)`).
     public private(set) var appliedStack: LayerStack?
+    /// REC-001: the handler waiting for the next frame.
+    private var pendingCapture: (@Sendable (CapturedPixels?) -> Void)?
 
     /// An empty compositor; give it layers with `apply(_:makeLayer:)` (CMP-002).
     /// PERF-004: `texturePool` nil gives the compositor a private pool.
@@ -295,7 +304,73 @@ public final class Compositor {
         encoder.setFragmentBuffer(flashGuard.gainBuffer, offset: 0, index: 0)
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
         encoder.endEncoding()
+        if let handler = pendingCapture {
+            pendingCapture = nil
+            encodeCapture(composite: composite, size: size, commandBuffer: commandBuffer, handler: handler)
+        }
         return true
+    }
+
+    // MARK: - Frame capture (REC-001)
+
+    /// True while a capture waits for the next frame.
+    public var hasPendingFrameCapture: Bool { pendingCapture != nil }
+
+    /// Captures the next frame `composite` encodes, as shown (after the flash guard): `handler` runs
+    /// once, on Metal's completion thread, with linear premultiplied half-float RGBA at the output's
+    /// size, or nil if the GPU work failed. A newer request or `cancelFrameCapture` gives an older
+    /// pending handler nil. Call on the compositor's thread.
+    public func requestFrameCapture(_ handler: @escaping @Sendable (CapturedPixels?) -> Void) {
+        pendingCapture?(nil)
+        pendingCapture = handler
+    }
+
+    /// Drops a pending capture (its handler gets nil).
+    public func cancelFrameCapture() {
+        let handler = pendingCapture
+        pendingCapture = nil
+        handler?(nil)
+    }
+
+    private func encodeCapture(composite: MTLTexture, size: LayerPictureDescriptor, commandBuffer: MTLCommandBuffer,
+                               handler: @escaping @Sendable (CapturedPixels?) -> Void) {
+        let width = size.width, height = size.height
+        let rowBytes = width * 8
+        let d = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba16Float, width: width, height: height, mipmapped: false)
+        d.usage = [.renderTarget]
+        d.storageMode = .private
+        guard let pipeline = outputPipeline(for: .rgba16Float), let target = device.makeTexture(descriptor: d),
+              let buffer = device.makeBuffer(length: rowBytes * height, options: .storageModeShared) else {
+            handler(nil)
+            return
+        }
+        target.label = "REC-001 capture"
+        let pass = MTLRenderPassDescriptor()
+        pass.colorAttachments[0].texture = target
+        pass.colorAttachments[0].loadAction = .dontCare
+        pass.colorAttachments[0].storeAction = .store
+        guard let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: pass) else { handler(nil); return }
+        encoder.label = "REC-001 capture output"
+        encoder.setRenderPipelineState(pipeline)
+        encoder.setFragmentTexture(composite, index: 0)
+        encoder.setFragmentBuffer(flashGuard.gainBuffer, offset: 0, index: 0)
+        encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
+        encoder.endEncoding()
+        guard let blit = commandBuffer.makeBlitCommandEncoder() else { handler(nil); return }
+        blit.label = "REC-001 capture read-back"
+        blit.copy(from: target, sourceSlice: 0, sourceLevel: 0, sourceOrigin: MTLOrigin(x: 0, y: 0, z: 0),
+                  sourceSize: MTLSize(width: width, height: height, depth: 1), to: buffer, destinationOffset: 0,
+                  destinationBytesPerRow: rowBytes, destinationBytesPerImage: rowBytes * height)
+        blit.endEncoding()
+        // The buffer is read only here, after the GPU finished with it; nothing else holds it.
+        nonisolated(unsafe) let readBack = buffer
+        commandBuffer.addCompletedHandler { (completed: MTLCommandBuffer) in
+            guard completed.status == .completed else { handler(nil); return }
+            let count = width * height * 4
+            let halves = readBack.contents().bindMemory(to: UInt16.self, capacity: count)
+            let values = Array(UnsafeBufferPointer(start: halves, count: count))
+            handler(CapturedPixels(width: width, height: height, layout: .linearPremultipliedHalfRGBA(values)))
+        }
     }
 
     // MARK: - Transforms (CMP-005)

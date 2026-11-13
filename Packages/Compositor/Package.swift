@@ -35,6 +35,10 @@
 //   compiled generator graph or one typed refusal: size limit before decoding, executables, scripts
 //   and archives refused by their first bytes, `JSONDecoder` into the SHD-002 document. It reads no
 //   files and loads nothing; Foundation only, builds on Linux.
+// * `FrameCapture` (REC-001, specs/055-rec-001-still-frame-capture) turns a captured frame (linear
+//   premultiplied half floats from the compositor, or 8-bit sRGB from the native and projectM paths)
+//   into 8-bit sRGB pixels per format policy and encodes PNG or HEIF with ImageIO (no metadata). The
+//   conversion and refusal rules are plain Swift and build on Linux; ImageIO compiles out there.
 // Nothing here imports projectM, ANGLE, capture or the app (Constitution VI). The projectM layer is
 // target `ProjectMLayer` in Packages/ANGLERendering.
 // One library product, so CI's `-scheme Compositor` builds and tests every target.
@@ -43,7 +47,7 @@ import PackageDescription
 let package = Package(
     name: "Compositor",
     platforms: [.iOS("26.0"), .macOS(.v15)],
-    products: [.library(name: "Compositor", targets: ["Compositor", "SpectrumLayers", "CameraLayer", "ProceduralMaterials", "GeneratorGraph", "GeneratorGraphImport", "ImageLayer", "VideoLayer"])],
+    products: [.library(name: "Compositor", targets: ["Compositor", "SpectrumLayers", "CameraLayer", "ProceduralMaterials", "GeneratorGraph", "GeneratorGraphImport", "ImageLayer", "VideoLayer", "FrameCapture"])],
     dependencies: [
         .package(path: "../AnalysisFeatures"),
         .package(path: "../FlashSafety"),
@@ -52,7 +56,9 @@ let package = Package(
         .package(path: "../ParameterGraph"),
     ],
     targets: [
-        .target(name: "Compositor", dependencies: ["AnalysisFeatures", "FlashSafety"]),
+        // REC-001: still frame capture: formats, color conversion, ImageIO encoding (pure Swift + ImageIO).
+        .target(name: "FrameCapture"),
+        .target(name: "Compositor", dependencies: ["AnalysisFeatures", "FlashSafety", "FrameCapture"]),
         .target(name: "SpectrumLayers", dependencies: ["Compositor", .product(name: "VisualGenerators", package: "VisualGenerators")]),
         .target(name: "CameraLayer", dependencies: ["Compositor"]),
         .target(name: "ProceduralMaterials", dependencies: ["Compositor", "ParameterGraph"]),
@@ -61,12 +67,13 @@ let package = Package(
         .target(name: "VideoLayer", dependencies: ["Compositor", "CameraLayer"]),
         .target(name: "GeneratorGraphImport", dependencies: ["GeneratorGraph"]),
         .testTarget(name: "CompositorTests",
-                    dependencies: ["Compositor", "SpectrumLayers", "CameraLayer", "ImageLayer", "VideoLayer", "AnalysisFeatures", "FlashSafety",
+                    dependencies: ["Compositor", "SpectrumLayers", "CameraLayer", "ImageLayer", "VideoLayer", "AnalysisFeatures", "FlashSafety", "FrameCapture",
                                    .product(name: "VisualGenerators", package: "VisualGenerators")]),
         .testTarget(name: "ProceduralMaterialsTests",
                     dependencies: ["ProceduralMaterials", "Compositor", "ParameterGraph", "FlashSafety", "AnalysisFeatures"]),
         .testTarget(name: "GeneratorGraphTests",
                     dependencies: ["GeneratorGraph", "Compositor", "FlashSafety", "AnalysisFeatures", "ProceduralMaterials"]),
+        .testTarget(name: "FrameCaptureTests", dependencies: ["FrameCapture"]),
         .testTarget(name: "GeneratorGraphImportTests", dependencies: ["GeneratorGraphImport", "GeneratorGraph"]),
     ]
 )

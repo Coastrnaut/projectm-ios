@@ -61,8 +61,10 @@ file records the technical ones.
 ## REC-001-D5: Metadata
 
 - The written files contain only what ImageIO derives from the image: dimensions, color model, depth,
-  alpha flag, and the sRGB profile. The tests read back the properties and refuse `{GPS}`, `{Exif}`
-  dates, `{TIFF}` Make/Model/Software/DateTime, and `{IPTC}`.
+  alpha flag, and the sRGB profile. ImageIO also writes an `{Exif}` dictionary describing the image
+  itself (`ColorSpace`, `PixelXDimension`, `PixelYDimension`); the tests allow exactly those keys and
+  refuse `{GPS}`, `{IPTC}`, `{MakerApple}`, any other Exif key (dates, camera, lens), `{TIFF}`
+  Make/Model/Software/DateTime/Artist/HostComputer and PNG text chunks.
 
 ## REC-001-D6: Timeout and cancellation
 
