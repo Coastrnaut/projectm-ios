@@ -154,6 +154,17 @@ final class VideoRecordingCoordinator {
         observers.forEach(NotificationCenter.default.removeObserver)
     }
 
+    /// FILE-010-R5: what cache cleanup must keep — the whole recording folders while a recording is made
+    /// or finished, the offered recording and the one handed to the Save mover.
+    var filesInUse: [URL] {
+        var urls: [URL] = [offered, fileToMove].compactMap { (url: URL?) -> URL? in url }
+        if state != .idle {
+            urls.append(directory)
+            if let debugDirectory { urls.append(debugDirectory) }
+        }
+        return urls
+    }
+
     /// `<tmp>/Recordings`: the only place recordings exist before the mover takes them.
     static var defaultDirectory: URL {
         FileManager.default.temporaryDirectory.appendingPathComponent("Recordings", isDirectory: true)

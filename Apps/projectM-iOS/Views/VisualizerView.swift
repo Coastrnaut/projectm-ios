@@ -288,7 +288,8 @@ struct VisualizerView: View {
                          nativeVisualUnavailable: coordinator.nativeVisualUnavailable,
                          glowUnavailable: coordinator.glowUnavailable, photos: coordinator.photos,
                          videos: coordinator.videos, texts: coordinator.texts,
-                         show: coordinator.show, addCurrentScene: { coordinator.addCurrentSceneToShow() })
+                         show: coordinator.show, addCurrentScene: { coordinator.addCurrentSceneToShow() },
+                         cacheFilesInUse: { () -> Set<String> in coordinator.cacheFilesInUse() })
         }
         // REC-001: the format choice (HEIF only where it can be encoded) and the system Files exporter.
         .confirmationDialog("Save Frame", isPresented: Binding(get: { coordinator.frameCapture.showFormatChoice },

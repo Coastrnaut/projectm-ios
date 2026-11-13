@@ -1,5 +1,8 @@
 // StorageUsageModel.swift — FILE-009-R5: measures off the main thread on a detached utility task;
 // a newer request or leaving the screen cancels the running one, and a late result is dropped.
+// FILE-010-R2, R5, R6: Clear Caches plans off the main thread with the files in use at that moment, asks
+// for confirmation, clears off the main thread with the files in use gathered again, then measures again.
+// Leaving the screen does not stop a running clear.
 import Foundation
 import LocalPortability
 import Observation
@@ -10,15 +13,89 @@ final class StorageUsageModel {
     private(set) var report: StorageReport?
     private(set) var isMeasuring = false
 
+    /// FILE-010: what the cleanup alert shows.
+    enum CleanupPrompt: Equatable {
+        case confirm(CacheCleanupPlan)
+        /// Nothing to clear; `keptInUse`: the only cache files left are in use.
+        case nothingToClear(keptInUse: Bool)
+    }
+
+    private(set) var cleanupPrompt: CleanupPrompt?
+    private(set) var isPlanningCleanup = false
+    private(set) var isClearing = false
+    /// The last clear's result (the screen's note).
+    private(set) var lastCleanup: CacheCleanupResult?
+
     @ObservationIgnored private let locations: StorageLocations
     @ObservationIgnored private let calculator: StorageUsageCalculator
     @ObservationIgnored private var generation = 0
     /// The running measurement (tests await it).
     @ObservationIgnored private(set) var work: Task<StorageReport, any Error>?
+    @ObservationIgnored private let cleaner: CacheCleaner
+    /// Absolute paths the running app must keep (FILE-010-R5).
+    @ObservationIgnored private let filesInUse: @MainActor () -> Set<String>
+    /// The running cleanup step, planning or clearing (tests await it).
+    @ObservationIgnored private(set) var cleanupWork: Task<Void, Never>?
 
-    init(locations: StorageLocations, calculator: StorageUsageCalculator = StorageUsageCalculator()) {
+    init(locations: StorageLocations, calculator: StorageUsageCalculator = StorageUsageCalculator(),
+         cleaner: CacheCleaner = CacheCleaner(), filesInUse: @escaping @MainActor () -> Set<String> = { () -> Set<String> in [] }) {
         self.locations = locations
         self.calculator = calculator
+        self.cleaner = cleaner
+        self.filesInUse = filesInUse
+    }
+
+    /// Clear Caches is offered once measured and while nothing else runs.
+    var canClearCaches: Bool { report != nil && !isMeasuring && !isPlanningCleanup && !isClearing }
+
+    // MARK: - FILE-010 cache cleanup
+
+    /// Plans the cleanup off the main thread, then shows the confirmation (or "nothing to clear").
+    func prepareCleanup() {
+        guard !isPlanningCleanup, !isClearing else { return }
+        isPlanningCleanup = true
+        cleanupPrompt = nil
+        let request = locations.cleanupRequest(inUse: filesInUse())
+        let cleaner = cleaner
+        cleanupWork = Task { @MainActor [weak self] in
+            let plan: CacheCleanupPlan? = try? await Task.detached(priority: .utility) { () throws -> CacheCleanupPlan in
+                try cleaner.plan(request)
+            }.value
+            self?.planned(plan)
+        }
+    }
+
+    func planned(_ plan: CacheCleanupPlan?) {
+        isPlanningCleanup = false
+        guard let plan else { return }
+        cleanupPrompt = plan.isEmpty ? .nothingToClear(keptInUse: !plan.keptInUse.isEmpty) : .confirm(plan)
+    }
+
+    /// Cancel (or OK): nothing is removed.
+    func dismissCleanup() {
+        cleanupPrompt = nil
+    }
+
+    /// Clear: removes the confirmed plan's items off the main thread, re-checking the files in use.
+    func confirmCleanup(_ plan: CacheCleanupPlan) {
+        cleanupPrompt = nil
+        guard !isClearing else { return }
+        isClearing = true
+        lastCleanup = nil
+        let inUse = filesInUse()
+        let cleaner = cleaner
+        cleanupWork = Task { @MainActor [weak self] in
+            let result: CacheCleanupResult = await Task.detached(priority: .utility) { () -> CacheCleanupResult in
+                cleaner.execute(plan, inUse: inUse)
+            }.value
+            self?.cleared(result)
+        }
+    }
+
+    private func cleared(_ result: CacheCleanupResult) {
+        isClearing = false
+        lastCleanup = result
+        refresh()
     }
 
     /// Cancels any running measurement and starts a new one.

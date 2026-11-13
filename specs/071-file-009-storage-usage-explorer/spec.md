@@ -150,6 +150,8 @@ Measuring runs in the background; leaving the screen or refreshing again stops t
   may be higher." when the result is incomplete, and MUST give each row an accessibility label and value (category and size).
 - **FILE-009-R7**: The screen MUST NOT delete anything. Clearing caches belongs to FILE-010, erasing
   user data to FILE-011; temporary folders are already emptied at launch by their owners.
+  *(2026-11-13: FILE-010 added Clear Caches to this screen; it clears only the cache and intermediate
+  folders — `specs/072-file-010-safe-cache-cleanup/`.)*
 - **FILE-009-R8**: Measurement MUST NOT read file dates or the free or total space of the volume
   (privacy manifest: no new required-reason API use).
 - **FILE-009-R9**: The measuring logic MUST be plain Swift behind a replaceable directory reader, so it
