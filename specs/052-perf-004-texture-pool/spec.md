@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (PERF-004-T01-T13 verified on the Mac: host GPU, Linux shape, iOS 27.2 simulator; T14-T16 `{device}` open)
 
 **Input**: User description: "Implement PERF-004 (Texture pool) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Reuse intermediate textures with

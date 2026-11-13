@@ -35,7 +35,10 @@ the technical decisions behind them.
   `recommendedMaxWorkingSetSize` / 8)); on overflow evict the least recently returned first; an entry
   bigger than the cap is dropped on return. Age: entries retired more than `maxIdleFrames` (default
   300) pool frames ago are dropped at `tick()`. Bytes per texture: `MTLTexture.allocatedSize` (actual
-  allocation, including alignment).
+  allocation, including alignment); where Metal reports 0 (the iOS Simulator does, and its
+  `currentAllocatedSize` is 0 too) an estimate from the description (`TexturePool.estimatedBytes`):
+  pixels × bytes per pixel × samples × slices, plus a third for a mip chain. Found by the first
+  simulator run, where the cap never acted.
 - **Rationale**: textures in use are never refused (a refusal would blank a layer); only the cache is
   capped. 128 MiB ≈ five iPhone 15 full-screen rgba16Float pictures (≈ 24 MB each): one visual's set.
 - **Alternatives**: wall-clock age (untestable without sleeps, owner rule against wall-clock asserts);
