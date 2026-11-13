@@ -45,6 +45,16 @@ the answers in App Store Connect when a version with the Camera visual is submit
 documents them. The camera path adds no required-reason API (AVFoundation capture and CoreVideo
 are not in Apple's list); `check_privacy_manifest.py` on the next Release build confirms it.
 
+MED-001 (2026-11-13; `specs/044-med-001-import-photo-layer`, privacy review in its spec): the Photo
+visual stores one picture the user picks (Photos picker or Files) in the app's own storage, re-encoded
+without location, camera or other metadata, until the user removes it. It never leaves the device
+through the app and no permission is added (the Photos picker runs outside the app; there is no
+`NSPhotoLibraryUsageDescription`). Data kept only on the device is not collected, so the answers stay
+**No** and the label stays **Data Not Collected**. Owner action: confirm this in App Store Connect ›
+App Privacy when a version with the Photo visual is submitted. The import adds no required-reason
+API (no file dates, no disk-space queries); `check_privacy_manifest.py` on the simulator Debug build
+found none on 2026-11-13, and the next Release build is checked again.
+
 ## Privacy manifest (`Apps/projectM-iOS/PrivacyInfo.xcprivacy`)
 
 - `NSPrivacyTracking`: false; `NSPrivacyTrackingDomains`: empty; `NSPrivacyCollectedDataTypes`: empty.

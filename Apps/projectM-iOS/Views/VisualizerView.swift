@@ -9,6 +9,9 @@
 // "Open Settings" when access is off.
 // CAM-012: while the camera runs, a "Camera on" badge with Stop camera stays at the top, with or
 // without the controls.
+// MED-001: the Photo visual (imported photo under the circular spectrum) replaces the renderer's view
+// the same way; the photo notice (an import refused, the stored copy unreadable) is a non-blocking
+// banner with Dismiss.
 // AUD-007: a route change's explanation shows above the source-and-state indicator for about 4 s.
 import CaptureKit
 import CaptureUI
@@ -23,27 +26,7 @@ struct VisualizerView: View {
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-            if coordinator.showsCameraVisual, let camera = coordinator.cameraVisual {
-                NativeVisualHost(view: camera.view)
-                    .ignoresSafeArea()
-                    .accessibilityElement()
-                    .accessibilityLabel("Camera visualization")
-                    .accessibilityValue(coordinator.cameraState.accessibilityValue)   // CAM-001-R14
-                    .accessibilityIdentifier("cameraVisual")
-            } else if coordinator.showsNativeVisual, let native = coordinator.nativeVisual {
-                NativeVisualHost(view: native.view)
-                    .ignoresSafeArea()
-                    .accessibilityElement()
-                    .accessibilityLabel("\(native.style.title) visualization")
-                    .accessibilityValue(NativeSpectrumHost.accessibilityValue(style: native.style,
-                                                                              glowEnabled: coordinator.settings.glowEnabled,
-                                                                              glowUnavailable: coordinator.glowUnavailable))   // FX-001, VIS-002-R13
-                    .accessibilityIdentifier(native.style.accessibilityIdentifier)
-            } else if let renderer = coordinator.renderer {
-                RendererHost(renderer: renderer)
-                    .ignoresSafeArea()
-                    .accessibilityIdentifier("visualizer")
-            }
+            visual
             if coordinator.userPaused {
                 // FR-085: the last frame stays, dimmed, with "Paused".
                 Color.black.opacity(0.5).ignoresSafeArea().allowsHitTesting(false)
@@ -128,6 +111,15 @@ struct VisualizerView: View {
                             .accessibilityValue("\(camera.framesShown)")
                     }
                 }
+                if let photo = coordinator.photoVisual {   // MED-001: frames that showed the photo
+                    TimelineView(.periodic(from: .now, by: 0.5)) { _ in
+                        Text("\(photo.framesShown)")
+                            .font(.caption2)
+                            .opacity(0.01)
+                            .accessibilityIdentifier("photoFramesShown")
+                            .accessibilityValue("\(photo.framesShown)")
+                    }
+                }
             }
         }
         .statusBarHidden(coordinator.hidesSystemOverlays)
@@ -155,7 +147,7 @@ struct VisualizerView: View {
             SettingsView(settings: coordinator.settings, osc: coordinator.osc,
                          reduceFlashingAvailable: coordinator.renderer?.supportsReduceFlashing ?? true,
                          nativeVisualUnavailable: coordinator.nativeVisualUnavailable,
-                         glowUnavailable: coordinator.glowUnavailable)
+                         glowUnavailable: coordinator.glowUnavailable, photos: coordinator.photos)
         }
         .onChange(of: coordinator.settings.reduceFlashing) { coordinator.applyReduceFlashing() }
         .onChange(of: coordinator.settings.visual) { coordinator.visualSettingsChanged() }                 // VIS-001
@@ -184,6 +176,38 @@ struct VisualizerView: View {
         PurchaseSheet(packs: coordinator.presets.library?.packs ?? [], price: coordinator.entitlements.displayPrice,
                       state: coordinator.entitlements.state, onBuy: coordinator.buyLibrary,
                       onRestore: coordinator.restorePurchases)
+    }
+
+    /// The shown visual: Camera, Photo, a native spectrum or projectM.
+    @ViewBuilder private var visual: some View {
+        if coordinator.showsCameraVisual, let camera = coordinator.cameraVisual {
+            NativeVisualHost(view: camera.view)
+                .ignoresSafeArea()
+                .accessibilityElement()
+                .accessibilityLabel("Camera visualization")
+                .accessibilityValue(coordinator.cameraState.accessibilityValue)   // CAM-001-R14
+                .accessibilityIdentifier("cameraVisual")
+        } else if coordinator.showsPhotoVisual, let photo = coordinator.photoVisual {
+            NativeVisualHost(view: photo.view)
+                .ignoresSafeArea()
+                .accessibilityElement()
+                .accessibilityLabel("Photo visualization")
+                .accessibilityValue(PhotoVisualHost.accessibilityValue(coordinator.photoState))   // MED-001-R15
+                .accessibilityIdentifier("photoVisual")
+        } else if coordinator.showsNativeVisual, let native = coordinator.nativeVisual {
+            NativeVisualHost(view: native.view)
+                .ignoresSafeArea()
+                .accessibilityElement()
+                .accessibilityLabel("\(native.style.title) visualization")
+                .accessibilityValue(NativeSpectrumHost.accessibilityValue(style: native.style,
+                                                                          glowEnabled: coordinator.settings.glowEnabled,
+                                                                          glowUnavailable: coordinator.glowUnavailable))   // FX-001, VIS-002-R13
+                .accessibilityIdentifier(native.style.accessibilityIdentifier)
+        } else if let renderer = coordinator.renderer {
+            RendererHost(renderer: renderer)
+                .ignoresSafeArea()
+                .accessibilityIdentifier("visualizer")
+        }
     }
 
     @ViewBuilder private var banners: some View {
@@ -221,6 +245,23 @@ struct VisualizerView: View {
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("cameraNotice")
+        }
+        // MED-001-R11: never blocks; clears itself after a few seconds.
+        if coordinator.showsPhotoVisual, !coordinator.showSettings, let notice = coordinator.photos.notice {
+            HStack(spacing: 10) {
+                Image(systemName: "photo")
+                    .accessibilityHidden(true)
+                Text(notice)
+                    .font(.footnote)
+                    .accessibilityIdentifier("photoNoticeText")
+                Button("Dismiss") { coordinator.photos.clearNotice() }
+                    .font(.footnote.bold())
+                    .accessibilityIdentifier("photoNoticeDismiss")
+            }
+            .padding(10)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("photoNotice")
         }
         if let failure = coordinator.presets.failureMessage {
             Text(failure)

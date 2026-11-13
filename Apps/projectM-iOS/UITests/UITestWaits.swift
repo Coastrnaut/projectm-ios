@@ -28,7 +28,7 @@ extension XCUIApplication {
     /// `visualPicker`). Identifiers are `visual.<VisualChoice raw value>`.
     func visualRow(_ title: String) -> XCUIElement {
         let raw = ["projectM": "projectM", "Circular Spectrum": "circularSpectrum",
-                   "Linear Spectrum": "linearSpectrum", "Camera": "camera"][title] ?? title
+                   "Linear Spectrum": "linearSpectrum", "Camera": "camera", "Photo": "photo"][title] ?? title
         return buttons["visual.\(raw)"]
     }
 }
