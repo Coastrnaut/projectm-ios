@@ -86,7 +86,10 @@ final class PresetMutationSweepTests: XCTestCase {
             let validation = MilkdropPresetValidator.validate(variant, knownTextures: [])
             let elapsed = Date().timeIntervalSince(started)
             slowest = max(slowest, elapsed)
-            XCTAssertLessThan(elapsed, 1.0, "variant \(index) (\(variant.count) bytes)")
+            // A hang guard, not a speed target: the slowest variant takes about 0.2 s on the Mac
+            // Studio but up to 7 s in a Debug build on CI's xcode-27 simulator (run 43349673457),
+            // so a 1 s wall-clock limit failed there without any defect. The speed is reported below.
+            XCTAssertLessThan(elapsed, 10.0, "variant \(index) (\(variant.count) bytes) looks hung")
 
             let before = F.snapshot(directory)
             let playableBefore = await library.snapshot.playable.map(\.id)

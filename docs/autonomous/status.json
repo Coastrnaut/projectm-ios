@@ -6,12 +6,14 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 64,
+   "audited": 63,
+   "implementing": 1,
    "integrated": 22,
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 148,
+   "audited": 147,
+   "implementing": 1,
    "integrated": 3
   },
   "P2": {
@@ -22,7 +24,8 @@
   }
  },
  "by_state": {
-  "audited": 300,
+  "audited": 298,
+  "implementing": 2,
   "integrated": 25,
   "skipped_existing": 1
  },
@@ -461,13 +464,13 @@
   },
   "ANL-001": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/anl-001",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/014-anl-001-windowed-fft",
+   "state": "implementing"
   },
   "ANL-002": {
    "attempts": 0,
@@ -641,13 +644,13 @@
   },
   "AUD-003": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/aud-003",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
-   "spec_dir": null,
-   "state": "audited"
+   "spec_dir": "specs/015-aud-003-audio-library-queue",
+   "state": "implementing"
   },
   "AUD-004": {
    "attempts": 0,
@@ -3752,5 +3755,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T02:17:24Z"
+ "updated": "2026-11-13T02:17:51Z"
 }
