@@ -41,11 +41,21 @@ public final class AudioFeatureModulator {
     /// Validates `binding` (contract C2) and adds it; a binding for an already bound target
     /// replaces that one and restarts its signal at 0.
     public func bind(_ binding: AudioFeatureBinding) throws(AudioFeatureBindingError) {
-        let descriptor = try Self.validate(binding, in: registry, otherBindings: slots.count - (index(of: binding.target) == nil ? 0 : 1))
+        let existing = index(of: binding.target)
+        let descriptor = try Self.validate(binding, in: registry, otherBindings: slots.count - (existing == nil ? 0 : 1))
+        // MOD-014-R9: the candidate binding set must be a loop-free graph. Audio features have no
+        // inputs, so this never fires today; it routes bindings through the validator later rows use.
+        var edges = modulationGraph.edges
+        let edge = Self.edge(for: binding)
+        if let existing { edges[existing] = edge } else { edges.append(edge) }
+        let issues = ModulationGraph(edges: edges).validate(in: registry)
+        if let loop = issues.first(where: { (issue: ModulationGraphIssue) -> Bool in issue.cycle != nil })?.cycle {
+            throw .feedbackCycle(binding.target, path: loop.path)
+        }
         let bounds = Self.bounds(of: descriptor.kind)
         let slot = Slot(binding: binding, descriptor: descriptor, minimum: bounds.minimum, maximum: bounds.maximum,
                         isInteger: bounds.isInteger)
-        if let i = index(of: binding.target) {
+        if let i = existing {
             slots[i] = slot
         } else {
             slots.append(slot)
@@ -68,6 +78,16 @@ public final class AudioFeatureModulator {
 
     /// The bindings, in the order they were first bound.
     public var bindings: [AudioFeatureBinding] { slots.map(\.binding) }
+
+    /// The bindings as modulation graph connections (MOD-014-R9, contract G9): one
+    /// `audio feature → parameter.value` connection per binding, in binding order.
+    public var modulationGraph: ModulationGraph {
+        ModulationGraph(edges: slots.map { (slot: Slot) -> ModulationEdge in Self.edge(for: slot.binding) })
+    }
+
+    private static func edge(for binding: AudioFeatureBinding) -> ModulationEdge {
+        ModulationEdge(source: .audio(binding.source), target: .parameter(binding.target))
+    }
 
     /// The target's current signal (0…1), or nil when it is not bound.
     public func signal(for target: ParameterID) -> Double? { index(of: target).map { slots[$0].signal } }
