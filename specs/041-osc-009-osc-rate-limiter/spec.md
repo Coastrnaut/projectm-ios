@@ -45,6 +45,15 @@ interaction); each answer is the conservative, local-first option.
 - Q: Where is limited traffic visible? → A: In Settings, under the OSC test value while OSC is on: "Rate-limited N", the number of datagrams dropped plus updates coalesced since the listener started. Counters are in memory only and hold no payloads or addresses (OSC-009-R12).
 - Q: Is an ADR needed? → A: No. No default is overridden; the limiter is inside OSC-001's receiver and ADR-0008's ruling.
 
+### Session 2026-11-13 (speckit-clarify)
+
+Same delegation (owner rule 4); recommended option taken each time.
+
+- Q: Can the user change the rates in Settings? → A: No (recommended: fewer controls, and a user raising them would defeat the safety bound). The rates are fixed app defaults; only tests and later rows set others (OSC-009-R5).
+- Q: What happens to the buckets when the listener stops and starts again? → A: Every start begins with fresh, full buckets and no held values, so a restart never inherits a previous session's debt; a stop discards held values (OSC-009-R8, edge cases).
+- Q: Does "Rate-limited N" count since the app launched or since the listener started? → A: Since the receiver was created (app launch), like OSC-001's other counters, which also survive restarts; the number only grows during a session and is never stored (OSC-009-R12).
+- Q: When OSC-006 schedules timestamped bundle messages, which limit applies? → A: The datagram limits apply when the bundle arrives; each scheduled message passes the target limiter when it becomes due, so scheduling can never bypass the target rate. Recorded for OSC-006; nothing is scheduled in this row (Assumptions).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A flooding controller cannot freeze the visualizer (Priority: P1)
@@ -127,7 +136,8 @@ fast is explained rather than mysterious.
 - **OSC-009-R4**: Only messages that would be applied to a routed parameter MUST count against that
   target's limit; ignored and rejected messages MUST NOT take target slots.
 - **OSC-009-R5**: Rates, bursts and table sizes MUST be one configuration value with the defaults
-  above, settable by tests.
+  above, settable by tests and not shown in Settings. Each listener start MUST begin with empty
+  bucket tables (full buckets) and no held values.
 - **OSC-009-R6**: A datagram over the source or global limit MUST be dropped before decoding and
   counted as `rateLimited`.
 - **OSC-009-R7**: Updates to one target MUST be applied at most at the configured target rate and
@@ -143,8 +153,8 @@ fast is explained rather than mysterious.
 - **OSC-009-R11**: The app MUST copy OSC state onto the main thread at most once per 1/30 s, with at
   most one refresh pending, however many changes arrive; the latest state MUST still be shown.
 - **OSC-009-R12**: Settings MUST show "Rate-limited N" (datagrams dropped plus updates coalesced)
-  under the test value while OSC is on; counters MUST stay in memory and hold no payloads or
-  addresses.
+  under the test value while OSC is on, counted since the receiver was created; counters MUST stay
+  in memory and hold no payloads or addresses.
 
 ### Key Entities
 
