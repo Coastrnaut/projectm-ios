@@ -1,0 +1,68 @@
+# Tasks: MOD-002 Audio Feature Binding
+
+**Input**: Design documents in `specs/031-mod-002-audio-feature-binding/` (spec.md, plan.md,
+research.md, data-model.md, contracts/audio-feature-binding.md, quickstart.md).
+
+**Tests**: test-first. Each test task comes before the code it covers; the red run (compile failure
+or failing assertions) is recorded before the production change. Budgets (owner rule 7): a unit
+test about 1-2 s (≤ 10 s) on the host, a package suite under 1 minute, a UI test under 30 s;
+representative cases only.
+
+**Format**: `- [ ] ID [P?] [Story?] Description with file path`. `[P]` = can run in parallel
+(different files). Tags: `{device}` = needs a physical device (none in this row); `{sim}` = needs
+this row's own iOS 27.2 simulator "MOD2 iPhone 17". Inside descriptions "T07" is short for
+`MOD-002-T07`. A task is ticked only when its acceptance evidence was produced, with
+" — Verified <date>: <how>" appended. Logs go to `.build/scratch/`.
+
+## Phase 1: Setup
+
+- [ ] MOD-002-T01 Record the baseline: `swift test --package-path Packages/ParameterGraph` on the host; count `~/Library/Logs/DiagnosticReports/PosterBoard-*.ips`. Evidence: counts recorded here.
+
+## Phase 2: Foundational (sources and frames)
+
+- [ ] MOD-002-T02 [P] Write `Packages/ParameterGraph/Tests/ParameterGraphTests/AudioFeatureSourceTests.swift`: IDs `audio.band.0`, `audio.band.127`, `audio.bandMean`, `audio.onset`, `audio.beatConfidence` round-trip through `AudioFeatureSource(id:)`; `audio.band.01`, `audio.band.-1`, `audio.band.128`, `audio.band.`, `audio.level` → nil; `value(in:)` reads a band, a band beyond the frame (0), the mean of `[0.2, 0.4, 0.6]` (0.4), the mean of no bands (0), onset and beat confidence present and absent (0), and a NaN band (0).
+- [ ] MOD-002-T03 Record the T02 red run; implement `Packages/ParameterGraph/Sources/ParameterGraph/AudioFeatureSource.swift` (`AudioFeatureSource` with `maximumBandIndex = 127`, `id`, `init?(id:)`, `value(in:)`; `AudioFeatureFrame` with `bands: UnsafeBufferPointer<Float>`, `onset: Float?`, `beatConfidence: Double?`, `.silent`). Evidence: T02 passes on the host.
+
+## Phase 3: User Story 1 - a band level drives a parameter; unbind restores manual control (P1) MVP
+
+**Independent test**: `AudioFeatureModulatorTests`.
+
+- [ ] MOD-002-T04 [US1] Write `Packages/ParameterGraph/Tests/ParameterGraphTests/AudioFeatureModulatorTests.swift` over a test catalog (`test.layer.opacity` continuous 0…1 default 0.25 modulatable with all three modes; `test.layer.count` integer 0…10 step 2 modulatable): (a) roadmap acceptance: band 0 → opacity, replace 0…1, frames with band 0 at 0, 0.5, 1 give effective 0, 0.5, 1; the store's manual value stays 0.25; `unbind` → effective equals the manual value exactly, including a manual value changed to 0.8 while bound (`value(for:in:)`); unbinding again returns false; (b) exact endpoints: input 0.2…0.6 → output 0.9…0.1 (inverted) gives exactly 0.9 at 0.2 and below, exactly 0.1 at 0.6 and above; (c) add −0.2…0.2 with manual 0.5 → 0.3 at 0, 0.7 at 1; add clamps (manual 0.95 + 0.2 → 1); multiply 0.5…1 with manual 0.8 → 0.4 at 0, 0.8 at 1; (d) integer target: replace 0…10 at band 0.33 → 3.3 → rounds to 3 → snaps to 4 (ties toward the maximum, step 2 from 0); (e) envelope: attack 0.1 s, release 0.4 s; band steps 0 → 1 at t0; after frames totalling 0.1 s (6 frames of 1/60 s) the signal is within 1 % of 1 − e⁻¹, and after the step back to 0 for 0.4 s within 1 % of e⁻¹ of the start level; a second identical run gives bit-identical values; (f) clock: the first advance after bind has Δt 0 (signal stays 0 with an attack); repeated or backwards time leaves the signal unchanged; a 10 s gap counts as 0.25 s; (g) rebinding resets the signal to 0; (h) `isBound`, `bindings`, `signal(for:)` report the binding; unbound targets return the manual value bit for bit (also for a NaN-free `ParameterValue` of kind integer). Every test < 1 s.
+- [ ] MOD-002-T05 [US1] Record the T04 red run; implement `Packages/ParameterGraph/Sources/ParameterGraph/AudioFeatureBinding.swift` (`AudioFeatureEnvelope` "finite, 0…60" seconds, `.none`; `AudioFeatureBinding` with source, target, input minimum/maximum, output start/end, mix mode default `.replace`, envelope default `.none`) and `AudioFeatureModulator.swift` (slots reserved for `maximumBindings = 32`; `bind`, `unbind`, `unbindAll`, `isBound`, `hasBindings`, `bindings`, `signal(for:)`, `advance(frame:timeNanoseconds:)`, `value(for:manual: Double)`, `value(for:manual: ParameterValue)`, `value(for:in:)`), contract C3/C4; validation can be a stub accepting every binding until T07. Evidence: T04 passes on the host.
+
+## Phase 4: User Story 2 - incompatible bindings are refused with a reason (P1)
+
+**Independent test**: `AudioFeatureBindingValidationTests`, `VisualParameterBindingTests`.
+
+- [ ] MOD-002-T06 [P] [US2] Write `Packages/ParameterGraph/Tests/ParameterGraphTests/AudioFeatureBindingValidationTests.swift`: one fixture per contract C2 rule, in order: unknown target (`settings.reduceFlashing`), not numeric (a boolean), not modulatable (a continuous parameter with policy `.none`), mix mode not allowed (a parameter allowing only replace, bound with add), band 128 and −1, input ranges 1…1, 1…0 and NaN…1, output out of range per mode (replace 1.2 on 0…1; add 1.5 on a 0…1 span; multiply 1.5 and −0.1), envelope −1, ∞ and 61 s, and a 33rd binding; each throws the expected case, its description names the target and the reason, and the existing bindings are unchanged. A valid rebind replaces (count unchanged).
+- [ ] MOD-002-T07 [US2] Record the T06 red run; implement the contract C2 checks in `AudioFeatureBinding.swift` (`AudioFeatureBindingError` with readable `description`) and call them from `AudioFeatureModulator.bind`. Evidence: T04 and T06 pass on the host.
+- [ ] MOD-002-T08 [P] [US2] Write `Packages/VisualGenerators/Tests/VisualGeneratorsTests/VisualParameterBindingTests.swift`: over `VisualParameterCatalog.makeRegistry()`, every modulatable descriptor accepts `audio.band.0` replace over its full range; the bar counts, orientation and `effect.bloom.enabled` are refused (`notNumeric`); a Reduce-flashing ID is refused (`unknownTarget`). Evidence: passes on the host (guard test over T07's code; no red run expected).
+
+## Phase 5: User Story 3 - the glow follows the bass on screen, safely (P2)
+
+**Independent test**: `AudioFeatureBindingAppTests`, `AudioFeatureBindingUITests`.
+
+- [ ] MOD-002-T09 [P] [US3] Add a test to `Packages/VisualGenerators/Tests/VisualGeneratorsTests/BloomRenderTests.swift` (Metal; skipped without a device): after `prepare`, setting `parameters.intensity` alone leaves `plan` equal and the effect still renders; changing the radius changes the plan. Record the red run of an instrumented check if possible, otherwise note it is a guard test; then change `Packages/VisualGenerators/Sources/VisualEffects/BloomEffect.swift` so an intensity-only change calls `updateUniforms()` instead of `updatePlan()` (research D6). Evidence: BloomRenderTests and BloomFlashSafetyRenderTests pass on the host.
+- [ ] MOD-002-T10 [US3] {sim} Write `Apps/projectM-iOS/Tests/AudioFeatureBindingAppTests.swift`: a host (`NativeSpectrumHost.make(device:reader: nil, barCount: .b32, glow: enabled, intensity 0.5)`) binds `audio.band.0` → `effect.bloom.intensity` replace 0…1; `applyModulation(bands:timeNanoseconds:)` with band 0 = 0.8 gives effective glow intensity 0.8, the bloom's parameters' intensity 0.8, and the downstream luminance of a flat white equal to `BloomLuminanceModel` at 0.8; the readout reads "bound, manual 0.50, effective 0.80"; `unbind` → effective 0.5, readout "unbound, manual 0.50, effective 0.50"; binding `effect.bloom.enabled` throws. Skipped without Metal.
+- [ ] MOD-002-T11 [US3] Record the T10 red run; implement in `Apps/projectM-iOS/Visuals/NativeSpectrumHost.swift`: the modulator over the catalog, `bind(_:)`, `unbind(_:)`, `effectiveGlow`, `ModulatedGlowLuminance` (final class, `FrameLuminanceTransfer`, main-thread mutation), `applyModulation(bands:timeNanoseconds:)` called from `frame(_:)` only when a binding exists, `glowActive` using the effective glow, and `glowModulationReadout`. Without bindings the frame path is unchanged. Evidence: T10 and `NativeVisualTests` pass on "MOD2 iPhone 17".
+- [ ] MOD-002-T12 [US3] {sim} Write `Apps/projectM-iOS/UITests/AudioFeatureBindingUITests.swift`: launch with `-uitestResetNotice -uitestDiagnostics -autostart inAppPlayback -settings.visual circularSpectrum -settings.circularSpectrum.glow YES -uitestBindGlowToBass` plus `Self.noStore`; poll (≤ 15 s) until `glowModulation` has shown at least two different effective values, each starting with "bound, manual 0.50"; tap `glowModulationUnbind`; poll until the value is "unbound, manual 0.50, effective 0.50". Under 30 s.
+- [ ] MOD-002-T13 [US3] Record the T12 red run; implement the DEBUG path: `Apps/projectM-iOS/Coordinators/AppCoordinator.swift` (`#if DEBUG`: after creating the host, `-uitestBindGlowToBass` binds band 0 → glow intensity, replace 0…1; `unbindGlowTest()`; `glowModulationReadout`), `Apps/projectM-iOS/Debug/UITestModulationPanel.swift` (`#if DEBUG`; readout refreshed 4 times a second, accessibility `glowModulation`, button `glowModulationUnbind`), and the panel hook in `Apps/projectM-iOS/Views/VisualizerView.swift`. Evidence: T12 passes on "MOD2 iPhone 17" in under 30 s; `GlowUITests` pass unchanged.
+
+## Phase 6: Polish and cross-cutting
+
+- [ ] MOD-002-T14 Run every touched package: `swift test --package-path Packages/ParameterGraph` (host and `-Xswiftc` default Linux shape: no flags needed) and `Packages/VisualGenerators` (host; and `-Xswiftc -DVISUAL_NO_METAL -Xswiftc -DANALYSIS_NO_ACCELERATE`); compile both for generic iOS; no new warnings. Linux itself: pending CI.
+- [ ] MOD-002-T15 Run `projectM-iOSTests` and the touched UI tests on "MOD2 iPhone 17"; `python3 scripts/check_compliance.py`, `scripts/validate_docs.py`, `scripts/test_scripts.py`; count PosterBoard reports before and after; shut down and delete "MOD2 iPhone 17".
+
+## Dependencies
+
+- T01 → T02 → T03 → (US1: T04 → T05) → (US2: T06 → T07; T08) → (US3: T09; T10 → T11 → T12 → T13) → T14 → T15.
+- US2 builds on US1's modulator; US3 needs both.
+
+## Parallel opportunities
+
+- T02, T06 and T08 are separate test files; T09 is independent of the model.
+
+## Implementation strategy
+
+MVP = Phases 1-3 (the roadmap acceptance in unit tests). US2 enforces "compatible"; US3 is the
+roadmap's simulator verification.
