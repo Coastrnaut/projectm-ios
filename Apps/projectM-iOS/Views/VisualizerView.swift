@@ -22,6 +22,8 @@
 // (controls, badges, banners, sheets) stays on the device.
 // OUT-010: while the output is blacked out (or restoring) a persistent badge with Restore stays at
 // the top, with or without the controls, and the external display note says the display is black.
+// SHOW-014: the persistent emergency Black out button (bottom trailing, with or without the
+// controls) and the B key on it and on the badge's Restore.
 // REC-001: Save Frame's format choice, the Files exporter and its notice; DEBUG `frameCaptureProbe`.
 // REC-003: the recording indicator, the system file mover for a finished recording, its notice;
 // DEBUG `videoRecordingProbe`.
@@ -89,6 +91,10 @@ struct VisualizerView: View {
                         .background(.regularMaterial, in: Capsule())
                         .transition(.opacity)
                         .accessibilityIdentifier("routeExplanation")
+                }
+                if coordinator.externalDisplay.blackoutPhase.offersEmergencyBlackout {   // SHOW-014-R1: with or without the controls
+                    HStack { Spacer(); EmergencyBlackoutButton(external: coordinator.externalDisplay) }
+                        .transition(.opacity)
                 }
                 if coordinator.controlsVisible {
                     ControlsOverlay(coordinator: coordinator)
@@ -521,10 +527,12 @@ struct OutputBlackoutBadge: View {
                   systemImage: "eye.slash")
                 .font(.footnote.bold())
                 .accessibilityIdentifier("blackoutBadgeText")
-            if external.blackoutPhase == .blackedOut {
+            if external.blackoutPhase.offersRestore {
                 Button("Restore") { external.setBlackout(false) }
                     .font(.footnote)
                     .buttonStyle(.borderedProminent)
+                    .keyboardShortcut("b", modifiers: [])   // SHOW-014-R6: B again restores
+
                     .accessibilityLabel("Restore output")
                     .accessibilityIdentifier("blackoutRestore")
             }

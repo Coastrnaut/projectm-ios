@@ -94,6 +94,14 @@ variants, warp, calibration, blackout, diagnostics and per-output pacing on top.
      only if the content strobes at its own limit while the user toggles faster than once a second.
      Routing the cover through every envelope is left to ACC-012 (sensory safety profile).
    - The state is session-only and never stored (FR-065).
+   - *Emergency entry point (amendment 2026-11-13, SHOW-014; `specs/061-show-014-emergency-blackout`)*:
+     a persistent 44 × 44 pt "Emergency black out" button at the bottom trailing edge of the device
+     screen (never on the external display) calls the same `setBlackout(true)` with one tap, with or
+     without the controls, while the output is live or fading in; it only blacks out (restore stays
+     on the badge, so a second accidental tap cannot reveal the picture). The B key (no modifier)
+     blacks out from that button and restores from the badge's Restore. No default is overridden:
+     the model, covers, fade, spacing and badge are unchanged, and restore resumes the same visual
+     view in the same slot with no new placement.
 
 ## Consequences
 

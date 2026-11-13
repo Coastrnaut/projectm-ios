@@ -190,4 +190,32 @@ final class OutputBlackoutTests: XCTestCase {
             }
         }
     }
+
+    // MARK: - SHOW-014-T03: which control offers the blackout (and carries the B key)
+
+    func testTheEmergencyControlAndRestoreAreOfferedInDisjointPhases() {
+        let expected: [(OutputBlackout.Phase, Bool, Bool)] = [
+            (.live, true, false), (.blackedOut, false, true), (.restoreWaiting, false, false), (.fadingIn, true, false),
+        ]
+        for (phase, emergency, restore) in expected {
+            XCTAssertEqual(phase.offersEmergencyBlackout, emergency, "\(phase)")
+            XCTAssertEqual(phase.offersRestore, restore, "\(phase)")
+            XCTAssertFalse(phase.offersEmergencyBlackout && phase.offersRestore, "one key command at a time: \(phase)")
+        }
+    }
+
+    func testTheEmergencyControlFollowsTheModelThroughACycle() {
+        var model = OutputBlackout()
+        XCTAssertTrue(model.phase.offersEmergencyBlackout, "a launch starts live")
+        model.blackOut()
+        XCTAssertTrue(model.phase.offersRestore)
+        XCTAssertFalse(model.phase.offersEmergencyBlackout, "a second tap cannot land on the emergency control")
+        model.restore()
+        XCTAssertEqual(model.phase, .fadingIn)
+        XCTAssertTrue(model.phase.offersEmergencyBlackout, "black out again during the fade")
+        model.blackOut()
+        model.restore()
+        XCTAssertEqual(model.phase, .restoreWaiting, "within the restore spacing")
+        XCTAssertFalse(model.phase.offersEmergencyBlackout || model.phase.offersRestore, "B does nothing while waiting")
+    }
 }
