@@ -12,7 +12,10 @@ swift test --package-path Packages/AudioCore -Xswiftc -DAUDIOCORE_NO_AVFAUDIO
 ```
 
 Expected: all pass. The acceptance suite (`FixtureAcceptanceTests`) covers every sine fixture ×
-5 sizes × 2 rates (documented bin on the first window, within one bin on every frame of the loop),
+5 sizes × 2 rates (documented bin on the first window; within one bin on every frame of the loop for
+representative cases, every combination on demand with
+`swift run -c release --package-path Packages/AnalysisFeatures/Bench AnalysisBench --anl001-sweep`;
+owner rule 7, 2026-11-13),
 the sweeps (finite, peaks near the documented instantaneous frequency at 2,048), repeated runs
 bit-identical, silence exactly 0, the amplitude scale, both backends against each other and the
 reference DFT.
