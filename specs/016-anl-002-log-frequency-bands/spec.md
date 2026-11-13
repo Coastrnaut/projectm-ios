@@ -63,7 +63,7 @@ band each tone is predicted to fall in, computed in the test from the documented
 **Acceptance Scenarios**:
 
 1. **Given** the multi-tone fixture, any band count, any FFT size and either catalog rate, **When** the first window is reduced to bands, **Then** the band predicted for each tone reads at least 0.35 of that tone's amplitude.
-2. **Given** the same, **When** a tone's main lobe (two bins either side of it) lies wholly inside one band that no other tone reaches, **Then** that band reads the tone's amplitude within 2 % and is the largest band near the tone.
+2. **Given** the same, **When** a tone's main lobe (2.5 bins either side of it, which holds all but a negligible part of a Hann-windowed tone's energy) lies wholly inside one band that no other tone's main lobe reaches, **Then** that band reads the tone's amplitude within 2 % and is the largest band near the tone.
 3. **Given** the same, **When** a band lies more than four bins away from every tone, **Then** it reads at most 2 % of the quietest tone's amplitude.
 
 ---
