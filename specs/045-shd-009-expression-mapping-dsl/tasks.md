@@ -59,7 +59,7 @@ and at most 10 s, the package suite under 1 minute, no wall-clock assertions.
 
 ## Phase 7: Polish
 
-- [ ] SHD-009-T18 ADR at the next free number (checked across branches and worktrees at commit): the language's safety design (data only, closed sets, declarative bindings without recursion, static limits and cost, finite arithmetic), the adapter-only integration and what SHD-010 and SHD-011 build on; row in `docs/adr/README.md`
+- [X] SHD-009-T18 ADR at the next free number (checked across branches and worktrees at commit): the language's safety design (data only, closed sets, declarative bindings without recursion, static limits and cost, finite arithmetic), the adapter-only integration and what SHD-010 and SHD-011 build on; row in `docs/adr/README.md` — Verified 2026-11-13: docs/adr/0021-expression-mapping-language.md and its README row; 0020 is taken by MED-001 (commit 456b24f), 0021 free across all branches and worktrees; validate_docs OK
 - [ ] SHD-009-T19 Verification: `swift test --package-path Packages/ParameterGraph` (suite < 1 min, record counts and durations); the VisualGenerators host suite and its Linux shape (`-Xswiftc -DVISUAL_NO_METAL -Xswiftc -DANALYSIS_NO_ACCELERATE --scratch-path .build/linuxshape`); confirm `.github/workflows/ios-ci.yml` runs ParameterGraph's tests (new targets need no workflow change); `check_compliance.py` and `validate_docs.py` pass; spec status updated
 
 ## Dependencies

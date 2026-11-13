@@ -80,7 +80,7 @@ specs/045-shd-009-expression-mapping-dsl/
 ├── spec.md, plan.md, research.md, data-model.md, quickstart.md, tasks.md
 ├── contracts/expression-language.md
 └── checklists/requirements.md
-docs/adr/00NN-expression-mapping-language.md   (next free number, checked across branches at commit)
+docs/adr/0021-expression-mapping-language.md   (0020 is MED-001's; 0021 checked free across branches and worktrees)
 ```
 
 ### Source Code (repository root)

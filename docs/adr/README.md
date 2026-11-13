@@ -19,5 +19,6 @@
 | [0017](0017-rear-camera-layer.md) | Rear camera layer | Accepted 2026-11-13 (CAM-001; owner rule 4) |
 | [0018](0018-procedural-material-shaders.md) | Procedural material shaders | Accepted 2026-11-13 (SHD-001; owner rule 4) |
 | [0019](0019-generator-graph-interpreter.md) | Generator graph interpreter | Accepted 2026-11-13 (SHD-002; owner rule 4) |
+| [0021](0021-expression-mapping-language.md) | Expression mapping language | Accepted 2026-11-13 (SHD-009; owner rule 4); 0020 is MED-001's |
 
 Required by Constitution X: capture API, minimum OS, renderer, dependency strategy.
