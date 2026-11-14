@@ -1,0 +1,473 @@
+{
+  "format": "projectm-ios.scene-migration-matrix",
+  "note": "QA-004 scene migration matrix (specs/084-qa-004-scene-migration-matrix, contracts/migration-matrix.md). Rows are version cases, containers are every place a scene is stored; every (row, container) cell not listed in notApplicable is run through that container's real reader by the container's test. versionJSON null removes the version key. Chains marked testOnly are synthetic, defined in each runner and never registered in the app: version 1 is the only format version ever written. errors is the documented error table (contracts/scene-decode-errors.md).",
+  "currentVersion": 1,
+  "oldestSupportedVersion": 1,
+  "goldenBase": "material-plasma.scene.json",
+  "containers": [
+    {
+      "id": "decode",
+      "reader": "SceneDocument.decode(_:migrator:)",
+      "test": "Packages/SceneFormat/Tests/SceneFormatTests/SceneMigrationMatrixTests.swift",
+      "surfaces": "throws the SceneDecodeError; a result carries migration"
+    },
+    {
+      "id": "repairReport",
+      "reader": "SceneRepairReport.open(bytes:registry:migrator:)",
+      "test": "Packages/SceneFormat/Tests/SceneFormatTests/SceneMigrationMatrixTests.swift",
+      "surfaces": "one cannot-open entry refusal.<case>; a migrated document adds the note migration.updated"
+    },
+    {
+      "id": "showStore",
+      "reader": "ShowStore.scene(_:) and ShowStore.load()",
+      "test": "Packages/ShowControl/Tests/ShowControlTests/ShowStoreMigrationMatrixTests.swift",
+      "surfaces": "scene throws .unreadable(e); load lists the scene ID in unreadableScenes; the file is unchanged"
+    },
+    {
+      "id": "archive",
+      "reader": "SceneArchiveReader.read(_:registry:limits:migrator:)",
+      "test": "Packages/SceneArchive/Tests/SceneArchiveTests/SceneArchiveMigrationMatrixTests.swift",
+      "surfaces": "throws .sceneRefused(e); contents.document is the (migrated) scene"
+    },
+    {
+      "id": "autosave",
+      "reader": "SceneAutosaveStore.load(registry:assets:)",
+      "test": "Apps/projectM-iOS/Tests/SceneAutosaveMigrationMatrixTests.swift",
+      "surfaces": "events mainUnreadable(e.message), setAsideNewer for newerVersion only, nothingRestored; a migrated file adds the event migrated"
+    },
+    {
+      "id": "golden",
+      "reader": "GoldenSceneRenderer.document(from:) (SceneDocument.decode where Metal is compiled out)",
+      "test": "Packages/RenderGoldens/Tests/RenderGoldensTests/GoldenMigrationMatrixTests.swift",
+      "surfaces": "throws .sceneInvalid(e.message)"
+    }
+  ],
+  "chains": [
+    {
+      "id": "standard",
+      "testOnly": false,
+      "target": 1,
+      "steps": []
+    },
+    {
+      "id": "test-v0",
+      "testOnly": true,
+      "target": 1,
+      "steps": [
+        "test-v0-to-v1"
+      ]
+    },
+    {
+      "id": "test-gap",
+      "testOnly": true,
+      "target": 2,
+      "steps": [
+        "test-v0-to-v1"
+      ]
+    }
+  ],
+  "rows": [
+    {
+      "id": "QA-004-M01",
+      "title": "Version 1, every historical fixture",
+      "versionJSON": "1",
+      "chain": "standard",
+      "shape": "as-is",
+      "base": "all",
+      "outcome": {
+        "kind": "current"
+      },
+      "notApplicable": {}
+    },
+    {
+      "id": "QA-004-M02",
+      "title": "Oldest supported - 1 (version 0)",
+      "versionJSON": "0",
+      "chain": "standard",
+      "shape": "as-is",
+      "base": "v1/material-plasma.scene.json",
+      "outcome": {
+        "kind": "refused",
+        "error": "invalidVersion",
+        "message": "The scene's format version must be a whole number from 1; found 0."
+      },
+      "notApplicable": {}
+    },
+    {
+      "id": "QA-004-M03",
+      "title": "Negative version",
+      "versionJSON": "-1",
+      "chain": "standard",
+      "shape": "as-is",
+      "base": "v1/material-plasma.scene.json",
+      "outcome": {
+        "kind": "refused",
+        "error": "invalidVersion",
+        "message": "The scene's format version must be a whole number from 1; found -1."
+      },
+      "notApplicable": {}
+    },
+    {
+      "id": "QA-004-M04",
+      "title": "Current + 1 (version 2)",
+      "versionJSON": "2",
+      "chain": "standard",
+      "shape": "as-is",
+      "base": "v1/material-plasma.scene.json",
+      "outcome": {
+        "kind": "refused",
+        "error": "newerVersion",
+        "message": "This scene was saved by a newer version of the app (format version 2); this version reads format version 1."
+      },
+      "notApplicable": {}
+    },
+    {
+      "id": "QA-004-M05",
+      "title": "Largest 64-bit integer",
+      "versionJSON": "9223372036854775807",
+      "chain": "standard",
+      "shape": "as-is",
+      "base": "v1/material-plasma.scene.json",
+      "outcome": {
+        "kind": "refused",
+        "error": "newerVersion",
+        "message": "This scene was saved by a newer version of the app (format version 9223372036854775807); this version reads format version 1."
+      },
+      "notApplicable": {}
+    },
+    {
+      "id": "QA-004-M06",
+      "title": "Beyond 64 bits",
+      "versionJSON": "9223372036854775808",
+      "chain": "standard",
+      "shape": "as-is",
+      "base": "v1/material-plasma.scene.json",
+      "outcome": {
+        "kind": "refused",
+        "error": "invalidVersion",
+        "message": "The scene's format version must be a whole number from 1; found 9223372036854775808."
+      },
+      "notApplicable": {}
+    },
+    {
+      "id": "QA-004-M07",
+      "title": "Fraction",
+      "versionJSON": "1.5",
+      "chain": "standard",
+      "shape": "as-is",
+      "base": "v1/material-plasma.scene.json",
+      "outcome": {
+        "kind": "refused",
+        "error": "invalidVersion",
+        "message": "The scene's format version must be a whole number from 1; found 1.5."
+      },
+      "notApplicable": {}
+    },
+    {
+      "id": "QA-004-M08",
+      "title": "Integral value written as a fraction",
+      "versionJSON": "1.0",
+      "chain": "standard",
+      "shape": "as-is",
+      "base": "v1/material-plasma.scene.json",
+      "outcome": {
+        "kind": "refused",
+        "error": "invalidVersion",
+        "message": "The scene's format version must be a whole number from 1; found 1.0."
+      },
+      "notApplicable": {}
+    },
+    {
+      "id": "QA-004-M09",
+      "title": "Integral value written with an exponent",
+      "versionJSON": "1e0",
+      "chain": "standard",
+      "shape": "as-is",
+      "base": "v1/material-plasma.scene.json",
+      "outcome": {
+        "kind": "refused",
+        "error": "invalidVersion",
+        "message": "The scene's format version must be a whole number from 1; found 1e0."
+      },
+      "notApplicable": {}
+    },
+    {
+      "id": "QA-004-M10",
+      "title": "Version as a string",
+      "versionJSON": "\"1\"",
+      "chain": "standard",
+      "shape": "as-is",
+      "base": "v1/material-plasma.scene.json",
+      "outcome": {
+        "kind": "refused",
+        "error": "invalidVersion",
+        "message": "The scene's format version must be a whole number from 1; found a string."
+      },
+      "notApplicable": {}
+    },
+    {
+      "id": "QA-004-M11",
+      "title": "Version null",
+      "versionJSON": "null",
+      "chain": "standard",
+      "shape": "as-is",
+      "base": "v1/material-plasma.scene.json",
+      "outcome": {
+        "kind": "refused",
+        "error": "invalidVersion",
+        "message": "The scene's format version must be a whole number from 1; found null."
+      },
+      "notApplicable": {}
+    },
+    {
+      "id": "QA-004-M12",
+      "title": "Version missing",
+      "versionJSON": null,
+      "chain": "standard",
+      "shape": "as-is",
+      "base": "v1/material-plasma.scene.json",
+      "outcome": {
+        "kind": "refused",
+        "error": "invalidVersion",
+        "message": "The scene's format version must be a whole number from 1; found nothing."
+      },
+      "notApplicable": {}
+    },
+    {
+      "id": "QA-004-M13",
+      "title": "Another format",
+      "versionJSON": "1",
+      "format": "projectm-ios.preset",
+      "chain": "standard",
+      "shape": "as-is",
+      "base": "v1/material-plasma.scene.json",
+      "outcome": {
+        "kind": "refused",
+        "error": "notAScene",
+        "message": "The file is not a projectM-iOS scene."
+      },
+      "notApplicable": {}
+    },
+    {
+      "id": "QA-004-M14",
+      "title": "TEST-ONLY: synthetic version 0 migrates to 1",
+      "versionJSON": "0",
+      "chain": "test-v0",
+      "shape": "v0-title",
+      "base": "v1/material-plasma.scene.json",
+      "outcome": {
+        "kind": "migrated",
+        "from": 0,
+        "to": 1,
+        "log": [
+          "v0->v1 test-v0-to-v1: renamed $.title -> $.name: title renamed to name",
+          "v0->v1 test-v0-to-v1: version $.version: 0 to 1"
+        ]
+      },
+      "notApplicable": {
+        "golden": "The golden harness reads with the app's chain only; its scenes are committed current-version files (test-only chains cannot reach it)."
+      }
+    },
+    {
+      "id": "QA-004-M15",
+      "title": "TEST-ONLY: synthetic version 0 whose step fails",
+      "versionJSON": "0",
+      "chain": "test-v0",
+      "shape": "as-is",
+      "base": "v1/material-plasma.scene.json",
+      "outcome": {
+        "kind": "refused",
+        "error": "migrationFailed",
+        "message": "The scene's format version 0 cannot be updated to version 1 (step test-v0-to-v1): $.title: missing title."
+      },
+      "notApplicable": {
+        "golden": "The golden harness reads with the app's chain only; its scenes are committed current-version files (test-only chains cannot reach it)."
+      }
+    },
+    {
+      "id": "QA-004-M16",
+      "title": "TEST-ONLY: chain with a gap (no step from 1)",
+      "versionJSON": "1",
+      "chain": "test-gap",
+      "shape": "as-is",
+      "base": "v1/material-plasma.scene.json",
+      "outcome": {
+        "kind": "refused",
+        "error": "migrationFailed",
+        "message": "The scene's format version 1 cannot be updated to version 1: $.version: no step from version 1."
+      },
+      "notApplicable": {
+        "golden": "The golden harness reads with the app's chain only; its scenes are committed current-version files (test-only chains cannot reach it)."
+      }
+    },
+    {
+      "id": "QA-004-M17",
+      "title": "TEST-ONLY: a chain never touches a current file",
+      "versionJSON": "1",
+      "chain": "test-v0",
+      "shape": "as-is",
+      "base": "v1/material-plasma.scene.json",
+      "outcome": {
+        "kind": "current"
+      },
+      "notApplicable": {
+        "golden": "The golden harness reads with the app's chain only; its scenes are committed current-version files (test-only chains cannot reach it)."
+      }
+    }
+  ],
+  "errors": [
+    {
+      "case": "empty",
+      "code": "refusal.empty",
+      "group": "damagedFile",
+      "severity": "cannotOpen",
+      "ifOpened": "The file is damaged and cannot open.",
+      "when": "zero bytes",
+      "coveredBy": [
+        "SceneDecodeErrorTests.testRefusalsHaveExactMessages"
+      ]
+    },
+    {
+      "case": "tooLarge",
+      "code": "refusal.tooLarge",
+      "group": "damagedFile",
+      "severity": "cannotOpen",
+      "ifOpened": "The file is damaged and cannot open.",
+      "when": "more than 1 MiB",
+      "coveredBy": [
+        "SceneHostileInputTests.testOversizePayloadsAreRefusedBeforeParsing"
+      ]
+    },
+    {
+      "case": "notJSON",
+      "code": "refusal.notJSON",
+      "group": "damagedFile",
+      "severity": "cannotOpen",
+      "ifOpened": "The file is damaged and cannot open.",
+      "when": "not JSON",
+      "coveredBy": [
+        "SceneDecodeErrorTests.testRefusalsHaveExactMessages"
+      ]
+    },
+    {
+      "case": "nestingTooDeep",
+      "code": "refusal.nestingTooDeep",
+      "group": "damagedFile",
+      "severity": "cannotOpen",
+      "ifOpened": "The file is damaged and cannot open.",
+      "when": "nesting beyond the limit",
+      "coveredBy": [
+        "SceneHostileInputTests.testDeepNestingIsRefusedAtTheDepthLimit"
+      ]
+    },
+    {
+      "case": "duplicateKey",
+      "code": "refusal.duplicateKey",
+      "group": "damagedFile",
+      "severity": "cannotOpen",
+      "ifOpened": "The file is damaged and cannot open.",
+      "when": "a key twice in one object",
+      "coveredBy": [
+        "SceneHostileInputTests.testDuplicateKeysAreRefused"
+      ]
+    },
+    {
+      "case": "notAScene",
+      "code": "refusal.notAScene",
+      "group": "damagedFile",
+      "severity": "cannotOpen",
+      "ifOpened": "The file is damaged and cannot open.",
+      "when": "not an object, or format is not projectm-ios.scene",
+      "coveredBy": [
+        "QA-004-M13"
+      ]
+    },
+    {
+      "case": "newerVersion",
+      "code": "refusal.newerVersion",
+      "group": "unsupportedVersion",
+      "severity": "cannotOpen",
+      "ifOpened": "Made by a newer version of the app: update the app to open it.",
+      "when": "an integer version above the current",
+      "coveredBy": [
+        "QA-004-M04",
+        "QA-004-M05"
+      ]
+    },
+    {
+      "case": "invalidVersion",
+      "code": "refusal.invalidVersion",
+      "group": "unsupportedVersion",
+      "severity": "cannotOpen",
+      "ifOpened": "The scene's format version cannot be read, so it cannot open.",
+      "when": "version missing, not a number, not written as an integer, beyond 64 bits, or below the oldest supported with no step",
+      "coveredBy": [
+        "QA-004-M02",
+        "QA-004-M03",
+        "QA-004-M06",
+        "QA-004-M07",
+        "QA-004-M08",
+        "QA-004-M09",
+        "QA-004-M10",
+        "QA-004-M11",
+        "QA-004-M12"
+      ]
+    },
+    {
+      "case": "tooMany",
+      "code": "refusal.tooMany",
+      "group": "damagedFile",
+      "severity": "cannotOpen",
+      "ifOpened": "The file is damaged and cannot open.",
+      "when": "a count limit exceeded",
+      "coveredBy": [
+        "SceneDecodeErrorTests.testCountLimitsAreCheckedBeforeTypedDecoding"
+      ]
+    },
+    {
+      "case": "malformed",
+      "code": "refusal.malformed",
+      "group": "damagedFile",
+      "severity": "cannotOpen",
+      "ifOpened": "The file is damaged and cannot open.",
+      "when": "a wrong JSON type or missing required field",
+      "coveredBy": [
+        "SceneDecodeErrorTests.testRefusalsHaveExactMessages"
+      ]
+    },
+    {
+      "case": "migrationFailed",
+      "code": "refusal.migrationFailed",
+      "group": "unsupportedVersion",
+      "severity": "cannotOpen",
+      "ifOpened": "The scene's older format cannot be updated by this version of the app, so it cannot open.",
+      "when": "an older version the chain cannot bring to the current one (no step, or a step refused it); unreachable with the empty production chain",
+      "coveredBy": [
+        "QA-004-M15",
+        "QA-004-M16"
+      ]
+    }
+  ],
+  "migrationErrors": [
+    {
+      "case": "notAScene",
+      "decodeError": "notAScene"
+    },
+    {
+      "case": "invalidVersion",
+      "decodeError": "invalidVersion"
+    },
+    {
+      "case": "newerVersion",
+      "decodeError": "newerVersion"
+    },
+    {
+      "case": "missingStep",
+      "decodeError": "migrationFailed"
+    },
+    {
+      "case": "stepFailed",
+      "decodeError": "migrationFailed"
+    }
+  ]
+}
