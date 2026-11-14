@@ -14,7 +14,7 @@
 - [ ] REC-002-T04 [US1] `SnapshotBatchExportCoordinator` (contract B4; research D1, D7): `start(selection:size:)` captures the job, deletes any previous batch folder, renders off the main actor into `<tmp>/SnapshotBatch/<UUID>/`, publishes progress, finishes with the file URLs; `done()` deletes the folder; leftovers removed at init; announcements on the library lane, in Apps/projectM-iOS/Coordinators/SnapshotBatchExportCoordinator.swift
 - [ ] REC-002-T05 [US1] Wiring: `AppCoordinator.snapshotBatch`, `connectSnapshotBatch()` (settings, snapshots, compare, announcer, photos, share simulation), the snapshot coordinator's weak `batchExport` link, in Apps/projectM-iOS/Coordinators/AppCoordinator+SnapshotBatch.swift, Apps/projectM-iOS/Coordinators/AppCoordinator.swift and Apps/projectM-iOS/Coordinators/SceneSnapshotCoordinator.swift
 - [ ] REC-002-T06 [US1] UI (contract B5): "Export Images…" row under the Compare row; the sheet with snapshot toggles, size picker, unsupported-visual notice, Export, progress and Cancel, then Save… (multi-document `fileExporter`), Share… (system sheet, REC-012 exclusions, DEBUG simulation), Save to Photos (REC-011 sequentially, "Saved N of M to Photos.") and Done; DEBUG probe, in Apps/projectM-iOS/Views/SnapshotBatchExportViews.swift and Apps/projectM-iOS/Views/SceneSnapshotRows.swift
-- [ ] REC-002-T07 [US1] Acceptance tests in Apps/projectM-iOS/Tests/SnapshotBatchExportAcceptanceTests.swift: five fixture snapshots ("Dawn/Dusk", "Dawn:Dusk", "🌅🌅", "Sunset 🌅", "...") through the real renderer → exactly five files with the expected names, each a PNG of 1920 × 1080; scene file and backup bytes, snapshot entries, undo stack and live values unchanged; same snapshot twice → identical bytes (S4); naming unit tests in Apps/projectM-iOS/Tests/SnapshotBatchNamingTests.swift
+- [ ] REC-002-T07 [US1] Acceptance tests in Apps/projectM-iOS/Tests/SnapshotBatchExportAcceptanceTests.swift: five fixture snapshots ("Dawn/Dusk", "Dawn:Dusk", "🌅🌅", "Sunset 🌅", "...") through the real renderer → exactly five files with the expected names, each a PNG of 1920 × 1080; scene file and backup bytes, snapshot entries, undo stack and live values unchanged, also with the scene locked (R9); a leftover folder is removed when a coordinator is created (R6); same snapshot twice → identical bytes (S4); naming unit tests in Apps/projectM-iOS/Tests/SnapshotBatchNamingTests.swift
 
 ## Phase 3: User Story 2 — Cancel (P1)
 
@@ -22,7 +22,7 @@
 
 ## Phase 4: User Story 3 — Choose snapshots and size (P2)
 
-- [ ] REC-002-T09 [US3] Selection in list order, square size, unusable rows not selectable, refusals (non-native visual, Compare active); acceptance test exporting two of five at Square → `01-…png`, `02-…png` of 1080 × 1080, in Apps/projectM-iOS/Tests/SnapshotBatchExportAcceptanceTests.swift
+- [ ] REC-002-T09 [US3] Selection in list order, square size, unusable rows not selectable, refusals (non-native visual, Compare active); Save to Photos with a stand-in that refuses after two images reports "Saved 2 of 5 to Photos." and keeps the batch (R8); acceptance test exporting two of five at Square → `01-…png`, `02-…png` of 1080 × 1080, in Apps/projectM-iOS/Tests/SnapshotBatchExportAcceptanceTests.swift
 
 ## Phase 5: UI test
 
