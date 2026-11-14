@@ -86,6 +86,7 @@ extension AppCoordinator {
         var notes: [String] = []
         if !apply.omittedKinds.isEmpty { notes.append("\(Self.showOmittedLayersNote) (\(apply.omittedKinds.joined(separator: ", "))).") }
         if apply.missingMedia { notes.append(Self.showMissingMediaNote) }
+        noteAppliedSceneMedia(document, missingMedia: apply.missingMedia)   // MED-013-R2: the placeholder tile
         return notes
     }
 

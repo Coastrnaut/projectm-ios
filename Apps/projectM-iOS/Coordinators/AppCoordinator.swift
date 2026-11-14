@@ -242,6 +242,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     @ObservationIgnored private(set) lazy var scenePreviews: ScenePreviewModel = makeScenePreviews()
     /// SCN-012: the repair report before a show cue's scene or Reopen opens.
     let sceneRepair: SceneRepairCoordinator
+    /// MED-013: missing imported media (Settings › Storage › Missing Media) and the visualizer's placeholder.
+    let missingMedia = MissingMediaCoordinator()
     /// ACC-011: capture and recording status events (announcements and captions); owns ACC-004's announcer.
     let statusEvents = StatusEventRouter()
     /// FILE-005: Settings › Storage › Backup (announces on the `library` lane, set in init).
@@ -551,6 +553,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         if recovery.decision.isCrashLoop { sceneAutosave?.commitFreshScene() }
         recovery.startObservingLifecycle()
         connectShow()   // SHOW-001
+        connectMissingMedia(defaults: defaults)   // MED-013 (and its DEBUG seed)
         connectLayerInspector()   // CMP-015
         #if DEBUG
         UITestLayerInspectorFixture.seedIfRequested(self)   // CMP-015: LayerInspectorUITests (before the history starts)
