@@ -433,10 +433,24 @@ final class UserPresetsCoordinator: UserPresetGuarding {
         speak(PresetArchiveText.previewAnnouncement(plan))
     }
 
-    /// Plans again with another conflict policy (FILE-003-R6).
+    /// Plans again with another conflict policy (FILE-003-R6). FILE-004: this is "Apply to all", so the
+    /// per-conflict choices are cleared.
     func setArchivePolicy(_ policy: PresetArchiveConflictPolicy) async {
-        guard var review = archiveReview, let data = archiveData, review.plan.policy != policy, !isInstallingArchive else { return }
+        guard var review = archiveReview, let data = archiveData, !isInstallingArchive,
+              review.plan.policy != policy || !review.plan.overrides.isEmpty else { return }
         review.plan = await library.planArchiveImport(data, policy: policy)
+        review.notice = nil
+        archiveReview = review
+    }
+
+    /// FILE-004-R1, R8: one conflict's choice (by its incoming identifier); plans again. A choice equal
+    /// to the default is stored as no override.
+    func setArchiveChoice(_ choice: PresetArchiveConflictPolicy, for incomingID: String) async {
+        guard var review = archiveReview, let data = archiveData, !isInstallingArchive,
+              review.plan.choice(for: incomingID) != choice else { return }
+        var overrides: [String: PresetArchiveConflictPolicy] = review.plan.overrides
+        overrides[incomingID] = choice == review.plan.policy ? nil : choice
+        review.plan = await library.planArchiveImport(data, policy: review.plan.policy, overrides: overrides)
         review.notice = nil
         archiveReview = review
     }
@@ -452,7 +466,7 @@ final class UserPresetsCoordinator: UserPresetGuarding {
         case .installed(let presets):
             archiveReview = nil
             archiveData = nil
-            speak(PresetArchiveText.installed(presets.count))
+            speak(PresetArchiveText.installed(presets.count, replaced: review.plan.replaceCount))
             await refresh()
             await library.runPendingTrials()
             await refresh()
@@ -509,17 +523,19 @@ final class UserPresetsCoordinator: UserPresetGuarding {
     #if DEBUG
     /// PresetArchiveImportUITests: `-uitestPresetArchiveFixture` writes a two-preset archive (one
     /// without licence lines) to a temporary file and opens its preview, as if picked. DEBUG only.
-    func previewFixtureArchive() async {
+    /// FILE-004 (`-uitestPresetArchiveConflictFixture`): the first preset is named "Seeded Lantern", the
+    /// UI test's seeded preset, with another text, so the preview has one name conflict.
+    func previewFixtureArchive(conflict: Bool = false) async {
         tracksLibraryDigest = true
         updateDigest()
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("FILE-003 fixture.zip")
-        guard let data = Self.fixtureArchive() else { return }
+        guard let data = Self.fixtureArchive(firstName: conflict ? "Seeded Lantern" : "Fixture Harbor") else { return }
         try? data.write(to: url, options: .atomic)
         await previewArchive(at: url)
         try? FileManager.default.removeItem(at: url)
     }
 
-    nonisolated static func fixtureArchive() -> Data? {
+    nonisolated static func fixtureArchive(firstName: String = "Fixture Harbor") -> Data? {
         func text(_ tag: String, license: Bool) -> String {
             var lines: [String] = ["MILKDROP_PRESET_VERSION=201", "PSVERSION=2", "PSVERSION_WARP=2", "PSVERSION_COMP=2", "[preset00]"]
             if license { lines.append("// License: CC-BY 4.0, Example Author") }
@@ -529,7 +545,7 @@ final class UserPresetsCoordinator: UserPresetGuarding {
             return lines.joined(separator: "\n") + "\n"
         }
         let items: [(id: String, name: String, text: String)] = [
-            ("user/file003-fixture-harbor", "Fixture Harbor", text("harbor", license: true)),
+            ("user/file003-fixture-harbor", firstName, text("harbor", license: true)),
             ("user/file003-fixture-drift", "Fixture Drift", text("drift", license: false)),
         ]
         var records: [UserPreset] = []
@@ -567,10 +583,23 @@ final class UserPresetsCoordinator: UserPresetGuarding {
         }
     }
 
-    /// What Keep both does to this entry, or nil.
+    /// What the install does to this entry (Keep both's new name or identifier; FILE-004: Replace,
+    /// a Replace that fell back, Skip), or nil when it is installed as it is.
     nonisolated static func archiveInstallText(_ entry: PresetArchivePlanEntry) -> String? {
-        guard let install = entry.install, install.name != entry.incomingName || install.id != entry.incomingID else { return nil }
-        if install.name != entry.incomingName { return "Installed as “\(install.name)”." }
+        guard let install = entry.install else {
+            return entry.isConflict ? "Left out. Your preset is not changed." : nil
+        }
+        if let replaced = entry.replaces {
+            let named: String = install.name == replaced.name ? "" : " It will be named “\(install.name)”."
+            return "Replaces “\(replaced.name)”; collections that list it keep it." + named
+        }
+        let renamed: Bool = install.name != entry.incomingName
+        if entry.fellBack {
+            let target: String = renamed ? "as “\(install.name)”" : "as a copy"
+            return "Nothing of yours to replace, so it is installed " + target + "."
+        }
+        guard renamed || install.id != entry.incomingID else { return nil }
+        if renamed { return "Installed as “\(install.name)”." }
         return "Installed with a new identifier."
     }
 
@@ -578,6 +607,7 @@ final class UserPresetsCoordinator: UserPresetGuarding {
         switch policy {
         case .keepBoth: return "Keep both"
         case .skip: return "Skip"
+        case .replace: return "Replace"
         }
     }
 
@@ -585,6 +615,7 @@ final class UserPresetsCoordinator: UserPresetGuarding {
         switch policy {
         case .keepBoth: return "Install it as a copy. Your preset is not changed."
         case .skip: return "Leave it out."
+        case .replace: return "Your preset takes the imported text and name and keeps its place in collections."
         }
     }
 

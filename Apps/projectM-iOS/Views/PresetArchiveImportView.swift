@@ -1,7 +1,8 @@
 // PresetArchiveImportView.swift — the preset archive import preview (roadmap FILE-003,
 // specs/105-file-003-import-dry-run; FILE-003-R3-R8, R11, R13; contract C4).
 //
-// Shows the dry-run plan: counts, conflicts with the Keep both / Skip choice, presets without licence
+// Shows the dry-run plan: counts, conflicts with the Keep both / Skip / Replace choice ("Apply to all",
+// and FILE-004's per-row choice in `PresetArchiveChoiceRow`), presets without licence
 // information, refused presets with their reasons, the size, and Install / Cancel. Nothing is written
 // until Install; Cancel (or swiping the sheet away) discards the plan. Every row is a vertical stack
 // of wrapping text, so the sheet works at the largest accessibility sizes; nothing animates. Each
@@ -20,8 +21,8 @@ struct PresetArchiveImportView: View {
             List {
                 probeSection
                 noticeSection
+                conflictSection   // FILE-004: the decisions first, reachable without scrolling far
                 summarySection
-                conflictSection
                 licenseSection
                 refusedSection
                 identicalSection
@@ -105,25 +106,40 @@ struct PresetArchiveImportView: View {
             .accessibilityIdentifier("archiveSize")
     }
 
+    /// FILE-004: each conflict with its own choice first, then "Apply to all" in its own section.
     @ViewBuilder
     private var conflictSection: some View {
         let conflicts: [PresetArchivePlanEntry] = plan.entries.filter(\.isConflict)
         if !conflicts.isEmpty {
             Section {
-                Picker("If a preset clashes with one of yours", selection: policyBinding) {
-                    ForEach(PresetArchiveConflictPolicy.allCases, id: \.self) { (policy: PresetArchiveConflictPolicy) in
-                        policyLabel(policy).tag(policy)
-                    }
-                }
-                .pickerStyle(.inline)
-                .disabled(userPresets.isInstallingArchive)
-                .accessibilityIdentifier("archivePolicy")
                 ForEach(Array(conflicts.enumerated()), id: \.offset) { (item: (offset: Int, element: PresetArchivePlanEntry)) in
-                    entryRow(item.element, id: "archiveConflict:\(item.element.incomingName)")
+                    choiceRow(item.element)
                 }
             } header: {
                 Text("Conflicts")
             }
+            Section {
+                policyPicker
+            } footer: {
+                Text("Choosing here applies one choice to every conflict.")
+            }
+        }
+    }
+
+    private var policyPicker: some View {
+        Picker("Apply to all clashing presets", selection: policyBinding) {
+            ForEach(PresetArchiveConflictPolicy.allCases, id: \.self) { (policy: PresetArchiveConflictPolicy) in
+                policyLabel(policy).tag(policy)
+            }
+        }
+        .pickerStyle(.inline)
+        .disabled(userPresets.isInstallingArchive)
+        .accessibilityIdentifier("archivePolicy")
+    }
+
+    private func choiceRow(_ entry: PresetArchivePlanEntry) -> some View {
+        PresetArchiveChoiceRow(entry: entry, disabled: userPresets.isInstallingArchive) { (choice: PresetArchiveConflictPolicy) in
+            Task { await userPresets.setArchiveChoice(choice, for: entry.incomingID) }
         }
     }
 

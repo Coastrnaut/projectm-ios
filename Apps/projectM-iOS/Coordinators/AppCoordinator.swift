@@ -757,6 +757,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             }
             // PresetArchiveImportUITests (FILE-003): previews a fixture archive after the trials ran.
             if defaults.bool(forKey: "uitestPresetArchiveFixture") { await userPresets.previewFixtureArchive() }
+            // PresetArchiveConflictUITests (FILE-004): the same with one name conflict.
+            if defaults.bool(forKey: "uitestPresetArchiveConflictFixture") { await userPresets.previewFixtureArchive(conflict: true) }
             #endif
         }
     }
