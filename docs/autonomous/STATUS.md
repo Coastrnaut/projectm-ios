@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T06:06:58Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T06:08:38Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,18 +10,19 @@
 | State | Features |
 |---|---|
 | audited | 206 |
-| implementing | 5 |
+| implementing | 4 |
+| unit_passed | 1 |
 | integrated | 114 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 3 | 1 | 82 | 1 |
-| P1 | 117 | 4 | 30 | 0 |
-| P2 | 77 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 3 | 0 | 1 | 82 | 1 |
+| P1 | 117 | 4 | 0 | 30 | 0 |
+| P2 | 77 | 0 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -1141,6 +1142,12 @@ None.
 - `python3 scripts/check_compliance.py`: pass at `47115ca78022` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-001/20261113T180131/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `47115ca78022` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-001/20261113T180131/docs.log`)
 - `post-merge: projectM-iOSTests 342 incl. GuidedFirstScene tests; GuidedFirstSceneUITests 4 (offline finish, skip, largest text, reopen), CacheCleanup, SessionRecovery 3 UI tests on iOS 27.2 sim`: pass at `f8f54e2ac938` (log `.autonomous/logs/integration/uix-001/app-tests.log`)
+
+### UIX-002 Quick scene switcher (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `fcf53a475301` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-002/20261114T010824/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `fcf53a475301` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-002/20261114T010824/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `fcf53a475301` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-002/20261114T010824/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `fcf53a475301` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-002/20261114T010824/autonomous-tests.log`)
 
 ### VIS-001 Circular spectrum (integrated)
 - `python3 scripts/check_compliance.py`: pass at `7fa6d4e0f3c1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-001/20261113T080701/compliance.log`)
