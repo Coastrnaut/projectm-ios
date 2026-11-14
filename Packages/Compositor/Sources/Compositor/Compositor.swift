@@ -11,7 +11,7 @@
 // kept, desaturated toward white), and the flash guard measures the same tone-mapped values, so its gain applies
 // to what is shown. Every output (screen, REC-003 recording, REC-001 capture, CMP-014's bus) uses that pass; the
 // screen pass counts non-finite composite pixels (`nonFiniteOutputPixels`).
-// FX-003 (contracts/color-grade.md in specs/123, ADR-0049): before the tone map the output pass applies `colorGrade`
+// FX-003 (contracts/color-grade.md in specs/123, ADR-0050): before the tone map the output pass applies `colorGrade`
 // (`cmp_grade`: temperature, lift, gamma, gain, saturation in linear light; neutral = bypass, bit for bit), and the
 // flash guard measures the graded, tone-mapped values (`cmp_display`) with the same block.
 //
@@ -244,7 +244,7 @@ public final class Compositor {
     private var gradeBlock = CompositorShaders.GradeBlock.neutral
     private var shownGradeBlock = CompositorShaders.GradeBlock.neutral
 
-    /// FX-003 (contracts/color-grade.md in specs/123, ADR-0049): the colour grade every output pass applies before the
+    /// FX-003 (contracts/color-grade.md in specs/123, ADR-0050): the colour grade every output pass applies before the
     /// tone map, and the flash guard measures. Set between frames; neutral (the default) bypasses grading bit for bit.
     /// Never invalidates CMP-013's caches (grading runs after the composite).
     public var colorGrade: ColorGrade = .neutral {

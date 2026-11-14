@@ -50,7 +50,7 @@ public final class SceneTransitionBus {
     private var gradeBlock = CompositorShaders.GradeBlock.neutral
     private var shownGradeBlock = CompositorShaders.GradeBlock.neutral
 
-    /// FX-003 (ADR-0049): the colour grade of the bus's output pass and flash guard (as `Compositor.colorGrade`; the
+    /// FX-003 (ADR-0050): the colour grade of the bus's output pass and flash guard (as `Compositor.colorGrade`; the
     /// scenes' own `colorGrade` is not used here, since the bus runs its own output pass).
     public var colorGrade: ColorGrade = .neutral {
         didSet { gradeBlock = CompositorShaders.GradeBlock(colorGrade.coefficients) }

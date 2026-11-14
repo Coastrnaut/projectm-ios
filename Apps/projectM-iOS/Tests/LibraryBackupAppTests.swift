@@ -28,7 +28,7 @@ final class LibraryBackupAppTests: XCTestCase {
     }
 
     func testIncludedKeysAndFolderNamesAgreeWithTheStores() {
-        let appKeys: Set<String> = Set(AppSettings.allKeys + LatencyOffsetSetting.allKeys
+        let appKeys: Set<String> = Set(AppSettings.allKeys + LatencyOffsetSetting.allKeys + ColorGradeSetting.allKeys
             + [InputTrimSetting.decibelsKey, ChannelSelectionSetting.modeKey, NoiseGateSetting.enabledKey, NoiseGateSetting.thresholdKey,
                FavoritesStore.favoritesKey, FavoritesStore.lastPresetKey, PhotoStore.idKey, TextOverlayStore.key])
         let included = Set(LibrarySettingsPolicy.includedKeys)

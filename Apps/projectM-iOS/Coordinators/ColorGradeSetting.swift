@@ -6,7 +6,10 @@
 // range → the nearest bound (`ColorGrade.clamped`). `resetToNeutral()` removes the five keys. Every change calls
 // `onChange`, through which `AppCoordinator` hands `grade` to the compositor-backed visuals (Camera, Photo, Video,
 // Text); the native spectra and projectM are not graded (spec Clarifications). Readouts are built in typed steps.
+// ACC-012: the sensory safety profile's intensity limit caps the brightening part of gain (`effectiveGrade`;
+// research FX-003-D10); Standard leaves the grade unchanged. The flash guard measures the graded output either way.
 import Compositor
+import FlashSafety
 import Foundation
 import Observation
 
@@ -64,6 +67,22 @@ final class ColorGradeSetting {
 
     var isNeutral: Bool { grade.isNeutral }
 
+    /// What the compositors apply under `clamp` (ACC-012, research FX-003-D10): gain above 1 is an intensity-type
+    /// boost, so its excursion is capped at the profile's intensity limit × (maximum gain − 1). Unchanged at limit 1.
+    func effectiveGrade(clamp: SafetyClamp) -> ColorGrade {
+        Self.effective(grade, clamp: clamp)
+    }
+
+    static func effective(_ grade: ColorGrade, clamp: SafetyClamp) -> ColorGrade {
+        guard clamp.capsIntensity, grade.gain > 1 else { return grade }
+        let boost: Float = Float(grade.gain - 1)
+        let room: Float = Float(ColorGrade.gainRange.upperBound - 1)
+        let capped: Float = clamp.intensity(boost, maximum: room)
+        var out: ColorGrade = grade
+        out.gain = 1 + Double(capped)
+        return out
+    }
+
     /// Every control back to neutral; the five keys are removed (absent = neutral).
     func resetToNeutral() {
         let neutral: ColorGrade = .neutral
@@ -90,9 +109,11 @@ final class ColorGradeSetting {
         onChange?(grade)
     }
 
-    /// Absent or not a number → `neutral` (NaN is handled by `clamped`).
+    /// Absent, not a number or a Bool → `neutral` (NaN is handled by `clamped`). A Bool is told apart by its
+    /// CFBoolean type, since a stored 0.0 or 1.0 would also bridge to Bool.
     private static func read(_ defaults: UserDefaults, _ key: String, _ neutral: Double) -> Double {
-        guard let number = defaults.object(forKey: key) as? NSNumber, !(defaults.object(forKey: key) is Bool) else { return neutral }
+        guard let number = defaults.object(forKey: key) as? NSNumber else { return neutral }
+        if CFGetTypeID(number) == CFBooleanGetTypeID() { return neutral }
         return number.doubleValue
     }
 
