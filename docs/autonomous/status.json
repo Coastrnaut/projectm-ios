@@ -6,14 +6,16 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 3,
+   "audited": 2,
+   "implementing": 1,
    "integrated": 83,
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 117,
-   "integrated": 31,
-   "unit_passed": 3
+   "audited": 116,
+   "implementing": 1,
+   "integrated": 32,
+   "unit_passed": 2
   },
   "P2": {
    "audited": 77,
@@ -24,10 +26,11 @@
   }
  },
  "by_state": {
-  "audited": 206,
-  "integrated": 116,
+  "audited": 204,
+  "implementing": 2,
+  "integrated": 117,
   "skipped_existing": 1,
-  "unit_passed": 3
+  "unit_passed": 2
  },
  "device_gate": {
   "blocked": [],
@@ -89,7 +92,6 @@
    "FX-017",
    "FX-018",
    "FX-020",
-   "MED-003",
    "MED-004",
    "MED-005",
    "MED-006",
@@ -247,7 +249,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "209 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)"
+   "208 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)"
   ]
  },
  "features": {
@@ -1063,13 +1065,13 @@
   },
   "CMP-011": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/cmp-011",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "CMP-012": {
    "attempts": 0,
@@ -1466,10 +1468,10 @@
    "branch": "feature/med-003",
    "branch_sha": "ef4ad61613e91defd946d49aadf23aec866bb539",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "b75c685f96f745864b53066ebb20c5ee1d9155e1",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "MED-004": {
    "attempts": 0,
@@ -3303,13 +3305,13 @@
   },
   "UIX-015": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/uix-015",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "VIS-001": {
    "attempts": 0,
@@ -3849,6 +3851,11 @@
    "sha": "e9e04eeb62a82bb2ffc74f56b1bbeea34ebd3ec2"
   },
   {
+   "branch": "feature/med-003",
+   "id": "MED-003",
+   "sha": "b75c685f96f745864b53066ebb20c5ee1d9155e1"
+  },
+  {
    "branch": "feature/med-009",
    "id": "MED-009",
    "sha": "beca43d66718242bb6ba638c09213dfdeeceb612"
@@ -4119,5 +4126,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T06:47:10Z"
+ "updated": "2026-11-14T06:47:18Z"
 }

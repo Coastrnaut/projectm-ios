@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T06:47:10Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T06:47:18Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,24 +9,25 @@
 
 | State | Features |
 |---|---|
-| audited | 206 |
-| unit_passed | 3 |
-| integrated | 116 |
+| audited | 204 |
+| implementing | 2 |
+| unit_passed | 2 |
+| integrated | 117 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 3 | 0 | 83 | 1 |
-| P1 | 117 | 3 | 31 | 0 |
-| P2 | 77 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 2 | 1 | 0 | 83 | 1 |
+| P1 | 116 | 1 | 2 | 32 | 0 |
+| P2 | 77 | 0 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 209 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)
+- 208 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)
 
 ## Integrated
 
@@ -99,6 +100,7 @@ The physical-device suite may **not** start:
 | FX-019 | Strobe safety envelope | `6cfcbaabc8d0` | `feature/fx-019` |
 | MED-001 | Import photo layer | `dd604d0b1d51` | `feature/med-001` |
 | MED-002 | Import video layer | `e9e04eeb62a8` | `feature/med-002` |
+| MED-003 | Video loop region | `b75c685f96f7` | `feature/med-003` |
 | MED-009 | Text overlay | `beca43d66718` | `feature/med-009` |
 | MED-014 | Safe media decoder | `31e16534f057` | `feature/med-014` |
 | MOD-001 | Typed parameter registry | `304f3bce431a` | `feature/mod-001` |
@@ -781,7 +783,7 @@ None.
 - `swift test --package-path Packages/Compositor`: pass at `1954f853e740` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-002/20261113T134641/swift-test_Compositor.log`)
 - `post-merge: Compositor scheme on iPhone 17 sim (Compositor 154 incl. video pipeline, import and layer tests); projectM-iOSTests 210 incl. VideoStoreTests; VideoLayerUITests 22.1 s, Photo, Camera 2, ExternalDisplay; SettingsUITests 4 pass after the scroll fix`: pass at `e9e04eeb62a8` (log `.autonomous/logs/integration/med-002/app-tests.log`)
 
-### MED-003 Video loop region (unit_passed)
+### MED-003 Video loop region (integrated)
 - `python3 scripts/check_compliance.py`: pass at `ef4ad61613e9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-003/20261114T014458/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `ef4ad61613e9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-003/20261114T014458/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `ef4ad61613e9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-003/20261114T014458/script-tests.log`)
