@@ -86,6 +86,8 @@ steps.
 - The scene is locked when the boundary passes: the change is refused at that moment (SCN-015 announcement) and dropped.
 - A scene change (cue step) in Beat or Bar mode: the queue is cleared and the drop announced.
 - Mode changed while changes are queued: the queue is cleared and the drop announced.
+- Undo/redo (SCN-010) is an edit of the same scene, not a scene change: the queue is kept.
+- Cue mode with cues but no step taken: the change waits until the performer steps (the wait is the performer's choice; switching the mode to Off clears it).
 - Continuous parameters (glow intensity, radius, threshold): never queued.
 - Tempo changes after a request: the boundary computed at request time stands (bounded wait).
 - Clock jumps over several boundaries (app suspended): the change applies once at the first tick after its boundary.
