@@ -27,7 +27,8 @@ final class SceneFoldersUITests: XCTestCase {
 
     func testCreateAFolderMoveASceneIntoItAndFindItThere() {
         XCUIDevice.shared.orientation = .portrait
-        app.launchArguments = ["-uitestResetNotice", "-uitestKeepControls", "-uitestShowSeed", "-autostart", "inAppPlayback"] + Self.noStore
+        app.launchArguments = ["-uitestResetNotice", "-uitestKeepControls", "-uitestShowSeed", "-autostart", "inAppPlayback",
+                               "-uitestSettingsSection", "show"] + Self.noStore   // Settings opens at the Show row (owner rule 7)
         app.launch()
         let settings = app.buttons["settings"]
         let area = app.otherElements["visualizerTapArea"].firstMatch
@@ -36,16 +37,8 @@ final class SceneFoldersUITests: XCTestCase {
         XCTAssertTrue(settings.appears(within: 5), "the controls are shown")
         settings.tap()
         let showLink = app.buttons["showEditorLink"]
-        // The Show row is the last of a long Settings list: two fast flicks in the right margin (no
-        // slider there) get close in about 4 s, where held reveal drags took 15 s (owner rule 7).
         XCTAssertTrue(app.navigationBars["Settings"].appears(within: 5))
-        let window = app.windows.firstMatch
-        for _ in 0..<2 {
-            window.coordinate(withNormalizedOffset: CGVector(dx: 0.96, dy: 0.9))
-                .press(forDuration: 0.01, thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.96, dy: 0.15)),
-                       withVelocity: 6000, thenHoldForDuration: 0)
-        }
-        XCTAssertTrue(app.reveal(showLink, long: true), "the Show row is reachable")
+        XCTAssertTrue(app.reveal(showLink), "the Show row is reachable")
         showLink.tap()
         let foldersLink = app.buttons["showSceneFoldersLink"]
         XCTAssertTrue(foldersLink.appears(within: 5))

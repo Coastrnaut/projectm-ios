@@ -15,7 +15,8 @@ final class OSCRateLimiterUITests: XCTestCase {
     func testSettingsShowsTheRateLimitedCount() {
         XCUIDevice.shared.orientation = .portrait
         app.launchArguments = ["-uitestDiagnostics", "-autostart", "inAppPlayback",
-                               "-settings.osc.enabled", "YES", "-settings.osc.port", "47125"] + Self.noStore
+                               "-settings.osc.enabled", "YES", "-settings.osc.port", "47125",
+                               "-uitestSettingsSection", "osc"] + Self.noStore   // Settings opens at OSC (owner rule 7)
         app.launch()
         XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
 
@@ -28,7 +29,7 @@ final class OSCRateLimiterUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Settings"].appears(within: 5))
 
         let row = app.descendants(matching: .any)["oscRateLimited"]
-        app.reveal(row, long: true)
+        app.reveal(row)
         XCTAssertTrue(row.exists, "the Rate-limited row is shown while OSC is on")
         // LabeledContent reads as one element, "Rate-limited, 0".
         XCTAssertEqual(row.label, "Rate-limited, 0", "no traffic: the row shows 0")
