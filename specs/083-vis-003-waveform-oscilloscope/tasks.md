@@ -38,7 +38,7 @@ Logs go to `.build/scratch/`.
 
 ## Phase 3: User Story 3 - flash safety and glow (P2)
 
-- [ ] VIS-003-T11 [P] [US3] Write `OscilloscopeFlashTests.swift`: (CPU) a 60 Hz alternation of a full-scale 220 Hz sine and silence for 2 s through `FlashSafetyLimiter` with the oscilloscope layout (Thick line, white palette, the strongest glow's luminance model as the downstream transfer) yields ≤ 4 transitions per 1 s window in every area and signal with Reduce flashing on and ≤ 6 off (FlashAnalysis); portrait and landscape layouts keep every sample point inside the output. Evidence: passes on the host and in the Linux shape (fix the model if needed).
+- [X] VIS-003-T11 [P] [US3] Write `OscilloscopeFlashTests.swift`: (CPU) a 60 Hz alternation of a full-scale 220 Hz sine and silence for 2 s through `FlashSafetyLimiter` with the oscilloscope layout (Thick line, white palette, the strongest glow's luminance model as the downstream transfer) yields ≤ 4 transitions per 1 s window in every area and signal with Reduce flashing on and ≤ 6 off (FlashAnalysis); portrait and landscape layouts keep every sample point inside the output. Evidence: passes on the host and in the Linux shape (fix the model if needed). — Verified 2026-11-13: OscilloscopeFlashTests 2 pass on the host (5.7 s; the alternation test 5.0 s for 4 runs of 120 frames, the envelope bisecting each frame in Debug) and in the Linux shape; worst transitions per 1 s window with Reduce flashing on: 1 (portrait, plain) and 1 (landscape, strongest glow), limit 4, rises within 0.25/s; off: 6 and 6, limit 6. No model fix needed. The test uses the 10 ms window (440 points) to keep its time down (.build/scratch/vis003-T11-*.log).
 
 ## Phase 4: User Story 1 - choose it in the app (P1)
 
