@@ -70,3 +70,9 @@ visible bug, extra work is not.
 - Skipping the flash guard or the output pass on a reused frame: an unfilled drawable, and an envelope
   that would skip time.
 - Composite placement in the layer key: every opacity fade would re-render static layers for nothing.
+
+## Amendment 2026-11-14 (FX-009, ADR-0051)
+
+While a compositor's motion feedback ("Trails") is active, the composite is never kept (level 2): the shown frame
+depends on the previous frames, so no time-dependent output enters the cache. Layer pictures (level 1) may still be
+reused. With Trails off, caching is unchanged.
