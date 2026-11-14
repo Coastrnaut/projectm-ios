@@ -54,6 +54,10 @@ Answered by Claude under owner rules 4 and 9 (recommended option first).
 - Q: Where is "Assign MIDI…" offered? → A: On each cue in Settings → Show (context menu, a leading "MIDI" swipe action and a VoiceOver action "Assign MIDI"). The Scene Folders view is not changed (its rows already offer Go to Cue; one entry point keeps the learn sheet in one place).
 - Q: Do scene triggers keep working while a learn session runs? → A: Yes: every message except the one a learn session consumes is routed as usual, so learning never blocks a show; the learning message itself selects nothing and fires no MIDI-006 trigger.
 
+### Session 2026-11-14 (show editor fix)
+
+- Q: Are all the cue row's swipe actions reachable on an iPhone? → A: Decided (best judgement, owner rule 4): eight leading swipe actions (Go, Duplicate, Name, Transition, Into, Advance, MIDI) pushed the later ones off a 402 pt iPhone (MIDI at x = 475, not tappable; MIDISceneSelectionUITests). Each swipe edge now has at most three actions: leading Go, MIDI (when MIDI is available) and More…, which opens a dialog with Duplicate Scene, Rename Scene…, Transition…, Transition Into This Cue… and Advance After… (More… hidden while the scene is locked, SCN-015-R6); trailing Delete and Skip. The context menu and VoiceOver actions are unchanged, and the accessibility identifiers move with their actions into the dialog. For this feature, "MIDI" stays a direct leading swipe action, second after Go, so it is always on screen.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A program change recalls a scene (Priority: P1) — MVP
