@@ -59,6 +59,29 @@ answer is the conservative option.
 - Q: Which visuals? → A: The compositor-backed visuals (Camera, Photo, Video, Text), on every output; the native
   spectra and projectM are unchanged. Applied to FX-009-R1 and the Assumptions.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Five questions, each answered by Claude with the recommended option (owner rule 4).
+
+- Q: What range, default and steps does the trails length (half-life) use? → A: 0.05…0.50 s, default 0.20 s, step
+  hint 0.01 s; a VoiceOver swipe moves 0.05 s (9 steps). The per-frame decay is never above 0.99, which only binds
+  above 120 frames per second at the longest length (at 60 fps the longest length gives 0.977 per frame, at 120 fps
+  0.989). Applied to FX-009-R3, R9, R10.
+- Q: What happens to the two scenes of a running transition (CMP-014)? → A: Starting a transition (or a cut) clears
+  the trails of both the scene being left and the scene coming in, so neither carries trails from before the
+  change into the blend. Applied to FX-009-R5.
+- Q: Should Reduce flashing turn Trails off or shorten them? → A: Shorten: Reduce flashing caps the length at
+  0.25 s; the profile's intensity limit caps it at limit × 0.50 s (Reduced 0.25 s, Strict 0.125 s, a Custom limit
+  of 0 turns Trails off); the stricter cap wins. Trails by maximum never add brightness and soften dark frames, so
+  shortening rather than removing keeps the effect usable while bounding how long bright areas persist; the flash
+  guard still judges every shown frame. Applied to FX-009-R7, S5.
+- Q: Does pausing and resuming the visual clear the trails? → A: Yes: a frame-loop start is already a new scene for
+  the flash guard (FX-019-R11), and the trails follow it, so a resumed visual never shows trails from before the
+  pause. Applied to FX-009-R5 and Edge Cases.
+- Q: How exact must "no prior-scene content in the first new frame" be? → A: Exact: the first frame after a reset is
+  bit-identical to the frame shown with Trails off for the same scene (the reset frame passes the new composite
+  through unchanged), checked in both output formats. Applied to FX-009-R6, S1.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Moving things leave fading trails (Priority: P1)
@@ -130,7 +153,7 @@ actually shown, and the sensory safety profile and Reduce flashing shorten the t
 - Turning Trails off returns the held picture memory; turning them on again starts clean.
 - A size change (rotation, external display, split view) or an output colour format change starts clean.
 - A long gap between frames (a stall, a pause and resume) fades more per frame, by the elapsed time; a resumed
-  frame loop starts clean (it is a new scene for the flash guard as well).
+  frame loop (after a pause or the app returning) starts clean (it is a new scene for the flash guard as well).
 - NaN or infinite picture values are not kept by the trails (they never spread into later frames).
 - Transparent areas stay transparent once the trails have faded.
 - Stored values missing, not numbers, NaN or out of range: off, or the nearest limit.
@@ -146,17 +169,18 @@ actually shown, and the sensory safety profile and Reduce flashing shorten the t
   trails frame multiplied by a per-frame decay; the result never exceeds the brightest value either input holds.
 - **FX-009-R3**: The decay follows a half-life in seconds, converted per frame from the frame's duration
   (decay = 0.5^(duration ÷ half-life)), so the fade per second is the same at any frame rate; the per-frame decay is
-  never above a fixed ceiling.
+  never above 0.99. The half-life is 0.05…0.50 s, default 0.20 s.
 - **FX-009-R4**: Trails are applied to the composite before the colour grade, the tone map and the flash guard, so
   the flash guard and every output see the trails result.
 - **FX-009-R5**: Any scene change clears the trails history: show cue apply (including the scene switcher), visual
   switch or frame-loop start, scene reopen or restore, undo/redo of a scene state, the start of a scene
-  transition, an output size change, an output format change, a render-health reset, and turning Trails on.
-- **FX-009-R6**: The first frame after a reset contains the new composite only: every pixel equals the frame that
-  would be shown without Trails.
-- **FX-009-R7**: The sensory safety profile's intensity limit caps the half-life (limit × the longest half-life), and
-  Reduce flashing caps it at half the longest half-life; a cap of zero turns Trails off. The flash guard measures
-  the trails result under every profile.
+  transition or cut (both scenes), an output size change, an output format change, a render-health reset, and
+  turning Trails on.
+- **FX-009-R6**: The first frame after a reset contains the new composite only: every pixel is bit-identical to the
+  frame that would be shown with Trails off.
+- **FX-009-R7**: The sensory safety profile's intensity limit caps the half-life at limit × 0.50 s, and Reduce
+  flashing caps it at 0.25 s; the stricter cap wins and a cap of zero turns Trails off. The flash guard measures the
+  trails result under every profile.
 - **FX-009-R8**: Trails off is bit-identical to the output before this feature and holds no extra picture memory;
   Trails on uses one extra pair of pooled pictures at output size and one extra full-screen pass per frame, with no
   per-frame allocation. Pictures go back to the shared pool when Trails turn off, the size changes or the visual is
@@ -182,13 +206,13 @@ actually shown, and the sensory safety profile and Reduce flashing shorten the t
 ### Measurable Outcomes
 
 - **FX-009-S1**: For each reset trigger, after several red frames with Trails on, the first frame of a blue scene
-  equals the blue scene without Trails (no red in any pixel).
+  is bit-identical to the blue scene without Trails (no red in any pixel), in both output formats.
 - **FX-009-S2**: The fade after one half-life is 0.5 within 1% at 60 and at 120 frames per second (computed from
   injected frame durations, no clock).
 - **FX-009-S3**: Trails off output is bit-identical to the output before this feature; all RenderGoldens pass
   unchanged.
 - **FX-009-S4**: With Trails on, the stored composite is never reused; with Trails off reuse works as before.
-- **FX-009-S5**: Under Strict the effective half-life is at most a quarter of the longest; a strobing source with
+- **FX-009-S5**: Under Strict the effective half-life is at most 0.125 s, under Reduce flashing at most 0.25 s; a strobing source with
   Trails still makes the flash limiter lower its gain.
 - **FX-009-S6**: Turning Trails on and off and changing the size many times leaves the picture pool's checkouts
   where they started (no leak).
