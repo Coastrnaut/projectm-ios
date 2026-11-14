@@ -85,6 +85,15 @@ first.
   on): the gate starts closed with an empty envelope, so a quiet room stays gated from the first
   frame and music opens it within the attack. A threshold change applies at the next read (the
   state machine continues) (AUD-011-R9).
+- Q: Should Settings or the visualizer show whether the gate is currently open? → A: No. The row
+  asks for suppression, not metering; the analysis worker's state would need a second atomic path to
+  the UI and a live indicator in Settings, which is closed while the visualizer runs. The visuals
+  themselves show the effect. Recorded as out of scope (AUD-011-R7).
+- Q: How does the gate know the active source is the microphone? → A: The app sets a "microphone
+  source" flag on the shared gate control whenever it starts a source (true for Microphone, false
+  for the others) and clears it on Stop; the analysis reader reads it with the enabled flag at each
+  read. A source started while the gate is on therefore starts gated from its first read, and
+  switching to playback passes through from the next read (AUD-011-R3, R9).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -152,11 +161,11 @@ the feature.
 
 - **AUD-011-R1**: The gate MUST apply only to the analysis tap's consumer copy, after AUD-008's trim and before `WaveformTap` and the pipeline (tap → selection → trim → gate). The PCM sink, projectM's ring, the audio-state classifier and playback MUST be unchanged bit for bit.
 - **AUD-011-R2**: The gate MUST be a pass-through reader: it forwards the wrapped reader's frame count and session generation unchanged and changes only the frames it returned, in the caller's buffer.
-- **AUD-011-R3**: The gate MUST be active only when it is enabled AND the active source is Microphone; otherwise the output MUST be bit-identical to the input.
+- **AUD-011-R3**: The gate MUST be active only when it is enabled AND the active source is Microphone (a flag the app sets when it starts a source and clears on Stop); otherwise the output MUST be bit-identical to the input.
 - **AUD-011-R4**: Detector: per frame e = max(max(|L|, |R|), e · r) with r = exp(−1 / (0.010 s · 44,100 Hz)); NaN magnitudes count as 0. Thresholds compare e against 10^(dBFS/20).
 - **AUD-011-R5**: Law: closed (gain 0) → when e ≥ open threshold, attack: the gain rises linearly by 1/attackFrames per frame to 1 (open). While open, e ≥ close threshold re-arms the hold; after holdFrames below the close threshold, release: the gain falls linearly by 1/releaseFrames per frame to 0 (closed). During release, e ≥ open threshold starts the attack again from the current gain; e between close and open thresholds continues the current phase. Output y = x · gain; gain 0 writes exactly 0.
 - **AUD-011-R6**: Parameters and bounds: open threshold −80…−20 dBFS (default −50, NaN → default); hysteresis 0…20 dB (default 6; close = open − hysteresis); attack 0.5…50 ms (default 5); hold 0…1,000 ms (default 100); release 10…2,000 ms (default 150). Times convert to whole frames at 44.1 kHz, at least 1.
-- **AUD-011-R7**: Settings → Audio Analysis MUST offer a "Noise gate" section: a toggle (default off), a "Gate threshold" slider −80…−20 dBFS in 1 dB steps disabled while off, a readout ("−50 dBFS", U+2212 minus), and a footer saying it applies to the microphone only and changes only how the native visuals and tempo detection react.
+- **AUD-011-R7**: Settings → Audio Analysis MUST offer a "Noise gate" section: a toggle (default off), a "Gate threshold" slider −80…−20 dBFS in 1 dB steps disabled while off, a readout ("−50 dBFS", U+2212 minus), and a footer saying it applies to the microphone only and changes only how the native visuals and tempo detection react. No live open/closed indicator.
 - **AUD-011-R8**: Persisted under `settings.noiseGate.enabled` (Bool) and `settings.noiseGate.thresholdDecibels` (Double); device-level user settings, not part of scenes, show cues, archives or CaptureLab. This amends FR-065 by exactly these two keys; the device privacy check's allowed list gains them; `-uitestResetNotice` clears them.
 - **AUD-011-R9**: Off or inactive keeps no state; becoming active, or a session-generation change while active, starts closed with e = 0. Setting changes reach a running reader at its next read without restarting the source or the visual.
 - **AUD-011-R10**: Accessibility (FR-070): toggle label "Noise gate"; slider label "Gate threshold" with the readout as its value; identifiers `noiseGateToggle`, `noiseGateThresholdSlider`, `noiseGateThresholdValue`.
