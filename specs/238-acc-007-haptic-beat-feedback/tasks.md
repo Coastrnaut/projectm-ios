@@ -37,7 +37,7 @@ are never device evidence.
 
 ## Phase 6: Polish
 
-- [ ] ACC-007-T14 Register the keys (R8): `ALLOWED_KEYS` in scripts/run_device_tests.py, FILE-005 `includedKeys` in Packages/LibraryBackup/Sources/LibraryBackup/LibrarySettings.swift, the app keys in Apps/projectM-iOS/Tests/LibraryBackupAppTests.swift; run `LibraryBackupAppTests` and the LibraryBackup package tests
+- [ ] ACC-007-T14 Register the keys (R8): `ALLOWED_KEYS` in scripts/run_device_tests.py, FILE-005 `includedKeys` in Packages/LibraryBackup/Sources/LibraryBackup/LibrarySettings.swift, the app keys in Apps/projectM-iOS/Tests/LibraryBackupAppTests.swift; check that no scene, cue, MIDI or OSC code reads the keys (R9); run `LibraryBackupAppTests` and the LibraryBackup package tests
 - [ ] ACC-007-T15 Type-check budget build, the six repo checks, `check_privacy_manifest` and `check_network_symbols` on the Debug app
 - [ ] ACC-007-T16 Spec status, analyze notes, delete the simulator and derived data, PosterBoard counts
 
@@ -49,3 +49,10 @@ T08; T15–T16 last. Parallel: T04 with T05; T12 with T07.
 ## Implementation strategy
 
 MVP = US1 (both acceptance clauses). US2 and US3 are further tests on the same coordinator.
+
+## Analyze notes (speckit-analyze, 2026-11-14)
+
+- C1 (fixed): R9 (never in scenes, cues, MIDI, OSC, modulation) had no task; T14 now also checks that no scene, MIDI or OSC code references the keys (grep in the polish step).
+- C2 (fixed): R11 (labels, identifiers, Dynamic Type) is covered by T08 (identifiers and labels) and T09 (the UI test finds them by identifier).
+- I1 (accepted, LOW): the footer text lives in contract C4 only; the spec states its content (R1, R6), not its wording.
+- Coverage: R1 T08/T09, R2 T06/T07, R3 T02/T04/T10, R4 T02/T04/T07, R5 T06/T11, R6 T06/T08/T11, R7 T03/T06, R8 T14, R9 T14, R10 T12, R11 T08/T09; S1-S5 map to T07, T07, T10, T11, T09. No constitution conflict.
