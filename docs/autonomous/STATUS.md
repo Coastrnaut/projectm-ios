@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T10:27:01Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T10:27:08Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,25 +9,24 @@
 
 | State | Features |
 |---|---|
-| audited | 188 |
-| implementing | 2 |
-| unit_passed | 1 |
-| integrated | 134 |
+| audited | 187 |
+| implementing | 3 |
+| integrated | 135 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 100 | 2 | 1 | 48 | 0 |
-| P2 | 77 | 0 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 2 | 0 | 84 | 1 |
+| P1 | 99 | 3 | 49 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 191 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)
+- 190 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)
 
 ## Integrated
 
@@ -112,6 +111,7 @@ The physical-device suite may **not** start:
 | FILE-013 | Privacy permission audit | `b5e4bd0` | `feature/file-013` |
 | FX-001 | Bloom | `1192e0d6503e` | `feature/fx-001` |
 | FX-002 | Tone mapping | `2e8e134d` | `feature/fx-002` |
+| FX-003 | Color grading | `784a1c765550` | `feature/fx-003` |
 | FX-019 | Strobe safety envelope | `6cfcbaabc8d0` | `feature/fx-019` |
 | MED-001 | Import photo layer | `dd604d0b1d51` | `feature/med-001` |
 | MED-002 | Import video layer | `e9e04eeb62a8` | `feature/med-002` |
@@ -930,7 +930,7 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `aa29cfdd5237` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-002/20261114T045152/swift-test_ShowControl.log`)
 - `post-merge (FX-002 + FILE-011): projectM-iOSTests 559 + LibraryErase/LibraryBackup/PhotoLayer/FrameCapture UI tests 5`: pass at `2e8e134d` (log `.autonomous/logs/integration/fx-002-file-011/app-tests.log`)
 
-### FX-003 Color grading (unit_passed)
+### FX-003 Color grading (integrated)
 - `python3 scripts/check_compliance.py`: pass at `fd8d5f55e153` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-003/20261114T052407/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `fd8d5f55e153` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-003/20261114T052407/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `fd8d5f55e153` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-003/20261114T052407/script-tests.log`)
