@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (MED-003-T01-T19 verified on the Mac host, the Linux shape and the iOS 27.2 simulator; device task T20 `{device}` open; report `docs/test-reports/video-loop-region.md`)
 
 **Input**: User description: "Implement MED-003 (Video loop region) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Choose in and out points and
