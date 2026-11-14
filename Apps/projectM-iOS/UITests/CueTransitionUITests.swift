@@ -31,7 +31,11 @@ final class CueTransitionUITests: XCTestCase {
         let start = row.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.5))
         start.press(forDuration: 0.05, thenDragTo: row.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.5)),
                     withVelocity: .fast, thenHoldForDuration: 0.05)
-        let button = app.buttons.matching(NSPredicate(format: "identifier == %@ OR label == %@", "showCueTransition", "Transition")).firstMatch
+        // The cue's edit actions are in the leading swipe's More… dialog (show editor fix, 2026-11-14).
+        let more = app.buttons.matching(NSPredicate(format: "identifier == %@ OR label == %@", "showCueMore", "More Actions")).firstMatch
+        XCTAssertTrue(more.appears(within: 3), "More is offered")
+        more.tap()
+        let button = app.buttons.matching(NSPredicate(format: "identifier == %@ OR label == %@", "showCueTransition", "Transition…")).firstMatch
         XCTAssertTrue(button.appears(within: 3), "Transition is offered")
         button.tap()
         XCTAssertTrue(app.navigationBars["Transition"].appears(within: 3), "the Transition sheet")
