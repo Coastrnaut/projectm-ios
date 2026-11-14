@@ -120,7 +120,8 @@ name and current value (read-only). Moving the slider updates the labels.
 
 ### Functional Requirements
 
-- **MOD-010-R1**: A macro MUST have a name, a value in 0…1 and 1…8 targets; a scene holds at most 8 macros.
+- **MOD-010-R1**: A macro MUST have a name, a value in 0…1 and an ordered list of targets, of which the first 8
+  are used; the first 8 macros of a scene are used. Entries beyond a limit are kept but not used, and reported.
 - **MOD-010-R2**: Each target MUST name a registered parameter and carry a MOD-004 curve, an output range
   (minimum ≤ maximum) and an optional reversal.
 - **MOD-010-R3**: A target's value MUST be its range interpolated at its curve applied to the macro value

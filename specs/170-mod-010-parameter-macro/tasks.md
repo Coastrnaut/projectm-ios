@@ -59,7 +59,8 @@ No setup: existing packages and app target.
 - [ ] MOD-010-T09 Scene-document contract `macros` section
   (`specs/059-scn-001-versioned-scene-format/contracts/scene-document.md`); repository checks
   (compliance, docs, motion, permissions, status events, script tests, privacy manifest, network symbols);
-  type-check budget; spec status
+  type-check budget; Linux shape (`ParameterMacro.swift` and `SceneMacros.swift` import no Foundation
+  or Apple-only API; MOD-010-R11); spec status
 
 ## Dependencies
 
