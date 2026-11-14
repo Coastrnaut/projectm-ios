@@ -8,7 +8,7 @@
 
 ## UIX-013-D2: How exclusion is proven
 
-- **Decision**: Three app tests with real views: (1) an external window built from `ExternalDisplayViewController` holding a solid-colour visual, with the real `SceneHUDLayer` hosted in a device window: the external window's view tree contains no hosting view or HUD element, and its snapshot is byte-identical with the HUD on and off; (2) a red Photo visual recorded through `VideoRecordingCoordinator` while the HUD and a green probe are on screen in the same window: no probe pixel in any frame, and the frames equal a HUD-off recording's frames outside the spectrum disc; (3) `FrameCaptureCoordinator`'s source (the same Photo visual) captured with the HUD on and off: identical pixels.
+- **Decision**: Three app tests with real views: (1) an external window built from `ExternalDisplayViewController` holding a solid-colour visual, with the real `SceneHUDLayer` hosted in a device window: the external window's view tree contains no hosting view or HUD element, and its snapshot is byte-identical with the HUD on and off; (2) a red Photo visual recorded through `VideoRecordingCoordinator` while the HUD and a green probe are on screen in the same window: no probe pixel in any frame, and each decoded frame equals the matching frame of a HUD-off recording; (3) `FrameCaptureCoordinator`'s source (the same Photo visual) captured with the HUD on and off: identical pixels.
 - **Rationale**: follows REC-009-T08's proven pattern; deterministic (solid picture, no audio reader), no wall-clock assertions.
 - **Alternatives considered**: UI-test screenshots of a simulated external display (rejected: the simulator's external display path differs between iOS 26 and 27 and is not device evidence anyway).
 

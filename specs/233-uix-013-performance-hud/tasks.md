@@ -50,3 +50,10 @@ US2 depends on US1's layer (it hosts the real HUD). Parallel: T03 with T04; T07 
 ## Implementation strategy
 
 MVP = US1 + US2 together (the roadmap acceptance is US2); US3 is a check on the same view.
+
+## Analyze notes (speckit-analyze, 2026-11-14)
+
+- I1 (fixed): the last-cue text read "End of show" / "end of show" in two places; normalised to "Next: End of show" (contract C1).
+- I2 (fixed): research D2 compared recordings outside the spectrum disc only, while S2 asks for identical frames; D2 now compares whole decoded frames.
+- C1 (accepted, LOW): OUT-012's rehearsal preview has no test of its own; it draws its grid card, never device overlays (research D1), and T09 covers the real external path.
+- Coverage: R1-R11 and S1-S4 each map to at least one task (R1 T02/T06/T07, R2-R7 T04-T06/T08, R8 T09, R9 T10, R10 T05/T11, R11 T03/T13). No constitution conflict.

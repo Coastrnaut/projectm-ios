@@ -38,7 +38,7 @@ Answered by Claude under the owner's standing approval (owner rules 4 and 9: bes
 interaction); each answer is the conservative, local-first option.
 
 - Q: How is the HUD turned on? → A: A Settings switch "Show HUD" in the Performance section, off by default. It is a stored preference (one Bool, key `settings.visualizer.sceneHUD`): a performer sets it once per device. Backed up with the library settings (FILE-005), erased with the Settings category (FILE-011), removed by the UI-test reset.
-- Q: What does it show? → A: Four lines: the current cue ("Cue 2 of 5 · Build", "Standby · 5 cues" or "No cues"), the next cue ("Next: Drop", "Next: end of show", with SHOW-002's countdown or SHOW-003's queued step when present), the tempo with its source ("120 BPM · Tap", "≈118 BPM · Estimated", "— BPM · None"), and the audio source (the FR-042 indicator text verbatim, so labeling stays truthful).
+- Q: What does it show? → A: Four lines: the current cue ("Cue 2 of 5 · Build", "Standby · 5 cues" or "No cues"), the next cue ("Next: Drop", "Next: End of show", with SHOW-002's countdown or SHOW-003's queued step when present), the tempo with its source ("120 BPM · Tap", "≈118 BPM · Estimated", "— BPM · None"), and the audio source (the FR-042 indicator text verbatim, so labeling stays truthful).
 - Q: Where does it sit? → A: At the top of the visualizer's status stack, inside the safe area, the performance pad's reserved edges and (iPad) the split editor's output pane; width at most 360 pt; never in the output's centre. It stays with or without the controls while the switch is on.
 - Q: Is it on the external display, in recordings or in saved frames? → A: Never. It is device UI only; there is no option to include it.
 - Q: How is the tempo source named? → A: Tap for a tapped (manual) tempo, Estimated for the analysis estimate (stable or uncertain; uncertain shows "≈"), None while searching.
@@ -90,7 +90,7 @@ never covers the middle of the picture.
 
 - No cues: the cue line reads "No cues" and the next line is absent.
 - Standby: current "Standby · 5 cues", next is cue 1.
-- Last cue: next reads "End of show".
+- Last cue: next reads "Next: End of show".
 - A timed advance is running: the next line adds "in 0:12" (or "in 0:12, held").
 - A quantized step waits: the next line shows the queued text instead of the next cue.
 - No tempo yet: "— BPM · None".
@@ -106,7 +106,7 @@ never covers the middle of the picture.
 - **UIX-013-R1**: Settings → Performance MUST offer a switch "Show HUD", off by default, stored on the device and kept across launches.
 - **UIX-013-R2**: While on, the visualizer MUST show the HUD with or without the controls, in every visual (projectM and the alternate visuals).
 - **UIX-013-R3**: The HUD MUST show the current cue (position and label, Standby, or No cues).
-- **UIX-013-R4**: The HUD MUST show the next cue's label, "End of show" on the last cue, the SHOW-002 countdown when one runs, and the SHOW-003 queued step instead of the next cue while one waits; no next line without cues.
+- **UIX-013-R4**: The HUD MUST show the next cue's label, "Next: End of show" on the last cue, the SHOW-002 countdown when one runs, and the SHOW-003 queued step instead of the next cue while one waits; no next line without cues.
 - **UIX-013-R5**: The HUD MUST show the tempo and its source: Tap, Estimated or None (contract texts).
 - **UIX-013-R6**: The HUD MUST show the audio source exactly as the FR-042 indicator states it.
 - **UIX-013-R7**: The HUD MUST sit at the top of the status stack inside the safe area, the performance pad's reserved edges and the split editor's output pane, at most 360 pt wide, and MUST NOT cover the output's centre.
