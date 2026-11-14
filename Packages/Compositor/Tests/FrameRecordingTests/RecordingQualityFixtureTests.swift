@@ -55,8 +55,8 @@ final class RecordingQualityFixtureTests: XCTestCase {
         return Rig(device: device, queue: queue, frames: frames)
     }
 
-    /// Records the fixture with `profile` and returns the plan and the read-back.
-    private func record(_ profile: RecordingQualityProfile) async throws -> (RecordingProfilePlan, RecordedVideoInfo) {
+    /// Records the fixture with `profile` and returns the plan, the recorder's result and the read-back.
+    private func record(_ profile: RecordingQualityProfile) async throws -> (RecordingProfilePlan, RecordedVideo, RecordedVideoInfo) {
         let caps = VideoToolboxEncoderCapabilities(maxFramesPerSecond: 60)
         guard let plan = RecordingQualityCatalog.availability(of: profile, drawableWidth: Self.drawableWidth,
                                                               drawableHeight: Self.drawableHeight, capabilities: caps).plan else {
@@ -87,28 +87,38 @@ final class RecordingQualityFixtureTests: XCTestCase {
             if k % 3 == 2 { recorder.waitForPendingFrames() }   // the gate holds 3 frames
         }
         recorder.waitForPendingFrames()
-        _ = try (await recorder.finish()).get()
+        let video = try (await recorder.finish()).get()
         let info = try await XCTUnwrapAsync(await RecordedVideoInspector.inspect(url))
-        return (plan, info)
+        return (plan, video, info)
     }
 
     private func check(_ profile: RecordingQualityProfile, size: [Int], codec: String) async throws {
-        var (plan, info) = try await record(profile)
+        var (plan, video, info) = try await record(profile)
         let target = Double(plan.averageBitRate)
         if abs(info.averageVideoBitRate - target) > target * Self.bitRateTolerance {
             // The host's hardware encoder is shared with other processes; under contention its rate control can
             // overshoot one short clip. One re-record, both values logged (research REC-005-D4).
             print("REC-005 fixture \(profile.rawValue): first take \(Int(info.averageVideoBitRate)) b/s; recording again")
-            (plan, info) = try await record(profile)
+            (plan, video, info) = try await record(profile)
         }
         let measured = info.averageVideoBitRate
-        // Logged for research REC-005-D4.
+        let stats = video.statistics
+        let slots: Int = plan.settings.maxFrameRate * Self.seconds
+        // Logged for research REC-005-D4 (and the drop counts, for a slow encoder).
         print("REC-005 fixture \(profile.rawValue): \(info.summary) fps=\(String(format: "%.2f", info.nominalFrameRate)) "
-              + "bitrate=\(Int(measured)) target=\(Int(target)) ratio=\(String(format: "%.3f", measured / target))")
+              + "bitrate=\(Int(measured)) target=\(Int(target)) ratio=\(String(format: "%.3f", measured / target)) "
+              + "written=\(stats.written) notReady=\(stats.droppedNotReady) busy=\(stats.droppedBusy) slots=\(stats.droppedSlots)")
         XCTAssertEqual(info.codec, codec)
         XCTAssertEqual([info.width, info.height], size)
         XCTAssertEqual([plan.geometry.outputWidth, plan.geometry.outputHeight], size)
-        XCTAssertEqual(info.frameCount, plan.settings.maxFrameRate * Self.seconds)
+        // Every offered frame is in the file, and the recorder's counts say why when one is not (REC-003-R7,
+        // REC-006-R4). Run 43612171768 lost one of 120 on CI's iOS 27 simulator, where this test took 432 s (53 s on
+        // the Mac Studio's simulator, which writes all 120): a frame the slow encoder had not taken within the offline
+        // writer's former 5 s hang guard (`VideoFileWriter.offlineReadyTimeoutSeconds`) is dropped and counted.
+        XCTAssertEqual(info.frameCount, stats.written, "the file holds exactly the frames the recorder appended")
+        XCTAssertEqual(video.frameCount, stats.written)
+        XCTAssertEqual(stats.written + stats.dropped, slots, "frames + dropped = offered slots")
+        XCTAssertEqual(stats.dropped, 0, "offline, no frame is dropped: notReady \(stats.droppedNotReady), busy \(stats.droppedBusy)")
         XCTAssertEqual(info.nominalFrameRate, Double(plan.settings.maxFrameRate), accuracy: 1)
         XCTAssertEqual(measured, target, accuracy: target * Self.bitRateTolerance, "average video bit rate")
         XCTAssertEqual(info.audioTrackCount, 0, "audio is REC-004's and unchanged")
