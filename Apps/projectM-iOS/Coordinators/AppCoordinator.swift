@@ -198,6 +198,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let colorGrade: ColorGradeSetting
     /// FX-009: Trails (Settings → Trails) of the compositor-backed visuals.
     let motionFeedback: MotionFeedbackSetting
+    /// FX-020: the order of Trails and Color, and the chain presets.
+    let effectChain: EffectChainSetting
     /// The native spectra (VIS-001 circular, VIS-002 linear), created the first time one is needed.
     private(set) var nativeVisual: NativeSpectrumHost?
     /// The Camera visual (CAM-001), created when Camera is chosen and released when another visual is.
@@ -335,6 +337,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             LatencyOffsetSetting.allKeys.forEach(defaults.removeObject(forKey:))   // AUD-013: 0 ms
             ColorGradeSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-003: neutral
             MotionFeedbackSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-009: Trails off
+            EffectChainSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-020: standard order, no presets
             defaults.removeObject(forKey: MIDIMappingCoordinator.mappingsKey)   // MIDI-003: no mappings
             try? FileManager.default.removeItem(at: PresetCollectionStore.defaultDirectory())   // PRE-007: UI tests start without collections
             try? FileManager.default.removeItem(at: UserPresetStore.defaultDirectory())         // PRE-012: and without imported presets
@@ -357,6 +360,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         latencyOffset = LatencyOffsetSetting(defaults: defaults)
         colorGrade = ColorGradeSetting(defaults: defaults)   // FX-003
         motionFeedback = MotionFeedbackSetting(defaults: defaults)   // FX-009
+        effectChain = EffectChainSetting(defaults: defaults)   // FX-020
         self.externalDisplay.reduceFlashing = settings.effectiveReduceFlashing   // OUT-010-R6, ACC-012-R7
         // PERF-010 (contract C1): decide before the OSC receiver exists, so an abnormal exit never
         // reopens the listener; a pending offer holds the scene instead of restoring it.
@@ -410,6 +414,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             recovery.hold(recovery.decision.isCrashLoop ? nil : sceneAutosave?.holdCommittedScene(assets: stored))
         } else if let values = sceneAutosave?.restore(assets: stored) {
             SceneAutosaveCapture.apply(values, to: settings)
+            SceneAutosaveCapture.applyEffects(values.effects, chain: effectChain, grade: colorGrade, trails: motionFeedback)   // FX-020
             layers.restore(values.layerComposites)   // CMP-015-R5
             if let text = values.text { texts.spec = text }
             videos.restoreLoop(storeID: values.videoStoreID, loop: values.videoLoop)   // MED-003-R8
@@ -509,6 +514,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         texts.onSpecChange = { [weak self] (spec: TextOverlaySpec) in self?.textVisual?.spec = spec }   // MED-009
         colorGrade.onChange = { [weak self] (_: ColorGrade) in self?.applyColorGrade() }   // FX-003
         connectMotionFeedback()   // FX-009
+        connectEffectChain()   // FX-020
         routes.context = { [weak self] in self?.routeContext }   // AUD-007
         // AUD-012-R12: the noise gate's microphone flag changes when a session (or a switch) begins.
         manager.onSessionMode = { [weak self] (mode: AudioSourceMode) in
@@ -1019,6 +1025,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.compositor.flashLimits = settings.safetyClamp.flashLimitsOverride   // ACC-012-R5
             host.colorGrade = colorGrade.effectiveGrade(clamp: settings.safetyClamp)   // FX-003, ACC-012 gain cap
             host.compositor.motionFeedback = effectiveMotionFeedback   // FX-009, ACC-012 length cap
+            host.compositor.outputEffectOrder = effectChain.order   // FX-020
             host.onRenderHealthChange = observeRenderHealth(of: "camera")   // PERF-014
             #if DEBUG
             host.compositor.faultInjection = armedRenderFaults
@@ -1055,6 +1062,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.compositor.flashLimits = settings.safetyClamp.flashLimitsOverride   // ACC-012-R5
             host.colorGrade = colorGrade.effectiveGrade(clamp: settings.safetyClamp)   // FX-003, ACC-012 gain cap
             host.compositor.motionFeedback = effectiveMotionFeedback   // FX-009, ACC-012 length cap
+            host.compositor.outputEffectOrder = effectChain.order   // FX-020
             host.onRenderHealthChange = observeRenderHealth(of: "photo")   // PERF-014
             #if DEBUG
             host.compositor.faultInjection = armedRenderFaults
@@ -1109,6 +1117,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.compositor.flashLimits = settings.safetyClamp.flashLimitsOverride   // ACC-012-R5
             host.colorGrade = colorGrade.effectiveGrade(clamp: settings.safetyClamp)   // FX-003, ACC-012 gain cap
             host.compositor.motionFeedback = effectiveMotionFeedback   // FX-009, ACC-012 length cap
+            host.compositor.outputEffectOrder = effectChain.order   // FX-020
             host.onRenderHealthChange = observeRenderHealth(of: "video")   // PERF-014
             #if DEBUG
             host.compositor.faultInjection = armedRenderFaults
@@ -1160,6 +1169,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.compositor.flashLimits = settings.safetyClamp.flashLimitsOverride   // ACC-012-R5
             host.colorGrade = colorGrade.effectiveGrade(clamp: settings.safetyClamp)   // FX-003, ACC-012 gain cap
             host.compositor.motionFeedback = effectiveMotionFeedback   // FX-009, ACC-012 length cap
+            host.compositor.outputEffectOrder = effectChain.order   // FX-020
             host.onRenderHealthChange = observeRenderHealth(of: "text")   // PERF-014
             #if DEBUG
             host.compositor.faultInjection = armedRenderFaults
@@ -1445,6 +1455,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         let held = replacement ?? marked
         if let values = sceneAutosave?.reopen(held) {
             SceneAutosaveCapture.apply(values, to: settings)
+            SceneAutosaveCapture.applyEffects(values.effects, chain: effectChain, grade: colorGrade, trails: motionFeedback)   // FX-020
             layers.restore(values.layerComposites)   // CMP-015-R5
             if let text = values.text { texts.spec = text }
             videos.restoreLoop(storeID: values.videoStoreID, loop: values.videoLoop)   // MED-003-R8
@@ -1479,7 +1490,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                     videoSpeedPercent: videos.sceneSpeedPercent,   // MED-004
                     slideshow: slideshow.sceneValue,   // MED-006
                     layerComposites: layers.composites,   // CMP-015
-                    logo: logo.sceneLogo)   // MED-010
+                    logo: logo.sceneLogo,   // MED-010
+                    effects: liveEffectSettings)   // FX-020
     }
 
     /// ACC-003-R13: the colour-blind-safe palette setting changed; the native spectrum redraws with it.

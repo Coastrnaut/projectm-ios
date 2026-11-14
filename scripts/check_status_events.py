@@ -53,6 +53,7 @@ CHECKED = [
     "Views/RecordingAudioSection.swift",  # REC-004-R9: recording audio announces through the router (X9a, X9b)
     "Coordinators/RecordingAudioSetting.swift",
     "Views/SceneFoldersView.swift",  # SCN-004-R13: folder edits announce on the library lane
+    "Views/EffectChainView.swift",  # FX-020-R9: moves and presets announce through the announcer
 ]
 COORDINATOR = "Coordinators/AppCoordinator.swift"
 ALLOWED_IN_COORDINATOR = ("onScopeChange", "nativeVisualUnavailableMessage", "glowUnavailableMessage")

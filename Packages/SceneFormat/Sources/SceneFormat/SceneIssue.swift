@@ -72,6 +72,12 @@ public struct SceneIssue: Sendable, Hashable, CustomStringConvertible {
         /// CMP-011: a damaged layer group (bad ID, bad child reference, no layers, not one run); kept,
         /// its layers drawn ungrouped.
         case invalidGroup
+        /// FX-020: an `effects` entry of a kind this version does not know; kept verbatim, not shown.
+        case unknownEffectKind
+        /// FX-020: an `effects` entry naming flash safety or the tone map, which always run last; kept, no effect.
+        case fixedEffectStage
+        /// FX-020: a second `effects` entry of the same kind; kept, only the first is used.
+        case duplicateEffect
         case valueClamped
         case droppedField
         case unknownMaterial
@@ -109,7 +115,8 @@ public struct SceneIssue: Sendable, Hashable, CustomStringConvertible {
         /// never refuses the scene; `invalidModulation` (generator declarations) stays an error.
         public var severity: Severity {
             switch self {
-            case .unknownLayerKind, .unsupportedBlendMode, .unsupportedFitMode, .unsupportedMaskShape, .invalidGroup, .valueClamped, .droppedField, .unknownAssetType, .unusedAsset,
+            case .unknownLayerKind, .unsupportedBlendMode, .unsupportedFitMode, .unsupportedMaskShape, .invalidGroup, .unknownEffectKind, .fixedEffectStage,
+                 .duplicateEffect, .valueClamped, .droppedField, .unknownAssetType, .unusedAsset,
                  .missingAsset, .orphanedParameter, .rejectedParameter, .parameterClamped,
                  .invalidBinding, .duplicateBindingTarget, .invalidExpression, .migratedReference, .retiredReference,
                  .orphanedBinding, .orphanedConnection, .rejectedConnection, .unsupportedCurve:

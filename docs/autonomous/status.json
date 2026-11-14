@@ -1400,7 +1400,7 @@
    "state": "integrated"
   },
   "FX-020": {
-   "attempts": 0,
+   "attempts": 1,
    "branch": null,
    "branch_sha": "bc8275dc34d3e13ed3828d5613912d08b2e4a885",
    "error_category": null,
@@ -4252,5 +4252,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T13:52:42Z"
+ "updated": "2026-11-14T13:52:49Z"
 }

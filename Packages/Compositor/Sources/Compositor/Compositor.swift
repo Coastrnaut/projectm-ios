@@ -92,6 +92,10 @@
 // (MotionFeedbackPass.swift) turns the finished composite into the trails frame, max(composite, decay × previous), which
 // the guard, every output and `encodeScene` receive; a reset (a new scene, size, output format, render-health reset,
 // enabling, an unfinished frame) makes the next frame the composite only. CMP-013 never keeps the composite then.
+// FX-020 (contracts/effect-chain.md in specs/142, ADR-0054): `outputEffectOrder` orders Trails and Color. Only when Color
+// comes first, Trails are active and the grade is not neutral does `OutputGradePass` grade the composite before Trails
+// (the guard and outputs then use the neutral block); otherwise the single-pass output above runs unchanged. The flash
+// guard and the tone map always come after both. `encodeScene` never runs the grade pass (CMP-014's bus grades itself).
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import FrameCapture
 import FlashSafety
@@ -252,6 +256,20 @@ public final class Compositor {
     private let trails: TrailsPass
     private var shownComposite: MTLTexture?
     private var lastOutputFormat: MTLPixelFormat?
+    /// FX-020: the Color-first pass, the grade block the guard and outputs use this frame (neutral when the pass ran),
+    /// and whether the last frame's trails history was graded (a change resets it).
+    private let gradePass: OutputGradePass
+    private var outputGradeBlock = CompositorShaders.GradeBlock.neutral
+    private var trailsHistoryGraded = false
+
+    /// FX-020 (ADR-0054): the order of Trails and Color, set between frames. The flash guard and the tone map always
+    /// run after both. `.standard` (the default) renders exactly as before FX-020; a change resets the trails.
+    public var outputEffectOrder: OutputEffectOrder = .standard {
+        didSet { if outputEffectOrder != oldValue { trails.resetPending = true } }
+    }
+
+    /// FX-020: frames that ran the Color-first grade pass (tests, diagnostics).
+    public var gradePassFrames: Int { gradePass.frames }
 
     /// FX-009 (ADR-0051): Trails, set between frames (the effective value after ACC-012's caps). Inactive (the default)
     /// adds no pass and holds no picture: output bit-identical to before FX-009. Turning it on starts clean; turning it
@@ -320,9 +338,11 @@ public final class Compositor {
         records = layers.map { (layer: any LayerSource) -> LayerRecord in
             LayerRecord(id: nil, layer: layer, settings: layer.compositeSettings)
         }
-        library = try CompositorShaders.library(device: device, source: CompositorShaders.source + TrailsPass.source)   // FX-009
+        library = try CompositorShaders.library(device: device, source: CompositorShaders.source + TrailsPass.source
+                                                + OutputGradePass.source)   // FX-009, FX-020
         fullScreen = try CompositorShaders.function(library, "cmp_fullscreen")
         trails = try TrailsPass(device: device, library: library, vertex: fullScreen)
+        gradePass = try OutputGradePass(device: device, library: library, vertex: fullScreen)   // FX-020
         overPipeline = try CompositorShaders.pipeline(device: device, vertex: fullScreen,
                                                       fragment: try CompositorShaders.function(library, "cmp_over"),
                                                       format: LayerPictureDescriptor.metalPixelFormat, blendOver: true,
@@ -351,6 +371,7 @@ public final class Compositor {
         if let groupAlternate { texturePool.recycle(groupAlternate, after: lastCommandBuffer) }
         for record in records { texturePool.recycle(record.pictures, after: lastCommandBuffer) }
         trails.release(to: texturePool, after: lastCommandBuffer)   // FX-009
+        gradePass.release(to: texturePool, after: lastCommandBuffer)   // FX-020
     }
 
     public var layerCount: Int { records.count }
@@ -544,9 +565,9 @@ public final class Compositor {
         if let last = lastOutputFormat, last != output.pixelFormat { trails.resetPending = true }   // FX-009-R5
         lastOutputFormat = output.pixelFormat
         return encodeFrame(size: size, commandBuffer: commandBuffer, presentationTimeNanoseconds: presentationTimeNanoseconds,
-                           contentScale: contentScale, reduceFlashing: reduceFlashing,
-                           audio: audio) { (composite: MTLTexture, frame: LayerFrameContext) -> Bool in
-            let grade: CompositorShaders.GradeBlock = gradeBlock   // FX-003: one block for the guard and every output
+                           contentScale: contentScale, reduceFlashing: reduceFlashing, audio: audio,
+                           allowGradePass: true) { (composite: MTLTexture, frame: LayerFrameContext) -> Bool in
+            let grade: CompositorShaders.GradeBlock = outputGradeBlock   // FX-003, FX-020: one block for the guard and outputs
             guard flashGuard.encode(composite: composite, commandBuffer: commandBuffer, frameDuration: frame.frameDuration,
                                     reduceFlashing: reduceFlashing, flashLimits: flashLimits, grade: grade) else { return false }
             shownGradeBlock = grade
@@ -582,8 +603,8 @@ public final class Compositor {
         guard let size = LayerPictureDescriptor(width: width, height: height) else { return nil }
         var finished: MTLTexture?
         let ok = encodeFrame(size: size, commandBuffer: commandBuffer, presentationTimeNanoseconds: presentationTimeNanoseconds,
-                             contentScale: contentScale, reduceFlashing: reduceFlashing,
-                             audio: audio) { (composite: MTLTexture, _: LayerFrameContext) -> Bool in
+                             contentScale: contentScale, reduceFlashing: reduceFlashing, audio: audio,
+                             allowGradePass: false) { (composite: MTLTexture, _: LayerFrameContext) -> Bool in
             finished = composite
             return true
         }
@@ -593,7 +614,7 @@ public final class Compositor {
     /// One frame's stack phase, then `finish` on the finished composite (the guard and output, or nothing);
     /// a successful `finish` makes the frame finished (watched, its composite inputs noted for CMP-013).
     private func encodeFrame(size: LayerPictureDescriptor, commandBuffer: MTLCommandBuffer, presentationTimeNanoseconds: UInt64,
-                             contentScale: Double, reduceFlashing: Bool, audio: LayerAudioContext,
+                             contentScale: Double, reduceFlashing: Bool, audio: LayerAudioContext, allowGradePass: Bool,
                              finish: (MTLTexture, LayerFrameContext) -> Bool) -> Bool {
         frameTicks &+= 1   // PERF-014-D1
         let tick = frameTicks
@@ -706,13 +727,19 @@ public final class Compositor {
 
         // FX-009: the trails frame replaces the composite for the guard and every output (research FX-009-D3).
         var shown: MTLTexture = composite
+        outputGradeBlock = gradeBlock
         if motionFeedback.isActive {
+            guard let trailsInput = gradeBeforeTrails(composite, allowed: allowGradePass, commandBuffer: commandBuffer) else {
+                return false
+            }
             let decay: Double = motionFeedback.decay(frameDuration: frame.frameDuration)
             let taken: Int = trails.allocations
-            guard let trailed = trails.encode(composite: composite, decay: decay, pool: texturePool, fence: lastCommandBuffer,
+            guard let trailed = trails.encode(composite: trailsInput, decay: decay, pool: texturePool, fence: lastCommandBuffer,
                                               commandBuffer: commandBuffer) else { return false }
             pictureAllocations += trails.allocations - taken   // PERF-004: the pair, at its allocation points
             shown = trailed
+        } else if gradePass.holdsPicture {
+            gradePass.release(to: texturePool, after: lastCommandBuffer)   // FX-020: not used while Trails are off
         }
         shownComposite = shown
         guard finish(shown, frame) else { return false }   // CMP-014: the guard and output, or the bus's
@@ -720,6 +747,26 @@ public final class Compositor {
         noteCompositeInputs()   // CMP-013
         finished = true
         return true
+    }
+
+    /// FX-020: the Trails input. Color first with a non-neutral grade: the graded composite (and the neutral block for
+    /// the guard and outputs); otherwise the composite. A change between the two resets the trails history.
+    private func gradeBeforeTrails(_ composite: MTLTexture, allowed: Bool, commandBuffer: MTLCommandBuffer) -> MTLTexture? {
+        let graded: Bool = allowed && outputEffectOrder.gradeBeforeTrails && gradeBlock.flags != 0
+        if graded != trailsHistoryGraded {
+            trails.resetPending = true
+            trailsHistoryGraded = graded
+        }
+        guard graded else {
+            if gradePass.holdsPicture { gradePass.release(to: texturePool, after: lastCommandBuffer) }
+            return composite
+        }
+        let taken: Int = gradePass.allocations
+        guard let output = gradePass.encode(composite: composite, grade: gradeBlock, pool: texturePool, fence: lastCommandBuffer,
+                                            commandBuffer: commandBuffer) else { return nil }
+        pictureAllocations += gradePass.allocations - taken   // PERF-004
+        outputGradeBlock = .neutral
+        return output
     }
 
     // MARK: - Render caching (CMP-013)

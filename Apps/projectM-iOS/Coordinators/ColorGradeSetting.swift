@@ -10,6 +10,8 @@
 // reset like the others; ACC-012 does not cap it (it keeps luminance; research FX-004-D7).
 // ACC-012: the sensory safety profile's intensity limit caps the brightening part of gain (`effectiveGrade`;
 // research FX-003-D10); Standard leaves the grade unchanged. The flash guard measures the graded output either way.
+// FX-020 (specs/142-fx-020-effect-chains, research FX-020-D9): an on/off switch, `settings.colorGrade.enabled` (Bool,
+// absent → on); off makes `effectiveGrade` neutral and keeps the values. Removed with the others by the reset.
 import Compositor
 import FlashSafety
 import Foundation
@@ -24,7 +26,8 @@ final class ColorGradeSetting {
     static let gainKey = "settings.colorGrade.gain"
     static let saturationKey = "settings.colorGrade.saturation"
     static let hueKey = "settings.colorGrade.hue"   // FX-004-R8
-    static let allKeys: [String] = [temperatureKey, liftKey, gammaKey, gainKey, saturationKey, hueKey]
+    static let enabledKey = "settings.colorGrade.enabled"   // FX-020-R8
+    static let allKeys: [String] = [temperatureKey, liftKey, gammaKey, gainKey, saturationKey, hueKey, enabledKey]
 
     @ObservationIgnored private let defaults: UserDefaults
     /// Called after every change with the new (valid) grade.
@@ -55,8 +58,19 @@ final class ColorGradeSetting {
         didSet { store(\.hue, ColorGrade.hueRange, 0, Self.hueKey) }
     }
 
+    /// FX-020: Color on (the default) or off (neutral output, values kept).
+    var isEnabled: Bool {
+        didSet {
+            guard isEnabled != oldValue else { return }
+            defaults.set(isEnabled, forKey: Self.enabledKey)
+            onChange?(grade)
+        }
+    }
+
     init(defaults: UserDefaults) {
         self.defaults = defaults
+        let storedEnabled = defaults.object(forKey: Self.enabledKey) as? NSNumber
+        isEnabled = storedEnabled.map { (n: NSNumber) -> Bool in CFGetTypeID(n) == CFBooleanGetTypeID() ? n.boolValue : true } ?? true
         let stored = ColorGrade(temperature: Self.read(defaults, Self.temperatureKey, 0), lift: Self.read(defaults, Self.liftKey, 0),
                                 gamma: Self.read(defaults, Self.gammaKey, 1), gain: Self.read(defaults, Self.gainKey, 1),
                                 saturation: Self.read(defaults, Self.saturationKey, 1), hue: Self.read(defaults, Self.hueKey, 0))
@@ -79,7 +93,8 @@ final class ColorGradeSetting {
     /// What the compositors apply under `clamp` (ACC-012, research FX-003-D10): gain above 1 is an intensity-type
     /// boost, so its excursion is capped at the profile's intensity limit × (maximum gain − 1). Unchanged at limit 1.
     func effectiveGrade(clamp: SafetyClamp) -> ColorGrade {
-        Self.effective(grade, clamp: clamp)
+        guard isEnabled else { return .neutral }   // FX-020
+        return Self.effective(grade, clamp: clamp)
     }
 
     static func effective(_ grade: ColorGrade, clamp: SafetyClamp) -> ColorGrade {
@@ -101,6 +116,7 @@ final class ColorGradeSetting {
         gain = neutral.gain
         saturation = neutral.saturation
         hue = neutral.hue
+        isEnabled = true
         for key in Self.allKeys { defaults.removeObject(forKey: key) }
         onChange?(grade)
     }

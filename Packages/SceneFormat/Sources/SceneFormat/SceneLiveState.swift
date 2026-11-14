@@ -52,13 +52,16 @@ public struct SceneLiveState: Sendable, Equatable {
     public var preservedMasks: [LayerInstanceID: SceneMask]
     /// CMP-011: saved groups that are not live (damaged, or without live layers), kept verbatim.
     public var preservedGroups: [SceneGroup]
+    /// FX-020: the document's effect chain as stored (apply `SceneEffectSettings.read`; capture writes it back).
+    public var effects: [SceneEffectEntry]?
 
     public init(stack: LayerStack, contents: [LayerInstanceID: SceneLayerContent] = [:],
                 parameters: ParameterSnapshot = ParameterSnapshot(values: [:]), bindings: [AudioFeatureBinding] = [],
                 expressions: [ParameterID: String] = [:], modulation: ModulationGraph = ModulationGraph(),
                 preserved: SceneModulationPreserved = SceneModulationPreserved(), assets: [String: SceneAsset] = [:],
                 preservedBlendModes: [LayerInstanceID: String] = [:], preservedFits: [LayerInstanceID: SceneFit] = [:],
-                preservedMasks: [LayerInstanceID: SceneMask] = [:], preservedGroups: [SceneGroup] = []) {
+                preservedMasks: [LayerInstanceID: SceneMask] = [:], preservedGroups: [SceneGroup] = [],
+                effects: [SceneEffectEntry]? = nil) {
         self.stack = stack
         self.contents = contents
         self.parameters = parameters
@@ -71,6 +74,7 @@ public struct SceneLiveState: Sendable, Equatable {
         self.preservedFits = preservedFits
         self.preservedMasks = preservedMasks
         self.preservedGroups = preservedGroups
+        self.effects = effects
     }
 
     /// Replaces `modulator`'s bindings with the live ones, in order (contract M5). They were
@@ -138,7 +142,7 @@ extension SceneDocument {
             + live.preservedGroups   // CMP-011
         self.init(id: id, name: name, layers: layers, parameters: live.parameters.values, bindings: bindings,
                   modulation: SceneModulation(generators: live.modulation.generators, connections: connections), assets: live.assets,
-                  groups: groups)
+                  groups: groups, effects: live.effects)   // FX-020
     }
 
     /// The live state of a document without errors (contract C6). Errors refuse it whole
@@ -197,7 +201,8 @@ extension SceneDocument {
         let state = SceneLiveState(stack: stack, contents: contents, parameters: ParameterSnapshot(values: parameters),
                                    bindings: restore.bindings, expressions: restore.expressions, modulation: restore.graph,
                                    preserved: restore.preserved, assets: assets, preservedBlendModes: unknownBlends,
-                                   preservedFits: unknownFits, preservedMasks: unknownMasks, preservedGroups: preservedGroups)
+                                   preservedFits: unknownFits, preservedMasks: unknownMasks, preservedGroups: preservedGroups,
+                                   effects: effects)   // FX-020
         return SceneLoadResult(state: state, warnings: issues, modulationReport: restore.report)
     }
 }
