@@ -141,6 +141,49 @@ final class LibraryBackupAppTests: XCTestCase {
         XCTAssertNil(again.message, "the result is shown once")
     }
 
+    /// FILE-008-T13 (FILE-008-R9, S4): a library whose two photo references share one payload backs up
+    /// both references and restores them exactly; the next launch's reconcile shares the payload again.
+    func testADeduplicatedPhotoLibraryBacksUpAndRestoresExactly() async throws {
+        let sourceFolders = LibraryFolders(root: temporaryFolder("dedupSource"))
+        let sourceDefaults = suite("dedupSourceDefaults")
+        let photos = PhotoStore(directory: sourceFolders.url(.photos), defaults: sourceDefaults)
+        let picked = temporaryFolder("picked").appendingPathComponent("p.png")
+        try XCTUnwrap(UITestPhotoFixture.png(alpha: false)).write(to: picked)
+        let first = try photos.importImage(at: picked)
+        let second = try photos.importImage(at: picked)
+        XCTAssertEqual(photos.folder.payloadNames().count, 1)
+        let temp = temporaryFolder("dedupTemp")
+        let backup = LibraryBackupCoordinator(folders: sourceFolders, defaults: sourceDefaults, temporaryRoot: temp.appendingPathComponent("out"))
+        backup.backUp()
+        await backup.work?.value
+        let saved = temp.appendingPathComponent("saved.pmbackup")
+        try FileManager.default.copyItem(at: try XCTUnwrap(backup.backupFile), to: saved)
+        backup.moverCancelled()
+        let contents = try LibraryBackupReader.read(try Data(contentsOf: saved)).contents
+        let ext = second.url.pathExtension   // the sanitizer's choice (an opaque picture is stored as JPEG)
+        XCTAssertEqual(Set(contents.photos.keys), ["\(first.id.uuidString).\(ext)", "\(second.id.uuidString).\(ext)"], "both references")
+        XCTAssertEqual(contents.photos["\(first.id.uuidString).\(ext)"], try Data(contentsOf: second.url), "each with the payload's bytes")
+
+        let freshFolders = LibraryFolders(root: temporaryFolder("dedupFresh"))
+        let freshDefaults = suite("dedupFreshDefaults")
+        let restore = LibraryBackupCoordinator(folders: freshFolders, defaults: freshDefaults, temporaryRoot: temp.appendingPathComponent("r"))
+        restore.previewRestore(at: saved)
+        await restore.work?.value
+        restore.requestRestore()
+        LibraryBackupCoordinator.finishPendingRestore(defaults: freshDefaults, folders: freshFolders)
+        let original = try LibraryRecords.read(folders: sourceFolders, settings: LibrarySettingsBridge.read(sourceDefaults))
+        XCTAssertEqual(try LibraryRecords.read(folders: freshFolders, settings: LibrarySettingsBridge.read(freshDefaults)).differences(from: original), [])
+        // The next launch (FILE-008-R7): one payload, both references, the same records.
+        let restored = PhotoStore(directory: freshFolders.url(.photos), defaults: freshDefaults)
+        restored.prepareFolder()
+        restored.reconcileFolder()
+        restored.prepareFolder()
+        XCTAssertEqual(restored.folder.payloadNames().count, 1)
+        XCTAssertEqual(Set(restored.knownIDs()), [first.id, second.id])
+        XCTAssertEqual(restored.current()?.id, second.id)
+        XCTAssertEqual(try LibraryRecords.read(folders: freshFolders, settings: LibrarySettingsBridge.read(freshDefaults)).differences(from: original), [])
+    }
+
     func testABadFileIsRefusedWithAMessage() async throws {
         let folder = temporaryFolder("bad")
         let bad = folder.appendingPathComponent("bad.pmbackup")

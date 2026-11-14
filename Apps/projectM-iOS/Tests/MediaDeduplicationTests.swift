@@ -155,6 +155,30 @@ final class MediaDeduplicationTests: XCTestCase {
         XCTAssertEqual(coordinator.loopRegion, VideoLoopRegion(inMilliseconds: 200, outMilliseconds: 1_200), "a foreign identifier changes nothing")
     }
 
+    // MARK: - Storage numbers (FILE-008-R11, S6)
+
+    func testTheStorageScreenCountsTheSharedPayloadOnceAndReportsTheSaving() async throws {
+        let sandbox = try makeSandbox()
+        defer { sandbox.cleanUp() }
+        let support = sandbox.root.appendingPathComponent("Library/Application Support", isDirectory: true)
+        let photosFolder = support.appendingPathComponent(PhotoStore.folderName, isDirectory: true)
+        let photos = PhotoStore(directory: photosFolder, defaults: sandbox.defaults)
+        let first = try photos.importImage(at: try pickedPhoto(sandbox))
+        _ = try photos.importImage(at: try pickedPhoto(sandbox))
+        let payloadBytes = try XCTUnwrap(try FileManager.default.attributesOfItem(atPath: first.url.path)[.size] as? NSNumber).int64Value
+        let locations = StorageLocations.make(applicationSupport: support, temporary: sandbox.root.appendingPathComponent("tmp"),
+                                              caches: sandbox.root.appendingPathComponent("Library/Caches"), container: sandbox.root)
+        let model = StorageUsageModel(locations: locations)
+        model.refresh()
+        await model.finishWork?.value
+        let usage = try XCTUnwrap(model.report).usage(.photos)
+        XCTAssertEqual(usage.fileCount, 2, "the payload and the registry: the photo is counted once")
+        XCTAssertGreaterThanOrEqual(usage.contentBytes, payloadBytes)
+        XCTAssertLessThan(usage.contentBytes, 2 * payloadBytes)
+        XCTAssertEqual(model.sharedSavings, payloadBytes, "the second reference costs nothing")
+        XCTAssertEqual(StorageUsageView.sharedSavingsNote(4_000), "Shared copies of identical photos and videos save 4 KB.")
+    }
+
     // MARK: - Migration (FILE-008-S3)
 
     /// Legacy copies as MED-001/002 stored them, with the current keys set.

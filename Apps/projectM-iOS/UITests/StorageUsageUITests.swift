@@ -1,7 +1,7 @@
 // StorageUsageUITests.swift — FILE-009-T09 (FILE-009-S4): Settings › Storage on the simulator with the
 // DEBUG fixture container (`-uitestStorageFixture`: known sizes, the real stores untouched). The seeded
 // sizes appear; after "Add Test Recording" and Refresh, Recordings and the total grow and Photos does
-// not change. Simulator results are never device evidence.
+// not change; FILE-008: the shared-copies note shows the fixture's saving. Simulator results are never device evidence.
 import XCTest
 
 @MainActor
@@ -41,6 +41,10 @@ final class StorageUsageUITests: XCTestCase {
         XCTAssertEqual(value("videos"), "5 MB")
         XCTAssertEqual(value("importedAudio"), "3 MB")
         XCTAssertEqual(row("photos").label, "Photos")
+        // FILE-008-S6: the fixture's photo payload is shared by two references; Photos counts it once.
+        let shared = app.staticTexts["storageSharedSavings"]
+        XCTAssertTrue(app.reveal(shared), "the shared-copies note")
+        XCTAssertEqual(shared.label, "Shared copies of identical photos and videos save 4 KB.")
         let totalBefore = value("total")
         XCTAssertFalse(totalBefore.isEmpty)
 
