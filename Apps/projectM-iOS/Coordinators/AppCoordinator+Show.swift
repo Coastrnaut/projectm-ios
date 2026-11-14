@@ -57,6 +57,12 @@ extension AppCoordinator {
         }
         // MIDI-006: note triggers step the show and use OUT-010's blackout (kept out of init's type-check budget).
         midiMappings.connectNoteActions(MIDINoteActionPerformer(show: show, external: externalDisplay))
+        // MIDI-007: program changes and notes select scenes through Go to Cue; "not found" on the `.midi` lane.
+        midiMappings.connectSceneActions(MIDISceneActionPerformer(show: show, announce: midiMappings.announce))
+        midiMappings.sceneDisplayName = { [weak show] (id: String) -> String? in
+            guard let show, show.firstCue(ofScene: id) != nil else { return nil }
+            return show.displayName(ofScene: id)
+        }
     }
 
     /// Sets a validated scene's look; returns the notes for the step's notice.

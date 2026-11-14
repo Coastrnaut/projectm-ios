@@ -19,6 +19,11 @@ public enum MIDILearnEligibility {
     public static func isNoteEligible(_ event: MIDIEvent) -> Bool {
         event.noteEdge == .on
     }
+
+    /// MIDI-007: a scene learn accepts a program change or a key press (note on with velocity > 0).
+    public static func isSceneEligible(_ event: MIDIEvent) -> Bool {
+        event.kind == .programChange || event.noteEdge == .on
+    }
 }
 
 /// How a learn session ended.
