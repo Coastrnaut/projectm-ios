@@ -70,7 +70,8 @@ public enum LibraryErasePolicy {
         switch category {
         case .scenes, .presets, .importedAudio: []
         case .collections: [LibrarySettingsPolicy.favoritesKey]
-        case .media: [LibrarySettingsPolicy.photoKey, LibrarySettingsPolicy.slideshowKey, videoKey, videoLoopKey, videoSpeedKey]   // MED-006
+        case .media: [LibrarySettingsPolicy.photoKey, LibrarySettingsPolicy.slideshowKey, videoKey, videoLoopKey, videoSpeedKey,   // MED-006
+                      LibrarySettingsPolicy.logoKey, LibrarySettingsPolicy.logoPlacementKey]   // MED-010
         case .settings: settingsCategoryKeys
         }
     }
@@ -94,6 +95,7 @@ public enum LibraryErasePolicy {
     static let settingsCategoryKeys: [String] = {
         let owned: Set<String> = [LibrarySettingsPolicy.favoritesKey, LibrarySettingsPolicy.lastPresetKey, LibrarySettingsPolicy.photoKey,
                                   LibrarySettingsPolicy.slideshowKey,   // MED-006: erased with the media
+                                  LibrarySettingsPolicy.logoKey, LibrarySettingsPolicy.logoPlacementKey,   // MED-010: erased with the media
                                   reduceFlashingKey, colorBlindSafePaletteKey]
         let included: [String] = LibrarySettingsPolicy.includedKeys.filter { (key: String) -> Bool in !owned.contains(key) }
         return included + [oscEnabledKey, midiEnabledKey]
