@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T11:11:39Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T11:11:59Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,24 +9,24 @@
 
 | State | Features |
 |---|---|
-| audited | 185 |
-| unit_passed | 1 |
-| integrated | 139 |
+| audited | 182 |
+| implementing | 3 |
+| integrated | 140 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | unit_passed | integrated | skipped_existing |
+| Priority | audited | implementing | integrated | skipped_existing |
 |---|---|---|---|---|
 | P0 | 2 | 0 | 84 | 1 |
-| P1 | 97 | 1 | 53 | 0 |
+| P1 | 94 | 3 | 54 | 0 |
 | P2 | 77 | 0 | 2 | 0 |
 | P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 186 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)
+- 185 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)
 
 ## Integrated
 
@@ -123,6 +123,7 @@ The physical-device suite may **not** start:
 | MED-014 | Safe media decoder | `31e16534f057` | `feature/med-014` |
 | MIDI-001 | MIDI endpoint discovery | `5e7bcff1` | `feature/midi-001` |
 | MIDI-002 | MIDI input monitor | `c7cd1169` | `feature/midi-002` |
+| MIDI-003 | MIDI learn | `3c3737227ac0` | `feature/midi-003` |
 | MOD-001 | Typed parameter registry | `304f3bce431a` | `feature/mod-001` |
 | MOD-002 | Audio feature binding | `006678f3d7a5` | `feature/mod-002` |
 | MOD-003 | Linear mapping | `29cd3bbb1e12` | `feature/mod-003` |
@@ -1064,7 +1065,7 @@ None.
 - `swift test --package-path Packages/PerformanceControl`: pass at `44b1f9f38d32` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-002/20261114T053552/swift-test_PerformanceControl.log`)
 - `post-merge: projectM-iOSTests 589 + MIDIMonitor/MIDIDiscovery UI tests 2; network-symbol scan OK`: pass at `c7cd1169` (log `.autonomous/logs/integration/midi-002/app-tests.log`)
 
-### MIDI-003 MIDI learn (unit_passed)
+### MIDI-003 MIDI learn (integrated)
 - `python3 scripts/check_compliance.py`: pass at `e796e3a1a8b0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-003/20261114T061050/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `e796e3a1a8b0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-003/20261114T061050/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `e796e3a1a8b0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-003/20261114T061050/script-tests.log`)
