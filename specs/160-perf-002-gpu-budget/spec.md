@@ -4,7 +4,10 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (PERF-002-T01-T12 verified on the Mac Studio: host package tests, the Linux shape of
+the pure target, and the feature's own iOS 27.2 simulator "PERF2"; no device claim). FrameTimingTests 26 (12 new),
+Diagnostics 19, FrameBudgetAppTests 5, FrameBudgetOverlayUITests 1 (8.6 s). Open: T13 `{device}` (D1 verdict at
+normal load). Linux itself: not run here; CI's Linux job tests the Compositor and Diagnostics packages.
 
 **Input**: User description: "Implement PERF-002 (GPU budget meter) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Display bounded render-time estimate against frame deadline." Acceptance,
