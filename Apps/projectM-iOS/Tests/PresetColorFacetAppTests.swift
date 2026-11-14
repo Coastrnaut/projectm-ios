@@ -117,7 +117,10 @@ final class PresetColorFacetAppTests: XCTestCase {
         XCTAssertEqual(search.last, "Colour filter cleared")
 
         // A relaunch reads the colours back without drawing again.
-        for _ in 0..<500 where await store.snapshot().count < 3 { await Task.yield() }
+        // Up to 5 s for the third colour record: 500 bare yields were not enough under load (post-merge 2026-11-14).
+        for _ in 0..<500 where await store.snapshot().count < 3 { try await Task.sleep(for: .milliseconds(10)) }
+        let recorded = await store.snapshot().count
+        XCTAssertEqual(recorded, 3, "all three colour records before the relaunch")
         await store.flush()
         let (relaunched, _) = try await makeCoordinator(drawing)
         XCTAssertEqual(relaunched.colorFilter.matching(all: [.blue]), ["frontend-uwp/Alpha.milk", "frontend-uwp/Gamma.milk"])
