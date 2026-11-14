@@ -8,7 +8,7 @@ unit tests ≤ 10 s, package suite < 1 min, UI test < 30 s.
 
 ## Phase 1: Foundational (blocking)
 
-- [X] OUT-004-T01 [P] Add `ExternalOutputFit`, `ExternalOutputShape`, `ExternalPixelAspect`, `ExternalOutputCorrection` and `ExternalOutputPlacement` (contract C1) in `Packages/PresentationLifecycle/Sources/PresentationLifecycle/ExternalOutputPlacement.swift`
+- [X] OUT-004-T01 [P] Add `ExternalOutputFit`, `ExternalOutputShape`, `ExternalPixelAspect`, `ExternalOutputCorrection` and `ExternalOutputPlacement` (contract C1) in `Packages/PresentationLifecycle/Sources/PresentationLifecycle/ExternalOutputPlacement.swift` — Verified 2026-11-14: swift test --package-path Packages/PresentationLifecycle, 66 pass (6 new)
 - [X] OUT-004-T02 [P] Acceptance tests in `Packages/PresentationLifecycle/Tests/PresentationLifecycleTests/ExternalOutputPlacementTests.swift`: screens 16:9, 4:3, 21:9 × source 9:19.5 and display shape × PAR 1.0, 0.9, 1.2: Fit and Fill keep circles within 0.5 % and Fit shows all / Fill covers; Stretch is an ellipse; invalid input; PAR sanitising (OUT-004-S1) — Verified 2026-11-14: ExternalOutputPlacementTests 6 pass in 0.012 s on the host (54 combinations in the acceptance test)
 
 ## Phase 2: User Story 1 - Circles stay round (P1) MVP
