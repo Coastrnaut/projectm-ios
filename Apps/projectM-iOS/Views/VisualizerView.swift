@@ -351,6 +351,7 @@ struct VisualizerView: View {
                          show: coordinator.show, addCurrentScene: { coordinator.addCurrentSceneToShow() },
                          libraryBackup: coordinator.libraryBackup,   // FILE-005
                          cacheFilesInUse: { () -> Set<String> in coordinator.cacheFilesInUse() },
+                         missingMedia: coordinator.missingMedia,   // MED-013
                          openGuide: { coordinator.openGuidedFirstScene() },
                          history: coordinator.sceneHistory,      // UIX-001, SCN-010
                          layerInspector: coordinator,            // CMP-015
@@ -582,6 +583,7 @@ struct VisualizerView: View {
                 .overlaySurface(Capsule())   // ACC-008-R2
                 .accessibilityIdentifier("nativeVisualUnavailable")
         }
+        MissingMediaTile(model: coordinator.missingMedia)   // MED-013-R2: a scene's media is missing
         // CAM-001-R5, R6, R8: never blocks; stays while the camera cannot show pictures.
         // FILE-013-R3: denied and restricted come from the permission catalog; the other states
         // (no camera, paused) keep CAM-001's notice without Open Settings. One notice view for both.

@@ -53,6 +53,8 @@ struct SettingsView: View {
     var libraryBackup: LibraryBackupCoordinator?
     /// FILE-010: the files Clear Caches must keep (absolute paths).
     var cacheFilesInUse: @MainActor () -> Set<String> = { () -> Set<String> in [] }
+    /// MED-013: Settings › Storage › Missing Media (nil hides the row).
+    var missingMedia: MissingMediaCoordinator? = nil
     /// UIX-001: opens the guided first scene (nil hides the row, e.g. in previews).
     var openGuide: (() -> Void)?
     /// SCN-010: Undo and Redo in the navigation bar (nil hides them, e.g. in previews).
@@ -434,7 +436,9 @@ struct SettingsView: View {
             }
         }
         Section {
-            NavigationLink("Storage") { StorageUsageView(filesInUse: cacheFilesInUse, libraryBackup: libraryBackup) }   // FILE-009, FILE-010, FILE-005
+            NavigationLink("Storage") {   // FILE-009, FILE-010, FILE-005, MED-013
+                StorageUsageView(filesInUse: cacheFilesInUse, libraryBackup: libraryBackup, missingMedia: missingMedia)
+            }
                 .accessibilityIdentifier("storageLink")
             NavigationLink("Licenses") { LicensesView() }
                 .accessibilityIdentifier("licensesLink")
