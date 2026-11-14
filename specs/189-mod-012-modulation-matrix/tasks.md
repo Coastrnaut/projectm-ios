@@ -14,8 +14,8 @@ Tests are requested by the spec (acceptance, reorder, round trip, undo, UI). Bud
   A/B/C, disable B (intensity == A-only exactly, radius and A's signal bit-identical), re-enable (two-layer fold),
   all off → base, signal keeps advancing; [US3] reorder changes the fold as documented, cross/out-of-range refused;
   list edits match the modulator; grouping order — Verified 2026-11-14: ModulationMatrixTests 6 pass in 0.003 s (`testDisablingOneRowAffectsOnlyItsDestinationRoute` asserts bit patterns of intensity vs an A-only modulator, radius and A's signal)
-- [ ] MOD-012-T03 [US5] SceneFormat `enabled` field (encode only when false, decode optional boolean, malformed
-  otherwise) and `SceneBindingEnabledTests` (round trip, absent → enabled, restore keeps a disabled layer)
+- [X] MOD-012-T03 [US5] SceneFormat `enabled` field (encode only when false, decode optional boolean, malformed
+  otherwise) and `SceneBindingEnabledTests` (round trip, absent → enabled, restore keeps a disabled layer) — Verified 2026-11-14: `swift test --package-path Packages/SceneFormat` 167 tests, 0 failures, 2.5 s (SceneBindingEnabledTests 2 new; capture byte-identical, malformed path `$.bindings[0].enabled`)
 
 ## Phase 2: App (User Stories 1-5)
 
