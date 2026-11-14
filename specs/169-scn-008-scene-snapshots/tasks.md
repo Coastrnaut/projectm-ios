@@ -4,11 +4,11 @@
 
 ## Phase 1: Model (US2)
 
-- [ ] SCN-008-T01 SceneFormat: `SceneSnapshotEntry`, `SceneSnapshot`, limits, `read`, editing helpers, reserved action ID (SCN-008-R1, R3, R11)
-- [ ] SCN-008-T02 SceneFormat: `snapshots` on the document, decode (count limit), encode only when set, live state and capture carry it (SCN-008-R2)
-- [ ] SCN-008-T03 SceneFormat: `invalidSnapshot`, `unknownSnapshotParameter` codes, validation and SCN-012 classification (SCN-008-R4)
-- [ ] SCN-008-T04 SceneFormat: `SceneSnapshotRecallPlan` (unknown, not settable, rejected, clamped; sorted) (SCN-008-R6, R7)
-- [ ] SCN-008-T05 SceneFormat tests: byte-identical round trip, legacy bytes, unknown fields kept, invalid entries and limit, unknown parameter reported and skipped, editing limits and names (SCN-008-S2, S3, S4)
+- [X] SCN-008-T01 SceneFormat: `SceneSnapshotEntry`, `SceneSnapshot`, limits, `read`, editing helpers, reserved action ID (SCN-008-R1, R3, R11) — Verified 2026-11-14: SceneFormat `SceneSnapshotTests.testLimitsAndEditing`, `testSnapshotsRoundTripByteIdenticallyAndReadExactly`
+- [X] SCN-008-T02 SceneFormat: `snapshots` on the document, decode (count limit), encode only when set, live state and capture carry it (SCN-008-R2) — Verified 2026-11-14: `SceneSnapshotTests` (byte-identical round trip, legacy bytes, live state and capture carry the list, 65 entries → `tooMany`)
+- [X] SCN-008-T03 SceneFormat: `invalidSnapshot`, `unknownSnapshotParameter` codes, validation and SCN-012 classification (SCN-008-R4) — Verified 2026-11-14: `SceneSnapshotTests.testUnusableEntriesAndUnknownParametersAreReportedAndKept` (codes, paths, warnings only, repair report entries)
+- [X] SCN-008-T04 SceneFormat: `SceneSnapshotRecallPlan` (unknown, not settable, rejected, clamped; sorted) (SCN-008-R6, R7) — Verified 2026-11-14: `SceneSnapshotTests.testRecallPlanSkipsUnsettableAndRejectedValuesAndClamps` and the unknown-parameter case
+- [X] SCN-008-T05 SceneFormat tests: byte-identical round trip, legacy bytes, unknown fields kept, invalid entries and limit, unknown parameter reported and skipped, editing limits and names (SCN-008-S2, S3, S4) — Verified 2026-11-14: `swift test` in Packages/SceneFormat: 156 tests, 0 failures after adding `SceneSnapshots.swift` to `SceneSourceSafetyTests` (13.8 s)
 
 ## Phase 2: App (US1, US3)
 

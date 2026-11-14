@@ -118,6 +118,10 @@ public struct SceneIssue: Sendable, Hashable, CustomStringConvertible {
         case invalidLFO
         /// MOD-007: an oscillator whose shape this version does not know; kept.
         case unknownLFO
+        /// SCN-008: a snapshot with a missing or wrong name or values, a malformed value, or beyond the limit; kept.
+        case invalidSnapshot
+        /// SCN-008: a snapshot value whose parameter ID this version does not know; kept, skipped on recall.
+        case unknownSnapshotParameter
 
         /// MOD-013 (ADR-0028 amendment): every per-edge modulation problem is a warning, so one edge
         /// never refuses the scene; `invalidModulation` (generator declarations) stays an error.
@@ -127,7 +131,8 @@ public struct SceneIssue: Sendable, Hashable, CustomStringConvertible {
                  .duplicateEffect, .valueClamped, .droppedField, .unknownAssetType, .unusedAsset,
                  .missingAsset, .orphanedParameter, .rejectedParameter, .parameterClamped,
                  .invalidBinding, .duplicateBindingTarget, .invalidExpression, .migratedReference, .retiredReference,
-                 .orphanedBinding, .orphanedConnection, .rejectedConnection, .unsupportedCurve, .invalidTrigger, .unknownTrigger, .invalidLFO, .unknownLFO:
+                 .orphanedBinding, .orphanedConnection, .rejectedConnection, .unsupportedCurve, .invalidTrigger, .unknownTrigger, .invalidLFO, .unknownLFO,
+                 .invalidSnapshot, .unknownSnapshotParameter:
                 .warning
             default:
                 .error

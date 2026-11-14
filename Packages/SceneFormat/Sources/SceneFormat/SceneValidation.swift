@@ -231,6 +231,9 @@ extension SceneDocument {
         issues += restoreModulation(registry: registry).issues
         if let triggers { issues += SceneTriggerEntry.read(triggers).issues }   // MOD-006 (warnings)
         if let lfos { issues += SceneLFOEntry.read(lfos).issues }   // MOD-007 (warnings)
+        if let snapshots {   // SCN-008 (warnings)
+            issues += SceneSnapshotEntry.read(snapshots).issues + SceneSnapshotEntry.unknownParameters(snapshots, registry: registry)
+        }
     }
 }
 
