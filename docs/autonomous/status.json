@@ -13,8 +13,7 @@
   "P1": {
    "audited": 39,
    "implementing": 7,
-   "integrated": 104,
-   "unit_passed": 1
+   "integrated": 105
   },
   "P2": {
    "audited": 71,
@@ -27,9 +26,8 @@
  "by_state": {
   "audited": 121,
   "implementing": 7,
-  "integrated": 196,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "integrated": 197,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -106,7 +104,6 @@
    "PRE-008",
    "PRE-009",
    "PRE-011",
-   "PRE-016",
    "PRE-017",
    "PRE-018",
    "QA-009",
@@ -169,7 +166,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "129 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-013, ANL-015)"
+   "128 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-013, ANL-015)"
   ]
  },
  "features": {
@@ -408,7 +405,7 @@
    "branch": "feature/anl-012",
    "branch_sha": "9c8799d3ae436f17bdd7e786b345802e3f1dad99",
    "error_category": null,
-   "integrated_sha": "7a754c5d37c22517290035d4d708d6dca3ef6200",
+   "integrated_sha": "7a754c5d",
    "priority": "P2",
    "spec_dir": null,
    "state": "integrated"
@@ -2358,10 +2355,10 @@
    "branch": "feature/pre-016",
    "branch_sha": "3bb694ab053e1f5c3cc428d60d2d66969d5c4a66",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "e4dca4c4",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "PRE-017": {
    "attempts": 0,
@@ -3288,7 +3285,7 @@
    "branch": "feature/vis-006",
    "branch_sha": "1dd9d242b902865d828754eb6b6d775710bd823b",
    "error_category": null,
-   "integrated_sha": "427617b950eeabb02223eae366b72314ac1190a0",
+   "integrated_sha": "427617b9",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
@@ -3538,7 +3535,7 @@
   {
    "branch": "feature/anl-012",
    "id": "ANL-012",
-   "sha": "7a754c5d37c22517290035d4d708d6dca3ef6200"
+   "sha": "7a754c5d"
   },
   {
    "branch": "feature/anl-014",
@@ -4181,6 +4178,11 @@
    "sha": "c6cce9988587b09d1c791c173ab511ee50fb2f26"
   },
   {
+   "branch": "feature/pre-016",
+   "id": "PRE-016",
+   "sha": "e4dca4c4"
+  },
+  {
    "branch": "feature/qa-002",
    "id": "QA-002",
    "sha": "dffa2be908f507e21886d1561549282279cd67da"
@@ -4413,7 +4415,7 @@
   {
    "branch": "feature/vis-006",
    "id": "VIS-006",
-   "sha": "427617b950eeabb02223eae366b72314ac1190a0"
+   "sha": "427617b9"
   }
  ],
  "integration_branch": "autonomous/integration",
@@ -4441,5 +4443,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T18:36:53Z"
+ "updated": "2026-11-14T18:41:09Z"
 }
