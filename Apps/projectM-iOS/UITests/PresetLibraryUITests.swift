@@ -57,7 +57,17 @@ final class PresetLibraryUITests: XCTestCase {
     }
 
     private func waitForScopeLine(_ text: String, file: StaticString = #filePath, line: UInt = #line) {
-        if !poll(5, { self.scopeLine.exists && self.scopeLine.label == text }) {
+        // The scope line is on the controls overlay, which hides 5 s after launch. The unlocked
+        // library's index loads more slowly, so its scope can arrive after the overlay is gone
+        // (seen 2026-11-13): bring the overlay back once if the line is missing.
+        let area = app.otherElements["visualizerTapArea"].firstMatch
+        var shownAgain = false
+        let found = poll(10) {
+            if self.scopeLine.exists { return self.scopeLine.label == text }
+            if !shownAgain { shownAgain = true; area.tap() }
+            return false
+        }
+        if !found {
             XCTFail("scope line “\(scopeLine.exists ? scopeLine.label : "<missing>")”, expected “\(text)”", file: file, line: line)
         }
     }

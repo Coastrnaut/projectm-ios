@@ -94,10 +94,19 @@ final class UserPresetEditingUITests: XCTestCase {
     }
 
     /// Replaces the editor's whole text with `text` (select all, then type).
+    /// Selects everything, then types `text`. Cmd-A right after the tap can land before the text
+    /// view has keyboard focus; the typing then goes in after the first character (seen once the
+    /// waits got faster, 2026-11-13). So wait for focus, and check the result and retry once.
     private func replaceText(_ editor: XCUIElement, with text: String) {
-        editor.tap()
-        editor.typeKey("a", modifierFlags: .command)
-        editor.typeText(text)
+        for _ in 0..<2 {
+            editor.tap()
+            _ = poll(3) { (editor.value(forKey: "hasKeyboardFocus") as? Bool) == true }
+            editor.typeKey("a", modifierFlags: .command)
+            editor.typeText(text)
+            let value: String = editor.value as? String ?? ""
+            if value == text { return }
+        }
+        XCTFail("the editor does not hold exactly the typed text")
     }
 
     private var editor: XCUIElement { app.textViews["presetEditorText"] }
