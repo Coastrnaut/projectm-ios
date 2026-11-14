@@ -156,7 +156,8 @@ public enum SceneLayerContent: Sendable, Hashable {
 public struct SceneComposite: Sendable, Hashable {
     /// 0…1.
     public var opacity: Double
-    /// `normal` is the only mode drawn today (CMP-004 adds more); any name is kept.
+    /// A `LayerBlendMode` name (`normal`, `add`, `screen`, `multiply`, `overlay`, `difference`; CMP-004)
+    /// is drawn; any other name is kept, drawn as normal and warned about (`unsupportedBlendMode`).
     public var blendMode: String
     public var transform: LayerTransform
 
