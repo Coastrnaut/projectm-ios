@@ -116,7 +116,7 @@ cue; skip every cue; round-trip the flag through the show file; refuse the edit 
 - **SHOW-005-R7**: Skip edits MUST save at once, never apply a scene or move the position, be refused while the scene is locked, and cancel a countdown that no longer has a cue to advance to.
 - **SHOW-005-R8**: The cue row MUST offer the Hold toggle and the performance pad MUST show the Hold state, both with VoiceOver; the editor MUST show skipped cues dimmed with "Skipped" and offer Skip/Unskip as context menu, swipe and VoiceOver actions (hidden while locked).
 - **SHOW-005-R9**: Duplicate Scene MUST copy the Skip flag.
-- **SHOW-005-R10a**: Turning Hold on or off MUST be announced on the cue lane.
+- **SHOW-005-R11**: Turning Hold on or off MUST be announced on the cue lane.
 - **SHOW-005-R10**: No network access, no new stored settings key, no wall-clock time.
 
 ### Key Entities
