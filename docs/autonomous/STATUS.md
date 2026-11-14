@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T15:57:31Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T16:22:08Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,9 +9,9 @@
 
 | State | Features |
 |---|---|
-| audited | 144 |
-| implementing | 2 |
-| integrated | 179 |
+| audited | 137 |
+| implementing | 8 |
+| integrated | 180 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -19,14 +19,14 @@
 | Priority | audited | implementing | integrated | skipped_existing |
 |---|---|---|---|---|
 | P0 | 2 | 0 | 84 | 1 |
-| P1 | 60 | 2 | 89 | 0 |
+| P1 | 53 | 8 | 90 | 0 |
 | P2 | 73 | 0 | 6 | 0 |
 | P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 146 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-011, ANL-012)
+- 145 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-011, ANL-012)
 
 ## Integrated
 
@@ -145,6 +145,7 @@ The physical-device suite may **not** start:
 | MOD-006 | Threshold trigger | `6fc64ff1d0fc` | `feature/mod-006` |
 | MOD-007 | LFO sine and triangle | `0c57cf7ce720` | `None` |
 | MOD-009 | Tempo-synced LFO | `5d85f165` | `None` |
+| MOD-010 | Parameter macro | `5703e0c5` | `feature/mod-010` |
 | MOD-013 | Modulation serialization | `d08b5103b0ef` | `feature/mod-013` |
 | MOD-014 | Modulation feedback prevention | `3b3a60649025` | `feature/mod-014` |
 | OSC-001 | OSC receiver | `13d9883531b9` | `feature/osc-001` |
@@ -166,7 +167,7 @@ The physical-device suite may **not** start:
 | PRE-003 | Preset tags | `ddce41418d7c` | `feature/pre-003` |
 | PRE-006 | Recently played history | `b4fe95151be2` | `feature/pre-006` |
 | PRE-007 | Preset collections | `e834535cb98b` | `feature/pre-007` |
-| PRE-010 | Preset quick audition | `a653f631233a` | `feature/pre-010` |
+| PRE-010 | Preset quick audition | `a653f631` | `feature/pre-010` |
 | PRE-012 | Preset import validation | `4bf9f50d1af8` | `feature/pre-012` |
 | PRE-014 | Bulk preset export | `a20ba4bafb5e` | `feature/pre-014` |
 | PRE-015 | User preset duplication | `c6cce9988587` | `feature/pre-015` |
@@ -1411,6 +1412,22 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `ba1c39fe1372` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-009/20261114T103238/swift-test_VisualGenerators.log`)
 - `post-merge: projectM-iOSTests 778 + UI 8 (cue transitions, show cues, text, photo, glow; ShowCue test fixed and rerun green)`: pass at `5d85f165` (log `.autonomous/logs/integration/batch19/rerun2.log`)
 
+### MOD-010 Parameter macro (integrated)
+- `python3 scripts/check_compliance.py`: pass at `a5d42a32bfed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-010/20261114T110432/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `a5d42a32bfed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-010/20261114T110432/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `a5d42a32bfed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-010/20261114T110432/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `a5d42a32bfed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-010/20261114T110432/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `a5d42a32bfed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-010/20261114T110432/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `a5d42a32bfed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-010/20261114T110432/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/ParameterGraph`: pass at `a5d42a32bfed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-010/20261114T110432/swift-test_ParameterGraph.log`)
+- `swift test --package-path Packages/PerformanceControl`: pass at `a5d42a32bfed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-010/20261114T110432/swift-test_PerformanceControl.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `a5d42a32bfed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-010/20261114T110432/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `a5d42a32bfed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-010/20261114T110432/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `a5d42a32bfed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-010/20261114T110432/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `a5d42a32bfed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-010/20261114T110432/swift-test_ShowControl.log`)
+- `swift test --package-path Packages/VisualGenerators`: pass at `a5d42a32bfed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-010/20261114T110432/swift-test_VisualGenerators.log`)
+- `post-merge: projectM-iOSTests 797 pass; ParameterMacroUITests pass on rerun (flaky once); SceneUndoUITests intensity-drag failure predates MOD-010 (seen on feature/scn-008), under investigation in fix/scene-undo-drag`: pass at `5703e0c5` (log `.autonomous/logs/integration/batch23/rerun.log`)
+
 ### MOD-013 Modulation serialization (integrated)
 - `python3 scripts/check_compliance.py`: pass at `bbdb65cb39c4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-013/20261113T160144/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `bbdb65cb39c4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-013/20261113T160144/docs.log`)
@@ -1616,6 +1633,7 @@ None.
 - `python3 scripts/validate_docs.py`: pass at `e9ec9e9eeee3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-010/20261114T105402/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `e9ec9e9eeee3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-010/20261114T105402/script-tests.log`)
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `e9ec9e9eeee3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-010/20261114T105402/autonomous-tests.log`)
+- `post-merge: projectM-iOSTests 793 + UI 14 (audition, preset library, settings, external display, cue transitions, stage overlay)`: pass at `a653f631` (log `.autonomous/logs/integration/batch22/app-tests.log`)
 
 ### PRE-012 Preset import validation (integrated)
 - `python3 scripts/check_compliance.py`: pass at `6d4ada96b86c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-012/20261112T182006/compliance.log`)
