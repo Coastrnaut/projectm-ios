@@ -16,7 +16,7 @@ unit tests ≤ 10 s, package suite < 1 min, UI test < 30 s.
 
 - [ ] OUT-012-T04 [US1] `RehearsalPreviewView` (stage, outline, real external `VisualSlotView` scaled by the preview transform) and `RehearsalCardView` in `Apps/projectM-iOS/ExternalDisplay/RehearsalPreviewView.swift`
 - [ ] OUT-012-T05 [US1] Acceptance tests in `Apps/projectM-iOS/Tests/ExternalRehearsalTests.swift`: four profile × correction cases, grid centres and edges through the preview and a real coordinator-placed external slot of that profile agree within 0.5 pt after scaling; rendered circle physical axis ratio equal within 2 % (OUT-012-S1, S2)
-- [ ] OUT-012-T06 [US1] `ExternalRehearsalView` (profile, custom size, display PAR, Fit/Shape bound to the OUT-004 setting, preview with spoken description, DEBUG probe, Done) in `Apps/projectM-iOS/Views/ExternalRehearsalView.swift`; "Rehearse output…" row and cover in `Apps/projectM-iOS/Views/ExternalDisplaySection.swift`; strings in `ExternalOutputSetting.swift` (C4, OUT-012-R1, R2, R7)
+- [ ] OUT-012-T06 [US1] `ExternalRehearsalView` (profile, custom size, display PAR, Fit/Shape bound to the OUT-004 setting, device shape from the coordinator else the window, preview with spoken description, DEBUG probe, Done) in `Apps/projectM-iOS/Views/ExternalRehearsalView.swift`; "Rehearse output…" row and cover in `Apps/projectM-iOS/Views/ExternalDisplaySection.swift`; strings in `ExternalOutputSetting.swift` (C4, OUT-012-R1, R2, R7)
 
 ## Phase 3: User Story 2 - Test grid (P2)
 
@@ -24,13 +24,21 @@ unit tests ≤ 10 s, package suite < 1 min, UI test < 30 s.
 
 ## Phase 4: User Story 3 - Exit and takeover (P2)
 
-- [ ] OUT-012-T08 [US3] `isRehearsing`, `hasExternalDisplay`, `beginRehearsal()`, `endRehearsal()` in `Apps/projectM-iOS/ExternalDisplay/ExternalDisplayCoordinator.swift`; tests in `ExternalRehearsalTests.swift`: a settled connect ends rehearsal, an unsettled bounce does not, begin refused while connected (OUT-012-S3)
+- [ ] OUT-012-T08 [US3] `isRehearsing`, `hasExternalDisplay`, `beginRehearsal()`, `endRehearsal()` in `Apps/projectM-iOS/ExternalDisplay/ExternalDisplayCoordinator.swift`; tests in `ExternalRehearsalTests.swift`: a settled connect ends rehearsal, an unsettled bounce does not, begin refused while connected; the visual stays in the device slot throughout (OUT-012-S3, R8)
 - [ ] OUT-012-T09 [US3] UI test `Apps/projectM-iOS/UITests/ExternalRehearsalUITests.swift`: open the rehearsal, choose Shape Device, probe reads `profile=1920x1080` and `bars=pillarbox`, preview label, Done closes (OUT-012-S4)
 
 ## Phase 5: Polish
 
 - [ ] OUT-012-T10 Regression: ExternalOutputCorrectionTests, ExternalDisplayCoordinatorTests, HotPlugAcceptanceTests, ExternalDisplayUITests; PresentationLifecycle package; repo checks; privacy manifest and network symbols; type-check budget (OUT-012-S5, R9)
 - [ ] OUT-012-T11 {device} Quickstart C on D1 with an HDMI projector
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+No critical issues; no constitution conflicts. Fixed: R8 (live visual untouched) had no test, now
+asserted in T08; the device-shape fallback (spec Edge Cases) is named in T06. Coverage: R1 → T06; R2
+→ T01, T06; R3 → T01, T03, T04, T05; R4 → T01, T04, T05; R5 → T07; R6 → T06, T08; R7 → T01, T06,
+T09; R8 → T08; R9 → T01, T02, T10. S1, S2 → T05; S3 → T08; S4 → T09; S5 → T10. 11 tasks, 100 %
+of requirements covered.
 
 ## Dependencies
 
