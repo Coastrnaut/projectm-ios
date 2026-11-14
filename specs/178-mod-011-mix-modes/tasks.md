@@ -29,9 +29,9 @@ Linux shape). Budgets (owner rule 7): unit test ≤ 10 s, package suite < 1 min.
 
 ## Phase 3: User Story 3 — scenes and app (P2)
 
-- [ ] MOD-011-T06 [US3] SceneFormat: restore layers (≤ 4, `addLayer`), fifth and later-layer expression →
+- [X] MOD-011-T06 [US3] SceneFormat: restore layers (≤ 4, `addLayer`), fifth and later-layer expression →
   `duplicateBindingTarget`; `SceneBinding.list(_:expressions:)` used by `SceneLiveState`; update
-  `SceneValidationTests` and `SceneModulationRestoreTests`; add a layered round-trip test
+  `SceneValidationTests` and `SceneModulationRestoreTests`; add a layered round-trip test — Verified 2026-11-14: `swift test --package-path Packages/SceneFormat` 160 tests, 0 failures, 3.7 s (SceneLayeredBindingTests 2 new; SceneValidationTests, SceneModulationRestoreTests migration case and SceneRepairTests fixture updated: a same-target binding is now a layer; binding edges deduplicated for the graph check)
 - [ ] MOD-011-T07 [US3] App: `NativeSpectrumHost` uses `GlowModulationOrder` and gains `addLayer`; scene
   restore adds layers in order (`AppCoordinator`); `SceneAutosaveCapture` uses `SceneBinding.list`
 - [ ] MOD-011-T08 [US3] Inspector: numbered layers and the order line in `ParameterInspectorModel.swift`

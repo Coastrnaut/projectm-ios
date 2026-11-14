@@ -300,6 +300,16 @@ public struct SceneBinding: Sendable, Hashable {
         set { if let newValue { sourceID = newValue.id } }
     }
 
+    /// Live bindings as stored, in order, each parameter's SHD-009 expression on its first binding only
+    /// (MOD-011-R7, contract mix-order O3).
+    public static func list(_ bindings: [AudioFeatureBinding], expressions: [ParameterID: String]) -> [SceneBinding] {
+        var seen: Set<ParameterID> = []
+        return bindings.map { (b: AudioFeatureBinding) -> SceneBinding in
+            let first: Bool = seen.insert(b.target).inserted
+            return SceneBinding(b, expression: first ? expressions[b.target] : nil)
+        }
+    }
+
     /// The MOD-002 binding (the expression is carried separately), or nil for an unknown source.
     public var audioFeatureBinding: AudioFeatureBinding? {
         source.map { (s: AudioFeatureSource) -> AudioFeatureBinding in audioFeatureBinding(source: s, target: target) }
