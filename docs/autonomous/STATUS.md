@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T14:32:26Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T14:36:47Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,8 +9,8 @@
 
 | State | Features |
 |---|---|
-| audited | 157 |
-| implementing | 7 |
+| audited | 156 |
+| implementing | 8 |
 | integrated | 161 |
 | skipped_existing | 1 |
 
@@ -19,7 +19,7 @@
 | Priority | audited | implementing | integrated | skipped_existing |
 |---|---|---|---|---|
 | P0 | 2 | 0 | 84 | 1 |
-| P1 | 72 | 7 | 72 | 0 |
+| P1 | 71 | 8 | 72 | 0 |
 | P2 | 74 | 0 | 5 | 0 |
 | P3 | 9 | 0 | 0 | 0 |
 
@@ -154,7 +154,7 @@ The physical-device suite may **not** start:
 | PERF-014 | Render failure fallback | `76a8cbf21e15` | `feature/perf-014` |
 | PRE-001 | Visual thumbnail cache | `7b7a78050ada` | `feature/pre-001` |
 | PRE-002 | Thumbnail invalidation | `4bad23aa` | `None` |
-| PRE-003 | Preset tags | `ddce41418d7c` | `feature/pre-003` |
+| PRE-003 | Preset tags | `ddce4141` | `feature/pre-003` |
 | PRE-007 | Preset collections | `e834535cb98b` | `feature/pre-007` |
 | PRE-012 | Preset import validation | `4bf9f50d1af8` | `feature/pre-012` |
 | PRE-014 | Bulk preset export | `a20ba4bafb5e` | `feature/pre-014` |
@@ -1466,6 +1466,7 @@ None.
 - `swift test --package-path Packages/ImportFuzz`: pass at `a01ade94e327` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-003/20261114T093007/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/LibraryBackup`: pass at `a01ade94e327` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-003/20261114T093007/swift-test_LibraryBackup.log`)
 - `swift test --package-path Packages/PresetLibrary`: pass at `a01ade94e327` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-003/20261114T093007/swift-test_PresetLibrary.log`)
+- `post-merge: projectM-iOSTests 714 + UI 9 (preset tags, library, thumbnails, backup)`: pass at `ddce4141` (log `.autonomous/logs/integration/batch8/app-tests.log`)
 
 ### PRE-007 Preset collections (integrated)
 - `python3 scripts/check_compliance.py`: pass at `20a56625dc20` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-007/20261112T163454/compliance.log`)

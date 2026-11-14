@@ -11,8 +11,8 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 72,
-   "implementing": 7,
+   "audited": 71,
+   "implementing": 8,
    "integrated": 72
   },
   "P2": {
@@ -24,8 +24,8 @@
   }
  },
  "by_state": {
-  "audited": 157,
-  "implementing": 7,
+  "audited": 156,
+  "implementing": 8,
   "integrated": 161,
   "skipped_existing": 1
  },
@@ -2261,7 +2261,7 @@
    "branch": "feature/pre-003",
    "branch_sha": "a01ade94e32769be873eb7cb96c51c62a7731e90",
    "error_category": null,
-   "integrated_sha": "ddce41418d7cc402b62021ee6d4d63da5b3c5de2",
+   "integrated_sha": "ddce4141",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
@@ -2288,13 +2288,13 @@
   },
   "PRE-006": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/pre-006",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "PRE-007": {
    "attempts": 1,
@@ -4081,7 +4081,7 @@
   {
    "branch": "feature/pre-003",
    "id": "PRE-003",
-   "sha": "ddce41418d7cc402b62021ee6d4d63da5b3c5de2"
+   "sha": "ddce4141"
   },
   {
    "branch": "feature/pre-007",
@@ -4299,5 +4299,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T14:32:26Z"
+ "updated": "2026-11-14T14:36:47Z"
 }
