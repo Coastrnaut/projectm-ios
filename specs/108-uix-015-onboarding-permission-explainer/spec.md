@@ -50,6 +50,32 @@ interaction); each answer is the conservative option.
   feature 001's contract (`contracts/ui-states.md`). The microphone already meets the rules: iOS reports
   whether it has asked, and the explainer shows only before that. Applied to UIX-015-R9.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Five questions, each answered by Claude with the recommended option (owner rule 4).
+
+- Q: CAM-001-R5 says the camera notice stays while the camera cannot show pictures; may the user
+  dismiss the denied or restricted notice? → A: Yes, for denied and restricted only (the permission
+  notices). Dismiss hides it for the current attempt; the spectrum keeps running and the visual's
+  VoiceOver value still says "Camera access off". Choosing the Camera visual again is a new attempt.
+  Interrupted, failed and no-camera notices keep CAM-001/CAM-013's rules (no Dismiss). This refines
+  CAM-001-R5 for the permission notices. Applied to UIX-015-R7.
+- Q: How do the many existing UI tests that pick Camera or turn on OSC avoid the new explainer? → A: As
+  UIX-001's guided scene: in DEBUG or automation builds, a harness launch (an `-uitest…` argument,
+  `-autostart`, XCTest or `PROJECTM_AUTORUN`) suppresses the explainer, unless the launch passes
+  `-uitestPermissionExplainers`. Release builds never suppress it. Applied to UIX-015-R13.
+- Q: How is the explainer presented? → A: As a sheet, the same pattern as FR-005's microphone sheet:
+  a decorative symbol, the catalog's name as title, the catalog's usage text, a fallback line, then
+  "Continue" (prominent) and "Not now". It scrolls, and at accessibility text sizes the buttons stack.
+  Applied to UIX-015-R5, R12.
+- Q: Should a local network denial turn OSC receiver off? → A: No. OSC-001 keeps the user's toggle;
+  the denial stays an inline notice in Settings' OSC section with Open Settings and the fallback. iOS
+  never asks twice, so the listener's quiet retry at launch shows nothing outside Settings. Applied
+  to UIX-015-R8.
+- Q: Does the microphone get a stored explained flag? → A: No. iOS reports whether it has asked, which
+  is the flag; FR-005's in-memory acknowledgement is kept. Only camera and local network store a flag
+  (two keys). Applied to UIX-015-R9, R11.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - I know why the app wants the camera or the network before iOS asks (Priority: P1)
@@ -148,6 +174,8 @@ and notices.
   review's allowed keys, and cleared by `-uitestResetNotice`.
 - **UIX-015-R12**: The explainer MUST work at accessibility text sizes and with VoiceOver, use no
   animation of its own, and post no announcement.
+- **UIX-015-R13**: In DEBUG or automation builds a harness launch suppresses the explainer unless it
+  passes `-uitestPermissionExplainers`; Release builds never suppress it.
 
 ### Key Entities
 
