@@ -55,6 +55,8 @@
 //   `BeatRingTrigger` (confident ANL-005 beats, the ANL-007 kick as the fallback) and emits a ring stamped with
 //   the frame's time under the frame's envelope (the rate cap). Leaving the style unsubscribes; a loop start
 //   discards events that queued while stopped. The ring life changes only its configuration.
+// * Mandala (VIS-007): draws the smoothed bands as N rotated petals; symmetry, mirror and petal style change only
+//   its configuration. `reduceMotion` (the system setting, from the coordinator) halves its turn (VIS-007-R5).
 // * REC-001 (research REC-001-D1): `captureFrame` turns the layer's `framebufferOnly` off until the
 //   next readable drawable is drawn, blits that drawable (the frame as shown: glow and Reduce
 //   flashing included) into a shared buffer and delivers 8-bit sRGB BGRA on the main actor; then
@@ -207,6 +209,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             ?? (generator as? LissajousGenerator)?.configuration.palette
             ?? (generator as? RadialWaveformGenerator)?.configuration.palette
             ?? (generator as? BeatRingGenerator)?.configuration.palette
+            ?? (generator as? MandalaGenerator)?.configuration.palette
     }
 
     private func applyPalette() {
@@ -234,7 +237,27 @@ final class NativeSpectrumHost: PresentationBoundResource {
             var configuration = rings.configuration
             configuration.palette = palette
             rings.configuration = configuration
+        } else if let mandala = generator as? MandalaGenerator {
+            var configuration = mandala.configuration
+            configuration.palette = palette
+            mandala.configuration = configuration
         }
+    }
+
+    /// VIS-007: the mandala's generator (tests; nil for another visual).
+    var mandalaGenerator: MandalaGenerator? { generator as? MandalaGenerator }
+
+    /// VIS-007-R5, ACC-001: the system Reduce Motion; halves the mandala's turn (applied to every generator a style
+    /// change builds).
+    var reduceMotion = false {
+        didSet { if reduceMotion != oldValue { applyReduceMotion() } }
+    }
+
+    private func applyReduceMotion() {
+        guard let mandala = generator as? MandalaGenerator, mandala.configuration.reduceMotion != reduceMotion else { return }
+        var configuration = mandala.configuration
+        configuration.reduceMotion = reduceMotion   // the layout re-anchors, so the angle stays continuous
+        mandala.configuration = configuration
     }
 
     /// VIS-005: the radial waveform's generator (tests; nil for another visual).
@@ -395,6 +418,12 @@ final class NativeSpectrumHost: PresentationBoundResource {
                                                   configuration: BeatRingConfiguration(life: life.seconds))
             generator.barCount = barCount
             return generator
+        case let .mandala(symmetry, mirror, petal):   // VIS-007
+            let generator = try MandalaGenerator(device: device, pixelFormat: .bgra8Unorm_srgb,
+                                                 configuration: MandalaConfiguration(symmetry: symmetry, mirror: mirror,
+                                                                                     petalStyle: petal))
+            generator.barCount = barCount
+            return generator
         }
     }
 
@@ -456,10 +485,17 @@ final class NativeSpectrumHost: PresentationBoundResource {
             var configuration = rings.configuration   // VIS-006: in place, from the next frame
             configuration.life = life.seconds
             rings.configuration = configuration
+        } else if case let .mandala(symmetry, mirror, petal) = newStyle, let mandala = generator as? MandalaGenerator {
+            var configuration = mandala.configuration   // VIS-007: in place, from the next frame
+            configuration.symmetry = symmetry
+            configuration.mirror = mirror
+            configuration.petalStyle = petal
+            mandala.configuration = configuration
         } else {
             let replacement = try Self.makeGenerator(device: device, style: newStyle, barCount: generator.barCount)
             generator = replacement
             applyPalette()   // ACC-003-R13: a new generator starts with the default palette
+            applyReduceMotion()   // VIS-007-R5
             samples.update(repeating: 0, count: WaveformFrameBuffer.capacity)   // VIS-004: mono and stereo histories differ
         }
         style = newStyle
@@ -637,6 +673,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
         case let .lissajous(mode, persistence): return "\(mode.title), Persistence \(persistence ? "on" : "off"), \(glow)"   // VIS-004-R14
         case let .radialWaveform(ring, amplitude): return "\(ring.title) ring, \(amplitude.title) amplitude, \(glow)"   // VIS-005-R11
         case let .beatRings(life): return "\(life.title) ring life, \(glow)"   // VIS-006-R11
+        case let .mandala(symmetry, mirror, petal):   // VIS-007-R11
+            return "\(symmetry)-fold, Mirror \(mirror ? "on" : "off"), \(petal.title), \(glow)"
         }
     }
 
@@ -972,6 +1010,8 @@ enum NativeSpectrumStyle: Equatable, Sendable {
     case radialWaveform(ring: RadialWaveformRing, amplitude: RadialWaveformAmplitude)
     /// VIS-006: beat pulse rings.
     case beatRings(life: BeatRingLife)
+    /// VIS-007: the mandala.
+    case mandala(symmetry: Int, mirror: Bool, petal: MandalaPetalStyle)
 
     /// The oscilloscope and the radial waveform draw the mono sample history instead of the bands.
     var drawsMonoHistory: Bool {
@@ -989,6 +1029,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .lissajous: VisualChoice.lissajous.title
         case .radialWaveform: VisualChoice.radialWaveform.title
         case .beatRings: VisualChoice.beatRings.title
+        case .mandala: VisualChoice.mandala.title
         }
     }
 
@@ -1000,6 +1041,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .lissajous: "lissajous"
         case .radialWaveform: "radialWaveform"
         case .beatRings: "beatRings"
+        case .mandala: "mandala"
         }
     }
 }
