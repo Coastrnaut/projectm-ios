@@ -45,6 +45,8 @@ struct SettingsView: View {
     var openGuide: (() -> Void)?
     /// SCN-010: Undo and Redo in the navigation bar (nil hides them, e.g. in previews).
     var history: SceneHistoryCoordinator?
+    /// AUD-008: the analysis-only input trim (nil hides its section, e.g. in previews).
+    var inputTrim: InputTrimSetting?
     @Environment(\.dismiss) private var dismiss
     @State private var pickedPhoto: PhotosPickerItem?
     @State private var showPhotoFileImporter = false
@@ -203,6 +205,7 @@ struct SettingsView: View {
                 } footer: {
                     Text("Shows the frame rate and the audio state over the visualization.")
                 }
+                if let inputTrim { InputTrimSection(inputTrim: inputTrim) }   // AUD-008-R8
                 oscSection
                 if let show {   // SHOW-001-R14
                     Section {

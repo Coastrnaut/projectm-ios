@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (device task AUD-008-T13 open)
 
 **Input**: User description: "Implement AUD-008 (Input trim) from docs/FEATURE_ROADMAP_AUTONOMOUS.md
 line 95. Observable behavior, verbatim: "Add bounded gain before feature extraction, without clipping
@@ -114,13 +114,14 @@ on the next launch.
 
 **Why this priority**: It is the row's observable behavior.
 
-**Independent Test**: In the simulator, set the trim to +6 dB, relaunch, check +6 dB is shown, tap
-Reset, check 0 dB.
+**Independent Test**: In the simulator, set the trim to +24 dB (the slider's end stop: XCUITest drags
+land only within a few steps of a mid position), relaunch, check +24 dB is shown, tap Reset, check 0 dB.
+Intermediate values and their persistence are unit-tested.
 
 **Acceptance Scenarios**:
 
 1. **Given** Settings open, **When** the user moves Input trim, **Then** the readout shows the signed value in whole dB ("+6 dB", "0 dB", "−12 dB") and VoiceOver reads the same value.
-2. **Given** a trim of +6 dB, **When** the app is relaunched, **Then** Settings shows +6 dB.
+2. **Given** a trim of +6 dB (unit test) or +24 dB (UI test), **When** the app is relaunched, **Then** Settings shows that value.
 3. **Given** any trim, **When** the user taps "Reset to 0 dB", **Then** the trim is 0 dB and is stored.
 
 ---
@@ -200,7 +201,7 @@ without the trim.
 - **AUD-008-S3**: The tone's band value moves by trim/80 within 0.005 at −12 and +6 dB.
 - **AUD-008-S4**: No frame-to-frame gain change exceeds the ramp bound; the target is reached after exactly 2,048 frames.
 - **AUD-008-S5**: projectM's ring output is bit-identical with and without a +24 dB trim on the tap.
-- **AUD-008-S6**: Setting +6 dB, relaunching and resetting works in one UI test of at most 30 s.
+- **AUD-008-S6**: Setting +24 dB, relaunching and resetting works in one UI test of at most 30 s.
 - **AUD-008-S7**: Every existing AudioCore, VisualGenerators and app test passes unchanged.
 
 ## Assumptions

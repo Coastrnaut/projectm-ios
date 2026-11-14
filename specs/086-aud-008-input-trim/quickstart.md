@@ -12,7 +12,7 @@ Budgets (owner rule 7): unit test ≤ 10 s, package suite < 1 min, UI test < 30 
    `-Xswiftc -DVISUAL_NO_METAL -Xswiftc -DANALYSIS_NO_ACCELERATE`).
 3. App (simulator "AUD8 iPhone 17", iOS 27.2): `xcodegen generate`, then `xcodebuild test` with
    `-only-testing:projectM-iOSTests/InputTrimSettingTests` and
-   `-only-testing:projectM-iOSUITests/InputTrimUITests`: set +6 dB, relaunch, +6 dB shown; Reset →
+   `-only-testing:projectM-iOSUITests/InputTrimUITests`: set +24 dB, relaunch, +24 dB shown; Reset →
    0 dB.
 4. `{device}` (final roadmap phase): on D1, microphone source, trim +12 dB: bars react more; route
    change (headphones) and an interruption (phone call) keep the trim and the analysis running.

@@ -84,7 +84,7 @@ Apps/projectM-iOS/Views/InputTrimSection.swift                  # Settings secti
 Apps/projectM-iOS/Views/SettingsView.swift                      # one optional parameter + one line
 Apps/projectM-iOS/Views/VisualizerView.swift                    # passes coordinator.inputTrim
 Apps/projectM-iOS/Tests/InputTrimSettingTests.swift             # persistence, clamping, control sync
-Apps/projectM-iOS/UITests/InputTrimUITests.swift                # +6 dB persists across relaunch; Reset
+Apps/projectM-iOS/UITests/InputTrimUITests.swift                # +24 dB persists across relaunch; Reset
 scripts/run_device_tests.py                                     # ALLOWED_KEYS gains the key
 ```
 
