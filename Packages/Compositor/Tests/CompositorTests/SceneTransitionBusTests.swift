@@ -5,6 +5,7 @@
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import Compositor
 import Metal
+import ParameterGraph
 import XCTest
 
 /// A still layer that opts into CMP-013 caching (its picture never changes).
@@ -134,6 +135,31 @@ final class SceneTransitionBusTests: XCTestCase {
         XCTAssertEqual(bus.blendedFrames, 3)
         XCTAssertEqual(pool.counters.checkedOutTextures, before, "no leaked textures")
         print("CMP-014 acceptance: pool checked out before \(before), during \(during), after \(pool.counters.checkedOutTextures)")
+    }
+
+    /// SCN-007-T03 (SCN-007-S5): a cue's MOD-004 curve drives the bus's eased progress and the mix at every frame.
+    func testACurveShapesTheBusTransition() throws {
+        let rig = try GPURig()
+        let pool = TexturePool(device: rig.device)
+        let bus = try SceneTransitionBus(device: rig.device, texturePool: pool)
+        let output = try rig.output()
+        bus.show(try scene(rig, red, pool: pool))
+        try frame(rig, bus, 0, into: output)
+        let curve = MappingCurve.easeIn(exponent: 2)
+        let spec = try SceneTransitionSpec(style: .crossfade, durationSeconds: 0.1, curve: curve)
+        bus.transition(to: try scene(rig, blue, pool: pool), spec: spec, reduceMotion: false)
+        XCTAssertEqual(bus.activeSpec, spec)
+        try frame(rig, bus, 1, into: output)
+        for k in 2...4 {
+            try frame(rig, bus, k, into: output)
+            let t = Double(k - 1) / 4
+            XCTAssertEqual(bus.lastProgress, t)
+            XCTAssertEqual(bus.clock?.easedProgress, curve.apply(t))
+            let e = Float(curve.apply(t))
+            assertNear(try rig.read(output), Pixel(1 - e, 0, e, 1), "frame \(k): the mix follows the curve")
+        }
+        try frame(rig, bus, 5, into: output)
+        XCTAssertFalse(bus.isTransitioning)
     }
 
     func testCancelReturnsToTheOutgoingSceneWithNoLeakedTextures() throws {

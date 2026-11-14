@@ -33,6 +33,39 @@ public struct DiagnosticsSnapshot: Codable, Sendable, Equatable {
         public var frameGPUMedianMs: Double?
         public var frameGPUP95Ms: Double?
         public var stages: [Stage]
+        /// PERF-002 (specs/160-perf-002-gpu-budget): the budget verdict for the same window; absent when not judged.
+        public var budget: Budget? = nil
+
+        /// PERF-002-R9: the frame deadline, the threshold and clear shares, the estimates and the flagged passes.
+        public struct Budget: Codable, Sendable, Equatable {
+            /// Every pass label the meter can flag (6 stages × cpu/gpu, then the whole frame's GPU time).
+            public static let passNames: [String] = FrameTimings.stageNames.flatMap { (name: String) -> [String] in
+                [name + " cpu", name + " gpu"]
+            } + ["gpu frame"]
+
+            public var framesPerSecond: Double
+            public var deadlineMs: Double
+            public var thresholdShare: Double
+            public var clearShare: Double
+            public var thresholdMs: Double
+            public var cpuEstimateMs: Double?
+            public var gpuEstimateMs: Double?
+            /// Over-budget pass labels, frame order (at most 13).
+            public var flaggedPasses: [String]
+
+            /// Keeps known pass names (at most 13) and only finite, non-negative values (others become absent or 0).
+            public init(framesPerSecond: Double, deadlineMs: Double, thresholdShare: Double, clearShare: Double,
+                        thresholdMs: Double, cpuEstimateMs: Double? = nil, gpuEstimateMs: Double? = nil, flaggedPasses: [String]) {
+                self.framesPerSecond = FrameTimings.clean(framesPerSecond) ?? 0
+                self.deadlineMs = FrameTimings.clean(deadlineMs) ?? 0
+                self.thresholdShare = FrameTimings.clean(thresholdShare) ?? 0
+                self.clearShare = FrameTimings.clean(clearShare) ?? 0
+                self.thresholdMs = FrameTimings.clean(thresholdMs) ?? 0
+                self.cpuEstimateMs = FrameTimings.clean(cpuEstimateMs)
+                self.gpuEstimateMs = FrameTimings.clean(gpuEstimateMs)
+                self.flaggedPasses = Array(flaggedPasses.filter { (name: String) -> Bool in Self.passNames.contains(name) }.prefix(13))
+            }
+        }
 
         public struct Stage: Codable, Sendable, Equatable {
             /// One of `stageNames`.
@@ -57,7 +90,8 @@ public struct DiagnosticsSnapshot: Codable, Sendable, Equatable {
 
         /// Keeps known stage names (at most 6) and only finite, non-negative values (others become absent).
         public init(windowFrames: Int, rejectedSamples: Int, frameGPUMedianMs: Double? = nil, frameGPUP95Ms: Double? = nil,
-                    stages: [Stage]) {
+                    stages: [Stage], budget: Budget? = nil) {
+            self.budget = budget
             self.windowFrames = max(0, windowFrames)
             self.rejectedSamples = max(0, rejectedSamples)
             self.frameGPUMedianMs = Self.clean(frameGPUMedianMs)
@@ -70,7 +104,7 @@ public struct DiagnosticsSnapshot: Codable, Sendable, Equatable {
             }
         }
 
-        private static func clean(_ value: Double?) -> Double? {
+        static func clean(_ value: Double?) -> Double? {
             guard let value, value.isFinite, value >= 0 else { return nil }
             return value
         }

@@ -26,7 +26,10 @@ enum ExpressionCatalog {
         case "pi": return .constant(Double.pi)
         case "tau": return .constant(2 * Double.pi)
         case "e": return .constant(2.718281828459045)
-        default: return AudioFeatureSource(id: name).map { (source: AudioFeatureSource) -> ExpressionValueName in .audio(source) }
+        default:
+            guard let source = AudioFeatureSource(id: name) else { return nil }
+            if case .lfo = source { return nil }   // MOD-007-D4: oscillators are binding sources, not formula names
+            return .audio(source)
         }
     }
 

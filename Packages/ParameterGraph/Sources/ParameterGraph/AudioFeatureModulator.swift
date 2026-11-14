@@ -188,6 +188,9 @@ public final class AudioFeatureModulator {
         if case let .band(index) = binding.source, !(0...AudioFeatureSource.maximumBandIndex).contains(index) {
             throw .bandIndexOutOfRange(id, index)
         }
+        if case let .lfo(index) = binding.source, !(0...AudioFeatureSource.maximumLFOIndex).contains(index) {
+            throw .lfoIndexOutOfRange(id, index)   // MOD-007
+        }
         guard binding.inputMinimum.isFinite, binding.inputMaximum.isFinite, binding.inputMinimum < binding.inputMaximum else {
             throw .invalidInputRange(id)
         }

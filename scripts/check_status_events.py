@@ -38,6 +38,9 @@ CHECKED = [
     "Views/PresetTagsView.swift",                      # PRE-003-R12: tag edits announce through the announcer
     "Views/PresetTagChips.swift",                      # PRE-003-R12: chip counts announce through the announcer
     "Coordinators/PresetCoordinator+Tags.swift",       # PRE-003-R12
+    "Coordinators/RecentPresetsCoordinator.swift",     # PRE-006-R6: history changes announce through the announcer
+    "Views/RecentPresetsView.swift",                   # PRE-006-R6
+    "Views/RecentHistorySection.swift",                # PRE-006-R6
     "Coordinators/MIDIMappingCoordinator.swift",       # MIDI-003-R11: learn announces through the announcer
     "Coordinators/MIDIMappingCoordinator+Notes.swift", # MIDI-006-R9: note learn announces through the announcer
     "Coordinators/MIDINoteActionPerformer.swift",      # MIDI-006-R9: triggers add no announcement of their own
@@ -60,6 +63,8 @@ CHECKED = [
     "Views/LogoSection.swift",
     "Views/RecordingAudioSection.swift",  # REC-004-R9: recording audio announces through the router (X9a, X9b)
     "Coordinators/RecordingAudioSetting.swift",
+    "Views/RecordingQualitySection.swift",  # REC-005-R6: the fallback announces through the router (X9c)
+    "Coordinators/RecordingQualitySetting.swift",
     "Views/SceneFoldersView.swift",  # SCN-004-R13: folder edits announce on the library lane
     "Views/EffectChainView.swift",  # FX-020-R9: moves and presets announce through the announcer
     "Views/SceneTagsView.swift",  # SCN-005-R13: tag edits announce on the library lane
