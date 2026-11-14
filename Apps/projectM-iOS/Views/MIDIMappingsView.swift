@@ -1,6 +1,7 @@
 // MIDIMappingsView.swift — the MIDI Mappings screen (MIDI-003-R10, R11; contracts/midi-learn.md L2, L4).
 // Opened from the MIDI section in Settings: a status line (with Cancel while learning), one row per learnable
-// parameter with its control, Learn and Delete, and a one-step Undo. Small views so each body stays under CI's
+// parameter with its control, Learn and Delete, and a one-step Undo. MIDI-004-R7: under each mapped parameter a
+// "Curve" row shows the curve summary and opens `MIDIMappingOptionsView`. Small views so each body stays under CI's
 // type-check budget. No animation; announcements come from the coordinator through the shared announcer.
 import ParameterGraph
 import PerformanceControl
@@ -64,6 +65,9 @@ private struct MIDIMappingsRowsSection: View {
                 MIDIMappingRowView(row: row, canLearn: mappings.canLearn,
                                    learn: { () -> Void in mappings.startLearning(row.parameter) },
                                    delete: { () -> Void in mappings.deleteMapping(row.parameter) })
+                if let summary = row.curveSummary {
+                    MIDIMappingCurveRow(mappings: mappings, row: row, summary: summary)
+                }
             }
         }
     }
@@ -93,5 +97,23 @@ private struct MIDIMappingRowView: View {
                     .accessibilityIdentifier("midiDelete." + row.id)
             }
         }
+    }
+}
+
+/// MIDI-004-R7: "Curve  Ease in, inverted" → the mapping's options screen.
+private struct MIDIMappingCurveRow: View {
+    var mappings: MIDIMappingCoordinator
+    let row: MIDIMappingRow
+    let summary: String
+
+    var body: some View {
+        NavigationLink {
+            MIDIMappingOptionsView(mappings: mappings, parameter: row.parameter, name: row.name)
+        } label: {
+            LabeledContent("Curve", value: summary)
+        }
+        .accessibilityLabel(row.name + " curve")
+        .accessibilityValue(row.curveUnreadable ? summary + ". " + MIDIMappingCoordinator.unreadableCurveText : summary)
+        .accessibilityIdentifier("midiCurve." + row.id)
     }
 }

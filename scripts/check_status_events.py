@@ -37,6 +37,7 @@ CHECKED = [
     "Views/MIDIMonitorView.swift",                     # MIDI-002-R10
     "Coordinators/MIDIMappingCoordinator.swift",       # MIDI-003-R11: learn announces through the announcer
     "Views/MIDIMappingsView.swift",                    # MIDI-003-R11
+    "Views/MIDIMappingOptionsView.swift",              # MIDI-004-R8: curve and Invert announce through the announcer
     "Views/CaptureResultPanels.swift",
     "Views/StatusCaptionView.swift",
     "Views/SceneSwitcherView.swift",   # UIX-002-R9: the switcher announces through the announcer

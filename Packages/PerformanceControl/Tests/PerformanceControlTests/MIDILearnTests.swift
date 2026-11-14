@@ -148,7 +148,7 @@ final class MIDILearnTests: XCTestCase {
 
     func testUnreadableDisallowedDuplicateAndOptionLinesOnLoad() {
         let lines: [String] = [
-            "cc:0:7=test.glow.intensity;curve=log;invert",   // MIDI-004 options are ignored
+            "cc:0:7=test.glow.intensity;curve=log;invert",   // MIDI-004: unreadable curve and unknown segment kept
             "cc:16:7=test.glow.radius", "cc:0:120=test.glow.radius", "note:0:60=test.glow.radius",
             "cc:0:8=", "garbage", "cc:0:x=test.glow.radius", "cc:1:8=test.unknown",
             "cc:0:7=test.glow.radius",                       // the control is already bound
@@ -156,7 +156,7 @@ final class MIDILearnTests: XCTestCase {
             "cc:3:10=test.glow.radius",
         ]
         let list = MIDIBindingList(storageLines: lines, allowedTargets: [Self.intensity, Self.radius])
-        XCTAssertEqual(list.storageLines, ["cc:0:7=test.glow.intensity", "cc:3:10=test.glow.radius"])
+        XCTAssertEqual(list.storageLines, ["cc:0:7=test.glow.intensity;curve=log;invert", "cc:3:10=test.glow.radius"])
         let many: [String] = (0..<100).map { (index: Int) -> String in "cc:0:" + String(index) + "=test.p" + String(index) }
         let allowed: Set<ParameterID> = Set((0..<100).map { (index: Int) -> ParameterID in ParameterID("test.p" + String(index)) })
         XCTAssertEqual(MIDIBindingList(storageLines: many, allowedTargets: allowed).count, MIDIBindingList.capacity)
