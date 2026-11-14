@@ -12,6 +12,9 @@
 //   `LayerStack` value (CPU) that `Compositor.apply` takes between frames (ADR-0013 amendment).
 //   PERF-004 (specs/052-perf-004-texture-pool) adds the `TexturePool` the compositor takes its pictures
 //   from: plain-Swift bookkeeping (`TexturePoolCore`, Linux-testable) and a locked Metal wrapper.
+//   CMP-013 (specs/113-cmp-013-render-caching, ADR-0040) adds render caching: the plain-Swift dependency and
+//   key model (`LayerRenderCache.swift`, Linux-testable) and, in the compositor, reuse of unchanged layer
+//   pictures and of an unchanged composite; the photo and text layers declare their dependencies.
 // * `SpectrumLayers` adapts the native spectra (VIS-001, VIS-002, FX-001 glow) to the contract.
 // * `CameraLayer` (CAM-001, ADR-0017) draws the newest picture of a `CameraFrameProvider` (a stub,
 //   or the iOS `AVCaptureSession` provider) as a layer. Its feed states and geometry are plain Swift
