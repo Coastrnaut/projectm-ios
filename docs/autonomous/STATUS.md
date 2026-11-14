@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T05:28:08Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T05:33:54Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,18 +10,19 @@
 | State | Features |
 |---|---|
 | audited | 211 |
-| implementing | 3 |
+| implementing | 2 |
+| unit_passed | 1 |
 | integrated | 111 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 4 | 1 | 81 | 1 |
-| P1 | 121 | 2 | 28 | 0 |
-| P2 | 77 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 4 | 0 | 1 | 81 | 1 |
+| P1 | 121 | 2 | 0 | 28 | 0 |
+| P2 | 77 | 0 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -180,6 +181,12 @@ None.
 - `python3 scripts/validate_docs.py`: pass at `a356ef676c45` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-006/20261113T233346/docs.log`)
 - `swift test --package-path Packages/CaptureUI`: pass at `a356ef676c45` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-006/20261113T233346/swift-test_CaptureUI.log`)
 - `post-merge in 3 batches: projectM-iOSTests 430 + AccessibilityScreens 7 + DynamicTypeInspector 30, all pass; inspector tests 14-103 s each (over the 30 s budget; shortening in chore/ui-test-budget-2)`: pass at `bb1439c7` (log `.autonomous/logs/integration/acc-006/app-tests.log`)
+
+### ACC-011 Captioned status events (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `2b76f6f1015b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-011/20261114T003341/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `2b76f6f1015b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-011/20261114T003341/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `2b76f6f1015b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-011/20261114T003341/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `2b76f6f1015b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-011/20261114T003341/autonomous-tests.log`)
 
 ### ANL-001 Windowed FFT (integrated)
 - `python3 scripts/check_compliance.py`: pass at `0d0eb4b9f656` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-001/20261113T061117/compliance.log`)
