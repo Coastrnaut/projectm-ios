@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (device task AUD-015-T13 open)
 
 **Input**: User description: "Implement AUD-015 (Background playback policy) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md line 102. Observable behavior, verbatim: "Document and enforce

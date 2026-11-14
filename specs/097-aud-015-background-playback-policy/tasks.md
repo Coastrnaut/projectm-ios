@@ -56,10 +56,13 @@ person.
   (R5, R6, R7, R10). Evidence: T04 and the full CaptureKit suite pass. — Verified 2026-11-14: `swift test --package-path
   Packages/CaptureKit` 471 tests (454 + 17), 0 failures, 38.6 s; `BackgroundPolicyManagerTests` 12
   tests in 0.07 s; every pre-existing lifecycle, interruption and user-pause test unchanged.
-- [ ] AUD-015-T06 [US1] Update `Apps/projectM-iOS/Tests/LifecycleCoordinatorTests.swift`
+- [X] AUD-015-T06 [US1] Update `Apps/projectM-iOS/Tests/LifecycleCoordinatorTests.swift`
   `testUnlockWhileStillInTheBackgroundResumesNothing`: the microphone is no longer resumed by an
   unlock in the background (0 resumes), and is resumed once on foreground. Evidence: app unit test
-  passes.
+  passes. — Verified 2026-11-14: passes on the private iOS 27.2 simulator. The first run also
+  failed `testAVisualizationStartedWhileSuspendedResumesOnForeground` (a start while backgrounded
+  now holds Paused, R6, by design); updated to assert Paused, then Waiting on the return. Rerun:
+  `projectM-iOSTests` 423 tests, 0 failures (14.9 s; .build/scratch/aud015-xcodebuild-unit.log).
 
 ## Phase 4: User Story 2 - In-App Playback pauses and comes back (P1)
 
@@ -70,14 +73,16 @@ person.
   interruption stays on hold on return; the notice is cleared by a user pause and by `resume()`
   (S3, R7, R10). — Verified 2026-11-14: 5 In-App Playback tests in `BackgroundPolicyManagerTests`
   pass (same run as T05).
-- [ ] AUD-015-T08 [US2] Wire the app: `Apps/projectM-iOS/Coordinators/AppCoordinator.swift` sets
+- [X] AUD-015-T08 [US2] Wire the app: `Apps/projectM-iOS/Coordinators/AppCoordinator.swift` sets
   `manager.backgroundConfiguration` from `Bundle.main` `UIBackgroundModes` and keep = false
   (R3); exposes `visibleBackgroundNotice` (nil while away or while a stop/pause reason shows).
   `Apps/projectM-iOS/Views/VisualizerView.swift` shows the notice (identifiers `backgroundNotice`,
   `backgroundNoticeText`, `backgroundNoticeDismiss`), clears it after 8 s, announces it once
   (R7). Unit tests in `Apps/projectM-iOS/Tests/BackgroundPolicyAppTests.swift`: the shipped
   Info.plist declares no `audio` mode and the configuration is (false, false); the notice is
-  hidden while away and while a reason shows.
+  hidden while away and while a reason shows. — Verified 2026-11-14: `BackgroundPolicyAppTests` configuration and notice
+  tests pass (3); the shipped app's `UIBackgroundModes` is `["screen-capture"]`; the notice view is
+  exercised by T11. The VoiceOver announcement is not asserted by a test.
 
 ## Phase 5: User Story 3 - System/App Capture follows the system (P2)
 
@@ -89,29 +94,38 @@ person.
 
 ## Phase 6: User Story 4 - Rendering stops while away (P2)
 
-- [ ] AUD-015-T10 [P] [US4] Test in `Apps/projectM-iOS/Tests/BackgroundPolicyAppTests.swift`
+- [X] AUD-015-T10 [P] [US4] Test in `Apps/projectM-iOS/Tests/BackgroundPolicyAppTests.swift`
   through `LifecycleCoordinator`: in every mode, background and lock suspend the visualization and
   every registered presentation resource; an unlock in the background resumes neither the
-  resources nor the microphone (R8).
+  resources nor the microphone (R8). — Verified 2026-11-14: 2 tests in `BackgroundPolicyAppTests` pass (same run
+  as T06).
 
 ## Phase 7: UI test and polish
 
-- [ ] AUD-015-T11 Write `Apps/projectM-iOS/UITests/BackgroundPolicyUITests.swift`: import a tone,
+- [X] AUD-015-T11 Write `Apps/projectM-iOS/UITests/BackgroundPolicyUITests.swift`: import a tone,
   play it as In-App Playback, `XCUIDevice.shared.press(.home)`, `app.activate()`; the indicator
   returns to "In-App Playback · Active audio" and `backgroundNoticeText` reads "Playback paused
-  while projectM-iOS was in the background." (S4). Under 30 s.
-- [ ] AUD-015-T12 Documentation: `docs/privacy-policy.md` section "When the app is in the
+  while projectM-iOS was in the background." (S4). Under 30 s. — Verified 2026-11-14: passes in 13.0 s on the private iOS 27.2
+  simulator, with StatusUITests (8), InterruptionUITests (3), SessionRecoveryUITests (3) and
+  SourceSwitchUITests (1): 16 UI tests, 0 failures (.build/scratch/aud015-xcodebuild-test.log).
+  Simulator only, never device evidence.
+- [X] AUD-015-T12 Documentation: `docs/privacy-policy.md` section "When the app is in the
   background"; `docs/adr/<next free number>-background-playback-policy.md` (0036 if still free at
   commit time; never 0015, 0016, 0025, 0026, 0031); data-model lifecycle matrix note in
   `specs/001-ios-projectm-visualizer/data-model.md`; keep `check_permission_catalog.py` passing
-  (R9).
+  (R9). — Verified 2026-11-14: privacy policy section added; ADR-0036 and its README row;
+  matrix note in feature 001's data model; `check_permission_catalog.py` OK, `validate_docs.py` OK.
 - [ ] AUD-015-T13 {device} On D1, per source (Microphone, In-App Playback, System/App Capture): Home
   and return, lock and unlock into the app, lock then unlock onto the Home Screen then open the
   app; record the export; check against the contract (S6).
-- [ ] AUD-015-T14 Final checks: CaptureKit suite, the app unit tests and the UI tests named in the
+- [X] AUD-015-T14 Final checks: CaptureKit suite, the app unit tests and the UI tests named in the
   brief (`projectM-iOSTests`, StatusUITests, InterruptionUITests, SessionRecoveryUITests,
   SourceSwitchUITests, BackgroundPolicyUITests), the five scripts, `check_privacy_manifest.py` on
-  the Debug app; PosterBoard count after.
+  the Debug app; PosterBoard count after. — Verified 2026-11-14: CaptureKit 471 tests 0 failures (38.6 s); app unit
+  423, 0 failures; the 16 UI tests above pass; `check_compliance`, `validate_docs`,
+  `check_motion_policy`, `check_permission_catalog` OK; `test_scripts.py` 147 OK (1 skipped);
+  `check_privacy_manifest.py` OK on the Debug simulator app; PosterBoard reports 25 before and
+  after; the private simulator was deleted. Linux package tests not run on this host (pending CI).
 
 ## Dependencies
 
