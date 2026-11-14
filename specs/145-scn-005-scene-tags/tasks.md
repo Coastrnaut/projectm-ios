@@ -8,15 +8,15 @@ rule 7): unit tests about 1-2 s, package suites under 1 minute, the UI test unde
 
 ## Phase 1: Setup
 
-- [ ] SCN-005-T01 Create the feature's own simulator "SCN5 iPhone 17" (iOS 27.2), `xcodegen generate`, keep the `Build` link, and count PosterBoard reports before any run.
+- [X] SCN-005-T01 Create the feature's own simulator "SCN5 iPhone 17" (iOS 27.2), `xcodegen generate`, keep the `Build` link, and count PosterBoard reports before any run. — Verified 2026-11-14: simulator SCN5 (7F7D552A) created on iOS 27.2, `xcodegen generate`, `Build` link present, preset submodules initialized, PosterBoard reports 25 before.
 
 ## Phase 2: Foundational (model and file format; blocks every story)
 
-- [ ] SCN-005-T02 Implement `SceneTagMap` and `SceneTagError` in `Packages/ShowControl/Sources/ShowControl/SceneTags.swift`: tags "trimmed, 1-40 characters, one line"; "≤ 16 per scene"; "≤ 256 distinct per show"; folded identity (SCN-004 fold); existing spelling adopted; each scene's tags sorted by (fold, text); `add`, `remove`, `copyTags`, `vocabulary`, `count(of:)`, `matches(sceneID:all:)`, `prune(keepingScenes:)`, `repaired` (research SCN-005-D2, D3; contract T3).
-- [ ] SCN-005-T03 Add `tags` to `ShowCueList` with `addTag`, `removeTag`, `copyTags` (refuse a scene no cue refers to) in `Packages/ShowControl/Sources/ShowControl/ShowCueList.swift`.
-- [ ] SCN-005-T04 Encode and decode the optional `sceneTags` key (written only when non-empty after pruning; lenient decoding; `ShowDecodeWarning.droppedTags(n)`) in `Packages/ShowControl/Sources/ShowControl/ShowDocument.swift` (research SCN-005-D4; contract T1, T2).
-- [ ] SCN-005-T05 [P] Package tests for the tag rules (trim, folding and dedup, adopted spelling, limits 40 / 16 / 256, remove, vocabulary, AND matching) in `Packages/ShowControl/Tests/ShowControlTests/SceneTagMapTests.swift`.
-- [ ] SCN-005-T06 [P] Package tests for the file format in `Packages/ShowControl/Tests/ShowControlTests/ShowTagDocumentTests.swift`: round trip, determinism, a legacy file without `sceneTags` re-encoding byte for byte, damaged data repaired with a warning (unknown scene, bad tag, duplicate, over limit, non-object), a `ShowStore` save → reload keeping tags, and FILE-004 `installImportedScenes` keeping existing tags.
+- [X] SCN-005-T02 Implement `SceneTagMap` and `SceneTagError` in `Packages/ShowControl/Sources/ShowControl/SceneTags.swift`: tags "trimmed, 1-40 characters, one line"; "≤ 16 per scene"; "≤ 256 distinct per show"; folded identity (SCN-004 fold); existing spelling adopted; each scene's tags sorted by (fold, text); `add`, `remove`, `copyTags`, `vocabulary`, `count(of:)`, `matches(sceneID:all:)`, `prune(keepingScenes:)`, `repaired` (research SCN-005-D2, D3; contract T3). — Verified 2026-11-14: `swift test --package-path Packages/ShowControl` (SceneTagMapTests 5/5).
+- [X] SCN-005-T03 Add `tags` to `ShowCueList` with `addTag`, `removeTag`, `copyTags` (refuse a scene no cue refers to) in `Packages/ShowControl/Sources/ShowControl/ShowCueList.swift`. — Verified 2026-11-14: ShowTagDocumentTests.testTaggingASceneThatNoCueShowsIsRefused and testTagsOfScenesNoCueShowsAreNotWritten.
+- [X] SCN-005-T04 Encode and decode the optional `sceneTags` key (written only when non-empty after pruning; lenient decoding; `ShowDecodeWarning.droppedTags(n)`) in `Packages/ShowControl/Sources/ShowControl/ShowDocument.swift` (research SCN-005-D4; contract T1, T2). — Verified 2026-11-14: ShowTagDocumentTests 6/6 (round trip, legacy bytes, repair warning).
+- [X] SCN-005-T05 [P] Package tests for the tag rules (trim, folding and dedup, adopted spelling, limits 40 / 16 / 256, remove, vocabulary, AND matching) in `Packages/ShowControl/Tests/ShowControlTests/SceneTagMapTests.swift`. — Verified 2026-11-14: SceneTagMapTests 5 tests pass in 0.01 s.
+- [X] SCN-005-T06 [P] Package tests for the file format in `Packages/ShowControl/Tests/ShowControlTests/ShowTagDocumentTests.swift`: round trip, determinism, a legacy file without `sceneTags` re-encoding byte for byte, damaged data repaired with a warning (unknown scene, bad tag, duplicate, over limit, non-object), a `ShowStore` save → reload keeping tags, and FILE-004 `installImportedScenes` keeping existing tags. — Verified 2026-11-14: ShowTagDocumentTests 6 tests pass; ShowControl 67/67 in 1.1 s.
 
 ## Phase 3: User Story 1 — tag scenes and filter by tag (P1, MVP)
 
@@ -35,7 +35,7 @@ rule 7): unit tests about 1-2 s, package suites under 1 minute, the UI test unde
 
 ## Phase 5: User Story 3 — backup and older files (P2)
 
-- [ ] SCN-005-T14 [P] [US3] Backup round trip in `Packages/LibraryBackup/Tests/LibraryBackupTests/LibraryBackupSceneTagTests.swift`: backup, exact restore into a fresh sandbox, same tags and same `show.json` bytes.
+- [X] SCN-005-T14 [P] [US3] Backup round trip in `Packages/LibraryBackup/Tests/LibraryBackupTests/LibraryBackupSceneTagTests.swift`: backup, exact restore into a fresh sandbox, same tags and same `show.json` bytes. — Verified 2026-11-14: `swift test --package-path Packages/LibraryBackup --filter LibraryBackupScene` 2/2 (tags and SCN-004 folders) in 0.07 s.
 
 ## Phase 6: Polish
 

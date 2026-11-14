@@ -37,6 +37,9 @@ public enum ShowDecodeWarning: Sendable, Hashable {
     case droppedFolders(Int)
     /// SCN-004: scene-folder assignments to an unknown folder or a scene no cue shows were left out.
     case droppedFolderAssignments(Int)
+    /// SCN-005: tags or `sceneTags` entries that broke a rule (unknown scene, invalid or repeated
+    /// tag, over a limit, not a list of strings) were left out.
+    case droppedTags(Int)
 }
 
 public struct ShowDecodeResult: Sendable {
@@ -70,6 +73,10 @@ extension ShowCueList {
             for (scene, folder) in tree.assignments { map[scene] = folder.uuidString }
             file.sceneFolders = map
         }
+        // SCN-005 (contract T1): written only when a scene the cues show has tags.
+        var tagMap = tags
+        tagMap.prune(keepingScenes: Set(sceneIDs))
+        if !tagMap.isEmpty { file.sceneTags = tagMap.tags.mapValues { (list: [String]) -> LenientTags in .tags(list) } }
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
         // Encoding plain strings, ints and arrays cannot fail.
@@ -111,6 +118,14 @@ extension ShowCueList {
                 list.folders = repaired.tree
                 if repaired.droppedFolders > 0 { warnings.append(.droppedFolders(repaired.droppedFolders)) }
                 if repaired.droppedAssignments > 0 { warnings.append(.droppedFolderAssignments(repaired.droppedAssignments)) }
+            }
+            if let stored = file.sceneTags {   // SCN-005 (contract T2)
+                let raw: [String: [String]?] = stored.mapValues { (value: LenientTags) -> [String]? in value.list }
+                let repaired = SceneTagMap.repaired(raw, sceneIDs: Set(list.sceneIDs))
+                list.tags = repaired.map
+                if repaired.dropped > 0 { warnings.append(.droppedTags(repaired.dropped)) }
+            } else if file.sceneTagsUnreadable {
+                warnings.append(.droppedTags(1))
             }
             return ShowDecodeResult(list: list, warnings: warnings)
         } catch {
@@ -162,6 +177,42 @@ private struct ShowFileV1: Codable {
     var folders: [Folder]? = nil
     /// SCN-004, optional: scene ID → folder ID; absent = every scene at the top level.
     var sceneFolders: [String: String]? = nil
+    /// SCN-005, optional: scene ID → tags; absent = no tags. Read leniently (contract T2).
+    var sceneTags: [String: LenientTags]? = nil
+    /// SCN-005: `sceneTags` was present but not an object (decoding only).
+    var sceneTagsUnreadable = false
+
+    enum CodingKeys: String, CodingKey {
+        case format, version, id, name, cues, position, folders, sceneFolders, sceneTags
+    }
+
+    init(format: String, version: Int, id: String, name: String, cues: [Cue], position: String?) {
+        self.format = format
+        self.version = version
+        self.id = id
+        self.name = name
+        self.cues = cues
+        self.position = position
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        format = try container.decode(String.self, forKey: .format)
+        version = try container.decode(Int.self, forKey: .version)
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        cues = try container.decode([Cue].self, forKey: .cues)
+        position = try container.decodeIfPresent(String.self, forKey: .position)
+        folders = try container.decodeIfPresent([Folder].self, forKey: .folders)
+        sceneFolders = try container.decodeIfPresent([String: String].self, forKey: .sceneFolders)
+        if container.contains(.sceneTags), try !container.decodeNil(forKey: .sceneTags) {
+            if let map = try? container.decode([String: LenientTags].self, forKey: .sceneTags) {
+                sceneTags = map
+            } else {
+                sceneTagsUnreadable = true
+            }
+        }
+    }
 
     // `position` is written as null at Standby (the synthesized encoder would leave it out).
     func encode(to encoder: any Encoder) throws {
@@ -174,5 +225,27 @@ private struct ShowFileV1: Codable {
         try container.encode(position, forKey: .position)
         try container.encodeIfPresent(folders, forKey: .folders)
         try container.encodeIfPresent(sceneFolders, forKey: .sceneFolders)
+        try container.encodeIfPresent(sceneTags, forKey: .sceneTags)
+    }
+}
+
+/// SCN-005: one `sceneTags` value, read leniently: a list of strings, or anything else (dropped).
+private enum LenientTags: Codable {
+    case tags([String])
+    case other
+
+    var list: [String]? {
+        if case let .tags(list) = self { return list }
+        return nil
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let list = try? container.decode([String].self) { self = .tags(list) } else { self = .other }
+    }
+
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(list ?? [])
     }
 }
