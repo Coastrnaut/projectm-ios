@@ -215,13 +215,13 @@ final class PresetThumbnailRunner: PresetThumbnailDrawing, @unchecked Sendable {
             engine.setFrameTime(Double(index) / Self.frameRate)   // PRE-005: a pinned clock
             engine.renderFrame(toFramebuffer: framebuffer)
             if wanted.contains(index) {
-                guard let sample = readBack(framebuffer, width: width, height: height) else {
+                guard let sample = Self.readBack(framebuffer, width: width, height: height) else {
                     return refused(.unavailable("The thumbnail could not be read back."))
                 }
                 samples.append(sample)
             }
         }
-        guard let picture = readBack(framebuffer, width: width, height: height) else {
+        guard let picture = Self.readBack(framebuffer, width: width, height: height) else {
             return refused(.unavailable("The thumbnail could not be read back."))
         }
         return PresetThumbnailSampleResult(picture: .pixels(picture), samples: samples)
@@ -231,7 +231,7 @@ final class PresetThumbnailRunner: PresetThumbnailDrawing, @unchecked Sendable {
     static let frameRate = 60.0
 
     /// Waits for the GPU and reads the framebuffer back as RGBA rows, top row first.
-    private func readBack(_ framebuffer: UInt32, width: Int, height: Int) -> Data? {
+    static func readBack(_ framebuffer: UInt32, width: Int, height: Int) -> Data? {
         PMANGLEFinish()
         PMANGLEBindFramebuffer(framebuffer)
         let rowBytes = width * 4

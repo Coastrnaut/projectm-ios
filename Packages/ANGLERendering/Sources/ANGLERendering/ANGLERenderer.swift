@@ -135,6 +135,11 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     /// PRE-001: the browser's thumbnails, drawn on their own thread, context and engine.
     let thumbnailRunner: PresetThumbnailRunner
     public var presetThumbnails: (any PresetThumbnailDrawing)? { thumbnailRunner }
+    /// PRE-009: the Compare sheet's two lockstep previews, on their own thread, contexts and engines.
+    let comparisonRunner: PresetComparisonRunner
+    public var presetComparison: (any PresetComparing)? { comparisonRunner }
+    /// PRE-009-D1: the attached reader; the comparison reads it on the main thread while this renderer is paused.
+    public var sharedPCMReader: (any NormalizedPCMReader)? { reader }
 
     /// PERF-014-R2: projectM's render health record; `onRenderHealthChange` hears every update.
     public private(set) var health = RenderHealth()
@@ -163,6 +168,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
                                         delay: .milliseconds(Int(presetBlendSeconds * 1000) + 500))
         trialRunner = PresetTrialRunner(display: display, config: config)
         thumbnailRunner = PresetThumbnailRunner(display: display, config: config)
+        comparisonRunner = PresetComparisonRunner(display: display, config: config)
         super.init()
         layerView.onLayout = { [weak self] in self?.layoutSurface() }
         layerView.onWindowChange = { [weak self] inWindow in
@@ -206,6 +212,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     isolated deinit {
         trialRunner.setSuspended(true)   // no new trial; a running one stops at its next safe point
         thumbnailRunner.setSuspended(true)   // PRE-001: likewise for a thumbnail
+        comparisonRunner.setSuspended(true)   // PRE-009: and a comparison
         warmUp.shutdown()
         displayLink?.invalidate()
         for observer in observers { NotificationCenter.default.removeObserver(observer) }
@@ -254,6 +261,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
         engine.setTextureSearchPaths(texturePaths)
         trialRunner.setTexturePaths(texturePaths)
         thumbnailRunner.setTexturePaths(texturePaths)
+        comparisonRunner.setTexturePaths(texturePaths)
     }
 
     public func prewarm(_ presets: [Preset]) {
@@ -505,6 +513,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
         cancelFrameCapture()   // REC-001-R14: no frame until presentation returns
         trialRunner.setSuspended(true)   // PRE-012: no off-screen trial without presentation either
         thumbnailRunner.setSuspended(true)   // PRE-001: nor a thumbnail
+        comparisonRunner.setSuspended(true)   // PRE-009: nor a comparison
         stopDisplayLink()
         eglMakeCurrent(display, placeholder, placeholder, context)
         if let flashLimiter {
@@ -523,6 +532,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
         presentationSuspended = false
         trialRunner.setSuspended(false)
         thumbnailRunner.setSuspended(false)
+        comparisonRunner.setSuspended(false)
         resetPresentationHealth()
         layoutSurface()
         if inWindow { startDisplayLink() }
