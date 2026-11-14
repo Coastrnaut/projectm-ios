@@ -152,7 +152,8 @@ actually shown, and the sensory safety profile and Reduce flashing shorten the t
 - The first frame after Trails are turned on shows the picture only (there is no previous frame yet).
 - Turning Trails off returns the held picture memory; turning them on again starts clean.
 - A size change (rotation, external display, split view) or an output colour format change starts clean.
-- A long gap between frames (a stall, a pause and resume) fades more per frame, by the elapsed time; a resumed
+- A long gap between frames (a stall) fades more per frame, by the elapsed time up to the frame clock's 0.1 s
+  clamp (CMP-001); a resumed
   frame loop (after a pause or the app returning) starts clean (it is a new scene for the flash guard as well).
 - NaN or infinite picture values are not kept by the trails (they never spread into later frames).
 - Transparent areas stay transparent once the trails have faded.
@@ -191,7 +192,8 @@ actually shown, and the sensory safety profile and Reduce flashing shorten the t
   defaults and step hints.
 - **FX-009-R11**: The two values are saved on the device, restored at launch, included in library backups, erased
   with the other settings, checked on read, and removed by the UI-test reset.
-- **FX-009-R12**: The render cache never reuses a stored composite while Trails are on.
+- **FX-009-R12**: The render cache never reuses a stored composite while Trails are active; layer pictures may still
+  be reused.
 - **FX-009-R13**: A plain-software reference of the decay and the blend exists, testable without a GPU (Linux), and
   the GPU output matches it.
 

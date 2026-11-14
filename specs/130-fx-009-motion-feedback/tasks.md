@@ -85,7 +85,8 @@ finish. Logs go to `.autonomous/logs-fx-009/`.
 - [ ] FX-009-T15 App tests: `Apps/projectM-iOS/Tests/MotionFeedbackSettingTests.swift` (persistence, read rule,
   caps, readout, spoken value, the coordinator pushing the effective value and resetting history) and the backup /
   erase key tests (`LibraryBackupAppTests`, `LibraryEraseAppTests`); `Apps/projectM-iOS/UITests/TrailsUITests.swift`
-  (toggle on shows the Length slider, value survives relaunch).
+  (toggle on shows the Length slider, value survives relaunch). FILE-011's Settings erase category derives from
+  `LibrarySettingsPolicy.includedKeys`, so `LibraryEraseAppTests` must list `MotionFeedbackSetting.allKeys` too.
 
 ## Phase 8: Polish
 
