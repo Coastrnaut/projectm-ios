@@ -69,6 +69,31 @@ human interaction); each answer is the conservative, local-first option.
   work for one layer), and a cut is one transition the flash guard already limits. With Reduce
   Motion there is therefore nothing to reduce: every change is a cut either way (MED-006-R8).
 
+### Session 2026-11-14 (speckit-clarify)
+
+Five questions, each answered by Claude with the recommended option (owner rules 4 and 9).
+
+- Q: Which slide shows first, and what happens to the shown slide when the list is edited? → A: The
+  first slide of the saved order whenever the Photo visual is created or Slideshow is turned on (the
+  position is not saved). Reordering keeps the shown picture on screen (the position follows it);
+  removing the shown picture shows the one that took its place at once; adding pictures changes
+  nothing on screen (MED-006-R3).
+- Q: What happens to the running timer when the mode, seconds or beats change? → A: The shown slide
+  stays; its slide time and beat count restart from the change, so a settings edit never causes an
+  immediate change (MED-006-R4, R5).
+- Q: Which slideshow edits are scene edits (autosave and undo)? → A: On/off, order, mode, seconds
+  and beats are part of the scene and each change is one undo step (the seconds slider coalesces like
+  other sliders); adding and removing pictures change stored files, so they are not undone (like the
+  MED-001 photo), and an undo can only reorder pictures that are still stored (MED-006-R12).
+- Q: What does a slide whose copy cannot be loaded do? → A: Identifiers that no longer resolve are
+  dropped from the list when it is read; a copy that resolves but fails to decode shows the
+  transparent fallback until the next scheduled change (no notice per slide; the safety floor still
+  applies), so one damaged picture never stops the slideshow (MED-006-R3).
+- Q: How do UI tests seed a slideshow without the system pickers? → A: DEBUG only, `-uitestSeedPhoto
+  slideshow5` imports five solid-colour 64 × 48 pictures (red, green, blue, yellow, magenta) through
+  the real slide import, turns Slideshow on in Time mode at 2 s, and the probe `slideshowProbe` reads
+  "<shown index> changes=<n>" (MED-006-R15).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Cycle several pictures on a timer (Priority: P1)
@@ -185,9 +210,14 @@ key and the folder.
 - **MED-006-R2**: The user MUST be able to reorder, remove one, and clear all slides; removing or
   clearing MUST release the slides' references (a payload no other reference shares is deleted).
 - **MED-006-R3**: With Slideshow on and at least one slide, the Photo visual MUST show the slides in
-  the saved order, wrapping after the last; with it off or empty, MED-001's single photo shows.
+  the saved order, wrapping after the last, starting from the first slide whenever the visual is
+  created or Slideshow is turned on; reordering keeps the shown picture, removing it shows its
+  successor at once; a slide that fails to decode shows the transparent fallback until the next
+  change; with Slideshow off or empty, MED-001's single photo shows.
 - **MED-006-R4**: In Time mode a slide MUST stay for the chosen seconds (2…60, whole seconds) of
-  shown time; slide time MUST accumulate only while the visual runs, ignoring steps over 1 s or ≤ 0.
+  shown time; slide time MUST accumulate only while the visual runs, ignoring steps over 1 s or ≤ 0;
+  changing the mode, seconds or beats MUST restart the shown slide's time and beat count without a
+  change.
 - **MED-006-R5**: In Beats mode a slide MUST change on the beat at which N beats (1, 2, 4, 8 or 16)
   have passed since the last change, counting beats of the tempo grid only while the visual runs.
 - **MED-006-R6**: Beats mode MUST use the tempo only when it is stable or manual and has a phase;
@@ -211,7 +241,8 @@ key and the folder.
   an optional field of the photo asset, without a format version change; restoring MUST apply its
   on/off, mode and timing and reorder the stored slides by it (named ones first, in the scene's
   order; others after, unchanged); an absent field MUST turn the slideshow off; a malformed field
-  MUST read as absent; older apps MUST carry it verbatim.
+  MUST read as absent; older apps MUST carry it verbatim. On/off, order, mode, seconds and beats
+  changes MUST each be one undo step; adding or removing pictures MUST NOT be undoable.
 - **MED-006-R13**: Settings → Photo MUST offer a Slideshow area: an on/off switch, the slide list
   with thumbnails (reorder, swipe to delete, VoiceOver actions Move up / Move down / Delete), Add
   from Photos (multiple), Add from Files (multiple), Clear Slideshow, a mode picker, a seconds
@@ -221,8 +252,9 @@ key and the folder.
 - **MED-006-R14**: The slideshow schedule MUST be testable without a graphics device on every
   platform the packages' tests run on (injected clock and beat grid).
 - **MED-006-R15**: DEBUG diagnostics MUST expose the shown slide index and the count of changes, and
-  a DEBUG launch argument MUST seed five solid-colour slides through the real import path, so UI
-  tests can check order without the system pickers.
+  a DEBUG launch argument (`-uitestSeedPhoto slideshow5`) MUST seed five solid-colour slides through
+  the real import path with Slideshow on in Time mode at 2 s, so UI tests can check order without the
+  system pickers.
 
 ### Key Entities
 
