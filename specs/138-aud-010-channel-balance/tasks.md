@@ -42,7 +42,7 @@ Tests are requested by the brief (acceptance, law, availability, persistence, UI
 
 ## Phase 6: Polish
 
-- [ ] AUD-010-T15 Run the repo checks, the type-check budget, `check_privacy_manifest.py` and `check_network_symbols` on the Debug app; record PosterBoard counts; delete the simulator, derived data and the `Build` link
+- [X] AUD-010-T15 Run the repo checks, the type-check budget, `check_privacy_manifest.py` and `check_network_symbols` on the Debug app; record PosterBoard counts; delete the simulator, derived data and the `Build` link — Verified 2026-11-14: check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events, test_scripts (153) OK; check_privacy_manifest OK and check_network_symbols OK on the Debug simulator app; PlaybackBalanceTests 5/5 also on the iOS 27.2 simulator; PosterBoard 25 before, 25 after; simulator, derived data and Build link removed. Type-check: no new function or expression over budget; AppCoordinator.init measured 398 ms without this change at load average ~500 (pre-existing, load-dominated)
 - [ ] AUD-010-T16 {device} On D1 with wired headphones and AirPods: full left silences the right ear, an interruption and a route change keep the balance, the visuals do not change with it
 
 ## Dependencies

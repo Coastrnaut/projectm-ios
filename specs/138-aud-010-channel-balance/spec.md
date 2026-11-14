@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (device task AUD-010-T16 open)
 
 **Input**: User description: "Implement AUD-010 (Channel balance) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md line 97. Observable behavior, verbatim: "Expose independent L/R
