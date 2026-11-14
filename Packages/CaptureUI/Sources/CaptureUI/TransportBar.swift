@@ -82,7 +82,7 @@ public struct TransportBar: View {
         VStack(spacing: 6) {
             Text(title)
                 .font(.subheadline.weight(.semibold))
-                .lineLimit(1)
+                .lineLimit(typeSize.isAccessibilitySize ? 3 : 1)   // ACC-006-R1: a long title wraps at AX sizes
                 .truncationMode(.middle)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityIdentifier("transportTitle")

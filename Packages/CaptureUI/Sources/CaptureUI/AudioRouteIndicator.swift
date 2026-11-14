@@ -8,6 +8,7 @@ import SwiftUI
 public struct AudioRouteIndicator: View {
     let route: AudioRoute
     let context: AudioRouteContext
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     public init(route: AudioRoute, context: AudioRouteContext) {
         self.route = route
@@ -19,7 +20,8 @@ public struct AudioRouteIndicator: View {
             Image(systemName: UIStrings.routeSymbol(route, context: context))
                 .accessibilityHidden(true)
             Text(UIStrings.routeIndicator(route, context: context))
-                .lineLimit(1)
+                // ACC-006-R1: wraps at accessibility sizes instead of losing the route's middle.
+                .lineLimit(typeSize.isAccessibilitySize ? 3 : 1)
                 .truncationMode(.middle)
         }
         .font(.footnote.weight(.semibold))

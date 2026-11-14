@@ -29,7 +29,13 @@ struct ShowEditorView: View {
                 Button {
                     addCurrentScene()
                 } label: {
-                    Label("Add Current Scene", systemImage: "plus.rectangle.on.rectangle")
+                    // ACC-006-R1: icon and title side by side, the title wrapping in its own column. A Label
+                    // in a list row wraps its title under the icon at AX5, which the audit reports as clipped
+                    // text (2026-11-13). The icon is decorative; the button reads "Add Current Scene".
+                    HStack(alignment: .firstTextBaseline, spacing: 12) {
+                        Image(systemName: "plus.rectangle.on.rectangle").accessibilityHidden(true)
+                        Text("Add Current Scene").fixedSize(horizontal: false, vertical: true)
+                    }
                 }
                 .disabled(show.list.cues.count >= ShowCueList.maximumCues)
                 .accessibilityIdentifier("showAddCurrentScene")

@@ -612,30 +612,57 @@ struct VisualizerView: View {
 /// "Restoring output" while the restore waits or fades in.
 struct OutputBlackoutBadge: View {
     let external: ExternalDisplayCoordinator
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
-        let requested = external.isBlackoutRequested
-        HStack(spacing: 10) {
-            Label(requested && external.blackoutPhase == .blackedOut ? "Output blacked out" : "Restoring output",
-                  systemImage: "eye.slash")
-                .font(.footnote.bold())
-                .accessibilityIdentifier("blackoutBadgeText")
-            if external.blackoutPhase.offersRestore {
-                Button("Restore") { external.setBlackout(false) }
-                    .font(.footnote)
-                    .buttonStyle(.borderedProminent)
-                    .keyboardShortcut("b", modifiers: [])   // SHOW-014-R6: B again restores
-
-                    .accessibilityLabel("Restore output")
-                    .accessibilityIdentifier("blackoutRestore")
-            }
+        // ACC-006-R1: label over Restore at accessibility sizes; side by side both were cut to "Out…"
+        // and "Rest…" at AX5 (audit 2026-11-13). A rounded rectangle there, as a capsule clips two rows.
+        // Standard sizes keep the original one-row capsule.
+        if typeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 8) { label; restore }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                .modifier(BadgeAccessibility(external: external))
+        } else {
+            HStack(spacing: 10) { label; restore }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(.regularMaterial, in: Capsule())
+                .modifier(BadgeAccessibility(external: external))
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .background(.regularMaterial, in: Capsule())
-        .accessibilityElement(children: .contain)
-        .accessibilityValue(external.blackoutPhase.accessibilityValue)
-        .accessibilityIdentifier("blackoutBadge")
+    }
+
+    private var label: some View {
+        let requested = external.isBlackoutRequested
+        return Label(requested && external.blackoutPhase == .blackedOut ? "Output blacked out" : "Restoring output",
+                     systemImage: "eye.slash")
+            .font(.footnote.bold())
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityIdentifier("blackoutBadgeText")
+    }
+
+    @ViewBuilder private var restore: some View {
+        if external.blackoutPhase.offersRestore {
+            Button("Restore") { external.setBlackout(false) }
+                .font(.footnote)
+                .buttonStyle(.borderedProminent)
+                .keyboardShortcut("b", modifiers: [])   // SHOW-014-R6: B again restores
+
+                .accessibilityLabel("Restore output")
+                .accessibilityIdentifier("blackoutRestore")
+        }
+    }
+
+    private struct BadgeAccessibility: ViewModifier {
+        let external: ExternalDisplayCoordinator
+
+        func body(content: Content) -> some View {
+            content
+                .accessibilityElement(children: .contain)
+                .accessibilityValue(external.blackoutPhase.accessibilityValue)
+                .accessibilityIdentifier("blackoutBadge")
+        }
     }
 }
 

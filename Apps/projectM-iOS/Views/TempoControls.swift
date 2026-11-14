@@ -13,6 +13,7 @@ import SwiftUI
 struct TempoControls: View {
     let coordinator: AppCoordinator
     var compact = false
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         let tempo = coordinator.tempo
@@ -29,8 +30,10 @@ struct TempoControls: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
+            // ACC-006-R1: one line shrunk to fit at standard sizes; at accessibility sizes the readout
+            // keeps its full size and may wrap (its row stacks, so it has the width).
+            .lineLimit(typeSize.isAccessibilitySize ? nil : 1)
+            .minimumScaleFactor(typeSize.isAccessibilitySize ? 1 : 0.7)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Tempo")
             .accessibilityValue(spoken)

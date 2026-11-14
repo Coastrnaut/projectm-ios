@@ -61,7 +61,9 @@ final class AccessibilityScreensUITests: XCTestCase {
 
     /// Rows at the bottom of the browser home: at the audit's larger text sizes they move below the
     /// visible list, which the audit reports as "partially unsupported". They do scale: see
-    /// `testBrowserRowsScaleWithAccessibilityTextSizes` (ACC-004-T10).
+    /// `testBrowserRowsScaleWithAccessibilityTextSizes` (ACC-004-T10). ACC-006 re-checked (2026-11-13):
+    /// still reported when the screen starts at the default size; a walk that starts at AX3 or AX5
+    /// (DynamicTypeInspectorUITests) reports nothing for these rows, so the filter stays here only.
     nonisolated private static func bottomRows(_ screen: String) -> [AuditFilter] {
         ["Collections", "My Presets", "0"].map { (label: String) -> AuditFilter in
             AuditFilter(screen: screen, type: .dynamicType, element: label,
@@ -92,6 +94,10 @@ final class AccessibilityScreensUITests: XCTestCase {
                            + "passed\"); iOS's Increase Contrast darkens it. An app-wide accent change is left to ACC-003/ACC-008"),
            AuditFilter(screen: "showEditor", type: .contrast, element: "Adds a cue that keeps the visual", labelPrefix: true,
                        reason: "the system section footer style (Apple's secondary grey)"),
+           AuditFilter(screen: "showEditor", type: .dynamicType, element: "Cues",
+                       reason: "the system section header is pushed below the visible list at the audit's larger sizes "
+                           + "(ACC-006 lets \"Add Current Scene\" wrap in its own column, so that row grows), as the "
+                           + "browser's bottom rows are; DynamicTypeInspectorUITests audits the editor at AX3 and AX5"),
            AuditFilter(screen: "showEditor", type: .contrast, element: "Cues",
                        reason: "the system section header style (Apple's secondary grey)")]
         + ["controls", "showRow"].map { (screen: String) -> AuditFilter in

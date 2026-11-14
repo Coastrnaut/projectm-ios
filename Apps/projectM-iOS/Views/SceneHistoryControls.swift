@@ -17,11 +17,13 @@ struct SceneUndoRedoButtons: View {
                 .keyboardShortcut("z", modifiers: .command)
                 .accessibilityLabel(history.undoAccessibilityLabel)
                 .accessibilityIdentifier("sceneUndo")
+                .accessibilityShowsLargeContentViewer()   // ACC-006: a fixed-size bar glyph at AX sizes
             Button { history.redo() } label: { Image(systemName: "arrow.uturn.forward") }
                 .disabled(!history.canRedo)
                 .keyboardShortcut("z", modifiers: [.command, .shift])
                 .accessibilityLabel(history.redoAccessibilityLabel)
                 .accessibilityIdentifier("sceneRedo")
+                .accessibilityShowsLargeContentViewer()
         }
     }
 }

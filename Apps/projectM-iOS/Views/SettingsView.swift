@@ -71,10 +71,17 @@ struct SettingsView: View {
     /// A labeled glow slider; VoiceOver reads the label and the percentage (FR-070).
     private func glowSlider(_ title: String, value: Binding<Double>, range: ClosedRange<Float>, text: String, id: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            HStack {
-                Text(title)
-                Spacer()
-                Text(text).monospacedDigit().foregroundStyle(.secondary)
+            // ACC-006-R1: title and value side by side, or stacked when they do not fit (clipped at AX5).
+            ViewThatFits(in: .horizontal) {
+                HStack {
+                    Text(title)
+                    Spacer()
+                    Text(text).monospacedDigit().foregroundStyle(.secondary)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                    Text(text).monospacedDigit().foregroundStyle(.secondary)
+                }
             }
             .accessibilityHidden(true)
             Slider(value: value, in: Double(range.lowerBound)...Double(range.upperBound)) { (editing: Bool) in
@@ -138,7 +145,7 @@ struct SettingsView: View {
                             Picker("Bars", selection: $settings.circularSpectrumBars) {
                                 ForEach(AppSettings.circularSpectrumBarChoices, id: \.self) { Text("\($0)").tag($0) }
                             }
-                            .pickerStyle(.segmented)
+                            .segmentedUnlessAccessibilitySize()   // ACC-006-R1
                             .accessibilityLabel("Bars")
                             .accessibilityIdentifier("barsPicker")
                         }
@@ -146,13 +153,13 @@ struct SettingsView: View {
                             Picker("Line", selection: $settings.oscilloscopeLine) {
                                 ForEach(OscilloscopeLine.allCases, id: \.self) { Text($0.title).tag($0) }
                             }
-                            .pickerStyle(.segmented)
+                            .segmentedUnlessAccessibilitySize()   // ACC-006-R1
                             .accessibilityLabel("Line")
                             .accessibilityIdentifier("oscilloscopeLinePicker")
                             Picker("Window", selection: $settings.oscilloscopeWindowMilliseconds) {
                                 ForEach(AppSettings.oscilloscopeWindowChoices, id: \.self) { Text("\($0) ms").tag($0) }
                             }
-                            .pickerStyle(.segmented)
+                            .segmentedUnlessAccessibilitySize()   // ACC-006-R1
                             .accessibilityLabel("Window")
                             .accessibilityIdentifier("oscilloscopeWindowPicker")
                         }
@@ -160,13 +167,13 @@ struct SettingsView: View {
                             Picker("Orientation", selection: $settings.linearSpectrumOrientation) {
                                 ForEach(LinearSpectrumOrientation.allCases, id: \.self) { Text($0.title).tag($0) }
                             }
-                            .pickerStyle(.segmented)
+                            .segmentedUnlessAccessibilitySize()   // ACC-006-R1
                             .accessibilityLabel("Orientation")
                             .accessibilityIdentifier("orientationPicker")
                             Picker("Spacing", selection: $settings.linearSpectrumSpacing) {
                                 ForEach(AppSettings.linearSpectrumSpacingChoices, id: \.value) { Text($0.title).tag($0.value) }
                             }
-                            .pickerStyle(.segmented)
+                            .segmentedUnlessAccessibilitySize()   // ACC-006-R1
                             .accessibilityLabel("Spacing")
                             .accessibilityIdentifier("spacingPicker")
                         }
@@ -432,13 +439,13 @@ struct SettingsView: View {
             Picker("Alignment", selection: field(texts, \.alignment)) {
                 ForEach(TextAlignmentChoice.allCases, id: \.self) { Text($0.title).tag($0) }
             }
-            .pickerStyle(.segmented)
+            .segmentedUnlessAccessibilitySize()   // ACC-006-R1
             .accessibilityLabel("Alignment")
             .accessibilityIdentifier("textAlignmentPicker")
             Picker("Position", selection: field(texts, \.verticalPosition)) {
                 ForEach(TextVerticalPosition.allCases, id: \.self) { Text($0.title).tag($0) }
             }
-            .pickerStyle(.segmented)
+            .segmentedUnlessAccessibilitySize()   // ACC-006-R1
             .accessibilityLabel("Position")
             .accessibilityIdentifier("textPositionPicker")
             glowSlider("Outline", value: field(texts, \.outlineWidth),
