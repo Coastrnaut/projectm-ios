@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T16:22:08Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T16:33:15Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,19 +9,20 @@
 
 | State | Features |
 |---|---|
-| audited | 137 |
+| audited | 136 |
 | implementing | 8 |
+| unit_passed | 1 |
 | integrated | 180 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 2 | 0 | 84 | 1 |
-| P1 | 53 | 8 | 90 | 0 |
-| P2 | 73 | 0 | 6 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 84 | 1 |
+| P1 | 52 | 8 | 1 | 90 | 0 |
+| P2 | 73 | 0 | 0 | 6 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -1524,6 +1525,21 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `fbf29467f5cf` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-002/20261114T100519/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `fbf29467f5cf` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-002/20261114T100519/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `fbf29467f5cf` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-002/20261114T100519/swift-test_ShowControl.log`)
+
+### PERF-003 Adaptive effect quality (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `a3c83bc52fa9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-003/20261114T112229/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `a3c83bc52fa9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-003/20261114T112229/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `a3c83bc52fa9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-003/20261114T112229/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `a3c83bc52fa9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-003/20261114T112229/swift-test_Compositor.log`)
+- `swift test --package-path Packages/Diagnostics`: pass at `a3c83bc52fa9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-003/20261114T112229/swift-test_Diagnostics.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `a3c83bc52fa9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-003/20261114T112229/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `a3c83bc52fa9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-003/20261114T112229/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `a3c83bc52fa9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-003/20261114T112229/swift-test_RenderGoldens.log`)
+- `xcodebuild -scheme Rendering-Package -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `a3c83bc52fa9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-003/20261114T112229/sim-test_Rendering.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `a3c83bc52fa9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-003/20261114T112229/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `a3c83bc52fa9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-003/20261114T112229/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `a3c83bc52fa9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-003/20261114T112229/swift-test_ShowControl.log`)
+- `swift test --package-path Packages/VisualGenerators`: pass at `a3c83bc52fa9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-003/20261114T112229/swift-test_VisualGenerators.log`)
 
 ### PERF-004 Texture pool (integrated)
 - `python3 scripts/check_compliance.py`: pass at `b32cc31f34e8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-004/20261113T135753/compliance.log`)
