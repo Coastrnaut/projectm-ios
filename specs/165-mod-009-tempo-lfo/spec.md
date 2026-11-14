@@ -122,7 +122,8 @@ scene round trip and issue paths; an app unit test with a tapped tempo.
   positive); the tempo source itself only reports 60…200.
 - Tempo lost (Reset with no confident estimate): the oscillator continues smoothly at its stored rate.
 - Reduce flashing turned on or off: a synced oscillator continues smoothly at the new effective rate.
-- Time before the origin or a repeated time reads as the last known phase, never as negative time.
+- Time before the origin (or before the current tempo segment's start) reads as the phase at that start,
+  never as negative time; a repeated time reads the same value.
 - A tempo change on the very first frame: the oscillator starts at its stored phase at that tempo.
 - An older app reading a synced oscillator ignores the unknown `sync` field and runs it at its stored rate.
 
@@ -145,7 +146,8 @@ scene round trip and issue paths; an app unit test with a tapped tempo.
 - **MOD-009-R7**: A scene MUST store the sync length in an optional `sync` field of the oscillator entry,
   written only when set, with no format version change; unknown fields stay verbatim.
 - **MOD-009-R8**: A malformed sync field or an unknown length MUST be reported with a warning at its path;
-  the oscillator stays live at its stored rate and the entry is kept for re-save.
+  the oscillator stays live at its stored rate and the entry is kept for re-save. An oscillator already
+  unusable under MOD-007's rules stays unusable (its sync is not examined).
 - **MOD-009-R9**: The app MUST feed the current tempo (MOD-009-R3) to the scene's oscillators every frame.
 - **MOD-009-R10**: The oscillator code MUST stay pure, allocation-free per frame and build on Linux.
 
