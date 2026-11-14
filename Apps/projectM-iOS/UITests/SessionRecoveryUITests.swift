@@ -6,6 +6,11 @@
 // stand-in camera (`-uitestCamera granted`) would report frames if it were started. The DEBUG probe
 // `sessionRecovery` reports the decision, the offer and whether the OSC transport listens. Simulator
 // results are never device evidence; the real crash on D1 is PERF-010-T15. Budget: under 30 s per test.
+// Shortened 2026-11-14 under owner rule 7: T08 picks Camera before turning OSC on (the recorded visual
+// is the one chosen before Camera either way, SceneAutosaveCapture.recordedVisual), so it no longer
+// scrolls back up from the OSC section (six drags); the OSC section is revealed with longer drags
+// (`reveal(long:)`) at the smallest text size (shorter rows); scroll loops stop once their row is visible
+// instead of re-checking it on every remaining iteration. Every assertion is kept.
 import XCTest
 
 @MainActor
@@ -21,7 +26,10 @@ final class SessionRecoveryUITests: XCTestCase {
         XCUIDevice.shared.orientation = .portrait
         app.launchArguments = (reset ? ["-uitestResetNotice"] : [])
             + ["-uitestDiagnostics", "-autostart", "inAppPlayback", "-uitestCamera", "granted",
-               "-uitestSessionRecovery", "-settings.osc.port", Self.port] + Self.noStore
+               "-uitestSessionRecovery", "-settings.osc.port", Self.port,
+               // The smallest text size: shorter Settings rows, so the OSC section is fewer drags down
+               // (owner rule 7, 2026-11-14); recovery does not depend on the text size.
+               "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryXS"] + Self.noStore
         app.launch()
         XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
     }
@@ -63,7 +71,7 @@ final class SessionRecoveryUITests: XCTestCase {
     }
 
     private func toggleOSC() {
-        XCTAssertTrue(app.reveal(oscToggle), "the OSC section is in Settings")
+        XCTAssertTrue(app.reveal(oscToggle, long: true), "the OSC section is in Settings")
         oscToggle.switches.firstMatch.exists ? oscToggle.switches.firstMatch.tap() : oscToggle.tap()
     }
 
@@ -84,15 +92,17 @@ final class SessionRecoveryUITests: XCTestCase {
     func testSimulatedCrashReopensNoListenerOrCameraAndOffersTheScene() {
         launch(reset: true)
         XCTAssertTrue(probe.hasPrefix("decision=clean offer=none"), "fresh start: \(probe)")
-        // One Settings visit: Circular Spectrum, 16 bars, OSC on, then Camera (session only, so the
-        // committed scene records Circular Spectrum); closing Settings commits (SCN-002-R3).
+        // One Settings visit: Circular Spectrum, 16 bars, Camera (session only, so the committed scene
+        // records Circular Spectrum, the visual chosen before it), then OSC on; closing Settings commits
+        // (SCN-002-R3). Camera is picked before OSC, while the visual rows are still on screen, so the
+        // list is not scrolled back up from the OSC section (owner rule 7, 2026-11-14).
         openSettings()
         app.visualRow("Circular Spectrum").tap()
         XCTAssertTrue(bars.appears(within: 5))
         bars.buttons["16"].tap()
-        toggleOSC()
-        app.reveal(app.visualRow("Camera"), down: true)
+        XCTAssertTrue(app.reveal(app.visualRow("Camera")), "the Camera row")
         app.visualRow("Camera").tap()
+        toggleOSC()
         closeSettings()
         XCTAssertTrue(poll(10) { self.autosave.contains("pending=0") && !self.autosave.contains("committed=0") },
                       "the scene is committed: \(autosave)")
@@ -123,7 +133,7 @@ final class SessionRecoveryUITests: XCTestCase {
         openSettings()
         XCTAssertTrue(bars.appears(within: 5))
         XCTAssertTrue(bars.buttons["16"].isSelected, "the committed bar count returns")
-        XCTAssertTrue(app.reveal(oscToggle))
+        XCTAssertTrue(app.reveal(oscToggle, long: true))
         XCTAssertEqual(oscToggle.value as? String, "0", "the stored OSC toggle is off; Reopen does not turn it on")
         closeSettings()
         XCTAssertFalse(oscBadge.exists)

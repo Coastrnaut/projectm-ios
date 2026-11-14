@@ -69,7 +69,8 @@ final class UserPresetEditingUITests: XCTestCase {
     }
 
     private func backToHome() {
-        for _ in 0..<3 where !app.buttons["node:myPresets"].exists {
+        for _ in 0..<3 {
+            if app.buttons["node:myPresets"].exists { break }
             let back = app.navigationBars.buttons.element(boundBy: 0)
             guard back.exists else { break }
             back.tap()
@@ -219,7 +220,8 @@ final class UserPresetEditingUITests: XCTestCase {
         XCTAssertTrue(app.buttons["node:included"].appears(within: 10))
         // At this text size the row can sit half under the bottom edge, where a tap lands on the
         // home indicator (seen in the PRE-014 run): retry until My Presets is open.
-        for _ in 0..<4 where !app.buttons["importPreset"].exists {
+        for _ in 0..<4 {
+            if app.buttons["importPreset"].exists { break }
             open("node:myPresets")
             if app.buttons["importPreset"].appears(within: 5) { break }
             app.reveal(app.buttons["node:myPresets"])

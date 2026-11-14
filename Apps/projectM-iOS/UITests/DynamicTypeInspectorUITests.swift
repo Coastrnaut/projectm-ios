@@ -11,6 +11,28 @@
 // walk can be repeated at any size without editing the suite.
 // Simulator results are never device evidence; the device pass is ACC-006-T12 {device}.
 // Owner rule 7: each test < 30 s (one screen group per test); UITestWaits' 0.1 s polling.
+// Shortened 2026-11-14 under owner rule 7 (profiled from the xcresult activity timelines):
+// - `scrollTo` stops once the element is visible. Its `for ... where !visible()` loop had kept checking
+//   visibility on all 32 iterations after the element was found (about 13 queries each, 4-6 s per
+//   call); VisualizerControls spent 66 s of 95 s in those checks.
+// - Each drag costs 2-3 s whatever its length (XCTest waits for the app to idle afterwards), and Settings
+//   at AX5 took about 15 held drags to its end. Its last sections (OSC, Show, Storage, Licenses) are now
+//   reached by flinging the list to its end (`scrollTo(fromEnd:)`, 3-5 flings), then held drags back.
+//   Faster held drags were tried and dropped: a hold at the end does not remove the momentum of a fast
+//   drag, so the precise drags overshot and oscillated.
+// - Once visible, `scrollTo` waits for the row to stop moving, and counts a search field floating at
+//   the bottom (the preset browser's) as the end of the visible area: without the old idle re-checks,
+//   Collections at AX5 was tapped under the search field and did not open. The smallest precise drag
+//   halves whenever the direction flips, and the visualizer controls' scroll area (still in the tree
+//   behind Settings) no longer narrows the visible area of a Settings row: the OSC port field reached
+//   from the end of Settings oscillated in 104 pt steps between the two different bounds.
+// - Moved assertions, each kept unchanged: Licenses (reached, opened, audited) moved from the Storage
+//   test to testLicensesAX5/AX3; the Text message field input (reached, typed) moved from the Text rows
+//   test to testTextMessageFieldAX5/AX3, which reaches it on the way down; the Rename Scene alert
+//   (cue 2 swipe, alert audited, field input, Rename hittable) moved from the show editor test to
+//   testRenameSceneAlertAX5/AX3, which opens the editor the same way; Next cue reached in the controls
+//   moved from the show editor test to the repair sheet test (same control, a show seed too), which
+//   used to scroll to it without asserting it.
 import XCTest
 
 @MainActor
@@ -160,14 +182,29 @@ final class DynamicTypeInspectorUITests: XCTestCase {
     /// hit. While the element is not in the tree (lazy lists), long drags without momentum; once it
     /// exists, drags by what is missing. The drags run inside the controls' scroll view when
     /// the element is in it (a drag that starts on the scrubber would seek instead of scroll).
+    /// `fromEnd`: the element is in the last few screens of a long list (Settings' OSC, Show, Storage and
+    /// Licenses rows; Settings at AX5 is about a dozen screens). Every gesture costs 2-3 s however far it
+    /// moves (XCTest waits for the app to idle afterwards), so the list is first flung to its end (fast
+    /// drags released with momentum, 10000 pt/s), stopping early if the element turns up, then searched
+    /// back with long held drags. Moderate flings were tried for the OSC rows: they sometimes stopped on
+    /// them and sometimes ran to the end anyway, costing more gestures on average.
     @discardableResult
-    private func scrollTo(_ element: XCUIElement, down: Bool = false) -> Bool {
+    private func scrollTo(_ element: XCUIElement, down: Bool = false, fromEnd: Bool = false) -> Bool {
         let window = app.windows.firstMatch
         // Below a compact navigation bar. A large title grows the bar when a list returns to its top,
         // so the bar counts at most up to 130 pt; otherwise drags would oscillate around a row.
         func top() -> CGFloat {
             let bar = app.navigationBars.firstMatch
             return bar.exists ? min(bar.frame.maxY, window.frame.minY + 130) : window.frame.minY
+        }
+        // Above a search field floating at the bottom (the preset browser's): a row under it is
+        // "hittable" but a tap lands on the field (Collections at AX5 failed this way, 2026-11-14).
+        let search = app.searchFields.firstMatch
+        func bottom() -> CGFloat {
+            let maxY = window.frame.maxY
+            guard search.exists else { return maxY }
+            let field = search.frame
+            return field.minY > window.frame.midY ? min(maxY, field.minY) : maxY
         }
         let controlsScroll = app.scrollViews.containing(.other, identifier: "controls").firstMatch
         let controlsContent = app.otherElements["controls"]
@@ -178,9 +215,12 @@ final class DynamicTypeInspectorUITests: XCTestCase {
             let frame = element.frame
             var area = window.frame
             area.origin.y = top()
-            area.size.height = window.frame.maxY - top()
-            // Inside the visualizer controls' scroll view: its own frame is the visible part.
-            if controlsScroll.exists, controlsContent.exists, controlsContent.frame.contains(frame) {
+            area.size.height = bottom() - top()
+            // Inside the visualizer controls' scroll view: its own frame is the visible part. Not under a
+            // sheet: at AX sizes the controls' content behind Settings is tall enough to "contain" a
+            // Settings row, and the narrower area made the precise drags oscillate (2026-11-14).
+            if !app.navigationBars.firstMatch.exists, controlsScroll.exists, controlsContent.exists,
+               controlsContent.frame.contains(frame) {
                 area = area.intersection(controlsScroll.frame)
             }
             guard frame.height > 0, !area.isNull else { return false }
@@ -189,27 +229,60 @@ final class DynamicTypeInspectorUITests: XCTestCase {
         }
         var dragDown = down
         var blind = 0
-        for _ in 0..<32 where !visible() {
+        var flinging = fromEnd && !down
+        var backFromEnd = false
+        // The smallest precise drag; halved each time the direction flips, so a row that a drag carries
+        // past the visible area and back does not oscillate (seen from the end of Settings at AX5).
+        var minimum: CGFloat = 0.12
+        var lastTowardsTop: Bool?
+        // Where the list stands: the first cell's label and top edge (unchanged after a fling = the end).
+        func position() -> String {
+            let cell = app.cells.firstMatch
+            return cell.exists ? "\(cell.label)@\(Int(cell.frame.minY))" : ""
+        }
+        var last = position()
+        for _ in 0..<32 {
+            if visible() { break }
             let known = element.exists && element.frame.height > 0
             // Inside the visualizer controls' scroll view when it is on screen (not under a sheet).
             let inControls = controlsScroll.exists && !app.navigationBars.firstMatch.exists
             if !known && !inControls {
+                if flinging {
+                    // Towards the end with momentum; once the list no longer moves (or after eight), it
+                    // is at its end and the element is above: held drags back (owner rule 7, 2026-11-14).
+                    window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8))
+                        .press(forDuration: 0.05, thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)),
+                               withVelocity: XCUIGestureVelocity(rawValue: 10000), thenHoldForDuration: 0)
+                    blind += 1
+                    let now = position()
+                    if (!now.isEmpty && now == last) || blind >= 8 {
+                        flinging = false
+                        backFromEnd = true
+                        dragDown = true
+                        blind = 0
+                    }
+                    last = now
+                    continue
+                }
                 // Not in the tree yet (a lazy row): long drags held at the end (no momentum, so no row is
                 // skipped). After sixteen without finding it (Settings at AX5 is about a dozen screens), the
-                // other way: it is above.
+                // other way: it is above. Back from a list's end the down drags are longer (0.2 to 0.9):
+                // nowhere near the top, a pull cannot reach the sheet.
                 if blind == 16 { dragDown.toggle() }
                 blind += 1
                 // Up: from 0.8 (lower starts land on sheets' bottom bars and do not scroll).
-                let high = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: dragDown ? 0.4 : 0.2))
-                let low = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: dragDown ? 0.75 : 0.8))
+                let high = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: dragDown ? (backFromEnd ? 0.2 : 0.4) : 0.2))
+                let low = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: dragDown ? (backFromEnd ? 0.9 : 0.75) : 0.8))
                 let (from, to) = dragDown ? (high, low) : (low, high)
                 from.press(forDuration: 0.05, thenDragTo: to, withVelocity: .fast, thenHoldForDuration: 0.1)
                 continue
             }
             let area: XCUIElement = inControls ? controlsScroll : window
             let upper: CGFloat = inControls ? controlsScroll.frame.minY : top()
-            let lower: CGFloat = inControls ? controlsScroll.frame.maxY : window.frame.maxY
+            let lower: CGFloat = inControls ? controlsScroll.frame.maxY : bottom()
             let towardsTop = known ? element.frame.minY < upper : down   // above the visible area: drag down
+            if let last = lastTowardsTop, last != towardsTop { minimum = max(minimum / 2, 0.03) }
+            lastTowardsTop = towardsTop
             // Drag by what is missing (plus a margin), at most 60 % of the area, so a tall row does not
             // overshoot back and forth; held at the end, so there is no momentum.
             let span = area.frame.height
@@ -218,17 +291,30 @@ final class DynamicTypeInspectorUITests: XCTestCase {
                 let frame = element.frame
                 needed = towardsTop ? upper - frame.minY + 24 : frame.maxY - lower + 24
             }
-            let fraction: CGFloat = min(max(needed / span, 0.12), 0.6)
+            let fraction: CGFloat = min(max(needed / span, minimum), 0.6)
             let middle = area.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: towardsTop ? 0.2 : 0.8))
             let to = middle.withOffset(CGVector(dx: 0, dy: (towardsTop ? 1 : -1) * fraction * span))
             middle.press(forDuration: 0.05, thenDragTo: to, withVelocity: .slow, thenHoldForDuration: 0.15)
+        }
+        guard visible() else { return false }
+        // The loop used to re-check visibility on every remaining iteration, which also gave the list
+        // time to settle; now it stops at once, so wait until the element stops moving (two equal frames
+        // 0.1 s apart, at most 2 s): a tap on a list still decelerating only stops it (seen at AX5 on
+        // a loaded Mac, 2026-11-14).
+        var previous = element.frame
+        for _ in 0..<20 {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.1))
+            let now = element.exists ? element.frame : .null
+            if now == previous { break }
+            previous = now
         }
         return visible()
     }
 
     /// Scrolling reaches `element` (ACC-006-R2) and it can then be hit.
-    private func requireReachable(_ element: XCUIElement, _ what: String, file: StaticString = #filePath, line: UInt = #line) {
-        XCTAssertTrue(scrollTo(element), "scrolling reaches \(what)", file: file, line: line)
+    private func requireReachable(_ element: XCUIElement, _ what: String, fromEnd: Bool = false,
+                                  file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertTrue(scrollTo(element, fromEnd: fromEnd), "scrolling reaches \(what)", file: file, line: line)
         XCTAssertTrue(element.isHittable, "\(what) can be hit", file: file, line: line)
     }
 
@@ -321,29 +407,34 @@ final class DynamicTypeInspectorUITests: XCTestCase {
         openSettings()
         try audit("settings")
         let port = app.textFields["oscPortField"].firstMatch
-        XCTAssertTrue(scrollTo(port), "the OSC port field")
+        XCTAssertTrue(scrollTo(port, fromEnd: true), "the OSC port field")
         requireAcceptsInput(port, "1", "the OSC port field")
     }
 
-    /// Storage and Licenses, the last rows of Settings (split from Settings: owner rule 7).
+    /// Storage, one of the last rows of Settings (split from Settings: owner rule 7).
     private func storage(_ size: String) throws {
         launch(size)
         openSettings()
         let link = app.buttons["storageLink"]
-        requireReachable(link, "Storage")
+        requireReachable(link, "Storage", fromEnd: true)
         link.tap()
         XCTAssertTrue(app.navigationBars["Storage"].appears(within: 10))
         try audit("storage")
-        back()
+    }
+
+    /// Licenses, the last link of Settings (split from Storage, 2026-11-14: owner rule 7).
+    private func licenses(_ size: String) throws {
+        launch(size)
+        openSettings()
         let licenses = app.buttons["licensesLink"]
-        requireReachable(licenses, "Licenses")
+        requireReachable(licenses, "Licenses", fromEnd: true)
         licenses.tap()
         XCTAssertTrue(app.navigationBars["Licenses"].appears(within: 10))
         try audit("licenses")
     }
 
     /// Settings with one native visual's own rows (owner rule 7: one visual per test): the visual's
-    /// row, then its last row scrolled into view, then the audit; Text also takes typed input.
+    /// row, then its last row scrolled into view, then the audit.
     private func settingsVisual(_ size: String, raw: String, screen: String, last: String) throws {
         launch(size, raw == "text" ? ["-uitestSeedText"] : [])
         openSettings()
@@ -353,11 +444,20 @@ final class DynamicTypeInspectorUITests: XCTestCase {
         let element = app.descendants(matching: .any)[last].firstMatch
         XCTAssertTrue(scrollTo(element), "\(last) is reachable")
         try audit(screen)
-        if raw == "text" {
-            let message = app.descendants(matching: .any)["textMessageField"].firstMatch
-            XCTAssertTrue(scrollTo(message, down: true), "the Text message field")
-            requireAcceptsInput(message, "Hi", "the Text message field")
-        }
+    }
+
+    /// The Text visual's message field takes typed input (split from the Text rows, 2026-11-14: owner
+    /// rule 7). The field sits above the rows' last control, so it is reached on the way down instead of
+    /// scrolling back up after the audit.
+    private func textMessageField(_ size: String) throws {
+        launch(size, ["-uitestSeedText"])
+        openSettings()
+        let row = app.buttons["visual.text"]
+        XCTAssertTrue(scrollTo(row), "text row")
+        row.tap()
+        let message = app.descendants(matching: .any)["textMessageField"].firstMatch
+        XCTAssertTrue(scrollTo(message), "the Text message field")
+        requireAcceptsInput(message, "Hi", "the Text message field")
     }
 
     /// The preset browser home, a pack, Collections and My Presets.
@@ -391,17 +491,29 @@ final class DynamicTypeInspectorUITests: XCTestCase {
         try audit("myPresets")
     }
 
-    /// The show editor (scene cards) and its two rename alerts: each field accepts input.
+    /// The show editor (scene cards): the Show row reached, the editor audited and its second cue
+    /// reached. (Next cue in the controls is checked by the repair sheet test, which taps it.)
     private func showEditor(_ size: String) throws {
         launch(size, ["-uitestShowSeed"])
-        showControls()
-        requireReachable(app.buttons["showNextCue"], "Next cue")
+        try openShowEditor()
+        try audit("showEditor")
+        let cue = app.descendants(matching: .any)["showCue2"].firstMatch
+        XCTAssertTrue(scrollTo(cue), "cue 2")
+    }
+
+    private func openShowEditor() throws {
         openSettings()
         let link = app.buttons["showEditorLink"]
-        requireReachable(link, "the Show row")
+        requireReachable(link, "the Show row", fromEnd: true)
         link.tap()
         XCTAssertTrue(app.navigationBars["Show"].appears(within: 5))
-        try audit("showEditor")
+    }
+
+    /// The show editor's Rename Scene alert (split from the show editor, 2026-11-14: owner rule 7):
+    /// audited, its field accepts input, Rename can be hit.
+    private func renameSceneAlert(_ size: String) throws {
+        launch(size, ["-uitestShowSeed"])
+        try openShowEditor()
         let cue = app.descendants(matching: .any)["showCue2"].firstMatch
         XCTAssertTrue(scrollTo(cue), "cue 2")
         swipeAction(cue, id: "showRenameScene", titles: ["Name", "Rename Scene"])
@@ -412,7 +524,7 @@ final class DynamicTypeInspectorUITests: XCTestCase {
         // area scrolls (drag on the message, not on the buttons).
         let field = alert.textFields.firstMatch
         let message = alert.staticTexts.element(boundBy: alert.staticTexts.count > 1 ? 1 : 0)
-        for _ in 0..<4 where !field.isHittable { message.swipeUp() }
+        for _ in 0..<4 { if field.isHittable { break }; message.swipeUp() }
         requireAcceptsInput(field, " B", "the scene name field")
         requireOnScreen(alert.buttons["Rename"], "Rename")
         alert.buttons["Cancel"].tap()
@@ -462,7 +574,9 @@ final class DynamicTypeInspectorUITests: XCTestCase {
     private func repairSheet(_ size: String) throws {
         launch(size, ["-uitestShowRepairSeed"])
         showControls()
-        tapControl("showNextCue")
+        // Next cue reached in the controls (moved from the show editor test, 2026-11-14: owner rule 7).
+        requireReachable(app.buttons["showNextCue"], "Next cue")
+        app.buttons["showNextCue"].tap()
         XCTAssertTrue(app.staticTexts["sceneRepairStatus"].appears(within: 5), "the repair report")
         try audit("repair")
         let last = app.staticTexts["sceneRepairGroup.invalidMappings"]
@@ -476,7 +590,7 @@ final class DynamicTypeInspectorUITests: XCTestCase {
         launch(size, ["-settings.osc.enabled", "NO", "-settings.osc.port", "47127", "-uitestOSCFailure", "localNetworkDenied"])
         openSettings()
         let toggle = app.switches["oscReceiverToggle"]
-        XCTAssertTrue(scrollTo(toggle), "the OSC section")
+        XCTAssertTrue(scrollTo(toggle, fromEnd: true), "the OSC section")
         toggle.switches.firstMatch.exists ? toggle.switches.firstMatch.tap() : toggle.tap()
         // The notice replaces the status below the toggle; at AX5 it can start below the screen (lazy).
         let text = app.staticTexts["localNetworkNoticeText"]
@@ -539,6 +653,8 @@ final class DynamicTypeInspectorUITests: XCTestCase {
     func testSettingsAX3() throws { try settings(Self.ax3) }
     func testStorageAX5() throws { try storage(Self.ax5) }
     func testStorageAX3() throws { try storage(Self.ax3) }
+    func testLicensesAX5() throws { try licenses(Self.ax5) }
+    func testLicensesAX3() throws { try licenses(Self.ax3) }
     func testLinearSpectrumRowsAX5() throws { try settingsVisual(Self.ax5, raw: "linearSpectrum", screen: "settingsLinear", last: "spacingPicker") }
     func testLinearSpectrumRowsAX3() throws { try settingsVisual(Self.ax3, raw: "linearSpectrum", screen: "settingsLinear", last: "spacingPicker") }
     func testOscilloscopeRowsAX5() throws {
@@ -549,12 +665,16 @@ final class DynamicTypeInspectorUITests: XCTestCase {
     }
     func testTextRowsAX5() throws { try settingsVisual(Self.ax5, raw: "text", screen: "settingsText", last: "textFontPicker") }
     func testTextRowsAX3() throws { try settingsVisual(Self.ax3, raw: "text", screen: "settingsText", last: "textFontPicker") }
+    func testTextMessageFieldAX5() throws { try textMessageField(Self.ax5) }
+    func testTextMessageFieldAX3() throws { try textMessageField(Self.ax3) }
     func testBrowserAX5() throws { try browser(Self.ax5) }
     func testBrowserAX3() throws { try browser(Self.ax3) }
     func testCollectionsAndMyPresetsAX5() throws { try libraries(Self.ax5) }
     func testCollectionsAndMyPresetsAX3() throws { try libraries(Self.ax3) }
     func testShowEditorAX5() throws { try showEditor(Self.ax5) }
     func testShowEditorAX3() throws { try showEditor(Self.ax3) }
+    func testRenameSceneAlertAX5() throws { try renameSceneAlert(Self.ax5) }
+    func testRenameSceneAlertAX3() throws { try renameSceneAlert(Self.ax3) }
     func testPresetEditorAX5() throws { try presetEditor(Self.ax5) }
     func testPresetEditorAX3() throws { try presetEditor(Self.ax3) }
     func testRepairSheetAX5() throws { try repairSheet(Self.ax5) }
