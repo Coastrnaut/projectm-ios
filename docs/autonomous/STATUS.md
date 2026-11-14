@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T23:47:12Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T23:48:26Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,20 +9,21 @@
 
 | State | Features |
 |---|---|
-| audited | 71 |
-| implementing | 3 |
-| built | 2 |
+| audited | 70 |
+| implementing | 4 |
+| built | 1 |
+| unit_passed | 1 |
 | integrated | 249 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | built | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 10 | 1 | 1 | 139 | 0 |
-| P2 | 50 | 2 | 1 | 26 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 0 | 84 | 1 |
+| P1 | 10 | 1 | 0 | 1 | 139 | 0 |
+| P2 | 49 | 3 | 1 | 0 | 26 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -2682,6 +2683,19 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `1eff7d369c70` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-004/20261114T175839/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `1eff7d369c70` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-004/20261114T175839/swift-test_ShowControl.log`)
 - `post-merge batch75: Compositor 976, SceneFormat 190, RenderGoldens 87, ShowControl 120, projectM-iOSTests 1059, UI 7 of 8 (camera exposure 2, camera focus 2, cue hold/skip, material inspector, scene lock); MIDISceneSelectionUITests fails: show editor leading swipe overflow (pre-existing, fix/show-swipe-actions in progress)`: pass at `3b813137` (log `.autonomous/logs/integration/batch75/app-tests.log`)
+
+### SHD-005 Gradient editor (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `8c516784eda1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-005/20261114T184415/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `8c516784eda1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-005/20261114T184415/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `8c516784eda1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-005/20261114T184415/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `8c516784eda1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-005/20261114T184415/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `8c516784eda1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-005/20261114T184415/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `8c516784eda1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-005/20261114T184415/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `8c516784eda1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-005/20261114T184415/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `8c516784eda1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-005/20261114T184415/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `8c516784eda1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-005/20261114T184415/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `8c516784eda1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-005/20261114T184415/swift-test_ShowControl.log`)
+- `swift test --package-path Packages/VisualGenerators`: pass at `8c516784eda1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-005/20261114T184415/swift-test_VisualGenerators.log`)
 
 ### SHD-009 Expression mapping DSL (integrated)
 - `python3 scripts/check_compliance.py`: pass at `269a293b8d9d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-009/20261113T125934/compliance.log`)
