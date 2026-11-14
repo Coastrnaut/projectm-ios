@@ -82,7 +82,7 @@ Apps/projectM-iOS/
 ├── Tests/RecordingFrameRateAppTests.swift       # NEW
 └── UITests/RecordingFrameRateUITests.swift      # NEW
 Packages/LibraryBackup/Sources/LibraryBackup/{LibrarySettings,LibraryErasePolicy}.swift, scripts/run_device_tests.py  # the key
-docs/adr/00NN-recording-frame-grid.md            # amends ADR-0027 decision 2
+docs/adr/0056-recording-frame-grid.md            # amends ADR-0027 decision 2
 ```
 
 **Structure Decision**: extend the existing FrameRecording module and REC-005's app setting; no new package or target.

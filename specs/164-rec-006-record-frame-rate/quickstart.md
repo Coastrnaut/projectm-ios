@@ -25,5 +25,5 @@ notice, the last recording's rate and drops); the UI test selects 24 fps in unde
 
 ## Device (`{device}`, REC-006-S6)
 
-On D1, select 24 fps, record 10 s of a projectM preset, and read the file back with the DEBUG probe
+On D1, select 24 fps, record 10 s of the photo visual (projectM is not recordable, REC-003-R12), and read the file back with the DEBUG probe
 or `RecordedVideoInspector`: nominal 24 fps, times on the 1/24 s grid, the reported dropped count.

@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (REC-006-T01-T14 verified on the Mac: package fixture and rules on the host, app and UI tests on the REC6 iOS 27.2 simulator; device task T15 `{device}` open)
 
 **Input**: User description: "Implement REC-006 (Record frame rate) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Choose supported 24, 30 and 60 fps export targets." Acceptance,
@@ -34,7 +34,7 @@ human interaction); each answer is the conservative, local-first option.
 
 - Q: A separate frame-rate setting, or a per-profile override? → A: A separate setting, "Frame rate", with four choices: Profile default (the default), 24, 30 and 60 fps. Profile default keeps REC-005 exactly (a user who never opens it records as before); an explicit rate overrides the profile's rate and nothing else (size, codec, bit rate). One extra short list is clearer than doubling the profile table.
 - Q: Which rates? → A: Exactly 24, 30 and 60 fps: the roadmap's export targets. All divide the file's 1/600 s timescale exactly (25, 20 and 10 ticks).
-- Q: How are frame times written? → A: On an exact grid: the n-th output slot is at n/fps from the first frame (n × 600/fps ticks). For each slot the recorder takes the rendered frame nearest to it (ties go to the earlier frame), so 60 → 24 fps decimates by nearest frame, not by every other frame. This replaces REC-003's rounded real times for all recordings; ADR needed (it amends ADR-0027 decision 2).
+- Q: How are frame times written? → A: On an exact grid: the n-th output slot is at n/fps from the first frame (n × 600/fps ticks). For each slot the recorder takes the rendered frame nearest to it (ties go to the earlier frame), so 60 → 24 fps decimates by nearest frame, not by every other frame. This replaces REC-003's rounded real times for all recordings; ADR-0056 (it amends ADR-0027 decision 2).
 - Q: What happens to a slot that no rendered frame is near (a stall, a render loop slower than the target, a frame the bounded queue dropped)? → A: It is skipped: no sample is written for it, the previous picture stays on screen for the gap (a player shows exactly what a repeated frame would), and the slot is counted as a dropped frame in the recording result. Repeating the previous frame was rejected: it needs an extra retained pixel buffer and a burst of encoder work right after a stall, when a real-time encoder is least able to take it.
 - Q: When is a rate unavailable? → A: When the display cannot show it (`maximumFramesPerSecond` below it), when the visual's render loop is capped below it (Low Power Mode or serious thermal state cap the loop at 30 fps), or when the encoder reports a lower frame-rate limit for the planned codec and size. Unavailable rates are shown disabled with a reason, never hidden, and cannot be picked.
 - Q: What happens at Record with an explicit rate that is unavailable at that moment (Low Power Mode switched on)? → A: The recording uses the highest supported rate below it that is available, starts, and announces "Recording at 30 fps: <reason>." through the status router (row X9c, the same row as a profile fallback). The stored choice is unchanged. 24 fps is always available on a working display, so a rate fallback never refuses.
