@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (REC-007-T01-T12 verified on the Mac: app unit tests and the UI test on the REC7 iOS 27.2 simulator; device task T13 `{device}` open)
 
 **Input**: User description: "Implement REC-007 (Recording countdown) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Start after a configurable countdown with cancellation." Acceptance,

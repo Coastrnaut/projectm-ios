@@ -59,8 +59,7 @@ specs/175-rec-007-countdown/
 Apps/projectM-iOS/
 ├── Coordinators/RecordingCountdown.swift                  # NEW: setting values, clock protocol + system clock, cancel reasons
 ├── Coordinators/RecordingCountdownSetting.swift           # NEW: the stored preference
-├── Coordinators/VideoRecordingCoordinator.swift           # state case, toggle routing, start(afterCountdown:), writer count, hooks
-├── Coordinators/VideoRecordingCoordinator+Countdown.swift # NEW: begin, tick, complete, cancel, guards
+├── Coordinators/VideoRecordingCoordinator.swift           # state case, toggle routing, start(afterCountdown:), writer count; MARK Countdown: begin, tick, complete, cancel, guards (one file: `state` has a private setter)
 ├── Coordinators/StatusEvents.swift                        # rows X9d, X9e
 ├── Coordinators/AppCoordinator.swift                      # the setting + context field (two lines)
 ├── Views/RecordingCountdownView.swift                     # NEW: number + Cancel overlay
