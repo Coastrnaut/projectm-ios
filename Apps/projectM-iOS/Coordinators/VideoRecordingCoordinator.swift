@@ -15,7 +15,8 @@
 //   opens the system file mover (`fileMover`: the user picks the folder; the temporary file is moved,
 //   never copied), never the photo library; a cancelled move keeps it offered (REC-012 supersedes
 //   REC-003-R13's delete on cancel). Leftovers in `<tmp>/Recordings` are deleted at launch
-//   (REC-003-R13), so nothing outlives the session. Nothing else is stored.
+//   (REC-003-R13), so nothing outlives the session unless the user taps Keep (REC-010, specs/198-rec-010-recording-library:
+//   the file moves into `Application Support/RecordingLibrary`). Nothing else is stored.
 // * REC-015 (specs/063-rec-015-recording-disk-guard): Record reads the free storage once (after the
 //   refusals above) and refuses below the reserve plus one minute; while recording, a 5 s loop reads
 //   the free storage and the file's size off the main actor and stops with `.lowStorage` (the normal
@@ -242,6 +243,10 @@ final class VideoRecordingCoordinator {
 
     @ObservationIgnored private let context: @MainActor () -> Context
     @ObservationIgnored private let directory: URL
+    /// REC-010: Keep moves the offered recording here (`Application Support/RecordingLibrary`).
+    @ObservationIgnored let library: RecordingLibraryStore
+    /// REC-010-R9: Keep's announcement on the shared announcer's library lane (AppCoordinator).
+    @ObservationIgnored var onKept: (@MainActor (String) -> Void)?
     @ObservationIgnored private let debugDirectory: URL?
     @ObservationIgnored private let checkInterval: Duration?
     @ObservationIgnored private var recorder: MetalFrameRecorder?
@@ -269,8 +274,10 @@ final class VideoRecordingCoordinator {
          storageCheckInterval: Duration? = .seconds(RecordingStoragePolicy.checkIntervalSeconds),
          writerFault: RecordingWriterFault? = nil,
          countdownClock: (any RecordingCountdownClock)? = nil,
+         library: RecordingLibraryStore = RecordingLibraryStore.standard(),
          context: @escaping @MainActor () -> Context) {
         self.directory = directory
+        self.library = library
         self.debugDirectory = debugDirectory
         self.checkInterval = checkInterval
         let debugStorage = Self.debugStorageFromArguments()
@@ -414,6 +421,31 @@ final class VideoRecordingCoordinator {
         fileToMove = nil
         showMover = false
     }
+
+    /// REC-010 Keep (contract C1): the offered recording moves into the library; a failed move keeps it offered.
+    static let keptNotice = "Recording kept in Recordings."
+
+    @discardableResult
+    func keepOffered() -> URL? {
+        guard let offered else { return nil }
+        do {
+            let kept = try library.keep(offered)
+            self.offered = nil
+            fileToMove = nil
+            showMover = false
+            notice = Self.keptNotice
+            onKept?(Self.keptNotice)
+            return kept
+        } catch {
+            notice = RecordingFailure.writerFailed("").notice
+            return nil
+        }
+    }
+
+    #if DEBUG
+    /// Tests: offers `url` as a finished recording (REC-010 Keep tests; no recording needed).
+    func offerForTests(_ url: URL) { offered = url }
+    #endif
 
     /// The mover finished: the file was moved (success: nothing is offered any more); a cancel or a
     /// failure keeps the recording offered (REC-012-R8).

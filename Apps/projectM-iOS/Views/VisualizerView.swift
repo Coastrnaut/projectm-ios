@@ -420,6 +420,7 @@ struct VisualizerView: View {
                          libraryBackup: coordinator.libraryBackup,   // FILE-005
                          cacheFilesInUse: { () -> Set<String> in coordinator.cacheFilesInUse() },
                          missingMedia: coordinator.missingMedia,   // MED-013
+                         recordingLibrary: coordinator.recordingLibrary,   // REC-010
                          openGuide: { coordinator.openGuidedFirstScene() },
                          history: coordinator.sceneHistory,      // UIX-001, SCN-010
                          layerInspector: coordinator,            // CMP-015

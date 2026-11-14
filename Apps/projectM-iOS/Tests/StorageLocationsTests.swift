@@ -2,6 +2,7 @@
 // really use (FILE-009-R2, S2), and the screen model shows only the newest measurement (R5).
 import CaptureKit
 import Foundation
+import LibraryBackup
 import LocalPortability
 import PresetLibrary
 import XCTest
@@ -20,6 +21,8 @@ final class StorageLocationsTests: XCTestCase {
         XCTAssertEqual(roots(.presets), [path(UserPresetStore.defaultDirectory()), path(PresetCollectionStore.defaultDirectory())])
         XCTAssertEqual(roots(.importedAudio), [path(try AudioLibrary.defaultDirectory())])
         XCTAssertEqual(roots(.recordings), [path(VideoRecordingCoordinator.defaultDirectory)])
+        XCTAssertEqual(roots(.savedRecordings), [path(RecordingLibraryStore.defaultDirectory)])   // REC-010
+        XCTAssertEqual(RecordingLibraryStore.folderName, LibraryErasePolicy.recordingLibraryFolderName)
         let temporary = FileManager.default.temporaryDirectory
         XCTAssertEqual(roots(.sharesAndExports), [path(ShareFileStore.defaultDirectory),
                                                   path(temporary.appendingPathComponent(SceneArchiveService.exportFolderName)),
@@ -64,7 +67,7 @@ final class StorageLocationsTests: XCTestCase {
         }
         XCTAssertEqual(report.usage(.presets).fileCount, 2)
         XCTAssertEqual(report.usage(.sharesAndExports).fileCount, 3)
-        XCTAssertEqual(report.total.fileCount, 12)
+        XCTAssertEqual(report.total.fileCount, 13)   // REC-010: one more folder (Saved recordings)
         XCTAssertEqual(report.total.contentBytes, StorageCategory.allCases.reduce(Int64(0)) { (sum: Int64, c: StorageCategory) -> Int64 in
             sum + (expected[c] ?? 0)
         })

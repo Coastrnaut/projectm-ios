@@ -7,7 +7,7 @@ import Foundation
 
 /// The six categories the user can choose, in display order (FILE-011-R1).
 public enum LibraryEraseCategory: String, Sendable, Hashable, CaseIterable, Codable, Comparable {
-    case scenes, presets, collections, media, importedAudio, settings
+    case scenes, presets, collections, media, importedAudio, recordings, settings
 
     public var title: String {
         switch self {
@@ -16,6 +16,7 @@ public enum LibraryEraseCategory: String, Sendable, Hashable, CaseIterable, Coda
         case .collections: "Collections, tags, favorites and history"   // PRE-006-R7
         case .media: "Photos and videos"
         case .importedAudio: "Imported audio"
+        case .recordings: "Saved recordings"   // REC-010-R8
         case .settings: "Settings"
         }
     }
@@ -41,6 +42,9 @@ public enum LibraryErasePolicy {
     /// `Application Support/MIDIProfiles` (MIDI-012 `MIDIProfilesCoordinator.folderName`): MIDI mapping profiles, erased
     /// with Settings and never in a library backup (research MIDI-012-D7).
     public static let midiProfilesFolderName = "MIDIProfiles"
+    /// `Application Support/RecordingLibrary` (REC-010 `RecordingLibraryStore.folderName`): kept recordings, erased with
+    /// "Saved recordings" and never in a library backup (research REC-010-D8).
+    public static let recordingLibraryFolderName = "RecordingLibrary"
     /// The erase's own work folder (request, journal, trash, last result).
     public static let workFolderName = "LibraryErase"
     /// Photo payload and legacy extensions (MED-001 `PhotoStore.extensions`); videos (`VideoStore.fileExtension`).
@@ -75,6 +79,7 @@ public enum LibraryErasePolicy {
         case .collections: [LibraryFolders.Folder.collections.rawValue]
         case .media: [LibraryFolders.Folder.photos.rawValue, videosFolderName]
         case .importedAudio: [audioFolderName]
+        case .recordings: [recordingLibraryFolderName]   // REC-010-R8
         case .settings: [midiProfilesFolderName]   // MIDI-012-R9
         }
     }
@@ -83,7 +88,7 @@ public enum LibraryErasePolicy {
     /// names a user preset).
     public static func settingKeys(_ category: LibraryEraseCategory) -> [String] {
         switch category {
-        case .scenes, .presets, .importedAudio: []
+        case .scenes, .presets, .importedAudio, .recordings: []
         case .collections: [LibrarySettingsPolicy.favoritesKey, LibrarySettingsPolicy.recentPresetsKey]   // PRE-006-R7
         case .media: [LibrarySettingsPolicy.photoKey, LibrarySettingsPolicy.slideshowKey, videoKey, videoLoopKey, videoSpeedKey,   // MED-006
                       LibrarySettingsPolicy.logoKey, LibrarySettingsPolicy.logoPlacementKey]   // MED-010
