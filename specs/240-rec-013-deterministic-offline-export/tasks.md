@@ -15,7 +15,7 @@
 - [ ] REC-013-T05 [US1] `OfflineExportJob` (data-model; REC-002 capture plus smoothing, Reduce Motion, size, rate, seed, audio source; refusals of contract C3) in Apps/projectM-iOS/Coordinators/OfflineExportJob.swift
 - [ ] REC-013-T06 [US1] `OfflineAudioLoader` (R9: AVAudioFile → 44.1 kHz stereo Float32, at most 600 s, unreadable/too short errors) in Apps/projectM-iOS/Visuals/OfflineAudioLoader.swift
 - [ ] REC-013-T07 [US1] `OfflineSceneRenderer` (contract C1, C2; D1, D4, D5, D7, D8): per-frame analysis, smoothing, events, generator + glow into a private texture, read-back + recorder copy in one command buffer, SHA-256, audio slices, sidecar, in Apps/projectM-iOS/Visuals/OfflineSceneRenderer.swift
-- [ ] REC-013-T08 [US2] Acceptance tests (contract C2): two 2 s exports at 30 fps, 160 × 90 → identical checksum lists of 60, MP4 read back with 60 frames and an audio track, sidecar = manifest; Particle Fountain seed 1 vs 2 differ; Circular Spectrum fixture seed vs other audio differ, in Apps/projectM-iOS/Tests/OfflineExportAcceptanceTests.swift
+- [ ] REC-013-T08 [US2] Acceptance tests (contract C2): two 2 s exports at 30 fps, 160 × 90 → identical checksum lists of 60, MP4 read back with 60 frames and an audio track, sidecar = manifest; Particle Fountain seed 1 vs 2 differ; Circular Spectrum fixture seed vs other audio differ; the live settings' values are unchanged after an export (R12, S5), in Apps/projectM-iOS/Tests/OfflineExportAcceptanceTests.swift
 
 ## Phase 3: User Story 1 and 3 — Sheet, cancel (P1, P2)
 
@@ -32,3 +32,8 @@
 ## Dependencies
 
 T01, T02 → T03 → T04; T05, T06 → T07 → T08; T07 → T09 → T10, T11 → T12; all → T13. T14 needs a person and D1.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+- Coverage: R1 T11; R2 T05; R3-R5 T03, T07; R6, R7 T07, T08; R8 T05, T10; R9 T06; R10 T09, T10; R11 T09, T11; R12 T08 (added: live values unchanged); R13 T09; R14 T13; R15 T09, T10. S1-S4 T08, T10; S5 T08; S6 T08 timing.
+- No contradictions found between spec, plan and contract; terminology: "checksum sidecar" throughout.
