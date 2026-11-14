@@ -29,6 +29,21 @@ SCN-001 / SCN-012 (scene document and its issue report), QA-004 (scene migration
 | App feed | `NativeSpectrumHost.applyModulation` evaluates the bank once per frame at the frame's display time; `AppCoordinator+LFOs.swift` hands it the scene's oscillators. |
 | Scenes | `lfos` entries are kept verbatim (unknown fields included); `invalidLFO`, `unknownLFO` warnings. |
 
+## Clarifications
+
+### Session 2026-11-14
+
+Answered by Claude under the owner's standing approval (owner rules 4 and 9: best judgement, no human
+interaction); each answer is the conservative, local-first option, recommended option first.
+
+- Q: Which sync lengths are allowed, and are dotted or triplet lengths included? → A: Straight lengths only: ¼, ½, 1, 2, 4 and 8 beats per cycle (one beat is a quarter note). Dotted and triplet lengths are left out: they add little for slow modulation, and a value a later version adds (for example ⅓) is reported as an unknown length and kept verbatim, with the oscillator running at its stored rate. All lengths are exact binary fractions, so stored numbers compare exactly (MOD-009-R1, R8).
+- Q: Where does the tempo come from, and in what order? → A: From SHOW-011's tempo snapshot, the one tempo API every consumer reads, unchanged: (1) the manual tap tempo if set; (2) otherwise ANL-005's detected tempo when its confidence is at least 0.5 (ANL-005's "high", `TapTempoRules.minimumEstimateConfidence`) and it lies in 60…200 BPM; (3) otherwise no tempo, and the oscillator runs at its stored rate in hertz (its fallback). The order is not re-implemented in the oscillator; the oscillator only takes a BPM or none (MOD-009-R2, R3).
+- Q: How does a tempo change avoid a phase jump? → A: Piecewise integration. A synced oscillator keeps a phase segment (start frame time, phase at that time, rate). While its effective rate is unchanged the phase is MOD-007's exact closed form from the segment start, so a constant tempo never drifts. When the effective rate changes (tempo, tempo found or lost, Reduce flashing), a new segment starts at that frame with the phase reached there under the old rate. The result is continuous and deterministic for the same frame times and tempos. Free-running (unsynced) oscillators keep MOD-007's behaviour exactly (MOD-009-R4, R5).
+- Q: What BPM range and safety limits apply? → A: The BPM given to the oscillator is clamped to 40…240 (a non-finite or non-positive BPM counts as no tempo); 8 beats at 40 BPM is about 0.083 Hz and ¼ beat at 240 BPM is 16 Hz, both inside MOD-007's 0.01…20 Hz. Reduce flashing still caps the effective rate at 3 Hz, and with sync the cap changes the rate continuously (MOD-009-R2, R6).
+- Q: Is the phase aligned to the beat grid (the tap's or the analysis's beat anchor)? → A: No. Aligning would move the phase each time the anchor moves (every analysed beat jitters by a few milliseconds, and every new tap moves it), which contradicts continuity and could flash. The oscillator keeps its stored phase from its origin; beat alignment is left to a later row (for example a retrigger option) and recorded here.
+- Q: How is sync stored, and what happens to invalid values? → A: The oscillator entry gains an optional `sync` object, `{"beats": 1}`, written only when set; `rate` stays required as the fallback, so an older app keeps the entry verbatim and runs it at its stored rate. New SCN-012 warning codes: `invalidLFOSync` (not an object, `beats` missing or not a finite positive number, path `$.lfos[i].sync` or `.sync.beats`) and `unknownLFOSync` (a finite positive length this version does not allow, path `$.lfos[i].sync.beats`). Either way the oscillator stays live at its stored rate and the entry is kept (MOD-009-R7, R8).
+- Q: Is any UI or settings key added? → A: No (MOD-007 decided the same): model, scene persistence, issue reporting and the app's per-frame tempo feed, verified by an app unit test on the simulator. No UserDefaults key.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - An oscillator cycle follows the tempo in beats (Priority: P1)
