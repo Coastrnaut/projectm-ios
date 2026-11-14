@@ -36,7 +36,7 @@ evidence was produced, with " — Verified <date>: <how>" appended. Logs go to `
 **Independent test**: `TempoCoordinatorTests`, `TempoConfidenceUITests`.
 
 - [ ] ANL-006-T06 [US1] Update `Apps/projectM-iOS/Tests/TempoCoordinatorTests.swift`: an injected `stateClock`; the readout text, word and accessibility value for manual, stable, uncertain and searching (contract C1 app table); Reset returns to the analysis's current state without a new dwell; the Reset announcement per state; stopping the analysis returns to searching; the Tap value uses the new words.
-- [ ] ANL-006-T07 [US1] Implement in `Apps/projectM-iOS/Coordinators/TempoCoordinator.swift` (indicator, `stateClock`, `readout`, text functions on `TempoReadout`, announcement, reset on stop, DEBUG estimate override) and `Apps/projectM-iOS/Views/TempoControls.swift` (two lines and accessibility value from `TempoReadout`, strings built in typed steps); the DEBUG launch argument `-uitestTempoEstimate` in `Apps/projectM-iOS/Coordinators/AppCoordinator.swift`. Evidence: T06 passes `{sim}`; projectM-iOSTests all pass.
+- [ ] ANL-006-T07 [US1] Implement in `Apps/projectM-iOS/Coordinators/TempoCoordinator.swift` (indicator, `stateClock`, `readout`, text functions on `TempoReadout`, announcement, reset on stop, DEBUG estimate override) and `Apps/projectM-iOS/Views/TempoControls.swift` (two lines and accessibility value from `TempoReadout`, strings built in typed steps; no opacity or secondary-style dimming of the number line, ANL-006-R9); the DEBUG launch argument `-uitestTempoEstimate` in `Apps/projectM-iOS/Coordinators/AppCoordinator.swift`. Evidence: T06 passes `{sim}`; projectM-iOSTests all pass.
 - [ ] ANL-006-T08 [US1] Write `Apps/projectM-iOS/UITests/TempoConfidenceUITests.swift` (`-uitestTempoEstimate 120:0.9:40:0.3`: the readout reaches "120 BPM, stable", then "About 120 BPM, uncertain") and update `Apps/projectM-iOS/UITests/TapTempoUITests.swift`'s post-reset expectation for the new words. Evidence: passes in < 30 s `{sim}` with TapTempoUITests, AccessibilityScreensUITests and NativeVisualUITests green.
 
 ## Phase 6: Polish
@@ -55,3 +55,12 @@ parallel; the app build waits for T07.
 ## Implementation strategy
 
 MVP = T01-T04 (the roadmap acceptance in the package); then the readout (T06-T08); polish last.
+
+## Analysis (speckit-analyze, 2026-11-13)
+
+Coverage: R1-R6 → T02-T05; R7, R8, R12 → T06-T07; R9 → T07 (no dimming) and T08 (AccessibilityScreensUITests);
+R10 → T03 (TempoSource untouched; existing TempoSource tests in T01/T04 runs); R11 → T09
+(check_motion_policy). S1-S3 → T04; S4 → T05; S5 → T06, T08; S6 → T04, T07, T08. Findings applied:
+(1) S5 promised the UI test would see the searching phase, which happens before the controls can be
+read; S5 now asks for stable then uncertain, and the earlier phases are unit-tested. (2) R9 had no
+task wording; T07 now says no dimming. No constitution conflict, no duplicate or orphan task.

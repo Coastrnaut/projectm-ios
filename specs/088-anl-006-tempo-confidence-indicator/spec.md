@@ -144,7 +144,7 @@ between states.
 - **ANL-006-S2**: 120 BPM and 90 BPM pulse trains reach `stable` at ±1 BPM within 10 s and stay stable.
 - **ANL-006-S3**: A 120 → 90 BPM change leaves `stable` and returns to `stable` at 90 BPM within 12 s of the change.
 - **ANL-006-S4**: A borderline confidence sequence (60 s, 4 Hz) changes state at most twice; short dips do not leave stable.
-- **ANL-006-S5**: The readout text, state word and accessibility value are exact for every state, and a UI test of at most 30 s sees the readout move from searching or uncertain to stable and back to uncertain.
+- **ANL-006-S5**: The readout text, state word and accessibility value are exact for every state, and a UI test of at most 30 s sees the readout reach stable and then move to uncertain (the starting searching/uncertain phase passes before the controls can be read reliably, so unit tests cover it).
 - **ANL-006-S6**: Every existing PerformanceControl test and the existing tap-tempo app and UI tests pass (updated only where the "Detected"/"No tempo" wording changed).
 
 ## Assumptions
