@@ -47,6 +47,13 @@
 //   next readable drawable is drawn, blits that drawable (the frame as shown: glow and Reduce
 //   flashing included) into a shared buffer and delivers 8-bit sRGB BGRA on the main actor; then
 //   `framebufferOnly` returns to true. Stopping the loop cancels a pending capture.
+// * Spectral smoothing (ANL-003-R2, R3, R5; research ANL-003-D1): each frame the newest raw bands
+//   go through a `BandSmoother` (attack/release from `smoothing`, the real interval between display
+//   link timestamps, the bus frame's session as its generation) and the spectra draw the result;
+//   MOD-002 modulation keeps the raw bands. Instant (the default) is a bit-exact copy. Starting the
+//   loop and changing the bar count reset it, so nothing ramps from a stale picture. Preallocated;
+//   nothing allocates per frame.
+import AnalysisFeatures
 import AudioCore
 import FrameCapture
 import Metal
@@ -77,6 +84,10 @@ final class NativeSpectrumHost: PresentationBoundResource {
     /// VIS-003: the newest sample history (zeros until the first one arrives).
     private let samples: UnsafeMutablePointer<Float>
     private var bandCount = 0
+    /// ANL-003: the smoother, the newest frame's session and the previous display-link timestamp.
+    private let smoother = BandSmoother()
+    private var bandSession: UInt64 = 0
+    private var lastLinkTimestamp: CFTimeInterval?
     private var displayLink: CADisplayLink?
     private var paused = true
     private(set) var isSuspended = false
@@ -120,6 +131,12 @@ final class NativeSpectrumHost: PresentationBoundResource {
     /// REC-003: the device the recording's pixel buffers are made for.
     var recordingDevice: MTLDevice { device }
 
+    /// ANL-003: attack and release of the drawn bands (Instant by default); from the next frame.
+    var smoothing: SmoothingTimes {
+        get { smoother.times }
+        set { smoother.times = newValue }
+    }
+
     var barCount: SpectrumBarCount {
         get { generator.barCount }
         set {
@@ -127,6 +144,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             generator.barCount = newValue
             analyzer.setBarCount(newValue)
             bandCount = 0   // the old vector does not match the new bars
+            smoother.reset()   // ANL-003-R5
         }
     }
 
@@ -372,6 +390,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
         let run = !paused && !isSuspended
         if run, displayLink == nil {
             generator.restartLoop()
+            smoother.reset()   // ANL-003-R5: no ramp from the picture before the pause
+            lastLinkTimestamp = nil
             if let waveform { analyzer.start(reader: waveform) }   // VIS-003: the tap through the pass-through wrapper
             let link = CADisplayLink(target: NativeSpectrumLinkProxy(self), selector: #selector(NativeSpectrumLinkProxy.fire(_:)))
             link.preferredFrameRateRange = quality.frameRateRange
@@ -451,7 +471,12 @@ final class NativeSpectrumHost: PresentationBoundResource {
         guard view.window != nil, layer.drawableSize.width >= 1, layer.drawableSize.height >= 1 else { return }
         if let info = analyzer.output.readLatest(into: bands, capacity: SpectrumBarCount.maximum) {
             bandCount = info.count
+            bandSession = info.session
         }
+        // ANL-003: the real interval since the previous frame (the first frame after a start snaps).
+        let interval: Double = lastLinkTimestamp.map { (previous: CFTimeInterval) -> Double in link.timestamp - previous } ?? 0
+        lastLinkTimestamp = link.timestamp
+        let smoothedBands = smoother.update(target: bands, count: bandCount, frameInterval: interval, generation: bandSession)
         guard let drawable = layer.nextDrawable(), let commands = queue.makeCommandBuffer() else { return }
         let context = VisualFrameContext(timeNanoseconds: UInt64(max(link.targetTimestamp, 0) * 1e9),
                                          frameDuration: link.targetTimestamp - link.timestamp, reduceFlashing: reduceFlashing)
@@ -463,7 +488,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             _ = waveform?.output.readLatest(into: samples, capacity: WaveformFrameBuffer.capacity)
             input = UnsafeBufferPointer(start: samples, count: WaveformFrameBuffer.capacity)
         } else {
-            input = bandInput
+            input = smoothedBands   // ANL-003: the spectra draw the smoothed bands
         }
         let target = drawable.texture
         var drawn = false

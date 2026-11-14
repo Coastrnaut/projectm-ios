@@ -259,6 +259,7 @@ targets:
       - package: AudioCore            # SHOW-011 TempoCoordinatorTests (an analysis tap)
       - package: ParameterGraph       # MOD-001 ParameterCatalogAppTests; OSC-001 coordinator tests
       - package: LocalPortability     # FILE-001 SceneArchiveServiceTests (a hand-built hostile archive)
+      - package: AnalysisFeatures     # ANL-003 SpectralSmoothingAppTests (SmoothingTimes)
       - sdk: StoreKitTest.framework
     settings:
       base:
