@@ -50,6 +50,7 @@ extension AppCoordinator {
         }
         // ACC-004-R7: cue announcements share the rate-limited path (a clicker can step quickly).
         show.announce = { [weak self] (message: String) in self?.announcer.announce(message, kind: .cue) }
+        show.announceLibrary = { [weak self] (message: String) in self?.announcer.announce(message, kind: .library) }   // SCN-004
         sceneRepair.availability = { [weak self] () -> StoredMediaAvailability in
             self?.storedMediaAvailability ?? StoredMediaAvailability(photos: [], videos: [])
         }

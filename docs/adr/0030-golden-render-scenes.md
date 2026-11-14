@@ -37,6 +37,11 @@ per-feature signatures (a few means and sampled pixels per layer) that a reviewe
    Text scenes compare only on the recorded OS major.minor.
 6. **Comparison (until QA-003).** Equal pixel hashes pass; otherwise same size and at most
    ⌊0.1 % × pixels⌋ pixels above 2/255 in any channel (`GoldenTolerance.qa002`).
+   *Amended 2026-11-14 by QA-003 (`specs/133-qa-003-visual-diff`):* the goldens now compare with
+   `ImageDiffTolerance.golden`: the same colour rule, plus one-pixel shifts forgiven (radius 1, both
+   directions) and no 8-connected cluster of unmatched pixels larger than 8. Equal pixel hashes still
+   pass as "identical"; `.qa002` stays available. The diff image adds orange (forgiven) and a cyan
+   bounding-box outline, and the summary gives counts, the largest cluster, the box and SSIM.
 7. **Artifacts.** On failure: expected, actual, diff (grey unchanged, yellow within, red above,
    magenta outside the overlap) and a summary, attached to the XCTest result (kept always) and
    written to `Packages/RenderGoldens/.build/golden-diffs/<class>/` (`GOLDEN_DIFF_DIR` overrides).

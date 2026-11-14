@@ -114,8 +114,10 @@ def default_simulator(runner=subprocess.run) -> str | None:
         return tuple(int(n) for n in re.findall(r"\d+", runtime.rsplit("iOS-", 1)[-1]))
     for runtime in sorted((r for r in devices if "SimRuntime.iOS-" in r), key=version,
                           reverse=True):
+        # Reuse a booted one first (2026-11-14): picking a shut-down phone each time left four extra
+        # simulators booted after a few gates and pushed the load average past 600.
         phones = sorted((d for d in devices[runtime] if d["name"].startswith("iPhone")),
-                        key=lambda d: (d["state"] == "Booted", d["name"]))
+                        key=lambda d: (d["state"] != "Booted", d["name"]))
         if phones:
             return phones[0]["udid"]
     return None

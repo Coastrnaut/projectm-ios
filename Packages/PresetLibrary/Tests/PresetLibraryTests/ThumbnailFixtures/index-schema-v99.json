@@ -1,0 +1,14 @@
+{
+  "entries": {
+    "21cd8f60f83c92fb2d2f40e48b21925e": {
+      "contentHash": "hashA",
+      "file": "21cd8f60f83c92fb2d2f40e48b21925e.png",
+      "height": 72,
+      "presetID": "fixture/A.milk",
+      "rendererVersion": 1,
+      "width": 128
+    }
+  },
+  "rendererVersion": 7,
+  "schemaVersion": 99
+}
