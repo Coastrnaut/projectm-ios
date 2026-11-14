@@ -40,6 +40,16 @@ human interaction); each answer is the conservative, local-first option.
 - Q: What happens on a thermal warning? → A: At Serious the recording goes on and the notice "The device is getting hot. Recording stops if it gets hotter." is shown once per recording; at Critical the recording stops normally (the file is finished and offered) with "Recording stopped because the device is too hot." Record is refused at Critical with "The device is too hot to record. Try again when it cools down." Reducing the recording's quality mid-file was rejected (the writer's size and rate are fixed per file).
 - Q: What counts as an app interruption? → A: The app leaving the screen (background), which already stops and finishes the file; this feature proves the file is finished and offered on return. Audio-session interruptions (calls) do not stop the video; REC-004 already ends the audio when the source stops.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Which fragment interval? → A: 1 s. At most about one second (plus the encoder's lag) is lost on a writer failure; the cost is one small fragment header per second while recording and a header rewrite at finish. 0.5 s doubles the headers for little gain; 2 s (the key-frame interval) loses up to two seconds.
+- Q: Does a kept partial recording report its real length? → A: Yes. The recorder reads the kept file back and reports the frames and duration the file actually holds (not what was appended), so "Recording ready" and REC-006's facts are honest.
+- Q: How are "resources released" proven? → A: A process-wide ledger of live recorders and writers (each writer owns its pixel-buffer pool), counted on creation and release, plus the recorder's frames-in-flight count; tests compare against the count before the recording. The ledger is diagnostics only (memory, never stored).
+- Q: Which thermal source does the coordinator read? → A: `ProcessInfo.thermalState`, injected in tests; DEBUG's existing `-uitestThermalState` argument also drives it. It is read at Record and by the 0.25 s check.
+- Q: Is the injection seam reachable in Release? → A: No user-visible path. The fault type lives in the package (tests use it); the app accepts `-uitestWriterFault` only in DEBUG builds.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A writer failure keeps what was recorded (Priority: P1)
