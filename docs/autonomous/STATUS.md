@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T06:08:38Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T06:10:50Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,24 +10,24 @@
 | State | Features |
 |---|---|
 | audited | 206 |
-| implementing | 4 |
+| implementing | 3 |
 | unit_passed | 1 |
-| integrated | 114 |
+| integrated | 115 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
 | Priority | audited | implementing | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|
-| P0 | 3 | 0 | 1 | 82 | 1 |
-| P1 | 117 | 4 | 0 | 30 | 0 |
+| P0 | 3 | 0 | 0 | 83 | 1 |
+| P1 | 117 | 3 | 1 | 30 | 0 |
 | P2 | 77 | 0 | 0 | 2 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 211 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)
+- 210 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)
 
 ## Integrated
 
@@ -144,6 +144,7 @@ The physical-device suite may **not** start:
 | SHOW-011 | Tap tempo | `11329d52e6dc` | `feature/show-011` |
 | SHOW-014 | Emergency blackout | `c3886d1cb0bb` | `feature/show-014` |
 | UIX-001 | Guided first scene | `f8f54e2ac938` | `feature/uix-001` |
+| UIX-002 | Quick scene switcher | `ed0b96a542d7` | `feature/uix-002` |
 | VIS-001 | Circular spectrum | `48285d49c422` | `feature/vis-001` |
 | VIS-002 | Linear spectrum | `c2b2f75c11bb` | `feature/vis-002` |
 | VIS-003 | Waveform oscilloscope | `2d758a4` | `feature/vis-003` |
@@ -667,6 +668,17 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `9169b95d3c27` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-006/20261114T004058/swift-test_ShowControl.log`)
 - `post-merge: projectM-iOSTests 442 + PhotoLayer/VideoLayer/SceneRepair UI tests 3; gate 9 suites`: pass at `53ddd8c4` (log `.autonomous/logs/integration/cmp-006/app-tests.log`)
 
+### CMP-007 Shape masks (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `389bfc89e1bd` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-007/20261114T010838/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `389bfc89e1bd` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-007/20261114T010838/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `389bfc89e1bd` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-007/20261114T010838/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `389bfc89e1bd` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-007/20261114T010838/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `389bfc89e1bd` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-007/20261114T010838/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `389bfc89e1bd` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-007/20261114T010838/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `389bfc89e1bd` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-007/20261114T010838/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `389bfc89e1bd` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-007/20261114T010838/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `389bfc89e1bd` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-007/20261114T010838/swift-test_ShowControl.log`)
+
 ### FILE-001 Portable scene archive (integrated)
 - `python3 scripts/check_compliance.py`: pass at `b4e63d16acf1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-001/20261113T154852/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `b4e63d16acf1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-001/20261113T154852/docs.log`)
@@ -1143,7 +1155,7 @@ None.
 - `python3 scripts/validate_docs.py`: pass at `47115ca78022` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-001/20261113T180131/docs.log`)
 - `post-merge: projectM-iOSTests 342 incl. GuidedFirstScene tests; GuidedFirstSceneUITests 4 (offline finish, skip, largest text, reopen), CacheCleanup, SessionRecovery 3 UI tests on iOS 27.2 sim`: pass at `f8f54e2ac938` (log `.autonomous/logs/integration/uix-001/app-tests.log`)
 
-### UIX-002 Quick scene switcher (unit_passed)
+### UIX-002 Quick scene switcher (integrated)
 - `python3 scripts/check_compliance.py`: pass at `fcf53a475301` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-002/20261114T010824/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `fcf53a475301` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-002/20261114T010824/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `fcf53a475301` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-002/20261114T010824/script-tests.log`)

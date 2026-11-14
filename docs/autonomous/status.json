@@ -7,14 +7,14 @@
  "by_priority": {
   "P0": {
    "audited": 3,
-   "integrated": 82,
-   "skipped_existing": 1,
-   "unit_passed": 1
+   "integrated": 83,
+   "skipped_existing": 1
   },
   "P1": {
    "audited": 117,
-   "implementing": 4,
-   "integrated": 30
+   "implementing": 3,
+   "integrated": 30,
+   "unit_passed": 1
   },
   "P2": {
    "audited": 77,
@@ -26,8 +26,8 @@
  },
  "by_state": {
   "audited": 206,
-  "implementing": 4,
-  "integrated": 114,
+  "implementing": 3,
+  "integrated": 115,
   "skipped_existing": 1,
   "unit_passed": 1
  },
@@ -217,7 +217,6 @@
    "SHOW-012",
    "SHOW-013",
    "SHOW-015",
-   "UIX-002",
    "UIX-003",
    "UIX-004",
    "UIX-005",
@@ -251,7 +250,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "211 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)"
+   "210 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)"
   ]
  },
  "features": {
@@ -1028,12 +1027,12 @@
   "CMP-007": {
    "attempts": 0,
    "branch": "feature/cmp-007",
-   "branch_sha": null,
+   "branch_sha": "389bfc89e1bd63b7e4d9c17022d22daca76e770b",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "CMP-008": {
    "attempts": 0,
@@ -3180,10 +3179,10 @@
    "branch": "feature/uix-002",
    "branch_sha": "fcf53a475301d226a513db527ace774048e27e1a",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "ed0b96a542d7e6d0113c98283fcbeb91fb3f6b4b",
    "priority": "P0",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "UIX-003": {
    "attempts": 0,
@@ -4073,6 +4072,11 @@
    "sha": "f8f54e2ac93878ef06a7d92ffee436d68631c10e"
   },
   {
+   "branch": "feature/uix-002",
+   "id": "UIX-002",
+   "sha": "ed0b96a542d7e6d0113c98283fcbeb91fb3f6b4b"
+  },
+  {
    "branch": "feature/vis-001",
    "id": "VIS-001",
    "sha": "48285d49c422576ac32986029ee731b214fcde63"
@@ -4113,5 +4117,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T06:08:38Z"
+ "updated": "2026-11-14T06:10:50Z"
 }
