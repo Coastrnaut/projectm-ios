@@ -41,7 +41,7 @@ final class LinearSpectrumUITests: XCTestCase {
         XCTAssertTrue(app.reveal(app.visualRow("Linear Spectrum")), "the visual row (below the fold as visuals grow)")
         app.visualRow("Linear Spectrum").tap()
         let orientation = app.segmentedControls["orientationPicker"]
-        XCTAssertTrue(orientation.appears(within: 5), "Orientation offered for the linear spectrum")
+        XCTAssertTrue(app.reveal(orientation), "Orientation offered for the linear spectrum (below the visual rows)")
         XCTAssertTrue(orientation.buttons["Vertical"].isSelected, "vertical by default")
         XCTAssertTrue(app.segmentedControls["spacingPicker"].buttons["Narrow"].isSelected, "Narrow by default")
         XCTAssertTrue(app.segmentedControls["barsPicker"].exists, "Bars shared with the circular spectrum")
@@ -57,6 +57,7 @@ final class LinearSpectrumUITests: XCTestCase {
         XCTAssertTrue(linearSpectrum.appears(within: 10), "the choice persisted")
         XCTAssertTrue(poll(10) { self.value.hasPrefix("Horizontal") }, "the orientation persisted: \(value)")
         openSettings()
+        XCTAssertTrue(app.reveal(app.segmentedControls["orientationPicker"]), "Orientation below the visual rows")
         XCTAssertTrue(app.segmentedControls["orientationPicker"].buttons["Horizontal"].isSelected)
         closeSettings()
     }
