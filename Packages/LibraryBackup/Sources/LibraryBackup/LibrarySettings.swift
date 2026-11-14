@@ -94,6 +94,7 @@ public enum LibrarySettingsPolicy {
         "settings.colorGrade.enabled", "settings.effectChain.order", "settings.effectChain.presets",   // FX-020-R8, R10
         "settings.oscilloscope.line", "settings.oscilloscope.window",
         "settings.lissajous.mode", "settings.lissajous.persistence",   // VIS-004-R11
+        "settings.radialWaveform.ring", "settings.radialWaveform.amplitude",   // VIS-005-R9
         "settings.spectrum.attack", "settings.spectrum.release",
         "settings.camera.position", "settings.camera.mirrorFront", "settings.camera.mirrorBack",
         "settings.camera.cropMode", "settings.camera.cropAnchor", "settings.camera.zoom",
@@ -107,6 +108,7 @@ public enum LibrarySettingsPolicy {
         photoKey, slideshowKey, "settings.text.overlay",
         logoKey, logoPlacementKey,   // MED-010
         recentPresetsEnabledKey,   // PRE-006-R7
+        "settings.recording.countdown",   // REC-007-R8: a preference (off, 3, 5, 10); erased with Settings
     ]
 
     /// Read by the app but deliberately left out (documented; a test checks none is included).
@@ -115,6 +117,8 @@ public enum LibrarySettingsPolicy {
         "settings.recording.includeMicrophone",   // REC-004-R3: a consent never travels to another device
         "settings.recording.qualityProfile",   // REC-005-R7: depends on this device's encoder and screen
         "settings.recording.frameRate",   // REC-006-R8: depends on this device's display and encoder
+        "settings.externalDisplay.fit", "settings.externalDisplay.shape",   // OUT-004-R8: the user's display hardware
+        "settings.externalDisplay.pixelAspect",
         "settings.video.id", "settings.video.loop", "settings.video.speed",
         recentPresetsKey,   // PRE-006-R7: recently played history stays on this device
         "notice.photosensitivityAcknowledged", "permission.explained.camera", "permission.explained.localNetwork",

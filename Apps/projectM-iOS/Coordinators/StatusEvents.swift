@@ -116,7 +116,7 @@ enum StatusEventCatalog {
         StatusEvent(id: "X8", kind: .capture, visibleText: notice, announcement: notice, cause: .user)
     }
 
-    // MARK: Recording (X9-X14a; X9c REC-005)
+    // MARK: Recording (X9-X14a; X9c REC-005; X9d, X9e REC-007)
 
     /// X9-X11: the recording state. `idle` is reached through the offered panel (X11); a stop reason or a
     /// failure shows its notice instead (X13, X14).
@@ -132,7 +132,43 @@ enum StatusEventCatalog {
         case .idle:
             return StatusEvent(id: "X11", kind: .recording, visibleText: recordingReady, announcement: recordingReady,
                                cause: .user)
+        case .countingDown(let remaining):
+            return recordingCountdown(remaining: remaining, first: true)
         }
+    }
+
+    /// REC-007-R7: X9d, one second of a countdown: "Recording in 3" on screen; spoken in full for the first
+    /// second, then the bare number ("2", "1") on the same lane.
+    static func recordingCountdown(remaining: Int, first: Bool) -> StatusEvent {
+        let visible: String = countdownText(remaining)
+        let spoken: String = first ? visible : String(remaining)
+        return StatusEvent(id: "X9d", kind: .recording, visibleText: visible, announcement: spoken, cause: .user)
+    }
+
+    /// The row a recording state change posts (X9, X9d, X9e, X10), nil when none: a direct recording → idle
+    /// also says "Recording stopped"; a countdown says its first second in full, then the number (REC-007);
+    /// a countdown ending in idle posts its cancellation, and nothing when a refusal at completion has its
+    /// own notice.
+    static func recordingTransition(from old: VideoRecordingCoordinator.State, to new: VideoRecordingCoordinator.State,
+                                    elapsed: String, countdownCancel: RecordingCountdownCancel?) -> StatusEvent? {
+        if let remaining = new.countdownRemaining {
+            return recordingCountdown(remaining: remaining, first: !old.isCountingDown)
+        }
+        if old.isCountingDown, new == .idle {
+            return countdownCancel.map(countdownCancelled)
+        }
+        let state: VideoRecordingCoordinator.State = new == .idle && old == .recording ? .finishing : new
+        return state == .idle ? nil : recording(state, elapsed: elapsed)
+    }
+
+    /// "Recording in 3".
+    static func countdownText(_ remaining: Int) -> String { "Recording in \(remaining)" }
+
+    /// REC-007-R6: X9e, a countdown was cancelled (a transient caption; no file was made).
+    static func countdownCancelled(_ reason: RecordingCountdownCancel) -> StatusEvent {
+        let text: String = reason.text
+        return StatusEvent(id: "X9e", kind: .recording, visibleText: text, announcement: text,
+                           cause: reason.isUser ? .user : .system, presentation: .caption)
     }
 
     /// REC-004-R9: X9a, what audio the recording that just started contains (after X9, same lane);

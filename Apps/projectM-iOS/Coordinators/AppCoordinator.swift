@@ -175,6 +175,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     }
     /// SCN-010: undo and redo of scene edits (in memory only).
     @ObservationIgnored let sceneHistory = SceneHistoryCoordinator()
+    /// SCN-008: named parameter snapshots of the current scene (AppCoordinator+SceneSnapshots.swift).
+    @ObservationIgnored let sceneSnapshots = SceneSnapshotCoordinator()
     /// CMP-015: the layer inspector's composites (a scene input) and transient solo/mute.
     let layers = LayerInspectorCoordinator()
     /// SCN-002: the current scene's autosave (nil only if its folder cannot be made).
@@ -223,6 +225,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let slideshow: SlideshowCoordinator
     /// The logo overlay (MED-010): the stored logo, its placement and the compositor visuals' logo layers.
     let logo: LogoCoordinator
+    /// MOD-010: the current scene's parameter macros (Settings › Macros).
+    let macros: MacroCoordinator
     /// The Photo visual (MED-001), created when Photo is chosen and released when another visual is.
     private(set) var photoVisual: PhotoVisualHost?
     /// The photo layer's state while the Photo visual exists (`empty` otherwise).
@@ -322,6 +326,10 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         rowSize: { [weak self] () -> CGSize in
             self?.activeVideoRecordingSource?.recordingDrawableSize ?? RecordingQualitySetting.screenPixelSize()
         })
+    /// REC-007: the recording countdown (Settings → Recording countdown; Off by default).
+    @ObservationIgnored private(set) lazy var recordingCountdown = RecordingCountdownSetting(defaults: defaults)
+    /// OUT-004: the external display's output correction (Settings › External Display).
+    @ObservationIgnored private(set) lazy var externalOutput = ExternalOutputSetting(defaults: defaults, external: externalDisplay)
     /// UIX-004: the favorite parameter shelf (pinned controls in the visualizer's controls).
     let parameterShelf: ParameterShelf
     /// REC-004: reads the microphone permission (never asks for it).
@@ -404,6 +412,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         photos = PhotoCoordinator.makeDefault(defaults: defaults)
         slideshow = SlideshowCoordinator.makeDefault(defaults: defaults)   // MED-006
         logo = LogoCoordinator.makeDefault(defaults: defaults)   // MED-010
+        macros = MacroCoordinator.makeDefault(settings: settings)   // MOD-010
         videos = VideoCoordinator.makeDefault(defaults: defaults)
         texts = TextOverlayCoordinator.makeDefault(defaults: defaults)
         // SCN-002: the last committed scene wins over the settings (research SCN-002-D2).
@@ -420,6 +429,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             videos.restoreSpeed(storeID: values.videoStoreID, speedPercent: values.videoSpeedPercent)   // MED-004-R7
             if let restore = values.slideshow { slideshow.restore(restore.value) }   // MED-006-R12
             if let scene = values.logo { logo.restore(storeID: scene.storeID, placement: scene.placement) }   // MED-010-R10
+            macros.restore(values.macros)   // MOD-010: restored, not applied
         }
         self.sceneAutosave = sceneAutosave
         show = ShowCoordinator.makeDefault()   // SHOW-001
@@ -429,6 +439,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         UITestVideoFixture.seedIfRequested(videos)   // MED-002: VideoLayerUITests
         UITestTextFixture.seedIfRequested(texts)     // MED-009: TextOverlayUITests
         UITestLogoFixture.seedIfRequested(logo)      // MED-010: LogoOverlayUITests
+        UITestMacroFixture.seedIfRequested(macros)   // MOD-010: ParameterMacroUITests
         #endif
         let initialScreen: Screen = defaults.bool(forKey: Self.noticeKey) ? .chooser : .notice
         screen = initialScreen
@@ -586,6 +597,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         UITestLayerInspectorFixture.seedIfRequested(self)   // CMP-015: LayerInspectorUITests (before the history starts)
         #endif
         connectSceneHistory()   // SCN-010: starts from the restored (or fresh) scene
+        connectSceneSnapshots()   // SCN-008
         midiMappings.applyValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.nativeVisual?.externalValues = values }   // MIDI-003-R8
         #if DEBUG
         UITestShowFixture.seedIfRequested(self)   // SHOW-001: ShowCueUITests
@@ -816,6 +828,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
 
     /// Stop (FR-007): stops the source and returns to the chooser.
     func stop() {
+        videoRecording.cancelCountdown(.leftVisualizer)   // REC-007-R5
         noiseGate.control.isMicrophoneSource = false   // AUD-011-R3
         latencyOffset.activeMode = nil   // AUD-013-R8
         hideTask?.cancel()
@@ -1025,6 +1038,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         case .linearSpectrum: .linear(settings.linearSpectrumOrientation, spacing: settings.linearSpectrumSpacing)
         case .oscilloscope: .oscilloscope(line: settings.oscilloscopeLine, windowMilliseconds: settings.oscilloscopeWindowMilliseconds)
         case .lissajous: .lissajous(mode: settings.lissajousMode, persistence: settings.lissajousPersistence)   // VIS-004
+        case .radialWaveform: .radialWaveform(ring: settings.radialWaveformRing, amplitude: settings.radialWaveformAmplitude)   // VIS-005
         default: .circular
         }
     }
@@ -1395,7 +1409,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// REC-003/REC-004: what the recording coordinator reads (visual, output, pause; source mode, consent, tap).
     var videoRecordingContext: VideoRecordingCoordinator.Context {
         let manager = manager
-        return VideoRecordingCoordinator.Context(source: activeVideoRecordingSource, visualShown: screen == .visualizer,
+        var context = VideoRecordingCoordinator.Context(source: activeVideoRecordingSource, visualShown: screen == .visualizer,
                                                  outputLive: externalDisplay.blackoutPhase == .live, paused: userPaused,
                                                  audioMode: manager.activeMode,
                                                  microphoneGranted: microphonePermissionProbe.permission == .granted,
@@ -1405,6 +1419,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                                                  qualityProfile: recordingQuality.profile,   // REC-005
                                                  qualityCapabilities: RecordingQualitySetting.deviceCapabilities(),
                                                  frameRateChoice: recordingQuality.frameRate)   // REC-006
+        context.countdown = recordingCountdown.length   // REC-007
+        return context
     }
 
     var activeVideoRecordingSource: (any VideoRecordingSource)? {
@@ -1527,6 +1543,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             videos.restoreSpeed(storeID: values.videoStoreID, speedPercent: values.videoSpeedPercent)   // MED-004-R7
             if let restore = values.slideshow { slideshow.restore(restore.value) }   // MED-006-R12
             if let scene = values.logo { logo.restore(storeID: scene.storeID, placement: scene.placement) }   // MED-010-R10
+            macros.restore(values.macros)   // MOD-010: restored, not applied
         }
         if let visual { settings.visual = visual }
         resetTrailsHistory()   // FX-009-R5: a reopened scene starts without trails
@@ -1556,7 +1573,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                     slideshow: slideshow.sceneValue,   // MED-006
                     layerComposites: layers.composites,   // CMP-015
                     logo: logo.sceneLogo,   // MED-010
-                    effects: liveEffectSettings)   // FX-020
+                    effects: liveEffectSettings,   // FX-020
+                    macros: macros.entries)   // MOD-010
     }
 
     /// ACC-003-R13: the colour-blind-safe palette setting changed; the native spectrum redraws with it.

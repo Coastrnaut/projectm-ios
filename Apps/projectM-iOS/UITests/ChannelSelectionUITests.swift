@@ -17,7 +17,8 @@ final class ChannelSelectionUITests: XCTestCase {
 
     private func launch() {
         XCUIDevice.shared.orientation = .portrait
-        let common: [String] = ["-uitestResetNotice", "-uitestDiagnostics", "-autostart", "inAppPlayback"]
+        let common: [String] = ["-uitestResetNotice", "-uitestDiagnostics", "-autostart", "inAppPlayback",
+                                "-uitestSettingsSection", "channel"]   // Settings opens at Analysis channel (owner rule 7)
         app.launchArguments = common + Self.noStore
         app.launch()
         XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))

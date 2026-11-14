@@ -48,6 +48,8 @@
 //   generator. Its plot and persistence change only its configuration; the persistence half-life is the
 //   ACC-012-capped one (`LissajousConfiguration.persistenceHalfLife(enabled:clamp:)`), re-applied whenever
 //   the style or `safetyClamp` changes.
+// * Radial waveform (VIS-005): draws the same mono history as the oscilloscope, wrapped around a ring; its
+//   ring size and amplitude change only its configuration (no new generator).
 // * REC-001 (research REC-001-D1): `captureFrame` turns the layer's `framebufferOnly` off until the
 //   next readable drawable is drawn, blits that drawable (the frame as shown: glow and Reduce
 //   flashing included) into a shared buffer and delivers 8-bit sRGB BGRA on the main actor; then
@@ -58,6 +60,11 @@
 //   MOD-002 modulation keeps the raw bands. Instant (the default) is a bit-exact copy. Starting the
 //   loop and changing the bar count reset it, so nothing ramps from a stale picture. Preallocated;
 //   nothing allocates per frame.
+// * Adaptive effect quality (PERF-003; NativeSpectrumHost+EffectQuality.swift): one `EffectQualityLadder` started with
+//   the loop and stepped each frame with the display-link time, the thermal state, Low Power and PERF-002's budget
+//   signal. Its level goes to the bloom (Reduced: fewer taps, coarser glow; Minimal: no glow pass) and its fade weight
+//   multiplies the glow intensity after the ACC-012 clamp, so the FX-019 limiter models the glow actually drawn. With
+//   the glow switched on the governor defers the serious-state frame-rate cap to the ladder (PERF-003-R7).
 import AnalysisFeatures
 import AudioCore
 import FlashSafety
@@ -121,6 +128,18 @@ final class NativeSpectrumHost: PresentationBoundResource {
     static let frameStages: [FrameStage] = [.audio, .render, .encode, .present]
     private let gpuTimes = MetalGPUFrameTimes()
     private var quality = QualityGovernor.current()
+    /// FR-049 / PERF-003-R7: the frame-rate cap and render scale this loop uses.
+    var qualitySettings: QualitySettings { quality }
+    /// PERF-003: the effect quality ladder and its inputs (NativeSpectrumHost+EffectQuality.swift).
+    let effectLadder = EffectQualityLadder()
+    /// PERF-002's verdict while the performance overlay runs (any flag → over); `.unavailable` otherwise.
+    var effectBudget: EffectBudgetSignal = .unavailable
+    /// Tests and DEBUG `-uitestThermalState` replace the device's thermal state; tests replace Low Power.
+    var thermalOverride: EffectThermalState? = NativeSpectrumHost.launchThermalOverride
+    var lowPowerOverride: Bool?
+    /// The inputs as last read (`refreshQuality()`).
+    var effectThermal: EffectThermalState = .nominal
+    var effectLowPower = false
     private var observers: [NSObjectProtocol] = []
 
     /// Frame rate and frame time for the FR-048 overlay.
@@ -147,7 +166,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
     }
 
     /// FX-001: the bloom and the chain that runs it; nil when the glow is unavailable.
-    private let bloom: BloomEffect?
+    let bloom: BloomEffect?
     private var chain: EffectChain?
     /// The glow could not be built on this device (FX-001-R13); the visual renders without it.
     private(set) var glowUnavailable: Bool
@@ -169,6 +188,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             ?? (generator as? LinearSpectrumGenerator)?.configuration.palette
             ?? (generator as? OscilloscopeGenerator)?.configuration.palette
             ?? (generator as? LissajousGenerator)?.configuration.palette
+            ?? (generator as? RadialWaveformGenerator)?.configuration.palette
     }
 
     private func applyPalette() {
@@ -188,8 +208,15 @@ final class NativeSpectrumHost: PresentationBoundResource {
             var configuration = lissajous.configuration
             configuration.palette = palette
             lissajous.configuration = configuration
+        } else if let radial = generator as? RadialWaveformGenerator {
+            var configuration = radial.configuration
+            configuration.palette = palette
+            radial.configuration = configuration
         }
     }
+
+    /// VIS-005: the radial waveform's generator (tests; nil for another visual).
+    var radialWaveformGenerator: RadialWaveformGenerator? { generator as? RadialWaveformGenerator }
 
     /// VIS-004-R9: the Lissajous's persistence half-life under the safety clamp (0 = off).
     private func applyLissajousPersistence() {
@@ -299,6 +326,12 @@ final class NativeSpectrumHost: PresentationBoundResource {
                                                    configuration: LissajousConfiguration(mode: mode))
             generator.barCount = barCount
             return generator
+        case let .radialWaveform(ring, amplitude):   // VIS-005
+            let generator = try RadialWaveformGenerator(device: device, pixelFormat: .bgra8Unorm_srgb,
+                                                        configuration: RadialWaveformConfiguration(baseRadius: ring.value,
+                                                                                                   amplitude: amplitude.value))
+            generator.barCount = barCount
+            return generator
         }
     }
 
@@ -351,6 +384,11 @@ final class NativeSpectrumHost: PresentationBoundResource {
             var configuration = lissajous.configuration
             configuration.mode = mode   // a mode change clears the ghosts (VIS-004-R8)
             lissajous.configuration = configuration
+        } else if case let .radialWaveform(ring, amplitude) = newStyle, let radial = generator as? RadialWaveformGenerator {
+            var configuration = radial.configuration   // VIS-005: in place, from the next frame
+            configuration.baseRadius = ring.value
+            configuration.amplitude = amplitude.value
+            radial.configuration = configuration
         } else {
             let replacement = try Self.makeGenerator(device: device, style: newStyle, barCount: generator.barCount)
             generator = replacement
@@ -367,6 +405,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         view.accessibilityLabel = "\(style.title) visualization"
         view.accessibilityIdentifier = style.accessibilityIdentifier
         view.accessibilityValue = Self.accessibilityValue(style: style, glowEnabled: glow.enabled, glowUnavailable: glowUnavailable)
+        refreshQuality()   // PERF-003-R7: switching the glow changes whether the governor defers the serious cap
     }
 
     // MARK: - Audio feature bindings (MOD-002)
@@ -375,7 +414,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
 
     /// Applies `glow` with any bound intensity to the bloom and the luminance model. Unbound, this is
     /// exactly the FX-001 path.
-    private func resolveEffectiveGlow() {
+    func resolveEffectiveGlow() {
         var resolved = glow.applying(externalValues)   // MIDI-003: a mapped control sets the live manual value
         if let modulator, glowIntensityIsBound {
             let manual: Double = Double(resolved.intensity)
@@ -383,6 +422,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
             resolved.intensity = Float(safetyClamp.modulated(manual: manual, modulated: modulated))   // ACC-012: depth
         }
         resolved = resolved.limited(by: safetyClamp)   // ACC-012-R4: the cap, after modulation, before render
+        let factor: Float = effectLadder.intensityFactor   // PERF-003-R8: only ever lowers the clamped glow
+        if factor < 1 { resolved.intensity *= factor }
         effectiveGlow = resolved
         bloom?.parameters = resolved
         if glowIntensityIsBound {
@@ -488,6 +529,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         case let .linear(orientation, _): return "\(orientation.title), \(glow)"
         case let .oscilloscope(_, window): return "\(window) ms, \(glow)"
         case let .lissajous(mode, persistence): return "\(mode.title), Persistence \(persistence ? "on" : "off"), \(glow)"   // VIS-004-R14
+        case let .radialWaveform(ring, amplitude): return "\(ring.title) ring, \(amplitude.title) amplitude, \(glow)"   // VIS-005-R11
         }
     }
 
@@ -557,6 +599,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             loudness = 0       // ANL-014: and its loudness envelope
             midTransient = 0   // ANL-008: and its mid transient
             highTransient = 0  // ANL-009: and its high transient
+            startEffectQuality()   // PERF-003: the floor at once, no fade
             if let waveform { analyzer.start(reader: waveform) }   // VIS-003: the tap through the pass-through wrapper
             let link = CADisplayLink(target: NativeSpectrumLinkProxy(self), selector: #selector(NativeSpectrumLinkProxy.fire(_:)))
             link.preferredFrameRateRange = quality.frameRateRange
@@ -667,9 +710,10 @@ final class NativeSpectrumHost: PresentationBoundResource {
         let bandInput = UnsafeBufferPointer(start: bands, count: bandCount)
         applyModulation(bands: bandInput, kick: kickEnvelope, centroid: centroid, loudness: loudness, midTransient: midTransient,
                         highTransient: highTransient, timeNanoseconds: context.timeNanoseconds)   // MOD-002; no-op without bindings
+        stepEffectQuality(time: link.timestamp)   // PERF-003: arithmetic; the glow changes only when the level or fade moves
         // VIS-003: the oscilloscope draws the newest sample history (kept when nothing new arrived).
         let input: UnsafeBufferPointer<Float>
-        if case .oscilloscope = style {
+        if style.drawsMonoHistory {   // VIS-003, VIS-005
             _ = waveform?.output.readLatest(into: samples, capacity: WaveformFrameBuffer.capacity)
             input = UnsafeBufferPointer(start: samples, count: WaveformFrameBuffer.capacity)
         } else if case .lissajous = style {   // VIS-004: the newest stereo history (interleaved)
@@ -725,19 +769,23 @@ final class NativeSpectrumHost: PresentationBoundResource {
         }
     }
 
+    /// FR-049, PERF-003-R7: re-reads the thermal state and Low Power Mode (or their overrides) and applies the
+    /// governor's settings when they changed.
+    func refreshQuality() {
+        readEffectInputs()
+        let quality: QualitySettings = governedQuality
+        guard quality != self.quality else { return }
+        self.quality = quality
+        displayLink?.preferredFrameRateRange = quality.frameRateRange
+        layoutDrawable()
+    }
+
     /// FR-049: frame-rate cap and render scale follow the thermal state and Low Power Mode.
     private func observeFrameRatePressure() {
         let center = NotificationCenter.default
         for name in [ProcessInfo.thermalStateDidChangeNotification, Notification.Name.NSProcessInfoPowerStateDidChange] {
             observers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
-                MainActor.assumeIsolated {
-                    guard let self else { return }
-                    let quality = QualityGovernor.current()
-                    guard quality != self.quality else { return }
-                    self.quality = quality
-                    self.displayLink?.preferredFrameRateRange = quality.frameRateRange
-                    self.layoutDrawable()
-                }
+                MainActor.assumeIsolated { self?.refreshQuality() }
             })
         }
     }
@@ -800,6 +848,16 @@ enum NativeSpectrumStyle: Equatable, Sendable {
     case oscilloscope(line: OscilloscopeLine, windowMilliseconds: Int)
     /// VIS-004: the Lissajous scope.
     case lissajous(mode: LissajousMode, persistence: Bool)
+    /// VIS-005: the radial waveform.
+    case radialWaveform(ring: RadialWaveformRing, amplitude: RadialWaveformAmplitude)
+
+    /// The oscilloscope and the radial waveform draw the mono sample history instead of the bands.
+    var drawsMonoHistory: Bool {
+        switch self {
+        case .oscilloscope, .radialWaveform: true
+        default: false
+        }
+    }
 
     var title: String {
         switch self {
@@ -807,6 +865,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .linear: VisualChoice.linearSpectrum.title
         case .oscilloscope: VisualChoice.oscilloscope.title
         case .lissajous: VisualChoice.lissajous.title
+        case .radialWaveform: VisualChoice.radialWaveform.title
         }
     }
 
@@ -816,6 +875,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .linear: "linearSpectrum"
         case .oscilloscope: "oscilloscope"
         case .lissajous: "lissajous"
+        case .radialWaveform: "radialWaveform"
         }
     }
 }

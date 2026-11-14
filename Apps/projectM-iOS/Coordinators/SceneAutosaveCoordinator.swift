@@ -40,6 +40,17 @@ final class SceneAutosaveCoordinator {
     /// MOD-007: the current scene's oscillators by position (a native spectrum gets them when it is created).
     var lfoOscillators: [LFO?] { SceneLFOEntry.read(carry.lfos ?? []).oscillators }
 
+    /// SCN-008: the current scene's snapshot entries as stored (empty without a list).
+    var snapshotEntries: [SceneSnapshotEntry] { carry.snapshots ?? [] }
+
+    /// SCN-008-R5, R8 (research SCN-008-D6): replaces the current scene's snapshot list (nil or empty removes
+    /// the field) and commits the scene at once. Not an undo step: SCN-010 covers the live inputs only.
+    func replaceSnapshots(_ entries: [SceneSnapshotEntry]) {
+        carry.snapshots = entries.isEmpty ? nil : entries
+        noteEdit()
+        commitNow()
+    }
+
     /// SCN-010: the content the current scene carries (the history captures its states over it).
     var carrySnapshot: SceneAutosaveCarry { carry }
 

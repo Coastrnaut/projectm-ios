@@ -19,7 +19,8 @@ final class CacheCleanupUITests: XCTestCase {
 
     func testClearCachesEmptiesTheCacheCategoriesAndKeepsUserData() {
         XCUIDevice.shared.orientation = .portrait
-        app.launchArguments = ["-uitestStorageFixture", "-uitestDiagnostics", "-autostart", "inAppPlayback"] + Self.noStore
+        app.launchArguments = ["-uitestStorageFixture", "-uitestDiagnostics", "-autostart", "inAppPlayback",
+                               "-uitestSettingsSection", "storage"] + Self.noStore   // Settings opens at Storage (owner rule 7)
         app.launch()
         XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
 

@@ -33,6 +33,12 @@ rule, record switch, CI guard, diff artifacts and integrity check as the scene g
 (`Tests/RenderGoldensTests/LissajousGoldenTests.swift`); record with `--filter LissajousGoldenTests` or
 `-only-testing:RenderGoldensTests/LissajousGoldenTests`.
 
+`GeneratorGoldens/RadialWaveform/<class>/` (VIS-005) holds the radial waveform's goldens the same way:
+`radial-sine-<w>x<h>-f1.png` (a 220 Hz sine wrapped around the ring) and `radial-silence-<w>x<h>-f1.png`
+(the base circle), through `RadialWaveformGenerator`
+(`Tests/RenderGoldensTests/RadialWaveformGoldenTests.swift`); record with `--filter RadialWaveformGoldenTests` or
+`-only-testing:RenderGoldensTests/RadialWaveformGoldenTests`.
+
 ## Run
 
 ```bash
