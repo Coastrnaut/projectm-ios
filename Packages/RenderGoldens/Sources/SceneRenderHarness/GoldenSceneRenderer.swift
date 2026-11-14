@@ -12,6 +12,7 @@
 // have rendered its own picture on a captured frame, or the run fails.
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import AnalysisFeatures
+import ColorGradeParameters
 import Compositor
 import Foundation
 import FrameCapture
@@ -55,9 +56,11 @@ public final class GoldenSceneRenderer {
         self.queue = queue
     }
 
-    /// The registry the app combines: visual parameters (VIS, FX) plus the material catalog (SHD-001).
+    /// The registry the app combines: visual parameters (VIS, FX), the material catalog (SHD-001) and the colour
+    /// grade (FX-003).
     public static func registry() throws -> ParameterRegistry {
-        try ParameterRegistry(descriptors: VisualParameterCatalog.descriptors + ProceduralMaterialCatalog.descriptors)
+        try ParameterRegistry(descriptors: VisualParameterCatalog.descriptors + ProceduralMaterialCatalog.descriptors
+                              + ColorGradeCatalog.descriptors)
     }
 
     /// Decodes scene bytes strictly: no decode warnings, and validation warnings are refused too.

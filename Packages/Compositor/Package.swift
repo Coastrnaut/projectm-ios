@@ -57,13 +57,15 @@
 //   recorder (IOSurface pixel buffers through a texture cache, no CPU read-back) compile out there.
 // Nothing here imports projectM, ANGLE, capture or the app (Constitution VI). The projectM layer is
 // target `ProjectMLayer` in Packages/ANGLERendering.
+// * `ColorGradeParameters` (FX-003, specs/123-fx-003-color-grading) holds the colour grade's MOD-001 descriptors; the
+//   grade value, its plain-Swift reference and its shader stage are in `Compositor` (output pass).
 // One library product, so CI's `-scheme Compositor` builds and tests every target.
 import PackageDescription
 
 let package = Package(
     name: "Compositor",
     platforms: [.iOS("26.0"), .macOS(.v15)],
-    products: [.library(name: "Compositor", targets: ["Compositor", "SpectrumLayers", "CameraLayer", "ProceduralMaterials", "GeneratorGraph", "GeneratorGraphImport", "ImageLayer", "VideoLayer", "TextLayer", "FrameCapture", "MediaSniffing", "FrameRecording"])],
+    products: [.library(name: "Compositor", targets: ["Compositor", "SpectrumLayers", "CameraLayer", "ProceduralMaterials", "GeneratorGraph", "GeneratorGraphImport", "ImageLayer", "VideoLayer", "TextLayer", "FrameCapture", "MediaSniffing", "FrameRecording", "ColorGradeParameters"])],
     dependencies: [
         .package(path: "../AnalysisFeatures"),
         .package(path: "../FlashSafety"),
@@ -80,6 +82,8 @@ let package = Package(
         .target(name: "SpectrumLayers", dependencies: ["Compositor", .product(name: "VisualGenerators", package: "VisualGenerators")]),
         .target(name: "CameraLayer", dependencies: ["Compositor"]),
         .target(name: "ProceduralMaterials", dependencies: ["Compositor", "ParameterGraph"]),
+        // FX-003: the colour grade's MOD-001 descriptors (the value and its shader live in Compositor).
+        .target(name: "ColorGradeParameters", dependencies: ["Compositor", "ParameterGraph"]),
         .target(name: "GeneratorGraph", dependencies: ["Compositor"]),
         .target(name: "MediaSniffing"),
         .target(name: "ImageLayer", dependencies: ["Compositor", "MediaSniffing"]),
@@ -93,6 +97,9 @@ let package = Package(
                     dependencies: ["ProceduralMaterials", "Compositor", "ParameterGraph", "FlashSafety", "AnalysisFeatures"]),
         .testTarget(name: "GeneratorGraphTests",
                     dependencies: ["GeneratorGraph", "Compositor", "FlashSafety", "AnalysisFeatures", "ProceduralMaterials"]),
+        .testTarget(name: "ColorGradeParametersTests",
+                    dependencies: ["ColorGradeParameters", "Compositor", "ParameterGraph", "ProceduralMaterials",
+                                   .product(name: "VisualGenerators", package: "VisualGenerators")]),
         .testTarget(name: "FrameCaptureTests", dependencies: ["FrameCapture"]),
         .testTarget(name: "FrameRecordingTests", dependencies: ["FrameRecording"]),
         .testTarget(name: "GeneratorGraphImportTests", dependencies: ["GeneratorGraphImport", "GeneratorGraph"]),

@@ -23,6 +23,7 @@
 //   of the picked file is removed. `importArchive(at:plan:)` imports only when the archive's bytes
 //   and the current photo and video are those the plan saw (`.planChanged` otherwise).
 // No networking; nothing from an archive is executed. Runs off the main actor.
+import ColorGradeParameters
 import Foundation
 import LocalPortability
 import ImageLayer
@@ -163,9 +164,10 @@ struct SceneArchiveService: Sendable {
         self.observer = observer
     }
 
-    /// The visual catalog plus the material catalog, as scenes are validated (SCN-001).
+    /// The visual catalog, the material catalog and the colour grade (FX-003), as scenes are validated (SCN-001).
     static func appRegistry() throws -> ParameterRegistry {
-        try ParameterRegistry(descriptors: VisualParameterCatalog.descriptors + ProceduralMaterialCatalog.descriptors)
+        try ParameterRegistry(descriptors: VisualParameterCatalog.descriptors + ProceduralMaterialCatalog.descriptors
+                              + ColorGradeCatalog.descriptors)
     }
 
     /// "projectM-iOS Scene 2026-11-13.pmscene": the local date, no scene, device or user name.

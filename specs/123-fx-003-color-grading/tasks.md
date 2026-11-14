@@ -48,7 +48,7 @@ finish. Logs go to `.autonomous/logs-fx-003/`.
   (`Packages/Compositor/Sources/Compositor/Compositor.swift`, `SceneTransitionBus.swift`): block built on set,
   bound in the screen, recording and capture output passes and the flash guard; whole-compositor test: a
   neutral `colorGrade` composites identically to a fresh compositor; setting it does not stop CMP-013 reuse. — Verified 2026-11-14: testCompositorAppliesTheGradeAndKeepsItsCompositeCache: graded output = reference within 0.002, compositeReused stays true after a grade change, recording = screen; block bound with setFragmentBytes/setBytes (no buffer).
-- [ ] FX-003-T08 [US2] Run RenderGoldens unchanged (FX-003-S5; log `goldens.log`).
+- [X] FX-003-T08 [US2] Run RenderGoldens unchanged (FX-003-S5; log `goldens.log`). — Verified 2026-11-14: RenderGoldens 39/39 with no golden re-recorded (git status clean under Packages/RenderGoldens; logs-fx-003/goldens.log, 2.2 s).
 
 ## Phase 4: User Story 1 - Grade the look (P1)
 
@@ -58,11 +58,11 @@ reference per operator; setting tests; UI test.
 - [X] FX-003-T09 [P] [US1] In `ColorGradeOutputTests.swift`: each operator alone and all together at a few
   representative settings vs `ColorGrade.apply` then `ToneMap.map`, within one 8-bit step / 0.002 (FX-003-S2);
   record the worst error per operator. — Verified 2026-11-14: testEachOperatorMatchesTheReference: worst half 0.00049, screen 0.77 of an 8-bit step (temperature −1); table in research D9.
-- [ ] FX-003-T10 [US1] Create `Packages/Compositor/Sources/ColorGradeParameters/ColorGradeCatalog.swift` and the
+- [X] FX-003-T10 [US1] Create `Packages/Compositor/Sources/ColorGradeParameters/ColorGradeCatalog.swift` and the
   target in `Packages/Compositor/Package.swift`: IDs `effect.colorGrade.temperature|lift|gamma|gain|saturation`,
   group `effect.colorGrade` "Color", ranges/defaults/steps from `ColorGrade`, `.continuousDefault`;
   `Packages/Compositor/Tests/ColorGradeParametersTests/ColorGradeCatalogTests.swift` (validates in a registry,
-  matches `ColorGrade`, IDs unique against `VisualParameterCatalog` and `ProceduralMaterialCatalog`).
+  matches `ColorGrade`, IDs unique against `VisualParameterCatalog` and `ProceduralMaterialCatalog`). — Verified 2026-11-14: ColorGradeCatalogTests 3/3 (validates, matches ColorGrade ranges/defaults/steps, IDs unique with the visual and material catalogs).
 - [ ] FX-003-T11 [US1] Register the catalog in the app registry
   (`Apps/projectM-iOS/Coordinators/SceneArchiveService.swift`) and the golden renderer
   (`Packages/RenderGoldens/Sources/SceneRenderHarness/GoldenSceneRenderer.swift`).
