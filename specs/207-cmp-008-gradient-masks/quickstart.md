@@ -14,9 +14,10 @@ Run from the worktree root on the Mac Studio. Simulator results are not device e
    host; the same suite on the "CMP8 iPhone 17" iOS 27.2 simulator with `xcodebuild test -scheme
    RenderGoldens -only-testing:RenderGoldensTests/GradientMaskGoldenTests`. Record once with
    `GOLDEN_RECORD=1` (refused under CI).
-5. GPU bench (CMP-008-S5): `CMP008_BENCH=1 swift test --package-path Packages/Compositor -c release
-   --filter testGradientGPUTimeBench`; record in `docs/test-reports/gradient-masks.md` as not device
-   evidence.
+5. GPU bench (CMP-008-S5): `CMP008_BENCH=1 swift test --package-path Packages/Compositor
+   --filter testGradientGPUTimeBench` (Debug: the Compositor tests do not build with `-c release`, their
+   DEBUG-only fault-injection hooks are compiled out; the GPU time is the run-time-compiled shader's either way);
+   record in `docs/test-reports/gradient-masks.md` as not device evidence.
 6. App: unit `LayerGradientEditTests`; UI test
    `LayerInspectorUITests/testGradientStopsCanBeAddedEditedAndUndone` on the "CMP8 iPhone 17"
    simulator (< 30 s).

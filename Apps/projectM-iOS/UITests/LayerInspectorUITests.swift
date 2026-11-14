@@ -123,8 +123,7 @@ final class LayerInspectorUITests: XCTestCase {
         XCTAssertEqual(alpha.value as? String, "0.50", "the new stop takes the gradient's own alpha")
         // A quick drag along the slider's line (the element is the slider alone; `dragSlider`'s slow drag took 6 s).
         let line = alpha.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        line.press(forDuration: 0.05, thenDragTo: alpha.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.5)),
-                   withVelocity: .fast, thenHoldForDuration: 0)
+        line.press(forDuration: 0.05, thenDragTo: alpha.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.5)))
         XCTAssertTrue(poll(5) { (Double(alpha.value as? String ?? "") ?? 0) > 0.6 }, "raised: \(String(describing: alpha.value))")
         let undo = app.navigationBars["Photo"].buttons["sceneUndo"]
         XCTAssertTrue(poll(5) { undo.label.hasPrefix("Undo Photo Gradient Stop 2 Alpha") }, undo.label)
