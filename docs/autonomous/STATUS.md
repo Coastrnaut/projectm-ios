@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T05:55:00Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T05:59:05Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 209 |
 | implementing | 2 |
-| unit_passed | 1 |
-| integrated | 113 |
+| integrated | 114 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 3 | 1 | 0 | 82 | 1 |
-| P1 | 120 | 1 | 1 | 29 | 0 |
-| P2 | 77 | 0 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 3 | 1 | 82 | 1 |
+| P1 | 120 | 1 | 30 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 212 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)
+- 211 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)
 
 ## Integrated
 
@@ -81,6 +80,7 @@ The physical-device suite may **not** start:
 | CAM-002 | Front camera layer | `ad0aebe2` | `feature/cam-002` |
 | CAM-007 | Camera crop and rotation | `094dece4` | `feature/cam-007` |
 | CAM-012 | Camera privacy status | `a188b049fc60` | `feature/cam-012` |
+| CAM-013 | Camera failure recovery | `95e6d77e` | `feature/cam-013` |
 | CMP-001 | Unified layer protocol | `ba60b9d3485a` | `feature/cmp-001` |
 | CMP-002 | Ordered layer stack | `4c8340e68244` | `feature/cmp-002` |
 | CMP-003 | Opacity per layer | `65caf9e9e6ec` | `feature/cmp-003` |
@@ -596,7 +596,7 @@ None.
 - `python3 scripts/validate_docs.py`: pass at `3e408a740a3b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-012/20261113T120140/docs.log`)
 - `post-merge: projectM-iOSTests 179 incl. CameraPrivacyStatusTests, CameraPrivacyStatusUITests 14.8 s, CameraUITests 2 (11.0 s, 11.4 s) on iPhone 17 iOS 27.2 sim`: pass at `a188b049fc60` (log `.autonomous/logs/integration/cam-012/app-tests.log`)
 
-### CAM-013 Camera failure recovery (unit_passed)
+### CAM-013 Camera failure recovery (integrated)
 - `python3 scripts/check_compliance.py`: pass at `a9f306f4d74d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-013/20261114T004901/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `a9f306f4d74d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-013/20261114T004901/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `a9f306f4d74d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-013/20261114T004901/sim-test_ANGLERendering.log`)
@@ -610,6 +610,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `a9f306f4d74d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-013/20261114T005209/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `a9f306f4d74d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-013/20261114T005209/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `a9f306f4d74d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-013/20261114T005209/swift-test_ShowControl.log`)
+- `post-merge: projectM-iOSTests 452 (after updating ACC-011's expected notice text) + CameraRecovery/StatusEvents/Camera/CameraPrivacyStatus UI tests 6; merge resolved with ACC-011 (router carries the stop reason)`: pass at `95e6d77e` (log `.autonomous/logs/integration/cam-013/final.log`)
 
 ### CMP-001 Unified layer protocol (integrated)
 - `python3 scripts/check_compliance.py`: pass at `19d1bd7e65a2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-001/20261113T110629/compliance.log`)
