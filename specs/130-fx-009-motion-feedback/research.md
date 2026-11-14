@@ -109,7 +109,10 @@ slider `trailsLengthSlider` (ACC-005 `.accessibleParameter`, step 0.05 s, unit s
 "0.20 s", footer naming the visuals and the safety caps. Keys join `LibrarySettingsPolicy.includedKeys` (FILE-005;
 FILE-011's erase derives from it), the privacy allow-list and the UI-test reset (`MotionFeedbackSetting.allKeys`).
 
-## FX-009-D10: GPU cost (filled in by FX-009-T10)
+## FX-009-D10: GPU cost (measured by FX-009-T10)
 
-To be measured on the Mac (M-class GPU) with command-buffer GPU timestamps, 1170 × 2532 output, 120 frames with and
-without Trails; recorded here and in the ADR.
+Measured on the Mac Studio's GPU with command-buffer GPU timestamps (`testBenchTrailsGPUTime`): one solid layer,
+1170 × 2532 `bgra8Unorm_srgb` output, render caching off so both runs do the same stack work, median of 50 frames
+after 10 warm-up frames, best of three alternating runs: **0.167 ms off, 0.183 ms on**, so the trails pass costs
+about 0.02 ms there. A first, non-alternating attempt gave a negative difference (warm-up in the "off" run), which is
+why the bench alternates. Mac numbers are not device evidence; the device frame rate is FX-009-T18 (`{device}`).

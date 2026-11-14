@@ -50,11 +50,11 @@ finish. Logs go to `.autonomous/logs-fx-009/`.
 - [X] FX-009-T07 [US1] In `MotionFeedbackCompositeTests.swift`: a trailing frame equals `MotionFeedback.blend` of
   the composite and the previous frame (within half-float rounding) at 60 and 120 fps; a still picture stays
   itself; transparent stays transparent. — Verified 2026-11-14: testTrailingFramesFollowTheHalfLifeAt60And120 (one frame = MotionFeedback.blend within 0.001; one half-life 0.4976 at 60 fps, 0.4961 at 120 fps), testStillPictureTrailsIntoItselfAndTransparentStaysTransparent.
-- [ ] FX-009-T08 [P] [US1] `Packages/Compositor/Sources/ColorGradeParameters/MotionFeedbackCatalog.swift`
+- [X] FX-009-T08 [P] [US1] `Packages/Compositor/Sources/ColorGradeParameters/MotionFeedbackCatalog.swift`
   (`effect.feedback.enabled`, `effect.feedback.halfLife`, D8); tests in
   `Packages/Compositor/Tests/ColorGradeParametersTests/ColorGradeCatalogTests.swift`; register in
   `Apps/projectM-iOS/Coordinators/SceneArchiveService.swift` and
-  `Packages/RenderGoldens/Sources/SceneRenderHarness/GoldenSceneRenderer.swift`.
+  `Packages/RenderGoldens/Sources/SceneRenderHarness/GoldenSceneRenderer.swift`. — Verified 2026-11-14: MotionFeedbackCatalogTests 3/3 and ColorGradeCatalogTests 3/3 on the host and in the Linux shape (logs-fx-009/catalog.log, linux-shape-final.log); registered in SceneArchiveService.appRegistry and GoldenSceneRenderer.registry; RenderGoldens 39/39 pass unchanged (logs-fx-009/rendergoldens.log).
 
 ## Phase 5: User Story 3 - Off is exactly today (P1)
 
@@ -62,8 +62,8 @@ finish. Logs go to `.autonomous/logs-fx-009/`.
   never had Trails, holds no picture, runs no pass; enable → disable returns both pictures; CMP-013 never reuses
   the composite while on and reuses it as before when off (FX-009-S4); pool checkouts return to the start after
   many enable/disable/size cycles (FX-009-S6). RenderGoldens unchanged (FX-009-S3). — Verified 2026-11-14: testOffIsBitIdenticalAndHoldsNothing (both formats, no pass, pair returned), testCompositeIsNeverReusedWhileTrailsAreActive (0 reuses on, reuse when off, layer hits kept), testPoolCheckoutsReturnAfterEnableDisableAndSizeCycles (2 → 2 after 6 cycles). RenderGoldens: see T17.
-- [ ] FX-009-T10 [US3] GPU timing on the Mac (bench test, not asserted): 1170 × 2532, 120 frames with and without
-  Trails; record in research FX-009-D10 and the ADR (FX-009-S8).
+- [X] FX-009-T10 [US3] GPU timing on the Mac (bench test, not asserted): 1170 × 2532, 120 frames with and without
+  Trails; record in research FX-009-D10 and the ADR (FX-009-S8). — Verified 2026-11-14: testBenchTrailsGPUTime on the Mac Studio GPU, 1170 × 2532 bgra8Unorm_srgb, median of 50 frames, best of 3 alternating runs: 0.167 ms off, 0.183 ms on (pass ≈ 0.016 ms; logs-fx-009/bench.log); recorded in research FX-009-D10 and ADR-0051.
 
 ## Phase 6: User Story 4 - Safety (P1)
 
@@ -90,8 +90,8 @@ finish. Logs go to `.autonomous/logs-fx-009/`.
 
 ## Phase 8: Polish
 
-- [ ] FX-009-T16 ADR `docs/adr/0051-motion-feedback-trails.md` (placement, blend, decay, reset rule, cache, safety)
-  and the ADR index; spec status.
+- [X] FX-009-T16 ADR `docs/adr/0051-motion-feedback-trails.md` (placement, blend, decay, reset rule, cache, safety)
+  and the ADR index; spec status. — Verified 2026-11-14: docs/adr/0051-motion-feedback-trails.md and the ADR index row; ADR-0040 amendment; validate_docs OK.
 - [ ] FX-009-T17 Gates: `check_compliance`, `validate_docs`, `check_motion_policy`, `check_permission_catalog`,
   `check_status_events`, `test_scripts`; Compositor, RenderGoldens and LibraryBackup package suites; app unit and
   `TrailsUITests` on an own simulator; long-body warnings in the changed SwiftUI files.

@@ -64,6 +64,8 @@ struct SettingsView: View {
     var latencyOffset: LatencyOffsetSetting?
     /// FX-003: the colour grade (nil hides its section, e.g. in previews).
     var colorGrade: ColorGradeSetting?
+    /// FX-009: Trails (nil hides its section, e.g. in previews).
+    var motionFeedback: MotionFeedbackSetting?
     /// MIDI-001: MIDI endpoint discovery (nil hides its section, e.g. in previews).
     var midi: MIDIDiscoveryCoordinator?
     /// UIX-015: the explainer before the camera and local network prompts (nil: none, e.g. in previews).
@@ -351,6 +353,7 @@ struct SettingsView: View {
         }
         if settings.visual.isNative { SpectrumColorsSection(settings: settings) }   // ACC-003-R13
         if let colorGrade { ColorGradeSection(setting: colorGrade) }   // FX-003-R9
+        if let motionFeedback { TrailsSection(setting: motionFeedback, clamp: settings.safetyClamp) }   // FX-009-R9
         SensorySafetySection(settings: settings, announcer: announcer)   // ACC-012-R10
         ReduceFlashingSection(settings: settings, available: reduceFlashingAvailable)   // FR-072 (own view: ACC-012 body budget)
     }
