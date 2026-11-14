@@ -239,7 +239,7 @@ the GPU time per frame (recorded, not asserted).
 | Layer content change (new photo loaded, new message rendered) | That layer renders once | Redrawn |
 | Layer parameter change (fit) | That layer renders once | Redrawn |
 | Output size change | All render | Redrawn |
-| Picture colour space or format change | All render (key) | Redrawn |
+| Picture colour space or format change (fixed by the CMP-001 picture contract today; in the key for when it varies) | All render (key) | Redrawn |
 | Reduce Flashing or content-scale change | All cacheable layers render | Redrawn |
 | Memory warning (texture pool purge) | All render | Redrawn |
 | GPU error observed, render-health reset, layer re-prepared or new pictures | All render (that layer for a re-prepare) | Redrawn |
