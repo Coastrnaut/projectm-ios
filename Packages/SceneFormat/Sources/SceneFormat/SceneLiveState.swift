@@ -146,9 +146,7 @@ extension SceneDocument {
                                                                fit: fit, mask: mask)))
         }
         // Canonical order (MOD-013-R10): live edges in live order, then preserved edges as stored.
-        let bindings = live.bindings.map { (b: AudioFeatureBinding) -> SceneBinding in
-            SceneBinding(b, expression: live.expressions[b.target])
-        } + live.preserved.bindings
+        let bindings = SceneBinding.list(live.bindings, expressions: live.expressions) + live.preserved.bindings
         let connections = live.modulation.edges.map { (e: ModulationEdge) -> SceneConnection in SceneConnection(e) }
             + live.preserved.connections
         let groups = live.stack.groups.map { (g: LayerGroup) -> SceneGroup in SceneGroup(g, members: live.stack.members(of: g.id)) }

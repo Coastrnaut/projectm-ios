@@ -115,6 +115,8 @@ public enum AudioFeatureBindingError: Error, Sendable, Hashable, CustomStringCon
     /// The curve breaks MOD-004 contract K5; `reason` is `MappingCurve.validationProblem`.
     case invalidCurve(ParameterID, reason: String)
     case tooManyBindings(ParameterID, limit: Int)
+    /// MOD-011-R1: the target already has `limit` bindings (layers).
+    case tooManyLayers(ParameterID, limit: Int)
     /// The binding set would contain a feedback loop (MOD-014-R9); `path` is the loop, readable.
     case feedbackCycle(ParameterID, path: String)
 
@@ -142,6 +144,8 @@ public enum AudioFeatureBindingError: Error, Sendable, Hashable, CustomStringCon
             "the curve bound to \"\(id)\" is invalid: \(reason)"
         case let .tooManyBindings(id, limit):
             "\"\(id)\" cannot be bound: \(limit) bindings already exist"
+        case let .tooManyLayers(id, limit):
+            "\"\(id)\" cannot take another binding: it already has \(limit), the most per parameter"
         case let .feedbackCycle(id, path):
             "\"\(id)\" cannot be bound: it would create the feedback loop \(path)"
         }

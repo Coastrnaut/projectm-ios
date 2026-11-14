@@ -202,10 +202,10 @@ final class SceneModulationRestoreTests: XCTestCase {
         XCTAssertEqual(loaded.modulationReport.entries.map { (e: SceneModulationReport.Entry) -> String in "\(e.outcome.rawValue) \(e.reason)" }, [
             "rewritten migrated to audio.onset → effect.bloom.intensity",
             "dropped \"effect.bloom.legacy\" is retired",
-            "rejected \"effect.bloom.intensity\" is already bound by binding 0",
+            "rewritten migrated to audio.onset → effect.bloom.intensity",   // MOD-011: a second layer on the parameter
         ])
         let saved = try SceneDocument(capturing: loaded.state, id: SceneFixtures.sceneID, name: "Old")
-        XCTAssertEqual(saved.bindings.map(\.edgeText), ["audio.onset → effect.bloom.intensity", "audio.onset → effect.glow.amount"])
+        XCTAssertEqual(saved.bindings.map(\.edgeText), ["audio.onset → effect.bloom.intensity", "audio.onset → effect.bloom.intensity"])
         // Without the history, the old IDs are merely unknown: orphaned and kept, never applied.
         let plain = try document.liveState(registry: try SceneFixtures.registry())
         XCTAssertEqual(plain.modulationReport.entries.map(\.outcome), [.orphaned, .orphaned, .orphaned])

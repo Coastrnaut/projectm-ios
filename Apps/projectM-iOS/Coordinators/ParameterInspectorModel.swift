@@ -301,10 +301,14 @@ struct ParameterModulationReading: Equatable {
     let sources: [String]
     /// The sensory safety clamp lowered the value.
     let limitedBySafety: Bool
+    /// MOD-011-R8: the mix order, shown when more than one binding drives the parameter; nil otherwise.
+    var order: String? = nil
 }
 
 enum ParameterModulationReader {
     static let midiSource = "MIDI control"
+    /// MOD-011-R8 (contract mix-order O1), shown when a parameter has more than one binding.
+    static let orderNote = "Order: the base value (MIDI control, else yours), then bindings 1, 2, … in turn, each kept in range, then the sensory safety limit."
 
     /// Nil when no binding and no MIDI value drives the parameter. `modulated` is the modulator's value for
     /// the MIDI (or manual) value; `rendered` the value the visual actually draws, when known.
@@ -313,11 +317,16 @@ enum ParameterModulationReader {
         let own: [AudioFeatureBinding] = bindings.filter { (b: AudioFeatureBinding) -> Bool in b.target == descriptor.id }
         guard !own.isEmpty || external != nil else { return nil }
         var sources: [String] = own.map { (b: AudioFeatureBinding) -> String in describe(b, descriptor: descriptor) }
+        let layered: Bool = own.count > 1
+        if layered {   // MOD-011-R8: numbered in application order
+            sources = sources.enumerated().map { (entry: (offset: Int, element: String)) -> String in "\(entry.offset + 1). " + entry.element }
+        }
         if external != nil { sources.append(midiSource) }
         let beforeClamp: Double = modulated ?? external ?? manual
         let effective: Double = rendered ?? beforeClamp
         let limited: Bool = rendered.map { (r: Double) -> Bool in r < beforeClamp - 1e-4 } ?? false
-        return ParameterModulationReading(effective: effective, sources: sources, limitedBySafety: limited)
+        return ParameterModulationReading(effective: effective, sources: sources, limitedBySafety: limited,
+                                          order: layered ? orderNote : nil)
     }
 
     /// "Kick → 0%…40% (replace)", "Average level → +10%…+20% (add)", "Onset → ×0.50…×1.00 (multiply)".

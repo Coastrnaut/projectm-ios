@@ -10,11 +10,16 @@
 // * One owner at a time (not `Sendable`, no lock). After setup, `advance` and `value(for:…)`
 //   allocate nothing: slots live in an array reserved for `maximumBindings` and are updated in
 //   place; lookups scan at most 32 slots. Never call from an audio callback (Constitution VII).
+// * MOD-011 layers: a parameter may have up to `maximumBindingsPerTarget` bindings. They apply in list
+//   order with a clamp after each (`ModulationMixOrder`, contract mix-order O1); `bind` keeps MOD-002's
+//   meaning (one binding per call, in place of all the target's layers), `addLayer` appends one.
 import Foundation
 
 public final class AudioFeatureModulator {
     /// At most this many bindings exist at once (MOD-002-R7).
     public static let maximumBindings = 32
+    /// At most this many bindings act on one parameter (MOD-011-R1).
+    public static let maximumBindingsPerTarget = 4
     /// The longest elapsed time one `advance` applies (a pause or suspension counts as this).
     public static let maximumStepSeconds = 0.25
 
@@ -38,36 +43,74 @@ public final class AudioFeatureModulator {
 
     // MARK: Binding
 
-    /// Validates `binding` (contract C2) and adds it; a binding for an already bound target
-    /// replaces that one and restarts its signal at 0.
+    /// Validates `binding` (contract C2) and adds it; for an already bound target it replaces all of
+    /// that target's bindings (MOD-011 layers included) in the first one's place and restarts its signal at 0.
     public func bind(_ binding: AudioFeatureBinding) throws(AudioFeatureBindingError) {
         let existing = index(of: binding.target)
-        let descriptor = try Self.validate(binding, in: registry, otherBindings: slots.count - (existing == nil ? 0 : 1))
-        // MOD-014-R9: the candidate binding set must be a loop-free graph. Audio features have no
-        // inputs, so this never fires today; it routes bindings through the validator later rows use.
+        let layers = layerCount(for: binding.target)
+        let descriptor = try Self.validate(binding, in: registry, otherBindings: slots.count - layers)
         var edges = modulationGraph.edges
         let edge = Self.edge(for: binding)
         if let existing { edges[existing] = edge } else { edges.append(edge) }
-        let issues = ModulationGraph(edges: edges).validate(in: registry)
-        if let loop = issues.first(where: { (issue: ModulationGraphIssue) -> Bool in issue.cycle != nil })?.cycle {
-            throw .feedbackCycle(binding.target, path: loop.path)
-        }
-        let bounds = Self.bounds(of: descriptor.kind)
-        let slot = Slot(binding: binding, descriptor: descriptor, minimum: bounds.minimum, maximum: bounds.maximum,
-                        isInteger: bounds.isInteger)
-        if let i = existing {
-            slots[i] = slot
-        } else {
-            slots.append(slot)
+        try checkLoops(edges, target: binding.target)
+        let slot = Self.slot(binding, descriptor: descriptor)
+        guard let i = existing else { return slots.append(slot) }
+        slots[i] = slot
+        if layers > 1 {   // MOD-011: the other layers go; the replaced one keeps its place
+            var j = slots.count - 1
+            while j > i {
+                if slots[j].binding.target == binding.target { slots.remove(at: j) }
+                j -= 1
+            }
         }
     }
 
-    /// Removes the target's binding; false when it was not bound.
+    /// MOD-011-R1, R2: validates `binding` (contract C2) and appends it as the target's next layer, applied
+    /// after every binding already in the list; the first layer when the target is unbound. Refuses a fifth
+    /// layer (`tooManyLayers`); nothing changes when it throws.
+    public func addLayer(_ binding: AudioFeatureBinding) throws(AudioFeatureBindingError) {
+        let descriptor = try Self.validate(binding, in: registry, otherBindings: slots.count)
+        guard layerCount(for: binding.target) < Self.maximumBindingsPerTarget else {
+            throw .tooManyLayers(binding.target, limit: Self.maximumBindingsPerTarget)
+        }
+        try checkLoops(modulationGraph.edges + [Self.edge(for: binding)], target: binding.target)
+        slots.append(Self.slot(binding, descriptor: descriptor))
+    }
+
+    /// MOD-014-R9: the candidate binding set must be a loop-free graph. Audio features have no inputs, so
+    /// this never fires today; it routes bindings through the validator later rows use. Duplicate edges
+    /// (two layers with the same source) are allowed.
+    private func checkLoops(_ edges: [ModulationEdge], target: ParameterID) throws(AudioFeatureBindingError) {
+        let issues = ModulationGraph(edges: edges).validate(in: registry)
+        if let loop = issues.first(where: { (issue: ModulationGraphIssue) -> Bool in issue.cycle != nil })?.cycle {
+            throw .feedbackCycle(target, path: loop.path)
+        }
+    }
+
+    private static func slot(_ binding: AudioFeatureBinding, descriptor: ParameterDescriptor) -> Slot {
+        let bounds = Self.bounds(of: descriptor.kind)
+        return Slot(binding: binding, descriptor: descriptor, minimum: bounds.minimum, maximum: bounds.maximum,
+                    isInteger: bounds.isInteger)
+    }
+
+    /// Removes every binding of the target (all MOD-011 layers); false when it was not bound.
     @discardableResult
     public func unbind(_ target: ParameterID) -> Bool {
-        guard let i = index(of: target) else { return false }
-        slots.remove(at: i)
+        guard index(of: target) != nil else { return false }
+        slots.removeAll { (slot: Slot) -> Bool in slot.binding.target == target }
         return true
+    }
+
+    /// MOD-011: how many bindings act on `target` (0 when unbound).
+    public func layerCount(for target: ParameterID) -> Int {
+        var count = 0
+        for i in slots.indices where slots[i].binding.target == target { count += 1 }
+        return count
+    }
+
+    /// MOD-011: the target's bindings in application order.
+    public func bindings(for target: ParameterID) -> [AudioFeatureBinding] {
+        slots.filter { (slot: Slot) -> Bool in slot.binding.target == target }.map(\.binding)
     }
 
     public func unbindAll() { slots.removeAll(keepingCapacity: true) }
@@ -89,8 +132,12 @@ public final class AudioFeatureModulator {
         ModulationEdge(source: .audio(binding.source), target: .parameter(binding.target))
     }
 
-    /// The target's current signal (0…1), or nil when it is not bound.
+    /// The target's current signal (0…1), or nil when it is not bound; with MOD-011 layers, the first
+    /// layer's (`signal(for:layer:)` reads the others).
     public func signal(for target: ParameterID) -> Double? { index(of: target).map { slots[$0].signal } }
+
+    /// MOD-011: the signal of the target's `layer`-th binding (0-based), or nil when there is none.
+    public func signal(for target: ParameterID, layer: Int) -> Double? { index(of: target, layer: layer).map { slots[$0].signal } }
 
     // MARK: Evaluation
 
@@ -117,16 +164,18 @@ public final class AudioFeatureModulator {
     /// Replaces the bound target's attack and release times without restarting its signal
     /// (MOD-005-R8, contract E6): the next advance continues from the current signal with the new
     /// times. Refuses an unbound target and invalid times; nothing changes when it throws.
-    public func setEnvelope(_ envelope: AudioFeatureEnvelope, for target: ParameterID) throws(AudioFeatureBindingError) {
-        guard let i = index(of: target) else { throw .unknownTarget(target) }
+    /// MOD-011: `layer` picks one of the target's bindings (0-based, the first by default).
+    public func setEnvelope(_ envelope: AudioFeatureEnvelope, for target: ParameterID, layer: Int = 0) throws(AudioFeatureBindingError) {
+        guard let i = index(of: target, layer: layer) else { throw .unknownTarget(target) }
         guard envelope.isValid else { throw .invalidEnvelope(target) }
         slots[i].binding.envelope = envelope
     }
 
-    /// The effective value of `target` given its manual value: `manual` itself when unbound.
+    /// The effective value of `target` given its manual (base) value: `manual` itself when unbound;
+    /// otherwise every layer in list order (contract mix-order O1).
     public func value(for target: ParameterID, manual: Double) -> Double {
         guard let i = index(of: target) else { return manual }
-        return effective(slots[i], manual: manual)
+        return effective(from: i, manual: manual)
     }
 
     /// The effective value of `target` given its manual value; unbound targets and non-numeric
@@ -134,8 +183,8 @@ public final class AudioFeatureModulator {
     public func value(for target: ParameterID, manual: ParameterValue) -> ParameterValue {
         guard let i = index(of: target) else { return manual }
         switch manual {
-        case let .continuous(v): return .continuous(effective(slots[i], manual: v))
-        case let .integer(v): return .integer(Int(effective(slots[i], manual: Double(v))))
+        case let .continuous(v): return .continuous(effective(from: i, manual: v))
+        case let .integer(v): return .integer(Int(effective(from: i, manual: Double(v))))
         default: return manual
         }
     }
@@ -152,16 +201,31 @@ public final class AudioFeatureModulator {
         return nil
     }
 
-    private func effective(_ slot: Slot, manual: Double) -> Double {
-        let s = slot.signal
-        let shaped = slot.binding.curve.apply(s)            // 0…1, exact ends, monotonic; linear returns s (MOD-004)
-        let mapped = slot.binding.mapping.interpolate(shaped)   // exact ends, bounded, monotonic (MOD-003)
-        let combined: Double = switch slot.binding.mixMode {
-        case .replace: mapped
-        case .add: manual + mapped
-        case .multiply: manual * mapped
+    private func index(of target: ParameterID, layer: Int) -> Int? {
+        var seen = 0
+        for i in slots.indices where slots[i].binding.target == target {
+            if seen == layer { return i }
+            seen += 1
         }
-        let clamped = min(max(combined.isFinite ? combined : manual, slot.minimum), slot.maximum)
+        return nil
+    }
+
+    /// The layer's mapped value: signal (already enveloped, MOD-005) → curve (MOD-004) → range (MOD-003).
+    private static func mapped(_ slot: Slot) -> Double {
+        let shaped = slot.binding.curve.apply(slot.signal)   // 0…1, exact ends, monotonic; linear returns s (MOD-004)
+        return slot.binding.mapping.interpolate(shaped)      // exact ends, bounded, monotonic (MOD-003)
+    }
+
+    /// Contract mix-order O1 steps 2 and 3, from the target's first slot `first`. Allocation-free.
+    private func effective(from first: Int, manual: Double) -> Double {
+        let slot = slots[first]
+        let target = slot.binding.target
+        var running: Double = manual
+        for i in first..<slots.count where slots[i].binding.target == target {
+            running = ModulationMixOrder.step(running, mapped: Self.mapped(slots[i]), mode: slots[i].binding.mixMode,
+                                              minimum: slot.minimum, maximum: slot.maximum)
+        }
+        let clamped = running
         guard slot.isInteger else { return clamped }
         let rounded = Int(clamped.rounded(.toNearestOrAwayFromZero))
         let snapped = try? ParameterStore.normalized(.integer(rounded), for: slot.descriptor)

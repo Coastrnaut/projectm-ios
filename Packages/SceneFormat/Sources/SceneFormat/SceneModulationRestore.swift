@@ -138,10 +138,20 @@ extension SceneDocument {
             return finish(.orphaned, reason, issue: SceneIssue(.orphanedBinding, path: path + ".target",
                                                                "Binding \(i): \(reason); it is kept but not applied."))
         }
+        // MOD-011-R7 (contract mix-order O3): up to 4 bindings per parameter apply as layers in document
+        // order; a fifth, or an expression on a later layer, is rejected and kept verbatim.
         if let j = firstIndexByTarget[targetID] {
-            let reason = "\"\(targetID)\" is already bound by binding \(j)"
-            return finish(.rejected, reason, issue: SceneIssue(.duplicateBindingTarget, path: path + ".target",
-                                                               "Binding \(i) targets \"\(targetID)\", already bound by binding \(j)."))
+            let limit = AudioFeatureModulator.maximumBindingsPerTarget
+            if modulator.layerCount(for: targetID) >= limit {
+                let reason = "\"\(targetID)\" is already bound by \(limit) bindings"
+                return finish(.rejected, reason, issue: SceneIssue(.duplicateBindingTarget, path: path + ".target",
+                                                                   "Binding \(i) targets \"\(targetID)\", already bound by \(limit) bindings (the most per parameter)."))
+            }
+            if binding.expression != nil {
+                let reason = "only the first binding of \"\(targetID)\" (binding \(j)) may carry an expression"
+                return finish(.rejected, reason, issue: SceneIssue(.duplicateBindingTarget, path: path + ".expression",
+                                                                   "Binding \(i) carries an expression for \"\(targetID)\", already bound by binding \(j); only a parameter's first binding may carry one."))
+            }
         }
         if binding.hasUnreadableCurve {   // MOD-004 contract K8: kept verbatim, never guessed
             return finish(.rejected, "the curve cannot be read by this version",
@@ -158,13 +168,13 @@ extension SceneDocument {
         }
         let live = binding.audioFeatureBinding(source: feature, target: targetID)
         do {
-            try modulator.bind(live)
+            try modulator.addLayer(live)   // the first binding of its target, or the next layer (MOD-011)
         } catch {
             // MOD-005-R10: an invalid attack or release time is reported at the envelope itself.
             let at: String = if case .invalidEnvelope = error { path + ".envelope" } else { path }
             return finish(.rejected, error.description, issue: SceneIssue(.invalidBinding, path: at, "Binding \(i): \(error.description)."))
         }
-        firstIndexByTarget[targetID] = i
+        if firstIndexByTarget[targetID] == nil { firstIndexByTarget[targetID] = i }
         restore.bindings.append(live)
         if let text = binding.expression { restore.expressions[targetID] = text }
         let applied = feature.id + " → " + targetID.rawValue
@@ -192,9 +202,11 @@ extension SceneDocument {
             restore.issues.append(SceneIssue(.invalidModulation, path: k.map { (k: Int) -> String in "$.modulation.generators[\(k)]" } ?? "$.modulation",
                                              "Modulation: \(issue.message)"))
         }
+        // One edge per source and parameter: MOD-011 layers with the same source are one dependency.
+        var seenEdges: Set<ModulationEdge> = []
         let bindingEdges = restore.bindings.map { (b: AudioFeatureBinding) -> ModulationEdge in
             ModulationEdge(source: .audio(b.source), target: .parameter(b.target))
-        }
+        }.filter { (e: ModulationEdge) -> Bool in seenEdges.insert(e).inserted }
         var accepted: [ModulationEdge] = []
         for (j, connection) in modulation.connections.enumerated() {
             let path = "\(base)[\(j)]"
