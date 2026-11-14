@@ -1,0 +1,67 @@
+# Tasks: ANL-010 Spectral Centroid
+
+**Input**: Design documents in `specs/093-anl-010-spectral-centroid/` (spec.md, plan.md,
+research.md, data-model.md, contracts/spectral-centroid.md, quickstart.md).
+
+**Tests**: test-first. Each test task comes before the code it covers; the red run (compile failure)
+is recorded before the production change. Budgets (owner rule 7): a unit test about 1-2 s (≤ 10 s),
+each package suite under 1 minute; the AnalysisFeatures Linux-shape suite already takes ≈ 67 s, so
+this row adds at most a few hundred milliseconds there. Representative cases only.
+
+**Format**: `- [ ] ID [P?] [Story?] Description with file path`. `[P]` = can run in parallel.
+`{sim}` = needs the row's own iOS 27.2 simulator "ANL10 iPhone 17" (created for this row, deleted
+afterwards). Inside descriptions "T03" is short for `ANL-010-T03`. A task is ticked only when its
+evidence was produced, with " — Verified <date>: <how>" appended. Logs go to `.build/scratch/`.
+
+## Phase 1: Setup
+
+- [ ] ANL-010-T01 Record the baseline: `swift test --package-path Packages/AnalysisFeatures` in the Linux shape (`-Xswiftc -DANALYSIS_NO_ACCELERATE --scratch-path Packages/AnalysisFeatures/.build/linux`); `check_compliance.py`, `validate_docs.py`, `check_motion_policy.py`, `check_permission_catalog.py`, `test_scripts.py`. Evidence: counts and durations recorded here.
+
+## Phase 2: Foundational (blocks every story)
+
+- [ ] ANL-010-T02 Write `Packages/AnalysisFeatures/Tests/AnalysisFeaturesTests/SpectralCentroidTests.swift` with a helper that analyses one window of synthetic PCM through `SpectrumAnalyzer` (both backends where compiled) and the estimator, plus tests for `SpectralBinRange` ("first = max(1, ⌈lower·N/R⌉)", "last = min(N/2, ⌊upper·N/R⌋)", nil when empty) and the configuration (`.standard` = 44,100 Hz, 20 Hz, Nyquist, −70 dB, 50 Hz, 10 kHz; each invalid field throws: rate "finite, > 0", lower "finite, > 0, < Nyquist", upper "nil or finite and > lowerFrequency", floor "finite, < 0", normalization "finite, > 0" and upper > lower; `normalized(hz:)` at 50 Hz → 0, 10 kHz → 1, 1 kHz ≈ 0.565, non-finite → 0). Record the red run.
+- [ ] ANL-010-T03 Implement `Packages/AnalysisFeatures/Sources/AnalysisFeatures/SpectralBinRange.swift` and `SpectralCentroid.swift` (contract C1, C2; power-weighted sum accumulated in Double; non-finite magnitudes count 0; typed arithmetic steps; `process` allocates, locks, logs and reads no clock, ANL-010-R10, R11, checked by reading the diff). Evidence: T02 passes on the host and in the Linux shape.
+
+## Phase 3: User Story 1 - brighter sound reads higher (P1) 🎯 MVP
+
+**Independent test**: `SpectralCentroidTests` acceptance cases.
+
+- [ ] ANL-010-T04 [US1] Add to `SpectralCentroidTests.swift`: tones 100, 200, 400, 800, 1,600, 3,200, 6,400 Hz (−6 dBFS, 2,048 points, 44.1 kHz, not bin-centred) give strictly increasing centroids, each within 1 % of the tone, normalized strictly increasing in 0…1 (print the table); seeded white noise reads within 5 % of the expected mean (k₀ + N/2)/2·R/N; two tones 500 Hz + 2 kHz at amplitudes 1 and 0.25 read 800 Hz within 1 %, equal amplitudes 1,250 Hz. Evidence: passes on both shapes; tone table recorded in spec.md.
+
+## Phase 4: User Story 2 - same reading everywhere (P1)
+
+- [ ] ANL-010-T05 [US2] Add to `SpectralCentroidTests.swift`: a 1 kHz tone at all five FFT sizes and at 44.1 and 48 kHz reads within 1 %; 200 Hz at 512 points within 1 %; a tone at −6 and −40 dBFS reads the same within 0.1 %. Evidence: passes on both shapes.
+
+## Phase 5: User Story 3 - silence is calm (P1)
+
+- [ ] ANL-010-T06 [US3] Add to `SpectralCentroidTests.swift`: digital silence and ±1 LSB 16-bit dither from the start read (0, 0, no signal); a tone then silence holds the tone's `hz` and `normalized` exactly with `hasSignal` false; `reset()` returns `.none`; a frame at another sample rate or with a wrong magnitude count leaves the reading unchanged; non-finite magnitudes give finite output. Evidence: passes on both shapes.
+
+## Phase 6: Bus integration (serves US1, US4)
+
+- [ ] ANL-010-T07 [US4] Write a pipeline test in `SpectralCentroidTests.swift` (stereo 300 Hz then 3 kHz tone, about 0.2 s each, through a `NormalizedPCMRing` tap and `AnalysisPipeline.step()`): frames well inside each tone read `centroidHz` within 1 % of it and the 3 kHz frames' `centroid` is higher; frames before any signal after a session start read 0; a configuration with a different centroid sample rate throws `.sampleRateMismatch`. Record the red run.
+- [ ] ANL-010-T08 [US4] Implement `AnalysisFrame.centroidHz`/`centroid` (defaulted to 0) in `AnalysisBusTypes.swift`, `centroid` with the rate check in `AnalysisPipelineConfiguration.swift`, and in `AnalysisPipeline.swift` own the estimator, reset it per session, run it per frame. Evidence: T07 passes; AnalysisFeatures whole suite on the host and in the Linux shape (delta recorded).
+
+## Phase 7: User Story 4 - Centroid modulation source (P2)
+
+- [ ] ANL-010-T09 [P] [US4] Add tests in `Packages/ParameterGraph/Tests/`: `AudioFeatureSourceTests` (`audio.centroid` round-trips, reads `frame.centroid`, nil/non-finite → 0), `AudioFeatureModulatorTests` (a Centroid binding follows the value), `ExpressionEvaluationTests` (`audio.centroid` compiles to opcode 15 and reads the frame). Record the red run.
+- [ ] ANL-010-T10 [US4] Implement `AudioFeatureSource.centroid` and `AudioFeatureFrame.centroid` in `Packages/ParameterGraph/Sources/ParameterGraph/AudioFeatureSource.swift`, `ExpressionOpcode.centroid = 15` in `CompiledExpression.swift` and `ExpressionCompiler.swift`. Evidence: ParameterGraph and SceneFormat suites pass on the host.
+- [ ] ANL-010-T11 [US4] Add `centroid` to `LiveBandFrameInfo` in `Packages/VisualGenerators/Sources/VisualBandFeed/LiveBandAnalyzer.swift`; in `Apps/projectM-iOS/Visuals/NativeSpectrumHost.swift` keep the last centroid read (0 after a pause restart) and pass it through `applyModulation(bands:kick:centroid:timeNanoseconds:)`; add "Centroid binds and drives the glow" to `Apps/projectM-iOS/Tests/AudioFeatureBindingAppTests.swift`. Evidence: VisualGenerators suite on the host; projectM-iOSTests pass `{sim}`.
+
+## Phase 8: Polish
+
+- [ ] ANL-010-T12 Build and test the remaining dependants (PerformanceControl, Compositor, RenderGoldens, ShowControl); record the tone table and test cost in `spec.md`; run the five scripts (check_compliance covers ANL-010-R12); count PosterBoard reports; delete the row's simulator; mark the spec Implemented.
+
+## Dependencies
+
+T01 → T02 → T03 → (T04, T05, T06) → T07 → T08 → T09 → T10 → T11 → T12. T09 can be written in
+parallel with T04-T08 (different package).
+
+## Parallel example
+
+After T03: T04-T06 (AnalysisFeatures tests) and T09 (ParameterGraph tests) touch different
+packages and can be written together.
+
+## Implementation strategy
+
+MVP = T01-T04 (the roadmap acceptance in the package); then consistency and silence (T05, T06),
+the bus (T07, T08), the modulation source (T09-T11); polish last.
