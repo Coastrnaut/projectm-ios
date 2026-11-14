@@ -21,7 +21,8 @@ final class SceneSwitcherUITests: XCTestCase {
     private var probe: String { (app.staticTexts["sceneSwitcherProbe"].value as? String) ?? "" }
     private var announcement: String { (app.staticTexts["announcementProbe"].value as? String) ?? "" }
     private var card: XCUIElement { app.otherElements["sceneSwitcher"] }
-    private var field: XCUIElement { app.textFields["sceneSwitcherField"] }
+    /// A text field, or a text view at accessibility sizes (the query wraps there, ACC-006-R1).
+    private var field: XCUIElement { app.descendants(matching: .any)["sceneSwitcherField"].firstMatch }
     private var count: XCUIElement { app.staticTexts["sceneSwitcherCount"] }
     private func entry(_ n: Int) -> XCUIElement { app.buttons["sceneSwitcherEntry.\(n)"] }
     private var controls: XCUIElement { app.otherElements["controls"] }

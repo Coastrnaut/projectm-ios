@@ -96,23 +96,27 @@ extension MIDIMappingCoordinator {
 
     // MARK: Receiving
 
-    /// Note learn first (the learning press is consumed), then the router on the rest of the batch.
-    func receiveNotes(_ batch: [MIDIEvent]) {
+    /// Note learn first (the learning press is consumed), then the router on the rest of the batch. Returns the
+    /// learning press's index (MIDI-007: scene routing skips it too).
+    @discardableResult
+    func receiveNotes(_ batch: [MIDIEvent]) -> Int? {
         guard noteSession.isLearning, let outcome = noteSession.handle(batch, now: clock(), isEligible: MIDILearnEligibility.isNoteEligible) else {
             route(batch[...])
-            return
+            return nil
         }
         switch outcome {
         case let .bound(key, target, eventIndex):
             route(batch[..<eventIndex])
             bindNote(key, to: target)
             route(batch[(eventIndex + 1)...])
+            return eventIndex
         case .timedOut:
             finishTimedOut()
             route(batch[...])
         case .cancelled:
             route(batch[...])
         }
+        return nil
     }
 
     private func route(_ events: ArraySlice<MIDIEvent>) {
@@ -127,6 +131,7 @@ extension MIDIMappingCoordinator {
         let outcome: MIDINoteBindOutcome = after.bind(key, to: target)
         endLearning()
         let mapped: String = target.title + " mapped to " + Self.spokenNote(key)
+        let scenesBefore: MIDISceneBindingList = sceneBindings
         switch outcome {
         case .full:
             lastMessage = Self.fullText
@@ -137,10 +142,13 @@ extension MIDIMappingCoordinator {
             lastMessage = mapped + " (moved from " + from.title + ")."
         case .added, .replaced:
             lastMessage = mapped + "."
+            if let freed = sceneBindings.remove(key: key) {   // MIDI-007-R8: one action per note
+                lastMessage = mapped + " (moved from " + sceneTitle(freed.sceneID) + ")."
+            }
         }
         releaseNotes(changedFrom: before, to: after)
         noteBindings = after
-        if before != after { rememberUndo(cc: bindings, notes: before) }
+        if before != after || scenesBefore != sceneBindings { rememberUndo(cc: bindings, notes: before, scenes: scenesBefore) }
         announce(lastMessage ?? mapped)
         listChanged()
     }

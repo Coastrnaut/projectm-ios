@@ -15,8 +15,10 @@ final class SceneSourceSafetyTests: XCTestCase {
                                "SceneEncoding.swift", "SceneGroup.swift",   // CMP-011
                                "SceneHistory.swift", "SceneIssue.swift",
                                "SceneJSON.swift", "SceneJSONParser.swift", "SceneJSONWriter.swift", "SceneLiveState.swift", "SceneLogo.swift",   // MED-010
+                               "SceneMediaReferences.swift",   // MED-013
                                "SceneMigration.swift",
                                "SceneModulationRestore.swift", "SceneRepair.swift", "SceneSlideshow.swift",   // MED-006
+                               "SceneTriggers.swift",   // MOD-006
                                "SceneValidation.swift", "SceneVideoLoop.swift"])   // MED-003
         return try names.map { (name: String) -> (name: String, text: String) in
             (name, try String(contentsOf: directory.appendingPathComponent(name), encoding: .utf8))

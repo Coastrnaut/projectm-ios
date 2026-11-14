@@ -229,6 +229,7 @@ extension SceneDocument {
     /// MOD-013 per-edge restore (contract M3, M4): bindings, generator declarations, connections.
     private func validateModulation(_ registry: ParameterRegistry, into issues: inout [SceneIssue]) {
         issues += restoreModulation(registry: registry).issues
+        if let triggers { issues += SceneTriggerEntry.read(triggers).issues }   // MOD-006 (warnings)
     }
 }
 

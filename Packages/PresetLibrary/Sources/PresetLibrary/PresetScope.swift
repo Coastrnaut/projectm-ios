@@ -13,6 +13,9 @@ public enum PresetScope: Sendable, Hashable {
     case collection(String)
     /// The presets the user imported (PRE-012-R22), alphabetical.
     case user
+    /// PRE-003-R10: the presets carrying every one of these tags (display spellings), alphabetical.
+    /// Like a search it is not kept across launches: it is stored as `all`.
+    case tagged([String])
 
     /// Persisted as `settings.presetScope`. A search scope stores `all`: no search text is kept
     /// (spec Clarifications, FR-119).
@@ -22,7 +25,7 @@ public enum PresetScope: Sendable, Hashable {
         case .pack(let id): "pack:\(id)"
         case .folder(let id, let path): "folder:" + ([id] + path).joined(separator: "/")
         case .favorites: "favorites"
-        case .search, .all: "all"
+        case .search, .all, .tagged: "all"
         case .collection(let id): "collection:\(id)"
         case .user: "user"
         }
