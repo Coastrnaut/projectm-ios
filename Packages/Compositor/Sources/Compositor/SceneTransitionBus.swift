@@ -18,6 +18,7 @@
 // returns its own pictures in its `deinit`. Nothing is cached: every blended frame is mixed again (CMP-013's
 // reuse stays inside each scene). Not Sendable: one thread drives the bus and its scenes.
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
+import FlashSafety
 import Metal
 
 public final class SceneTransitionBus {
@@ -133,6 +134,11 @@ public final class SceneTransitionBus {
     /// Forgets the flash history (FX-019-R11); a transition does not call it.
     public func resetFlashHistory() { flashGuard.reset() }
 
+    /// ACC-012-R5: the sensory safety profile's envelope for the final flash guard when it differs from the
+    /// Reduce flashing one (`SafetyClamp.flashLimitsOverride`); nil = `forReduceFlashing(reduceFlashing)`.
+    /// From the next frame; the guard's history is kept (FX-019-R11).
+    public var flashLimits: FlashEnvelopeConfiguration?
+
     /// Encodes one shown frame into `output` (a `Compositor.supportedOutputFormats` render target). Returns
     /// false for no live scene, an empty output, an unsupported format or an encoding failure.
     public func encodeFrame(into output: MTLTexture, commandBuffer: MTLCommandBuffer, presentationTimeNanoseconds: UInt64,
@@ -172,7 +178,7 @@ public final class SceneTransitionBus {
         }
         lastCommandBuffer = commandBuffer
         guard flashGuard.encode(composite: shown, commandBuffer: commandBuffer, frameDuration: frame.frameDuration,
-                                reduceFlashing: reduceFlashing) else { return false }
+                                reduceFlashing: reduceFlashing, flashLimits: flashLimits) else { return false }
         guard encodeOutputPass(shown, into: output, pipeline: pipeline, label: "CMP-014 output", commandBuffer: commandBuffer) else {
             return false
         }
