@@ -58,7 +58,7 @@ an amplitude smaller than the gap between the fire level and the re-arm level, a
 **Acceptance Scenarios**:
 
 1. **Given** a trigger with fire level `high` and re-arm level `low`, **When** the input is noise of
-   amplitude below `high − low` centred on `high`, on `low` or between them for 10 s at 60 fps, **Then**
+   amplitude below `high − low` centred on `high` or on `low`, or below half of it centred on their midpoint, for 10 s at 60 fps, **Then**
    at most one trigger fires.
 2. **Given** a clean pulse train (each pulse rises above `high`, then falls below `low`) with pulses
    farther apart than the minimum interval, **When** it plays, **Then** exactly one trigger fires per
@@ -163,8 +163,8 @@ a kick-shaped input driving the cue action.
 
 ### Measurable Outcomes
 
-- **MOD-006-S1**: 10 s of seeded noise at 60 fps with amplitude below the hysteresis width, centred on the
-  fire level, the re-arm level and their midpoint, gives at most one trigger in every case.
+- **MOD-006-S1**: 10 s of seeded noise at 60 fps with amplitude below the hysteresis width centred on the
+  fire level or the re-arm level, and below half the width centred on their midpoint, gives at most one trigger in every case.
 - **MOD-006-S2**: A clean pulse train gives exactly one trigger per pulse; with pulses closer than the
   minimum interval, no two triggers are closer than the interval, at 60 fps, 120 fps and with jitter.
 - **MOD-006-S3**: No tested non-finite input or frame-time anomaly produces a trigger; two runs are

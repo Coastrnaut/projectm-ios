@@ -51,7 +51,7 @@ link; never an audio callback).
 **Constraints**: Constitution VI (ParameterGraph stays independent of PerformanceControl: the action
 enum mirrors MIDI-006's identifiers and the app maps them), VII (not in audio callbacks), X (tests).
 
-**Scale/Scope**: 3 new source files, 4 edited package files, 3 edited app files, 4 new test files.
+**Scale/Scope**: 3 new source files, 6 edited SceneFormat files, 5 edited app files, 3 new test files.
 
 ## Constitution Check
 
