@@ -77,7 +77,7 @@ public final class MetalFrameRecorder: @unchecked Sendable {
                             settings: RecordingSettings = .standard, realTime: Bool = true,
                             fault: RecordingWriterFault? = nil, audio: Bool = false) throws(RecordingFailure) {
         guard let geometry = RecordingGeometry(drawableWidth: drawableWidth, drawableHeight: drawableHeight,
-                                               maxLongSide: settings.maxLongSide) else { throw .pixelBufferUnavailable }
+                                               settings: settings) else { throw .pixelBufferUnavailable }   // REC-014: aspect, cap
         let writer = try VideoFileWriter.make(url: url, geometry: geometry, settings: settings, realTime: realTime, audio: audio)
         // REC-015-R12: tests may make the writer fail after N frames (nil in the app's normal use).
         let sink: any RecordingSampleSink = fault.map { (f: RecordingWriterFault) -> any RecordingSampleSink in
