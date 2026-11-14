@@ -11,15 +11,15 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 32,
-   "built": 6,
-   "implementing": 1,
-   "integrated": 111,
+   "audited": 31,
+   "built": 5,
+   "implementing": 2,
+   "integrated": 112,
    "unit_passed": 1
   },
   "P2": {
-   "audited": 69,
-   "implementing": 1,
+   "audited": 68,
+   "implementing": 2,
    "integrated": 9
   },
   "P3": {
@@ -27,10 +27,10 @@
   }
  },
  "by_state": {
-  "audited": 112,
-  "built": 6,
-  "implementing": 2,
-  "integrated": 204,
+  "audited": 110,
+  "built": 5,
+  "implementing": 4,
+  "integrated": 205,
   "skipped_existing": 1,
   "unit_passed": 1
  },
@@ -106,7 +106,6 @@
    "PRE-009",
    "PRE-011",
    "PRE-017",
-   "PRE-018",
    "QA-009",
    "QA-010",
    "QA-011",
@@ -164,7 +163,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "121 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-015, CAM-003)"
+   "120 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-015, CAM-003)"
   ]
  },
  "features": {
@@ -770,13 +769,13 @@
   },
   "CAM-003": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/cam-003",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "CAM-004": {
    "attempts": 0,
@@ -2373,10 +2372,10 @@
    "branch": "feature/pre-018",
    "branch_sha": "653a3ca8caffd817a32ddf0f35eb633a51914a6c",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "7a07c74e",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "QA-001": {
    "attempts": 0,
@@ -3121,12 +3120,12 @@
   "UIX-005": {
    "attempts": 0,
    "branch": "feature/uix-005",
-   "branch_sha": "bcbc6596",
+   "branch_sha": "70fdae05d74309ed9fa57e4d2d7d31dc2f797dfd",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "built"
+   "state": "unit_passed"
   },
   "UIX-006": {
    "attempts": 0,
@@ -3300,13 +3299,13 @@
   },
   "VIS-008": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/vis-008",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "VIS-009": {
    "attempts": 0,
@@ -4201,6 +4200,11 @@
    "sha": "e4dca4c4"
   },
   {
+   "branch": "feature/pre-018",
+   "id": "PRE-018",
+   "sha": "7a07c74e"
+  },
+  {
    "branch": "feature/qa-002",
    "id": "QA-002",
    "sha": "dffa2be908f507e21886d1561549282279cd67da"
@@ -4476,5 +4480,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T19:40:59Z"
+ "updated": "2026-11-14T19:42:55Z"
 }

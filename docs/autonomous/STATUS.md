@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T19:40:59Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T19:42:55Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,11 +9,11 @@
 
 | State | Features |
 |---|---|
-| audited | 112 |
-| implementing | 2 |
-| built | 6 |
+| audited | 110 |
+| implementing | 4 |
+| built | 5 |
 | unit_passed | 1 |
-| integrated | 204 |
+| integrated | 205 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -21,14 +21,14 @@
 | Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 0 | 84 | 1 |
-| P1 | 32 | 1 | 6 | 1 | 111 | 0 |
-| P2 | 69 | 1 | 0 | 0 | 9 | 0 |
+| P1 | 31 | 2 | 5 | 1 | 112 | 0 |
+| P2 | 68 | 2 | 0 | 0 | 9 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 121 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-015, CAM-003)
+- 120 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-015, CAM-003)
 
 ## Integrated
 
@@ -188,6 +188,7 @@ The physical-device suite may **not** start:
 | PRE-014 | Bulk preset export | `a20ba4bafb5e` | `feature/pre-014` |
 | PRE-015 | User preset duplication | `c6cce9988587` | `feature/pre-015` |
 | PRE-016 | Preset parameter overrides | `e4dca4c4` | `feature/pre-016` |
+| PRE-018 | Preset integrity scanner | `7a07c74e` | `feature/pre-018` |
 | QA-002 | Golden render scenes | `dffa2be908f5` | `feature/qa-002` |
 | QA-003 | Visual diff tolerances | `ae0249ac` | `feature/qa-003` |
 | QA-004 | Scene migration matrix | `2d758a4` | `feature/qa-004` |
@@ -1893,7 +1894,7 @@ None.
 - `swift test --package-path Packages/PresetLibrary`: pass at `3bb694ab053e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-016/20261114T123919/swift-test_PresetLibrary.log`)
 - `post-merge: projectM-iOSTests 872 + UI 9 (beat rings, preset overrides, preset library, glow)`: pass at `e4dca4c4` (log `.autonomous/logs/integration/batch37/app-tests.log`)
 
-### PRE-018 Preset integrity scanner (unit_passed)
+### PRE-018 Preset integrity scanner (integrated)
 - `python3 scripts/check_compliance.py`: pass at `653a3ca8caff` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-018/20261114T143904/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `653a3ca8caff` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-018/20261114T143904/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `653a3ca8caff` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-018/20261114T143904/script-tests.log`)
@@ -1901,6 +1902,7 @@ None.
 - `swift test --package-path Packages/ImportFuzz`: pass at `653a3ca8caff` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-018/20261114T143904/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/LibraryBackup`: pass at `653a3ca8caff` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-018/20261114T143904/swift-test_LibraryBackup.log`)
 - `swift test --package-path Packages/PresetLibrary`: pass at `653a3ca8caff` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-018/20261114T143904/swift-test_PresetLibrary.log`)
+- `post-merge: projectM-iOSTests 907 + UI 1 (library check)`: pass at `7a07c74e` (log `.autonomous/logs/integration/batch46/app-tests.log`)
 
 ### QA-002 Golden render scenes (integrated)
 - `python3 scripts/check_compliance.py`: pass at `494ac9eeb8d4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-002/20261113T162728/compliance.log`)
@@ -2310,6 +2312,13 @@ None.
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `55450ba74bdc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-004/20261114T094239/autonomous-tests.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `55450ba74bdc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-004/20261114T094239/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/LibraryBackup`: pass at `55450ba74bdc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-004/20261114T094239/swift-test_LibraryBackup.log`)
+
+### UIX-005 Performance control layout (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `70fdae05d743` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-005/20261114T144124/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `70fdae05d743` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-005/20261114T144124/docs.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `70fdae05d743` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-005/20261114T144124/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `70fdae05d743` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-005/20261114T144124/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `70fdae05d743` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-005/20261114T144124/swift-test_ShowControl.log`)
 
 ### UIX-015 Onboarding permission explainer (integrated)
 - `python3 scripts/check_compliance.py`: pass at `4f7b3b7b8790` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-015/20261114T021007/compliance.log`)
