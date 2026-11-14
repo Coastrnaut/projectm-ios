@@ -32,9 +32,20 @@ devices (`CABTMIDICentralViewController`, which needs a Bluetooth usage string).
    (`settings.midi.enabled`, off by default). Mapping rows decide their own persistence.
 6. Discovery runs only while the toggle is on and the app is in the foreground; no MIDI messages
    are received in MIDI-001.
+7. **Receiving (amended 2026-11-14 by MIDI-002, `specs/125-midi-002-midi-input-monitor`; decided by
+   Claude under owner rule 4).** One shared input (`MIDIInputService`, its own CoreMIDI client and
+   one port from `MIDIInputPortCreateWithProtocol` with the MIDI 1.0 protocol) receives only while
+   listening is on, the app is in the foreground and a feature needs messages (MIDI-002: the open
+   MIDI Monitor). It connects exactly the inputs MIDI-001 lists, so network MIDI is never connected.
+   The receive block decodes Universal MIDI Packets into a preallocated 512-event ring (drop newest,
+   counted) with no allocation, lock or logging; the main actor drains it at display rate. Messages
+   carry no source (`connRefCon` nil, no source field), and nothing received is stored or logged.
+   MIDI-003 onward reuse the input and its `MIDIEvent` model.
 
 ## Consequences
 
-- MIDI-002 onward build on `MIDIEndpointDiscovery` and `MIDIEndpointID`.
+- MIDI-002 onward build on `MIDIEndpointDiscovery` and `MIDIEndpointID`; MIDI-003 onward also on
+  MIDI-002's shared input and `MIDIEvent` (Decision 7).
+- A physical controller check of receiving (MIDI-002-T20) is a device task.
 - A physical controller check (MIDI-001-S8) remains a device task; the driver-owner strings used
   for attribution are confirmed there.

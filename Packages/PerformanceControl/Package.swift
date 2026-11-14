@@ -22,6 +22,9 @@
 //   IDs, diffing, coalescing and the discovery lifecycle are pure Swift in `Sources/PerformanceControl/MIDI/`;
 //   the CoreMIDI provider lives in `Sources/PerformanceControl/MIDISystem/` under `#if canImport(CoreMIDI)`
 //   (absent on Linux). Local endpoints only: no network MIDI, no Bluetooth pairing (ADR-0038).
+// * MIDI-002 (specs/125-midi-002-midi-input-monitor/contracts/midi-input.md): the MIDI 1.0 event model, UMP decoder,
+//   byte-stream parser, the 512-event real-time ring and the shared input service are pure Swift in `MIDI/`; the
+//   CoreMIDI input port (MIDI 1.0 protocol) is `MIDISystem/CoreMIDIInputProvider.swift` (ADR-0038 Decision 7).
 // Nothing here feeds projectM (Constitution VIII, ADR-0008 decision 5).
 // One library product, so CI's `-scheme PerformanceControl` builds and tests every target.
 import PackageDescription
