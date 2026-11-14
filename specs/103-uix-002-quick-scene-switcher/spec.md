@@ -163,7 +163,7 @@ scrolls; with Reduce Motion the card appears without animation.
 - **UIX-002-S3**: Across every keystroke of a typed query, the field keeps focus and its text equals what was typed (0 resets).
 - **UIX-002-S4**: Filtering is correct for case, accents, empty query and ordering in 100 % of the unit cases.
 - **UIX-002-S5**: A problem scene chosen from the switcher shows the repair report and applies nothing until the user opens it.
-- **UIX-002-S6**: Filtering a 256-cue show takes under 5 ms per keystroke on the Mac host (unit test, monotonic clock, generous ceiling).
+- **UIX-002-S6**: Filtering a 256-cue show takes under 5 ms per keystroke in the app unit tests on the simulator (monotonic clock, generous ceiling; never device evidence).
 
 ## Assumptions
 
