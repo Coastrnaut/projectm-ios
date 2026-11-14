@@ -27,7 +27,8 @@ Any size ≤ 0 gives the identity (visible 1, offset 0).
 | `contentRect` | content's rectangle in output fractions: origin `−offset ÷ visible`, size `1 ÷ visible` |
 | `pixelAspect` | output pixels per content pixel horizontally ÷ vertically (1 except stretch) |
 | `contentToOutput` | `LayerTransformMatrix`, normalized content → normalized output |
-| `placed(transform:outputWidth:outputHeight:)` | `transform.matrix(aspect) * contentToOutput` |
+| `pixelScale` | output pixels per content pixel, per axis |
+| `placed(by:)` | `transform.matrix(outputWidth:outputHeight:) * contentToOutput` |
 
 ## LayerCompositeSettings (Compositor) — changed
 

@@ -65,6 +65,10 @@ rules). The format must add none of its own definitions of validity.
   list of drawn blend names. Done 2026-11-14 (ADR-0037): `normal`, `add`, `screen`, `multiply`,
   `overlay`, `difference` are drawn; any other name is kept (through load → capture too) and warned
   about; format version unchanged.
+- CMP-006 (aspect fitting, 2026-11-14, specs/101-cmp-006-aspect-fitting) adds the optional
+  `composite.fit` (`mode`, `anchor`), written only when set, so existing scenes encode
+  byte-identically; unknown mode names are kept and warned (`unsupportedFitMode`); format version
+  unchanged (no QA-004 matrix row). An older version drops `fit` with `droppedField`.
 - Procedural material values are registry parameters shared by layers of the same material until a
   later row adds per-instance values.
 
