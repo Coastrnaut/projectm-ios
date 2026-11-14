@@ -131,18 +131,32 @@ final class UserPresetExportTests: XCTestCase {
         XCTAssertEqual(UserPresetExportSummary(exported: 1, excluded: [:], fileName: "a.zip").message, "Exported 1 preset.")
     }
 
-    /// S6 (indicative): 1,000 small presets in under 10 s.
-    func testAThousandPresetsExportQuickly() async throws {
+    /// S6: many presets export completely. Owner rule 7 (2026-11-14): no wall-clock assertion in the
+    /// suite and no 90 s test; CI's iOS 27 simulator took 88 s and failed the old 10 s limit for 1,000
+    /// presets. The suite checks completeness on 20; the 1,000-preset timing is an on-demand bench
+    /// (`PRE014_BENCH=1`), which reports the time and asserts only completeness.
+    func testManyPresetsExportCompletely() async throws {
+        try await exportCompletely(count: 20)
+    }
+
+    func testAThousandPresetsExportBench() async throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["PRE014_BENCH"] == "1", "bench: set PRE014_BENCH=1")
+        let elapsed: TimeInterval = try await exportCompletely(count: PresetImportLimits.maxUserPresets)
+        print("PRE014_BENCH export of \(PresetImportLimits.maxUserPresets) presets: \(elapsed) s")
+    }
+
+    @discardableResult
+    private func exportCompletely(count: Int) async throws -> TimeInterval {
         let ids = CountingIDs()
         let library = await X.library(directory, ids: ids)
-        for index in 0..<PresetImportLimits.maxUserPresets {
+        for index in 0..<count {
             try await X.importFile(library, named: "P\(index).milk", text: X.text("bulk-\(index)"), in: folder)
         }
         let start = Date()
         let (summary, data) = try await X.exportData(library, to: output)
-        let elapsed = Date().timeIntervalSince(start)
-        XCTAssertEqual(summary.exported, 1_000)
-        XCTAssertEqual(try UserPresetArchiveReader.read(data).texts.count, 1_000)
-        XCTAssertLessThan(elapsed, 10, "export took \(elapsed) s")
+        let elapsed: TimeInterval = Date().timeIntervalSince(start)
+        XCTAssertEqual(summary.exported, count)
+        XCTAssertEqual(try UserPresetArchiveReader.read(data).texts.count, count)
+        return elapsed
     }
 }

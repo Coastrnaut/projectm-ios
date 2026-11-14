@@ -27,9 +27,9 @@ final class FrameCaptureUITests: XCTestCase {
     private func saveFrameAsPNG() {
         showControls()
         let save = app.buttons["saveFrame"]
-        XCTAssertTrue(save.exists)
+        XCTAssertTrue(save.appears(within: 3))
         XCTAssertEqual(save.label, "Save Frame")
-        save.tap()
+        app.tapFreshControl("saveFrame")   // the controls may auto-hide between the check and the tap (seen 2026-11-14)
         let png = app.buttons["PNG"].firstMatch
         XCTAssertTrue(png.appears(within: 5), "the format choice")
         png.tap()

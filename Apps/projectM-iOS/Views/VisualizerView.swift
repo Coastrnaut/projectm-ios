@@ -44,7 +44,14 @@ import UIKit
 struct VisualizerView: View {
     @Bindable var coordinator: AppCoordinator
 
+    // Split into separately type-checked parts (2026-11-14): as one expression this body made
+    // Xcode 26 on CI give up ("unable to type-check this expression in reasonable time", run
+    // 43557257624). Order of modifiers is unchanged: layers, system overlays, presentations, changes.
     var body: some View {
+        withChangeHandlers(withPresentations(layers))
+    }
+
+    private var layers: some View {
         ZStack {
             Color.black.ignoresSafeArea()
             visual
@@ -127,164 +134,174 @@ struct VisualizerView: View {
                     .padding(.top, 2)
                     .padding(.trailing, 8)
             }
-            #if DEBUG
-            if let fake = coordinator.fakeSource {
-                VStack { HStack { FakeSourcePanel(fake: fake); Spacer() }; Spacer() }
-                    .padding(.top, 2)
-            }
-            if UITestSessionEventPanel.isRequested {   // AUD-014: InterruptionUITests
-                VStack { HStack { UITestSessionEventPanel(); Spacer() }; Spacer() }
-                    .padding(.top, 2)
-            }
-            if UITestRouteProvider.isRequested {       // AUD-007: RouteIndicatorUITests
-                VStack { HStack { UITestRoutePanel(); Spacer() }; Spacer() }
-                    .padding(.top, 40)
-            }
-            if UITestModulationPanel.isRequested {     // MOD-002: AudioFeatureBindingUITests
-                VStack { HStack { UITestModulationPanel(coordinator: coordinator); Spacer() }; Spacer() }
-                    .padding(.top, 70)
-            }
-            if UITestMemoryPanel.isRequested {         // PERF-006: MemoryPressureUITests
-                VStack { HStack { UITestMemoryPanel(coordinator: coordinator); Spacer() }; Spacer() }
-                    .padding(.top, 130)
-            }
-            if UITestCameraEventPanel.isRequested {    // CAM-013: CameraRecoveryUITests
-                VStack { HStack { UITestCameraEventPanel(coordinator: coordinator); Spacer() }; Spacer() }
-                    .padding(.top, 220)
-            }
-            if UITestRenderFaultPanel.isRequested {    // PERF-014: RenderFaultUITests
-                VStack { HStack { UITestRenderFaultPanel(coordinator: coordinator); Spacer() }; Spacer() }
-                    .padding(.top, 160)
-            }
-            if FrameCaptureCoordinator.debugDirectoryFromArguments() != nil {   // REC-001: FrameCaptureUITests
-                Text(coordinator.frameCapture.probe)
-                    .font(.caption2)
-                    .opacity(0.01)
-                    .allowsHitTesting(false)
-                    .accessibilityIdentifier("frameCaptureProbe")
-                    .accessibilityValue(coordinator.frameCapture.probe)
-            }
-            if VideoRecordingCoordinator.debugDirectoryFromArguments() != nil
-                || VideoRecordingCoordinator.debugStorageRequested {   // REC-003, REC-015: recording UI tests
-                Text(coordinator.videoRecording.probe)
-                    .font(.caption2)
-                    .opacity(0.01)
-                    .allowsHitTesting(false)
-                    .accessibilityIdentifier("videoRecordingProbe")
-                    .accessibilityValue(coordinator.videoRecording.probe)
-            }
-            if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {   // SHOW-001: ShowCueUITests
-                let value = "\(coordinator.show.appliedSceneID ?? "none")|\(coordinator.settings.visual.rawValue)"
-                Text(value)
-                    .font(.caption2)
-                    .opacity(0.01)
-                    .allowsHitTesting(false)
-                    .accessibilityIdentifier("showAppliedScene")
-                    .accessibilityValue(value)
-            }
-            if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {   // ACC-004-R9: the last announcement
-                let spoken = coordinator.announcer.lastSpoken
-                Text(spoken)
-                    .font(.caption2)
-                    .opacity(0.01)
-                    .allowsHitTesting(false)
-                    .accessibilityIdentifier("announcementProbe")
-                    .accessibilityValue(spoken)
-            }
-            if AppCoordinator.reduceMotionPanelRequested {   // ACC-001: ReduceMotionUITests (contract C2)
-                VStack { HStack { reduceMotionPanel; Spacer() }; Spacer() }
-                    .padding(.top, 190)
-            }
-            if UITestExternalDisplay.isRequested {     // OUT-001: ExternalDisplayUITests
-                VStack { HStack { UITestExternalDisplayPanel(coordinator: coordinator.externalDisplay); Spacer() }; Spacer() }
-                    .padding(.top, 100)
-            }
-            #endif
-            if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {
-                Text("\(coordinator.sourceStarts)")
-                    .font(.caption2)
-                    .opacity(0.01)
-                    .accessibilityIdentifier("sourceStarts")
-                    .accessibilityValue("\(coordinator.sourceStarts)")
-                // OUT-010: whether the slot holding the visual is black, and whether the visual still draws.
-                TimelineView(.periodic(from: .now, by: 0.25)) { _ in
-                    let external = coordinator.externalDisplay
-                    let state = external.isOutputBlack ? "black" : external.blackoutPhase.rawValue
-                    let running = coordinator.activeVisualMetrics.framesPerSecond > 0 ? "yes" : "no"
-                    Text(state)
-                        .font(.caption2)
-                        .opacity(0.01)
-                        .accessibilityIdentifier("outputBlackout")
-                        .accessibilityValue(state)
-                    Text(running)
-                        .font(.caption2)
-                        .opacity(0.01)
-                        .accessibilityIdentifier("visualRunning")
-                        .accessibilityValue(running)
-                }
-                if let camera = coordinator.cameraVisual {   // CAM-001: frames that showed a camera picture
-                    TimelineView(.periodic(from: .now, by: 0.5)) { _ in
-                        Text("\(camera.framesShown)")
-                            .font(.caption2)
-                            .opacity(0.01)
-                            .accessibilityIdentifier("cameraFramesShown")
-                            .accessibilityValue("\(camera.framesShown)")
-                    }
-                }
-                if let photo = coordinator.photoVisual {   // MED-001: frames that showed the photo
-                    TimelineView(.periodic(from: .now, by: 0.5)) { _ in
-                        Text("\(photo.framesShown)")
-                            .font(.caption2)
-                            .opacity(0.01)
-                            .accessibilityIdentifier("photoFramesShown")
-                            .accessibilityValue("\(photo.framesShown)")
-                    }
-                }
-                if let video = coordinator.videoVisual {   // MED-002: frames shown and the shown picture's index
-                    TimelineView(.periodic(from: .now, by: 0.25)) { _ in
-                        let index = video.shownFrameIndex().map(String.init) ?? "none"
-                        VStack {
-                            Text("\(video.framesShown)")
-                                .accessibilityIdentifier("videoFramesShown")
-                                .accessibilityValue("\(video.framesShown)")
-                            Text(index)
-                                .accessibilityIdentifier("videoFrameIndex")
-                                .accessibilityValue(index)
-                        }
-                        .font(.caption2)
-                        .opacity(0.01)
-                    }
-                }
-                #if DEBUG
-                // PERF-010-R12: the recovery decision and whether the OSC transport listens.
-                let recoveryProbe = coordinator.recovery.probe(oscListening: coordinator.osc.isListenerOpen)
-                Text(recoveryProbe)
-                    .font(.caption2)
-                    .opacity(0.01)
-                    .allowsHitTesting(false)
-                    .accessibilityIdentifier("sessionRecovery")
-                    .accessibilityValue(recoveryProbe)
-                if let autosave = coordinator.sceneAutosave {   // SCN-002-R12: the committed revision
-                    Text(autosave.probe)
-                        .font(.caption2)
-                        .opacity(0.01)
-                        .allowsHitTesting(false)
-                        .accessibilityIdentifier("sceneAutosave")
-                        .accessibilityValue(autosave.probe)
-                }
-                if coordinator.textVisual != nil {   // MED-009-R14: the rendering's size and checksum
-                    let value = Self.textRenderingValue(coordinator.textState)
-                    Text(value)
-                        .font(.caption2)
-                        .opacity(0.01)
-                        .accessibilityIdentifier("textRendering")
-                        .accessibilityValue(value)
-                }
-                #endif
-            }
+            diagnostics
         }
         .statusBarHidden(coordinator.hidesSystemOverlays)
         .persistentSystemOverlays(coordinator.hidesSystemOverlays ? .hidden : .automatic)
+    }
+
+    /// The DEBUG panels and the UI-test probes (all invisible or DEBUG-only).
+    @ViewBuilder private var diagnostics: some View {
+        #if DEBUG
+        if let fake = coordinator.fakeSource {
+            VStack { HStack { FakeSourcePanel(fake: fake); Spacer() }; Spacer() }
+                .padding(.top, 2)
+        }
+        if UITestSessionEventPanel.isRequested {   // AUD-014: InterruptionUITests
+            VStack { HStack { UITestSessionEventPanel(); Spacer() }; Spacer() }
+                .padding(.top, 2)
+        }
+        if UITestRouteProvider.isRequested {       // AUD-007: RouteIndicatorUITests
+            VStack { HStack { UITestRoutePanel(); Spacer() }; Spacer() }
+                .padding(.top, 40)
+        }
+        if UITestModulationPanel.isRequested {     // MOD-002: AudioFeatureBindingUITests
+            VStack { HStack { UITestModulationPanel(coordinator: coordinator); Spacer() }; Spacer() }
+                .padding(.top, 70)
+        }
+        if UITestMemoryPanel.isRequested {         // PERF-006: MemoryPressureUITests
+            VStack { HStack { UITestMemoryPanel(coordinator: coordinator); Spacer() }; Spacer() }
+                .padding(.top, 130)
+        }
+        if UITestCameraEventPanel.isRequested {    // CAM-013: CameraRecoveryUITests
+            VStack { HStack { UITestCameraEventPanel(coordinator: coordinator); Spacer() }; Spacer() }
+                .padding(.top, 220)
+        }
+        if UITestRenderFaultPanel.isRequested {    // PERF-014: RenderFaultUITests
+            VStack { HStack { UITestRenderFaultPanel(coordinator: coordinator); Spacer() }; Spacer() }
+                .padding(.top, 160)
+        }
+        if FrameCaptureCoordinator.debugDirectoryFromArguments() != nil {   // REC-001: FrameCaptureUITests
+            Text(coordinator.frameCapture.probe)
+                .font(.caption2)
+                .opacity(0.01)
+                .allowsHitTesting(false)
+                .accessibilityIdentifier("frameCaptureProbe")
+                .accessibilityValue(coordinator.frameCapture.probe)
+        }
+        if VideoRecordingCoordinator.debugDirectoryFromArguments() != nil
+            || VideoRecordingCoordinator.debugStorageRequested {   // REC-003, REC-015: recording UI tests
+            Text(coordinator.videoRecording.probe)
+                .font(.caption2)
+                .opacity(0.01)
+                .allowsHitTesting(false)
+                .accessibilityIdentifier("videoRecordingProbe")
+                .accessibilityValue(coordinator.videoRecording.probe)
+        }
+        if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {   // SHOW-001: ShowCueUITests
+            let value = "\(coordinator.show.appliedSceneID ?? "none")|\(coordinator.settings.visual.rawValue)"
+            Text(value)
+                .font(.caption2)
+                .opacity(0.01)
+                .allowsHitTesting(false)
+                .accessibilityIdentifier("showAppliedScene")
+                .accessibilityValue(value)
+        }
+        if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {   // ACC-004-R9: the last announcement
+            let spoken = coordinator.announcer.lastSpoken
+            Text(spoken)
+                .font(.caption2)
+                .opacity(0.01)
+                .allowsHitTesting(false)
+                .accessibilityIdentifier("announcementProbe")
+                .accessibilityValue(spoken)
+        }
+        if AppCoordinator.reduceMotionPanelRequested {   // ACC-001: ReduceMotionUITests (contract C2)
+            VStack { HStack { reduceMotionPanel; Spacer() }; Spacer() }
+                .padding(.top, 190)
+        }
+        if UITestExternalDisplay.isRequested {     // OUT-001: ExternalDisplayUITests
+            VStack { HStack { UITestExternalDisplayPanel(coordinator: coordinator.externalDisplay); Spacer() }; Spacer() }
+                .padding(.top, 100)
+        }
+        #endif
+        if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {
+            Text("\(coordinator.sourceStarts)")
+                .font(.caption2)
+                .opacity(0.01)
+                .accessibilityIdentifier("sourceStarts")
+                .accessibilityValue("\(coordinator.sourceStarts)")
+            // OUT-010: whether the slot holding the visual is black, and whether the visual still draws.
+            TimelineView(.periodic(from: .now, by: 0.25)) { _ in
+                let external = coordinator.externalDisplay
+                let state = external.isOutputBlack ? "black" : external.blackoutPhase.rawValue
+                let running = coordinator.activeVisualMetrics.framesPerSecond > 0 ? "yes" : "no"
+                Text(state)
+                    .font(.caption2)
+                    .opacity(0.01)
+                    .accessibilityIdentifier("outputBlackout")
+                    .accessibilityValue(state)
+                Text(running)
+                    .font(.caption2)
+                    .opacity(0.01)
+                    .accessibilityIdentifier("visualRunning")
+                    .accessibilityValue(running)
+            }
+            if let camera = coordinator.cameraVisual {   // CAM-001: frames that showed a camera picture
+                TimelineView(.periodic(from: .now, by: 0.5)) { _ in
+                    Text("\(camera.framesShown)")
+                        .font(.caption2)
+                        .opacity(0.01)
+                        .accessibilityIdentifier("cameraFramesShown")
+                        .accessibilityValue("\(camera.framesShown)")
+                }
+            }
+            if let photo = coordinator.photoVisual {   // MED-001: frames that showed the photo
+                TimelineView(.periodic(from: .now, by: 0.5)) { _ in
+                    Text("\(photo.framesShown)")
+                        .font(.caption2)
+                        .opacity(0.01)
+                        .accessibilityIdentifier("photoFramesShown")
+                        .accessibilityValue("\(photo.framesShown)")
+                }
+            }
+            if let video = coordinator.videoVisual {   // MED-002: frames shown and the shown picture's index
+                TimelineView(.periodic(from: .now, by: 0.25)) { _ in
+                    let index = video.shownFrameIndex().map(String.init) ?? "none"
+                    VStack {
+                        Text("\(video.framesShown)")
+                            .accessibilityIdentifier("videoFramesShown")
+                            .accessibilityValue("\(video.framesShown)")
+                        Text(index)
+                            .accessibilityIdentifier("videoFrameIndex")
+                            .accessibilityValue(index)
+                    }
+                    .font(.caption2)
+                    .opacity(0.01)
+                }
+            }
+            #if DEBUG
+            // PERF-010-R12: the recovery decision and whether the OSC transport listens.
+            let recoveryProbe = coordinator.recovery.probe(oscListening: coordinator.osc.isListenerOpen)
+            Text(recoveryProbe)
+                .font(.caption2)
+                .opacity(0.01)
+                .allowsHitTesting(false)
+                .accessibilityIdentifier("sessionRecovery")
+                .accessibilityValue(recoveryProbe)
+            if let autosave = coordinator.sceneAutosave {   // SCN-002-R12: the committed revision
+                Text(autosave.probe)
+                    .font(.caption2)
+                    .opacity(0.01)
+                    .allowsHitTesting(false)
+                    .accessibilityIdentifier("sceneAutosave")
+                    .accessibilityValue(autosave.probe)
+            }
+            if coordinator.textVisual != nil {   // MED-009-R14: the rendering's size and checksum
+                let value = Self.textRenderingValue(coordinator.textState)
+                Text(value)
+                    .font(.caption2)
+                    .opacity(0.01)
+                    .accessibilityIdentifier("textRendering")
+                    .accessibilityValue(value)
+            }
+            #endif
+        }
+    }
+
+    /// Sheets, dialogs and the Files exporter and mover.
+    private func withPresentations(_ content: some View) -> some View {
+        content
         .sheet(isPresented: $coordinator.showPresetBrowser) {
             PresetBrowserView(presets: coordinator.presets, userPresets: coordinator.userPresets) { coordinator.choose($0, from: $1) }
                 .sheet(isPresented: Binding(get: { coordinator.presets.purchaseRequested },
@@ -362,6 +379,11 @@ struct VisualizerView: View {
         } onCancellation: {
             coordinator.videoRecording.moverCancelled()   // REC-003-R13: the temporary file is deleted
         }
+    }
+
+    /// Settings and state changes forwarded to the coordinator.
+    private func withChangeHandlers(_ content: some View) -> some View {
+        content
         .onChange(of: coordinator.settings.reduceFlashing) { coordinator.applyReduceFlashing() }
         .onChange(of: coordinator.settings.visual) { coordinator.visualSettingsChanged() }                 // VIS-001
         .onChange(of: coordinator.settings.cameraPosition) { coordinator.cameraSettingsChanged() }         // CAM-002
