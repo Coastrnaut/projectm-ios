@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (QA-003-T01-T16 verified on the Mac host, the Linux shape and the QA3 iOS 27.2 simulator; QA-003-T17 `{device}` open; CI pending)
 
 **Input**: User description: "Implement QA-003 (Visual diff tolerances) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Compare GPU images with

@@ -20,9 +20,11 @@ ImageDiff.compare(expected: GoldenImage, actual: GoldenImage,
 
 ## I2 — Summary
 
-One line: `PASS|FAIL [rules]: <changed>/<total> changed, <exceeding> over <t>/255 (<forgiven> forgiven
-as shifts, <unmatched> unmatched, allowed <allowed>), max delta <d>/255, largest cluster <c>
-[(limit <L>)], box <x a-b, y c-d>|none, SSIM <s>|n/a`. Size mismatch: `FAIL [size]: expected WxH, actual WxH`.
+One line: `PASS|FAIL [rules]: <changed> of <total> pixels changed, <exceeding> above the threshold
+<t>/255 (<forgiven> forgiven as shifts, <unmatched> unmatched, allowed <allowed>), largest channel
+difference <d>/255, largest cluster <c>[ (limit <L>)], box x <a>-<b>, y <c>-<d>|none, SSIM <s>|n/a[
+(minimum <m>)]`. Size mismatch: `FAIL [size]: expected WxH, actual WxH`. `GoldenComparisonResult.summary`
+prefixes the outcome (`identical: PASS: …`).
 
 ## I3 — Golden adoption
 
