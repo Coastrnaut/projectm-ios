@@ -32,7 +32,7 @@ Format: `- [ ] QA-010-Tnn [P?] [Story] Description`. `{device}` = needs a physic
 - [ ] QA-010-T08 [US1] `PerformanceThresholdsTests` in `scripts/test_scripts.py`: each fixture's expected
   verdict, determinism (two runs byte-identical), boundary (value = limit passes), committed thresholds file
   matches its schema's required keys and catalogue, simulator class says not evidence, pinned version mismatch,
-  mixed models, exit codes (QA-010-S1, S3)
+  mixed models, an invalid (negative) value reads not measured, exit codes (QA-010-S1, S3)
 
 ## Phase 4: User Story 2 — the final device stage step (P2)
 

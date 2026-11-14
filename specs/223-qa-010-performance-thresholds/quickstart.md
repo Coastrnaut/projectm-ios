@@ -4,7 +4,8 @@
    in `scripts/fixtures/qa010/`.
 2. Check one report by hand:
    `python3 scripts/check_performance_thresholds.py scripts/fixtures/qa010/perf012-d1-pass.json scripts/fixtures/qa010/perf001-d1-pass.json scripts/fixtures/qa010/sc015-pass.json --device D1`
-   → every metric but `audioAgeP95Ms` passes; overall `incomplete` (audio age is not in any report yet).
+   → every metric passes (the fixture `perf001` carries the additive `audioAgeP95Ms`). A real run today reads
+   `audioAgeP95Ms: not measured` and overall `incomplete`: no mode writes audio age yet.
 3. Final device stage `{device}` (QA-010-T12): on each of D1, D2, D3, with the measurement build installed and the
    device unlocked (Auto-Lock Never):
    `python3 scripts/run_device_tests.py thresholds --device D1 --run --report <exported performance JSON>`
