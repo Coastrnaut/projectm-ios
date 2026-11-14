@@ -15,6 +15,7 @@ import Compositor
 import Foundation
 import ParameterGraph
 import SceneFormat
+import ShaderParameterMetadata
 import VisualParameters
 
 // MARK: - Parameters and help (CMP-015-R7)
@@ -95,6 +96,8 @@ struct LayerInspectorRow: Equatable, Sendable, Identifiable {
     let readOnlyReason: String?
     let groupName: String?
     let ownValues: [LayerOwnValue]
+    /// SHD-003-R8: a material layer's controls, built from its validated metadata (empty for other kinds).
+    var materialControls: [ShaderParameterControl] = []
 
     var id: UInt64 { instance }
 
@@ -149,7 +152,8 @@ enum LayerInspectorScene {
         return LayerInspectorRow(instance: layer.instance, kind: kind, title: title(of: layer.content), position: index + 1, count: count,
                                  composite: layer.composite, isEditable: editable, readOnlyReason: reason,
                                  groupName: groupName(of: layer.instance, in: document),
-                                 ownValues: ownValues(kind: kind, parameters: document.parameters))
+                                 ownValues: ownValues(kind: kind, parameters: document.parameters),
+                                 materialControls: MaterialInspectorModel.controls(for: layer.content, parameters: document.parameters))
     }
 
     static func title(of content: SceneLayerContent) -> String {

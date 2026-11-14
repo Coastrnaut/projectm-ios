@@ -28,6 +28,7 @@ struct LayerDetailView: View {
             if showsFit { fitSection }
             maskSection
             LayerGradientSection(row: row, layers: layers)   // CMP-008
+            MaterialParametersSection(controls: row.materialControls)   // SHD-003: read-only until materials are drawn
             layerSection
         }
         .navigationTitle(row.title)

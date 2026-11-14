@@ -26,6 +26,10 @@ final class MaterialCatalogTests: XCTestCase {
         "material.noiseFlow.tint": (0.10, 0.35, 0.45), "material.tunnel.color": (0.85, 0.45, 0.20),
         "material.starfield.color": (0.90, 0.90, 1.00),
     ]
+    /// SHD-003: the enum parameters (cases, default).
+    private let documentedEnums: [String: ([String], String)] = [
+        "material.gradient.shape": (["linear", "radial"], "linear"),
+    ]
 
     func testFiveMaterialsInCatalogOrder() {
         XCTAssertEqual(Catalog.materials.map(\.id),
@@ -43,7 +47,7 @@ final class MaterialCatalogTests: XCTestCase {
     func testRegistryValidates() throws {
         XCTAssertEqual(ParameterRegistry.validate(Catalog.descriptors, retiredIDs: Catalog.retiredIDs), [])
         let registry = try Catalog.makeRegistry()
-        XCTAssertEqual(registry.count, 28)
+        XCTAssertEqual(registry.count, 29, "SHD-001's 28 plus SHD-003's material.gradient.shape")
         XCTAssertEqual(registry.groups.map(\.id), Catalog.materials.map(\.id))
     }
 
@@ -59,7 +63,7 @@ final class MaterialCatalogTests: XCTestCase {
                 switch d.kind {
                 case .continuous:
                     XCTAssertEqual(d.modulation, .continuousDefault, d.id.rawValue)
-                case .color, .integer:
+                case .color, .integer, .enumeration:   // SHD-003: enums are manual too
                     XCTAssertEqual(d.modulation, .discreteManual, d.id.rawValue)
                 default:
                     XCTFail("unexpected kind \(d.kind.name) for \(d.id)")
@@ -87,7 +91,7 @@ final class MaterialCatalogTests: XCTestCase {
     }
 
     func testDocumentedDefaultsMatchTheDataModel() {
-        XCTAssertEqual(documentedNumbers.count + documentedColors.count, Catalog.descriptors.count)
+        XCTAssertEqual(documentedNumbers.count + documentedColors.count + documentedEnums.count, Catalog.descriptors.count)
         for d in Catalog.descriptors {
             switch d.kind {
             case let .continuous(minimum, maximum, value, _, _):
@@ -105,6 +109,10 @@ final class MaterialCatalogTests: XCTestCase {
                 XCTAssertEqual(doc?.0, c.red, d.id.rawValue)
                 XCTAssertEqual(doc?.1, c.green, d.id.rawValue)
                 XCTAssertEqual(doc?.2, c.blue, d.id.rawValue)
+            case let .enumeration(cases, value):
+                let doc = documentedEnums[d.id.rawValue]
+                XCTAssertEqual(doc?.0, cases.map(\.id), d.id.rawValue)
+                XCTAssertEqual(doc?.1, value, d.id.rawValue)
             default:
                 XCTFail(d.id.rawValue)
             }
