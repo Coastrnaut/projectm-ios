@@ -66,6 +66,7 @@ extension SceneDocument {
         validateHeader(into: &issues)
         validateLayers(into: &issues)
         issues += analyzeGroups().issues   // CMP-011
+        issues += effectIssues()   // FX-020
         validateAssets(availability, into: &issues)
         validateParameters(registry, into: &issues)
         validateModulation(registry, into: &issues)

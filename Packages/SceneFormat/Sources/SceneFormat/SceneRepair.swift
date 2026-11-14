@@ -269,6 +269,8 @@ extension SceneRepairReport {
             (.invalidMappings, .dropInvalidMappings)
         case .invalidModulation: (.invalidMappings, .dropInvalidModulation)
         case .unknownLayerKind: (.unknownContent, .keepUnknownContent)
+        case .unknownEffectKind: (.unknownContent, nil)   // FX-020: kept verbatim
+        case .fixedEffectStage, .duplicateEffect: (.valuesAdjusted, nil)   // FX-020: kept, ignored
         case .unknownAssetType, .unusedAsset, .orphanedParameter: (.unknownContent, nil)
         case .unsupportedBlendMode, .unsupportedFitMode, .unsupportedMaskShape, .valueClamped, .droppedField, .parameterClamped, .rejectedParameter, .migratedReference:
             (.valuesAdjusted, nil)
@@ -302,7 +304,9 @@ extension SceneRepairReport {
              .unsupportedCurve:
             return "It is kept in the scene but has no effect."
         case .unknownLayerKind: return "The layer is kept but not shown."
-        case .unknownAssetType, .unusedAsset, .orphanedParameter: return "It is kept but not used by this version."
+        case .unknownAssetType, .unusedAsset, .orphanedParameter, .unknownEffectKind: return "It is kept but not used by this version."
+        case .fixedEffectStage: return "Flash safety and the tone map still run last; the entry is kept."
+        case .duplicateEffect: return "Only the first entry of that effect is used; the entry is kept."
         case .rejectedParameter: return "The current value is kept."
         case .migratedReference: return "It is applied under its new name."
         default: return "It opens with the adjusted value."

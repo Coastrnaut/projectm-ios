@@ -10,6 +10,8 @@
 // depend on loading speed. Captured frames use REC-001's `requestFrameCapture` (composite
 // × the guard's gain) and `FrameColorConversion.rgba8` (8-bit sRGB, straight alpha). Every layer must
 // have rendered its own picture on a captured frame, or the run fails.
+// FX-020: a scene's `effects` list sets the compositor's output effect order, colour grade and Trails
+// (`apply(effects:to:)`); without one the compositor keeps its defaults (Trails off, neutral grade), as before.
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import AnalysisFeatures
 import ColorGradeParameters
@@ -83,8 +85,10 @@ public final class GoldenSceneRenderer {
     }
 
     /// Renders every frame of `run` for `document` at `resolution` and returns the captured frames.
-    public func render(run: GoldenSceneRun, document: SceneDocument,
-                       resolution: GoldenResolution) throws(GoldenRenderError) -> [Int: GoldenImage] {
+    /// FX-020: `allowEffectWarnings` accepts the effect chain's kept-and-ignored entries (unknown, repeated or fixed-stage
+    /// kinds); every other warning still refuses the scene.
+    public func render(run: GoldenSceneRun, document: SceneDocument, resolution: GoldenResolution,
+                       allowEffectWarnings: Bool = false) throws(GoldenRenderError) -> [Int: GoldenImage] {
         let registry: ParameterRegistry
         do {
             registry = try Self.registry()
@@ -97,7 +101,9 @@ public final class GoldenSceneRenderer {
         } catch {
             throw .sceneInvalid("\(error)")
         }
-        guard load.warnings.isEmpty else { throw .sceneInvalid("warnings: \(load.warnings)") }
+        let effectCodes: Set<SceneIssue.Code> = allowEffectWarnings ? [.unknownEffectKind, .fixedEffectStage, .duplicateEffect] : []
+        let refused = load.warnings.filter { (w: SceneIssue) -> Bool in !effectCodes.contains(w.code) }
+        guard refused.isEmpty else { throw .sceneInvalid("warnings: \(refused)") }
         let store = ParameterStore(registry: registry)
         _ = store.restore(load.state.parameters)
 
@@ -115,6 +121,7 @@ public final class GoldenSceneRenderer {
         } catch {
             throw .renderFailed("compositor: \(error)")
         }
+        if let effects = document.effectSettings { Self.apply(effects: effects, to: compositor) }   // FX-020
 
         let d = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba16Float, width: resolution.width,
                                                          height: resolution.height, mipmapped: false)
@@ -159,6 +166,13 @@ public final class GoldenSceneRenderer {
             images[frame] = image
         }
         return images
+    }
+
+    /// FX-020: a scene chain's live values on a compositor (a missing effect keeps the compositor's value).
+    public static func apply(effects: SceneEffectSettings, to compositor: Compositor) {
+        compositor.outputEffectOrder = effects.order
+        if let grade = effects.grade { compositor.colorGrade = (effects.gradeEnabled ?? true) ? grade : .neutral }
+        if let trails = effects.trails { compositor.motionFeedback = trails }
     }
 }
 #endif
