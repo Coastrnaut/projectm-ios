@@ -10,28 +10,29 @@
 import SwiftUI
 
 struct LayerInspectorView: View {
-    let coordinator: AppCoordinator
-
-    private var rows: [LayerInspectorRow] { coordinator.layerInspectorRows }
-    private var groups: [LayerInspectorGroupRow] { coordinator.layerInspectorGroups }
+    let layers: LayerInspectorCoordinator
+    let history: SceneHistoryCoordinator
+    /// The current scene's rows, top first (AppCoordinator.layerInspectorRows; read at each update).
+    let rows: @MainActor () -> [LayerInspectorRow]
+    let groups: @MainActor () -> [LayerInspectorGroupRow]
 
     var body: some View {
         List {
-            layersSection
-            if !groups.isEmpty { groupsSection }
+            layersSection(rows())
+            groupsSection(groups())
         }
         .navigationTitle("Layers")
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { SceneUndoRedoButtons(history: coordinator.sceneHistory) } }
+        .toolbar { ToolbarItem(placement: .topBarTrailing) { SceneUndoRedoButtons(history: history) } }
         .accessibilityIdentifier("layerInspector")
     }
 
-    private var layersSection: some View {
+    private func layersSection(_ rows: [LayerInspectorRow]) -> some View {
         Section {
             if rows.isEmpty {
                 Text("This visual has no layers.").accessibilityIdentifier("layerInspectorEmpty")
             } else {
                 ForEach(rows) { (row: LayerInspectorRow) in
-                    LayerInspectorRowView(row: row, layers: coordinator.layers, history: coordinator.sceneHistory)
+                    LayerInspectorRowView(row: row, layers: layers, history: history)
                 }
             }
         } header: {
@@ -41,7 +42,11 @@ struct LayerInspectorView: View {
         }
     }
 
-    private var groupsSection: some View {
+    @ViewBuilder private func groupsSection(_ groups: [LayerInspectorGroupRow]) -> some View {
+        if !groups.isEmpty { groupsList(groups) }
+    }
+
+    private func groupsList(_ groups: [LayerInspectorGroupRow]) -> some View {
         Section("Groups") {
             ForEach(groups) { (group: LayerInspectorGroupRow) in
                 LabeledContent(group.name, value: Self.groupSummary(group))

@@ -300,6 +300,7 @@ struct SettingsView: View {
                         Text("Attack sets how quickly bars rise to a louder sound, Release how slowly they fall. Instant shows each analysis as it comes.")
                     }
                 }
+                if let layerInspector { layersSection(layerInspector) }   // CMP-015
                 if settings.visual.usesCamera {   // CAM-002-R1: which camera, and its mirror
                     cameraSection
                 }
@@ -353,7 +354,6 @@ struct SettingsView: View {
                         .accessibilityIdentifier("showEditorLink")
                     }
                 }
-                if let layerInspector { layersSection(layerInspector) }   // CMP-015
                 if let openGuide {   // UIX-001-R8
                     Section {
                         Button("Guided first scene", action: openGuide)
@@ -421,7 +421,11 @@ struct SettingsView: View {
     private func layersSection(_ coordinator: AppCoordinator) -> some View {
         let count: Int = coordinator.layerInspectorRows.count
         return Section {
-            NavigationLink { LayerInspectorView(coordinator: coordinator) } label: {
+            NavigationLink {
+                LayerInspectorView(layers: coordinator.layers, history: coordinator.sceneHistory,
+                                   rows: { () -> [LayerInspectorRow] in coordinator.layerInspectorRows },
+                                   groups: { () -> [LayerInspectorGroupRow] in coordinator.layerInspectorGroups })
+            } label: {
                 LabeledContent("Layers", value: count == 1 ? "1 layer" : "\(count) layers")
             }
             .accessibilityIdentifier("layersLink")
