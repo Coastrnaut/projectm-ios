@@ -280,7 +280,9 @@ they override any system-provided reminder.
    CI read was scheduled 50 minutes after a push, the Linux job had already failed at minute 5
    (`fflush(stdout)`, rejected by Swift 6 on Linux), integrated work was held back for that run,
    and an agent slot stood empty.
-   - *How to apply:* after every push, start `python3 scripts/autonomous/ci_monitor.py --sha <sha>`
+   - *How to apply:* after every push, run `python3 scripts/autonomous/ci_prune.py` (cancels superseded
+     queued runs on `main`, never a running one; 2026-11-14), then start
+     `python3 scripts/autonomous/ci_monitor.py --sha <sha>`
      in the background (one `gh` call per 5 minutes; prints each job as it finishes; exits when
      the run completes) and keep working: never end a turn or wait just for CI, never use
      `gh run watch`. When it reports a failure, read that job's log once and fix the cause and its
