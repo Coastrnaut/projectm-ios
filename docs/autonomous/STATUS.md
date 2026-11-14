@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T05:01:50Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T05:15:27Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,18 +10,19 @@
 | State | Features |
 |---|---|
 | audited | 213 |
-| implementing | 3 |
+| implementing | 2 |
+| unit_passed | 1 |
 | integrated | 109 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 4 | 1 | 81 | 1 |
-| P1 | 123 | 2 | 26 | 0 |
-| P2 | 77 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 4 | 1 | 0 | 81 | 1 |
+| P1 | 123 | 1 | 1 | 26 | 0 |
+| P2 | 77 | 0 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -592,6 +593,17 @@ None.
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `e105dc91fb50` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-003/20261113T124019/sim-test_ANGLERendering.log`)
 - `swift test --package-path Packages/Compositor`: pass at `e105dc91fb50` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-003/20261113T124019/swift-test_Compositor.log`)
 - `post-merge: Compositor xcodebuild test on iPhone 17 sim (Compositor 95 incl. opacity GPU tests, GeneratorGraph 46 with 1 bench skipped, ProceduralMaterials 31); projectM-iOSTests 186; CameraUITests 2`: pass at `65caf9e9e6ec` (log `.autonomous/logs/integration/cmp-003/compositor-sim.log`)
+
+### CMP-004 Blend mode library (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `e97da06ada5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-004/20261114T001332/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `e97da06ada5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-004/20261114T001332/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `e97da06ada5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-004/20261114T001332/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `e97da06ada5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-004/20261114T001332/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `e97da06ada5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-004/20261114T001332/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `e97da06ada5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-004/20261114T001332/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `e97da06ada5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-004/20261114T001332/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `e97da06ada5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-004/20261114T001332/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `e97da06ada5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-004/20261114T001332/swift-test_ShowControl.log`)
 
 ### CMP-005 Transform controls (integrated)
 - `python3 scripts/check_compliance.py`: pass at `95bb91a901f3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-005/20261113T125428/compliance.log`)
