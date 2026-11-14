@@ -7,6 +7,9 @@
 // between the presentation times of the frames shown, each clamped like the compositor's frame clock
 // (`LayerFrameClock.maxFrameDuration`), in integer nanoseconds, so a transition is deterministic from
 // the frame times, never reads a wall clock, survives a pause of any length and ends exactly.
+// SCN-007 (specs/158-scn-007-transition-presets): a spec may carry a MOD-004 `MappingCurve` that shapes
+// the progress instead of `easing` (nil = CMP-014 exactly, and the spec encodes as before).
+import ParameterGraph
 
 /// How the outgoing scene gives way to the incoming one.
 public enum SceneTransitionStyle: String, Sendable, Equatable, Codable, CaseIterable {
@@ -36,31 +39,48 @@ public enum SceneTransitionEasing: String, Sendable, Equatable, Codable, CaseIte
 public enum SceneTransitionError: Error, Sendable, Equatable {
     case nonFiniteDuration
     case durationOutOfRange(Double)
+    /// SCN-007: the curve is not a valid MOD-004 curve.
+    case invalidCurve(String)
 }
 
 /// A validated transition: style, duration (finite, 0…`maximumSeconds`) and easing.
 public struct SceneTransitionSpec: Sendable, Equatable, Codable {
     public static let maximumSeconds = 10.0
     /// The incoming scene from the next frame.
-    public static let cut = SceneTransitionSpec(uncheckedStyle: .cut, durationSeconds: 0, easing: .linear)
+    public static let cut = SceneTransitionSpec(uncheckedStyle: .cut, durationSeconds: 0, easing: .linear, curve: nil)
     /// The default crossfade: 1 s, ease in-out (CMP-014 Clarifications).
-    public static let defaultCrossfade = SceneTransitionSpec(uncheckedStyle: .crossfade, durationSeconds: 1, easing: .easeInOut)
+    public static let defaultCrossfade = SceneTransitionSpec(uncheckedStyle: .crossfade, durationSeconds: 1, easing: .easeInOut,
+                                                                 curve: nil)
 
     public let style: SceneTransitionStyle
     public let durationSeconds: Double
     public let easing: SceneTransitionEasing
+    /// SCN-007: shapes the progress instead of `easing` when set (a valid MOD-004 curve).
+    public let curve: MappingCurve?
 
     public init(style: SceneTransitionStyle, durationSeconds: Double, easing: SceneTransitionEasing = .easeInOut) throws(SceneTransitionError) {
-        guard durationSeconds.isFinite else { throw .nonFiniteDuration }
-        guard durationSeconds >= 0, durationSeconds <= Self.maximumSeconds else { throw .durationOutOfRange(durationSeconds) }
-        self.init(uncheckedStyle: style, durationSeconds: durationSeconds, easing: easing)
+        try self.init(style: style, durationSeconds: durationSeconds, easing: easing, curve: nil)
     }
 
-    private init(uncheckedStyle style: SceneTransitionStyle, durationSeconds: Double, easing: SceneTransitionEasing) {
+    /// SCN-007: a transition shaped by `curve` (nil = `easing`); an invalid curve throws `.invalidCurve`.
+    public init(style: SceneTransitionStyle, durationSeconds: Double, easing: SceneTransitionEasing = .linear,
+                curve: MappingCurve?) throws(SceneTransitionError) {
+        guard durationSeconds.isFinite else { throw .nonFiniteDuration }
+        guard durationSeconds >= 0, durationSeconds <= Self.maximumSeconds else { throw .durationOutOfRange(durationSeconds) }
+        if let problem = curve?.validationProblem { throw .invalidCurve(problem) }
+        self.init(uncheckedStyle: style, durationSeconds: durationSeconds, easing: easing, curve: curve)
+    }
+
+    private init(uncheckedStyle style: SceneTransitionStyle, durationSeconds: Double, easing: SceneTransitionEasing,
+                 curve: MappingCurve?) {
         self.style = style
         self.durationSeconds = durationSeconds
         self.easing = easing
+        self.curve = curve
     }
+
+    /// Clock progress t (0…1) to eased progress: the curve when set, otherwise `easing`.
+    public func ease(_ t: Double) -> Double { curve?.apply(t) ?? easing.ease(t) }
 
     /// A cut, or a transition of no duration: the incoming scene from the next frame.
     public var isInstant: Bool { style == .cut || durationSeconds == 0 }
@@ -71,15 +91,22 @@ public struct SceneTransitionSpec: Sendable, Equatable, Codable {
     /// The duration in whole nanoseconds (rounded).
     public var durationNanoseconds: UInt64 { UInt64((durationSeconds * 1e9).rounded()) }
 
-    private enum CodingKeys: String, CodingKey { case style, durationSeconds, easing }
+    private enum CodingKeys: String, CodingKey { case style, durationSeconds, easing, curve }
 
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let style = try container.decode(SceneTransitionStyle.self, forKey: .style)
         let seconds = try container.decode(Double.self, forKey: .durationSeconds)
         let easing = try container.decodeIfPresent(SceneTransitionEasing.self, forKey: .easing) ?? .easeInOut
+        var curve: MappingCurve? = nil
+        if let text = try container.decodeIfPresent(String.self, forKey: .curve) {
+            guard let parsed = MappingCurve(textForm: text) else {
+                throw DecodingError.dataCorruptedError(forKey: .curve, in: container, debugDescription: "unreadable curve \(text)")
+            }
+            curve = parsed
+        }
         do {
-            try self.init(style: style, durationSeconds: seconds, easing: easing)
+            try self.init(style: style, durationSeconds: seconds, easing: easing, curve: curve)
         } catch {
             throw DecodingError.dataCorruptedError(forKey: .durationSeconds, in: container,
                                                    debugDescription: "duration must be finite and within 0…\(Self.maximumSeconds) s")
@@ -91,6 +118,7 @@ public struct SceneTransitionSpec: Sendable, Equatable, Codable {
         try container.encode(style, forKey: .style)
         try container.encode(durationSeconds, forKey: .durationSeconds)
         try container.encode(easing, forKey: .easing)
+        try container.encodeIfPresent(curve?.textForm, forKey: .curve)   // SCN-007: only when set
     }
 }
 
@@ -99,17 +127,20 @@ public struct SceneTransitionSpec: Sendable, Equatable, Codable {
 public struct SceneTransitionClock: Sendable, Equatable {
     public let durationNanoseconds: UInt64
     public let easing: SceneTransitionEasing
+    /// SCN-007: shapes the progress instead of `easing` when set.
+    public let curve: MappingCurve?
     public private(set) var elapsedNanoseconds: UInt64 = 0
     private var previous: UInt64?
     private static let maxStepNanoseconds = UInt64((LayerFrameClock.maxFrameDuration * 1e9).rounded())
 
-    public init(durationNanoseconds: UInt64, easing: SceneTransitionEasing = .easeInOut) {
+    public init(durationNanoseconds: UInt64, easing: SceneTransitionEasing = .easeInOut, curve: MappingCurve? = nil) {
         self.durationNanoseconds = durationNanoseconds
         self.easing = easing
+        self.curve = curve
     }
 
     public init(spec: SceneTransitionSpec) {
-        self.init(durationNanoseconds: spec.isInstant ? 0 : spec.durationNanoseconds, easing: spec.easing)
+        self.init(durationNanoseconds: spec.isInstant ? 0 : spec.durationNanoseconds, easing: spec.easing, curve: spec.curve)
     }
 
     /// Advances to the frame shown at `presentationTimeNanoseconds` and returns the progress (0…1).
@@ -136,8 +167,8 @@ public struct SceneTransitionClock: Sendable, Equatable {
         return Double(elapsedNanoseconds) / Double(durationNanoseconds)
     }
 
-    /// Progress through the easing curve (exact at 0 and 1).
-    public var easedProgress: Double { easing.ease(progress) }
+    /// Progress through the easing curve, or the SCN-007 curve when set (exact at 0 and 1).
+    public var easedProgress: Double { curve?.apply(progress) ?? easing.ease(progress) }
 
     public var isFinished: Bool { progress >= 1 }
 }
