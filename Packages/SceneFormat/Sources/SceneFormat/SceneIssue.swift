@@ -110,6 +110,10 @@ public struct SceneIssue: Sendable, Hashable, CustomStringConvertible {
         case rejectedConnection
         /// MOD-004: a binding whose stored curve this version cannot read; kept verbatim, not applied.
         case unsupportedCurve
+        /// MOD-006: a threshold trigger with a missing or wrong field, invalid levels or times, or beyond the limit; kept.
+        case invalidTrigger
+        /// MOD-006: a threshold trigger whose audio feature or action this version does not know; kept.
+        case unknownTrigger
 
         /// MOD-013 (ADR-0028 amendment): every per-edge modulation problem is a warning, so one edge
         /// never refuses the scene; `invalidModulation` (generator declarations) stays an error.
@@ -119,7 +123,7 @@ public struct SceneIssue: Sendable, Hashable, CustomStringConvertible {
                  .duplicateEffect, .valueClamped, .droppedField, .unknownAssetType, .unusedAsset,
                  .missingAsset, .orphanedParameter, .rejectedParameter, .parameterClamped,
                  .invalidBinding, .duplicateBindingTarget, .invalidExpression, .migratedReference, .retiredReference,
-                 .orphanedBinding, .orphanedConnection, .rejectedConnection, .unsupportedCurve:
+                 .orphanedBinding, .orphanedConnection, .rejectedConnection, .unsupportedCurve, .invalidTrigger, .unknownTrigger:
                 .warning
             default:
                 .error
