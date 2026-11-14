@@ -11,12 +11,13 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 52,
-   "implementing": 6,
+   "audited": 49,
+   "implementing": 9,
    "integrated": 93
   },
   "P2": {
-   "audited": 73,
+   "audited": 72,
+   "implementing": 1,
    "integrated": 6
   },
   "P3": {
@@ -24,8 +25,8 @@
   }
  },
  "by_state": {
-  "audited": 136,
-  "implementing": 6,
+  "audited": 132,
+  "implementing": 10,
   "integrated": 183,
   "skipped_existing": 1
  },
@@ -406,13 +407,13 @@
   },
   "ANL-011": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/anl-011",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "ANL-012": {
    "attempts": 0,
@@ -2116,13 +2117,13 @@
   },
   "PERF-005": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/perf-005",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "PERF-006": {
    "attempts": 0,
@@ -2586,13 +2587,13 @@
   },
   "REC-008": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/rec-008",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "REC-009": {
    "attempts": 0,
@@ -2776,13 +2777,13 @@
   },
   "SCN-011": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/scn-011",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "SCN-012": {
    "attempts": 0,
@@ -4387,5 +4388,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T16:40:18Z"
+ "updated": "2026-11-14T16:42:07Z"
 }
