@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T07:38:02Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T07:39:36Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -89,7 +89,7 @@ The physical-device suite may **not** start:
 | CMP-006 | Aspect fitting | `53ddd8c4` | `feature/cmp-006` |
 | CMP-007 | Shape masks | `20b9cc8a` | `feature/cmp-007` |
 | CMP-011 | Layer groups | `e7cc94cc` | `feature/cmp-011` |
-| CMP-012 | Solo and mute | `a93c29db3c0d` | `feature/cmp-012` |
+| CMP-012 | Solo and mute | `bc4817f3` | `feature/cmp-012` |
 | FILE-001 | Portable scene archive | `c3886d1cb0bb` | `feature/file-001` |
 | FILE-002 | Archive manifest checksums | `77fcfa3f1e56` | `feature/file-002` |
 | FILE-003 | Import dry run | `5e7bcff1` | `feature/file-003` |
@@ -708,6 +708,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `6fdc7642b09c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-012/20261114T023547/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `6fdc7642b09c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-012/20261114T023547/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `6fdc7642b09c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-012/20261114T023547/swift-test_ShowControl.log`)
+- `post-merge: projectM-iOSTests + PhotoLayer UI test; gate ran Compositor, SceneFormat and downstream suites`: pass at `bc4817f3` (log `.autonomous/logs/integration/cmp-012/app-tests.log`)
 
 ### FILE-001 Portable scene archive (integrated)
 - `python3 scripts/check_compliance.py`: pass at `b4e63d16acf1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-001/20261113T154852/compliance.log`)
