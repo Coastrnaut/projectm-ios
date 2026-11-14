@@ -30,6 +30,7 @@
 // REC-012: the ready panels (Save…, Share…, Discard) and the share notice (`CaptureResultPanels`).
 // SHOW-001: the show's keyboard shortcuts (arrows, Page Up/Down; with or without the controls), its
 // step notice, Settings → Show, and the DEBUG probe `showAppliedScene` (applied scene ID | visual).
+import AudioCore
 import CaptureKit
 import CaptureUI
 import FrameCapture
@@ -314,6 +315,16 @@ struct VisualizerView: View {
         }
         // SCN-012: the repair report before a cue's scene or Reopen opens (over Settings while it is shown).
         .sceneRepairSheet(coordinator.sceneRepair, active: !coordinator.showSettings)
+        // AUD-012: the other available sources; the handoff keeps the visual running.
+        .confirmationDialog(UIStrings.switchSource, isPresented: Binding(get: { coordinator.showSourceSwitcher },
+                                                                        set: { coordinator.showSourceSwitcher = $0 }),
+                            titleVisibility: .visible) {
+            ForEach(coordinator.switchTargets, id: \.self) { (mode: AudioSourceMode) in
+                Button(UIStrings.label(mode)) { coordinator.switchSource(to: mode) }
+                    .accessibilityIdentifier("switchSource:\(mode.rawValue)")
+            }
+            Button("Cancel", role: .cancel) {}
+        }
         // REC-001: the format choice (HEIF only where it can be encoded) and the system Files exporter.
         .confirmationDialog("Save Frame", isPresented: Binding(get: { coordinator.frameCapture.showFormatChoice },
                                                               set: { coordinator.frameCapture.showFormatChoice = $0 }),
@@ -355,7 +366,8 @@ struct VisualizerView: View {
         .onChange(of: coordinator.settings.glowParameters) { coordinator.glowSettingsChanged() }          // FX-001
         .onChange(of: coordinator.manager.state) { _, state in
             coordinator.routes.refresh()   // AUD-007-R3: a source started or changed state
-            SourceStatusIndicator.announce(mode: coordinator.manager.activeMode, state: state, signal: coordinator.testSignalName)   // FR-070, AUD-016-R16
+            SourceStatusIndicator.announce(mode: coordinator.manager.activeMode, state: state, signal: coordinator.testSignalName,
+                                           switching: coordinator.manager.switchingTo != nil)   // FR-070, AUD-016-R16, AUD-012-R7
         }
         // ACC-004-R5: the output's blackout and the recording, whichever control or key caused them.
         .onChange(of: coordinator.externalDisplay.isBlackoutRequested) { _, blackedOut in

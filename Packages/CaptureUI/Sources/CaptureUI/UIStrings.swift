@@ -317,6 +317,12 @@ public enum UIStrings {
     /// The source-and-state indicator's text (FR-013, FR-042): "In-App Playback · Active audio", or
     /// with a test signal playing "In-App Playback · Test tone 1 kHz · Active audio" (AUD-016-R16).
     /// A signal name is shown only with In-App Playback, the only mode that plays one.
+    /// AUD-012-R7: the indicator while a source switch waits for the new source's audio; it names no
+    /// source (the old one has gone, the new one has not delivered yet).
+    public static let switchingSource = "Switching source…"
+    /// AUD-012-R14: the visualizer control that switches the source in place.
+    public static let switchSource = "Switch Source"
+
     public static func sourceStatus(mode: AudioSourceMode?, state: AudioState, signal: String?) -> String {
         let label = mode.map(UIStrings.label) ?? "No source"
         if mode == .inAppPlayback, let signal { return "\(label) · \(signal) · \(UIStrings.state(state))" }

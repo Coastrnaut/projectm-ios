@@ -32,6 +32,7 @@
 // exporter (REC-001-R1); shown for every visual.
 // SHOW-001: when the show has cues, its row (Previous cue, "Cue 2 of 5 · Intro", Next cue) sits above
 // the buttons in both layouts (ShowCueRow).
+// AUD-012: "Switch Source" (after Stop) opens the list of the other available sources.
 import CaptureKit
 import CaptureUI
 import PresentationLifecycle
@@ -257,6 +258,11 @@ struct ControlsOverlay: View {
     private var allButtons: [Item] {
         [
             Item(id: "stop", title: "Stop", icon: "stop.fill") { coordinator.stop() },
+            Item(id: "switchSource", title: UIStrings.switchSource, icon: "arrow.left.arrow.right",
+                 hint: "Changes the audio source without leaving the visualizer") {   // AUD-012-R1
+                coordinator.showControls()
+                coordinator.showSourceSwitcher = true
+            },
             Item(id: "pauseResume", title: coordinator.userPaused ? "Resume" : "Pause",
                  icon: coordinator.userPaused ? "play.fill" : "pause.fill") { coordinator.togglePause() },
             blackoutItem,
