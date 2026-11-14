@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (UIX-004-T01-T13 verified on the Mac: 8 unit tests, 2 UI tests on the iOS 27.2 simulator)
 
 **Input**: User description: "Implement UIX-004 (favorite parameter shelf) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Pin frequently used parameters to a

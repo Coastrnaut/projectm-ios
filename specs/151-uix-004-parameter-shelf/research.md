@@ -31,11 +31,15 @@
 
 ## UIX-004-D4 Reaching the shelf from UIX-003 without widening SettingsView
 
-- Decision: an environment value `\.parameterShelf` set once on Settings (from the coordinator it
-  already receives); the UIX-003 entry modifier and the sheet read it. The sheet re-injects it explicitly
-  into its content.
+- Decision: an environment value `\.parameterShelf` set once on the Settings sheet in `VisualizerView`; the
+  UIX-003 entry modifier and the inspector sheet read it (the sheet re-injects it into its content). The
+  sheet's Pin to Shelf button sits in its navigation bar, so it is in reach at every text size.
 - Rationale: other agents edit `SettingsView.swift` in parallel; one line instead of a new parameter
-  and edits at seven call sites.
+  and edits at seven call sites. Set inside `SettingsView.body` it pushed that body's type check towards
+  the 200 ms limit, so it moved to the call site.
+- VoiceOver: the shelf action is a plain `accessibilityAction(named:)`. An `accessibilityActions` builder
+  holding a Button stopped XCTest from dragging the ACC-005 Intensity slider (GlowUITests failed twice;
+  passed again with plain named actions, 2026-11-14).
 
 ## UIX-004-D5 Shelf placement and visibility
 

@@ -39,15 +39,15 @@ private struct ParameterInspectorEntryModifier: ViewModifier {
         if let shelf, ParameterShelf.isPinnable(id) { ParameterShelfPinButton(shelf: shelf, id: id) }
     }
 
-    private func actions<V: View>(_ view: V, _ id: ParameterID) -> some View {
-        let shelfTitle: String? = shelf?.actionTitle(id)
-        return view
-            .accessibilityAction(named: "Inspect") { open(id) }
-            .accessibilityActions {
-                if let shelfTitle {
-                    Button(shelfTitle) { shelf?.toggle(id) }
-                }
-            }
+    /// Inspect, plus Pin to Shelf / Remove from Shelf when it applies (UIX-004-R1). Plain named actions: an
+    /// `accessibilityActions` builder with a Button stopped XCTest from dragging the ACC-005 slider (GlowUITests).
+    @ViewBuilder private func actions<V: View>(_ view: V, _ id: ParameterID) -> some View {
+        let inspected = view.accessibilityAction(named: "Inspect") { open(id) }
+        if let shelf, let title = shelf.actionTitle(id) {
+            inspected.accessibilityAction(named: title) { shelf.toggle(id) }
+        } else {
+            inspected
+        }
     }
 
     private func inspectButton(_ id: ParameterID) -> some View {

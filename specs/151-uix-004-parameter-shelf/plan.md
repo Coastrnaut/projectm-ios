@@ -31,10 +31,10 @@ inspector.
   - `ParameterShelfEnvironment`: an environment value carrying the shelf, so the UIX-003 entry
     modifier and sheet can offer Pin/Remove without new parameters through `SettingsView`.
 - `ParameterInspectorView.swift`: the entry modifier's context menu and VoiceOver actions add
-  "Pin to Shelf" / "Remove from Shelf"; the sheet's Value section adds the same button.
+  "Pin to Shelf" / "Remove from Shelf"; the sheet's navigation bar adds the same button.
 - `AppCoordinator`: owns `parameterShelf` (one property, one init line, reset-flag line).
 - `ControlsOverlay`: one line placing the strip above the button rows.
-- `SettingsView`: one environment line and one section line (other agents edit this file).
+- `SettingsView`: one section line; `VisualizerView`: one environment line on the Settings sheet (other agents edit both).
 - Key lists: `run_device_tests.py` `ALLOWED_KEYS`, `LibrarySettingsPolicy.includedKeys`, the
   `-uitestResetNotice` reset.
 
@@ -79,7 +79,8 @@ Apps/projectM-iOS/Views/ParameterShelfView.swift              (new)
 Apps/projectM-iOS/Views/ParameterInspectorView.swift          (Pin/Remove in menu, actions, sheet)
 Apps/projectM-iOS/Coordinators/AppCoordinator.swift           (owns the shelf; reset flag)
 Apps/projectM-iOS/Views/ControlsOverlay.swift                 (the strip)
-Apps/projectM-iOS/Views/SettingsView.swift                    (environment + section)
+Apps/projectM-iOS/Views/SettingsView.swift                    (section)
+Apps/projectM-iOS/Views/VisualizerView.swift                  (environment on the Settings sheet)
 Packages/LibraryBackup/Sources/LibraryBackup/LibrarySettings.swift (included key)
 scripts/run_device_tests.py                                   (allowed key)
 Apps/projectM-iOS/Tests/ParameterShelfTests.swift             (new)
