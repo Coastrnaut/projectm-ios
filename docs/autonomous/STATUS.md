@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T15:05:11Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T15:08:41Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -135,14 +135,14 @@ The physical-device suite may **not** start:
 | MIDI-004 | MIDI CC scaling | `6ac0c21c` | `None` |
 | MIDI-006 | MIDI note triggers | `4bad23aa` | `None` |
 | MIDI-007 | MIDI scene selection | `42658ec3d3d7` | `feature/midi-007` |
-| MIDI-008 | MIDI transport mapping | `265ddd1401f9` | `feature/midi-008` |
+| MIDI-008 | MIDI transport mapping | `265ddd14` | `feature/midi-008` |
 | MOD-001 | Typed parameter registry | `304f3bce431a` | `feature/mod-001` |
 | MOD-002 | Audio feature binding | `006678f3d7a5` | `feature/mod-002` |
 | MOD-003 | Linear mapping | `29cd3bbb1e12` | `feature/mod-003` |
 | MOD-004 | Curve mapping | `ae0249ac8569` | `feature/mod-004` |
 | MOD-005 | Attack/release envelope | `4bad23aa` | `feature/mod-005` |
 | MOD-006 | Threshold trigger | `6fc64ff1d0fc` | `feature/mod-006` |
-| MOD-007 | LFO sine and triangle | `0c57cf7ce720` | `None` |
+| MOD-007 | LFO sine and triangle | `265ddd14` | `None` |
 | MOD-013 | Modulation serialization | `d08b5103b0ef` | `feature/mod-013` |
 | MOD-014 | Modulation feedback prevention | `3b3a60649025` | `feature/mod-014` |
 | OSC-001 | OSC receiver | `13d9883531b9` | `feature/osc-001` |
@@ -1265,6 +1265,7 @@ None.
 - `python3 scripts/validate_docs.py`: pass at `21f8785505c8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-008/20261114T100415/docs.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `21f8785505c8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-008/20261114T100415/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/PerformanceControl`: pass at `21f8785505c8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-008/20261114T100415/swift-test_PerformanceControl.log`)
+- `post-merge: projectM-iOSTests 752 + UI 4 (MIDI transport, notes, scenes, learn)`: pass at `265ddd14` (log `.autonomous/logs/integration/batch14/app-tests.log`)
 
 ### MOD-001 Typed parameter registry (integrated)
 - `python3 scripts/check_compliance.py`: pass at `c62c162f633a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-001/20261113T104902/compliance.log`)
@@ -1359,6 +1360,7 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `5caacf82d050` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-007/20261114T095918/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `5caacf82d050` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-007/20261114T095918/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `5caacf82d050` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-007/20261114T095918/swift-test_VisualGenerators.log`)
+- `post-merge: projectM-iOSTests 752 + UI 4 (MIDI transport, notes, scenes, learn)`: pass at `265ddd14` (log `.autonomous/logs/integration/batch14/app-tests.log`)
 
 ### MOD-013 Modulation serialization (integrated)
 - `python3 scripts/check_compliance.py`: pass at `bbdb65cb39c4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-013/20261113T160144/compliance.log`)
