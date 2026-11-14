@@ -33,7 +33,8 @@ final class LibraryBackupAppTests: XCTestCase {
                FavoritesStore.favoritesKey, FavoritesStore.lastPresetKey, PhotoStore.idKey, TextOverlayStore.key,
                MIDIMappingCoordinator.mappingsKey, RecordingAudioSetting.includeMicrophoneKey,   // MIDI-003-R9, REC-004-R3
                PlaybackBalanceSetting.positionKey,   // AUD-010-R9
-               ParameterShelf.pinsKey]   // UIX-004-R10
+               ParameterShelf.pinsKey,   // UIX-004-R10
+               RecordingCountdownSetting.key]   // REC-007-R8
             + RecentPresetsStore.allKeys)   // PRE-006-R7
         let included = Set(LibrarySettingsPolicy.includedKeys)
         let excluded = Set(LibrarySettingsPolicy.excludedKeys)
