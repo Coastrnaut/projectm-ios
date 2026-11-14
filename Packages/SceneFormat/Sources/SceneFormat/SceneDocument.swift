@@ -152,7 +152,32 @@ public enum SceneLayerContent: Sendable, Hashable {
                                                  "material", "generator.graph"]
 }
 
-/// Opacity, blend mode and transform (CMP-003, CMP-004, CMP-005).
+/// CMP-006: a layer's saved fit: a mode name (`fill`, `fit`, `stretch`, `pixelAccurate` are drawn; any
+/// other name is kept, drawn as the layer's default and warned about, `unsupportedFitMode`) and an
+/// anchor in content fractions (0…1; centre by default).
+public struct SceneFit: Sendable, Hashable {
+    public var mode: String
+    public var anchor: LayerPoint
+
+    public init(mode: String, anchor: LayerPoint = LayerPoint(x: 0.5, y: 0.5)) {
+        self.mode = mode
+        self.anchor = anchor
+    }
+
+    /// A live fit's saved form.
+    public init(_ fit: LayerFit) {
+        self.init(mode: fit.mode.rawValue, anchor: fit.anchor)
+    }
+
+    /// The live fit, nil for a mode name this version does not draw.
+    public var layerFit: LayerFit? { LayerFitMode(rawValue: mode).map { LayerFit(mode: $0, anchor: anchor) } }
+
+    public static func == (lhs: SceneFit, rhs: SceneFit) -> Bool { SceneEncoder.fit(lhs) == SceneEncoder.fit(rhs) }
+
+    public func hash(into hasher: inout Hasher) { hasher.combine(SceneEncoder.fit(self)) }
+}
+
+/// Opacity, blend mode, transform and fit (CMP-003, CMP-004, CMP-005, CMP-006).
 public struct SceneComposite: Sendable, Hashable {
     /// 0…1.
     public var opacity: Double
@@ -160,13 +185,17 @@ public struct SceneComposite: Sendable, Hashable {
     /// is drawn; any other name is kept, drawn as normal and warned about (`unsupportedBlendMode`).
     public var blendMode: String
     public var transform: LayerTransform
+    /// CMP-006: nil when the layer has no fit set (the field is not written; the layer draws its default).
+    public var fit: SceneFit?
 
     public static let normalBlendMode = "normal"
 
-    public init(opacity: Double = 1, blendMode: String = SceneComposite.normalBlendMode, transform: LayerTransform = .identity) {
+    public init(opacity: Double = 1, blendMode: String = SceneComposite.normalBlendMode, transform: LayerTransform = .identity,
+                fit: SceneFit? = nil) {
         self.opacity = opacity
         self.blendMode = blendMode
         self.transform = transform
+        self.fit = fit
     }
 
     public static func == (lhs: SceneComposite, rhs: SceneComposite) -> Bool {

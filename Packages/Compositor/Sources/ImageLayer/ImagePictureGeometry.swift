@@ -5,14 +5,14 @@
 // likewise for the image. The stored image is already upright (MED-001-R4), so there is no
 // rotation. Fill covers the output and crops the overflow equally on both sides (visible ≤ 1); fit
 // shows the whole image and letterboxes (visible ≥ 1 on one axis: coordinates outside 0…1 are not
-// part of the image and are drawn transparent).
+// part of the image and are drawn transparent). CMP-006 adds stretch and pixelAccurate and an anchor;
+// the arithmetic is the compositor's `LayerFitPlacement`.
 
-public enum ImageScaleMode: Sendable, Equatable {
-    /// Cover the output, crop the overflow (the default; spec Clarifications).
-    case fill
-    /// Show the whole image, transparent bars on the other axis.
-    case fit
-}
+import Compositor
+
+/// The photo layer's fit modes are the compositor's (CMP-006): fill (the default; spec
+/// Clarifications), fit, stretch and pixelAccurate.
+public typealias ImageScaleMode = LayerFitMode
 
 public struct ImagePictureGeometry: Sendable, Equatable {
     /// Width and height of the output, in units of the image's width and height.
@@ -31,21 +31,20 @@ public struct ImagePictureGeometry: Sendable, Equatable {
         self.offsetY = offsetY
     }
 
-    /// Any size ≤ 0 gives the identity.
-    public init(pictureWidth: Int, pictureHeight: Int, outputWidth: Int, outputHeight: Int, mode: ImageScaleMode = .fill) {
-        guard pictureWidth > 0, pictureHeight > 0, outputWidth > 0, outputHeight > 0 else {
-            self = .identity
-            return
-        }
-        let w = Double(pictureWidth), h = Double(pictureHeight)
-        let sx = Double(outputWidth) / w, sy = Double(outputHeight) / h
-        let scale = mode == .fill ? max(sx, sy) : min(sx, sy)
-        let fx = Double(outputWidth) / (w * scale)
-        let fy = Double(outputHeight) / (h * scale)
-        visibleWidth = Float(fx)
-        visibleHeight = Float(fy)
-        offsetX = Float((1 - fx) / 2)
-        offsetY = Float((1 - fy) / 2)
+    /// Any size ≤ 0 gives the identity. CMP-006: the placement is `LayerFitPlacement` (fill and fit
+    /// as before; stretch; pixelAccurate at one image pixel per output pixel), around `anchor`.
+    public init(pictureWidth: Int, pictureHeight: Int, outputWidth: Int, outputHeight: Int, mode: ImageScaleMode = .fill,
+                anchor: LayerPoint = LayerPoint(x: 0.5, y: 0.5)) {
+        self.init(LayerFitPlacement(contentWidth: pictureWidth, contentHeight: pictureHeight, outputWidth: outputWidth,
+                                    outputHeight: outputHeight, fit: LayerFit(mode: mode, anchor: anchor)))
+    }
+
+    /// The shader's single-precision copy of a placement.
+    public init(_ placement: LayerFitPlacement) {
+        visibleWidth = Float(placement.visibleWidth)
+        visibleHeight = Float(placement.visibleHeight)
+        offsetX = Float(placement.offsetX)
+        offsetY = Float(placement.offsetY)
     }
 
     /// The image coordinate shown at output point (`x`, `y`); outside 0…1 means "no image here".

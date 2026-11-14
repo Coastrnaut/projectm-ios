@@ -47,6 +47,9 @@
 // composite texture that cannot be created; while it backs off no layer renders and the frame is
 // black. `health` is the visual's record. DEBUG builds can arm `faultInjection`, which makes creation
 // or the status check fail (no faulty shader exists).
+// CMP-006 (contracts/aspect-fitting.md in specs/101): a layer that adopts `LayerFitting` (photo,
+// video) gets its stack entry's fit at creation and at every apply; it fits its content inside its
+// own picture, so compositing (transform, opacity, blend) is unchanged.
 // CMP-004 (contracts/blend-modes.md in specs/099, ADR-0037): each layer has a blend mode. Normal layers
 // keep the fixed-function "over" in the open pass. A layer with another mode ends that pass and draws
 // `cmp_blend` full screen into a second composite (pooled, created the first time a mode layer is drawn
@@ -108,6 +111,9 @@ public final class Compositor {
             opacity = LayerOpacityAnimator(opacity: settings.opacity)
             transform = settings.transform
             blendMode = settings.blendMode
+            // CMP-006: a stack entry's fit always reaches the layer (the stack is the source of
+            // truth); a layer given to `init(device:layers:)` keeps its own fit unless its settings set one.
+            if let fitting = layer as? any LayerFitting, id != nil || settings.fit != nil { fitting.fit = settings.fit }
         }
     }
 
@@ -252,6 +258,7 @@ public final class Compositor {
                 }
                 kept.transform = entry.settings.transform
                 kept.blendMode = entry.settings.blendMode
+                if let fitting = kept.layer as? any LayerFitting { fitting.fit = entry.settings.fit }   // CMP-006
                 next.append(kept)
                 continue
             }

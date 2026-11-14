@@ -114,6 +114,10 @@ extension SceneDocument {
                 issues.append(SceneIssue(.unsupportedBlendMode, path: path + ".composite.blend",
                                          "Layer \(i) uses the blend mode \"\(layer.composite.blendMode)\", which this version draws as normal."))
             }
+            if let fit = layer.composite.fit, LayerFitMode(rawValue: fit.mode) == nil {   // CMP-006: four names are drawn
+                issues.append(SceneIssue(.unsupportedFitMode, path: path + ".composite.fit.mode",
+                                         "Layer \(i) uses the fit mode \"\(fit.mode)\", which this version draws as the layer's default."))
+            }
             if case let .material(id) = layer.content, ProceduralMaterialCatalog.material(withID: id) == nil {
                 issues.append(SceneIssue(.unknownMaterial, path: path + ".content.material",
                                          "Layer \(i) uses the unknown material \"\(id)\"."))

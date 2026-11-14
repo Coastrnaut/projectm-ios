@@ -4,7 +4,7 @@
 // A plain value, CPU only (builds on Linux): callers edit it and hand it to
 // `Compositor.apply(_:makeLayer:)`, which diffs it by instance ID. Index 0 is the BOTTOM layer;
 // the last index is drawn on top. Every operation either succeeds or throws and leaves the stack
-// unchanged. Opacity (CMP-003), transforms (CMP-005) and blend modes (CMP-004)
+// unchanged. Opacity (CMP-003), transforms (CMP-005), blend modes (CMP-004) and fits (CMP-006)
 // live in each entry's `LayerCompositeSettings`; groups, masks and solo/mute will add
 // fields to the entry. SCN-001 adds `init(restoring:)`: a saved scene's stack is rebuilt with its
 // own instance IDs (specs/059-scn-001-versioned-scene-format, research SCN-001-D7).

@@ -51,7 +51,14 @@ enum SceneEncoder {
     }
 
     static func composite(_ c: SceneComposite) -> SceneJSON {
-        .object(["opacity": .double(c.opacity), "blend": .string(c.blendMode), "transform": transform(c.transform)])
+        var o: [String: SceneJSON] = ["opacity": .double(c.opacity), "blend": .string(c.blendMode), "transform": transform(c.transform)]
+        if let f = c.fit { o["fit"] = fit(f) }   // CMP-006: only when set, so older scenes stay byte-identical
+        return .object(o)
+    }
+
+    /// CMP-006's saved form.
+    static func fit(_ f: SceneFit) -> SceneJSON {
+        .object(["mode": .string(f.mode), "anchor": point(f.anchor)])
     }
 
     /// CMP-005's saved form, version 1.

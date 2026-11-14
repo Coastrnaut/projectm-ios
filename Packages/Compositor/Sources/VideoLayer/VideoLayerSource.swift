@@ -7,7 +7,8 @@
 //      a gap over 1 s, e.g. a pause, adds nothing);
 //   2. takes the latest queued picture due at that playback time (`take(upTo:)`, which never waits;
 //      older due pictures are dropped as late) and keeps it as the held picture;
-//   3. draws the held picture with aspect fill and the track's rotation (`CameraPictureGeometry`),
+//   3. draws the held picture with its CMP-006 fit (fill by default) on the upright size and the
+//      track's rotation (`VideoPictureGeometry`), transparent outside the picture,
 //      sampling a `.bgra8Unorm_srgb` texture (linear light), alpha 1 (premultiplied = color).
 // Until a picture is due, with no content, or after the session failed, `render` throws `.notReady`
 // and the compositor shows the transparent fallback. It never decodes, waits or does I/O: the
@@ -39,11 +40,14 @@ import Compositor
 import Metal
 import os
 
-public final class VideoLayerSource: LayerSource {
+public final class VideoLayerSource: LayerSource, LayerFitting {
     public let layerName = "video"
     public let fallback = LayerFallback.transparent
     public let device: MTLDevice
     public let capacity: Int
+    /// CMP-006: the stack entry's fit (set by the compositor; nil: fill at the centre). Shown from the
+    /// next frame; decoding is not restarted.
+    public var fit: LayerFit?
     private let slot = VideoStateSlot()
     private var pipeline: VideoDecodePipeline<AVVideoFrameReader>?
     private var clock = VideoPlaybackClock()
@@ -170,8 +174,8 @@ public final class VideoLayerSource: LayerSource {
         if let newest = pipeline.take(upTo: playback) { held = newest }
         guard let shown = held, let renderPipeline, let sampler else { throw .notReady }
         let texture = shown.frame.texture
-        let geometry = CameraPictureGeometry(pictureWidth: texture.width, pictureHeight: texture.height, rotation: shown.frame.rotation,
-                                             outputWidth: picture.width, outputHeight: picture.height)
+        let geometry = VideoPictureGeometry(pictureWidth: texture.width, pictureHeight: texture.height, rotation: shown.frame.rotation,
+                                            outputWidth: picture.width, outputHeight: picture.height, fit: fit ?? .default)
         var uniforms = VideoUniforms(geometry: geometry, outputWidth: picture.width, outputHeight: picture.height)
         let pass = MTLRenderPassDescriptor()
         pass.colorAttachments[0].texture = picture
@@ -212,12 +216,14 @@ public final class VideoLayerSource: LayerSource {
     };
 
     // Output point (0...1, top-left) -> visible part of the upright picture -> video texture
-    // (CameraPictureGeometry.textureCoordinate does the same). The texture is sRGB, so the sample
-    // is linear light; the video is opaque, so alpha 1 makes it premultiplied.
+    // (VideoPictureGeometry.textureCoordinate does the same). The texture is sRGB, so the sample
+    // is linear light; the video is opaque, so alpha 1 makes it premultiplied. Outside the upright
+    // picture (CMP-006 fit and pixelAccurate bars) nothing is drawn.
     fragment float4 vid_picture(VidOut in [[stage_in]], texture2d<float> video [[texture(0)]],
                                 sampler s [[sampler(0)]], constant VidUniforms &u [[buffer(0)]]) {
         float2 p = in.position.xy / u.outputSize;
         float2 ab = u.offset + p * u.visible;
+        if (any(ab < 0.0) || any(ab > 1.0)) { return float4(0.0); }
         float2 t = ab;
         if (u.rotation == 1u) { t = float2(ab.y, 1.0 - ab.x); }
         else if (u.rotation == 2u) { t = float2(1.0 - ab.x, 1.0 - ab.y); }
@@ -275,7 +281,7 @@ struct VideoUniforms {
     var rotation: UInt32
     var pad: UInt32 = 0
 
-    init(geometry: CameraPictureGeometry, outputWidth: Int, outputHeight: Int) {
+    init(geometry: VideoPictureGeometry, outputWidth: Int, outputHeight: Int) {
         visible = SIMD2(geometry.visibleWidth, geometry.visibleHeight)
         offset = SIMD2(geometry.offsetX, geometry.offsetY)
         outputSize = SIMD2(Float(max(outputWidth, 1)), Float(max(outputHeight, 1)))

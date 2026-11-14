@@ -30,7 +30,7 @@
 // * `VideoLayer` (MED-002, specs/048-med-002-import-video-layer) imports (remux without soundtrack or
 //   metadata) and plays one video as a layer at its own rate through a bounded decode queue. Limits,
 //   errors, the playback clock and the queue are plain Swift and build on Linux; AVFoundation reading
-//   and the Metal layer compile out there. It reuses CameraLayer's rotation and aspect-fill geometry.
+//   and the Metal layer compile out there. It reuses CameraLayer's rotation type; CMP-006 fits it with `LayerFitPlacement` on the upright size.
 // * `GeneratorGraphImport` (SHD-011, ADR-0024) turns the bytes of an imported file into a validated,
 //   compiled generator graph or one typed refusal: size limit before decoding, executables, scripts
 //   and archives refused by their first bytes, `JSONDecoder` into the SHD-002 document. It reads no

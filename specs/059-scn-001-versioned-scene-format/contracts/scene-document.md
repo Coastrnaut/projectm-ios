@@ -51,7 +51,11 @@ empty when absent and are always written. Unknown top-level keys are kept (C6).
 always written. `transform` is CMP-005's saved form (`version` 1). Opacity and transform components
 outside their ranges are clamped on decode with a `valueClamped` warning. `blend`: any string;
 `normal`, `add`, `screen`, `multiply`, `overlay` and `difference` are drawn (CMP-004, ADR-0037), others
-give `unsupportedBlendMode` and are kept. `values`: the layer's own
+give `unsupportedBlendMode` and are kept. `fit` (CMP-006, optional, written only when set):
+`{"mode": <string>, "anchor": {"x", "y"}}`; `mode` required inside it, `fill`, `fit`, `stretch` and
+`pixelAccurate` are drawn by photo and video layers, others give `unsupportedFitMode` and are kept
+(through load → capture too); `anchor` optional (centre), components clamped to 0…1 with
+`valueClamped`; absent means the layer's default (fill, centre). `values`: the layer's own
 numbers (`LayerDescriptor.parameters`), names 1…64 UTF-8 bytes without control characters.
 
 ### Parameter value (MOD-001 tagged form)
@@ -99,7 +103,7 @@ numbers in their written text. `encode(decode(b)) == b` for every canonical `b`.
 ## C3 — Semantic equality (`SceneDocument ==`)
 
 Equal scene ID, name, layers in order (instance, kind and content, values, opacity, blend,
-transform), parameter values, bindings in order, generators and connections in order, assets and
+transform, fit), parameter values, bindings in order, generators and connections in order, assets and
 every preserved unknown field; doubles compared by bit pattern; map key order and white space never
 matter; preserved unknown numbers compared by their written text.
 
@@ -139,6 +143,7 @@ order (layers, assets, parameters, bindings, modulation). Errors block `liveStat
 | `invalidValueName` | error | `Layer <i> has a value named "<name>"; names are 1…64 bytes without control characters.` |
 | `unknownLayerKind` | warning | `Layer <i> has the unknown kind "<kind>"; it is kept but not shown.` |
 | `unsupportedBlendMode` | warning | `Layer <i> uses the blend mode "<mode>", which this version draws as normal.` |
+| `unsupportedFitMode` | warning | `Layer <i> uses the fit mode "<mode>", which this version draws as the layer's default.` (CMP-006) |
 | `valueClamped` | warning | `<path>: <value> is outside <range>; read as <clamped>.` |
 | `droppedField` | warning | `<path> has the unknown field "<key>"; it was dropped.` |
 | `unknownMaterial` | error | `Layer <i> uses the unknown material "<id>".` |

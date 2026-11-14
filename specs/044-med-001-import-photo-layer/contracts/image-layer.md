@@ -45,9 +45,10 @@ public enum ImageSanitizer {
 ## Geometry (CPU)
 
 ```swift
-public enum ImageScaleMode: Sendable { case fill, fit }
+public typealias ImageScaleMode = LayerFitMode   // CMP-006: fill, fit, stretch, pixelAccurate
 public struct ImagePictureGeometry: Sendable, Equatable {
-    public init(pictureWidth: Int, pictureHeight: Int, outputWidth: Int, outputHeight: Int, mode: ImageScaleMode)
+    public init(pictureWidth: Int, pictureHeight: Int, outputWidth: Int, outputHeight: Int, mode: ImageScaleMode,
+                anchor: LayerPoint = LayerPoint(x: 0.5, y: 0.5))   // CMP-006: LayerFitPlacement
     public func textureCoordinate(x: Float, y: Float) -> (x: Float, y: Float)
 }
 ```
@@ -70,4 +71,6 @@ public final class ImageLayerSource: LayerSource {
 Rules: `render` throws `.notReady` unless a texture is held; it never decodes, allocates, does I/O
 or waits for the load (it takes the slot only if its lock is free). `prepare` builds the pipeline
 and sampler once; a size change does not reload the image. Output is linear premultiplied
-(`color.rgb * a, a`), transparent outside the picture in fit mode.
+(`color.rgb * a, a`), transparent outside the picture in fit mode. CMP-006 (specs/101-cmp-006-aspect-fitting): the layer adopts
+`LayerFitting`; a stack entry's `fit` (any of the four modes, with an anchor) is drawn from the next
+frame without reloading; with no fit set it draws its init `mode` at the centre (fill by default).
