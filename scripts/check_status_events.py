@@ -38,6 +38,7 @@ CHECKED = [
     "Views/LayerInspectorView.swift",  # CMP-015-R10: solo and mute announce through the announcer
     "Coordinators/LayerInspectorCoordinator.swift",
     "Views/AccessibleParameter.swift",   # ACC-005-R7: slider ends announce through the announcer
+    "Views/SensorySafetySection.swift",  # ACC-012-R10: profile changes announce through the announcer
 ]
 COORDINATOR = "Coordinators/AppCoordinator.swift"
 ALLOWED_IN_COORDINATOR = ("onScopeChange", "nativeVisualUnavailableMessage", "glowUnavailableMessage")

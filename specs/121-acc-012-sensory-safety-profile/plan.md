@@ -15,7 +15,7 @@ and caps glow intensity, binding excursions and graph speed where a frame's para
 after MOD-002 modulation in `NativeSpectrumHost.resolveEffectiveGlow()` and in
 `GeneratorGraphLayer.render`. Standard yields `nil` overrides and identity caps, so the existing code paths
 run unchanged (bit-identical). Settings gains a Sensory safety section; values persist in four
-UserDefaults keys, are cleared by the UI-test reset and travel in the FILE-005 backup. ADR-0045 records
+UserDefaults keys, are cleared by the UI-test reset and travel in the FILE-005 backup. ADR-0049 records
 the clamp point and precedence (research R1-R6).
 
 ## Technical Context
@@ -86,7 +86,7 @@ Apps/projectM-iOS/Views/SensorySafetySection.swift                    (new), Set
 Apps/projectM-iOS/Tests/SensorySafetyTests.swift                       (new)
 Apps/projectM-iOS/UITests/SensorySafetyUITests.swift                   (new)
 scripts/run_device_tests.py (ALLOWED_KEYS)
-docs/adr/0045-sensory-safety-clamp.md (number checked before commit)
+docs/adr/0049-sensory-safety-clamp.md (number checked before commit)
 ```
 
 **Structure Decision**: model and clamp in FlashSafety (already the one definition of a flash, tested on

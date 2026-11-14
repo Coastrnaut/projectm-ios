@@ -426,6 +426,7 @@ struct VisualizerView: View {
     private func withVisualChanges(_ content: some View) -> some View {
         withSpectrumChanges(content
             .onChange(of: coordinator.settings.reduceFlashing) { coordinator.applyReduceFlashing() }
+            .onChange(of: coordinator.settings.sensorySafety.profile) { coordinator.applyReduceFlashing() }   // ACC-012
             .onChange(of: coordinator.settings.visual) { coordinator.visualSettingsChanged() }                 // VIS-001
             .onChange(of: coordinator.settings.glowParameters) { coordinator.glowSettingsChanged() }          // FX-001
             .onChange(of: coordinator.settings.colorBlindSafePalette) { coordinator.spectrumPaletteChanged() }) // ACC-003-R13

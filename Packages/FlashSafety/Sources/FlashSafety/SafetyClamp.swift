@@ -1,5 +1,5 @@
 // SafetyClamp.swift — the one clamp every frame's parameters pass through (ACC-012-R4 to R7;
-// contracts/safety-clamp.md C1; ADR-0045).
+// contracts/safety-clamp.md C1; ADR-0049).
 //
 // Built on the main actor whenever the profile or the effective Reduce flashing setting changes, then
 // copied (a small value) to each frame resolver: native glow after MOD-002 modulation, the native

@@ -31,6 +31,8 @@ enum AnnouncementKind: String, CaseIterable, Sendable {
     case parameter
     /// CMP-015-R10: layer solo and mute in the layer inspector.
     case layer
+    /// ACC-012-R10: the sensory safety profile was changed in Settings.
+    case safety
 }
 
 struct AnnouncementGate: Sendable, Equatable {

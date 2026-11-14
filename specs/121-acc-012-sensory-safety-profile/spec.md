@@ -4,7 +4,8 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (ACC-012-T01-T21 verified on the Mac and an own iOS 27.2 simulator;
+T22 `{device}` open)
 
 **Input**: User description: "Implement ACC-012 (Sensory safety profile) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Store per-user limits for flash, motion
@@ -185,7 +186,8 @@ on another device, and finds the same limits.
   its animations go through `MotionPolicy` (ACC-001). Custom sliders appear only while Custom is chosen;
   Custom first starts from the previously selected preset.
 - **ACC-012-R11**: The profile MUST NOT be recorded in scenes or cues, set by MIDI or OSC, or modulated.
-- **ACC-012-R12**: DEBUG builds MUST show a probe with the values the native visual receives, for UI tests.
+- **ACC-012-R12**: DEBUG builds MUST show a probe with the values the clamp hands the native visual (the
+  host's own `limited(by:)` over the current glow, and the envelope), for UI tests.
 
 ### Key Entities
 

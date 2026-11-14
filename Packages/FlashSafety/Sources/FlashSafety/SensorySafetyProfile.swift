@@ -1,5 +1,5 @@
 // SensorySafetyProfile.swift — the viewer's sensory safety limits (ACC-012-R1 to R3; spec
-// specs/121-acc-012-sensory-safety-profile, data-model.md; ADR-0045).
+// specs/121-acc-012-sensory-safety-profile, data-model.md; ADR-0049).
 //
 // * Flash: FX-019's own envelope knobs, never a second limiter. "Flashes per second" f ∈ 1…3 is the
 //   envelope's transition budget 2f per 1 s window; the rise limit is its `riseRatePerSecond` (nil = none).
