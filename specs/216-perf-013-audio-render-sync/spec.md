@@ -101,7 +101,8 @@ brings the age error within budget in the documented time without overshooting; 
 - **PERF-013-R8**: The performance overlay shows one age line (smoothed age, p95, the AUD-013 offset when set, and
   the drift verdict with the estimate when detected); unavailable when no visual consumes analysis frames.
 - **PERF-013-R9**: The PERF-012 report gains an optional `audioSync` section (age sample count, p50, p95, max,
-  drift verdict and estimate, correction count); absent without measurements.
+  drift verdict and estimate, detection count) over every frame measured since launch while the overlay was shown;
+  absent without measurements.
 - **PERF-013-R10**: Each drift detection and each clear is marked with a Points of Interest signpost event carrying
   numbers only, emitted outside the frame path.
 - **PERF-013-R11**: Measurement follows the existing telemetry cost model: only while the performance overlay is

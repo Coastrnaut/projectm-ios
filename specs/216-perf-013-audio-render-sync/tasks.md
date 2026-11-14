@@ -6,6 +6,7 @@ Tests are part of the acceptance (spec S1-S4) and use injected clocks only (owne
 
 ## Phase 1: Setup
 
+- [ ] PERF-013-T00 Create the feature simulator "PERF13 iPhone 17" (iOS 27.2) and run `xcodegen generate` in the worktree (delete the simulator and derived data at the end)
 - [ ] PERF-013-T01 Add `sessionSample: Int64 = 0` to `LiveBandFrameInfo` and fill it from `frame.time.sessionSample` in `LiveBandOutput.readLatest` in Packages/VisualGenerators/Sources/VisualBandFeed/LiveBandAnalyzer.swift
 
 ## Phase 2: Foundational (estimator)
@@ -27,7 +28,7 @@ Tests are part of the acceptance (spec S1-S4) and use injected clocks only (owne
 - [ ] PERF-013-T06 [US1] `FeatureAgeMeasured` protocol, conformance of the native, camera, photo, video and text hosts, and the per-frame helper (arrival = `MonotonicClock`, presentation = display-link target) in Apps/projectM-iOS/Visuals/FeatureAgeMeasuring.swift; one call after `readLatest` in each host's frame loop (Apps/projectM-iOS/Visuals/*VisualHost.swift, NativeSpectrumHost.swift)
 - [ ] PERF-013-T07 [US1] `FeatureAgeAttachment` (attach to the shown visual while the overlay is shown, counting session per attach), overlay line per contract C2 after the frame-drop lines, verdict signposts per C3 (`DiagnosticsLog.audioSync`) in Apps/projectM-iOS/Coordinators/AppCoordinator+FeatureAge.swift, Apps/projectM-iOS/Coordinators/AppCoordinator+FrameStages.swift, Packages/Diagnostics/Sources/Diagnostics/Logging.swift; one stored property in Apps/projectM-iOS/Coordinators/AppCoordinator.swift
 - [ ] PERF-013-T08 [US1] Report section `PerformanceReport.AudioSync` (optional; schema version 1 amended in specs/209-perf-012-performance-report/contracts/performance-report.schema.json and its test copy) and builder input in Packages/Diagnostics/Sources/Diagnostics/PerformanceReport.swift, Apps/projectM-iOS/Coordinators/PerformanceReportBuilder.swift, Apps/projectM-iOS/Coordinators/AppCoordinator+PerformanceReport.swift; schema test in Packages/Diagnostics/Tests/DiagnosticsTests/PerformanceReportTests.swift
-- [ ] PERF-013-T09 [US1] App tests: attachment follows the overlay and the visual, overlay line text (available, unavailable, offset, drift), report section present/absent in Apps/projectM-iOS/Tests/FeatureAgeAppTests.swift
+- [ ] PERF-013-T09 [US1] App tests: attachment follows the overlay and the visual, overlay line text (available, unavailable, offset, drift), report section present/absent, the signpost fires once per verdict change (R10) in Apps/projectM-iOS/Tests/FeatureAgeAppTests.swift
 
 ## Phase 5: Polish
 
@@ -37,7 +38,7 @@ Tests are part of the acceptance (spec S1-S4) and use injected clocks only (owne
 
 ## Dependencies
 
-T01 → T06; T02 → T03 → T04, T05; T03 → T06 → T07 → T09; T03 → T08 → T09; T10-T11 after all; T12 last.
+T00 → T06-T09; T01 → T06; T02 → T03 → T04, T05; T03 → T06 → T07 → T09; T03 → T08 → T09; T10-T11 after all; T12 last.
 
 ## Parallel examples
 
