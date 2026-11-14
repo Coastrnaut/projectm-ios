@@ -63,6 +63,7 @@ TARGETS = {
 ALLOWED_KEYS = {"favorites", "lastPresetID", "settings.performanceOverlay", "settings.reduceFlashing",
                 "settings.presetScope", "notice.photosensitivityAcknowledged",
                 "settings.visual", "settings.circularSpectrum.bars",
+                "settings.camera.position", "settings.camera.mirrorFront", "settings.camera.mirrorBack",
                 "settings.circularSpectrum.glow", "settings.circularSpectrum.glowIntensity",
                 "settings.circularSpectrum.glowRadius", "settings.circularSpectrum.glowThreshold",
                 "settings.linearSpectrum.orientation", "settings.linearSpectrum.spacing",   # VIS-002-R11

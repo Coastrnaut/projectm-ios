@@ -71,8 +71,8 @@ enum PermissionCatalog {
         PermissionEntry(permission: .camera,
                         name: "Camera",
                         infoPlistKey: "NSCameraUsageDescription",
-                        usageDescription: "The Camera visual shows the live view from your rear camera behind the visualization. The picture stays on your device and is never recorded or sent.",
-                        features: ["Camera visual (CAM-001)"],
+                        usageDescription: "The Camera visual shows the live view from the front or rear camera you choose, behind the visualization. The picture stays on your device: it is never sent, and it is saved only when you save a frame or record the visualization yourself.",
+                        features: ["Camera visual (CAM-001, front camera CAM-002)"],
                         askedWhen: "The first time you choose the Camera visual in Settings.",
                         settingsCanChange: true,
                         hasDistinctRestrictedState: true),
@@ -127,9 +127,10 @@ enum PermissionCatalog {
 
     /// The camera visual's notice: the catalog's for denied and restricted, otherwise CAM-001's notice
     /// for the feed state (no camera, paused) without Open Settings; nil when none is needed.
-    static func cameraNotice(for feed: CameraFeedState) -> PermissionNotice? {
+    /// CAM-002-R10: denied and restricted are the same for both cameras; no camera names the position.
+    static func cameraNotice(for feed: CameraFeedState, position: CameraPosition = .back) -> PermissionNotice? {
         if let state = state(camera: feed), let notice = notice(.camera, state) { return notice }
-        guard let text = feed.notice else { return nil }
+        guard let text = feed.notice(position: position) else { return nil }
         return PermissionNotice(permission: .camera, state: nil, text: text, offersSettings: false)
     }
 

@@ -12,16 +12,21 @@ import SwiftUI
 /// Whether the in-app camera indicator is shown, and what VoiceOver reads (CAM-012-R1, R9).
 struct CameraIndicator: Equatable {
     static let label = "Camera on"
+    /// CAM-002-R8: the badge names the front camera.
+    static let frontLabel = "Front camera on"
     static let stopTitle = "Stop camera"
     static let stoppedAnnouncement = "Camera off"
     static let hidden = CameraIndicator(state: .idle)
 
     let isShown: Bool
     let accessibilityValue: String
+    /// "Camera on", or "Front camera on" for the front camera (CAM-002-R8).
+    let label: String
 
-    init(state: CameraFeedState) {
+    init(state: CameraFeedState, position: CameraPosition = .back) {
         isShown = state == .starting || state == .running
         accessibilityValue = state == .running ? "Live" : "Starting"
+        label = position == .front ? Self.frontLabel : Self.label
     }
 }
 
@@ -36,11 +41,11 @@ struct CameraIndicatorBadge: View {
                 Image(systemName: "video.fill")
                     .foregroundStyle(.green)
                     .accessibilityHidden(true)
-                Text(CameraIndicator.label)
+                Text(indicator.label)
                     .font(.footnote.weight(.semibold))
             }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(CameraIndicator.label)
+            .accessibilityLabel(indicator.label)
             .accessibilityValue(indicator.accessibilityValue)
             .accessibilityIdentifier("cameraIndicatorStatus")
             Button(action: onStop) {

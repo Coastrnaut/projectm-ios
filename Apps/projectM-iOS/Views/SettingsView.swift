@@ -14,6 +14,7 @@
 // SHOW-001: a Show row opens the cue list editor (ShowEditorView).
 // UIX-001: a "Guided first scene" row closes Settings and opens the tutorial (UIX-001-R8).
 import PhotosUI
+import CameraLayer
 import SwiftUI
 import TextLayer
 import VisualEffects
@@ -80,6 +81,28 @@ struct SettingsView: View {
                 .accessibilityLabel(title)
                 .accessibilityValue(text)
                 .accessibilityIdentifier(id)
+        }
+    }
+
+    /// CAM-002-R1, R3, R11: Back or Front and the chosen camera's Mirror. Changing either never restarts
+    /// the audio source; a switch shows the new camera as soon as it delivers a picture.
+    private var cameraSection: some View {
+        Section {
+            Picker("Camera", selection: $settings.cameraPosition) {
+                ForEach(CameraPosition.allCases, id: \.self) { (position: CameraPosition) in
+                    Text(position.title).tag(position)
+                }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityLabel("Camera")
+            .accessibilityValue(settings.cameraPosition.title)
+            .accessibilityIdentifier("cameraPositionPicker")
+            Toggle("Mirror", isOn: $settings.cameraMirrored)
+                .accessibilityIdentifier("cameraMirrorToggle")
+        } header: {
+            Text("Camera")
+        } footer: {
+            Text("Mirror flips the camera picture left to right, like a mirror; saved frames and recordings show it the same way. Each camera keeps its own setting: on for Front, off for Back unless you change it.")
         }
     }
 
@@ -164,7 +187,7 @@ struct SettingsView: View {
                             .accessibilityIdentifier("nativeVisualUnavailableFooter")
                     } else {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Oscilloscope draws the sound's waveform, held still when the sound repeats. Camera shows your rear camera behind a circular spectrum, only while it is on screen; the picture is never recorded or sent. Photo shows a picture you choose behind a circular spectrum. Video plays a video you choose, without its sound, behind a circular spectrum. Text shows your own words over a circular spectrum.")
+                            Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Oscilloscope draws the sound's waveform, held still when the sound repeats. Camera shows your rear or front camera behind a circular spectrum, only while it is on screen; the picture is never sent. Photo shows a picture you choose behind a circular spectrum. Video plays a video you choose, without its sound, behind a circular spectrum. Text shows your own words over a circular spectrum.")
                             if settings.visual.isNative {
                                 if glowUnavailable {
                                     Text(AppCoordinator.glowUnavailableMessage)
@@ -197,6 +220,9 @@ struct SettingsView: View {
                     } footer: {
                         Text("Attack sets how quickly bars rise to a louder sound, Release how slowly they fall. Instant shows each analysis as it comes.")
                     }
+                }
+                if settings.visual.usesCamera {   // CAM-002-R1: which camera, and its mirror
+                    cameraSection
                 }
                 if settings.visual.usesPhoto, let photos {
                     photoSection(photos)

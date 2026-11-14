@@ -1,5 +1,12 @@
-// AVCameraFrameProvider.swift — the rear camera through AVFoundation (CAM-001-R4, R6 to R9, R15;
-// research CAM-001-D2, D4, D5). iOS only.
+// AVCameraFrameProvider.swift — the rear or front camera through AVFoundation (CAM-001-R4, R6 to R9,
+// R15; research CAM-001-D2, D4, D5; CAM-002 research D3-D5). iOS only.
+//
+// CAM-002: `position` chooses the wide-angle camera (`camera(for:)`). `select(_:)` on a running
+// session swaps its input inside begin/commitConfiguration on the session queue (the session keeps
+// running, no new prompt); the slot stays closed until the video queue has delivered every buffer
+// queued before the swap, and each picture is stamped with its connection's source position, so the
+// layer never draws the previous camera. A new RotationCoordinator follows the new device. Mirroring
+// is not done here: the camera layer flips the picture (one place for every output).
 //
 // * `start()` (main thread, only from the user's choice of the camera visual): no back wide-angle
 //   camera → `unavailable` without asking; access never decided → iOS's prompt (`requestingAccess`);
@@ -36,6 +43,8 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
     private var rotationObservation: NSKeyValueObservation?
     private var observers: [NSObjectProtocol] = []
     private var generation: UInt64 = 0
+    /// CAM-002: the chosen camera (main thread).
+    public private(set) var position: CameraPosition = .back
 
     public private(set) var state: CameraFeedState = .idle {
         didSet { if state != oldValue { onStateChange?(state) } }
@@ -48,15 +57,19 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
     }
 
     /// The back wide-angle camera, if this device has one.
-    public static func backCamera() -> AVCaptureDevice? {
-        AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back)
+    public static func backCamera() -> AVCaptureDevice? { camera(for: .back) }
+
+    /// CAM-002: the wide-angle camera at a position, if this device has one.
+    public static func camera(for position: CameraPosition) -> AVCaptureDevice? {
+        let avPosition: AVCaptureDevice.Position = position == .front ? .front : .back
+        return AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: avPosition)
     }
 
     public func start() {
         guard session == nil, state != .requestingAccess, state != .starting else { return }
         generation &+= 1
         let current = generation
-        guard Self.backCamera() != nil else {   // checked first: no camera, no prompt (CAM-001-R6)
+        guard Self.camera(for: position) != nil else {   // checked first: no camera, no prompt (CAM-001-R6, CAM-002-R10)
             state = .unavailable
             return
         }
@@ -102,11 +115,86 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
 
     public func latestFrame() -> CameraFrame? { latest.read() }
 
+    // MARK: - Camera choice (CAM-002-R7)
+
+    public func select(_ position: CameraPosition) {
+        guard position != self.position else { return }
+        self.position = position
+        latest.clear()
+        latest.setPosition(position)
+        switch state {
+        case .idle, .denied, .restricted, .requestingAccess:
+            return   // recorded; a pending prompt's answer configures the camera chosen last
+        case .unavailable, .interrupted, .failed:
+            stop()
+            start()
+        case .starting, .running:
+            if session != nil, Self.camera(for: position) != nil {
+                switchInput()
+            } else {
+                stop()
+                start()   // no camera at the new position: `unavailable`, nothing asked
+            }
+        }
+    }
+
+    /// Replaces the running session's input with the chosen camera's (research CAM-002-D4).
+    private func switchInput() {
+        guard let session, let camera = Self.camera(for: position), let input = try? AVCaptureDeviceInput(device: camera) else {
+            stop()
+            state = .unavailable
+            return
+        }
+        generation &+= 1
+        let current = generation
+        latest.close()   // no picture until the old camera's queued buffers are gone
+        state = .starting
+        observers.forEach(NotificationCenter.default.removeObserver)
+        observers.removeAll()
+        observe(session)   // the observers carry the generation
+        followRotation(of: camera)
+        let box = Unchecked(value: (session, input))
+        let video = videoQueue
+        sessionQueue.async { [self] in
+            let (session, input) = box.value
+            session.beginConfiguration()
+            let old = session.inputs
+            old.forEach(session.removeInput)
+            let added = session.canAddInput(input)
+            if added { session.addInput(input) } else { old.forEach { if session.canAddInput($0) { session.addInput($0) } } }
+            session.commitConfiguration()
+            video.async { [self] in   // every buffer queued before the swap was refused by the closed slot
+                DispatchQueue.main.async { [self] in
+                    guard current == generation, state == .starting else { return }
+                    if added {
+                        latest.open()
+                        state = .running
+                    } else {
+                        stop()
+                        state = .unavailable
+                    }
+                }
+            }
+        }
+    }
+
+    /// Picture rotation from the device's RotationCoordinator (CAM-001; CAM-002-D5 for the front camera).
+    private func followRotation(of camera: AVCaptureDevice) {
+        rotationObservation?.invalidate()
+        let coordinator = AVCaptureDevice.RotationCoordinator(device: camera, previewLayer: nil)
+        rotationCoordinator = coordinator
+        latest.setRotation(CameraRotation(degrees: Double(coordinator.videoRotationAngleForHorizonLevelCapture)))
+        let slot = latest
+        rotationObservation = coordinator.observe(\.videoRotationAngleForHorizonLevelCapture, options: [.new]) { coordinator, _ in
+            slot.setRotation(CameraRotation(degrees: Double(coordinator.videoRotationAngleForHorizonLevelCapture)))
+        }
+    }
+
     // MARK: - Session
 
     private func configureAndRun() {
         state = .starting
-        guard let camera = Self.backCamera(), let input = try? AVCaptureDeviceInput(device: camera) else {
+        guard let camera = Self.camera(for: position), let input = try? AVCaptureDeviceInput(device: camera) else {
             state = .unavailable
             return
         }
@@ -133,13 +221,8 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
         session.commitConfiguration()
         self.session = session
 
-        let coordinator = AVCaptureDevice.RotationCoordinator(device: camera, previewLayer: nil)
-        rotationCoordinator = coordinator
-        latest.setRotation(CameraRotation(degrees: Double(coordinator.videoRotationAngleForHorizonLevelCapture)))
-        let slot = latest
-        rotationObservation = coordinator.observe(\.videoRotationAngleForHorizonLevelCapture, options: [.new]) { coordinator, _ in
-            slot.setRotation(CameraRotation(degrees: Double(coordinator.videoRotationAngleForHorizonLevelCapture)))
-        }
+        followRotation(of: camera)
+        latest.setPosition(position)
         observe(session)
 
         latest.open()
@@ -186,7 +269,16 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
         guard CVMetalTextureCacheCreateTextureFromImage(kCFAllocatorDefault, cache, pixels, nil, .bgra8Unorm_srgb, width, height, 0,
                                                         &wrapper) == kCVReturnSuccess,
               let wrapper, let texture = CVMetalTextureGetTexture(wrapper) else { return }
-        latest.store(texture, owner: wrapper)
+        latest.store(texture, owner: wrapper, position: Self.position(of: connection))
+    }
+
+    /// CAM-002-D3: the camera a buffer came from (nil: the slot's position).
+    private static func position(of connection: AVCaptureConnection) -> CameraPosition? {
+        switch connection.inputPorts.first?.sourceDevicePosition {
+        case .front?: return .front
+        case .back?: return .back
+        default: return nil
+        }
     }
 }
 #endif
