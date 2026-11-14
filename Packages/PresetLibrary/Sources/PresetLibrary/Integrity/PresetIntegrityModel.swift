@@ -5,7 +5,7 @@ import Foundation
 
 /// A store that names presets by ID (PRE-018-R1).
 public enum PresetReferenceStore: String, Sendable, CaseIterable, Comparable {
-    case favorites, tags, overrides, collections, recents
+    case favorites, tags, overrides, notes, collections, recents
 
     public static func < (a: Self, b: Self) -> Bool {
         (allCases.firstIndex(of: a) ?? 0) < (allCases.firstIndex(of: b) ?? 0)
@@ -17,6 +17,7 @@ public enum PresetReferenceStore: String, Sendable, CaseIterable, Comparable {
         case .favorites: "Favorites"
         case .tags: "Tags"
         case .overrides: "Adjustments"
+        case .notes: "Notes"   // PRE-011-R8
         case .collections: "A collection"
         case .recents: "Recently Played"
         }
@@ -28,6 +29,7 @@ public enum PresetReferenceStore: String, Sendable, CaseIterable, Comparable {
         case .favorites: "Remove from Favorites"
         case .tags: "Remove Tag Entries"
         case .overrides: "Remove Adjustments"
+        case .notes: "Remove Note"
         case .collections: "Remove from Collection"
         case .recents: "Remove from Recently Played"
         }
