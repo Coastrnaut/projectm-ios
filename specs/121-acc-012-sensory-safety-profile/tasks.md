@@ -20,8 +20,8 @@ Format: `- [ ] ACC-012-Tnn [P?] [Story?] Description with file path`.
 
 Goal: the clamp reaches every renderer input. Independent test: renderer inputs under Strict are clamped.
 
-- [ ] ACC-012-T05 [US1] `VisualFrameContext.flashLimits` + `flashConfiguration`; `FlashSafetyLimiter` configuration overloads; the three generators pass `context.flashConfiguration` in Packages/VisualGenerators/Sources/VisualGenerators/{VisualGenerator,FlashSafetyLimiter,CircularSpectrumGenerator,LinearSpectrumGenerator,OscilloscopeGenerator}.swift
-- [ ] ACC-012-T06 [P] [US1] `BloomParameters.limited(by:)` in Packages/VisualGenerators/Sources/VisualEffects/BloomParameters+Safety.swift
+- [X] ACC-012-T05 [US1] `VisualFrameContext.flashLimits` + `flashConfiguration`; `FlashSafetyLimiter` configuration overloads; the three generators pass `context.flashConfiguration` in Packages/VisualGenerators/Sources/VisualGenerators/{VisualGenerator,FlashSafetyLimiter,CircularSpectrumGenerator,LinearSpectrumGenerator,OscilloscopeGenerator}.swift — Verified 2026-11-14: swift test --package-path Packages/VisualGenerators (136 tests, 0 failures, 26 s) and the -DVISUAL_NO_METAL Linux-shape build
+- [X] ACC-012-T06 [P] [US1] `BloomParameters.limited(by:)` in Packages/VisualGenerators/Sources/VisualEffects/BloomParameters+Safety.swift — Verified 2026-11-14: SensorySafetyRenderTests.testStrictProfileCapsGlowAndRiseRate: bloom intensity 0.25
 - [ ] ACC-012-T07 [P] [US1] `ANGLERenderer.flashLimits` used by both envelope sites in Packages/ANGLERendering/Sources/ANGLERendering/ANGLERenderer.swift
 - [ ] ACC-012-T08 [P] [US1] `Compositor.flashLimits` and `SceneTransitionBus.flashLimits` passed to `CompositeFlashGuard.encode` (both guards) in Packages/Compositor/Sources/Compositor/{Compositor,SceneTransitionBus,CompositeFlashGuard}.swift
 - [ ] ACC-012-T09 [P] [US1] `GeneratorGraphLayer.intensityLimit` and `effectiveSpeed` (|speed| ≤ limit × speedCap) used before `GraphMotion.advance` in Packages/Compositor/Sources/GeneratorGraph/GeneratorGraphLayer.swift
@@ -32,7 +32,7 @@ Goal: the clamp reaches every renderer input. Independent test: renderer inputs 
 
 ## Phase 4: User Story 2 - Standard changes nothing; system settings protect (P1)
 
-- [ ] ACC-012-T14 [P] [US2] GPU bit identity: generator + bloom, 30 frames with and without the Standard clamp (0 differing bytes); Strict measured rise ≤ 0.10/s, in Packages/VisualGenerators/Tests/VisualGeneratorsTests/SensorySafetyRenderTests.swift
+- [X] ACC-012-T14 [P] [US2] GPU bit identity: generator + bloom, 30 frames with and without the Standard clamp (0 differing bytes); Strict measured rise ≤ 0.10/s, in Packages/VisualGenerators/Tests/VisualGeneratorsTests/SensorySafetyRenderTests.swift — Verified 2026-11-14: SensorySafetyRenderTests on the host (Apple M5 Max): Standard 0 of 30 frames differ; Strict worst rise 0.00051 per frame (bound 0.00167 + 0.002); 2.3 s
 - [ ] ACC-012-T15 [US2] Precedence in the app: Reduce flashing (chosen, or following Reduce Motion) raises Standard's flash limit to Reduced's; Strict wins over it; a profile stricter than Standard turns on ACC-002's flagging without writing `settings.reduceFlashing`, in Apps/projectM-iOS/Tests/SensorySafetyAppTests.swift
 
 ## Phase 5: User Story 3 - Custom limits that stay put (P2)

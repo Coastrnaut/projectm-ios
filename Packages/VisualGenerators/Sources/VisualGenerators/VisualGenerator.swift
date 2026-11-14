@@ -5,6 +5,7 @@
 // `CAMetalLayer` drawable in the app, later a CMP-001 layer. It knows nothing about projectM,
 // capture, the app or its settings; its input is a band vector (ANL-002 values normalized to 0…1)
 // and a frame context.
+import FlashSafety
 #if canImport(Metal) && !VISUAL_NO_METAL
 import Metal
 #endif
@@ -17,11 +18,21 @@ public struct VisualFrameContext: Sendable, Equatable {
     public var frameDuration: Double
     /// The app's Reduce flashing setting (FR-072).
     public var reduceFlashing: Bool
+    /// ACC-012: the sensory safety profile's envelope when it differs from the Reduce flashing one
+    /// (`SafetyClamp.flashLimitsOverride`); nil = `forReduceFlashing(reduceFlashing)`, today's path.
+    public var flashLimits: FlashEnvelopeConfiguration?
 
-    public init(timeNanoseconds: UInt64, frameDuration: Double, reduceFlashing: Bool) {
+    public init(timeNanoseconds: UInt64, frameDuration: Double, reduceFlashing: Bool,
+                flashLimits: FlashEnvelopeConfiguration? = nil) {
         self.timeNanoseconds = timeNanoseconds
         self.frameDuration = frameDuration
         self.reduceFlashing = reduceFlashing
+        self.flashLimits = flashLimits
+    }
+
+    /// The envelope the generators' limiter applies this frame (ACC-012-R5).
+    public var flashConfiguration: FlashEnvelopeConfiguration {
+        flashLimits ?? FlashEnvelopeConfiguration.forReduceFlashing(reduceFlashing)
     }
 }
 

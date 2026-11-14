@@ -56,10 +56,11 @@ public final class OscilloscopeGenerator: SpectrumTextureGenerator {
         layout.layout(samples: samples, width: target.width, height: target.height)
         let gain: Float
         if let downstream = downstreamLuminance {
-            gain = limiter.gain(for: layout, transfer: downstream, frameTime: context.frameDuration, enabled: context.reduceFlashing)
+            gain = limiter.gain(for: layout, transfer: downstream, frameTime: context.frameDuration,
+                                configuration: context.flashConfiguration)
         } else {
             gain = limiter.gain(for: layout, transfer: IdentityLuminanceTransfer(), frameTime: context.frameDuration,
-                                enabled: context.reduceFlashing)
+                                configuration: context.flashConfiguration)
         }
         lastGain = gain
         let count = layout.tessellate(into: shapes.vertices(slot), capacity: OscilloscopeLayout.maximumVertexCount, gain: gain)

@@ -58,10 +58,11 @@ public final class LinearSpectrumGenerator: SpectrumTextureGenerator {
         layout.layout(values: shown, frameTime: context.frameDuration, width: target.width, height: target.height)
         let gain: Float
         if let downstream = downstreamLuminance {
-            gain = limiter.gain(for: layout, transfer: downstream, frameTime: context.frameDuration, enabled: context.reduceFlashing)
+            gain = limiter.gain(for: layout, transfer: downstream, frameTime: context.frameDuration,
+                                configuration: context.flashConfiguration)
         } else {
             gain = limiter.gain(for: layout, transfer: IdentityLuminanceTransfer(), frameTime: context.frameDuration,
-                                enabled: context.reduceFlashing)
+                                configuration: context.flashConfiguration)
         }
         lastGain = gain
         let count = layout.tessellate(into: shapes.vertices(slot), capacity: LinearSpectrumLayout.maximumVertexCount, gain: gain)
