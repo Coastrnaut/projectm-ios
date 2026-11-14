@@ -33,6 +33,10 @@ public enum SceneArchiveError: Error, Sendable, Equatable, CustomStringConvertib
     case missingMedia(key: String)
     /// Export: the destination could not be written.
     case writeFailed
+    /// SCN-014: the slides and the photo asset's slideshow disagree for this key.
+    case slideMismatch(key: String)
+    /// SCN-014: a manifest or scene string names a location on a disk.
+    case absolutePath(String)
 
     public var message: String {
         switch self {
@@ -68,6 +72,10 @@ public enum SceneArchiveError: Error, Sendable, Equatable, CustomStringConvertib
             "Asset \"\(key)\" is not on this device, so the scene cannot be packed with it."
         case .writeFailed:
             "The scene archive could not be saved."
+        case let .slideMismatch(key):
+            "The slideshow of asset \"\(key)\" and the archive's pictures disagree."
+        case .absolutePath:
+            "The scene names a file location on this device, so it cannot be packed."
         }
     }
 

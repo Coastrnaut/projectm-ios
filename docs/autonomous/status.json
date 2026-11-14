@@ -2794,7 +2794,7 @@
    "state": "integrated"
   },
   "SCN-014": {
-   "attempts": 0,
+   "attempts": 1,
    "branch": "feature/scn-014",
    "branch_sha": "e25709ae088d07963b71285303d6aa044a853f15",
    "error_category": null,
@@ -4446,5 +4446,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T18:45:15Z"
+ "updated": "2026-11-14T18:45:20Z"
 }

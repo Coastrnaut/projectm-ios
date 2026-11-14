@@ -609,6 +609,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         connectShow()   // SHOW-001
         presetLoader.prewarmScheduler = mediaPrewarm.scheduler   // PERF-005-R8: preset picks pass through unchanged
         connectMediaPrewarm()   // PERF-005
+        connectScenePacks(defaults: defaults)   // SCN-014
         connectMissingMedia(defaults: defaults)   // MED-013 (and its DEBUG seed)
         connectLayerInspector()   // CMP-015
         #if DEBUG
