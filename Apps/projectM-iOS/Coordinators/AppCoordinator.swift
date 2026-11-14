@@ -322,6 +322,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         rowSize: { [weak self] () -> CGSize in
             self?.activeVideoRecordingSource?.recordingDrawableSize ?? RecordingQualitySetting.screenPixelSize()
         })
+    /// OUT-004: the external display's output correction (Settings › External Display).
+    @ObservationIgnored private(set) lazy var externalOutput = ExternalOutputSetting(defaults: defaults, external: externalDisplay)
     /// UIX-004: the favorite parameter shelf (pinned controls in the visualizer's controls).
     let parameterShelf: ParameterShelf
     /// REC-004: reads the microphone permission (never asks for it).

@@ -57,6 +57,9 @@ public enum LibraryErasePolicy {
     public static let recordingQualityKey = "settings.recording.qualityProfile"
     /// REC-006-R8: the record frame rate (device-dependent: not backed up, erased with Settings).
     public static let recordingFrameRateKey = "settings.recording.frameRate"
+    /// OUT-004-R8: the external display's output correction (display hardware: not backed up, erased with Settings).
+    public static let externalDisplayKeys: [String] = ["settings.externalDisplay.fit", "settings.externalDisplay.shape",
+                                                       "settings.externalDisplay.pixelAspect"]
 
     /// Folder names under the library root (FILE-011-R4).
     public static func folders(_ category: LibraryEraseCategory) -> [String] {
@@ -105,6 +108,7 @@ public enum LibraryErasePolicy {
                                   reduceFlashingKey, colorBlindSafePaletteKey]
         let included: [String] = LibrarySettingsPolicy.includedKeys.filter { (key: String) -> Bool in !owned.contains(key) }
         return included + [oscEnabledKey, midiEnabledKey, recordingMicrophoneKey, recordingQualityKey, recordingFrameRateKey]
+            + externalDisplayKeys
     }()
 
     /// Every key some category can remove.

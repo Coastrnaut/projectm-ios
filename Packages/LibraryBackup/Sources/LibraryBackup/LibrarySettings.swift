@@ -115,6 +115,8 @@ public enum LibrarySettingsPolicy {
         "settings.recording.includeMicrophone",   // REC-004-R3: a consent never travels to another device
         "settings.recording.qualityProfile",   // REC-005-R7: depends on this device's encoder and screen
         "settings.recording.frameRate",   // REC-006-R8: depends on this device's display and encoder
+        "settings.externalDisplay.fit", "settings.externalDisplay.shape",   // OUT-004-R8: the user's display hardware
+        "settings.externalDisplay.pixelAspect",
         "settings.video.id", "settings.video.loop", "settings.video.speed",
         recentPresetsKey,   // PRE-006-R7: recently played history stays on this device
         "notice.photosensitivityAcknowledged", "permission.explained.camera", "permission.explained.localNetwork",

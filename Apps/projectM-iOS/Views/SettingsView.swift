@@ -84,6 +84,8 @@ struct SettingsView: View {
     var recordingAudioStatus: (() -> String)?
     /// REC-005: the record quality profile (nil hides the section, e.g. in previews).
     var recordingQuality: RecordingQualitySetting?
+    /// OUT-004: the external display's output correction (nil hides the section, e.g. in previews).
+    var externalOutput: ExternalOutputSetting? = nil
     /// UIX-015: the explainer before the camera and local network prompts (nil: none, e.g. in previews).
     var explainers: PermissionExplainerCoordinator?
     /// UIX-015-R1: the camera's permission status when Camera is picked.
@@ -456,6 +458,7 @@ struct SettingsView: View {
             }
         }
         if let recentPresets { RecentHistorySection(recent: recentPresets).id("recentPresets") }   // PRE-006-R3, R4
+        if let externalOutput { ExternalDisplaySection(setting: externalOutput).id("externalDisplay") }   // OUT-004-R9
         Section {
             NavigationLink("Storage") {   // FILE-009, FILE-010, FILE-005, MED-013
                 StorageUsageView(filesInUse: cacheFilesInUse, libraryBackup: libraryBackup, missingMedia: missingMedia)

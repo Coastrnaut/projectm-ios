@@ -413,6 +413,7 @@ struct VisualizerView: View {
                          recordingAudio: coordinator.recordingAudio,   // REC-004
                          recordingAudioStatus: { () -> String in coordinator.videoRecording.audioStatusText },
                          recordingQuality: coordinator.recordingQuality,   // REC-005
+                         externalOutput: coordinator.externalOutput,   // OUT-004
                          explainers: coordinator.explainers,   // UIX-015
                          cameraStatus: { () -> PermissionState? in coordinator.cameraPermissionStatus },
                          recentPresets: coordinator.presets.recent,   // PRE-006
