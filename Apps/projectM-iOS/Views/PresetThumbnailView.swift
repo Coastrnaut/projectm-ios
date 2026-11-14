@@ -17,7 +17,13 @@ struct PresetThumbnailView: View {
     let model: PresetThumbnailModel?
     @State private var image: UIImage?
 
-    private var taskID: String { preset.id + "\n" + preset.hash + (playable ? "" : "\nlocked") }
+    /// The row's request identity: a new content hash (PRE-002: a saved edit) restarts the request;
+    /// a rename does not.
+    static func requestID(for preset: IndexedPreset, playable: Bool) -> String {
+        preset.id + "\n" + preset.hash + (playable ? "" : "\nlocked")
+    }
+
+    private var taskID: String { Self.requestID(for: preset, playable: playable) }
 
     var body: some View {
         content

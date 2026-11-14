@@ -677,6 +677,7 @@ final class UserPresetsCoordinator: UserPresetGuarding {
 
     private func refresh() async {
         let snapshot = await library.snapshot
+        let before: [String: String] = Self.contentHashes(playable)
         playable = snapshot.playable
         pending = snapshot.pending
         quarantined = snapshot.quarantined
@@ -691,6 +692,21 @@ final class UserPresetsCoordinator: UserPresetGuarding {
         let flashRisk = await library.flashRisk()
         presets?.setUserPresets(snapshot.playable.map { (preset: UserPreset) -> IndexedPreset in preset.indexed(flash: flashRisk[preset.id]) })
         updateDigest()
+        await invalidateThumbnails(before: before, after: Self.contentHashes(snapshot.playable))
+    }
+
+    /// PRE-002 (research D1): every user preset change passes through `refresh`, so changed or removed
+    /// playable presets lose exactly their old thumbnails here; a rename keeps the hash and the picture.
+    private func invalidateThumbnails(before: [String: String], after: [String: String]) async {
+        guard let thumbnails = presets?.thumbnails else { return }
+        for (id, hash) in before where after[id] != hash {
+            await thumbnails.invalidate(presetID: id, keepingContentHash: after[id])
+        }
+    }
+
+    nonisolated static func contentHashes(_ presets: [UserPreset]) -> [String: String] {
+        Dictionary(presets.map { (preset: UserPreset) -> (String, String) in (preset.id, preset.blobHash) },
+                   uniquingKeysWith: { (first: String, _: String) -> String in first })
     }
 
     @ObservationIgnored private var noticeShown = false

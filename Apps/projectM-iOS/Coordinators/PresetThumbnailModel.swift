@@ -25,6 +25,8 @@ final class PresetThumbnailModel {
     let cache: PresetThumbnailCache
     private let contents: ContentsProvider
     private let images = NSCache<NSString, UIImage>()
+    /// PRE-002: the stable IDs put in `images`, per preset ID, so a changed preset's pictures can be evicted.
+    private var memoryIDs: [String: Set<String>] = [:]
 
     /// `Library/Caches/PresetThumbnails` (inside FILE-009's Caches root, `StorageLocations`).
     nonisolated static func defaultDirectory() -> URL {
@@ -58,8 +60,30 @@ final class PresetThumbnailModel {
             guard let data = try? Data(contentsOf: url) else { return nil }
             return UIImage(data: data)?.preparingForDisplay()
         }.value
-        if let image { images.setObject(image, forKey: key.stableID as NSString) }
+        if let image {
+            images.setObject(image, forKey: key.stableID as NSString)
+            memoryIDs[preset.id, default: []].insert(key.stableID)
+        }
         return image
+    }
+
+    // MARK: - Invalidation (PRE-002, contract C3)
+
+    /// A preset's content changed (`keepingContentHash` is its new hash) or it left the library
+    /// (nil): its other pictures leave memory and the cache (entries, files); nothing else is touched.
+    func invalidate(presetID: String, keepingContentHash: String?) async {
+        let keep = keepingContentHash.map { (hash: String) -> String in
+            PresetThumbnailKey(presetID: presetID, contentHash: hash, rendererVersion: cache.spec.rendererVersion).stableID
+        }
+        for id in memoryIDs[presetID] ?? [] where id != keep { images.removeObject(forKey: id as NSString) }
+        memoryIDs[presetID] = keep.flatMap { (id: String) -> Set<String>? in memoryIDs[presetID]?.contains(id) == true ? [id] : nil }
+        await cache.invalidate(presetID: presetID, keepingContentHash: keepingContentHash)
+    }
+
+    /// The launch collection's listing (PRE-002-R7): every listed preset's ID → content hash.
+    nonisolated static func listing(_ library: PresetLibrary) -> [String: String] {
+        Dictionary(library.presets.map { (preset: IndexedPreset) -> (String, String) in (preset.id, preset.hash) },
+                   uniquingKeysWith: { (first: String, _: String) -> String in first })
     }
 }
 
