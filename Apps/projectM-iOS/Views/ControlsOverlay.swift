@@ -237,7 +237,7 @@ struct ControlsOverlay: View {
         coordinator.routeContext.map { AudioRouteIndicator(route: coordinator.routes.route, context: $0) }
     }
 
-    /// One row of icon buttons (FR-087).
+    /// The compact layout: the FR-082 controls in one row (FR-087), the secondary actions in a row above.
     /// The compact grid's minimum cell width, scaled with Dynamic Type (32 pt at the default size).
     @ScaledMetric(relativeTo: .title3) private var buttonCellWidth: CGFloat = 32
 
@@ -266,19 +266,46 @@ struct ControlsOverlay: View {
             // the row had about 11 buttons, and at the largest text sizes it ran off the screen (the
             // Presets button sat at x 412 on a 402 pt iPhone). Cells keep a minimum width that scales
             // with the text, so every control stays on screen and tappable at any size.
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: buttonCellWidth), spacing: 0)], spacing: 4) {
-                ForEach(buttons, id: \.id) { item in
-                    Button(action: item.action) {
-                        Image(systemName: item.icon).frame(maxWidth: .infinity, minHeight: 36)
-                    }
-                    .accessibilityLabel(item.title)
-                    .accessibilityValue(item.value ?? "")
-                    .accessibilityHint(item.hint ?? "")
-                    .accessibilityIdentifier(item.id)
-                }
-            }
-            .font(.title3)
+            // FR-087 (fix 2026-11-14): the secondary actions (Switch Source, Black out, Lock scene, Save
+            // Frame, Record, Performance layout) get their own row above the FR-082 controls. In one grid
+            // the 13 buttons needed 416 pt and wrapped on a 402 pt iPhone, splitting the main row.
+            iconGrid(secondaryButtons)
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("controlsSecondary")
+            iconGrid(primaryButtons)
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("controlsPrimary")
         }
+    }
+
+    /// The FR-082 controls, in the order of the compact main row (FR-087).
+    private static let primaryIDs: [String] = ["stop", "pauseResume", "previous", "next", "random", "presets", "settings"]
+
+    private var primaryButtons: [Item] {
+        let items: [Item] = buttons
+        return Self.primaryIDs.compactMap { (id: String) -> Item? in items.first { $0.id == id } }
+    }
+
+    private var secondaryButtons: [Item] {
+        let primary: Set<String> = Set(Self.primaryIDs)
+        return buttons.filter { !primary.contains($0.id) }
+    }
+
+    /// A grid of icon buttons whose cells keep a minimum width scaled with the text, so it wraps
+    /// only at accessibility sizes.
+    private func iconGrid(_ items: [Item]) -> some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: buttonCellWidth), spacing: 0)], spacing: 4) {
+            ForEach(items, id: \.id) { (item: Item) in
+                Button(action: item.action) {
+                    Image(systemName: item.icon).frame(maxWidth: .infinity, minHeight: 36)
+                }
+                .accessibilityLabel(item.title)
+                .accessibilityValue(item.value ?? "")
+                .accessibilityHint(item.hint ?? "")
+                .accessibilityIdentifier(item.id)
+            }
+        }
+        .font(.title3)
     }
 
     private var regular: some View {

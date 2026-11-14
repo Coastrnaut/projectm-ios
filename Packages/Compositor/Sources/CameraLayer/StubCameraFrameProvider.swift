@@ -12,6 +12,10 @@
 // CAM-003: a lens inventory (`lensInventory`) and a `FakeCameraCaptureSession` whose input is set
 // up on every start and replaced by `CameraInputSwitch` on a lens switch, exactly as the real
 // provider does; lenses can fail at input creation (`failingLenses`) or be refused by the session.
+// CAM-004: each stand-in camera has a `FakeCameraExposureDevice` (`exposureLockCameras` chooses which
+// can lock); `setExposureLocked` runs `CameraExposureControl` on the running input's device, and the
+// session's setup (every start and camera switch), a lens switch, `stop()` and `fail(_:)` release it
+// first, exactly as the real provider does.
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import Metal
 
@@ -71,8 +75,17 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
     public var availableLenses: [CameraLens] { lensInventory.backLenses }
 
     public private(set) var state: CameraFeedState = .idle {
-        didSet { if state != oldValue { onStateChange?(state) } }
+        didSet {
+            guard state != oldValue else { return }
+            refreshExposure()   // CAM-004
+            onStateChange?(state)
+        }
     }
+    /// CAM-004: the current camera's exposure, read back from its fake device (main thread).
+    public private(set) var exposure: CameraExposureState = .notRunning(canLock: false) {
+        didSet { if exposure != oldValue { onExposureChange?(exposure) } }
+    }
+    public var onExposureChange: ((CameraExposureState) -> Void)?
     public var onStateChange: ((CameraFeedState) -> Void)?
     /// How many times `start()` asked for access (a real prompt is never shown).
     public private(set) var accessRequests = 0
@@ -83,10 +96,12 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
     public init(device: MTLDevice, scenario: CameraScenario, pattern: Pattern = .solid(Color(red: 188, green: 188, blue: 188)),
                 width: Int = 64, height: Int = 48, rotation: CameraRotation = .none, position: CameraPosition = .back,
                 availablePositions: Set<CameraPosition> = [.back, .front],
-                lensInventory: (any CameraLensInventory)? = nil, failingLenses: Set<CameraLens> = [], lens: CameraLens = .wide) {
+                lensInventory: (any CameraLensInventory)? = nil, failingLenses: Set<CameraLens> = [], lens: CameraLens = .wide,
+                exposureLockCameras: Set<FakeCameraKey>? = nil) {
         let inventory: any CameraLensInventory = lensInventory ?? FixedCameraLensInventory([.wide])
         self.lensInventory = inventory
         self.session = FakeCameraCaptureSession(failingLenses: failingLenses)
+        session.exposureLockCameras = exposureLockCameras
         self.lens = inventory.resolve(lens)
         self.device = device
         self.position = position
@@ -98,6 +113,7 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
         self.rotation = rotation
         latest.setRotation(rotation)
         latest.setPosition(position)
+        refreshExposure()
     }
 
     /// True while the stand-in camera "runs" (it delivers pictures).
@@ -141,6 +157,7 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
         guard state != .idle else { return }
         stopCount += 1
         latest.close()
+        releaseExposure()   // CAM-004-R7
         session.reset()   // CAM-003: a released session has no input
         stopReason = nil
         state = .idle
@@ -164,6 +181,7 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
             latest.close()
             startFeed()   // straight to the new camera: the badge never sees idle (CAM-002-R7, R8)
         }
+        refreshExposure()   // CAM-004: the new camera's state (or capability)
     }
 
     /// Another app or the system takes the camera (CAM-013: for `reason`, an interruption kind).
@@ -186,6 +204,7 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
     public func fail(_ reason: CameraStopReason = .runtimeError) {
         guard state == .running || state == .starting || state == .interrupted, !reason.isInterruption else { return }
         latest.close()
+        releaseExposure()   // CAM-004-R7
         session.reset()
         stopReason = reason
         state = .failed
@@ -205,6 +224,7 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
         lensSelectCount += 1
         let previous: CameraLens = lens
         lens = target
+        defer { refreshExposure() }   // CAM-004: the new lens's state (or capability)
         guard position == .back else { return }   // R9: the front camera keeps its wide lens
         switch state {
         case .idle, .denied, .restricted, .requestingAccess:
@@ -213,6 +233,7 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
             latest.close()
             startFeed()
         case .starting, .running:
+            releaseExposure()   // CAM-004-R6: before the input is removed
             let fake: FakeCameraCaptureSession = session
             let outcome: CameraInputSwitchOutcome = CameraInputSwitch.replace(
                 in: fake, makeInput: { () -> FakeCameraInput? in fake.makeInput(lens: target) },
@@ -240,6 +261,7 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
     /// Sets up the session's single input for the current camera (empty session: the wanted lens,
     /// else the wide lens) and starts it. False when nothing could be added.
     private func configureSession() -> Bool {
+        releaseExposure()   // CAM-004-R6: a camera switch or restart never keeps a lock
         session.reset()
         let fake: FakeCameraCaptureSession = session
         let wanted: CameraLens = position == .back ? lens : .wide
@@ -250,6 +272,35 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
         if outcome == .fellBackToWide, position == .back { lens = .wide }
         fake.startRunning()
         return outcome != .noInput
+    }
+
+    // MARK: - Exposure (CAM-004)
+
+    /// The running input's device, if any.
+    private var runningExposureDevice: FakeCameraExposureDevice? { session.configuredInputs.first?.device }
+
+    /// Whether the chosen camera can lock (known without starting it).
+    private var chosenCameraCanLock: Bool {
+        guard scenario != .unavailable, availablePositions.contains(position) else { return false }
+        return session.exposureDevice(lens: position == .back ? lens : .wide, position: position).supportsExposure(.locked)
+    }
+
+    public func setExposureLocked(_ locked: Bool) {
+        guard state == .running, let device = runningExposureDevice, device.supportsExposure(.locked) else { return }   // R3
+        if locked { CameraExposureControl.lock(device) } else { CameraExposureControl.release(device) }
+        refreshExposure()   // R5: read back
+    }
+
+    private func releaseExposure() {
+        if let device = runningExposureDevice { CameraExposureControl.release(device) }
+    }
+
+    private func refreshExposure() {
+        if state == .running, let device = runningExposureDevice {
+            exposure = CameraExposureControl.state(of: device)
+        } else {
+            exposure = .notRunning(canLock: chosenCameraCanLock)
+        }
     }
 
     private func run() {

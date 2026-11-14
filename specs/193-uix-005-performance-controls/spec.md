@@ -62,6 +62,7 @@ Answered by Claude under owner rules 4 and 9 (recommended option first).
 - Q: Does the "Performance layout" button keep the controls up? → A: Yes, like every control it restarts the 5 s auto-hide.
 - Q: Is the pad shown while the scene switcher (UIX-002) is open? → A: Yes, behind it; the switcher is above every layer, as before.
 - Q: Test hook? → A: A DEBUG-only launch argument `-uitestPerformanceLayout` starts with the layout on, so the landscape, AX5 and audit tests skip the toggle; the portrait test turns it on through the controls. Release ignores it.
+- Q: Where does "Performance layout" sit in compact width? → A: In the compact layout's secondary row of icon buttons (with Switch Source, Black out, Lock scene, Save Frame and Record), above the FR-082 main row (FR-087 fix 2026-11-14), so the main row stays one row; regular width is unchanged.
 
 ## User Scenarios & Testing *(mandatory)*
 

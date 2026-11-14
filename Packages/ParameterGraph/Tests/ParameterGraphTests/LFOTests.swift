@@ -23,6 +23,8 @@ final class LFOTests: XCTestCase {
             if phi < 0.25 { return 4 * phi }
             if phi < 0.75 { return 2 - 4 * phi }
             return 4 * phi - 4
+        case .square, .sampleHold:   // MOD-008: stepped shapes have their own tests (SteppedLFOTests)
+            return shape.wave(phi)
         }
     }
 
