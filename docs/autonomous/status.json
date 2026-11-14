@@ -14,8 +14,7 @@
   "P1": {
    "audited": 127,
    "implementing": 1,
-   "integrated": 22,
-   "unit_passed": 1
+   "integrated": 23
   },
   "P2": {
    "audited": 77,
@@ -28,9 +27,8 @@
  "by_state": {
   "audited": 218,
   "implementing": 2,
-  "integrated": 104,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "integrated": 105,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -52,7 +50,6 @@
    "ANL-011",
    "ANL-012",
    "ANL-013",
-   "ANL-014",
    "ANL-015",
    "AUD-010",
    "AUD-013",
@@ -262,7 +259,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "221 features are not implemented yet (first: ACC-003, ACC-005, ACC-006, ACC-007, ACC-008)"
+   "220 features are not implemented yet (first: ACC-003, ACC-005, ACC-006, ACC-007, ACC-008)"
   ]
  },
  "features": {
@@ -521,10 +518,10 @@
    "branch": "feature/anl-014",
    "branch_sha": "71c12fb822f4fb39bfee0dc92972e263679188c7",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "c3900199",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "ANL-015": {
    "attempts": 0,
@@ -3584,6 +3581,11 @@
    "sha": "bf6d440f"
   },
   {
+   "branch": "feature/anl-014",
+   "id": "ANL-014",
+   "sha": "c3900199"
+  },
+  {
    "branch": "feature/anl-016",
    "id": "ANL-016",
    "sha": "97e498d64a14b6a3a5dbe88e27a6b04ac8556e0a"
@@ -4074,5 +4076,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T03:50:25Z"
+ "updated": "2026-11-14T03:52:50Z"
 }
