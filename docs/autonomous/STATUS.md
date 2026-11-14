@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T14:28:52Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T14:32:00Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,8 +9,8 @@
 
 | State | Features |
 |---|---|
-| audited | 158 |
-| implementing | 7 |
+| audited | 157 |
+| implementing | 8 |
 | integrated | 160 |
 | skipped_existing | 1 |
 
@@ -19,7 +19,7 @@
 | Priority | audited | implementing | integrated | skipped_existing |
 |---|---|---|---|---|
 | P0 | 2 | 0 | 84 | 1 |
-| P1 | 73 | 7 | 71 | 0 |
+| P1 | 72 | 8 | 71 | 0 |
 | P2 | 74 | 0 | 5 | 0 |
 | P3 | 9 | 0 | 0 | 0 |
 
@@ -173,7 +173,7 @@ The physical-device suite may **not** start:
 | SCN-003 | Scene duplicate and rename | `4936d8fcd1d3` | `feature/scn-003` |
 | SCN-004 | Scene folder organization | `7b7a78050ada` | `feature/scn-004` |
 | SCN-005 | Scene tags | `4bad23aa` | `None` |
-| SCN-006 | Scene preview image | `546e69643d04` | `feature/scn-006` |
+| SCN-006 | Scene preview image | `546e6964` | `feature/scn-006` |
 | SCN-010 | Scene undo/redo | `01b155c6c3d0` | `feature/scn-010` |
 | SCN-012 | Scene validation | `2a86515` | `feature/scn-012` |
 | SCN-013 | Scene migration | `7f597d2` | `feature/scn-013` |
@@ -1641,6 +1641,7 @@ None.
 - `swift test --package-path Packages/ImportFuzz`: pass at `a56c9083faa8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-006/20261114T092504/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/LibraryBackup`: pass at `a56c9083faa8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-006/20261114T092504/swift-test_LibraryBackup.log`)
 - `swift test --package-path Packages/PresetLibrary`: pass at `a56c9083faa8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-006/20261114T092504/swift-test_PresetLibrary.log`)
+- `post-merge: projectM-iOSTests 710 + UI 7 (previews, switcher, folders, tags)`: pass at `546e6964` (log `.autonomous/logs/integration/batch7/app-tests.log`)
 
 ### SCN-010 Scene undo/redo (integrated)
 - `python3 scripts/check_compliance.py`: pass at `96baa4c3de9b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-010/20261113T180647/compliance.log`)
