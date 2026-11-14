@@ -4,7 +4,11 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (SCN-005-T01-T15 verified on the Mac: host package tests and the
+feature's own iOS 27.2 simulator "SCN5"; no device claim). ShowControl 67 tests (1.1 s; 11 new),
+LibraryBackup scene tests 2 (0.07 s; 1 new), projectM-iOSTests 664 (21.2 s; SceneTagAcceptanceTests 4,
+two new switcher tests), SceneTagsUITests 1 (9.4 s, 9.1 s). Linux: not run here; CI's Linux job builds
+and tests ShowControl and LibraryBackup.
 
 **Input**: User description: "Implement SCN-005 (Scene tags) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Filter scenes by locally assigned labels and search text."
