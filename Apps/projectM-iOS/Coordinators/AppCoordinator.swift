@@ -241,6 +241,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let slideshow: SlideshowCoordinator
     /// The logo overlay (MED-010): the stored logo, its placement and the compositor visuals' logo layers.
     let logo: LogoCoordinator
+    /// UIX-011: palettes and the scene's palette link.
+    let palettes: PaletteCoordinator
     /// MOD-010: the current scene's parameter macros (Settings › Macros).
     let macros: MacroCoordinator
     /// MOD-012: the current scene's routes (Settings › Modulation; AppCoordinator+ModulationMatrix.swift).
@@ -452,6 +454,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         photos = PhotoCoordinator.makeDefault(defaults: defaults)
         slideshow = SlideshowCoordinator.makeDefault(defaults: defaults)   // MED-006
         logo = LogoCoordinator.makeDefault(defaults: defaults)   // MED-010
+        palettes = PaletteCoordinator.makeDefault()   // UIX-011 (after FILE-005's pending restore and FILE-011's erase)
         macros = MacroCoordinator.makeDefault(settings: settings)   // MOD-010
         videos = VideoCoordinator.makeDefault(defaults: defaults)
         texts = TextOverlayCoordinator.makeDefault(defaults: defaults)
@@ -470,6 +473,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             if let restore = values.slideshow { slideshow.restore(restore.value) }   // MED-006-R12
             if let scene = values.logo { logo.restore(storeID: scene.storeID, placement: scene.placement) }   // MED-010-R10
             macros.restore(values.macros)   // MOD-010: restored, not applied
+            palettes.restore(values.paletteID)   // UIX-011
         }
         self.sceneAutosave = sceneAutosave
         show = ShowCoordinator.makeDefault()   // SHOW-001
@@ -610,6 +614,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         GuidedFirstSceneCoordinator.reset(defaults)  // UIX-001: never offered
         PermissionExplainerCoordinator.reset(defaults)   // UIX-015: nothing explained
         if let shows = try? ShowStore.defaultDirectory() { try? FileManager.default.removeItem(at: shows) }   // SHOW-001: no show
+        if let palettes = try? PaletteStore.defaultDirectory() { try? FileManager.default.removeItem(at: palettes) }   // UIX-011: no palettes
     }
 
     /// The end of init, after every stored property is set: callbacks, observers and the first loads.
@@ -619,6 +624,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         photos.onPhotoChange = { [weak self] (_: StoredPhoto?) in self?.refreshPhotoContent() }   // MED-006: the slideshow wins when on
         connectSlideshow()   // MED-006
         connectLogo()   // MED-010
+        connectPalettes()   // UIX-011
         videos.onVideoChange = { [weak self] (stored: StoredVideo?) in
             guard let self, let host = videoVisual else { return }
             host.content = .none   // MED-003: the new video's region applies from its first picture
@@ -1150,7 +1156,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.reduceFlashing = settings.effectiveReduceFlashing   // ACC-012-R7
             host.safetyClamp = settings.safetyClamp   // ACC-012-R4
             host.smoothing = settings.spectrumSmoothing   // ANL-003
-            host.palette = settings.spectrumPalette        // ACC-003-R13
+            host.palette = effectiveSpectrumPalette        // ACC-003-R13, UIX-011
             host.reduceMotion = settings.systemReduceMotion   // VIS-007-R5, VIS-008-R9, VIS-009-R9: the mandala's turn, the fountain's bursts, the orbit (ACC-001)
             host.externalValues = externalLiveValues.merged   // MIDI-003, OSC-003: values held while no native visual was shown
             for binding in sceneAutosave?.bindings ?? [] { try? host.addLayer(binding) }   // SCN-002: restored bindings, MOD-011 layers in order
@@ -1655,6 +1661,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             if let restore = values.slideshow { slideshow.restore(restore.value) }   // MED-006-R12
             if let scene = values.logo { logo.restore(storeID: scene.storeID, placement: scene.placement) }   // MED-010-R10
             macros.restore(values.macros)   // MOD-010: restored, not applied
+            palettes.restore(values.paletteID)   // UIX-011
         }
         if let visual { settings.visual = visual }
         resetTrailsHistory()   // FX-009-R5: a reopened scene starts without trails
@@ -1688,13 +1695,17 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                     logo: logo.sceneLogo,   // MED-010
                     effects: liveEffectSettings,   // FX-020
                     macros: macros.entries,   // MOD-010
-                    bindings: modulationMatrix.routes)   // MOD-012
+                    bindings: modulationMatrix.routes,   // MOD-012
+                    palette: ScenePaletteChoice(id: palettes.sceneLink))   // UIX-011
     }
 
     /// ACC-003-R13: the colour-blind-safe palette setting changed; the native spectrum redraws with it.
     func spectrumPaletteChanged() {
-        nativeVisual?.palette = settings.spectrumPalette
+        nativeVisual?.palette = effectiveSpectrumPalette
     }
+
+    /// UIX-011-R8: the scene's palette, unless ACC-003's colour-blind-safe switch is on.
+    var effectiveSpectrumPalette: VisualPalette { palettes.visualPalette(colorBlindSafe: settings.colorBlindSafePalette) }
 
     // MARK: - Glow (FX-001)
 
