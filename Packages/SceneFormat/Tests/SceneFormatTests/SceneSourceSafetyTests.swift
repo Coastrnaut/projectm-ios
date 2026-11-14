@@ -14,7 +14,10 @@ final class SceneSourceSafetyTests: XCTestCase {
                                "SceneEffectChain.swift", "SceneEffectChainPresets.swift",   // FX-020
                                "SceneEncoding.swift", "SceneGroup.swift",   // CMP-011
                                "SceneHistory.swift", "SceneIssue.swift",
-                               "SceneJSON.swift", "SceneJSONParser.swift", "SceneJSONWriter.swift", "SceneLiveState.swift", "SceneLogo.swift",   // MED-010
+                               "SceneJSON.swift", "SceneJSONParser.swift", "SceneJSONWriter.swift",
+                               "SceneLFOs.swift",   // MOD-007
+                               "SceneLiveState.swift", "SceneLogo.swift",   // MED-010
+                               "SceneMediaReferences.swift",   // MED-013
                                "SceneMigration.swift",
                                "SceneModulationRestore.swift", "SceneRepair.swift", "SceneSlideshow.swift",   // MED-006
                                "SceneTriggers.swift",   // MOD-006

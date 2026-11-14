@@ -68,6 +68,12 @@ final class ExpressionRejectionTests: XCTestCase {
         }
     }
 
+    /// MOD-007-T05 (research MOD-007-D4): oscillators are binding sources, not formula names.
+    func testLFOSourcesAreNotFormulaNames() {
+        XCTAssertEqual(Self.error(for: "audio.lfo.0 * 2")?.reason, .unknownIdentifier("audio.lfo.0"))
+        XCTAssertNil(Self.error(for: "audio.kick * 2"))
+    }
+
     func testErrorCarriesPositionAndReason() {
         let error = Self.error(for: "1 +\n  audio.bass")
         XCTAssertEqual(error?.position, SourcePosition(line: 2, column: 3))

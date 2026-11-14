@@ -125,11 +125,18 @@ struct SceneDecoder {
             for (i, item) in try array(value, base).enumerated() { list.append(try SceneTriggerEntry.decode(item, path: ScenePath.index(base, i))) }
             triggers = list
         }
+        var lfos: [SceneLFOEntry]?   // MOD-007
+        if let value = o["lfos"] {
+            let base = ScenePath.key(root, "lfos")
+            var list: [SceneLFOEntry] = []
+            for (i, item) in try array(value, base).enumerated() { list.append(try SceneLFOEntry.decode(item, path: ScenePath.index(base, i))) }
+            lfos = list
+        }
 
         let known: Set<String> = ["format", "version", "id", "name", "layers", "parameters", "bindings", "modulation", "assets", "groups",
-                                  "effects", "triggers"]
+                                  "effects", "triggers", "lfos"]
         return SceneDocument(id: id, name: name, layers: layers, parameters: parameters, bindings: bindings,
-                             modulation: modulation, assets: assets, groups: groups, effects: effects, triggers: triggers, extra: o.filter { (key: String, _: SceneJSON) -> Bool in !known.contains(key) })
+                             modulation: modulation, assets: assets, groups: groups, effects: effects, triggers: triggers, lfos: lfos, extra: o.filter { (key: String, _: SceneJSON) -> Bool in !known.contains(key) })
     }
 
     /// Count limits, before any typed decoding (SCN-001-R8). Wrong types are left to typed decoding.
@@ -150,6 +157,7 @@ struct SceneDecoder {
         try check("modulation connections", modulation?["connections"]?.arrayValue?.count, SceneLimits.maximumConnections)
         try check("effects", o["effects"]?.arrayValue?.count, SceneLimits.maximumEffects)   // FX-020
         try check("triggers", o["triggers"]?.arrayValue?.count, SceneLimits.maximumTriggerEntries)   // MOD-006
+        try check("lfos", o["lfos"]?.arrayValue?.count, SceneLimits.maximumLFOEntries)   // MOD-007
         let groups = o["groups"]?.arrayValue   // CMP-011
         try check("groups", groups?.count, SceneLimits.maximumGroups)
         for (i, group) in (groups ?? []).enumerated() {

@@ -29,13 +29,17 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
     /// "Mid transient" (ANL-008): a mid-band (1–4 kHz) percussive transient's envelope × its
     /// confidence, 0…1. Not a snare detector: it never implies which instrument played.
     case midTransient
+    /// MOD-007: the scene's oscillator at this 0-based position (0…7), read from `AudioFeatureFrame.lfos`.
+    /// Its ID keeps the `audio.` binding-source prefix so every stored-binding path (MOD-013 restore,
+    /// migrations) reads it, and an older version orphans it instead of dropping it (research MOD-007-D4).
+    case lfo(Int)
 
     /// The highest band index (the largest band count is 128).
     public static let maximumBandIndex = 127
 
     /// The stable identifier (MOD-013 stores it): `audio.band.<index>`, `audio.bandMean`,
     /// `audio.onset`, `audio.beatConfidence`, `audio.kick`, `audio.centroid`, `audio.loudness`,
-    /// `audio.midTransient`.
+    /// `audio.midTransient`, `audio.lfo.<index>` (MOD-007).
     public var id: String {
         switch self {
         case let .band(index): "audio.band.\(index)"
@@ -46,6 +50,7 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
         case .centroid: "audio.centroid"
         case .loudness: "audio.loudness"
         case .midTransient: "audio.midTransient"
+        case let .lfo(index): "audio.lfo.\(index)"
         }
     }
 
@@ -63,14 +68,27 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
         case "audio.loudness": self = .loudness
         case "audio.midTransient": self = .midTransient
         default:
-            let prefix = "audio.band."
-            guard id.hasPrefix(prefix) else { return nil }
-            let digits = id.dropFirst(prefix.count)
-            guard !digits.isEmpty, digits.utf8.allSatisfy({ $0 >= UInt8(ascii: "0") && $0 <= UInt8(ascii: "9") }),
-                  digits.count == 1 || digits.first != "0",
-                  let index = Int(digits), index <= Self.maximumBandIndex else { return nil }
-            self = .band(index)
+            if let index = Self.index(in: id, prefix: "audio.band.", maximum: Self.maximumBandIndex) {
+                self = .band(index)
+            } else if let index = Self.index(in: id, prefix: "audio.lfo.", maximum: Self.maximumLFOIndex) {
+                self = .lfo(index)
+            } else {
+                return nil
+            }
         }
+    }
+
+    /// MOD-007: the highest oscillator index (`LFOBank.maximumOscillators` − 1).
+    public static let maximumLFOIndex = LFOBank.maximumOscillators - 1
+
+    /// The decimal index after `prefix` (no sign, no leading zeros, at most `maximum`), or nil.
+    private static func index(in id: String, prefix: String, maximum: Int) -> Int? {
+        guard id.hasPrefix(prefix) else { return nil }
+        let digits = id.dropFirst(prefix.count)
+        guard !digits.isEmpty, digits.utf8.allSatisfy({ $0 >= UInt8(ascii: "0") && $0 <= UInt8(ascii: "9") }),
+              digits.count == 1 || digits.first != "0",
+              let index = Int(digits), index <= maximum else { return nil }
+        return index
     }
 
     /// The feature's value in `frame`; a missing or non-finite reading is 0 (MOD-002-R6).
@@ -96,6 +114,9 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
             return frame.loudness.map { (value: Float) -> Double in Self.finite(Double(value)) } ?? 0
         case .midTransient:
             return frame.midTransient.map { (value: Float) -> Double in Self.finite(Double(value)) } ?? 0
+        case let .lfo(index):
+            guard index >= 0, index < frame.lfos.count else { return 0 }
+            return min(max(Self.finite(frame.lfos[index]), 0), 1)
         }
     }
 
@@ -116,9 +137,13 @@ public struct AudioFeatureFrame {
     public var loudness: Float?
     /// ANL-008's mid transient value (envelope × confidence, 0…1); nil when the producer does not feed it.
     public var midTransient: Float?
+    /// MOD-007: the scene's oscillator values (0…1) by position, borrowed like `bands`; empty when the producer
+    /// has no oscillators (every `.lfo` source then reads 0).
+    public var lfos: UnsafeBufferPointer<Double>
 
     public init(bands: UnsafeBufferPointer<Float>, onset: Float? = nil, beatConfidence: Double? = nil, kick: Float? = nil,
-                centroid: Float? = nil, loudness: Float? = nil, midTransient: Float? = nil) {
+                centroid: Float? = nil, loudness: Float? = nil, midTransient: Float? = nil,
+                lfos: UnsafeBufferPointer<Double> = UnsafeBufferPointer(start: nil, count: 0)) {
         self.bands = bands
         self.onset = onset
         self.beatConfidence = beatConfidence
@@ -126,6 +151,7 @@ public struct AudioFeatureFrame {
         self.centroid = centroid
         self.loudness = loudness
         self.midTransient = midTransient
+        self.lfos = lfos
     }
 
     /// No audio: every feature reads 0.

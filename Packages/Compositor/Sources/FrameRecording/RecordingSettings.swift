@@ -35,7 +35,8 @@ public enum RecordingCodec: String, Sendable, CaseIterable, Equatable {
     }
 }
 
-/// What a recording writes (REC-003-R5 to R7, R11). REC-005/REC-006 change these values later.
+/// What a recording writes (REC-003-R5 to R7, R11). REC-005 profiles (`RecordingQualityProfile`) make these;
+/// `.standard` is REC-003's settings and REC-005's default.
 public struct RecordingSettings: Sendable, Equatable {
     /// Ticks per second of every written time (1/600 s divides 24, 25, 30 and 60 frames per second).
     public static let timescale: Int32 = 600
@@ -50,9 +51,15 @@ public struct RecordingSettings: Sendable, Equatable {
     public var framesInFlight: Int
     /// Codecs tried in order.
     public var codecPreference: [RecordingCodec]
+    /// REC-005: a fixed average bit rate (bits per second, at least 100 kb/s); nil keeps REC-003's per-pixel rule.
+    public var fixedBitRate: Int?
+
+    /// REC-005: a long-side cap above any drawable (Max: the screen's own size, never scaled).
+    public static let nativeLongSide = 16_384
 
     public init(maxFrameRate: Int = 30, maxLongSide: Int = 1920, maxDurationSeconds: Int = 600, framesInFlight: Int = 3,
-                codecPreference: [RecordingCodec] = [.hevc, .h264]) {
+                codecPreference: [RecordingCodec] = [.hevc, .h264], fixedBitRate: Int? = nil) {
+        self.fixedBitRate = fixedBitRate.map { (rate: Int) -> Int in max(rate, 100_000) }
         self.maxFrameRate = min(max(maxFrameRate, 1), 60)
         let side = max(maxLongSide, 16)
         self.maxLongSide = side - side % 2
@@ -65,6 +72,11 @@ public struct RecordingSettings: Sendable, Equatable {
 
     /// The minimum spacing of written frames, in ticks (20 at 30 fps).
     public var frameIntervalTicks: Int64 { Int64(Self.timescale) / Int64(maxFrameRate) }
+
+    /// REC-005: the average bit rate written for `codec` at an output size: the fixed rate, else REC-003's rule.
+    public func averageBitRate(codec: RecordingCodec, width: Int, height: Int) -> Int {
+        fixedBitRate ?? codec.averageBitRate(width: width, height: height, frameRate: maxFrameRate)
+    }
 
     /// The duration limit in ticks.
     public var maxDurationTicks: Int64 { Int64(maxDurationSeconds) * Int64(Self.timescale) }

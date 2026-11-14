@@ -359,6 +359,7 @@ struct VisualizerView: View {
                          show: coordinator.show, addCurrentScene: { coordinator.addCurrentSceneToShow() },
                          libraryBackup: coordinator.libraryBackup,   // FILE-005
                          cacheFilesInUse: { () -> Set<String> in coordinator.cacheFilesInUse() },
+                         missingMedia: coordinator.missingMedia,   // MED-013
                          openGuide: { coordinator.openGuidedFirstScene() },
                          history: coordinator.sceneHistory,      // UIX-001, SCN-010
                          layerInspector: coordinator,            // CMP-015
@@ -373,9 +374,11 @@ struct VisualizerView: View {
                          midi: coordinator.midi,   // MIDI-001
                          recordingAudio: coordinator.recordingAudio,   // REC-004
                          recordingAudioStatus: { () -> String in coordinator.videoRecording.audioStatusText },
+                         recordingQuality: coordinator.recordingQuality,   // REC-005
                          explainers: coordinator.explainers,   // UIX-015
                          cameraStatus: { () -> PermissionState? in coordinator.cameraPermissionStatus },
                          announcer: coordinator.announcer)   // ACC-005-R7
+                .environment(\.parameterShelf, coordinator.parameterShelf)   // UIX-004-R1: Pin to Shelf in Inspect
                 .sceneRepairSheet(coordinator.sceneRepair, active: true)   // SCN-012: a show editor step's report
         }
         // SCN-012: the repair report before a cue's scene or Reopen opens (over Settings while it is shown).
@@ -458,6 +461,8 @@ struct VisualizerView: View {
         .onChange(of: coordinator.settings.linearSpectrumSpacing) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.oscilloscopeLine) { coordinator.visualSettingsChanged() }   // VIS-003
         .onChange(of: coordinator.settings.oscilloscopeWindowMilliseconds) { coordinator.visualSettingsChanged() }
+        .onChange(of: coordinator.settings.lissajousMode) { coordinator.visualSettingsChanged() }   // VIS-004
+        .onChange(of: coordinator.settings.lissajousPersistence) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.spectrumSmoothing) { coordinator.visualSettingsChanged() }   // ANL-003
     }
 
@@ -590,6 +595,7 @@ struct VisualizerView: View {
                 .overlaySurface(Capsule())   // ACC-008-R2
                 .accessibilityIdentifier("nativeVisualUnavailable")
         }
+        MissingMediaTile(model: coordinator.missingMedia)   // MED-013-R2: a scene's media is missing
         // CAM-001-R5, R6, R8: never blocks; stays while the camera cannot show pictures.
         // FILE-013-R3: denied and restricted come from the permission catalog; the other states
         // (no camera, paused) keep CAM-001's notice without Open Settings. One notice view for both.

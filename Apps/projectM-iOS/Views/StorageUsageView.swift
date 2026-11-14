@@ -7,6 +7,7 @@
 // FILE-008: a note with the space shared photo and video copies save.
 // FILE-005: the Backup section (LibraryBackupSection: back up the library, restore from a backup).
 // FILE-011: the Erase section and sheet (LibraryEraseSection).
+// MED-013: a Missing Media row (MissingMediaView: list, relink by checksum, folder search, replacement).
 import LocalPortability
 import SwiftUI
 
@@ -15,10 +16,14 @@ struct StorageUsageView: View {
     /// FILE-005: back up and restore (nil hides the section, e.g. in previews).
     private let libraryBackup: LibraryBackupCoordinator?
 
+    /// MED-013: Missing Media (nil hides the row, e.g. in previews).
+    private let missingMedia: MissingMediaCoordinator?
+
     init(model: StorageUsageModel? = nil, filesInUse: @escaping @MainActor () -> Set<String> = { () -> Set<String> in [] },
-         libraryBackup: LibraryBackupCoordinator? = nil) {
+         libraryBackup: LibraryBackupCoordinator? = nil, missingMedia: MissingMediaCoordinator? = nil) {
         _model = State(initialValue: model ?? StorageUsageModel(locations: StorageLocations.forCurrentLaunch(), filesInUse: filesInUse))
         self.libraryBackup = libraryBackup
+        self.missingMedia = missingMedia
     }
 
     static let incompleteNote = "Some files could not be counted; sizes may be higher."
@@ -95,6 +100,12 @@ struct StorageUsageView: View {
                 }
             }
             cleanupSection
+            if let missingMedia {   // MED-013-R11
+                Section {
+                    NavigationLink("Missing Media") { MissingMediaView(model: missingMedia) }
+                        .accessibilityIdentifier("missingMediaLink")
+                }
+            }
             if model.sharedSavings > 0 {
                 Section {
                     Text(Self.sharedSavingsNote(model.sharedSavings)).accessibilityIdentifier("storageSharedSavings")   // FILE-008

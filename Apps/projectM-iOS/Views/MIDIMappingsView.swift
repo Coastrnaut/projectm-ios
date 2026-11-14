@@ -3,7 +3,8 @@
 // parameter with its control, Learn and Delete, and a one-step Undo. MIDI-004-R7: under each mapped parameter a
 // "Curve" row shows the curve summary and opens `MIDIMappingOptionsView`. Small views so each body stays under CI's
 // type-check budget. No animation; announcements come from the coordinator through the shared announcer.
-// MIDI-006-R8: a "Note triggers" section, one row per trigger target with its note, Learn and Delete.
+// MIDI-006-R8: a trigger section, one row per trigger target with its note, Learn and Delete. MIDI-008-R7: titled
+// "Transport", with Play/Pause, Play and Pause first; a row's source may be a note, a CC button or MIDI Start/Stop.
 // MIDI-007-R9: a "Scene triggers" section, one row per scene mapping with Delete, and the "Program number selects
 // cue" picker. Scenes are assigned from Settings › Show (Assign MIDI…).
 import ParameterGraph
@@ -123,7 +124,7 @@ private struct MIDIMappingCurveRow: View {
     }
 }
 
-/// MIDI-006-R8: Next cue, Previous cue, Black out, Black out while held.
+/// MIDI-006-R8 and MIDI-008-R7: Play/Pause, Play, Pause, Next cue, Previous cue, Black out, Black out while held.
 private struct MIDINoteTriggersSection: View {
     var mappings: MIDIMappingCoordinator
 
@@ -135,7 +136,7 @@ private struct MIDINoteTriggersSection: View {
                                 delete: { () -> Void in mappings.deleteNoteMapping(row.target) })
             }
         } header: {
-            Text("Note triggers")
+            Text("Transport")
         } footer: {
             Text(MIDIMappingCoordinator.noteFooterText)
         }

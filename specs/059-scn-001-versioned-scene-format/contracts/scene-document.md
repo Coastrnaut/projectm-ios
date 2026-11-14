@@ -119,6 +119,17 @@ unusable entry is kept and reported with a warning: `invalidTrigger` (a missing 
 high`, levels outside 0…1, times outside 0…60 s, beyond 8) or `unknownTrigger` (unknown source or action),
 at the field's path or `$.triggers[i]`.
 
+### Oscillators (MOD-007, optional top-level `lfos`)
+
+`[{"shape": "sine", "rate": 0.5, "phase": 0, "amplitude": 1, "center": 0.5}]`: low-frequency oscillators
+(specs/156-mod-007-lfo/contracts/lfo.md). Written only when the scene has the list (no version change); each
+entry is an object kept verbatim, unknown keys included. `shape` (`sine`, `triangle`) and `rate` (0.01…20 Hz)
+are required; `phase` (0…1 cycle, default 0), `amplitude` (0…1 peak-to-peak, default 1) and `center` (0…1,
+default 0.5) are optional. A binding names oscillator *i* by the source ID `audio.lfo.<i>` (0…7, its position
+in the list); an unusable or missing oscillator reads 0. At most 64 entries decode (`tooMany`); the first 8 are
+used. An unusable entry is kept and reported with a warning: `invalidLFO` (a missing or wrong field, values out
+of range, beyond 8) or `unknownLFO` (unknown shape), at the field's path or `$.lfos[i]`.
+
 ### Modulation
 
 `generators`: `[{"id": "lfo.one", "inputs": ["rate"], "name": "LFO One"}]`;

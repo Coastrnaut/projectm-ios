@@ -3,7 +3,8 @@
 // content once.
 //
 //   <sha256>.<ext>            a payload: one immutable copy per content (SHA-256 of its bytes + size)
-//   references.json           the registry: store identifier (canonical UUID) → payload name
+//   references.json           the registry: store identifier (canonical UUID) → payload name; MED-013:
+//                             plus the payload names of released identifiers (`released`, for relinking)
 //   <UUID>.<ext>              a legacy copy (MED-001/002 layout, or written by a FILE-005 restore)
 //   .incoming-<UUID>.<ext>    an import in progress
 //
@@ -60,6 +61,8 @@ public struct ContentAddressedMediaFolder: Sendable {
     public static let version = 1
     public static let maxReferencesPerPayload = 32
     public static let maxRegistryBytes = 1 << 20
+    /// MED-013-R3: released identifiers whose payload names the registry keeps.
+    public static let maxReleasedEntries = 256
 
     public let directory: URL
     /// Lowercase extensions this store keeps (`png`, `jpg`; `mov`).
@@ -114,19 +117,37 @@ public struct ContentAddressedMediaFolder: Sendable {
         var format: String
         var version: Int
         var references: [Entry]
+        /// MED-013 (research MED-013-D1): released identifiers' payload names, oldest first (optional key;
+        /// older readers ignore it). Names only: never a reference, never keeps a payload.
+        var released: [Entry]?
+    }
+
+    /// The registry's two lists, validated.
+    struct Registry: Sendable {
+        var references: [Entry]
+        var released: [Entry]
     }
 
     private var registryURL: URL { payloadURL(Self.registryName) }
 
     /// Validated entries in age order (oldest first). Anything unreadable reads as none.
-    func entries() -> [Entry] {
+    func entries() -> [Entry] { registry().references }
+
+    /// Both lists. A damaged registry reads as empty lists.
+    func registry() -> Registry {
         guard let size = Self.size(of: registryURL), size <= Int64(Self.maxRegistryBytes),
               let data = try? Data(contentsOf: registryURL),
               let file = try? JSONDecoder().decode(RegistryFile.self, from: data),
-              file.format == Self.format, file.version == Self.version else { return [] }
-        var seen: Set<String> = []
+              file.format == Self.format, file.version == Self.version else { return Registry(references: [], released: []) }
+        let references = validated(file.references, excluding: [])
+        let released = validated(file.released ?? [], excluding: Set(references.map(\.id)))
+        return Registry(references: references, released: released)
+    }
+
+    private func validated(_ list: [Entry], excluding: Set<String>) -> [Entry] {
+        var seen: Set<String> = excluding
         var result: [Entry] = []
-        for entry in file.references {
+        for entry in list {
             guard let id = UUID(uuidString: entry.id), id.uuidString == entry.id, isPayloadName(entry.payload),
                   !seen.contains(entry.id) else { continue }
             seen.insert(entry.id)
@@ -135,11 +156,21 @@ public struct ContentAddressedMediaFolder: Sendable {
         return result
     }
 
-    private func write(_ entries: [Entry]) throws {
+    /// Keeps the released list (minus identifiers now referenced).
+    func write(_ entries: [Entry]) throws {
+        try write(entries, released: registry().released)
+    }
+
+    /// MED-013: writes both lists; `released` loses identifiers in `entries` and keeps the newest
+    /// `maxReleasedEntries`.
+    func write(_ entries: [Entry], released: [Entry]) throws {
         try fault?(.writeRegistry, registryURL)
+        let referenced = Set(entries.map(\.id))
+        let kept = Array(released.filter { (e: Entry) -> Bool in !referenced.contains(e.id) }.suffix(Self.maxReleasedEntries))
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys]
-        let data = try encoder.encode(RegistryFile(format: Self.format, version: Self.version, references: entries))
+        let file = RegistryFile(format: Self.format, version: Self.version, references: entries, released: kept.isEmpty ? nil : kept)
+        let data = try encoder.encode(file)
         try data.write(to: registryURL, options: .atomic)
     }
 
@@ -255,9 +286,15 @@ public struct ContentAddressedMediaFolder: Sendable {
         guard !ids.isEmpty else { return }
         try withLock { () throws in
             let keys = Set(ids.map(\.uuidString))
-            let all = entries()
+            let current = registry()
+            let all = current.references
             let kept = all.filter { (e: Entry) -> Bool in !keys.contains(e.id) }
-            if kept.count != all.count { try write(kept) }
+            if kept.count != all.count {
+                // MED-013-R3: remember the released entries' payload names (newest last).
+                let removed = all.filter { (e: Entry) -> Bool in keys.contains(e.id) }
+                let older = current.released.filter { (e: Entry) -> Bool in !keys.contains(e.id) }
+                try write(kept, released: older + removed)
+            }
             for id in ids {
                 for ext in extensions {
                     let url = payloadURL("\(id.uuidString).\(ext)")
@@ -424,7 +461,7 @@ public struct ContentAddressedMediaFolder: Sendable {
 
     // MARK: - Lock
 
-    private func withLock<T>(_ body: () throws -> T) rethrows -> T {
+    func withLock<T>(_ body: () throws -> T) rethrows -> T {
         let lock = FolderLocks.shared.lock(for: directory)
         lock.lock()
         defer { lock.unlock() }
