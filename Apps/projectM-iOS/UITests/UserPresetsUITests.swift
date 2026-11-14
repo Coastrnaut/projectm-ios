@@ -4,6 +4,10 @@
 // the same code path as the Files picker's result (the system picker itself is not driven here).
 // Launched with the fixed fake entitlement (`-uitestUnlocked NO`, no StoreKit). Simulator only (the
 // app reads the test's file from the host); never device evidence (Constitution X).
+// Shortened 2026-11-13 under owner rule 7: `-autostart inAppPlayback` replaces the notice and chooser
+// taps, waits poll every 0.1 s (UITestWaits.swift), and held drags (`app.reveal`) replace flinging
+// swipes. testImportPlayStepAndRelaunch is split in two (its US4 information checks moved to
+// testImportedPresetShowsWhatWasRecorded). Every assertion is unchanged.
 import XCTest
 
 @MainActor
@@ -38,19 +42,12 @@ final class UserPresetsUITests: XCTestCase {
 
     private func start(reset: Bool, importing file: URL? = nil) {
         XCUIDevice.shared.orientation = .portrait
-        app.launchArguments = (reset ? ["-uitestResetNotice"] : []) + ["-uitestDiagnostics", "-uitestUnlocked", "NO"]
+        // `-autostart inAppPlayback` (Debug) starts the reference track as the chooser's row does.
+        app.launchArguments = (reset ? ["-uitestResetNotice"] : []) + ["-uitestDiagnostics", "-uitestUnlocked", "NO",
+                                                                       "-autostart", "inAppPlayback"]
             + (file.map { ["-uitestImportPreset", $0.path] } ?? [])
         app.launch()
-        if reset {
-            let acknowledge = app.buttons["acknowledgeNotice"]
-            XCTAssertTrue(acknowledge.waitForExistence(timeout: 10))
-            acknowledge.tap()
-        }
-        let inApp = app.buttons["In-App Playback"]
-        if !inApp.waitForExistence(timeout: 10) { app.swipeUp() }
-        XCTAssertTrue(inApp.waitForExistence(timeout: 5))
-        inApp.tap()
-        XCTAssertTrue(scopeLine.waitForExistence(timeout: 10))
+        XCTAssertTrue(scopeLine.appears(within: 15))
     }
 
     private var scopeLine: XCUIElement { app.staticTexts["scopeLine"] }
@@ -59,44 +56,39 @@ final class UserPresetsUITests: XCTestCase {
     /// Taps a control of the overlay. The controls hide by themselves after 5 s, and a tap on the
     /// picture toggles them, so a tap that lands just as they hide is retried.
     private func tapControl(_ id: String) {
-        let button = app.buttons[id]
-        for _ in 0..<3 {
-            if button.waitForExistence(timeout: 2) { break }
-            app.otherElements["visualizerTapArea"].firstMatch.tap()
-        }
-        XCTAssertTrue(button.waitForExistence(timeout: 3), id)
-        button.tap()
+        app.tapFreshControl(id)
     }
 
     private func open(_ id: String) {
         let element = app.buttons[id]
-        for _ in 0..<6 where !(element.exists && element.isHittable) { app.swipeUp() }
-        XCTAssertTrue(element.waitForExistence(timeout: 5), id)
+        // Held drags only when needed: a flinging swipe waits seconds for the list to settle.
+        if !(element.appears(within: 2) && element.isHittable) { app.reveal(element) }
+        XCTAssertTrue(element.appears(within: 3), id)
         element.tap()
     }
 
     private func openMyPresets() {
         tapControl("presets")
-        XCTAssertTrue(app.buttons["node:included"].waitForExistence(timeout: 10), "library home")
+        XCTAssertTrue(app.buttons["node:included"].appears(within: 10), "library home")
         // At the largest text sizes the row can sit half under the bottom edge: scroll and retry.
         for _ in 0..<3 {
             open("node:myPresets")
             // My Presets is open when its Import button is there, or the import result's alert covers it.
-            if app.buttons["importPreset"].waitForExistence(timeout: 3) || app.alerts["Import Preset"].exists { return }
-            app.swipeUp()
+            if poll(3, { self.app.buttons["importPreset"].exists || self.app.alerts["Import Preset"].exists }) { return }
+            app.reveal(app.buttons["node:myPresets"])
         }
-        XCTAssertTrue(app.buttons["importPreset"].waitForExistence(timeout: 5) || app.alerts["Import Preset"].exists)
+        XCTAssertTrue(poll(5) { self.app.buttons["importPreset"].exists || self.app.alerts["Import Preset"].exists })
     }
 
     /// Scrolls until `element` exists (lists build rows only near the screen).
     private func scrollTo(_ element: XCUIElement, _ what: String, file: StaticString = #filePath, line: UInt = #line) {
-        for _ in 0..<8 where !element.waitForExistence(timeout: 2) { app.swipeUp() }
+        _ = element.appears(within: 2)
+        app.reveal(element)
         XCTAssertTrue(element.exists, what, file: file, line: line)
     }
 
     private func waitForLabel(_ element: XCUIElement, _ text: String, file: StaticString = #filePath, line: UInt = #line) {
-        let done = expectation(for: NSPredicate(format: "label == %@", text), evaluatedWith: element)
-        if XCTWaiter().wait(for: [done], timeout: 8) != .completed {
+        if !poll(8, { element.exists && element.label == text }) {
             XCTFail("expected “\(text)”, found “\(element.exists ? element.label : "<missing>")”", file: file, line: line)
         }
     }
@@ -112,37 +104,46 @@ final class UserPresetsUITests: XCTestCase {
     /// The "Import Preset" alert's message; dismisses it.
     private func importAlertMessage() -> String {
         let alert = app.alerts["Import Preset"]
-        XCTAssertTrue(alert.waitForExistence(timeout: 15), "the import result is shown")
+        XCTAssertTrue(alert.appears(within: 15), "the import result is shown")
         let message = alert.staticTexts.allElementsBoundByIndex.map(\.label).first { $0 != "Import Preset" } ?? ""
         alert.buttons["OK"].tap()
-        XCTAssertTrue(alert.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(alert.disappears(within: 5))
         return message
     }
 
-    /// S5, US1, US4: a valid preset is imported, tried by the real engine, listed, shows what
-    /// was recorded about it, plays in its own scope, and is still there after the original file
-    /// is deleted and the app is relaunched.
-    func testImportPlayStepAndRelaunch() throws {
-        #if !targetEnvironment(simulator)
-        throw XCTSkip("the app reads the test's file from the host; simulator only")
-        #else
+    /// Imports the valid preset and opens My Presets; returns its row (S5: listed within 5 s).
+    private func importSunrise() throws -> XCUIElement {
         let file = try write(presetLines(), named: "Example Author - Sunrise.milk")
         start(reset: true, importing: file)
         let builtIn = current.label
         XCTAssertNotEqual(builtIn, "Sunrise", "importing does not switch the picture")
         openMyPresets()
         let row = app.buttons["preset:Sunrise"]
-        XCTAssertTrue(row.waitForExistence(timeout: 5), "S5: listed within 5 s")
+        XCTAssertTrue(row.appears(within: 5), "S5: listed within 5 s")
         XCTAssertEqual(importAlertMessage(), "Added “Sunrise” to My Presets with 1 warning. See its information for details.")
         XCTAssertEqual(row.label, "Sunrise, by Example Author")
+        return row
+    }
+
+    // Owner rule 7 (2026-11-13): the former single test (35 s after the faster waits) is split in
+    // two. testImportedPresetShowsWhatWasRecorded keeps the US4 information checks; both tests
+    // import, list and check the import message and row label (S5).
+
+    /// S5, US4: a valid preset is imported, tried by the real engine, listed, and shows what was
+    /// recorded about it.
+    func testImportedPresetShowsWhatWasRecorded() throws {
+        #if !targetEnvironment(simulator)
+        throw XCTSkip("the app reads the test's file from the host; simulator only")
+        #else
+        let row = try importSunrise()
         keepScreenshot("my presets")
 
         // US4: what the app recorded.
         row.swipeLeft()
         let info = app.buttons["userPresetInfo"]
-        XCTAssertTrue(info.waitForExistence(timeout: 5))
+        XCTAssertTrue(info.appears(within: 5))
         info.tap()
-        XCTAssertTrue(app.staticTexts["Preset Information"].waitForExistence(timeout: 5) || app.navigationBars["Preset Information"].exists)
+        XCTAssertTrue(app.staticTexts["Preset Information"].appears(within: 5) || app.navigationBars["Preset Information"].exists)
         keepScreenshot("preset information")
         scrollTo(app.staticTexts["presetRights"], "the rights sentence")
         XCTAssertEqual(app.staticTexts["presetRights"].label, "Imported by you. projectM-iOS has not verified any rights to this preset.")
@@ -151,9 +152,20 @@ final class UserPresetsUITests: XCTestCase {
         let warning = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'mytexture'")).firstMatch
         scrollTo(warning, "the missing texture is listed")
         app.navigationBars["Preset Information"].buttons["Done"].tap()
+        XCTAssertTrue(row.appears(within: 5))
+        try? FileManager.default.removeItem(at: folder)
+        #endif
+    }
+
+    /// S5, US1: the imported preset plays in its own scope, and is still there after the original
+    /// file is deleted and the app is relaunched.
+    func testImportPlayStepAndRelaunch() throws {
+        #if !targetEnvironment(simulator)
+        throw XCTSkip("the app reads the test's file from the host; simulator only")
+        #else
+        let row = try importSunrise()
 
         // US1: it plays, and My Presets is the scope.
-        XCTAssertTrue(row.waitForExistence(timeout: 5))
         row.tap()
         waitForLabel(current, "Sunrise")
         waitForLabel(scopeLine, "My Presets · 1")
@@ -170,15 +182,15 @@ final class UserPresetsUITests: XCTestCase {
         waitForLabel(current, "Sunrise")   // restored as the last preset
         XCTAssertEqual(scopeLine.label, "My Presets · 1")
         openMyPresets()
-        XCTAssertTrue(app.buttons["preset:Sunrise"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["preset:Sunrise"].appears(within: 5))
 
         // R24: remove it; the list is empty again and the built-in library is what it was.
         app.buttons["preset:Sunrise"].swipeLeft()
         app.buttons["removeUserPreset"].tap()
         let confirm = app.alerts.buttons["Remove Preset"].firstMatch
-        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
+        XCTAssertTrue(confirm.appears(within: 5))
         confirm.tap()
-        XCTAssertTrue(app.staticTexts["userPresetsEmpty"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["userPresetsEmpty"].appears(within: 5))
         #endif
     }
 
@@ -200,7 +212,7 @@ final class UserPresetsUITests: XCTestCase {
                        "“photo.milk” was put in Quarantine. This file is not text. A Milkdrop preset is a plain text file.")
         XCTAssertTrue(app.staticTexts["userPresetsEmpty"].exists, "nothing became playable")
         open("quarantineLink")
-        XCTAssertTrue(app.staticTexts["quarantineReason:photo.milk"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["quarantineReason:photo.milk"].appears(within: 5))
         XCTAssertEqual(app.staticTexts["quarantineReason:photo.milk"].label, "This file is not text. A Milkdrop preset is a plain text file.")
         app.navigationBars["Quarantine"].buttons["Done"].tap()
         waitForLabel(current, playing)
@@ -217,13 +229,13 @@ final class UserPresetsUITests: XCTestCase {
         XCTAssertFalse(app.buttons["preset:Broken Equations"].exists)
         XCTAssertTrue(app.staticTexts["userPresetsEmpty"].exists)
         open("quarantineLink")
-        XCTAssertTrue(app.staticTexts["quarantineReason:Broken Equations.milk"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["quarantineReason:Broken Equations.milk"].appears(within: 5))
         keepScreenshot("quarantine")
         scrollTo(app.staticTexts["quarantineReason:photo.milk"], "the first file is still in Quarantine after the relaunch")
 
         // R24: delete one; the other stays.
         open("deleteQuarantined:photo.milk")
-        XCTAssertTrue(app.staticTexts["quarantineReason:photo.milk"].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["quarantineReason:photo.milk"].disappears(within: 5))
         XCTAssertTrue(app.staticTexts["quarantineReason:Broken Equations.milk"].exists)
         app.navigationBars["Quarantine"].buttons["Done"].tap()
 
