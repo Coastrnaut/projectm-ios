@@ -1060,6 +1060,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         case .lissajous: .lissajous(mode: settings.lissajousMode, persistence: settings.lissajousPersistence)   // VIS-004
         case .radialWaveform: .radialWaveform(ring: settings.radialWaveformRing, amplitude: settings.radialWaveformAmplitude)   // VIS-005
         case .beatRings: .beatRings(life: settings.beatRingsLife)   // VIS-006
+        case .mandala: .mandala(symmetry: settings.mandalaSymmetry, mirror: settings.mandalaMirror, petal: settings.mandalaPetal)   // VIS-007
         default: .circular
         }
     }
@@ -1091,6 +1092,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.safetyClamp = settings.safetyClamp   // ACC-012-R4
             host.smoothing = settings.spectrumSmoothing   // ANL-003
             host.palette = settings.spectrumPalette        // ACC-003-R13
+            host.reduceMotion = settings.systemReduceMotion   // VIS-007-R5: the mandala's turn (ACC-001)
             host.externalValues = midiMappings.liveValues   // MIDI-003: values held while no native visual was shown
             for binding in sceneAutosave?.bindings ?? [] { try? host.addLayer(binding) }   // SCN-002: restored bindings, MOD-011 layers in order
             connectThresholdTriggers(host)   // MOD-006
@@ -1642,6 +1644,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// The system Reduce Motion setting changed.
     func systemReduceMotionChanged(_ enabled: Bool) {
         settings.systemReduceMotion = enabled
+        nativeVisual?.reduceMotion = enabled   // VIS-007-R5
         applyReduceFlashing()
     }
 

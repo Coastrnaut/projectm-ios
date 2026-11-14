@@ -84,6 +84,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.lissajous.mode", "settings.lissajous.persistence",   # VIS-004-R11
                 "settings.radialWaveform.ring", "settings.radialWaveform.amplitude",   # VIS-005-R9
                 "settings.beatRings.life",   # VIS-006-R9
+                "settings.mandala.symmetry", "settings.mandala.mirror", "settings.mandala.petal",   # VIS-007-R9
                 "settings.spectrum.attack", "settings.spectrum.release",   # ANL-003-R6
                 "settings.osc.enabled", "settings.osc.port",   # OSC-001 (off by default)
                 "settings.midi.enabled",   # MIDI-001 (off by default; no device names stored)
