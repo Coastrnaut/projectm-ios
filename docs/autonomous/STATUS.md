@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T16:35:55Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T16:36:48Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 136 |
 | implementing | 7 |
-| unit_passed | 1 |
-| integrated | 181 |
+| integrated | 182 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 52 | 7 | 1 | 91 | 0 |
-| P2 | 73 | 0 | 0 | 6 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 2 | 0 | 84 | 1 |
+| P1 | 52 | 7 | 92 | 0 |
+| P2 | 73 | 0 | 6 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 144 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-011, ANL-012)
+- 143 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-011, ANL-012)
 
 ## Integrated
 
@@ -158,7 +157,7 @@ The physical-device suite may **not** start:
 | OUT-010 | Output blackout isolation | `1def5a80ab64` | `feature/out-010` |
 | PERF-001 | Per-stage frame timings | `2c4317ae` | `feature/perf-001` |
 | PERF-002 | GPU budget meter | `0c570bb94ccc` | `None` |
-| PERF-003 | Adaptive effect quality | `53c913bd209d` | `feature/perf-003` |
+| PERF-003 | Adaptive effect quality | `53c913bd` | `feature/perf-003` |
 | PERF-004 | Texture pool | `ea0ee43e0f04` | `feature/perf-004` |
 | PERF-006 | Memory warning recovery | `b4281645619e` | `feature/perf-006` |
 | PERF-010 | Crash-safe session recovery | `7d64b6b027da` | `feature/perf-010` |
@@ -185,6 +184,7 @@ The physical-device suite may **not** start:
 | REC-004 | Recording audio mux | `787bb98e2086` | `feature/rec-004` |
 | REC-005 | Record quality profiles | `6a8bdbbdffdf` | `feature/rec-005` |
 | REC-006 | Record frame rate | `302a8e6c` | `None` |
+| REC-007 | Recording countdown | `1847eae27ee8` | `feature/rec-007` |
 | REC-012 | Share via Files | `c3886d1cb0bb` | `feature/rec-012` |
 | REC-015 | Recording disk guard | `d1a76394fab1` | `feature/rec-015` |
 | SCN-001 | Versioned scene format | `c3886d1cb0bb` | `feature/scn-001` |
@@ -1541,6 +1541,7 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `a3c83bc52fa9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-003/20261114T112229/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `a3c83bc52fa9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-003/20261114T112229/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `a3c83bc52fa9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-003/20261114T112229/swift-test_VisualGenerators.log`)
+- `post-merge: projectM-iOSTests 801 + UI 4 (effect quality, budget overlay, glow)`: pass at `53c913bd` (log `.autonomous/logs/integration/batch24/app-tests.log`)
 
 ### PERF-004 Texture pool (integrated)
 - `python3 scripts/check_compliance.py`: pass at `b32cc31f34e8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-004/20261113T135753/compliance.log`)
@@ -1814,7 +1815,7 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `c5c566ba25f9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-006/20261114T104818/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `c5c566ba25f9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-006/20261114T104818/swift-test_ShowControl.log`)
 
-### REC-007 Recording countdown (unit_passed)
+### REC-007 Recording countdown (integrated)
 - `python3 scripts/check_compliance.py`: pass at `bc6b335a76bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-007/20261114T113329/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `bc6b335a76bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-007/20261114T113329/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `bc6b335a76bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-007/20261114T113329/script-tests.log`)
