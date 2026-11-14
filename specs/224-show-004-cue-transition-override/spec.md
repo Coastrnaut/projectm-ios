@@ -97,6 +97,7 @@ this cue: Cut"; choose "Use Scene Default"; the line disappears. With the scene 
 
 ### Edge Cases
 
+- The show steps into a cue through a SHOW-003 quantized step or a SHOW-002 timed advance: the same override applies (every step goes through one path).
 - A cue's scene is missing or needs repair (SCN-012): the override is used when the repaired scene is opened, as SCN-007's transition is.
 - Reduce Motion is on: the override, like any transition, resolves to a cut; with Reduce flashing a Cut override becomes the 0.5 s crossfade (SCN-007-R6).
 - The default is removed or changed while an override exists: the override still wins; removing the override later uses the new default.
@@ -109,7 +110,7 @@ this cue: Cut"; choose "Use Scene Default"; the line disappears. With the scene 
 
 - **SHOW-004-R1**: Each cue MUST support an optional transition override with the same content and validation as an SCN-007 transition (type, duration 0…10 s, easing).
 - **SHOW-004-R2**: The override MUST be stored in the show file as an optional per-cue field, written only when set (shows without overrides keep their bytes), with no format version change; an invalid stored override MUST be dropped with a counted warning, and an unknown type MUST be kept with a warning, while the rest of the show loads.
-- **SHOW-004-R3**: Every step that makes a cue active MUST drive the cue's override when it has one, and otherwise its scene default (SCN-007 transition), resolved by the existing safety rules.
+- **SHOW-004-R3**: Every step that makes a cue active MUST drive the cue's override when it has one, and otherwise its scene default (SCN-007 transition), resolved by the existing safety rules; an override of an unknown type applies as a cut (the scene default is not used).
 - **SHOW-004-R4**: Setting, changing, removing or using an override MUST NOT change the scene default of any cue or any scene file.
 - **SHOW-004-R5**: The show editor MUST offer "Transition Into This Cue…" per cue (context menu, swipe action, VoiceOver action) with "Use Scene Default" as the first choice, and MUST show an existing override under the cue's label (and in its VoiceOver value).
 - **SHOW-004-R6**: Override edits MUST save at once and never apply a scene or move the position; they MUST be refused while the scene is locked (SCN-015).
