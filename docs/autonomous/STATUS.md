@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T14:59:02Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T15:03:13Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,8 +9,8 @@
 
 | State | Features |
 |---|---|
-| audited | 155 |
-| implementing | 3 |
+| audited | 154 |
+| implementing | 4 |
 | unit_passed | 3 |
 | integrated | 164 |
 | skipped_existing | 1 |
@@ -20,7 +20,7 @@
 | Priority | audited | implementing | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 70 | 3 | 3 | 75 | 0 |
+| P1 | 69 | 4 | 3 | 75 | 0 |
 | P2 | 74 | 0 | 0 | 5 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
@@ -165,12 +165,12 @@ The physical-device suite may **not** start:
 | QA-003 | Visual diff tolerances | `ae0249ac` | `feature/qa-003` |
 | QA-004 | Scene migration matrix | `2d758a4` | `feature/qa-004` |
 | QA-005 | Import fuzz suite | `d7faef231370` | `feature/qa-005` |
-| QA-006 | Render soak test | `dc341318c32b` | `None` |
+| QA-006 | Render soak test | `dc341318` | `None` |
 | QA-007 | Audio source contract suite | `32172fdd5795` | `feature/qa-007` |
 | REC-001 | Still frame capture | `5666cc2332ff` | `feature/rec-001` |
 | REC-003 | Video recording | `bf82b49836a5` | `feature/rec-003` |
 | REC-004 | Recording audio mux | `787bb98e2086` | `feature/rec-004` |
-| REC-005 | Record quality profiles | `6a8bdbbdffdf` | `feature/rec-005` |
+| REC-005 | Record quality profiles | `6a8bdbbd` | `feature/rec-005` |
 | REC-012 | Share via Files | `c3886d1cb0bb` | `feature/rec-012` |
 | REC-015 | Recording disk guard | `d1a76394fab1` | `feature/rec-015` |
 | SCN-001 | Versioned scene format | `c3886d1cb0bb` | `feature/scn-001` |
@@ -1569,6 +1569,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `86203d89d897` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-006/20261114T094813/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `86203d89d897` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-006/20261114T094813/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `86203d89d897` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-006/20261114T094813/swift-test_ShowControl.log`)
+- `post-merge: projectM-iOSTests 744 (QA-006 package-only; soak ran in gate)`: pass at `dc341318` (log `.autonomous/logs/integration/batch13/app-tests.log`)
 
 ### QA-007 Audio source contract suite (integrated)
 - `python3 scripts/check_compliance.py`: pass at `1985f0c1e666` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-007/20261112T210720/compliance.log`)
@@ -1642,6 +1643,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `5259b1613341` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-005/20261114T095419/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `5259b1613341` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-005/20261114T095419/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `5259b1613341` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-005/20261114T095419/swift-test_ShowControl.log`)
+- `post-merge: projectM-iOSTests 744 + UI 8 (recording quality, audio, video, settings)`: pass at `6a8bdbbd` (log `.autonomous/logs/integration/batch13/app-tests.log`)
 
 ### REC-012 Share via Files (integrated)
 - `python3 scripts/check_compliance.py`: pass at `8909040fb290` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-012/20261113T152825/compliance.log`)

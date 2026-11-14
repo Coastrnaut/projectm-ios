@@ -11,8 +11,8 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 70,
-   "implementing": 3,
+   "audited": 69,
+   "implementing": 4,
    "integrated": 75,
    "unit_passed": 3
   },
@@ -25,8 +25,8 @@
   }
  },
  "by_state": {
-  "audited": 155,
-  "implementing": 3,
+  "audited": 154,
+  "implementing": 4,
   "integrated": 164,
   "skipped_existing": 1,
   "unit_passed": 3
@@ -2470,7 +2470,7 @@
    "branch": null,
    "branch_sha": "86203d89d8971f3a54ac96ab609aeb431a1082df",
    "error_category": null,
-   "integrated_sha": "dc341318c32b5aa1eac78cd5f2c409388d98329d",
+   "integrated_sha": "dc341318",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
@@ -2580,20 +2580,20 @@
    "branch": "feature/rec-005",
    "branch_sha": "5259b1613341ebff00471856b9727ff6f31101f9",
    "error_category": null,
-   "integrated_sha": "6a8bdbbdffdf71bd98e51f80a6f308f48bca9f77",
+   "integrated_sha": "6a8bdbbd",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
   },
   "REC-006": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/rec-006",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "REC-007": {
    "attempts": 0,
@@ -4130,7 +4130,7 @@
   {
    "branch": null,
    "id": "QA-006",
-   "sha": "dc341318c32b5aa1eac78cd5f2c409388d98329d"
+   "sha": "dc341318"
   },
   {
    "branch": "feature/qa-007",
@@ -4155,7 +4155,7 @@
   {
    "branch": "feature/rec-005",
    "id": "REC-005",
-   "sha": "6a8bdbbdffdf71bd98e51f80a6f308f48bca9f77"
+   "sha": "6a8bdbbd"
   },
   {
    "branch": "feature/rec-012",
@@ -4313,5 +4313,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T14:59:02Z"
+ "updated": "2026-11-14T15:03:13Z"
 }
