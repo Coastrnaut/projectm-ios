@@ -84,6 +84,10 @@ struct SettingsView: View {
     var recordingAudioStatus: (() -> String)?
     /// REC-005: the record quality profile (nil hides the section, e.g. in previews).
     var recordingQuality: RecordingQualitySetting?
+    /// REC-007: the recording countdown (nil hides the section, e.g. in previews).
+    var recordingCountdown: RecordingCountdownSetting?
+    /// OUT-004: the external display's output correction (nil hides the section, e.g. in previews).
+    var externalOutput: ExternalOutputSetting? = nil
     /// UIX-015: the explainer before the camera and local network prompts (nil: none, e.g. in previews).
     var explainers: PermissionExplainerCoordinator?
     /// UIX-015-R1: the camera's permission status when Camera is picked.
@@ -299,6 +303,7 @@ struct SettingsView: View {
                     .accessibilityIdentifier("oscilloscopeWindowPicker")
                 }
                 if settings.visual == .lissajous { lissajousOptions }   // VIS-004-R11
+                if settings.visual == .radialWaveform { radialWaveformOptions }   // VIS-005-R9
                 if settings.visual == .linearSpectrum {
                     Picker("Orientation", selection: $settings.linearSpectrumOrientation) {
                         ForEach(LinearSpectrumOrientation.allCases, id: \.self) { Text($0.title).tag($0) }
@@ -327,6 +332,7 @@ struct SettingsView: View {
                                text: Self.percent(settings.glowThreshold), inspect: VisualParameterIDs.bloomThreshold)
                 }
             }
+            if let layerInspector { SceneSnapshotRows(snapshots: layerInspector.sceneSnapshots) }   // SCN-008-R9: under what it holds
         } header: {
             Text("Visual")
         } footer: {
@@ -335,7 +341,7 @@ struct SettingsView: View {
                     .accessibilityIdentifier("nativeVisualUnavailableFooter")
             } else {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Oscilloscope draws the sound's waveform, held still when the sound repeats. Lissajous plots the left channel against the right: mono sound is a straight line, wide stereo fills the space; Mid/Side turns it so mono is vertical. Camera shows your rear or front camera behind a circular spectrum, only while it is on screen; the picture is never sent. Photo shows a picture you choose behind a circular spectrum. Video plays a video you choose, without its sound, behind a circular spectrum. Text shows your own words over a circular spectrum.")
+                    Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Oscilloscope draws the sound's waveform, held still when the sound repeats. Lissajous plots the left channel against the right: mono sound is a straight line, wide stereo fills the space; Mid/Side turns it so mono is vertical. Radial Waveform wraps the waveform around a ring: louder sound pushes it out and pulls it in, silence is a still circle. Camera shows your rear or front camera behind a circular spectrum, only while it is on screen; the picture is never sent. Photo shows a picture you choose behind a circular spectrum. Video plays a video you choose, without its sound, behind a circular spectrum. Text shows your own words over a circular spectrum.")
                     if settings.visual.isNative {
                         if glowUnavailable {
                             Text(AppCoordinator.glowUnavailableMessage)
@@ -347,6 +353,7 @@ struct SettingsView: View {
                 }
             }
         }
+        .id("visualOptions")   // UITestSettingsSection: bars and glow without drags (SceneUndoUITests)
     }
 
     /// VIS-004-R11: the Lissajous's plot and persistence.
@@ -359,6 +366,22 @@ struct SettingsView: View {
         .accessibilityIdentifier("lissajousModePicker")
         Toggle("Persistence", isOn: $settings.lissajousPersistence)
             .accessibilityIdentifier("lissajousPersistenceToggle")
+    }
+
+    /// VIS-005-R9: the radial waveform's ring size and amplitude.
+    @ViewBuilder private var radialWaveformOptions: some View {
+        Picker("Ring", selection: $settings.radialWaveformRing) {
+            ForEach(RadialWaveformRing.allCases, id: \.self) { (ring: RadialWaveformRing) in Text(ring.title).tag(ring) }
+        }
+        .segmentedUnlessAccessibilitySize()   // ACC-006-R1
+        .accessibilityLabel("Ring")
+        .accessibilityIdentifier("radialWaveformRingPicker")
+        Picker("Amplitude", selection: $settings.radialWaveformAmplitude) {
+            ForEach(RadialWaveformAmplitude.allCases, id: \.self) { (amplitude: RadialWaveformAmplitude) in Text(amplitude.title).tag(amplitude) }
+        }
+        .segmentedUnlessAccessibilitySize()   // ACC-006-R1
+        .accessibilityLabel("Amplitude")
+        .accessibilityIdentifier("radialWaveformAmplitudePicker")
     }
 
     @ViewBuilder private var smoothingSection: some View {
@@ -400,7 +423,7 @@ struct SettingsView: View {
             }
         }
         if settings.visual.usesVideo, let videos {
-            videoSection(videos)
+            videoSection(videos).id("video")   // IDs: UITestSettingsSection
         }
         if let logo { LogoSection(logo: logo) }   // MED-010: every visual (the help names those that show it)
         if settings.visual.usesText, let texts {
@@ -408,9 +431,9 @@ struct SettingsView: View {
         }
         if settings.visual.isNative { SpectrumColorsSection(settings: settings) }   // ACC-003-R13
         if let colorGrade { ColorGradeSection(setting: colorGrade).id("color") }   // FX-003-R9 (IDs: UITestSettingsSection)
-        if let motionFeedback { TrailsSection(setting: motionFeedback, clamp: settings.safetyClamp) }   // FX-009-R9
-        if let layerInspector { EffectChainSection(coordinator: layerInspector) }   // FX-020-R9 (the app coordinator)
-        SensorySafetySection(settings: settings, announcer: announcer)   // ACC-012-R10
+        if let motionFeedback { TrailsSection(setting: motionFeedback, clamp: settings.safetyClamp).id("trails") }   // FX-009-R9
+        if let layerInspector { EffectChainSection(coordinator: layerInspector).id("effects") }   // FX-020-R9 (the app coordinator)
+        SensorySafetySection(settings: settings, announcer: announcer).id("safety")   // ACC-012-R10
         ReduceFlashingSection(settings: settings, available: reduceFlashingAvailable).id("reduceFlashing")   // FR-072 (own view: ACC-012 body budget)
     }
 
@@ -421,19 +444,21 @@ struct SettingsView: View {
         } footer: {
             Text("Shows the frame rate and the audio state over the visualization.")
         }
+        .id("performance")
     }
 
     @ViewBuilder private var audioSections: some View {
-        if let inputTrim { InputTrimSection(inputTrim: inputTrim) }   // AUD-008-R8
-        if let channelSelection { ChannelSelectionSection(selection: channelSelection) }   // AUD-009-R7
-        if let noiseGate { NoiseGateSection(noiseGate: noiseGate) }   // AUD-011-R7
-        if let playbackBalance { PlaybackBalanceSection(balance: playbackBalance, available: playbackBalanceAvailable) }   // AUD-010-R6
-        if let latencyOffset { LatencyOffsetSection(setting: latencyOffset) }   // AUD-013-R10
+        if let inputTrim { InputTrimSection(inputTrim: inputTrim).id("trim") }   // AUD-008-R8
+        if let channelSelection { ChannelSelectionSection(selection: channelSelection).id("channel") }   // AUD-009-R7
+        if let noiseGate { NoiseGateSection(noiseGate: noiseGate).id("gate") }   // AUD-011-R7
+        if let playbackBalance { PlaybackBalanceSection(balance: playbackBalance, available: playbackBalanceAvailable).id("balance") }   // AUD-010-R6
+        if let latencyOffset { LatencyOffsetSection(setting: latencyOffset).id("latency") }   // AUD-013-R10
         oscSection.id("osc")
         if let midi { MIDISettingsSection(midi: midi).id("midi") }   // MIDI-001-R8
-        if let recordingQuality { RecordingQualitySection(setting: recordingQuality) }   // REC-005-R9
+        if let recordingQuality { RecordingQualitySection(setting: recordingQuality).id("quality") }   // REC-005-R9
         if let recordingQuality { RecordingFrameRateSection(setting: recordingQuality) }   // REC-006-R9
-        if let recordingAudio { RecordingAudioSection(setting: recordingAudio, status: recordingAudioStatus) }   // REC-004-R13
+        if let recordingCountdown { RecordingCountdownSection(setting: recordingCountdown) }   // REC-007-R9
+        if let recordingAudio { RecordingAudioSection(setting: recordingAudio, status: recordingAudioStatus).id("recording") }   // REC-004-R13
     }
 
     @ViewBuilder private var tailSections: some View {
@@ -455,8 +480,10 @@ struct SettingsView: View {
             } footer: {
                 Text("A short guide to making a scene. Everything stays on this device.")
             }
+            .id("guide")
         }
         if let recentPresets { RecentHistorySection(recent: recentPresets).id("recentPresets") }   // PRE-006-R3, R4
+        if let externalOutput { ExternalDisplaySection(setting: externalOutput).id("externalDisplay") }   // OUT-004-R9
         Section {
             NavigationLink("Storage") {   // FILE-009, FILE-010, FILE-005, MED-013
                 StorageUsageView(filesInUse: cacheFilesInUse, libraryBackup: libraryBackup, missingMedia: missingMedia)

@@ -175,6 +175,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     }
     /// SCN-010: undo and redo of scene edits (in memory only).
     @ObservationIgnored let sceneHistory = SceneHistoryCoordinator()
+    /// SCN-008: named parameter snapshots of the current scene (AppCoordinator+SceneSnapshots.swift).
+    @ObservationIgnored let sceneSnapshots = SceneSnapshotCoordinator()
     /// CMP-015: the layer inspector's composites (a scene input) and transient solo/mute.
     let layers = LayerInspectorCoordinator()
     /// SCN-002: the current scene's autosave (nil only if its folder cannot be made).
@@ -324,6 +326,10 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         rowSize: { [weak self] () -> CGSize in
             self?.activeVideoRecordingSource?.recordingDrawableSize ?? RecordingQualitySetting.screenPixelSize()
         })
+    /// REC-007: the recording countdown (Settings → Recording countdown; Off by default).
+    @ObservationIgnored private(set) lazy var recordingCountdown = RecordingCountdownSetting(defaults: defaults)
+    /// OUT-004: the external display's output correction (Settings › External Display).
+    @ObservationIgnored private(set) lazy var externalOutput = ExternalOutputSetting(defaults: defaults, external: externalDisplay)
     /// UIX-004: the favorite parameter shelf (pinned controls in the visualizer's controls).
     let parameterShelf: ParameterShelf
     /// REC-004: reads the microphone permission (never asks for it).
@@ -532,6 +538,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         MotionFeedbackSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-009: Trails off
         EffectChainSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-020: standard order, no presets
         defaults.removeObject(forKey: MIDIMappingCoordinator.mappingsKey)   // MIDI-003: no mappings
+        if let profiles = try? MIDIProfilesCoordinator.defaultDirectory() { try? FileManager.default.removeItem(at: profiles) }   // MIDI-012: no profiles
         try? FileManager.default.removeItem(at: PresetCollectionStore.defaultDirectory())   // PRE-007: UI tests start without collections
         try? FileManager.default.removeItem(at: UserPresetStore.defaultDirectory())         // PRE-012: and without imported presets
         if let photos = try? PhotoStore.defaultDirectory() { try? FileManager.default.removeItem(at: photos) }   // MED-001: no photo
@@ -545,6 +552,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
 
     /// The end of init, after every stored property is set: callbacks, observers and the first loads.
     private func connectAfterInit(defaults: UserDefaults) {
+        midiMappings.profiles = MIDIProfilesCoordinator.makeDefault(mappings: midiMappings)   // MIDI-012
         photos.onPhotoChange = { [weak self] (_: StoredPhoto?) in self?.refreshPhotoContent() }   // MED-006: the slideshow wins when on
         connectSlideshow()   // MED-006
         connectLogo()   // MED-010
@@ -589,6 +597,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         UITestLayerInspectorFixture.seedIfRequested(self)   // CMP-015: LayerInspectorUITests (before the history starts)
         #endif
         connectSceneHistory()   // SCN-010: starts from the restored (or fresh) scene
+        connectSceneSnapshots()   // SCN-008
         midiMappings.applyValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.nativeVisual?.externalValues = values }   // MIDI-003-R8
         #if DEBUG
         UITestShowFixture.seedIfRequested(self)   // SHOW-001: ShowCueUITests
@@ -819,6 +828,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
 
     /// Stop (FR-007): stops the source and returns to the chooser.
     func stop() {
+        videoRecording.cancelCountdown(.leftVisualizer)   // REC-007-R5
         noiseGate.control.isMicrophoneSource = false   // AUD-011-R3
         latencyOffset.activeMode = nil   // AUD-013-R8
         hideTask?.cancel()
@@ -888,6 +898,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             if defaults.bool(forKey: "uitestPresetArchiveFixture") { await userPresets.previewFixtureArchive() }
             // PresetArchiveConflictUITests (FILE-004): the same with one name conflict.
             if defaults.bool(forKey: "uitestPresetArchiveConflictFixture") { await userPresets.previewFixtureArchive(conflict: true) }
+            // BulkPresetImportUITests (PRE-013): `-uitestBulkImportFolder <path>` imports that folder as if picked.
+            if let path = defaults.string(forKey: "uitestBulkImportFolder") { await userPresets.bulk.start(.folder(URL(fileURLWithPath: path))) }
             #endif
         }
     }
@@ -1028,6 +1040,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         case .linearSpectrum: .linear(settings.linearSpectrumOrientation, spacing: settings.linearSpectrumSpacing)
         case .oscilloscope: .oscilloscope(line: settings.oscilloscopeLine, windowMilliseconds: settings.oscilloscopeWindowMilliseconds)
         case .lissajous: .lissajous(mode: settings.lissajousMode, persistence: settings.lissajousPersistence)   // VIS-004
+        case .radialWaveform: .radialWaveform(ring: settings.radialWaveformRing, amplitude: settings.radialWaveformAmplitude)   // VIS-005
         default: .circular
         }
     }
@@ -1398,7 +1411,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// REC-003/REC-004: what the recording coordinator reads (visual, output, pause; source mode, consent, tap).
     var videoRecordingContext: VideoRecordingCoordinator.Context {
         let manager = manager
-        return VideoRecordingCoordinator.Context(source: activeVideoRecordingSource, visualShown: screen == .visualizer,
+        var context = VideoRecordingCoordinator.Context(source: activeVideoRecordingSource, visualShown: screen == .visualizer,
                                                  outputLive: externalDisplay.blackoutPhase == .live, paused: userPaused,
                                                  audioMode: manager.activeMode,
                                                  microphoneGranted: microphonePermissionProbe.permission == .granted,
@@ -1408,6 +1421,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                                                  qualityProfile: recordingQuality.profile,   // REC-005
                                                  qualityCapabilities: RecordingQualitySetting.deviceCapabilities(),
                                                  frameRateChoice: recordingQuality.frameRate)   // REC-006
+        context.countdown = recordingCountdown.length   // REC-007
+        return context
     }
 
     var activeVideoRecordingSource: (any VideoRecordingSource)? {

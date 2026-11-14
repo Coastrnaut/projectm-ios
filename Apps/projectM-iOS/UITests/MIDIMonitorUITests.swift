@@ -30,13 +30,13 @@ final class MIDIMonitorUITests: XCTestCase {
     func testInjectedControlChangeAndNoteAppearInTheMonitor() {
         XCUIDevice.shared.orientation = .portrait
         app.launchArguments = ["-uitestDiagnostics", "-autostart", "inAppPlayback", "-uitestFakeMIDI",
-                               "-settings.midi.enabled", "YES"] + Self.noStore
+                               "-settings.midi.enabled", "YES", "-uitestSettingsSection", "midi"] + Self.noStore   // Settings opens at MIDI (owner rule 7)
         app.launch()
         XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
         openSettings()
 
         let plug = app.buttons["midiFakePlug"]
-        XCTAssertTrue(app.reveal(plug, long: true), "the MIDI section's stand-in panel")
+        XCTAssertTrue(app.reveal(plug), "the MIDI section's stand-in panel")
         plug.tap()
         let link = app.buttons["midiMonitorLink"]
         XCTAssertTrue(app.reveal(link), "the MIDI Monitor row")

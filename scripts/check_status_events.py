@@ -38,6 +38,8 @@ CHECKED = [
     "Views/PresetTagsView.swift",                      # PRE-003-R12: tag edits announce through the announcer
     "Views/PresetTagChips.swift",                      # PRE-003-R12: chip counts announce through the announcer
     "Coordinators/PresetCoordinator+Tags.swift",       # PRE-003-R12
+    "Coordinators/SceneSnapshotCoordinator.swift",     # SCN-008-R9: snapshot messages announce through the announcer
+    "Views/SceneSnapshotRows.swift",                   # SCN-008-R9
     "Coordinators/RecentPresetsCoordinator.swift",     # PRE-006-R6: history changes announce through the announcer
     "Views/RecentPresetsView.swift",                   # PRE-006-R6
     "Views/RecentHistorySection.swift",                # PRE-006-R6
@@ -58,6 +60,8 @@ CHECKED = [
     "Coordinators/LayerInspectorCoordinator.swift",
     "Views/AccessibleParameter.swift",   # ACC-005-R7: slider ends announce through the announcer
     "Coordinators/LibraryEraseCoordinator.swift",   # FILE-011-R3: the erase announces on the library lane
+    "Coordinators/BulkPresetImportCoordinator.swift",   # PRE-013-R10: bulk import announces on the library lane
+    "Views/BulkPresetImportViews.swift",                 # PRE-013-R10
     "Views/LibraryEraseSection.swift",
     "Coordinators/FolderBackupCoordinator.swift",   # FILE-006-R9: folder backup results on the library lane
     "Views/SensorySafetySection.swift",  # ACC-012-R10: profile changes announce through the announcer

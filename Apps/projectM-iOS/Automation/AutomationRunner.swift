@@ -49,6 +49,7 @@ import FrameTiming
 import Foundation
 import PresetLibrary
 import UIKit
+import VisualEffects
 
 @MainActor
 enum AutomationRunner {
@@ -385,8 +386,13 @@ enum AutomationRunner {
         visual.stageTimer = timer
         let fpsOn = await fpsSamples(coordinator, seconds: 5)
         let report: FrameStageReport = timer.report()
-        let verdict: FrameBudgetVerdict = FrameBudgetMeter().evaluate(report, deadline: AppCoordinator.frameDeadline())   // PERF-002
-        let timings = AppCoordinator.exportTimings(report, budget: verdict)
+        let native: NativeSpectrumHost? = visual as? NativeSpectrumHost
+        let verdict: FrameBudgetVerdict = FrameBudgetMeter().evaluate(
+            report, deadline: AppCoordinator.frameDeadline(cap: native?.qualitySettings.maxFramesPerSecond))   // PERF-002
+        let quality = native.map { (host: NativeSpectrumHost) -> DiagnosticsSnapshot.FrameTimings.EffectQuality in   // PERF-003
+            AppCoordinator.exportEffectQuality(level: host.effectLadder.target, reason: host.effectLadder.reason)
+        }
+        let timings = AppCoordinator.exportTimings(report, budget: verdict, effectQuality: quality)
         visual.stageTimer = nil
         var body: [String: Any] = ["visual": coordinator.settings.visual.rawValue, "fpsTimerOff": fpsOff, "fpsTimerOn": fpsOn,
                                    "lines": report.lines + verdict.lines]

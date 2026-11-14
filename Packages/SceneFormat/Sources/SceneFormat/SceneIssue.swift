@@ -128,6 +128,10 @@ public struct SceneIssue: Sendable, Hashable, CustomStringConvertible {
         case invalidMacro
         /// MOD-010: a macro target naming a parameter this version does not know; kept.
         case unknownMacroTarget
+        /// SCN-008: a snapshot with a missing or wrong name or values, a malformed value, or beyond the limit; kept.
+        case invalidSnapshot
+        /// SCN-008: a snapshot value whose parameter ID this version does not know; kept, skipped on recall.
+        case unknownSnapshotParameter
 
         /// MOD-013 (ADR-0028 amendment): every per-edge modulation problem is a warning, so one edge
         /// never refuses the scene; `invalidModulation` (generator declarations) stays an error.
@@ -138,7 +142,8 @@ public struct SceneIssue: Sendable, Hashable, CustomStringConvertible {
                  .missingAsset, .orphanedParameter, .rejectedParameter, .parameterClamped,
                  .invalidBinding, .duplicateBindingTarget, .invalidExpression, .migratedReference, .retiredReference,
                  .orphanedBinding, .orphanedConnection, .rejectedConnection, .unsupportedCurve, .invalidTrigger, .unknownTrigger, .invalidLFO, .unknownLFO,
-                 .invalidLFOSync, .unknownLFOSync, .invalidMacro, .unknownMacroTarget:
+                 .invalidLFOSync, .unknownLFOSync, .invalidMacro, .unknownMacroTarget,
+                 .invalidSnapshot, .unknownSnapshotParameter:
                 .warning
             default:
                 .error

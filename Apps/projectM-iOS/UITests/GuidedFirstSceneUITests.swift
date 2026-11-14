@@ -130,7 +130,7 @@ final class GuidedFirstSceneUITests: XCTestCase {
     /// UIX-001-T09: Settings › Guided first scene over the running visualizer applies the new visual
     /// and keeps the running source (no second start).
     func testReopenFromSettingsKeepsTheRunningSource() {
-        launch(reset: true, extra: ["-autostart", "inAppPlayback"])
+        launch(reset: true, extra: ["-autostart", "inAppPlayback", "-uitestSettingsSection", "guide"])   // Settings opens at the guide row (owner rule 7)
         XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
         XCTAssertFalse(guide.exists, "not offered by itself (the notice was skipped by -autostart)")
         let controls = app.otherElements["controls"], area = app.otherElements["visualizerTapArea"].firstMatch

@@ -267,17 +267,17 @@ final class AccessibilityScreensUITests: XCTestCase {
     }
 
     /// Settings and the show editor: the scene cards (ACC-004-R1, R2). Split from the show row to stay
-    /// under 30 s (owner rule 7).
+    /// under 30 s (owner rule 7). The first Settings of the launch opens at the Show row (DEBUG
+    /// `-uitestSettingsSection show -uitestSettingsSectionOnce`: the row sits below the reach of `reveal`
+    /// as Settings grows, 2026-11-14); the second opens at the top, where the Settings audit runs.
     func testSettingsAndShowEditorAreLabelledAndPassTheAudit() throws {
-        launch(["-uitestShowSeed"])
+        launch(["-uitestShowSeed", "-uitestSettingsSection", "show", "-uitestSettingsSectionOnce"])
         showControls()
         app.buttons["settings"].tap()
         XCTAssertTrue(app.navigationBars["Settings"].appears(within: 5))
-        requireControls([("visual.projectM", .button)], screen: "settings")
-        try audit("settings")
 
         let link = app.buttons["showEditorLink"]
-        XCTAssertTrue(app.reveal(link), "the Show row is reachable")
+        XCTAssertTrue(app.reveal(link, long: true), "the Show row is reachable (several screens down)")
         requireControls([("showEditorLink", .button)], screen: "settings")
         link.tap()
         XCTAssertTrue(app.navigationBars["Show"].appears(within: 5))
@@ -291,6 +291,16 @@ final class AccessibilityScreensUITests: XCTestCase {
             XCTAssertEqual(cue.isSelected, n == 1, "only the active cue is selected (ACC-004-R2)")
         }
         try audit("showEditor")
+
+        app.navigationBars["Show"].buttons.element(boundBy: 0).tap()   // back to Settings
+        XCTAssertTrue(app.navigationBars["Settings"].appears(within: 5))
+        app.navigationBars["Settings"].buttons["Done"].tap()
+        XCTAssertTrue(app.navigationBars["Settings"].disappears(within: 5))
+        showControls()
+        app.buttons["settings"].tap()   // the second Settings of the launch: at its top
+        XCTAssertTrue(app.navigationBars["Settings"].appears(within: 5))
+        requireControls([("visual.projectM", .button)], screen: "settings")
+        try audit("settings")
     }
 
     /// User-caused changes are announced (ACC-004-R5, R9): Next, Pause, Black out.

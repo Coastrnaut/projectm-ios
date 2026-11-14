@@ -100,6 +100,9 @@ struct SceneAutosaveCarry: Sendable {
     var lfos: [SceneLFOEntry]?
     /// MOD-010: the opened scene's macros as stored (nil: none).
     var macros: [SceneMacroEntry]?
+    /// SCN-008: the current scene's snapshots as stored (nil: none); written back unchanged, edited by
+    /// `SceneAutosaveCoordinator.replaceSnapshots`.
+    var snapshots: [SceneSnapshotEntry]?
 
     static let defaultName = "Current Scene"
 
@@ -128,6 +131,7 @@ struct SceneAutosaveCarry: Sendable {
         triggers = document.triggers   // MOD-006
         lfos = document.lfos   // MOD-007
         macros = document.macros   // MOD-010
+        snapshots = document.snapshots   // SCN-008
     }
 }
 
@@ -160,8 +164,8 @@ enum SceneAutosaveCapture {
         var contents: [SceneLayerContent] = []
         let spectrumOver: [SceneLayerContent] = [.circularSpectrum]
         switch inputs.visual {
-        case .projectM, .camera, .oscilloscope, .lissajous:
-            break   // camera never reaches here (mapped by the caller); projectM, the oscilloscope (VIS-003-R12) and the Lissajous (VIS-004-R12) are no compositor layer
+        case .projectM, .camera, .oscilloscope, .lissajous, .radialWaveform:
+            break   // camera never reaches here (mapped by the caller); projectM, the oscilloscope (VIS-003-R12) the Lissajous (VIS-004-R12) and the radial waveform (VIS-005-R10) are no compositor layer
         case .circularSpectrum:
             contents = spectrumOver
         case .linearSpectrum:
@@ -243,7 +247,8 @@ enum SceneAutosaveCapture {
                                      modulation: SceneModulation(generators: carry.modulation.generators, connections: connections),
                                      assets: assets, effects: effects(inputs.effects, carry: carry.effects),
                                      triggers: carry.triggers, lfos: carry.lfos,   // MOD-006, MOD-007: as stored
-                                     macros: inputs.macros ?? carry.macros, extra: carry.extra)   // MOD-010
+                                     macros: inputs.macros ?? carry.macros,   // MOD-010
+                                     snapshots: carry.snapshots, extra: carry.extra)   // SCN-008: as stored
         return (document, events)
     }
 
