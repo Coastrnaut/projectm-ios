@@ -33,6 +33,20 @@ This is a gap row. The audit confirms the gap.
 | Bindable parameters | MOD-001's visual catalog registers the spectra and glow; MOD-002 bindings can only drive the glow in the native host. | No visual geometry parameter is bindable. |
 | Frame budget | PERF-001/007 measure stage times and drops on device; PERF-003 lowers the glow under budget pressure. | No particle visual has a documented per-frame work bound. |
 
+## Clarifications
+
+### Session 2026-11-14
+
+Answered by Claude under the owner's standing approval (owner rule 4); each answer is the conservative,
+local-first option. Lengths are in R, half the output's shorter side; positions are measured from the output's
+centre, y up.
+
+- Q: How are the particles placed and moved? → A: A fixed pool of 256 slots, 160 drawn by default (16…256). Slot k takes three draws, in slot order, from a SplitMix64 generator seeded with 0x5EED0009 (restored at every loop restart): a phase uniform in [0, 2π), an angular speed 0.8 × (0.75 + 0.5·u) rad/s (counter-clockwise) and a radial offset 1 + 0.1·(2u − 1). Particle k sits at the current radius × its offset, at its phase; phases advance on VIS-008's fixed 1/240 s step on the injected frame clock (same anchor, at most 240 steps per frame, a longer gap skipped). Rejected: free-flying particles with orbital physics (unbounded drift, no closed form); per-frame random jitter (not repeatable) (VIS-009-R2).
+- Q: How does the radius follow the bass, and what bounds it? → A: Target = clamp(base × (1 + 0.4 × b), 0.15, 0.85), b = bass clamped to 0…1 (non-finite reads 0). Each fixed step moves the radius toward the target by a one-pole step with τ = 0.06 s, limited to 3 R/s × Δt; the target given at a frame applies to that frame's steps. With the largest offset the ring stays within 0.935 R, inside the output. Rejected: drawing the bass value directly (jumps on every kick, a flashing risk); an unbounded depth (the ring would leave the screen) (VIS-009-R3).
+- Q: What is "mapped bass", and how is the radius bindable? → A: A new permanent MOD-001 parameter `visual.particleOrbit.radius` ("Radius (of half the shorter side)", group "Particle Orbit", 0.2…0.8, default 0.5, step 0.01, continuous, modulatable by default). Its manual value is the Radius setting: Small 0.35, Medium 0.5 (default), Large 0.65. Unbound, b is ANL-007's kick envelope (the built-in default mapping). With any MOD-002 binding on the parameter, the base is the modulator's value (MOD-011 order, kept in range) and b = 0, so bass is never counted twice. MIDI and OSC routes are not added (out of scope). Rejected: installing a default binding into the scene's binding list (it would be captured into every scene and shown as a user route); a separate bass-depth setting (more keys, little value) (VIS-009-R4).
+- Q: What does the beat-reactive centre do, and what changes under Reduce Motion? → A: VIS-006's `BeatRingTrigger` (confident ANL-005 beats, the ANL-007 kick as fallback) queues a beat (queue of 16, excess dropped and counted); the pulse p is set to 1 at the first step starting at or after it and decays as exp(−t / 0.2 s). The centre is a square of side 0.12 R × (1 + A·p), A = 0.5, alpha 0.7. Reduce Motion (ACC-001, applied at once): angular speeds × 0.5, A = 0.2, radius τ = 0.15 s and rate 1.5 R/s. Rejected: moving the centre on beats (whole-picture motion, a Reduce Motion concern); stopping the orbit (VIS-009-R5, R9).
+- Q: How are drawing and the frame budget made checkable without wall-clock tests? → A: Particles are flat squares of side max(0.022 R, 2 px), palette colour (k mod 16) of 16, alpha 0.75 (below ACC-012's 0.8). The budget is a fixed work bound: at 60 frames per second each frame runs exactly 4 steps over at most 256 particles (≤ 1,024 particle steps) and tessellates at most 257 squares (≤ 1,542 vertices), counted by the simulation and layout and asserted by a test over 600 frames with storage addresses unchanged; an XCTest `measure` baseline is reported, never asserted. Frame rate on D1 is a `{device}` task read from the PERF-001/007 overlay. One setting, Radius (Small/Medium/Large). Rejected: a wall-clock assertion (flaky); a particle-count slider (more keys, more GPU risk) (VIS-009-R6, R7).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Bass-driven orbit (Priority: P1)
@@ -104,7 +118,7 @@ change it, close Settings and check the visual's value.
 - **VIS-009-R3**: Radius: the drawn radius follows a target radius = base × (1 + depth × bass), bounded to a documented range, approached smoothly with a bounded rate on a fixed step independent of the frame rate.
 - **VIS-009-R4**: Mapped bass: the base radius is a user setting and a registered, bindable visual parameter. Unbound, bass is ANL-007's kick envelope (the default mapping); when the parameter has a binding, the binding's value is the base and the built-in kick response is off, so bass never counts twice.
 - **VIS-009-R5**: Beat-reactive centre: confident beats (kick fallback, VIS-006's trigger) make the centre pulse larger and decay; the pulse is bounded.
-- **VIS-009-R6**: Bounds and work: a fixed maximum particle count, preallocated storage, no allocation per frame, and a documented per-frame work bound (particle steps and vertices).
+- **VIS-009-R6**: Bounds and work: at most 256 particles (160 by default), preallocated storage, no allocation per frame, and the per-frame work bound of Clarifications (≤ 1,024 particle steps and ≤ 1,542 vertices per 60 Hz frame).
 - **VIS-009-R7**: Drawing: flat squares in palette colours (ACC-003-R13) at most 0.8 alpha (ACC-012), premultiplied over opaque black; the centre is a square of the same model.
 - **VIS-009-R8**: Flash safety: every frame passes FX-019's envelope with the squares as regions, as the other native visuals.
 - **VIS-009-R9**: Reduce Motion (ACC-001): half the angular speed, a smaller centre pulse and a slower radius response.
