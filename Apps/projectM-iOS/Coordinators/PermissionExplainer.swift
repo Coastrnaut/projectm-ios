@@ -27,7 +27,7 @@ enum PermissionExplainerPolicy {
         switch permission {
         case .camera: cameraExplainedKey
         case .localNetwork: localNetworkExplainedKey
-        case .microphone, .screenCapture: nil
+        case .microphone, .screenCapture, .photosAdd: nil   // REC-011-R14: no explainer
         }
     }
 

@@ -51,6 +51,8 @@ final class RecordingLibraryModel {
     @ObservationIgnored let inspector: RecordingLibraryInspector
     /// The shared announcer's library lane (AppCoordinator).
     @ObservationIgnored var announce: (@MainActor (String) -> Void)?
+    /// REC-011: Save to Photos on a row (AppCoordinator); nil hides the button (previews, tests).
+    @ObservationIgnored var photos: PhotosSaveCoordinator?
     /// The running facts and thumbnail loads (tests await them).
     @ObservationIgnored private(set) var loads: [Task<Void, Never>] = []
 

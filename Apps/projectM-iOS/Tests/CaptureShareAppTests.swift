@@ -180,14 +180,16 @@ final class CaptureShareAppTests: XCTestCase {
         XCTAssertEqual(share.copyCount, 0)
     }
 
-    /// REC-012-R7, S4: Save to Photos and Assign to Contact are excluded; the app declares no Photos or
-    /// Contacts usage string.
+    /// REC-012-R7, S4: Save to Photos and Assign to Contact are excluded; the app declares no full Photos
+    /// library or Contacts usage string. REC-011-R11 (ADR-0059): the sheet still excludes Save to Photos; the
+    /// add-only key exists for the app's own Save to Photos button.
     func testExcludedActivitiesAndNoPhotosPermission() {
         XCTAssertEqual(ShareFileStore.excludedActivityTypes, [.saveToCameraRoll, .assignToContact])
         let info = Bundle.main.infoDictionary ?? [:]
-        for key in ["NSPhotoLibraryAddUsageDescription", "NSPhotoLibraryUsageDescription", "NSContactsUsageDescription"] {
+        for key in ["NSPhotoLibraryUsageDescription", "NSContactsUsageDescription"] {
             XCTAssertNil(info[key], key)
         }
+        XCTAssertNotNil(info["NSPhotoLibraryAddUsageDescription"])
         XCTAssertEqual(ShareFileStore.defaultDirectory.lastPathComponent, "Sharing")
     }
 

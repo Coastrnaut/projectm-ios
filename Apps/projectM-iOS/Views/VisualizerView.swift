@@ -737,7 +737,7 @@ struct VisualizerView: View {
         }
         // REC-012: "Frame ready" / "Recording ready" with Save…, Share…, Discard; the share notice.
         CaptureResultPanels(frameCapture: coordinator.frameCapture, videoRecording: coordinator.videoRecording,
-                            share: coordinator.captureShare)
+                            share: coordinator.captureShare, photos: coordinator.photosSave)   // REC-011
         // REC-003: the recording indicator (app UI, never part of the recorded picture; REC-003-R16).
         RecordingCountdownView(recording: coordinator.videoRecording)   // REC-007-R7: the number and Cancel
         if coordinator.videoRecording.state.hasRecording {
