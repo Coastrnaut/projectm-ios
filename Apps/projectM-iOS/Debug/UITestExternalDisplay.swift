@@ -10,6 +10,8 @@
 // OUT-002-T10: the fake drives the coordinator through `ExternalDisplayEventSink` like the real
 // scenes; "ext~" connects and disconnects at once (a bounce inside the settle time), and the hidden
 // `externalResources` probe reads what the external side holds.
+// OUT-004-T08: the hidden `externalPlacement` probe reads the visual's placement on the fake display
+// ("fit=… shape=… par=… frame=W×H bars=…", or "none" while the visual is on the device).
 #if DEBUG
 import PresentationLifecycle
 import SwiftUI
@@ -70,6 +72,11 @@ struct UITestExternalDisplayPanel: View {
                     .opacity(0.01)
                     .accessibilityIdentifier("externalResources")
                     .accessibilityValue(probe)
+                let placement: String = coordinator.externalPlacementSummary ?? "none"
+                Text(placement)
+                    .opacity(0.01)
+                    .accessibilityIdentifier("externalPlacement")
+                    .accessibilityValue(placement)
             }
         }
         .font(.caption2)

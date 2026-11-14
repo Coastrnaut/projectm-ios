@@ -38,6 +38,9 @@ public enum LibraryErasePolicy {
     public static let videosFolderName = "Videos"
     /// `Application Support/AudioLibrary` (AUD-001 `AudioLibrary.defaultDirectory()`).
     public static let audioFolderName = "AudioLibrary"
+    /// `Application Support/MIDIProfiles` (MIDI-012 `MIDIProfilesCoordinator.folderName`): MIDI mapping profiles, erased
+    /// with Settings and never in a library backup (research MIDI-012-D7).
+    public static let midiProfilesFolderName = "MIDIProfiles"
     /// The erase's own work folder (request, journal, trash, last result).
     public static let workFolderName = "LibraryErase"
     /// Photo payload and legacy extensions (MED-001 `PhotoStore.extensions`); videos (`VideoStore.fileExtension`).
@@ -57,6 +60,9 @@ public enum LibraryErasePolicy {
     public static let recordingQualityKey = "settings.recording.qualityProfile"
     /// REC-006-R8: the record frame rate (device-dependent: not backed up, erased with Settings).
     public static let recordingFrameRateKey = "settings.recording.frameRate"
+    /// OUT-004-R8: the external display's output correction (display hardware: not backed up, erased with Settings).
+    public static let externalDisplayKeys: [String] = ["settings.externalDisplay.fit", "settings.externalDisplay.shape",
+                                                       "settings.externalDisplay.pixelAspect"]
 
     /// Folder names under the library root (FILE-011-R4).
     public static func folders(_ category: LibraryEraseCategory) -> [String] {
@@ -66,7 +72,7 @@ public enum LibraryErasePolicy {
         case .collections: [LibraryFolders.Folder.collections.rawValue]
         case .media: [LibraryFolders.Folder.photos.rawValue, videosFolderName]
         case .importedAudio: [audioFolderName]
-        case .settings: []
+        case .settings: [midiProfilesFolderName]   // MIDI-012-R9
         }
     }
 
@@ -105,6 +111,7 @@ public enum LibraryErasePolicy {
                                   reduceFlashingKey, colorBlindSafePaletteKey]
         let included: [String] = LibrarySettingsPolicy.includedKeys.filter { (key: String) -> Bool in !owned.contains(key) }
         return included + [oscEnabledKey, midiEnabledKey, recordingMicrophoneKey, recordingQualityKey, recordingFrameRateKey]
+            + externalDisplayKeys
     }()
 
     /// Every key some category can remove.

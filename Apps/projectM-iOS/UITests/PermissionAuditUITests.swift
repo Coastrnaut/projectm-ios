@@ -104,7 +104,8 @@ final class PermissionAuditUITests: XCTestCase {
     func testLocalNetworkDeniedShowsNoticeWithOpenSettings() {
         XCUIDevice.shared.orientation = .portrait
         app.launchArguments = ["-uitestDiagnostics", "-autostart", "inAppPlayback", "-settings.osc.enabled", "NO",
-                               "-settings.osc.port", "47127", "-uitestOSCFailure", "localNetworkDenied"] + Self.noStore
+                               "-settings.osc.port", "47127", "-uitestOSCFailure", "localNetworkDenied",
+                               "-uitestSettingsSection", "osc"] + Self.noStore   // Settings opens at OSC (owner rule 7)
         app.launch()
         XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
         openSettings()

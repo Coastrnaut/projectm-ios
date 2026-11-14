@@ -52,7 +52,7 @@ final class SettingsUITests: XCTestCase {
     private var overlayElement: XCUIElement { app.descendants(matching: .any)["performanceOverlay"].firstMatch }
 
     func testPerformanceOverlay() {
-        launch(reset: true)
+        launch(reset: true, section: "performance")
         XCTAssertFalse(overlayElement.exists, "off by default (FR-048)")
         openSettings()
         let toggle = app.switches["performanceOverlayToggle"]

@@ -109,6 +109,11 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
   `xcode-27` preview image with Xcode 27.2 (27B52; it warns on any other build): it compiles the
   driver and CaptureLab for devices and runs the package tests on an iOS 27.2 simulator (about
   4.5 min). CI does not run the CaptureLab UI tests.
+  - Since 2026-11-14 the package tests run in matrix jobs per package group (`PKGS_AUDIO`,
+    `PKGS_LIBRARY`, `PKGS_VISUAL` in the workflow env): `apple-package-tests` (host + iOS 26
+    simulator) and `build-ios27` (iOS 27.2 simulator), 45-minute limits each;
+    `build-and-test-apple` only builds. A new package must be added to exactly one group (the docs
+    job checks it). The single job had hit its 90-minute limit (run 43606196231).
 - Project Mac = build machine of record: Xcode 27.2 / iOS SDK 27.2 / Swift 6.4.2, XcodeGen 2.46.0,
   CMake 4.4.5 (ADR-0002, T010). Simulators iOS 27.2 and 26.5 (23F77 only). Verified here
   2026-11-08 (after the owner review): package tests (AudioCore 50, CaptureKit 74, Diagnostics 8,

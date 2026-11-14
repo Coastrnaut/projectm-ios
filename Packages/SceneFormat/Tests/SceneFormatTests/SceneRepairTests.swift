@@ -211,11 +211,13 @@ final class SceneRepairTests: XCTestCase {
         let registry = try registry()
         let unknown = SceneLayer(instance: 7, content: .unknown(kind: "particles.v9"), values: ["rate": 30])
         let good = binding("audio.onset", IDs.bloomIntensity)
+        var duplicate = binding("audio.onset", IDs.bloomIntensity)   // MOD-011: a later layer may not carry an expression
+        duplicate.expression = "audio.onset"
         let document = scene([SceneLayer(instance: 3, content: .photo(asset: Self.photoKey)),
                               SceneLayer(instance: 3, content: .circularSpectrum), unknown,
                               SceneLayer(instance: 0, content: .linearSpectrum)],
                              parameters: [IDs.bloomEnabled: .boolean(true)],
-                             bindings: [good, binding("audio.onset", "visual.future.thing"), binding("audio.onset", IDs.bloomIntensity)],
+                             bindings: [good, binding("audio.onset", "visual.future.thing"), duplicate],
                              assets: [Self.photoKey: .photo(storeID: Self.missingPhotoID)])
         let report = SceneRepairReport(document: document, registry: registry, assets: FakeAvailability())
         XCTAssertEqual(report.repairActions, [.renumberLayers, .dropMissingMedia, .dropInvalidMappings, .keepUnknownContent])

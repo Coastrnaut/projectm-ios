@@ -164,8 +164,8 @@ enum SceneAutosaveCapture {
         var contents: [SceneLayerContent] = []
         let spectrumOver: [SceneLayerContent] = [.circularSpectrum]
         switch inputs.visual {
-        case .projectM, .camera, .oscilloscope, .lissajous:
-            break   // camera never reaches here (mapped by the caller); projectM, the oscilloscope (VIS-003-R12) and the Lissajous (VIS-004-R12) are no compositor layer
+        case .projectM, .camera, .oscilloscope, .lissajous, .radialWaveform:
+            break   // camera never reaches here (mapped by the caller); projectM, the oscilloscope (VIS-003-R12) the Lissajous (VIS-004-R12) and the radial waveform (VIS-005-R10) are no compositor layer
         case .circularSpectrum:
             contents = spectrumOver
         case .linearSpectrum:
@@ -239,9 +239,7 @@ enum SceneAutosaveCapture {
         for (id, value) in parameterValues(inputs) { parameters[id] = value }
 
         let bindings = liveBindings ?? carry.bindings
-        let sceneBindings = bindings.map { (b: AudioFeatureBinding) -> SceneBinding in
-            SceneBinding(b, expression: carry.expressions[b.target])
-        } + carry.preserved.bindings
+        let sceneBindings = SceneBinding.list(bindings, expressions: carry.expressions) + carry.preserved.bindings   // MOD-011-R7
         let connections = carry.modulation.edges.map { (e: ModulationEdge) -> SceneConnection in SceneConnection(e) }
             + carry.preserved.connections
         let document = SceneDocument(id: carry.id, name: carry.name, layers: layers, parameters: parameters,

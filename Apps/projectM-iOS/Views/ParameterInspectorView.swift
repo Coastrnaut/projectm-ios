@@ -323,6 +323,12 @@ private struct ParameterModulationRows: View {
                     .accessibilityLabel("Source, " + entry.element)
                     .accessibilityIdentifier("parameterInspector.source.\(entry.offset)")
             }
+            if let order = reading.order {   // MOD-011-R8
+                Text(order)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("parameterInspector.mixOrder")
+            }
         } else {
             Text("Not modulated")
                 .accessibilityIdentifier("parameterInspector.modulation")

@@ -16,6 +16,8 @@
 //   closing it deletes any archive still waiting to be shared.
 // * FILE-003 (specs/105-file-003-import-dry-run): a preset archive (`.zip`) picked in "Import
 //   Preset…" opens the import preview (PresetArchiveImportView); nothing is stored before Install.
+// * PRE-013 (specs/174-pre-013-bulk-import): "Import Folder or Archive…" (BulkImportSection) and its
+//   summary sheet (BulkImportSummaryView).
 import PresetLibrary
 import SwiftUI
 import UniformTypeIdentifiers
@@ -130,6 +132,8 @@ struct UserPresetsView: View {
                     }
                 }
             }
+            // PRE-013: below the presets, so it never pushes a row of My Presets down.
+            BulkImportSection(userPresets: userPresets)
             Section {
                 NavigationLink(value: UserPresetRoute.quarantine) {
                     HStack {
@@ -153,7 +157,7 @@ struct UserPresetsView: View {
                     Label("Import Preset…", systemImage: "square.and.arrow.down")
                         .labelStyle(.titleAndIcon)
                 }
-                .disabled(userPresets.isImporting || userPresets.isExporting || userPresets.unavailableMessage != nil)
+                .disabled(userPresets.isImporting || userPresets.isExporting || userPresets.unavailableMessage != nil || userPresets.bulk.isRunning)
                 .accessibilityIdentifier("importPreset")
             }
             ToolbarItem(placement: .bottomBar) {
@@ -181,6 +185,7 @@ struct UserPresetsView: View {
             PresetArchiveImportView(userPresets: userPresets, review: review)
         }
         .sheet(item: $showingInfo) { preset in UserPresetInfoView(preset: preset) }
+        .sheet(isPresented: bulkReportShown) { bulkSummary }
         .alert("Remove “\(removing?.name ?? "")”?",
                isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }),
                presenting: removing) { preset in
@@ -197,6 +202,19 @@ struct UserPresetsView: View {
         Binding<PresetArchiveReview?>(
             get: { () -> PresetArchiveReview? in userPresets.archiveReview },
             set: { (value: PresetArchiveReview?) in if value == nil, userPresets.archiveReview != nil { userPresets.cancelArchive() } })
+    }
+
+    /// PRE-013: the bulk import summary while a report is set; dismissing it clears the report.
+    private var bulkReportShown: Binding<Bool> {
+        Binding<Bool>(get: { () -> Bool in userPresets.bulk.report != nil },
+                      set: { (shown: Bool) in if !shown { userPresets.bulk.dismissReport() } })
+    }
+
+    @ViewBuilder
+    private var bulkSummary: some View {
+        if let report = userPresets.bulk.report {
+            BulkImportSummaryView(report: report) { userPresets.bulk.dismissReport() }
+        }
     }
 
     /// DEBUG probe for PresetArchiveImportUITests: the library's snapshot digest.
