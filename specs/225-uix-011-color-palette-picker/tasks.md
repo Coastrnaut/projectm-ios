@@ -4,8 +4,8 @@
 
 ## Phase 1: Foundation (model and rendering)
 
-- [ ] UIX-011-T01 [P] Palette model, library operations and limits, file codec, colour names, contrast, scene link accessors and resolver in `Packages/SceneFormat/Sources/SceneFormat/ScenePalettes.swift` and `PaletteColorNames.swift` (UIX-011-R1, R2, R4, R5, R9; contract P1–P3)
-- [ ] UIX-011-T02 [P] SceneFormat tests `ScenePalettesTests.swift`: codec round trip and canonical bytes, lenient read, newer version, limits, built-ins read-only, links in a decoded document, resolver fallback, names and contrast
+- [X] UIX-011-T01 [P] Palette model, library operations and limits, file codec, colour names, contrast, scene link accessors and resolver in `Packages/SceneFormat/Sources/SceneFormat/ScenePalettes.swift` and `PaletteColorNames.swift` (UIX-011-R1, R2, R4, R5, R9; contract P1–P3) — Verified 2026-11-14: `swift test --package-path Packages/SceneFormat --filter ScenePalettesTests` (6 tests pass)
+- [X] UIX-011-T02 [P] SceneFormat tests `ScenePalettesTests.swift`: codec round trip and canonical bytes, lenient read, newer version, limits, built-ins read-only, links in a decoded document, resolver fallback, names and contrast — Verified 2026-11-14: `swift test --package-path Packages/SceneFormat --filter ScenePalettesTests` (6 tests pass)
 - [ ] UIX-011-T03 [P] `VisualPalette.custom` (gradient and swatches) with `LinearColor` Hashable; `CustomPaletteTests.swift` (contract P4)
 
 ## Phase 2: User Story 1 — palettes on the visual (P1)
