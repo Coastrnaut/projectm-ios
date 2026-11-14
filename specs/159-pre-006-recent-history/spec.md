@@ -116,9 +116,9 @@ history is gone.
 ### Functional Requirements
 
 - **PRE-006-R1**: The app MUST keep a local, ordered, de-duplicated list of at most 50 preset IDs, most recent first, under the UserDefaults key `recentPresets`. Nothing but the IDs is stored.
-- **PRE-006-R2**: A preset MUST be recorded when it stays on screen for at least 3 s after a successful load; leaving it earlier (another preset, a failure does not leave it) records nothing; a failed load records nothing. Recording moves an existing ID to the front.
+- **PRE-006-R2**: A preset MUST be recorded when it stays on screen for at least 3 s after a successful load; replacing it earlier with another loaded preset records nothing for it (a failed load of another preset leaves it on screen and its dwell continues); a failed load itself records nothing. Recording moves an existing ID to the front.
 - **PRE-006-R3**: A Settings switch "Remember Recently Played" (default on, `settings.recentPresets.enabled`) MUST control recording; turning it off MUST clear the history and cancel any pending recording.
-- **PRE-006-R4**: "Clear History" MUST ask for confirmation, then remove only the history; favorites, `lastPresetID`, the scope, tags and collections MUST be unchanged.
+- **PRE-006-R4**: "Clear History" (disabled in Settings while the history is empty) MUST ask for confirmation, then remove only the history; favorites, `lastPresetID`, the scope, tags and collections MUST be unchanged.
 - **PRE-006-R5**: The browser home MUST offer "Recently Played" with its count, opening a list newest first (locked presets marked, presets not in the library left out), with an empty state ("No recently played presets yet." or, when off, "Recently played history is off.") and "Clear History" (shown while the history is not empty). Rows are the browser's standard preset rows. Choosing a preset there plays it without changing the scope.
 - **PRE-006-R6**: Every new control MUST have an accessible label (the row: "Recently Played, 2 presets"); a clear and the switch's change are announced on the shared announcer's library lane.
 - **PRE-006-R7**: The history MUST NOT be backed up (FILE-005 excluded key); the switch is backed up and erased with Settings; FILE-011's "Collections, tags, favorites and history" erases the history, and the category's count includes it.
@@ -145,3 +145,11 @@ history is gone.
 - Recording automatic switches (launch preset, OSC, MIDI, play queue) is intended: the list answers "what was on screen".
 - Simulator and Mac results are not device evidence; this row needs no device-only check.
 - Grouping by date, per-preset play counts and syncing are out of scope.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+No critical findings; every requirement (R1-R9) and success criterion (S1-S4) maps to at least one task
+(R1, R2, R8 → T02, T04, T05, T08; R3 → T05, T11; R4 → T09, T10; R5, R6 → T07, T09; R7 → T03, T12;
+R9 → T13, T14; S4 → T15). Applied fixes: R2's wording on a failed load of another preset (it does not
+reset the dwell of the preset still on screen); R4 says the Settings button is disabled while the
+history is empty.
