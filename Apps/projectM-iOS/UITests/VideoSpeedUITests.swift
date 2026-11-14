@@ -42,18 +42,6 @@ final class VideoSpeedUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Settings"].disappears(within: 5))
     }
 
-    /// Held drags, not swipes (see SettingsUITests.scrollTo).
-    @discardableResult
-    private func scrollTo(_ element: XCUIElement) -> Bool {
-        let window = app.windows.firstMatch
-        let top = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3))
-        let bottom = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8))
-        for _ in 0..<12 where !(element.exists && element.isHittable) {
-            bottom.press(forDuration: 0.05, thenDragTo: top, withVelocity: .default, thenHoldForDuration: 0.1)
-        }
-        return element.exists && element.isHittable
-    }
-
     /// Launches with the seeded video, chooses the Video visual and waits until it plays.
     private func launchPlayingVideo(_ extra: [String] = []) {
         XCUIDevice.shared.orientation = .portrait
@@ -63,7 +51,7 @@ final class VideoSpeedUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
         openSettings()
         let row = app.visualRow("Video")
-        XCTAssertTrue(scrollTo(row))
+        XCTAssertTrue(app.reveal(row))
         row.tap()
         closeSettings()
         XCTAssertTrue(videoVisual.appears(within: 10))
@@ -74,7 +62,7 @@ final class VideoSpeedUITests: XCTestCase {
     private func pickSpeed(_ label: String) {
         openSettings()
         let picker = app.buttons["videoSpeedPicker"]
-        XCTAssertTrue(scrollTo(picker), "the Speed picker is offered while a video is stored")
+        XCTAssertTrue(app.reveal(picker, long: true), "the Speed picker is offered while a video is stored")
         picker.tap()
         let option = app.buttons[label].firstMatch
         XCTAssertTrue(option.appears(within: 3), "the menu offers \(label)")

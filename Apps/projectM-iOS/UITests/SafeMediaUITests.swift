@@ -33,19 +33,6 @@ final class SafeMediaUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Settings"].disappears(within: 5), "Settings closes")
     }
 
-    /// Held drags, not swipes (see SettingsUITests.scrollTo).
-    @discardableResult
-    private func scrollTo(_ element: XCUIElement) -> Bool {
-        let window = app.windows.firstMatch
-        let top = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3))
-        let bottom = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8))
-        for _ in 0..<8 {
-            if element.exists && element.isHittable { break }
-            bottom.press(forDuration: 0.05, thenDragTo: top, withVelocity: .default, thenHoldForDuration: 0.1)
-        }
-        return element.exists
-    }
-
     /// The visualizer notice's text (`photoNoticeText` / `videoNoticeText`).
     private func noticeText(_ identifier: String) -> String { app.staticTexts[identifier].firstMatch.label }
 
@@ -60,7 +47,7 @@ final class SafeMediaUITests: XCTestCase {
 
         openSettings()
         let photoRow = app.visualRow("Photo")
-        XCTAssertTrue(scrollTo(photoRow))
+        XCTAssertTrue(app.reveal(photoRow))
         photoRow.tap()
         closeSettings()
         let photoNotice = app.descendants(matching: .any)["photoNotice"].firstMatch
@@ -70,9 +57,9 @@ final class SafeMediaUITests: XCTestCase {
 
         openSettings()
         let videoRow = app.visualRow("Video")
-        XCTAssertTrue(scrollTo(videoRow))
+        XCTAssertTrue(app.reveal(videoRow))
         videoRow.tap()
-        XCTAssertTrue(scrollTo(app.buttons["removeVideo"]), "the seeded video was imported (its copy is damaged afterwards)")
+        XCTAssertTrue(app.reveal(app.buttons["removeVideo"]), "the seeded video was imported (its copy is damaged afterwards)")
         closeSettings()
         let videoNotice = app.descendants(matching: .any)["videoNotice"].firstMatch
         XCTAssertTrue(videoNotice.appears(within: 10), "the damaged video shows its notice")
