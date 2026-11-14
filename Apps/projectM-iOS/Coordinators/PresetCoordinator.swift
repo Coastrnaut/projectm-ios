@@ -136,6 +136,10 @@ final class PresetCoordinator {
     /// Set once when unreadable saved collections were set aside (PRE-007-R15).
     private(set) var collectionsNotice: String?
 
+    /// PRE-008: bumped on every smart collection change so views refresh.
+    var smartVersion = 0
+    @ObservationIgnored let smartStore: PresetSmartCollectionStore
+
     /// PRE-003: bumped on every tag change so views refresh.
     var tagsVersion = 0
     /// PRE-003-R8: the browser's selected tag chips (AND), in memory only.
@@ -166,8 +170,10 @@ final class PresetCoordinator {
     @ObservationIgnored private var scopeAnnouncer: ((String) -> Void)?
 
     init(store: FavoritesStore, settings: AppSettings, loader: any PresetLoading, collections: PresetCollectionStore,
-         tags: PresetTagStore? = nil) {
+         tags: PresetTagStore? = nil, smart: PresetSmartCollectionStore? = nil) {
         self.store = store
+        smartStore = smart ?? PresetSmartCollectionStore(directory: FileManager.default.temporaryDirectory
+            .appendingPathComponent("PresetSmart-\(UUID().uuidString)", isDirectory: true))   // PRE-008: tests without smart collections
         collectionStore = collections
         tagStore = tags ?? PresetTagStore(directory: FileManager.default.temporaryDirectory
             .appendingPathComponent("PresetTags-\(UUID().uuidString)", isDirectory: true))   // tests without tags
@@ -261,9 +267,10 @@ final class PresetCoordinator {
         guard let library else { return [] }
         _ = favoritesVersion
         var collections: [String: [String]] = [:]
-        if case .collection = scope {
+        if case .collection(let id) = scope {
             _ = collectionsVersion
             collections = collectionStore.presetIDsByCollection
+            if let smart = smartMembers(id) { collections[id] = smart }   // PRE-008-R9
         }
         var tags: PresetTagIndex = .empty
         switch scope {
@@ -361,7 +368,7 @@ final class PresetCoordinator {
     private func title(of scope: PresetScope, in library: PresetLibrary) -> String {
         guard case .collection = scope else { return library.title(of: scope) }
         _ = collectionsVersion
-        return library.title(of: scope, collectionNames: collectionStore.namesByCollection)
+        return library.title(of: scope, collectionNames: collectionStore.namesByCollection.merging(smartNames) { (a: String, _: String) -> String in a })
     }
 
     // MARK: - Switching
@@ -535,11 +542,11 @@ final class PresetCoordinator {
 
     /// A stored scope that no longer resolves falls back (spec Edge Cases). A collection scope
     /// resolves while the collections store has that collection (PRE-007-R12).
-    private func resolveScope() {
+    func resolveScope() {   // internal: PRE-008 calls it after deleting a smart collection
         guard let library else { return }
         let resolves: Bool
         if case .collection(let id) = scope {
-            resolves = collectionStore.collection(id: id) != nil
+            resolves = collectionStore.collection(id: id) != nil || smartStore.collection(id: id) != nil   // PRE-008
         } else if case .user = scope {
             resolves = !library.userPresets.isEmpty   // PRE-012: an empty My Presets is not a scope to stay in
         } else {

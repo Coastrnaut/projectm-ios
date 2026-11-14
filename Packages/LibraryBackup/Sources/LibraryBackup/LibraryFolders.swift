@@ -12,7 +12,7 @@ public struct LibraryFolders: Sendable, Equatable {
         case currentScene = "Scenes"
         /// `UserPresets/`: index.json, files/ (PRE-012).
         case presets = "UserPresets"
-        /// `PresetCollections/`: collections.json (PRE-007), tags.json (PRE-003) and overrides.json (PRE-016).
+        /// `PresetCollections/`: collections.json (PRE-007), tags.json (PRE-003), overrides.json (PRE-016) and smart-collections.json (PRE-008).
         case collections = "PresetCollections"
         /// `Photos/`: <UUID>.png|jpg (MED-001).
         case photos = "Photos"
@@ -30,6 +30,8 @@ public struct LibraryFolders: Sendable, Equatable {
     public static let tagsFileName = "tags.json"
     /// PRE-016: preset parameter overrides, beside the collections (`PresetOverrideStore.fileName`).
     public static let overridesFileName = "overrides.json"
+    /// PRE-008: smart collections, beside the collections (`PresetSmartCollectionStore.fileName`).
+    public static let smartCollectionsFileName = "smart-collections.json"
     /// UIX-011: the palette library (`PaletteFile.fileName`).
     public static let palettesFileName = "palettes.json"
 
@@ -49,6 +51,7 @@ public struct LibraryFolders: Sendable, Equatable {
     public var collectionsFile: URL { url(.collections).appendingPathComponent(Self.collectionsFileName, isDirectory: false) }
     public var tagsFile: URL { url(.collections).appendingPathComponent(Self.tagsFileName, isDirectory: false) }
     public var overridesFile: URL { url(.collections).appendingPathComponent(Self.overridesFileName, isDirectory: false) }
+    public var smartCollectionsFile: URL { url(.collections).appendingPathComponent(Self.smartCollectionsFileName, isDirectory: false) }
     public var palettesFile: URL { url(.palettes).appendingPathComponent(Self.palettesFileName, isDirectory: false) }
 
     /// Every folder the backup reads or the restore may replace (FILE-003 snapshots use these).
