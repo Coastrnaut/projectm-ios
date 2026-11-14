@@ -11,8 +11,8 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 42,
-   "implementing": 6,
+   "audited": 39,
+   "implementing": 9,
    "integrated": 103
   },
   "P2": {
@@ -25,8 +25,8 @@
   }
  },
  "by_state": {
-  "audited": 124,
-  "implementing": 7,
+  "audited": 121,
+  "implementing": 10,
   "integrated": 194,
   "skipped_existing": 1
  },
@@ -1826,13 +1826,13 @@
   },
   "OSC-003": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/osc-003",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "OSC-004": {
    "attempts": 0,
@@ -2126,13 +2126,13 @@
   },
   "PERF-007": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/perf-007",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "PERF-008": {
    "attempts": 0,
@@ -3126,13 +3126,13 @@
   },
   "UIX-005": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/uix-005",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "UIX-006": {
    "attempts": 0,
@@ -4432,5 +4432,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T17:37:40Z"
+ "updated": "2026-11-14T17:38:10Z"
 }
