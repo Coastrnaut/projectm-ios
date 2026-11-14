@@ -54,6 +54,13 @@
 // fires the completions of the segments it cancels; each completion carries the schedule
 // generation it was created in and is ignored when that generation is over.
 //
+// Monitoring balance (AUD-010; specs/138-aud-010-channel-balance, research AUD-010-D1, D2): one
+// extra mixer node after the main mixer, `player → mainMixer (tap) → balanceNode → output`. The
+// balance is the pan of the main mixer's input into that node, which for a stereo bus is a linear
+// balance (near side unity, far side × (1 − |b|), no fold-over). The tap stays on the main mixer's
+// output, upstream of the balance, so the analysis always gets the unbalanced PCM. Changing the
+// balance sets one mixer parameter on the main actor: no cut, no discard, no render-thread code.
+//
 // AVAudioSession, route changes and interruptions stay in AVInAppPlaybackBackend (iOS only). This
 // type has none of that, so the macOS host can run it in offline manual-rendering mode.
 #if canImport(AVFAudio)
@@ -146,6 +153,8 @@ final class InAppPlaybackGraph {
 
     private let engine = AVAudioEngine()
     private let player = AVAudioPlayerNode()
+    /// AUD-010: after the tapped main mixer, before the output. Only what is heard passes it.
+    private let balanceNode = AVAudioMixerNode()
     private var content: Content
     private let gate = PlaybackTapGate()
     /// Set by `installTap(into:)`: where the tap writes.
@@ -189,6 +198,11 @@ final class InAppPlaybackGraph {
     /// when playback is asked to continue from the end. Never called after `stop()`, nor for a
     /// schedule that a later cut replaced.
     var onTrackEnded: (() -> Void)?
+    /// AUD-010: the monitoring balance, −1 (left) … +1 (right); validated with `MonitorBalance`.
+    /// Applies at once, playing or not; never affects the tap.
+    var monitorBalance: Double = 0 {
+        didSet { applyMonitorBalance() }
+    }
 
     init(content: Content) {
         self.content = content
@@ -240,11 +254,43 @@ final class InAppPlaybackGraph {
     /// Connects the player and taps the app's own mix into `sink`. Call once, before `start()`.
     func installTap(into sink: PCMSink) throws {
         engine.connect(player, to: engine.mainMixerNode, format: content.format)
+        insertBalanceNode()   // AUD-010: after the mixer whose output is tapped below
         guard AudioFormat(asbd: engine.mainMixerNode.outputFormat(forBus: 0).streamDescription.pointee) != nil else {
             throw SourceError(.inAppPlaybackFailed)
         }
         self.sink = sink
         installGatedTap(token: gate.token)
+    }
+
+    /// AUD-010: re-routes `mainMixer → output` through `balanceNode`.
+    private func insertBalanceNode() {
+        engine.attach(balanceNode)
+        engine.disconnectNodeOutput(engine.mainMixerNode)
+        routeBalanceNode(force: true)
+        applyMonitorBalance()
+    }
+
+    /// AUD-010: connects `mainMixer → balanceNode → output` in the format the implicit
+    /// `mainMixer → output` connection would get when the engine starts: the manual-rendering format
+    /// offline, the output hardware's format otherwise. So the tap's format and what is rendered stay
+    /// as they were before the balance node (the implicit connection followed the hardware at each
+    /// start; explicit connections do not, hence this is called again before each start, and only
+    /// reconnects when the hardware format changed, e.g. after a route change stopped the engine).
+    /// Not the main mixer's current output format: before a start it reports a connected player's
+    /// rate (seen 2026-11-14: a 44.1 kHz track into a 48 kHz output).
+    private func routeBalanceNode(force: Bool = false) {
+        let format = engine.isInManualRenderingMode ? engine.manualRenderingFormat : engine.outputNode.outputFormat(forBus: 0)
+        guard format.sampleRate > 0, format.channelCount > 0 else { return }
+        guard force || engine.mainMixerNode.outputFormat(forBus: 0) != format else { return }
+        engine.connect(engine.mainMixerNode, to: balanceNode, format: format)
+        engine.connect(balanceNode, to: engine.outputNode, format: format)
+        applyMonitorBalance()
+    }
+
+    /// AUD-010: the pan of the main mixer's bus into `balanceNode` (nil before `installTap`).
+    private func applyMonitorBalance() {
+        let pan = Float(MonitorBalance.validated(monitorBalance))
+        engine.mainMixerNode.destination(forMixer: balanceNode, bus: 0)?.pan = pan
     }
 
     /// Installs the mixer tap for `token`. A buffer is written only while that token is current.
@@ -291,6 +337,7 @@ final class InAppPlaybackGraph {
             heldFrame = normalized(frame)
             return
         }
+        routeBalanceNode()   // AUD-010: before the tap is re-installed by `cut()` below
         engine.prepare()
         do {
             try engine.start()
@@ -335,6 +382,7 @@ final class InAppPlaybackGraph {
     /// engine while playing) the player continues as it was.
     func resume() throws {
         guard isRunning else { throw SourceError(.inAppPlaybackFailed) }
+        if !engine.isRunning { routeBalanceNode() }   // AUD-010: the hardware may have changed meanwhile
         try engine.start()
         if let frame = heldFrame {
             heldFrame = nil
@@ -569,12 +617,18 @@ final class InAppPlaybackGraph {
 
     /// Renders up to `frames` frames offline and returns how many were produced.
     func renderOffline(frames: AVAudioFrameCount) throws -> Int {
+        Int(try renderOfflineOutput(frames: frames)?.frameLength ?? 0)
+    }
+
+    /// AUD-010 tests: renders like `renderOffline` and returns what the output played (what is
+    /// heard, after the balance); nil when nothing was rendered.
+    func renderOfflineOutput(frames: AVAudioFrameCount) throws -> AVAudioPCMBuffer? {
         guard let buffer = AVAudioPCMBuffer(pcmFormat: engine.manualRenderingFormat,
                                             frameCapacity: engine.manualRenderingMaximumFrameCount) else {
             throw SourceError(.inAppPlaybackFailed)
         }
         let status = try engine.renderOffline(min(frames, buffer.frameCapacity), to: buffer)
-        return status == .success ? Int(buffer.frameLength) : 0
+        return status == .success ? buffer : nil
     }
 }
 #endif

@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T13:52:49Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T13:53:04Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,23 +10,25 @@
 | State | Features |
 |---|---|
 | audited | 168 |
-| unit_passed | 8 |
+| unit_passed | 7 |
 | integrated | 149 |
+| blocked | 1 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 2 | 0 | 84 | 1 |
-| P1 | 83 | 6 | 62 | 0 |
-| P2 | 74 | 2 | 3 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | unit_passed | integrated | blocked | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 2 | 0 | 84 | 0 | 1 |
+| P1 | 83 | 6 | 62 | 0 | 0 |
+| P2 | 74 | 1 | 3 | 1 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 176 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)
+- 175 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)
+- 1 feasible features are blocked (first: AUD-010); strict completion allows none
 
 ## Integrated
 
@@ -188,7 +190,9 @@ The physical-device suite may **not** start:
 
 ## Blocked or infeasible
 
-None.
+| ID | Feature | Category | Reason |
+|---|---|---|---|
+| AUD-010 | Channel balance | conflict | merge conflict in Apps/projectM-iOS/Coordinators/AppCoordinator.swift, Apps/projectM-iOS/Tests/LibraryBackupAppTests.swift |
 
 ## Evidence by feature
 
@@ -521,7 +525,7 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `09b61291a19e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-009/20261113T205831/swift-test_VisualGenerators.log`)
 - `post-merge (AUD-009 + ANL-006): projectM-iOSTests 402 + ChannelSelection/InputTrim/TempoConfidence/TapTempo/AccessibilityScreens UI tests 11`: pass at `b0abb4e` (log `.autonomous/logs/integration/aud-009-anl-006/app-tests.log`)
 
-### AUD-010 Channel balance (unit_passed)
+### AUD-010 Channel balance (blocked)
 - `python3 scripts/check_compliance.py`: pass at `70c5efe6f1c2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-010/20261114T071523/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `70c5efe6f1c2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-010/20261114T071523/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `70c5efe6f1c2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-010/20261114T071523/script-tests.log`)

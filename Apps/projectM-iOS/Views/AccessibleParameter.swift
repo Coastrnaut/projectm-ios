@@ -34,6 +34,8 @@ enum SpokenUnit: Sendable, Equatable {
     case multiplier
     /// FX-004: "plus 30 degrees", "0 degrees", "minus 1 degree".
     case signedDegrees
+    /// AUD-010: "centered", "30 percent left", "30 percent right".
+    case balance
 }
 
 enum SpokenValueFormatter {
@@ -48,6 +50,7 @@ enum SpokenValueFormatter {
         case .degrees: return degrees(value)
         case .multiplier: return value.formatted(.number.precision(.fractionLength(2))) + " times"
         case .signedDegrees: return signedDegrees(value)
+        case .balance: return PlaybackBalanceSetting.spokenText(for: value)
         }
     }
 
@@ -232,6 +235,9 @@ enum AccessibleParameterCatalog {
     static let latencyOffset = AccessibleParameterSpec(id: "latencyOffsetSlider", label: "Visual delay",
                                                        range: LatencyOffsetSetting.range, step: LatencyOffsetSetting.step,
                                                        unit: .milliseconds)
+    /// AUD-010-R8: 10 % per swipe.
+    static let playbackBalance = AccessibleParameterSpec(id: "playbackBalanceSlider", label: "Balance",
+                                                         range: PlaybackBalanceSetting.range, step: 0.1, unit: .balance)
     /// The upper bound is replaced by the video's duration (`withRange`).
     static let videoLoopIn = AccessibleParameterSpec(id: "videoLoopIn", label: "Loop in", range: 0...0.1,
                                                      step: 0.1, unit: .seconds)
@@ -240,7 +246,7 @@ enum AccessibleParameterCatalog {
 
     static var all: [AccessibleParameterSpec] {
         [glowIntensity, glowRadius, glowThreshold, textSize, textOutline, inputTrim, noiseGateThreshold,
-         latencyOffset, videoLoopIn, videoLoopOut]
+         latencyOffset, videoLoopIn, videoLoopOut, playbackBalance]
     }
 
     /// The registry's descriptor for `parameter` (MOD-001: the single source of range and step hint).

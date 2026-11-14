@@ -1,5 +1,11 @@
 {
- "blocked": [],
+ "blocked": [
+  {
+   "category": "conflict",
+   "id": "AUD-010",
+   "reason": "merge conflict in Apps/projectM-iOS/Coordinators/AppCoordinator.swift, Apps/projectM-iOS/Tests/LibraryBackupAppTests.swift"
+  }
+ ],
  "budget": {
   "spent_usd": 0.0,
   "wall_seconds": 0.0
@@ -17,8 +23,9 @@
   },
   "P2": {
    "audited": 74,
+   "blocked": 1,
    "integrated": 3,
-   "unit_passed": 2
+   "unit_passed": 1
   },
   "P3": {
    "audited": 9
@@ -26,12 +33,15 @@
  },
  "by_state": {
   "audited": 168,
+  "blocked": 1,
   "integrated": 149,
   "skipped_existing": 1,
-  "unit_passed": 8
+  "unit_passed": 7
  },
  "device_gate": {
-  "blocked": [],
+  "blocked": [
+   "AUD-010"
+  ],
   "device_prerequisites": [],
   "implementation_complete": false,
   "infeasible": [],
@@ -45,7 +55,6 @@
    "ANL-012",
    "ANL-013",
    "ANL-015",
-   "AUD-010",
    "CAM-003",
    "CAM-004",
    "CAM-005",
@@ -215,7 +224,8 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "176 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)"
+   "175 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)",
+   "1 feasible features are blocked (first: AUD-010); strict completion allows none"
   ]
  },
  "features": {
@@ -590,14 +600,14 @@
    "state": "integrated"
   },
   "AUD-010": {
-   "attempts": 2,
+   "attempts": 3,
    "branch": "feature/aud-010",
    "branch_sha": "70c5efe6f1c253d4d4d08cd928c3c30f88cb4543",
-   "error_category": null,
+   "error_category": "conflict",
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "blocked"
   },
   "AUD-011": {
    "attempts": 0,
@@ -4252,5 +4262,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T13:52:49Z"
+ "updated": "2026-11-14T13:53:04Z"
 }

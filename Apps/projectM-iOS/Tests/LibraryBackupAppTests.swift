@@ -31,7 +31,8 @@ final class LibraryBackupAppTests: XCTestCase {
         let appKeys: Set<String> = Set(AppSettings.allKeys + LatencyOffsetSetting.allKeys + ColorGradeSetting.allKeys + MotionFeedbackSetting.allKeys + EffectChainSetting.allKeys
             + [InputTrimSetting.decibelsKey, ChannelSelectionSetting.modeKey, NoiseGateSetting.enabledKey, NoiseGateSetting.thresholdKey,
                FavoritesStore.favoritesKey, FavoritesStore.lastPresetKey, PhotoStore.idKey, TextOverlayStore.key,
-               MIDIMappingCoordinator.mappingsKey, RecordingAudioSetting.includeMicrophoneKey])   // MIDI-003-R9, REC-004-R3
+               MIDIMappingCoordinator.mappingsKey, RecordingAudioSetting.includeMicrophoneKey,   // MIDI-003-R9, REC-004-R3
+               PlaybackBalanceSetting.positionKey])   // AUD-010-R9
         let included = Set(LibrarySettingsPolicy.includedKeys)
         let excluded = Set(LibrarySettingsPolicy.excludedKeys)
         XCTAssertEqual(included.subtracting(appKeys), [], "every included key is a key the app stores")

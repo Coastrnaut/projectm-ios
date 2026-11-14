@@ -53,6 +53,8 @@ public final class AVInAppPlaybackBackend: InAppPlaybackBackend {
         didSet { graph?.loops = loopsCurrentTrack }
     }
     public var onTrackEnded: (@MainActor () -> Void)?
+    /// AUD-010: the monitoring balance, kept here so every graph (start, rebuild) gets it.
+    private(set) var monitorBalance: Double = 0
 
     public init(bundle: Bundle = .main, resource: String = "reference", fileExtension: String = "wav") {
         self.bundle = bundle
@@ -114,6 +116,7 @@ public final class AVInAppPlaybackBackend: InAppPlaybackBackend {
     private func makeGraph(_ content: InAppPlaybackGraph.Content, sink: PCMSink) throws -> InAppPlaybackGraph {
         let graph = InAppPlaybackGraph(content: content)
         graph.loops = loopsCurrentTrack
+        graph.monitorBalance = monitorBalance   // AUD-010-R5: also a graph rebuilt after a reset
         graph.onTrackEnded = { [weak self] in self?.onTrackEnded?() }
         do {
             if let offline {
@@ -164,6 +167,17 @@ public final class AVInAppPlaybackBackend: InAppPlaybackBackend {
     public func seek(to seconds: Double) {
         guard let graph else { return }
         graph.seek(toFrame: PlaybackPositionMath.frame(seconds: seconds, sampleRate: graph.sampleRate, length: graph.lengthFrames))
+    }
+
+    /// AUD-010: what is heard only; the tap and the analysis never see it.
+    public func setMonitorBalance(_ balance: Double) {
+        monitorBalance = MonitorBalance.validated(balance)
+        graph?.monitorBalance = monitorBalance
+    }
+
+    /// Tests (AUD-010): the current graph's rendered output, after the balance.
+    func renderOfflineOutput(frames: AVAudioFrameCount) throws -> AVAudioPCMBuffer? {
+        try graph?.renderOfflineOutput(frames: frames)
     }
 
     /// AUD-004: false while the tail of a track that played to its end may still reach the tap.

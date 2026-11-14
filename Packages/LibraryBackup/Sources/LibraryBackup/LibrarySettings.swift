@@ -94,6 +94,7 @@ public enum LibrarySettingsPolicy {
         "settings.osc.port",
         "settings.midi.mappings",   // MIDI-003-R9: channel, controller and parameter ID per line; erased with Settings
         "settings.inputTrim.decibels", "settings.analysisChannel.mode",
+        "settings.playbackBalance.position",   // AUD-010-R7: the In-App Playback monitoring balance
         "settings.noiseGate.enabled", "settings.noiseGate.thresholdDecibels",
         "settings.latencyOffset.microphone", "settings.latencyOffset.inAppPlayback", "settings.latencyOffset.systemAppCapture",
         photoKey, slideshowKey, "settings.text.overlay",
