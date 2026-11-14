@@ -4,7 +4,11 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (MED-013-T01-T15 verified on the Mac: host package tests and the
+feature's own iOS 27.2 simulator "MED13"; no device claim). LocalPortability 120 tests (12 new), SceneFormat
+143 (3 new), ShowControl 71 (4 new), LibraryBackup 68 (2 extended), projectM-iOSTests 701 (36.2 s;
+MediaRelinkAcceptanceTests 6), MissingMediaUITests 1 (18.6 s, 11.0 s). Linux: not run here; CI's Linux job
+builds and tests these packages.
 
 **Input**: User description: "Implement MED-013 (Media asset relinking) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Locate missing imported media by
