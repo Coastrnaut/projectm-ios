@@ -7,10 +7,13 @@
 //   quarantined ones; each with its text (checked against its SHA-256) and its check state reset to
 //   "waiting" (a file never vouches for a text, FILE-005-R11). The left-out records are kept in
 //   `otherPresets` for planning only (identifiers, names and texts already taken); they are never written.
-// * Photos: `<UUID>.png|jpg` files only.
+// * Photos: `<UUID>.png|jpg` names only. FILE-008: the folder is content-addressed, so each reference
+//   is read under its logical name (registry entries and legacy files alike); two references to one
+//   payload are two entries with equal bytes, exactly as two separate files were.
 // * Settings: only `LibrarySettingsPolicy.includedKeys`.
 // Reads only.
 import Foundation
+import LocalPortability
 import PresetLibrary
 import SceneFormat
 import ShowControl
@@ -232,11 +235,12 @@ public enum LibraryContentsReader {
     }
 
     private static func readPhotos(_ folder: URL) throws(LibraryReadError) -> [String: Data] {
-        let names = ((try? FileManager.default.contentsOfDirectory(atPath: folder.path)) ?? []).filter(LibraryBackupFormat.isPhotoName).sorted()
+        let files = ContentAddressedMediaFolder(directory: folder, extensions: ["png", "jpg"]).logicalFiles()   // FILE-008-R9
+        let names = files.keys.filter(LibraryBackupFormat.isPhotoName).sorted()
         guard names.count <= LibraryBackupFormat.maxPhotos else { throw .tooManyPhotos(limit: LibraryBackupFormat.maxPhotos) }
         var photos: [String: Data] = [:]
         for name in names {
-            if let data = try? Data(contentsOf: folder.appendingPathComponent(name, isDirectory: false)) { photos[name] = data }
+            if let url = files[name], let data = try? Data(contentsOf: url) { photos[name] = data }
         }
         return photos
     }
