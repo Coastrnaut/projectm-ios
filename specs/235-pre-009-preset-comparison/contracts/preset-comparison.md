@@ -26,7 +26,8 @@ frame time, then draws both. A side that failed to load receives nothing and is 
 ## C3 Renderer (R10, R12)
 
 `VisualizerRenderer.presetComparison` (default nil) and `sharedPCMReader` (default nil). `ANGLERenderer` returns
-its runner and its attached reader; it stops the runner on PERF-011 suspension, memory pressure and deinit.
+its runner and its attached reader; it stops the runner on PERF-011 suspension and deinit. Memory pressure (R12) is
+handled by `PresetComparisonModel`, which stops the previews on the system's memory warning and says so.
 
 ## C4 UI (R1-R4, R14)
 

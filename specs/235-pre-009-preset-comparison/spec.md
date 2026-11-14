@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (PRE-009-T01-T12, T14 verified on the Mac: Rendering and ANGLERendering package tests, app unit and UI tests on the private simulator "PRE9 iPhone 17", iOS 27.2; no ADR; T13 (S5, D1 GPU and thermal cost) is open `{device}`)
 
 **Input**: User description: "Implement PRE-009 (Preset comparison) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Preview two presets side by side using shared PCM input."
