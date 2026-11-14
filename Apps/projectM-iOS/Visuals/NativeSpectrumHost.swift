@@ -114,6 +114,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
     private var highTransient: Float = 0
     /// ANL-011: the newest frame's normalized rolloff, fed to the bindings (MOD-002's Rolloff source).
     private var rolloff: Float = 0
+    /// ANL-012: the newest frame's spectral flatness, fed to the bindings (MOD-002's Flatness source).
+    private var flatness: Float = 0
     private var lastLinkTimestamp: CFTimeInterval?
     private var displayLink: CADisplayLink?
     private var paused = true
@@ -481,7 +483,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
     /// applies the result. Does nothing without bindings or triggers. Called by `frame(_:)`; tests call it directly.
     func applyModulation(bands: UnsafeBufferPointer<Float>, kick: Float? = nil, centroid: Float? = nil,
                          loudness: Float? = nil, midTransient: Float? = nil, highTransient: Float? = nil,
-                         rolloff: Float? = nil, timeNanoseconds: UInt64) {
+                         rolloff: Float? = nil, flatness: Float? = nil, timeNanoseconds: UInt64) {
         let bound: Bool = modulator?.hasBindings ?? false
         guard bound || triggerBank.hasTriggers else { return }
         var lfos = UnsafeBufferPointer<Double>(start: nil, count: 0)
@@ -492,7 +494,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             lfos = UnsafeBufferPointer(lfoValues)
         }
         let frame = AudioFeatureFrame(bands: bands, kick: kick, centroid: centroid, loudness: loudness, midTransient: midTransient,
-                                      highTransient: highTransient, rolloff: rolloff, lfos: lfos)
+                                      highTransient: highTransient, rolloff: rolloff, flatness: flatness, lfos: lfos)
         if triggerBank.hasTriggers {   // MOD-006: one step per trigger, no allocation
             triggerBank.advance(frame: frame, timeNanoseconds: timeNanoseconds) { (action: ThresholdTriggerAction) -> Void in
                 onTrigger?(action)
@@ -602,6 +604,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             midTransient = 0   // ANL-008: and its mid transient
             highTransient = 0  // ANL-009: and its high transient
             rolloff = 0        // ANL-011: and its rolloff
+            flatness = 0       // ANL-012: and its flatness
             startEffectQuality()   // PERF-003: the floor at once, no fade
             if let waveform { analyzer.start(reader: waveform) }   // VIS-003: the tap through the pass-through wrapper
             let link = CADisplayLink(target: NativeSpectrumLinkProxy(self), selector: #selector(NativeSpectrumLinkProxy.fire(_:)))
@@ -701,6 +704,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             midTransient = info.midTransient
             highTransient = info.highTransient
             rolloff = info.rolloff
+            flatness = info.flatness
         }
         // ANL-003: the real interval since the previous frame (the first frame after a start snaps).
         let interval: Double = lastLinkTimestamp.map { (previous: CFTimeInterval) -> Double in link.timestamp - previous } ?? 0
@@ -713,7 +717,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
                                                        frameDuration: link.targetTimestamp - link.timestamp)
         let bandInput = UnsafeBufferPointer(start: bands, count: bandCount)
         applyModulation(bands: bandInput, kick: kickEnvelope, centroid: centroid, loudness: loudness, midTransient: midTransient,
-                        highTransient: highTransient, rolloff: rolloff, timeNanoseconds: context.timeNanoseconds)   // MOD-002; no-op without bindings
+                        highTransient: highTransient, rolloff: rolloff, flatness: flatness,
+                        timeNanoseconds: context.timeNanoseconds)   // MOD-002; no-op without bindings
         stepEffectQuality(time: link.timestamp)   // PERF-003: arithmetic; the glow changes only when the level or fade moves
         // VIS-003: the oscilloscope draws the newest sample history (kept when nothing new arrived).
         let input: UnsafeBufferPointer<Float>
