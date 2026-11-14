@@ -16,7 +16,7 @@ stage and stay open until a person runs them.
 - [ ] MIDI-002-T03 [P] `MIDIUMPDecoder` (types 0x1, 0x2, 0x3 SysEx7 length across packets; others skipped by word count) in `MIDI/MIDIUMPDecoder.swift` (research MIDI-002-D1)
 - [ ] MIDI-002-T04 [P] `MIDIByteStreamParser` (running status, interleaved real-time, system common cancels running status, SysEx length until F7 or next status, stray data ignored) in `MIDI/MIDIByteStreamParser.swift` (research MIDI-002-D2)
 - [ ] MIDI-002-T05 [P] `MIDIEventRing` (512 preallocated events, `Atomic` indices, drop newest counted, clock and active sensing counted not stored, `drain`, `discardAll`, `storageAddress` for tests) in `MIDI/MIDIEventRing.swift` (research MIDI-002-D3)
-- [ ] MIDI-002-T06 Package tests `Packages/PerformanceControl/Tests/PerformanceControlTests/MIDIMessageDecodingTests.swift` and `MIDIEventRingTests.swift`: decoder tables (each type, 0/127, bend 0/8192/16383, note on velocity 0, running status, SysEx in one and several packets, real-time interleaved, stray data, unknown UMP types), ring overflow and counters, fixed storage over 10,000 messages through decode-into-ring (MIDI-002-R3-R5, S3, S4); host and the Linux shape `-Xswiftc -DANALYSIS_NO_ACCELERATE`
+- [ ] MIDI-002-T06 Package tests `Packages/PerformanceControl/Tests/PerformanceControlTests/MIDIMessageDecodingTests.swift` and `MIDIEventRingTests.swift`: decoder tables (each type, 0/127, bend 0/8192/16383, note on velocity 0, running status, SysEx in one and several packets, real-time interleaved, stray data, unknown UMP types), control key and normalized value (R14), ring overflow and counters, fixed storage over 10,000 messages through decode-into-ring (MIDI-002-R3-R5, S3, S4); host and the Linux shape `-Xswiftc -DANALYSIS_NO_ACCELERATE`
 
 ## Phase 3: User Story 1 - I see what my controller sends (P1) — MVP
 
@@ -24,11 +24,11 @@ stage and stay open until a person runs them.
 
 - [ ] MIDI-002-T07 [US1] `MIDIInputProvider`, `MIDIInputState`, `MIDIInputService` (idempotent start/stop, sources, unavailable) and `UnavailableMIDIInputProvider` in `MIDI/MIDIInputService.swift`; `ScriptedMIDIInputProvider` in `MIDI/ScriptedMIDIInputProvider.swift` (contract C3)
 - [ ] MIDI-002-T08 [P] [US1] `MIDIEventText` (type, "Ch n", number "CC 7" / "60 C4" / "Program 5", value, spoken label; middle C 60 = C4, sharps only) in `MIDI/MIDIEventText.swift`
-- [ ] MIDI-002-T09 [US1] Package tests `MIDIInputServiceTests.swift` (lifecycle, connected sources, delivery only while open and connected, unavailable, stop discards) and `MIDIEventTextTests.swift` (every kind's texts)
+- [ ] MIDI-002-T09 [US1] Package tests `MIDIInputServiceTests.swift` (lifecycle, connected sources, delivery only while open and connected, unavailable and the Linux `UnavailableMIDIInputProvider` (R11), stop discards) and `MIDIEventTextTests.swift` (every kind's texts)
 - [ ] MIDI-002-T10 [US1] `CoreMIDIInputProvider` (`#if canImport(CoreMIDI)`) in `Packages/PerformanceControl/Sources/PerformanceControl/MIDISystem/CoreMIDIInputProvider.swift`: own client, `MIDIInputPortCreateWithProtocol(._1_0)`, connect exactly the requested IDs (MIDI-001 identity rule), `connRefCon` nil, in-place event-list walk, host time → ns, decode into the ring; `MIDIInputService.system()`
 - [ ] MIDI-002-T11 [US1] App `Apps/projectM-iOS/Coordinators/MIDIInputCoordinator.swift` (clients, receiving iff a client and discovery listening, sources from the list, CADisplayLink drain ≤ 30 Hz) and list observers in `MIDIDiscoveryCoordinator.swift`; `AppCoordinator.midiInput` (DEBUG: `UITestFakeMIDI.inputProvider` when `-uitestFakeMIDI`)
 - [ ] MIDI-002-T12 [US1] `Apps/projectM-iOS/Coordinators/MIDIMonitorCoordinator.swift` (entries ≤ 64 newest first, time text "12.40 s", counters, status text) and `Apps/projectM-iOS/Views/MIDIMonitorView.swift`; a "MIDI Monitor" row in `Views/MIDISettingsSection.swift`
-- [ ] MIDI-002-T13 [US1] App tests `Apps/projectM-iOS/Tests/MIDIMonitorCoordinatorTests.swift`: the acceptance (injected CC and notes render the expected texts, S1), 64 cap, receiving only while listening and open (R1), sources follow plug and unplug (R2)
+- [ ] MIDI-002-T13 [US1] App tests `Apps/projectM-iOS/Tests/MIDIMonitorCoordinatorTests.swift`: the acceptance (injected CC and notes render the expected texts, S1), 64 cap, receiving only while listening and open (R1), sources follow plug and unplug (R2), the "MIDI Monitor" row and the listening-off text (R15)
 - [ ] MIDI-002-T14 [US1] DEBUG stand-in (`UITestFakeMIDI.inputProvider`, "Send CC" / "Send Note" on the monitor) and UI test `Apps/projectM-iOS/UITests/MIDIMonitorUITests.swift` (S6, under 30 s)
 
 ## Phase 4: User Story 2 - I can pause and clear while I check (P2)
@@ -56,6 +56,12 @@ US1 is the MVP; US2 and US3 add behaviour and proof on the same code.
 - T02, T03, T04, T05: separate files.
 - T08 (texts) alongside T07 (service).
 - T17 (script) alongside T15-T16.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Findings applied: R15 moved after R14 in the spec (numbering order); R14 (control key, normalized
+value) added to T06; R11's unavailable provider added to T09; R15 (monitor row, listening-off text)
+added to T13. No constitution conflict; every requirement R1-R15 and criterion S1-S8 has a task.
 
 ## Implementation strategy
 

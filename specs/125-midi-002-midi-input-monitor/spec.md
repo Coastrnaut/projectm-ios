@@ -135,12 +135,12 @@ nothing is left.
 - **MIDI-002-R7**: Entries, counters, status texts, diagnostics and logs MUST NOT contain a MIDI endpoint's unique number, stable ID, name, or device, entity or manufacturer name, nor which source sent a message. Message contents MUST NOT be logged.
 - **MIDI-002-R8**: The monitor MUST keep at most 64 entries (newest first) in memory only; nothing about messages is stored on disk or in settings, and closing the monitor drops entries and counters. No new stored setting is added.
 - **MIDI-002-R9**: The monitor MUST offer Pause/Resume (paused: the list is frozen, arriving messages are counted and not added) and Clear (entries and counters emptied).
-- **MIDI-002-R15**: The MIDI section MUST always offer a "MIDI Monitor" row; while listening is off or MIDI is unavailable the monitor says "Turn on Listen for MIDI devices to see messages." and receives nothing.
 - **MIDI-002-R10**: Live traffic MUST NOT be announced to VoiceOver; the monitor posts no announcement directly (status events check).
 - **MIDI-002-R11**: The message model, decoders and queue MUST build and pass their tests on Linux; the system input compiles only where the system MIDI framework exists, and elsewhere receiving reports unavailable.
 - **MIDI-002-R12**: A DEBUG-only stand-in (MIDI-001's `-uitestFakeMIDI`) MUST let a UI test inject a control change and a note into the monitor; Release builds never create it.
 - **MIDI-002-R13**: The built app MUST still pass the network symbol scan, the privacy manifest check and the source compliance check; no permission or usage string is added.
 - **MIDI-002-R14**: The received-message model MUST be reusable by MIDI-003 onward: it names the message kind, channel and number as a control key and gives a normalized value (7-bit values over 127, pitch bend over 16383).
+- **MIDI-002-R15**: The MIDI section MUST always offer a "MIDI Monitor" row; while listening is off or MIDI is unavailable the monitor says "Turn on Listen for MIDI devices to see messages." and receives nothing.
 
 ### Key Entities
 
