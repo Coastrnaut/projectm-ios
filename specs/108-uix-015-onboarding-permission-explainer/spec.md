@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (UIX-015-T01-T13 verified on the Mac and an own iOS 27.2 simulator; T14 `{device}` open)
 
 **Input**: User description: "Implement UIX-015 (Onboarding permission explainer) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Explain camera, microphone and
