@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Planned 2026-11-14
 
 **Input**: User description: "Implement VIS-008 (Particle fountain) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Spawn particles from onset events with gravity and drag." Acceptance,
@@ -117,7 +117,7 @@ speeds with Reduce Motion off and on.
 - Pause and resume: the loop restart clears the particles and pending onsets and reseeds (no burst of stale particles); the envelope history is kept (FX-019-R11).
 - A long frame gap (over 1 s of injected time): the simulation advances at most 1 s and skips the rest of the gap.
 - Time going backwards: nothing advances; no crash.
-- Gravity changed while running: applies from the next substep without rebuilding the generator; particles keep their positions.
+- Gravity or Reduce Motion changed while running: applies to particles spawned afterwards, without rebuilding the generator; particles in flight keep their gravity and drag.
 
 ## Requirements *(mandatory)*
 
