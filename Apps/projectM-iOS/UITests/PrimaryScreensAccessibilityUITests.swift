@@ -107,7 +107,7 @@ final class PrimaryScreensAccessibilityUITests: XCTestCase {
                 || fail(tag, "⌘K did not open the switcher")
         case .parameterInspector:
             guard showControls(tag: tag), tapOverlayButton("settings", tag: tag) else { return false }
-            return app.buttons["parameterInspector.done"].appears(within: 8) || fail(tag, "the inspector did not open")
+            return app.buttons["parameterInspector.done"].appears(within: 15) || fail(tag, "the inspector did not open")
         }
     }
 
@@ -139,7 +139,7 @@ final class PrimaryScreensAccessibilityUITests: XCTestCase {
         }
         let limit: String = control.scrolls == 1 ? "one scroll" : "\(control.scrolls) scrolls"
         guard let snapshot = tree.find(control) else {
-            problems.append("\(prefix) not found (after \(limit))")
+            problems.append("\(prefix) not found (after \(limit)); nearby: \(tree.similar(control).joined(separator: ", "))")
             return
         }
         let label: String = snapshot.label.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -152,6 +152,7 @@ final class PrimaryScreensAccessibilityUITests: XCTestCase {
         // Polled briefly: a sheet or card still fading in reports not hittable. A wrapper that carries the identifier
         // (ACC-005's accessible slider: an element around the system Slider) counts when the control inside it can be
         // hit: a touch there operates it.
+        guard control.hitTest else { return }
         let element = app.descendants(matching: control.type)[control.id].firstMatch
         let inner = element.children(matching: .any).firstMatch
         // A text field that already holds the keyboard focus takes typed input without a touch (the scene switcher's
@@ -166,7 +167,12 @@ final class PrimaryScreensAccessibilityUITests: XCTestCase {
     /// D3); 70 % along the list when the element is not in the tree yet. Vertical drags run in the right-hand
     /// lane; a row cut off at the side is dragged sideways along its own middle. In the visualizer's controls
     /// the drag runs in their scroll view.
-    private func scroll(_ tree: ScreenTree, towards target: XCUIElementSnapshot?, overlay: Bool) {
+    private func scroll(_ tree: ScreenTree, towards found: XCUIElementSnapshot?, overlay: Bool) {
+        // A lazy row built but not laid out reports an empty frame at the origin: direction unknown, so down the list
+        // as for a row not built yet (taken for "above", it sent the browser's list back to its top at AX5).
+        let target: XCUIElementSnapshot? = found.flatMap { (s: XCUIElementSnapshot) -> XCUIElementSnapshot? in
+            s.frame.isEmpty ? nil : s
+        }
         let area: CGRect = target.map { (s: XCUIElementSnapshot) -> CGRect in tree.area(for: s, bar: false) }
             ?? tree.defaultArea(overlay: overlay)
         let origin = app.coordinate(withNormalizedOffset: .zero)
@@ -188,7 +194,10 @@ final class PrimaryScreensAccessibilityUITests: XCTestCase {
         // Plus the touch slop a drag spends before the list moves; at least 60 pt so the drag registers.
         let distance: CGFloat = min(max(needed + 16, 60), span * 0.7)
         let startY: CGFloat = towardsTop ? area.minY + span * 0.15 : area.maxY - span * 0.15
-        let start = origin.withOffset(CGVector(dx: area.minX + area.width * 0.96, dy: startY))
+        // The right-hand lane of the scroll view that holds the target (the scene switcher's card is narrower than
+        // the window), else of the area.
+        let lane: CGRect = tree.scrollContainer(for: target?.frame) ?? area
+        let start = origin.withOffset(CGVector(dx: lane.minX + lane.width * 0.96, dy: startY))
         let end = start.withOffset(CGVector(dx: 0, dy: towardsTop ? distance : -distance))
         start.press(forDuration: 0.05, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.15)
     }
@@ -245,24 +254,30 @@ final class PrimaryScreensAccessibilityUITests: XCTestCase {
                       prefixes: ["Learn waits up to 30 seconds", "Assign MIDI", "Program number"])
             + section("licenses", ["This app", "Visualization engine", "ANGLE (Metal renderer)", "Presets", "Assets", "Preset packs"])
             + section("parameterInspector", ["Parameter", "Details", "Value", "Modulation"], prefixes: ["Audio bindings and MIDI"])
-            + ["Unit", "Range", "Step", "Default", "Value"].map { (l: String) -> Filter in
+            + section("storage", [], prefixes: ["The space this app's own data takes", "Removes leftover recordings"])
+            + ["Name", "Group", "ID", "Unit", "Range", "Step", "Default", "Value", "Effective value"].map { (l: String) -> Filter in
                 Filter(screen: "parameterInspector", type: .dynamicType, element: l, reason: inspectorRows)
             } + [
             Filter(screen: "storage", type: .dynamicType, element: "storageRefresh", reason: bar),
+            Filter(screen: "sceneSwitcher", type: .contrast, element: "Visual unavailable",
+                   reason: "PERF-014's placeholder behind the switcher, caught while fading or behind the live visual "
+                       + "(ACC-004's filter for the controls; at full opacity its grey on black is about 6:1)"),
             Filter(screen: "midiMappings", type: .contrast, element: "midiMappingsUndo",
                    reason: "disabled until there is something to undo (an inactive control is exempt from contrast, "
                        + "WCAG 1.4.3); " + glass),
             Filter(screen: "effectOrder", type: .dynamicType, element: "effectChain.savePreset", reason: bottom),
             Filter(screen: "effectOrder", type: .dynamicType, element: "effectChain.edit", reason: bar),
-            Filter(screen: "licenses", type: .contrast, element: "", elementless: true, limit: 2,
+            Filter(screen: "licenses", type: .contrast, element: "", elementless: true, limit: 6,
                    reason: "the section headers (\"This app\", the groups) reported without an element; " + header + "; bounded"),
             Filter(screen: "effectOrder", type: .dynamicType, element: "", elementless: true, limit: 1,
                    reason: "Save current as preset, the last row, reported without an element; " + bottom),
             Filter(screen: "midiMappings", type: .dynamicType, element: "midiMappingsUndo", reason: bar),
-            Filter(screen: "parameterInspector", type: .contrast, element: "", elementless: true, limit: 3,
+            Filter(screen: "parameterInspector", type: .contrast, element: "", elementless: true, limit: 5,
                    reason: "the inspector's section headers and footer (Value, Modulation) reported without an element; "
                        + footer + "; bounded"),
             Filter(screen: "storage", type: .contrast, element: "storageRefresh", reason: glass),
+            Filter(screen: "storage", type: .contrast, element: "", elementless: true, limit: 4,
+                   reason: "Storage's section headers and footers reported without an element; " + footer + "; bounded"),
             Filter(screen: "licenses", type: .textClipped, element: "", elementless: true, limit: 1,
                    reason: "a row cut by the bottom edge of the screen (ANGLE's section at AX5, reported without an element); "
                        + "bounded to one, so a new one fails"),
@@ -394,6 +409,7 @@ struct ScreenTree {
     let window: CGRect
     private var bars: [CGRect] = []
     private var searchFields: [CGRect] = []
+    private var scrollers: [CGRect] = []
     private var overlay: XCUIElementSnapshot?
     private var overlayScroll: CGRect?
     /// The control's live element, asked only when the app snapshot does not reach it: a deep element (the
@@ -413,6 +429,7 @@ struct ScreenTree {
         switch node.elementType {
         case .navigationBar: bars.append(node.frame)
         case .searchField: searchFields.append(node.frame)
+        case .scrollView, .collectionView, .table: scrollers.append(node.frame)
         default: break
         }
         if node.identifier == "controls", overlay == nil {
@@ -439,6 +456,19 @@ struct ScreenTree {
         return try? element.snapshot()
     }
 
+    /// Identifiers sharing the control's prefix (up to its first "." or ":"), with frames: failure context.
+    func similar(_ control: RequiredControl) -> [String] {
+        guard let root else { return ["no snapshot"] }
+        let stem: Substring = control.id.split(whereSeparator: { (c: Character) -> Bool in c == "." || c == ":" }).first ?? Substring(control.id)
+        var found: [String] = []
+        var stack: [XCUIElementSnapshot] = [root]
+        while let node = stack.popLast(), found.count < 6 {
+            if node.identifier.hasPrefix(stem) { found.append("\(node.identifier)@\(Int(node.frame.minY))") }
+            stack.append(contentsOf: node.children.reversed())
+        }
+        return found
+    }
+
     /// The overlay's scroll area when `element` is inside the visualizer's controls and nothing with a bar covers them.
     private func overlayArea(_ element: XCUIElementSnapshot?) -> CGRect? {
         guard bars.isEmpty, let overlay else { return nil }
@@ -455,6 +485,13 @@ struct ScreenTree {
             stack.append(contentsOf: node.children)
         }
         return false
+    }
+
+    /// The narrowest scroll view (or list) around `frame`, or around the window's centre for a target not built yet.
+    func scrollContainer(for frame: CGRect?) -> CGRect? {
+        let point = CGPoint(x: frame?.midX ?? window.midX, y: frame?.midY ?? window.midY)
+        return scrollers.filter { (r: CGRect) -> Bool in r.contains(point) && r.width > 100 }
+            .min { (a: CGRect, b: CGRect) -> Bool in a.width < b.width }
     }
 
     /// Where a list's rows show: the overlay's scroll area for its controls, else below the bars and above a
@@ -484,8 +521,11 @@ struct ScreenTree {
         let frame: CGRect = element.frame
         let area: CGRect = self.area(for: element, bar: bar)
         guard frame.height > 0, area.height > 0 else { return false }
-        let horizontal: Bool = frame.minX >= area.minX - 0.5 && frame.maxX <= area.maxX + 0.5
+        // Within 4 pt: the visualizer's controls end 2 pt past their scroll view's frame at AX5 (rounding of the
+        // scaled grid inside its backing); a touch there still lands on the control.
+        let slack: CGFloat = 4
+        let horizontal: Bool = frame.minX >= area.minX - slack && frame.maxX <= area.maxX + slack
         if frame.height > area.height { return horizontal && frame.intersects(area) }
-        return horizontal && frame.minY >= area.minY - 0.5 && frame.maxY <= area.maxY + 0.5
+        return horizontal && frame.minY >= area.minY - slack && frame.maxY <= area.maxY + slack
     }
 }

@@ -23,26 +23,38 @@ import SwiftUI
 struct SceneSwitcherLayer: View {
     let coordinator: AppCoordinator
 
+    // Split into typed parts (QA-009, 2026-11-14): as one expression the ZStack took 193-215 ms to type-check
+    // (-warn-long-expression-type-checking; CI's Xcode 26 limit is 200 ms).
     var body: some View {
-        let shown: Bool = coordinator.sceneSwitcher.isOpen && !coordinator.showSettings
-        ZStack {
-            if shown {
-                SceneSwitcherView(coordinator: coordinator)
-                    .transition(.opacity)
-            }
-            #if DEBUG
-            if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {   // UIX-002-R8, contract C4
-                let value: String = coordinator.sceneSwitcher.probeText
-                Text(value)
-                    .font(.caption2)
-                    .opacity(0.01)
-                    .allowsHitTesting(false)
-                    .accessibilityIdentifier("sceneSwitcherProbe")
-                    .accessibilityValue(value)
-            }
-            #endif
+        let open: Bool = coordinator.sceneSwitcher.isOpen
+        let settingsShown: Bool = coordinator.showSettings
+        let shown: Bool = open && !settingsShown
+        let layer = ZStack {
+            card(shown)
+            probe
         }
-        .reduceMotionAware(MotionPolicy.controlsFade, value: shown, policy: coordinator.motion)
+        return layer.reduceMotionAware(MotionPolicy.controlsFade, value: shown, policy: coordinator.motion)
+    }
+
+    @ViewBuilder private func card(_ shown: Bool) -> some View {
+        if shown {
+            SceneSwitcherView(coordinator: coordinator)
+                .transition(.opacity)
+        }
+    }
+
+    @ViewBuilder private var probe: some View {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {   // UIX-002-R8, contract C4
+            let value: String = coordinator.sceneSwitcher.probeText
+            Text(value)
+                .font(.caption2)
+                .opacity(0.01)
+                .allowsHitTesting(false)
+                .accessibilityIdentifier("sceneSwitcherProbe")
+                .accessibilityValue(value)
+        }
+        #endif
     }
 }
 
@@ -61,11 +73,17 @@ struct SceneSwitcherView: View {
         GeometryReader { (proxy: GeometryProxy) in
             let maxList: CGFloat = max(120, proxy.size.height * 0.55)
             ZStack(alignment: .top) {
+                // QA-009 (2026-11-14): `.accessibilityHidden(true)` did not keep the tappable backdrop out of the
+                // accessibility tree: it stayed an unlabelled element across the screen ("Element has no description"
+                // in the audit). It is now described as what it does, a button that closes the switcher.
                 Color.black.opacity(0.35)
                     .ignoresSafeArea()
                     .contentShape(Rectangle())
                     .onTapGesture { coordinator.closeSceneSwitcher() }
-                    .accessibilityHidden(true)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("Close scenes")
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityAction { coordinator.closeSceneSwitcher() }
                     .accessibilityIdentifier("sceneSwitcherBackdrop")
                 card(maxList: maxList)
                     .frame(maxWidth: 480)
