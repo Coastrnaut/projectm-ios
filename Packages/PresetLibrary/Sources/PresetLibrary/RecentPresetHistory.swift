@@ -48,6 +48,11 @@ public struct RecentPresetHistory: Sendable, Equatable {
     }
 
     public mutating func clear() { ids = [] }
+
+    /// PRE-018-R9: the list without `removed`, order kept.
+    public func removing(_ removed: Set<String>) -> RecentPresetHistory {
+        RecentPresetHistory(ids: ids.filter { (id: String) -> Bool in !removed.contains(id) })
+    }
 }
 
 public struct RecentPresetDwell: Sendable, Equatable {
