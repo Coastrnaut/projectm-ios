@@ -33,6 +33,42 @@ exist for photos only, and nothing is chosen per layer or saved.
 | Scene format (SCN-001, ADR-0028) | `composite` is a closed object: `opacity`, `blend`, `transform`; other keys are dropped with `droppedField`. | No place for a fit mode. |
 | UI | No screen edits a layer's opacity, transform, blend or fit; stacks come from code, scenes and show cues. | None required (Clarifications). |
 
+## Clarifications
+
+### Session 2026-11-14
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the recommended, conservative option.
+
+- Q: What does "one content pixel per output pixel" mean on a 3× screen versus a recording or an
+  external display? → A: One content pixel per **output (drawable) pixel**, whatever the device's
+  points-to-pixels scale (CMP-006-R4). The screen, saved frames, recordings and the external display
+  all show the same composite, so a recording is pixel-identical to the screen and no pixel is ever
+  resampled; the frame context's `contentScale` is not used. The function takes an optional
+  output-pixels-per-content-pixel factor (default 1) so a later "point-accurate" option can reuse it.
+  Rejected: scaling by `contentScale` (a 3× phone would triple each picture pixel, which is not
+  pixel-accurate, and the recording would differ from an external display of the same size).
+- Q: What does a layer with no fit set draw, and what is the default? → A: The layer kind's default,
+  which for photo and video is `fill` anchored at the centre, exactly today's drawing (CMP-006-R7).
+  "No fit" stays distinct from "fill set explicitly" so that old scenes re-save byte-identically
+  (CMP-006-R9). No default changes, so no ADR is needed.
+- Q: How is the fit saved in a scene? → A: As an optional closed object `composite.fit` =
+  `{"mode": "<name>", "anchor": {"x": <0…1>, "y": <0…1>}}`; `mode` is required inside it, `anchor` is
+  optional (centre) and clamped to 0…1 with a `valueClamped` warning. Written only when set; the
+  format version stays 1, so QA-004's migration matrix gains no row. An unknown mode name is kept
+  verbatim (decode, encode, load and capture), gives the new warning `unsupportedFitMode`, which
+  SCN-012's repair report lists as a note, and is drawn as the layer's default (CMP-006-R9, R10).
+  An older app reading a newer file drops `fit` with its existing `droppedField` warning.
+- Q: What is the anchor, and is it saved? → A: A point in content fractions (0…1; default centre)
+  that lands on the same fraction of the output in fill, fit and pixelAccurate (stretch ignores it).
+  In fill it picks the kept part of the crop; in fit and pixelAccurate it places the picture inside
+  the output. It is saved with the mode, because it is the "chosen crop" of the acceptance
+  criterion (CMP-006-R5).
+- Q: Is there a fit-mode picker in the UI? → A: No. No screen edits a layer's opacity, transform,
+  blend or fit today (stacks come from code, scenes and show cues); the inspector row that edits a
+  stack adds the picker. The row's "GPU performance" is a Mac measurement of a photo layer per mode,
+  recorded as not device evidence, with no wall-clock assertion in tests (CMP-006-S5).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Choose how a photo or video fills the output (Priority: P1)
@@ -189,3 +225,16 @@ unknown mode.
   keeps its rotation type.
 - Older app versions read a scene with `composite.fit` and drop it with a `droppedField` warning
   (version 1 tolerates it); that loss is accepted, as for any newer optional value.
+
+## Camera adoption (follow-up after CAM-007; CMP-006-R12)
+
+CAM-007 adds Fill/Fit to the camera layer inside the CameraLayer module, which this feature does
+not touch. Once both are integrated, a follow-up row:
+
+1. maps CAM-007's mode names onto `LayerFitMode` (`fill`, `fit`, plus `stretch` and
+   `pixelAccurate`; the names here were chosen to match);
+2. computes the camera's visible rectangle with the shared fit function on the **upright** camera
+   size (after rotation, before the mirror), as video does here, so a portrait camera keeps its
+   crop on a landscape output too;
+3. makes the camera layer adopt the compositor's fit hook so a stack entry's `composite.fit`
+   reaches it, and adds letterbox transparency to the camera shader for `fit`.
