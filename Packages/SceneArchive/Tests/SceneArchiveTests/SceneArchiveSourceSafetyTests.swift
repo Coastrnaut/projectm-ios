@@ -9,7 +9,8 @@ final class SceneArchiveSourceSafetyTests: XCTestCase {
             .appendingPathComponent("Sources/SceneArchive")
         let names = try FileManager.default.contentsOfDirectory(atPath: sources.path).filter { (n: String) -> Bool in n.hasSuffix(".swift") }.sorted()
         XCTAssertEqual(names, ["SceneArchiveContentCheck.swift", "SceneArchiveError.swift", "SceneArchiveFormat.swift",
-                               "SceneArchiveManifest.swift", "SceneArchiveReader.swift", "SceneArchiveWriter.swift", "SceneStoreRemapping.swift"])
+                               "SceneArchiveManifest.swift", "SceneArchivePathAudit.swift", "SceneArchiveReader.swift",   // SCN-014
+                               "SceneArchiveSlides.swift", "SceneArchiveWriter.swift", "SceneStoreRemapping.swift"])
         // Split words so this file does not match its own list.
         let forbidden = ["URL" + "Session", "N" + "WConnection", "Network", "File" + "Manager", "File" + "Handle", "contentsOf" + "File",
                          "Pro" + "cess(", "dl" + "open", "dl" + "sym", "Bundle(" + "path", "f" + "open", "socket("]

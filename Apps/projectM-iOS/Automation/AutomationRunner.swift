@@ -37,7 +37,7 @@
 // PERF-001 (specs/152-perf-001-stage-timings, PERF-001-R12, T15-T16):
 //   perf001 In-App Playback on the visual chosen in Settings: 5 s of frame rate with no stage timer, then a
 //           timer attached to the shown visual (no overlay, so only the timer's cost differs) for 5 s, then the
-//           per-stage report in the diagnostics format (`frameTimings`, with the PERF-002 `budget` verdict). Report: automation-perf001-*.json.
+//           per-stage report in the diagnostics format (`frameTimings`, with the PERF-002 `budget` verdict; PERF-007 `frameDrops`). Report: automation-perf001-*.json.
 #if DEBUG || PROJECTM_AUTOMATION
 import ANGLERendering
 import AudioCore
@@ -384,7 +384,12 @@ enum AutomationRunner {
         let fpsOff = await fpsSamples(coordinator, seconds: 5)
         let timer = FrameStageTimer()
         visual.stageTimer = timer
+        let drops: (any FrameDropCounted)? = visual as? any FrameDropCounted   // PERF-007: the same window's frame drops
+        let dropCounter = FrameDropCounter()
+        dropCounter.beginSession(measuresPresentation: drops?.measuresPresentation ?? false)
+        drops?.frameDrops = dropCounter
         let fpsOn = await fpsSamples(coordinator, seconds: 5)
+        drops?.frameDrops = nil
         let report: FrameStageReport = timer.report()
         let native: NativeSpectrumHost? = visual as? NativeSpectrumHost
         let verdict: FrameBudgetVerdict = FrameBudgetMeter().evaluate(
@@ -398,6 +403,13 @@ enum AutomationRunner {
                                    "lines": report.lines + verdict.lines]
         if let data = try? JSONEncoder().encode(timings), let object = try? JSONSerialization.jsonObject(with: data) {
             body["frameTimings"] = object
+        }
+        if drops != nil {
+            let output: FrameDropOutput = coordinator.externalDisplay.showsVisualExternally ? .external : .device
+            let exported = AppCoordinator.exportFrameDrops([(output, dropCounter.counts())])
+            if let data = try? JSONEncoder().encode(exported), let object = try? JSONSerialization.jsonObject(with: data) {
+                body["frameDrops"] = object
+            }
         }
         write("perf001", body)
         exitSoon()
