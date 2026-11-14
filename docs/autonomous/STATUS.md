@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T21:01:29Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T21:08:57Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,25 +9,26 @@
 
 | State | Features |
 |---|---|
-| audited | 101 |
-| implementing | 2 |
-| unit_passed | 3 |
-| integrated | 219 |
+| audited | 97 |
+| implementing | 4 |
+| built | 1 |
+| unit_passed | 2 |
+| integrated | 221 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 25 | 0 | 3 | 123 | 0 |
-| P2 | 65 | 2 | 0 | 12 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 0 | 84 | 1 |
+| P1 | 22 | 3 | 0 | 1 | 125 | 0 |
+| P2 | 64 | 1 | 1 | 1 | 12 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 106 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, CAM-004, CAM-005)
+- 104 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, CAM-004, CAM-005)
 
 ## Integrated
 
@@ -243,6 +244,7 @@ The physical-device suite may **not** start:
 | UIX-003 | Context parameter inspector | `7b7a78050ada` | `feature/uix-003` |
 | UIX-004 | Favorite parameter shelf | `327bf363` | `feature/uix-004` |
 | UIX-005 | Performance control layout | `19ea9810` | `feature/uix-005` |
+| UIX-007 | Split preview/editor | `c801a438` | `feature/uix-007` |
 | UIX-015 | Onboarding permission explainer | `ae498579` | `feature/uix-015` |
 | VIS-001 | Circular spectrum | `48285d49c422` | `feature/vis-001` |
 | VIS-002 | Linear spectrum | `c2b2f75c11bb` | `feature/vis-002` |
@@ -252,6 +254,7 @@ The physical-device suite may **not** start:
 | VIS-006 | Beat pulse rings | `427617b9` | `feature/vis-006` |
 | VIS-007 | Mandala symmetry | `8bdb0122` | `feature/vis-007` |
 | VIS-008 | Particle fountain | `11e727ab` | `feature/vis-008` |
+| VIS-009 | Particle orbit | `cd89f309` | `feature/vis-009` |
 
 ## Proved already implemented
 
@@ -1567,6 +1570,21 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `5caacf82d050` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-007/20261114T095918/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `5caacf82d050` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-007/20261114T095918/swift-test_VisualGenerators.log`)
 
+### MOD-008 LFO square and sample-hold (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `d1561803ea0a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-008/20261114T160254/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `d1561803ea0a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-008/20261114T160254/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `d1561803ea0a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-008/20261114T160254/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `d1561803ea0a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-008/20261114T160254/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `d1561803ea0a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-008/20261114T160254/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `d1561803ea0a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-008/20261114T160254/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/ParameterGraph`: pass at `d1561803ea0a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-008/20261114T160254/swift-test_ParameterGraph.log`)
+- `swift test --package-path Packages/PerformanceControl`: pass at `d1561803ea0a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-008/20261114T160254/swift-test_PerformanceControl.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `d1561803ea0a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-008/20261114T160254/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `d1561803ea0a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-008/20261114T160254/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `d1561803ea0a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-008/20261114T160254/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `d1561803ea0a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-008/20261114T160254/swift-test_ShowControl.log`)
+- `swift test --package-path Packages/VisualGenerators`: pass at `d1561803ea0a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-008/20261114T160254/swift-test_VisualGenerators.log`)
+
 ### MOD-009 Tempo-synced LFO (integrated)
 - `python3 scripts/check_compliance.py`: pass at `ba1c39fe1372` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-009/20261114T103238/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `ba1c39fe1372` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-009/20261114T103238/docs.log`)
@@ -2505,7 +2523,7 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `70fdae05d743` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-005/20261114T144124/swift-test_ShowControl.log`)
 - `post-merge: projectM-iOSTests 911 + UI 4 (performance layout)`: pass at `19ea9810` (log `.autonomous/logs/integration/batch47/app-tests.log`)
 
-### UIX-007 Split preview/editor (unit_passed)
+### UIX-007 Split preview/editor (integrated)
 - `python3 scripts/check_compliance.py`: pass at `b408638dddf9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-007/20261114T153759/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `b408638dddf9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-007/20261114T153759/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `b408638dddf9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-007/20261114T153759/script-tests.log`)
@@ -2520,6 +2538,7 @@ None.
 - `swift test --package-path Packages/ImportFuzz`: pass at `397a3934fef8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-007/20261114T155436/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/LibraryBackup`: pass at `397a3934fef8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-007/20261114T155436/swift-test_LibraryBackup.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `397a3934fef8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-007/20261114T155436/swift-test_ShowControl.log`)
+- `post-merge batch57: VisualGenerators 245, RenderGoldens 82, ShowControl 110, LibraryBackup 77, projectM-iOSTests 980, UI ParticleOrbit/ParticleFountain/LayerInspector/VisualizerUITests 7 of 8 (compact-width row test fails, pre-existing from UIX-005/SCN-015 controls; fix/compact-controls in progress). SplitEditorUITests (iPad) pending`: pass at `cd89f309` (log `.autonomous/logs/integration/batch57/app-tests.log`)
 
 ### UIX-015 Onboarding permission explainer (integrated)
 - `python3 scripts/check_compliance.py`: pass at `4f7b3b7b8790` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-015/20261114T021007/compliance.log`)
@@ -2645,7 +2664,7 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/swift-test_VisualGenerators.log`)
 - `post-merge: projectM-iOSTests 938 + UI 2 (particle fountain, mandala)`: pass at `11e727ab` (log `.autonomous/logs/integration/batch53/app-tests.log`)
 
-### VIS-009 Particle orbit (unit_passed)
+### VIS-009 Particle orbit (integrated)
 - `python3 scripts/check_compliance.py`: pass at `444292771120` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-009/20261114T155605/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `444292771120` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-009/20261114T155605/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `444292771120` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-009/20261114T155605/script-tests.log`)
@@ -2659,3 +2678,4 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `444292771120` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-009/20261114T155605/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `444292771120` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-009/20261114T155605/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `444292771120` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-009/20261114T155605/swift-test_VisualGenerators.log`)
+- `post-merge batch57: VisualGenerators 245, RenderGoldens 82, ShowControl 110, LibraryBackup 77, projectM-iOSTests 980, UI ParticleOrbit/ParticleFountain/LayerInspector/VisualizerUITests 7 of 8 (compact-width row test fails, pre-existing from UIX-005/SCN-015 controls; fix/compact-controls in progress). SplitEditorUITests (iPad) pending`: pass at `cd89f309` (log `.autonomous/logs/integration/batch57/app-tests.log`)
