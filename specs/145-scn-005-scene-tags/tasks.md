@@ -26,8 +26,8 @@ rule 7): unit tests about 1-2 s, package suites under 1 minute, the UI test unde
 - [ ] SCN-005-T08 [US1] Switcher filtering in `Apps/projectM-iOS/Coordinators/SceneSwitcher.swift` (`tags` on entries, VoiceOver ", tags …", tag-aware `results`, `selectedTags`, `toggleTag`) and `Apps/projectM-iOS/Coordinators/AppCoordinator+SceneSwitcher.swift` (`toggleSwitcherTag`: re-highlight, count announcement) (contract T4).
 - [ ] SCN-005-T09 [US1] `Apps/projectM-iOS/Views/SceneTagsView.swift` (Tags sheet, contract T5) and the switcher UI in `Apps/projectM-iOS/Views/SceneSwitcherView.swift` (chip row, row tag button, VoiceOver action "Tags", subtitle); register the new view in `scripts/check_status_events.py`.
 - [ ] SCN-005-T10 [US1] Scene Folders integration in `Apps/projectM-iOS/Views/SceneFoldersView.swift`: tags on scene rows, "Tags…" swipe action, context menu and VoiceOver action opening the sheet.
-- [ ] SCN-005-T11 [US1] Acceptance test `Apps/projectM-iOS/Tests/SceneTagAcceptanceTests.swift`: tag scenes, filter by chips (AND) and text, change a tag and check the results update, reload a coordinator from the same store and check tags and results persist; duplicate copies tags; removing the last cue drops the scene's tags; search matches tags in `Apps/projectM-iOS/Tests/SceneSwitcherTests.swift`.
-- [ ] SCN-005-T12 [US1] UI test `Apps/projectM-iOS/UITests/SceneTagsUITests.swift` (under 30 s): with `-uitestShowSeed`, open the switcher, tag cue 1 "Intro" through the row's tag button, select the "Intro" chip and see only cue 1.
+- [ ] SCN-005-T11 [US1] Acceptance test `Apps/projectM-iOS/Tests/SceneTagAcceptanceTests.swift`: tag scenes, filter by chips (AND) and text, change a tag and check the results update, reload a coordinator from the same store and check tags and results persist; duplicate copies tags; removing the last cue drops the scene's tags; a selected chip whose tag no scene carries any more is ignored; an unreadable scene keeps its tags and can be tagged (spec Edge Cases); search matches tags in `Apps/projectM-iOS/Tests/SceneSwitcherTests.swift`.
+- [ ] SCN-005-T12 [US1] UI test `Apps/projectM-iOS/UITests/SceneTagsUITests.swift` (under 30 s): with `-uitestShowSeed`, open the switcher, tag cue 1 "Intro" through the row's tag button, select the "Intro" chip (reached with the shared `app.reveal`) and see only cue 1.
 
 ## Phase 4: User Story 2 — tag rules (P2)
 
@@ -39,7 +39,7 @@ rule 7): unit tests about 1-2 s, package suites under 1 minute, the UI test unde
 
 ## Phase 6: Polish
 
-- [ ] SCN-005-T15 Repo checks (compliance, docs, motion, permissions, status events, script tests), privacy manifest and network symbol checks on the Debug app, type-check budget, PosterBoard count after; update spec status; delete the simulator and derived data.
+- [ ] SCN-005-T15 Repo checks (compliance, docs, motion, permissions, status events, script tests), privacy manifest and network symbol checks on the Debug app, type-check budget, no new UserDefaults keys (SCN-005-R14: grep the diff), PosterBoard count after; update spec status; delete the simulator and derived data.
 
 ## Dependencies
 
