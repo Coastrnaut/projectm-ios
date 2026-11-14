@@ -52,6 +52,10 @@ Five questions, each answered with the recommended option (owner rules 4 and 9).
 - Q: Does Hold change the show file or a backup? → A: No. Hold is never written; FILE-005 backups carry the `skip` flags automatically because they re-encode `show.json` through the show's own decode and encode.
 - Q: What does a skip value other than `true` in a file do? → A: `false` and absent mean not skipped (a writer never writes `false`); any other JSON type (number, string, object) is dropped with a counted warning `droppedSkipFlags(n)` and the show loads.
 
+### Session 2026-11-14 (speckit-analyze)
+
+- Consistency pass over spec, plan and tasks: R1 → T05, T09; R2 → T09; R3 → T05, T06, T09; R4 → T05, T12; R5 → T02, T03, T11; R6 → T02, T10, T11, T12; R7 → T05, T10, T12; R8 → T08, T13, T14; R9 → T10, T12; R10 → T16; R11 → T07. S1-S2 → T09, S3 → T11, T12, S4 → T11, S5 → T14. No constitution conflict. Two fixes applied: T12 now tests that Duplicate Scene copies the flag (R9 had no test), and T11 tests that skipping the active cue keeps the position (an edge case without a test).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Hold the timed show (Priority: P1) — MVP
