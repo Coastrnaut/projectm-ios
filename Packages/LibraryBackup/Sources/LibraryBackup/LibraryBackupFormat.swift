@@ -1,5 +1,5 @@
 // LibraryBackupFormat.swift — FILE-005 (data-model "Archive layout", "Manifest"; contract C1, C2;
-// ADR-0040): the `.pmbackup` format: a FILE-002 portable archive named
+// ADR-0041): the `.pmbackup` format: a FILE-002 portable archive named
 // `org.projectmios.library-backup`, its limits, manifest and version table.
 //
 // Version table (QA-004 style; FILE-005-R3):

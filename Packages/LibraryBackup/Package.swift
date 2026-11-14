@@ -1,6 +1,6 @@
 // swift-tools-version: 6.0
 // LibraryBackup (roadmap FILE-005, specs/114-file-005-local-library-backup, contracts/library-backup.md;
-// ADR-0040): the local library backup.
+// ADR-0041): the local library backup.
 //
 // * Reads the user's library (the show and its scenes, the current scene, My Presets, collections,
 //   photos, plus the settings the app hands over) into one logical value, with the exclusions of the

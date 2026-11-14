@@ -76,7 +76,7 @@ Re-checked after Phase 1 design: unchanged.
 
 ```text
 specs/114-file-005-local-library-backup/  plan.md research.md data-model.md quickstart.md contracts/library-backup.md tasks.md
-docs/adr/0040-local-library-backup.md            (format and exclusions)
+docs/adr/0041-local-library-backup.md            (format and exclusions)
 Packages/LibraryBackup/                          (new package; Sources/LibraryBackup, Tests/LibraryBackupTests)
 Packages/ImportFuzz/Package.swift                (LibraryBackup dependency)
 Packages/ImportFuzz/Tests/ImportFuzzTests/LibraryBackupFuzzTests.swift   (new)

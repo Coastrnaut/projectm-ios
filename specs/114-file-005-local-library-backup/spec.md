@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (FILE-005-T01-T18 verified on the Mac Studio: LibraryBackup package tests on the host, the ImportFuzz suite, app and UI tests on an own iOS 27.2 simulator; the Linux job is left to CI). ADR-0041.
 
 **speckit-analyze (2026-11-14)**: 0 critical, 0 high; every requirement and success criterion maps to a task (R1 T03/T05/T06, R2 T05/T12, R3 T02/T12, R4 T14/T15, R5 T07/T14, R6 T13/T14, R7 T08/T11, R8 T09, R9 T04/T09, R10 T07/T10, R11 T09, R12 T14/T16, R13 T17/T18; S1 T09, S2 T11, S3 T10, S4 T12, S5 T06, S6 T16). Fixes applied: the older-version path of R3 gets a test in T12; the launch-time result reports the counts actually installed, which can differ from the preview when the library changed in between (R6).
 
