@@ -411,6 +411,7 @@ struct VisualizerView: View {
         .onChange(of: coordinator.settings.oscilloscopeWindowMilliseconds) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.spectrumSmoothing) { coordinator.visualSettingsChanged() }   // ANL-003
         .onChange(of: coordinator.settings.glowParameters) { coordinator.glowSettingsChanged() }          // FX-001
+        .onChange(of: coordinator.settings.colorBlindSafePalette) { coordinator.spectrumPaletteChanged() } // ACC-003-R13
         .onChange(of: coordinator.manager.state) {
             coordinator.routes.refresh()   // AUD-007-R3: a source started or changed state
             coordinator.announceSourceStatus()   // FR-070, AUD-016-R16, AUD-012-R7 (ACC-011 X1-X3)

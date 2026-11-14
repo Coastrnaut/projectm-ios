@@ -292,6 +292,7 @@ struct SettingsView: View {
                 if settings.visual.usesText, let texts {
                     textSection(texts)
                 }
+                if settings.visual.isNative { SpectrumColorsSection(settings: settings) }   // ACC-003-R13
                 Section {
                     Toggle("Reduce flashing", isOn: $settings.reduceFlashing)
                         .disabled(!reduceFlashingAvailable)

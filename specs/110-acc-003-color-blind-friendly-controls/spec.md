@@ -98,6 +98,15 @@ Five questions, each answered by Claude with the recommended option (owner rule 
   shape alone: the camera badge ("Starting" / "Live"). Every other critical status already has different
   words. Applied to ACC-003-R4.
 
+### Session 2026-11-14 (implementation decision)
+
+- Q: Does the colour-blind-safe palette also recolour the spectrum drawn over Camera, Photo, Video and
+  Text? → A: Not in this feature (revises the clarify answer above). Those four visuals build their own
+  circular spectrum in four separate hosts that CMP-011 is changing in parallel; the palette applies to
+  the three native spectra (Circular, Linear, Oscilloscope), where the bars are the whole picture. The
+  composites keep VIS-001's default; extending it is a follow-up (UIX-011's palette editing). Applied to
+  ACC-003-R13.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - I can tell every status apart without colour (Priority: P1)
@@ -198,8 +207,8 @@ spectra. The bars then use a blue-to-yellow ramp whose brightness rises with eac
   and ACC-004's contract updated.
 - **ACC-003-R12**: In DEBUG builds, UI tests MUST be able to force Increase Contrast and Differentiate
   Without Colour by launch argument; Release builds never read them.
-- **ACC-003-R13**: The native spectra (Circular, Linear, Oscilloscope, and the spectrum over Camera,
-  Photo, Video and Text) MUST offer an opt-in colour-blind-safe palette whose relative luminance rises
+- **ACC-003-R13**: The native spectra (Circular, Linear, Oscilloscope; implementation decision above)
+  MUST offer an opt-in colour-blind-safe palette whose relative luminance rises
   strictly from the first bar to the last, with the first bar at least 3:1 against black; off by
   default, stored on the device only, listed in the privacy review's allowed keys. projectM presets are
   never recoloured.

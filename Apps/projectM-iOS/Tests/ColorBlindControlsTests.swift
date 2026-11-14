@@ -8,8 +8,11 @@
 // draws one symbol in a red and a green of equal luminance: it must measure below 1%, proving the
 // measure ignores hue. No reference images are stored and no clock is read.
 import CaptureUI
+import Metal
 import SwiftUI
 import UIKit
+import VisualEffects
+import VisualGenerators
 import XCTest
 @testable import projectM_iOS
 
@@ -222,6 +225,35 @@ final class ColorBlindControlsTests: XCTestCase {
     func testBadgeStyleIsOpaqueOnlyWithIncreasedContrast() {
         XCTAssertEqual(StatusBadgeStyle.resolve(increasedContrast: false), .material)
         XCTAssertEqual(StatusBadgeStyle.resolve(increasedContrast: true), .opaqueBordered)
+    }
+
+    // MARK: - ACC-003-R13: the colour-blind-safe spectrum palette
+
+    func testPaletteSettingIsOffByDefaultAndPersists() {
+        let suite = "ColorBlindControlsTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = AppSettings(defaults: defaults, systemReduceMotion: false)
+        XCTAssertFalse(settings.colorBlindSafePalette)
+        XCTAssertEqual(settings.spectrumPalette, .spectrum, "off: the spectra look as before (S4)")
+        settings.colorBlindSafePalette = true
+        XCTAssertEqual(settings.spectrumPalette, .colorBlindSafe)
+        XCTAssertTrue(AppSettings(defaults: defaults, systemReduceMotion: false).colorBlindSafePalette, "stored")
+        XCTAssertTrue(AppSettings.allKeys.contains("settings.visual.colorBlindSafePalette"))
+    }
+
+    func testHostAppliesThePaletteToEveryStyle() throws {
+        guard let device = MTLCreateSystemDefaultDevice() else { throw XCTSkip("No Metal device in this simulator") }
+        let host = try NativeSpectrumHost.make(device: device, reader: nil, barCount: .b32, glow: BloomParameters())
+        XCTAssertEqual(host.generatorPalette, .spectrum)
+        host.palette = .colorBlindSafe
+        XCTAssertEqual(host.generatorPalette, .colorBlindSafe, "circular")
+        try host.apply(style: .linear(.vertical, spacing: 0.2))
+        XCTAssertEqual(host.generatorPalette, .colorBlindSafe, "linear keeps it")
+        try host.apply(style: .oscilloscope(line: .medium, windowMilliseconds: 20))
+        XCTAssertEqual(host.generatorPalette, .colorBlindSafe, "oscilloscope keeps it")
+        host.palette = .spectrum
+        XCTAssertEqual(host.generatorPalette, .spectrum)
     }
 
     // MARK: - ACC-003-R12: appearance and its DEBUG overrides

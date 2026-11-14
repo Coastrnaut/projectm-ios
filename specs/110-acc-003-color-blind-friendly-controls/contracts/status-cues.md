@@ -38,5 +38,5 @@ after grayscale conversion; the equal-luminance control measures < 1%.
 
 ## C5. Spectrum palette
 
-`settings.visual.colorBlindSafePalette` (Bool) → `VisualPalette.colorBlindSafe` for all native spectra;
+`settings.visual.colorBlindSafePalette` (Bool) → `VisualPalette.colorBlindSafe` for the native spectra (Circular, Linear, Oscilloscope; not the Camera, Photo, Video and Text composites);
 toggle `colorBlindSafePaletteToggle` in Settings (shown for native visuals).
