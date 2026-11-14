@@ -28,6 +28,19 @@ ACC-004 (announcer lanes).
 | Parameter writes | `ParameterInspectorTargets.target(for:settings:)` is the get/set choke point over `AppSettings` for the inspector, shelf, macros and snapshots; SCN-015 refuses its `set` while the scene is locked. Discrete registry parameters with a control today: glow on/off (boolean), circular spectrum bar count and linear spectrum orientation (enums), linear spectrum spacing (fixed choices). |
 | Quantized changes | **None.** Every write applies at once. |
 
+## Clarifications
+
+### Session 2026-11-14
+
+Answered by Claude under the owner's standing approval (owner rules 4 and 9: best judgement, no human
+interaction); each answer is the conservative, local-first option, recommended option first.
+
+- Q: What happens in Beat or Bar mode when there is no tempo to wait for? → A: The change applies immediately (no timeout), and the announcement says "applied now, no tempo". A bounded timeout was rejected: a change landing at an arbitrary, unrelated moment is less predictable than an immediate one. A tempo without phase (an estimate with no beat time) counts as no tempo. Cue mode with an empty show applies immediately too (MOD-017-R6).
+- Q: Where is a bar boundary without downbeat detection? → A: Every 4 beats counted from the tempo grid's anchor (the last tap, or ANL-005's latest beat), 4/4 only; the boundary is computed once at request time and not moved by later tempo changes, so every wait is bounded by one bar (MOD-017-R4).
+- Q: Which edits are quantized? → A: Only discrete parameters (boolean, enum, integer, fixed choices) written from the inspector, the parameter shelf and macros. Snapshot recall, cue scenes, undo/redo, MIDI/OSC live values and modulation are never quantized: they are recalls or continuous inputs, and quantizing them would split one recall into two moments (MOD-017-R2, R3).
+- Q: How do cues and scene changes interact with the queue? → A: In Cue mode the cue step is the boundary: queued changes apply right after the next cue's scene is applied (so they land on top of it) and are then gone. In Beat or Bar mode a cue step (any show scene change) clears the queue with the announcement "Queued changes cleared". Changing the mode also clears it (MOD-017-R5, R8).
+- Q: When exactly does a request "between beats" apply, and what about clock jumps? → A: At the first boundary strictly after the request time; a request exactly on a beat waits for the next one. The app checks the queue at each due boundary on the monotonic analysis clock; if the app was suspended past several boundaries, the change applies once at the first check after its boundary. Changes due in the same check apply in request order. The mode is a device setting (`settings.modulation.quantize`, absent = Off), excluded from library backups like the other device-only performance settings (MOD-017-R1, R5, R10).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Switch on the beat (Priority: P1)
