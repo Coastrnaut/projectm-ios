@@ -22,7 +22,7 @@
 
 ## Phase 4: User Story 3 - Prewarming never costs the live frame (P1)
 
-- [ ] PERF-005-T07 [US3] Tests in PrewarmSchedulerTests.swift: executor spy (every load on the executor's thread, never the main thread); nothing starts while paused for presentation or thermal; a presentation suspension refuses a pending graphics step and releases non-live entries; settle delay on the injected clock; Low Power keeps rank 0; `forwardPresets` calls through synchronously with no clock use
+- [ ] PERF-005-T07 [US3] Tests in PrewarmSchedulerTests.swift: executor spy (every load on the executor's thread, never the main thread); nothing starts while paused for presentation or thermal; a presentation suspension refuses a pending graphics step and releases non-live entries; settle delay on the injected clock; Low Power keeps rank 0; `forwardPresets` calls through synchronously with no clock use; `releaseForMemoryPressure` releases every non-live entry and reports the bytes (R10)
 - [ ] PERF-005-T08 [US3] Preset routing: `AppCoordinator.prewarm` forwards through `MediaPrewarmCoordinator.forwardPresets`; `PresetWarmUpController` and `PresetPrewarmer` unchanged (diff shows no change in Packages/ANGLERendering) in Apps/projectM-iOS/Coordinators/AppCoordinator.swift
 
 ## Phase 5: User Story 1 - The next cue's picture is ready (P1)
@@ -49,3 +49,9 @@ T02 and T03; T05/T06 and T09/T10.
 ## Implementation strategy
 
 Core first (US2 is the roadmap acceptance), then the frame guarantees (US3), then the app path (US1).
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Applied: R3 cited a non-existent "R-D3" (now research PERF-005-D3); R6 and the data model named a memory-pressure
+pause reason that no requirement uses (R10 releases instead; removed); R10 had no test (added to T07). Coverage:
+R1-R13 and S1-S6 each map to at least one task; no constitution conflicts; no open placeholders.
