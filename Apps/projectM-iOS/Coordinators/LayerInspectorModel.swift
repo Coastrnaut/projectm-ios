@@ -26,12 +26,13 @@ enum LayerInspectorParameter: String, CaseIterable, Sendable {
     case maskShape, maskSize, maskCornerRadius, maskFeather, maskInverted
     case gradientKind, gradientAngle, gradientRadius, gradientStops   // CMP-008
     case lumaKey, lumaLow, lumaHigh, lumaSoftness, lumaInverted   // CMP-009
+    case colorKey, colorKeyColor, colorTolerance, colorFeather   // CMP-010
     case group, ownParameters, solo, mute
 
     /// The sliders (continuous values).
     static let sliders: [LayerInspectorParameter] = [
         .opacity, .positionX, .positionY, .scale, .rotation, .fitAnchorX, .fitAnchorY, .maskSize, .maskCornerRadius, .maskFeather,
-        .gradientAngle, .gradientRadius, .lumaLow, .lumaHigh, .lumaSoftness,
+        .gradientAngle, .gradientRadius, .lumaLow, .lumaHigh, .lumaSoftness, .colorTolerance, .colorFeather,
     ]
 
     var title: String { LayerInspectorHelp.entry(self).title }
@@ -71,6 +72,10 @@ enum LayerInspectorHelp {
         .lumaHigh: Entry(title: "Key High", help: "The brightest brightness that is keyed out. Everything between Low and High becomes transparent."),
         .lumaSoftness: Entry(title: "Key Softness", help: "Fades the edges of the range in gradually instead of cutting them off. 0 gives a hard edge."),
         .lumaInverted: Entry(title: "Invert Key", help: "Keeps only the brightness range and makes everything else transparent."),
+        .colorKey: Entry(title: "Color Key", help: "Makes the parts of the layer close to one colour transparent, so the layers below show through. It starts as a green key: green areas disappear and other colours stay as they are."),
+        .colorKeyColor: Entry(title: "Key Color", help: "The colour that is keyed out. Pick it to match the area you want to remove; its brightness matters less than its hue."),
+        .colorTolerance: Entry(title: "Color Tolerance", help: "How different a colour may be from the key colour and still be removed completely. Raise it to remove more shades."),
+        .colorFeather: Entry(title: "Color Feather", help: "Fades colours just beyond the tolerance in gradually instead of cutting them off. 0 gives a hard edge."),
         .group: Entry(title: "Group", help: "The group this layer belongs to. A group's settings apply to all of its layers together."),
         .ownParameters: Entry(title: "Layer Settings", help: "Settings that belong to this kind of layer, such as the spectrum's bar count. Change them in Settings."),
         .solo: Entry(title: "Solo", help: "Shows only the soloed layers while you check them. Solo is never saved and cannot be undone; it ends when the visual changes."),
@@ -242,6 +247,8 @@ enum LayerCompositeEdit {
         case .gradientAngle: LayerGradientEdit.angleRange
         case .gradientRadius: LayerGradientEdit.radiusRange
         case .lumaSoftness: LayerLumaKey.softnessLimits   // CMP-009
+        case .colorTolerance: LayerColorKey.toleranceLimits   // CMP-010
+        case .colorFeather: LayerColorKey.featherLimits
         default: 0...1
         }
     }
@@ -251,7 +258,7 @@ enum LayerCompositeEdit {
         switch parameter {
         case .rotation, .gradientAngle: 5
         case .scale, .positionX, .positionY, .maskSize: 0.05
-        case .maskCornerRadius, .maskFeather, .lumaSoftness: 0.02
+        case .maskCornerRadius, .maskFeather, .lumaSoftness, .colorTolerance, .colorFeather: 0.02
         default: 0.05
         }
     }
@@ -275,6 +282,7 @@ enum LayerCompositeEdit {
         case .gradientAngle: return LayerGradientEdit.angle(composite)   // CMP-008
         case .gradientRadius: return LayerGradientEdit.radius(composite)
         case .lumaKey, .lumaLow, .lumaHigh, .lumaSoftness, .lumaInverted: return LayerLumaKeyEdit.value(parameter, of: composite)   // CMP-009
+        case .colorKey, .colorKeyColor, .colorTolerance, .colorFeather: return LayerColorKeyEdit.value(parameter, of: composite)   // CMP-010
         default: return 0
         }
     }
@@ -332,6 +340,7 @@ enum LayerCompositeEdit {
         case .gradientRadius: return String(format: "%.2f", v)
         case .gradientStops: return LayerGradientEdit.stopsText(composite)
         case .lumaKey, .lumaLow, .lumaHigh, .lumaSoftness, .lumaInverted: return LayerLumaKeyEdit.text(parameter, of: composite)   // CMP-009
+        case .colorKey, .colorKeyColor, .colorTolerance, .colorFeather: return LayerColorKeyEdit.text(parameter, of: composite)   // CMP-010
         default: return ""
         }
     }
@@ -350,6 +359,7 @@ enum LayerCompositeEdit {
         case .gradientAngle: result = LayerGradientEdit.settingAngle(value, on: composite)   // CMP-008
         case .gradientRadius: result = LayerGradientEdit.settingRadius(value, on: composite)
         case .lumaKey, .lumaLow, .lumaHigh, .lumaSoftness, .lumaInverted: result = LayerLumaKeyEdit.setting(parameter, to: value, on: composite)   // CMP-009
+        case .colorKey, .colorKeyColor, .colorTolerance, .colorFeather: result = LayerColorKeyEdit.setting(parameter, to: value, on: composite)   // CMP-010
         default: break
         }
         return result
@@ -452,7 +462,7 @@ enum LayerCompositeMapping {
         return LayerCompositeSettings(opacity: composite.opacity, blendMode: mode, transform: composite.transform,
                                       fit: composite.fit?.layerFit, mask: composite.mask?.layerMask,
                                       gradientMask: composite.gradientMask?.layerGradientMask,   // CMP-008
-                                      lumaKey: composite.lumaKey)   // CMP-009
+                                      lumaKey: composite.lumaKey, colorKey: composite.colorKey)   // CMP-009, CMP-010
     }
 
     /// Default composites left out (research CMP-015-D2).
