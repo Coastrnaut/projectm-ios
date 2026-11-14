@@ -4,7 +4,9 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (PERF-007-T01-T11 verified: host package tests, the app and UI tests on the
+feature's iOS 27.2 simulator "PERF7", an unsigned generic-iOS device build; no device claim). Open: T12 `{device}`
+(D1 with an external display and a recording). Simulator results are not performance evidence.
 
 **Input**: User description: "Implement PERF-007 (Frame drop telemetry) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Count late, skipped and presented frames by output." Acceptance, verbatim:
@@ -61,6 +63,11 @@ Answered by Claude under owner rules 4 and 9 (recommended option first).
 - Q: Which recording does the recording line show? → A: The running recording's live statistics; after it stops, the last recording's final statistics until the overlay is turned off or the visualizer is left (the recording counter's session is that recording). No recording in the session → no recording line.
 - Q: Where does the export get the counts? → A: The same place as `frameTimings`: the automation runner's frame-timing export (`AutomationRunner`) adds a `frameDrops` section when the counts exist. The user-facing diagnostics export of CaptureLab has no frame loop and carries none.
 - Q: Do the counts persist across launches or go into UserDefaults? → A: No. In memory only; no new stored key, no Settings row.
+
+### Session 2026-11-14 (speckit-implement)
+
+- Q: The iOS Simulator SDK has no `addPresentedHandler`/`presentedTime`; what do the Metal paths report there? → A: Unavailable for presented, late and discarded (the same rule as projectM's), with the handler compiled for devices only. Submitted and skipped are counted everywhere.
+- Q: When is the external display's output-change hook registered? → A: At the first frame drop sync while the overlay is shown (the coordinator's init cannot capture itself before all its properties exist); counting starts only at that sync anyway, so no frame can be counted before it.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -129,7 +136,7 @@ timestamps) into a counter and check the exact counts; show the overlay in the a
 - **PERF-007-R4**: Each frame MUST be counted at most once: by frame ID for presented, late and discarded; by strictly increasing display-link timestamp for submitted and skipped.
 - **PERF-007-R5**: Every event MUST carry the session token it was produced under; an event of another session MUST NOT change the counts (it increments only the stale count).
 - **PERF-007-R6**: Counters MUST reset to zero when a session begins: per visualizer session and visual (device), per external display placement (external), per recording (recording); see Clarifications.
-- **PERF-007-R7**: A value a path cannot measure MUST be reported as unavailable (overlay text "unavailable", absent export key), never 0 and never estimated. projectM's presented, late and discarded are unavailable; the recording's late and discarded are unavailable.
+- **PERF-007-R7**: A value a path cannot measure MUST be reported as unavailable (overlay text "unavailable", absent export key), never 0 and never estimated. projectM's presented, late and discarded are unavailable; so are every Metal path's in the iOS Simulator (its SDK has no presented report); the recording's late and discarded are unavailable.
 - **PERF-007-R8**: Recording on the frame path MUST NOT lock, wait or allocate (beyond Metal's presented-handler block); the presented report may arrive on any thread.
 - **PERF-007-R9**: The counting logic MUST be pure Swift that builds and tests on Linux.
 - **PERF-007-R10**: The performance overlay MUST show one "frames <output>" line for the output the visual is on, plus a recording line while a recording runs or exists in the session, only while the overlay is shown.

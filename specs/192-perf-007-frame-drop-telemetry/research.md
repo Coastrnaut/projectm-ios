@@ -3,6 +3,7 @@
 ## PERF-007-D1 What each visual path can measure
 
 - Decision: Metal-drawable visuals (native spectrum and oscilloscope, Camera, Photo, Video, Text) measure everything: `submitted` and `skipped` from their `CADisplayLink`, `presented`/`late`/`discarded` from `CAMetalDrawable.addPresentedHandler` (`presentedTime`, 0 when never shown). projectM (`ANGLERenderer`) presents with `eglSwapBuffers`; ANGLE owns the `CAMetalLayer` drawable, so only `submitted` and `skipped` are measurable; the rest is unavailable. The recording: `presented` = frames written to the file, `skipped` = REC-006 `droppedSlots`; `late`/`discarded` do not apply.
+- Finding (implementation, 2026-11-14): the iOS 27.2 **Simulator** SDK's `MTLDrawable` declares only `present` and `present(at:)`; `addPresentedHandler`, `presentedTime` and `presentAfterMinimumDuration` exist only in the device SDK. The app compiles the presented handler for devices only (`#if !targetEnvironment(simulator)`); in the simulator the Metal paths report presented, late and discarded as unavailable. Device behaviour is a `{device}` task (PERF-007-T12).
 - Rationale: count only what the platform reports (PERF-001/002 rule: unavailable, never estimated).
 - Alternatives: patching ANGLE to expose the drawable (an engine fork change for a diagnostic; rejected); MetricKit hitch metrics (aggregated daily, not per output or per session, and delivered as payloads; rejected for this purpose, no upload either way).
 
