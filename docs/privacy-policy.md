@@ -400,9 +400,18 @@ iOS each time it starts.
 
 ## Diagnostics
 
-The app has no diagnostics export and sends no diagnostics. Diagnostics exist only in a separate
-test build used by the developer's testers, and leave a device only when a tester exports them
-by hand; they contain audio levels, formats and timing, never audio.
+The app sends no diagnostics. You can export a performance report yourself (Settings → Performance →
+Export performance report, PERF-012): the app writes one JSON file into its temporary folder and
+opens the share sheet, and the file goes only where you send it; the temporary copy is deleted when
+the sheet closes. The report holds frame times, dropped-frame counts, thermal, Low Power Mode and
+power profile changes, render scale, texture and memory counters, the device model, the iOS version
+and the app version. It holds no audio, media, file names, paths, preset, scene, text or recording
+names, OSC device addresses, identifiers or anything you typed. Frame times are measured only while
+the performance overlay is shown, and nothing is kept after the app quits.
+
+Other diagnostics exist only in a separate test build used by the developer's testers, and leave a
+device only when a tester exports them by hand; they contain audio levels, formats and timing, never
+audio.
 
 ## No analytics, tracking or network use
 

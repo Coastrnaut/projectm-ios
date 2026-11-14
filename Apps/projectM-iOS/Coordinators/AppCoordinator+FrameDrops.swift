@@ -9,6 +9,7 @@
 //   else the last finished one's if it ran while the overlay was shown.
 // * Lines go after the stage and budget lines (`frameStageLines()`); the export is for the automation runner.
 // * Local, in memory only: no stored key, no network (PERF-007-R12, R13).
+// * PERF-012: both counters feed one `FrameIntervalRecorder` (the performance report's frame percentiles).
 import Diagnostics
 import FrameRecording
 import FrameTiming
@@ -16,8 +17,10 @@ import FrameTiming
 /// Which visual counts into which output's counter (PERF-007-R6).
 @MainActor
 final class FrameDropAttachment {
-    let device = FrameDropCounter()
-    let external = FrameDropCounter()
+    /// PERF-012: every frame interval measured since launch, shared by both display counters (the performance report).
+    let intervals: FrameIntervalRecorder
+    let device: FrameDropCounter
+    let external: FrameDropCounter
     private(set) weak var visual: (any FrameDropCounted)?
     /// The output being counted; nil while nothing is attached.
     private(set) var output: FrameDropOutput?
@@ -25,6 +28,12 @@ final class FrameDropAttachment {
     private(set) var sessionsBegun = 0
     /// A finished recording's line is shown only if a recording ran while counting was on.
     private var showsFinishedRecording = false
+
+    init(intervals: FrameIntervalRecorder = FrameIntervalRecorder()) {
+        self.intervals = intervals
+        device = FrameDropCounter(intervals: intervals)
+        external = FrameDropCounter(intervals: intervals)
+    }
 
     func counter(for output: FrameDropOutput) -> FrameDropCounter? {
         switch output {
@@ -91,6 +100,7 @@ extension AppCoordinator {
     /// The overlay's "frames …" lines (PERF-007-R10).
     func frameDropLines() -> [String] {
         syncFrameDrops()
+        performanceRecorder.sampleMemory()   // PERF-012-R8: the footprint peak, once per overlay refresh
         return frameDrops.lines(recording: videoRecording.frameDropStatistics)
     }
 

@@ -70,6 +70,14 @@ public enum DiagnosticsLog {
         app.info("power profile \(summary, privacy: .private)")
     }
 
+    /// PERF-012-R10: one Points of Interest event and one app log line per performance report export. The summary
+    /// (`PerformanceReport.signpostSummary`) carries counts only.
+    public static func performanceReport(_ summary: String) {
+        assertNotRealtime()
+        signposter.emitEvent("Performance report", "\(summary, privacy: .private)")
+        app.info("performance report \(summary, privacy: .private)")
+    }
+
     /// PERF-014-R13: one Points of Interest event and one app log line per counted render fault or
     /// recovery. The summary (`RenderHealth.summary(visual:)`) carries the visual kind, the state, the
     /// reason identifier and counts only; private like every dynamic value.

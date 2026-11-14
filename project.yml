@@ -271,6 +271,8 @@ targets:
       - path: Apps/projectM-iOS/Tests
       - path: Apps/projectM-iOS/Store/projectM-iOS.storekit   # SKTestSession (feature 002 T225)
         buildPhase: resources
+      - path: specs/209-perf-012-performance-report/contracts/performance-report.schema.json   # PERF-012-T13
+        buildPhase: resources
     dependencies:
       - target: projectM-iOS
       - package: PresetLibrary
