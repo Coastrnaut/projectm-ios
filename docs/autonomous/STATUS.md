@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T01:34:14Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T02:05:09Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,18 +10,19 @@
 | State | Features |
 |---|---|
 | audited | 224 |
-| implementing | 3 |
+| implementing | 2 |
+| unit_passed | 1 |
 | integrated | 98 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 5 | 1 | 80 | 1 |
-| P1 | 133 | 2 | 16 | 0 |
-| P2 | 77 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 5 | 1 | 0 | 80 | 1 |
+| P1 | 133 | 1 | 1 | 16 | 0 |
+| P2 | 77 | 0 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -313,6 +314,27 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `c99151006e80` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-008/20261113T195638/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `c99151006e80` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-008/20261113T195638/swift-test_VisualGenerators.log`)
 - `post-merge (AUD-008 + ANL-003): projectM-iOSTests 395 + InputTrim/SpectralSmoothing/NativeVisual/Settings/Oscilloscope UI tests 11`: pass at `214fa36` (log `.autonomous/logs/integration/aud-008-anl-003/app-tests.log`)
+
+### AUD-009 Channel selection (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `09b61291a19e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-009/20261113T205831/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `09b61291a19e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-009/20261113T205831/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `09b61291a19e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-009/20261113T205831/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `09b61291a19e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-009/20261113T205831/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `09b61291a19e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-009/20261113T205831/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/AnalysisFeatures`: pass at `09b61291a19e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-009/20261113T205831/swift-test_AnalysisFeatures.log`)
+- `swift test --package-path Packages/AudioCore`: pass at `09b61291a19e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-009/20261113T205831/swift-test_AudioCore.log`)
+- `swift test --package-path Packages/CaptureKit`: pass at `09b61291a19e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-009/20261113T205831/swift-test_CaptureKit.log`)
+- `swift test --package-path Packages/CaptureUI`: pass at `09b61291a19e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-009/20261113T205831/swift-test_CaptureUI.log`)
+- `swift test --package-path Packages/Compositor`: pass at `09b61291a19e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-009/20261113T205831/swift-test_Compositor.log`)
+- `swift test --package-path Packages/Diagnostics`: pass at `09b61291a19e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-009/20261113T205831/swift-test_Diagnostics.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `09b61291a19e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-009/20261113T205831/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/PerformanceControl`: pass at `09b61291a19e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-009/20261113T205831/swift-test_PerformanceControl.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `09b61291a19e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-009/20261113T205831/swift-test_RenderGoldens.log`)
+- `xcodebuild -scheme Rendering-Package -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `09b61291a19e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-009/20261113T205831/sim-test_Rendering.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `09b61291a19e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-009/20261113T205831/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `09b61291a19e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-009/20261113T205831/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `09b61291a19e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-009/20261113T205831/swift-test_ShowControl.log`)
+- `swift test --package-path Packages/VisualGenerators`: pass at `09b61291a19e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-009/20261113T205831/swift-test_VisualGenerators.log`)
 
 ### AUD-014 Audio session interruption recovery (integrated)
 - `python3 scripts/check_compliance.py`: pass at `8d270f3cbeed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-014/20261112T185431/compliance.log`)
