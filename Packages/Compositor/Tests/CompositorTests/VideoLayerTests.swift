@@ -255,6 +255,33 @@ final class VideoLayerTests: XCTestCase {
         }
     }
 
+    /// MED-004-T16 on a real file (S3): region [0.5 s, 1.0 s) at 0.5× and 2×: every shown picture inside
+    /// across at least three wraps; the joint's measured gap is reported and, with the decoder waited for
+    /// at each step, below one picture.
+    func testLoopRegionAtHalfAndDoubleSpeedOnARealFile() async throws {
+        let rig = try GPURig()
+        let url = try await fixture("counter.mov")
+        let runs: [(Int, Int)] = [(50, 200), (200, 60)]
+        for (percent, steps) in runs {
+            let layer = VideoLayerSource(device: rig.device)
+            let compositor = try Compositor(device: rig.device, layers: [layer])
+            layer.playbackSpeed = try XCTUnwrap(VideoPlaybackSpeed(percent: percent))
+            layer.loopRegion = VideoLoopRegion(inMilliseconds: 500, outMilliseconds: 1000)
+            layer.content = .file(url)
+            let output = try rig.output()
+            for i in 0..<steps {
+                let t: UInt64 = i == 0 ? base : base + 10_000_000 + UInt64(i - 1) * 1_000_000_000 / 60
+                XCTAssertTrue(layer.waitUntilBuffered())
+                try rig.frame(compositor, into: output, time: t)
+                let index = try XCTUnwrap(try shownIndex(rig, output), "\(percent) %, step \(i)")
+                XCTAssertTrue((15...29).contains(index), "\(percent) %, step \(i): picture \(index) inside")
+            }
+            XCTAssertGreaterThanOrEqual(layer.wraps, 3, "\(percent) %")
+            XCTAssertLessThan(layer.maxWrapLatenessNanoseconds, 1_000_000_000 / 30, "\(percent) %: gap 0 frames at the joint")
+            print("MED-004 real loop \(percent) %: wraps \(layer.wraps), joint gap \(layer.maxWrapLatenessNanoseconds) ns, prepared \(layer.statistics.prepared)")
+        }
+    }
+
     /// New content restarts at 0; a rotated (portrait) video reports its upright size.
     func testNewContentRestartsAndRotationIsUpright() async throws {
         let rig = try GPURig()

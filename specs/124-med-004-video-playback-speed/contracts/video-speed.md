@@ -39,7 +39,8 @@
 - C4.5 DEBUG probe `videoSpeed`: `"<percent> ratio=<playbackSince / presentationSince, 3 decimals>"`
   (`ratio=none` before any counted step).
 - C4.6 No audio source state (capture manager mode, In-App Playback transport) is read or written
-  by any speed path.
+  by any speed path: the speed is set only on the Video visual's host (three setters), and
+  `VideoLayer` imports no audio or capture module (research D8).
 
 ## C5 — Scene field
 

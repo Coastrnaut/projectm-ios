@@ -81,6 +81,9 @@ Decisions made by Claude under the owner's standing approval (owner rules 4 and 
   the video track only; `VideoLayer` imports `AVFoundation`, `CoreMedia`, `Metal`, `Compositor`,
   `CameraLayer`, `MediaSniffing` and Foundation only, no AudioCore or CaptureKit. Speed is set on
   the Video visual's host and nowhere else.
-- **Test**: an app unit test sets every speed through the coordinator and asserts the capture
-  manager's mode and the In-App Playback transport state are unchanged; a package test asserts
-  the clock's speed affects only playback time.
+- **Test** (as built): `VideoSpeedTests.testSpeedNeverReachesTheAudioSource` (app) checks that no
+  `VideoLayer` source imports an audio or capture module or uses `AVAudio*`/`AVPlayer`/`audioMix`,
+  and that the only three speed setters in the app are on the Video visual's host; the coordinator
+  path is tested with no audio object at all. Building a second `AppCoordinator` in the hosted test
+  (to compare the capture manager and transport) was rejected: it would start a second audio
+  pipeline inside the host app. Package tests assert the speed changes only the video time.
