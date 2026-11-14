@@ -11,12 +11,13 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 39,
-   "implementing": 7,
+   "audited": 37,
+   "implementing": 9,
    "integrated": 105
   },
   "P2": {
-   "audited": 71,
+   "audited": 70,
+   "implementing": 1,
    "integrated": 8
   },
   "P3": {
@@ -24,8 +25,8 @@
   }
  },
  "by_state": {
-  "audited": 121,
-  "implementing": 7,
+  "audited": 118,
+  "implementing": 10,
   "integrated": 197,
   "skipped_existing": 1
  },
@@ -412,13 +413,13 @@
   },
   "ANL-013": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/anl-013",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "ANL-014": {
    "attempts": 0,
@@ -2372,13 +2373,13 @@
   },
   "PRE-018": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/pre-018",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "QA-001": {
    "attempts": 0,
@@ -3292,13 +3293,13 @@
   },
   "VIS-007": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/vis-007",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "VIS-008": {
    "attempts": 0,
@@ -4443,5 +4444,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T18:41:09Z"
+ "updated": "2026-11-14T18:41:44Z"
 }

@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T18:41:09Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T18:41:44Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,8 +9,8 @@
 
 | State | Features |
 |---|---|
-| audited | 121 |
-| implementing | 7 |
+| audited | 118 |
+| implementing | 10 |
 | integrated | 197 |
 | skipped_existing | 1 |
 
@@ -19,8 +19,8 @@
 | Priority | audited | implementing | integrated | skipped_existing |
 |---|---|---|---|---|
 | P0 | 2 | 0 | 84 | 1 |
-| P1 | 39 | 7 | 105 | 0 |
-| P2 | 71 | 0 | 8 | 0 |
+| P1 | 37 | 9 | 105 | 0 |
+| P2 | 70 | 1 | 8 | 0 |
 | P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
