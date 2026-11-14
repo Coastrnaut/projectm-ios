@@ -47,6 +47,15 @@ conservative, local-first option that still delivers the roadmap row.
 - Q: Where is the history shown? → A: A "Recently Played" row on the browser's library home (with its count) opens the Recent list: most recent first, locked presets marked (FR-114's way), presets no longer in the library left out. Choosing a preset there plays it without changing the scope (the list reorders itself as presets are played, so it is not a stable scope to walk).
 - Q: Is history backed up or erased? → A: Not backed up: it is personal usage data, so `recentPresets` joins FILE-005's excluded keys (a restore never brings history from another device). The opt-out switch is a normal setting: backed up and erased with Settings. FILE-011 erases the history with favorites; the category is renamed "Collections, tags, favorites and history" so the user can see that.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Does time with the app in the background count toward the 3 s dwell? → A: The dwell runs on the monotonic clock from the successful load; the preset is recorded when 3 s have passed and it is still the current preset. A background stay does not prevent recording (the preset was the one chosen to be on screen); a device sleep does not advance the clock. This keeps one rule and no lifecycle coupling.
+- Q: What can the user do with a row in the Recent list? → A: The same as any browser row: play it, star it, Add to Collection, Tags…, Duplicate (the shared preset row). Favoriting from Recent changes favorites, never the history.
+- Q: Is "Recently Played" on the home while history is off? → A: Yes, with count 0; it opens the list, which says "Recently played history is off." and offers no Clear button (there is nothing to clear). The switch lives in Settings only.
+- Q: Is the preset on screen listed before its 3 s have passed? → A: No; only recorded presets are listed, so the list and the stored key always agree.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - I find the presets I just watched (Priority: P1) — MVP
@@ -110,7 +119,7 @@ history is gone.
 - **PRE-006-R2**: A preset MUST be recorded when it stays on screen for at least 3 s after a successful load; leaving it earlier (another preset, a failure does not leave it) records nothing; a failed load records nothing. Recording moves an existing ID to the front.
 - **PRE-006-R3**: A Settings switch "Remember Recently Played" (default on, `settings.recentPresets.enabled`) MUST control recording; turning it off MUST clear the history and cancel any pending recording.
 - **PRE-006-R4**: "Clear History" MUST ask for confirmation, then remove only the history; favorites, `lastPresetID`, the scope, tags and collections MUST be unchanged.
-- **PRE-006-R5**: The browser home MUST offer "Recently Played" with its count, opening a list newest first (locked presets marked, presets not in the library left out), with an empty state ("No recently played presets yet." or, when off, "Recently played history is off.") and "Clear History". Choosing a preset there plays it without changing the scope.
+- **PRE-006-R5**: The browser home MUST offer "Recently Played" with its count, opening a list newest first (locked presets marked, presets not in the library left out), with an empty state ("No recently played presets yet." or, when off, "Recently played history is off.") and "Clear History" (shown while the history is not empty). Rows are the browser's standard preset rows. Choosing a preset there plays it without changing the scope.
 - **PRE-006-R6**: Every new control MUST have an accessible label (the row: "Recently Played, 2 presets"); a clear and the switch's change are announced on the shared announcer's library lane.
 - **PRE-006-R7**: The history MUST NOT be backed up (FILE-005 excluded key); the switch is backed up and erased with Settings; FILE-011's "Collections, tags, favorites and history" erases the history, and the category's count includes it.
 - **PRE-006-R8**: Stored values MUST be read leniently (non-strings, empty and duplicate IDs dropped; trimmed to 50).
