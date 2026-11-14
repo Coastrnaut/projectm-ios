@@ -1611,6 +1611,16 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         announcer.announce(AccessibilityAnnouncer.pausedText(userPaused), kind: .playback)   // ACC-004-R5
     }
 
+    /// MIDI-008 (research MIDI-008-D5): Pause or resume as the controls' Pause/Resume does, without revealing the
+    /// controls, and only while the visualizer is shown and the app is active; no change, no announcement.
+    func setPausedQuietly(_ paused: Bool) {
+        guard screen == .visualizer, appIsActive, userPaused != paused else { return }
+        userPaused = paused
+        paused ? pauseActiveVisual() : resumeActiveVisual()
+        updateIdleTimer()
+        announcer.announce(AccessibilityAnnouncer.pausedText(paused), kind: .playback)
+    }
+
     func next() { showControls(); Task { await announcingPresetChange { await presets.next() } } }
     func previous() { showControls(); Task { await announcingPresetChange { await presets.previous() } } }
     func random() { showControls(); Task { await announcingPresetChange { await presets.random() } } }
