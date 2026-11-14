@@ -48,6 +48,9 @@ interaction); each answer is the conservative, local-first option.
 - Q: How short is the default? → A: 30 s simulated (1,800 frames at 128 × 96, dwell 30 frames = 0.5 s, transition 0.25 s: 60 switches, 10 cycles), well under 60 s wall time on the host; the projectM soak runs 20 s simulated (1,200 frames at 64 × 64, a preset switch every 60 frames, 5 presets: 4 cycles) on the simulator. Each negative control runs a shorter soak (6 cycles).
 - Q: How is the long soak run? → A: `QA006_SOAK_SECONDS=<n>` turns on a bench test (skipped otherwise) that runs n simulated seconds with the same rule and writes the report; `scripts/run_render_soak.py` runs it on the host or a named simulator (passing the variable through as `TEST_RUNNER_QA006_SOAK_SECONDS`) and prints the verdict. The device run is a FINAL-stage task `{device}`.
 - Q: Where does the report go? → A: A JSON report (configuration, per-cycle samples, slope, bounds, errors, verdict) is written to `QA006_REPORT_DIR` when set, else to the test's temporary folder, and attached to the test; the script collects it.
+- Q: Does the default soak run in CI? → A: Yes. It is an ordinary RenderGoldens test, so CI runs it on the macOS host and the iOS simulator jobs that already test the package (skipped without a Metal device, and compiled out in the Linux shape, where the verdict tests still run); the projectM soak runs in CI's existing ANGLERendering simulator step. The long soak never runs in CI.
+- Q: Which compositor settings does the soak use? → A: The app's defaults: render caching (CMP-013) on, Reduce flashing on, content scale 2, standard effect order, each scene's own effect settings when it has them. Caching on is the path that keeps the most state between frames, so it is the one a leak would hide in.
+- Q: How long may each soak test take? → A: The default scene soak under 20 s wall time on the host (the owner's 10 s unit-test ceiling does not fit a soak; QA-006-R8's 60 s is the hard limit), each negative control under 10 s (6 cycles, 3 scenes), the projectM soak under 30 s on the simulator. The report records wall time and frames per second so a slow run is visible, but no test asserts wall time.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -146,7 +149,8 @@ the final QA phase) a device and gets a JSON report and a verdict.
 - **QA-006-R7**: The soak MUST write a JSON report with its configuration, per-cycle samples, slope,
   bounds, errors and verdict.
 - **QA-006-R8**: The default soak in the normal suite MUST simulate 20-60 s and finish in under 60 s
-  wall time on the host; its tests MUST meet the owner's budgets.
+  wall time on the host (target under 20 s; negative controls under 10 s each), using the app's default
+  compositor settings (render caching on, Reduce flashing on); wall time is reported, never asserted.
 - **QA-006-R9**: A long soak MUST run on demand with `QA006_SOAK_SECONDS=<n>` (skipped otherwise), and
   a script MUST run it on the host or a simulator and print the verdict and report path.
 - **QA-006-R10**: Negative controls MUST show that an injected per-cycle leak (pooled and non-pooled)
