@@ -450,6 +450,8 @@ struct VisualizerView: View {
         .onChange(of: coordinator.settings.linearSpectrumSpacing) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.oscilloscopeLine) { coordinator.visualSettingsChanged() }   // VIS-003
         .onChange(of: coordinator.settings.oscilloscopeWindowMilliseconds) { coordinator.visualSettingsChanged() }
+        .onChange(of: coordinator.settings.lissajousMode) { coordinator.visualSettingsChanged() }   // VIS-004
+        .onChange(of: coordinator.settings.lissajousPersistence) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.spectrumSmoothing) { coordinator.visualSettingsChanged() }   // ANL-003
     }
 

@@ -146,8 +146,8 @@ enum SceneAutosaveCapture {
         var contents: [SceneLayerContent] = []
         let spectrumOver: [SceneLayerContent] = [.circularSpectrum]
         switch inputs.visual {
-        case .projectM, .camera, .oscilloscope:
-            break   // camera never reaches here (mapped by the caller); projectM and the oscilloscope (VIS-003-R12) are no compositor layer
+        case .projectM, .camera, .oscilloscope, .lissajous:
+            break   // camera never reaches here (mapped by the caller); projectM, the oscilloscope (VIS-003-R12) and the Lissajous (VIS-004-R12) are no compositor layer
         case .circularSpectrum:
             contents = spectrumOver
         case .linearSpectrum:

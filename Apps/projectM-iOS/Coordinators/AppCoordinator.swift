@@ -975,11 +975,12 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         SpectrumBarCount(rawValue: settings.circularSpectrumBars) ?? .b64
     }
 
-    /// The native visual the settings ask for (VIS-002-R11, VIS-003-R10; circular for any other choice).
+    /// The native visual the settings ask for (VIS-002-R11, VIS-003-R10, VIS-004-R11; circular for any other choice).
     private var nativeSpectrumStyle: NativeSpectrumStyle {
         switch settings.visual {
         case .linearSpectrum: .linear(settings.linearSpectrumOrientation, spacing: settings.linearSpectrumSpacing)
         case .oscilloscope: .oscilloscope(line: settings.oscilloscopeLine, windowMilliseconds: settings.oscilloscopeWindowMilliseconds)
+        case .lissajous: .lissajous(mode: settings.lissajousMode, persistence: settings.lissajousPersistence)   // VIS-004
         default: .circular
         }
     }
