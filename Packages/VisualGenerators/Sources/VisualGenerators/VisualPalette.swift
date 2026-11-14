@@ -72,6 +72,17 @@ public enum VisualPalette: String, CaseIterable, Sendable {
     case ice
     /// White.
     case mono
+    /// ACC-003-R13: a colour-blind-safe ramp derived from cividis (blue-grey to yellow), lightened at the
+    /// start so the first bar has at least 3:1 on black; relative luminance rises strictly with the bar.
+    /// Interpolated in linear light between five sRGB stops.
+    case colorBlindSafe
+
+    /// The sRGB stops of `colorBlindSafe` (research ACC-003-D6).
+    static let colorBlindSafeStops: [LinearColor] = [
+        LinearColor.fromSRGB(red: 0x4D, green: 0x5C, blue: 0x7B), LinearColor.fromSRGB(red: 0x6B, green: 0x6F, blue: 0x7A),
+        LinearColor.fromSRGB(red: 0x8F, green: 0x8A, blue: 0x78), LinearColor.fromSRGB(red: 0xBB, green: 0xAE, blue: 0x6E),
+        LinearColor.fromSRGB(red: 0xFD, green: 0xE7, blue: 0x38),
+    ]
 
     /// The linear color of bar `k` of `count`.
     public func color(bar k: Int, of count: Int) -> LinearColor {
@@ -86,7 +97,19 @@ public enum VisualPalette: String, CaseIterable, Sendable {
                                blue: a.blue + (b.blue - a.blue) * t, alpha: 1)
         case .mono:
             return LinearColor(red: 1, green: 1, blue: 1, alpha: 1)
+        case .colorBlindSafe:
+            return VisualPalette.ramp(VisualPalette.colorBlindSafeStops, at: t)
         }
+    }
+
+    /// Linear-light interpolation along evenly spaced stops, `t` in 0…1.
+    static func ramp(_ stops: [LinearColor], at t: Float) -> LinearColor {
+        let position = min(max(t, 0), 1) * Float(stops.count - 1)
+        let i = min(Int(position), stops.count - 2)
+        let f = position - Float(i)
+        let a = stops[i], b = stops[i + 1]
+        return LinearColor(red: a.red + (b.red - a.red) * f, green: a.green + (b.green - a.green) * f,
+                           blue: a.blue + (b.blue - a.blue) * f, alpha: 1)
     }
 
     /// HSV(hue, 1, 1) in sRGB, decoded to linear.
