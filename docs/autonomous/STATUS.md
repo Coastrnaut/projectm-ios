@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T06:14:00Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T06:42:45Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,18 +10,19 @@
 | State | Features |
 |---|---|
 | audited | 206 |
-| implementing | 3 |
+| implementing | 2 |
+| unit_passed | 1 |
 | integrated | 116 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 3 | 0 | 83 | 1 |
-| P1 | 117 | 3 | 31 | 0 |
-| P2 | 77 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 3 | 0 | 0 | 83 | 1 |
+| P1 | 117 | 2 | 1 | 31 | 0 |
+| P2 | 77 | 0 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -698,6 +699,12 @@ None.
 - `swift test --package-path Packages/PresetLibrary`: pass at `fd80d903f84b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-002/20261113T161716/swift-test_PresetLibrary.log`)
 - `swift test --package-path Packages/SceneArchive`: pass at `fd80d903f84b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-002/20261113T161716/swift-test_SceneArchive.log`)
 - `post-merge: projectM-iOSTests incl. SceneArchiveTamperImportTests on iOS 27.2 sim; LocalPortability 58, SceneArchive 21, PresetLibrary in the gate`: pass at `77fcfa3f1e56` (log `.autonomous/logs/integration/file-002/app-tests.log`)
+
+### FILE-003 Import dry run (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `2dbb99af1390` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-003/20261114T014156/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `2dbb99af1390` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-003/20261114T014156/docs.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `2dbb99af1390` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-003/20261114T014156/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/PresetLibrary`: pass at `2dbb99af1390` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-003/20261114T014156/swift-test_PresetLibrary.log`)
 
 ### FILE-007 Document schema validator (integrated)
 - `python3 scripts/check_compliance.py`: pass at `d9f90f1e1d0f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-007/20261113T163821/compliance.log`)
