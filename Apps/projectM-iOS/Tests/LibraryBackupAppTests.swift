@@ -35,6 +35,7 @@ final class LibraryBackupAppTests: XCTestCase {
                PlaybackBalanceSetting.positionKey,   // AUD-010-R9
                ParameterShelf.pinsKey,   // UIX-004-R10
                RecordingCountdownSetting.key,   // REC-007-R8
+               SceneHUDSetting.key,   // UIX-013-R11
                RecordingTimedStopSetting.key,   // REC-008-R9
                SplitEditorSetting.key,   // UIX-007-R7 (excluded: this device's screen)
                OSCRoutesCoordinator.disabledRoutesKey, OSCRoutesCoordinator.aliasesKey,   // OSC-003-R9

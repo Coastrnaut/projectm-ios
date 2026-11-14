@@ -88,6 +88,8 @@ struct SettingsView: View {
     var recordingQuality: RecordingQualitySetting?
     /// REC-007: the recording countdown (nil hides the section, e.g. in previews).
     var recordingCountdown: RecordingCountdownSetting?
+    /// UIX-013: the scene performance HUD switch (nil hides the row, e.g. in previews).
+    var sceneHUD: SceneHUDSetting? = nil
     /// OUT-004: the external display's output correction (nil hides the section, e.g. in previews).
     var externalOutput: ExternalOutputSetting? = nil
     /// REC-008: the recording length (nil hides the section, e.g. in previews).
@@ -530,6 +532,7 @@ struct SettingsView: View {
             Text("Shows the frame rate and the audio state over the visualization.")
         }
         .id("performance")
+        if let sceneHUD { SceneHUDSection(setting: sceneHUD).id("sceneHUD") }   // UIX-013-R1
         if let powerProfile { PowerProfileSection(setting: powerProfile).id("powerProfile") }   // PERF-008-R1
         if let performanceReport { PerformanceReportSection(export: performanceReport).id("performanceReport") }   // PERF-012-R1
     }

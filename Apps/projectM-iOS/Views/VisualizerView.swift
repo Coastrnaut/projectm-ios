@@ -151,6 +151,10 @@ struct VisualizerView: View {
     /// Top status stack. OSC-007-R2, R6: the OSC listener badge, with or without the controls; then
     /// CAM-012's "Camera on" badge.
     @ViewBuilder private var topStatus: some View {
+        if coordinator.sceneHUD.isEnabled {   // UIX-013-R2, C3: device only, with or without the controls
+            SceneHUDLayer(show: coordinator.show, advance: coordinator.showAutoAdvance, tempo: coordinator.tempo,
+                          source: coordinator.sourceStatusText)
+        }
         OSCListenerBadge(osc: coordinator.osc) { () -> Void in coordinator.statusEvents.post(StatusEventCatalog.osc(port: nil)) }
         SceneLockBadge(lock: coordinator.settings.sceneLock)   // SCN-015-R7: never hidden with the controls
         SceneCompareBar(compare: coordinator.sceneCompare)   // SCN-009-R7: never hidden with the controls
@@ -473,6 +477,7 @@ struct VisualizerView: View {
                      recordingAudioStatus: { () -> String in coordinator.videoRecording.audioStatusText },
                      recordingQuality: coordinator.recordingQuality,   // REC-005
                      recordingCountdown: coordinator.recordingCountdown,   // REC-007
+                     sceneHUD: coordinator.sceneHUD,   // UIX-013
                      externalOutput: coordinator.externalOutput,   // OUT-004
                      recordingTimedStop: coordinator.recordingTimedStop,   // REC-008
                      explainers: coordinator.explainers,   // UIX-015
