@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T19:45:11Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T20:24:22Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,25 +9,26 @@
 
 | State | Features |
 |---|---|
-| audited | 110 |
-| implementing | 4 |
-| built | 5 |
-| integrated | 206 |
+| audited | 104 |
+| implementing | 5 |
+| built | 3 |
+| unit_passed | 1 |
+| integrated | 212 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | built | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 31 | 2 | 5 | 113 | 0 |
-| P2 | 68 | 2 | 0 | 9 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 0 | 84 | 1 |
+| P1 | 26 | 4 | 1 | 1 | 119 | 0 |
+| P2 | 67 | 1 | 2 | 0 | 9 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 119 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-015, CAM-003)
+- 113 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-015, CAM-003)
 
 ## Integrated
 
@@ -156,10 +157,12 @@ The physical-device suite may **not** start:
 | MOD-012 | Modulation matrix UI | `d63b2fb9` | `feature/mod-012` |
 | MOD-013 | Modulation serialization | `d08b5103b0ef` | `feature/mod-013` |
 | MOD-014 | Modulation feedback prevention | `3b3a60649025` | `feature/mod-014` |
+| MOD-015 | Envelope follower bank | `17a05dd0` | `feature/mod-015` |
 | OSC-001 | OSC receiver | `13d9883531b9` | `feature/osc-001` |
 | OSC-002 | OSC message parser | `3b3a60649025` | `feature/osc-002` |
 | OSC-003 | OSC parameter routes | `ca21d525` | `feature/osc-003` |
 | OSC-007 | OSC network access switch | `ade4dfec39a5` | `feature/osc-007` |
+| OSC-008 | OSC peer allowlist | `1cc452b0` | `feature/osc-008` |
 | OSC-009 | OSC rate limiter | `1ee3a05d25fb` | `feature/osc-009` |
 | OUT-001 | External display scene | `dfd5757fccd4` | `feature/out-001` |
 | OUT-002 | Display connect handling | `526c47e9` | `None` |
@@ -173,6 +176,7 @@ The physical-device suite may **not** start:
 | PERF-005 | Preset prewarm scheduler | `0c755b4a` | `feature/perf-005` |
 | PERF-006 | Memory warning recovery | `b4281645619e` | `feature/perf-006` |
 | PERF-007 | Frame drop telemetry | `f089007a` | `feature/perf-007` |
+| PERF-008 | Battery saver profile | `a47ba62c` | `feature/perf-008` |
 | PERF-010 | Crash-safe session recovery | `7d64b6b027da` | `feature/perf-010` |
 | PERF-011 | Background resource release | `6d669fcb8576` | `feature/perf-011` |
 | PERF-014 | Render failure fallback | `76a8cbf21e15` | `feature/perf-014` |
@@ -203,6 +207,7 @@ The physical-device suite may **not** start:
 | REC-007 | Recording countdown | `1847eae2` | `feature/rec-007` |
 | REC-008 | Timed recording stop | `5091bfb8` | `feature/rec-008` |
 | REC-009 | Recording status overlay | `ed68646f` | `feature/rec-009` |
+| REC-010 | Recording library | `864dc0c0` | `feature/rec-010` |
 | REC-012 | Share via Files | `c3886d1cb0bb` | `feature/rec-012` |
 | REC-015 | Recording disk guard | `d1a76394fab1` | `feature/rec-015` |
 | SCN-001 | Versioned scene format | `c3886d1cb0bb` | `feature/scn-001` |
@@ -218,6 +223,7 @@ The physical-device suite may **not** start:
 | SCN-012 | Scene validation | `2a86515` | `feature/scn-012` |
 | SCN-013 | Scene migration | `7f597d2` | `feature/scn-013` |
 | SCN-014 | Scene dependency pack | `cc53b27d` | `feature/scn-014` |
+| SCN-015 | Scene lock mode | `d518a943` | `feature/scn-015` |
 | SHD-001 | Procedural material catalog | `ade4dfec39a5` | `feature/shd-001` |
 | SHD-002 | Node-based generator graph | `e91692538b99` | `feature/shd-002` |
 | SHD-009 | Expression mapping DSL | `d84b02f95a85` | `feature/shd-009` |
@@ -239,6 +245,7 @@ The physical-device suite may **not** start:
 | VIS-005 | Radial waveform | `9bbd8af5` | `feature/vis-005` |
 | VIS-006 | Beat pulse rings | `427617b9` | `feature/vis-006` |
 | VIS-007 | Mandala symmetry | `8bdb0122` | `feature/vis-007` |
+| VIS-008 | Particle fountain | `11e727ab` | `feature/vis-008` |
 
 ## Proved already implemented
 
@@ -522,6 +529,13 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `71c12fb822f4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-014/20261113T224539/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `71c12fb822f4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-014/20261113T224539/swift-test_VisualGenerators.log`)
 - `post-merge: projectM-iOSTests 413 + NativeVisual UI tests 4; gate ran 13 package suites incl. downstream`: pass at `c3900199` (log `.autonomous/logs/integration/anl-014/app-tests.log`)
+
+### ANL-015 Section energy change (built)
+- `python3 scripts/check_compliance.py`: pass at `9a1653f93379` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-015/20261114T150829/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `9a1653f93379` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-015/20261114T150829/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `9a1653f93379` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-015/20261114T150829/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/AnalysisFeatures`: pass at `9a1653f93379` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-015/20261114T150829/swift-test_AnalysisFeatures.log`)
+- `swift test --package-path Packages/Compositor`: exit 1 at `9a1653f93379` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-015/20261114T150829/swift-test_Compositor.log`)
 
 ### ANL-016 Analysis event bus (integrated)
 - `python3 scripts/check_compliance.py`: pass at `1e9e7eec69b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-016/20261113T101323/compliance.log`)
@@ -847,6 +861,14 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `ccc35e86202b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-002/20261113T232519/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `ccc35e86202b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-002/20261113T232519/swift-test_ShowControl.log`)
 - `post-merge (CAM-002 + AUD-015): projectM-iOSTests 430 + FrontCamera/Camera/BackgroundPolicy/Status/SessionRecovery UI tests 15`: pass at `ad0aebe2` (log `.autonomous/logs/integration/cam-002-aud-015/app-tests.log`)
+
+### CAM-003 Camera lens selection (built)
+- `python3 scripts/check_compliance.py`: pass at `04d42e64881d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-003/20261114T151242/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `04d42e64881d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-003/20261114T151242/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `04d42e64881d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-003/20261114T151242/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `04d42e64881d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-003/20261114T151242/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `04d42e64881d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-003/20261114T151242/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: exit 1 at `04d42e64881d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-003/20261114T151242/swift-test_Compositor.log`)
 
 ### CAM-007 Camera crop and rotation (integrated)
 - `python3 scripts/check_compliance.py`: pass at `bbfa49c59ca0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-007/20261114T001920/compliance.log`)
@@ -1592,6 +1614,22 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `a08446ecdde1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-014/20261113T114626/swift-test_VisualGenerators.log`)
 - `post-merge: ParameterGraph xcodebuild test on iPhone 17 sim (66); projectM-iOSTests 172 + AudioFeatureBindingUITests 13.7 s`: pass at `3b3a60649025` (log `.autonomous/logs/integration/mod-014-osc-002/pg-sim.log`)
 
+### MOD-015 Envelope follower bank (integrated)
+- `python3 scripts/check_compliance.py`: pass at `c05f569b6078` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-015/20261114T144306/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `c05f569b6078` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-015/20261114T144306/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `c05f569b6078` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-015/20261114T144306/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `c05f569b6078` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-015/20261114T144306/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `c05f569b6078` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-015/20261114T144306/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `c05f569b6078` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-015/20261114T144306/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/ParameterGraph`: pass at `c05f569b6078` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-015/20261114T144306/swift-test_ParameterGraph.log`)
+- `swift test --package-path Packages/PerformanceControl`: pass at `c05f569b6078` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-015/20261114T144306/swift-test_PerformanceControl.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `c05f569b6078` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-015/20261114T144306/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `c05f569b6078` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-015/20261114T144306/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `c05f569b6078` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-015/20261114T144306/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `c05f569b6078` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-015/20261114T144306/swift-test_ShowControl.log`)
+- `swift test --package-path Packages/VisualGenerators`: pass at `c05f569b6078` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-015/20261114T144306/swift-test_VisualGenerators.log`)
+- `post-merge (conflicts with ANL-013 resolved): ParameterGraph 208 + projectM-iOSTests 912`: pass at `17a05dd0` (log `.autonomous/logs/integration/batch48/app-tests.log`)
+
 ### OSC-001 OSC receiver (integrated)
 - `python3 scripts/check_compliance.py`: pass at `6467d622b4bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-001/20261113T113140/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `6467d622b4bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-001/20261113T113140/docs.log`)
@@ -1620,6 +1658,16 @@ None.
 - `python3 scripts/check_compliance.py`: pass at `30fe777ae19d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-007/20261113T120523/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `30fe777ae19d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-007/20261113T120523/docs.log`)
 - `post-merge: projectM-iOSTests 184 incl. OSCNetworkAccessTests (real listener ready/cancelled), OSCNetworkAccessUITests 14.9 s, OSCReceiverUITests 14.8 s, CameraPrivacyStatusUITests 14.8 s (shared status stack) on iPhone 17 iOS 27.2 sim`: pass at `ade4dfec39a5` (log `.autonomous/logs/integration/osc-007-shd-001/app-tests.log`)
+
+### OSC-008 OSC peer allowlist (integrated)
+- `python3 scripts/check_compliance.py`: pass at `570bded48a26` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-008/20261114T150018/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `570bded48a26` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-008/20261114T150018/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `570bded48a26` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-008/20261114T150018/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `570bded48a26` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-008/20261114T150018/autonomous-tests.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `570bded48a26` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-008/20261114T150018/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `570bded48a26` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-008/20261114T150018/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/PerformanceControl`: pass at `570bded48a26` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-008/20261114T150018/swift-test_PerformanceControl.log`)
+- `post-merge (conflicts resolved): LibraryBackup 77, projectM-iOSTests 924 + UI 2 (OSC peers, routes)`: pass at `1cc452b0` (log `.autonomous/logs/integration/batch51/app-tests.log`)
 
 ### OSC-009 OSC rate limiter (integrated)
 - `python3 scripts/check_compliance.py`: pass at `f4291322e4b6` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-009/20261113T122631/compliance.log`)
@@ -1757,6 +1805,23 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `ec9d7e48153f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-007/20261114T141129/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `ec9d7e48153f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-007/20261114T141129/swift-test_ShowControl.log`)
 - `post-merge: projectM-iOSTests 896 + UI 1 (frame-drop overlay)`: pass at `f089007a` (log `.autonomous/logs/integration/batch43/app-tests.log`)
+
+### PERF-008 Battery saver profile (integrated)
+- `python3 scripts/check_compliance.py`: pass at `dbbd7372c467` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-008/20261114T145104/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `dbbd7372c467` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-008/20261114T145104/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `dbbd7372c467` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-008/20261114T145104/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `dbbd7372c467` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-008/20261114T145104/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `dbbd7372c467` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-008/20261114T145104/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `dbbd7372c467` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-008/20261114T145104/swift-test_Compositor.log`)
+- `swift test --package-path Packages/Diagnostics`: pass at `dbbd7372c467` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-008/20261114T145104/swift-test_Diagnostics.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `dbbd7372c467` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-008/20261114T145104/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `dbbd7372c467` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-008/20261114T145104/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `dbbd7372c467` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-008/20261114T145104/swift-test_RenderGoldens.log`)
+- `xcodebuild -scheme Rendering-Package -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `dbbd7372c467` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-008/20261114T145104/sim-test_Rendering.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `dbbd7372c467` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-008/20261114T145104/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `dbbd7372c467` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-008/20261114T145104/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `dbbd7372c467` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-008/20261114T145104/swift-test_ShowControl.log`)
+- `post-merge: projectM-iOSTests 921 + UI 1 (power profile), after two test fixes`: pass at `5c3582d6` (log `.autonomous/logs/integration/batch50c/app-tests.log`)
 
 ### PERF-010 Crash-safe session recovery (integrated)
 - `python3 scripts/check_compliance.py`: pass at `26108200f9d2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-010/20261113T170914/compliance.log`)
@@ -1965,6 +2030,12 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `bd661ef22a94` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-008/20261114T104021/swift-test_ShowControl.log`)
 - `post-merge: projectM-iOSTests 782 + UI 5 (MIDI discovery, monitor, learn, video recording)`: pass at `2a986abd` (log `.autonomous/logs/integration/batch20/app-tests.log`)
 
+### QA-009 Accessibility snapshot suite (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `d151e5288bc9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-009/20261114T152204/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `d151e5288bc9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-009/20261114T152204/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `d151e5288bc9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-009/20261114T152204/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `d151e5288bc9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-009/20261114T152204/autonomous-tests.log`)
+
 ### REC-001 Still frame capture (integrated)
 - `python3 scripts/check_compliance.py`: pass at `08830385f564` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-001/20261113T142938/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `08830385f564` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-001/20261113T142938/docs.log`)
@@ -2083,6 +2154,17 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `e53fbaff2a00` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-009/20261114T135122/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `e53fbaff2a00` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-009/20261114T135122/swift-test_ShowControl.log`)
 - `post-merge: projectM-iOSTests 882 + UI 3 (status overlay, video recording)`: pass at `ed68646f` (log `.autonomous/logs/integration/batch40/app-tests.log`)
+
+### REC-010 Recording library (integrated)
+- `python3 scripts/check_compliance.py`: pass at `946aadeca9bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-010/20261114T150300/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `946aadeca9bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-010/20261114T150300/docs.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `946aadeca9bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-010/20261114T150300/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `946aadeca9bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-010/20261114T150300/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/LocalPortability`: pass at `946aadeca9bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-010/20261114T150300/swift-test_LocalPortability.log`)
+- `swift test --package-path Packages/PresetLibrary`: pass at `946aadeca9bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-010/20261114T150300/swift-test_PresetLibrary.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `946aadeca9bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-010/20261114T150300/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `946aadeca9bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-010/20261114T150300/swift-test_ShowControl.log`)
+- `post-merge: projectM-iOSTests 934 + UI 2 (recording library, cache cleanup)`: pass at `864dc0c0` (log `.autonomous/logs/integration/batch52/app-tests.log`)
 
 ### REC-012 Share via Files (integrated)
 - `python3 scripts/check_compliance.py`: pass at `8909040fb290` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-012/20261113T152825/compliance.log`)
@@ -2222,6 +2304,15 @@ None.
 - `swift test --package-path Packages/ImportFuzz`: pass at `e25709ae088d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-014/20261114T134421/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/SceneArchive`: pass at `e25709ae088d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-014/20261114T134421/swift-test_SceneArchive.log`)
 - `post-merge: projectM-iOSTests 877 + UI 3 (scene packs, folders, slideshow)`: pass at `cc53b27d` (log `.autonomous/logs/integration/batch39/app-tests.log`)
+
+### SCN-015 Scene lock mode (integrated)
+- `python3 scripts/check_compliance.py`: pass at `417f54ea354d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-015/20261114T144852/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `417f54ea354d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-015/20261114T144852/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `417f54ea354d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-015/20261114T144852/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `417f54ea354d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-015/20261114T144852/autonomous-tests.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `417f54ea354d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-015/20261114T144852/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `417f54ea354d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-015/20261114T144852/swift-test_LibraryBackup.log`)
+- `post-merge: projectM-iOSTests 916 + UI 2 (scene lock, modulation matrix); REC-008 load-tolerant test fix`: pass at `ff775df4` (log `.autonomous/logs/integration/batch49b/app-tests.log`)
 
 ### SHD-001 Procedural material catalog (integrated)
 - `python3 scripts/check_compliance.py`: pass at `67186e7fa06d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-001/20261113T120524/compliance.log`)
@@ -2428,3 +2519,19 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `0116459b31c6` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-007/20261114T143158/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `0116459b31c6` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-007/20261114T143158/swift-test_VisualGenerators.log`)
 - `post-merge: projectM-iOSTests 904 + UI 1 (mandala)`: pass at `8bdb0122` (log `.autonomous/logs/integration/batch45/app-tests.log`)
+
+### VIS-008 Particle fountain (integrated)
+- `python3 scripts/check_compliance.py`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/swift-test_ShowControl.log`)
+- `swift test --package-path Packages/VisualGenerators`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/swift-test_VisualGenerators.log`)
+- `post-merge: projectM-iOSTests 938 + UI 2 (particle fountain, mandala)`: pass at `11e727ab` (log `.autonomous/logs/integration/batch53/app-tests.log`)

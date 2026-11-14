@@ -13,6 +13,10 @@
 // PERF-003 (specs/173-perf-003-adaptive-quality, research PERF-003-D6): with `adaptiveEffects` (the visual has an
 // adaptable effect switched on, which the effect quality ladder lowers first) the serious state keeps 60 fps; the
 // critical state and Low Power cap as above. Without it the table is unchanged.
+//
+// PERF-008 (specs/201-perf-008-battery-saver, R3): the user's power profile adds a `PowerBudget` ceiling. The result
+// is the per-value minimum of the table above and the budget (never below 30 fps); the overloads without a budget
+// keep Standard, so the table above is unchanged for them. `current()` uses the active profile (`PowerProfileState`).
 import Foundation
 import QuartzCore
 
@@ -59,6 +63,28 @@ public enum QualityGovernor {
 
     /// PERF-003-R7: effects step down before the frame rate; the serious-state cap is deferred to the effect ladder.
     public static func settings(thermal: ThermalLevel, lowPower: Bool, adaptiveEffects: Bool) -> QualitySettings {
+        settings(thermal: thermal, lowPower: lowPower, adaptiveEffects: adaptiveEffects, budget: .standard)
+    }
+
+    /// PERF-008-R3: the thermal/Low Power result capped by the power budget, per value; the governor can lower further
+    /// but never above the budget, and never below the 30 fps floor. Caps do not compound (0.75 and 0.75 stay 0.75).
+    public static func settings(thermal: ThermalLevel, lowPower: Bool, adaptiveEffects: Bool,
+                                budget: PowerBudget) -> QualitySettings {
+        var settings = systemSettings(thermal: thermal, lowPower: lowPower, adaptiveEffects: adaptiveEffects)
+        let fps: Int = min(settings.maxFramesPerSecond, budget.maxFramesPerSecond)
+        settings.maxFramesPerSecond = max(minimumFramesPerSecond, fps)
+        settings.renderScale = min(settings.renderScale, budget.renderScaleCap)
+        return settings
+    }
+
+    /// The notifications after which `current()` may change: thermal state, Low Power Mode and the power profile.
+    public static let changeNotifications: [Notification.Name] = [
+        ProcessInfo.thermalStateDidChangeNotification,
+        Notification.Name.NSProcessInfoPowerStateDidChange,
+        PowerProfileState.didChangeNotification,
+    ]
+
+    private static func systemSettings(thermal: ThermalLevel, lowPower: Bool, adaptiveEffects: Bool) -> QualitySettings {
         var settings = QualitySettings.full
         let thermalCap: Bool = adaptiveEffects ? thermal == .critical : (thermal == .serious || thermal == .critical)
         if lowPower || thermalCap {
@@ -73,6 +99,8 @@ public enum QualityGovernor {
     /// The settings for this device right now.
     public static func current() -> QualitySettings {
         let info = ProcessInfo.processInfo
-        return settings(thermal: ThermalLevel(info.thermalState), lowPower: info.isLowPowerModeEnabled)
+        let lowPower = info.isLowPowerModeEnabled
+        return settings(thermal: ThermalLevel(info.thermalState), lowPower: lowPower, adaptiveEffects: false,
+                        budget: PowerProfileState.budget(lowPower: lowPower))
     }
 }

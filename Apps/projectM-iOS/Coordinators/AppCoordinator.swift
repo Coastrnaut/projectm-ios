@@ -261,6 +261,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let sceneRepair: SceneRepairCoordinator
     /// MED-013: missing imported media (Settings › Storage › Missing Media) and the visualizer's placeholder.
     let missingMedia = MissingMediaCoordinator()
+    /// REC-010: Settings › Storage › Recordings (announces on the `library` lane).
+    @ObservationIgnored private(set) lazy var recordingLibrary: RecordingLibraryModel = makeRecordingLibrary()
     /// ACC-011: capture and recording status events (announcements and captions); owns ACC-004's announcer.
     let statusEvents = StatusEventRouter()
     /// ANL-013: the native visual's stereo phase-inversion warning (source indicator, overlay, X3a/X3b).
@@ -324,10 +326,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// leftover share copies runs at launch (REC-012-R6).
     @ObservationIgnored let captureShare = CaptureShareCoordinator()
     /// REC-003: Record (the shown visual's frames into a video file, handed to the file mover).
-    @ObservationIgnored private(set) lazy var videoRecording = VideoRecordingCoordinator { [weak self] () -> VideoRecordingCoordinator.Context in
-        guard let self else { return VideoRecordingCoordinator.Context(source: nil, visualShown: false, outputLive: false, paused: false) }
-        return self.videoRecordingContext
-    }
+    @ObservationIgnored private(set) lazy var videoRecording: VideoRecordingCoordinator = makeVideoRecording()
     /// REC-004: "Include microphone audio" for recordings (Settings → Recording; off by default).
     let recordingAudio: RecordingAudioSetting
     /// REC-005: the record quality profile (Settings → Recording quality; Standard by default). The rows
@@ -340,6 +339,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         })
     /// REC-007: the recording countdown (Settings → Recording countdown; Off by default).
     @ObservationIgnored private(set) lazy var recordingCountdown = RecordingCountdownSetting(defaults: defaults)
+    /// PERF-008: the power profile (made in `init`, so the first frame loop already runs under it).
+    @ObservationIgnored private(set) lazy var powerProfile = PowerProfileSetting(defaults: defaults)
     /// OUT-004: the external display's output correction (Settings › External Display).
     @ObservationIgnored private(set) lazy var externalOutput = ExternalOutputSetting(defaults: defaults, external: externalDisplay)
     /// REC-008: the recording length (Settings → Stop recording after; Off by default).
@@ -537,6 +538,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         lifecycleForwarding = Task { @MainActor in
             for await event in lifecycle.events { await lifecycleCoordinator.handle(event) }
         }
+        _ = powerProfile   // PERF-008-R6: the stored profile is active before any visual starts
         connectAfterInit(defaults: defaults)
     }
 
@@ -581,6 +583,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         EffectChainSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-020: standard order, no presets
         defaults.removeObject(forKey: MIDIMappingCoordinator.mappingsKey)   // MIDI-003: no mappings
         OSCRoutesCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-003: every route on, no aliases
+        OSCPeersCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-008: allowlist off, nobody approved
         if let profiles = try? MIDIProfilesCoordinator.defaultDirectory() { try? FileManager.default.removeItem(at: profiles) }   // MIDI-012: no profiles
         try? FileManager.default.removeItem(at: PresetCollectionStore.defaultDirectory())   // PRE-007: UI tests start without collections
         try? FileManager.default.removeItem(at: UserPresetStore.defaultDirectory())         // PRE-012: and without imported presets
@@ -596,6 +599,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// The end of init, after every stored property is set: callbacks, observers and the first loads.
     private func connectAfterInit(defaults: UserDefaults) {
         midiMappings.profiles = MIDIProfilesCoordinator.makeDefault(mappings: midiMappings)   // MIDI-012
+        osc.peers = OSCPeersCoordinator(allowlist: osc.peerAllowlist, defaults: defaults)   // OSC-008 (outside init: type-check budget)
         photos.onPhotoChange = { [weak self] (_: StoredPhoto?) in self?.refreshPhotoContent() }   // MED-006: the slideshow wins when on
         connectSlideshow()   // MED-006
         connectLogo()   // MED-010
@@ -645,6 +649,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         connectModulationMatrix()   // MOD-012 (and its DEBUG seed; before the history starts)
         connectSceneHistory()   // SCN-010: starts from the restored (or fresh) scene
         connectSceneSnapshots()   // SCN-008
+        connectSceneLock()   // SCN-015
         midiMappings.applyValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.midi, values) }   // MIDI-003-R8
         osc.applyLiveValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.osc, values) }   // OSC-003-R5
         #if DEBUG
@@ -1096,6 +1101,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         case .radialWaveform: .radialWaveform(ring: settings.radialWaveformRing, amplitude: settings.radialWaveformAmplitude)   // VIS-005
         case .beatRings: .beatRings(life: settings.beatRingsLife)   // VIS-006
         case .mandala: .mandala(symmetry: settings.mandalaSymmetry, mirror: settings.mandalaMirror, petal: settings.mandalaPetal)   // VIS-007
+        case .particleFountain: .particleFountain(gravity: settings.particleGravity)   // VIS-008
         default: .circular
         }
     }
@@ -1127,7 +1133,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.safetyClamp = settings.safetyClamp   // ACC-012-R4
             host.smoothing = settings.spectrumSmoothing   // ANL-003
             host.palette = settings.spectrumPalette        // ACC-003-R13
-            host.reduceMotion = settings.systemReduceMotion   // VIS-007-R5: the mandala's turn (ACC-001)
+            host.reduceMotion = settings.systemReduceMotion   // VIS-007-R5, VIS-008-R9: the mandala's turn, the fountain's bursts (ACC-001)
             host.externalValues = externalLiveValues.merged   // MIDI-003, OSC-003: values held while no native visual was shown
             for binding in sceneAutosave?.bindings ?? [] { try? host.addLayer(binding) }   // SCN-002: restored bindings, MOD-011 layers in order
             connectThresholdTriggers(host)   // MOD-006
@@ -1468,6 +1474,23 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// REC-003: the shown visual's recording source; nil for projectM (not recordable in this row,
     /// ADR-0027) and when no visual is shown.
     /// REC-003/REC-004: what the recording coordinator reads (visual, output, pause; source mode, consent, tap).
+    /// REC-010-R9: the library's results are announced on the `library` lane.
+    private func makeRecordingLibrary() -> RecordingLibraryModel {
+        let library = RecordingLibraryModel()
+        library.announce = { [weak self] (text: String) in self?.announcer.announce(text, kind: .library) }
+        return library
+    }
+
+    /// REC-003's coordinator; REC-010-R9: Keep announces on the `library` lane.
+    private func makeVideoRecording() -> VideoRecordingCoordinator {
+        let recording = VideoRecordingCoordinator { [weak self] () -> VideoRecordingCoordinator.Context in
+            guard let self else { return VideoRecordingCoordinator.Context(source: nil, visualShown: false, outputLive: false, paused: false) }
+            return self.videoRecordingContext
+        }
+        recording.onKept = { [weak self] (text: String) in self?.announcer.announce(text, kind: .library) }
+        return recording
+    }
+
     var videoRecordingContext: VideoRecordingCoordinator.Context {
         let manager = manager
         var context = VideoRecordingCoordinator.Context(source: activeVideoRecordingSource, visualShown: screen == .visualizer,
@@ -1959,6 +1982,8 @@ final class RendererPresetLoader: PresetLoading, MemoryPressureResponder {
     /// SC-104: hands upcoming presets (with their archive data) to the renderer's warm-up.
     func prewarm(_ presets: [IndexedPreset]) {
         guard let renderer, let resources = Bundle.main.resourceURL else { return }
+        // PERF-008-R2: Battery saver (or Follow Low Power Mode under Low Power) skips the background warm-up.
+        guard Self.allowsWarmUp(lowPower: ProcessInfo.processInfo.isLowPowerModeEnabled) else { return }
         // Imported presets are not warmed: the warm-up engine is outside their guarded path (PRE-012).
         let playable: [Preset] = presets.filter { $0.source != PresetLibrary.userSource }.compactMap { preset in
             var item = Preset(id: preset.id, name: preset.name, fileURL: resources.appendingPathComponent(preset.path),
@@ -1974,6 +1999,11 @@ final class RendererPresetLoader: PresetLoading, MemoryPressureResponder {
         } else {
             renderer.prewarm(playable)
         }
+    }
+
+    /// PERF-008-R2: the active power budget allows the SC-104 background warm-up.
+    static func allowsWarmUp(lowPower: Bool) -> Bool {
+        PowerProfileState.budget(lowPower: lowPower).allowsBackgroundWarmUp
     }
 
     // MARK: - Memory pressure (PERF-006-R11)

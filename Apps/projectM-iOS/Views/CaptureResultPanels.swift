@@ -1,5 +1,5 @@
 // CaptureResultPanels.swift — the "Frame ready" and "Recording ready" panels with Save…, Share… and
-// Discard, the share notice, and the DEBUG share simulation (REC-012; spec
+// Discard (REC-010: the recording's also has Keep), the share notice, and the DEBUG share simulation (REC-012; spec
 // specs/060-rec-012-share-via-files, contracts/capture-share.md).
 //
 // * Each panel is one accessibility container with labeled buttons (REC-012-R13, FR-070); the system
@@ -26,6 +26,7 @@ struct CaptureResultPanels: View {
             panel(kind: .recording, title: "Recording ready", icon: "film",
                   save: { videoRecording.requestSave() },
                   shareAction: { _ = share.shareRecording(recording) },
+                  keep: { videoRecording.keepOffered() },   // REC-010-R1
                   discard: { videoRecording.discardOffered() })
         }
         if let notice = share.notice {   // REC-012-R11, R15 (FR-070: a labeled element)
@@ -52,7 +53,7 @@ struct CaptureResultPanels: View {
     }
 
     private func panel(kind: CaptureShareCoordinator.Kind, title: String, icon: String, save: @escaping () -> Void,
-                       shareAction: @escaping () -> Void, discard: @escaping () -> Void) -> some View {
+                       shareAction: @escaping () -> Void, keep: (() -> Void)? = nil, discard: @escaping () -> Void) -> some View {
         let prefix = kind == .frame ? "frameResult" : "recordingResult"
         let noun = kind == .frame ? "frame" : "recording"
         return HStack(spacing: 12) {
@@ -73,6 +74,11 @@ struct CaptureResultPanels: View {
                             .accessibilityHidden(true)
                     }
                 }
+            if let keep {   // REC-010-R1: into Settings › Storage › Recordings
+                Button("Keep", action: keep)
+                    .accessibilityLabel("Keep the \(noun) in Recordings")
+                    .accessibilityIdentifier("\(prefix)Keep")
+            }
             Button("Discard", role: .destructive, action: discard)
                 .foregroundStyle(OverlayContrast.criticalText)   // ACC-008-R5: system red missed 4.5:1 on the overlay
                 .accessibilityLabel("Discard the \(noun)")
