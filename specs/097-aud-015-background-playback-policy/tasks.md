@@ -12,23 +12,28 @@ person.
 
 ## Phase 1: Setup
 
-- [ ] AUD-015-T01 Record the baseline: `swift test --package-path Packages/CaptureKit` on the host;
+- [X] AUD-015-T01 Record the baseline: `swift test --package-path Packages/CaptureKit` on the host;
   `python3 scripts/check_compliance.py`, `validate_docs.py`, `check_motion_policy.py`,
   `check_permission_catalog.py`, `test_scripts.py`; PosterBoard report count. Evidence: counts
-  recorded here.
+  recorded here. — Verified 2026-11-14: at c791527f, CaptureKit 454 tests on the host, 0 failures
+  (39.8 s); the four checks OK; `test_scripts.py` 147 tests OK (1 skipped, 16.6 s); PosterBoard
+  reports 25.
 
 ## Phase 2: Foundational (the policy)
 
-- [ ] AUD-015-T02 Write `Packages/CaptureKit/Tests/CaptureKitTests/BackgroundPolicyTests.swift`
+- [X] AUD-015-T02 Write `Packages/CaptureKit/Tests/CaptureKitTests/BackgroundPolicyTests.swift`
   table test: all 48 cases of source (3) × presence (foreground, background, locked, background and
   locked) × keepPlayingInBackground (2) × declaresAudioBackgroundMode (2) against the contract's
   policy table (action, reason, notice text); `mayResumeAutomatically` true only in the foreground
   and unlocked for Microphone and In-App Playback; `declaresAudioMode(in:)` for `[]`,
-  `["screen-capture"]`, `["screen-capture","audio"]` (S1). Record the red run.
-- [ ] AUD-015-T03 Implement `Packages/CaptureKit/Sources/CaptureKit/BackgroundPolicy.swift`
+  `["screen-capture"]`, `["screen-capture","audio"]` (S1). Record the red run. — Verified 2026-11-14: red run
+  `cannot find type 'BackgroundPolicy' in scope` (.build/scratch/aud015-red-T02.log); 5 tests in
+  `BackgroundPolicyTableTests`, the table test counts 48 cases.
+- [X] AUD-015-T03 Implement `Packages/CaptureKit/Sources/CaptureKit/BackgroundPolicy.swift`
   (Context, Action, Reason with `notice`, Decision, Configuration, `decide`,
   `mayResumeAutomatically`, `declaresAudioMode(in:)`), pure Swift, no platform imports (R1, R2,
-  R4, R5). Evidence: T02 passes.
+  R4, R5). Evidence: T02 passes. — Verified 2026-11-14: `swift test --filter
+  BackgroundPolicyTableTests` 5 tests, 0 failures (0.001 s).
 
 ## Phase 3: User Story 1 - The microphone never listens in the background (P1)
 
