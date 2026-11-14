@@ -13,8 +13,9 @@
   },
   "P1": {
    "audited": 127,
-   "implementing": 2,
-   "integrated": 22
+   "implementing": 1,
+   "integrated": 22,
+   "unit_passed": 1
   },
   "P2": {
    "audited": 77,
@@ -26,9 +27,10 @@
  },
  "by_state": {
   "audited": 218,
-  "implementing": 3,
+  "implementing": 2,
   "integrated": 104,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -517,12 +519,12 @@
   "ANL-014": {
    "attempts": 0,
    "branch": "feature/anl-014",
-   "branch_sha": null,
+   "branch_sha": "71c12fb822f4fb39bfee0dc92972e263679188c7",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "ANL-015": {
    "attempts": 0,
@@ -4072,5 +4074,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T03:25:31Z"
+ "updated": "2026-11-14T03:50:25Z"
 }
