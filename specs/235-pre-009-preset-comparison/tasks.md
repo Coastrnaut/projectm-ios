@@ -25,9 +25,9 @@
 
 **Independent test**: `PresetCompareUITests` opens Compare and chooses B.
 
-- [ ] PRE-009-T07 [US1] `PresetComparisonModel` (pending pick, session, tick driver at 30/15 fps reading `sharedPCMReader` on the main actor with the PRE-001 test signal when silent, panes with loading/showing/failed and the 20 s limit, main visual pause/resume hooks, announcements) in `Apps/projectM-iOS/Coordinators/PresetComparisonModel.swift`
+- [ ] PRE-009-T07 [US1] `PresetComparisonModel` (pending pick, session, tick driver at 30/15 fps reading `sharedPCMReader` on the main actor with the PRE-001 test signal when silent, panes with loading/showing/failed and the 20 s limit, main visual pause/resume hooks, announcements; a start refused while the previous worker finishes is retried every 0.1 s for up to 2 s (edge case); R13: no stored state) in `Apps/projectM-iOS/Coordinators/PresetComparisonModel.swift`
 - [ ] PRE-009-T08 [US1] Wiring in `Apps/projectM-iOS/Coordinators/AppCoordinator+Comparison.swift` (preset contents as PRE-001, renderer, safety clamp, pause and `resumeActiveVisual`) and one line in `AppCoordinator.swift`; `PresetCoordinator.comparison`
-- [ ] PRE-009-T09 [US1] UI: row menu "Compare…"/"Compare with <A>" and VoiceOver action, the pick bar and the Compare sheet (side by side when wide, stacked when tall; Play A/B; Close; test-signal note) in `Apps/projectM-iOS/Views/PresetCompareView.swift` and small edits in `Apps/projectM-iOS/Views/PresetBrowserView.swift`
+- [ ] PRE-009-T09 [US1] UI: row menu "Compare…"/"Compare with <A>" and VoiceOver action, the pick bar and the Compare sheet (side by side when wide, stacked when tall; Play A/B; Close; test-signal note; R14: each pane one accessibility element "Preview A, <name>" with Play hints) in `Apps/projectM-iOS/Views/PresetCompareView.swift` and small edits in `Apps/projectM-iOS/Views/PresetBrowserView.swift`
 - [ ] PRE-009-T10 [P] [US1] Model unit tests (pick rules, same preset refused, cancel, choose calls back with the pick's scope, tick stamping with a fake runner, silence uses the test signal, pause/resume) in `Apps/projectM-iOS/Tests/PresetComparisonModelTests.swift`
 - [ ] PRE-009-T11 [US1] UI test (S4): Compare… on one preset, Compare with … on another, sheet shows both names, Play B makes B current, in `Apps/projectM-iOS/UITests/PresetCompareUITests.swift`
 
@@ -44,3 +44,8 @@
 
 T01 → T02 → (T03, T04) → T05 → T06; T02 + T05 → T07 → T08 → T09 → (T10, T11); T12 after T09; T13 after all; T14 last.
 MVP: Phases 1-4 (acceptance and the Compare sheet).
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+- Coverage: R1-R14 and S1-S5 each map to at least one task (R1-R4, R7, R14 → T07-T11; R5, R6, S1-S3 → T04-T06; R8, R9 → T04, T07; R10 → T07-T08; R11 → T04, T07; R12 → T05; R13 → T07, T14; S4 → T11; S5 → T13). No constitution conflict (engine untouched, no networking, nothing stored).
+- Fixed: R14 (accessibility labels) and the restart edge case had no explicit task; added to T09 and T07.
