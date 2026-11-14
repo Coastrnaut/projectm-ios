@@ -81,6 +81,13 @@ Four questions, each answered by Claude with the recommended option (owner rule 
   for the sRGB screen format and 0.002 absolute for the half-float format; bit-identity is checked separately
   for in-range pixels at neutral. Applied to FX-003-S1, S2.
 
+### Session 2026-11-14 (implementation, after ACC-012 was integrated)
+
+- Q: Does ACC-012's sensory safety profile limit grading? → A: The flash guard keeps measuring the graded output
+  with the profile's envelope; in addition the profile's intensity limit caps gain's boost above 1 (Strict: at most
+  1.25, Reduced 1.5; Standard unchanged), without changing the stored setting. Applied to FX-003-R6 (research
+  FX-003-D10, ADR-0050).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Grade the look of a composited visual (Priority: P1)
@@ -167,7 +174,7 @@ with a high gain they become a visible flash, and the limiter lowers its gain.
   input luminance for every value within their ranges.
 - **FX-003-R5**: Saturation 0 gives a grey of the same luminance; temperature keeps the luminance of greys.
 - **FX-003-R6**: The flash limiter measures the graded and tone-mapped colour, and its gain multiplies that
-  colour.
+  colour; under a sensory safety profile with an intensity limit (ACC-012), gain's boost above 1 is capped by it.
 - **FX-003-R7**: The five controls are registered parameters (MOD-001) with stable IDs, ranges, defaults and
   step hints, so scenes, bindings and safety clamps can see them.
 - **FX-003-R8**: The values are one global visual setting saved on the device, restored at launch, included in

@@ -101,3 +101,31 @@ Then FX-002's tone map, then × the flash guard's gain.
 - **Decision**: record the output pass's GPU time at 1920 × 1080 with neutral and with every operator active
   (median of 30 command buffers' `gpuEndTime − gpuStartTime`, after 5 warm-ups) on the Mac; no threshold.
   Device frame rate is a `{device}` task.
+- **Result (Mac Studio, 2026-11-14, `ColorGradeOutputTests.testOutputPassGPUTimeIsRecorded`)**: neutral 0.033 ms,
+  every operator active 0.044 ms (FX-002's tone-mapped pass alone measured 0.037-0.070 ms). Not device evidence.
+- **Operator error table** (worst |GPU − reference| over the D8 image, `testEachOperatorMatchesTheReference`):
+
+  | Setting | Half float | Screen (8-bit steps) |
+  |---|---|---|
+  | temperature +0.6 / −1 | 0.00049 / 0.00049 | 0.60 / 0.77 |
+  | lift +0.05 / −0.1 | 0.00044 / 0.00048 | 0.50 / 0.52 |
+  | gamma 0.5 / 1.8 | 0.00048 / 0.00048 | 0.74 / 0.52 |
+  | gain 0.5 / 2 | 0.00048 / 0.00048 | 0.56 / 0.54 |
+  | saturation 0 / 2 | 0.00049 / 0.00048 | 0.66 / 0.57 |
+  | all five (T 0.4, L 0.02, γ 1.3, G 1.4, S 1.5) | 0.00049 | 0.62 |
+
+  Neutral vs bypass: 512/512 pixels bit-identical in `bgra8Unorm_srgb` and `rgba16Float` (416 in range; the NaN,
+  Inf, negative and over-range pixels are identical too).
+
+## FX-003-D10: ACC-012's sensory safety profile
+
+- **Decision** (after ACC-012 was integrated on 2026-11-14): the flash guard keeps measuring the graded, tone-mapped
+  output with the profile's envelope (`Compositor.flashLimits`). In addition, gain's boost above 1 is treated as an
+  intensity-type value: the app hands the compositors `1 + intensity(gain − 1, maximum: 2 − 1)` (Reduced ≤ 1.5,
+  Strict ≤ 1.25; Standard and Custom at limit 1 unchanged, so Standard stays bit-identical). The stored setting is
+  not changed, so lowering the profile restores the user's grade. Dimming (gain < 1) is never capped.
+- **Rationale**: the profile's intensity limit exists to cap brightness boosts (it caps glow intensity); gain is the
+  grade's direct brightness boost. Lift (at most +0.1 linear), gamma (fixed 0 and 1) and saturation (luminance-
+  neutral) are bounded by their ranges, and any flash they make is judged by the guard.
+- **Alternatives**: no cap (the guard alone limits flashes, but a Strict user could still double steady
+  brightness); capping every control (would change saturation and temperature, which do not raise luminance).

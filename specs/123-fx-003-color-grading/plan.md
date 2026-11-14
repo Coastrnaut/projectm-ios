@@ -44,7 +44,7 @@ parallel); `Compositor.swift` and `SceneTransitionBus.swift` edits limited to a 
 binding its block; `makeLibrary(source:)` stays in `CompositorShaders.swift` (SHD-011 allow-list); SwiftUI
 bodies small (`-warn-long-function-bodies=300`, `-warn-long-expression-type-checking=150`)
 **Scale/Scope**: 3 new package source files, 1 new app setting and 1 view, ~6 edited source files, 4 new
-test files, ADR-0049 (output pipeline contract extended)
+test files, ADR-0050 (output pipeline contract extended)
 
 ## Constitution Check
 
@@ -58,7 +58,7 @@ test files, ADR-0049 (output pipeline contract extended)
 | Sensory safety (FX-019, ACC-012) | The limiter measures the graded, tone-mapped colour | Pass |
 | Privacy | Five numeric settings on the device; allow-listed; nothing sent | Pass |
 
-Post-design re-check: unchanged, Pass. ADR-0049 records the output pipeline's new stage order (grade → tone
+Post-design re-check: unchanged, Pass. ADR-0050 records the output pipeline's new stage order (grade → tone
 map → × gain) and the flash guard measuring it.
 
 ## Project Structure
@@ -87,7 +87,7 @@ Apps/projectM-iOS/Coordinators/AppCoordinator.swift, SceneArchiveService.swift, 
 Apps/projectM-iOS/Views/SettingsView.swift, ProjectMApp.swift (wiring)
 Apps/projectM-iOS/Tests/ColorGradeSettingTests.swift, UITests/ColorGradeUITests.swift (new)
 Packages/LibraryBackup/Sources/LibraryBackup/LibrarySettings.swift, scripts/run_device_tests.py (keys)
-docs/adr/0049-output-color-grade.md (number checked before commit)
+docs/adr/0050-output-color-grade.md (number checked before commit)
 ```
 
 **Structure Decision**: the value and its reference sit in the `Compositor` target beside `ToneMap` and
