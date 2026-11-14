@@ -149,6 +149,7 @@ public final class LibraryRestoreInstaller {
             rollBack(moved)
             removeWorkFolders()
             try? FileManager.default.removeItem(at: journalFile)
+            removeRestoreFolderIfEmpty()
             return .refused(LibraryRestoreText.failed)
         }
         applySettings(plan.settingsToApply)
@@ -187,6 +188,7 @@ public final class LibraryRestoreInstaller {
             }
             removeWorkFolders()
             try? FileManager.default.removeItem(at: journalFile)
+            removeRestoreFolderIfEmpty()
         case .committed:
             applySettings(journal.settings)
             finishCleanup()
@@ -301,6 +303,12 @@ public final class LibraryRestoreInstaller {
         }
     }
 
+    /// The work folder exists only while it holds something (a request, a result, a journal).
+    private func removeRestoreFolderIfEmpty() {
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: folders.restore.path)) ?? ["?"]
+        if names.isEmpty { try? FileManager.default.removeItem(at: folders.restore) }
+    }
+
     private func removeWorkFolders() {
         try? FileManager.default.removeItem(at: stagingRoot)
         try? FileManager.default.removeItem(at: previousRoot)
@@ -312,6 +320,7 @@ public final class LibraryRestoreInstaller {
             if exists(previousRoot) { try perform(.remove, previousRoot) { (url: URL) in try FileManager.default.removeItem(at: url) } }
             if exists(stagingRoot) { try perform(.remove, stagingRoot) { (url: URL) in try FileManager.default.removeItem(at: url) } }
             try perform(.remove, journalFile) { (url: URL) in try FileManager.default.removeItem(at: url) }
+            removeRestoreFolderIfEmpty()
         } catch {
             return   // the committed journal stays; the next launch finishes the clean-up
         }

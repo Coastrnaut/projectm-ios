@@ -10,7 +10,7 @@ import XCTest
 @testable import LibraryBackup
 
 enum BackupFixtures {
-    static let now = Date(timeIntervalSince1970: 1_794_571_200)   // 2026-11-13 00:00:00 UTC
+    static let now = Date(timeIntervalSince1970: 1_794_571_200)   // 2026-11-13 12:00:00 UTC
 
     static func uuid(_ n: Int) -> UUID { UUID(uuidString: String(format: "00000000-0000-4000-8000-%012d", n))! }
     static func sceneID(_ n: Int) -> String { UUID(uuidString: String(format: "5CE7E000-0000-4000-8000-%012d", n))!.uuidString }
