@@ -64,6 +64,9 @@ public enum LibraryErasePolicy {
     public static let recordingQualityKey = "settings.recording.qualityProfile"
     /// REC-006-R8: the record frame rate (device-dependent: not backed up, erased with Settings).
     public static let recordingFrameRateKey = "settings.recording.frameRate"
+    /// REC-014-R7: the record aspect and custom size (device-dependent: not backed up, erased with Settings).
+    public static let recordingAspectKeys: [String] = ["settings.recording.aspect", "settings.recording.customWidth",
+                                                       "settings.recording.customHeight"]
     /// OUT-004-R8: the external display's output correction (display hardware: not backed up, erased with Settings).
     public static let externalDisplayKeys: [String] = ["settings.externalDisplay.fit", "settings.externalDisplay.shape",
                                                        "settings.externalDisplay.pixelAspect"]
@@ -121,6 +124,7 @@ public enum LibraryErasePolicy {
                                   reduceFlashingKey, colorBlindSafePaletteKey]
         let included: [String] = LibrarySettingsPolicy.includedKeys.filter { (key: String) -> Bool in !owned.contains(key) }
         return included + [oscEnabledKey, midiEnabledKey, recordingMicrophoneKey, recordingQualityKey, recordingFrameRateKey]
+            + recordingAspectKeys   // REC-014-R7
             + externalDisplayKeys + [sceneLockKey] + oscPeerKeys + [splitEditorWidthKey]   // SCN-015: erasing Settings unlocks the scene; OSC-008; UIX-007
             + [quantizeModeKey, cueQuantizeModeKey]   // MOD-017, SHOW-003: erasing Settings turns quantizing off
     }()
