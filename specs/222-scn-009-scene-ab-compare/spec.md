@@ -44,6 +44,14 @@ local-first option.
 - Q: What happens if the app is killed or backgrounded during Compare? → A: Nothing is written; at the next launch the pre-Compare scene is restored (or offered by PERF-010).
 - Q: Announcements? → A: "Comparing A/B: A, <name>" on start, "A, <name>" / "B, <name>" on each switch, "Kept <name>" or "Compare cancelled" on leaving, on the library lane (ACC-004).
 
+### Session 2026-11-14 (speckit-clarify)
+
+- Q: What happens to other edits made during Compare (Settings beside the output, the inspector, macros)? → A: They are live but unsaved like the switch itself; Cancel Compare restores the whole pre-Compare scene (the undo history's state), Keep commits whatever is live once.
+- Q: What if a cue, Reopen or a photo/video replacement changes the scene during Compare? → A: Compare ends at once without restoring ("Compare ended"): the new scene replaces both sides, and autosave and the history resume and treat it exactly as they would without Compare.
+- Q: Does Keep write when the kept side equals the pre-Compare scene (Keep A with A = Current scene)? → A: No. Nothing differs, so nothing is written and no undo step is recorded; it is announced "Kept Current scene".
+- Q: Is rapid toggling throttled? → A: No. Each tap is its own cut; only values that differ are written, so tapping the shown side does nothing.
+- Q: Can Settings be opened during Compare? → A: Yes. The bar stays on the output; opening Settings does not end Compare, and closing it commits nothing.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Switch between two looks (Priority: P1)
@@ -98,6 +106,8 @@ The performer compares what is on screen now with one snapshot.
 - A snapshot value for an unknown parameter is skipped as in a recall (SCN-008-R7).
 - App killed during Compare: the next launch restores the pre-Compare scene (nothing was written).
 - Background or Settings closing during Compare: no commit.
+- A cue, Reopen or media replacement during Compare: Compare ends without restoring; the new scene is saved under the normal rules (SCN-009-R11).
+- Keep of a side equal to the pre-Compare scene: nothing written, no undo step.
 - Undo/redo (buttons or ⌘Z) during Compare: refused (nothing to undo while previewing); snapshot save, rename, delete and recall are refused with "Finish Compare first."
 
 ## Requirements *(mandatory)*
@@ -114,6 +124,7 @@ The performer compares what is on screen now with one snapshot.
 - **SCN-009-R8**: Start, each switch and leaving MUST be announced on the library lane (ACC-004); the toggle has label "Compare side" and value "A, <name>" / "B, <name>".
 - **SCN-009-R9**: A crash or kill during Compare MUST leave the pre-Compare scene on disk, restored by the existing launch restore (SCN-002) or PERF-010's offer.
 - **SCN-009-R10**: No new stored setting, scene field or file. Compare is session state in memory only.
+- **SCN-009-R11**: A cue, Reopen or media replacement that restarts the undo history during Compare MUST end Compare without restoring, resuming autosave and history against the pre-Compare inputs.
 
 ### Key Entities
 
@@ -132,6 +143,5 @@ The performer compares what is on screen now with one snapshot.
 ## Assumptions
 
 - Snapshots hold only the seven app-held parameters SCN-008 captures; Compare covers exactly those. Comparing whole scenes from the show is out of scope (the cue path already switches scenes).
-- Edits made in Settings beside the output (iPad split editor) during Compare are live but unsaved; Cancel restores the pre-Compare state, Keep commits whatever is live.
 - MIDI/OSC values are live performance input outside the scene and are not affected.
 - Simulator results are never device evidence (Constitution X); no device task is required.
