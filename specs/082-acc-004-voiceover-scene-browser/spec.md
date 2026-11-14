@@ -4,7 +4,12 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (ACC-004-T01-T11 verified on the Mac, own iOS 27.2 simulator; no
+device claim). projectM-iOSTests 376/376 (AccessibilityAnnouncerTests 8), AccessibilityScreensUITests 7/7, each
+under 30 s (7.3-24.0 s), zero unfiltered audit issues in three consecutive runs; regression UI suites pass
+(UserPresets' known tapControl race failed once and passed on rerun). Audit: 12 issue kinds fixed in the app,
+system-owned findings filtered per element with reasons (contracts/accessibility-tree.md C3). Open:
+ACC-004-T12 `{device}` (VoiceOver pass on D1).
 
 **Input**: User description: "Implement ACC-004 (VoiceOver scene browser) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md (line 452). Observable behavior, verbatim: "Label scene cards,
@@ -81,6 +86,7 @@ interaction); each answer is the recommended, conservative option.
 - Q: Which preset changes count as caused by the user and are announced? → A: Previous, Next and Random (button or keyboard) and a preset chosen in the browser, announced as "Preset: <name>" once the preset has loaded; a show cue's preset change is covered by the cue's own announcement. Not announced: the app replacing a preset that failed, the preset restored at launch, scene reopen or recovery, OSC commands and any future automatic rotation (`ACC-004-R6`). Rejected: announcing every engine change (spam during automatic rotation, the brief's explicit concern); announcing before the load (a failed load would announce a preset that never showed).
 - Q: Which touch-only row actions get new VoiceOver actions? → A: Only those with no other touch-free path: Move Up and Move Down on show cues (today only Edit-mode drag) and Add to / Remove from Favorites on preset rows (today only the separate star). Swipe actions and swipe-to-delete are already exposed by iOS as VoiceOver actions (collections' Rename and Delete, cues' Delete), so they are not duplicated (`ACC-004-R3`). Rejected: duplicating every swipe action by hand (double entries in the actions rotor).
 - Q: Which system audit types run, and how may issues be filtered? → A: Element description, hit region, contrast, Dynamic Type and trait on every covered screen, at the default text size. An issue may be filtered only by a per-issue rule naming the audit type and the element (identifier or label) with a written reason, kept in one list in the suite and in the contract; filtering a whole audit type or a whole screen is not allowed (`ACC-004-R8`). Rejected: `.all` (includes text-clipped and parent/child checks that QA-009 owns at large sizes); ignoring contrast entirely because of the moving visualization.
+- Q: The audit found the visualizer controls failing contrast in light mode (ultra-thin material over the visualization). Fix or filter? → A: Fix: the controls are always dark, on a thick material with a 45 % black backing, like a video player's controls; secondary grey and tint-coloured text in the scene browser lists use the label colour (decided during implementation, 2026-11-13; ACC-008 may refine the overlay). Rejected: filtering contrast over the visualization (it was a real failure on bright presets).
 - Q: Do announcements post when VoiceOver is off, and how are they tested? → A: They post regardless (the system drops them when no assistive technology listens, as every existing announcement in the app does); test builds record the last spoken text and kind in a hidden probe for the UI suite, and the rate rule is a pure value tested with a fake clock (`ACC-004-R9`). Rejected: checking whether VoiceOver runs first (untestable in UI tests, and Switch Control users would lose them).
 
 ## User Scenarios & Testing *(mandatory)*
