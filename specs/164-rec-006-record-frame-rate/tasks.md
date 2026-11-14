@@ -9,7 +9,7 @@
 
 ## Phase 2: Foundational
 
-- [ ] REC-006-T02 Rewrite `RecordingTimeline` to the slot grid (contract C1: slot m = (t × fps + 500_000_000) / 1_000_000_000, ticks m × 600/fps, nearest-frame deferral with d ≤ one slot and the 1.5 d margin, `droppedNotIncreasing` for t ≤ last written time or before the origin, `durationReached` on the slot time; same public API) in Packages/Compositor/Sources/FrameRecording/RecordingTimeline.swift, and update Packages/Compositor/Tests/FrameRecordingTests/RecordingRulesTests.swift to the grid (120 Hz → 30 fps every 20 ticks; slower loops on the grid with gaps)
+- [ ] REC-006-T02 Rewrite `RecordingTimeline` to the slot grid (contract C1: slot m = (t × fps + 500_000_000) / 1_000_000_000, ticks m × 600/fps, nearest-frame deferral with d ≤ one slot and the 1.5 d margin, `droppedNotIncreasing` for t ≤ last written time or before the origin, `durationReached` on the slot time; same public API; constant integer work per frame, no wait, no GPU copy, REC-006-R2, R3, R11) in Packages/Compositor/Sources/FrameRecording/RecordingTimeline.swift, and update Packages/Compositor/Tests/FrameRecordingTests/RecordingRulesTests.swift to the grid (120 Hz → 30 fps every 20 ticks; slower loops on the grid with gaps)
 - [ ] REC-006-T03 Add `droppedSlots` to `RecordingStatistics` (RecordingFrameGate.swift), count `(tick − last) / interval − 1` per append in `MetalFrameRecorder` (contract C2), and add `frameRate` and `droppedFrames` to `RecordedVideo` (RecordingOutcome.swift); update MetalFrameRecorderTests' stalled-writer case to assert the 9 empty slots
 
 ## Phase 3: User Story 1 - Record at a chosen export rate (P1) MVP
@@ -29,7 +29,7 @@
 **Goal**: the result reports empty slots; steady rendering reports 0.
 **Independent test**: the fixture's stall cases and an app test.
 
-- [ ] REC-006-T10 [US2] App test in Apps/projectM-iOS/Tests/RecordingFrameRateAppTests.swift: a 24 fps recording through the coordinator reads back at 24 fps and `lastRecording` reports its rate and dropped count (REC-006-R4)
+- [ ] REC-006-T10 [US2] App test in Apps/projectM-iOS/Tests/RecordingFrameRateAppTests.swift: a 24 fps recording through the coordinator reads back at 24 fps and `lastRecording` reports its rate and dropped count; changing the choice during a recording leaves that recording's rate unchanged (REC-006-R4, R10)
 
 ## Phase 5: User Story 3 - Unsupported rates disabled (P2)
 
