@@ -7,13 +7,12 @@
  "by_priority": {
   "P0": {
    "audited": 2,
-   "integrated": 83,
-   "skipped_existing": 1,
-   "unit_passed": 1
+   "integrated": 84,
+   "skipped_existing": 1
   },
   "P1": {
-   "audited": 116,
-   "implementing": 1,
+   "audited": 114,
+   "implementing": 3,
    "integrated": 34
   },
   "P2": {
@@ -25,11 +24,10 @@
   }
  },
  "by_state": {
-  "audited": 204,
-  "implementing": 1,
-  "integrated": 119,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "audited": 202,
+  "implementing": 3,
+  "integrated": 120,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -225,7 +223,6 @@
    "UIX-012",
    "UIX-013",
    "UIX-014",
-   "UIX-015",
    "VIS-004",
    "VIS-005",
    "VIS-006",
@@ -246,7 +243,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "206 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)"
+   "205 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)"
   ]
  },
  "features": {
@@ -272,13 +269,13 @@
   },
   "ACC-003": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/acc-003",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "ACC-004": {
    "attempts": 0,
@@ -1142,13 +1139,13 @@
   },
   "FILE-004": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/file-004",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "FILE-005": {
    "attempts": 0,
@@ -3305,10 +3302,10 @@
    "branch": "feature/uix-015",
    "branch_sha": "4f7b3b7b87908d34c7e154dfe7cc5d319e8bd974",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "b4f2abf96cab3d37761941137fcde0dede2b86d3",
    "priority": "P0",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "VIS-001": {
    "attempts": 0,
@@ -4093,6 +4090,11 @@
    "sha": "20b9cc8a"
   },
   {
+   "branch": "feature/uix-015",
+   "id": "UIX-015",
+   "sha": "b4f2abf96cab3d37761941137fcde0dede2b86d3"
+  },
+  {
    "branch": "feature/vis-001",
    "id": "VIS-001",
    "sha": "48285d49c422576ac32986029ee731b214fcde63"
@@ -4133,5 +4135,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T07:10:20Z"
+ "updated": "2026-11-14T07:10:29Z"
 }

@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T07:10:20Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T07:10:29Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,25 +9,24 @@
 
 | State | Features |
 |---|---|
-| audited | 204 |
-| implementing | 1 |
-| unit_passed | 1 |
-| integrated | 119 |
+| audited | 202 |
+| implementing | 3 |
+| integrated | 120 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 1 | 83 | 1 |
-| P1 | 116 | 1 | 0 | 34 | 0 |
-| P2 | 77 | 0 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 2 | 0 | 84 | 1 |
+| P1 | 114 | 3 | 34 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 206 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)
+- 205 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)
 
 ## Integrated
 
@@ -149,6 +148,7 @@ The physical-device suite may **not** start:
 | SHOW-014 | Emergency blackout | `c3886d1cb0bb` | `feature/show-014` |
 | UIX-001 | Guided first scene | `f8f54e2ac938` | `feature/uix-001` |
 | UIX-002 | Quick scene switcher | `20b9cc8a` | `feature/uix-002` |
+| UIX-015 | Onboarding permission explainer | `b4f2abf96cab` | `feature/uix-015` |
 | VIS-001 | Circular spectrum | `48285d49c422` | `feature/vis-001` |
 | VIS-002 | Linear spectrum | `c2b2f75c11bb` | `feature/vis-002` |
 | VIS-003 | Waveform oscilloscope | `2d758a4` | `feature/vis-003` |
@@ -1197,7 +1197,7 @@ None.
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `fcf53a475301` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-002/20261114T010824/autonomous-tests.log`)
 - `post-merge (UIX-002 + CMP-007): projectM-iOSTests 465 + SceneSwitcher/ShowCue/SceneRepair/SceneUndo UI tests 8; gates passed`: pass at `20b9cc8a` (log `.autonomous/logs/integration/uix-002-cmp-007/app-tests.log`)
 
-### UIX-015 Onboarding permission explainer (unit_passed)
+### UIX-015 Onboarding permission explainer (integrated)
 - `python3 scripts/check_compliance.py`: pass at `4f7b3b7b8790` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-015/20261114T021007/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `4f7b3b7b8790` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-015/20261114T021007/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `4f7b3b7b8790` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-015/20261114T021007/script-tests.log`)
