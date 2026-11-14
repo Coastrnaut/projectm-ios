@@ -46,7 +46,7 @@ struct LibraryRestorePreview: Equatable {
 @Observable
 final class LibraryBackupCoordinator {
     static let pendingText = "Restore ready. Close projectM-iOS and open it again to finish."
-    static let footer = "A backup holds your show and scenes, the presets you imported or copied from Included presets, collections, favorites and settings. Videos, imported audio and copies of full-library presets stay on this device. The file goes only where you save it."
+    static let footer = "A backup holds your show and scenes, the presets you imported or copied from Included presets, collections, favorites and settings. Videos, imported audio and copies of full-library presets stay on this device. The file goes only where you save it. Back Up to Folder… also copies your photos, videos and imported audio, and later backups to the same folder copy only what changed."
 
     private(set) var isWorking = false
     /// The written backup waiting for the file mover.
@@ -73,6 +73,8 @@ final class LibraryBackupCoordinator {
 
     /// FILE-011: Erase Data… (shares the folders, the defaults and the announcer).
     @ObservationIgnored let erase: LibraryEraseCoordinator
+    /// FILE-006: Back Up to Folder… and Restore Media from Folder… (same sharing).
+    @ObservationIgnored let folder: FolderBackupCoordinator
 
     init(folders: LibraryFolders = LibraryBackupCoordinator.standardFolders(), defaults: UserDefaults = .standard,
          temporaryRoot: URL = FileManager.default.temporaryDirectory.appendingPathComponent("LibraryBackup", isDirectory: true)) {
@@ -80,8 +82,11 @@ final class LibraryBackupCoordinator {
         self.defaults = defaults
         self.temporaryRoot = temporaryRoot
         erase = LibraryEraseCoordinator(root: folders.root, defaults: defaults)
+        folder = FolderBackupCoordinator(folders: folders, defaults: defaults)
         erase.announce = { [weak self] (text: String) in self?.announce?(text) }
-        erase.isRestorePending = { [weak self] () -> Bool in self?.isRestorePending ?? false }
+        erase.isRestorePending = { [weak self] () -> Bool in (self?.isRestorePending ?? false) || (self?.folder.isRestorePending ?? false) }
+        folder.announce = { [weak self] (text: String) in self?.announce?(text) }
+        folder.isOtherWorkPending = { [weak self] () -> Bool in self?.erase.pending != nil }   // FILE-006: not while an erase waits
     }
 
     nonisolated static func standardFolders() -> LibraryFolders {
@@ -97,12 +102,14 @@ final class LibraryBackupCoordinator {
         LibraryRestoreLaunch.run(folders: folders, settings: LibrarySettingsBridge.read(defaults)) { (values: [String: LibrarySettingValue]) in
             LibrarySettingsBridge.apply(values, to: defaults)
         }
+        FolderBackupCoordinator.finishPendingRestore(root: folders.root)   // FILE-006-R8: media after the library records
     }
 
     // MARK: - Section state
 
     /// The section appeared: the pending state, the launch result (once) and, in DEBUG, a fixture file.
     func refresh() {
+        folder.refresh()   // FILE-006
         let store = LibraryRestoreRequestStore(folders: folders)
         isRestorePending = store.pending != nil
         if let note = store.takeResult() {
