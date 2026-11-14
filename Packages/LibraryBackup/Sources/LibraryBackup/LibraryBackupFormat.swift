@@ -15,6 +15,7 @@
 // PRE-003 (2026-11-14) added the optional record `collections/tags.json` without a version change: no
 // release has shipped FILE-005, so no reader exists that would refuse it (research PRE-003-D6).
 // PRE-016 (2026-11-14) added `collections/overrides.json` the same way (research PRE-016-D5).
+// UIX-011 (2026-11-14) added `palettes/palettes.json` the same way (research UIX-011-D7).
 import Foundation
 import LocalPortability
 
@@ -53,6 +54,8 @@ public enum LibraryBackupFormat {
     public static let tagsPath = "collections/tags.json"
     /// PRE-016: the preset overrides document (`PresetOverridesFile`).
     public static let overridesPath = "collections/overrides.json"
+    /// UIX-011: the user palettes (`PaletteFile`).
+    public static let palettesPath = "palettes/palettes.json"
     public static let settingsPath = "settings.json"
     public static let photosPrefix = "photos/"
 
