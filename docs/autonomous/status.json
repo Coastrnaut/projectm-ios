@@ -11,8 +11,8 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 101,
-   "implementing": 2,
+   "audited": 100,
+   "implementing": 3,
    "integrated": 48
   },
   "P2": {
@@ -24,8 +24,8 @@
   }
  },
  "by_state": {
-  "audited": 189,
-  "implementing": 2,
+  "audited": 188,
+  "implementing": 3,
   "integrated": 134,
   "skipped_existing": 1
  },
@@ -1575,13 +1575,13 @@
   },
   "MIDI-002": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/midi-002",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "MIDI-003": {
    "attempts": 0,
@@ -4191,5 +4191,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T10:13:39Z"
+ "updated": "2026-11-14T10:13:46Z"
 }
