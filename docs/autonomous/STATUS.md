@@ -11,23 +11,22 @@
 |---|---|
 | audited | 226 |
 | implementing | 2 |
-| unit_passed | 1 |
-| integrated | 96 |
+| integrated | 97 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 5 | 1 | 0 | 80 | 1 |
-| P1 | 135 | 1 | 1 | 14 | 0 |
-| P2 | 77 | 0 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 5 | 1 | 80 | 1 |
+| P1 | 135 | 1 | 15 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 229 features are not implemented yet (first: ACC-003, ACC-005, ACC-006, ACC-007, ACC-008)
+- 228 features are not implemented yet (first: ACC-003, ACC-005, ACC-006, ACC-007, ACC-008)
 
 ## Integrated
 
@@ -48,6 +47,7 @@ The physical-device suite may **not** start:
 | AUD-005 | Shuffle with history | `bf010e1ee1e6` | `None` |
 | AUD-006 | Seekable transport | `03b23a8ae6a0` | `feature/aud-006` |
 | AUD-007 | Audio output route indicator | `902d1734d42a` | `feature/aud-007` |
+| AUD-008 | Input trim | `6c90722a4268` | `feature/aud-008` |
 | AUD-014 | Audio session interruption recovery | `c4f03aa5e3d8` | `feature/aud-014` |
 | AUD-016 | Reference tone suite | `f69525cf0e8d` | `feature/aud-016` |
 | AUTO-001 | Roadmap parser | `419cc2a999ed` | `autonomous/integration` |
@@ -274,7 +274,7 @@ None.
 - `swift test --package-path Packages/CaptureUI`: pass at `6fdff3fc48ef` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-007/20261113T103522/swift-test_CaptureUI.log`)
 - `integration checkout (after the VisualizerView merge with VIS-002): CaptureKit 449 on iOS 27.2 sim; app: projectM-iOSTests 140; UI 9 (RouteIndicator, Status, LinearSpectrum); 239 s wall; 0 PosterBoard reports`: pass at `902d173` (log `.autonomous/logs/integration/aud-007/app-tests.log`)
 
-### AUD-008 Input trim (unit_passed)
+### AUD-008 Input trim (integrated)
 - `python3 scripts/check_compliance.py`: pass at `c99151006e80` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-008/20261113T195638/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `c99151006e80` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-008/20261113T195638/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `c99151006e80` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-008/20261113T195638/script-tests.log`)
