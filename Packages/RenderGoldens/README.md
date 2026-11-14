@@ -39,6 +39,11 @@ rule, record switch, CI guard, diff artifacts and integrity check as the scene g
 (`Tests/RenderGoldensTests/RadialWaveformGoldenTests.swift`); record with `--filter RadialWaveformGoldenTests` or
 `-only-testing:RenderGoldensTests/RadialWaveformGoldenTests`.
 
+`GeneratorGoldens/BeatRings/<class>/` (VIS-006) holds the beat rings' golden the same way:
+`beat-rings-four-<w>x<h>-f0.png` (four rings at ages 1.3, 0.9, 0.5 and 0.1 s), through `BeatRingGenerator`
+(`Tests/RenderGoldensTests/BeatRingGoldenTests.swift`); record with `--filter BeatRingGoldenTests` or
+`-only-testing:RenderGoldensTests/BeatRingGoldenTests`.
+
 ## Run
 
 ```bash
