@@ -4,7 +4,10 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (PRE-006-T01-T16 verified on the Mac: host package tests and the
+feature's own iOS 27.2 simulator "PRE6"; no device claim). PresetLibrary 286 tests (6 new), LibraryBackup
+73 (1 new), app unit tests 47 in the touched suites (RecentPresetsAcceptanceTests 6), RecentPresetsUITests 1
+(24 s warm). Linux: not run here; CI's Linux job builds and tests PresetLibrary and LibraryBackup.
 
 **Input**: Roadmap row PRE-006 (P1, size S, extension of the existing favorites). Observable behavior,
 verbatim: "Track recent preset IDs locally with opt-out and clear control." Acceptance, verbatim:
