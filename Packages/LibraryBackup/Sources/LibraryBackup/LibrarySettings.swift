@@ -108,6 +108,7 @@ public enum LibrarySettingsPolicy {
         "settings.osc.enabled", "settings.midi.enabled",
         "settings.recording.includeMicrophone",   // REC-004-R3: a consent never travels to another device
         "settings.recording.qualityProfile",   // REC-005-R7: depends on this device's encoder and screen
+        "settings.recording.frameRate",   // REC-006-R8: depends on this device's display and encoder
         "settings.video.id", "settings.video.loop", "settings.video.speed",
         "notice.photosensitivityAcknowledged", "permission.explained.camera", "permission.explained.localNetwork",
         "session.recovery.open", "session.recovery.heldVisual", "session.recovery.sessionsSinceReopen", "guide.firstScene",

@@ -139,6 +139,8 @@ final class VideoRecordingCoordinator {
         /// REC-005: the selected quality profile and what the device can encode (nil: VideoToolbox at 60 fps).
         var qualityProfile: RecordingQualityProfile = .defaultProfile
         var qualityCapabilities: (any RecordingEncoderCapabilities)? = nil
+        /// REC-006: the frame-rate choice (Profile default keeps the profile's rate).
+        var frameRateChoice: RecordingFrameRateChoice = .defaultChoice
     }
 
     enum State: Equatable, CaseIterable {   // CaseIterable: ACC-011's completeness test
@@ -167,6 +169,8 @@ final class VideoRecordingCoordinator {
     private(set) var audioEnded = false
     /// REC-005: the profile the current (or last) recording uses (after a fallback, the one it fell back to).
     private(set) var recordingProfile: RecordingQualityProfile?
+    /// REC-006-R4: the last finished recording's facts (frame rate, frames, dropped frames); nil before the first.
+    private(set) var lastRecording: RecordedVideo?
     @ObservationIgnored private var recordingAudioMode: AudioSourceMode?
     @ObservationIgnored private var disarmAudioTap: (() -> Void)?
 
@@ -360,11 +364,12 @@ final class VideoRecordingCoordinator {
         let audio = Self.audioDecision(for: c)   // REC-004-R4: fixed for this recording
         let tapArmer = c.setAudioTapArmed
         let url = directory.appendingPathComponent(Self.fileName(date: Date()))
-        // REC-005-R6: the selected profile, re-checked with this drawable; a fallback is announced (X9c).
+        // REC-005-R6, REC-006-R7: the selected profile and rate, re-checked with this drawable; a fallback is announced (X9c).
         let capabilities: any RecordingEncoderCapabilities = c.qualityCapabilities ?? RecordingQualitySetting.encoder
-        let resolution = RecordingQualityCatalog.resolve(c.qualityProfile, drawableWidth: Int(size.width),
-                                                         drawableHeight: Int(size.height), capabilities: capabilities)
-        guard case .record(let plan, _, _) = resolution else {
+        let resolution = RecordingFrameRateCatalog.resolve(profile: c.qualityProfile, choice: c.frameRateChoice,
+                                                           drawableWidth: Int(size.width), drawableHeight: Int(size.height),
+                                                           capabilities: capabilities)
+        guard let plan = resolution.plan else {
             fail(.encoderUnavailable)
             return
         }
@@ -410,7 +415,7 @@ final class VideoRecordingCoordinator {
         audioEnded = false
         state = .recording
         elapsedSeconds = 0
-        notice = resolution.fallbackNotice   // REC-005-R6: X9c, nil without a fallback
+        notice = resolution.notice   // REC-005-R6, REC-006-R7: X9c, nil without a fallback
         recordingProfile = plan.profile
         lastStopReason = nil
         probe = "recording"
@@ -524,6 +529,7 @@ final class VideoRecordingCoordinator {
         case .failure(let failure):
             fail(failure)
         case .success(let video):
+            lastRecording = video   // REC-006-R4
             notice = reason.notice
             if let debugDirectory {
                 moveForTests(video, into: debugDirectory)

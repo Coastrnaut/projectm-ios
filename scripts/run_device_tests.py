@@ -92,6 +92,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID", "settings.performanceOverlay", "set
                 "settings.noiseGate.thresholdDecibels",   # AUD-011-R8
                 "settings.recording.includeMicrophone",   # REC-004-R3 (microphone audio in recordings; off by default)
                 "settings.recording.qualityProfile",   # REC-005-R7 (record quality profile; Standard by default)
+                "settings.recording.frameRate",   # REC-006-R8 (record frame rate; Profile default by default)
                 "settings.latencyOffset.microphone",   # AUD-013-R11 (per-source visual delay)
                 "settings.latencyOffset.inAppPlayback", "settings.latencyOffset.systemAppCapture",   # AUD-013-R11
                 "settings.photo.id", "settings.video.id", "settings.text.overlay",   # MED-001, MED-008, MED-009
