@@ -55,6 +55,12 @@ local-first option.
   the reviewed module shader constant (SHD-011), no new Metal source file. With no gradient set the Gradient
   Field draws exactly as before (goldens unchanged). With a gradient, the axis maps linearly (no smoothstep):
   t = 0.5 + p·direction across the shorter side (or 2·radius for Radial), clamped to 0…1.
+- Q: How fine are the controls, and how is the result previewed? → A: Position and alpha sliders move in steps
+  of 1 % (VoiceOver adjusts by 1 % per swipe; stored values stay in thousandths and 0…255 so a 1 % step is exact
+  to the stored precision after rounding); the preview strip draws the stops at their positions over black with
+  the same colour × alpha the native visuals use (Step shows hard bands). Rows read "Stop i of n".
+- Q: Are stop edits undoable scene edits? → A: No; like every palette edit (UIX-011) they are library edits saved
+  at once, not scene edits, so they are not in scene undo. The scene's palette link is unchanged.
 
 ## User Scenarios & Testing *(mandatory)*
 
