@@ -23,6 +23,8 @@ public struct AnalysisPipelineConfiguration: Sendable, Hashable {
     public let centroid: SpectralCentroidConfiguration
     /// ANL-014's loudness envelope (built for the spectrum's FFT size).
     public let loudness: LoudnessConfiguration
+    /// ANL-011's spectral rolloff (fraction 0.85 by default).
+    public let rolloff: SpectralRolloffConfiguration
 
     public init(spectrum: SpectrumConfiguration = AnalysisPipelineConfiguration.defaultSpectrum,
                 bandCount: BandCount = .b64,
@@ -33,11 +35,12 @@ public struct AnalysisPipelineConfiguration: Sendable, Hashable {
                 midTransient: TransientDetectorConfiguration = .midTransient,
                 highTransient: TransientDetectorConfiguration = .highTransient,
                 centroid: SpectralCentroidConfiguration = .standard,
-                loudness: LoudnessConfiguration = .standard) throws(AnalysisBusError) {
+                loudness: LoudnessConfiguration = .standard,
+                rolloff: SpectralRolloffConfiguration = .standard) throws(AnalysisBusError) {
         guard spectrum.sampleRate == onset.sampleRate, spectrum.sampleRate == beat.sampleRate,
               spectrum.sampleRate == kick.sampleRate, spectrum.sampleRate == midTransient.sampleRate,
               spectrum.sampleRate == highTransient.sampleRate,
-              spectrum.sampleRate == centroid.sampleRate,
+              spectrum.sampleRate == centroid.sampleRate, spectrum.sampleRate == rolloff.sampleRate,
               spectrum.sampleRate == loudness.sampleRate else {
             throw .sampleRateMismatch
         }
@@ -52,5 +55,6 @@ public struct AnalysisPipelineConfiguration: Sendable, Hashable {
         self.highTransient = highTransient
         self.centroid = centroid
         self.loudness = loudness
+        self.rolloff = rolloff
     }
 }

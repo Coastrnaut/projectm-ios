@@ -1,0 +1,48 @@
+{
+  "entries" : [
+    {
+      "file" : "radial-silence-128x96-f1.png",
+      "fileSHA256" : "1d2ca532d4221ff71c30131771771573c818b58ef63980a685d67c22240ebd63",
+      "frame" : 1,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "eb4d311c6c10a9a952965d76001919e9c63c3f6da323375c690fb74497a85b9e",
+      "scene" : "radial-silence",
+      "width" : 128
+    },
+    {
+      "file" : "radial-silence-256x192-f1.png",
+      "fileSHA256" : "c2ade40b734ec21bdccd355a9d730c04f0fe2a06dc212b10ba33d8327c358afc",
+      "frame" : 1,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "1b507f1f520ce787a303447b248770056c19e1563b9d91f807e6d57be2c2cf83",
+      "scene" : "radial-silence",
+      "width" : 256
+    },
+    {
+      "file" : "radial-sine-128x96-f1.png",
+      "fileSHA256" : "7fe086d349964b5b27d795044ca145234817e1607c84237844f0b4ff22631923",
+      "frame" : 1,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "eada0b7b1082af82d91431e3c768f56a90f94882749622a4ada174a8ff959ff1",
+      "scene" : "radial-sine",
+      "width" : 128
+    },
+    {
+      "file" : "radial-sine-256x192-f1.png",
+      "fileSHA256" : "7918dfbde10cd269dde3d6745c626349c14379cd85d358d1a10f7405f8c674eb",
+      "frame" : 1,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "cf0363474831d0390a53545c5a52b78b8c53d40b6168243f9810e528b44ea469",
+      "scene" : "radial-sine",
+      "width" : 256
+    }
+  ],
+  "formatVersion" : 1,
+  "platform" : "macos",
+  "recordedGPU" : "Apple M5 Max",
+  "recordedOS" : "27.2"
+}

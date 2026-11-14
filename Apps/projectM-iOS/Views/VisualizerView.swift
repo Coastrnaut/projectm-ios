@@ -414,6 +414,7 @@ struct VisualizerView: View {
                          recordingAudioStatus: { () -> String in coordinator.videoRecording.audioStatusText },
                          recordingQuality: coordinator.recordingQuality,   // REC-005
                          recordingCountdown: coordinator.recordingCountdown,   // REC-007
+                         externalOutput: coordinator.externalOutput,   // OUT-004
                          explainers: coordinator.explainers,   // UIX-015
                          cameraStatus: { () -> PermissionState? in coordinator.cameraPermissionStatus },
                          recentPresets: coordinator.presets.recent,   // PRE-006
@@ -503,6 +504,8 @@ struct VisualizerView: View {
         .onChange(of: coordinator.settings.oscilloscopeWindowMilliseconds) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.lissajousMode) { coordinator.visualSettingsChanged() }   // VIS-004
         .onChange(of: coordinator.settings.lissajousPersistence) { coordinator.visualSettingsChanged() }
+        .onChange(of: coordinator.settings.radialWaveformRing) { coordinator.visualSettingsChanged() }   // VIS-005
+        .onChange(of: coordinator.settings.radialWaveformAmplitude) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.spectrumSmoothing) { coordinator.visualSettingsChanged() }   // ANL-003
     }
 

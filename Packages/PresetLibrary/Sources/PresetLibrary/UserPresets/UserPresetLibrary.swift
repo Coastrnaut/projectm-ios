@@ -87,12 +87,12 @@ public struct UserPresetSnapshot: Sendable, Equatable {
 
 public actor UserPresetLibrary {
     private let directory: URL
-    private let now: @Sendable () -> Date
-    private let makeID: @Sendable () -> String
+    let now: @Sendable () -> Date   // PRE-013: module-internal for UserPresetLibrary+BulkImport
+    let makeID: @Sendable () -> String
     private let write: (@Sendable (Data, URL) throws -> Void)?
 
-    private var store: UserPresetStore?
-    private var context = PresetImportContext.empty
+    var store: UserPresetStore?   // PRE-013: module-internal for UserPresetLibrary+BulkImport
+    var context = PresetImportContext.empty
     private var trial: (any PresetTrialRunning)?
     private var trialInFlight = false
     /// Presets a leftover record names whose quarantine could not be saved: unplayable anyway.
@@ -677,7 +677,7 @@ public actor UserPresetLibrary {
 
     // MARK: - Helpers
 
-    private func loaded() -> UserPresetStore? {
+    func loaded() -> UserPresetStore? {   // PRE-013: module-internal
         if store == nil { load() }
         return store
     }

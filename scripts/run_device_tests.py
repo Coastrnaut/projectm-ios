@@ -82,6 +82,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.linearSpectrum.orientation", "settings.linearSpectrum.spacing",   # VIS-002-R11
                 "settings.oscilloscope.line", "settings.oscilloscope.window",   # VIS-003-R10
                 "settings.lissajous.mode", "settings.lissajous.persistence",   # VIS-004-R11
+                "settings.radialWaveform.ring", "settings.radialWaveform.amplitude",   # VIS-005-R9
                 "settings.spectrum.attack", "settings.spectrum.release",   # ANL-003-R6
                 "settings.osc.enabled", "settings.osc.port",   # OSC-001 (off by default)
                 "settings.midi.enabled",   # MIDI-001 (off by default; no device names stored)
@@ -96,6 +97,8 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.recording.qualityProfile",   # REC-005-R7 (record quality profile; Standard by default)
                 "settings.recording.frameRate",   # REC-006-R8 (record frame rate; Profile default by default)
                 "settings.recording.countdown",   # REC-007-R8 (recording countdown; Off by default)
+                "settings.externalDisplay.fit", "settings.externalDisplay.shape",   # OUT-004-R8 (external output correction)
+                "settings.externalDisplay.pixelAspect",   # OUT-004-R8
                 "settings.latencyOffset.microphone",   # AUD-013-R11 (per-source visual delay)
                 "settings.latencyOffset.inAppPlayback", "settings.latencyOffset.systemAppCapture",   # AUD-013-R11
                 "settings.photo.id", "settings.video.id", "settings.text.overlay",   # MED-001, MED-008, MED-009

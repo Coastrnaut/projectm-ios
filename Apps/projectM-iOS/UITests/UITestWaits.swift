@@ -72,10 +72,16 @@ extension XCUIApplication {
             return frame.height > 0 && frame.minY >= limit && frame.maxY <= screen.maxY
         }
         // Long: up to 12 drags (about 10 screens; OSC's last rows sat just past 8 on 2026-11-14).
+        var dragged = false
         for _ in 0..<(long ? 12 : 8) {
             // A long drag can leave the list gliding: wait until the row holds still (a tap on a list
-            // still moving only stops it; LayerInspectorUITests, 2026-11-14), then check again.
-            if visible(), element.settles(), visible() { break }
+            // still moving only stops it; LayerInspectorUITests, 2026-11-14), then check again. Before
+            // this call's first drag nothing glides (`-uitestSettingsSection` jumps without animation), so
+            // a row already on screen is taken at once: on a loaded Mac each frame query took about 2 s,
+            // `settles()` (three equal frames within 2 s) failed, and the drag moved the row away
+            // (NoiseGateUITests, InputTrimUITests, 2026-11-14).
+            if visible(), !dragged || element.settles(), visible() { break }
+            dragged = true
             // Down (towards the top of the list) uses a short drag from mid-screen: a long pull from
             // near the top on a list already at its top dismisses the sheet instead of scrolling.
             let midHigh = window.coordinate(withNormalizedOffset: CGVector(dx: revealLane, dy: 0.42))

@@ -70,7 +70,10 @@ public struct LibraryEraseInventory: Sendable, Equatable {
             let names: [String] = (try? FileManager.default.contentsOfDirectory(atPath: assets.path)) ?? []
             return names.filter { (name: String) -> Bool in !name.hasPrefix(".") }.count
         case .settings:
-            return LibraryErasePolicy.settingKeys(.settings).filter { (key: String) -> Bool in settings[key] != nil }.count
+            let keys: Int = LibraryErasePolicy.settingKeys(.settings).filter { (key: String) -> Bool in settings[key] != nil }.count
+            let profiles: URL = root.appendingPathComponent(LibraryErasePolicy.midiProfilesFolderName, isDirectory: true)
+                .appendingPathComponent("profiles.json", isDirectory: false)
+            return keys + (FileManager.default.fileExists(atPath: profiles.path) ? 1 : 0)   // MIDI-012: the profiles file
         }
     }
 

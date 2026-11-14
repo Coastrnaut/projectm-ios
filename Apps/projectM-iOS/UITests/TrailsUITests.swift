@@ -14,7 +14,8 @@ final class TrailsUITests: XCTestCase {
 
     private func launch() {
         XCUIDevice.shared.orientation = .portrait
-        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-autostart", "inAppPlayback"] + Self.noStore
+        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-autostart", "inAppPlayback",
+                               "-uitestSettingsSection", "trails"] + Self.noStore   // Settings opens at Trails (owner rule 7)
         app.launch()
         XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
     }
@@ -37,7 +38,7 @@ final class TrailsUITests: XCTestCase {
     func testTrailsToggleShowsLength() {
         launch()
         openSettings()
-        XCTAssertTrue(app.reveal(toggle, long: true), "Trails is in Settings")
+        XCTAssertTrue(app.reveal(toggle), "Trails is in Settings")
         XCTAssertFalse(isOn(toggle), "off by default")
         XCTAssertFalse(length.exists, "no Length slider while off")
         flip(toggle)
