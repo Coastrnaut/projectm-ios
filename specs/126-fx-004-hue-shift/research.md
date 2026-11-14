@@ -106,9 +106,14 @@ Every row has luminance 0.2126 (red's) before the tone map. At 240° pure blue c
 
 ## FX-004-D8: Flash safety
 
-The guard already measures `cmp_display(sample, grade)` with the same block, so it sees the hue step. A test
-alternates black and a bright red-ish patch above the threshold with hue 120° and checks the guard engages, and
-that the guard's measured luminance of a shifted steady colour equals the unshifted one (luminance kept).
+The guard already measures `cmp_display(sample, grade)` with the same block, so it sees the hue step. It tracks
+luminance and redness max(R − G − B, 0). The hue step keeps luminance, but it can create redness, so the guard
+measuring the shifted colour matters. Results (`HueShiftOutputTests.testFlashLimiterMeasuresTheShiftedColour`):
+a black ↔ white strobe is limited identically with and without +120° (minimum gain 0.095 both); a black ↔ blue
+flicker (luminance step 0.0722, no redness) is not limited unshifted (gain 1) and is limited once +120° turns it
+into pure red (wB/wR, 0, 0) = (0.3396, 0, 0) (minimum gain 0.169). A first attempt with a dim green turned by
+−120° was not limited: green's luminance is too high for pure red, so it became a pink tint of redness 0.05, under
+the 0.0625 threshold; that is the correct behaviour, so the test uses blue.
 
 ## FX-004-D9: Records
 
