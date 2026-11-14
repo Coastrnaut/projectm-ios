@@ -19,7 +19,7 @@ Decisions D1-D5 restate the Clarifications with their evidence; D6-D8 are design
   The tones were not bin-centred (phase 0.3 rad, arbitrary frequencies). Hann's power response
   |W(δ)|² is symmetric and band-limited, so its discrete first moment around the tone is exact;
   the only bias is at 512 points and 100 Hz, where the main lobe reaches the excluded DC bin. Two
-  tones 500 Hz + 2 kHz at amplitudes 1 and 0.25 read 800.0 Hz (prediction Σa²f/Σa² = 800).
+  tones 500 Hz + 2 kHz at amplitudes 0.5 and 0.25 read 800.0 Hz (prediction Σa²f/Σa² = 800).
   A 100 Hz tone plus uniform noise 54 dB below read 100.03 Hz power-weighted, 385 Hz
   magnitude-weighted.
 - **Alternatives**: magnitude weighting (noise-floor sensitive), log-magnitude weighting (no

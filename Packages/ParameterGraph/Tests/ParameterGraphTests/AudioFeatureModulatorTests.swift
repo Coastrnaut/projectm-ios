@@ -54,6 +54,23 @@ final class AudioFeatureModulatorTests: XCTestCase {
         XCTAssertFalse(modulator.hasBindings)
     }
 
+    // ANL-010-T09: a Centroid binding follows the frame's normalized centroid (ANL-010-R8).
+    func testCentroidBindingFollowsTheCentroid() throws {
+        let registry = try Self.registry()
+        let store = ParameterStore(registry: registry)
+        let modulator = AudioFeatureModulator(registry: registry)
+        try modulator.bind(AudioFeatureBinding(source: .centroid, target: Self.opacity, outputStart: 0, outputEnd: 1))
+        var time: UInt64 = 1_000
+        let bands: [Float] = [0]
+        for centroid: Float in [0.25, 0.75, 0.5] {
+            bands.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> Void in
+                modulator.advance(frame: AudioFeatureFrame(bands: buffer, centroid: centroid), timeNanoseconds: time)
+            }
+            time += Self.frame
+            XCTAssertEqual(modulator.value(for: Self.opacity, in: store), .continuous(Double(centroid)))
+        }
+    }
+
     // ANL-007-T09: a Kick binding follows the frame's kick envelope (ANL-007-R11).
     func testKickBindingFollowsTheKickEnvelope() throws {
         let registry = try Self.registry()

@@ -212,6 +212,7 @@ struct ExpressionCompiler {
             case .onset: ExpressionInstruction(opcode: .onset)
             case .beatConfidence: ExpressionInstruction(opcode: .beatConfidence)
             case .kick: ExpressionInstruction(opcode: .kick)
+            case .centroid: ExpressionInstruction(opcode: .centroid)
             }
             try append(instruction, at: position)
         case let .binding(slot, position):
