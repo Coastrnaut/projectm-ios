@@ -45,6 +45,16 @@ human interaction); each answer is the conservative, local-first option.
 - Q: Where are thumbnails kept, and how do they fit storage and erase? → A: In a folder inside the app's Caches, excluded from backup, counted in the Storage screen's existing "Caches" category and emptied by Clear Caches (FILE-010). They are rebuildable, so they are not a FILE-011 erase category; erasing My Presets leaves at most orphaned pictures that no row asks for, which Clear Caches removes.
 - Q: What if the cache index is damaged or from another version? → A: The cache never blocks browsing: a corrupt index, an index from a newer version, or entries from an older renderer version are discarded (their files deleted) and rebuilt on demand; an entry whose file is missing is dropped and re-rendered when its row appears.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Where do thumbnails appear? → A: Only in the preset browser's rows (every list that uses the shared preset row: packs, All A-Z, search, Favorites, collections, My Presets). Not in the visualizer's controls, where the preset name is enough and a picture would sit over the picture it describes.
+- Q: How many thumbnail requests may wait at once? → A: 32. Rows request their thumbnail when they appear; the newest request is served first, and beyond 32 the oldest waiting request is dropped (its row, long scrolled away, asks again if it comes back).
+- Q: How is generation throttled while the visualizer runs behind the browser? → A: One thumbnail at a time, at utility priority, with a 150 ms pause after each one, and nothing at all while the app cannot present frames (background, lock). It is not paused merely because the visualizer is visible: the browser covers it and thumbnails are only asked for while the browser is open. The cost is measured on D1 (PRE-001-S7) and the pause can be raised if it fails.
+- Q: Which image format is stored? → A: PNG: lossless, so the same render always gives the same bytes, decodable everywhere, and about 10-20 KB at 128 × 72. HEIC saves little at this size and its encoder output is not guaranteed to be stable.
+- Q: Is a preset that failed to render remembered across launches? → A: No. A failure is remembered for the session only (the row keeps its placeholder); the next launch tries once more. Failures are not written to the index, so a fixed engine or renderer version heals them without a migration.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - I recognize presets by their picture (Priority: P1) — MVP
@@ -97,7 +107,7 @@ entry whose file is gone) open without error and lead to re-rendering exactly th
 
 - A preset that fails to load or draw keeps the placeholder; it is not retried until the next launch.
 - The app leaves the screen (background, lock): generation stops and resumes when the app is visible again.
-- The visualizer behind the browser keeps running: generation is throttled (one at a time, low priority, a pause between thumbnails) so the visible frame rate is not visibly hurt.
+- The visualizer behind the browser keeps running: generation is throttled (one at a time, utility priority, 150 ms between thumbnails) so the visible frame rate is not visibly hurt.
 - The same preset shown in two lists (a pack and Favorites) is generated once.
 - Clear Caches removes the folder: the cache starts empty again without an error.
 - The renderer is unavailable (no ANGLE): rows keep placeholders.
@@ -109,15 +119,16 @@ entry whose file is gone) open without error and lead to re-rendering exactly th
 
 - **PRE-001-R1**: The browser MUST show a thumbnail or a placeholder at the leading edge of every preset row; the placeholder shows until the thumbnail exists, and always for locked and non-playable presets.
 - **PRE-001-R2**: Thumbnails MUST be generated off the main thread, one at a time, at low priority, only for rows the user has shown.
-- **PRE-001-R3**: Pending requests MUST be bounded (oldest dropped beyond the bound) and served most recent first; a request whose row disappears before its render starts MUST be cancelled.
+- **PRE-001-R3**: At most 32 requests MUST wait (the oldest is dropped beyond that), served most recent first; a request whose row disappears before its render starts MUST be cancelled.
 - **PRE-001-R4**: Each thumbnail MUST be a still frame of a fixed small size drawn after a fixed number of frames with deterministic synthetic audio and a fixed seed.
 - **PRE-001-R5**: Each thumbnail MUST have a stable ID derived from the preset ID, the preset's content hash and the renderer version; the same inputs MUST give the same ID and file name.
 - **PRE-001-R6**: A thumbnail already in the cache MUST be served without rendering; the same preset requested twice at once MUST be rendered once.
 - **PRE-001-R7**: The cache index MUST be stored as a versioned file and read back at the next launch.
 - **PRE-001-R8**: A corrupt index, an index with an unknown (newer) version, and entries of an older renderer version MUST be discarded with their files; an entry whose file is missing MUST be dropped and regenerated on demand. Opening the cache MUST never fail.
 - **PRE-001-R9**: Thumbnails MUST be stored in the app's Caches, excluded from backup, counted in FILE-009's "Caches" category and removed by FILE-010's Clear Caches; they are not a FILE-011 erase category.
-- **PRE-001-R10**: Generation MUST stop while the app cannot present frames and MUST be throttled while the visualizer runs (a pause between thumbnails).
-- **PRE-001-R11**: A preset that fails to render MUST keep its placeholder and MUST NOT be retried in the same session.
+- **PRE-001-R10**: Generation MUST stop while the app cannot present frames and MUST be throttled: one thumbnail at a time, utility priority, a 150 ms pause after each.
+- **PRE-001-R14**: Thumbnails MUST be stored as PNG files; they appear only in the preset browser's rows.
+- **PRE-001-R11**: A preset that fails to render MUST keep its placeholder and MUST NOT be retried in the same session; failures are not persisted.
 - **PRE-001-R12**: Thumbnails are decorative: VoiceOver MUST read the row exactly as before (no new spoken element).
 - **PRE-001-R13**: The cache logic MUST build and be tested on Linux; the renderer MUST sit behind an interface so Linux and tests use a fake.
 
