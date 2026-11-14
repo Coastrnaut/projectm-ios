@@ -4,7 +4,10 @@
 // written file is byte-identical. Order of checks: size (before parsing) → JSON → `format` →
 // `version` (a newer one is refused, never rewritten) → fields → the model's rules (cue limit, labels,
 // scene IDs, duplicate cue IDs). A position naming no cue is a warning (Standby).
+// SCN-007: each cue entry may carry an optional `transition` object (`duration`, `easing`, `type`), written
+// only when the cue has one, so older shows keep their bytes; read leniently (contract X1-X3).
 import Foundation
+import ParameterGraph
 
 public enum ShowDecodeError: Error, Sendable, Hashable, CustomStringConvertible {
     case tooLarge(bytes: Int, limit: Int)
@@ -40,6 +43,11 @@ public enum ShowDecodeWarning: Sendable, Hashable {
     /// SCN-005: tags or `sceneTags` entries that broke a rule (unknown scene, invalid or repeated
     /// tag, over a limit, not a list of strings) were left out.
     case droppedTags(Int)
+    /// SCN-007: cue transitions that broke a rule (not an object, a missing field, a duration outside
+    /// 0…10 s, an unreadable or invalid easing, a type of 0 or over 64 characters) were left out.
+    case droppedTransitions(Int)
+    /// SCN-007: a cue's transition type is not one this version knows; it is kept and applied as a cut.
+    case unknownTransitionType(cue: String, type: String)
 }
 
 public struct ShowDecodeResult: Sendable {
@@ -57,7 +65,8 @@ extension ShowCueList {
     public func encoded() -> Data {
         var file = ShowFileV1(format: Self.formatName, version: Self.currentVersion, id: id.uuidString, name: name,
                               cues: cues.map { (cue: ShowCue) -> ShowFileV1.Cue in
-                                  ShowFileV1.Cue(id: cue.id.uuidString, scene: cue.sceneID, label: cue.label)
+                                  ShowFileV1.Cue(id: cue.id.uuidString, scene: cue.sceneID, label: cue.label,
+                                                 transition: cue.transition.map(StoredTransition.init(_:)))
                               },
                               position: activeCue?.id.uuidString)
         // SCN-004 (contract F4): written only when non-empty, so a show without folders keeps its bytes.
@@ -94,11 +103,21 @@ extension ShowCueList {
         guard let showID = canonicalUUID(file.id) else { throw .invalidID(file.id) }
         guard file.cues.count <= maximumCues else { throw .invalid(.tooManyCues(limit: maximumCues)) }
         var cues: [ShowCue] = []
+        var warnings: [ShowDecodeWarning] = []
+        var droppedTransitions = 0
         for cue in file.cues {
             guard let cueID = canonicalUUID(cue.id) else { throw .invalidID(cue.id) }
-            cues.append(ShowCue(id: cueID, sceneID: cue.scene, label: cue.label))
+            var transition: ShowCueTransition? = nil
+            if let stored = cue.transition {   // SCN-007 (contract X2)
+                transition = stored.transition
+                if transition == nil { droppedTransitions += 1 }
+                if let type = transition?.type, !type.isKnown {
+                    warnings.append(.unknownTransitionType(cue: cue.id, type: type.text))
+                }
+            }
+            cues.append(ShowCue(id: cueID, sceneID: cue.scene, label: cue.label, transition: transition))
         }
-        var warnings: [ShowDecodeWarning] = []
+        if droppedTransitions > 0 { warnings.append(.droppedTransitions(droppedTransitions)) }
         var position = ShowPosition.standby
         if let text = file.position {
             if let cueID = canonicalUUID(text), cues.contains(where: { (c: ShowCue) -> Bool in c.id == cueID }) {
@@ -150,6 +169,33 @@ private struct ShowFileV1: Codable {
         let id: String
         let scene: String
         let label: String
+        /// SCN-007, optional: absent (or null) = no transition.
+        var transition: StoredTransition? = nil
+
+        enum CodingKeys: String, CodingKey { case id, scene, label, transition }
+
+        init(id: String, scene: String, label: String, transition: StoredTransition?) {
+            self.id = id
+            self.scene = scene
+            self.label = label
+            self.transition = transition
+        }
+
+        init(from decoder: any Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            id = try container.decode(String.self, forKey: .id)
+            scene = try container.decode(String.self, forKey: .scene)
+            label = try container.decode(String.self, forKey: .label)
+            transition = try container.decodeIfPresent(StoredTransition.self, forKey: .transition)
+        }
+
+        func encode(to encoder: any Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(id, forKey: .id)
+            try container.encode(scene, forKey: .scene)
+            try container.encode(label, forKey: .label)
+            try container.encodeIfPresent(transition, forKey: .transition)
+        }
     }
 
     /// SCN-004: a scene folder (parent nil = top level).
@@ -247,5 +293,36 @@ private enum LenientTags: Codable {
     func encode(to encoder: any Encoder) throws {
         var container = encoder.singleValueContainer()
         try container.encode(list ?? [])
+    }
+}
+
+/// SCN-007: one cue's `transition` value, read leniently: anything that is not a valid transition object
+/// decodes as `nil` content (dropped with a warning) instead of refusing the show.
+private struct StoredTransition: Codable {
+    let transition: ShowCueTransition?
+
+    init(_ transition: ShowCueTransition) { self.transition = transition }
+
+    private struct Fields: Codable {
+        let duration: Double
+        let easing: String
+        let type: String
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        guard let fields = try? container.decode(Fields.self), let type = ShowTransitionType(text: fields.type),
+              let easing = MappingCurve(textForm: fields.easing) else {
+            transition = nil
+            return
+        }
+        transition = try? ShowCueTransition(type: type, durationSeconds: fields.duration, easing: easing)
+    }
+
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.singleValueContainer()
+        guard let transition else { return try container.encodeNil() }
+        try container.encode(Fields(duration: transition.durationSeconds, easing: transition.easing.textForm,
+                                    type: transition.type.text))
     }
 }
