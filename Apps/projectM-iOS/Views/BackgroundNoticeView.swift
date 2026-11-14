@@ -23,7 +23,7 @@ struct BackgroundNoticeView: View {
                 .accessibilityIdentifier("backgroundNoticeDismiss")
         }
         .padding(10)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .overlaySurface(RoundedRectangle(cornerRadius: 12))   // ACC-008-R2
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("backgroundNotice")
         .task(id: text) {

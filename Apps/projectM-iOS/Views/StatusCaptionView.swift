@@ -19,7 +19,7 @@ struct StatusCaptionView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                .overlaySurface(RoundedRectangle(cornerRadius: 12))   // ACC-008-R2
                 .allowsHitTesting(false)
                 .accessibilityLabel(caption)
                 .accessibilityIdentifier("statusCaption")

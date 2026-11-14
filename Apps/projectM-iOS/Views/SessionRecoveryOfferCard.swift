@@ -29,6 +29,7 @@ struct SessionRecoveryOfferCard: View {
                     if recovery.offersReopen {
                         Button("Reopen last scene", action: onReopen)
                             .buttonStyle(.borderedProminent)
+                            .overlayProminentTint()   // ACC-008-R5
                             .accessibilityIdentifier("sessionRecoveryReopen")
                     }
                     Button("Start fresh", action: onStartFresh)
@@ -39,7 +40,7 @@ struct SessionRecoveryOfferCard: View {
             }
             .padding(12)
             .frame(maxWidth: 420, alignment: .leading)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .overlaySurface(RoundedRectangle(cornerRadius: 12))   // ACC-008-R2
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("sessionRecoveryOffer")
             .onAppear { Self.announceOnce(onShown) }

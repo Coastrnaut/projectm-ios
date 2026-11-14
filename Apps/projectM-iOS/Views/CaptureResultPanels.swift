@@ -40,7 +40,7 @@ struct CaptureResultPanels: View {
                     .accessibilityIdentifier("captureShareNoticeDismiss")
             }
             .padding(10)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .overlaySurface(RoundedRectangle(cornerRadius: 12))   // ACC-008-R2
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("captureShareNotice")
         }
@@ -74,12 +74,13 @@ struct CaptureResultPanels: View {
                     }
                 }
             Button("Discard", role: .destructive, action: discard)
+                .foregroundStyle(OverlayContrast.criticalText)   // ACC-008-R5: system red missed 4.5:1 on the overlay
                 .accessibilityLabel("Discard the \(noun)")
                 .accessibilityIdentifier("\(prefix)Discard")
         }
         .font(.footnote)
         .padding(10)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .overlaySurface(RoundedRectangle(cornerRadius: 12))   // ACC-008-R2
         .accessibilityElement(children: .contain)
         .accessibilityLabel(title)
         .accessibilityIdentifier(prefix)

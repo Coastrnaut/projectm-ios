@@ -25,7 +25,7 @@ struct EmergencyBlackoutButton: View {
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(.primary)
                 .frame(width: 44, height: 44)          // SHOW-014-R5: the minimum comfortable target, no larger
-                .background(.regularMaterial, in: Circle())
+                .overlaySurface(Circle())   // ACC-008-R2
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
