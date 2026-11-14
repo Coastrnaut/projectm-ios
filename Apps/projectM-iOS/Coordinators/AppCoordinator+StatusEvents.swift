@@ -19,6 +19,18 @@ extension AppCoordinator {
         sceneRepair.announce = { [weak self] (spoken: String) -> Void in
             self?.statusEvents.post(StatusEventCatalog.repairReport(spoken))
         }
+        stereoPhase.post = { [weak self] (event: StatusEvent) -> Void in self?.statusEvents.post(event) }   // ANL-013 X3a, X3b
+    }
+
+    /// ANL-013: the native visual reports its phase-inversion warning (false when it stops).
+    func connectStereoPhase(_ host: NativeSpectrumHost) {
+        host.onPhaseWarningChange = { [weak self] (raised: Bool) -> Void in self?.stereoPhase.update(raised) }
+    }
+
+    /// ANL-013: FR-048's "stereo:" line while a native visual is shown, nil otherwise.
+    var stereoOverlayLine: String? {
+        guard showsNativeVisual, let host = nativeVisual else { return nil }
+        return StereoPhaseWarningPresenter.overlayLine(correlation: host.correlation, raised: stereoPhase.isRaised)
     }
 
     /// X1-X3: the source changed (state, stop reason or a switch).

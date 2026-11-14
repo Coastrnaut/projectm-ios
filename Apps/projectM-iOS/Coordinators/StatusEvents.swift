@@ -91,6 +91,20 @@ enum StatusEventCatalog {
         }
     }
 
+    // MARK: Stereo phase (X3a, X3b; ANL-013-R8)
+
+    /// X3a: ANL-013's phase-inversion warning was raised (the indicator shows it); X3b: an announced
+    /// warning cleared (a transient caption). System rows on the source lane; the presenter throttles X3a.
+    static func stereoPhase(raised: Bool) -> StatusEvent {
+        if raised {
+            let text: String = StereoPhaseWarningPresenter.warningText
+            return StatusEvent(id: "X3a", kind: .source, visibleText: text, announcement: text, cause: .system)
+        }
+        let text: String = StereoPhaseWarningPresenter.clearedText
+        return StatusEvent(id: "X3b", kind: .source, visibleText: text, announcement: text, cause: .system,
+                           presentation: .caption)
+    }
+
     // MARK: Background, route (X4, X5)
 
     static func background(_ notice: String) -> StatusEvent {

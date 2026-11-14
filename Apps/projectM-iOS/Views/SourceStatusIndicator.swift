@@ -20,9 +20,12 @@ struct SourceStatusIndicator: View {
     /// With a test signal playing it names the signal: "In-App Playback · Test tone 1 kHz · Active
     /// audio" (AUD-016-R16).
     /// AUD-012-R7: while a switch waits for the new source's audio, "Switching source…".
-    static func text(mode: AudioSourceMode?, state: AudioState, signal: String? = nil, switching: Bool = false) -> String {
+    /// ANL-013-R8: while the stereo phase warning is raised, " · Stereo channels look phase-inverted" follows.
+    static func text(mode: AudioSourceMode?, state: AudioState, signal: String? = nil, switching: Bool = false,
+                     phaseWarning: Bool = false) -> String {
         if switching { return UIStrings.switchingSource }
-        return UIStrings.sourceStatus(mode: mode, state: state, signal: signal)
+        let status: String = UIStrings.sourceStatus(mode: mode, state: state, signal: signal)
+        return phaseWarning ? status + StereoPhaseWarningPresenter.indicatorSuffix : status
     }
 
     /// AUD-014-R18: what VoiceOver hears when In-App Playback goes on hold for a reason the user
