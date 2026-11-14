@@ -41,12 +41,22 @@ local-first option.
 - Q: How does a seek interact with transitions and quantized steps? → A: A seek lands on the target state: the destination scene comes in as a cut (Reduce flashing's minimum fade still applies, as for every cue), replacing any transition in progress. A seek is not quantized (it is a transport jump, not a cue step) and withdraws a step waiting for the beat or bar, so nothing fires afterwards.
 - Q: What is Loop? → A: An explicit opt-in toggle, off by default, remembered on this device (`settings.show.loop`, not backed up, erased with Settings). With Loop on and a timeline without an open end, the last timeline cue counts down and the show wraps to the first timeline cue, exactly once per pass (quantized like a timed advance). With Loop off nothing changes from SHOW-002.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Five questions, each answered with the recommended option (owner rules 4 and 9).
+
+- Q: Does the position keep moving through the last timeline cue when Loop is off (SHOW-002 shows no countdown there)? → A: Yes. The position tracks elapsed time in every timed cue, the last one included, and stops at the end of the timeline; SHOW-002's "Next in" text is unchanged (still none on the last cue without Loop).
+- Q: Does a seek or a loop wrap post a VoiceOver announcement? → A: No. A seek is the performer's own action and the slider's value speaks the new position; a wrap is a timed advance (which announces nothing today). Only Play/Pause keep SHOW-005's Hold announcements ("Hold on, timed advances paused" / "Hold off") on the cue lane, so nothing is announced twice.
+- Q: How large is one VoiceOver swipe on the scrub slider? → A: 5 seconds (ACC-005 grid from 0:00), each swipe one committed seek; the spoken value is the position ("1 minute 15 seconds, cue 3 of 5").
+- Q: Is a seek an edit (refused while the scene is locked; recorded in scene history)? → A: No. A seek is a performance action like a step: allowed while locked (SCN-015), it restarts scene history as every cue apply does (SCN-010) and saves the show's position.
+- Q: Where is the transport shown? → A: Only in the visualizer's cue row (with the controls), under Previous/Next, when a timeline exists. The performance pad (UIX-005), the HUD (UIX-013), the external display and recordings are unchanged.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Scrub to a point in the show (Priority: P1) — MVP
 
 A VJ runs a timed show of five cues. During a rehearsal they drag the show's timeline to 1:15, inside cue 3: the
-output jumps straight to cue 3's look, cue 3's countdown shows the time it has left, and cues 2's look never flashes
+output jumps straight to cue 3's look, cue 3's countdown shows the time it has left, and cue 2's look never flashes
 on the way.
 
 **Independent Test**: Five cues with 30 s dwells, active cue 1; seek to 75 s: exactly one scene apply (cue 3), cue 3's
@@ -95,7 +105,8 @@ turn Loop on: after the last cue the show starts again at cue 1, forever, one wr
 - **SHOW-007-R5**: A seek MUST land on the target state (a cut; Reduce flashing's minimum fade still applies), MUST NOT be quantized and MUST withdraw a waiting quantized step.
 - **SHOW-007-R6**: Pause MUST be SHOW-005's Hold (remaining time kept) and Play MUST release it; Play at Standby MUST seek to 0:00.
 - **SHOW-007-R7**: Loop (opt-in, off by default, key `settings.show.loop`, device-only: not backed up, erased with Settings and by the UI-test reset) MUST wrap from the last timeline cue to the first exactly once per pass; it MUST be unavailable for a timeline with an open end.
-- **SHOW-007-R8**: The transport row (Play/Pause, position and total, scrub slider, Loop) MUST appear in the cue row only when a timeline exists, with VoiceOver labels and values; the slider MUST use the ACC-005 accessible slider (one swipe = one seek).
+- **SHOW-007-R8**: The transport row (Play/Pause, position and total, scrub slider, Loop) MUST appear in the cue row only when a timeline exists, with VoiceOver labels and values; the slider MUST use the ACC-005 accessible slider (one 5 s swipe = one seek).
+- **SHOW-007-R10**: The timeline position MUST advance through every timed cue, the last included, and stop at the end; seeks and wraps MUST NOT post announcements (Play/Pause keep the Hold announcements); a seek MUST be allowed while the scene is locked.
 - **SHOW-007-R9**: No network access, no new show-file field, no wall-clock assertions in tests; ShowControl MUST keep building on Linux.
 
 ### Key Entities
