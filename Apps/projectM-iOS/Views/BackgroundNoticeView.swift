@@ -3,10 +3,11 @@
 // Dismiss. The timer starts only when the notice is visible (the scene is active), so a long stay
 // in the background never uses it up.
 import SwiftUI
-import UIKit
 
 struct BackgroundNoticeView: View {
     let text: String
+    /// ACC-011 X4: announces the notice through the status-event router (kind `background`).
+    let announce: (String) -> Void
     let onDismiss: () -> Void
 
     var body: some View {
@@ -26,7 +27,7 @@ struct BackgroundNoticeView: View {
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("backgroundNotice")
         .task(id: text) {
-            UIAccessibility.post(notification: .announcement, argument: text)
+            announce(text)
             try? await Task.sleep(for: AppCoordinator.backgroundNoticeDuration)
             guard !Task.isCancelled else { return }
             onDismiss()

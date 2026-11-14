@@ -26,6 +26,7 @@ import check_privacy_manifest as cpm  # noqa: E402
 import check_permission_catalog as cpc  # noqa: E402
 import check_network_symbols as cns  # noqa: E402
 import check_motion_policy as cmp  # noqa: E402
+import check_status_events as cse  # noqa: E402
 import observe_app_network as oan  # noqa: E402
 import generate_gles_loader as ggl  # noqa: E402
 import generate_reference_audio as gra  # noqa: E402
@@ -1566,6 +1567,32 @@ class MotionPolicyCheckTests(unittest.TestCase):
 
     def test_the_app_is_clean(self):
         self.assertEqual(cmp.check(), [])
+
+
+class StatusEventsCheckTests(unittest.TestCase):
+    """check_status_events.py (ACC-011-T13, R11): no direct announcement posts in the capture files."""
+
+    def test_direct_posts_are_flagged_and_comments_pass(self):
+        text = "\n".join([
+            "UIAccessibility.post(notification: .announcement, argument: t)",
+            "AccessibilityNotification.Announcement(t).post()",
+            "// UIAccessibility.post(notification: .announcement, argument: t)",
+            'let s = "UIAccessibility.post"',
+            "router.post(event)",
+        ])
+        self.assertEqual(cse.violations(text), [1, 2])
+
+    def test_allowed_names_excuse_a_line(self):
+        text = "presets.onScopeChange { UIAccessibility.post(notification: .announcement, argument: $0) }\n"
+        self.assertEqual(cse.violations(text, cse.ALLOWED_IN_COORDINATOR), [])
+        self.assertEqual(cse.violations(text), [1])
+
+    def test_a_missing_file_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertTrue(any("missing" in p for p in cse.check(Path(tmp))))
+
+    def test_the_app_is_clean(self):
+        self.assertEqual(cse.check(), [])
 
 
 class PermissionCatalogCheckTests(unittest.TestCase):

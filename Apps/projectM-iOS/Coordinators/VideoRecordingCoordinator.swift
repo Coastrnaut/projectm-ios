@@ -91,7 +91,7 @@ final class VideoRecordingCoordinator {
         var paused: Bool
     }
 
-    enum State: Equatable {
+    enum State: Equatable, CaseIterable {   // CaseIterable: ACC-011's completeness test
         case idle
         case recording
         case finishing

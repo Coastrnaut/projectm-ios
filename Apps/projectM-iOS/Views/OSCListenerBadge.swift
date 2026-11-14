@@ -4,10 +4,11 @@
 // the visualizer it sits in the top status stack, independent of the controls (R6); the source
 // chooser shows it at the bottom.
 import SwiftUI
-import UIKit
 
 struct OSCListenerBadge: View {
     let osc: OSCReceiverCoordinator
+    /// ACC-011 X20: "OSC off" through the status-event router, with a caption (OSC-007-R7).
+    let onStopped: () -> Void
 
     var body: some View {
         if let port = osc.badgePort {
@@ -21,7 +22,7 @@ struct OSCListenerBadge: View {
                     .accessibilityIdentifier("oscListenerBadgeText")
                 Button("Stop") {
                     osc.stopFromBadge()
-                    UIAccessibility.post(notification: .announcement, argument: "OSC off")   // OSC-007-R7
+                    onStopped()   // OSC-007-R7
                 }
                 .font(.footnote.bold())
                 .accessibilityLabel("Stop OSC")

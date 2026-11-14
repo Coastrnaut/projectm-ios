@@ -38,6 +38,10 @@ struct RootView: View {
                                      onPlay: { coordinator.finishGuidedFirstScene() })
             }
         }
+        // ACC-011 X19: the OSC listener opened (a network listener; announced on every screen).
+        .onChange(of: coordinator.osc.badgePort) { _, port in
+            if let port { coordinator.statusEvents.post(StatusEventCatalog.osc(port: port)) }
+        }
         // ACC-001-R3 (moved from VisualizerView): every screen, so a change on the chooser is not missed.
         .onReceive(NotificationCenter.default.publisher(for: UIAccessibility.reduceMotionStatusDidChangeNotification)) { _ in
             coordinator.syncSystemReduceMotion()
@@ -70,12 +74,20 @@ struct RootView: View {
                 .navigationTitle("Choose source")
             }
             // OSC-007-R2: an enabled listener already runs on the chooser, so its badge is shown here too.
-            .safeAreaInset(edge: .bottom) { OSCListenerBadge(osc: coordinator.osc).padding(.bottom, 4) }
+            .safeAreaInset(edge: .bottom) {
+                OSCListenerBadge(osc: coordinator.osc) { coordinator.statusEvents.post(StatusEventCatalog.osc(port: nil)) }
+                    .padding(.bottom, 4)
+            }
             // PERF-010-R4: the recovery offer after an abnormal exit, above the chooser (non-blocking).
+            // ACC-011-R7: the status caption (e.g. "OSC off" after the badge's Stop) under it.
             .safeAreaInset(edge: .top) {
-                SessionRecoveryOfferCard(recovery: coordinator.recovery, onReopen: { coordinator.reopenLastScene() },
-                                         onStartFresh: { coordinator.startFresh() })
-                    .padding(.horizontal)
+                VStack(spacing: 8) {
+                    SessionRecoveryOfferCard(recovery: coordinator.recovery, onReopen: { coordinator.reopenLastScene() },
+                                             onStartFresh: { coordinator.startFresh() },
+                                             onShown: { coordinator.announceRecoveryOffer() })
+                    StatusCaptionView(router: coordinator.statusEvents)
+                }
+                .padding(.horizontal)
             }
             .onAppear { automationChooserAppeared() }
             // SCN-012: Reopen's repair report when the offer is answered on the chooser.

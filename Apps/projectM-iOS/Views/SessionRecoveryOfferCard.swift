@@ -4,12 +4,13 @@
 // Reopen appears only when a committed scene can be reopened (never in a crash loop). The card is
 // announced to VoiceOver once when it first appears.
 import SwiftUI
-import UIKit
 
 struct SessionRecoveryOfferCard: View {
     let recovery: SessionRecoveryCoordinator
     let onReopen: () -> Void
     let onStartFresh: () -> Void
+    /// ACC-011 X24: announces the card through the status-event router (once per launch).
+    let onShown: () -> Void
 
     var body: some View {
         if recovery.offer == .pending {
@@ -41,16 +42,16 @@ struct SessionRecoveryOfferCard: View {
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("sessionRecoveryOffer")
-            .onAppear { Self.announceOnce(recovery) }
+            .onAppear { Self.announceOnce(onShown) }
         }
     }
 
     /// Posted once per launch, whichever screen shows the card first.
     @MainActor private static var announced = false
 
-    @MainActor private static func announceOnce(_ recovery: SessionRecoveryCoordinator) {
+    @MainActor private static func announceOnce(_ announce: () -> Void) {
         guard !announced else { return }
         announced = true
-        UIAccessibility.post(notification: .announcement, argument: "\(recovery.title) \(recovery.message)")
+        announce()
     }
 }

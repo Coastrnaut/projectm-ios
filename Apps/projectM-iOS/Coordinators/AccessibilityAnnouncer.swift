@@ -18,6 +18,8 @@ import UIKit
 
 enum AnnouncementKind: String, CaseIterable, Sendable {
     case preset, cue, playback, output, recording, favorite
+    /// ACC-011: capture and status lanes (contract C1 of specs/100-acc-011-captioned-status-events).
+    case source, route, background, capture, camera, osc, session
 }
 
 struct AnnouncementGate: Sendable, Equatable {

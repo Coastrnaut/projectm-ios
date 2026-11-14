@@ -14,18 +14,14 @@ struct SourceStatusIndicator: View {
 
     var text: String { coordinator.sourceStatusText }
 
-    /// The indicator text; also what VoiceOver announces when the audio state changes (FR-070).
+    /// The indicator text; also what VoiceOver announces when the audio state changes (FR-070; posted
+    /// through ACC-011's status-event router, `AppCoordinator.announceSourceStatus()`).
     /// With a test signal playing it names the signal: "In-App Playback · Test tone 1 kHz · Active
     /// audio" (AUD-016-R16).
     /// AUD-012-R7: while a switch waits for the new source's audio, "Switching source…".
     static func text(mode: AudioSourceMode?, state: AudioState, signal: String? = nil, switching: Bool = false) -> String {
         if switching { return UIStrings.switchingSource }
         return UIStrings.sourceStatus(mode: mode, state: state, signal: signal)
-    }
-
-    /// FR-070: announces an audio-state change to VoiceOver users, as the indicator shows it.
-    static func announce(mode: AudioSourceMode?, state: AudioState, signal: String? = nil, switching: Bool = false) {
-        UIAccessibility.post(notification: .announcement, argument: text(mode: mode, state: state, signal: signal, switching: switching))
     }
 
     /// AUD-014-R18: what VoiceOver hears when In-App Playback goes on hold for a reason the user
