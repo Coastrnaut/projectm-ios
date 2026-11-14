@@ -218,6 +218,9 @@ public final class LibraryRestoreInstaller {
             case .collections:
                 if let list = plan.collections { try write(try PresetCollectionsFile(collections: list).encode(), to: staged.collectionsFile) }
                 if let tags = plan.presetTags { try write(try PresetTagsFile.encode(tags), to: staged.tagsFile) }   // PRE-003
+                if let overrides = plan.presetOverrides {   // PRE-016
+                    try write(try PresetOverridesFile.encode(overrides), to: staged.overridesFile)
+                }
             case .photos:
                 for name in plan.photosToWrite.keys.sorted() {
                     guard let bytes = plan.photosToWrite[name] else { continue }

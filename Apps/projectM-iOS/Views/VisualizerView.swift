@@ -508,6 +508,7 @@ struct VisualizerView: View {
         .onChange(of: coordinator.settings.lissajousPersistence) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.radialWaveformRing) { coordinator.visualSettingsChanged() }   // VIS-005
         .onChange(of: coordinator.settings.radialWaveformAmplitude) { coordinator.visualSettingsChanged() }
+        .onChange(of: coordinator.settings.beatRingsLife) { coordinator.visualSettingsChanged() }   // VIS-006
         .onChange(of: coordinator.settings.spectrumSmoothing) { coordinator.visualSettingsChanged() }   // ANL-003
     }
 
@@ -721,6 +722,7 @@ struct VisualizerView: View {
             .accessibilityLabel(finishing ? "Finishing the recording" : "Recording, \(coordinator.videoRecording.indicatorAccessibilityText)")
             .accessibilityIdentifier("recordingIndicator")
             RecordingAudioLine(recording: coordinator.videoRecording)   // REC-004-R9
+            RecordingStatusLines(recording: coordinator.videoRecording)   // REC-009: dropped frames, storage
         }
         // REC-003: refusals, stop reasons, failures and "Recording saved." (FR-070: a labeled element).
         if let notice = coordinator.videoRecording.notice {

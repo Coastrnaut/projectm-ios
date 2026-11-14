@@ -43,8 +43,9 @@ struct LogoStore: @unchecked Sendable {
     }
 
     /// The sanitized PNG copy of a picked file under a new identifier, not current (MED-010-R3).
-    func stage(at source: URL) throws(ImageImportError) -> StoredPhoto {
-        try photos.stage(at: source, limits: LogoImport.limits, format: .png)
+    func stage(at source: URL, id: UUID = UUID(), keepingCleanOriginal: Bool = false) throws(ImageImportError) -> StoredPhoto {
+        try photos.stage(at: source, limits: LogoImport.limits, format: .png, id: id,   // SCN-014: from a scene pack
+                         keepingCleanOriginal: keepingCleanOriginal)
     }
 
     /// Imports `source` and makes it the logo.

@@ -13,6 +13,9 @@
 // * MOD-011 layers: a parameter may have up to `maximumBindingsPerTarget` bindings. They apply in list
 //   order with a clamp after each (`ModulationMixOrder`, contract mix-order O1); `bind` keeps MOD-002's
 //   meaning (one binding per call, in place of all the target's layers), `addLayer` appends one.
+// * MOD-012 (contract specs/189-mod-012-modulation-matrix/contracts/modulation-matrix.md M1, M2): a disabled layer
+//   (`isEnabled` false) is skipped in the fold and keeps advancing; with no enabled layer the value is the base
+//   exactly. `setEnabled` and `moveLayer` edit in place (signals kept); `replaceBindings` swaps the whole list.
 import Foundation
 
 public final class AudioFeatureModulator {
@@ -171,6 +174,35 @@ public final class AudioFeatureModulator {
         slots[i].binding.envelope = envelope
     }
 
+    /// MOD-012-R3 (contract M2): turns the target's `layer`-th binding (0-based) on or off without restarting its
+    /// signal. Refuses a missing layer; nothing changes when it throws.
+    public func setEnabled(_ enabled: Bool, for target: ParameterID, layer: Int) throws(AudioFeatureBindingError) {
+        guard let i = index(of: target, layer: layer) else { throw .unknownTarget(target) }
+        slots[i].binding.isEnabled = enabled
+    }
+
+    /// MOD-012-R6 (contract M2): moves the target's layer `from` to layer position `to` (both 0-based). The target's
+    /// bindings keep the list positions they occupy, so no other target moves; signals move with their bindings.
+    /// Refuses out-of-range positions; nothing changes when it throws.
+    public func moveLayer(of target: ParameterID, from: Int, to: Int) throws(AudioFeatureBindingError) {
+        var positions: [Int] = []
+        for i in slots.indices where slots[i].binding.target == target { positions.append(i) }
+        guard positions.indices.contains(from), positions.indices.contains(to) else { throw .unknownTarget(target) }
+        guard from != to else { return }
+        var ordered: [Slot] = positions.map { (i: Int) -> Slot in slots[i] }
+        let moved: Slot = ordered.remove(at: from)
+        ordered.insert(moved, at: to)
+        for (k, i) in positions.enumerated() { slots[i] = ordered[k] }
+    }
+
+    /// MOD-012 (contract M2): replaces every binding with `list`, each validated as `addLayer` would (signals restart
+    /// at 0). All or nothing: nothing changes when it throws.
+    public func replaceBindings(_ list: [AudioFeatureBinding]) throws(AudioFeatureBindingError) {
+        let scratch = AudioFeatureModulator(registry: registry)
+        for binding in list { try scratch.addLayer(binding) }
+        slots = scratch.slots
+    }
+
     /// The effective value of `target` given its manual (base) value: `manual` itself when unbound;
     /// otherwise every layer in list order (contract mix-order O1).
     public func value(for target: ParameterID, manual: Double) -> Double {
@@ -217,14 +249,18 @@ public final class AudioFeatureModulator {
     }
 
     /// Contract mix-order O1 steps 2 and 3, from the target's first slot `first`. Allocation-free.
+    /// MOD-012 (contract M1): disabled layers are skipped; with none enabled the base is returned exactly.
     private func effective(from first: Int, manual: Double) -> Double {
         let slot = slots[first]
         let target = slot.binding.target
         var running: Double = manual
-        for i in first..<slots.count where slots[i].binding.target == target {
+        var applied = false
+        for i in first..<slots.count where slots[i].binding.target == target && slots[i].binding.isEnabled {
             running = ModulationMixOrder.step(running, mapped: Self.mapped(slots[i]), mode: slots[i].binding.mixMode,
                                               minimum: slot.minimum, maximum: slot.maximum)
+            applied = true
         }
+        guard applied else { return manual }
         let clamped = running
         guard slot.isInteger else { return clamped }
         let rounded = Int(clamped.rounded(.toNearestOrAwayFromZero))

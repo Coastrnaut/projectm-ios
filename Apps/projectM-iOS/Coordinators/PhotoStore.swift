@@ -97,16 +97,19 @@ struct PhotoStore: @unchecked Sendable {
     /// FILE-001: the sanitized copy of `source` written into this store's folder under a new
     /// identifier, without making it current (the identifier key is not touched). A failure leaves
     /// no file. MED-010: the logo passes its own limits and `.png`.
+    /// SCN-014: a scene pack import passes an identifier derived from the pack's bytes and keeps a picture
+    /// that is already a pixels-only copy byte for byte (`ScenePackPicture`, research SCN-014-D9).
     func stage(at source: URL, limits override: ImageImportLimits? = nil,
-               format: ImageOutputFormat = .automatic) throws(ImageImportError) -> StoredPhoto {
+               format: ImageOutputFormat = .automatic, id: UUID = UUID(), keepingCleanOriginal: Bool = false) throws(ImageImportError) -> StoredPhoto {
         let limits: ImageImportLimits = override ?? self.limits
         let data = try Self.readPicked(source, limits: limits)
         let copy = try ImageSanitizer.sanitize(data, limits: limits, format: format)
-        let id = UUID()
+        let keep: Bool = keepingCleanOriginal && ScenePackPicture.keepsOriginal(data, sanitized: copy.data, fileExtension: copy.fileExtension)
+        let bytes: Data = keep ? data : copy.data
         let temp = folder.incomingURL(for: id, extension: copy.fileExtension)
         do {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            try copy.data.write(to: temp, options: .atomic)
+            try bytes.write(to: temp, options: .atomic)
             let url = try folder.intern(temp, as: id, consumingSource: true)   // FILE-008-R2
             return StoredPhoto(id: id, url: url)
         } catch {

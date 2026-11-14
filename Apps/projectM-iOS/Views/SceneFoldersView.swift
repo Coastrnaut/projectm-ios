@@ -7,6 +7,8 @@
 // shows the scene's first cue (SHOW-001). Announcements go through ShowCoordinator's library lane.
 // SCN-005: scene rows show their tags and offer "Tags…" (swipe, context menu, VoiceOver action),
 // which opens the Tags sheet.
+// SCN-014: scene rows offer "Export Scene…" (context menu, leading swipe, VoiceOver action) and the top level
+// has "Import Scene…" (`ScenePackSection`); the share sheet shows from the level on screen.
 // SCN-006: scene rows show the scene's preview picture in place of the scene symbol (placeholder until
 // one exists; `show.previews` is nil without the app coordinator).
 import ShowControl
@@ -41,6 +43,7 @@ struct SceneFoldersView: View {
     @State private var moving: Moving?
     @State private var deleting: SceneFolder?
     @State private var tagging: SceneTagsTarget?   // SCN-005
+    @State private var onScreen = false   // SCN-014: only the level on screen presents the share sheet
 
     private var tree: SceneFolderTree { show.list.folders }
     private var title: String { folderID.flatMap { (id: UUID) -> String? in tree.folder(id)?.name } ?? "Scene Folders" }
@@ -49,6 +52,7 @@ struct SceneFoldersView: View {
         List {
             messageSection
             actionsSection
+            packSection   // SCN-014
             foldersSection
             scenesSection
         }
@@ -72,6 +76,9 @@ struct SceneFoldersView: View {
         .sheet(item: $tagging) { (target: SceneTagsTarget) in
             SceneTagsView(show: show, sceneID: target.sceneID) { tagging = nil }
         }
+        .scenePackShare(show.scenePacks, visible: onScreen)   // SCN-014
+        .onAppear { onScreen = true }
+        .onDisappear { onScreen = false }
         .accessibilityIdentifier("sceneFolders")
     }
 
@@ -102,6 +109,11 @@ struct SceneFoldersView: View {
         } footer: {
             Text("Folders only organize this list. Cues, their order and the show stay as they are.")
         }
+    }
+
+    /// SCN-014: Import Scene… and the last pack result, at the top level.
+    @ViewBuilder private var packSection: some View {
+        if folderID == nil, let packs = show.scenePacks { ScenePackSection(packs: packs) }
     }
 
     @ViewBuilder private var foldersSection: some View {
@@ -208,6 +220,7 @@ struct SceneFoldersView: View {
                 Button("Move to…") { moving = .scene(sceneID) }
                 Button("Go to Cue") { show.goToScene(sceneID) }
                 Button("Tags…") { tagging = SceneTagsTarget(sceneID: sceneID) }   // SCN-005
+                Button("Export Scene…") { exportScene(sceneID) }   // SCN-014
             }
             .swipeActions(edge: .leading) {
                 Button("Move") { moving = .scene(sceneID) }
@@ -217,6 +230,10 @@ struct SceneFoldersView: View {
                 Button("Go") { show.goToScene(sceneID) }
                     .tint(.accentColor)
                     .accessibilityLabel("Go to Cue")
+                Button("Export") { exportScene(sceneID) }   // SCN-014
+                    .tint(.green)
+                    .accessibilityLabel("Export Scene")
+                    .accessibilityIdentifier("sceneFolderExportScene")
             }
             .swipeActions(edge: .trailing) {   // SCN-005
                 Button("Tags") { tagging = SceneTagsTarget(sceneID: sceneID) }
@@ -226,7 +243,11 @@ struct SceneFoldersView: View {
             .accessibilityAction(named: "Move to") { moving = .scene(sceneID) }
             .accessibilityAction(named: "Go to Cue") { show.goToScene(sceneID) }
             .accessibilityAction(named: "Tags") { tagging = SceneTagsTarget(sceneID: sceneID) }
+            .accessibilityAction(named: "Export Scene") { exportScene(sceneID) }   // SCN-014
     }
+
+    /// SCN-014: packs the scene with its media and opens the share sheet.
+    private func exportScene(_ sceneID: String) { show.scenePacks?.export(sceneID: sceneID) }
 
     // MARK: - Actions
 
