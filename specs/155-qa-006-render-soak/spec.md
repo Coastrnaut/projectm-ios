@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (QA-006-T01-T12, T14, T15 verified on the macOS host, the Linux shape and the QA6 iOS 27.2 simulator; QA-006-T13 `{device}` open; CI pending)
 
 **Input**: User description: "Implement QA-006 (Render soak test) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Switch scenes repeatedly using fixture audio for fixed duration."
