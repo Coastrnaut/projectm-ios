@@ -34,6 +34,7 @@
 // the buttons in both layouts (ShowCueRow).
 // AUD-012: "Switch Source" (after Stop) opens the list of the other available sources.
 // UIX-004: the favorite parameter shelf (pinned controls) sits above the buttons while it has pins.
+// UIX-005: "Performance layout" / "Standard layout" turns the performance pad on and off (PerformancePad).
 import CameraLayer
 import CaptureKit
 import CaptureUI
@@ -328,6 +329,17 @@ struct ControlsOverlay: View {
         }
     }
 
+    /// UIX-005-R1: turns the performance pad on and off (session only).
+    private var performanceLayoutItem: Item {
+        let on: Bool = coordinator.performanceLayout
+        return Item(id: "performanceLayout", title: on ? "Standard layout" : "Performance layout",
+                    icon: on ? "rectangle.compress.vertical" : "square.grid.2x2",
+                    hint: on ? "Removes the large cue, tempo and blackout buttons"
+                        : "Shows large cue, tempo and blackout buttons that stay on screen") {
+            coordinator.togglePerformanceLayout()
+        }
+    }
+
     /// REC-003: Record / Stop recording; for projectM a tap refuses with the reason (REC-003-R12).
     private var recordItem: Item {
         let recording = coordinator.videoRecording
@@ -375,6 +387,7 @@ struct ControlsOverlay: View {
                 coordinator.showPresetBrowser = true
             },
             Item(id: "settings", title: "Settings", icon: "gearshape") { coordinator.showSettings = true },
+            performanceLayoutItem,
         ]
     }
 }

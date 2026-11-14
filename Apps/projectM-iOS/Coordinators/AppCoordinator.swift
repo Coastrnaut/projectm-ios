@@ -241,6 +241,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let texts: TextOverlayCoordinator
     /// SHOW-001: the manual cue list.
     let show: ShowCoordinator
+    /// UIX-005-R1: the performance layout (large cue, tempo and blackout targets); session only, off at launch.
+    var performanceLayout = AppCoordinator.startsInPerformanceLayout
     /// SCN-007, XFADE: the cues' resolved transitions, blended out on the shown compositor visual.
     @ObservationIgnored let cueTransitions = CueTransitionStage()
     /// UIX-002: the quick scene switcher's overlay state (AppCoordinator+SceneSwitcher.swift).
