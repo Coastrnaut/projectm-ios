@@ -111,8 +111,11 @@ public enum LibraryErasePolicy {
                                   reduceFlashingKey, colorBlindSafePaletteKey]
         let included: [String] = LibrarySettingsPolicy.includedKeys.filter { (key: String) -> Bool in !owned.contains(key) }
         return included + [oscEnabledKey, midiEnabledKey, recordingMicrophoneKey, recordingQualityKey, recordingFrameRateKey]
-            + externalDisplayKeys
+            + externalDisplayKeys + [sceneLockKey]   // SCN-015: erasing Settings unlocks the scene
     }()
+
+    /// SCN-015: the scene lock (excluded from backups; erased with Settings).
+    public static let sceneLockKey = "settings.scene.locked"
 
     /// Every key some category can remove.
     public static var erasableKeys: [String] {

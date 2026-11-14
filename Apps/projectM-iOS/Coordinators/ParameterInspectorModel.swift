@@ -221,7 +221,17 @@ enum ParameterInspectorTargets {
 
     /// The setting `id` is written through (the same properties the Settings controls and
     /// `AppCoordinator.set(_:settings:texts:)` write); nil for a parameter without an app control.
+    /// SCN-015-R3: while the scene is locked the target's `set` is refused (the choke point of every Settings-target
+    /// write: inspector, shelf, macros, snapshots); `get` still reads.
     static func target(for id: ParameterID, settings: AppSettings) -> ParameterInspectorTarget? {
+        guard let target = settingsTarget(for: id, settings: settings) else { return nil }
+        let lock: SceneLock = settings.sceneLock
+        return ParameterInspectorTarget(get: target.get,
+                                        set: { (v: ParameterValue) -> Void in if !lock.refusesEdit() { target.set(v) } },
+                                        choices: target.choices)
+    }
+
+    private static func settingsTarget(for id: ParameterID, settings: AppSettings) -> ParameterInspectorTarget? {
         switch id {
         case IDs.bloomEnabled:
             return ParameterInspectorTarget(get: { () -> ParameterValue in .boolean(settings.glowEnabled) },

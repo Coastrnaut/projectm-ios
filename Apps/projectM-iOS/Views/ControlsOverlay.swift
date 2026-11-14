@@ -115,6 +115,7 @@ struct ControlsOverlay: View {
             }
             ParameterShelfStrip(shelf: coordinator.parameterShelf, settings: coordinator.settings,   // UIX-004-R3
                                 endCoalescing: { coordinator.sceneHistory.endCoalescing() }, touched: { coordinator.showControls() })
+                .disabled(coordinator.settings.sceneLock.isLocked)   // SCN-015-R6
             // Accessibility text sizes use the one-row icon layout too: seven labeled buttons in a
             // row cannot fit (FR-070).
             if sizeClass == .compact || typeSize.isAccessibilitySize {
@@ -362,6 +363,18 @@ struct ControlsOverlay: View {
         }
     }
 
+    /// SCN-015-R2, R8: one tap locks; unlocking asks first (the badge presents the confirmation).
+    private var lockItem: Item {
+        let lock: SceneLock = coordinator.settings.sceneLock
+        let locked: Bool = lock.isLocked
+        return Item(id: "lockScene", title: locked ? "Unlock scene" : "Lock scene", icon: locked ? "lock.fill" : "lock.open",
+                    value: lock.accessibilityValue,
+                    hint: locked ? "Asks before allowing edits again" : "Stops edits to the scene; cues still play") {
+            coordinator.showControls()
+            if locked { lock.isConfirmingUnlock = true } else { lock.lock() }
+        }
+    }
+
     private var allButtons: [Item] {
         [
             Item(id: "stop", title: "Stop", icon: "stop.fill") { coordinator.stop() },
@@ -373,6 +386,7 @@ struct ControlsOverlay: View {
             Item(id: "pauseResume", title: coordinator.userPaused ? "Resume" : "Pause",
                  icon: coordinator.userPaused ? "play.fill" : "pause.fill") { coordinator.togglePause() },
             blackoutItem,
+            lockItem,   // SCN-015
             Item(id: "saveFrame", title: "Save Frame", icon: "camera.viewfinder") {   // REC-001
                 coordinator.showControls()
                 coordinator.frameCapture.requestSave()

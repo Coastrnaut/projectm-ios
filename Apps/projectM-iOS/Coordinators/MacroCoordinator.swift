@@ -42,6 +42,8 @@ final class MacroCoordinator {
 
     @ObservationIgnored let registry: ParameterRegistry?
     @ObservationIgnored private let target: @MainActor (ParameterID) -> ParameterInspectorTarget?
+    /// SCN-015-R3: the scene lock (nil: never locked, e.g. tests of macros alone).
+    @ObservationIgnored var sceneLock: SceneLock?
     private static let log = Logger(subsystem: "org.projectmios.ProjectMiOS", category: "macros")
 
     init(registry: ParameterRegistry?, target: @escaping @MainActor (ParameterID) -> ParameterInspectorTarget?) {
@@ -51,9 +53,11 @@ final class MacroCoordinator {
 
     /// The app's coordinator: the visual catalog and the Settings write path.
     static func makeDefault(settings: AppSettings) -> MacroCoordinator {
-        MacroCoordinator(registry: ParameterInspectorCatalog.registry) { (id: ParameterID) -> ParameterInspectorTarget? in
+        let coordinator = MacroCoordinator(registry: ParameterInspectorCatalog.registry) { (id: ParameterID) -> ParameterInspectorTarget? in
             ParameterInspectorTargets.target(for: id, settings: settings)
         }
+        coordinator.sceneLock = settings.sceneLock   // SCN-015
+        return coordinator
     }
 
     /// The usable macros with their positions (what Settings › Macros lists).
@@ -83,6 +87,7 @@ final class MacroCoordinator {
     func setValue(_ value: Double, at index: Int) -> MacroChangeReport? {
         guard let registry, var stored = entries, index >= 0, index < macros.count, index < stored.count,
               var macro = macros[index] else { return nil }
+        if sceneLock?.refusesEdit() == true { return nil }   // SCN-015-R3: the value stays as stored
         let m: Double = LinearMapping.clampedPosition(value)
         macro.value = m
         stored[index] = stored[index].settingValue(m)
