@@ -21,7 +21,7 @@
 - [ ] REC-007-T05 [US1] Add `RecordingCountdownSection` (rows `recordingCountdown.off|3|5|10`, checkmark, selected trait) in Apps/projectM-iOS/Views/RecordingCountdownSection.swift and wire it under the frame-rate section in SettingsView.swift (`audioSections`) and VisualizerView.swift (REC-007-R9)
 - [ ] REC-007-T06 [US1] Add the countdown overlay (number, label "Recording in N", Cancel with `.keyboardShortcut(.cancelAction)`, no animation) in Apps/projectM-iOS/Views/RecordingCountdownView.swift, show it in VisualizerView's status area, and make the Record item read "Cancel countdown" in ControlsOverlay.swift (REC-007-R7)
 - [ ] REC-007-T07 [US1] Status rows X9d (first "Recording in N", then "N") and X9e (caption; user or system) in Apps/projectM-iOS/Coordinators/StatusEvents.swift, posted from StatusCaptionView.swift's `recordingStateChanged` (REC-007-R6, R7; contract C2)
-- [ ] REC-007-T08 [US1] Acceptance and unit tests in Apps/projectM-iOS/Tests/RecordingCountdownAppTests.swift: completed 3 s countdown → exactly 1 writer creation, a second toggle at 2.99 s and at 3.0 s (before and after the tick) adds no recording and no stop (REC-007-S2); Off starts in the same call (S3); setting persistence and unknown value; announcements "Recording in 3", "2", "1", "Recording started" through the router (S5)
+- [ ] REC-007-T08 [US1] Acceptance and unit tests in Apps/projectM-iOS/Tests/RecordingCountdownAppTests.swift: completed 3 s countdown → exactly 1 writer creation, a second toggle at 2.99 s and at 3.0 s (before and after the tick) adds no recording and no stop (REC-007-S2); Off starts in the same call (S3); setting persistence and unknown value; announcements "Recording in 3", "2", "1", "Recording started" through the router (S5); a setting change during a countdown does not change its length (spec Edge Cases)
 
 ## Phase 4: User Story 2 - Cancel a countdown (P1)
 
@@ -34,7 +34,7 @@
 
 ## Phase 5: Polish
 
-- [ ] REC-007-T12 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), the type-check budget flags on the touched files, StatusEventsTests completeness (X9d, X9e), existing recording app tests unchanged, privacy manifest and network symbols on the built app
+- [ ] REC-007-T12 Audit that only the Record control calls `toggle()` and no OSC/MIDI action starts or cancels a countdown (`grep` over Apps/projectM-iOS; REC-007-R10, research D10); repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), the type-check budget flags on the touched files, StatusEventsTests completeness (X9d, X9e), existing recording app tests unchanged, privacy manifest and network symbols on the built app
 - [ ] REC-007-T13 {device} On D1: 3 s countdown with VoiceOver on, let it complete and cancel once; the recording starts after "1" and a cancel leaves no file
 
 ## Dependencies
