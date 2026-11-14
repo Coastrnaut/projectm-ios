@@ -29,6 +29,7 @@ final class RecordingAudioMuxTests: XCTestCase {
     }
 
     private struct ReadBack {
+        var url: URL
         var info: RecordedVideoInfo
         var flashTime: Double?
         var clickTime: Double?
@@ -118,31 +119,15 @@ final class RecordingAudioMuxTests: XCTestCase {
         let inspected = await RecordedVideoInspector.inspect(url)
         let info = try XCTUnwrap(inspected)
         let asset = AVURLAsset(url: url)
-        var result = ReadBack(info: info, flashTime: nil, clickTime: nil, lastAudioTime: nil, audioPeak: 0)
-        result.flashTime = try await flashTime(asset)
+        var result = ReadBack(url: url, info: info, flashTime: nil, clickTime: nil, lastAudioTime: nil, audioPeak: 0)
+        // QA-008: the flash and click finders are the validator's (same thresholds as before).
+        let markers = await RecordingValidator.markerTimes(url)
+        result.flashTime = markers.flash
+        result.clickTime = markers.click
         if let audio = try await asset.loadTracks(withMediaType: .audio).first {
             try readAudio(asset, track: audio, into: &result)
         }
         return result
-    }
-
-    private func flashTime(_ asset: AVURLAsset) async throws -> Double? {
-        let tracks = try await asset.loadTracks(withMediaType: .video)
-        let track = try XCTUnwrap(tracks.first)
-        let reader = try AVAssetReader(asset: asset)
-        let output = AVAssetReaderTrackOutput(track: track, outputSettings: [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA])
-        reader.add(output)
-        XCTAssertTrue(reader.startReading())
-        while let sample = output.copyNextSampleBuffer() {
-            guard let pixels = CMSampleBufferGetImageBuffer(sample) else { continue }
-            CVPixelBufferLockBaseAddress(pixels, .readOnly)
-            defer { CVPixelBufferUnlockBaseAddress(pixels, .readOnly) }
-            let row = CVPixelBufferGetBytesPerRow(pixels)
-            let bytes = try XCTUnwrap(CVPixelBufferGetBaseAddress(pixels)).assumingMemoryBound(to: UInt8.self)
-            let center = bytes[(CVPixelBufferGetHeight(pixels) / 2) * row + (CVPixelBufferGetWidth(pixels) / 2) * 4 + 1]
-            if center > 128 { return CMSampleBufferGetPresentationTimeStamp(sample).seconds }
-        }
-        return nil
     }
 
     private func readAudio(_ asset: AVURLAsset, track: AVAssetTrack, into result: inout ReadBack) throws {
@@ -165,7 +150,6 @@ final class RecordingAudioMuxTests: XCTestCase {
             for i in 0..<frames {
                 let value = abs(floats[2 * i])
                 result.audioPeak = max(result.audioPeak, value)
-                if result.clickTime == nil, value > 0.3 { result.clickTime = start + Double(i) / 44_100 }
                 if value > 0.05 { result.lastAudioTime = start + Double(i) / 44_100 }
             }
         }
@@ -175,6 +159,10 @@ final class RecordingAudioMuxTests: XCTestCase {
 
     func testOwnedAudioClickAlignsWithFlash() async throws {
         let back = try await record(Fixture(audio: true))
+        // QA-008-T07: the whole file checked by the validator (audio expected, marker at 1.0 s, 20 ms).
+        let expectation = RecordingExpectation(durationSeconds: 2.0, expectsAudio: true, checksSyncMarker: true, markerSeconds: 1.0)
+        let report = await RecordingValidator.validate(back.url, expectation: expectation)
+        XCTAssertTrue(report.passed, report.summary)
         XCTAssertEqual(back.info.audioTrackCount, 1)
         XCTAssertEqual(back.info.audioCodec, "aac ")
         XCTAssertEqual(back.info.audioSampleRate, 44_100)

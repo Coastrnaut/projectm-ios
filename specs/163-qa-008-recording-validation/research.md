@@ -13,6 +13,10 @@
 - **Decision**: good fixtures use `VideoFileWriter` (`@testable`) with CPU-filled 32BGRA pixel buffers
   from its own pool, and its `appendAudio` for LPCM chunks; bad fixtures the real writer cannot make use
   a test-only AVAssetWriter helper.
+- **Found while implementing (2026-11-14)**: in its offline mode (`realTime: false`), `VideoFileWriter`
+  with both inputs fed from one thread stalls the video input after about 1.2 s (each append then waits
+  its 5 s limit). The fixtures use the live mode, as the app does, and retry an append that reports
+  `notReady` every 1 ms (at most 3 s), so no frame or chunk is dropped; the corpus then takes about 1.3 s.
 - **Rationale**: the corpus then exercises the app's writer settings (codec preference, no reordering,
   Rec. 709, AAC) and runs on CI's macOS VMs, which may have no usable Metal device (the REC-003/004
   Metal tests skip there).

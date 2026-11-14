@@ -39,5 +39,7 @@ metadataIdentifiers [String]. `frameCount` = presentationTicks.count.
 
 ## Personal metadata
 
-An identifier is personal when its lowercased text contains any of: `location`, `iso6709`, `gps`,
+An identifier is personal when its lowercased text (the item's identifier plus `common/<key>` when it has a
+common key; an MP4 stores a QuickTime location as `uiso/loci`, common key `location`) contains any of:
+`location`, `iso6709`, `loci`, `©xyz`, `gps`,
 `make`, `model`, `author`, `artist`, `creator`, `owner`, `user`, `phone`, `email`.

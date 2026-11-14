@@ -57,6 +57,9 @@
 //   recorder (IOSurface pixel buffers through a texture cache, no CPU read-back) compile out there.
 //   REC-004 (specs/134-rec-004-recording-audio, ADR-0053) adds the audio policy and the audio timeline
 //   (plain Swift, Linux-buildable) and an optional AAC input fed with host-timed LPCM chunks.
+//   QA-008 (specs/163-qa-008-recording-validation) adds `RecordingValidation` (plain-Swift rules: codec,
+//   timestamps, duration, frame count, audio, A/V marker sync, metadata; Linux-tested) and the AVFoundation
+//   `RecordingValidator` that reads a file for them; a generated corpus of good and bad files tests both.
 // Nothing here imports projectM, ANGLE, capture or the app (Constitution VI). The projectM layer is
 // target `ProjectMLayer` in Packages/ANGLERendering.
 // * `ColorGradeParameters` (FX-003, specs/123-fx-003-color-grading) holds the colour grade's MOD-001 descriptors; the
