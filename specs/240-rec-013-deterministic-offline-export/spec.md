@@ -4,7 +4,9 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (REC-013-T01-T13 verified on the Mac, simulator "REC13 iPhone 17", iOS 27.2; no
+device claim). OfflineExportAcceptanceTests 4 (1.9 s), OfflineExportUITests 1 (19.5 s), OfflineExportCoreTests 5 (0.4 s),
+OfflineVideoFileWriterTests 2 (0.2 s). T14 `{device}` open.
 
 **Input**: Roadmap row REC-013 (P2, effort XL, depends on SCN-001 and ANL-016, both integrated). Observable behavior,
 verbatim: "Render scene from fixed audio fixture and clock without real-time pacing." Acceptance, verbatim: "Two exports
