@@ -10,8 +10,10 @@
 // SCN-007-R9: Transition… per cue (context menu, a leading "Transition" swipe action, VoiceOver action) opens
 // `CueTransitionView`; a cue with a transition shows "Transition: Crossfade 1.5 s, Ease Out" under its label
 // and VoiceOver reads ", transition Crossfade 1.5 seconds, Ease Out".
+// SCN-011-R7: Add from Template… opens `SceneTemplateGalleryView` (bundled starter scenes added as copies).
 import SceneFormat
 import ShowControl
+import ShowStorage
 import SwiftUI
 
 struct ShowEditorView: View {
@@ -25,43 +27,11 @@ struct ShowEditorView: View {
     @State private var sceneNameText = ""
     @State private var assigningMIDI: ShowCue?
     @State private var editingTransition: ShowCue?
+    /// SCN-011: the template gallery (catalog read when it opens).
+    @State private var templateCatalog: SceneTemplateCatalog?
 
     var body: some View {
-        List {
-            if let message = show.editorMessage {
-                Section {
-                    Text(message).accessibilityIdentifier("showEditorMessage")
-                    Button("OK") { show.dismissEditorMessage() }
-                }
-            }
-            Section {
-                Button {
-                    addCurrentScene()
-                } label: {
-                    // ACC-006-R1: icon and title side by side, the title wrapping in its own column. A Label
-                    // in a list row wraps its title under the icon at AX5, which the audit reports as clipped
-                    // text (2026-11-13). The icon is decorative; the button reads "Add Current Scene".
-                    HStack(alignment: .firstTextBaseline, spacing: 12) {
-                        Image(systemName: "plus.rectangle.on.rectangle").accessibilityHidden(true)
-                        Text("Add Current Scene").fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-                .disabled(show.list.cues.count >= ShowCueList.maximumCues)
-                .accessibilityIdentifier("showAddCurrentScene")
-                if !show.list.cues.isEmpty { sceneFoldersLink }   // SCN-004
-            } footer: {
-                Text("Adds a cue that keeps the visual and its settings as they are now. Next and Previous in the controls, or the arrow keys, step through the cues.")
-            }
-            Section(show.list.cues.isEmpty ? "No cues" : "Cues") {
-                ForEach(Array(show.list.cues.enumerated()), id: \.element.id) { (index: Int, cue: ShowCue) in
-                    row(cue, number: index + 1)
-                }
-                .onMove { (offsets: IndexSet, destination: Int) in show.move(fromOffsets: offsets, toOffset: destination) }
-                .onDelete { (offsets: IndexSet) in
-                    for id in offsets.map({ (i: Int) -> UUID in show.list.cues[i].id }) { show.remove(id) }
-                }
-            }
-        }
+        cueList
         .navigationTitle("Show")
         .toolbar { if !show.list.cues.isEmpty { EditButton() } }
         .alert("Rename Cue", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
@@ -90,7 +60,51 @@ struct ShowEditorView: View {
         .sheet(isPresented: Binding(get: { editingTransition != nil }, set: { if !$0 { editingTransition = nil } })) {
             transitionSheet
         }
+        .sheet(isPresented: Binding(get: { templateCatalog != nil }, set: { if !$0 { templateCatalog = nil } })) {
+            templateSheet
+        }
         .accessibilityIdentifier("showEditor")
+    }
+
+    /// The editor's list (its own property since SCN-011, 2026-11-14: with the template sheet `body` took 316 ms to
+    /// type-check, past the 300 ms budget).
+    private var cueList: some View {
+        List {
+            if let message = show.editorMessage {
+                Section {
+                    Text(message).accessibilityIdentifier("showEditorMessage")
+                    Button("OK") { show.dismissEditorMessage() }
+                }
+            }
+            Section {
+                Button {
+                    addCurrentScene()
+                } label: {
+                    // ACC-006-R1: icon and title side by side, the title wrapping in its own column. A Label
+                    // in a list row wraps its title under the icon at AX5, which the audit reports as clipped
+                    // text (2026-11-13). The icon is decorative; the button reads "Add Current Scene".
+                    HStack(alignment: .firstTextBaseline, spacing: 12) {
+                        Image(systemName: "plus.rectangle.on.rectangle").accessibilityHidden(true)
+                        Text("Add Current Scene").fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .disabled(show.list.cues.count >= ShowCueList.maximumCues)
+                .accessibilityIdentifier("showAddCurrentScene")
+                addFromTemplateButton   // SCN-011
+                if !show.list.cues.isEmpty { sceneFoldersLink }   // SCN-004
+            } footer: {
+                Text("Adds a cue that keeps the visual and its settings as they are now. Next and Previous in the controls, or the arrow keys, step through the cues.")
+            }
+            Section(show.list.cues.isEmpty ? "No cues" : "Cues") {
+                ForEach(Array(show.list.cues.enumerated()), id: \.element.id) { (index: Int, cue: ShowCue) in
+                    row(cue, number: index + 1)
+                }
+                .onMove { (offsets: IndexSet, destination: Int) in show.move(fromOffsets: offsets, toOffset: destination) }
+                .onDelete { (offsets: IndexSet) in
+                    for id in offsets.map({ (i: Int) -> UUID in show.list.cues[i].id }) { show.remove(id) }
+                }
+            }
+        }
     }
 
     /// MIDI-007-R8: the Assign MIDI sheet for the chosen cue's scene.
@@ -105,6 +119,27 @@ struct ShowEditorView: View {
     @ViewBuilder private var transitionSheet: some View {
         if let cue = editingTransition {
             CueTransitionView(show: show, cueID: cue.id, dismiss: { () -> Void in editingTransition = nil })
+        }
+    }
+
+    /// SCN-011-R7: Add from Template… opens the gallery of bundled starter scenes (disabled when the show is full).
+    private var addFromTemplateButton: some View {
+        Button {
+            templateCatalog = ShowCoordinator.bundledTemplates()
+        } label: {
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Image(systemName: "square.grid.2x2").accessibilityHidden(true)
+                Text("Add from Template…").fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .disabled(show.list.cues.count >= ShowCueList.maximumCues)
+        .accessibilityIdentifier("showAddFromTemplate")
+    }
+
+    /// SCN-011: the template gallery sheet.
+    @ViewBuilder private var templateSheet: some View {
+        if let catalog = templateCatalog {
+            SceneTemplateGalleryView(show: show, catalog: catalog, dismiss: { () -> Void in templateCatalog = nil })
         }
     }
 
