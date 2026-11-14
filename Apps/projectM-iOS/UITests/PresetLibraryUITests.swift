@@ -4,7 +4,8 @@
 // (`-uitestUnlocked YES`, no StoreKit): the Fractal › Nested Spiral scope, Next wrapping, Random
 // staying inside, and the scope line. Simulator results are never device evidence (Constitution X).
 // Shortened 2026-11-13 under owner rule 7: `-autostart inAppPlayback` replaces the notice and chooser
-// taps, and waits poll every 0.1 s (UITestWaits.swift) instead of about once a second.
+// taps, and waits poll every 0.1 s (UITestWaits.swift) instead of about once a second; held drags
+// (`app.reveal`) replace flinging swipes.
 import XCTest
 
 @MainActor
@@ -40,11 +41,11 @@ final class PresetLibraryUITests: XCTestCase {
         XCTAssertTrue(app.buttons["node:included"].appears(within: 10), "library home")
     }
 
-    /// Scrolls the list until a row is on screen (lists build rows lazily).
+    /// Scrolls the list until a row is on screen (lists build rows lazily), with held drags: a
+    /// flinging swipe makes XCUITest wait seconds for the list to settle.
     private func scrollTo(_ element: XCUIElement) {
         _ = element.appears(within: 2)
-        var swipes = 0
-        while swipes < 10 && !(element.exists && element.isHittable) { app.swipeUp(); swipes += 1 }
+        if !app.reveal(element) { app.reveal(element) }
         XCTAssertTrue(element.appears(within: 3), element.debugDescription)
     }
 
