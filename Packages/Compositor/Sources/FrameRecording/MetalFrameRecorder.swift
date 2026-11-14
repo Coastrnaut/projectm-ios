@@ -17,8 +17,14 @@
 // (the frame that crossed the limit was never encoded, so nothing after the end reaches the writer).
 //
 // `finish` stops accepting frames, waits (asynchronously) for the frames in flight, then ends the
-// session one interval after the last appended frame. Fewer than two frames, a writer failure or
-// `cancel` delete the file.
+// session one interval after the last appended frame. Fewer than two frames or `cancel` delete the file.
+//
+// REC-016 (specs/226-rec-016-recording-interruption-recovery, contract C2, ADR-0061): after a writer failure (an
+// append or the finish) the sink salvages what it can — a healthy writer is finished at the last appended frame, a
+// failed one keeps its completed movie fragments — and the file is read back: with at least two frames it is the
+// result (`RecordedVideo.interruption` set, read-back frames and duration), otherwise it is deleted. Out of storage
+// still deletes (REC-015-R7). A throw after the writer exists cancels it (no file is left), and the end flushes the
+// texture cache; `RecordingResourceLedger` counts live recorders and writers.
 #if canImport(Metal) && canImport(CoreVideo) && canImport(AVFoundation) && !COMPOSITOR_NO_METAL
 import CoreVideo
 import Foundation
@@ -79,11 +85,17 @@ public final class MetalFrameRecorder: @unchecked Sendable {
         guard let geometry = RecordingGeometry(drawableWidth: drawableWidth, drawableHeight: drawableHeight,
                                                settings: settings) else { throw .pixelBufferUnavailable }   // REC-014: aspect, cap
         let writer = try VideoFileWriter.make(url: url, geometry: geometry, settings: settings, realTime: realTime, audio: audio)
-        // REC-015-R12: tests may make the writer fail after N frames (nil in the app's normal use).
+        // REC-015-R12, REC-016-R2: tests may make the writer fail (nil in the app's normal use).
         let sink: any RecordingSampleSink = fault.map { (f: RecordingWriterFault) -> any RecordingSampleSink in
             FaultInjectingSink(wrapping: writer, fault: f)
         } ?? writer
-        try self.init(device: device, url: url, geometry: geometry, settings: settings, sink: sink)
+        do throws(RecordingFailure) {
+            if fault?.kind == .startFails { throw RecordingFailure.pixelBufferUnavailable }
+            try self.init(device: device, url: url, geometry: geometry, settings: settings, sink: sink)
+        } catch {
+            writer.discard()   // REC-016-R6: a failed start leaves no file
+            throw error
+        }
     }
 
     /// Tests: any sink (a stalled writer).
@@ -103,7 +115,10 @@ public final class MetalFrameRecorder: @unchecked Sendable {
         // REC-008-R4: audio ends where the last possible frame ends (the duration limit), never later.
         let limit = Int64(settings.maxDurationSeconds) * Int64(RecordingAudioTimeline.sampleRate)
         shared = Mutex(Shared(audio: RecordingAudioTimeline(limitSample: limit)))
+        RecordingResourceLedger.recorder(1)
     }
+
+    deinit { RecordingResourceLedger.recorder(-1) }
 
     // MARK: - Frames (frame-loop thread)
 
@@ -293,28 +308,48 @@ public final class MetalFrameRecorder: @unchecked Sendable {
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
             pending.notify(queue: queue) { continuation.resume() }
         }
+        defer { CVMetalTextureCacheFlush(textureCache, 0) }   // REC-016-R4: no texture of this recording is kept
         let (statistics, last, failed) = shared.withLock { (s: inout Shared) -> (RecordingStatistics, Int64?, Bool) in
             (s.statistics, s.lastAppendedTick, s.writerFailed)
         }
         let endTick = (last ?? 0) + settings.frameIntervalTicks
-        guard keep, !failed, statistics.written >= 2 else {
-            let result = await sink.finish(endTick: endTick, keep: false)
-            if !keep { return .failure(.cancelled) }
-            if failed {
-                if case .failure(let failure) = result { return .failure(failure) }
-                return .failure(.writerFailed("append failed"))
+        if !keep {
+            _ = await sink.finish(endTick: endTick, keep: false)
+            return .failure(.cancelled)
+        }
+        if !failed {
+            guard statistics.written >= 2 else {
+                _ = await sink.finish(endTick: endTick, keep: false)
+                return .failure(.tooFewFrames)
             }
-            return .failure(.tooFewFrames)
+            switch await sink.finish(endTick: endTick, keep: true) {
+            case .success:
+                return .success(RecordedVideo(url: url, codec: sink.codec, width: geometry.outputWidth, height: geometry.outputHeight,
+                                              frameCount: statistics.written,
+                                              durationSeconds: Double(endTick) / Double(RecordingSettings.timescale),
+                                              statistics: statistics, frameRate: settings.maxFrameRate))
+            case .failure(.storageFull):
+                return .failure(.storageFull)   // REC-015-R7: the writer deleted the file
+            case .failure:
+                break   // REC-016: the finish failed; salvage its fragments
+            }
         }
-        switch await sink.finish(endTick: endTick, keep: true) {
-        case .failure(let failure):
+        return await salvage(endTick: endTick, statistics: statistics)
+    }
+
+    /// REC-016-R3: keeps the file when it reads back with at least two frames, else deletes it.
+    private func salvage(endTick: Int64, statistics: RecordingStatistics) async -> Result<RecordedVideo, RecordingFailure> {
+        let (outcome, failure) = await sink.salvage(endTick: endTick)
+        guard outcome != .nothing else { return .failure(failure) }
+        guard let info = await RecordedVideoInspector.inspect(url), info.frameCount >= 2 else {
+            try? FileManager.default.removeItem(at: url)
             return .failure(failure)
-        case .success:
-            return .success(RecordedVideo(url: url, codec: sink.codec, width: geometry.outputWidth, height: geometry.outputHeight,
-                                          frameCount: statistics.written,
-                                          durationSeconds: Double(endTick) / Double(RecordingSettings.timescale),
-                                          statistics: statistics, frameRate: settings.maxFrameRate))
         }
+        var video = RecordedVideo(url: url, codec: sink.codec, width: geometry.outputWidth, height: geometry.outputHeight,
+                                  frameCount: info.frameCount, durationSeconds: info.durationSeconds, statistics: statistics,
+                                  frameRate: settings.maxFrameRate)
+        video.interruption = failure
+        return .success(video)
     }
 }
 #endif

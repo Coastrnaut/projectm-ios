@@ -9,6 +9,8 @@ import SwiftUI
 enum CollectionRoute: Hashable {
     case list
     case collection(String)
+    /// PRE-008: one smart collection.
+    case smart(String)
 }
 
 struct PresetCollectionsView: View {
@@ -17,6 +19,7 @@ struct PresetCollectionsView: View {
     let onDone: () -> Void
 
     @State private var namingNew = false
+    @State private var namingSmart = false   // PRE-008
     /// Drag handles appear only in Edit mode; outside it, touch and hold opens the row menu
     /// (a drag-to-reorder waiting on the same gesture would compete with it).
     @State private var editMode = EditMode.inactive
@@ -45,6 +48,7 @@ struct PresetCollectionsView: View {
                 }
                 .onMove(perform: editMode.isEditing ? { presets.moveCollections(fromOffsets: $0, toOffset: $1) } : nil)
             }
+            SmartCollectionsSection(presets: presets)   // PRE-008
         }
         .navigationTitle("Collections")
         .toolbar {
@@ -60,6 +64,12 @@ struct PresetCollectionsView: View {
                             .labelStyle(.titleAndIcon)
                     }
                     .accessibilityIdentifier("newCollection")
+                    Button {
+                        namingSmart = true
+                    } label: {
+                        Label("New Smart Collection", systemImage: "sparkles")
+                    }
+                    .accessibilityIdentifier("newSmartCollection")   // PRE-008
                 }
             }
         }
@@ -67,6 +77,7 @@ struct PresetCollectionsView: View {
         .sheet(isPresented: $namingNew) {
             CollectionNameSheet(presets: presets)
         }
+        .sheet(isPresented: $namingSmart) { SmartRulesSheet(presets: presets) }   // PRE-008
         .sheet(item: $renaming) { collection in
             CollectionNameSheet(presets: presets, renaming: collection)
         }

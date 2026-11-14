@@ -44,7 +44,11 @@ public struct LibraryEraseInventory: Sendable, Equatable {
         switch category {
         case .scenes:
             let stored: Int = ShowStore(directory: folders.url(.show)).storedSceneIDs().count
-            return stored + (FileManager.default.fileExists(atPath: folders.currentSceneFile.path) ? 1 : 0)
+            var palettes = 0   // UIX-011: user palettes
+            if let data = try? Data(contentsOf: folders.palettesFile), let file = try? PaletteFile.decode([UInt8](data)) {
+                palettes = file.library.user.count
+            }
+            return stored + palettes + (FileManager.default.fileExists(atPath: folders.currentSceneFile.path) ? 1 : 0)
         case .presets:
             guard let data = try? Data(contentsOf: folders.presetIndexFile), let file = try? UserPresetsFile.decode(data).file else { return 0 }
             return file.presets.count
@@ -58,6 +62,10 @@ public struct LibraryEraseInventory: Sendable, Equatable {
             }
             if let data = try? Data(contentsOf: folders.overridesFile), let overrides = try? PresetOverridesFile.decode(data).map {
                 total += overrides.values.count   // PRE-016: presets with overrides
+            }
+            if let data = try? Data(contentsOf: folders.smartCollectionsFile),
+               let file = try? PresetSmartCollectionsFile.decode(data).file {
+                total += file.smartCollections.count   // PRE-008
             }
             if case let .strings(ids)? = settings[LibrarySettingsPolicy.favoritesKey] { total += ids.count }
             if case let .strings(ids)? = settings[LibrarySettingsPolicy.recentPresetsKey] { total += ids.count }   // PRE-006-R7

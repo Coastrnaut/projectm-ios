@@ -59,6 +59,12 @@ public struct RecordingSettings: Sendable, Equatable {
     /// REC-014: the device class's largest encoded frame (every recording).
     public var outputCap: RecordingOutputCap
 
+    /// REC-016-R1 (ADR-0061): the writer writes a movie fragment this often (seconds, at least 0.1), so a writer
+    /// failure keeps every completed fragment readable. A normal finish produces an ordinary MP4.
+    public var fragmentIntervalSeconds: Double = 1.0 {
+        didSet { fragmentIntervalSeconds = max(fragmentIntervalSeconds, 0.1) }
+    }
+
     /// REC-005: a long-side cap above any drawable (Max: the screen's own size, never scaled).
     public static let nativeLongSide = 16_384
 
