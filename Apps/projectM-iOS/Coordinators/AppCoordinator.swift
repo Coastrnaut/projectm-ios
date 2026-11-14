@@ -190,6 +190,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let inputTrim: InputTrimSetting
     /// AUD-009: the analysis-only channel selection (Settings → Analysis Channel).
     let channelSelection: ChannelSelectionSetting
+    /// AUD-010: the monitoring balance of In-App Playback (Settings → Playback Balance).
+    let playbackBalance: PlaybackBalanceSetting
     /// AUD-011: the analysis-only noise gate (Settings → Audio Analysis; microphone source only).
     let noiseGate: NoiseGateSetting
     /// AUD-013: the per-source visual delay (Settings → Visual Delay; analysis and projectM's feed).
@@ -322,6 +324,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             AppSettings.allKeys.forEach(defaults.removeObject(forKey:))
             defaults.removeObject(forKey: InputTrimSetting.decibelsKey)   // AUD-008: 0 dB
             defaults.removeObject(forKey: ChannelSelectionSetting.modeKey)   // AUD-009: Mix
+            defaults.removeObject(forKey: PlaybackBalanceSetting.positionKey)   // AUD-010: centred
             defaults.removeObject(forKey: NoiseGateSetting.enabledKey)   // AUD-011: off
             defaults.removeObject(forKey: NoiseGateSetting.thresholdKey)   // AUD-011: −50 dBFS
             LatencyOffsetSetting.allKeys.forEach(defaults.removeObject(forKey:))   // AUD-013: 0 ms
@@ -344,6 +347,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         inputTrim = InputTrimSetting(defaults: defaults)
         channelSelection = ChannelSelectionSetting(defaults: defaults)
         noiseGate = NoiseGateSetting(defaults: defaults)
+        playbackBalance = PlaybackBalanceSetting(defaults: defaults)   // AUD-010
         latencyOffset = LatencyOffsetSetting(defaults: defaults)
         colorGrade = ColorGradeSetting(defaults: defaults)   // FX-003
         self.externalDisplay.reduceFlashing = settings.effectiveReduceFlashing   // OUT-010-R6, ACC-012-R7
@@ -419,6 +423,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         microphone = MicrophoneSource(backend: AVMicrophoneBackend())
         let inAppPlayback = InAppPlaybackSource(backend: AVInAppPlaybackBackend())
         self.inAppPlayback = inAppPlayback
+        Self.connect(playbackBalance, to: inAppPlayback)   // AUD-010
         audioLibrary = AudioLibraryCoordinator.makeDefault()
         var sources: [any AudioSource] = [
             ScreenCaptureSource.makeDefault(),
@@ -707,6 +712,16 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     }
 
     /// AUD-012-R1: the modes "Switch Source" offers: available on this device, not the current one.
+    /// AUD-010: what is heard only; the stored balance applies from the first session on. A static
+    /// helper keeps the initializer's type-check time down.
+    private static func connect(_ balance: PlaybackBalanceSetting, to source: InAppPlaybackSource) {
+        source.monitorBalance = balance.position
+        balance.onChange = { (value: Double) -> Void in source.monitorBalance = value }
+    }
+
+    /// AUD-010-R6: the balance is enabled only while In-App Playback is the source.
+    var playbackBalanceAvailable: Bool { PlaybackBalanceSetting.isAvailable(for: manager.activeMode) }
+
     var switchTargets: [AudioSourceMode] { Self.switchTargets(current: manager.activeMode, availability: availability) }
 
     static func switchTargets(current: AudioSourceMode?, availability: [AudioSourceMode: SourceAvailability]) -> [AudioSourceMode] {

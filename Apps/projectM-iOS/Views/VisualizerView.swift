@@ -355,6 +355,8 @@ struct VisualizerView: View {
                          layerInspector: coordinator,            // CMP-015
                          inputTrim: coordinator.inputTrim,       // AUD-008
                          channelSelection: coordinator.channelSelection,   // AUD-009
+                         playbackBalance: coordinator.playbackBalance,   // AUD-010
+                         playbackBalanceAvailable: coordinator.playbackBalanceAvailable,
                          noiseGate: coordinator.noiseGate,   // AUD-011
                          latencyOffset: coordinator.latencyOffset,   // AUD-013
                          colorGrade: coordinator.colorGrade,   // FX-003

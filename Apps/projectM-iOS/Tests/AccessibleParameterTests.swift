@@ -33,6 +33,8 @@ final class AccessibleParameterTests: XCTestCase {
         XCTAssertEqual(SpokenValueFormatter.text(0.5, unit: .percent(decimals: 0)), "50 percent")
         XCTAssertEqual(SpokenValueFormatter.text(0.025, unit: .percent(decimals: 1)), "2.5 percent")
         XCTAssertEqual(SpokenValueFormatter.text(6, unit: .signedDecibels), "plus 6 decibels")
+        XCTAssertEqual(SpokenValueFormatter.text(0, unit: .balance), "centered")   // AUD-010-R8
+        XCTAssertEqual(SpokenValueFormatter.text(-0.3, unit: .balance), "30 percent left")
         XCTAssertEqual(SpokenValueFormatter.text(0, unit: .signedDecibels), "0 decibels")
         XCTAssertEqual(SpokenValueFormatter.text(-1, unit: .signedDecibels), "minus 1 decibel")
         XCTAssertEqual(SpokenValueFormatter.text(-12, unit: .signedDecibels), "minus 12 decibels")
@@ -91,9 +93,9 @@ final class AccessibleParameterTests: XCTestCase {
         }
         XCTAssertEqual(Catalog.all.map(\.id), ["glowIntensitySlider", "glowRadiusSlider", "glowThresholdSlider", "textSizeSlider",
                                                "textOutlineSlider", "inputTrimSlider", "noiseGateThresholdSlider",
-                                               "latencyOffsetSlider", "videoLoopIn", "videoLoopOut"])
+                                               "latencyOffsetSlider", "videoLoopIn", "videoLoopOut", "playbackBalanceSlider"])
         XCTAssertEqual(Catalog.all.map(\.label), ["Intensity", "Radius", "Threshold", "Size", "Outline", "Input trim",
-                                                  "Gate threshold", "Visual delay", "Loop in", "Loop out"])
+                                                  "Gate threshold", "Visual delay", "Loop in", "Loop out", "Balance"])
         XCTAssertEqual(Catalog.inputTrim.step, 1)
         XCTAssertEqual(Catalog.latencyOffset.step, LatencyOffsetSetting.step)
     }
@@ -125,6 +127,7 @@ final class AccessibleParameterTests: XCTestCase {
         let trim = InputTrimSetting(defaults: defaults)
         let gate = NoiseGateSetting(defaults: defaults)
         let delay = LatencyOffsetSetting(defaults: defaults)
+        let balance = PlaybackBalanceSetting(defaults: defaults)   // AUD-010
         let videoStore = VideoStore(directory: videoRoot, defaults: defaults)
         let id = UUID()
         let url = videoRoot.appendingPathComponent("\(id.uuidString).mov")
@@ -161,6 +164,8 @@ final class AccessibleParameterTests: XCTestCase {
                 relaunched: { VideoLoopControls.inTarget(videoCoordinator()).get() }),
             Row(spec: loopSpec(Catalog.videoLoopOut), start: 1.5, target: VideoLoopControls.outTarget(videos),
                 relaunched: { VideoLoopControls.outTarget(videoCoordinator()).get() }),
+            Row(spec: Catalog.playbackBalance, start: -0.3, target: PlaybackBalanceSection.target(balance),
+                relaunched: { PlaybackBalanceSection.target(PlaybackBalanceSetting(defaults: defaults)).get() }),
         ]
         XCTAssertEqual(rows.map(\.spec.id), Catalog.all.map(\.id), "every control of the catalog is in the table")
 

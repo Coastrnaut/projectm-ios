@@ -81,6 +81,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID", "settings.performanceOverlay", "set
                 "settings.midi.mappings",  # MIDI-003 (channel, controller and parameter ID per line; no device)
                 "settings.inputTrim.decibels",   # AUD-008-R6 (analysis-only input trim)
                 "settings.analysisChannel.mode",   # AUD-009-R6 (analysis-only channel selection)
+                "settings.playbackBalance.position",   # AUD-010-R7 (In-App Playback monitoring balance)
                 "settings.noiseGate.enabled",   # AUD-011-R8 (analysis-only noise gate, microphone)
                 "settings.noiseGate.thresholdDecibels",   # AUD-011-R8
                 "settings.latencyOffset.microphone",   # AUD-013-R11 (per-source visual delay)

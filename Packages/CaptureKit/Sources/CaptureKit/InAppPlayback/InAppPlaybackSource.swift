@@ -58,6 +58,9 @@ public protocol InAppPlaybackBackend: AnyObject {
     /// AUD-004: false while a track that played to its end may still have frames on their way to the
     /// sink (at most one tap block); the transport waits for it before stopping at the end.
     var hasDeliveredTrackEnd: Bool { get }
+    /// AUD-010: the monitoring balance, −1 (left) … +1 (right), already validated. Changes what is
+    /// heard only, never what reaches the sink; applies at once and to every later track and graph.
+    func setMonitorBalance(_ balance: Double)
 }
 
 extension InAppPlaybackBackend {
@@ -68,6 +71,9 @@ extension InAppPlaybackBackend {
 
     /// For backends whose tap delivers at once (scripted test backends).
     public var hasDeliveredTrackEnd: Bool { true }
+
+    /// For backends that play nothing aloud (scripted test backends).
+    public func setMonitorBalance(_ balance: Double) {}
 }
 
 @MainActor
@@ -82,6 +88,15 @@ public final class InAppPlaybackSource: AudioSource {
     public var track: InAppPlaybackTrack = .reference
     /// Successful starts so far. The transport uses it to tell sessions apart (AUD-006).
     public private(set) var sessionCount = 0
+    /// AUD-010: the monitoring balance (validated, `MonitorBalance`), forwarded to the backend on
+    /// every set, whether or not a session runs. In-App Playback only: no other source plays aloud.
+    public var monitorBalance: Double = 0 {
+        didSet {
+            let valid = MonitorBalance.validated(monitorBalance)
+            if valid != monitorBalance || monitorBalance.isNaN { monitorBalance = valid }
+            backend.setMonitorBalance(valid)
+        }
+    }
 
     public init(backend: any InAppPlaybackBackend) {
         self.backend = backend

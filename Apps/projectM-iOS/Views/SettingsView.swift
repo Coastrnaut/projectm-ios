@@ -58,6 +58,10 @@ struct SettingsView: View {
     var inputTrim: InputTrimSetting?
     /// AUD-009: the analysis-only channel selection (nil hides its section, e.g. in previews).
     var channelSelection: ChannelSelectionSetting?
+    /// AUD-010: the In-App Playback monitoring balance (nil hides its section, e.g. in previews).
+    var playbackBalance: PlaybackBalanceSetting?
+    /// AUD-010-R6: whether In-App Playback is the active source (the balance is enabled only then).
+    var playbackBalanceAvailable = false
     /// AUD-011: the analysis-only noise gate (nil hides its section, e.g. in previews).
     var noiseGate: NoiseGateSetting?
     /// AUD-013: the per-source visual delay (nil hides its section, e.g. in previews).
@@ -368,6 +372,7 @@ struct SettingsView: View {
         if let inputTrim { InputTrimSection(inputTrim: inputTrim) }   // AUD-008-R8
         if let channelSelection { ChannelSelectionSection(selection: channelSelection) }   // AUD-009-R7
         if let noiseGate { NoiseGateSection(noiseGate: noiseGate) }   // AUD-011-R7
+        if let playbackBalance { PlaybackBalanceSection(balance: playbackBalance, available: playbackBalanceAvailable) }   // AUD-010-R6
         if let latencyOffset { LatencyOffsetSection(setting: latencyOffset) }   // AUD-013-R10
         oscSection
         if let midi { MIDISettingsSection(midi: midi) }   // MIDI-001-R8
