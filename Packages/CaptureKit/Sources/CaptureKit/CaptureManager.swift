@@ -178,6 +178,15 @@ public final class CaptureManager {
     /// got a positive `analysisTapCapacityFrames`. Never handed to projectM (ADR-0008 decision 5).
     public nonisolated var analysisTap: (any NormalizedPCMReader)? { analyzer.normalizedOutput.analysisTap }
 
+    /// REC-004 (contract C2): the normalized output's recording tap, written only while armed; every new
+    /// session (start, restart, source switch) disarms it before its first audio.
+    public nonisolated var recordingTap: any RecordingTapReading { analyzer.normalizedOutput.recordingTap }
+
+    /// REC-004: starts (empty) or stops the recording tap. Only a recording with permitted audio arms it.
+    public nonisolated func setRecordingTapArmed(_ armed: Bool) {
+        if armed { analyzer.normalizedOutput.armRecordingTap() } else { analyzer.normalizedOutput.disarmRecordingTap() }
+    }
+
     /// True while `source` is the started source of the current session (AUD-006: the transport
     /// acts only on its own In-App Playback source, never on a source that replaced it).
     public func isCurrent(_ source: any AudioSource) -> Bool {
