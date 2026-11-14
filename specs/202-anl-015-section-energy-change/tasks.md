@@ -21,11 +21,11 @@
 
 ## Phase 4: User Story 2 - Bursts and steady music fire nothing (P1)
 
-- [ ] ANL-015-T05 [US2] Tests: 1.0 s and 1.5 s loud bursts in a quiet tone, steady tone, steady seeded noise, silence → no change; a 10 s linear fade-in in dB → at most one change, in SectionEnergyChangeTests.swift
+- [ ] ANL-015-T05 [US2] Tests: 1.0 s and 1.5 s loud bursts in a quiet tone, steady tone, steady seeded noise, silence → no change; a 10 s linear fade-in in dB → at most one change; a step during the 2 s settling period → no change (spec Edge Cases), in SectionEnergyChangeTests.swift
 
 ## Phase 5: User Story 3 - Loud-to-quiet and bad input (P2)
 
-- [ ] ANL-015-T06 [US3] Tests: loud then quiet (and loud then silence) → exactly one `.falling` change after the dwell; non-finite levels and samples keep every value finite and the envelope in 0…1; envelope is 1 on the change frame, decays and snaps to 0, in SectionEnergyChangeTests.swift
+- [ ] ANL-015-T06 [US3] Tests: loud then quiet (and loud then silence) → exactly one `.falling` change after the dwell; non-finite levels and samples keep every value finite and the envelope in 0…1; envelope is 1 on the change frame, decays and snaps to 0; silence then a tone after settling → one `.rising`; a loud section of 3 s (rise, then fall inside the 4 s refractory) → the fall fires only after the refractory ends (ANL-015-R5), in SectionEnergyChangeTests.swift
 
 ## Phase 6: User Story 4 - Pipeline, source and app (P2)
 

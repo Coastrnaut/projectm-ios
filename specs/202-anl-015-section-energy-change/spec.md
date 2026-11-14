@@ -85,7 +85,7 @@ itself, not on every hit.
 
 1. **Given** a quiet tone with a 1.0 s or 1.5 s loud burst, **When** analysed, **Then** no event fires.
 2. **Given** a steady tone, steady noise or silence throughout, **When** analysed, **Then** no event fires.
-3. **Given** a slow fade-in over many seconds, **When** analysed, **Then** at most one event fires.
+3. **Given** a slow fade-in (−50 to −10 dBFS over 10 s), **When** analysed, **Then** at most one event fires.
 
 ---
 
