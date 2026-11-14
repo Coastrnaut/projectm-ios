@@ -79,6 +79,9 @@ final class CompositorRecordingTests: XCTestCase {
         XCTAssertEqual(info.audioTrackCount, 0, "REC-003-R8: video only")
         XCTAssertEqual(info.metadataCount, 0, "REC-003-R8: no metadata items")
         XCTAssertEqual(info.codec, video.codec.fourCharacterCode)
+        // QA-008-T08: the same file through the validator (codec, times, 10 s ±1 frame, count, no audio, no metadata).
+        let report = await RecordingValidator.validate(url, expectation: RecordingExpectation(durationSeconds: 10))
+        XCTAssertTrue(report.passed, report.summary)
 
         let indices = try decodedIndices(url)
         XCTAssertEqual(indices.count, frames)
