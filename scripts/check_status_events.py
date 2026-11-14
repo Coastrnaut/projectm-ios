@@ -36,6 +36,8 @@ CHECKED = [
     "Coordinators/MIDIMonitorCoordinator.swift",       # MIDI-002-R10
     "Views/MIDIMonitorView.swift",                     # MIDI-002-R10
     "Coordinators/MIDIMappingCoordinator.swift",       # MIDI-003-R11: learn announces through the announcer
+    "Coordinators/MIDIMappingCoordinator+Notes.swift", # MIDI-006-R9: note learn announces through the announcer
+    "Coordinators/MIDINoteActionPerformer.swift",      # MIDI-006-R9: triggers add no announcement of their own
     "Views/MIDIMappingsView.swift",                    # MIDI-003-R11
     "Views/MIDIMappingOptionsView.swift",              # MIDI-004-R8: curve and Invert announce through the announcer
     "Views/CaptureResultPanels.swift",

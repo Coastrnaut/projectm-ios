@@ -16,6 +16,9 @@
 // * MIDI-004 (specs/140-midi-004-cc-scaling, contract C4): each mapping's curve and Invert are set from its options
 //   screen (`selectPreset`, `setInverted`): saved at once in the same line (`;curve=`, `;invert=1`), announced on
 //   the `.midi` lane, no Undo entry, and applied from the control's next message (no jump while nobody touches it).
+// * MIDI-006 (specs/143-midi-006-note-triggers, contract N4): note mappings (`note:` lines after the `cc:` lines, same
+//   key) drive trigger actions through `performNotes`; note learn, rows and stuck-note release live in
+//   `MIDIMappingCoordinator+Notes.swift`. One learn session (CC or note) at a time; Undo covers both lists.
 import Foundation
 import Observation
 import ParameterGraph
@@ -61,24 +64,34 @@ final class MIDIMappingCoordinator {
 
     private(set) var bindings = MIDIBindingList()
     private(set) var learningTarget: ParameterID?
+    /// MIDI-006: the note target being learned.
+    private(set) var learningNoteTarget: MIDINoteTarget?
+    /// MIDI-006: note mappings (stored after the CC lines).
+    var noteBindings = MIDINoteBindingList()
     private(set) var liveValues: [ParameterID: Double] = [:]
     private(set) var canUndo = false
-    private(set) var lastMessage: String?
+    var lastMessage: String?
 
     /// Called with every live value after each change (the app pushes them to the native host).
     @ObservationIgnored var applyValues: @MainActor ([ParameterID: Double]) -> Void = { (_: [ParameterID: Double]) -> Void in }
+    /// MIDI-006: performs the router's commands (the app sets a `MIDINoteActionPerformer`).
+    @ObservationIgnored var performNotes: @MainActor ([MIDINoteCommand]) -> Void = { (_: [MIDINoteCommand]) -> Void in }
+    @ObservationIgnored var noteSession = MIDILearnSession<MIDINoteTarget>()
+    @ObservationIgnored var noteRouter = MIDINoteRouter()
+    /// MIDI-006-R6: the listed inputs at the last state change (a shrink releases held notes).
+    @ObservationIgnored var lastSources: Set<MIDIEndpointID> = []
 
     @ObservationIgnored let learnable: [ParameterDescriptor]
     @ObservationIgnored private let registry: ParameterRegistry
-    @ObservationIgnored private let input: MIDIInputCoordinator
+    @ObservationIgnored let input: MIDIInputCoordinator
     @ObservationIgnored private let discovery: MIDIDiscoveryCoordinator
     @ObservationIgnored private let defaults: UserDefaults
-    @ObservationIgnored private let announce: @MainActor (String) -> Void
-    @ObservationIgnored private let clock: @MainActor () -> UInt64
-    @ObservationIgnored private let scheduler: Scheduler
+    @ObservationIgnored let announce: @MainActor (String) -> Void
+    @ObservationIgnored let clock: @MainActor () -> UInt64
+    @ObservationIgnored let scheduler: Scheduler
     @ObservationIgnored private var session = MIDILearnSession<ParameterID>()
-    @ObservationIgnored private var cancelTimeout: (@MainActor () -> Void)?
-    @ObservationIgnored private var undoList: MIDIBindingList?
+    @ObservationIgnored var cancelTimeout: (@MainActor () -> Void)?
+    @ObservationIgnored private var undoList: (cc: MIDIBindingList, notes: MIDINoteBindingList)?
     @ObservationIgnored private var isClientRegistered = false
 
     init(registry: ParameterRegistry, applied: Set<ParameterID>, input: MIDIInputCoordinator,
@@ -97,6 +110,8 @@ final class MIDIMappingCoordinator {
         let allowed: Set<ParameterID> = Set(learnable.map { (descriptor: ParameterDescriptor) -> ParameterID in descriptor.id })
         let lines: [String] = defaults.stringArray(forKey: Self.mappingsKey) ?? []
         bindings = MIDIBindingList(storageLines: lines, allowedTargets: allowed)
+        noteBindings = MIDINoteBindingList(storageLines: lines)   // MIDI-006-R7
+        lastSources = input.listedSources
         input.addStateObserver { [weak self] () -> Void in self?.inputStateChanged() }
         updateClient()
     }
@@ -125,7 +140,7 @@ final class MIDIMappingCoordinator {
     // MARK: Texts and rows
 
     var canLearn: Bool { discovery.state.isListening }
-    var isLearning: Bool { learningTarget != nil }
+    var isLearning: Bool { learningTarget != nil || learningNoteTarget != nil }
 
     var rows: [MIDIMappingRow] {
         learnable.map { (descriptor: ParameterDescriptor) -> MIDIMappingRow in
@@ -139,6 +154,7 @@ final class MIDIMappingCoordinator {
 
     var statusText: String {
         if let learningTarget { return "Move a control on your MIDI device to map " + name(of: learningTarget) + "…" }
+        if let learningNoteTarget { return Self.noteLearnPrompt(learningNoteTarget) + "…" }
         if !canLearn { return lastMessage == Self.stoppedText ? Self.stoppedText : Self.offText }
         return lastMessage ?? Self.idleText
     }
@@ -181,6 +197,7 @@ final class MIDIMappingCoordinator {
     /// Leaving the screen cancels learning and forgets Undo (MIDI-003 spec Clarifications).
     func close() {
         if session.isLearning { _ = session.cancel() }
+        if noteSession.isLearning { _ = noteSession.cancel() }
         endLearning()
         undoList = nil
         canUndo = false
@@ -189,8 +206,21 @@ final class MIDIMappingCoordinator {
 
     // MARK: Learning
 
+    /// Sets the note target being learned (the Notes extension; stored properties live here).
+    func setLearningNoteTarget(_ target: MIDINoteTarget?) {
+        learningNoteTarget = target
+        if target != nil { learningTarget = nil }
+    }
+
+    /// Cancels a CC learn session without a message (MIDI-006: a note learn replaces it).
+    func cancelCCLearnSession() {
+        if session.isLearning { _ = session.cancel() }
+    }
+
     func startLearning(_ target: ParameterID) {
         guard canLearn, learnable.contains(where: { (descriptor: ParameterDescriptor) -> Bool in descriptor.id == target }) else { return }
+        if noteSession.isLearning { _ = noteSession.cancel() }   // MIDI-006: one learn session at a time
+        learningNoteTarget = nil
         session.start(target: target, now: clock())
         learningTarget = target
         lastMessage = nil
@@ -201,33 +231,39 @@ final class MIDIMappingCoordinator {
     }
 
     func cancelLearning() {
-        guard session.cancel() != nil else { return }
+        let cancelledNote: Bool = noteSession.cancel() != nil
+        guard session.cancel() != nil || cancelledNote else { return }
         lastMessage = Self.cancelledText
         endLearning()
         updateClient()
     }
 
-    private func timeoutFired() {
-        guard session.expire(now: clock()) != nil else { return }
+    func timeoutFired() {
+        let now: UInt64 = clock()
+        let noteExpired: Bool = noteSession.expire(now: now) != nil
+        guard session.expire(now: now) != nil || noteExpired else { return }
         finishTimedOut()
     }
 
-    private func finishTimedOut() {
+    func finishTimedOut() {
         lastMessage = Self.timedOutText
         endLearning()
         announce(Self.timedOutText)
         updateClient()
     }
 
-    private func endLearning() {
+    func endLearning() {
         learningTarget = nil
+        learningNoteTarget = nil
         cancelTimeout?()
         cancelTimeout = nil
     }
 
     private func inputStateChanged() {
-        guard session.isLearning, !input.isReceiving else { return }
+        releaseNotesIfInputChanged()   // MIDI-006-R6
+        guard session.isLearning || noteSession.isLearning, !input.isReceiving else { return }
         _ = session.cancel()
+        _ = noteSession.cancel()
         lastMessage = Self.stoppedText
         endLearning()
         updateClient()
@@ -277,16 +313,22 @@ final class MIDIMappingCoordinator {
         guard let previous = undoList else { return }
         undoList = nil
         canUndo = false
-        bindings = previous
+        releaseNotes(changedFrom: noteBindings, to: previous.notes)
+        bindings = previous.cc
+        noteBindings = previous.notes
         listChanged()
     }
 
     private func rememberUndo(_ list: MIDIBindingList) {
-        undoList = list
+        rememberUndo(cc: list, notes: noteBindings)
+    }
+
+    func rememberUndo(cc: MIDIBindingList, notes: MIDINoteBindingList) {
+        undoList = (cc, notes)
         canUndo = true
     }
 
-    private func listChanged() {
+    func listChanged() {
         save()
         let bound: Set<ParameterID> = Set(bindings.bindings.map { (binding: MIDIControlBinding) -> ParameterID in binding.target })
         let kept: [ParameterID: Double] = liveValues.filter { (entry: (key: ParameterID, value: Double)) -> Bool in bound.contains(entry.key) }
@@ -297,11 +339,13 @@ final class MIDIMappingCoordinator {
         updateClient()
     }
 
+    /// MIDI-003/004 `cc:` lines unchanged, then MIDI-006 `note:` lines (kept unreadable ones included).
     private func save() {
-        if bindings.isEmpty {
+        let lines: [String] = bindings.storageLines + noteBindings.storageLines
+        if lines.isEmpty {
             defaults.removeObject(forKey: Self.mappingsKey)
         } else {
-            defaults.set(bindings.storageLines, forKey: Self.mappingsKey)
+            defaults.set(lines, forKey: Self.mappingsKey)
         }
     }
 
@@ -310,6 +354,7 @@ final class MIDIMappingCoordinator {
     /// The input client's handler (one display tick's batch).
     func receive(_ batch: [MIDIEvent]) {
         guard !batch.isEmpty else { return }
+        receiveNotes(batch)   // MIDI-006: note learn and triggers
         var updates: [ParameterID: Double] = [:]
         var rest: ArraySlice<MIDIEvent> = batch[...]
         if session.isLearning, let outcome = session.handle(batch, now: clock()) {
@@ -360,9 +405,11 @@ final class MIDIMappingCoordinator {
 
     // MARK: Input client (MIDI-003-R12)
 
-    private var needsInput: Bool { session.isLearning || !bindings.isEmpty }
+    private var needsInput: Bool {
+        session.isLearning || noteSession.isLearning || !bindings.isEmpty || !noteBindings.isEmpty
+    }
 
-    private func updateClient() {
+    func updateClient() {
         if needsInput && !isClientRegistered {
             isClientRegistered = true
             input.addClient(Self.clientName) { [weak self] (batch: [MIDIEvent]) -> Void in self?.receive(batch) }
