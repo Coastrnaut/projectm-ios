@@ -34,6 +34,8 @@ public struct LiveBandFrameInfo: Sendable, Equatable {
     public var loudness: Float = 0
     /// ANL-008's mid transient value (envelope × confidence, 0…1), for MOD-002's Mid transient source.
     public var midTransient: Float = 0
+    /// ANL-009's high transient value (envelope × confidence, 0…1), for MOD-002's High transient source.
+    public var highTransient: Float = 0
 }
 
 /// The frame loop's view of the analyzer's bus subscription.
@@ -48,7 +50,8 @@ public final class LiveBandOutput: Sendable {
         guard let frame = subscription.latestFrame(into: destination, capacity: capacity) else { return nil }
         return LiveBandFrameInfo(count: min(frame.bandCount, max(capacity, 0)), timestampNanoseconds: frame.time.hostNanoseconds,
                                  sequence: frame.id, session: frame.time.session, kickEnvelope: frame.kickEnvelope,
-                                 centroid: frame.centroid, loudness: frame.loudness, midTransient: frame.midTransient)
+                                 centroid: frame.centroid, loudness: frame.loudness, midTransient: frame.midTransient,
+                                 highTransient: frame.highTransient)
     }
 }
 

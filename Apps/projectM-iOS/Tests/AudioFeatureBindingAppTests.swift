@@ -120,6 +120,26 @@ final class AudioFeatureBindingAppTests: XCTestCase {
         XCTAssertEqual(host.glow.intensity, 0.5, "the manual intensity is unchanged")
     }
 
+    /// ANL-009-T09: a High transient binding on the glow follows the high transient value
+    /// (envelope × confidence) the frame loop passes in (ANL-009-R8, R9).
+    func testHighTransientBindsAndDrivesTheGlow() throws {
+        let host = try makeHost()
+        try host.bind(AudioFeatureBinding(source: .highTransient, target: VisualParameterIDs.bloomIntensity, outputStart: 0, outputEnd: 1))
+        XCTAssertEqual(host.bindings.map(\.source), [.highTransient])
+        XCTAssertEqual(AudioFeatureSource.highTransient.inspectorName, "High transient")
+        let bands: [Float] = [0.1, 0.1, 0.1]
+        var time: UInt64 = 1_000_000
+        for value: Float in [0.75, 0.25] {
+            bands.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> Void in
+                host.applyModulation(bands: buffer, kick: 1, centroid: 0.5, loudness: 0.5, midTransient: 1, highTransient: value,
+                                     timeNanoseconds: time)
+            }
+            time += 16_666_667
+            XCTAssertEqual(host.effectiveGlow.intensity, value)
+        }
+        XCTAssertEqual(host.glow.intensity, 0.5, "the manual intensity is unchanged")
+    }
+
     func testManualOnlyGlowSwitchCannotBeBoundAndAnOffGlowStaysOff() throws {
         let host = try makeHost(glowEnabled: false)
         XCTAssertThrowsError(try host.bind(AudioFeatureBinding(source: .band(0), target: VisualParameterIDs.bloomEnabled,
