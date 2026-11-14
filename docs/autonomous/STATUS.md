@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T06:43:51Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T06:47:10Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,19 +10,18 @@
 | State | Features |
 |---|---|
 | audited | 206 |
-| implementing | 1 |
-| unit_passed | 2 |
+| unit_passed | 3 |
 | integrated | 116 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 3 | 0 | 0 | 83 | 1 |
-| P1 | 117 | 1 | 2 | 31 | 0 |
-| P2 | 77 | 0 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 3 | 0 | 83 | 1 |
+| P1 | 117 | 3 | 31 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -781,6 +780,19 @@ None.
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `1954f853e740` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-002/20261113T134641/sim-test_ANGLERendering.log`)
 - `swift test --package-path Packages/Compositor`: pass at `1954f853e740` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-002/20261113T134641/swift-test_Compositor.log`)
 - `post-merge: Compositor scheme on iPhone 17 sim (Compositor 154 incl. video pipeline, import and layer tests); projectM-iOSTests 210 incl. VideoStoreTests; VideoLayerUITests 22.1 s, Photo, Camera 2, ExternalDisplay; SettingsUITests 4 pass after the scroll fix`: pass at `e9e04eeb62a8` (log `.autonomous/logs/integration/med-002/app-tests.log`)
+
+### MED-003 Video loop region (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `ef4ad61613e9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-003/20261114T014458/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `ef4ad61613e9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-003/20261114T014458/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `ef4ad61613e9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-003/20261114T014458/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `ef4ad61613e9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-003/20261114T014458/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `ef4ad61613e9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-003/20261114T014458/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `ef4ad61613e9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-003/20261114T014458/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `ef4ad61613e9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-003/20261114T014458/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `ef4ad61613e9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-003/20261114T014458/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `ef4ad61613e9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-003/20261114T014458/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `ef4ad61613e9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-003/20261114T014458/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `ef4ad61613e9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-003/20261114T014458/swift-test_ShowControl.log`)
 
 ### MED-009 Text overlay (integrated)
 - `python3 scripts/check_compliance.py`: pass at `5adba5200543` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-009/20261113T142110/compliance.log`)
