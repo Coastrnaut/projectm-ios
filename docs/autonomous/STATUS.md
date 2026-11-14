@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T16:52:23Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T16:52:30Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,8 +11,8 @@
 |---|---|
 | audited | 132 |
 | implementing | 6 |
-| unit_passed | 2 |
-| integrated | 185 |
+| unit_passed | 1 |
+| integrated | 186 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -20,14 +20,14 @@
 | Priority | audited | implementing | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 49 | 5 | 2 | 95 | 0 |
+| P1 | 49 | 5 | 1 | 96 | 0 |
 | P2 | 72 | 1 | 0 | 6 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 140 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-011, ANL-012)
+- 139 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-011, ANL-012)
 
 ## Integrated
 
@@ -172,6 +172,7 @@ The physical-device suite may **not** start:
 | PRE-007 | Preset collections | `e834535cb98b` | `feature/pre-007` |
 | PRE-010 | Preset quick audition | `a653f631` | `feature/pre-010` |
 | PRE-012 | Preset import validation | `4bf9f50d1af8` | `feature/pre-012` |
+| PRE-013 | Bulk preset import | `ae03002a405d` | `feature/pre-013` |
 | PRE-014 | Bulk preset export | `a20ba4bafb5e` | `feature/pre-014` |
 | PRE-015 | User preset duplication | `c6cce9988587` | `feature/pre-015` |
 | QA-002 | Golden render scenes | `dffa2be908f5` | `feature/qa-002` |
@@ -1684,7 +1685,7 @@ None.
 - `xcodebuild -scheme Rendering-Package -destination id=4E32B01D-7911-4A64-A944-877DDD445BC0 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `6d4ada96b86c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-012/20261112T182006/sim-test_Rendering.log`)
 - `integration checkout, full packs: PRE012_CORPUS swift test PresetLibrary 133 pass (14576 pack files, 0 over a limit, 2 incompleteShader); xcodebuild projectM-iOS test on iPhone 17 iOS 27.2: unit and UI suites pass (UserPresets 2, PresetCollections 3, PresetLibrary, Purchase, Visualizer); PresetBlocklist.json in the app bundle`: pass at `9e78b94c8ee1` (log `.autonomous/logs/integration/pre-012/app-tests.log`)
 
-### PRE-013 Bulk preset import (unit_passed)
+### PRE-013 Bulk preset import (integrated)
 - `python3 scripts/check_compliance.py`: pass at `ecfa981803b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-013/20261114T114830/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `ecfa981803b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-013/20261114T114830/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `ecfa981803b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-013/20261114T114830/script-tests.log`)
