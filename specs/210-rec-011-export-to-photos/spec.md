@@ -38,6 +38,16 @@ human interaction); each answer is the conservative, local-first option.
 - Q: Does the share sheet now offer its own Save to Photos? → A: No. It stays excluded, so the one way into Photos is the explicit button with the app's own error handling.
 - Q: What does the user see on denial or restriction? → A: A notice naming the problem, saying the file is still in the app, with Open Settings (iOS has a switch for this app); it is announced.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Is an in-app explainer shown before iOS's Photos prompt, as UIX-015 does for the camera? → A: No. The user has just tapped "Save to Photos", which already says what happens, and iOS's prompt shows the add-only usage text; an extra sheet would add a step without information. No "explained" flag, so no new UserDefaults key.
+- Q: Does the save go into a projectM album? → A: No. Creating or finding an album needs read access to the library; the item goes to the library's default place (Recents) with add-only access.
+- Q: Is the video converted (for example HEVC to H.264) before saving? → A: No. The file is added as it is; every device that runs the app plays HEVC, and conversion would cost time and battery for no gain.
+- Q: Where is the outcome shown in Settings › Storage › Recordings? → A: In the Recordings screen's own notice row (with Open Settings for denied or restricted), and announced through the same status-event row as on the visualizer (one path, capture lane, row X8a).
+- Q: Does the app remember what it saved to Photos? → A: No. Nothing is recorded about saved items (no history, no key, no identifier from Photos); a second tap saves a second copy, as Photos' own duplicate handling is the user's.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Save a finished frame or recording to Photos (Priority: P1)
@@ -93,7 +103,8 @@ A performer saves a frame they like, or a finished recording, into their photo l
 - **REC-011-R6**: Every outcome MUST leave the local original unchanged: the offered frame and recording stay offered, the recording and library files keep their path and bytes.
 - **REC-011-R7**: Denied MUST show "Photos access is off. To save to Photos, allow adding photos for projectM in Settings." with Open Settings; restricted MUST show "Saving to Photos is restricted on this device." with Open Settings; both add "The file is still in the app."
 - **REC-011-R8**: A failed save MUST show "The file couldn't be saved to Photos. It is still in the app."; success shows "Saved to Photos.".
-- **REC-011-R9**: Every outcome text MUST be announced through the status-event router (capture lane), and shown as a dismissible notice.
+- **REC-011-R9**: Every outcome text MUST be announced through the status-event router (capture lane, row X8a), and shown as a dismissible notice: next to the result panels on the visualizer, in the Recordings screen's notice row in Settings.
+- **REC-011-R14**: The app MUST NOT show its own explainer before iOS's prompt, create albums, convert the file, or keep any record of saved items.
 - **REC-011-R10**: While a save runs, Save to Photos MUST be disabled, and Keep, Discard, Rename and Delete MUST be disabled for the item being saved.
 - **REC-011-R11**: The share sheet MUST keep excluding Save to Photos and Assign to Contact.
 - **REC-011-R12**: The permission catalog, Info.plist, privacy policy "Permissions and why" and the catalog check MUST list Photos (add only); the full-library key MUST remain forbidden.
