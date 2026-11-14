@@ -135,15 +135,23 @@ struct VisualizerView: View {
             if !coordinator.showSettings && !coordinator.sceneSwitcher.isOpen { SceneHistoryKeyCommands(coordinator: coordinator) }
             SceneSwitcherLayer(coordinator: coordinator)   // UIX-002: the quick scene switcher
             if coordinator.settings.showsPerformanceOverlay, coordinator.renderer != nil || coordinator.showsAlternateVisual {
-                VStack { HStack { Spacer(); PerformanceOverlay(metrics: { coordinator.activeVisualMetrics }, manager: coordinator.manager,
-                                                                   renderHealth: { coordinator.renderHealthOverlayLine }) }; Spacer() }
-                    .padding(.top, 2)
-                    .padding(.trailing, 8)
+                performanceOverlay
             }
             diagnostics
         }
         .statusBarHidden(coordinator.hidesSystemOverlays)
         .persistentSystemOverlays(coordinator.hidesSystemOverlays ? .hidden : .automatic)
+    }
+
+    /// FR-048 overlay, top trailing; PERF-001: its stage lines, and no stage timing once it is gone (R8).
+    private var performanceOverlay: some View {
+        let overlay = PerformanceOverlay(metrics: { coordinator.activeVisualMetrics }, manager: coordinator.manager,
+                                         renderHealth: { coordinator.renderHealthOverlayLine },
+                                         stageLines: { () -> [String] in coordinator.frameStageLines() })
+        return VStack { HStack { Spacer(); overlay }; Spacer() }
+            .padding(.top, 2)
+            .padding(.trailing, 8)
+            .onDisappear { coordinator.stopFrameStageTiming() }
     }
 
     /// The DEBUG panels and the UI-test probes (all invisible or DEBUG-only).

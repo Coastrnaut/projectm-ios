@@ -554,6 +554,13 @@ public final class Compositor {
     /// Reduce flashing one (`SafetyClamp.flashLimitsOverride`); nil = `forReduceFlashing(reduceFlashing)`.
     /// From the next frame; the guard's history is kept (FX-019-R11).
     public var flashLimits: FlashEnvelopeConfiguration?
+    /// PERF-001 (contracts/frame-stage-timer.md C4): when set, `composite(into:)` stamps
+    /// `lastOutputPassStartNanoseconds` with this clock where the output pass (flash guard, grade, output)
+    /// begins, so a host can split its time into composite and output. Nil (the default): nothing is read.
+    public var stageClock: (() -> UInt64)?
+    /// PERF-001: the stage clock's reading at the start of the last frame's output pass; 0 when the frame
+    /// stopped before it (or without a stage clock).
+    public private(set) var lastOutputPassStartNanoseconds: UInt64 = 0
 
     /// Encodes one frame into `output` (a render target of a `supportedOutputFormats` format) and
     /// `commandBuffer`, which the caller commits. Returns false, encoding nothing, for an empty
@@ -564,9 +571,11 @@ public final class Compositor {
               let outputPipeline = outputPipeline(for: output.pixelFormat) else { return false }
         if let last = lastOutputFormat, last != output.pixelFormat { trails.resetPending = true }   // FX-009-R5
         lastOutputFormat = output.pixelFormat
+        lastOutputPassStartNanoseconds = 0
         return encodeFrame(size: size, commandBuffer: commandBuffer, presentationTimeNanoseconds: presentationTimeNanoseconds,
                            contentScale: contentScale, reduceFlashing: reduceFlashing, audio: audio,
                            allowGradePass: true) { (composite: MTLTexture, frame: LayerFrameContext) -> Bool in
+            if let stageClock { lastOutputPassStartNanoseconds = stageClock() }   // PERF-001: the output pass starts
             let grade: CompositorShaders.GradeBlock = outputGradeBlock   // FX-003, FX-020: one block for the guard and outputs
             guard flashGuard.encode(composite: composite, commandBuffer: commandBuffer, frameDuration: frame.frameDuration,
                                     reduceFlashing: reduceFlashing, flashLimits: flashLimits, grade: grade) else { return false }

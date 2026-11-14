@@ -44,6 +44,7 @@ public enum LibraryBackupWriter {
             if let collections = contents.collections {
                 try add(LibraryBackupFormat.collectionsPath, try PresetCollectionsFile(collections: collections).encode())
             }
+            if let tags = contents.presetTags, !tags.isEmpty { try add(LibraryBackupFormat.tagsPath, try PresetTagsFile.encode(tags)) }
             try add(LibraryBackupFormat.settingsPath, try encodedSettings(contents.settings))
             for name in contents.photos.keys.sorted() {
                 if let bytes = contents.photos[name] { try add(LibraryBackupFormat.photoPath(name), bytes) }
@@ -109,6 +110,10 @@ public enum LibraryBackupReader {
             guard let file = try? PresetCollectionsFile.decode(collections).file else { throw .unreadableRecord(LibraryBackupFormat.collectionsPath) }
             contents.collections = file.collections
         }
+        if let tags = files[LibraryBackupFormat.tagsPath] {
+            guard let decoded = try? PresetTagsFile.decode(tags) else { throw .unreadableRecord(LibraryBackupFormat.tagsPath) }
+            contents.presetTags = decoded.map
+        }
         contents.settings = try readSettings(files)
         contents.photos = try readPhotos(files)
         return LibraryBackupContents(manifest: manifest, contents: contents, sha256: PortableSHA256.hex(data))
@@ -116,7 +121,8 @@ public enum LibraryBackupReader {
 
     static func isKnownPath(_ path: String) -> Bool {
         if path == LibraryBackupFormat.showPath || path == LibraryBackupFormat.currentScenePath || path == LibraryBackupFormat.presetIndexPath
-            || path == LibraryBackupFormat.collectionsPath || path == LibraryBackupFormat.settingsPath { return true }
+            || path == LibraryBackupFormat.collectionsPath || path == LibraryBackupFormat.settingsPath
+            || path == LibraryBackupFormat.tagsPath { return true }
         if let id = stripped(path, prefix: LibraryBackupFormat.scenesPrefix, suffix: LibraryBackupFormat.sceneSuffix) {
             return ShowCueList.isSceneID(id)
         }

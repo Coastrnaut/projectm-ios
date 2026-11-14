@@ -418,7 +418,7 @@ struct SettingsView: View {
         if let show {   // SHOW-001-R14
             Section {
                 NavigationLink {
-                    ShowEditorView(show: show, addCurrentScene: addCurrentScene)
+                    ShowEditorView(show: show, addCurrentScene: addCurrentScene, midiMappings: midi?.mappings)   // MIDI-007-R8
                 } label: {
                     LabeledContent("Show", value: show.hasCues ? "\(show.list.cues.count) \(show.list.cues.count == 1 ? "cue" : "cues")" : "No cues")
                 }

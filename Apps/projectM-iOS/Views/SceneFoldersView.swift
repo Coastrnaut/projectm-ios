@@ -7,6 +7,8 @@
 // shows the scene's first cue (SHOW-001). Announcements go through ShowCoordinator's library lane.
 // SCN-005: scene rows show their tags and offer "Tags…" (swipe, context menu, VoiceOver action),
 // which opens the Tags sheet.
+// SCN-006: scene rows show the scene's preview picture in place of the scene symbol (placeholder until
+// one exists; `show.previews` is nil without the app coordinator).
 import ShowControl
 import SwiftUI
 
@@ -132,7 +134,7 @@ struct SceneFoldersView: View {
         let link = NavigationLink {
             SceneFoldersView(show: show, folderID: folder.id)
         } label: {
-            Label(folder.name, systemImage: "folder")
+            IconTitleRow(title: folder.name, systemImage: "folder")   // ACC-006-R1: no Label wrap under the icon
         }
         return link
             .accessibilityLabel(folder.name)
@@ -177,9 +179,9 @@ struct SceneFoldersView: View {
         return value
     }
 
-    private func sceneContent(_ name: String, missing: Bool, tags: [String]) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
-            Image(systemName: "rectangle.stack").accessibilityHidden(true)
+    private func sceneContent(_ sceneID: String, name: String, missing: Bool, tags: [String]) -> some View {
+        HStack(alignment: .center, spacing: 12) {
+            ScenePreviewView(sceneID: sceneID, model: show.previews)   // SCN-006
             VStack(alignment: .leading, spacing: 2) {
                 Text(name)
                 if missing {
@@ -197,7 +199,7 @@ struct SceneFoldersView: View {
     private func sceneRow(_ sceneID: String) -> some View {
         let name: String = sceneName(sceneID)
         let missing: Bool = show.unreadableScenes.contains(sceneID)
-        return sceneContent(name, missing: missing, tags: show.tags(ofScene: sceneID))
+        return sceneContent(sceneID, name: name, missing: missing, tags: show.tags(ofScene: sceneID))
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(name)
             .accessibilityValue(sceneValue(sceneID, missing: missing))

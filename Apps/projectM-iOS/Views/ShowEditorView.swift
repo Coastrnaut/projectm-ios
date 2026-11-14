@@ -5,6 +5,8 @@
 // ("Cue 2 of 5, Intro, active") and Full Keyboard Access apply (FR-070).
 // SCN-003: Duplicate Scene and Rename Scene… per cue (context menu and VoiceOver actions); a row whose
 // scene name differs from its label shows "Scene: <name>" and VoiceOver reads ", scene <name>".
+// MIDI-007-R8: Assign MIDI… per cue (context menu, a leading "MIDI" swipe action, VoiceOver action) opens
+// `MIDISceneAssignView` for the cue's scene when the app passes the MIDI mappings.
 import SceneFormat
 import ShowControl
 import SwiftUI
@@ -12,10 +14,13 @@ import SwiftUI
 struct ShowEditorView: View {
     let show: ShowCoordinator
     let addCurrentScene: () -> Void
+    /// MIDI-007: the MIDI mappings (nil hides Assign MIDI…, e.g. in previews).
+    var midiMappings: MIDIMappingCoordinator? = nil
     @State private var renaming: ShowCue?
     @State private var renameText = ""
     @State private var renamingScene: ShowCue?
     @State private var sceneNameText = ""
+    @State private var assigningMIDI: ShowCue?
 
     var body: some View {
         List {
@@ -39,19 +44,9 @@ struct ShowEditorView: View {
                 }
                 .disabled(show.list.cues.count >= ShowCueList.maximumCues)
                 .accessibilityIdentifier("showAddCurrentScene")
+                if !show.list.cues.isEmpty { sceneFoldersLink }   // SCN-004
             } footer: {
                 Text("Adds a cue that keeps the visual and its settings as they are now. Next and Previous in the controls, or the arrow keys, step through the cues.")
-            }
-            // SCN-004: the show's scenes organized in logical folders.
-            if !show.list.cues.isEmpty {
-                Section {
-                    NavigationLink {
-                        SceneFoldersView(show: show, folderID: nil)
-                    } label: {
-                        Label("Scene Folders", systemImage: "folder")
-                    }
-                    .accessibilityIdentifier("showSceneFoldersLink")
-                }
             }
             Section(show.list.cues.isEmpty ? "No cues" : "Cues") {
                 ForEach(Array(show.list.cues.enumerated()), id: \.element.id) { (index: Int, cue: ShowCue) in
@@ -85,7 +80,32 @@ struct ShowEditorView: View {
         } message: {
             Text("Every cue that shows this scene uses the new name. 1 to \(SceneLimits.maximumNameLength) characters.")
         }
+        .sheet(isPresented: Binding(get: { assigningMIDI != nil }, set: { if !$0 { assigningMIDI = nil } })) {
+            assignSheet
+        }
         .accessibilityIdentifier("showEditor")
+    }
+
+    /// MIDI-007-R8: the Assign MIDI sheet for the chosen cue's scene.
+    @ViewBuilder private var assignSheet: some View {
+        if let cue = assigningMIDI, let midiMappings {
+            MIDISceneAssignView(mappings: midiMappings, sceneID: cue.sceneID, sceneName: show.sceneName(of: cue) ?? cue.label,
+                                dismiss: { () -> Void in assigningMIDI = nil })
+        }
+    }
+
+    /// SCN-004: the show's scenes organized in logical folders. ACC-006-R1 (testShowEditorAX3, 2026-11-14):
+    /// as its own section below the footer, the row sat at the bottom edge of the screen at AX3, and its
+    /// `Label` wrapped the title under the icon; the audit reported clipped text and partly unsupported
+    /// Dynamic Type. Now an icon-and-title row (the title wraps in its own column, as Add Current Scene's)
+    /// in the first section, next to Add Current Scene. The link reads "Scene Folders".
+    private var sceneFoldersLink: some View {
+        NavigationLink {
+            SceneFoldersView(show: show, folderID: nil)
+        } label: {
+            IconTitleRow(title: "Scene Folders", systemImage: "folder")
+        }
+        .accessibilityIdentifier("showSceneFoldersLink")
     }
 
     // Split into short parts (2026-11-14): as one function this row took 4.4 s to type-check on
@@ -144,6 +164,7 @@ struct ShowEditorView: View {
                 Button("Duplicate Scene") { show.duplicateScene(of: cue.id) }
                     .disabled(missing || full)
                 Button("Rename Scene…") { startSceneRename(cue) }.disabled(missing)
+                if midiMappings != nil { Button("Assign MIDI…") { assigningMIDI = cue } }   // MIDI-007-R8
                 Button("Delete", role: .destructive) { show.remove(cue.id) }
             }
             .swipeActions(edge: .leading) {
@@ -160,6 +181,12 @@ struct ShowEditorView: View {
                         .accessibilityLabel("Rename Scene")
                         .accessibilityIdentifier("showRenameScene")
                 }
+                if midiMappings != nil {   // MIDI-007-R8
+                    Button("MIDI") { assigningMIDI = cue }
+                        .tint(.teal)
+                        .accessibilityLabel("Assign MIDI")
+                        .accessibilityIdentifier("showAssignMIDI")
+                }
             }
     }
 
@@ -169,6 +196,7 @@ struct ShowEditorView: View {
             .accessibilityAction(named: "Rename") { renameText = cue.label; renaming = cue }
             .accessibilityAction(named: "Duplicate Scene") { show.duplicateScene(of: cue.id) }
             .accessibilityAction(named: "Rename Scene") { startSceneRename(cue) }
+            .accessibilityAction(named: "Assign MIDI") { if midiMappings != nil { assigningMIDI = cue } }   // MIDI-007-R8
             // ACC-004-R3: reordering without Edit mode's drag handles.
             .accessibilityAction(named: "Move Up") { move(number - 1, by: -1) }
             .accessibilityAction(named: "Move Down") { move(number - 1, by: 1) }

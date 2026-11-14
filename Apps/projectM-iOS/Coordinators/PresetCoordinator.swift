@@ -33,6 +33,9 @@
 //   Next, Previous, Random, the warm-up and the launch preset (they walk `walkable`), and choosing
 //   one by name sets `flashWarning` instead of loading it, until Load Anyway or Cancel. With the
 //   setting off nothing changes. FX-019's envelope still limits every frame either way.
+// * Preset tags (roadmap PRE-003, specs/149-pre-003-preset-tags): labels kept by PresetTagStore
+//   (`PresetCollections/tags.json`); chips (AND, in memory) and the tagged scope; see
+//   PresetCoordinator+Tags.swift.
 import Foundation
 import Observation
 import PresetLibrary
@@ -112,15 +115,33 @@ final class PresetCoordinator {
     /// Set once when unreadable saved collections were set aside (PRE-007-R15).
     private(set) var collectionsNotice: String?
 
+    /// PRE-003: bumped on every tag change so views refresh.
+    var tagsVersion = 0
+    /// PRE-003-R8: the browser's selected tag chips (AND), in memory only.
+    var selectedTags: [String] = []
+    /// PRE-003-R4: why the last tag change was refused or not saved.
+    var tagsMessage: String?
+    /// PRE-003-R6: set once when the saved tags were set aside or repaired.
+    var tagsNotice: String?
+    @ObservationIgnored let tagStore: PresetTagStore
+    @ObservationIgnored var cachedTagIndex: (version: Int, library: ObjectIdentifier, index: PresetTagIndex)?
+    /// PRE-003-R12: set by AppCoordinator; tag edits (library lane) and chip counts (search lane).
+    @ObservationIgnored var announceLibrary: (String) -> Void = { (_: String) in }
+    @ObservationIgnored var announceSearch: (String) -> Void = { (_: String) in }
+
     @ObservationIgnored private let store: FavoritesStore
     @ObservationIgnored private let collectionStore: PresetCollectionStore
     @ObservationIgnored private let settings: AppSettings
     @ObservationIgnored private let loader: any PresetLoading
     @ObservationIgnored private var scopeAnnouncer: ((String) -> Void)?
 
-    init(store: FavoritesStore, settings: AppSettings, loader: any PresetLoading, collections: PresetCollectionStore) {
+    init(store: FavoritesStore, settings: AppSettings, loader: any PresetLoading, collections: PresetCollectionStore,
+         tags: PresetTagStore? = nil) {
         self.store = store
         collectionStore = collections
+        tagStore = tags ?? PresetTagStore(directory: FileManager.default.temporaryDirectory
+            .appendingPathComponent("PresetTags-\(UUID().uuidString)", isDirectory: true))   // tests without tags
+        tagsNotice = Self.tagsNoticeText(tagStore.loadNotice)
         if collections.loadNotice == .unreadableSetAside { collectionsNotice = PresetCollectionStore.unreadableText }
         self.settings = settings
         self.loader = loader
@@ -151,6 +172,9 @@ final class PresetCoordinator {
     }
 
     func onScopeChange(_ announce: @escaping (String) -> Void) { scopeAnnouncer = announce }
+
+    /// PRE-003: the tagged scope's members changed; the planned Random pick may no longer be one.
+    func plannedRandomInvalidated() { plannedRandom = nil }
 
     /// The user's playable imported presets changed (PRE-012-R22). They are part of the library
     /// from now on; presets that left it stop being listed, and an empty My Presets is not kept
@@ -199,8 +223,13 @@ final class PresetCoordinator {
             _ = collectionsVersion
             collections = collectionStore.presetIDsByCollection
         }
+        var tags: PresetTagIndex = .empty
+        switch scope {
+        case .tagged, .search: tags = tagIndex   // PRE-003-R9, R10
+        default: break
+        }
         return library.members(of: scope, unlocked: unlocked, favorites: Set(store.favorites), excluded: excludedThisSession,
-                               collections: collections)
+                               collections: collections, tags: tags)
     }
 
     /// ACC-002: whether the policy applies to this preset now (Reduce flashing on and flagged).
@@ -217,7 +246,7 @@ final class PresetCoordinator {
     /// ACC-002-R7: a row's VoiceOver label, with ", may flash" for a flagged preset.
     func rowLabel(_ preset: IndexedPreset, locked: Bool) -> String {
         "\(preset.name), by \(preset.author)\(locked ? ", locked" : "")\(preset == current ? ", current preset" : "")"
-            + (isFlagged(preset) ? ", \(Self.mayFlashLabel)" : "")
+            + (isFlagged(preset) ? ", \(Self.mayFlashLabel)" : "") + tagsLabelSuffix(preset)
     }
 
     /// FR-114: favorites across packs, alphabetical, locked ones listed (marked by the view).
@@ -251,7 +280,7 @@ final class PresetCoordinator {
             case .pack(let id): preset.source == id
             case .folder(let id, let path): preset.source == id && preset.folder.starts(with: path)
             case .all: unlocked || preset.isIncluded
-            case .favorites, .search, .collection, .user: false
+            case .favorites, .search, .collection, .user, .tagged: false
             }
         }.count
         return max(0, node.presetCount - failedHere)

@@ -10,6 +10,35 @@
     "schemaVersion": { "const": 2 },
     "exportedAt": { "type": "string", "format": "date-time" },
     "testerNote": { "type": "string", "maxLength": 500 },
+    "frameTimings": {
+      "description": "PERF-001: per-stage frame timings over the most recent frames (optional; metadata only). A missing CPU or GPU key means unavailable.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["windowFrames", "rejectedSamples", "stages"],
+      "properties": {
+        "windowFrames": { "type": "integer", "minimum": 0 },
+        "rejectedSamples": { "type": "integer", "minimum": 0 },
+        "frameGPUMedianMs": { "type": "number", "minimum": 0 },
+        "frameGPUP95Ms": { "type": "number", "minimum": 0 },
+        "stages": {
+          "type": "array",
+          "maxItems": 6,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "samples"],
+            "properties": {
+              "name": { "enum": ["audio", "render", "composite", "output", "encode", "present"] },
+              "samples": { "type": "integer", "minimum": 0 },
+              "cpuMedianMs": { "type": "number", "minimum": 0 },
+              "cpuP95Ms": { "type": "number", "minimum": 0 },
+              "gpuMedianMs": { "type": "number", "minimum": 0 },
+              "gpuP95Ms": { "type": "number", "minimum": 0 }
+            }
+          }
+        }
+      }
+    },
     "device": {
       "type": "object",
       "additionalProperties": false,
