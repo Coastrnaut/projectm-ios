@@ -11,45 +11,45 @@ finish. Logs go to `.autonomous/logs-fx-009/`.
 
 ## Phase 1: Setup
 
-- [ ] FX-009-T01 Audit: confirm no frame feedback exists (`grep -rni "feedback\|trail\|echo"` over
+- [X] FX-009-T01 Audit: confirm no frame feedback exists (`grep -rni "feedback\|trail\|echo"` over
   `Packages/*/Sources` and `Apps/projectM-iOS`), that every compositor frame starts from a cleared composite, and
-  how scene changes are signalled; record it in spec.md's audit.
+  how scene changes are signalled; record it in spec.md's audit. — Verified 2026-11-14: grep -rni feedback/trail/echo over Packages/*/Sources and Apps/projectM-iOS (only unrelated hits: ParameterGraph's modulation feedbackCycle, text trailing); encodeStack clears the composite; scene signals traced; recorded in spec.md's audit.
 
 ## Phase 2: Foundational
 
-- [ ] FX-009-T02 Write `Packages/Compositor/Sources/Compositor/MotionFeedback.swift` (plain Swift): fields, ranges,
+- [X] FX-009-T02 Write `Packages/Compositor/Sources/Compositor/MotionFeedback.swift` (plain Swift): fields, ranges,
   `clamped`, `isActive`, `decay(frameDuration:)` (research FX-009-D2), `limited(by: SafetyClamp)` (D6) and the CPU
-  reference `blend(current:previous:decay:reset:)` (D1, D4).
-- [ ] FX-009-T03 [P] Write `Packages/Compositor/Tests/CompositorTests/MotionFeedbackModelTests.swift` (CPU, Linux
+  reference `blend(current:previous:decay:reset:)` (D1, D4). — Verified 2026-11-14: MotionFeedback.swift builds in the Linux shape and on the host; MotionFeedbackModelTests 7/7 (logs-fx-009/model-linux-shape.log).
+- [X] FX-009-T03 [P] Write `Packages/Compositor/Tests/CompositorTests/MotionFeedbackModelTests.swift` (CPU, Linux
   shape): half-life fade 0.5 within 1% at 60 and 120 fps from injected durations (FX-009-S2), 0.99 ceiling, zero
   and NaN durations, clamping, Strict ≤ 0.125 s, Reduced ≤ 0.25 s, Reduce flashing ≤ 0.25 s, Custom 0 → off,
   Standard unchanged, blend: reset returns current, max never exceeds the brighter input, premultiplied validity,
-  non-finite current passed through, non-finite history ignored.
-- [ ] FX-009-T04 Write `Packages/Compositor/Sources/Compositor/MotionFeedbackPass.swift`: `cmp_trails` source, the
+  non-finite current passed through, non-finite history ignored. — Verified 2026-11-14: MotionFeedbackModelTests 7/7 in the Linux shape (-DCOMPOSITOR_NO_METAL -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE), 0.007 s: fade 0.5 ±0.005 at 60/120 fps, 0.977/0.989 decay, ceiling, Strict 0.125 s, Reduced/Reduce flashing 0.25 s, Custom 0 off.
+- [X] FX-009-T04 Write `Packages/Compositor/Sources/Compositor/MotionFeedbackPass.swift`: `cmp_trails` source, the
   16-byte `TrailsBlock`, the pipeline, the pooled pair (take, swap, return) and the encode helper; wire it into
   `Packages/Compositor/Sources/Compositor/Compositor.swift` after the stack phase (D3), the shown texture for
   `encodeOutput`, the reset points (D4), the CMP-013 rule (D5) and pool return at disable, size change and `deinit`
-  (D7).
+  (D7). — Verified 2026-11-14: Compositor builds; MotionFeedbackCompositeTests 12/12 and the full Compositor suite 466 (6 skipped) + 3 pass in 11.4 s (logs-fx-009/compositor-full.log).
 
 ## Phase 3: User Story 2 - A new scene starts clean (P1, the acceptance)
 
 **Goal**: the first frame after any reset has no prior-scene content. **Independent test**:
 `MotionFeedbackCompositeTests`.
 
-- [ ] FX-009-T05 [US2] Write `Packages/Compositor/Tests/CompositorTests/MotionFeedbackCompositeTests.swift` (GPU):
+- [X] FX-009-T05 [US2] Write `Packages/Compositor/Tests/CompositorTests/MotionFeedbackCompositeTests.swift` (GPU):
   red scene with Trails on for several frames, then blue; the first new frame is bit-identical to the Trails-off
   blue frame (both output formats) after each trigger: `resetFeedback`, `resetFlashHistory` (visual switch / loop
   start), `resetRenderHealth`, a layer-stack scene change with `resetFeedback` (cue apply, restore), size change,
-  output format change, enabling (FX-009-S1); trails rebuild from the new scene only.
-- [ ] FX-009-T06 [US2] Reset both scenes in `SceneTransitionBus.show(_:)` and `transition(to:spec:reduceMotion:)`
+  output format change, enabling (FX-009-S1); trails rebuild from the new scene only. — Verified 2026-11-14: testFirstFrameAfterEachResetTriggerHasNoPriorSceneContent (resetFeedback, resetFlashHistory, resetRenderHealth, off→on: first blue frame bit-identical to blue alone, no red pixel), testSizeChangeStartsClean, testOutputFormatChangeStartsCleanInBothFormats (sRGB and half float bit-identical), control test shows the trail without a reset.
+- [X] FX-009-T06 [US2] Reset both scenes in `SceneTransitionBus.show(_:)` and `transition(to:spec:reduceMotion:)`
   (`Packages/Compositor/Sources/Compositor/SceneTransitionBus.swift`); a bus test in
-  `MotionFeedbackCompositeTests.swift`: the first frame of a transition carries no trail of the earlier scene.
+  `MotionFeedbackCompositeTests.swift`: the first frame of a transition carries no trail of the earlier scene. — Verified 2026-11-14: testTransitionStartClearsBothScenesTrails: no red pixel at progress 0 or in the blend although both scenes held red trails.
 
 ## Phase 4: User Story 1 - Trails (P1)
 
-- [ ] FX-009-T07 [US1] In `MotionFeedbackCompositeTests.swift`: a trailing frame equals `MotionFeedback.blend` of
+- [X] FX-009-T07 [US1] In `MotionFeedbackCompositeTests.swift`: a trailing frame equals `MotionFeedback.blend` of
   the composite and the previous frame (within half-float rounding) at 60 and 120 fps; a still picture stays
-  itself; transparent stays transparent.
+  itself; transparent stays transparent. — Verified 2026-11-14: testTrailingFramesFollowTheHalfLifeAt60And120 (one frame = MotionFeedback.blend within 0.001; one half-life 0.4976 at 60 fps, 0.4961 at 120 fps), testStillPictureTrailsIntoItselfAndTransparentStaysTransparent.
 - [ ] FX-009-T08 [P] [US1] `Packages/Compositor/Sources/ColorGradeParameters/MotionFeedbackCatalog.swift`
   (`effect.feedback.enabled`, `effect.feedback.halfLife`, D8); tests in
   `Packages/Compositor/Tests/ColorGradeParametersTests/ColorGradeCatalogTests.swift`; register in
@@ -58,17 +58,17 @@ finish. Logs go to `.autonomous/logs-fx-009/`.
 
 ## Phase 5: User Story 3 - Off is exactly today (P1)
 
-- [ ] FX-009-T09 [US3] In `MotionFeedbackCompositeTests.swift`: Trails off is bit-identical to a compositor that
+- [X] FX-009-T09 [US3] In `MotionFeedbackCompositeTests.swift`: Trails off is bit-identical to a compositor that
   never had Trails, holds no picture, runs no pass; enable → disable returns both pictures; CMP-013 never reuses
   the composite while on and reuses it as before when off (FX-009-S4); pool checkouts return to the start after
-  many enable/disable/size cycles (FX-009-S6). RenderGoldens unchanged (FX-009-S3).
+  many enable/disable/size cycles (FX-009-S6). RenderGoldens unchanged (FX-009-S3). — Verified 2026-11-14: testOffIsBitIdenticalAndHoldsNothing (both formats, no pass, pair returned), testCompositeIsNeverReusedWhileTrailsAreActive (0 reuses on, reuse when off, layer hits kept), testPoolCheckoutsReturnAfterEnableDisableAndSizeCycles (2 → 2 after 6 cycles). RenderGoldens: see T17.
 - [ ] FX-009-T10 [US3] GPU timing on the Mac (bench test, not asserted): 1170 × 2532, 120 frames with and without
   Trails; record in research FX-009-D10 and the ADR (FX-009-S8).
 
 ## Phase 6: User Story 4 - Safety (P1)
 
-- [ ] FX-009-T11 [US4] In `MotionFeedbackCompositeTests.swift`: a red/black strobe at 30 Hz with Trails on (and on
-  Strict-capped trails) still makes the flash guard lower its gain below 1 (FX-009-S5).
+- [X] FX-009-T11 [US4] In `MotionFeedbackCompositeTests.swift`: a red/black strobe at 30 Hz with Trails on (and on
+  Strict-capped trails) still makes the flash guard lower its gain below 1 (FX-009-S5). — Verified 2026-11-14: testFlashGuardStillLimitsAStrobeWithTrails: lowest guard gain 0.80 (Standard, 0.2 s) and 0.58 (Strict-capped 0.125 s) on a 5 Hz white/black strobe.
 
 ## Phase 7: App
 
