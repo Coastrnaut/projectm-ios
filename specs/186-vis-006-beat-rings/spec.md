@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (device task VIS-006-T14 open)
 
 **Input**: User description: "Implement VIS-006 (Beat pulse rings) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Emit expanding rings from beat events with decay." Acceptance, verbatim:
