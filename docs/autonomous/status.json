@@ -12,9 +12,9 @@
   },
   "P1": {
    "audited": 71,
-   "implementing": 7,
+   "implementing": 6,
    "integrated": 72,
-   "unit_passed": 1
+   "unit_passed": 2
   },
   "P2": {
    "audited": 74,
@@ -26,10 +26,10 @@
  },
  "by_state": {
   "audited": 156,
-  "implementing": 7,
+  "implementing": 6,
   "integrated": 161,
   "skipped_existing": 1,
-  "unit_passed": 1
+  "unit_passed": 2
  },
  "device_gate": {
   "blocked": [],
@@ -3301,12 +3301,12 @@
   "VIS-004": {
    "attempts": 0,
    "branch": "feature/vis-004",
-   "branch_sha": null,
+   "branch_sha": "a06638f8924519453efabc2eda5035082820f128",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "VIS-005": {
    "attempts": 0,
@@ -4301,5 +4301,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T14:37:35Z"
+ "updated": "2026-11-14T14:42:29Z"
 }
