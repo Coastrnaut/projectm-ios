@@ -69,3 +69,23 @@ tests unchanged):
   area the envelope models (research VIS-002-D4).
 
 VIS-003 and VIS-020 can add a layout that adopts `FlashRegionLayout` and reuse the rest.
+
+## Amendment 2026-11-13: the third native visual and its sample path (VIS-003)
+
+VIS-003 (`specs/083-vis-003-waveform-oscilloscope/`) adds the waveform oscilloscope on the same
+pieces, without changing the spectra (their tests unchanged):
+
+- `OscilloscopeLayout` adopts `FlashRegionLayout` (one region per segment rectangle and per bevel
+  join) and `OscilloscopeGenerator` is a `SpectrumTextureGenerator` over `FlatShapePass`; its input
+  vector is the mono sample history instead of bands (`barCount` is only carried for the host).
+- Samples reach the frame loop through `WaveformTap` (`VisualBandFeed`): a pass-through
+  `NormalizedPCMReader` the analyzer reads instead of the analysis tap, which returns the tap's bytes
+  unchanged, forwards the session generation, and keeps the newest 4,096 mono samples in a
+  `WaveformFrameBuffer` (the band triple buffer's pattern). The tap keeps exactly one consumer; the
+  ANL-016 pipeline is untouched.
+- `WaveformTrigger` (pure Swift) keeps periodic signals still: a rising crossing of the range
+  midpoint with hysteresis, a grouped-interval periodicity test, and a match against the previous
+  frame's window; silence and aperiodic signals free-run.
+- Two more user-setting keys: `settings.oscilloscope.line`, `settings.oscilloscope.window`.
+- The oscilloscope is not an SCN-001 layer kind yet; scenes record it as no native layer. Its golden
+  image is generator-level (`Packages/RenderGoldens/GeneratorGoldens/`, QA-002's rule).

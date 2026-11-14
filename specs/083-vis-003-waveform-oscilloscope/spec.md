@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (device task VIS-003-T17 open)
 
 **Input**: User description: "Implement VIS-003 (Waveform oscilloscope) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Draw time-domain signal with
@@ -171,7 +171,7 @@ app.
 - **VIS-003-S3**: Over 1,000 frames (the stabilizer) and 300 frames (the whole layout with its area levels) the storage capacities and addresses never change, and the hand-off delivers complete histories (no torn frame) under a concurrent writer.
 - **VIS-003-S4**: The sine fixture passes QA-002's golden comparison on the macOS host and the iOS Simulator; where no GPU exists the check is reported as skipped.
 - **VIS-003-S5**: A 60 Hz loud/silent alternation yields at most 4 transitions per 1 s window in every area with Reduce flashing on and at most 6 with it off.
-- **VIS-003-S6**: Choosing Oscilloscope, Thick and 40 ms, relaunching, and finding them restored works in one UI test of at most 30 s with the source started exactly once; the existing native-visual and glow UI tests pass unchanged.
+- **VIS-003-S6**: Choosing Oscilloscope, Thick and 40 ms, relaunching, and finding the visual and its window restored works in one UI test of at most 30 s (the line's persistence is a unit test) with the source started exactly once; the existing native-visual and glow UI tests pass unchanged.
 - **VIS-003-S7**: Every existing VisualGenerators and RenderGoldens test passes unchanged.
 
 ## Assumptions

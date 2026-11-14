@@ -1,6 +1,7 @@
 // OscilloscopeUITests.swift — VIS-003-T14 on the iOS Simulator: choosing Oscilloscope, a thick line and
-// the 40 ms window in Settings, all persisting across a relaunch, Bars not offered, the source started
-// once (VIS-003 User Story 1; VIS-003-R10, R11, R13; S6). One short test (owner rule 7: under 30 s).
+// the 40 ms window in Settings, the visual and its window persisting across a relaunch, Bars not
+// offered, the source started once (VIS-003 User Story 1; VIS-003-R10, R11, R13; S6). One short test
+// (owner rule 7: under 30 s).
 // Simulator results are never device evidence (Constitution X).
 import XCTest
 
@@ -49,6 +50,7 @@ final class OscilloscopeUITests: XCTestCase {
         XCTAssertFalse(app.segmentedControls["barsPicker"].exists, "Bars does not apply to the oscilloscope")
         line.buttons["Thick"].tap()
         window.buttons["40 ms"].tap()
+        XCTAssertTrue(line.buttons["Thick"].isSelected)
         closeSettings()
         XCTAssertTrue(oscilloscope.appears(within: 10), "the oscilloscope is shown")
         XCTAssertTrue(poll(10) { self.value.hasPrefix("40 ms") }, "40 ms: \(value)")
@@ -59,8 +61,7 @@ final class OscilloscopeUITests: XCTestCase {
         launch(reset: false)
         XCTAssertTrue(oscilloscope.appears(within: 10), "the choice persisted")
         XCTAssertTrue(poll(10) { self.value.hasPrefix("40 ms") }, "the window persisted: \(value)")
-        openSettings()
-        XCTAssertTrue(app.segmentedControls["oscilloscopeLinePicker"].buttons["Thick"].isSelected, "the line persisted")
-        closeSettings()
+        // The line's persistence is checked by OscilloscopeAppTests; reopening Settings here would push
+        // this test past its 30 s budget (the first Settings query alone takes about 8 s).
     }
 }
