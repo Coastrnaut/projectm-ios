@@ -16,6 +16,8 @@
 // * UIX-002: the row's "Scenes" button opens the quick scene switcher; ⌘K toggles it from the keyboard.
 //   While it is open the arrow and Page keys belong to its search field, so they are not registered
 //   here. After a close without a choice VoiceOver focus returns to the Scenes button.
+// * SHOW-006-R1: the row's Rehearse toggle (eye.circle) shows the device-only cue rehearsal panel; VoiceOver
+//   "Rehearse next cue", value On/Off.
 import ShowControl
 import SwiftUI
 
@@ -25,33 +27,45 @@ struct ShowCueRow: View {
     @AccessibilityFocusState private var scenesFocused: Bool
 
     var body: some View {
-        let show = coordinator.show
         HStack(spacing: 12) {
-            Button { coordinator.showPreviousCue() } label: {
-                Image(systemName: "chevron.backward.circle.fill").font(.title2)
-            }
-            .disabled(!show.list.canGoPrevious)
-            .accessibilityLabel("Previous cue")
-            .accessibilityIdentifier("showPreviousCue")
+            previousButton
             status
-            Button { coordinator.showNextCue() } label: {
-                Image(systemName: "chevron.forward.circle.fill").font(.title2)
-            }
-            .disabled(!show.list.canGoNext)
-            .accessibilityLabel("Next cue")
-            .accessibilityIdentifier("showNextCue")
+            nextButton
             holdButton   // SHOW-005
-            Button { coordinator.openSceneSwitcher() } label: {   // UIX-002-R1
-                Image(systemName: "magnifyingglass.circle.fill").font(.title2)
-            }
-            .accessibilityLabel("Scenes")
-            .accessibilityHint("Search the show's scenes")
-            .accessibilityIdentifier("showSceneSwitcher")
-            .accessibilityFocused($scenesFocused)
+            rehearseButton   // SHOW-006
+            scenesButton
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("showCueRow")
         .onChange(of: coordinator.sceneSwitcher.focusReturnRevision) { scenesFocused = true }
+    }
+
+    private var previousButton: some View {
+        Button { coordinator.showPreviousCue() } label: {
+            Image(systemName: "chevron.backward.circle.fill").font(.title2)
+        }
+        .disabled(!coordinator.show.list.canGoPrevious)
+        .accessibilityLabel("Previous cue")
+        .accessibilityIdentifier("showPreviousCue")
+    }
+
+    private var nextButton: some View {
+        Button { coordinator.showNextCue() } label: {
+            Image(systemName: "chevron.forward.circle.fill").font(.title2)
+        }
+        .disabled(!coordinator.show.list.canGoNext)
+        .accessibilityLabel("Next cue")
+        .accessibilityIdentifier("showNextCue")
+    }
+
+    private var scenesButton: some View {
+        Button { coordinator.openSceneSwitcher() } label: {   // UIX-002-R1
+            Image(systemName: "magnifyingglass.circle.fill").font(.title2)
+        }
+        .accessibilityLabel("Scenes")
+        .accessibilityHint("Search the show's scenes")
+        .accessibilityIdentifier("showSceneSwitcher")
+        .accessibilityFocused($scenesFocused)
     }
 
     /// SHOW-005-R8: the performer's Hold (session only).
@@ -66,6 +80,19 @@ struct ShowCueRow: View {
         .accessibilityValue(held ? "On" : "Off")
         .accessibilityAddTraits(.isToggle)
         .accessibilityIdentifier("showHold")
+    }
+
+    /// SHOW-006-R1: rehearsal is session only.
+    private var rehearseButton: some View {
+        let on: Bool = coordinator.cueRehearsal.isOn
+        return Button { coordinator.toggleCueRehearsal() } label: {
+            Image(systemName: on ? "eye.circle.fill" : "eye.circle").font(.title2)
+        }
+        .tint(on ? .yellow : nil)
+        .accessibilityLabel("Rehearse next cue")
+        .accessibilityValue(on ? "On" : "Off")
+        .accessibilityAddTraits(.isToggle)
+        .accessibilityIdentifier("showRehearse")
     }
 
     /// The position and label, with SHOW-002's countdown under it while one runs. The status text stays the

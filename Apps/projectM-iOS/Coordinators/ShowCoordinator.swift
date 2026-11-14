@@ -42,6 +42,9 @@
 // * SHOW-005: a cue may be skipped (`skip` in `show.json`); Next and Previous pass over it (the list's rule), Go to Cue
 //   still reaches it. `setSkipped` is an edit (refused while locked), saves at once and applies nothing; a duplicate keeps
 //   the flag. A step when every cue is skipped posts "All cues are skipped." on the cue lane.
+// * SHOW-006: `rehearsalScene(of:)` reads and validates a cue's scene for cue rehearsal without applying it;
+//   `saveRehearsal(cueID:changes:)` writes rehearsal values into the cue's scene file (an edit, refused while locked)
+//   and never applies anything, even for the active cue.
 // Main actor; file I/O is small (≤ 1 MiB per file, typically a few KB) and only on user action.
 import Foundation
 import Observation
@@ -305,6 +308,42 @@ final class ShowCoordinator {
             guard !Task.isCancelled else { return }
             self?.notice = nil
         }
+    }
+
+    // MARK: - Rehearsal (SHOW-006-R3, R5, R6: reads and writes the cue's scene file only; never applies)
+
+    /// The cue's stored scene, validated as a step would (SCN-001 `liveState`), and what applying it would set. nil
+    /// when the cue is gone or its scene cannot be read or validated. Never applies, writes or posts anything.
+    func rehearsalScene(of cueID: UUID) -> ShowRehearsalScene? {
+        guard let cue = list.cues.first(where: { (c: ShowCue) -> Bool in c.id == cueID }), let store, let registry,
+              let decoded = try? store.scene(cue.sceneID),
+              let loaded = try? decoded.document.liveState(registry: registry, assets: availability()) else { return nil }
+        let apply = ShowSceneSnapshot.apply(of: decoded.document, warnings: decoded.warnings + loaded.warnings, registry: registry)
+        return ShowRehearsalScene(document: decoded.document, apply: apply)
+    }
+
+    /// Writes `changes` (app-held MOD-001 values) into the cue's stored scene; the file only (SHOW-006-R6). Returns
+    /// nil when saved, else the refusal (the scene lock announces its own refusal).
+    func saveRehearsal(cueID: UUID, changes: [ParameterID: ParameterValue]) -> String? {
+        if refusedByLock() { return SceneLock.refusalMessage }
+        guard let cue = list.cues.first(where: { (c: ShowCue) -> Bool in c.id == cueID }), let store else {
+            return Self.saveFailedMessage
+        }
+        let decoded: SceneDecodeResult
+        do {
+            decoded = try store.scene(cue.sceneID)
+        } catch {
+            return Self.sceneUnreadableMessage
+        }
+        var document: SceneDocument = decoded.document
+        for (id, value) in changes { document.parameters[id] = value }
+        do throws(ShowStoreError) {
+            try store.saveScene(document)
+        } catch {
+            return Self.saveFailedMessage
+        }
+        sceneFilesChanged([cue.sceneID])   // SCN-006: the stored picture no longer matches the file
+        return nil
     }
 
     // MARK: - Editing (SHOW-001-R6, R7: never applies anything)
