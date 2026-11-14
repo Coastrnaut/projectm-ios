@@ -118,6 +118,11 @@ public struct SceneIssue: Sendable, Hashable, CustomStringConvertible {
         case invalidLFO
         /// MOD-007: an oscillator whose shape this version does not know; kept.
         case unknownLFO
+        /// MOD-009: an oscillator's `sync` that is not an object or whose `beats` is not a finite positive number; kept,
+        /// the oscillator runs unsynced.
+        case invalidLFOSync
+        /// MOD-009: an oscillator's sync length this version does not know; kept, the oscillator runs unsynced.
+        case unknownLFOSync
 
         /// MOD-013 (ADR-0028 amendment): every per-edge modulation problem is a warning, so one edge
         /// never refuses the scene; `invalidModulation` (generator declarations) stays an error.
@@ -127,7 +132,8 @@ public struct SceneIssue: Sendable, Hashable, CustomStringConvertible {
                  .duplicateEffect, .valueClamped, .droppedField, .unknownAssetType, .unusedAsset,
                  .missingAsset, .orphanedParameter, .rejectedParameter, .parameterClamped,
                  .invalidBinding, .duplicateBindingTarget, .invalidExpression, .migratedReference, .retiredReference,
-                 .orphanedBinding, .orphanedConnection, .rejectedConnection, .unsupportedCurve, .invalidTrigger, .unknownTrigger, .invalidLFO, .unknownLFO:
+                 .orphanedBinding, .orphanedConnection, .rejectedConnection, .unsupportedCurve, .invalidTrigger, .unknownTrigger, .invalidLFO, .unknownLFO,
+                 .invalidLFOSync, .unknownLFOSync:
                 .warning
             default:
                 .error
