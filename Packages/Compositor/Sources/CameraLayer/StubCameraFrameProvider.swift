@@ -9,6 +9,9 @@
 // CAM-013: `interrupt(_:)`, `endInterruption()`, `fail(_:)` and `withdrawAccess()` inject every
 // interruption reason, its end, both runtime error kinds and a revoked permission (seen, as on iOS,
 // at the next start); `stopReason` is set before the state callback.
+// CAM-003: a lens inventory (`lensInventory`) and a `FakeCameraCaptureSession` whose input is set
+// up on every start and replaced by `CameraInputSwitch` on a lens switch, exactly as the real
+// provider does; lenses can fail at input creation (`failingLenses`) or be refused by the session.
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import Metal
 
@@ -56,6 +59,16 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
     public private(set) var accessWithdrawn = false
     /// CAM-013: why the feed is interrupted or failed (contracts/camera-recovery.md C1).
     public private(set) var stopReason: CameraStopReason?
+    /// CAM-003: the back lenses this stand-in device has.
+    public let lensInventory: any CameraLensInventory
+    /// CAM-003: the stand-in capture session (its input is the running lens; tests read it).
+    public let session: FakeCameraCaptureSession
+    /// CAM-003: the back lens (main thread).
+    public private(set) var lens: CameraLens
+    /// CAM-003: effective lens choices and the last switch's outcome (tests).
+    public private(set) var lensSelectCount = 0
+    public private(set) var lastLensOutcome: CameraInputSwitchOutcome?
+    public var availableLenses: [CameraLens] { lensInventory.backLenses }
 
     public private(set) var state: CameraFeedState = .idle {
         didSet { if state != oldValue { onStateChange?(state) } }
@@ -69,7 +82,12 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
 
     public init(device: MTLDevice, scenario: CameraScenario, pattern: Pattern = .solid(Color(red: 188, green: 188, blue: 188)),
                 width: Int = 64, height: Int = 48, rotation: CameraRotation = .none, position: CameraPosition = .back,
-                availablePositions: Set<CameraPosition> = [.back, .front]) {
+                availablePositions: Set<CameraPosition> = [.back, .front],
+                lensInventory: (any CameraLensInventory)? = nil, failingLenses: Set<CameraLens> = [], lens: CameraLens = .wide) {
+        let inventory: any CameraLensInventory = lensInventory ?? FixedCameraLensInventory([.wide])
+        self.lensInventory = inventory
+        self.session = FakeCameraCaptureSession(failingLenses: failingLenses)
+        self.lens = inventory.resolve(lens)
         self.device = device
         self.position = position
         self.availablePositions = availablePositions
@@ -123,6 +141,7 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
         guard state != .idle else { return }
         stopCount += 1
         latest.close()
+        session.reset()   // CAM-003: a released session has no input
         stopReason = nil
         state = .idle
     }
@@ -167,6 +186,7 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
     public func fail(_ reason: CameraStopReason = .runtimeError) {
         guard state == .running || state == .starting || state == .interrupted, !reason.isInterruption else { return }
         latest.close()
+        session.reset()
         stopReason = reason
         state = .failed
     }
@@ -177,11 +197,70 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
         accessWithdrawn = true
     }
 
+    // MARK: - Lenses (CAM-003)
+
+    public func selectLens(_ requested: CameraLens) {
+        let target: CameraLens = lensInventory.resolve(requested)
+        guard target != lens else { return }
+        lensSelectCount += 1
+        let previous: CameraLens = lens
+        lens = target
+        guard position == .back else { return }   // R9: the front camera keeps its wide lens
+        switch state {
+        case .idle, .denied, .restricted, .requestingAccess:
+            return
+        case .unavailable, .interrupted, .failed:
+            latest.close()
+            startFeed()
+        case .starting, .running:
+            let fake: FakeCameraCaptureSession = session
+            let outcome: CameraInputSwitchOutcome = CameraInputSwitch.replace(
+                in: fake, makeInput: { () -> FakeCameraInput? in fake.makeInput(lens: target) },
+                makeFallback: { () -> FakeCameraInput? in fake.makeInput(lens: .wide) })
+            lastLensOutcome = outcome
+            applyLensOutcome(outcome, previous: previous)
+        }
+    }
+
+    private func applyLensOutcome(_ outcome: CameraInputSwitchOutcome, previous: CameraLens) {
+        switch outcome {
+        case .switched, .fellBackToWide:
+            if outcome == .fellBackToWide { lens = .wide }
+            latest.clear()   // R8: no picture of the previous lens; the new lens's first picture follows
+            if state == .running, let texture { latest.store(texture, position: position) }
+        case .keptPrevious:
+            lens = previous   // R6: the previous lens keeps running
+        case .noInput:
+            latest.close()
+            session.stopRunning()
+            state = .unavailable   // R7
+        }
+    }
+
+    /// Sets up the session's single input for the current camera (empty session: the wanted lens,
+    /// else the wide lens) and starts it. False when nothing could be added.
+    private func configureSession() -> Bool {
+        session.reset()
+        let fake: FakeCameraCaptureSession = session
+        let wanted: CameraLens = position == .back ? lens : .wide
+        let side: CameraPosition = position
+        let outcome: CameraInputSwitchOutcome = CameraInputSwitch.replace(
+            in: fake, makeInput: { () -> FakeCameraInput? in fake.makeInput(lens: wanted, position: side) },
+            makeFallback: { () -> FakeCameraInput? in fake.makeInput(lens: .wide, position: side) })
+        if outcome == .fellBackToWide, position == .back { lens = .wide }
+        fake.startRunning()
+        return outcome != .noInput
+    }
+
     private func run() {
         state = .starting
         if texture == nil { texture = makeTexture() }
         guard let texture else {
             state = .failed
+            return
+        }
+        guard configureSession() else {
+            state = .unavailable
             return
         }
         latest.open()

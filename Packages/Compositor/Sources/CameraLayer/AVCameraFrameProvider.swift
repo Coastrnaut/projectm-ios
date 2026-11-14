@@ -24,6 +24,12 @@
 //   D2), a runtime error releases it at once so iOS's indicator turns off and a Retry starts clean
 //   (D4). `stop()` closes the slot at once (no picture is shown or kept from then on), stops
 //   observing and sends `stopRunning` to the session queue immediately.
+// CAM-003: `lens` chooses the back lens (wide, ultra wide, telephoto) from `lensInventory`;
+// `selectLens(_:)` on a running back camera replaces the input with `CameraInputSwitch` on the
+// session queue (one configuration; the previous input stays when the new one cannot be opened or
+// added; else the wide lens; only with nothing addable `unavailable`). The lens actually in the
+// session is read back on the session queue, so `lens` always names the running lens. A start whose
+// lens cannot be opened falls back to the wide lens.
 // A generation number discards callbacks from an earlier start. Thread confinement: state,
 // session reference, observers and generation on the main thread; the cache and the slot on the
 // video queue (the slot is locked). Hence `@unchecked Sendable`.
@@ -50,15 +56,40 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
     public private(set) var position: CameraPosition = .back
     /// CAM-013: why the feed is interrupted or failed (main thread).
     public private(set) var stopReason: CameraStopReason?
+    /// CAM-003: the back lenses this device has.
+    public let lensInventory: any CameraLensInventory
+    /// CAM-003: the back lens (main thread).
+    public private(set) var lens: CameraLens = .wide
+    public var availableLenses: [CameraLens] { lensInventory.backLenses }
 
     public private(set) var state: CameraFeedState = .idle {
         didSet { if state != oldValue { onStateChange?(state) } }
     }
     public var onStateChange: ((CameraFeedState) -> Void)?
 
-    public init(device: MTLDevice) {
+    public init(device: MTLDevice, lensInventory: any CameraLensInventory = AVCameraLensInventory()) {
         self.device = device
+        self.lensInventory = lensInventory
         super.init()
+    }
+
+    /// CAM-003: the camera for the chosen position and, at the back, the chosen lens (else the wide lens).
+    private func currentCamera() -> AVCaptureDevice? {
+        guard position == .back else { return Self.camera(for: position) }
+        return AVCameraLensInventory.backCamera(lens) ?? Self.camera(for: .back)
+    }
+
+    /// CAM-003: an input for the current camera; at the back, the wide lens when the chosen one cannot
+    /// be opened (R7). `lens` follows the lens actually opened.
+    private func makeCurrentInput() -> (AVCaptureDevice, AVCaptureDeviceInput)? {
+        if let camera = currentCamera(), let input = try? AVCaptureDeviceInput(device: camera) {
+            if position == .back { lens = AVCameraLensInventory.lens(of: camera.deviceType) ?? .wide }
+            return (camera, input)
+        }
+        guard position == .back, lens != .wide, let wide = Self.camera(for: .back),
+              let input = try? AVCaptureDeviceInput(device: wide) else { return nil }
+        lens = .wide
+        return (wide, input)
     }
 
     /// The back wide-angle camera, if this device has one.
@@ -75,7 +106,7 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
         generation &+= 1
         stopReason = nil
         let current = generation
-        guard Self.camera(for: position) != nil else {   // checked first: no camera, no prompt (CAM-001-R6, CAM-002-R10)
+        guard currentCamera() != nil else {   // checked first: no camera, no prompt (CAM-001-R6, CAM-002-R10)
             state = .unavailable
             return
         }
@@ -159,7 +190,7 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
             stop()
             start()
         case .starting, .running:
-            if session != nil, Self.camera(for: position) != nil {
+            if session != nil, currentCamera() != nil {
                 switchInput()
             } else {
                 stop()
@@ -170,11 +201,12 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
 
     /// Replaces the running session's input with the chosen camera's (research CAM-002-D4).
     private func switchInput() {
-        guard let session, let camera = Self.camera(for: position), let input = try? AVCaptureDeviceInput(device: camera) else {
+        guard let session, let made = makeCurrentInput() else {
             stop()
             state = .unavailable
             return
         }
+        let (camera, input) = made
         generation &+= 1
         let current = generation
         latest.close()   // no picture until the old camera's queued buffers are gone
@@ -208,6 +240,72 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
         }
     }
 
+    // MARK: - Lens choice (CAM-003-R6 to R9)
+
+    public func selectLens(_ requested: CameraLens) {
+        let target: CameraLens = lensInventory.resolve(requested)
+        guard target != lens else { return }
+        lens = target
+        guard position == .back else { return }   // R9: recorded; the front camera keeps its wide lens
+        switch state {
+        case .idle, .denied, .restricted, .requestingAccess:
+            return
+        case .unavailable, .interrupted, .failed:
+            stop()
+            start()
+        case .starting, .running:
+            if session != nil { switchLens(to: target) } else { stop(); start() }
+        }
+    }
+
+    /// Replaces the running session's lens through `CameraInputSwitch` on the session queue (contract C2).
+    private func switchLens(to target: CameraLens) {
+        guard let session else { return }
+        generation &+= 1
+        let current = generation
+        latest.close()   // R8: no picture until the previous lens's queued buffers are gone
+        state = .starting
+        observers.forEach(NotificationCenter.default.removeObserver)
+        observers.removeAll()
+        observe(session)   // the observers carry the generation
+        let box = Unchecked(value: session)
+        let video = videoQueue
+        sessionQueue.async { [self] in
+            let outcome: CameraInputSwitchOutcome = CameraInputSwitch.replace(
+                in: box.value,
+                makeInput: { () -> AVCaptureInput? in Self.makeBackInput(target) },
+                makeFallback: { () -> AVCaptureInput? in Self.makeBackInput(.wide) })
+            let running: CameraLens? = box.value.inputs.lazy.compactMap { (input: AVCaptureInput) -> CameraLens? in
+                (input as? AVCaptureDeviceInput).flatMap { AVCameraLensInventory.lens(of: $0.device.deviceType) }
+            }.first
+            video.async { [self] in   // every buffer queued before the switch was refused by the closed slot
+                DispatchQueue.main.async { [self] in
+                    guard current == generation, state == .starting else { return }
+                    finishLensSwitch(outcome, running: running)
+                }
+            }
+        }
+    }
+
+    private func finishLensSwitch(_ outcome: CameraInputSwitchOutcome, running: CameraLens?) {
+        guard outcome != .noInput, let running, let camera = AVCameraLensInventory.backCamera(running) else {
+            stop()
+            state = .unavailable   // R7: nothing could be added
+            return
+        }
+        lens = running   // keptPrevious: the previous lens; fellBackToWide: wide
+        followRotation(of: camera)
+        latest.setPosition(position)
+        latest.open()
+        state = .running
+    }
+
+    /// An input for a back lens, or nil when that lens is missing or cannot be opened.
+    private static func makeBackInput(_ lens: CameraLens) -> AVCaptureInput? {
+        guard let camera = AVCameraLensInventory.backCamera(lens) else { return nil }
+        return try? AVCaptureDeviceInput(device: camera)
+    }
+
     /// Picture rotation from the device's RotationCoordinator (CAM-001; CAM-002-D5 for the front camera).
     private func followRotation(of camera: AVCaptureDevice) {
         rotationObservation?.invalidate()
@@ -224,10 +322,11 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
 
     private func configureAndRun() {
         state = .starting
-        guard let camera = Self.camera(for: position), let input = try? AVCaptureDeviceInput(device: camera) else {
+        guard let made = makeCurrentInput() else {
             state = .unavailable
             return
         }
+        let (camera, input) = made
         var newCache: CVMetalTextureCache?
         guard CVMetalTextureCacheCreate(kCFAllocatorDefault, nil, device, nil, &newCache) == kCVReturnSuccess, let newCache else {
             stopReason = .runtimeError
