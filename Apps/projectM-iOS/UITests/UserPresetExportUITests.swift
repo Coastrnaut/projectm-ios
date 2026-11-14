@@ -46,7 +46,7 @@ final class UserPresetExportUITests: XCTestCase {
                                "-uitestImportPreset", file.path, "-uitestExportPresetTo", target.path,
                                "-autostart", "inAppPlayback"] + extra   // Debug: starts the reference track
         app.launch()
-        XCTAssertTrue(app.staticTexts["scopeLine"].appears(within: 15))
+        XCTAssertTrue(app.staticTexts["scopeLine"].appears(within: 30))   // a ceiling for a loaded Mac
     }
 
     /// The overlay's controls hide after 5 s; a tap on the picture shows them again.

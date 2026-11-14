@@ -27,7 +27,7 @@ final class StatusUITests: XCTestCase {
         app.launchArguments = ["-uitestResetNotice", "-uitestFake", mode, "-autostart", mode] + Self.noStore
         if let startError { app.launchArguments += ["-uitestFakeStartError", startError] }
         app.launch()
-        XCTAssertTrue(indicator.appears(within: 15))
+        XCTAssertTrue(indicator.appears(within: 30))   // a ceiling for a loaded Mac
         XCTAssertTrue(indicator.label.hasPrefix(Self.labels[mode]! + " · "), indicator.label)
     }
 

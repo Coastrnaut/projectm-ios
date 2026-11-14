@@ -47,7 +47,7 @@ final class UserPresetsUITests: XCTestCase {
                                                                        "-autostart", "inAppPlayback"]
             + (file.map { ["-uitestImportPreset", $0.path] } ?? [])
         app.launch()
-        XCTAssertTrue(scopeLine.appears(within: 15))
+        XCTAssertTrue(scopeLine.appears(within: 30))   // a ceiling: a launch took over 15 s on a loaded Mac
     }
 
     private var scopeLine: XCUIElement { app.staticTexts["scopeLine"] }
@@ -88,6 +88,10 @@ final class UserPresetsUITests: XCTestCase {
     }
 
     private func waitForLabel(_ element: XCUIElement, _ text: String, file: StaticString = #filePath, line: UInt = #line) {
+        // The preset name and scope line are part of the overlay, which hides 5 s after the last use
+        // (seen 2026-11-13 after closing Quarantine on a loaded Mac): a tap on the picture shows it.
+        let area = app.otherElements["visualizerTapArea"].firstMatch
+        if !element.appears(within: 1) && area.exists { area.tap() }
         if !poll(8, { element.exists && element.label == text }) {
             XCTFail("expected “\(text)”, found “\(element.exists ? element.label : "<missing>")”", file: file, line: line)
         }

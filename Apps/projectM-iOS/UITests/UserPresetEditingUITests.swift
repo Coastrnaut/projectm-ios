@@ -23,7 +23,7 @@ final class UserPresetEditingUITests: XCTestCase {
         app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-uitestUnlocked", "NO",
                                "-autostart", "inAppPlayback"] + extraArguments
         app.launch()
-        XCTAssertTrue(app.staticTexts["scopeLine"].appears(within: 15))
+        XCTAssertTrue(app.staticTexts["scopeLine"].appears(within: 30))   // a ceiling for a loaded Mac
     }
 
     /// Taps a control of the overlay. The controls hide by themselves 5 s after the last use and a
