@@ -76,13 +76,16 @@ public struct LayerCompositeSettings: Sendable, Equatable {
     /// CMP-006: how the layer's content is fitted to the output; nil is the layer's own default
     /// (photo and video: fill at the centre). Read only by layers that adopt `LayerFitting`.
     public var fit: LayerFit?
+    /// CMP-007: a shape mask in the layer's own space (moves with `transform`); nil draws unmasked.
+    public var mask: LayerMask?
 
     public init(opacity: Double = 1, blendMode: LayerBlendMode = .normal, transform: LayerTransform = .identity,
-                fit: LayerFit? = nil) {
+                fit: LayerFit? = nil, mask: LayerMask? = nil) {
         self.opacity = opacity.isFinite ? min(max(opacity, 0), 1) : 1
         self.blendMode = blendMode
         self.transform = transform
         self.fit = fit
+        self.mask = mask
     }
 
     /// CMP-001 accepts only opacity 1, normal blending and the identity transform (CMP-001-R11).
