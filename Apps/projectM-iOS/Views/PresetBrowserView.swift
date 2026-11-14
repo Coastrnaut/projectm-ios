@@ -8,6 +8,8 @@
 // Roadmap PRE-012: the home leads to My Presets (imported presets, Import Preset…, Quarantine).
 // Roadmap PRE-015: every built-in preset row offers "Duplicate to My Presets", every playable
 // user preset row offers "Edit" (context menu, VoiceOver action; PRE-015-R1, R9).
+// Roadmap PRE-003: tag chips under the picker and above search results (AND, in memory); selected
+// chips replace the home with the tagged presets; search matches tags; every row offers "Tags…".
 import PresetLibrary
 import SwiftUI
 
@@ -24,6 +26,7 @@ struct PresetBrowserView: View {
         NavigationStack {
             List {
                 if !query.trimmingCharacters(in: .whitespaces).isEmpty {
+                    PresetTagChipRow(presets: presets)
                     searchResults
                 } else {
                     Picker("Show", selection: $presets.favoritesOnly) {
@@ -33,7 +36,10 @@ struct PresetBrowserView: View {
                     .pickerStyle(.segmented)
                     .accessibilityLabel("Show presets")   // ACC-004-R1: a segmented picker hides its title
                     .accessibilityIdentifier("favoritesFilter")
-                    if presets.favoritesOnly {
+                    PresetTagChipRow(presets: presets)   // PRE-003
+                    if !presets.activeTags.isEmpty {
+                        TaggedPresetList(presets: presets, onChoose: onChoose)
+                    } else if presets.favoritesOnly {
                         favorites
                     } else {
                         home
@@ -58,12 +64,19 @@ struct PresetBrowserView: View {
                 }
             }
             .collectionsAlert(presets)
+            // PRE-003-R6: saved tags set aside or repaired, said once.
+            .alert("Preset tags", isPresented: Binding(get: { presets.tagsNotice != nil },
+                                                       set: { (shown: Bool) in if !shown { presets.dismissTagsNotice() } })) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(presets.tagsNotice ?? "")
+            }
             .searchable(text: $query, prompt: "Presets and authors")
-            .task(id: query) {
+            .task(id: "\(query)|\(presets.tagsVersion)|\(presets.selectedTags.joined(separator: "\u{1F}"))") {
                 // Debounced search over the in-memory index (FR-113, research R-26).
                 try? await Task.sleep(for: .milliseconds(150))
                 guard !Task.isCancelled else { return }
-                results = presets.library?.search(query, limit: PresetLibrary.searchLimit) ?? (groups: [], truncated: false)
+                results = presets.searchResults(query)   // PRE-003-R9: names, authors and tags, narrowed by chips
             }
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         }
@@ -218,6 +231,8 @@ struct PresetRow: View {
     var user: UserActions?
     let onChoose: () -> Void
     @State private var addingToCollection = false
+    /// PRE-003: the Tags sheet.
+    @State private var tagging = false
     /// PRE-015: duplicating and editing; absent outside the browser.
     @Environment(UserPresetsCoordinator.self) private var userPresets: UserPresetsCoordinator?
     @State private var editing: UserPreset?
@@ -248,36 +263,14 @@ struct PresetRow: View {
         let hint: String = locked ? "Opens the unlock sheet" : "Plays this preset"
         let favoriteAction: String = favorite ? "Remove from Favorites" : "Add to Favorites"
         HStack {
-            Button(action: onChoose) {
-                HStack {
-                    // PRE-001: a picture of the preset (placeholder until it exists).
-                    PresetThumbnailView(preset: preset, playable: presets.isPlayable(preset), locked: locked, model: presets.thumbnails)
-                    VStack(alignment: .leading, spacing: 2) {
-                        // ACC-004: label colour. `.primary` inside a button resolves to the tint, and blue
-                        // text on white failed the contrast audit ("nearly passed", about 4:1).
-                        Text(preset.name).foregroundStyle(Color.primary)
-                        Text(subtitle).font(.caption).foregroundStyle(Color.primary)
-                    }
-                    Spacer()
-                    if presets.isFlagged(preset) {
-                        // ACC-002-R7: a symbol and words, never color alone.
-                        Label("May flash", systemImage: "exclamationmark.triangle")
-                            .font(.caption)
-                            .accessibilityIdentifier("mayFlash:\(preset.name)")
-                    }
-                    if locked {
-                        Image(systemName: "lock.fill").foregroundStyle(.secondary)
-                    } else if preset == presets.current {
-                        Image(systemName: "checkmark")
-                    }
-                }
-            }
+            Button(action: onChoose) { rowContent(locked: locked) }
             .accessibilityLabel(presets.rowLabel(preset, locked: locked))
             // ACC-004-R2, R4: the playing preset is selected; the hint says what activating does.
             .accessibilityAddTraits(selectedTraits)
             .accessibilityHint(hint)
             .accessibilityIdentifier("preset:\(preset.name)")
             .accessibilityAction(named: "Add to Collection") { addingToCollection = true }
+            .accessibilityAction(named: "Tags") { tagging = true }   // PRE-003-R11
             // ACC-004-R3: favoriting without finding the separate star.
             .accessibilityAction(named: favoriteAction) {
                 presets.toggleFavoriteAnnounced(preset)
@@ -325,35 +318,68 @@ struct PresetRow: View {
                 }
             }
         }
-        .contextMenu {
-            Button { addingToCollection = true } label: { Label("Add to Collection…", systemImage: "folder.badge.plus") }
-            if isBundled && userPresets != nil {
-                Button(action: duplicate) { Label("Duplicate to My Presets", systemImage: "plus.square.on.square") }
-                    .accessibilityIdentifier("duplicatePreset")
-            }
-            if editable {
-                Button(action: edit) { Label("Edit", systemImage: "pencil") }
-                    .accessibilityIdentifier("editUserPreset")
-            }
-            if let user {
-                Button(action: user.info) { Label("Information", systemImage: "info.circle") }
-                Button(role: .destructive, action: user.remove) { Label("Remove from My Presets", systemImage: "trash") }
-            }
-            if let collection {
-                Button { presets.movePreset(preset, in: collection.id, by: -1) } label: { Label("Move Up", systemImage: "arrow.up") }
-                    .disabled(collection.isFirst)
-                Button { presets.movePreset(preset, in: collection.id, by: 1) } label: { Label("Move Down", systemImage: "arrow.down") }
-                    .disabled(collection.isLast)
-                Button(role: .destructive) {
-                    presets.removeFromCollection([preset], collection.id)
-                } label: {
-                    Label("Remove from Collection", systemImage: "minus.circle")
-                }
-            }
-        }
+        .contextMenu { menuItems(editable: editable) }
         .sheet(isPresented: $addingToCollection) { AddToCollectionSheet(presets: presets, preset: preset) }
+        .sheet(isPresented: $tagging) { PresetTagsView(presets: presets, preset: preset) }
         .sheet(item: $editing) { record in
             if let userPresets { UserPresetEditorView(preset: record, userPresets: userPresets) }
+        }
+    }
+
+    /// The row's visible content (split from `body` for the type-check budget).
+    private func rowContent(locked: Bool) -> some View {
+        HStack {
+            // PRE-001: a picture of the preset (placeholder until it exists).
+            PresetThumbnailView(preset: preset, playable: presets.isPlayable(preset), locked: locked, model: presets.thumbnails)
+            VStack(alignment: .leading, spacing: 2) {
+                // ACC-004: label colour. `.primary` inside a button resolves to the tint, and blue
+                // text on white failed the contrast audit ("nearly passed", about 4:1).
+                Text(preset.name).foregroundStyle(Color.primary)
+                Text(subtitle).font(.caption).foregroundStyle(Color.primary)
+                tagLine   // PRE-003
+            }
+            Spacer()
+            if presets.isFlagged(preset) {
+                // ACC-002-R7: a symbol and words, never color alone.
+                Label("May flash", systemImage: "exclamationmark.triangle")
+                    .font(.caption)
+                    .accessibilityIdentifier("mayFlash:\(preset.name)")
+            }
+            if locked {
+                Image(systemName: "lock.fill").foregroundStyle(.secondary)
+            } else if preset == presets.current {
+                Image(systemName: "checkmark")
+            }
+        }
+    }
+
+    /// The touch-and-hold menu (split from `body` for the type-check budget).
+    @ViewBuilder private func menuItems(editable: Bool) -> some View {
+        Button { addingToCollection = true } label: { Label("Add to Collection…", systemImage: "folder.badge.plus") }
+        Button { tagging = true } label: { Label("Tags…", systemImage: "tag") }
+            .accessibilityIdentifier("presetTagsAction")
+        if isBundled && userPresets != nil {
+            Button(action: duplicate) { Label("Duplicate to My Presets", systemImage: "plus.square.on.square") }
+                .accessibilityIdentifier("duplicatePreset")
+        }
+        if editable {
+            Button(action: edit) { Label("Edit", systemImage: "pencil") }
+                .accessibilityIdentifier("editUserPreset")
+        }
+        if let user {
+            Button(action: user.info) { Label("Information", systemImage: "info.circle") }
+            Button(role: .destructive, action: user.remove) { Label("Remove from My Presets", systemImage: "trash") }
+        }
+        if let collection {
+            Button { presets.movePreset(preset, in: collection.id, by: -1) } label: { Label("Move Up", systemImage: "arrow.up") }
+                .disabled(collection.isFirst)
+            Button { presets.movePreset(preset, in: collection.id, by: 1) } label: { Label("Move Down", systemImage: "arrow.down") }
+                .disabled(collection.isLast)
+            Button(role: .destructive) {
+                presets.removeFromCollection([preset], collection.id)
+            } label: {
+                Label("Remove from Collection", systemImage: "minus.circle")
+            }
         }
     }
 
@@ -403,6 +429,15 @@ struct PresetRow: View {
             } else {
                 content
             }
+        }
+    }
+
+    /// PRE-003: "Calm · Slow" under the author line when the preset has tags (VoiceOver hears them in the row label).
+    @ViewBuilder private var tagLine: some View {
+        let list: [String] = presets.tags(of: preset)
+        if !list.isEmpty {
+            Text(list.joined(separator: " · ")).font(.caption2).foregroundStyle(Color.primary)
+                .accessibilityIdentifier("presetTagLine:\(preset.name)")
         }
     }
 

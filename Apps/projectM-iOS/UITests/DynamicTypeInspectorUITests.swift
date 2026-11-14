@@ -523,6 +523,50 @@ final class DynamicTypeInspectorUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Show"].appears(within: 5))
     }
 
+    /// SCN-004's Scene Folders screen, opened from the show editor's Scene Folders row (2026-11-14: that row
+    /// failed the AX3 audit as a Label wrapping under its icon): audited with one folder and the seed's scenes.
+    private func sceneFolders(_ size: String) throws {
+        launch(size, ["-uitestShowSeed"] + Self.openAt("show"))
+        try openShowEditor()
+        let link = app.buttons["showSceneFoldersLink"]
+        requireReachable(link, "the Scene Folders row")
+        link.tap()
+        let newFolder = app.buttons["sceneFoldersNewFolder"]
+        XCTAssertTrue(newFolder.appears(within: 5), "the Scene Folders screen")
+        newFolder.tap()
+        let alert = app.alerts["New Folder"]
+        XCTAssertTrue(alert.appears(within: 3), "the New Folder alert")
+        alert.textFields.firstMatch.typeText("Set A")
+        let create = alert.buttons["Create"]
+        create.tap()
+        if !alert.disappears(within: 1.5) {   // a hardware-keyboard simulator swallows the first tap (SceneFoldersUITests)
+            create.settles()
+            create.tap()
+        }
+        XCTAssertTrue(alert.disappears(within: 3))
+        XCTAssertTrue(app.descendants(matching: .any)["sceneFolderRow.Set A"].firstMatch.appears(within: 3), "the folder row")
+        try audit("sceneFolders")
+    }
+
+    /// UIX-002's scene switcher (⌘K) with the show seed's five entries: audited (2026-11-14, with the Scene
+    /// Folders check: its rows already lift their line limit at accessibility sizes).
+    private func sceneSwitcher(_ size: String) throws {
+        launch(size, ["-uitestShowSeed"])
+        XCTAssertTrue(app.otherElements["visualizerTapArea"].firstMatch.appears(within: 15), "the visualizer is up")
+        app.typeKey("k", modifierFlags: .command)
+        let field = app.descendants(matching: .any)["sceneSwitcherField"].firstMatch
+        XCTAssertTrue(field.appears(within: 3), "⌘K opens the switcher")
+        XCTAssertTrue(app.buttons["sceneSwitcherEntry.1"].appears(within: 3), "the first entry")
+        try audit("sceneSwitcher")
+        // The wrapping field (ACC-006-R1) still filters, and Return still chooses the highlighted entry.
+        // The audit's size changes take the focus away, so the field is tapped first.
+        field.tap()
+        field.typeText("drop")
+        XCTAssertTrue(poll(3) { self.app.staticTexts["sceneSwitcherCount"].label == "1 scene" }, "the query filters")
+        field.typeText("\n")
+        XCTAssertTrue(field.disappears(within: 3), "Return chooses the scene and closes the switcher")
+    }
+
     /// The show editor's Rename Scene alert (split from the show editor, 2026-11-14: owner rule 7):
     /// audited, its field accepts input, Rename can be hit.
     private func renameSceneAlert(_ size: String) throws {
@@ -690,6 +734,10 @@ final class DynamicTypeInspectorUITests: XCTestCase {
     func testCollectionsAndMyPresetsAX3() throws { try libraries(Self.ax3) }
     func testShowEditorAX5() throws { try showEditor(Self.ax5) }
     func testShowEditorAX3() throws { try showEditor(Self.ax3) }
+    func testSceneFoldersAX5() throws { try sceneFolders(Self.ax5) }
+    func testSceneFoldersAX3() throws { try sceneFolders(Self.ax3) }
+    func testSceneSwitcherAX5() throws { try sceneSwitcher(Self.ax5) }
+    func testSceneSwitcherAX3() throws { try sceneSwitcher(Self.ax3) }
     func testRenameSceneAlertAX5() throws { try renameSceneAlert(Self.ax5) }
     func testRenameSceneAlertAX3() throws { try renameSceneAlert(Self.ax3) }
     func testPresetEditorAX5() throws { try presetEditor(Self.ax5) }

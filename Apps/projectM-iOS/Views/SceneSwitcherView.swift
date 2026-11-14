@@ -16,6 +16,7 @@
 // * SCN-005: a row of tag chips under the field (when the show has tags; AND; in memory), each row's
 //   tags in its subtitle and value, and a tag button after each row (plus the VoiceOver action "Tags")
 //   that opens the Tags sheet (`SceneTagsView`).
+// * SCN-006: each row starts with its scene's preview picture (placeholder until one exists).
 import ShowControl
 import SwiftUI
 
@@ -115,25 +116,44 @@ struct SceneSwitcherView: View {
 
     private var queryBinding: Binding<String> {
         Binding(get: { () -> String in coordinator.sceneSwitcher.query },
-                set: { (text: String) in
-                    guard text != coordinator.sceneSwitcher.query else { return }
-                    coordinator.sceneSwitcher.query = text
-                    coordinator.switcherQueryChanged()
+                set: { (typed: String) in
+                    // The wrapping field (accessibility sizes) takes Return as a newline: it chooses instead.
+                    let submitted: Bool = typed.contains("\n")
+                    let text: String = submitted ? typed.replacingOccurrences(of: "\n", with: "") : typed
+                    if text != coordinator.sceneSwitcher.query {
+                        coordinator.sceneSwitcher.query = text
+                        coordinator.switcherQueryChanged()
+                    }
+                    if submitted { submit() }
                 })
     }
 
+    private func submit() {
+        guard coordinator.sceneSwitcher.isOpen else { return }   // one Return, one choice
+        coordinator.chooseHighlightedSwitcherScene()
+        // Nothing matched: the text and focus stay (spec US2 scenario 4).
+        if coordinator.sceneSwitcher.isOpen { fieldFocused = true }
+    }
+
+    /// ACC-006-R1: at accessibility sizes the query wraps over up to three lines, as the preset editor's
+    /// name does; a one-line field clipped its placeholder at AX3 and AX5 (audit, 2026-11-14). A query is
+    /// one line: Return chooses (queryBinding). Standard sizes keep the one-line field.
+    @ViewBuilder private var fieldBase: some View {
+        if typeSize.isAccessibilitySize {
+            TextField("Search scenes", text: queryBinding, axis: .vertical).lineLimit(1...3)
+        } else {
+            TextField("Search scenes", text: queryBinding)
+        }
+    }
+
     private var field: some View {
-        TextField("Search scenes", text: queryBinding)
+        fieldBase
             .textFieldStyle(.roundedBorder)
             .textInputAutocapitalization(.never)
             .autocorrectionDisabled()
             .submitLabel(.go)
             .focused($fieldFocused)
-            .onSubmit {
-                coordinator.chooseHighlightedSwitcherScene()
-                // Nothing matched: the text and focus stay (spec US2 scenario 4).
-                if coordinator.sceneSwitcher.isOpen { fieldFocused = true }
-            }
+            .onSubmit { submit() }
             .onKeyPress(.downArrow) { () -> KeyPress.Result in
                 coordinator.moveSwitcherHighlight(by: 1)
                 return .handled
@@ -246,7 +266,8 @@ struct SceneSwitcherView: View {
         let traits: AccessibilityTraits = isHighlighted ? .isSelected : []
         let fill: Color = isHighlighted ? Color.accentColor.opacity(0.28) : Color.clear
         return Button { coordinator.chooseSwitcherScene(entry.cueID) } label: {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
+            HStack(alignment: .center, spacing: 8) {
+                ScenePreviewView(sceneID: entry.sceneID, model: coordinator.scenePreviews)   // SCN-006
                 VStack(alignment: .leading, spacing: 2) {
                     Text(entry.label)
                         .font(.body)

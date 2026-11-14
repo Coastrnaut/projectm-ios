@@ -11,9 +11,9 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 74,
-   "implementing": 9,
-   "integrated": 68
+   "audited": 71,
+   "implementing": 5,
+   "integrated": 75
   },
   "P2": {
    "audited": 74,
@@ -24,9 +24,9 @@
   }
  },
  "by_state": {
-  "audited": 159,
-  "implementing": 9,
-  "integrated": 157,
+  "audited": 156,
+  "implementing": 5,
+  "integrated": 164,
   "skipped_existing": 1
  },
  "device_gate": {
@@ -74,14 +74,12 @@
    "MED-012",
    "MED-013",
    "MIDI-005",
-   "MIDI-007",
    "MIDI-008",
    "MIDI-009",
    "MIDI-010",
    "MIDI-011",
    "MIDI-012",
    "MIDI-013",
-   "MOD-006",
    "MOD-007",
    "MOD-008",
    "MOD-009",
@@ -111,7 +109,6 @@
    "OUT-012",
    "OUT-013",
    "OUT-014",
-   "PERF-001",
    "PERF-002",
    "PERF-003",
    "PERF-005",
@@ -120,7 +117,6 @@
    "PERF-009",
    "PERF-012",
    "PERF-013",
-   "PRE-003",
    "PRE-004",
    "PRE-005",
    "PRE-006",
@@ -149,7 +145,6 @@
    "REC-013",
    "REC-014",
    "REC-016",
-   "SCN-006",
    "SCN-007",
    "SCN-008",
    "SCN-009",
@@ -175,7 +170,6 @@
    "SHOW-012",
    "SHOW-013",
    "SHOW-015",
-   "UIX-004",
    "UIX-005",
    "UIX-006",
    "UIX-007",
@@ -186,7 +180,6 @@
    "UIX-012",
    "UIX-013",
    "UIX-014",
-   "VIS-004",
    "VIS-005",
    "VIS-006",
    "VIS-007",
@@ -206,7 +199,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "168 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)"
+   "161 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)"
   ]
  },
  "features": {
@@ -1603,22 +1596,22 @@
   "MIDI-007": {
    "attempts": 0,
    "branch": "feature/midi-007",
+   "branch_sha": "0d3f193e7aeabcdcc29114d0733a18c7d250788f",
+   "error_category": null,
+   "integrated_sha": "42658ec3d3d7d208e92e4f5750863b793b86be17",
+   "priority": "P1",
+   "spec_dir": null,
+   "state": "integrated"
+  },
+  "MIDI-008": {
+   "attempts": 0,
+   "branch": "feature/midi-008",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
    "state": "implementing"
-  },
-  "MIDI-008": {
-   "attempts": 0,
-   "branch": null,
-   "branch_sha": null,
-   "error_category": null,
-   "integrated_sha": null,
-   "priority": "P1",
-   "spec_dir": null,
-   "state": "audited"
   },
   "MIDI-009": {
    "attempts": 0,
@@ -1723,12 +1716,12 @@
   "MOD-006": {
    "attempts": 0,
    "branch": "feature/mod-006",
-   "branch_sha": null,
+   "branch_sha": "638315aab1cd83261b2abbd4247a7091da9d15bc",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "6fc64ff1d0fc16c84d5b8f1ac6cc9bc41a076284",
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "integrated"
   },
   "MOD-007": {
    "attempts": 0,
@@ -2103,12 +2096,12 @@
   "PERF-001": {
    "attempts": 0,
    "branch": "feature/perf-001",
-   "branch_sha": null,
+   "branch_sha": "9d87d289ba618c598054a0ac08495ba3b3309a82",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "38172fff",
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "integrated"
   },
   "PERF-002": {
    "attempts": 0,
@@ -2263,12 +2256,12 @@
   "PRE-003": {
    "attempts": 0,
    "branch": "feature/pre-003",
-   "branch_sha": null,
+   "branch_sha": "a01ade94e32769be873eb7cb96c51c62a7731e90",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "ddce41418d7cc402b62021ee6d4d63da5b3c5de2",
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "integrated"
   },
   "PRE-004": {
    "attempts": 0,
@@ -2292,13 +2285,13 @@
   },
   "PRE-006": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/pre-006",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "PRE-007": {
    "attempts": 1,
@@ -2753,22 +2746,22 @@
   "SCN-006": {
    "attempts": 0,
    "branch": "feature/scn-006",
+   "branch_sha": "a56c9083faa805912ef14e275bd6c0489611f1ea",
+   "error_category": null,
+   "integrated_sha": "546e69643d046059000c405cd9b9bf0bf045208b",
+   "priority": "P1",
+   "spec_dir": null,
+   "state": "integrated"
+  },
+  "SCN-007": {
+   "attempts": 0,
+   "branch": "feature/scn-007",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
    "state": "implementing"
-  },
-  "SCN-007": {
-   "attempts": 0,
-   "branch": null,
-   "branch_sha": null,
-   "error_category": null,
-   "integrated_sha": null,
-   "priority": "P1",
-   "spec_dir": null,
-   "state": "audited"
   },
   "SCN-008": {
    "attempts": 0,
@@ -3153,12 +3146,12 @@
   "UIX-004": {
    "attempts": 0,
    "branch": "feature/uix-004",
-   "branch_sha": null,
+   "branch_sha": "55450ba74bdca5d9cbdd916df5f6b8f8cfea833a",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "327bf36372e4e8338030685ea0bd322a22161007",
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "integrated"
   },
   "UIX-005": {
    "attempts": 0,
@@ -3303,12 +3296,12 @@
   "VIS-004": {
    "attempts": 0,
    "branch": "feature/vis-004",
-   "branch_sha": null,
+   "branch_sha": "a06638f8924519453efabc2eda5035082820f128",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "38172fff",
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "integrated"
   },
   "VIS-005": {
    "attempts": 0,
@@ -3973,6 +3966,11 @@
    "sha": "4bad23aa"
   },
   {
+   "branch": "feature/midi-007",
+   "id": "MIDI-007",
+   "sha": "42658ec3d3d7d208e92e4f5750863b793b86be17"
+  },
+  {
    "branch": "feature/mod-001",
    "id": "MOD-001",
    "sha": "304f3bce431a7f6f0a1719bdced6b55b910c9668"
@@ -3996,6 +3994,11 @@
    "branch": "feature/mod-005",
    "id": "MOD-005",
    "sha": "4bad23aa"
+  },
+  {
+   "branch": "feature/mod-006",
+   "id": "MOD-006",
+   "sha": "6fc64ff1d0fc16c84d5b8f1ac6cc9bc41a076284"
   },
   {
    "branch": "feature/mod-013",
@@ -4038,6 +4041,11 @@
    "sha": "1def5a80ab64db55c0f41a52b830700ae9c2c9b3"
   },
   {
+   "branch": "feature/perf-001",
+   "id": "PERF-001",
+   "sha": "38172fff"
+  },
+  {
    "branch": "feature/perf-004",
    "id": "PERF-004",
    "sha": "ea0ee43e0f04f2b66596b10b89bd93be24387842"
@@ -4071,6 +4079,11 @@
    "branch": null,
    "id": "PRE-002",
    "sha": "4bad23aa"
+  },
+  {
+   "branch": "feature/pre-003",
+   "id": "PRE-003",
+   "sha": "ddce41418d7cc402b62021ee6d4d63da5b3c5de2"
   },
   {
    "branch": "feature/pre-007",
@@ -4168,6 +4181,11 @@
    "sha": "4bad23aa"
   },
   {
+   "branch": "feature/scn-006",
+   "id": "SCN-006",
+   "sha": "546e69643d046059000c405cd9b9bf0bf045208b"
+  },
+  {
    "branch": "feature/scn-010",
    "id": "SCN-010",
    "sha": "01b155c6c3d0a73e61e8922219c74cd3e92ea0af"
@@ -4238,6 +4256,11 @@
    "sha": "7b7a78050adac4aee7896f350d10b628bb8d4a47"
   },
   {
+   "branch": "feature/uix-004",
+   "id": "UIX-004",
+   "sha": "327bf36372e4e8338030685ea0bd322a22161007"
+  },
+  {
    "branch": "feature/uix-015",
    "id": "UIX-015",
    "sha": "ae498579"
@@ -4256,6 +4279,11 @@
    "branch": "feature/vis-003",
    "id": "VIS-003",
    "sha": "2d758a4"
+  },
+  {
+   "branch": "feature/vis-004",
+   "id": "VIS-004",
+   "sha": "38172fff"
   }
  ],
  "integration_branch": "autonomous/integration",
@@ -4283,5 +4311,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T14:02:02Z"
+ "updated": "2026-11-14T14:47:21Z"
 }

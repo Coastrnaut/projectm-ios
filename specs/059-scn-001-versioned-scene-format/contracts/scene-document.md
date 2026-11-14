@@ -108,6 +108,17 @@ is rejected with `unsupportedCurve`; a readable curve outside the ranges of
 `specs/129-mod-004-curve-mapping/contracts/mapping-curve.md` (K5) rejects its binding with
 `invalidBinding`. Unknown keys inside a readable curve are dropped (`droppedField`).
 
+### Triggers (MOD-006, optional top-level `triggers`)
+
+`[{"source": "audio.kick", "action": "cue.next", "high": 0.6, "low": 0.3, "minimumInterval": 0.1,
+"hold": 0}]`: threshold triggers (specs/148-mod-006-threshold-trigger/contracts/threshold-trigger.md).
+Written only when the scene has the list (no version change); each entry is an object kept verbatim,
+unknown keys included. `minimumInterval` (default 0.1 s) and `hold` (default 0) are optional; actions are
+`cue.next`, `cue.previous`, `blackout`. At most 64 entries decode (`tooMany`); at most 8 are used. An
+unusable entry is kept and reported with a warning: `invalidTrigger` (a missing or wrong field, `low ≥
+high`, levels outside 0…1, times outside 0…60 s, beyond 8) or `unknownTrigger` (unknown source or action),
+at the field's path or `$.triggers[i]`.
+
 ### Modulation
 
 `generators`: `[{"id": "lfo.one", "inputs": ["rate"], "name": "LFO One"}]`;

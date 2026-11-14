@@ -269,7 +269,7 @@ struct SettingsView: View {
     @ViewBuilder private var visualOptionsSection: some View {
         Section {
             if settings.visual.isNative {
-                if settings.visual != .oscilloscope {   // VIS-003: no bars on a waveform
+                if settings.visual.usesBars {   // VIS-003, VIS-004: no bars on a waveform or a phase plot
                     Picker("Bars", selection: $settings.circularSpectrumBars) {
                         ForEach(AppSettings.circularSpectrumBarChoices, id: \.self) { Text("\($0)").tag($0) }
                     }
@@ -292,6 +292,7 @@ struct SettingsView: View {
                     .accessibilityLabel("Window")
                     .accessibilityIdentifier("oscilloscopeWindowPicker")
                 }
+                if settings.visual == .lissajous { lissajousOptions }   // VIS-004-R11
                 if settings.visual == .linearSpectrum {
                     Picker("Orientation", selection: $settings.linearSpectrumOrientation) {
                         ForEach(LinearSpectrumOrientation.allCases, id: \.self) { Text($0.title).tag($0) }
@@ -328,7 +329,7 @@ struct SettingsView: View {
                     .accessibilityIdentifier("nativeVisualUnavailableFooter")
             } else {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Oscilloscope draws the sound's waveform, held still when the sound repeats. Camera shows your rear or front camera behind a circular spectrum, only while it is on screen; the picture is never sent. Photo shows a picture you choose behind a circular spectrum. Video plays a video you choose, without its sound, behind a circular spectrum. Text shows your own words over a circular spectrum.")
+                    Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Oscilloscope draws the sound's waveform, held still when the sound repeats. Lissajous plots the left channel against the right: mono sound is a straight line, wide stereo fills the space; Mid/Side turns it so mono is vertical. Camera shows your rear or front camera behind a circular spectrum, only while it is on screen; the picture is never sent. Photo shows a picture you choose behind a circular spectrum. Video plays a video you choose, without its sound, behind a circular spectrum. Text shows your own words over a circular spectrum.")
                     if settings.visual.isNative {
                         if glowUnavailable {
                             Text(AppCoordinator.glowUnavailableMessage)
@@ -340,6 +341,18 @@ struct SettingsView: View {
                 }
             }
         }
+    }
+
+    /// VIS-004-R11: the Lissajous's plot and persistence.
+    @ViewBuilder private var lissajousOptions: some View {
+        Picker("Plot", selection: $settings.lissajousMode) {
+            ForEach(LissajousMode.allCases, id: \.self) { (mode: LissajousMode) in Text(mode.title).tag(mode) }
+        }
+        .segmentedUnlessAccessibilitySize()   // ACC-006-R1
+        .accessibilityLabel("Plot")
+        .accessibilityIdentifier("lissajousModePicker")
+        Toggle("Persistence", isOn: $settings.lissajousPersistence)
+            .accessibilityIdentifier("lissajousPersistenceToggle")
     }
 
     @ViewBuilder private var smoothingSection: some View {
@@ -369,6 +382,7 @@ struct SettingsView: View {
 
     @ViewBuilder private var mediaSections: some View {
         if let layerInspector { layersSection(layerInspector) }   // CMP-015
+        if let shelf = layerInspector?.parameterShelf { ParameterShelfSection(shelf: shelf) }   // UIX-004-R6
         if settings.visual.usesCamera {   // CAM-002-R1: which camera, and its mirror
             cameraSection
         }
@@ -417,7 +431,7 @@ struct SettingsView: View {
         if let show {   // SHOW-001-R14
             Section {
                 NavigationLink {
-                    ShowEditorView(show: show, addCurrentScene: addCurrentScene)
+                    ShowEditorView(show: show, addCurrentScene: addCurrentScene, midiMappings: midi?.mappings)   // MIDI-007-R8
                 } label: {
                     LabeledContent("Show", value: show.hasCues ? "\(show.list.cues.count) \(show.list.cues.count == 1 ? "cue" : "cues")" : "No cues")
                 }

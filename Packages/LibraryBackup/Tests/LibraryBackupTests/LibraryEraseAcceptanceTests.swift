@@ -15,7 +15,7 @@ final class LibraryEraseAcceptanceTests: XCTestCase {
         switch category {
         case .scenes: return key == "show" || key.hasPrefix("scene/") || key == "current-scene"
         case .presets: return key.hasPrefix("preset/") || key == "setting/" + LibrarySettingsPolicy.lastPresetKey
-        case .collections: return key == "collections" || key == "setting/" + LibrarySettingsPolicy.favoritesKey
+        case .collections: return key == "collections" || key == "preset-tags" || key == "setting/" + LibrarySettingsPolicy.favoritesKey
         case .media: return key.hasPrefix("photo/") || key == "setting/" + LibrarySettingsPolicy.photoKey
             || key == "setting/" + LibrarySettingsPolicy.slideshowKey   // MED-006
             || key == "setting/" + LibrarySettingsPolicy.logoKey || key == "setting/" + LibrarySettingsPolicy.logoPlacementKey   // MED-010

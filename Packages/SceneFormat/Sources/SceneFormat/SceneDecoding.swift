@@ -118,10 +118,18 @@ struct SceneDecoder {
             effects = list
         }
 
+        var triggers: [SceneTriggerEntry]?   // MOD-006
+        if let value = o["triggers"] {
+            let base = ScenePath.key(root, "triggers")
+            var list: [SceneTriggerEntry] = []
+            for (i, item) in try array(value, base).enumerated() { list.append(try SceneTriggerEntry.decode(item, path: ScenePath.index(base, i))) }
+            triggers = list
+        }
+
         let known: Set<String> = ["format", "version", "id", "name", "layers", "parameters", "bindings", "modulation", "assets", "groups",
-                                  "effects"]
+                                  "effects", "triggers"]
         return SceneDocument(id: id, name: name, layers: layers, parameters: parameters, bindings: bindings,
-                             modulation: modulation, assets: assets, groups: groups, effects: effects, extra: o.filter { (key: String, _: SceneJSON) -> Bool in !known.contains(key) })
+                             modulation: modulation, assets: assets, groups: groups, effects: effects, triggers: triggers, extra: o.filter { (key: String, _: SceneJSON) -> Bool in !known.contains(key) })
     }
 
     /// Count limits, before any typed decoding (SCN-001-R8). Wrong types are left to typed decoding.
@@ -141,6 +149,7 @@ struct SceneDecoder {
         try check("modulation generators", modulation?["generators"]?.arrayValue?.count, SceneLimits.maximumGenerators)
         try check("modulation connections", modulation?["connections"]?.arrayValue?.count, SceneLimits.maximumConnections)
         try check("effects", o["effects"]?.arrayValue?.count, SceneLimits.maximumEffects)   // FX-020
+        try check("triggers", o["triggers"]?.arrayValue?.count, SceneLimits.maximumTriggerEntries)   // MOD-006
         let groups = o["groups"]?.arrayValue   // CMP-011
         try check("groups", groups?.count, SceneLimits.maximumGroups)
         for (i, group) in (groups ?? []).enumerated() {

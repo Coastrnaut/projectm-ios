@@ -5,13 +5,16 @@
 // limits it to the first Settings of a launch. The IDs are the `.id(...)`
 // strings on SettingsView's sections ("color", "reduceFlashing", "osc", "midi", "show", "storage"); an
 // identity only, so Release builds carry no new code: this modifier returns the list unchanged there.
+// Settings › Storage's list carries it too: "libraryErase" opens Storage at its end (the Erase section, with
+// the end of Backup above it), so LibraryEraseUITests reach the Backup and Erase rows without drags (2026-11-14: drags at the
+// end of that list in the right margin caught the scroll indicator, which scrubbed the list back to the top).
 import SwiftUI
 
 extension View {
     @ViewBuilder
-    func uitestSettingsSection() -> some View {
+    func uitestSettingsSection(repeated: Bool = false) -> some View {
         #if DEBUG
-        modifier(UITestSettingsSection())
+        modifier(UITestSettingsSection(repeated: repeated))
         #else
         self
         #endif
@@ -30,6 +33,9 @@ private struct UITestSettingsSection: ViewModifier {
         return arguments[index + 1]
     }()
     private let once: Bool = ProcessInfo.processInfo.arguments.contains("-uitestSettingsSectionOnce")
+    /// Scroll again 0.3 s and 1 s later: a list in a sheet presented at launch can drop the first scroll
+    /// (laid out mid-presentation on a busy Mac: LibraryEraseUITests saw Storage stay at its top, 2026-11-14).
+    var repeated = false
 
     func body(content: Content) -> some View {
         if let target {
@@ -39,6 +45,11 @@ private struct UITestSettingsSection: ViewModifier {
                     uitestSettingsSectionUsed = true
                     await Task.yield()   // after the list's first layout
                     proxy.scrollTo(target, anchor: .top)
+                    guard repeated else { return }
+                    for delay in [0.3, 0.7] {
+                        try? await Task.sleep(for: .seconds(delay))
+                        proxy.scrollTo(target, anchor: .top)
+                    }
                 }
             }
         } else {

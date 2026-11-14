@@ -34,6 +34,9 @@ final class SceneAutosaveCoordinator {
     /// last captured live ones (contract A5).
     var bindings: [AudioFeatureBinding] { carry.bindings }
 
+    /// MOD-006: the current scene's usable threshold triggers (a native spectrum gets them when it is created).
+    var triggerBindings: [ThresholdTriggerBinding] { SceneTriggerEntry.read(carry.triggers ?? []).bindings }
+
     /// SCN-010: the content the current scene carries (the history captures its states over it).
     var carrySnapshot: SceneAutosaveCarry { carry }
 

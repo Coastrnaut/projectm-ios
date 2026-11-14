@@ -27,6 +27,12 @@ rule, record switch, CI guard, diff artifacts and integrity check as the scene g
 `--filter OscilloscopeGoldenTests` (host) or `-only-testing:RenderGoldensTests/OscilloscopeGoldenTests`
 (simulator).
 
+`GeneratorGoldens/Lissajous/<class>/` (VIS-004) holds the Lissajous scope's goldens the same way:
+`lissajous-inphase-<w>x<h>-f1.png` (L = R, a diagonal) and `lissajous-quadrature-<w>x<h>-f1.png`
+(R = L shifted 90°, a circle), a 440 Hz sine through `LissajousGenerator`
+(`Tests/RenderGoldensTests/LissajousGoldenTests.swift`); record with `--filter LissajousGoldenTests` or
+`-only-testing:RenderGoldensTests/LissajousGoldenTests`.
+
 ## Run
 
 ```bash
