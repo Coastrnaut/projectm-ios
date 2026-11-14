@@ -85,6 +85,7 @@ public enum LibrarySettingsPolicy {
         "settings.camera.position", "settings.camera.mirrorFront", "settings.camera.mirrorBack",
         "settings.camera.cropMode", "settings.camera.cropAnchor", "settings.camera.zoom",
         "settings.osc.port",
+        "settings.midi.mappings",   // MIDI-003-R9: channel, controller and parameter ID per line; erased with Settings
         "settings.inputTrim.decibels", "settings.analysisChannel.mode",
         "settings.noiseGate.enabled", "settings.noiseGate.thresholdDecibels",
         "settings.latencyOffset.microphone", "settings.latencyOffset.inAppPlayback", "settings.latencyOffset.systemAppCapture",

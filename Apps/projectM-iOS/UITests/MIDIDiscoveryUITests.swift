@@ -47,7 +47,7 @@ final class MIDIDiscoveryUITests: XCTestCase {
         openSettings()
 
         let toggle = app.switches["midiListenToggle"]
-        XCTAssertTrue(app.reveal(toggle), "the MIDI section is in Settings")
+        XCTAssertTrue(app.reveal(toggle, long: true), "the MIDI section is in Settings")
         XCTAssertEqual(toggle.value as? String, "0", "off at start")
         XCTAssertEqual(status(), "Off")
 

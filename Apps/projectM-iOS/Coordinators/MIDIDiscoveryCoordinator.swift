@@ -39,6 +39,8 @@ final class MIDIDiscoveryCoordinator {
     @ObservationIgnored private var listObservers: [@MainActor () -> Void] = []
     /// MIDI-002: the input monitor shown from the MIDI section (nil: no monitor row, e.g. in tests).
     @ObservationIgnored weak var monitor: MIDIMonitorCoordinator?
+    /// MIDI-003: MIDI learn and mappings shown from the MIDI section (nil: no mappings row, e.g. in tests).
+    @ObservationIgnored weak var mappings: MIDIMappingCoordinator?
 
     init(settings: AppSettings, discovery: MIDIEndpointDiscovery = .system(), appIsActive: Bool = true,
          announce: @escaping @MainActor (String) -> Void = { (_: String) -> Void in }) {
