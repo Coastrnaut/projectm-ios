@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T09:29:04Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T09:33:21Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -38,7 +38,7 @@ The physical-device suite may **not** start:
 | ACC-004 | VoiceOver scene browser | `ff69b64` | `feature/acc-004` |
 | ACC-005 | VoiceOver parameter editing | `fc10ea1f` | `feature/acc-005` |
 | ACC-006 | Dynamic Type inspector | `bb1439c7` | `feature/acc-006` |
-| ACC-008 | High contrast overlay | `c5a70c41b664` | `feature/acc-008` |
+| ACC-008 | High contrast overlay | `89d78f88` | `feature/acc-008` |
 | ACC-011 | Captioned status events | `92196c47` | `feature/acc-011` |
 | ANL-001 | Windowed FFT | `df16f2b90397` | `feature/anl-001` |
 | ANL-002 | Log-frequency bands | `493269c77462` | `feature/anl-002` |
@@ -227,6 +227,7 @@ None.
 ### ACC-008 High contrast overlay (integrated)
 - `python3 scripts/check_compliance.py`: pass at `6b23f3bd600a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-008/20261114T042852/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `6b23f3bd600a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-008/20261114T042852/docs.log`)
+- `post-merge: projectM-iOSTests 556 + OverlayContrast/AccessibilityScreens/VoiceOverParameter UI tests 10`: pass at `89d78f88` (log `.autonomous/logs/integration/acc-008/app-tests.log`)
 
 ### ACC-011 Captioned status events (integrated)
 - `python3 scripts/check_compliance.py`: pass at `2b76f6f1015b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-011/20261114T003341/compliance.log`)
