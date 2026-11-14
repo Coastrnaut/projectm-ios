@@ -99,6 +99,13 @@ final class SceneAutosaveCoordinator {
         return SceneAutosaveCapture.restoredValues(document, live: result.state, registry: registry)
     }
 
+    #if DEBUG
+    /// CMP-015 (LayerInspectorUITests): carried layers as if restored from a document (DEBUG only).
+    func seedCarriedLayersForUITest(_ layers: [SceneLayer]) {
+        carry.layers = layers
+    }
+    #endif
+
     // MARK: - Held restore (PERF-010; research PERF-010-D3)
 
     /// After an abnormal exit: reads the committed scene without adopting it (the carry stays fresh,

@@ -49,6 +49,8 @@ struct SettingsView: View {
     var openGuide: (() -> Void)?
     /// SCN-010: Undo and Redo in the navigation bar (nil hides them, e.g. in previews).
     var history: SceneHistoryCoordinator?
+    /// CMP-015: Settings › Layers (nil hides the row, e.g. in previews).
+    var layerInspector: AppCoordinator?
     /// AUD-008: the analysis-only input trim (nil hides its section, e.g. in previews).
     var inputTrim: InputTrimSetting?
     /// AUD-009: the analysis-only channel selection (nil hides its section, e.g. in previews).
@@ -298,6 +300,7 @@ struct SettingsView: View {
                         Text("Attack sets how quickly bars rise to a louder sound, Release how slowly they fall. Instant shows each analysis as it comes.")
                     }
                 }
+                if let layerInspector { layersSection(layerInspector) }   // CMP-015
                 if settings.visual.usesCamera {   // CAM-002-R1: which camera, and its mirror
                     cameraSection
                 }
@@ -413,6 +416,21 @@ struct SettingsView: View {
     }
 
     // MARK: Photo (MED-001-R2, R7, R11, R15)
+
+    /// CMP-015-R1: the layer inspector.
+    private func layersSection(_ coordinator: AppCoordinator) -> some View {
+        let count: Int = coordinator.layerInspectorRows.count
+        return Section {
+            NavigationLink {
+                LayerInspectorView(layers: coordinator.layers, history: coordinator.sceneHistory,
+                                   rows: { () -> [LayerInspectorRow] in coordinator.layerInspectorRows },
+                                   groups: { () -> [LayerInspectorGroupRow] in coordinator.layerInspectorGroups })
+            } label: {
+                LabeledContent("Layers", value: count == 1 ? "1 layer" : "\(count) layers")
+            }
+            .accessibilityIdentifier("layersLink")
+        }
+    }
 
     private func photoSection(_ photos: PhotoCoordinator) -> some View {
         Section {

@@ -173,6 +173,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     }
     /// SCN-010: undo and redo of scene edits (in memory only).
     @ObservationIgnored let sceneHistory = SceneHistoryCoordinator()
+    /// CMP-015: the layer inspector's composites (a scene input) and transient solo/mute.
+    let layers = LayerInspectorCoordinator()
     /// SCN-002: the current scene's autosave (nil only if its folder cannot be made).
     @ObservationIgnored let sceneAutosave: SceneAutosaveCoordinator?
     /// PERF-010: abnormal-exit detection, the recovery offer and its consent rules.
@@ -367,6 +369,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             recovery.hold(recovery.decision.isCrashLoop ? nil : sceneAutosave?.holdCommittedScene(assets: stored))
         } else if let values = sceneAutosave?.restore(assets: stored) {
             SceneAutosaveCapture.apply(values, to: settings)
+            layers.restore(values.layerComposites)   // CMP-015-R5
             if let text = values.text { texts.spec = text }
             videos.restoreLoop(storeID: values.videoStoreID, loop: values.videoLoop)   // MED-003-R8
         }
@@ -476,6 +479,10 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         if recovery.decision.isCrashLoop { sceneAutosave?.commitFreshScene() }
         recovery.startObservingLifecycle()
         connectShow()   // SHOW-001
+        connectLayerInspector()   // CMP-015
+        #if DEBUG
+        UITestLayerInspectorFixture.seedIfRequested(self)   // CMP-015: LayerInspectorUITests (before the history starts)
+        #endif
         connectSceneHistory()   // SCN-010: starts from the restored (or fresh) scene
         #if DEBUG
         UITestShowFixture.seedIfRequested(self)   // SHOW-001: ShowCueUITests
@@ -963,6 +970,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.content = Self.photoContent(photos.photo)
             presentation.register(host)   // PERF-011: starts suspended while the app cannot present
             photoVisual = host
+            applyLayerState(to: host.compositor)   // CMP-015
         } catch {
             markNativeVisualUnavailable(error)
         }
@@ -1010,6 +1018,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.content = Self.videoContent(videos.video)
             presentation.register(host)   // PERF-011: starts suspended while the app cannot present
             videoVisual = host
+            applyLayerState(to: host.compositor)   // CMP-015
         } catch {
             markNativeVisualUnavailable(error)
         }
@@ -1054,6 +1063,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.spec = texts.spec
             presentation.register(host)   // PERF-011: starts suspended while the app cannot present
             textVisual = host
+            applyLayerState(to: host.compositor)   // CMP-015
         } catch {
             markNativeVisualUnavailable(error)
         }
@@ -1241,6 +1251,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// Settings changed the visual, its bar count or the linear spectrum's options: switch without
     /// touching the audio source (VIS-001-R12, VIS-002-R12).
     func visualSettingsChanged() {
+        layers.visualShown(settings.visual)   // CMP-015-R8: another scene clears solo and mute
         if !settings.visual.usesCamera { releaseCameraVisual() }   // CAM-001-R7: leaving Camera stops it
         if !settings.visual.usesPhoto { releasePhotoVisual() }     // MED-001
         if !settings.visual.usesVideo { releaseVideoVisual() }     // MED-002: leaving Video stops its decoder
@@ -1316,6 +1327,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         let held = replacement ?? marked
         if let values = sceneAutosave?.reopen(held) {
             SceneAutosaveCapture.apply(values, to: settings)
+            layers.restore(values.layerComposites)   // CMP-015-R5
             if let text = values.text { texts.spec = text }
             videos.restoreLoop(storeID: values.videoStoreID, loop: values.videoLoop)   // MED-003-R8
         }
@@ -1341,7 +1353,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                     spacing: settings.linearSpectrumSpacing, glowEnabled: settings.glowEnabled,
                     glowIntensity: settings.glowIntensity, glowRadius: settings.glowRadius, glowThreshold: settings.glowThreshold,
                     text: texts.spec, photoID: photos.photo?.id, videoID: videos.video?.id,
-                    videoLoop: SceneVideoLoopBridge.scene(videos.loopRegion))   // MED-003
+                    videoLoop: SceneVideoLoopBridge.scene(videos.loopRegion),   // MED-003
+                    layerComposites: layers.composites)   // CMP-015
     }
 
     /// ACC-003-R13: the colour-blind-safe palette setting changed; the native spectrum redraws with it.

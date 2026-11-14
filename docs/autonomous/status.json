@@ -1091,7 +1091,7 @@
    "state": "integrated"
   },
   "CMP-015": {
-   "attempts": 0,
+   "attempts": 1,
    "branch": "feature/cmp-015",
    "branch_sha": "69def87e9547cf692cd4b19378b8d0e598650117",
    "error_category": null,
