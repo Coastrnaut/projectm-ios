@@ -4,7 +4,10 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (QA-004-T01-T11 verified on the Mac: host, Linux shape, own iOS
+27.2 simulator for the autosave cells; no device claim). 17 rows × 6 containers, 11 historical
+fixtures, 7 golden scenes; every cell ends in its documented outcome. No real older version exists:
+the "migrates" and "migration failed" cells use labelled test-only chains.
 
 **Input**: User description: "Implement QA-004 (Scene migration matrix) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Run all historical schema
