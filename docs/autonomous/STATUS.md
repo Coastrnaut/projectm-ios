@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T16:53:10Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T16:59:21Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -137,7 +137,7 @@ The physical-device suite may **not** start:
 | MIDI-007 | MIDI scene selection | `42658ec3d3d7` | `feature/midi-007` |
 | MIDI-008 | MIDI transport mapping | `265ddd1401f9` | `feature/midi-008` |
 | MIDI-011 | MIDI hot-plug recovery | `2a986abd` | `None` |
-| MIDI-012 | MIDI mapping profiles | `93aae15008da` | `feature/midi-012` |
+| MIDI-012 | MIDI mapping profiles | `93aae150` | `feature/midi-012` |
 | MOD-001 | Typed parameter registry | `304f3bce431a` | `feature/mod-001` |
 | MOD-002 | Audio feature binding | `006678f3d7a5` | `feature/mod-002` |
 | MOD-003 | Linear mapping | `29cd3bbb1e12` | `feature/mod-003` |
@@ -172,7 +172,7 @@ The physical-device suite may **not** start:
 | PRE-007 | Preset collections | `e834535cb98b` | `feature/pre-007` |
 | PRE-010 | Preset quick audition | `a653f631` | `feature/pre-010` |
 | PRE-012 | Preset import validation | `4bf9f50d1af8` | `feature/pre-012` |
-| PRE-013 | Bulk preset import | `ae03002a405d` | `feature/pre-013` |
+| PRE-013 | Bulk preset import | `ae03002a` | `feature/pre-013` |
 | PRE-014 | Bulk preset export | `a20ba4bafb5e` | `feature/pre-014` |
 | PRE-015 | User preset duplication | `c6cce9988587` | `feature/pre-015` |
 | QA-002 | Golden render scenes | `dffa2be908f5` | `feature/qa-002` |
@@ -1315,6 +1315,7 @@ None.
 - `swift test --package-path Packages/ImportFuzz`: pass at `a32a7b7b6e2c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-012/20261114T115114/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/LibraryBackup`: pass at `a32a7b7b6e2c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-012/20261114T115114/swift-test_LibraryBackup.log`)
 - `swift test --package-path Packages/PerformanceControl`: pass at `a32a7b7b6e2c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-012/20261114T115114/swift-test_PerformanceControl.log`)
+- `post-merge: projectM-iOSTests 838 + UI 7 (bulk import, archive import, user presets (flaky Done tap rerun green, hardened), MIDI profiles, learn)`: pass at `93aae150` (log `.autonomous/logs/integration/batch30/app-tests.log`)
 
 ### MOD-001 Typed parameter registry (integrated)
 - `python3 scripts/check_compliance.py`: pass at `c62c162f633a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-001/20261113T104902/compliance.log`)
@@ -1696,6 +1697,7 @@ None.
 - `swift test --package-path Packages/PresetLibrary`: pass at `ecfa981803b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-013/20261114T114830/swift-test_PresetLibrary.log`)
 - `swift test --package-path Packages/SceneArchive`: pass at `ecfa981803b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-013/20261114T114830/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `ecfa981803b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-013/20261114T114830/swift-test_ShowControl.log`)
+- `post-merge: projectM-iOSTests 838 + UI 7 (bulk import, archive import, user presets (flaky Done tap rerun green, hardened), MIDI profiles, learn)`: pass at `ae03002a` (log `.autonomous/logs/integration/batch30/app-tests.log`)
 
 ### PRE-014 Bulk preset export (integrated)
 - `python3 scripts/check_compliance.py`: pass at `10193f697212` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-014/20261112T205210/compliance.log`)
