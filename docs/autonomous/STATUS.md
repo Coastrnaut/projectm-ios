@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T15:04:56Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T15:05:11Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,8 +11,8 @@
 |---|---|
 | audited | 154 |
 | implementing | 2 |
-| unit_passed | 4 |
-| integrated | 165 |
+| unit_passed | 3 |
+| integrated | 166 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -20,14 +20,14 @@
 | Priority | audited | implementing | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 69 | 2 | 4 | 76 | 0 |
+| P1 | 69 | 2 | 3 | 77 | 0 |
 | P2 | 74 | 0 | 0 | 5 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 160 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)
+- 159 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)
 
 ## Integrated
 
@@ -135,6 +135,7 @@ The physical-device suite may **not** start:
 | MIDI-004 | MIDI CC scaling | `6ac0c21c` | `None` |
 | MIDI-006 | MIDI note triggers | `4bad23aa` | `None` |
 | MIDI-007 | MIDI scene selection | `42658ec3d3d7` | `feature/midi-007` |
+| MIDI-008 | MIDI transport mapping | `265ddd1401f9` | `feature/midi-008` |
 | MOD-001 | Typed parameter registry | `304f3bce431a` | `feature/mod-001` |
 | MOD-002 | Audio feature binding | `006678f3d7a5` | `feature/mod-002` |
 | MOD-003 | Linear mapping | `29cd3bbb1e12` | `feature/mod-003` |
@@ -1259,7 +1260,7 @@ None.
 - `swift test --package-path Packages/ImportFuzz`: pass at `0d3f193e7aea` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-007/20261114T092047/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/PerformanceControl`: pass at `0d3f193e7aea` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-007/20261114T092047/swift-test_PerformanceControl.log`)
 
-### MIDI-008 MIDI transport mapping (unit_passed)
+### MIDI-008 MIDI transport mapping (integrated)
 - `python3 scripts/check_compliance.py`: pass at `21f8785505c8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-008/20261114T100415/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `21f8785505c8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-008/20261114T100415/docs.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `21f8785505c8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-008/20261114T100415/swift-test_ImportFuzz.log`)
