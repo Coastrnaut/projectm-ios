@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T20:14:02Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T20:21:52Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,20 +9,21 @@
 
 | State | Features |
 |---|---|
-| audited | 107 |
-| implementing | 2 |
-| built | 5 |
+| audited | 104 |
+| implementing | 5 |
+| built | 4 |
+| unit_passed | 1 |
 | integrated | 211 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | built | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 29 | 1 | 3 | 118 | 0 |
-| P2 | 67 | 1 | 2 | 9 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 0 | 84 | 1 |
+| P1 | 26 | 4 | 2 | 1 | 118 | 0 |
+| P2 | 67 | 1 | 2 | 0 | 9 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -859,6 +860,14 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `ccc35e86202b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-002/20261113T232519/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `ccc35e86202b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-002/20261113T232519/swift-test_ShowControl.log`)
 - `post-merge (CAM-002 + AUD-015): projectM-iOSTests 430 + FrontCamera/Camera/BackgroundPolicy/Status/SessionRecovery UI tests 15`: pass at `ad0aebe2` (log `.autonomous/logs/integration/cam-002-aud-015/app-tests.log`)
+
+### CAM-003 Camera lens selection (built)
+- `python3 scripts/check_compliance.py`: pass at `04d42e64881d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-003/20261114T151242/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `04d42e64881d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-003/20261114T151242/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `04d42e64881d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-003/20261114T151242/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `04d42e64881d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-003/20261114T151242/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `04d42e64881d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-003/20261114T151242/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: exit 1 at `04d42e64881d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-003/20261114T151242/swift-test_Compositor.log`)
 
 ### CAM-007 Camera crop and rotation (integrated)
 - `python3 scripts/check_compliance.py`: pass at `bbfa49c59ca0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-007/20261114T001920/compliance.log`)
@@ -2503,3 +2512,18 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `0116459b31c6` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-007/20261114T143158/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `0116459b31c6` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-007/20261114T143158/swift-test_VisualGenerators.log`)
 - `post-merge: projectM-iOSTests 904 + UI 1 (mandala)`: pass at `8bdb0122` (log `.autonomous/logs/integration/batch45/app-tests.log`)
+
+### VIS-008 Particle fountain (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/swift-test_ShowControl.log`)
+- `swift test --package-path Packages/VisualGenerators`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/swift-test_VisualGenerators.log`)

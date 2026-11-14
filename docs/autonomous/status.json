@@ -11,10 +11,11 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 29,
-   "built": 3,
-   "implementing": 1,
-   "integrated": 118
+   "audited": 26,
+   "built": 2,
+   "implementing": 4,
+   "integrated": 118,
+   "unit_passed": 1
   },
   "P2": {
    "audited": 67,
@@ -27,11 +28,12 @@
   }
  },
  "by_state": {
-  "audited": 107,
-  "built": 5,
-  "implementing": 2,
+  "audited": 104,
+  "built": 4,
+  "implementing": 5,
   "integrated": 211,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -761,7 +763,7 @@
    "state": "integrated"
   },
   "CAM-003": {
-   "attempts": 0,
+   "attempts": 1,
    "branch": "feature/cam-003",
    "branch_sha": "04d42e64",
    "error_category": null,
@@ -2162,13 +2164,13 @@
   },
   "PERF-012": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/perf-012",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "PERF-013": {
    "attempts": 0,
@@ -2592,13 +2594,13 @@
   },
   "REC-011": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/rec-011",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "REC-012": {
    "attempts": 0,
@@ -2932,13 +2934,13 @@
   },
   "SHOW-002": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/show-002",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "SHOW-003": {
    "attempts": 0,
@@ -3293,12 +3295,12 @@
   "VIS-008": {
    "attempts": 0,
    "branch": "feature/vis-008",
-   "branch_sha": "d7369ee0",
+   "branch_sha": "a91aca48785bc3b2bbd8314ac92b685e10ddcbf3",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "built"
+   "state": "unit_passed"
   },
   "VIS-009": {
    "attempts": 0,
@@ -4503,5 +4505,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T20:14:02Z"
+ "updated": "2026-11-14T20:21:52Z"
 }
