@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Clarified 2026-11-14
 
 **Input**: User description: "Implement PERF-013 (Audio-render synchronization) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Track age of analyzed audio features at frame presentation." Acceptance, verbatim:
@@ -132,3 +132,35 @@ brings the age error within budget in the documented time without overshooting; 
   the intended AUD-013 offset are outside the measured age (the offset is shown beside it).
 - Drift is constant within a session (crystal tolerance); steps come from route or offset changes.
 - Simulator results are not performance evidence; S5 is checked on D1 last.
+
+## Clarifications
+
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under the owner's standing approval (owner rules 4 and 9); each answer is the conservative,
+local-first option.
+
+- Q: From which moment is a feature frame's age measured? → A: From the bus's host time for the frame's audio
+  (ANL-016-D2: when the audio entered analysis, mapped through the session anchor), corrected for drift. Delivery
+  latency before the analysis tap is not observable without new capture hooks and is excluded; the AUD-013 offset is
+  intended delay and is shown beside the age, not added to it (PERF-013-R1, R8).
+- Q: What does the drift correction change? → A: Only the meter's sample-to-host mapping used to measure age (and
+  reported). The visuals keep consuming the newest frame as today; nothing re-times what is drawn and nothing reaches
+  projectM (Constitution VIII). A future consumer may read the corrected mapping (PERF-013-R5, R11).
+- Q: How is drift estimated robustly against jittery arrivals? → A: Arrival residual = first-read host time − bus host
+  time. Residuals are grouped in 1 s buckets of audio time and each bucket keeps its minimum (arrival jitter is
+  one-sided: frames are never early). A least-squares line through up to 64 bucket minima gives the drift (ppm). At
+  least 8 buckets are needed for a verdict; detection at ≥ 50 ppm, cleared below 25 ppm (hysteresis). A bucket more
+  than 4 ms off the previous one's drift prediction is a latency step: the buckets restart, the applied correction
+  stays (PERF-013-R3, R4, R6).
+- Q: What is the correction budget? → A: Correction target = estimated drift × audio time since the session start;
+  the applied correction moves toward it by at most 0.25 ms per presented frame and never past it. Budget: with
+  ±500 ppm drift, age error ≤ 1 ms from 10 s of audio on, until at least 60 s; no drift → no correction
+  (PERF-013-R5, S1-S3).
+- Q: Does the PERF-012 report need a new schema version for the `audioSync` section? → A: No. PERF-012 was
+  integrated on 2026-11-14 and has not shipped in any release, so no version 1 report exists outside development.
+  The optional section is added to schema version 1 (contract amended, the copy kept equal, `additionalProperties:
+  false` kept). Recorded in the PERF-012 contract's description (PERF-013-R9).
+- Q: Where are the signposts emitted? → A: On the overlay refresh (main thread, once a second) when the drift verdict
+  changes, as `DiagnosticsLog` Points of Interest events with numbers only; never from the frame path or an audio
+  callback (PERF-013-R10).
