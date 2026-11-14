@@ -175,6 +175,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     }
     /// SCN-010: undo and redo of scene edits (in memory only).
     @ObservationIgnored let sceneHistory = SceneHistoryCoordinator()
+    /// SCN-008: named parameter snapshots of the current scene (AppCoordinator+SceneSnapshots.swift).
+    @ObservationIgnored let sceneSnapshots = SceneSnapshotCoordinator()
     /// CMP-015: the layer inspector's composites (a scene input) and transient solo/mute.
     let layers = LayerInspectorCoordinator()
     /// SCN-002: the current scene's autosave (nil only if its folder cannot be made).
@@ -591,6 +593,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         UITestLayerInspectorFixture.seedIfRequested(self)   // CMP-015: LayerInspectorUITests (before the history starts)
         #endif
         connectSceneHistory()   // SCN-010: starts from the restored (or fresh) scene
+        connectSceneSnapshots()   // SCN-008
         midiMappings.applyValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.nativeVisual?.externalValues = values }   // MIDI-003-R8
         #if DEBUG
         UITestShowFixture.seedIfRequested(self)   // SHOW-001: ShowCueUITests

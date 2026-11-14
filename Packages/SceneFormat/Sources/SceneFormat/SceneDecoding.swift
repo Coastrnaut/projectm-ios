@@ -139,11 +139,19 @@ struct SceneDecoder {
             for (i, item) in try array(value, base).enumerated() { list.append(try SceneMacroEntry.decode(item, path: ScenePath.index(base, i))) }
             macros = list
         }
+        var snapshots: [SceneSnapshotEntry]?   // SCN-008
+        if let value = o["snapshots"] {
+            let base = ScenePath.key(root, "snapshots")
+            var list: [SceneSnapshotEntry] = []
+            for (i, item) in try array(value, base).enumerated() { list.append(try SceneSnapshotEntry.decode(item, path: ScenePath.index(base, i))) }
+            snapshots = list
+        }
 
         let known: Set<String> = ["format", "version", "id", "name", "layers", "parameters", "bindings", "modulation", "assets", "groups",
-                                  "effects", "triggers", "lfos", "macros"]
+                                  "effects", "triggers", "lfos", "macros", "snapshots"]
         return SceneDocument(id: id, name: name, layers: layers, parameters: parameters, bindings: bindings,
-                             modulation: modulation, assets: assets, groups: groups, effects: effects, triggers: triggers, lfos: lfos, macros: macros, extra: o.filter { (key: String, _: SceneJSON) -> Bool in !known.contains(key) })
+                             modulation: modulation, assets: assets, groups: groups, effects: effects, triggers: triggers, lfos: lfos, macros: macros,
+                             snapshots: snapshots, extra: o.filter { (key: String, _: SceneJSON) -> Bool in !known.contains(key) })
     }
 
     /// Count limits, before any typed decoding (SCN-001-R8). Wrong types are left to typed decoding.
@@ -166,6 +174,7 @@ struct SceneDecoder {
         try check("triggers", o["triggers"]?.arrayValue?.count, SceneLimits.maximumTriggerEntries)   // MOD-006
         try check("lfos", o["lfos"]?.arrayValue?.count, SceneLimits.maximumLFOEntries)   // MOD-007
         try check("macros", o["macros"]?.arrayValue?.count, SceneLimits.maximumMacroEntries)   // MOD-010
+        try check("snapshots", o["snapshots"]?.arrayValue?.count, SceneLimits.maximumSnapshotEntries)   // SCN-008
         let groups = o["groups"]?.arrayValue   // CMP-011
         try check("groups", groups?.count, SceneLimits.maximumGroups)
         for (i, group) in (groups ?? []).enumerated() {

@@ -99,6 +99,22 @@ final class SceneHistoryCoordinator {
         self.history = history
     }
 
+    /// SCN-008-R6 (research SCN-008-D5): records the current inputs as one step named `label` (no coalescing key)
+    /// and closes coalescing; the observation callback that follows finds equal bytes and records nothing.
+    /// Call `endCoalescing()` before the writes so earlier edits stay their own steps.
+    func recordStep(label: String) {
+        guard var history else { return }
+        let now = inputs()
+        let previous = history.current.value
+        if now.photoID != previous.photoID || now.videoID != previous.videoID {
+            restart()   // R9: the stored media is not undoable (a recall never changes it)
+            return
+        }
+        history.record(state(now), label: label, coalescingKey: nil)
+        history.endCoalescing()
+        self.history = history
+    }
+
     /// A boundary: a slider drag ended or Settings closed.
     func endCoalescing() {
         capture()

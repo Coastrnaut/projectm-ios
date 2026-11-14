@@ -94,7 +94,10 @@ final class VideoVisualHost: PresentationBoundResource, CompositorVisualHost {
     /// MED-003: the loop region (nil: the whole file).
     var loopRegion: VideoLoopRegion? {
         get { video.loopRegion }
-        set { video.loopRegion = newValue }
+        set {
+            MediaLoadSpy.shared.note(.video)   // SCN-008: a seek
+            video.loopRegion = newValue
+        }
     }
 
     /// MED-004: the playback speed (applied from the next frame, no decoder restart).
@@ -127,7 +130,10 @@ final class VideoVisualHost: PresentationBoundResource, CompositorVisualHost {
     /// What the video layer plays.
     var content: VideoLayerContent {
         get { video.content }
-        set { video.content = newValue }
+        set {
+            MediaLoadSpy.shared.note(.video)   // SCN-008: a new decode
+            video.content = newValue
+        }
     }
 
     var barCount: SpectrumBarCount {
@@ -172,6 +178,7 @@ final class VideoVisualHost: PresentationBoundResource, CompositorVisualHost {
             }
         }
         let analyzer = try LiveBandAnalyzer(barCount: barCount)
+        MediaLoadSpy.shared.note(.host)   // SCN-008: a new visual instance
         return VideoVisualHost(device: device, queue: queue, video: video, spectrum: spectrum, compositor: compositor,
                                analyzer: analyzer, reader: reader)
     }

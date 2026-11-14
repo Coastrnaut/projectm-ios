@@ -329,6 +329,7 @@ struct SettingsView: View {
                                text: Self.percent(settings.glowThreshold), inspect: VisualParameterIDs.bloomThreshold)
                 }
             }
+            if let layerInspector { SceneSnapshotRows(snapshots: layerInspector.sceneSnapshots) }   // SCN-008-R9: under what it holds
         } header: {
             Text("Visual")
         } footer: {

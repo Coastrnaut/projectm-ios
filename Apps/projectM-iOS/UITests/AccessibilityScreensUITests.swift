@@ -277,7 +277,7 @@ final class AccessibilityScreensUITests: XCTestCase {
         try audit("settings")
 
         let link = app.buttons["showEditorLink"]
-        XCTAssertTrue(app.reveal(link), "the Show row is reachable")
+        XCTAssertTrue(app.reveal(link, long: true), "the Show row is reachable (several screens down)")
         requireControls([("showEditorLink", .button)], screen: "settings")
         link.tap()
         XCTAssertTrue(app.navigationBars["Show"].appears(within: 5))

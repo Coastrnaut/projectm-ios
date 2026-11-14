@@ -232,6 +232,9 @@ extension SceneDocument {
         if let triggers { issues += SceneTriggerEntry.read(triggers).issues }   // MOD-006 (warnings)
         if let lfos { issues += SceneLFOEntry.read(lfos).issues }   // MOD-007 (warnings)
         if let macros { issues += SceneMacroEntry.read(macros, registry: registry).issues }   // MOD-010 (warnings)
+        if let snapshots {   // SCN-008 (warnings)
+            issues += SceneSnapshotEntry.read(snapshots).issues + SceneSnapshotEntry.unknownParameters(snapshots, registry: registry)
+        }
     }
 }
 
