@@ -41,6 +41,8 @@ CHECKED = [
     "Coordinators/RecentPresetsCoordinator.swift",     # PRE-006-R6: history changes announce through the announcer
     "Views/RecentPresetsView.swift",                   # PRE-006-R6
     "Views/RecentHistorySection.swift",                # PRE-006-R6
+    "Coordinators/PresetCoordinator+Audition.swift",   # PRE-010-R9: previews announce on the library lane
+    "Views/PresetAuditionBar.swift",                   # PRE-010-R9
     "Coordinators/MIDIMappingCoordinator.swift",       # MIDI-003-R11: learn announces through the announcer
     "Coordinators/MIDIMappingCoordinator+Notes.swift", # MIDI-006-R9: note learn announces through the announcer
     "Coordinators/MIDINoteActionPerformer.swift",      # MIDI-006-R9: triggers add no announcement of their own

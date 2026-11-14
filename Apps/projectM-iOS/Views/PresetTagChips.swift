@@ -71,7 +71,7 @@ struct TaggedPresetList: View {
             Text(PresetCoordinator.taggedEmptyText).accessibilityIdentifier("taggedEmpty")
         }
         ForEach(listing) { (preset: IndexedPreset) in
-            PresetRow(presets: presets, preset: preset, showsPack: true) { onChoose(preset, scope) }
+            PresetRow(presets: presets, preset: preset, showsPack: true, previewScope: scope) { onChoose(preset, scope) }
         }
     }
 }

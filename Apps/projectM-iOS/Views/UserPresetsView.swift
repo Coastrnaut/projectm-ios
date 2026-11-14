@@ -76,7 +76,8 @@ struct UserPresetsView: View {
                 }
                 ForEach(playableRows, id: \.record.id) { row in
                     PresetRow(presets: presets, preset: row.indexed, showsPack: false,
-                              user: PresetRow.UserActions(info: { showingInfo = row.record }, remove: { removing = row.record })) {
+                              user: PresetRow.UserActions(info: { showingInfo = row.record }, remove: { removing = row.record }),
+                              previewScope: .user) {
                         onChoose(row.indexed, .user)
                     }
                 }

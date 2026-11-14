@@ -54,6 +54,9 @@ public struct RecordingStatistics: Sendable, Equatable {
     /// REC-004: audio frames (44.1 kHz) appended, and dropped because the encoder was not ready.
     public var audioFramesWritten = 0
     public var audioFramesDropped = 0
+    /// REC-006-R4, D3: output slots (on the frame grid, between the first and last appended frame) that got no
+    /// frame: a stall, a render loop slower than the target, or any frame dropped above. Not filled by repeats.
+    public var droppedSlots = 0
 
     public init() {}
 
