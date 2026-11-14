@@ -40,7 +40,7 @@ o_i is continuous at both boundaries (s = 1 at t·m_v = 1, so B starts at t·v_i
 ends at 1), so it is a continuous piecewise function with non-negative slopes: non-decreasing in t. The
 final clamp is monotonic. Output luminance is min(Y, 1) in every region and Y increases with every input
 channel (positive weights), so output luminance never decreases when any input channel increases. Not
-claimed: that every output channel is non-decreasing in every input channel (raising red can lower green's
+claimed: that every output channel is non-decreasing in every input channel (raising one channel can lower another channel's
 output in region B, because the pixel desaturates). Tests: the reference over a ray grid and 10,000 random
 colours (FX-002-S5), the GPU gradient (S1).
 
