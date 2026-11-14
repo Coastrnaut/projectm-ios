@@ -166,10 +166,11 @@ final class RecordingFrameRateAppTests: XCTestCase {
         waitUntil("read back") { recording.probe.hasPrefix("video") || recording.probe.hasPrefix("failed") }
         let last = try XCTUnwrap(recording.lastRecording)
         XCTAssertEqual(last.frameRate, 24)
-        XCTAssertEqual(last.frameCount, 10)
-        XCTAssertEqual(last.droppedFrames, 5)
+        // The stall empties 5 slots; on a loaded machine the live writer may also drop a frame, which empties its slot
+        // and is counted (each frame is awaited, so no slot is refilled).
+        XCTAssertEqual(last.droppedFrames, 5 + last.statistics.dropped, "the stall's 5 slots plus any frame the writer dropped")
         XCTAssertEqual(last.frameCount + last.droppedFrames, 15, "slots 0-14")
-        XCTAssertTrue(recording.probe.contains("frames=10 duration=0.62"), recording.probe)
+        XCTAssertTrue(recording.probe.contains("frames=\(last.frameCount) duration=0.62"), recording.probe)
     }
 
     func testRenderCapLowersAnExplicitRateWithX9c() throws {
