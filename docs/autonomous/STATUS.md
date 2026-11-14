@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T16:45:22Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T16:48:20Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,9 +10,9 @@
 | State | Features |
 |---|---|
 | audited | 132 |
-| implementing | 9 |
+| implementing | 8 |
 | unit_passed | 1 |
-| integrated | 183 |
+| integrated | 184 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -20,14 +20,14 @@
 | Priority | audited | implementing | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 49 | 8 | 1 | 93 | 0 |
+| P1 | 49 | 7 | 1 | 94 | 0 |
 | P2 | 72 | 1 | 0 | 6 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 142 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-011, ANL-012)
+- 141 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-011, ANL-012)
 
 ## Integrated
 
@@ -216,6 +216,7 @@ The physical-device suite may **not** start:
 | VIS-002 | Linear spectrum | `c2b2f75c11bb` | `feature/vis-002` |
 | VIS-003 | Waveform oscilloscope | `2d758a4` | `feature/vis-003` |
 | VIS-004 | Lissajous scope | `38172fff` | `feature/vis-004` |
+| VIS-005 | Radial waveform | `9bbd8af54c94` | `feature/vis-005` |
 
 ## Proved already implemented
 
@@ -1495,6 +1496,17 @@ None.
 - `swift test --package-path Packages/PresentationLifecycle`: pass at `b233fd39e01c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-002/20261114T101841/swift-test_PresentationLifecycle.log`)
 - `xcodebuild -scheme Rendering-Package -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `b233fd39e01c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-002/20261114T101841/sim-test_Rendering.log`)
 
+### OUT-004 Aspect correction (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `24d0995cbd79` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-004/20261114T114533/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `24d0995cbd79` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-004/20261114T114533/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `24d0995cbd79` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-004/20261114T114533/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `24d0995cbd79` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-004/20261114T114533/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `24d0995cbd79` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-004/20261114T114533/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `24d0995cbd79` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-004/20261114T114533/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `24d0995cbd79` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-004/20261114T114533/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/PresentationLifecycle`: pass at `24d0995cbd79` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-004/20261114T114533/swift-test_PresentationLifecycle.log`)
+- `xcodebuild -scheme Rendering-Package -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `24d0995cbd79` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-004/20261114T114533/sim-test_Rendering.log`)
+
 ### OUT-010 Output blackout isolation (integrated)
 - `python3 scripts/check_compliance.py`: pass at `e7b40368ae98` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-010/20261113T140140/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `e7b40368ae98` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-010/20261113T140140/docs.log`)
@@ -2100,7 +2112,7 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `a06638f89245` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-004/20261114T093752/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `a06638f89245` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-004/20261114T093752/swift-test_VisualGenerators.log`)
 
-### VIS-005 Radial waveform (unit_passed)
+### VIS-005 Radial waveform (integrated)
 - `python3 scripts/check_compliance.py`: pass at `8f2ddb1d7482` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-005/20261114T114011/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `8f2ddb1d7482` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-005/20261114T114011/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `8f2ddb1d7482` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-005/20261114T114011/script-tests.log`)
