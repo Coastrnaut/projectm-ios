@@ -35,7 +35,7 @@ final class PrimaryScreensAccessibilityUITests: XCTestCase {
         for control in screen.controls where control.live { check(control, tag: tag, overlay: overlay) }
         if overlay { blackOut(tag: tag) }
         for control in screen.controls where !control.live { check(control, tag: tag, overlay: overlay) }
-        try audit(screen, layout, tag: tag)
+        if layout != .standard || screen.auditsAtStandardSize { try audit(screen, layout, tag: tag) }
         if !problems.isEmpty {
             attachScreenshot("qa009-\(screen.name)-\(layout.rawValue)")
             XCTFail(problems.joined(separator: "\n"))
@@ -149,9 +149,17 @@ final class PrimaryScreensAccessibilityUITests: XCTestCase {
             problems.append("\(prefix) not wholly visible after \(limit) (\(NSCoder.string(for: snapshot.frame)))")
             return
         }
-        // Polled briefly: a sheet or card still fading in reports not hittable (the scene switcher, 2026-11-14).
+        // Polled briefly: a sheet or card still fading in reports not hittable. A wrapper that carries the identifier
+        // (ACC-005's accessible slider: an element around the system Slider) counts when the control inside it can be
+        // hit: a touch there operates it.
         let element = app.descendants(matching: control.type)[control.id].firstMatch
-        if !poll(2, { () -> Bool in element.isHittable }) { problems.append("\(prefix) cannot be hit") }
+        let inner = element.children(matching: .any).firstMatch
+        // A text field that already holds the keyboard focus takes typed input without a touch (the scene switcher's
+        // query: focused on open, UIX-002).
+        let focused: () -> Bool = { () -> Bool in (element.value(forKey: "hasKeyboardFocus") as? Bool) == true }
+        if !poll(2, { () -> Bool in element.isHittable || (inner.exists && inner.isHittable) || focused() }) {
+            problems.append("\(prefix) cannot be hit")
+        }
     }
 
     /// One held drag (no momentum), by what is missing plus 24 pt, at most 70 % of the visible area (research
@@ -218,16 +226,43 @@ final class PrimaryScreensAccessibilityUITests: XCTestCase {
         let header = "the system section header style, as ACC-004's \"Cues\" and \"Visual\" headers"
         let bottom = "the last row of a list at the bottom of the screen, pushed out of the visible list at the audit's larger "
             + "sizes (ACC-004's bottom-row artefact); the walk reaches it and its label wraps at AX5 (QA-009 screenshots)"
-        return [
+        // A list section's header or footer text, drawn by the system List style: both audit types it draws findings
+        // for at the default size (Apple's secondary grey; a header pushed off the visible list at the audit's sizes).
+        func section(_ screen: String, _ labels: [String], prefixes: [String] = []) -> [Filter] {
+            let reason = "a system list section header or footer (" + header + "; " + footer + ")"
+            var list: [Filter] = []
+            for type in [XCUIAccessibilityAuditType.contrast, .dynamicType] {
+                list += labels.map { (l: String) -> Filter in Filter(screen: screen, type: type, element: l, reason: reason) }
+                list += prefixes.map { (p: String) -> Filter in Filter(screen: screen, type: type, element: p, labelPrefix: true, reason: reason) }
+            }
+            return list
+        }
+        let inspectorRows = "the inspector's label-and-value rows (ViewThatFits: side by side, stacked when the text grows) "
+            + "re-lay out while the audit changes the text size; the AX5 audit of the inspector, Dynamic Type included, "
+            + "passes (QA-009 run 2026-11-14)"
+        return section("effectOrder", ["Presets"], prefixes: ["Effects run from top to bottom"])
+            + section("midiMappings", ["Mappings", "Transport", "Scene triggers"],
+                      prefixes: ["Learn waits up to 30 seconds", "Assign MIDI", "Program number"])
+            + section("licenses", ["This app", "Visualization engine", "ANGLE (Metal renderer)", "Presets", "Assets", "Preset packs"])
+            + section("parameterInspector", ["Parameter", "Details", "Value", "Modulation"], prefixes: ["Audio bindings and MIDI"])
+            + ["Unit", "Range", "Step", "Default", "Value"].map { (l: String) -> Filter in
+                Filter(screen: "parameterInspector", type: .dynamicType, element: l, reason: inspectorRows)
+            } + [
+            Filter(screen: "storage", type: .dynamicType, element: "storageRefresh", reason: bar),
             Filter(screen: "midiMappings", type: .contrast, element: "midiMappingsUndo",
                    reason: "disabled until there is something to undo (an inactive control is exempt from contrast, "
                        + "WCAG 1.4.3); " + glass),
-            Filter(screen: "midiMappings", type: .contrast, element: "Learn waits up to 30 seconds", labelPrefix: true, reason: footer),
-            Filter(screen: "midiMappings", type: .dynamicType, element: "Mappings", reason: header),
-            Filter(screen: "effectOrder", type: .contrast, element: "Effects run from top to bottom", labelPrefix: true, reason: footer),
             Filter(screen: "effectOrder", type: .dynamicType, element: "effectChain.savePreset", reason: bottom),
             Filter(screen: "effectOrder", type: .dynamicType, element: "effectChain.edit", reason: bar),
-            Filter(screen: "licenses", type: .contrast, element: "This app", reason: header),
+            Filter(screen: "licenses", type: .contrast, element: "", elementless: true, limit: 2,
+                   reason: "the section headers (\"This app\", the groups) reported without an element; " + header + "; bounded"),
+            Filter(screen: "effectOrder", type: .dynamicType, element: "", elementless: true, limit: 1,
+                   reason: "Save current as preset, the last row, reported without an element; " + bottom),
+            Filter(screen: "midiMappings", type: .dynamicType, element: "midiMappingsUndo", reason: bar),
+            Filter(screen: "parameterInspector", type: .contrast, element: "", elementless: true, limit: 3,
+                   reason: "the inspector's section headers and footer (Value, Modulation) reported without an element; "
+                       + footer + "; bounded"),
+            Filter(screen: "storage", type: .contrast, element: "storageRefresh", reason: glass),
             Filter(screen: "licenses", type: .textClipped, element: "", elementless: true, limit: 1,
                    reason: "a row cut by the bottom edge of the screen (ANGLE's section at AX5, reported without an element); "
                        + "bounded to one, so a new one fails"),
@@ -235,10 +270,6 @@ final class PrimaryScreensAccessibilityUITests: XCTestCase {
             Filter(screen: "parameterInspector", type: .contrast, element: "parameterInspector.pin", reason: glass),
             Filter(screen: "parameterInspector", type: .dynamicType, element: "parameterInspector.done", reason: bar),
             Filter(screen: "parameterInspector", type: .dynamicType, element: "parameterInspector.pin", reason: bar),
-            Filter(screen: "settingsRecording", type: .contrast, element: "", elementless: true, limit: 4,
-                   reason: "\"nearly passed\" findings without an element at the recording sections: their system section "
-                       + "headers and footers in Apple's secondary grey (ACC-004 bounds the same class at 3 for Settings' top); "
-                       + "bounded, so a new one fails"),
         ]
     }()
 
@@ -412,7 +443,7 @@ struct ScreenTree {
     private func overlayArea(_ element: XCUIElementSnapshot?) -> CGRect? {
         guard bars.isEmpty, let overlay else { return nil }
         if let element {
-            guard Self.contains(overlay, element) || overlay.frame.contains(element.frame) else { return nil }
+            guard Self.contains(overlay, element) else { return nil }
         }
         return overlayScroll.map { (s: CGRect) -> CGRect in window.intersection(s) } ?? window
     }

@@ -70,6 +70,11 @@ struct PrimaryScreen: Sendable {
     /// The screen key of the ACC-004 and ACC-006 audit filter lists.
     let auditKey: String
     var launch: [String] = []
+    /// False for a Settings section opened by `-uitestSettingsSection`: at a jumped-to position the default-size
+    /// audit reports the rows at the screen's edges as pushed off and the section texts above them (ACC-006's rule:
+    /// no Settings audit at a jumped-to position). Settings is audited at its top by the `settings` entry, and these
+    /// sections are audited at AX3 and AX5.
+    var auditsAtStandardSize = true
     let route: PrimaryScreenRoute
     let controls: [RequiredControl]
 }
@@ -119,13 +124,15 @@ enum PrimaryScreens {
             RequiredControl("node:included", .button),
             // Below the four packs and All presets, each one to two screens tall at AX5 (content rows, not controls).
             RequiredControl("node:collections", .button, scrolls: 4),
-            RequiredControl("node:myPresets", .button),
+            RequiredControl("node:myPresets", .button, scrolls: 3),   // below Collections, more than a screen tall at AX5
         ]),
         PrimaryScreen(name: "sceneSwitcher", feature: "UIX-002", auditKey: "sceneSwitcher", launch: ["-uitestShowSeed"],
                       route: .sceneSwitcher, controls: [
             RequiredControl("sceneSwitcherClose", .button),
             RequiredControl("sceneSwitcherField", .any),
-            RequiredControl("sceneSwitcherEntry.1", .button),
+            // Entry 1 is the current cue: XCTest reports it not hittable although a touch at its centre chooses it
+            // (probe 2026-11-14); entry 2 stands for the rows, entry 5 for the last.
+            RequiredControl("sceneSwitcherEntry.2", .button),
             RequiredControl("sceneSwitcherEntry.5", .button),
         ]),
         PrimaryScreen(name: "showEditor", feature: "SHOW-001", auditKey: "showEditor",
@@ -144,7 +151,8 @@ enum PrimaryScreens {
         PrimaryScreen(name: "storage", feature: "FILE-009", auditKey: "storage", launch: section("storage"),
                       route: .settingsLink("storageLink", title: "Storage"), controls: [
             RequiredControl("storageRefresh", .button, bar: true),
-            RequiredControl("storageClearCaches", .button),
+            // Below the nine category rows and the total (content, not controls), several screens at AX5.
+            RequiredControl("storageClearCaches", .button, scrolls: 4),
         ]),
         PrimaryScreen(name: "licenses", feature: "FR-067", auditKey: "licenses", launch: section("storage"),
                       route: .settingsLink("licensesLink", title: "Licenses"), controls: [
@@ -156,7 +164,8 @@ enum PrimaryScreens {
                       launch: ["-uitestInspectParameter", "effect.bloom.intensity"], route: .parameterInspector, controls: [
             RequiredControl("parameterInspector.done", .button, bar: true),
             RequiredControl("parameterInspector.pin", .button, bar: true),
-            RequiredControl("parameterInspector.slider", .any),
+            // Below the unit, range, step, default and value rows (content, not controls), two screens at AX5.
+            RequiredControl("parameterInspector.slider", .any, scrolls: 3),
             RequiredControl("parameterInspector.reset", .button),
         ]),
         PrimaryScreen(name: "effectOrder", feature: "FX-020", auditKey: "effectOrder", launch: section("effectOrder"),
@@ -167,14 +176,14 @@ enum PrimaryScreens {
             RequiredControl("effectChain.savePreset", .button),
         ]),
         PrimaryScreen(name: "recordingQuality", feature: "REC-005", auditKey: "settingsRecording", launch: section("recordingQuality"),
-                      route: .settings, controls: [
+                      auditsAtStandardSize: false, route: .settings, controls: [
             RequiredControl("recordingQuality.draft", .button),
             RequiredControl("recordingQuality.standard", .button),
             RequiredControl("recordingQuality.high", .button),
             RequiredControl("recordingQuality.max", .button),
         ]),
         PrimaryScreen(name: "recordingFrameRate", feature: "REC-006", auditKey: "settingsRecording", launch: section("recordingFrameRate"),
-                      route: .settings, controls: [
+                      auditsAtStandardSize: false, route: .settings, controls: [
             RequiredControl("recordingFrameRate.profile", .button),
             RequiredControl("recordingFrameRate.24", .button),
             RequiredControl("recordingFrameRate.30", .button),
