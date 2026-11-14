@@ -120,8 +120,9 @@ exposure, the ultra wide lens runs on automatic exposure, the switch is off.
   automatic mode the camera reports; the switch shows the reported state (CAM-004-R5).
 - The camera is busy (configuration cannot be taken): the state is unchanged and the switch shows
   the real state; no crash, no notice.
-- An interruption while locked: the session is kept by the system; the lock stays on the camera and
-  the switch keeps showing the camera's state (disabled while interrupted).
+- An interruption while locked: the session is kept by the system; the lock stays on the camera; the
+  switch is disabled while interrupted (the camera is not running) and shows the camera's state again
+  when the interruption ends.
 - The front camera: governed by the same rules; on many devices it supports locking.
 - No camera at all (simulator, `unavailable`): the row is disabled with "Exposure can be locked while
   the camera is running."; nothing is asked.

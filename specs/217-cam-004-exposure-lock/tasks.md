@@ -24,7 +24,7 @@ under 30 s. Simulator results are never device evidence.
 
 - [ ] CAM-004-T05 [US1] Stand-in: `FakeCameraInput` carries its camera's `FakeCameraExposureDevice` (one per lens and for the front camera, kept by `FakeCameraCaptureSession`, `lockableCameras`) in `Packages/Compositor/Sources/CameraLayer/CameraInputSwitch.swift`; `StubCameraFrameProvider` implements `exposure`/`setExposureLocked` through `CameraExposureControl` on the session's device in `Packages/Compositor/Sources/CameraLayer/StubCameraFrameProvider.swift`
 - [ ] CAM-004-T06 [US1] Real camera: `AVCameraFrameProvider` runs `CameraExposureControl` on its session queue against the session's device input and posts the read-back state (generation-checked) in `Packages/Compositor/Sources/CameraLayer/AVCameraFrameProvider.swift`; capability read from the chosen camera without starting it (research CAM-004-D4)
-- [ ] CAM-004-T07 [US1] Package tests in `Packages/Compositor/Tests/CompositorTests/CameraExposureTests.swift`: control routine (lock, unlock, refused, unsupported: 0 configurations) and stand-in provider (lock/unlock while running read back, each change reported once, no lock while idle)
+- [ ] CAM-004-T07 [US1] Package tests in `Packages/Compositor/Tests/CompositorTests/CameraExposureTests.swift`: control routine (lock, unlock, refused, unsupported: 0 configurations) and stand-in provider (lock/unlock while running read back, each change reported once, 0 mode changes outside a configuration (R4), no lock while idle or interrupted, `startCount`/`stopCount` unchanged by a lock (R9))
 
 ## Phase 4: User Story 2 - Learn why the control is not available (P1)
 
@@ -34,7 +34,7 @@ under 30 s. Simulator results are never device evidence.
 - [ ] CAM-004-T09 [US2] Host and coordinator: `CameraVisualHost` forwards `cameraExposure`/`setCameraExposureLocked` and `onExposureChange`, and gives the stand-in its lockable cameras from DEBUG `-uitestCameraExposureLock <list|none>` in `Apps/projectM-iOS/Visuals/CameraVisualHost.swift`; `AppCoordinator.cameraExposure` (observed) is set from the host and reset when the host goes in `Apps/projectM-iOS/Coordinators/AppCoordinator.swift`
 - [ ] CAM-004-T10 [US2] Row: `CameraExposureRow` + `CameraExposureChoice` + coordinator extension (`shownCameraExposure`, `chooseCameraExposureLocked`, note text per contract C4) in `Apps/projectM-iOS/Views/CameraExposureRow.swift`; optional row after the Lens row in `Apps/projectM-iOS/Views/SettingsView.swift`; passed from `Apps/projectM-iOS/Views/VisualizerView.swift`
 - [ ] CAM-004-T11 [US2] App tests in `Apps/projectM-iOS/Tests/CameraExposureAppTests.swift`: note texts for unsupported / not running / running; host with a stand-in: lock through the coordinator reaches the device, unsupported makes 0 configurations; no new key in `AppSettings.allKeys`
-- [ ] CAM-004-T12 [US2] UI test in `Apps/projectM-iOS/UITests/CameraExposureUITests.swift` (stand-in, < 30 s each): supported → switch enabled, on → value "1", off → "0"; `-uitestCameraExposureLock none` → disabled with the explanation
+- [ ] CAM-004-T12 [US2] UI test in `Apps/projectM-iOS/UITests/CameraExposureUITests.swift` (stand-in, < 30 s each): supported → switch enabled, on → value "1", off → "0"; `-uitestCameraExposureLock none` → disabled with the explanation; the switch's label is "Lock exposure" and the note is exposed to accessibility (R11)
 
 ## Phase 5: User Story 3 - The lock never outlives its camera (P2)
 
@@ -61,3 +61,12 @@ T03 and T04 [different files]; T06 alongside T05; T11 and T12 once T10 is done.
 ## Implementation strategy
 
 MVP = US1 + US2 (the roadmap acceptance). US3 completes the safety rules in the same change.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Applied: T07 now asserts R4 (one configuration, 0 changes outside it), R9 (no start/stop from a
+lock) and the interrupted case; T12 asserts R11; the spec's interruption edge case states the switch
+is disabled while interrupted (consistent with R2). Coverage: R1-R11 and S1-S4 each map to at least
+one task (R1, R3, R11: T10/T12; R2, R5: T07/T11; R4: T05-T07; R6, R7: T13/T14; R8: T11/T15; R9: T07;
+R10: T05/T12). T08 is the `{device}` task, listed last because it needs a person. No constitution
+conflicts.
