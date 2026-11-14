@@ -77,6 +77,9 @@
 // no layer rendered and every draw input is unchanged, the previous composite is kept and only the layer passes
 // are skipped (level 2); the flash guard, output, capture and recording run every frame. Global triggers bump
 // the epoch. Output is bit-identical to `isRenderCachingEnabled = false`.
+// CMP-014 (contracts/transition-bus.md in specs/116, ADR-0042): `encodeScene` runs only the stack phase and returns
+// the composite, so a `SceneTransitionBus` can blend two scenes and run one flash guard on the shown frame;
+// `composite(into:)` runs the same phase and then its own guard and output pass, unchanged.
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import FrameCapture
 import Metal
@@ -470,6 +473,54 @@ public final class Compositor {
                           contentScale: Double, reduceFlashing: Bool, audio: LayerAudioContext) -> Bool {
         guard let size = LayerPictureDescriptor(width: output.width, height: output.height),
               let outputPipeline = outputPipeline(for: output.pixelFormat) else { return false }
+        return encodeFrame(size: size, commandBuffer: commandBuffer, presentationTimeNanoseconds: presentationTimeNanoseconds,
+                           contentScale: contentScale, reduceFlashing: reduceFlashing,
+                           audio: audio) { (composite: MTLTexture, frame: LayerFrameContext) -> Bool in
+            guard flashGuard.encode(composite: composite, commandBuffer: commandBuffer, frameDuration: frame.frameDuration,
+                                    reduceFlashing: reduceFlashing) else { return false }
+            let out = MTLRenderPassDescriptor()
+            out.colorAttachments[0].texture = output
+            out.colorAttachments[0].loadAction = .dontCare
+            out.colorAttachments[0].storeAction = .store
+            guard let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: out) else { return false }
+            encoder.label = "CMP-001 output"
+            encoder.setRenderPipelineState(outputPipeline)
+            encoder.setFragmentTexture(composite, index: 0)
+            encoder.setFragmentBuffer(flashGuard.gainBuffer, offset: 0, index: 0)
+            encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
+            encoder.endEncoding()
+            outputCommandBuffer = commandBuffer   // REC-003: `encodeOutput` may follow in this command buffer
+            if let handler = pendingCapture {
+                pendingCapture = nil
+                encodeCapture(composite: composite, size: size, commandBuffer: commandBuffer, handler: handler)
+            }
+            return true
+        }
+    }
+
+    /// CMP-014 (contracts/transition-bus.md in specs/116): the stack phase of one frame only, exactly as
+    /// `composite(into:)` runs it (frame tick, render health, layer renders, CMP-013 reuse, pool tick,
+    /// command-buffer watch). Returns the finished composite (`rgba16Float`, linear premultiplied, owned by
+    /// this compositor and valid in `commandBuffer` until its next frame); no flash guard and no output pass
+    /// run (a `SceneTransitionBus` runs its own). nil when nothing could be encoded.
+    public func encodeScene(width: Int, height: Int, commandBuffer: MTLCommandBuffer, presentationTimeNanoseconds: UInt64,
+                            contentScale: Double, reduceFlashing: Bool, audio: LayerAudioContext) -> MTLTexture? {
+        guard let size = LayerPictureDescriptor(width: width, height: height) else { return nil }
+        var finished: MTLTexture?
+        let ok = encodeFrame(size: size, commandBuffer: commandBuffer, presentationTimeNanoseconds: presentationTimeNanoseconds,
+                             contentScale: contentScale, reduceFlashing: reduceFlashing,
+                             audio: audio) { (composite: MTLTexture, _: LayerFrameContext) -> Bool in
+            finished = composite
+            return true
+        }
+        return ok ? finished : nil
+    }
+
+    /// One frame's stack phase, then `finish` on the finished composite (the guard and output, or nothing);
+    /// a successful `finish` makes the frame finished (watched, its composite inputs noted for CMP-013).
+    private func encodeFrame(size: LayerPictureDescriptor, commandBuffer: MTLCommandBuffer, presentationTimeNanoseconds: UInt64,
+                             contentScale: Double, reduceFlashing: Bool, audio: LayerAudioContext,
+                             finish: (MTLTexture, LayerFrameContext) -> Bool) -> Bool {
         frameTicks &+= 1   // PERF-014-D1
         let tick = frameTicks
         defer { updateHealthState() }
@@ -574,25 +625,7 @@ public final class Compositor {
             composite = stacked
         }
 
-        guard flashGuard.encode(composite: composite, commandBuffer: commandBuffer, frameDuration: frame.frameDuration,
-                                reduceFlashing: reduceFlashing) else { return false }
-
-        let out = MTLRenderPassDescriptor()
-        out.colorAttachments[0].texture = output
-        out.colorAttachments[0].loadAction = .dontCare
-        out.colorAttachments[0].storeAction = .store
-        guard let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: out) else { return false }
-        encoder.label = "CMP-001 output"
-        encoder.setRenderPipelineState(outputPipeline)
-        encoder.setFragmentTexture(composite, index: 0)
-        encoder.setFragmentBuffer(flashGuard.gainBuffer, offset: 0, index: 0)
-        encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
-        encoder.endEncoding()
-        outputCommandBuffer = commandBuffer   // REC-003: `encodeOutput` may follow in this command buffer
-        if let handler = pendingCapture {
-            pendingCapture = nil
-            encodeCapture(composite: composite, size: size, commandBuffer: commandBuffer, handler: handler)
-        }
+        guard finish(composite, frame) else { return false }   // CMP-014: the guard and output, or the bus's
         watch(commandBuffer, tick: tick)
         noteCompositeInputs()   // CMP-013
         finished = true
