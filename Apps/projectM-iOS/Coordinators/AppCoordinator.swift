@@ -271,6 +271,10 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let osc: OSCReceiverCoordinator
     /// MIDI endpoint discovery (MIDI-001): off by default, runs only while enabled and active.
     let midi: MIDIDiscoveryCoordinator
+    /// MIDI-002: the shared MIDI input (receives only while a feature needs it and discovery listens).
+    let midiInput: MIDIInputCoordinator
+    /// MIDI-002: the MIDI Monitor (opened from the MIDI section; `midi.monitor` points here).
+    let midiMonitor: MIDIMonitorCoordinator
     /// REC-001: Save Frame (the shown visual's next frame, to the Files exporter).
     @ObservationIgnored private(set) lazy var frameCapture = FrameCaptureCoordinator { [weak self] () -> FrameCaptureCoordinator.Context in
         guard let self else { return FrameCaptureCoordinator.Context(source: nil, outputLive: false, paused: false) }
@@ -360,6 +364,15 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         #else
         midi = MIDIDiscoveryCoordinator(settings: settings, announce: announceMIDI)
         #endif
+        #if DEBUG
+        let midiInputCoordinator = MIDIInputCoordinator(service: UITestFakeMIDI.inputServiceIfRequested() ?? .system(), discovery: midi)
+        #else
+        let midiInputCoordinator = MIDIInputCoordinator(service: .system(), discovery: midi)
+        #endif
+        let midiMonitorCoordinator = MIDIMonitorCoordinator(input: midiInputCoordinator, discovery: midi)
+        midi.monitor = midiMonitorCoordinator   // MIDI-002-R15
+        midiInput = midiInputCoordinator
+        midiMonitor = midiMonitorCoordinator
         photos = PhotoCoordinator.makeDefault(defaults: defaults)
         videos = VideoCoordinator.makeDefault(defaults: defaults)
         texts = TextOverlayCoordinator.makeDefault(defaults: defaults)

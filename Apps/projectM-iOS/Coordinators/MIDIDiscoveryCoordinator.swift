@@ -9,7 +9,7 @@
 //   shared announcer (`announce`, wired to `AccessibilityAnnouncer` kind `.midi`; MIDI-001-R11). The
 //   first list after a start is silent; the status line states the count.
 // * Nothing is stored except the toggle (`settings.midi.enabled`), and no name is logged (MIDI-001-R10).
-// No MIDI message is received in MIDI-001; this is discovery only (ADR-0038).
+// No MIDI message is received here; MIDI-002's `MIDIInputCoordinator` receives, following this list (ADR-0038).
 import Foundation
 import Observation
 import PerformanceControl
@@ -35,6 +35,10 @@ final class MIDIDiscoveryCoordinator {
     @ObservationIgnored let discovery: MIDIEndpointDiscovery
     @ObservationIgnored private(set) var appIsActive: Bool
     @ObservationIgnored private let announce: @MainActor (String) -> Void
+    /// MIDI-002: called after every state or list refresh (the shared MIDI input follows the listed sources).
+    @ObservationIgnored private var listObservers: [@MainActor () -> Void] = []
+    /// MIDI-002: the input monitor shown from the MIDI section (nil: no monitor row, e.g. in tests).
+    @ObservationIgnored weak var monitor: MIDIMonitorCoordinator?
 
     init(settings: AppSettings, discovery: MIDIEndpointDiscovery = .system(), appIsActive: Bool = true,
          announce: @escaping @MainActor (String) -> Void = { (_: String) -> Void in }) {
@@ -83,9 +87,15 @@ final class MIDIDiscoveryCoordinator {
         refresh()
     }
 
+    /// MIDI-002: `observer` runs on the main actor after each refresh of the state and list.
+    func addListObserver(_ observer: @escaping @MainActor () -> Void) {
+        listObservers.append(observer)
+    }
+
     private func refresh() {
         state = discovery.state
         list = discovery.endpoints
+        for observer in listObservers { observer() }
     }
 
     private func receive(_ update: MIDIDiscoveryUpdate) {

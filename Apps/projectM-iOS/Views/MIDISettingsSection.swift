@@ -1,4 +1,5 @@
-// MIDISettingsSection.swift — the MIDI section of Settings (MIDI-001-R8, R9; contracts/midi-discovery.md C4).
+// MIDISettingsSection.swift — the MIDI section of Settings (MIDI-001-R8, R9; contracts/midi-discovery.md C4) and
+// the MIDI Monitor row (MIDI-002-R15).
 // A small view of its own so SettingsView's body stays small (CI's Xcode 26 type-check budget).
 // No animation; Dynamic Type and VoiceOver come from the standard List section.
 import PerformanceControl
@@ -16,6 +17,10 @@ struct MIDISettingsSection: View {
                 .accessibilityLabel("MIDI status")
                 .accessibilityValue(midi.statusText)
                 .accessibilityIdentifier("midiStatus")
+            if let monitor = midi.monitor {   // MIDI-002-R15: always offered; it explains when listening is off
+                NavigationLink("MIDI Monitor") { MIDIMonitorView(monitor: monitor) }
+                    .accessibilityIdentifier("midiMonitorLink")
+            }
             #if DEBUG
             if UITestFakeMIDI.isRequested { UITestFakeMIDIPanel(rows: midi.rows) }   // above the rows: it never moves
             #endif
