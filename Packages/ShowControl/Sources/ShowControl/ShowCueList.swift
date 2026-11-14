@@ -22,15 +22,18 @@ public struct ShowCue: Sendable, Hashable, Identifiable {
     /// SHOW-004: the transition used for the edge into this cue instead of the scene default (`transition`); nil = use
     /// the scene default. Stored with the cue in the show, never in the scene and never in `transition`.
     public internal(set) var transitionOverride: ShowCueTransition?
+    /// SHOW-005: Next and Previous (manual, timed, quantized) pass over a skipped cue; Go to Cue still reaches it.
+    public internal(set) var skipped: Bool
 
     public init(id: UUID, sceneID: String, label: String, transition: ShowCueTransition? = nil, dwell: ShowCueDwell? = nil,
-                transitionOverride: ShowCueTransition? = nil) {
+                transitionOverride: ShowCueTransition? = nil, skipped: Bool = false) {
         self.id = id
         self.sceneID = sceneID
         self.label = label
         self.transition = transition
         self.dwell = dwell
         self.transitionOverride = transitionOverride
+        self.skipped = skipped
     }
 
     /// SHOW-004-R3: what a step into this cue drives: the override when set, else the scene default (nil = at once).
@@ -52,6 +55,8 @@ public enum ShowStepOutcome: String, Sendable, Hashable {
     case atStart
     /// The show has no cues.
     case empty
+    /// SHOW-005: Next or Previous when every cue is skipped: nothing changes.
+    case allSkipped
     /// Go to a cue ID the show does not have.
     case unknownCue
     /// SHOW-003: the step waits for the next beat or bar (returned by the app's quantized gate only; `ShowCueList` never
@@ -146,15 +151,29 @@ public struct ShowCueList: Sendable, Hashable {
     public var activeCue: ShowCue? { activeIndex.map { (i: Int) -> ShowCue in cues[i] } }
     public var activeSceneID: String? { activeCue?.sceneID }
 
-    /// Whether Next would move (SHOW-001-R13: otherwise the button is unavailable).
-    public var canGoNext: Bool {
-        guard !cues.isEmpty else { return false }
-        guard let index = activeIndex else { return true }
-        return index < cues.count - 1
+    /// Whether Next would move (SHOW-001-R13: otherwise the button is unavailable; SHOW-005: skipped cues do not count).
+    public var canGoNext: Bool { nextIndex() != nil }
+
+    /// Whether Previous would move (SHOW-005: skipped cues do not count).
+    public var canGoPrevious: Bool { previousIndex() != nil }
+
+    /// SHOW-005: every cue is skipped (false for an empty show).
+    public var allSkipped: Bool {
+        !cues.isEmpty && cues.allSatisfy { (cue: ShowCue) -> Bool in cue.skipped }
     }
 
-    /// Whether Previous would move.
-    public var canGoPrevious: Bool { (activeIndex ?? 0) > 0 }
+    /// SHOW-005: the first cue after the active one (or from the top at Standby) that is not skipped.
+    private func nextIndex() -> Int? {
+        let start: Int = (activeIndex ?? -1) + 1
+        guard start < cues.count else { return nil }
+        return cues[start...].firstIndex { (cue: ShowCue) -> Bool in !cue.skipped }
+    }
+
+    /// SHOW-005: the last cue before the active one that is not skipped (nil at Standby).
+    private func previousIndex() -> Int? {
+        guard let index = activeIndex, index > 0 else { return nil }
+        return cues[..<index].lastIndex { (cue: ShowCue) -> Bool in !cue.skipped }
+    }
 
     /// "Cue 2 of 5", or "Standby".
     public var positionText: String {
@@ -170,27 +189,25 @@ public struct ShowCueList: Sendable, Hashable {
 
     // MARK: - Stepping (contract S3)
 
-    /// Standby → cue 1; cue n → cue n + 1; the last cue → `.atEnd` (no wrap).
+    /// Standby → the first cue; cue n → the next cue; the last cue → `.atEnd` (no wrap). SHOW-005: skipped cues are passed
+    /// over; every cue skipped → `.allSkipped`.
     @discardableResult
     public mutating func next() -> ShowStep {
         guard !cues.isEmpty else { return step(.empty) }
-        let target: Int
-        if let index = activeIndex {
-            guard index < cues.count - 1 else { return step(.atEnd) }
-            target = index + 1
-        } else {
-            target = 0
-        }
+        guard !allSkipped else { return step(.allSkipped) }
+        guard let target = nextIndex() else { return step(.atEnd) }
         position = .cue(cues[target].id)
         return step(.moved)
     }
 
-    /// Cue n → cue n − 1; cue 1 and Standby → `.atStart`.
+    /// Cue n → the cue before; the first cue and Standby → `.atStart`. SHOW-005: skipped cues are passed over; every cue
+    /// skipped → `.allSkipped`.
     @discardableResult
     public mutating func previous() -> ShowStep {
         guard !cues.isEmpty else { return step(.empty) }
-        guard let index = activeIndex, index > 0 else { return step(.atStart) }
-        position = .cue(cues[index - 1].id)
+        guard !allSkipped else { return step(.allSkipped) }
+        guard let target = previousIndex() else { return step(.atStart) }
+        position = .cue(cues[target].id)
         return step(.moved)
     }
 
@@ -228,18 +245,18 @@ public struct ShowCueList: Sendable, Hashable {
 
     /// Inserts a cue right after the cue `after` (SCN-003 Duplicate Scene). The label is trimmed; the
     /// position keeps its cue. SCN-007: `transition` is the new cue's transition (a duplicate passes its source's);
-    /// SHOW-002: `dwell` likewise; SHOW-004: `transitionOverride` likewise.
+    /// SHOW-002: `dwell` likewise; SHOW-004: `transitionOverride` likewise; SHOW-005: `skipped` likewise.
     @discardableResult
     public mutating func insert(sceneID: String, label: String, after: UUID, cueID: UUID = UUID(),
                                 transition: ShowCueTransition? = nil, dwell: ShowCueDwell? = nil,
-                                transitionOverride: ShowCueTransition? = nil) throws(ShowEditError) -> ShowCue {
+                                transitionOverride: ShowCueTransition? = nil, skipped: Bool = false) throws(ShowEditError) -> ShowCue {
         guard let index = cues.firstIndex(where: { (cue: ShowCue) -> Bool in cue.id == after }) else { throw .unknownCue(after) }
         guard cues.count < Self.maximumCues else { throw .tooManyCues(limit: Self.maximumCues) }
         guard Self.isSceneID(sceneID) else { throw .invalidSceneID(sceneID) }
         guard let label = Self.normalizedLabel(label) else { throw .invalidLabel }
         guard !cues.contains(where: { (cue: ShowCue) -> Bool in cue.id == cueID }) else { throw .duplicateCueID(cueID) }
         let cue = ShowCue(id: cueID, sceneID: sceneID, label: label, transition: transition, dwell: dwell,
-                          transitionOverride: transitionOverride)
+                          transitionOverride: transitionOverride, skipped: skipped)
         cues.insert(cue, at: index + 1)
         return cue
     }
@@ -272,6 +289,12 @@ public struct ShowCueList: Sendable, Hashable {
         guard let index = cues.firstIndex(where: { (cue: ShowCue) -> Bool in cue.id == cueID }) else { throw .unknownCue(cueID) }
         guard let label = Self.normalizedLabel(label) else { throw .invalidLabel }
         cues[index].label = label
+    }
+
+    /// SHOW-005: marks a cue skipped or not. Never changes the position (skipping the active cue keeps it) or the order.
+    public mutating func setSkipped(_ cueID: UUID, _ skipped: Bool) throws(ShowEditError) {
+        guard let index = cues.firstIndex(where: { (cue: ShowCue) -> Bool in cue.id == cueID }) else { throw .unknownCue(cueID) }
+        cues[index].skipped = skipped
     }
 
     /// SCN-007: sets (or, with nil, removes) a cue's transition. Never changes the position or the order.

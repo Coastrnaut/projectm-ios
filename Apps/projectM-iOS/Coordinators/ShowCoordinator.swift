@@ -39,6 +39,9 @@
 // * SHOW-004: a cue may carry a transition override for the edge into it; `show` drives `cue.effectiveTransition` (the
 //   override, else the SCN-007 scene default) on every step. `setTransitionOverride` is an edit (refused while locked),
 //   saves at once and applies nothing; it never writes a scene file or a cue's `transition`. A duplicate keeps it.
+// * SHOW-005: a cue may be skipped (`skip` in `show.json`); Next and Previous pass over it (the list's rule), Go to Cue
+//   still reaches it. `setSkipped` is an edit (refused while locked), saves at once and applies nothing; a duplicate keeps
+//   the flag. A step when every cue is skipped posts "All cues are skipped." on the cue lane.
 // Main actor; file I/O is small (≤ 1 MiB per file, typically a few KB) and only on user action.
 import Foundation
 import Observation
@@ -56,6 +59,7 @@ final class ShowCoordinator {
     static let setAsideMessage = "The saved show could not be read and was set aside."
     static let saveFailedMessage = "The show could not be saved."
     static let sceneUnreadableMessage = "The scene could not be read."
+    static let allSkippedMessage = "All cues are skipped."
 
     private(set) var list: ShowCueList
     /// Scene IDs whose files cannot be read (cues flagged "Scene missing").
@@ -140,8 +144,13 @@ final class ShowCoordinator {
 
     /// "Cue 2 of 5 · Intro" or "Standby · 5 cues".
     var statusText: String {
-        if let cue = list.activeCue { return "\(list.positionText) · \(cue.label)" }
-        return "Standby · \(list.cues.count) \(list.cues.count == 1 ? "cue" : "cues")"
+        let base: String
+        if let cue = list.activeCue {
+            base = "\(list.positionText) · \(cue.label)"
+        } else {
+            base = "Standby · \(list.cues.count) \(list.cues.count == 1 ? "cue" : "cues")"
+        }
+        return list.allSkipped ? base + " · all skipped" : base   // SHOW-005
     }
 
     /// VoiceOver value: "Cue 2 of 5, Intro" or "Standby, 5 cues".
@@ -211,6 +220,7 @@ final class ShowCoordinator {
 
     private func perform(_ operation: (inout ShowCueList) -> ShowStep) -> ShowStep {
         let step = operation(&list)
+        if step.outcome == .allSkipped { post(Self.allSkippedMessage) }   // SHOW-005-R6
         guard step.moved, let cue = list.activeCue else { return step }
         save()
         show(cue)
@@ -422,7 +432,8 @@ final class ShowCoordinator {
         do throws(ShowEditError) {
             inserted = try list.insert(sceneID: copy.id, label: ShowCueList.copyLabel(cue.label), after: cue.id,
                                        transition: cue.transition, dwell: cue.dwell,   // SCN-007-R8, SHOW-002-R14
-                                       transitionOverride: cue.transitionOverride)   // SHOW-004-R7
+                                       transitionOverride: cue.transitionOverride,   // SHOW-004-R7
+                                       skipped: cue.skipped)   // SHOW-005-R9
         } catch {
             editorMessage = error.description   // the copy's file is removed by the next save (unreferenced)
             return nil
@@ -509,6 +520,16 @@ final class ShowCoordinator {
     func setTransitionOverride(_ cueID: UUID, to transition: ShowCueTransition?) -> Bool {
         if refusedByLock() { return false }
         guard (try? list.setTransitionOverride(cueID, to: transition)) != nil else { return false }
+        save()
+        return true
+    }
+
+    /// SHOW-005-R7: marks a cue skipped or not and saves; never applies anything or moves the position. A countdown left
+    /// without a next cue is cancelled by `listChanged` (in `save`).
+    @discardableResult
+    func setSkipped(_ cueID: UUID, _ skipped: Bool) -> Bool {
+        if refusedByLock() { return false }
+        guard (try? list.setSkipped(cueID, skipped)) != nil else { return false }
         save()
         return true
     }

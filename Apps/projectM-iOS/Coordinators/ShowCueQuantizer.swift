@@ -99,6 +99,16 @@ final class ShowCueQuantizer {
         }
     }
 
+    /// SHOW-005-R3: withdraws a waiting **timed** step (a Hold turned on); a waiting manual step stays. True when one was
+    /// withdrawn. Silent: the Hold announces itself.
+    @discardableResult
+    func withdrawTimed() -> Bool {
+        guard step.pending?.timed == true else { return false }
+        _ = step.cancel()
+        reschedule()
+        return true
+    }
+
     // MARK: - Boundaries (R4)
 
     /// Applies the waiting step when `time` has reached its deadline (once).
