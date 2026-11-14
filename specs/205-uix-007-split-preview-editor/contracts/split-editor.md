@@ -20,8 +20,9 @@
 
 ## C4 Probe (DEBUG, `-uitestDiagnostics`)
 
-- `splitOutputFrame` static text, value `"x,y,w,h|W,H"`: the device visual slot's frame in window
-  coordinates (from UIKit) and the window size, refreshed every 0.25 s; `"none"` when no slot.
+- `splitOutputFrame` static text, value `"x,y,w,h|W,H|bw,bh"`: the device visual slot's frame in
+  window coordinates (from UIKit, transforms applied), the window size and the slot's own bounds size
+  (unchanged by the split: UIX-007-R4), refreshed every 0.25 s; `"none"` when no slot.
 
 ## C5 Launch arguments (DEBUG)
 

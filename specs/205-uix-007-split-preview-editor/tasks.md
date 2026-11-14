@@ -29,7 +29,7 @@ Tests are requested by the spec (UIX-007-S1-S3). Budgets (owner rule 7): unit te
 **Independent test**: drag the divider; the probe's frame aspect equals the window aspect within 1% and its width changed.
 
 - [ ] UIX-007-T09 [US2] Divider drag (live clamp, snap on release, store) in `Apps/projectM-iOS/Views/SplitEditorHost.swift` (contract C2)
-- [ ] UIX-007-T10 [US2] Write `Apps/projectM-iOS/UITests/SplitEditorUITests.swift` on the iPad simulator: open Settings → split, no sheet, probe aspect = window aspect (1%), frame inside the pane; drag divider → width changes, aspect unchanged; Done closes and the output fills the window again (UIX-007-S2)
+- [ ] UIX-007-T10 [US2] Write `Apps/projectM-iOS/UITests/SplitEditorUITests.swift` on the iPad simulator: open Settings → split, no sheet, probe aspect = window aspect (1%), frame inside the pane; drag divider → width changes, aspect unchanged; the slot's bounds stay the window size (UIX-007-R4); the controls' Settings button lies inside the output pane (UIX-007-R9); Done closes and the output fills the window again (UIX-007-R8, S2)
 
 ## Phase 5: User Story 3 — VoiceOver resizing (P2)
 
@@ -52,3 +52,10 @@ T02 → T03, T06; T04 → T06; T06 → T07 → T09 → T10; T11 after T09. T05, 
 ## Implementation strategy
 
 MVP: Phases 2-3 (split opens, output undistorted at the stored width); then the drag (US2) and VoiceOver (US3).
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Coverage: R1-R10 and S1-S4 each map to at least one task (R1 T06/T07/T10, R2 T02/T03, R3 T02/T03/T10,
+R4 T10 bounds probe, R5 T09/T10, R6 T11, R7 T04/T05/T08, R8 T07/T10, R9 T06/T10, R10 T06). No
+constitution conflicts. Fixes applied: R4 and R9 had no test (MEDIUM): the probe now carries the slot's
+bounds size (contract C4) and T10 asserts R4 and R9.
