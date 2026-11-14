@@ -87,6 +87,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.beatRings.life",   # VIS-006-R9
                 "settings.mandala.symmetry", "settings.mandala.mirror", "settings.mandala.petal",   # VIS-007-R9
                 "settings.particleFountain.gravity",   # VIS-008-R10
+                "settings.particleOrbit.radius",   # VIS-009-R10
                 "settings.spectrum.attack", "settings.spectrum.release",   # ANL-003-R6
                 "settings.osc.enabled", "settings.osc.port",   # OSC-001 (off by default)
                 "settings.osc.disabledRoutes", "settings.osc.aliases",   # OSC-003 (route addresses and parameter IDs)
