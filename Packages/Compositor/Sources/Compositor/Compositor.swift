@@ -88,6 +88,10 @@
 // CMP-014 (contracts/transition-bus.md in specs/116, ADR-0042): `encodeScene` runs only the stack phase and returns
 // the composite, so a `SceneTransitionBus` can blend two scenes and run one flash guard on the shown frame;
 // `composite(into:)` runs the same phase and then its own guard and output pass, unchanged.
+// FX-009 (contracts/motion-feedback.md in specs/130, ADR-0051): while `motionFeedback` is active, one `cmp_trails` pass
+// (MotionFeedbackPass.swift) turns the finished composite into the trails frame, max(composite, decay × previous), which
+// the guard, every output and `encodeScene` receive; a reset (a new scene, size, output format, render-health reset,
+// enabling, an unfinished frame) makes the next frame the composite only. CMP-013 never keeps the composite then.
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import FrameCapture
 import FlashSafety
@@ -243,6 +247,32 @@ public final class Compositor {
     /// `encodeOutput` repeats exactly that frame's output.
     private var gradeBlock = CompositorShaders.GradeBlock.neutral
     private var shownGradeBlock = CompositorShaders.GradeBlock.neutral
+    /// FX-009: the trails pass and its pooled pair; the texture the last finished frame showed (the composite, or the
+    /// trails frame), which `encodeOutput` repeats; the output format of the last `composite(into:)` (a change resets).
+    private let trails: TrailsPass
+    private var shownComposite: MTLTexture?
+    private var lastOutputFormat: MTLPixelFormat?
+
+    /// FX-009 (ADR-0051): Trails, set between frames (the effective value after ACC-012's caps). Inactive (the default)
+    /// adds no pass and holds no picture: output bit-identical to before FX-009. Turning it on starts clean; turning it
+    /// off returns the pair to the pool.
+    public var motionFeedback: MotionFeedback = .off {
+        didSet {
+            if !motionFeedback.isActive {
+                trails.release(to: texturePool, after: lastCommandBuffer)
+            } else if !oldValue.isActive {
+                trails.resetPending = true
+            }
+        }
+    }
+
+    /// FX-009-R5: the next frame shows the composite only (a scene change); trails then build up from it.
+    public func resetFeedback() { trails.resetPending = true }
+
+    /// FX-009: frames drawn through the trails pass, reset frames among them, and whether the pair is held (tests).
+    public var trailsFrames: Int { trails.frames }
+    public var trailsResets: Int { trails.resets }
+    public var holdsTrailsPictures: Bool { trails.holdsPictures }
 
     /// FX-003 (contracts/color-grade.md in specs/123, ADR-0050): the colour grade every output pass applies before the
     /// tone map, and the flash guard measures. Set between frames; neutral (the default) bypasses grading bit for bit.
@@ -290,8 +320,9 @@ public final class Compositor {
         records = layers.map { (layer: any LayerSource) -> LayerRecord in
             LayerRecord(id: nil, layer: layer, settings: layer.compositeSettings)
         }
-        library = try CompositorShaders.library(device: device, source: CompositorShaders.source)
+        library = try CompositorShaders.library(device: device, source: CompositorShaders.source + TrailsPass.source)   // FX-009
         fullScreen = try CompositorShaders.function(library, "cmp_fullscreen")
+        trails = try TrailsPass(device: device, library: library, vertex: fullScreen)
         overPipeline = try CompositorShaders.pipeline(device: device, vertex: fullScreen,
                                                       fragment: try CompositorShaders.function(library, "cmp_over"),
                                                       format: LayerPictureDescriptor.metalPixelFormat, blendOver: true,
@@ -319,6 +350,7 @@ public final class Compositor {
         if let groupComposite { texturePool.recycle(groupComposite, after: lastCommandBuffer) }   // CMP-011
         if let groupAlternate { texturePool.recycle(groupAlternate, after: lastCommandBuffer) }
         for record in records { texturePool.recycle(record.pictures, after: lastCommandBuffer) }
+        trails.release(to: texturePool, after: lastCommandBuffer)   // FX-009
     }
 
     public var layerCount: Int { records.count }
@@ -473,6 +505,7 @@ public final class Compositor {
     public func resetRenderHealth() {
         let next = frameTicks &+ 1   // work from the next tick decides the retry
         invalidateRenderCache()   // CMP-013
+        trails.resetPending = true   // FX-009-R5
         visualRetry.reset(atTick: next)
         for i in records.indices {
             records[i].retry.reset(atTick: next)
@@ -487,7 +520,11 @@ public final class Compositor {
     public var lastFlashGain: Float { flashGuard.lastGain }
 
     /// Forgets the composite's flash history (a new scene; FX-019-R11). A pause must not call it.
-    public func resetFlashHistory() { flashGuard.reset() }
+    /// FX-009-R5: a new scene clears the trails too (every visual host calls this when its frame loop starts).
+    public func resetFlashHistory() {
+        flashGuard.reset()
+        trails.resetPending = true
+    }
 
     /// FX-002-R7: composite pixels with a NaN or infinite channel that the screen output pass tone-mapped to 0
     /// so far (cumulative; recording and capture passes do not count). Exact once the last frame completed.
@@ -504,6 +541,8 @@ public final class Compositor {
                           contentScale: Double, reduceFlashing: Bool, audio: LayerAudioContext) -> Bool {
         guard let size = LayerPictureDescriptor(width: output.width, height: output.height),
               let outputPipeline = outputPipeline(for: output.pixelFormat) else { return false }
+        if let last = lastOutputFormat, last != output.pixelFormat { trails.resetPending = true }   // FX-009-R5
+        lastOutputFormat = output.pixelFormat
         return encodeFrame(size: size, commandBuffer: commandBuffer, presentationTimeNanoseconds: presentationTimeNanoseconds,
                            contentScale: contentScale, reduceFlashing: reduceFlashing,
                            audio: audio) { (composite: MTLTexture, frame: LayerFrameContext) -> Bool in
@@ -560,7 +599,12 @@ public final class Compositor {
         let tick = frameTicks
         defer { updateHealthState() }
         var finished = false
-        defer { if !finished { invalidateRenderCache() } }   // CMP-013: an unfinished frame may leave pictures undrawn
+        defer {   // CMP-013: an unfinished frame may leave pictures undrawn; FX-009: and the trails history
+            if !finished {
+                invalidateRenderCache()
+                trails.resetPending = true
+            }
+        }
         observeFinishedCommandBuffers()
         if visualRetry.isRetryDue(atTick: tick) { visualRetry.beginRetry(atTick: tick) }
         if size != descriptor {
@@ -660,7 +704,18 @@ public final class Compositor {
             composite = stacked
         }
 
-        guard finish(composite, frame) else { return false }   // CMP-014: the guard and output, or the bus's
+        // FX-009: the trails frame replaces the composite for the guard and every output (research FX-009-D3).
+        var shown: MTLTexture = composite
+        if motionFeedback.isActive {
+            let decay: Double = motionFeedback.decay(frameDuration: frame.frameDuration)
+            let taken: Int = trails.allocations
+            guard let trailed = trails.encode(composite: composite, decay: decay, pool: texturePool, fence: lastCommandBuffer,
+                                              commandBuffer: commandBuffer) else { return false }
+            pictureAllocations += trails.allocations - taken   // PERF-004: the pair, at its allocation points
+            shown = trailed
+        }
+        shownComposite = shown
+        guard finish(shown, frame) else { return false }   // CMP-014: the guard and output, or the bus's
         watch(commandBuffer, tick: tick)
         noteCompositeInputs()   // CMP-013
         finished = true
@@ -688,7 +743,7 @@ public final class Compositor {
 
     /// CMP-013-R6: the composite is valid and every layer and group contributes what it contributed to it.
     private func canReuseComposite() -> Bool {
-        guard isRenderCachingEnabled, compositeValid else { return false }
+        guard isRenderCachingEnabled, compositeValid, !motionFeedback.isActive else { return false }   // FX-009-R12
         for i in records.indices where !drawInput(i).isUnchanged(from: records[i].drawn) { return false }
         for g in groupRecords where g.drawnOpacity != g.opacity.value { return false }
         return true
@@ -1015,7 +1070,7 @@ public final class Compositor {
     /// left. Returns false, encoding nothing, when no frame was composited into this command buffer,
     /// the target is larger than the output, or its format is not in `supportedOutputFormats`.
     public func encodeOutput(into target: MTLTexture, commandBuffer: MTLCommandBuffer) -> Bool {
-        guard let composite, let shown = outputCommandBuffer, shown === commandBuffer,
+        guard let composite = shownComposite, let shown = outputCommandBuffer, shown === commandBuffer,   // FX-009: as shown
               target.width <= composite.width, target.height <= composite.height,
               let pipeline = outputPipeline(for: target.pixelFormat) else { return false }
         let pass = MTLRenderPassDescriptor()
@@ -1140,6 +1195,7 @@ public final class Compositor {
         if let groupAlternate { texturePool.recycle(groupAlternate, after: lastCommandBuffer) }
         groupAlternate = nil
         invalidateRenderCache()   // CMP-013: a new size (the key holds it too)
+        trails.release(to: texturePool, after: lastCommandBuffer)   // FX-009-R5: a new size starts clean
         var starved = false
         #if DEBUG
         starved = faultInjection.missingPictures.contains("composite")

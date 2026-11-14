@@ -66,6 +66,7 @@ extension AppCoordinator {
         videos.restoreSpeed(storeID: apply.videoStoreID, speedPercent: apply.videoSpeedPercent)   // MED-004-R7
         if let restore = apply.slideshow { slideshow.restore(restore.value) }   // MED-006-R12
         sceneHistory.restart()   // SCN-010-R9: a cue is not an edit
+        resetTrailsHistory()   // FX-009-R5: a cue's scene (and UIX-002's switcher) starts without trails
         if refresh {
             visualSettingsChanged()
             glowSettingsChanged()
