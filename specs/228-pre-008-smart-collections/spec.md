@@ -44,6 +44,16 @@ interaction); each answer is the conservative, local-first option.
 - Q: Rules from a newer app version? → A: An unknown condition kind is kept, saved back unchanged, shown as "1 rule from a newer version is not applied", and skipped when matching. A file with a newer schema version makes smart collections unavailable (never interpreted or written), as PRE-007.
 - Q: Backup? → A: Yes: FILE-005 carries the file as the record `collections/smart-collections.json`; restore merges per smart collection by ID (a new one is added; a clash follows the restore choice: Replace takes the backup's, Keep both and Skip keep the device's). FILE-011's "Collections, tags, favorites and history" erase removes it with the folder and counts it.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Does an edit in the rule editor apply at once or on Save? → A: The editor shows the live count of the draft rules after every change (the membership is recomputed immediately); Save commits the rules in one atomic write, Cancel discards them. The saved collection's list and count then reflect the new rules at once.
+- Q: How do colour conditions combine inside one condition? → A: Any of the listed families (like the other kinds); the user adds a second colour condition with All to require both. This keeps one rule for every kind.
+- Q: Are locked presets members? → A: Yes, as in manual collections: the list shows them locked and the walk (`members`) skips them, so the count shown is the listed members, locked included.
+- Q: Can smart collections be reordered? → A: Not in this feature: they keep creation order; manual collections keep their own reorder. A later feature can add it without a format change (order is the array order).
+- Q: Is a smart collection's count in the Collections home row? → A: The home row counts manual and smart collections together.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Save a filter as a smart collection (Priority: P1) — MVP
