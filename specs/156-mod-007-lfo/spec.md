@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (MOD-007-T01-T11 verified on the Mac: host package tests and the app unit test host on a private iOS 27.2 simulator; no device task)
 
 **Input**: User description: "Implement MOD-007 (LFO sine and triangle) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Create clocked low-frequency oscillators with phase and amplitude." Acceptance,
