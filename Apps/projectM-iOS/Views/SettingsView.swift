@@ -766,10 +766,14 @@ struct SettingsView: View {
                 LabeledContent("Rate-limited", value: OSCReceiverCoordinator.rateLimitedText(osc.rateLimitedCount))
                     .accessibilityIdentifier("oscRateLimited")
             }
+            if let routes = osc.routes {   // OSC-003-R10
+                NavigationLink("OSC Routes") { OSCRoutesView(routes: routes, unknownCount: osc.unknownAddressCount) }
+                    .accessibilityIdentifier("oscRoutesLink")
+            }
         } header: {
             Text("OSC")
         } footer: {
-            Text("Lets an OSC controller on your local network send /projectm/test with a number from 0 to 1 to check the connection. projectM only listens while this is on and the app is open, never connects to the internet, and keeps nothing it receives.")
+            Text("Lets an OSC controller on your local network send /projectm/test with a number from 0 to 1 to check the connection, and the addresses in OSC Routes to control the glow. projectM only listens while this is on and the app is open, never connects to the internet, and keeps nothing it receives.")
         }
         .onAppear { portText = String(osc.port) }
         .onChange(of: portFieldFocused) { _, focused in

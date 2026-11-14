@@ -58,11 +58,13 @@ public final class OSCReceiver: Sendable {
 
     /// The receiver with the system's UDP transport (`NetworkDatagramTransport`, the Network
     /// framework); where the framework does not exist, every start fails as `.unavailable`.
-    public static func system() -> OSCReceiver {
+    /// OSC-003: `store` and `routes` give the app's route table (the registry's routable parameters).
+    public static func system(store: ParameterStore = OSCReceiverCatalog.makeStore(),
+                              routes: [OSCRoute] = OSCReceiverCatalog.routes) -> OSCReceiver {
         #if canImport(Network)
-        OSCReceiver(makeTransport: { NetworkDatagramTransport() })
+        OSCReceiver(store: store, routes: routes, makeTransport: { NetworkDatagramTransport() })
         #else
-        OSCReceiver(makeTransport: { nil })
+        OSCReceiver(store: store, routes: routes, makeTransport: { nil })
         #endif
     }
 

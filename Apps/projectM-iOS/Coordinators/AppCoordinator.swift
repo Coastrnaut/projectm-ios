@@ -99,6 +99,7 @@ import Metal
 import UIKit
 import VisualGenerators
 import ParameterGraph
+import PerformanceControl   // OSC-003: the receiver, its routes and the shared live values
 #if DEBUG
 import VisualParameters
 #endif
@@ -207,6 +208,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let effectChain: EffectChainSetting
     /// The native spectra (VIS-001 circular, VIS-002 linear), created the first time one is needed.
     private(set) var nativeVisual: NativeSpectrumHost?
+    /// MIDI-003 and OSC-003 live values, merged (newest change wins per parameter; OSC-003-R5).
+    @ObservationIgnored private(set) var externalLiveValues = ExternalLiveValues()
     /// PERF-001: the stage timer while the performance overlay is shown (AppCoordinator+FrameStages.swift).
     @ObservationIgnored let frameStages = FrameStageAttachment()
     /// The Camera visual (CAM-001), created when Camera is chosen and released when another visual is.
@@ -382,11 +385,18 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         self.recovery = recovery
         let guide = GuidedFirstSceneCoordinator(defaults: defaults, suppressed: GuidedFirstScenePolicy.harnessSuppresses())
         self.guide = guide
+        let oscRoutable: [ParameterDescriptor] = OSCRoutesCoordinator.routable()   // OSC-003: the allowlist's targets
+        let oscReceiver: OSCReceiver = .system(store: OSCRoutesCoordinator.makeStore(routable: oscRoutable),
+                                               routes: OSCRoutesCoordinator.initialRoutes(routable: oscRoutable, defaults: defaults))
         #if DEBUG
-        osc = OSCReceiverCoordinator(settings: settings, receiver: UITestOSCFailure.receiverIfRequested() ?? .system())
+        osc = OSCReceiverCoordinator(settings: settings, receiver: UITestOSCFailure.receiverIfRequested() ?? oscReceiver)
         #else
-        osc = OSCReceiverCoordinator(settings: settings)
+        osc = OSCReceiverCoordinator(settings: settings, receiver: oscReceiver)
         #endif
+        let oscCoordinator: OSCReceiverCoordinator = osc
+        osc.routes = OSCRoutesCoordinator(routable: oscRoutable, defaults: defaults) { [weak oscCoordinator] (routes: [OSCRoute]) -> Void in
+            oscCoordinator?.setRoutes(routes)
+        }
         // UIX-015-R2: OSC already on means iOS has already asked for local network access, and so
         // does a listener seen listening or denied.
         let explainers = PermissionExplainerCoordinator(defaults: defaults)
@@ -538,6 +548,12 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     }
 
     /// `-uitestResetNotice`: UI tests start from a clean library and settings.
+    /// OSC-003-R5: one live-value path for MIDI and OSC into the native host (then MOD-002 and ACC-012's clamp).
+    func pushLiveValues(_ source: ExternalLiveValues.Source, _ values: [ParameterID: Double]) {
+        externalLiveValues.update(source, values)
+        nativeVisual?.externalValues = externalLiveValues.merged
+    }
+
     private static func resetForUITests(_ defaults: UserDefaults) {
         defaults.removeObject(forKey: Self.noticeKey)
         defaults.removeObject(forKey: FavoritesStore.favoritesKey)
@@ -556,6 +572,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         MotionFeedbackSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-009: Trails off
         EffectChainSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-020: standard order, no presets
         defaults.removeObject(forKey: MIDIMappingCoordinator.mappingsKey)   // MIDI-003: no mappings
+        OSCRoutesCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-003: every route on, no aliases
         if let profiles = try? MIDIProfilesCoordinator.defaultDirectory() { try? FileManager.default.removeItem(at: profiles) }   // MIDI-012: no profiles
         try? FileManager.default.removeItem(at: PresetCollectionStore.defaultDirectory())   // PRE-007: UI tests start without collections
         try? FileManager.default.removeItem(at: UserPresetStore.defaultDirectory())         // PRE-012: and without imported presets
@@ -620,7 +637,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         connectModulationMatrix()   // MOD-012 (and its DEBUG seed; before the history starts)
         connectSceneHistory()   // SCN-010: starts from the restored (or fresh) scene
         connectSceneSnapshots()   // SCN-008
-        midiMappings.applyValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.nativeVisual?.externalValues = values }   // MIDI-003-R8
+        midiMappings.applyValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.midi, values) }   // MIDI-003-R8
+        osc.applyLiveValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.osc, values) }   // OSC-003-R5
         #if DEBUG
         UITestShowFixture.seedIfRequested(self)   // SHOW-001: ShowCueUITests
         #endif
@@ -1095,7 +1113,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.safetyClamp = settings.safetyClamp   // ACC-012-R4
             host.smoothing = settings.spectrumSmoothing   // ANL-003
             host.palette = settings.spectrumPalette        // ACC-003-R13
-            host.externalValues = midiMappings.liveValues   // MIDI-003: values held while no native visual was shown
+            host.externalValues = externalLiveValues.merged   // MIDI-003, OSC-003: values held while no native visual was shown
             for binding in sceneAutosave?.bindings ?? [] { try? host.addLayer(binding) }   // SCN-002: restored bindings, MOD-011 layers in order
             connectThresholdTriggers(host)   // MOD-006
             connectLFOs(host)   // MOD-007
