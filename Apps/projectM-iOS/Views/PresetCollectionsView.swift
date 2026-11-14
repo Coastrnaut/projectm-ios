@@ -27,7 +27,6 @@ struct PresetCollectionsView: View {
         List {
             if let unavailable = presets.collectionsUnavailableText {
                 Text(unavailable)
-                    .foregroundStyle(.secondary)
                     .accessibilityIdentifier("collectionsUnavailable")
             } else {
                 if let notice = presets.collectionsNotice {
@@ -39,7 +38,6 @@ struct PresetCollectionsView: View {
                 }
                 if presets.collections.isEmpty {
                     Text("No collections yet. Tap New Collection to make one, then add presets to it from any list.")
-                        .foregroundStyle(.secondary)
                         .accessibilityIdentifier("collectionsEmpty")
                 }
                 ForEach(presets.collections) { collection in
@@ -91,7 +89,7 @@ struct PresetCollectionsView: View {
             HStack {
                 Text(collection.name)
                 Spacer()
-                Text(count.formatted()).foregroundStyle(.secondary)
+                Text(count.formatted())   // ACC-004: full contrast (audit)
             }
             .accessibilityElement(children: .combine)
             .accessibilityLabel(PresetCoordinator.collectionRowLabel(name: collection.name, count: count))

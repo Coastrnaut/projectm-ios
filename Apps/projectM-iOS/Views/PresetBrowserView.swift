@@ -31,6 +31,7 @@ struct PresetBrowserView: View {
                         Text("Favorites").tag(true)
                     }
                     .pickerStyle(.segmented)
+                    .accessibilityLabel("Show presets")   // ACC-004-R1: a segmented picker hides its title
                     .accessibilityIdentifier("favoritesFilter")
                     if presets.favoritesOnly {
                         favorites
@@ -88,7 +89,7 @@ struct PresetBrowserView: View {
                 HStack {
                     Text("Collections")
                     Spacer()
-                    Text(presets.collections.count.formatted()).foregroundStyle(.secondary)
+                    Text(presets.collections.count.formatted())   // ACC-004: full contrast (audit)
                 }
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(PresetCoordinator.collectionsRowLabel(count: presets.collections.count))
@@ -99,7 +100,7 @@ struct PresetBrowserView: View {
                 HStack {
                     Text(UserPresetText.scopeTitle)
                     Spacer()
-                    Text(userPresets.playable.count.formatted()).foregroundStyle(.secondary)
+                    Text(userPresets.playable.count.formatted())
                 }
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(UserPresetsCoordinator.myPresetsRowLabel(count: userPresets.playable.count))
@@ -113,7 +114,6 @@ struct PresetBrowserView: View {
     @ViewBuilder private var favorites: some View {
         if let empty = presets.emptyStateText {
             Text(empty)
-                .foregroundStyle(.secondary)
                 .accessibilityIdentifier("favoritesEmpty")
         }
         ForEach(presets.favoritesListing) { preset in
@@ -125,7 +125,6 @@ struct PresetBrowserView: View {
         // First, so it is seen without scrolling past the capped list.
         if results.truncated {
             Text("Showing the first \(PresetLibrary.searchLimit) matches. Refine your search to see more.")
-                .foregroundStyle(.secondary)
                 .accessibilityIdentifier("refineSearch")
         }
         ForEach(results.groups, id: \.source) { group in
@@ -137,7 +136,7 @@ struct PresetBrowserView: View {
             }
         }
         if results.groups.isEmpty {
-            Text("No presets match").foregroundStyle(.secondary)
+            Text("No presets match")
         }
     }
 }
@@ -189,7 +188,7 @@ struct FolderRow: View {
             Text(title)
             Spacer()
             if locked { Image(systemName: "lock.fill").foregroundStyle(.secondary).accessibilityHidden(true) }
-            Text(count.formatted()).foregroundStyle(.secondary)
+            Text(count.formatted())   // ACC-004: secondary grey failed the contrast audit at body size
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(title), \(count) presets\(locked ? ", locked" : "")")
@@ -249,15 +248,16 @@ struct PresetRow: View {
             Button(action: onChoose) {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(preset.name).foregroundStyle(.primary)
-                        Text(subtitle).font(.caption).foregroundStyle(.secondary)
+                        // ACC-004: label colour. `.primary` inside a button resolves to the tint, and blue
+                        // text on white failed the contrast audit ("nearly passed", about 4:1).
+                        Text(preset.name).foregroundStyle(Color.primary)
+                        Text(subtitle).font(.caption).foregroundStyle(Color.primary)
                     }
                     Spacer()
                     if presets.isFlagged(preset) {
                         // ACC-002-R7: a symbol and words, never color alone.
                         Label("May flash", systemImage: "exclamationmark.triangle")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
                             .accessibilityIdentifier("mayFlash:\(preset.name)")
                     }
                     if locked {
@@ -268,13 +268,20 @@ struct PresetRow: View {
                 }
             }
             .accessibilityLabel(presets.rowLabel(preset, locked: locked))
+            // ACC-004-R2, R4: the playing preset is selected; the hint says what activating does.
+            .accessibilityAddTraits(preset == presets.current ? .isSelected : [])
+            .accessibilityHint(locked ? "Opens the unlock sheet" : "Plays this preset")
             .accessibilityIdentifier("preset:\(preset.name)")
             .accessibilityAction(named: "Add to Collection") { addingToCollection = true }
+            // ACC-004-R3: favoriting without finding the separate star.
+            .accessibilityAction(named: favorite ? "Remove from Favorites" : "Add to Favorites") {
+                presets.toggleFavoriteAnnounced(preset)
+            }
             .modifier(CollectionMoveActions(presets: presets, preset: preset, collection: collection))
             .modifier(UserPresetActions(user: user))
             .modifier(CopyActions(duplicate: duplicateAction, edit: editable ? editAction : nil))
             Button {
-                presets.toggleFavorite(preset)
+                presets.toggleFavoriteAnnounced(preset)   // ACC-004-R5
             } label: {
                 Image(systemName: favorite ? "star.fill" : "star")
                     .foregroundStyle(favorite ? .yellow : .secondary)

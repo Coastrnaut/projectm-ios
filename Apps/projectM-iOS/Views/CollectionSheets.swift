@@ -109,7 +109,7 @@ struct AddToCollectionSheet: View {
                                 if presets.addToCollection(preset, collection.id) != .failed { dismiss() }
                             } label: {
                                 HStack {
-                                    Text(collection.name).foregroundStyle(.primary)
+                                    Text(collection.name).foregroundStyle(Color.primary)   // ACC-004: label colour, not the tint
                                     Spacer()
                                     if contains { Image(systemName: "checkmark").accessibilityHidden(true) }
                                 }

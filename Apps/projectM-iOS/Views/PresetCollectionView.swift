@@ -24,7 +24,6 @@ struct PresetCollectionView: View {
         List {
             if listing.isEmpty {
                 Text("No presets yet. In any preset list, touch and hold a preset (or swipe it to the right) and choose Add to Collection.")
-                    .foregroundStyle(.secondary)
                     .accessibilityIdentifier("collectionEmpty")
             }
             ForEach(listing) { preset in

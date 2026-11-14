@@ -76,11 +76,11 @@ struct ShowEditorView: View {
         let missing = show.isSceneMissing(cue)
         let sceneName = show.sceneName(of: cue).flatMap { (name: String) -> String? in name == cue.label ? nil : name }
         return HStack {
-            Text("\(number)").monospacedDigit().foregroundStyle(.secondary).frame(minWidth: 28, alignment: .trailing)
+            Text("\(number)").monospacedDigit().frame(minWidth: 28, alignment: .trailing)
             VStack(alignment: .leading, spacing: 2) {
                 Text(cue.label)
                 if let sceneName {
-                    Text("Scene: \(sceneName)").font(.caption).foregroundStyle(.secondary)
+                    Text("Scene: \(sceneName)").font(.caption)
                 }
                 if missing {
                     Label("Scene missing", systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.orange)
@@ -94,6 +94,7 @@ struct ShowEditorView: View {
         .accessibilityLabel(cue.label)
         .accessibilityValue("Cue \(number) of \(show.list.cues.count)" + (active ? ", active" : "") + (missing ? ", scene missing" : "")
                             + (sceneName.map { (name: String) -> String in ", scene \(name)" } ?? ""))
+        .accessibilityAddTraits(active ? .isSelected : [])   // ACC-004-R2
         .accessibilityIdentifier("showCue\(number)")
         .contextMenu {
             Button("Go to Cue") { show.go(to: cue.id) }
@@ -122,6 +123,16 @@ struct ShowEditorView: View {
         .accessibilityAction(named: "Rename") { renameText = cue.label; renaming = cue }
         .accessibilityAction(named: "Duplicate Scene") { show.duplicateScene(of: cue.id) }
         .accessibilityAction(named: "Rename Scene") { startSceneRename(cue) }
+        // ACC-004-R3: reordering without Edit mode's drag handles.
+        .accessibilityAction(named: "Move Up") { move(number - 1, by: -1) }
+        .accessibilityAction(named: "Move Down") { move(number - 1, by: 1) }
+    }
+
+    /// Moves the cue at `index` one place up (-1) or down (+1); nothing at either end.
+    private func move(_ index: Int, by delta: Int) {
+        let target = index + delta
+        guard target >= 0, target < show.list.cues.count else { return }
+        show.move(fromOffsets: IndexSet(integer: index), toOffset: delta > 0 ? target + 1 : target)
     }
 
     private func startSceneRename(_ cue: ShowCue) {

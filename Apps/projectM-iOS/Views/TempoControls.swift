@@ -31,6 +31,7 @@ struct TempoControls: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Tempo")
             .accessibilityValue(TempoCoordinator.accessibilityValue(snapshot))
+            .accessibilityAddTraits(.isStaticText)   // ACC-004: a readout, not a control (hit-region audit)
             .accessibilityIdentifier("tempoReadout")
 
             Button { coordinator.tapTempo() } label: {
