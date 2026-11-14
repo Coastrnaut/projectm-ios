@@ -9,12 +9,12 @@ the UI test under 30 s.
 
 ## Phase 1: Setup
 
-- [ ] SCN-006-T01 Create the feature's own simulator "SCN6 iPhone 17" (iOS 27.2), `xcodegen generate`, keep the `Build` link, and count PosterBoard reports before any run.
+- [X] SCN-006-T01 Create the feature's own simulator "SCN6 iPhone 17" (iOS 27.2), `xcodegen generate`, keep the `Build` link, and count PosterBoard reports before any run. — Verified 2026-11-14: simulator SCN6 (3691DFC9) on iOS 27.2, `xcodegen generate`, `Build` link present, preset submodules initialized, PosterBoard reports 25 before.
 
 ## Phase 2: Foundational (the store; blocks every story)
 
-- [ ] SCN-006-T02 Implement `ScenePreviewKey` and the `ScenePreviewStore` actor in `Packages/PresetLibrary/Sources/PresetLibrary/Thumbnails/ScenePreviewStore.swift`, reusing `PresetThumbnailIndex` (repair, `staleIDs`, `unlistedIDs`, `removeEntries`) unchanged (research SCN-006-D1, D2; contract P1).
-- [ ] SCN-006-T03 [P] Package tests in `Packages/PresetLibrary/Tests/PresetLibraryTests/ScenePreviewStoreTests.swift`: key determinism and hash, store keeps one entry per scene, invalidate leaves neighbours, retainOnly prunes unlisted and changed scenes, reopen keeps entries (relaunch), damaged index repaired, cleared folder recreated and marked excluded from backup (Darwin); PRE-001's suites still pass.
+- [X] SCN-006-T02 Implement `ScenePreviewKey` and the `ScenePreviewStore` actor in `Packages/PresetLibrary/Sources/PresetLibrary/Thumbnails/ScenePreviewStore.swift`, reusing `PresetThumbnailIndex` (repair, `staleIDs`, `unlistedIDs`, `removeEntries`) unchanged (research SCN-006-D1, D2; contract P1). — Verified 2026-11-14: ScenePreviewStoreTests 5/5; PRE-001/PRE-002 files not changed (`git diff --stat`).
+- [X] SCN-006-T03 [P] Package tests in `Packages/PresetLibrary/Tests/PresetLibraryTests/ScenePreviewStoreTests.swift`: key determinism and hash, store keeps one entry per scene, invalidate leaves neighbours, retainOnly prunes unlisted and changed scenes, reopen keeps entries (relaunch), damaged index repaired, cleared folder recreated and marked excluded from backup (Darwin); PRE-001's suites still pass. — Verified 2026-11-14: `swift test --package-path Packages/PresetLibrary` 264 tests, 0 failures (27.8 s); ScenePreviewStoreTests 5 tests in 0.012 s.
 
 ## Phase 3: User Story 1 and 2 — previews captured, keyed and invalidated (P1, MVP)
 
