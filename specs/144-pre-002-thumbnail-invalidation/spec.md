@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (PRE-002-T01-T10 verified on the Mac and the simulator; no device task)
 
 **Input**: User description: "Implement PRE-002 (thumbnail invalidation) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Refresh thumbnail after user
