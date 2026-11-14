@@ -45,6 +45,16 @@ interaction); each answer is the conservative, local-first option.
 - Q: Does the app create its own virtual MIDI endpoint? → A: No (no other app can talk to projectM in this row; MIDI-009 feedback may add an output).
 - Q: Is there a badge on the visualizer like OSC's? → A: No. OSC's badge warns that a network listener is open; discovery opens no listener and receives nothing. The Settings section shows the status. MIDI-002's monitor may add one when messages are received.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rule 4 (recommended option first).
+
+- Q: In what order are endpoints listed? → A: Inputs first, then outputs; within each, by display name (case-insensitive, locale-independent), then by ID, so the order is the same on every refresh and in tests (MIDI-001-R9). Rejected: system order (it changes with plug order).
+- Q: Is the first list after turning listening on (or returning to the foreground) announced device by device? → A: No. Only changes after the first list are announced; the first list sets the baseline silently, and the status line ("Listening — N devices") states the count (MIDI-001-R11). Otherwise every return to the foreground would read out every device.
+- Q: What happens when the system MIDI service cannot be started? → A: The status shows "MIDI isn't available on this device." with no automatic retry; turning the toggle off and on tries again (MIDI-001-R8), as OSC-001-R3 does for its listener.
+- Q: Does an abnormal end of the previous session (PERF-010) turn MIDI listening off? → A: No. PERF-010 turns OSC off because it is a network listener; MIDI discovery receives nothing and opens nothing to the network, so the stored toggle is kept.
+- Q: How are a rename and an online change of the same endpoint in one refresh reported? → A: As two changes, renamed first then online changed, both naming the same ID; appeared and disappeared exclude any other change for that endpoint (MIDI-001-R5).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - I see my MIDI controller when I plug it in (Priority: P1)
@@ -121,13 +131,13 @@ the network symbol scan; the stored keys are only the toggle.
 - **MIDI-001-R2**: The app MUST NOT enable, configure or reference the system's network MIDI session, and MUST hide any endpoint the system attributes to network MIDI. It MUST NOT show the Bluetooth pairing screen or request Bluetooth permission.
 - **MIDI-001-R3**: Each endpoint MUST have an ID that is unique within the current list and stable across unplug and replug of the same device, renames and online changes.
 - **MIDI-001-R4**: The ID MUST come from the system's unique endpoint number when it is non-zero and not shared by another current endpoint; otherwise from a fallback derived from direction, device, entity and endpoint names, with an ordinal for identical fallbacks in list order. The kind of ID (system or fallback) MUST be visible to tests.
-- **MIDI-001-R5**: Changes between two lists MUST be reported as appeared, disappeared, renamed and online-changed, one change per endpoint and kind, in a deterministic order; an unchanged list reports nothing.
+- **MIDI-001-R5**: Changes between two lists MUST be reported as appeared, disappeared, renamed and online-changed, one change per endpoint and kind, in a deterministic order (disappeared, then appeared, then renamed, then online changed, each in list order; renamed before online changed for the same endpoint); an endpoint that appeared or disappeared has no other change; an unchanged list reports nothing.
 - **MIDI-001-R6**: System change notifications MUST be coalesced: the first notification in a quiet period schedules one refresh after a short delay (100 ms); notifications before that refresh starts add nothing; a notification during or after it schedules the next one.
 - **MIDI-001-R7**: Discovery MUST run only while the user's toggle is on and the app is active in the foreground; turning off or leaving the foreground MUST clear the list, cancel a pending refresh and stop reporting changes; returning restarts discovery with a fresh list.
-- **MIDI-001-R8**: The toggle MUST be off by default and stored as one boolean; Settings MUST show a MIDI section with the toggle, a status line ("Off", "Listening — no MIDI devices", "Listening — N devices", or the unavailable text) and the endpoint rows.
-- **MIDI-001-R9**: Each row MUST show the name (with " (2)", " (3)"… appended when two endpoints in the same direction share a name), "Input" or "Output", and "Virtual" and "Offline" where they apply; VoiceOver reads one combined label per row.
+- **MIDI-001-R8**: The toggle MUST be off by default and stored as one boolean; Settings MUST show a MIDI section with the toggle, a status line ("Off", "Listening — no MIDI devices", "Listening — N devices", or the unavailable text "MIDI isn't available on this device.", with no automatic retry) and the endpoint rows.
+- **MIDI-001-R9**: Each row MUST show the name (with " (2)", " (3)"… appended when two endpoints in the same direction share a name), "Input" or "Output", and "Virtual" and "Offline" where they apply; VoiceOver reads one combined label per row. Rows are ordered inputs first, then outputs, each by display name (case-insensitive), then ID.
 - **MIDI-001-R10**: Endpoint names, IDs and counts MUST NOT be stored, logged or sent; only the toggle is stored.
-- **MIDI-001-R11**: Appearances and disappearances MUST be announced to VoiceOver through the shared announcer (ACC-004/ACC-011), one announcement per refresh: "MIDI device connected: <name>", "MIDI device disconnected: <name>", or "<n> MIDI devices connected/disconnected" for more than one; never a direct post.
+- **MIDI-001-R11**: Appearances and disappearances MUST be announced to VoiceOver through the shared announcer (ACC-004/ACC-011), one announcement per refresh, never for the first list after listening starts: "MIDI device connected: <name>", "MIDI device disconnected: <name>", or "<n> MIDI devices connected/disconnected" for more than one; never a direct post.
 - **MIDI-001-R12**: Discovery MUST NOT receive or parse MIDI messages and MUST NOT allocate per MIDI message (none are subscribed in this row); refreshes run off the main thread and the app copies results onto the main actor.
 - **MIDI-001-R13**: The pure endpoint model, ID rule, diffing and coalescing MUST build and pass their tests on Linux; the system implementation compiles only where the system MIDI framework exists, and elsewhere discovery reports unavailable.
 - **MIDI-001-R14**: The source compliance check and the binary network symbol scan MUST fail on network MIDI symbols, and the built app MUST pass both.
