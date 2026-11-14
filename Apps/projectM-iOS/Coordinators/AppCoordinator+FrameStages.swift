@@ -11,11 +11,15 @@
 // the lower of the screen's maximum refresh rate and the quality governor's cap (research PERF-002-D1). The meter
 // reads only the report, once a second, so it never blocks or alters a frame (PERF-002-R6). DEBUG:
 // `-uitestSlowStage <stage>:<ms>` replaces one stage's CPU figure in that report (contract C5), never the rendering.
+// PERF-003 (specs/173-perf-003-adaptive-quality): while a native visual is shown, the verdict is its effect ladder's
+// budget signal (any flag → over; the overlay off → unavailable), its frame-rate cap is the deadline's cap, and the
+// lines end with its `effect quality …` line. The automation export carries the level.
 import ANGLERendering
 import Diagnostics
 import FrameTiming
 import Rendering
 import UIKit
+import VisualEffects
 
 /// Which visual holds the shared stage timer (PERF-001-R8). At most one visual at a time.
 @MainActor
@@ -72,18 +76,24 @@ extension AppCoordinator {
         frameStages.sync(overlayShown: settings.showsPerformanceOverlay, target: activeStageTimedVisual)
         guard let timer = frameStages.timer else { return [] }
         let report: FrameStageReport = Self.injectingSlowStage(timer.report())
-        let verdict: FrameBudgetVerdict = frameStages.budget.evaluate(report, deadline: Self.frameDeadline())
-        return report.lines + verdict.lines
+        let native: NativeSpectrumHost? = showsNativeVisual ? nativeVisual : nil
+        let cap: Int? = native?.qualitySettings.maxFramesPerSecond
+        let verdict: FrameBudgetVerdict = frameStages.budget.evaluate(report, deadline: Self.frameDeadline(cap: cap))
+        guard let native else { return report.lines + verdict.lines }
+        native.effectBudget = verdict.flagged.isEmpty ? .within : .over   // PERF-003-R3
+        return report.lines + verdict.lines + [native.effectQualityLine]
     }
 
     /// PERF-002-R1: the lower of the screen's maximum refresh rate and the frame-rate cap every visual's display
     /// link uses (FR-049).
-    static func frameDeadline() -> FrameDeadline {
+    /// PERF-003: `cap` is the shown visual's own cap when it has one (the native host defers the serious-state cap).
+    static func frameDeadline(cap: Int? = nil) -> FrameDeadline {
         let scene: UIWindowScene? = UIApplication.shared.connectedScenes.compactMap { (scene: UIScene) -> UIWindowScene? in
             scene as? UIWindowScene
         }.first
         let screenMaximum: Double? = scene.map { (scene: UIWindowScene) -> Double in Double(scene.screen.maximumFramesPerSecond) }
-        return FrameDeadline(displayMaximumFPS: screenMaximum, frameRateCap: Double(QualityGovernor.current().maxFramesPerSecond))
+        let frameRateCap: Int = cap ?? QualityGovernor.current().maxFramesPerSecond
+        return FrameDeadline(displayMaximumFPS: screenMaximum, frameRateCap: Double(frameRateCap))
     }
 
     /// The report as shown: unchanged, except in DEBUG with `-uitestSlowStage`.
@@ -97,7 +107,10 @@ extension AppCoordinator {
     }
 
     /// The overlay disappeared: no visual measures anything any more.
-    func stopFrameStageTiming() { frameStages.stop() }
+    func stopFrameStageTiming() {
+        frameStages.stop()
+        nativeVisual?.effectBudget = .unavailable   // PERF-003-R3: no verdict without the overlay
+    }
 
     /// PERF-002-R9: the verdict in the diagnostics format.
     nonisolated static func exportBudget(_ verdict: FrameBudgetVerdict) -> DiagnosticsSnapshot.FrameTimings.Budget {
@@ -108,7 +121,13 @@ extension AppCoordinator {
             flaggedPasses: verdict.flagged.map(\.label))
     }
 
-    nonisolated static func exportTimings(_ report: FrameStageReport, budget: FrameBudgetVerdict? = nil) -> DiagnosticsSnapshot.FrameTimings {
+    /// PERF-003-R10: a ladder's level and reason in the diagnostics format.
+    nonisolated static func exportEffectQuality(level: EffectQualityLevel, reason: EffectQualityReason?) -> DiagnosticsSnapshot.FrameTimings.EffectQuality {
+        DiagnosticsSnapshot.FrameTimings.EffectQuality(level: level.label, reason: reason?.rawValue)
+    }
+
+    nonisolated static func exportTimings(_ report: FrameStageReport, budget: FrameBudgetVerdict? = nil,
+                                          effectQuality: DiagnosticsSnapshot.FrameTimings.EffectQuality? = nil) -> DiagnosticsSnapshot.FrameTimings {
         let stages: [DiagnosticsSnapshot.FrameTimings.Stage] = report.stages.map {
             (summary: FrameStageReport.StageSummary) -> DiagnosticsSnapshot.FrameTimings.Stage in
             let cpu = summary.cpu.exportValues
@@ -119,7 +138,7 @@ extension AppCoordinator {
         let frameGPU = report.frameGPU.exportValues
         return DiagnosticsSnapshot.FrameTimings(windowFrames: report.frames, rejectedSamples: report.rejectedSamples,
                                                 frameGPUMedianMs: frameGPU.median, frameGPUP95Ms: frameGPU.p95, stages: stages,
-                                                budget: budget.map(exportBudget))
+                                                budget: budget.map(exportBudget), effectQuality: effectQuality)
     }
 }
 

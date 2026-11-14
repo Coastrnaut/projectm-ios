@@ -11,9 +11,9 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 53,
+   "audited": 52,
    "implementing": 8,
-   "integrated": 90
+   "integrated": 91
   },
   "P2": {
    "audited": 73,
@@ -24,9 +24,9 @@
   }
  },
  "by_state": {
-  "audited": 137,
+  "audited": 136,
   "implementing": 8,
-  "integrated": 180,
+  "integrated": 181,
   "skipped_existing": 1
  },
  "device_gate": {
@@ -101,7 +101,6 @@
    "OUT-012",
    "OUT-013",
    "OUT-014",
-   "PERF-003",
    "PERF-005",
    "PERF-007",
    "PERF-008",
@@ -183,7 +182,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "145 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-011, ANL-012)"
+   "144 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-011, ANL-012)"
   ]
  },
  "features": {
@@ -1742,20 +1741,20 @@
    "branch": "feature/mod-010",
    "branch_sha": "a5d42a32bfed1fb7d99e1f10b28d94ee30922630",
    "error_category": null,
-   "integrated_sha": "5703e0c5e92d48ce799a64f058ada8694ede78ee",
+   "integrated_sha": "5703e0c5",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
   },
   "MOD-011": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/mod-011",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "MOD-012": {
    "attempts": 0,
@@ -2100,12 +2099,12 @@
   "PERF-003": {
    "attempts": 0,
    "branch": "feature/perf-003",
-   "branch_sha": null,
+   "branch_sha": "a3c83bc52fa912a59a67b59a0109b6eecac9dc60",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "53c913bd209d3dfb4e578d438d5fd952c1218287",
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "integrated"
   },
   "PERF-004": {
    "attempts": 0,
@@ -4017,7 +4016,7 @@
   {
    "branch": "feature/mod-010",
    "id": "MOD-010",
-   "sha": "5703e0c5e92d48ce799a64f058ada8694ede78ee"
+   "sha": "5703e0c5"
   },
   {
    "branch": "feature/mod-013",
@@ -4073,6 +4072,11 @@
    "branch": null,
    "id": "PERF-002",
    "sha": "0c570bb94ccc15132bb9344140a09dc053149026"
+  },
+  {
+   "branch": "feature/perf-003",
+   "id": "PERF-003",
+   "sha": "53c913bd209d3dfb4e578d438d5fd952c1218287"
   },
   {
    "branch": "feature/perf-004",
@@ -4375,5 +4379,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T16:12:20Z"
+ "updated": "2026-11-14T16:33:24Z"
 }

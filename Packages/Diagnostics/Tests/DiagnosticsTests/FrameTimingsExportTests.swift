@@ -127,4 +127,32 @@ final class FrameTimingsExportTests: XCTestCase {
         timings.budget = budget
         XCTAssertEqual(try schemaErrors(DiagnosticsExporter.encode(try snapshot(timings))), [])
     }
+
+    // MARK: - PERF-003-T11: the effect quality level (optional)
+
+    func testEffectQualityRoundTripsAndValidates() throws {
+        var timings = Self.timings
+        timings.effectQuality = .init(level: "reduced", reason: "thermal")
+        let original = try snapshot(timings)
+        let data = try DiagnosticsExporter.encode(original)
+        XCTAssertEqual(try schemaErrors(data), [])
+        XCTAssertEqual(try JSONDecoder().decode(DiagnosticsSnapshot.self, from: data), original)
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let quality = try XCTUnwrap((object["frameTimings"] as? [String: Any])?["effectQuality"] as? [String: Any])
+        XCTAssertEqual(quality["level"] as? String, "reduced")
+        XCTAssertEqual(quality["reason"] as? String, "thermal")
+        XCTAssertTrue(DiagnosticsExporter.text(original).contains("Effect quality: reduced (thermal)\n"))
+    }
+
+    func testEffectQualityIsAbsentWhenUnknownAndSanitized() throws {
+        let data = try DiagnosticsExporter.encode(try snapshot(Self.timings))
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        XCTAssertNil((object["frameTimings"] as? [String: Any])?["effectQuality"])
+        let odd = DiagnosticsSnapshot.FrameTimings.EffectQuality(level: "ultra", reason: "heat")
+        XCTAssertEqual(odd.level, "full")
+        XCTAssertNil(odd.reason)
+        var timings = Self.timings
+        timings.effectQuality = .init(level: "full")
+        XCTAssertEqual(try schemaErrors(DiagnosticsExporter.encode(try snapshot(timings))), [])
+    }
 }
