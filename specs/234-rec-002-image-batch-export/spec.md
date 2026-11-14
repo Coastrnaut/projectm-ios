@@ -46,6 +46,13 @@ local-first option.
 - Q: Does exporting change the scene? → A: No. Exporting never writes the live parameter values, the scene file, its backup, the snapshot list or the undo history, and it works while the scene is locked (SCN-015) because it edits nothing. It is refused while Compare is active (the live values are a preview then): "Finish Compare first."
 - Q: Announcements? → A: "Exported 5 images", "Export cancelled" and failures on the library lane (ACC-004).
 
+### Session 2026-11-14 (speckit-clarify)
+
+- Q: What happens to the live scene if it changes while a batch renders (a cue fires, MIDI moves the glow)? → A: Nothing reaches the batch: the visual, its options, Reduce flashing, the safety profile and every image's values are captured when Export is tapped, so the files show the scene as it was then.
+- Q: What does a new export do while an earlier batch is still offered? → A: It replaces it: the earlier batch's temporary folder is deleted before the new one renders (one batch at a time).
+- Q: If Save to Photos is refused or fails part-way, what is kept? → A: The images already added stay in Photos; saving stops at the first refusal or failure with REC-011's notice, says how many were added ("Saved 2 of 5 to Photos."), and the batch stays offered.
+- Q: Does rendering block the interface? → A: No. Each image is rendered and encoded off the main thread; the sheet stays responsive and Cancel takes effect after the image in progress (at most one image of work).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Export a set of looks as images (Priority: P1)
@@ -96,6 +103,8 @@ The user exports only two snapshots, square.
 - A render or write failure: the batch stops, its folder is deleted, "Export failed" is shown; nothing partial is offered.
 - The app is backgrounded during an export: the export continues if iOS allows; a killed app's temporary folder is deleted at the next launch.
 - Save… cancelled: the images stay offered until Done.
+- A cue, MIDI or other live change during an export: the files still show the state captured at Export.
+- Save to Photos refused or failing part-way: "Saved N of M to Photos." with REC-011's notice; the batch stays offered.
 
 ## Requirements *(mandatory)*
 
@@ -112,6 +121,7 @@ The user exports only two snapshots, square.
 - **REC-002-R9**: Exporting MUST NOT write the live values, the scene file, its backup, the snapshot list or the undo history; it MUST work while the scene is locked and MUST be refused while Compare is active.
 - **REC-002-R10**: Outcomes MUST be announced on the library lane (ACC-004).
 - **REC-002-R11**: No new stored setting, scene field, permission or network use.
+- **REC-002-R12**: The batch MUST capture the visual, its options, Reduce flashing, the safety profile and every image's values when Export is tapped, and render off the main thread; a new export replaces an offered batch.
 
 ### Key Entities
 
