@@ -39,19 +39,23 @@ person.
 
 **Independent test**: a fake microphone backend that delivers frames only while its engine runs.
 
-- [ ] AUD-015-T04 [US1] Add manager tests to `BackgroundPolicyTests.swift` using a
+- [X] AUD-015-T04 [US1] Add manager tests to `BackgroundPolicyTests.swift` using a
   `FrameCountingMicrophoneBackend` (`deliver(frames:)` writes into the sink only while its engine
   runs) behind the real `MicrophoneSource`: (a) background → zero frames reach the sink and the
   engine is off; lock; unlock while backgrounded → still zero, engine off, no resume; foreground →
   engine on, frames flow (S2); (b) a start that completes while away is held Paused with the
   engine off (R6); (c) `resume()` while away does not start the engine; (d) the notice is
   `microphoneStoppedInBackground` after background and cleared by Stop and a new start. Record the
-  red run.
-- [ ] AUD-015-T05 [US1] In `Packages/CaptureKit/Sources/CaptureKit/CaptureManager.swift`: replace
+  red run. — Verified 2026-11-14: red run: `CaptureManager` has no member
+  `backgroundNotice`/`isAway`/`backgroundConfiguration` (.build/scratch/aud015-red-T04.log); 5
+  microphone tests in `BackgroundPolicyManagerTests` pass after T05.
+- [X] AUD-015-T05 [US1] In `Packages/CaptureKit/Sources/CaptureKit/CaptureManager.swift`: replace
   `isPresentable` with `isBackgrounded` and `isLocked` (foreground clears both), use the policy in
   `handle(_:)`, hold a start that completes while away, refuse a Microphone/In-App resume while
   away, publish `backgroundNotice` and `dismissBackgroundNotice()`, add `backgroundConfiguration`
-  (R5, R6, R7, R10). Evidence: T04 and the full CaptureKit suite pass.
+  (R5, R6, R7, R10). Evidence: T04 and the full CaptureKit suite pass. — Verified 2026-11-14: `swift test --package-path
+  Packages/CaptureKit` 471 tests (454 + 17), 0 failures, 38.6 s; `BackgroundPolicyManagerTests` 12
+  tests in 0.07 s; every pre-existing lifecycle, interruption and user-pause test unchanged.
 - [ ] AUD-015-T06 [US1] Update `Apps/projectM-iOS/Tests/LifecycleCoordinatorTests.swift`
   `testUnlockWhileStillInTheBackgroundResumesNothing`: the microphone is no longer resumed by an
   unlock in the background (0 resumes), and is resumed once on foreground. Evidence: app unit test
@@ -59,12 +63,13 @@ person.
 
 ## Phase 4: User Story 2 - In-App Playback pauses and comes back (P1)
 
-- [ ] AUD-015-T07 [P] [US2] Add tests to `BackgroundPolicyTests.swift` with `FakePlaybackBackend`
+- [X] AUD-015-T07 [P] [US2] Add tests to `BackgroundPolicyTests.swift` with `FakePlaybackBackend`
   behind the real `InAppPlaybackSource`: shipped configuration pauses on background and resumes on
   foreground with notice `playbackPausedInBackground`; configuration (audio mode, keep) continues,
   no pause, no notice; a user pause stays paused on return and sets no notice; an open
   interruption stays on hold on return; the notice is cleared by a user pause and by `resume()`
-  (S3, R7, R10).
+  (S3, R7, R10). — Verified 2026-11-14: 5 In-App Playback tests in `BackgroundPolicyManagerTests`
+  pass (same run as T05).
 - [ ] AUD-015-T08 [US2] Wire the app: `Apps/projectM-iOS/Coordinators/AppCoordinator.swift` sets
   `manager.backgroundConfiguration` from `Bundle.main` `UIBackgroundModes` and keep = false
   (R3); exposes `visibleBackgroundNotice` (nil while away or while a stop/pause reason shows).
@@ -76,10 +81,11 @@ person.
 
 ## Phase 5: User Story 3 - System/App Capture follows the system (P2)
 
-- [ ] AUD-015-T09 [P] [US3] Tests in `BackgroundPolicyTests.swift`: with a fake System/App
+- [X] AUD-015-T09 [P] [US3] Tests in `BackgroundPolicyTests.swift`: with a fake System/App
   Capture source, background, lock, unlock and foreground never suspend, resume or restart it and
   set no notice; an end by the system while away shows "Ended by system" (`endedBySystem`) on
-  return and nothing restarts (R4).
+  return and nothing restarts (R4). — Verified 2026-11-14: 2 tests in `BackgroundPolicyManagerTests` pass (same run
+  as T05).
 
 ## Phase 6: User Story 4 - Rendering stops while away (P2)
 

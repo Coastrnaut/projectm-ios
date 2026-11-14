@@ -40,6 +40,12 @@
 //   app was in the background happens on the return. A Play that iOS refuses while the
 //   interruption is open leaves the session as it was. States, reasons and log names are those of
 //   feature 001 (FR-051). Microphone and System/App Capture take the paths they always took.
+// * Background policy (AUD-015, ADR-0036): every lifecycle event asks `BackgroundPolicy`. Background
+//   and lock are independent (an unlock while still in the background resumes nothing; entering the
+//   foreground clears both, as PERF-011-R1). Away, the Microphone always stops and In-App Playback
+//   pauses unless it is entitled (audio background mode) and intended (keep playing); System/App
+//   Capture follows the system. A start or resume that completes while away is held Paused.
+//   `backgroundNotice` keeps what the policy did for the return notice, until a user command.
 import AudioCore
 import Observation
 
@@ -79,6 +85,12 @@ public final class CaptureManager {
     @ObservationIgnored public var handoffTiming: HandoffTiming = .default
     /// AUD-012-R12: called on the main actor when an attempt sets `activeMode` (AUD-011's flag).
     @ObservationIgnored public var onSessionMode: ((AudioSourceMode) -> Void)?
+    /// AUD-015-R7: what the background policy paused or stopped while the app was away; cleared by
+    /// a start, Stop, a user pause or resume, and `dismissBackgroundNotice()`.
+    public private(set) var backgroundNotice: BackgroundPolicy.Reason?
+    /// AUD-015-R2, R3: what the app is entitled to and what the user intended; the app sets it from
+    /// its Info.plist. Defaults to the shipped configuration (no audio mode, no keep playing).
+    @ObservationIgnored public var backgroundConfiguration: BackgroundPolicy.Configuration = .shipped
 
     private let sources: [AudioSourceMode: any AudioSource]
     private let sink = PCMSink()
@@ -97,8 +109,12 @@ public final class CaptureManager {
     @ObservationIgnored private var pauseReason: StopReason?
     /// The open interruption of In-App Playback (AUD-014); nil when there is none.
     @ObservationIgnored private var interruption: OpenInterruption?
-    /// False between background or lock and the next foreground or unlock.
-    @ObservationIgnored private var isPresentable = true
+    /// AUD-015-R5: in the background (until the next foreground) and locked (until an unlock or
+    /// the next foreground), tracked independently.
+    @ObservationIgnored private var isBackgrounded = false
+    @ObservationIgnored private var isLocked = false
+    /// The app is in the foreground and unlocked.
+    private var isPresentable: Bool { !isBackgrounded && !isLocked }
     /// The user pause is the transport's Stop playback (AUD-014: the policy's "stopped").
     @ObservationIgnored private var userPauseIsStop = false
     /// AUD-012: the cancel generation of the latest attempt, and whether that attempt came from a
@@ -189,6 +205,7 @@ public final class CaptureManager {
     public func stop() async {
         switchingTo = nil   // AUD-012-R11: the target is never shown
         _ = await cancelPendingStart()
+        backgroundNotice = nil   // AUD-015-R7
         await serialized {
             guard self.current != nil else { return }
             await self.stopCurrent()
@@ -220,8 +237,32 @@ public final class CaptureManager {
     }
 
     /// Resumes a Paused source (e.g. after "Paused — audio route changed"), and ends a user pause.
+    /// While the app is away a Microphone or paused In-App Playback session stays held (AUD-015-R6).
     public func resume() async {
+        backgroundNotice = nil
         await serialized { await self.resumeInner() }
+    }
+
+    /// AUD-015: the app is in the background, locked, or both.
+    public var isAway: Bool { !isPresentable }
+
+    /// AUD-015-R7: the user dismissed the return notice (or it timed out).
+    public func dismissBackgroundNotice() {
+        backgroundNotice = nil
+    }
+
+    private func backgroundContext(_ mode: AudioSourceMode) -> BackgroundPolicy.Context {
+        BackgroundPolicy.Context(mode: mode, isBackgrounded: isBackgrounded, isLocked: isLocked,
+                                 configuration: backgroundConfiguration)
+    }
+
+    /// The policy's away action for `mode` holds the source (pause or stop), now.
+    private func awayHolds(_ mode: AudioSourceMode) -> BackgroundPolicy.Decision? {
+        let decision = BackgroundPolicy.decide(backgroundContext(mode))
+        switch decision.action {
+        case .pausePlayback, .stopCapture: return decision
+        case .run, .continuePlayback, .followSystem: return nil
+        }
     }
 
     /// Pauses In-App Playback at the user's request (AUD-006-R20, R21): the source stays started,
@@ -235,6 +276,7 @@ public final class CaptureManager {
         await serialized {
             guard let source = self.current, self.activeMode == .inAppPlayback,
                   self.state.isRunning || self.state == .interrupted || self.state == .paused else { return }
+            self.backgroundNotice = nil   // AUD-015-R7: the user acted
             self.interruption?.userChangedTransport = true
             if self.isPausedByUser {
                 if asStop { self.userPauseIsStop = true }
@@ -258,27 +300,30 @@ public final class CaptureManager {
         userPauseIsStop = false
     }
 
-    /// App lifecycle per the data-model lifecycle matrix (FR-050, FR-053, FR-054).
+    /// App lifecycle per the data-model lifecycle matrix (FR-050, FR-053, FR-054) and the
+    /// background policy (AUD-015).
     public func handle(_ event: AppLifecycleEvent) async {
         log(event.rawValue)
         await serialized {
             switch event {
-            case .background, .lock: self.isPresentable = false
-            case .foreground, .unlock: self.isPresentable = true
+            case .background: self.isBackgrounded = true
+            case .lock: self.isLocked = true
+            case .foreground:
+                // Visible on screen, so also unlocked: a missing unlock never leaves capture held.
+                self.isBackgrounded = false
+                self.isLocked = false
+            case .unlock: self.isLocked = false
             }
-            guard let source = self.current, let mode = self.activeMode, mode != .systemAppCapture else {
-                // System/App Capture continues while the stream delivers (RI-003); if the OS ends
-                // it, the source reports endedBySystem.
-                return
-            }
+            guard let source = self.current, let mode = self.activeMode else { return }
             switch event {
             case .background, .lock:
-                guard self.state.isRunning || self.state == .interrupted else { return }
-                await source.suspend()
-                // AUD-014: an open interruption of In-App Playback stays visible as the reason.
-                self.pauseReason = self.interruption.map { $0.outputLost ? .audioRouteChanged : .interrupted }
-                self.apply(.suspended)
+                // System/App Capture follows the system (RI-003): if the OS ends it, the source
+                // reports endedBySystem. Entitled and intended playback continues.
+                guard let decision = self.awayHolds(mode) else { return }
+                await self.holdWhileAway(source, reason: decision.reason)
             case .foreground, .unlock:
+                // AUD-015-R5: only a real return (foreground and unlocked) resumes anything.
+                guard BackgroundPolicy.mayResumeAutomatically(self.backgroundContext(mode)) else { return }
                 // A user pause (AUD-006) stays until the user resumes.
                 guard !self.isPausedByUser else { return }
                 if self.interruption != nil {
@@ -290,6 +335,16 @@ public final class CaptureManager {
                 await self.resumeInner()
             }
         }
+    }
+
+    /// AUD-015: pauses playback or stops the microphone engine because the app is away.
+    private func holdWhileAway(_ source: any AudioSource, reason: BackgroundPolicy.Reason) async {
+        guard state.isRunning || state == .interrupted else { return }
+        await source.suspend()
+        // AUD-014: an open interruption of In-App Playback stays visible as the reason.
+        pauseReason = interruption.map { $0.outputLost ? .audioRouteChanged : .interrupted }
+        apply(.suspended)
+        backgroundNotice = reason
     }
 
     // MARK: - Internals
@@ -385,6 +440,10 @@ public final class CaptureManager {
             apply(.started)
             listen(to: events, from: source)
             if runsAnalysisTimer { analyzer.startTimer() }
+            // AUD-015-R6: a start that completes while the app is away is held until the return.
+            if !isPresentable, let decision = awayHolds(mode) {
+                await holdWhileAway(source, reason: decision.reason)
+            }
         } catch let error as SourceError {
             if cancelled() { applyCancelledStart(); return }
             apply(.startFailed(error.reason))
@@ -413,6 +472,7 @@ public final class CaptureManager {
         isPausedByUser = false
         userPauseIsStop = false
         interruption = nil
+        backgroundNotice = nil   // AUD-015-R7: a new attempt
         state = update.state
         stopReason = nil
         stopDetail = nil
@@ -449,6 +509,8 @@ public final class CaptureManager {
 
     private func resumeInner() async {
         guard let source = current, state == .paused || state == .interrupted else { return }
+        // AUD-015-R6: nothing the policy holds resumes while the app is away.
+        if !isPresentable, let mode = activeMode, awayHolds(mode) != nil { return }
         do {
             try await source.resume()
             pauseReason = nil
