@@ -5,7 +5,7 @@
 // allocated and this module stays independent of the analysis types (Constitution VI): the native
 // spectra pass their band scratch; a consumer of the analysis event bus (ANL-016) passes its copied
 // bands plus `AnalysisFrame.onsetFlux`, `beatConfidence`, `kickEnvelope` (ANL-007-R11) and the
-// normalized `centroid` (ANL-010-R8).
+// normalized `centroid` (ANL-010-R8) and the `loudness` envelope (ANL-014-R8).
 
 /// A normalized (0…1) audio feature a binding can follow.
 public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
@@ -22,12 +22,15 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
     /// The spectral centroid (ANL-010), normalized 0…1 on a log-frequency scale (50 Hz → 0,
     /// 10 kHz → 1): the sound's brightness.
     case centroid
+    /// The loudness envelope (ANL-014): K-weighted level normalized −60…0 dB, smoothed (attack
+    /// 100 ms, release 400 ms); 0 at silence.
+    case loudness
 
     /// The highest band index (the largest band count is 128).
     public static let maximumBandIndex = 127
 
     /// The stable identifier (MOD-013 stores it): `audio.band.<index>`, `audio.bandMean`,
-    /// `audio.onset`, `audio.beatConfidence`, `audio.kick`, `audio.centroid`.
+    /// `audio.onset`, `audio.beatConfidence`, `audio.kick`, `audio.centroid`, `audio.loudness`.
     public var id: String {
         switch self {
         case let .band(index): "audio.band.\(index)"
@@ -36,6 +39,7 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
         case .beatConfidence: "audio.beatConfidence"
         case .kick: "audio.kick"
         case .centroid: "audio.centroid"
+        case .loudness: "audio.loudness"
         }
     }
 
@@ -50,6 +54,7 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
         case "audio.beatConfidence": self = .beatConfidence
         case "audio.kick": self = .kick
         case "audio.centroid": self = .centroid
+        case "audio.loudness": self = .loudness
         default:
             let prefix = "audio.band."
             guard id.hasPrefix(prefix) else { return nil }
@@ -80,6 +85,8 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
             return frame.kick.map { (value: Float) -> Double in Self.finite(Double(value)) } ?? 0
         case .centroid:
             return frame.centroid.map { (value: Float) -> Double in Self.finite(Double(value)) } ?? 0
+        case .loudness:
+            return frame.loudness.map { (value: Float) -> Double in Self.finite(Double(value)) } ?? 0
         }
     }
 
@@ -96,14 +103,17 @@ public struct AudioFeatureFrame {
     public var kick: Float?
     /// ANL-010's normalized spectral centroid (0…1); nil when the producer does not feed it.
     public var centroid: Float?
+    /// ANL-014's loudness envelope (0…1); nil when the producer does not feed it.
+    public var loudness: Float?
 
     public init(bands: UnsafeBufferPointer<Float>, onset: Float? = nil, beatConfidence: Double? = nil, kick: Float? = nil,
-                centroid: Float? = nil) {
+                centroid: Float? = nil, loudness: Float? = nil) {
         self.bands = bands
         self.onset = onset
         self.beatConfidence = beatConfidence
         self.kick = kick
         self.centroid = centroid
+        self.loudness = loudness
     }
 
     /// No audio: every feature reads 0.
