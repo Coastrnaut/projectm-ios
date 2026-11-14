@@ -1,0 +1,48 @@
+{
+  "entries" : [
+    {
+      "file" : "gradient-mask-linear-128x96-f0.png",
+      "fileSHA256" : "346e992b262efbf65f99ee2cb9237f7d9d0455491987cfe4c9df0b9bb749a493",
+      "frame" : 0,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "8bc15aa0149c87d80182ebaf00d0c1275c5b65a29554c42f144b2d3eb166b15d",
+      "scene" : "gradient-mask-linear",
+      "width" : 128
+    },
+    {
+      "file" : "gradient-mask-linear-256x192-f0.png",
+      "fileSHA256" : "6a52c0466d018d22b2b42fe42a97d2d617f738064597f7256019cfa000c0709b",
+      "frame" : 0,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "ac0259fa8050a925bd145e177e0861d33d9fc2940a2746860c4f67ef943d3b25",
+      "scene" : "gradient-mask-linear",
+      "width" : 256
+    },
+    {
+      "file" : "gradient-mask-radial-128x96-f0.png",
+      "fileSHA256" : "7a0b5d8947b340a09b1402afec413514406c854b8fe12315a7af5f2550c925d9",
+      "frame" : 0,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "9748d1fa2369904a035a909c25bf0ef4dd139f4266855c3a89784a31495b33f2",
+      "scene" : "gradient-mask-radial",
+      "width" : 128
+    },
+    {
+      "file" : "gradient-mask-radial-256x192-f0.png",
+      "fileSHA256" : "5fbb6bba687393e60f8b4c14a113439b68f9430c87796734b0683205092fa52c",
+      "frame" : 0,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "f125f4621f044de7c230a528c2bc66639d4c2343df649898eb7c41783929d933",
+      "scene" : "gradient-mask-radial",
+      "width" : 256
+    }
+  ],
+  "formatVersion" : 1,
+  "platform" : "ios-simulator",
+  "recordedGPU" : "Apple iOS simulator GPU",
+  "recordedOS" : "27.2"
+}
