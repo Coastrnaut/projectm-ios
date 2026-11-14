@@ -39,17 +39,17 @@ human interaction); each answer is the conservative, local-first option.
 - Q: What happens when the source changes during a recording? → A: The audio track ends at the switch and does not resume in that recording, whatever the new source is; the video goes on. No silence is inserted. The same happens when the user turns "Include microphone audio" off while recording the microphone, or the source stops. A recording that started without a permitted source stays video only even if a permitted source starts later (the file's tracks are fixed when it starts).
 - Q: What A/V tolerance is promised? → A: In the written file, a sound and the frame stamped at the same host time are at most 20 ms apart (less than one frame at 30 fps, about one AAC frame of 1,024 samples at 44.1 kHz is 23 ms; 20 ms is the stricter bound). This is measured by the fixture with injected times; the device's own pipeline delay is measured in the last stage.
 - Q: How is the audio encoded? → A: AAC-LC, 44.1 kHz stereo, 128 kb/s, in the same MP4 as the video, no metadata.
-- Q: How does the user know what audio a recording holds? → A: A status line beside the Record control says what the next or current recording contains ("Recording includes app audio.", "Recording includes microphone audio.", "Recording has no audio: other apps' audio is never recorded.", "Recording has no audio."), and VoiceOver announces the audio status when a recording starts and when its audio ends early.
+- Q: How does the user know what audio a recording holds? → A: An audio status text (where it appears: see the speckit-clarify session) says what the next or current recording contains ("Recording includes app audio.", "Recording includes microphone audio.", "Recording has no audio: other apps' audio is never recorded.", "Recording has no audio: Include microphone audio is off.", "Recording has no audio: microphone permission is off.", "Recording has no audio."), and VoiceOver announces the audio status when a recording starts and when its audio ends early.
 
 ### Session 2026-11-14 (speckit-clarify)
 
 Answered by Claude under owner rules 4 and 9 (recommended option first).
 
 - Q: Which version of the audio goes into the file: as captured, or after the user's input trim, noise gate and latency offset? → A: As captured: the normalized source audio (44.1 kHz stereo) before input trim, noise gate and the renderer's latency offset. Those settings shape what drives the visuals; a recording should sound like the music, and the latency offset compensates for the screen, which a file does not need. The AUD-012 switch fade is part of the normalized audio and stays.
-- Q: Where does the user find "Include microphone audio"? → A: In Settings, in a new "Recording" section (the toggle plus one line of explanation), not in the visualizer controls, which keep only the status line. A second place would need its own VoiceOver review.
-- Q: When is the status line shown? → A: Whenever the Record control is shown: before a recording it says what the next recording would contain (from the current source and setting), during a recording what this one contains (the decision made at Record, or "audio ended" after an early end).
+- Q: Where does the user find "Include microphone audio"? → A: In Settings, in a new "Recording" section (the toggle plus one line of explanation), not in the visualizer controls, which keep only the audio status. A second place would need its own VoiceOver review.
+- Q: When and where is the audio status shown? → A: Before a recording, as the Record control's VoiceOver hint and in Settings → Recording (what the next recording would contain, from the current source and setting); during a recording, as a visible line under the recording indicator (the decision made at Record, or "Recording audio ended." after an early end). The controls grid keeps its one-line buttons; a second visible line there would crowd the wrapping grid.
 - Q: Can the setting change during a recording? → A: Yes. Turning it off while the microphone is being recorded ends the audio at once (REC-004-R5). Turning it on during a recording does not add audio to that recording (its tracks are fixed at Record); the next recording includes it.
-- Q: What if the microphone permission is undetermined when the user turns the setting on? → A: The setting does not ask for permission; the permission is asked only by Microphone mode at its point of use (FILE-013). The setting's footer says microphone audio needs the permission, and the status line says "Recording has no audio: microphone permission is off." when it is missing.
+- Q: What if the microphone permission is undetermined when the user turns the setting on? → A: The setting does not ask for permission; the permission is asked only by Microphone mode at its point of use (FILE-013). The setting's footer says microphone audio needs the permission, and the audio status says "Recording has no audio: microphone permission is off." when it is missing.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -85,7 +85,7 @@ permission granted gives a track with the samples.
 
 **Acceptance Scenarios**:
 
-1. **Given** Microphone is the source and the setting is off, **When** the user records, **Then** the file has no audio track and the status line says why.
+1. **Given** Microphone is the source and the setting is off, **When** the user records, **Then** the file has no audio track and the audio status says why.
 2. **Given** the setting is on and the permission is denied or undetermined, **When** the user records, **Then** the file has no audio track.
 3. **Given** the setting is on and the permission is granted, **When** the user records, **Then** the file holds the microphone audio.
 4. **Given** a new install, **When** the user opens Settings, **Then** "Include microphone audio" is off.
@@ -105,7 +105,7 @@ apps' audio may be protected.
 
 **Acceptance Scenarios**:
 
-1. **Given** System/App Capture is the source, **When** the user records, **Then** the file has no audio track and the status line says other apps' audio is never recorded.
+1. **Given** System/App Capture is the source, **When** the user records, **Then** the file has no audio track and the audio status says other apps' audio is never recorded.
 2. **Given** a recording with app audio runs, **When** the source switches to System/App Capture, **Then** the audio track ends at the switch (within 20 ms) and nothing after it has audio.
 
 ---
@@ -119,7 +119,7 @@ setting's value; app unit tests check the status texts and the announcement for 
 
 **Acceptance Scenarios**:
 
-1. **Given** any source, **When** the controls show Record, **Then** a status line names the audio the recording will contain.
+1. **Given** any source, **When** the user reads the Record control with VoiceOver or opens Settings → Recording, **Then** the audio the next recording will contain is named; **When** recording, **Then** a line under the indicator names it.
 2. **Given** a recording starts or its audio ends early, **When** VoiceOver runs, **Then** the audio status is announced once.
 
 ### Edge Cases
@@ -137,13 +137,13 @@ setting's value; app unit tests check the status texts and the announcement for 
 
 - **REC-004-R1**: A recording MUST contain audio only from In-App Playback, or from the Microphone when the permission is granted and "Include microphone audio" is on. All other cases MUST produce a file with no audio track.
 - **REC-004-R2**: System/App Capture audio MUST never be written into a recording, in any build or setting.
-- **REC-004-R3**: "Include microphone audio" MUST default to off, be stored on the device only, be included in the library backup's settings and erased with the Settings category, and be reset by the UI-test reset.
+- **REC-004-R3**: "Include microphone audio" MUST default to off and be stored on the device only. It is a consent, so it MUST be left out of the library backup (it never travels to another device), MUST be erased with the Settings category like the other device switches, and MUST be reset by the UI-test reset.
 - **REC-004-R4**: The audio decision MUST be made when the recording starts; the file MUST have an audio track only if the decision is "include".
 - **REC-004-R5**: When the source changes, stops, becomes non-permitted or the microphone setting is turned off during a recording, the audio MUST end at that point and MUST NOT resume in that recording; no silence MUST be inserted.
 - **REC-004-R6**: Audio MUST be placed by host time on the same clock as the video frames; a sound and a frame stamped at the same host time MUST be at most 20 ms apart in the file. Audio before the first frame and after the last frame MUST be left out.
 - **REC-004-R7**: Audio MUST be AAC-LC, 44.1 kHz stereo, 128 kb/s, in the same MP4, with no metadata.
 - **REC-004-R8**: Audio for the recording MUST be taken without blocking the audio path or the frame loop (bounded buffers, drop-and-count on overflow), and only while a recording with audio runs.
-- **REC-004-R9**: The controls MUST show a status line naming the audio the recording contains; VoiceOver MUST announce it when recording starts and when its audio ends early, through the app's announcement lanes.
+- **REC-004-R9**: The app MUST name the audio a recording contains: before recording in the Record control's VoiceOver hint and in Settings → Recording, during recording in a visible line under the recording indicator; VoiceOver MUST announce it when recording starts and when its audio ends early, through the app's announcement lanes.
 - **REC-004-R10**: Only files that passed the import check (which refuses protected content) MUST be the In-App Playback source of recorded audio; the app MUST NOT add any decryption or protected-stream path.
 - **REC-004-R12**: The recorded audio MUST be the normalized source audio, before input trim, noise gate and latency offset.
 - **REC-004-R13**: "Include microphone audio" MUST be in a "Recording" section of Settings; it MUST NOT request the microphone permission itself.
