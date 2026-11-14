@@ -13,8 +13,7 @@
   "P1": {
    "audited": 117,
    "implementing": 3,
-   "integrated": 30,
-   "unit_passed": 1
+   "integrated": 31
   },
   "P2": {
    "audited": 77,
@@ -27,9 +26,8 @@
  "by_state": {
   "audited": 206,
   "implementing": 3,
-  "integrated": 115,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "integrated": 116,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -59,7 +57,6 @@
    "CAM-009",
    "CAM-010",
    "CAM-011",
-   "CMP-007",
    "CMP-008",
    "CMP-009",
    "CMP-010",
@@ -250,7 +247,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "210 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)"
+   "209 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)"
   ]
  },
  "features": {
@@ -1029,10 +1026,10 @@
    "branch": "feature/cmp-007",
    "branch_sha": "389bfc89e1bd63b7e4d9c17022d22daca76e770b",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "20b9cc8a",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "CMP-008": {
    "attempts": 0,
@@ -3179,7 +3176,7 @@
    "branch": "feature/uix-002",
    "branch_sha": "fcf53a475301d226a513db527ace774048e27e1a",
    "error_category": null,
-   "integrated_sha": "ed0b96a542d7e6d0113c98283fcbeb91fb3f6b4b",
+   "integrated_sha": "20b9cc8a",
    "priority": "P0",
    "spec_dir": null,
    "state": "integrated"
@@ -3792,6 +3789,11 @@
    "sha": "53ddd8c4"
   },
   {
+   "branch": "feature/cmp-007",
+   "id": "CMP-007",
+   "sha": "20b9cc8a"
+  },
+  {
    "branch": "feature/file-001",
    "id": "FILE-001",
    "sha": "c3886d1cb0bb2fc8bfeec909a094332bdfb8ff71"
@@ -4074,7 +4076,7 @@
   {
    "branch": "feature/uix-002",
    "id": "UIX-002",
-   "sha": "ed0b96a542d7e6d0113c98283fcbeb91fb3f6b4b"
+   "sha": "20b9cc8a"
   },
   {
    "branch": "feature/vis-001",
@@ -4117,5 +4119,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T06:10:50Z"
+ "updated": "2026-11-14T06:14:00Z"
 }
