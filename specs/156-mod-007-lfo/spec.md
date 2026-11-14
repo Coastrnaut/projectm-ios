@@ -154,7 +154,7 @@ with an oscillator binding on the glow intensity.
 
 ### Key Entities
 
-- **Oscillator (LFO)**: shape, rate, phase offset, amplitude, centre; value as a function of elapsed time.
+- **Oscillator (LFO)**: shape, rate, phase offset, amplitude, centre (stored and named `center` in code and scenes); value as a function of elapsed time.
 - **Oscillator bank**: up to eight oscillators of a scene with one shared origin (the first frame after
   they are set).
 - **Stored oscillator**: one entry of a scene's oscillator list, kept as written.
