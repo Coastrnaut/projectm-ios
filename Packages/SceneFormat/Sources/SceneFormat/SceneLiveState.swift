@@ -52,6 +52,8 @@ public struct SceneLiveState: Sendable, Equatable {
     public var preservedMasks: [LayerInstanceID: SceneMask]
     /// CMP-008: saved gradient masks with an unknown kind, by instance, kept verbatim for re-save.
     public var preservedGradientMasks: [LayerInstanceID: SceneGradientMask] = [:]
+    /// SHD-004: material layers' selected variants, by instance, as stored (capture writes them back).
+    public var materialVariants: [LayerInstanceID: String] = [:]
     /// CMP-011: saved groups that are not live (damaged, or without live layers), kept verbatim.
     public var preservedGroups: [SceneGroup]
     /// FX-020: the document's effect chain as stored (apply `SceneEffectSettings.read`; capture writes it back).
@@ -148,7 +150,8 @@ extension SceneDocument {
             layers.append(SceneLayer(instance: entry.id.rawValue, content: content, values: entry.descriptor.parameters,
                                      composite: SceneComposite(opacity: settings.opacity, blendMode: blend, transform: settings.transform,
                                                                fit: fit, mask: mask, gradientMask: gradient,
-                                                               lumaKey: settings.lumaKey)))   // CMP-009
+                                                               lumaKey: settings.lumaKey),   // CMP-009
+                                     materialVariant: content.kind == "material" ? live.materialVariants[entry.id] : nil))   // SHD-004
         }
         // Canonical order (MOD-013-R10): live edges in live order, then preserved edges as stored.
         let bindings = SceneBinding.list(live.bindings, expressions: live.expressions) + live.preserved.bindings
@@ -176,6 +179,7 @@ extension SceneDocument {
         var unknownFits: [LayerInstanceID: SceneFit] = [:]
         var unknownMasks: [LayerInstanceID: SceneMask] = [:]
         var unknownGradients: [LayerInstanceID: SceneGradientMask] = [:]
+        var variants: [LayerInstanceID: String] = [:]
         for layer in layers {
             guard let kind = layer.content.layerKind else { continue }
             let id = LayerInstanceID(rawValue: layer.instance)
@@ -192,6 +196,7 @@ extension SceneDocument {
                                                   lumaKey: layer.composite.lumaKey)   // CMP-009
             entries.append(LayerStackEntry(id: id, descriptor: LayerDescriptor(kind: kind, parameters: layer.values), settings: settings))
             contents[id] = layer.content
+            if let variant = layer.materialVariant { variants[id] = variant }   // SHD-004
         }
         // CMP-011: valid groups with at least one live layer; the rest are preserved verbatim.
         var liveGroups: [LayerGroup] = []
@@ -227,6 +232,7 @@ extension SceneDocument {
                                    snapshots: snapshots)   // FX-020, MOD-006, MOD-007, MOD-010, SCN-008
         var withGradients = state
         withGradients.preservedGradientMasks = unknownGradients   // CMP-008
+        withGradients.materialVariants = variants   // SHD-004
         return SceneLoadResult(state: withGradients, warnings: issues, modulationReport: restore.report)
     }
 }

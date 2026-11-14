@@ -28,16 +28,16 @@
 - [X] SHD-004-T08 [US2] `ProceduralMaterialLayer`: `init(_:variant:capabilities:)`, `selectedVariant`, `select(variant:)`, pipeline cache built in `prepare`, `resolution`, render draws the resolved pipeline — Verified 2026-11-14: `MaterialVariantSwitchTests` (5 tests, 0.8 s)
 - [X] SHD-004-T09 [P] [US2] Resolution unit tests (CPU: default, supported, unsupported, unknown, pipeline unavailable — the spec's pipeline-failure edge case) in `ProceduralMaterialsTests/MaterialVariantResolutionTests.swift` — Verified 2026-11-14: `MaterialVariantCatalogTests.testResolution` (all five branches)
 - [X] SHD-004-T10 [US2] GPU tests: golden signature per non-default variant (differs from Standard), switching keeps every parameter value and the motion phase, switching back draws Standard again, no rebuild in `ProceduralMaterialsTests/MaterialVariantSwitchTests.swift`; flash-safety and extremes extended to the new variants — Verified 2026-11-14: `MaterialVariantSwitchTests` goldens, switch keeps values/motion/prepared set, extremes; flash budgets; 37 material tests pass in 9.5 s
-- [ ] SHD-004-T11 [US2] SceneFormat: `SceneLayer.materialVariant` (layer key `materialVariant`, written only when non-nil), decode (material only; non-text → `droppedField`), `SceneLiveState.materialVariants`, capture
-- [ ] SHD-004-T12 [US2] Scene tests: byte-equal apart from `materialVariant`; default restores original bytes; decode → live state → capture round trip in `Packages/SceneFormat/Tests/SceneFormatTests/SceneMaterialVariantTests.swift`
-- [ ] SHD-004-T13 [US2] RenderGoldens: `GoldenLayerFactory` draws the stored variant
+- [X] SHD-004-T11 [US2] SceneFormat: `SceneLayer.materialVariant` (layer key `materialVariant`, written only when non-nil), decode (material only; non-text → `droppedField`), `SceneLiveState.materialVariants`, capture — Verified 2026-11-14: SceneFormat suite 181 tests pass in 2.8 s
+- [X] SHD-004-T12 [US2] Scene tests: byte-equal apart from `materialVariant`; default restores original bytes; decode → live state → capture round trip in `Packages/SceneFormat/Tests/SceneFormatTests/SceneMaterialVariantTests.swift` — Verified 2026-11-14: `SceneMaterialVariantTests` (3 tests): byte-equal apart from the field, default restores bytes, decode → live state → capture
+- [X] SHD-004-T13 [US2] RenderGoldens: `GoldenLayerFactory` draws the stored variant — Verified 2026-11-14: `GoldenGPUTests.testSceneRendererDrawsTheStoredMaterialVariant` on the host GPU
 
 ## Phase 5: User Story 3 - Unsupported variant falls back (P1)
 
 **Goal**: fallback with notice, choice kept. **Independent test**: injected capability GPU test, scene warning.
 
 - [X] SHD-004-T14 [US3] GPU test: capability without `apple9` + Detailed selected → Standard's picture (signature), notice `unsupported(plasmaDetailed, apple9)`, `selectedVariant` still Detailed; unknown variant → Standard with `unknownVariant` in `MaterialVariantSwitchTests.swift` — Verified 2026-11-14: `MaterialVariantSwitchTests.testUnsupportedOrUnknownVariantFallsBackToStandard` (capability without apple9 injected: Standard's exact pixels, notice, selection kept)
-- [ ] SHD-004-T15 [US3] `SceneIssue.Code.unknownMaterialVariant` (warning; SCN-012 unknown content, no action) in `SceneIssue.swift`, `SceneRepair.swift`, `SceneValidation.swift`; test in `SceneMaterialVariantTests.swift`
+- [X] SHD-004-T15 [US3] `SceneIssue.Code.unknownMaterialVariant` (warning; SCN-012 unknown content, no action) in `SceneIssue.swift`, `SceneRepair.swift`, `SceneValidation.swift`; test in `SceneMaterialVariantTests.swift` — Verified 2026-11-14: `SceneMaterialVariantTests.testUnknownVariantIsKeptWithAWarningAndBadTypeIsDropped`
 
 ## Phase 6: User Story 4 - Inspector picker (P2)
 

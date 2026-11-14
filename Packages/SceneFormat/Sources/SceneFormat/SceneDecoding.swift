@@ -204,6 +204,7 @@ struct SceneDecoder {
 
         var known: Set<String> = ["instance", "kind", "values", "composite"]
         let content: SceneLayerContent
+        var materialVariant: String? = nil
         let contentPath = ScenePath.key(path, "content")
         switch kind {
         case "camera", "spectrum.circular", "spectrum.linear":
@@ -224,11 +225,21 @@ struct SceneDecoder {
         case "material":
             content = .material(id: try contentField(o["content"], "material", contentPath))
             known.insert("content")
+            known.insert("materialVariant")   // SHD-004: text, or dropped with a warning
+            if let value = o["materialVariant"] {
+                if case let .string(name) = value {
+                    materialVariant = name
+                } else {
+                    warnings.append(SceneIssue(.droppedField, path: ScenePath.key(path, "materialVariant"),
+                                               "\(path).materialVariant is not text; it was dropped."))
+                }
+            }
         default:
             content = .unknown(kind: kind)
         }
         let extra = o.filter { (key: String, _: SceneJSON) -> Bool in !known.contains(key) }
-        return SceneLayer(instance: instance, content: content, values: values, composite: composite, extra: extra)
+        return SceneLayer(instance: instance, content: content, values: values, composite: composite, extra: extra,
+                          materialVariant: materialVariant)
     }
 
     /// `{"<field>": "<string>"}`; other keys are dropped with a warning.

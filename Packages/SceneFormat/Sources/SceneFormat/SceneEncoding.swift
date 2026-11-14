@@ -50,6 +50,7 @@ enum SceneEncoder {
             o["content"] = .object(["asset": .string(key)])
         case let .material(id):
             o["content"] = .object(["material": .string(id)])
+            if let variant = l.materialVariant { o["materialVariant"] = .string(variant) }   // SHD-004: only when set
         case .unknown:
             break // its content, if any, is in `extra`
         }
