@@ -31,6 +31,19 @@ no stored data. This specification extends the CAM-001 to CAM-005 reviews (secti
 | Settings | Section "Camera": Camera Back/Front, Lens, Lock exposure, focus note, Mirror, Crop, Anchor, Zoom. | No white balance row. |
 | Permission | One iOS camera permission covers the camera; the badge and iOS's indicator show while it runs. | Nothing new. |
 
+## Clarifications
+
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the conservative, local-first option.
+
+- Q: Should the row offer temperature presets (daylight, tungsten…) or only lock the current white balance? → A: Only lock the current white balance and return to continuous automatic white balance (CAM-006-R4); no presets, temperature or tint controls. Rejected: presets now (each preset converts to gains that must be validated per camera, more surface with no acceptance need; can follow in a later row).
+- Q: How does the lock avoid an invalid device configuration? → A: When the camera can be locked at given values, the current gains are read, each channel is clamped into the camera's accepted range (1 to its maximum gain), and only then passed to the lock; a non-finite current gain or maximum refuses the lock and nothing is configured. When the camera cannot take given values, it is locked in place without passing values (CAM-006-R4, R5). Every change happens inside one configuration of the camera. Rejected: passing the camera's reported gains back unchanged (cameras can report gains slightly outside the accepted range, which the system rejects with an exception).
+- Q: What does "persists during session" cover? → A: The lock stays while the same camera stays in use, including across interruptions (a call, another app taking the camera): the session and its device are kept, so the lock remains and is read back when the camera runs again (CAM-006-R7). It is released on a lens or position switch and on every stop, as CAM-004's exposure lock (CAM-006-R8, R9). Rejected: re-applying a lock on the new camera after a switch (it would freeze the new camera's first, usually wrong, balance) and storing the lock across launches.
+- Q: How does an unsupported camera explain its limit? → A: The "Lock white balance" switch stays visible but disabled with "This camera can't lock white balance."; while the camera is not running it is disabled with "White balance can be locked while the camera is running." The note is also the switch's VoiceOver hint (CAM-006-R3, R13), matching CAM-004's row.
+- Q: What does the switch show: the choice or the camera's state? → A: The mode read back from the camera after every change (CAM-006-R6); a refused lock (busy camera or invalid gains) leaves the switch showing the real state with no notice, as CAM-004-R5.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Hold the colors steady (Priority: P1)
