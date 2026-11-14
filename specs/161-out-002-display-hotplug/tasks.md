@@ -8,8 +8,8 @@ tests ≤ 10 s, package suite < 1 min, UI test < 30 s.
 
 ## Phase 1: Foundational (blocking)
 
-- [ ] OUT-002-T01 [P] Add `HotPlugSettle` (pending connections with a token per connect, `connect`, `update`, `cancel`, `settle(token)`, `cancelled` count; "a repeat connect replaces the entry") and `ExternalDisplayRouting.effectiveTarget(held:)` in `Packages/PresentationLifecycle/Sources/PresentationLifecycle/HotPlugSettle.swift`
-- [ ] OUT-002-T02 [P] Package tests for T01 in `Packages/PresentationLifecycle/Tests/PresentationLifecycleTests/HotPlugSettleTests.swift` (settle, stale token, cancel, update while pending, held target valid / gone / not visualizing)
+- [X] OUT-002-T01 [P] Add `HotPlugSettle` (pending connections with a token per connect, `connect`, `update`, `cancel`, `settle(token)`, `cancelled` count; "a repeat connect replaces the entry") and `ExternalDisplayRouting.effectiveTarget(held:)` in `Packages/PresentationLifecycle/Sources/PresentationLifecycle/HotPlugSettle.swift` — Verified 2026-11-14: HotPlugSettleTests (9 pass, host)
+- [X] OUT-002-T02 [P] Package tests for T01 in `Packages/PresentationLifecycle/Tests/PresentationLifecycleTests/HotPlugSettleTests.swift` (settle, stale token, cancel, update while pending, held target valid / gone / not visualizing) — Verified 2026-11-14: swift test --filter HotPlugSettleTests, 9 pass in 0.002 s
 - [ ] OUT-002-T03 Add the `ExternalDisplayEventSink` protocol (contract C1) and adopt it in `Apps/projectM-iOS/ExternalDisplay/ExternalDisplayCoordinator.swift`; drive the DEBUG fake through it in `Apps/projectM-iOS/Debug/UITestExternalDisplay.swift`
 
 ## Phase 2: User Story 1 - Plug and unplug without losing the show (P1) MVP
