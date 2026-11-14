@@ -15,6 +15,8 @@ docs/test-reports/exports/feature002/<D1|D2|D3|sim>/ and checks them against the
     python3 scripts/run_device_tests.py entitlement --device D1 # T239: after a sandbox purchase/restore
     python3 scripts/run_device_tests.py privacy --device D1     # T241: session, container, keys
     python3 scripts/run_device_tests.py summarize               # verdicts from the pulled reports
+    python3 scripts/run_device_tests.py thresholds --device D1 --run --report <PERF-012 export>
+                                                                # QA-010: budgets (docs/performance/thresholds.json)
 
 --simulator <UDID> replaces --device to rehearse a step on a simulator (a Debug build from
 --app). Simulator results are never evidence (Constitution X); they go to exports/feature002/sim.
@@ -41,6 +43,9 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import check_performance_thresholds as cpt  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 BUNDLE = "org.projectmios.ProjectMiOS"
@@ -590,6 +595,49 @@ def verdicts_for(d: Path) -> dict[str, tuple[bool, str]]:
     return out
 
 
+# MARK: - QA-010 performance budgets (on demand, final device stage)
+
+def threshold_inputs(d: Path, extra: list[Path]) -> list[Path]:
+    """The newest perf001 report, sc015.json and newest PERF-012 export in `d`, plus the named files."""
+    chosen = []
+    for pattern in ("automation-perf001-*.json", "performance-*.json"):
+        files = sorted(p for p in d.glob(pattern) if p.name != "performance-verdict.json")
+        if files:
+            chosen.append(files[-1])
+    if (d / "sc015.json").exists():
+        chosen.append(d / "sc015.json")
+    return chosen + [Path(p) for p in extra]
+
+
+def judge_thresholds(d: Path, *, label: str, simulator: bool, extra: list[Path] | None = None,
+                     pinned: int | None = None, write: bool = True) -> dict:
+    """Judges the files in `d` against the budgets and writes performance-verdict.json there (QA-010-R9;
+    not in a dry run)."""
+    inputs = threshold_inputs(d, extra or [])
+    if not inputs:
+        verdict = cpt.error_verdict(f"no reports in {d.name}", None, [])
+    else:
+        verdict = cpt.check(inputs, pinned=pinned, simulator=simulator,
+                            model=None if simulator else DEVICES.get(label))
+    if write:
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "performance-verdict.json").write_text(cpt.render_json(verdict), encoding="utf-8")
+    print(cpt.render_text(verdict), end="")
+    return verdict
+
+
+def cmd_thresholds(args) -> int:
+    target = target_from_args(args)
+    if args.run:
+        if not args.no_install:
+            install(args, target)
+        run_mode(target, "perf001", "automation-perf001", 120)
+        launches(target, "sc015", args.repeat)
+    verdict = judge_thresholds(target.out_dir, label=target.label, simulator=target.simulator,
+                               extra=args.report, pinned=args.thresholds_version, write=not DRY_RUN)
+    return cpt.exit_code(verdict)
+
+
 def main(argv: list[str] | None = None) -> int:
     global DRY_RUN
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
@@ -611,6 +659,16 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--dwell", type=int, default=3, help="perf: seconds on each preset in SC-104")
         p.add_argument("--picks", type=int, default=200, help="perf: Random picks in SC-104")
         p.add_argument("--step", choices=["purchase", "relaunch", "offline", "restore"], help="entitlement: one step only")
+    budgets = sub.add_parser("thresholds", help="QA-010: judge reports against docs/performance/thresholds.json")
+    budgets.add_argument("--device", choices=sorted(DEVICES))
+    budgets.add_argument("--simulator", metavar="UDID")
+    budgets.add_argument("--app", help="the .app to install (default: the build step's output)")
+    budgets.add_argument("--reinstall", action="store_true")
+    budgets.add_argument("--no-install", action="store_true")
+    budgets.add_argument("--run", action="store_true", help="run perf001 and sc015 first and pull their reports")
+    budgets.add_argument("--repeat", type=int, default=10, help="recorded sc015 launches")
+    budgets.add_argument("--report", type=Path, action="append", default=[], help="an exported PERF-012 report")
+    budgets.add_argument("--thresholds-version", type=int, help="refuse any other thresholds version")
     size = sub.add_parser("size")
     size.add_argument("--old-archive", default="~/Library/Developer/Xcode/Archives/2026-11-10/ProjectMiOS 1.0 (1).xcarchive")
     size.add_argument("--new-archive", help="an existing archive instead of archiving now")
@@ -637,6 +695,8 @@ def main(argv: list[str] | None = None) -> int:
         cmd_size(args)
     elif args.command == "summarize":
         summarize()
+    elif args.command == "thresholds":
+        return cmd_thresholds(args)
     return 0
 
 

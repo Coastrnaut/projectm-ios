@@ -37,7 +37,7 @@ python3 scripts/check_performance_thresholds.py REPORT [REPORT...] [--thresholds
 | `coldLaunchMs` | max(`sc015` samples) × 1000 | empty list |
 
 A non-numeric, non-finite or negative value is not measured with reason `invalid value`. Two inputs giving one
-metric: the worse value (higher for max, lower for min). Values are rounded to 3 decimals.
+metric: the worse value (higher for max, lower for min); an invalid value in any input makes it not measured. Values are rounded to 3 decimals.
 
 ## C4 Verdict
 
@@ -51,4 +51,4 @@ class.
 [--report FILE ...] [--thresholds-version N]`: with `--run`, installs unless `--no-install`, runs `perf001`
 (pulls `automation-perf001-*.json`) and `sc015` launches (pulls `sc015.json`); then judges the newest of
 `automation-perf001-*.json`, `sc015.json`, `performance-*.json` in the target's export folder plus the `--report`
-files, and writes `performance-verdict.json` there. `--dry-run` prints device commands and judges what exists.
+files, and writes `performance-verdict.json` there. `--dry-run` prints device commands and judges what exists without writing the verdict file.

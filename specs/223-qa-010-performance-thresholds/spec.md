@@ -4,7 +4,8 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (QA-010-T01-T11 verified by `python3 scripts/test_scripts.py`, 9
+PerformanceThresholdsTests on the fixture benchmark). Open: T12 `{device}` (verdicts on D1-D3). No device result is claimed.
 
 **Input**: User description: "Implement QA-010 (Performance budget thresholds) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Declare per-device-class target FPS, memory and frame percentiles." Acceptance,
