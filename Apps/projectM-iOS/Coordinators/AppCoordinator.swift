@@ -305,6 +305,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     }
     /// REC-004: "Include microphone audio" for recordings (Settings → Recording; off by default).
     let recordingAudio: RecordingAudioSetting
+    /// UIX-004: the favorite parameter shelf (pinned controls in the visualizer's controls).
+    let parameterShelf: ParameterShelf
     /// REC-004: reads the microphone permission (never asks for it).
     @ObservationIgnored private lazy var microphonePermissionProbe = AVMicrophoneBackend()
 
@@ -337,6 +339,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             defaults.removeObject(forKey: NoiseGateSetting.enabledKey)   // AUD-011: off
             defaults.removeObject(forKey: NoiseGateSetting.thresholdKey)   // AUD-011: −50 dBFS
             defaults.removeObject(forKey: RecordingAudioSetting.includeMicrophoneKey)   // REC-004: off
+            defaults.removeObject(forKey: ParameterShelf.pinsKey)   // UIX-004: no pins
             LatencyOffsetSetting.allKeys.forEach(defaults.removeObject(forKey:))   // AUD-013: 0 ms
             ColorGradeSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-003: neutral
             MotionFeedbackSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-009: Trails off
@@ -360,6 +363,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         channelSelection = ChannelSelectionSetting(defaults: defaults)
         noiseGate = NoiseGateSetting(defaults: defaults)
         recordingAudio = RecordingAudioSetting(defaults: defaults)
+        parameterShelf = ParameterShelf(defaults: defaults)   // UIX-004
         playbackBalance = PlaybackBalanceSetting(defaults: defaults)   // AUD-010
         latencyOffset = LatencyOffsetSetting(defaults: defaults)
         colorGrade = ColorGradeSetting(defaults: defaults)   // FX-003

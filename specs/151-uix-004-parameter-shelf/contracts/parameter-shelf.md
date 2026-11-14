@@ -6,7 +6,8 @@
   `shelfPin.<id>`) or "Remove from Shelf" (`shelfUnpin.<id>`). At the limit, "Pin to Shelf" is disabled
   and titled "Shelf Full (8)".
 - VoiceOver actions on the same control: "Pin to Shelf" / "Remove from Shelf".
-- Inspector sheet, Value section: button `parameterInspector.pin` ("Pin to Shelf" / "Remove from Shelf").
+- Inspector sheet, navigation bar (leading, so it stays in reach at every text size): button `parameterInspector.pin`
+  ("Pin to Shelf" / "Remove from Shelf"), only for a parameter with a control.
 
 ## P2 Overlay strip (UIX-004-R3, R4, R9)
 

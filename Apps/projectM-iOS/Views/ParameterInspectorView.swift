@@ -19,17 +19,35 @@ private struct ParameterInspectorEntryModifier: ViewModifier {
     let menu: Bool
     let action: Bool
     let open: (ParameterID) -> Void
+    /// UIX-004-R1: Pin to Shelf / Remove from Shelf next to Inspect (nil: no shelf).
+    @Environment(\.parameterShelf) private var shelf
 
     @ViewBuilder func body(content: Content) -> some View {
         if let id, menu, action {
-            content.contextMenu { inspectButton(id) }.accessibilityAction(named: "Inspect") { open(id) }
+            actions(content.contextMenu { menuItems(id) }, id)
         } else if let id, menu {
-            content.contextMenu { inspectButton(id) }
+            content.contextMenu { menuItems(id) }
         } else if let id, action {
-            content.accessibilityAction(named: "Inspect") { open(id) }
+            actions(content, id)
         } else {
             content
         }
+    }
+
+    @ViewBuilder private func menuItems(_ id: ParameterID) -> some View {
+        inspectButton(id)
+        if let shelf, ParameterShelf.isPinnable(id) { ParameterShelfPinButton(shelf: shelf, id: id) }
+    }
+
+    private func actions<V: View>(_ view: V, _ id: ParameterID) -> some View {
+        let shelfTitle: String? = shelf?.actionTitle(id)
+        return view
+            .accessibilityAction(named: "Inspect") { open(id) }
+            .accessibilityActions {
+                if let shelfTitle {
+                    Button(shelfTitle) { shelf?.toggle(id) }
+                }
+            }
     }
 
     private func inspectButton(_ id: ParameterID) -> some View {
@@ -62,6 +80,8 @@ private struct ParameterInspectorSheetModifier: ViewModifier {
     let announcer: AccessibilityAnnouncer?
     let reading: (@MainActor (ParameterID) -> ParameterModulationReading?)?
     @State private var launchRequestHandled = false
+    /// UIX-004: passed on into the sheet explicitly.
+    @Environment(\.parameterShelf) private var shelf
 
     func body(content: Content) -> some View {
         content
@@ -75,6 +95,7 @@ private struct ParameterInspectorSheetModifier: ViewModifier {
             ParameterInspectorView(descriptor: descriptor, target: target, reader: reader(for: selected.id),
                                    endCoalescing: { [history] () -> Void in history?.endCoalescing() },
                                    announce: { [announcer] (text: String) -> Void in announcer?.announce(text, kind: .parameter) })
+                .environment(\.parameterShelf, shelf)
         }
     }
 
@@ -105,6 +126,7 @@ struct ParameterInspectorView: View {
     let endCoalescing: @MainActor () -> Void
     let announce: @MainActor (String) -> Void
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.parameterShelf) private var shelf
 
     private var summary: ParameterInspectorSummary { ParameterInspectorSummary(descriptor) }
 
@@ -121,6 +143,11 @@ struct ParameterInspectorView: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }.accessibilityIdentifier("parameterInspector.done")
+                }
+                if let shelf, target != nil {   // UIX-004-R1: always in reach, also at AX5
+                    ToolbarItem(placement: .topBarLeading) {
+                        ParameterShelfPinButton(shelf: shelf, id: descriptor.id, identifier: "parameterInspector.pin")
+                    }
                 }
             }
             .accessibilityIdentifier("parameterInspector")
@@ -214,11 +241,7 @@ private struct ParameterInspectorEditor: View {
         }
     }
 
-    private var choicesList: [ParameterValue]? {
-        if let choices = target.choices { return choices }
-        let cases: [ParameterEnumCase] = descriptor.kind.enumCases
-        return cases.isEmpty ? nil : cases.map { (c: ParameterEnumCase) -> ParameterValue in .enumeration(c.id) }
-    }
+    private var choicesList: [ParameterValue]? { ParameterShelfControlSpec.choices(descriptor, target: target) }
 
     private func choicePicker(_ choices: [ParameterValue]) -> some View {
         let selection = Binding<ParameterValue>(get: { () -> ParameterValue in target.get() },
@@ -254,12 +277,7 @@ private struct ParameterInspectorEditor: View {
     }
 
     private func sliderSpec(_ bounds: ClosedRange<Double>) -> AccessibleParameterSpec {
-        let span: Double = bounds.upperBound - bounds.lowerBound
-        let hint: Double = descriptor.kind.stepHint ?? span / 100
-        let step: Double = ParameterStepper.tidy(max(hint, span / 100))
-        let unit: SpokenUnit = ParameterValueText.spokenUnit(descriptor.unit, step: descriptor.kind.stepHint)
-        return AccessibleParameterSpec(id: "parameterInspector.slider", label: descriptor.displayName, range: bounds,
-                                       step: step, unit: unit)
+        ParameterShelfControlSpec.slider(descriptor, bounds: bounds, id: "parameterInspector.slider")   // shared with UIX-004
     }
 }
 
