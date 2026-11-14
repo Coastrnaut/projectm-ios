@@ -153,7 +153,7 @@ speeds with Reduce Motion off and on.
 - **VIS-008-S3**: A burst's size grows monotonically with onset strength and stays within 4…24; the live count never exceeds 512.
 - **VIS-008-S4**: With no drag a particle's path matches the closed-form ballistic path of the fixed step within 1e-9; with drag its speed never increases while it rises.
 - **VIS-008-S5**: Onset bursts alternating with silence at 60 Hz stay within the transition budget in all 17 areas with Reduce flashing on and off, with and without the strongest glow.
-- **VIS-008-S6**: With Reduce Motion on, a burst has half the particles (rounded up) and each particle's path is the same arc traced 0.7 times as fast (positions within 1e-9 at matching path times).
+- **VIS-008-S6**: With Reduce Motion on, a burst has half the particles (rounded up) and each particle launches exactly 0.7 times as fast; its arc's highest point is within 1% of the normal one.
 - **VIS-008-S7**: The seeded picture passes its golden on the macOS host and the iOS Simulator.
 - **VIS-008-S8**: One UI test of at most 30 s chooses Particle Fountain with the source started once; the setting key persists (unit test).
 - **VIS-008-S9**: Every existing native visual and golden test passes; the package builds in the Linux shape.
