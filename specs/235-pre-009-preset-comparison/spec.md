@@ -44,6 +44,16 @@ interaction); each answer is the conservative, local-first option.
 - Q: Do safety rules apply? → A: Yes: each preview's frame passes the same flash envelope pass as the main visual with the current safety clamp (Reduce flashing or the ACC-012 profile, FX-019); flagged presets cannot be compared while Reduce flashing is on (as PRE-010).
 - Q: Is anything stored? → A: No. A comparison lives in memory only; no settings key, no file. Closing the browser cancels a waiting pick and ends a comparison.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: How do VoiceOver users follow the comparison? → A: Each preview is one image element labelled "Preview A, <name>" (or B, or its loading or failure text); opening the sheet announces "Comparing <A> and <B>" on the library lane (`announceLibrary`), and Play A/B carry hints ("Plays <name> and closes the browser").
+- Q: Can A and B be changed or swapped inside the sheet? → A: No: the sheet compares the two picks; Close and pick again for others. This keeps one session per sheet and the lockstep simple.
+- Q: What does a pane show before its first frame and when a preset never draws? → A: "Loading…" until the first frame; a pane with no frame after 20 s (simulator shader compiles take seconds) or whose preset fails to load says "<name> could not be shown." and the other keeps drawing.
+- Q: Does Compare work when the main visual is not projectM (camera, photo, native)? → A: Yes: the comparison reads the same live input; the shown visual is paused while the sheet is open and the app's normal visual switch (`resumeActiveVisual`) restores whichever visual was shown when it closes.
+- Q: Which frame rate is "30 fps" measured against, and does it change during a session? → A: The tick rate is fixed when the session starts (30, or 15 under Low Power Mode or a serious thermal state); frame times stay n / rate for the whole session so they never jump.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Compare two presets live (Priority: P1) — MVP
@@ -90,6 +100,7 @@ are identical over many frames, also when one preview is made slower.
 - A locked or excluded preset: not offered (it is not previewable).
 - The renderer has no second engine (GLES fallback): Compare is not offered.
 - A quick Close then Compare again while the previous worker is still finishing: the new comparison starts once it has ended (the sheet shows loading).
+- A preset that compiles slowly: "Loading…" until its first frame, at most 20 s, then "could not be shown".
 - Memory pressure while comparing: the comparison is optional work and stops (PERF-006).
 
 ## Requirements *(mandatory)*
@@ -108,6 +119,7 @@ are identical over many frames, also when one preview is made slower.
 - **PRE-009-R10**: The main visual pauses while the Compare sheet is open and resumes when it closes.
 - **PRE-009-R11**: A preview whose preset fails to load says so; the other keeps drawing.
 - **PRE-009-R12**: The comparison stops while the app cannot present (PERF-011) and on memory pressure (PERF-006); nothing is kept after it ends.
+- **PRE-009-R14**: Each preview is one accessibility element ("Preview A, <name>"); opening announces "Comparing <A> and <B>" on the library lane; a pane with no frame after 20 s says it could not be shown.
 - **PRE-009-R13**: Nothing is stored: no UserDefaults key, no file; no networking.
 
 ### Key Entities
