@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T23:43:48Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T23:47:12Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,25 +10,24 @@
 | State | Features |
 |---|---|
 | audited | 71 |
-| implementing | 4 |
-| built | 1 |
-| unit_passed | 1 |
-| integrated | 248 |
+| implementing | 3 |
+| built | 2 |
+| integrated | 249 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 0 | 84 | 1 |
-| P1 | 10 | 1 | 1 | 0 | 139 | 0 |
-| P2 | 50 | 3 | 0 | 1 | 25 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | built | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 84 | 1 |
+| P1 | 10 | 1 | 1 | 139 | 0 |
+| P2 | 50 | 2 | 1 | 26 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 77 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, CAM-008, CAM-009)
+- 76 features are not implemented yet (first: ACC-009, ACC-010, CAM-008, CAM-009, CAM-010)
 
 ## Integrated
 
@@ -40,6 +39,7 @@ The physical-device suite may **not** start:
 | ACC-004 | VoiceOver scene browser | `ff69b64` | `feature/acc-004` |
 | ACC-005 | VoiceOver parameter editing | `fc10ea1f` | `feature/acc-005` |
 | ACC-006 | Dynamic Type inspector | `bb1439c7` | `feature/acc-006` |
+| ACC-007 | Haptic beat feedback | `03829784` | `feature/acc-007` |
 | ACC-008 | High contrast overlay | `89d78f88` | `feature/acc-008` |
 | ACC-011 | Captioned status events | `92196c47` | `feature/acc-011` |
 | ACC-012 | Sensory safety profile | `0b822ef5` | `feature/acc-012` |
@@ -343,7 +343,7 @@ None.
 - `swift test --package-path Packages/CaptureUI`: pass at `a356ef676c45` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-006/20261113T233346/swift-test_CaptureUI.log`)
 - `post-merge in 3 batches: projectM-iOSTests 430 + AccessibilityScreens 7 + DynamicTypeInspector 30, all pass; inspector tests 14-103 s each (over the 30 s budget; shortening in chore/ui-test-budget-2)`: pass at `bb1439c7` (log `.autonomous/logs/integration/acc-006/app-tests.log`)
 
-### ACC-007 Haptic beat feedback (unit_passed)
+### ACC-007 Haptic beat feedback (integrated)
 - `python3 scripts/check_compliance.py`: pass at `8eff9d44d8f4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-007/20261114T183750/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `8eff9d44d8f4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-007/20261114T183750/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `8eff9d44d8f4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-007/20261114T183750/script-tests.log`)
@@ -361,6 +361,7 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `8eff9d44d8f4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-007/20261114T183750/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `8eff9d44d8f4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-007/20261114T183750/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `8eff9d44d8f4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-007/20261114T183750/swift-test_VisualGenerators.log`)
+- `post-merge batch80: PerformanceControl 263, LibraryBackup 83, FlashSafety 27, projectM-iOSTests 1096, UI 2 (haptic beat, tap tempo)`: pass at `03829784` (log `.autonomous/logs/integration/batch80/app-tests.log`)
 
 ### ACC-008 High contrast overlay (integrated)
 - `python3 scripts/check_compliance.py`: pass at `6b23f3bd600a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-008/20261114T042852/compliance.log`)
