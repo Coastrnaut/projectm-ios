@@ -11,10 +11,16 @@
 - **UIX-005-D3 Reserved insets.** Decision: the pad reports the edge space it uses (columns: column
   width each side; bar: measured height + 8 pt bottom) and the status stack is padded by it. Rationale:
   the controls and badges must never sit under a target; the visual stays full screen.
-- **UIX-005-D4 Accessibility sizes.** Decision: fixed target sizes (icons, not text, fill them),
-  captions only at standard sizes (`caption2`, one line, scale 0.6), readouts two lines then tail
-  truncation, Large Content Viewer on every target (`accessibilityShowsLargeContentViewer`), the
-  iOS answer for fixed-size controls at large text sizes.
+- **UIX-005-D4 Accessibility sizes.** Decision: fixed target sizes filled by symbols, no captions,
+  readouts (`footnote`) two lines then tail truncation with no size cap, Large Content Viewer on every
+  target (`accessibilityShowsLargeContentViewer`), the iOS answer for fixed-size controls at large
+  text sizes. Tried and dropped in implementation (2026-11-14, audit runs): a `caption2` caption
+  under each symbol (contrast finding without an element, then clipped text at the audit's larger
+  sizes as `caption`), and a `...accessibility2` cap on the readouts ("Dynamic Type partially
+  unsupported"). The audit passes without them.
+- **UIX-005-D8 Type-check budget.** The pad takes `ShowCoordinator`, `TempoCoordinator` and
+  `ExternalDisplayCoordinator`, not `AppCoordinator`: the first member lookup on AppCoordinator in a
+  new file measured 220-263 ms of type-checking (budget 200 ms).
 - **UIX-005-D5 Blackout ownership.** Decision: the pad's target follows `OutputBlackout.Phase`:
   `offersEmergencyBlackout` → Black out (B key), `offersRestore` → Restore (B key stays on the badge),
   `restoreWaiting` → disabled. SHOW-014's corner button is hidden while the pad shows, so one B owner

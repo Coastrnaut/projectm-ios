@@ -17,12 +17,13 @@ in the ShowControl package (Linux-testable); the pad and its wiring are app view
   - `PerformancePadLayer`: a `GeometryReader` inside the safe area; builds `PerformanceLayout`,
     draws the bottom bar or the side columns, and reports the insets it reserves (callback).
   - `PerformancePadButton`: one target (`frame(width: side, height: side)`, ACC-008 overlay surface,
-    caption below the icon at standard sizes only, Large Content Viewer, label/value/identifier).
+    symbol only, Large Content Viewer, label/value/identifier).
   - `PerformanceCueReadout`, `PerformanceTempoReadout`: the readouts (ACC-008 surface, two lines max).
   - The Blackout target's state (`PerformancePadBlackout`): title, icon, enabled, action and whether it
     carries the B key, from `OutputBlackout.Phase` (pure, unit-tested).
-- `Apps/projectM-iOS/Coordinators/AppCoordinator+PerformanceLayout.swift` (new): `togglePerformanceLayout()`,
-  `performanceNextCue()`, `performancePreviousCue()`, `performanceTap()` (no `showControls()`), the DEBUG launch flag.
+- `Apps/projectM-iOS/Coordinators/AppCoordinator+PerformanceLayout.swift` (new): `togglePerformanceLayout()`
+  and the DEBUG launch flag. The pad receives the show, tempo and output coordinators and calls
+  `show.next()`/`previous()` and `tempo.tap()` directly (no `showControls()`; research UIX-005-D8).
 - `AppCoordinator.swift`: one stored property `performanceLayout` (other agents edit this file).
 - `ControlsOverlay.swift`: one `Item` in `allButtons` ("Performance layout"/"Standard layout").
 - `VisualizerView.swift`: one `@State` for the reserved insets, one layer line, one `.padding` on the

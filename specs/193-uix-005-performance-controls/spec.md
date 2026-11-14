@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (UIX-005-T01-T12 verified on the Mac: 5 package unit tests, 4 app unit tests, 4 UI tests on the iOS 27.2 simulator; T13 `{device}` open)
 
 **Input**: User description: "Implement UIX-005 (performance control layout) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Expose large touch targets for
@@ -46,7 +46,7 @@ conservative, local-first option.
 - Q: What does the pad's Blackout do? → A: It toggles: "Black out output" while the output is live or fading in (OUT-010's blackout, the same call as SHOW-014's emergency button), "Restore output" while blacked out, and disabled "Restoring output" while a restore waits. Unlike SHOW-014's small corner button (which only blacks out to avoid an accidental reveal), the pad is a deliberate surface the performer chose, and restoring from the same large target is what a performer expects of a blackout key. The badge's Restore stays as well.
 - Q: What happens to SHOW-014's 44 pt emergency button while the pad is shown? → A: It is not shown; the pad's Blackout replaces it (same action, larger). The B key moves with it: on the pad's Blackout while live or fading in, on the badge's Restore while blacked out, exactly one owner at a time.
 - Q: Do pad taps show the controls? → A: No. A cue step, a tap or a blackout from the pad leaves the controls as they are, so they never pop up over the visual mid-show (the row in the controls still shows them, as before).
-- Q: How does the pad behave at accessibility text sizes (up to AX5)? → A: Targets keep their size and stay reachable; the readouts' text scales and may wrap to two lines, then truncate; the small captions under the icons are dropped at accessibility sizes and every target offers the Large Content Viewer (long press shows the label large).
+- Q: How does the pad behave at accessibility text sizes (up to AX5)? → A: Targets keep their size and stay reachable; the readouts' text scales and may wrap to two lines, then truncate (in a side column the readout gives way to the targets); targets show symbols only and every target offers the Large Content Viewer (long press shows the label large). Implementation note (2026-11-14): captions under the symbols were tried and dropped, because the system audit reported them clipped at the largest standard sizes and the caption2 text as low contrast; capping the readouts' text size at AX2 was also dropped (the audit reports a cap as partially unsupported Dynamic Type).
 - Q: Keyboard shortcuts? → A: All existing shortcuts keep working unchanged (arrows and Page keys for cues, ⌘K, B). No new shortcut (⌘P means Print by convention).
 - Q: External display? → A: The pad is drawn on the device only; the external display shows the visual slot alone as before (OUT-001-R1).
 
@@ -140,7 +140,7 @@ keeps arrows, Page keys, ⌘K and B; the system accessibility audit passes on th
 - **UIX-005-R6**: Tap tempo records a tap exactly as SHOW-011's Tap does, without showing the controls; its accessibility value is the tap progress or the tempo.
 - **UIX-005-R7**: Blackout reads "Black out output" while the output is live or fading in and blacks it out (OUT-010, the same call as SHOW-014); "Restore output" while blacked out and restores; disabled "Restoring output" while a restore waits. Its accessibility value is the output state.
 - **UIX-005-R8**: While the pad is shown, SHOW-014's emergency button is not shown, and the B key belongs to the pad's Blackout while live or fading in (the badge's Restore keeps it while blacked out). All other keyboard shortcuts are unchanged.
-- **UIX-005-R9**: At accessibility text sizes (up to AX5) the targets keep their size and stay inside the safe area; readouts may wrap to two lines then truncate; captions under icons are dropped; every target offers the Large Content Viewer.
+- **UIX-005-R9**: At every text size (up to AX5) the targets keep their size and stay inside the safe area; readouts scale and may wrap to two lines then truncate; targets show symbols (no captions); every target offers the Large Content Viewer.
 - **UIX-005-R10**: Every target has a VoiceOver label equal to its meaning and a value where it has a state; the pad is one container ("Performance controls").
 - **UIX-005-R11**: The pad is drawn on the device only; the external display, the blackout cover and the controls' auto-hide behave as before.
 

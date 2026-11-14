@@ -9,25 +9,25 @@ Tests are short (owner rule 7): unit tests about 1 s, each UI test under 30 s.
 
 - [X] UIX-005-T01 Write `PerformanceLayout` (arrangement, target, spacing, margin, column width, reserved insets) in `Packages/ShowControl/Sources/ShowControl/PerformanceLayout.swift` (data-model; UIX-005-R3, R4) — Verified 2026-11-14: PerformanceLayoutTests (5 pass, host)
 - [X] UIX-005-T02 Unit tests `Packages/ShowControl/Tests/ShowControlTests/PerformanceLayoutTests.swift`: iPhone portrait (bar, 60), iPhone landscape (columns, 60, insets), iPad regular (72), narrow width (grid), square area (bar) (UIX-005-S4) — Verified 2026-11-14: `swift test --package-path Packages/ShowControl --filter PerformanceLayoutTests`, 5 tests pass in 0.004 s
-- [ ] UIX-005-T03 Session state: `performanceLayout` in `AppCoordinator.swift`; `AppCoordinator+PerformanceLayout.swift` with toggle, cue and tap actions that do not show the controls, DEBUG `-uitestPerformanceLayout` (UIX-005-R1, R5, R6)
+- [X] UIX-005-T03 Session state: `performanceLayout` in `AppCoordinator.swift`; `AppCoordinator+PerformanceLayout.swift` with toggle, cue and tap actions that do not show the controls, DEBUG `-uitestPerformanceLayout` (UIX-005-R1, R5, R6) — Verified 2026-11-14: PerformancePadTests.testTheLayoutFlagIsOffByDefault; PerformanceLayoutUITests (toggle on/off from the controls, pad steps do not show the controls)
 
 ## Phase 2: User Story 1 + 2 (P1) — the pad in every orientation
 
-- [ ] UIX-005-T04 [US1] `PerformancePadBlackout` state from `OutputBlackout.Phase` and its unit tests in `Apps/projectM-iOS/Tests/PerformancePadTests.swift` (UIX-005-R7, R8)
-- [ ] UIX-005-T05 [US1] `Apps/projectM-iOS/Views/PerformancePad.swift`: layer, bar, grid, columns, targets, readouts, insets callback, safe-area probe (UIX-005-R2-R4, R9, R10)
-- [ ] UIX-005-T06 [US1] "Performance layout"/"Standard layout" button in `ControlsOverlay.swift` (UIX-005-R1)
-- [ ] UIX-005-T07 [US1] `VisualizerView.swift`: pad layer, status-stack insets, emergency button hidden while the pad shows; the pad's appearance is not animated, so Reduce Motion needs no case (UIX-005-R2, R4, R8, R11)
-- [ ] UIX-005-T08 [US1] UI test portrait: toggle from the controls, geometry and safe area, pad survives the auto-hide, Next applies cue 2 (probe), Blackout toggles, Tap reads "Tap 1 of 4", "Standard layout" removes the pad and brings back the emergency button, in `Apps/projectM-iOS/UITests/PerformanceLayoutUITests.swift` (UIX-005-S1)
-- [ ] UIX-005-T09 [US2] UI test landscape: geometry, safe area, side columns clear of the centre, Next and Blackout (UIX-005-S1)
-- [ ] UIX-005-T10 [US2] UI test AX5 (portrait): geometry and safe area (UIX-005-S2)
+- [X] UIX-005-T04 [US1] `PerformancePadBlackout` state from `OutputBlackout.Phase` and its unit tests in `Apps/projectM-iOS/Tests/PerformancePadTests.swift` (UIX-005-R7, R8) — Verified 2026-11-14: PerformancePadTests, 4 tests pass (iOS 27.2 simulator)
+- [X] UIX-005-T05 [US1] `Apps/projectM-iOS/Views/PerformancePad.swift`: layer, bar, grid, columns, targets, readouts, insets callback, safe-area probe (UIX-005-R2-R4, R9, R10) — Verified 2026-11-14: PerformanceLayoutUITests portrait, landscape and AX5 geometry; screenshot of the portrait bar under the controls
+- [X] UIX-005-T06 [US1] "Performance layout"/"Standard layout" button in `ControlsOverlay.swift` (UIX-005-R1) — Verified 2026-11-14: PerformanceLayoutUITests.testPortraitPadFromTheControls (label Performance layout / Standard layout)
+- [X] UIX-005-T07 [US1] `VisualizerView.swift`: pad layer, status-stack insets, emergency button hidden while the pad shows; the pad's appearance is not animated, so Reduce Motion needs no case (UIX-005-R2, R4, R8, R11) — Verified 2026-11-14: PerformanceLayoutUITests (emergency button hidden with the pad, back after Standard layout; safe area); EmergencyBlackoutUITests and OutputBlackoutUITests pass
+- [X] UIX-005-T08 [US1] UI test portrait: toggle from the controls, geometry and safe area, pad survives the auto-hide, Next applies cue 2 (probe), Blackout toggles, Tap reads "Tap 1 of 4", "Standard layout" removes the pad and brings back the emergency button, in `Apps/projectM-iOS/UITests/PerformanceLayoutUITests.swift` (UIX-005-S1) — Verified 2026-11-14: PerformanceLayoutUITests.testPortraitPadFromTheControls passed in 17.0 s
+- [X] UIX-005-T09 [US2] UI test landscape: geometry, safe area, side columns clear of the centre, Next and Blackout (UIX-005-S1) — Verified 2026-11-14: PerformanceLayoutUITests.testLandscapeSideColumns passed in 11.7 s
+- [X] UIX-005-T10 [US2] UI test AX5 (portrait): geometry and safe area (UIX-005-S2) — Verified 2026-11-14: PerformanceLayoutUITests.testAX5PortraitKeepsTheTargets passed in 8.0 s
 
 ## Phase 3: User Story 3 (P2) — accessibility
 
-- [ ] UIX-005-T11 [US3] UI test: `performAccessibilityAudit` (element description, hit region, contrast, Dynamic Type, traits) on the performance layout, with documented per-element filters only; B blacks out via the pad (UIX-005-S3, R8)
+- [X] UIX-005-T11 [US3] UI test: `performAccessibilityAudit` (element description, hit region, contrast, Dynamic Type, traits) on the performance layout, with documented per-element filters only; B blacks out via the pad (UIX-005-S3, R8) — Verified 2026-11-14: PerformanceLayoutUITests.testAccessibilityAuditOnThePerformanceLayout passed in 17.4 s (one shared filter: PERF-014 placeholder)
 
 ## Phase 4: Polish
 
-- [ ] UIX-005-T12 Regressions: ShowCueUITests, TapTempoUITests, EmergencyBlackoutUITests, OutputBlackoutUITests; repo checks; type-check budget; spec status (UIX-005-S5)
+- [X] UIX-005-T12 Regressions: ShowCueUITests, TapTempoUITests, EmergencyBlackoutUITests, OutputBlackoutUITests; repo checks; type-check budget; spec status (UIX-005-S5) — Verified 2026-11-14: ShowCueUITests (2), TapTempoUITests, EmergencyBlackoutUITests (2), OutputBlackoutUITests, AccessibilityScreensUITests visualizer controls and show row, DynamicTypeInspectorUITests.testVisualizerControlsAX5, EmergencyBlackoutTests (2) pass; six repo checks, 159 script tests, privacy manifest and network symbols OK; no type-check warning in the new files
 - [ ] UIX-005-T13 {device} A performer's pass on D1 (portrait and landscape) and D2 (72 pt targets): every target hit without looking
 
 ## Dependencies
