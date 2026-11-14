@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T23:34:31Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T23:38:43Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,10 +10,10 @@
 | State | Features |
 |---|---|
 | audited | 74 |
-| implementing | 4 |
+| implementing | 2 |
 | built | 1 |
-| unit_passed | 1 |
-| integrated | 245 |
+| unit_passed | 2 |
+| integrated | 246 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -21,14 +21,14 @@
 | Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 0 | 84 | 1 |
-| P1 | 11 | 2 | 0 | 0 | 138 | 0 |
-| P2 | 52 | 2 | 1 | 1 | 23 | 0 |
+| P1 | 11 | 1 | 0 | 1 | 138 | 0 |
+| P2 | 52 | 1 | 1 | 1 | 24 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 80 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, CAM-006, CAM-008)
+- 79 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, CAM-008, CAM-009)
 
 ## Integrated
 
@@ -94,6 +94,7 @@ The physical-device suite may **not** start:
 | CAM-003 | Camera lens selection | `59e9d5cf` | `feature/cam-003` |
 | CAM-004 | Camera exposure lock | `637d6a54` | `feature/cam-004` |
 | CAM-005 | Camera focus point | `a2ccf8bd` | `feature/cam-005` |
+| CAM-006 | Camera white balance | `99c13569` | `feature/cam-006` |
 | CAM-007 | Camera crop and rotation | `094dece4` | `feature/cam-007` |
 | CAM-012 | Camera privacy status | `a188b049fc60` | `feature/cam-012` |
 | CAM-013 | Camera failure recovery | `95e6d77e` | `feature/cam-013` |
@@ -962,7 +963,7 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `b91afe2e8601` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-005/20261114T175328/swift-test_ShowControl.log`)
 - `post-merge batch75: Compositor 976, SceneFormat 190, RenderGoldens 87, ShowControl 120, projectM-iOSTests 1059, UI 7 of 8 (camera exposure 2, camera focus 2, cue hold/skip, material inspector, scene lock); MIDISceneSelectionUITests fails: show editor leading swipe overflow (pre-existing, fix/show-swipe-actions in progress)`: pass at `3b813137` (log `.autonomous/logs/integration/batch75/app-tests.log`)
 
-### CAM-006 Camera white balance (unit_passed)
+### CAM-006 Camera white balance (integrated)
 - `python3 scripts/check_compliance.py`: pass at `a642bb966c64` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-006/20261114T182652/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `a642bb966c64` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-006/20261114T182652/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `a642bb966c64` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-006/20261114T182652/sim-test_ANGLERendering.log`)
@@ -973,6 +974,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `a642bb966c64` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-006/20261114T182652/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `a642bb966c64` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-006/20261114T182652/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `a642bb966c64` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-006/20261114T182652/swift-test_ShowControl.log`)
+- `post-merge batch78: Camera package 79, projectM-iOSTests 1075, UI 6 (white balance 2, exposure 2, focus 2)`: pass at `99c13569` (log `.autonomous/logs/integration/batch78/app-tests.log`)
 
 ### CAM-007 Camera crop and rotation (integrated)
 - `python3 scripts/check_compliance.py`: pass at `bbfa49c59ca0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-007/20261114T001920/compliance.log`)
@@ -2155,6 +2157,12 @@ None.
 - `swift test --package-path Packages/PresetLibrary`: pass at `8a107417aea4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-008/20261114T174028/swift-test_PresetLibrary.log`)
 - `post-merge batch72: LibraryBackup 83, PresetLibrary 330, projectM-iOSTests 1038, UI 10 (preset collections 9, smart collections)`: pass at `3cf788cf` (log `.autonomous/logs/integration/batch72/app-tests.log`)
 
+### PRE-009 Preset comparison (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `a6e0924ba9e5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-009/20261114T183437/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `a6e0924ba9e5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-009/20261114T183437/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `a6e0924ba9e5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-009/20261114T183437/sim-test_ANGLERendering.log`)
+- `xcodebuild -scheme Rendering-Package -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `a6e0924ba9e5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-009/20261114T183437/sim-test_Rendering.log`)
+
 ### PRE-010 Preset quick audition (integrated)
 - `python3 scripts/check_compliance.py`: pass at `e9ec9e9eeee3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-010/20261114T105402/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `e9ec9e9eeee3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-010/20261114T105402/docs.log`)
@@ -2721,6 +2729,13 @@ None.
 - `swift test --package-path Packages/LibraryBackup`: pass at `4050d4ae02cc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-005/20261114T175723/swift-test_LibraryBackup.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `4050d4ae02cc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-005/20261114T175723/swift-test_ShowControl.log`)
 - `post-merge batch75: Compositor 976, SceneFormat 190, RenderGoldens 87, ShowControl 120, projectM-iOSTests 1059, UI 7 of 8 (camera exposure 2, camera focus 2, cue hold/skip, material inspector, scene lock); MIDISceneSelectionUITests fails: show editor leading swipe overflow (pre-existing, fix/show-swipe-actions in progress)`: pass at `3b813137` (log `.autonomous/logs/integration/batch75/app-tests.log`)
+
+### SHOW-006 Cue rehearsal mode (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `3e3bb9a78d99` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-006/20261114T183641/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `3e3bb9a78d99` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-006/20261114T183641/docs.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `3e3bb9a78d99` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-006/20261114T183641/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `3e3bb9a78d99` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-006/20261114T183641/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `3e3bb9a78d99` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-006/20261114T183641/swift-test_ShowControl.log`)
 
 ### SHOW-011 Tap tempo (integrated)
 - `python3 scripts/check_compliance.py`: pass at `725551081f5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-011/20261113T104510/compliance.log`)
