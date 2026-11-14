@@ -26,13 +26,13 @@ Tests are requested by the roadmap acceptance ("Step tests verify independent sm
 - [ ] MOD-015-T04 [US2] `AudioFeatureSource.bandEnvelope(Int, BandEnvelopeProfile)`, ID `audio.bandEnvelope.<profile>.<band>` (band 0…127, no sign, no leading zeros), `AudioFeatureFrame.bandEnvelopes` (borrowed) in Packages/ParameterGraph/Sources/ParameterGraph/AudioFeatureSource.swift
 - [ ] MOD-015-T05 [US2] Band range checks for the new case in AudioFeatureModulator.swift, ThresholdTrigger.swift and ModulationGraphValidator.swift (Packages/ParameterGraph/Sources/ParameterGraph/)
 - [ ] MOD-015-T06 [US2] Refuse the names in Packages/ParameterGraph/Sources/ParameterExpression/ExpressionCatalog.swift; unreachable constant in ExpressionCompiler.swift (no opcode, research MOD-015-D5)
-- [ ] MOD-015-T07 [US2] Package tests: ID round trip and refusals, frame value reading, modulator binding following the slow envelope, trigger acceptance, band > 127 refused, expression refusal, in Packages/ParameterGraph/Tests/ParameterGraphTests/BandEnvelopeBankTests.swift and Packages/ParameterGraph/Tests/ParameterExpressionTests/ (one test)
-- [ ] MOD-015-T08 [US2] App: `NativeSpectrumHost.applyModulation` advances a host-owned `BandEnvelopeBank` and passes `values` in the frame (Apps/projectM-iOS/Visuals/NativeSpectrumHost.swift); `inspectorName` "Band <n> <profile>" (Apps/projectM-iOS/Coordinators/ParameterInspectorModel.swift)
+- [ ] MOD-015-T07 [US2] Package tests: ID round trip and refusals, frame value reading, modulator binding following the slow envelope, trigger acceptance, band > 127 refused, expression refusal, in Packages/ParameterGraph/Tests/ParameterGraphTests/BandEnvelopeBankTests.swift Packages/ParameterGraph/Tests/ParameterExpressionTests/ (one test) and a scene binding round trip of `audio.bandEnvelope.slow.0` in Packages/SceneFormat/Tests/ (MOD-015-S4)
+- [ ] MOD-015-T08 [US2] App (the bank advances only past the existing no-bindings-no-triggers return, MOD-015-R7): `NativeSpectrumHost.applyModulation` advances a host-owned `BandEnvelopeBank` and passes `values` in the frame (Apps/projectM-iOS/Visuals/NativeSpectrumHost.swift); `inspectorName` "Band <n> <profile>" (Apps/projectM-iOS/Coordinators/ParameterInspectorModel.swift)
 - [ ] MOD-015-T09 [US2] App unit test: a slow-envelope binding on the glow follows the slow closed form; inspector name "Band 1 slow", in Apps/projectM-iOS/Tests/BandEnvelopeBindingAppTests.swift
 
 ## Phase 5: Polish
 
-- [ ] MOD-015-T10 Repo checks (compliance, docs, motion, permissions, status events, script tests), type-check budget build, Linux-shape build (`-DPARAMETER…` none needed: Foundation only), PosterBoard count, delete the simulator and derived data
+- [ ] MOD-015-T10 Repo checks (compliance, docs, motion, permissions, status events, script tests), type-check budget build, ParameterGraph package tests (Foundation and C math only, so the Linux CI shape needs no extra flag), PosterBoard count, delete the simulator and derived data
 
 ## Dependencies
 
