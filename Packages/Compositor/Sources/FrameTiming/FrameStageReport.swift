@@ -37,6 +37,12 @@ public struct FrameStageReport: Sendable, Equatable {
         public var cpu: StageStatistic
         public var gpu: StageStatistic
         public var label: String { stage.label }
+
+        public init(stage: FrameStage, cpu: StageStatistic, gpu: StageStatistic) {
+            self.stage = stage
+            self.cpu = cpu
+            self.gpu = gpu
+        }
     }
 
     /// Frames in the window (≤ capacity).
@@ -46,6 +52,13 @@ public struct FrameStageReport: Sendable, Equatable {
     /// The whole frame's GPU time (one command buffer for all stages), or unavailable.
     public var frameGPU: StageStatistic
     public var rejectedSamples: Int
+
+    public init(frames: Int, stages: [StageSummary], frameGPU: StageStatistic, rejectedSamples: Int) {
+        self.frames = frames
+        self.stages = stages
+        self.frameGPU = frameGPU
+        self.rejectedSamples = rejectedSamples
+    }
 
     public var labels: [String] { stages.map(\.label) }
 

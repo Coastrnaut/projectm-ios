@@ -204,6 +204,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let effectChain: EffectChainSetting
     /// The native spectra (VIS-001 circular, VIS-002 linear), created the first time one is needed.
     private(set) var nativeVisual: NativeSpectrumHost?
+    /// PERF-001: the stage timer while the performance overlay is shown (AppCoordinator+FrameStages.swift).
+    @ObservationIgnored let frameStages = FrameStageAttachment()
     /// The Camera visual (CAM-001), created when Camera is chosen and released when another visual is.
     private(set) var cameraVisual: CameraVisualHost?
     /// The camera feed's state while the Camera visual exists (`idle` otherwise; CAM-001-R5 to R8).

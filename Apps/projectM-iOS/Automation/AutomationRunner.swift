@@ -33,12 +33,19 @@
 //   privacy a scripted session with the real store (In-App Playback, Next, a favorite, both
 //           settings, a scope), then records the app's own UserDefaults keys and exits; the Mac
 //           script then lists the app container (T241).
+//
+// PERF-001 (specs/152-perf-001-stage-timings, PERF-001-R12, T15-T16):
+//   perf001 In-App Playback on the visual chosen in Settings: 5 s of frame rate with no stage timer, then a
+//           timer attached to the shown visual (no overlay, so only the timer's cost differs) for 5 s, then the
+//           per-stage report in the diagnostics format (`frameTimings`). Report: automation-perf001-*.json.
 #if DEBUG || PROJECTM_AUTOMATION
 import ANGLERendering
 import AudioCore
 import AVFAudio
 import CaptureKit
 import Darwin
+import Diagnostics
+import FrameTiming
 import Foundation
 import PresetLibrary
 import UIKit
@@ -79,6 +86,7 @@ enum AutomationRunner {
             case "sc104": await sc104(coordinator)
             case "entitlement": await entitlement(coordinator)
             case "privacy": await privacy(coordinator)
+            case "perf001": await perf001(coordinator)
             default: write("unknown", ["error": "unknown PROJECTM_AUTORUN \(mode)"])
             }
         }
@@ -355,6 +363,36 @@ enum AutomationRunner {
             ("interruptionEndedResume", interruption(.ended, resume: true)),
             ("routeChangeOldDeviceUnavailable", { SyntheticSessionEvents.postOutputRouteLost() }),
         ]
+    }
+
+    // MARK: - PERF-001
+
+    private static func fpsSamples(_ coordinator: AppCoordinator, seconds: Int) async -> [Double] {
+        var samples: [Double] = []
+        for _ in 0..<seconds {
+            try? await Task.sleep(for: .seconds(1))
+            samples.append(coordinator.activeVisualMetrics.framesPerSecond)
+        }
+        return samples
+    }
+
+    private static func perf001(_ coordinator: AppCoordinator) async {
+        coordinator.select(.inAppPlayback)
+        try? await Task.sleep(for: .seconds(3))
+        guard let visual = coordinator.activeStageTimedVisual else { return write("perf001", ["error": "no visual shown"]) }
+        let fpsOff = await fpsSamples(coordinator, seconds: 5)
+        let timer = FrameStageTimer()
+        visual.stageTimer = timer
+        let fpsOn = await fpsSamples(coordinator, seconds: 5)
+        let timings = AppCoordinator.exportTimings(timer.report())
+        visual.stageTimer = nil
+        var body: [String: Any] = ["visual": coordinator.settings.visual.rawValue, "fpsTimerOff": fpsOff, "fpsTimerOn": fpsOn,
+                                   "lines": timer.report().lines]
+        if let data = try? JSONEncoder().encode(timings), let object = try? JSONSerialization.jsonObject(with: data) {
+            body["frameTimings"] = object
+        }
+        write("perf001", body)
+        exitSoon()
     }
 
     // MARK: - Helpers
