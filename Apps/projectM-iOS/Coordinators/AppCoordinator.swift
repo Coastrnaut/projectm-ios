@@ -182,6 +182,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     @ObservationIgnored let sceneSnapshots = SceneSnapshotCoordinator()
     /// SCN-009: A/B compare of two scene states (AppCoordinator+SceneCompare.swift).
     @ObservationIgnored let sceneCompare = SceneCompareCoordinator()
+    /// REC-002: render selected snapshots to PNG files (AppCoordinator+SnapshotBatch.swift).
+    @ObservationIgnored let snapshotBatch = SnapshotBatchExportCoordinator()
     /// CMP-015: the layer inspector's composites (a scene input) and transient solo/mute.
     let layers = LayerInspectorCoordinator()
     /// SCN-002: the current scene's autosave (nil only if its folder cannot be made).
@@ -231,6 +233,9 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     @ObservationIgnored let cameraLensInventory: any CameraLensInventory = CameraVisualHost.makeLensInventory()
     /// CAM-004: the camera's exposure, read back (session state; CameraExposureRow.swift).
     private(set) var cameraExposure: CameraExposureState = .notRunning(canLock: false)
+    /// CAM-005: the camera's focus, read back, and the ring/explanation shown after a focus tap (CameraFocusRing.swift).
+    private(set) var cameraFocus: CameraFocusState = .notRunning(canFocus: false)
+    @ObservationIgnored let cameraFocusFeedback = CameraFocusFeedback()
     /// CAM-003-R6: a lens the user chose waits for the switch's end (CameraLensRow.swift).
     @ObservationIgnored var cameraLensChoicePending = false
     /// CAM-013: why the camera is interrupted or failed (nil otherwise), and whether a Retry waits.
@@ -361,6 +366,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         })
     /// REC-007: the recording countdown (Settings → Recording countdown; Off by default).
     @ObservationIgnored private(set) lazy var recordingCountdown = RecordingCountdownSetting(defaults: defaults)
+    /// UIX-013: the scene performance HUD preference (Settings → Show HUD; off by default).
+    @ObservationIgnored private(set) lazy var sceneHUD = SceneHUDSetting(defaults: defaults)
     /// PERF-008: the power profile (made in `init`, so the first frame loop already runs under it).
     @ObservationIgnored private(set) lazy var powerProfile = PowerProfileSetting(defaults: defaults)
     /// OUT-004: the external display's output correction (Settings › External Display).
@@ -679,6 +686,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         connectSceneSnapshots()   // SCN-008
         connectSceneLock()   // SCN-015
         connectSceneCompare()   // SCN-009 (after the snapshots, the history and the lock)
+        connectSnapshotBatch()   // REC-002 (after the snapshots and Compare)
         connectParameterQuantizer()   // MOD-017
         midiMappings.applyValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.midi, values) }   // MIDI-003-R8
         osc.applyLiveValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.osc, values) }   // OSC-003-R5
@@ -1211,6 +1219,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.onFeedStateChange = { [weak self] state in self?.cameraStateChanged(state) }
             host.onExposureChange = { [weak self] (state: CameraExposureState) -> Void in self?.cameraExposure = state }   // CAM-004
             cameraExposure = host.cameraExposure
+            host.onFocusChange = { [weak self] (state: CameraFocusState) -> Void in self?.cameraFocus = state }   // CAM-005
+            cameraFocus = host.cameraFocus
             host.onRecoveryChange = { [weak self, weak host] () -> Void in   // CAM-013
                 self?.cameraRetryPending = host?.retryPending ?? false
             }
@@ -1381,6 +1391,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         cameraVisual = nil   // the presentation registry holds it weakly
         cameraState = .idle
         cameraExposure = .notRunning(canLock: false)   // CAM-004-R7: the host's stop released the camera
+        cameraFocus = .notRunning(canFocus: false)   // CAM-005-R8: the host's stop reset the focus
         cameraStopReason = nil   // CAM-013
         cameraRetryPending = false
         cameraNoticeDismissed = false   // UIX-015-R7

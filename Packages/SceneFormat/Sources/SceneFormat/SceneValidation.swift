@@ -132,6 +132,11 @@ extension SceneDocument {
                 issues.append(SceneIssue(.unknownMaterial, path: path + ".content.material",
                                          "Layer \(i) uses the unknown material \"\(id)\"."))
             }
+            if case let .material(id) = layer.content, let variant = layer.materialVariant,   // SHD-004
+               let material = ProceduralMaterialCatalog.material(withID: id), material.variant(variant) == nil {
+                issues.append(SceneIssue(.unknownMaterialVariant, path: path + ".materialVariant",
+                                         "Layer \(i) uses the variant \"\(variant)\", which \(material.displayName) doesn't have; Standard is drawn."))
+            }
             if let key = layer.content.assetKey, let required = layer.content.requiredAssetType {
                 if let asset = assets[key] {
                     if asset.kind.typeName != required {

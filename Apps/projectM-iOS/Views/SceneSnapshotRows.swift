@@ -1,7 +1,7 @@
 // SceneSnapshotRows.swift — Settings › Visual › snapshots (roadmap SCN-008, specs/169-scn-008-scene-snapshots; R9):
 // rows at the end of the Visual section, right under the glow and spectrum controls a snapshot holds (rows, not a
 // section of their own, so nothing above them moves): Save Snapshot, then one row per snapshot of the current scene
-// with a Recall button, then SCN-009's "Compare A/B…" row; Rename and Delete by swipe and context menu; VoiceOver actions Recall, Rename, Delete.
+// with a Recall button, then SCN-009's "Compare A/B…" row and REC-002's "Export Images…" row; Rename and Delete by swipe and context menu; VoiceOver actions Recall, Rename, Delete.
 // Delete asks first. The last action's message shows in a status row (the coordinator also announces it on the
 // library lane). DEBUG builds show the media-load probe that SceneSnapshotUITests reads in that row.
 import SwiftUI
@@ -31,6 +31,7 @@ struct SceneSnapshotRows: View {
                                  rename: { () -> Void in startRename(row) }, delete: { () -> Void in deleting = row })
         }
         if let compare = snapshots.compare { SceneCompareRow(compare: compare, snapshots: snapshots) }   // SCN-009-R1
+        if let export = snapshots.batchExport { SnapshotBatchExportRow(export: export) }   // REC-002-R1
         statusRow
     }
 

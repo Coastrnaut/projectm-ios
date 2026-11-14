@@ -86,4 +86,27 @@ final class MaterialInspectorTests: XCTestCase {
         XCTAssertEqual(material?.isEditable, false)
         XCTAssertTrue(rows.filter { (r: LayerInspectorRow) -> Bool in r.kind != "material" }.allSatisfy { $0.materialControls.isEmpty })
     }
+
+    /// SHD-004-R8: the Variant picker is built from the metadata, shows the stored choice, and notes a variant this GPU
+    /// can't draw (injected capability); one-variant materials and other kinds have none.
+    func testVariantChoiceComesFromTheMetadata() throws {
+        let family8 = MaterialGPUCapabilities(families: [.apple7, .apple8])
+        let plasma = try XCTUnwrap(Model.variantChoice(for: .material(id: "material.plasma"), stored: nil, capabilities: family8))
+        XCTAssertEqual(plasma.options.map(\.label), ["Standard", "Detailed"])
+        XCTAssertEqual(plasma.selectedID, "plasma")
+        XCTAssertNil(plasma.note)
+        let stored = try XCTUnwrap(Model.variantChoice(for: .material(id: "material.plasma"), stored: "plasmaDetailed", capabilities: family8))
+        XCTAssertEqual(stored.selectedID, "plasmaDetailed", "the stored choice is shown")
+        XCTAssertTrue(stored.note?.contains("Apple GPU family 9") ?? false, "\(String(describing: stored.note))")
+        XCTAssertNil(Model.variantChoice(for: .material(id: "material.plasma"), stored: "plasmaDetailed", capabilities: .all)?.note)
+        let unknown = try XCTUnwrap(Model.variantChoice(for: .material(id: "material.plasma"), stored: "plasmaUltra", capabilities: .all))
+        XCTAssertEqual(unknown.selectedID, "plasma")
+        XCTAssertNotNil(unknown.note)
+        XCTAssertEqual(Model.variantChoice(for: .material(id: "material.noiseFlow"), stored: nil)?.options.map(\.label), ["Standard", "Low cost"])
+        XCTAssertNil(Model.variantChoice(for: .material(id: "material.gradient"), stored: nil))
+        XCTAssertNil(Model.variantChoice(for: .circularSpectrum, stored: nil))
+        let document = SceneDocument(id: "shd4", name: "SHD-004", layers: UITestLayerInspectorFixture.carriedLayers)
+        let row = LayerInspectorScene.rows(document: document, visual: .photo).first { (r: LayerInspectorRow) -> Bool in r.kind == "material" }
+        XCTAssertEqual(row?.materialVariant?.selectedID, "plasma")
+    }
 }

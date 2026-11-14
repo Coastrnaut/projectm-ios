@@ -75,7 +75,10 @@ enum GoldenLayerFactory {
             let layer: any LayerSource
             switch content {
             case let .material(id):
-                guard let material = ProceduralMaterialLayer(materialID: id) else { throw .unsupportedLayer("material \(id)") }
+                // SHD-004-R7: the stored variant (the device's GPU decides whether it can be drawn).
+                guard let material = ProceduralMaterialLayer(materialID: id, variant: state.materialVariants[entry.id]) else {
+                    throw .unsupportedLayer("material \(id)")
+                }
                 material.update(from: store)
                 layer = material
             case let .generatorGraph(key):

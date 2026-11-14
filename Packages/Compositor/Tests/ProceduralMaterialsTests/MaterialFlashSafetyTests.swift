@@ -116,6 +116,29 @@ final class MaterialFlashSafetyTests: XCTestCase {
         XCTAssertLessThanOrEqual(worst, FlashEnvelopeConfiguration.alwaysOn.transitionBudget, "radial at extremes")
     }
 
+    /// SHD-004-R3: each new variant stays inside the Reduce flashing envelope at defaults and inside the
+    /// always-on budget at its fastest, brightest settings with full music (before the composite guard).
+    func testVariantsStayInsideTheBudgets() throws {
+        let rig = try MaterialGPURig()
+        for (kind, variant) in [(MaterialKind.plasma, "plasmaDetailed"), (.noiseFlow, "noiseFlowLite")] {
+            let definition = ProceduralMaterialCatalog.definition(kind)
+            let calm = ProceduralMaterialLayer(definition, variant: variant, capabilities: .all)
+            let calmWorst = try worstTransitions(try MaterialGPURig.Driver(rig: rig, layer: calm), bands: [], configuration: .reduceFlashing)
+            XCTAssertLessThanOrEqual(calmWorst, 2, "\(variant) at defaults")
+            let layer = ProceduralMaterialLayer(definition, variant: variant, capabilities: .all)
+            for d in definition.parameters {
+                let name = d.id.segments.last ?? ""
+                if case let .continuous(_, maximum, _, _, _) = d.kind,
+                   ["speed", "brightness", "audioReactivity", "saturation"].contains(name) {
+                    try layer.set(.continuous(maximum), for: d.id)
+                }
+            }
+            let worst = try worstTransitions(try MaterialGPURig.Driver(rig: rig, layer: layer), bands: [Float](repeating: 1, count: 32),
+                                             configuration: .alwaysOn)
+            XCTAssertLessThanOrEqual(worst, FlashEnvelopeConfiguration.alwaysOn.transitionBudget, "\(variant) at extremes")
+        }
+    }
+
     /// R10: music changes motion only; with speed 0 a frame with music equals one without.
     func testMusicChangesOnlyMotion() throws {
         let rig = try MaterialGPURig()

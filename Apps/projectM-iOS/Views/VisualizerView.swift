@@ -68,7 +68,7 @@ struct VisualizerView: View {
             RenderPlaceholderView(shown: coordinator.showsRenderPlaceholder)
             externalDisplayLayer
             pausedLayer
-            tapArea
+            tapLayers
             statusLayers
             keyCommandLayers
             SceneSwitcherLayer(coordinator: coordinator)   // UIX-002: the quick scene switcher
@@ -123,12 +123,20 @@ struct VisualizerView: View {
         }
     }
 
+    /// The tap target and, above it, CAM-005's focus ring and explanation (no touches; one property
+    /// keeps `layers` quick to type-check).
+    @ViewBuilder private var tapLayers: some View {
+        tapArea
+        CameraFocusLayer(coordinator: coordinator)   // CAM-005-R5, R6
+    }
+
     /// A full-screen tap target above the renderer (the renderer's UIView takes no taps).
     private var tapArea: some View {
         Color.clear
             .contentShape(Rectangle())
             .ignoresSafeArea()
             .onTapGesture { () -> Void in coordinator.toggleControls() }
+            .modifier(CameraFocusGesture(coordinator: coordinator))   // CAM-005-R1, R7: double-tap alongside the single tap
             .accessibilityIdentifier("visualizerTapArea")
             .accessibilityLabel("Visualization")
             .accessibilityHint("Shows or hides the controls")
@@ -151,6 +159,10 @@ struct VisualizerView: View {
     /// Top status stack. OSC-007-R2, R6: the OSC listener badge, with or without the controls; then
     /// CAM-012's "Camera on" badge.
     @ViewBuilder private var topStatus: some View {
+        if coordinator.sceneHUD.isEnabled {   // UIX-013-R2, C3: device only, with or without the controls
+            SceneHUDLayer(show: coordinator.show, advance: coordinator.showAutoAdvance, tempo: coordinator.tempo,
+                          source: coordinator.sourceStatusText)
+        }
         OSCListenerBadge(osc: coordinator.osc) { () -> Void in coordinator.statusEvents.post(StatusEventCatalog.osc(port: nil)) }
         SceneLockBadge(lock: coordinator.settings.sceneLock)   // SCN-015-R7: never hidden with the controls
         SceneCompareBar(compare: coordinator.sceneCompare)   // SCN-009-R7: never hidden with the controls
@@ -207,7 +219,8 @@ struct VisualizerView: View {
     @ViewBuilder private var performancePadLayer: some View {
         if coordinator.performanceLayout {
             PerformancePadLayer(show: coordinator.show, tempo: coordinator.tempo, external: coordinator.externalDisplay,
-                                advance: coordinator.showAutoAdvance) {   // SHOW-002
+                                advance: coordinator.showAutoAdvance,   // SHOW-002
+                                onSetHold: { (held: Bool) -> Void in coordinator.setShowHold(held) }) {   // SHOW-005
                 (insets: EdgeInsets) -> Void in performanceInsets = insets
             }
         }
@@ -473,12 +486,14 @@ struct VisualizerView: View {
                      recordingAudioStatus: { () -> String in coordinator.videoRecording.audioStatusText },
                      recordingQuality: coordinator.recordingQuality,   // REC-005
                      recordingCountdown: coordinator.recordingCountdown,   // REC-007
+                     sceneHUD: coordinator.sceneHUD,   // UIX-013
                      externalOutput: coordinator.externalOutput,   // OUT-004
                      recordingTimedStop: coordinator.recordingTimedStop,   // REC-008
                      explainers: coordinator.explainers,   // UIX-015
                      cameraStatus: { () -> PermissionState? in coordinator.cameraPermissionStatus },
                      cameraLens: coordinator.cameraLensChoice,   // CAM-003
                      cameraExposure: coordinator.cameraExposureChoice,   // CAM-004
+                     cameraCanFocus: { () -> Bool in coordinator.cameraFocus.canFocus },   // CAM-005
                      recentPresets: coordinator.presets.recent,   // PRE-006
                      powerProfile: coordinator.powerProfile,   // PERF-008
                      performanceReport: coordinator.performanceReport,   // PERF-012

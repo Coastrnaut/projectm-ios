@@ -15,6 +15,7 @@
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import Compositor
 import Metal
+import ShaderParameterMetadata
 
 enum ProceduralMaterialShaders {
     static let vertexFunction = "mat_fullscreen"
@@ -113,6 +114,21 @@ enum ProceduralMaterialShaders {
         return mat_finish(col);
     }
 
+    // SHD-004 Plasma "Detailed" (requires Apple GPU family 9): the four Standard waves plus two finer ones,
+    // each still one cycle per phase cycle; six terms in -6...6 map to h in 0...1, as Standard's four do.
+    fragment float4 mat_plasmaDetailed(MatOut in [[stage_in]], constant MatUniforms &u [[buffer(0)]]) {
+        float2 p = mat_point(in, u);
+        float k = TAU * u.slots[0].x;
+        float t = TAU * u.phase;
+        float v = sin(p.x * k + t) + sin(p.y * k * 0.8 - t) + sin((p.x + p.y) * k * 0.6 + t) + sin(length(p) * k * 1.2 - t);
+        v += sin((p.x - p.y) * k * 1.7 + t) + sin(length(p - float2(0.2, -0.1)) * k * 2.3 - t);
+        float h = v / 12.0 + 0.5;
+        float3 col = 0.5 + 0.5 * cos(TAU * (0.5 * h + float3(0.0, 0.33, 0.67)));
+        float l = dot(col, float3(0.2126, 0.7152, 0.0722));
+        col = mix(float3(l), col, u.slots[3].x) * u.slots[2].x;
+        return mat_finish(col);
+    }
+
     // Noise Flow: 0 scale, 1 speed (cells/s), 2 octaves, 3 tint, 4 brightness, 5 audioReactivity.
     fragment float4 mat_noiseFlow(MatOut in [[stage_in]], constant MatUniforms &u [[buffer(0)]]) {
         float2 p = mat_point(in, u);
@@ -120,6 +136,16 @@ enum ProceduralMaterialShaders {
         float2 q = p * u.slots[0].x + float2(u.phase, 0.5 * u.phase);
         float w = mat_fbm(q + float2(3.1, 7.7), octaves);
         float n = mat_fbm(q + 0.8 * (w - 0.5), octaves);
+        float3 c = u.slots[3].rgb * (0.25 + 0.75 * n) * u.slots[4].x;
+        return mat_finish(c);
+    }
+
+    // SHD-004 Noise Flow "Low cost": one noise pass without the domain warp, at most 3 octaves.
+    fragment float4 mat_noiseFlowLite(MatOut in [[stage_in]], constant MatUniforms &u [[buffer(0)]]) {
+        float2 p = mat_point(in, u);
+        int octaves = clamp(int(u.slots[2].x + 0.5), 1, 3);
+        float2 q = p * u.slots[0].x + float2(u.phase, 0.5 * u.phase);
+        float n = mat_fbm(q, octaves);
         float3 c = u.slots[3].rgb * (0.25 + 0.75 * n) * u.slots[4].x;
         return mat_finish(c);
     }
@@ -172,6 +198,17 @@ enum ProceduralMaterialShaders {
         } catch {
             throw .resourceUnavailable("material shaders: \(error.localizedDescription)")
         }
+    }
+}
+
+extension MaterialGPUCapabilities {
+    /// SHD-004-R5: the Apple GPU families `device` supports (public `supportsFamily`).
+    public init(device: MTLDevice) {
+        var families: Set<ShaderGPUFamily> = []
+        if device.supportsFamily(.apple7) { families.insert(.apple7) }
+        if device.supportsFamily(.apple8) { families.insert(.apple8) }
+        if device.supportsFamily(.apple9) { families.insert(.apple9) }
+        self.init(families: families)
     }
 }
 

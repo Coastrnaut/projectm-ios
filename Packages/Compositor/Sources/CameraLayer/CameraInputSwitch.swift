@@ -72,11 +72,15 @@ public final class FakeCameraInput {
     public let position: CameraPosition
     /// CAM-004: the camera's exposure controls (one device per camera, as on iOS).
     public let device: FakeCameraExposureDevice
+    /// CAM-005: the camera's focus controls (one device per camera, as on iOS).
+    public let focusDevice: FakeCameraFocusDevice
 
-    public init(lens: CameraLens, position: CameraPosition = .back, device: FakeCameraExposureDevice = FakeCameraExposureDevice()) {
+    public init(lens: CameraLens, position: CameraPosition = .back, device: FakeCameraExposureDevice = FakeCameraExposureDevice(),
+                focusDevice: FakeCameraFocusDevice = FakeCameraFocusDevice()) {
         self.lens = lens
         self.position = position
         self.device = device
+        self.focusDevice = focusDevice
     }
 }
 
@@ -97,6 +101,10 @@ public final class FakeCameraCaptureSession: CameraInputConfiguring {
     /// first made, so set it before the first start.
     public var exposureLockCameras: Set<FakeCameraKey>?
     private var devices: [FakeCameraKey: FakeCameraExposureDevice] = [:]
+    /// CAM-005: the cameras that can focus on a point (`nil`: every camera). Read when a camera's focus
+    /// device is first made, so set it before the first start.
+    public var focusPointCameras: Set<FakeCameraKey>?
+    private var focusDevices: [FakeCameraKey: FakeCameraFocusDevice] = [:]
 
     public init(failingLenses: Set<CameraLens> = []) {
         self.failingLenses = failingLenses
@@ -111,11 +119,21 @@ public final class FakeCameraCaptureSession: CameraInputConfiguring {
         return device
     }
 
+    /// CAM-005: the focus device of a camera (the same object every time, as `AVCaptureDevice`).
+    public func focusDevice(lens: CameraLens, position: CameraPosition = .back) -> FakeCameraFocusDevice {
+        let key = FakeCameraKey(lens: lens, position: position)
+        if let device = focusDevices[key] { return device }
+        let device = FakeCameraFocusDevice(canFocusOnPoint: focusPointCameras?.contains(key) ?? true)
+        focusDevices[key] = device
+        return device
+    }
+
     /// The input for a lens, or nil when that lens fails (stands in for `AVCaptureDeviceInput(device:)`).
     public func makeInput(lens: CameraLens, position: CameraPosition = .back) -> FakeCameraInput? {
         let effective: CameraLens = position == .back ? lens : .wide
         guard position == .front || !failingLenses.contains(effective) else { return nil }
-        return FakeCameraInput(lens: effective, position: position, device: exposureDevice(lens: effective, position: position))
+        return FakeCameraInput(lens: effective, position: position, device: exposureDevice(lens: effective, position: position),
+                               focusDevice: focusDevice(lens: effective, position: position))
     }
 
     public func beginConfiguration() {
@@ -168,7 +186,7 @@ public struct FakeCameraKey: Hashable, Sendable {
     }
 
     /// A comma-separated list of lens raw values and `front` ("wide,front"); `none` or unknown names add
-    /// nothing (DEBUG `-uitestCameraExposureLock`).
+    /// nothing (DEBUG `-uitestCameraExposureLock`, CAM-005 `-uitestCameraFocusPoint`).
     public static func list(_ text: String) -> Set<FakeCameraKey> {
         var keys = Set<FakeCameraKey>()
         for name in text.split(separator: ",") {

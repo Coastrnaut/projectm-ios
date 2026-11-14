@@ -56,8 +56,23 @@ public struct MaterialDefinition: Sendable, Hashable {
     /// The group every parameter of this material belongs to.
     public var group: ParameterGroup { ParameterGroup(id: kind.id, displayName: displayName) }
 
-    /// The shader entry point (`mat_<name>`).
+    /// The shader entry point (`mat_<name>`) of the default variant.
     public var fragmentFunction: String { "mat_\(kind.rawValue)" }
+
+    /// SHD-004-R1: the material's precompiled implementations, default first (one "Standard" variant for a
+    /// hand-made definition).
+    public var variants: [ShaderVariantSpec] {
+        metadata?.variants ?? [ShaderVariantSpec(id: kind.rawValue, label: ShaderMetadataReader.defaultVariantLabel)]
+    }
+
+    /// The default variant's ID (`<name>`).
+    public var defaultVariantID: String { variants.first?.id ?? kind.rawValue }
+
+    /// The variant whose ID is exactly `id`, or nil.
+    public func variant(_ id: String) -> ShaderVariantSpec? { variants.first { $0.id == id } }
+
+    /// SHD-004-R2: a variant's entry point, `mat_<variant id>`.
+    public func fragmentFunction(for variantID: String) -> String { "mat_" + variantID }
 
     /// `material.<name>.<parameter>`.
     public func parameterID(_ name: String) -> ParameterID { ParameterID("\(kind.id).\(name)") }

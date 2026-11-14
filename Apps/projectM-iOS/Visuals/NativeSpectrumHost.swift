@@ -442,8 +442,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
         return host
     }
 
-    /// The generator of `style` (pipeline built here).
-    private static func makeGenerator(device: MTLDevice, style: NativeSpectrumStyle,
+    /// The generator of `style` (pipeline built here). REC-002: also used off the main actor by `SnapshotStillRenderer`.
+    nonisolated static func makeGenerator(device: MTLDevice, style: NativeSpectrumStyle,
                                       barCount: SpectrumBarCount) throws -> any SpectrumTextureGenerator {
         switch style {
         case .circular:
@@ -495,7 +495,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
     }
 
     /// VIS-003: the oscilloscope's configuration for the app's choices.
-    private static func oscilloscopeConfiguration(line: OscilloscopeLine, windowMilliseconds: Int) -> OscilloscopeConfiguration {
+    nonisolated private static func oscilloscopeConfiguration(line: OscilloscopeLine, windowMilliseconds: Int) -> OscilloscopeConfiguration {
         OscilloscopeConfiguration(windowMilliseconds: Double(windowMilliseconds), lineThickness: line.thickness)
     }
 

@@ -5,6 +5,7 @@
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import Foundation
 import GoldenImages
+import Metal
 import ParameterGraph
 import SceneFormat
 import SceneRenderHarness
@@ -88,6 +89,24 @@ final class GoldenGPUTests: XCTestCase {
         XCTAssertEqual(red, comparison.exceedingPixels, "every pixel above the threshold is red in the diff")
         let summary = try String(contentsOf: root.appendingPathComponent("\(platform.rawValue)/summary.txt"), encoding: .utf8)
         XCTAssertTrue(summary.contains("exceedsTolerance"))
+    }
+
+    /// SHD-004-R7: the scene renderer draws a material layer's stored variant; the default (no field) keeps the
+    /// committed picture. The host GPU must support Detailed's family (Apple GPU family 9).
+    func testSceneRendererDrawsTheStoredMaterialVariant() throws {
+        let renderer = try renderer()
+        guard renderer.device.supportsFamily(.apple9) else { throw XCTSkip("Detailed needs Apple GPU family 9") }
+        let run = try XCTUnwrap(GoldenSceneCatalog.run(named: "material-plasma"))
+        let document = try GoldenSceneRenderer.document(from: GoldenPaths.sceneBytes(run))
+        var detailed = document
+        let index = try XCTUnwrap(detailed.layers.firstIndex { (l: SceneLayer) -> Bool in l.kind == "material" })
+        detailed.layers[index].materialVariant = "plasmaDetailed"
+        let a = try XCTUnwrap(renderer.render(run: run, document: document, resolution: small)[7])
+        let b = try XCTUnwrap(renderer.render(run: run, document: detailed, resolution: small)[7])
+        XCTAssertFalse(GoldenComparison.compare(expected: a, actual: b).passed, "the Detailed variant is drawn")
+        var standard = detailed
+        standard.layers[index].materialVariant = nil
+        XCTAssertEqual(try XCTUnwrap(renderer.render(run: run, document: standard, resolution: small)[7]), a)
     }
 
     /// QA-002-R10 (US3): record writes a missing golden and its entry, and leaves an unchanged one untouched.

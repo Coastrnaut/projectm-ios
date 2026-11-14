@@ -52,6 +52,8 @@ public struct ValidatedShaderMetadata: Sendable, Hashable {
     public let summary: String
     /// In slot order.
     public let parameters: [ShaderParameterSpec]
+    /// SHD-004: the implementations of these parameters; the first is the default (its ID is `variant`).
+    public let variants: [ShaderVariantSpec]
 
     public func parameter(_ id: String) -> ShaderParameterSpec? { parameters.first { $0.id == id } }
 }
@@ -63,7 +65,7 @@ public enum ShaderMetadataReader {
     public static let maximumSummaryLength = 200
     public static let enumCaseCount = 2...16
 
-    static let documentKeys: Set<String> = ["schema", "variant", "name", "summary", "parameters"]
+    static let documentKeys: Set<String> = ["schema", "variant", "name", "summary", "parameters", "variants"]
     static let parameterKeys: Set<String> = ["id", "label", "kind", "slot", "unit", "min", "max", "step", "default", "cases"]
     static let caseKeys: Set<String> = ["id", "label"]
 
@@ -98,7 +100,9 @@ public enum ShaderMetadataReader {
         for required in requiredParameters where !seen.contains(required) {
             throw .missingRequiredParameter(document: document, parameterID: required)
         }
-        return ValidatedShaderMetadata(document: document, variant: variant, name: name, summary: summary, parameters: parameters)
+        let variants: [ShaderVariantSpec] = try self.variants(root, variant: variant)   // SHD-004-R1
+        return ValidatedShaderMetadata(document: document, variant: variant, name: name, summary: summary, parameters: parameters,
+                                       variants: variants)
     }
 
     // MARK: - Parameters

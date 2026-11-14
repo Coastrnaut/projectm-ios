@@ -7,14 +7,21 @@
 // scene name differs from its label shows "Scene: <name>" and VoiceOver reads ", scene <name>".
 // MIDI-007-R8: Assign MIDI… per cue (context menu, a leading "MIDI" swipe action, VoiceOver action) opens
 // `MIDISceneAssignView` for the cue's scene when the app passes the MIDI mappings.
-// SCN-007-R9: Transition… per cue (context menu, a leading "Transition" swipe action, VoiceOver action) opens
+// SCN-007-R9: Transition… per cue (context menu, the leading swipe's More… dialog, VoiceOver action) opens
 // `CueTransitionView`; a cue with a transition shows "Transition: Crossfade 1.5 s, Ease Out" under its label
 // and VoiceOver reads ", transition Crossfade 1.5 seconds, Ease Out".
-// SHOW-002-R10: Advance After… per cue (context menu, a leading "Advance" swipe action, VoiceOver action) opens
+// SHOW-002-R10: Advance After… per cue (context menu, the leading swipe's More… dialog, VoiceOver action) opens
 // `CueDwellView`; a cue with a dwell shows "Advance after 0:30" and VoiceOver reads ", advances after 30 seconds".
-// SHOW-004-R5: Transition Into This Cue… per cue (context menu, a leading "Into" swipe action, VoiceOver action) opens
+// SHOW-004-R5: Transition Into This Cue… per cue (context menu, the leading swipe's More… dialog, VoiceOver action) opens
 // `CueTransitionView` on the cue's override; a cue with one shows "Into this cue: Cut" and VoiceOver reads ", into this cue Cut".
 // SCN-011-R7: Add from Template… opens `SceneTemplateGalleryView` (bundled starter scenes added as copies).
+// SHOW-005-R8: Skip Cue / Don't Skip Cue per cue (context menu, a trailing "Skip"/"Unskip" swipe action next to Delete,
+// VoiceOver action);
+// a skipped cue's row is dimmed with "Skipped" under its label and VoiceOver reads ", skipped". Hidden while locked.
+// Swipe actions (show editor fix, 2026-11-14): at most three per edge so each one stays on screen on the narrowest
+// iPhone and at large Dynamic Type. Leading: Go, MIDI (when available) and More…, which opens a dialog with Duplicate
+// Scene, Rename Scene…, Transition…, Transition Into This Cue… and Advance After… (More… hidden while locked). Trailing:
+// Delete and Skip. Eight leading actions had pushed MIDI to x = 475 on a 402 pt iPhone, where it could not be tapped.
 import SceneFormat
 import ShowControl
 import ShowStorage
@@ -33,6 +40,8 @@ struct ShowEditorView: View {
     @State private var editingTransition: ShowCue?
     @State private var editingDwell: ShowCue?   // SHOW-002
     @State private var editingOverride: ShowCue?   // SHOW-004
+    /// The cue whose More… dialog is open (show editor fix: the edit swipe actions moved there).
+    @State private var moreCue: ShowCue?
     /// SCN-011: the template gallery (catalog read when it opens).
     @State private var templateCatalog: SceneTemplateCatalog?
 
@@ -69,7 +78,7 @@ struct ShowEditorView: View {
     /// The list with its sheets (SHOW-002, 2026-11-14: with a fourth sheet in `body`, `body` took 390 ms to type-check,
     /// past the 300 ms budget).
     private var listWithSheets: some View {
-        cueList
+        cueListWithMoreDialog
         .sheet(isPresented: Binding(get: { assigningMIDI != nil }, set: { if !$0 { assigningMIDI = nil } })) {
             assignSheet
         }
@@ -84,6 +93,15 @@ struct ShowEditorView: View {
         }
         .sheet(isPresented: Binding(get: { editingOverride != nil }, set: { if !$0 { editingOverride = nil } })) {
             overrideSheet
+        }
+    }
+
+    /// The cue list with the More… dialog (show editor fix, 2026-11-14), split out to keep `listWithSheets` short.
+    private var cueListWithMoreDialog: some View {
+        cueList
+        .confirmationDialog(moreCue?.label ?? "Cue", isPresented: Binding(get: { moreCue != nil }, set: { if !$0 { moreCue = nil } }),
+                            titleVisibility: .visible, presenting: moreCue) { (cue: ShowCue) in
+            moreDialogActions(cue)
         }
     }
 
@@ -227,6 +245,9 @@ struct ShowEditorView: View {
                 if let dwell = cue.dwell {   // SHOW-002
                     Text("Advance after \(dwell.clockText)").font(.caption).foregroundStyle(.secondary)
                 }
+                if cue.skipped {   // SHOW-005
+                    Text("Skipped").font(.caption).foregroundStyle(.secondary)
+                }
                 if missing {
                     Label("Scene missing", systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.orange)
                 }
@@ -234,6 +255,7 @@ struct ShowEditorView: View {
             Spacer()
             if active { Image(systemName: "play.fill").foregroundStyle(.tint).accessibilityHidden(true) }
         }
+        .opacity(cue.skipped ? 0.5 : 1)   // SHOW-005: dimmed
         .contentShape(Rectangle())
     }
 
@@ -253,6 +275,7 @@ struct ShowEditorView: View {
             value += ", into this cue \(spoken)"
         }
         if let dwell = cue.dwell { value += ", advances after \(dwell.spokenText)" }   // SHOW-002
+        if cue.skipped { value += ", skipped" }   // SHOW-005
         let selectedTraits: AccessibilityTraits = active ? .isSelected : []
         return content
             .accessibilityElement(children: .ignore)
@@ -270,16 +293,8 @@ struct ShowEditorView: View {
                 if !locked { editMenuItems(cue, missing: missing, full: full) }   // SCN-015-R6
                 if midiMappings != nil { Button("Assign MIDI…") { assigningMIDI = cue } }   // MIDI-007-R8
             }
-            .swipeActions(edge: .leading) {
-                Button("Go") { show.go(to: cue.id) }.tint(.accentColor)
-                if !locked { editSwipeActions(cue, missing: missing, full: full) }   // SCN-015-R6
-                if midiMappings != nil {   // MIDI-007-R8
-                    Button("MIDI") { assigningMIDI = cue }
-                        .tint(.teal)
-                        .accessibilityLabel("Assign MIDI")
-                        .accessibilityIdentifier("showAssignMIDI")
-                }
-            }
+            .swipeActions(edge: .leading) { leadingSwipeActions(cue) }
+            .swipeActions(edge: .trailing) { trailingSwipeActions(cue) }   // SHOW-005
     }
 
     @ViewBuilder private func editMenuItems(_ cue: ShowCue, missing: Bool, full: Bool) -> some View {
@@ -290,33 +305,61 @@ struct ShowEditorView: View {
         Button("Transition…") { editingTransition = cue }   // SCN-007
         Button("Transition Into This Cue…") { editingOverride = cue }   // SHOW-004
         Button("Advance After…") { editingDwell = cue }   // SHOW-002
+        Button(cue.skipped ? "Don't Skip Cue" : "Skip Cue") { show.setSkipped(cue.id, !cue.skipped) }   // SHOW-005
         Button("Delete", role: .destructive) { show.remove(cue.id) }
     }
 
-    @ViewBuilder private func editSwipeActions(_ cue: ShowCue, missing: Bool, full: Bool) -> some View {
-        // SCN-003: also here (the context menu's live blur over the visualizer is slow to settle).
-        if !missing {
-            Button("Duplicate") { show.duplicateScene(of: cue.id) }
+    /// Leading swipe actions (show editor fix, 2026-11-14): Go, MIDI and More…, never more than three, so each one is on
+    /// screen on the narrowest iPhone. The cue's edit actions (SCN-003, SCN-007, SHOW-002, SHOW-004) are in More…'s
+    /// dialog; the swipe stays because the context menu's live blur over the visualizer is slow to settle.
+    @ViewBuilder private func leadingSwipeActions(_ cue: ShowCue) -> some View {
+        Button("Go") { show.go(to: cue.id) }.tint(.accentColor)
+        if midiMappings != nil {   // MIDI-007-R8
+            Button("MIDI") { assigningMIDI = cue }
+                .tint(.teal)
+                .accessibilityLabel("Assign MIDI")
+                .accessibilityIdentifier("showAssignMIDI")
+        }
+        if !locked {   // SCN-015-R6: the edit actions are hidden while locked
+            Button("More") { moreCue = cue }
                 .tint(.indigo)
-                .disabled(full)
-                .accessibilityLabel("Duplicate Scene")
-                .accessibilityIdentifier("showDuplicateScene")
-            Button("Name") { startSceneRename(cue) }
-                .tint(.gray)
-                .accessibilityLabel("Rename Scene")
+                .accessibilityLabel("More Actions")
+                .accessibilityIdentifier("showCueMore")
+        }
+    }
+
+    /// The More… dialog's actions for one cue (the edit actions that were leading swipe actions until 2026-11-14).
+    @ViewBuilder private func moreDialogActions(_ cue: ShowCue) -> some View {
+        let missing: Bool = show.isSceneMissing(cue)
+        let full: Bool = show.list.cues.count >= ShowCueList.maximumCues
+        if !missing {   // SCN-003
+            if !full {
+                Button("Duplicate Scene") { show.duplicateScene(of: cue.id) }
+                    .accessibilityIdentifier("showDuplicateScene")
+            }
+            Button("Rename Scene…") { startSceneRename(cue) }
                 .accessibilityIdentifier("showRenameScene")
         }
-        Button("Transition") { editingTransition = cue }   // SCN-007
-            .tint(.orange)
+        Button("Transition…") { editingTransition = cue }   // SCN-007
             .accessibilityIdentifier("showCueTransition")
-        Button("Into") { editingOverride = cue }   // SHOW-004
-            .tint(.purple)
-            .accessibilityLabel("Transition Into This Cue")
+        Button("Transition Into This Cue…") { editingOverride = cue }   // SHOW-004
             .accessibilityIdentifier("showCueTransitionOverride")
-        Button("Advance") { editingDwell = cue }   // SHOW-002
-            .tint(.mint)
-            .accessibilityLabel("Advance After")
+        Button("Advance After…") { editingDwell = cue }   // SHOW-002
             .accessibilityIdentifier("showCueDwell")
+        Button("Cancel", role: .cancel) { moreCue = nil }
+    }
+
+    /// SHOW-005-R8 (research SHOW-005-D8): Delete and Skip on the trailing edge (at most three actions per edge,
+    /// show editor fix 2026-11-14). Custom trailing actions replace `onDelete`'s swipe,
+    /// so Delete is declared here (destructive, full swipe) and stays available in Edit mode through `onDelete`.
+    @ViewBuilder private func trailingSwipeActions(_ cue: ShowCue) -> some View {
+        if !locked {   // SCN-015-R6
+            Button("Delete", role: .destructive) { show.remove(cue.id) }
+            Button(cue.skipped ? "Unskip" : "Skip") { show.setSkipped(cue.id, !cue.skipped) }
+                .tint(.gray)
+                .accessibilityLabel(cue.skipped ? "Don't Skip Cue" : "Skip Cue")
+                .accessibilityIdentifier("showCueSkip")
+        }
     }
 
     private func rowActions(_ content: AnyView, cue: ShowCue, number: Int) -> some View {
@@ -333,6 +376,7 @@ struct ShowEditorView: View {
         Button("Transition") { editingTransition = cue }   // SCN-007
         Button("Transition Into This Cue") { editingOverride = cue }   // SHOW-004
         Button("Advance After") { editingDwell = cue }   // SHOW-002
+        Button(cue.skipped ? "Don't Skip Cue" : "Skip Cue") { show.setSkipped(cue.id, !cue.skipped) }   // SHOW-005
         // ACC-004-R3: reordering without Edit mode's drag handles.
         Button("Move Up") { move(number - 1, by: -1) }
         Button("Move Down") { move(number - 1, by: 1) }

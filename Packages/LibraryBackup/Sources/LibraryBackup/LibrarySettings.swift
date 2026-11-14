@@ -114,6 +114,7 @@ public enum LibrarySettingsPolicy {
         logoKey, logoPlacementKey,   // MED-010
         recentPresetsEnabledKey,   // PRE-006-R7
         "settings.recording.countdown",   // REC-007-R8: a preference (off, 3, 5, 10); erased with Settings
+        "settings.visualizer.sceneHUD",   // UIX-013-R11: a preference (Bool); erased with Settings
         "settings.recording.timedStop",   // REC-008-R9: a preference (off, 10, 30, 60, 300); erased with Settings
         "settings.performance.powerProfile",   // PERF-008-R6: a preference (standard, followLowPowerMode, batterySaver)
     ]

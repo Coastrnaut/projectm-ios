@@ -10,6 +10,8 @@
 // has a dwell; an invalid value is dropped with a warning (contract show-cue-dwell.md D1-D2). No version bump.
 // SHOW-004: each cue entry may carry an optional `transitionOverride` object (the SCN-007 shape), written only when the cue
 // has one; read leniently (contract show-cue-transition-override.md O1-O3). No version bump.
+// SHOW-005: each cue entry may carry an optional `skip` boolean, written (`true`) only when the cue is skipped; absent,
+// null or false = not skipped; another JSON type is dropped with a counted warning (contract show-cue-hold-skip.md K1-K2).
 import Foundation
 import ParameterGraph
 
@@ -58,6 +60,8 @@ public enum ShowDecodeWarning: Sendable, Hashable {
     case droppedTransitionOverrides(Int)
     /// SHOW-004: a cue's override type is not one this version knows; it is kept and applied as a cut.
     case unknownTransitionOverrideType(cue: String, type: String)
+    /// SHOW-005: cue `skip` values that were not booleans were left out (the cue is not skipped).
+    case droppedSkipFlags(Int)
 }
 
 public struct ShowDecodeResult: Sendable {
@@ -78,7 +82,8 @@ extension ShowCueList {
                                   ShowFileV1.Cue(id: cue.id.uuidString, scene: cue.sceneID, label: cue.label,
                                                  transition: cue.transition.map(StoredTransition.init(_:)),
                                                  advanceAfter: cue.dwell.map { (d: ShowCueDwell) -> StoredDwell in StoredDwell(seconds: d.seconds) },
-                                                 transitionOverride: cue.transitionOverride.map(StoredTransition.init(_:)))
+                                                 transitionOverride: cue.transitionOverride.map(StoredTransition.init(_:)),
+                                                 skip: cue.skipped ? StoredSkip(true) : nil)
                               },
                               position: activeCue?.id.uuidString)
         // SCN-004 (contract F4): written only when non-empty, so a show without folders keeps its bytes.
@@ -119,6 +124,7 @@ extension ShowCueList {
         var droppedTransitions = 0
         var droppedDwells = 0
         var droppedOverrides = 0
+        var droppedSkips = 0
         for cue in file.cues {
             guard let cueID = canonicalUUID(cue.id) else { throw .invalidID(cue.id) }
             var transition: ShowCueTransition? = nil
@@ -142,12 +148,17 @@ extension ShowCueList {
                     warnings.append(.unknownTransitionOverrideType(cue: cue.id, type: type.text))
                 }
             }
+            var skipped = false
+            if let stored = cue.skip {   // SHOW-005 (contract K2)
+                if let flag = stored.value { skipped = flag } else { droppedSkips += 1 }
+            }
             cues.append(ShowCue(id: cueID, sceneID: cue.scene, label: cue.label, transition: transition, dwell: dwell,
-                                transitionOverride: transitionOverride))
+                                transitionOverride: transitionOverride, skipped: skipped))
         }
         if droppedTransitions > 0 { warnings.append(.droppedTransitions(droppedTransitions)) }
         if droppedDwells > 0 { warnings.append(.droppedDwells(droppedDwells)) }
         if droppedOverrides > 0 { warnings.append(.droppedTransitionOverrides(droppedOverrides)) }
+        if droppedSkips > 0 { warnings.append(.droppedSkipFlags(droppedSkips)) }
         var position = ShowPosition.standby
         if let text = file.position {
             if let cueID = canonicalUUID(text), cues.contains(where: { (c: ShowCue) -> Bool in c.id == cueID }) {
@@ -205,17 +216,20 @@ private struct ShowFileV1: Codable {
         var advanceAfter: StoredDwell? = nil
         /// SHOW-004, optional: absent (or null) = no override.
         var transitionOverride: StoredTransition? = nil
+        /// SHOW-005, optional: absent (or null) = not skipped.
+        var skip: StoredSkip? = nil
 
-        enum CodingKeys: String, CodingKey { case id, scene, label, transition, advanceAfter, transitionOverride }
+        enum CodingKeys: String, CodingKey { case id, scene, label, transition, advanceAfter, transitionOverride, skip }
 
         init(id: String, scene: String, label: String, transition: StoredTransition?, advanceAfter: StoredDwell?,
-             transitionOverride: StoredTransition?) {
+             transitionOverride: StoredTransition?, skip: StoredSkip?) {
             self.id = id
             self.scene = scene
             self.label = label
             self.transition = transition
             self.advanceAfter = advanceAfter
             self.transitionOverride = transitionOverride
+            self.skip = skip
         }
 
         init(from decoder: any Decoder) throws {
@@ -226,6 +240,7 @@ private struct ShowFileV1: Codable {
             transition = try container.decodeIfPresent(StoredTransition.self, forKey: .transition)
             advanceAfter = try container.decodeIfPresent(StoredDwell.self, forKey: .advanceAfter)
             transitionOverride = try container.decodeIfPresent(StoredTransition.self, forKey: .transitionOverride)
+            skip = try container.decodeIfPresent(StoredSkip.self, forKey: .skip)
         }
 
         func encode(to encoder: any Encoder) throws {
@@ -236,6 +251,7 @@ private struct ShowFileV1: Codable {
             try container.encodeIfPresent(transition, forKey: .transition)
             try container.encodeIfPresent(advanceAfter, forKey: .advanceAfter)
             try container.encodeIfPresent(transitionOverride, forKey: .transitionOverride)
+            try container.encodeIfPresent(skip, forKey: .skip)
         }
     }
 
@@ -393,5 +409,24 @@ private struct StoredDwell: Codable {
         var container = encoder.singleValueContainer()
         guard let seconds else { return try container.encodeNil() }
         try container.encode(seconds)
+    }
+}
+
+/// SHOW-005: one cue's `skip` value, read leniently: a boolean, or anything else (`value` nil: dropped with a warning)
+/// instead of refusing the show.
+private struct StoredSkip: Codable {
+    let value: Bool?
+
+    init(_ value: Bool) { self.value = value }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        value = try? container.decode(Bool.self)
+    }
+
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.singleValueContainer()
+        guard let value else { return try container.encodeNil() }
+        try container.encode(value)
     }
 }
