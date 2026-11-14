@@ -2,8 +2,11 @@
 // Release builds contain none of this.
 //
 // Launch arguments:
-//   -uitestFake <mode>               replace that mode's real source with this fake
-//                                    (systemAppCapture, microphone or inAppPlayback)
+//   -uitestFake <mode>[,<mode>…]     replace each listed mode's real source with a fake
+//                                    (systemAppCapture, microphone or inAppPlayback); the first
+//                                    one is driven by FakeSourcePanel (AUD-012: two fakes let
+//                                    SourceSwitchUITests switch between them)
+//   -uitestFakeLevel <level>         every fake starts writing at that level (loud or silent)
 //   -uitestFakeAvailability <reason> the mode is unavailable for that reason (FILE-013)
 //   -uitestFakeStartError <reason>   `start` throws SourceError(reason) (a StopReason code;
 //                                    "error" uses the detail "fake failure")
@@ -30,18 +33,35 @@ final class UITestFakeSource: AudioSource {
     @ObservationIgnored private var level: Level = .none
     @ObservationIgnored private let startError: StopReason?
 
-    /// The fake requested by the launch arguments, if any.
-    static func fromLaunchArguments() -> UITestFakeSource? {
+    /// The fakes requested by the launch arguments, in the listed order (empty without any).
+    static func fromLaunchArguments() -> [UITestFakeSource] {
         let defaults = UserDefaults.standard
-        guard let raw = defaults.string(forKey: "uitestFake"), let mode = AudioSourceMode(rawValue: raw) else { return nil }
-        let error = defaults.string(forKey: "uitestFakeStartError").flatMap(Self.reason)
-        let fake = UITestFakeSource(mode: mode, startError: error)
-        // FILE-013-R8: `-uitestFakeAvailability <reason>` makes the mode unavailable (for example
-        // screenRecordingNotAllowed: System/App Capture not allowed on this device).
-        if let reason = defaults.string(forKey: "uitestFakeAvailability").flatMap(Self.reason) {
-            fake.availability = .unavailable(reason)
+        guard let raw = defaults.string(forKey: "uitestFake") else { return [] }
+        let modes: [AudioSourceMode] = raw.split(separator: ",").compactMap { (part: Substring) -> AudioSourceMode? in
+            AudioSourceMode(rawValue: String(part))
         }
-        return fake
+        let error = defaults.string(forKey: "uitestFakeStartError").flatMap(Self.reason)
+        let reason = defaults.string(forKey: "uitestFakeAvailability").flatMap(Self.reason)
+        let level: Level? = Self.level(defaults.string(forKey: "uitestFakeLevel"))
+        var fakes: [UITestFakeSource] = []
+        for (index, mode) in modes.enumerated() {
+            // The start error and the availability apply to the first (panel-driven) fake only.
+            let fake = UITestFakeSource(mode: mode, startError: index == 0 ? error : nil)
+            // FILE-013-R8: `-uitestFakeAvailability <reason>` makes the mode unavailable (for example
+            // screenRecordingNotAllowed: System/App Capture not allowed on this device).
+            if index == 0, let reason { fake.availability = .unavailable(reason) }
+            if let level { fake.set(level) }
+            fakes.append(fake)
+        }
+        return fakes
+    }
+
+    static func level(_ raw: String?) -> Level? {
+        switch raw {
+        case "loud": return .loud
+        case "silent": return .silent
+        default: return nil
+        }
     }
 
     init(mode: AudioSourceMode, startError: StopReason?) {

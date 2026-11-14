@@ -68,6 +68,12 @@
 //   offer card asks Reopen or Start fresh. The camera is session only and never restarts by itself.
 // * Show (SHOW-001): `show` (ShowCoordinator) owns the manual cue list; a step applies the cue's scene
 //   through the Settings path (AppCoordinator+Show.swift), never touching the audio source.
+// * Source switch (AUD-012): "Switch Source" in the controls lists `switchTargets` (the other
+//   available modes); `switchSource(to:)` hands off through `CaptureManager.switchSource` without
+//   leaving the visualizer or touching the visual. While `manager.switchingTo` is set the indicator
+//   reads "Switching source…" and the route indicator is hidden; AUD-011's microphone flag follows
+//   the manager's session callback at the switch point. Microphone with its explainer pending goes
+//   back to the chooser, whose row shows the explainer (FR-005).
 // * Guided first scene (UIX-001): `guide` offers the tutorial after the notice on a new install (not
 //   while PERF-010's offer is pending); Play is AppCoordinator+Guide.swift.
 import ANGLERendering
@@ -123,6 +129,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     var showAudioImporter = false
     /// The queue sheet (AUD-003), over the chooser or the visualizer.
     var showQueue = false
+    /// AUD-012: the "Switch Source" list over the visualizer.
+    var showSourceSwitcher = false
     @ObservationIgnored private let inAppPlayback: InAppPlaybackSource
     /// Play, pause, stop playback, seek, next and previous for In-App Playback (AUD-006).
     let transport: PlaybackTransport
@@ -342,8 +350,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         ]
         #if DEBUG
         // StatusUITests (T093): a scriptable fake replaces one mode's real source.
-        let fake = UITestFakeSource.fromLaunchArguments()
-        if let fake {
+        let fakes = UITestFakeSource.fromLaunchArguments()   // AUD-012: one or more modes
+        for fake in fakes {
             sources.removeAll { $0.mode == fake.mode }
             sources.append(fake)
         }
@@ -380,7 +388,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         entitlements = LibraryStore()
         #endif
         #if DEBUG
-        fakeSource = fake
+        fakeSource = fakes.first
         #endif
         // Background/foreground/lock/unlock go through LifecycleCoordinator (T099): it suspends the
         // visualization and forwards to CaptureManager's per-adapter matrix.
@@ -398,6 +406,10 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         videos.onVideoChange = { [weak self] (stored: StoredVideo?) in self?.videoVisual?.content = Self.videoContent(stored) }
         texts.onSpecChange = { [weak self] (spec: TextOverlaySpec) in self?.textVisual?.spec = spec }   // MED-009
         routes.context = { [weak self] in self?.routeContext }   // AUD-007
+        // AUD-012-R12: the noise gate's microphone flag changes when a session (or a switch) begins.
+        manager.onSessionMode = { [weak self] (mode: AudioSourceMode) in
+            self?.noiseGate.control.isMicrophoneSource = mode == .microphone
+        }
         routes.isActive = { [weak self] in self?.appIsActive ?? true }
         self.memoryPressure.register(presetLoader)   // PERF-006-R11: the archive's decompressed chunk
         self.memoryPressure.register(self)           // PERF-006-R12: an idle native spectrum
@@ -595,6 +607,36 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         showControls()
         updateIdleTimer()
         Task { await manager.select(mode) }
+    }
+
+    /// AUD-012-R1: the modes "Switch Source" offers: available on this device, not the current one.
+    var switchTargets: [AudioSourceMode] { Self.switchTargets(current: manager.activeMode, availability: availability) }
+
+    static func switchTargets(current: AudioSourceMode?, availability: [AudioSourceMode: SourceAvailability]) -> [AudioSourceMode] {
+        AudioSourceMode.allCases.filter { (mode: AudioSourceMode) -> Bool in
+            mode != current && availability[mode] == .available
+        }
+    }
+
+    /// AUD-012 (contract C5): switches the source in place with the bounded handoff.
+    func switchSource(to mode: AudioSourceMode) {
+        showSourceSwitcher = false
+        guard screen == .visualizer, switchTargets.contains(mode) else { return }
+        if mode == .microphone && microphone.needsExplainer {   // AUD-012-R13: FR-005 first
+            stop()
+            select(.microphone)
+            return
+        }
+        if mode == .inAppPlayback { prepareReferenceTrack() }   // as the chooser row (AUD-001-R21)
+        sourceStarts += 1
+        showControls()
+        Task { await manager.switchSource(to: mode) }
+    }
+
+    /// The indicator's text (FR-042) with AUD-012's switching label.
+    var sourceStatusText: String {
+        SourceStatusIndicator.text(mode: manager.activeMode, state: manager.state, signal: testSignalName,
+                                   switching: manager.switchingTo != nil)
     }
 
     /// Stop (FR-007): stops the source and returns to the chooser.
@@ -1329,7 +1371,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// AUD-007: what the route indicator shows (outputs for In-App Playback, inputs for
     /// Microphone); nil hides it.
     var routeContext: AudioRouteContext? {
-        AudioRouteContext.make(mode: manager.activeMode, state: manager.state, isPausedByUser: manager.isPausedByUser)
+        guard manager.switchingTo == nil else { return nil }   // AUD-012-R7: no source to describe yet
+        return AudioRouteContext.make(mode: manager.activeMode, state: manager.state, isPausedByUser: manager.isPausedByUser)
     }
 
     /// A tap on the visualization (FR-042).
