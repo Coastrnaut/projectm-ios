@@ -45,6 +45,16 @@ Answered by Claude under the owner's standing approval (owner rules 4 and 9).
 - Q: When are stuck notes cleared? → A: Every held key is released (holds release their action) when the input stops (listening off, background, no client), when a listed MIDI input goes away (the message carries no source, so all notes are released), on MIDI panic (controller 120 All Sound Off or 123 All Notes Off: that channel's keys; System Reset: all keys), and when a mapping is deleted or replaced while held.
 - Q: What is announced? → A: Learn start, result and timeout on the `.midi` lane, as MIDI-003. The actions announce themselves through their own paths (cue steps on `.cue`, blackout on the status-event path), so a trigger adds no second announcement.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: How is a mapped note shown and spoken? → A: Shown as "Note C4 · Ch 1" (MIDI-002's sharp note names, channels 1–16) and spoken as "note C4 on channel 1". The note number is not shown separately; the MIDI Monitor already shows both.
+- Q: Do note mappings share MIDI-003's one-step Undo, Cancel and 30 s learn timeout? → A: Yes. One learn session at a time for either kind (starting a note learn cancels a CC learn and the reverse); the same Cancel button, timeout, status line and Undo (Undo restores both lists as they were).
+- Q: Does a note mapping have a velocity threshold? → A: No. Any note on with velocity 1–127 is a down edge; velocity 0 is always a release. A threshold adds a setting with no acceptance need.
+- Q: Does blackout through a note work on the device screen alone, without an external display? → A: Yes. It is the same OUT-010 call as the controls' Black out button, which covers the device slot and every external slot.
+- Q: Does Black out while held restore if the user restored by hand while the key is still held? → A: The release calls Restore only if the output is still blacked out and the hold was what blacked it out; otherwise it does nothing.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A pad steps to the next cue, however my controller sends note-off (Priority: P1) — MVP
@@ -103,7 +113,8 @@ channel 1."
 - A note on another channel than the mapping's: ignored (channel filtering).
 - Note off for a key that is not down (for example the release of the learning press): ignored.
 - A note that maps to nothing: ignored; CC mappings are unaffected by note traffic.
-- Black out while held engaged when the output was already blacked out: releasing does not restore it (the hold only undoes what it did).
+- Black out while held engaged when the output was already blacked out, or restored by hand while held: releasing does not restore it (the hold only undoes what it did).
+- Learning a note while a CC learn is running: the CC learn is cancelled (one learn session at a time).
 - Running status interrupted by a real-time byte (clock): the note stream is unchanged.
 - A stored `note:` line with an unknown action or bad numbers: kept verbatim, not shown, not routed.
 - One note per action and one action per note; learning a note already used moves it, as MIDI-003.
@@ -120,7 +131,7 @@ channel 1."
 - **MIDI-006-R5**: A repeated note on while the key is down MUST NOT fire or toggle again; at most one trigger per mapping per delivered batch.
 - **MIDI-006-R6**: Held keys MUST be released (holds release their action) when the input stops, when a listed MIDI input disappears, on All Sound Off / All Notes Off (that channel) and System Reset (all), and when a held mapping is deleted or replaced.
 - **MIDI-006-R7**: Note mappings MUST be stored in `settings.midi.mappings` as `note:<ch>:<note>=<action>[;mode=hold]`; CC lines (MIDI-003/004) MUST read and write exactly as before; unknown or unreadable `note:` lines MUST be kept verbatim.
-- **MIDI-006-R8**: MIDI Mappings MUST show a "Note triggers" section with one row per action (name, the mapped note or "Not mapped", Learn, Delete); learning binds the next note on (velocity > 0) and the learning press fires nothing.
+- **MIDI-006-R8**: MIDI Mappings MUST show a "Note triggers" section with one row per action (name, the mapped note as "Note C4 · Ch 1" or "Not mapped", Learn, Delete); learning binds the next note on (velocity > 0) and the learning press fires nothing. Note learn shares MIDI-003's Cancel, 30 s timeout, status line and one-step Undo; only one learn session runs at a time.
 - **MIDI-006-R9**: Learn results and timeouts MUST be announced on the `.midi` lane; triggers add no announcement of their own.
 - **MIDI-006-R10**: The model MUST build and pass its tests on Linux; the app MUST pass the repository checks. No new stored key, permission, usage string or network API.
 - **MIDI-006-R11**: A DEBUG UI test MUST learn a note to a trigger with the stand-in MIDI input in under 30 s.
