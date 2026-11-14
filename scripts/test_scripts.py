@@ -1853,6 +1853,13 @@ class PerformanceThresholdsTests(unittest.TestCase):
         self.assertEqual((verdict["deviceClass"], verdict["evidence"], verdict["thresholdsVersion"]), ("D1", True, 1))
         self.assertEqual(cpt.exit_code(verdict), 0)
 
+    def test_audio_age_is_read_from_the_perf013_section_of_a_performance_report(self):
+        # PERF-013 puts audio age in the exported report (`audioSync.p95Ms`); no automation mode writes it.
+        ok = self.verdicts(self.check("perf012-d1-audiosync-pass.json", "perf001-d1-no-audio-age.json", "sc015-pass.json"))
+        self.assertEqual(ok["audioAgeP95Ms"], "pass")
+        bad = self.verdicts(self.check("perf012-d1-audiosync-fail.json", "perf001-d1-no-audio-age.json", "sc015-pass.json"))
+        self.assertEqual(bad["audioAgeP95Ms"], "fail")
+
     def test_each_kind_of_fail_fails_only_its_metric(self):
         cases = {
             "fps1sP5": ["perf012-d1-pass.json", "perf001-d1-fps-fail.json", "sc015-pass.json"],

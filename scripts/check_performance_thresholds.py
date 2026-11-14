@@ -170,6 +170,7 @@ def extract(kind: str, doc) -> tuple[str | None, dict[str, object]]:
         put("droppedFramePercent", dropped_percent(doc.get("frameDrops")))
         peak = ((doc.get("resources") or {}).get("memory") or {}).get("peakFootprintBytes")
         put("peakMemoryMB", peak / 1_000_000 if is_number(peak) else peak)
+        put("audioAgeP95Ms", (doc.get("audioSync") or {}).get("p95Ms"))   # PERF-013's optional section
         return (doc.get("device") or {}).get("model"), values
     samples = doc.get("fpsTimerOff") or []
     if samples:
