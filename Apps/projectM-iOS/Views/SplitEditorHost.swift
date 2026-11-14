@@ -1,14 +1,14 @@
 // SplitEditorHost.swift — UIX-007 (specs/205-uix-007-split-preview-editor, contract split-editor.md):
 // on iPad in regular width, Settings opens in an editor pane beside the live output instead of a sheet.
 //
-// * `SplitEditorHost` wraps the visualizer's layers. It measures the whole window, builds
-//   `SplitEditorLayout` (ShowControl) and, while Settings is open and the split fits, adds the divider and
-//   the editor as a trailing safe-area inset (research UIX-007-D4): the status stack, controls and
-//   badges lay out in the output pane at their real size; the editor lies above the views that ignore
-//   the safe area (black background, tap target).
-// * The visual is never re-laid out (D1): `.splitOutputScaled()` keeps it at the full window size and
-//   scales it uniformly into the layout's output rect, so its aspect ratio is the window's for every
-//   editor width, and the drawable, recordings and OUT-004's device shape are unchanged (R3, R4).
+// * `SplitEditorHost` measures the whole window and builds `SplitEditorLayout` (ShowControl). It lays
+//   the backdrop (black and the visual) out at the full window size, and the visualizer's other layers
+//   with, while Settings is open and the split fits, the divider and the editor as a trailing safe-area
+//   inset (research UIX-007-D4): the status stack, controls and badges lay out in the output pane at
+//   their real size (compact width there); the editor lies above the views that ignore the safe area.
+// * The visual is never re-laid out (D1): `.splitOutputScaled()` only draws it scaled (render-only
+//   transforms) into the layout's output rect, so its aspect ratio is the window's for every editor
+//   width, and the drawable, recordings and OUT-004's device shape are unchanged (R3, R4).
 // * `SplitEditorDivider`: drag (live, snap on release, stored), adjustable VoiceOver element (R5, R6).
 // * DEBUG `-uitestDiagnostics`: the `splitOutputFrame` probe reads the device slot's frame from UIKit (C4).
 // Bodies stay small (Xcode 26 type-check budget).
