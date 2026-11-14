@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T13:53:13Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T13:53:14Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,8 +10,8 @@
 | State | Features |
 |---|---|
 | audited | 168 |
-| unit_passed | 5 |
-| integrated | 151 |
+| unit_passed | 4 |
+| integrated | 152 |
 | blocked | 1 |
 | skipped_existing | 1 |
 
@@ -20,14 +20,14 @@
 | Priority | audited | unit_passed | integrated | blocked | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 84 | 0 | 1 |
-| P1 | 83 | 4 | 64 | 0 | 0 |
+| P1 | 83 | 3 | 65 | 0 | 0 |
 | P2 | 74 | 1 | 3 | 1 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 173 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)
+- 172 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)
 - 1 feasible features are blocked (first: AUD-010); strict completion allows none
 
 ## Integrated
@@ -135,6 +135,7 @@ The physical-device suite may **not** start:
 | MOD-002 | Audio feature binding | `006678f3d7a5` | `feature/mod-002` |
 | MOD-003 | Linear mapping | `29cd3bbb1e12` | `feature/mod-003` |
 | MOD-004 | Curve mapping | `ae0249ac8569` | `feature/mod-004` |
+| MOD-005 | Attack/release envelope | `584d34846722` | `feature/mod-005` |
 | MOD-013 | Modulation serialization | `d08b5103b0ef` | `feature/mod-013` |
 | MOD-014 | Modulation feedback prevention | `3b3a60649025` | `feature/mod-014` |
 | OSC-001 | OSC receiver | `13d9883531b9` | `feature/osc-001` |
@@ -1267,7 +1268,7 @@ The physical-device suite may **not** start:
 - `swift test --package-path Packages/ShowControl`: pass at `ebfe4ccae9e7` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-004/20261114T064913/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `ebfe4ccae9e7` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-004/20261114T064913/swift-test_VisualGenerators.log`)
 
-### MOD-005 Attack/release envelope (unit_passed)
+### MOD-005 Attack/release envelope (integrated)
 - `python3 scripts/check_compliance.py`: pass at `7d5bc9fe79dd` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-005/20261114T073217/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `7d5bc9fe79dd` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-005/20261114T073217/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: exit 65 at `7d5bc9fe79dd` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-005/20261114T073217/sim-test_ANGLERendering.log`)

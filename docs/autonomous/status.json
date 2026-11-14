@@ -18,8 +18,8 @@
   },
   "P1": {
    "audited": 83,
-   "integrated": 64,
-   "unit_passed": 4
+   "integrated": 65,
+   "unit_passed": 3
   },
   "P2": {
    "audited": 74,
@@ -34,9 +34,9 @@
  "by_state": {
   "audited": 168,
   "blocked": 1,
-  "integrated": 151,
+  "integrated": 152,
   "skipped_existing": 1,
-  "unit_passed": 5
+  "unit_passed": 4
  },
  "device_gate": {
   "blocked": [
@@ -94,7 +94,6 @@
    "MIDI-011",
    "MIDI-012",
    "MIDI-013",
-   "MOD-005",
    "MOD-006",
    "MOD-007",
    "MOD-008",
@@ -222,7 +221,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "173 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)",
+   "172 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)",
    "1 feasible features are blocked (first: AUD-010); strict completion allows none"
   ]
  },
@@ -1732,10 +1731,10 @@
    "branch": "feature/mod-005",
    "branch_sha": "7d5bc9fe79dd2f5a3cf5e06b2230d15a55c12a02",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "584d34846722cfd0543d966316512791a935b80d",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "MOD-006": {
    "attempts": 0,
@@ -3995,6 +3994,11 @@
    "sha": "ae0249ac85699b6499f24e3add0b5ea46e134212"
   },
   {
+   "branch": "feature/mod-005",
+   "id": "MOD-005",
+   "sha": "584d34846722cfd0543d966316512791a935b80d"
+  },
+  {
    "branch": "feature/mod-013",
    "id": "MOD-013",
    "sha": "d08b5103b0ef93971fa6e1925181bb8856ddc2b4"
@@ -4270,5 +4274,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T13:53:13Z"
+ "updated": "2026-11-14T13:53:14Z"
 }
