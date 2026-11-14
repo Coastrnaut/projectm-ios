@@ -11,16 +11,15 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 30,
+   "audited": 29,
    "built": 3,
-   "implementing": 3,
-   "integrated": 114,
-   "unit_passed": 1
+   "implementing": 4,
+   "integrated": 115
   },
   "P2": {
-   "audited": 68,
+   "audited": 67,
    "built": 1,
-   "implementing": 1,
+   "implementing": 2,
    "integrated": 9
   },
   "P3": {
@@ -28,12 +27,11 @@
   }
  },
  "by_state": {
-  "audited": 109,
+  "audited": 107,
   "built": 4,
-  "implementing": 4,
-  "integrated": 207,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "implementing": 6,
+  "integrated": 208,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -117,7 +115,6 @@
    "REC-014",
    "REC-016",
    "SCN-009",
-   "SCN-015",
    "SHD-003",
    "SHD-004",
    "SHD-005",
@@ -162,7 +159,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "118 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-015, CAM-003)"
+   "117 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-015, CAM-003)"
   ]
  },
  "features": {
@@ -948,13 +945,13 @@
   },
   "CMP-008": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/cmp-008",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "CMP-009": {
    "attempts": 0,
@@ -1788,13 +1785,13 @@
   },
   "MOD-017": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/mod-017",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "OSC-001": {
    "attempts": 0,
@@ -2801,10 +2798,10 @@
    "branch": "feature/scn-015",
    "branch_sha": "417f54ea354d4e08197c2376a8db63fa49fabb2d",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "d518a943",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "SHD-001": {
    "attempts": 0,
@@ -4359,6 +4356,11 @@
    "sha": "cc53b27d"
   },
   {
+   "branch": "feature/scn-015",
+   "id": "SCN-015",
+   "sha": "d518a943"
+  },
+  {
    "branch": "feature/shd-001",
    "id": "SHD-001",
    "sha": "ade4dfec39a538b841b105a67ff5545b1a6675e6"
@@ -4489,5 +4491,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T19:51:08Z"
+ "updated": "2026-11-14T19:56:03Z"
 }

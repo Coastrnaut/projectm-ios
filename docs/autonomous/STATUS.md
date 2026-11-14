@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T19:51:08Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T19:56:03Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,26 +9,25 @@
 
 | State | Features |
 |---|---|
-| audited | 109 |
-| implementing | 4 |
+| audited | 107 |
+| implementing | 6 |
 | built | 4 |
-| unit_passed | 1 |
-| integrated | 207 |
+| integrated | 208 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 0 | 84 | 1 |
-| P1 | 30 | 3 | 3 | 1 | 114 | 0 |
-| P2 | 68 | 1 | 1 | 0 | 9 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | built | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 84 | 1 |
+| P1 | 29 | 4 | 3 | 115 | 0 |
+| P2 | 67 | 2 | 1 | 9 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 118 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-015, CAM-003)
+- 117 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-015, CAM-003)
 
 ## Integrated
 
@@ -220,6 +219,7 @@ The physical-device suite may **not** start:
 | SCN-012 | Scene validation | `2a86515` | `feature/scn-012` |
 | SCN-013 | Scene migration | `7f597d2` | `feature/scn-013` |
 | SCN-014 | Scene dependency pack | `cc53b27d` | `feature/scn-014` |
+| SCN-015 | Scene lock mode | `d518a943` | `feature/scn-015` |
 | SHD-001 | Procedural material catalog | `ade4dfec39a5` | `feature/shd-001` |
 | SHD-002 | Node-based generator graph | `e91692538b99` | `feature/shd-002` |
 | SHD-009 | Expression mapping DSL | `d84b02f95a85` | `feature/shd-009` |
@@ -2241,13 +2241,14 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `e25709ae088d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-014/20261114T134421/swift-test_SceneArchive.log`)
 - `post-merge: projectM-iOSTests 877 + UI 3 (scene packs, folders, slideshow)`: pass at `cc53b27d` (log `.autonomous/logs/integration/batch39/app-tests.log`)
 
-### SCN-015 Scene lock mode (unit_passed)
+### SCN-015 Scene lock mode (integrated)
 - `python3 scripts/check_compliance.py`: pass at `417f54ea354d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-015/20261114T144852/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `417f54ea354d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-015/20261114T144852/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `417f54ea354d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-015/20261114T144852/script-tests.log`)
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `417f54ea354d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-015/20261114T144852/autonomous-tests.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `417f54ea354d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-015/20261114T144852/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/LibraryBackup`: pass at `417f54ea354d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-015/20261114T144852/swift-test_LibraryBackup.log`)
+- `post-merge: projectM-iOSTests 916 + UI 2 (scene lock, modulation matrix); REC-008 load-tolerant test fix`: pass at `ff775df4` (log `.autonomous/logs/integration/batch49b/app-tests.log`)
 
 ### SHD-001 Procedural material catalog (integrated)
 - `python3 scripts/check_compliance.py`: pass at `67186e7fa06d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-001/20261113T120524/compliance.log`)
