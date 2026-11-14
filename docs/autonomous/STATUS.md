@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T14:54:11Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T14:58:56Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,8 +10,8 @@
 | State | Features |
 |---|---|
 | audited | 155 |
-| implementing | 4 |
-| unit_passed | 3 |
+| implementing | 3 |
+| unit_passed | 4 |
 | integrated | 163 |
 | skipped_existing | 1 |
 
@@ -20,7 +20,7 @@
 | Priority | audited | implementing | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 70 | 4 | 3 | 74 | 0 |
+| P1 | 70 | 3 | 4 | 74 | 0 |
 | P2 | 74 | 0 | 0 | 5 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
@@ -1627,6 +1627,20 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `d6750ce74405` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-004/20261114T072617/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `d6750ce74405` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-004/20261114T072617/swift-test_VisualGenerators.log`)
 - `post-merge: projectM-iOSTests 667 + Recording UI 5`: pass at `787bb98e2086` (log `.autonomous/logs/integration/rec004/app-tests.log`)
+
+### REC-005 Record quality profiles (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `5259b1613341` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-005/20261114T095419/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `5259b1613341` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-005/20261114T095419/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `5259b1613341` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-005/20261114T095419/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `5259b1613341` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-005/20261114T095419/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `5259b1613341` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-005/20261114T095419/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `5259b1613341` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-005/20261114T095419/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `5259b1613341` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-005/20261114T095419/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `5259b1613341` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-005/20261114T095419/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `5259b1613341` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-005/20261114T095419/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `5259b1613341` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-005/20261114T095419/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `5259b1613341` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-005/20261114T095419/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `5259b1613341` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-005/20261114T095419/swift-test_ShowControl.log`)
 
 ### REC-012 Share via Files (integrated)
 - `python3 scripts/check_compliance.py`: pass at `8909040fb290` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-012/20261113T152825/compliance.log`)
