@@ -29,7 +29,7 @@
 ## RecordingGeometry (extended)
 
 - `sourceWidth/Height` (unchanged: the even drawable), `outputWidth/Height`.
-- `cropsToFill: Bool` — true for every aspect but Match screen when the output's ratio differs from the source's.
+- `cropsToFill: Bool` — true for every aspect but Match screen.
 - `reducedCustomSize: RecordingCustomSize?` — the asked size when a custom size was reduced.
 - `init?(drawableWidth:drawableHeight:settings:)`; the old `init?(drawableWidth:drawableHeight:maxLongSide:)` is Match screen with the regular cap.
 

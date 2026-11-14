@@ -9,7 +9,7 @@
 3. Match screen: REC-003's fit to L (nearest even); then, when w'·h' > P, both sides scaled by √(P / (w'·h')) and floored to even. `cropsToFill` false.
 4. Preset or custom with reduced ratio u:v: crop = (w, ⌊w·v/u⌋) when w·v ≤ h·u, else (⌊h·u/v⌋, h). Step k = 2 when u or v is odd, else 1. m = largest multiple of k with max(u,v)·m ≤ L, u·m ≤ cropW, v·m ≤ cropH, u·v·m² ≤ P. Preset: m < k → nil. Output (u·m, v·m).
 5. Custom W×H: if W ≤ cropW, H ≤ cropH, max(W,H) ≤ L and W·H ≤ P → exactly W×H. Else reduced: the step-4 multiple when its long side ≥ 90% of the uniform fallback (factor f = min(L/max(W,H), cropW/W, cropH/H, √(P/(W·H))), sides ⌊·f⌋ to even, ≥ 2), otherwise the fallback.
-6. `cropsToFill` = output ratio ≠ source ratio (cross-multiplied) for any aspect but Match screen.
+6. `cropsToFill` = the aspect is not Match screen (with an exact ratio the fill equals a plain fit, so the rule needs no ratio test).
 
 Invariants (tested): sides even and ≥ 2; outputWidth·outputHeight ≤ P; max side ≤ cap.maxSide; never larger than the source's crop in either dimension (no upscale).
 

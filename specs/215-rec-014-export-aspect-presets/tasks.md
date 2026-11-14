@@ -18,11 +18,11 @@
 **Goal**: preset files with exact ratio, never upscaled, within the cap.
 **Independent test**: geometry sweep and the short encode.
 
-- [ ] REC-014-T05 [P] [US1] Geometry sweep in Packages/Compositor/Tests/FrameRecordingTests/RecordingAspectTests.swift: each preset × profile (Draft, Standard, High, Max) × drawables (1179×2556, 2048×2732, 2732×2048, 2064×2752, 320×240) × caps (compact, regular) against exact expected sizes from an independent reference, plus invariants (even, exact ratio, ≤ cap side and pixels, ≤ crop); Match screen equals REC-005's geometry; spec scenarios (1178×1178, 1080×1920, 1152×648) (REC-014-S1, S3)
+- [ ] REC-014-T05 [P] [US1] Geometry sweep in Packages/Compositor/Tests/FrameRecordingTests/RecordingAspectTests.swift: each preset × profile (Draft, Standard, High, Max) × drawables (1179×2556, 2048×2732, 2732×2048, 2064×2752, 320×240) × caps (compact, regular) against exact expected sizes from an independent reference, plus invariants (even, exact ratio, ≤ cap side and pixels, ≤ crop); Match screen equals REC-005's geometry; spec scenarios (1178×1178, 1080×1920, 1152×648); a profile fallback (`resolve` with HEVC unavailable) keeps the aspect (REC-014-R12) (REC-014-S1, S3)
 - [ ] REC-014-T06 [US1] Short real encode in Packages/Compositor/Tests/FrameRecordingTests/RecordingAspectFixtureTests.swift: two tiny clips (Square and Landscape from a 64×128 drawable whose top and bottom quarters are red and middle green, offline writer, about 0.3 s each) read back with exactly the planned size; the first decoded frame's corners are green (crop, not bars) (REC-014-S2)
 - [ ] REC-014-T07 [US1] App: `aspect` choice and custom size in `RecordingQualitySetting` (keys `settings.recording.aspect`, `settings.recording.customWidth`, `settings.recording.customHeight`, nothing stored until changed, reset by `-uitestResetNotice`; aspect passed to every availability; `DisplayBoundCapabilities.outputCap` from `RecordingOutputCap.device`) in Apps/projectM-iOS/Coordinators/RecordingQualitySetting.swift; keys in `ALLOWED_KEYS` (scripts/run_device_tests.py), `excludedKeys` (Packages/LibraryBackup/Sources/LibraryBackup/LibrarySettings.swift), the Settings erase (LibraryErasePolicy.swift) and LibraryBackupAppTests if needed (REC-014-R7)
 - [ ] REC-014-T08 [US1] Record with the aspect: `Context.aspect`, resolution with `aspect:`, storage-estimate geometry from settings in Apps/projectM-iOS/Coordinators/VideoRecordingCoordinator.swift; one line in AppCoordinator.swift (REC-014-R9, R10)
-- [ ] REC-014-T09 [US1] App tests in Apps/projectM-iOS/Tests/RecordingAspectAppTests.swift: default Match screen and persistence, custom validation (1081 → 1080, 50 → 128, 9000 → 4096), rows show planned sizes, Record with Square on a fake source plans 1178×1178-type geometry with injected capabilities
+- [ ] REC-014-T09 [US1] App tests in Apps/projectM-iOS/Tests/RecordingAspectAppTests.swift: default Match screen and persistence, custom validation (1081 → 1080, 50 → 128, 9000 → 4096), rows show planned sizes, Record with Square on a fake 1179×2556 source and Standard plans exactly 1178×1178 with injected capabilities, and a running recording keeps its aspect when the setting changes (REC-014-R10)
 
 ## Phase 4: User Story 2 - Custom size, kept safe (P1)
 
@@ -36,7 +36,7 @@
 
 ## Phase 6: Polish
 
-- [ ] REC-014-T14 Linux shape build of Compositor, repo checks (compliance, validate_docs, motion, permission catalog, status events, test_scripts), privacy manifest and network symbols on the Debug app, type-check budget flags on touched files
+- [ ] REC-014-T14 Confirm no frame-loop file changed (REC-014-R11: `git diff --stat` shows no visual host edits); Linux shape build of Compositor, repo checks (compliance, validate_docs, motion, permission catalog, status events, test_scripts), privacy manifest and network symbols on the Debug app, type-check budget flags on touched files
 - [ ] REC-014-T15 {device} On D1 record Square and on D2 Portrait for 5 s; the files read back at the planned size and show the centre of the picture (REC-014-S5)
 
 ## Dependencies
@@ -46,3 +46,7 @@ T01 → T02 → T03 → T04 → (T05, T06, T10 in parallel) ; T04 → T07 → T0
 ## Implementation Strategy
 
 MVP = Phases 1-3 (presets end to end). Then custom safety (US2), then Settings UI polish (US3).
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Applied: `cropsToFill` defined once as "aspect is not Match screen" (contract C1.6, data model); T09 made exact; R12's fallback-keeps-aspect added to T05; R10 to T09; R11 check added to T14. R12's "stills unaffected" needs no task (the still path does not read recording settings). No constitution conflict; every requirement R1-R12 maps to a task (R1/R7 T02, T07; R2/R3/R5 T03, T05; R4 T03, T06; R6 T02, T10, T11; R8 T12, T13; R9 T04, T08).
