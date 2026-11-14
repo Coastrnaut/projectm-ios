@@ -48,6 +48,7 @@
 import AVFoundation
 import CoreVideo
 import Metal
+import os
 
 public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptureVideoDataOutputSampleBufferDelegate,
     @unchecked Sendable {
@@ -96,6 +97,12 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
         didSet { if whiteBalance != oldValue { onWhiteBalanceChange?(whiteBalance) } }
     }
     public var onWhiteBalanceChange: ((CameraWhiteBalanceState) -> Void)?
+    /// CAM-008: set on the main thread, read on the video queue.
+    private let masker = OSAllocatedUnfairLock<PersonMasker?>(initialState: nil)
+    public var personMasker: PersonMasker? {
+        get { masker.withLock { $0 } }
+        set { masker.withLock { $0 = newValue } }
+    }
 
     public init(device: MTLDevice, lensInventory: any CameraLensInventory = AVCameraLensInventory()) {
         self.device = device
@@ -531,7 +538,12 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
         guard CVMetalTextureCacheCreateTextureFromImage(kCFAllocatorDefault, cache, pixels, nil, .bgra8Unorm_srgb, width, height, 0,
                                                         &wrapper) == kCVReturnSuccess,
               let wrapper, let texture = CVMetalTextureGetTexture(wrapper) else { return }
-        latest.store(texture, owner: CVMetalTextureHold(texture: wrapper, cache: cache), position: Self.position(of: connection))
+        let position: CameraPosition? = Self.position(of: connection)
+        guard latest.store(texture, owner: CVMetalTextureHold(texture: wrapper, cache: cache), position: position) else { return }
+        if let personMasker {   // CAM-008-R4: the masker decides whether this picture is analysed
+            let stamp = latest.stamp
+            personMasker.offer(pixels, rotation: stamp.rotation, position: position ?? stamp.position)
+        }
     }
 
     /// CAM-002-D3: the camera a buffer came from (nil: the slot's position).
