@@ -311,6 +311,11 @@ struct VisualizerView: View {
 
     /// Sheets, dialogs and the Files exporter and mover.
     private func withPresentations(_ content: some View) -> some View {
+        withDialogsAndFiles(withSheets(content))
+    }
+
+    /// Sheets (presets, purchase, queue, Settings, repair) and their alerts.
+    private func withSheets(_ content: some View) -> some View {
         content
         .sheet(isPresented: $coordinator.showPresetBrowser) {
             PresetBrowserView(presets: coordinator.presets, userPresets: coordinator.userPresets) { coordinator.choose($0, from: $1) }
@@ -352,6 +357,11 @@ struct VisualizerView: View {
         }
         // SCN-012: the repair report before a cue's scene or Reopen opens (over Settings while it is shown).
         .sceneRepairSheet(coordinator.sceneRepair, active: !coordinator.showSettings)
+    }
+
+    /// Confirmation dialogs and the Files exporter and mover.
+    private func withDialogsAndFiles(_ content: some View) -> some View {
+        content
         // AUD-012: the other available sources; the handoff keeps the visual running.
         .confirmationDialog(UIStrings.switchSource, isPresented: Binding(get: { coordinator.showSourceSwitcher },
                                                                         set: { coordinator.showSourceSwitcher = $0 }),
@@ -394,24 +404,41 @@ struct VisualizerView: View {
         }
     }
 
-    /// Settings and state changes forwarded to the coordinator.
+    /// Settings and state changes forwarded to the coordinator. Split into short chains (2026-11-14):
+    /// one chain of 17 `.onChange` modifiers made CI's Xcode 26 give up type-checking (run 43564700735).
     private func withChangeHandlers(_ content: some View) -> some View {
+        withSourceChanges(withVisualChanges(withCameraChanges(content)))
+    }
+
+    private func withCameraChanges(_ content: some View) -> some View {
         content
-        .onChange(of: coordinator.settings.reduceFlashing) { coordinator.applyReduceFlashing() }
-        .onChange(of: coordinator.settings.visual) { coordinator.visualSettingsChanged() }                 // VIS-001
         .onChange(of: coordinator.settings.cameraPosition) { coordinator.cameraSettingsChanged() }         // CAM-002
         .onChange(of: coordinator.settings.cameraMirrored) { coordinator.cameraSettingsChanged() }
         .onChange(of: coordinator.settings.cameraCropMode) { coordinator.cameraSettingsChanged() }         // CAM-007
         .onChange(of: coordinator.settings.cameraCropAnchor) { coordinator.cameraSettingsChanged() }
         .onChange(of: coordinator.settings.cameraZoom) { coordinator.cameraSettingsChanged() }
+    }
+
+    private func withVisualChanges(_ content: some View) -> some View {
+        withSpectrumChanges(content
+            .onChange(of: coordinator.settings.reduceFlashing) { coordinator.applyReduceFlashing() }
+            .onChange(of: coordinator.settings.visual) { coordinator.visualSettingsChanged() }                 // VIS-001
+            .onChange(of: coordinator.settings.glowParameters) { coordinator.glowSettingsChanged() }          // FX-001
+            .onChange(of: coordinator.settings.colorBlindSafePalette) { coordinator.spectrumPaletteChanged() }) // ACC-003-R13
+    }
+
+    private func withSpectrumChanges(_ content: some View) -> some View {
+        content
         .onChange(of: coordinator.settings.circularSpectrumBars) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.linearSpectrumOrientation) { coordinator.visualSettingsChanged() }   // VIS-002
         .onChange(of: coordinator.settings.linearSpectrumSpacing) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.oscilloscopeLine) { coordinator.visualSettingsChanged() }   // VIS-003
         .onChange(of: coordinator.settings.oscilloscopeWindowMilliseconds) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.spectrumSmoothing) { coordinator.visualSettingsChanged() }   // ANL-003
-        .onChange(of: coordinator.settings.glowParameters) { coordinator.glowSettingsChanged() }          // FX-001
-        .onChange(of: coordinator.settings.colorBlindSafePalette) { coordinator.spectrumPaletteChanged() } // ACC-003-R13
+    }
+
+    private func withSourceChanges(_ content: some View) -> some View {
+        content
         .onChange(of: coordinator.manager.state) {
             coordinator.routes.refresh()   // AUD-007-R3: a source started or changed state
             coordinator.announceSourceStatus()   // FR-070, AUD-016-R16, AUD-012-R7 (ACC-011 X1-X3)

@@ -77,17 +77,21 @@ struct ShowEditorView: View {
         .accessibilityIdentifier("showEditor")
     }
 
+    // Split into short parts (2026-11-14): as one function this row took 4.4 s to type-check on
+    // Xcode 27 (-warn-long-function-bodies), past Xcode 26's limit on CI.
     private func row(_ cue: ShowCue, number: Int) -> some View {
-        let active = show.list.activeCue?.id == cue.id
-        let missing = show.isSceneMissing(cue)
-        let sceneName = show.sceneName(of: cue).flatMap { (name: String) -> String? in name == cue.label ? nil : name }
-        // Built in typed steps: as one `+` chain of literals and ternaries, Xcode 26 gave up type-checking it (CI, 607c2c2).
-        var value: String = "Cue \(number) of \(show.list.cues.count)"
-        if active { value += ", active" }
-        if missing { value += ", scene missing" }
-        if let sceneName { value += ", scene \(sceneName)" }
-        let selectedTraits: AccessibilityTraits = active ? .isSelected : []
-        return HStack {
+        let active: Bool = show.list.activeCue?.id == cue.id
+        let missing: Bool = show.isSceneMissing(cue)
+        let sceneName: String? = show.sceneName(of: cue).flatMap { (name: String) -> String? in name == cue.label ? nil : name }
+        let content: AnyView = AnyView(rowContent(cue, number: number, active: active, missing: missing, sceneName: sceneName))
+        let labelled: AnyView = AnyView(rowAccessibility(content, cue: cue, number: number, active: active, missing: missing,
+                                                         sceneName: sceneName))
+        let withMenus: AnyView = AnyView(rowMenus(labelled, cue: cue, missing: missing))
+        return rowActions(withMenus, cue: cue, number: number)
+    }
+
+    private func rowContent(_ cue: ShowCue, number: Int, active: Bool, missing: Bool, sceneName: String?) -> some View {
+        HStack {
             Text("\(number)").monospacedDigit().frame(minWidth: 28, alignment: .trailing)
             VStack(alignment: .leading, spacing: 2) {
                 Text(cue.label)
@@ -102,41 +106,61 @@ struct ShowEditorView: View {
             if active { Image(systemName: "play.fill").foregroundStyle(.tint).accessibilityHidden(true) }
         }
         .contentShape(Rectangle())
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(cue.label)
-        .accessibilityValue(value)
-        .accessibilityAddTraits(selectedTraits)   // ACC-004-R2
-        .accessibilityIdentifier("showCue\(number)")
-        .contextMenu {
-            Button("Go to Cue") { show.go(to: cue.id) }
-            Button("Rename…") { renameText = cue.label; renaming = cue }
-            Button("Duplicate Scene") { show.duplicateScene(of: cue.id) }
-                .disabled(missing || show.list.cues.count >= ShowCueList.maximumCues)
-            Button("Rename Scene…") { startSceneRename(cue) }.disabled(missing)
-            Button("Delete", role: .destructive) { show.remove(cue.id) }
-        }
-        .swipeActions(edge: .leading) {
-            Button("Go") { show.go(to: cue.id) }.tint(.accentColor)
-            // SCN-003: also here (the context menu's live blur over the visualizer is slow to settle).
-            if !missing {
-                Button("Duplicate") { show.duplicateScene(of: cue.id) }
-                    .tint(.indigo)
-                    .disabled(show.list.cues.count >= ShowCueList.maximumCues)
-                    .accessibilityLabel("Duplicate Scene")
-                    .accessibilityIdentifier("showDuplicateScene")
-                Button("Name") { startSceneRename(cue) }
-                    .tint(.gray)
-                    .accessibilityLabel("Rename Scene")
-                    .accessibilityIdentifier("showRenameScene")
+    }
+
+    private func rowAccessibility(_ content: AnyView, cue: ShowCue, number: Int, active: Bool, missing: Bool,
+                                  sceneName: String?) -> some View {
+        // Built in typed steps: as one `+` chain of literals and ternaries, Xcode 26 gave up type-checking it (CI, 607c2c2).
+        var value: String = "Cue \(number) of \(show.list.cues.count)"
+        if active { value += ", active" }
+        if missing { value += ", scene missing" }
+        if let sceneName { value += ", scene \(sceneName)" }
+        let selectedTraits: AccessibilityTraits = active ? .isSelected : []
+        return content
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(cue.label)
+            .accessibilityValue(value)
+            .accessibilityAddTraits(selectedTraits)   // ACC-004-R2
+            .accessibilityIdentifier("showCue\(number)")
+    }
+
+    private func rowMenus(_ content: AnyView, cue: ShowCue, missing: Bool) -> some View {
+        let full: Bool = show.list.cues.count >= ShowCueList.maximumCues
+        return content
+            .contextMenu {
+                Button("Go to Cue") { show.go(to: cue.id) }
+                Button("Rename…") { renameText = cue.label; renaming = cue }
+                Button("Duplicate Scene") { show.duplicateScene(of: cue.id) }
+                    .disabled(missing || full)
+                Button("Rename Scene…") { startSceneRename(cue) }.disabled(missing)
+                Button("Delete", role: .destructive) { show.remove(cue.id) }
             }
-        }
-        .accessibilityAction(named: "Go to Cue") { show.go(to: cue.id) }
-        .accessibilityAction(named: "Rename") { renameText = cue.label; renaming = cue }
-        .accessibilityAction(named: "Duplicate Scene") { show.duplicateScene(of: cue.id) }
-        .accessibilityAction(named: "Rename Scene") { startSceneRename(cue) }
-        // ACC-004-R3: reordering without Edit mode's drag handles.
-        .accessibilityAction(named: "Move Up") { move(number - 1, by: -1) }
-        .accessibilityAction(named: "Move Down") { move(number - 1, by: 1) }
+            .swipeActions(edge: .leading) {
+                Button("Go") { show.go(to: cue.id) }.tint(.accentColor)
+                // SCN-003: also here (the context menu's live blur over the visualizer is slow to settle).
+                if !missing {
+                    Button("Duplicate") { show.duplicateScene(of: cue.id) }
+                        .tint(.indigo)
+                        .disabled(full)
+                        .accessibilityLabel("Duplicate Scene")
+                        .accessibilityIdentifier("showDuplicateScene")
+                    Button("Name") { startSceneRename(cue) }
+                        .tint(.gray)
+                        .accessibilityLabel("Rename Scene")
+                        .accessibilityIdentifier("showRenameScene")
+                }
+            }
+    }
+
+    private func rowActions(_ content: AnyView, cue: ShowCue, number: Int) -> some View {
+        content
+            .accessibilityAction(named: "Go to Cue") { show.go(to: cue.id) }
+            .accessibilityAction(named: "Rename") { renameText = cue.label; renaming = cue }
+            .accessibilityAction(named: "Duplicate Scene") { show.duplicateScene(of: cue.id) }
+            .accessibilityAction(named: "Rename Scene") { startSceneRename(cue) }
+            // ACC-004-R3: reordering without Edit mode's drag handles.
+            .accessibilityAction(named: "Move Up") { move(number - 1, by: -1) }
+            .accessibilityAction(named: "Move Down") { move(number - 1, by: 1) }
     }
 
     /// Moves the cue at `index` one place up (-1) or down (+1); nothing at either end.
