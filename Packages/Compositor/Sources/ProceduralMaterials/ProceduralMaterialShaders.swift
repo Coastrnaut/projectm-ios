@@ -82,11 +82,18 @@ enum ProceduralMaterialShaders {
         return sum / max(norm, 1e-4);
     }
 
-    // Gradient Field: 0 colorA, 1 colorB, 2 speed (turns/s), 3 brightness, 4 audioReactivity.
+    // Gradient Field: 0 colorA, 1 colorB, 2 speed (turns/s), 3 brightness, 4 audioReactivity,
+    // 5 shape (SHD-003 enum: 0 linear, 1 radial). Radial blends by distance from the centre; its boundary
+    // breathes once per phase cycle (the rotation's bound).
     fragment float4 mat_gradient(MatOut in [[stage_in]], constant MatUniforms &u [[buffer(0)]]) {
         float2 p = mat_point(in, u);
         float a = TAU * u.phase;
-        float t = smoothstep(-0.6, 0.6, dot(p, float2(cos(a), sin(a))));
+        float t;
+        if (u.slots[5].x > 0.5) {
+            t = smoothstep(0.05, 0.75, length(p) * (1.0 + 0.15 * cos(a)));
+        } else {
+            t = smoothstep(-0.6, 0.6, dot(p, float2(cos(a), sin(a))));
+        }
         float3 c = mix(u.slots[0].rgb, u.slots[1].rgb, t) * u.slots[3].x;
         return mat_finish(c);
     }
