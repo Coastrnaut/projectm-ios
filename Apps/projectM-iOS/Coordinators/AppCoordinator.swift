@@ -236,6 +236,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let show: ShowCoordinator
     /// UIX-002: the quick scene switcher's overlay state (AppCoordinator+SceneSwitcher.swift).
     let sceneSwitcher = SceneSwitcherModel()
+    /// SCN-006: scene preview pictures for the switcher and Scene Folders (AppCoordinator+ScenePreviews.swift).
+    @ObservationIgnored private(set) lazy var scenePreviews: ScenePreviewModel = makeScenePreviews()
     /// SCN-012: the repair report before a show cue's scene or Reopen opens.
     let sceneRepair: SceneRepairCoordinator
     /// ACC-011: capture and recording status events (announcements and captions); owns ACC-004's announcer.
