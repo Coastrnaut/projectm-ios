@@ -11,10 +11,9 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 105,
-   "implementing": 1,
-   "integrated": 44,
-   "unit_passed": 1
+   "audited": 103,
+   "implementing": 3,
+   "integrated": 45
   },
   "P2": {
    "audited": 77,
@@ -25,11 +24,10 @@
   }
  },
  "by_state": {
-  "audited": 193,
-  "implementing": 1,
-  "integrated": 130,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "audited": 191,
+  "implementing": 3,
+  "integrated": 131,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -38,7 +36,6 @@
   "infeasible": [],
   "pending": [
    "ACC-007",
-   "ACC-008",
    "ACC-009",
    "ACC-010",
    "ACC-012",
@@ -235,7 +232,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "195 features are not implemented yet (first: ACC-007, ACC-008, ACC-009, ACC-010, ACC-012)"
+   "194 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ACC-012, ANL-008)"
   ]
  },
  "features": {
@@ -314,10 +311,10 @@
    "branch": "feature/acc-008",
    "branch_sha": "6b23f3bd600a4cf34808412bb45f17a53d57b164",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "c5a70c41b664c212984571a678270e75bf95c606",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "ACC-009": {
    "attempts": 0,
@@ -351,13 +348,13 @@
   },
   "ACC-012": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/acc-012",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "ANL-001": {
    "attempts": 0,
@@ -1241,13 +1238,13 @@
   },
   "FX-002": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/fx-002",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "FX-003": {
    "attempts": 0,
@@ -3532,6 +3529,11 @@
    "sha": "bb1439c7"
   },
   {
+   "branch": "feature/acc-008",
+   "id": "ACC-008",
+   "sha": "c5a70c41b664c212984571a678270e75bf95c606"
+  },
+  {
    "branch": "feature/acc-011",
    "id": "ACC-011",
    "sha": "92196c47"
@@ -4177,5 +4179,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T09:28:54Z"
+ "updated": "2026-11-14T09:29:04Z"
 }
