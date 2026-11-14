@@ -104,7 +104,9 @@ final class UserPresetsCoordinator: UserPresetGuarding {
     /// Reads a built-in preset's bytes (the loader's bundle and archive; tests replace it).
     @ObservationIgnored var bundledData: (@MainActor (IndexedPreset) throws -> Data)?
 
-    @ObservationIgnored private let library: UserPresetLibrary
+    @ObservationIgnored let library: UserPresetLibrary   // PRE-018: the library check reads and relinks through it
+    /// PRE-018: My Presets › Check Library (set by AppCoordinator; nil in tests that do not need it).
+    @ObservationIgnored var integrity: LibraryIntegrityCoordinator?
     @ObservationIgnored private let provingPeriod: Duration
     @ObservationIgnored private let announce: @MainActor (String) -> Void
     @ObservationIgnored private weak var presets: PresetCoordinator?
@@ -703,7 +705,7 @@ final class UserPresetsCoordinator: UserPresetGuarding {
 
     // MARK: - State
 
-    private func refresh() async {
+    func refresh() async {   // PRE-018: also after a library check fix
         let snapshot = await library.snapshot
         let before: [String: String] = Self.contentHashes(playable)
         playable = snapshot.playable

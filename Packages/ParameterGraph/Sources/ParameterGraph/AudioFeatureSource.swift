@@ -8,7 +8,7 @@
 // normalized `centroid` (ANL-010-R8), the `loudness` envelope (ANL-014-R8), the mid transient
 // value `AnalysisFrame.midTransient` (ANL-008-R8), the high transient value
 // `AnalysisFrame.highTransient` (ANL-009-R8), the normalized `rolloff` (ANL-011-R8) and the
-// `flatness` (ANL-012-R7).
+// `flatness` (ANL-012-R7) and the stereo `correlation` mapped to 0…1 (ANL-013-R6).
 
 /// A normalized (0…1) audio feature a binding can follow.
 public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
@@ -41,6 +41,9 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
     /// "Flatness" (ANL-012): spectral flatness (Wiener entropy), 0 tonal … 1 flat; white noise reads
     /// ≈ 0.56; 0 at silence.
     case flatness
+    /// "Correlation" (ANL-013): stereo correlation r (−1 inverted … 1 identical) mapped to (r + 1)/2:
+    /// identical channels (and mono) read 1, unrelated or silent 0.5, inverted 0.
+    case correlation
     /// MOD-007: the scene's oscillator at this 0-based position (0…7), read from `AudioFeatureFrame.lfos`.
     /// Its ID keeps the `audio.` binding-source prefix so every stored-binding path (MOD-013 restore,
     /// migrations) reads it, and an older version orphans it instead of dropping it (research MOD-007-D4).
@@ -51,7 +54,7 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
 
     /// The stable identifier (MOD-013 stores it): `audio.band.<index>`, `audio.bandMean`,
     /// `audio.onset`, `audio.beatConfidence`, `audio.kick`, `audio.centroid`, `audio.loudness`,
-    /// `audio.midTransient`, `audio.highTransient`, `audio.rolloff`, `audio.flatness`, `audio.lfo.<index>` (MOD-007).
+    /// `audio.midTransient`, `audio.highTransient`, `audio.rolloff`, `audio.flatness`, `audio.correlation`, `audio.lfo.<index>` (MOD-007).
     public var id: String {
         switch self {
         case let .band(index): "audio.band.\(index)"
@@ -65,6 +68,7 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
         case .highTransient: "audio.highTransient"
         case .rolloff: "audio.rolloff"
         case .flatness: "audio.flatness"
+        case .correlation: "audio.correlation"
         case let .lfo(index): "audio.lfo.\(index)"
         }
     }
@@ -85,6 +89,7 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
         case "audio.highTransient": self = .highTransient
         case "audio.rolloff": self = .rolloff
         case "audio.flatness": self = .flatness
+        case "audio.correlation": self = .correlation
         default:
             if let index = Self.index(in: id, prefix: "audio.band.", maximum: Self.maximumBandIndex) {
                 self = .band(index)
@@ -138,6 +143,10 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
             return frame.rolloff.map { (value: Float) -> Double in Self.finite(Double(value)) } ?? 0
         case .flatness:
             return frame.flatness.map { (value: Float) -> Double in Self.finite(Double(value)) } ?? 0
+        case .correlation:
+            guard let r = frame.correlation, r.isFinite else { return 0 }
+            let mapped: Double = (Double(r) + 1) / 2
+            return min(max(mapped, 0), 1)
         case let .lfo(index):
             guard index >= 0, index < frame.lfos.count else { return 0 }
             return min(max(Self.finite(frame.lfos[index]), 0), 1)
@@ -167,13 +176,15 @@ public struct AudioFeatureFrame {
     public var rolloff: Float?
     /// ANL-012's spectral flatness (0…1); nil when the producer does not feed it.
     public var flatness: Float?
+    /// ANL-013's raw stereo correlation (−1…1); the source maps it to 0…1. nil when not fed.
+    public var correlation: Float?
     /// MOD-007: the scene's oscillator values (0…1) by position, borrowed like `bands`; empty when the producer
     /// has no oscillators (every `.lfo` source then reads 0).
     public var lfos: UnsafeBufferPointer<Double>
 
     public init(bands: UnsafeBufferPointer<Float>, onset: Float? = nil, beatConfidence: Double? = nil, kick: Float? = nil,
                 centroid: Float? = nil, loudness: Float? = nil, midTransient: Float? = nil,
-                highTransient: Float? = nil, rolloff: Float? = nil, flatness: Float? = nil,
+                highTransient: Float? = nil, rolloff: Float? = nil, flatness: Float? = nil, correlation: Float? = nil,
                 lfos: UnsafeBufferPointer<Double> = UnsafeBufferPointer(start: nil, count: 0)) {
         self.bands = bands
         self.onset = onset
@@ -185,6 +196,7 @@ public struct AudioFeatureFrame {
         self.highTransient = highTransient
         self.rolloff = rolloff
         self.flatness = flatness
+        self.correlation = correlation
         self.lfos = lfos
     }
 

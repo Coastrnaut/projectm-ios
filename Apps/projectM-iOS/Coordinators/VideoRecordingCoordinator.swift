@@ -245,6 +245,11 @@ final class VideoRecordingCoordinator {
     @ObservationIgnored private let debugDirectory: URL?
     @ObservationIgnored private let checkInterval: Duration?
     @ObservationIgnored private var recorder: MetalFrameRecorder?
+    /// PERF-007: the running recording's statistics (live), else the last finished recording's; nil before the first.
+    var frameDropStatistics: (statistics: RecordingStatistics, live: Bool)? {
+        if let recorder { return (recorder.statistics, true) }
+        return lastRecording.map { (video: RecordedVideo) -> (statistics: RecordingStatistics, live: Bool) in (video.statistics, false) }
+    }
     @ObservationIgnored private weak var source: (any VideoRecordingSource)?
     @ObservationIgnored private var ticker: Task<Void, Never>?
     @ObservationIgnored private var backgroundTask: UIBackgroundTaskIdentifier = .invalid

@@ -12,6 +12,8 @@ indicator text, `UIStrings.sourceStatus` (FR-042), e.g. "In-App Playback · Acti
 | X1 | source → any AudioState (notStarted, waiting, noAudioReceived, silent, active, paused, interrupted, stopped, endedBySystem) | `<status>`; banner with the FR-015 message where one applies | `<status>` | source | S | P | FR-070; interrupted, stopped, ended by system and no audio are safety-relevant |
 | X2 | source switch waiting for the new source (AUD-012) | "Switching source…" | "Switching source…" | source | U | P | user-caused |
 | X3 | In-App Playback on hold (interrupted, output disconnected; AUD-014) | `<status>` + hold detail | "`<status>`. `<detail>`" (replaces X1's text for that change) | source | S | P | AUD-014-R18, safety |
+| X3a | stereo phase-inversion warning raised (ANL-013; native visuals, at most once per 30 s) | `<status>` + " · Stereo channels look phase-inverted" | "Stereo channels look phase-inverted" | source | S | P | ANL-013-R8 |
+| X3b | an announced phase-inversion warning cleared (ANL-013) | "Stereo phase normal" | "Stereo phase normal" | source | S | C | ANL-013-R8 |
 | X4 | background notice on return (AUD-015) | notice text | notice text | background | S | P | AUD-015-R7 |
 | X5 | output route changed (AUD-007) | route explanation | `UIStrings.routeAnnouncement` | route | S | P | AUD-007 |
 | X6 | Save Frame refused, failed or "Frame saved." (REC-001) | notice | notice | capture | U | P | user-caused (new) |

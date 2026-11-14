@@ -87,6 +87,21 @@ final class RecentPresetsCoordinator {
         announce(Self.clearedText)
     }
 
+    /// PRE-018-R9: the library check removes entries that name no preset (silently; the check announces).
+    func remove(_ removed: Set<String>) {
+        ids = store.remove(removed).ids
+    }
+
+    #if DEBUG
+    /// LibraryCheckUITests (PRE-018): history on, holding `list` (most recent first).
+    func replaceForUITests(_ list: [String]) {
+        store.isEnabled = true
+        isEnabled = true
+        for id in list.reversed() { _ = store.record(id) }
+        ids = store.history.ids
+    }
+    #endif
+
     /// The recorded presets the library lists, most recent first (locked ones included; R5).
     func listing(in library: PresetLibrary?) -> [IndexedPreset] {
         library?.collectionListing(ids) ?? []

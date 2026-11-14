@@ -62,6 +62,9 @@ final class SettingsTests: XCTestCase {
         settings.radialWaveformRing = .small   // VIS-005-R9
         settings.radialWaveformAmplitude = .high
         settings.beatRingsLife = .long         // VIS-006-R9
+        settings.mandalaSymmetry = 8           // VIS-007-R9
+        settings.mandalaMirror = true
+        settings.mandalaPetal = .spike
         settings.spectrumAttackMilliseconds = 25    // ANL-003-R6
         settings.spectrumReleaseMilliseconds = 250
         settings.oscEnabled = true             // OSC-001-R15
@@ -136,7 +139,7 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(bad.linearSpectrumSpacing, 0.2, "unknown → Narrow")
         XCTAssertTrue(AppSettings.allKeys.contains("settings.linearSpectrum.orientation"))
         XCTAssertTrue(AppSettings.allKeys.contains("settings.linearSpectrum.spacing"))
-        XCTAssertEqual(VisualChoice.allCases.filter(\.isNative), [.circularSpectrum, .linearSpectrum, .oscilloscope, .lissajous, .radialWaveform, .beatRings])   // VIS-003, VIS-004, VIS-005, VIS-006
+        XCTAssertEqual(VisualChoice.allCases.filter(\.isNative), [.circularSpectrum, .linearSpectrum, .oscilloscope, .lissajous, .radialWaveform, .beatRings, .mandala])   // VIS-003, VIS-004, VIS-005, VIS-006, VIS-007
         XCTAssertEqual(VisualChoice.linearSpectrum.title, "Linear Spectrum")
     }
 

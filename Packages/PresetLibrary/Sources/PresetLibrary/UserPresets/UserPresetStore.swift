@@ -358,6 +358,35 @@ public final class UserPresetStore {
         try? removeFile(at: from)   // no record names it any more
     }
 
+    /// PRE-018-R7 (MED-013 pattern): writes a waiting or playable preset's stored copy back from bytes
+    /// whose size and SHA-256 equal the record's. The record is not changed. Throws `saveFailed` for any
+    /// other bytes, a quarantined preset, or a failed write.
+    public func restoreContents(_ id: String, contents: Data) throws {
+        try requireWritable()
+        guard let preset = preset(id: id) else { throw StoreError.unknownPreset }
+        let bytes = [UInt8](contents)
+        guard preset.state != .quarantined, bytes.count == preset.byteCount,
+              ContentHash.sha256Hex(bytes) == preset.sha256 else { throw StoreError.saveFailed }
+        let url = fileURL(preset)
+        do {
+            try createDirectory(url.deletingLastPathComponent())
+            try writeFile(contents, to: url)
+        } catch {
+            throw StoreError.saveFailed
+        }
+    }
+
+    /// PRE-018-D3: the stored copy's bytes when its size matches the record (read at most `byteCount`
+    /// bytes plus one); nil when absent, unreadable or of another size. Never follows the record outside
+    /// the directory (the path is built from the validated hash).
+    func storedBytes(of preset: UserPreset) -> [UInt8]? {
+        let url = fileURL(preset)
+        guard let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
+              let size = (attributes[.size] as? NSNumber)?.intValue, size == preset.byteCount,
+              size <= PresetImportLimits.maxFileBytes, let data = try? Data(contentsOf: url) else { return nil }
+        return data.count == preset.byteCount ? [UInt8](data) : nil
+    }
+
     /// Removes the record, then its copy.
     public func remove(_ id: String) throws {
         try requireWritable()

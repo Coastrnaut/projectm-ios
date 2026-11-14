@@ -55,6 +55,8 @@
 //   `BeatRingTrigger` (confident ANL-005 beats, the ANL-007 kick as the fallback) and emits a ring stamped with
 //   the frame's time under the frame's envelope (the rate cap). Leaving the style unsubscribes; a loop start
 //   discards events that queued while stopped. The ring life changes only its configuration.
+// * Mandala (VIS-007): draws the smoothed bands as N rotated petals; symmetry, mirror and petal style change only
+//   its configuration. `reduceMotion` (the system setting, from the coordinator) halves its turn (VIS-007-R5).
 // * REC-001 (research REC-001-D1): `captureFrame` turns the layer's `framebufferOnly` off until the
 //   next readable drawable is drawn, blits that drawable (the frame as shown: glow and Reduce
 //   flashing included) into a shared buffer and delivers 8-bit sRGB BGRA on the main actor; then
@@ -121,11 +123,19 @@ final class NativeSpectrumHost: PresentationBoundResource {
     private var rolloff: Float = 0
     /// ANL-012: the newest frame's spectral flatness, fed to the bindings (MOD-002's Flatness source).
     private var flatness: Float = 0
+    /// ANL-013: the newest frame's stereo correlation (−1…1), fed to the bindings (MOD-002's Correlation source).
+    private(set) var correlation: Float = 0
+    /// ANL-013: the newest frame's phase-inversion warning; changes go to `onPhaseWarningChange`.
+    private(set) var phaseInverted = false
+    /// ANL-013: called on the main actor when the warning is raised or cleared (cleared on start and stop).
+    var onPhaseWarningChange: (@MainActor (Bool) -> Void)?
     private var lastLinkTimestamp: CFTimeInterval?
     private var displayLink: CADisplayLink?
     private var paused = true
     private(set) var isSuspended = false
     private var meter = FrameRateMeter()
+    /// PERF-007: the output's frame drop counter while the performance overlay is shown (nil: no counting work).
+    var frameDrops: FrameDropCounter?
     /// PERF-001: the stage timer while the performance overlay is shown (nil: no timing work), and the
     /// frames' command buffers until their GPU times are known.
     var stageTimer: FrameStageTimer? {
@@ -199,6 +209,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             ?? (generator as? LissajousGenerator)?.configuration.palette
             ?? (generator as? RadialWaveformGenerator)?.configuration.palette
             ?? (generator as? BeatRingGenerator)?.configuration.palette
+            ?? (generator as? MandalaGenerator)?.configuration.palette
     }
 
     private func applyPalette() {
@@ -226,7 +237,27 @@ final class NativeSpectrumHost: PresentationBoundResource {
             var configuration = rings.configuration
             configuration.palette = palette
             rings.configuration = configuration
+        } else if let mandala = generator as? MandalaGenerator {
+            var configuration = mandala.configuration
+            configuration.palette = palette
+            mandala.configuration = configuration
         }
+    }
+
+    /// VIS-007: the mandala's generator (tests; nil for another visual).
+    var mandalaGenerator: MandalaGenerator? { generator as? MandalaGenerator }
+
+    /// VIS-007-R5, ACC-001: the system Reduce Motion; halves the mandala's turn (applied to every generator a style
+    /// change builds).
+    var reduceMotion = false {
+        didSet { if reduceMotion != oldValue { applyReduceMotion() } }
+    }
+
+    private func applyReduceMotion() {
+        guard let mandala = generator as? MandalaGenerator, mandala.configuration.reduceMotion != reduceMotion else { return }
+        var configuration = mandala.configuration
+        configuration.reduceMotion = reduceMotion   // the layout re-anchors, so the angle stays continuous
+        mandala.configuration = configuration
     }
 
     /// VIS-005: the radial waveform's generator (tests; nil for another visual).
@@ -387,6 +418,12 @@ final class NativeSpectrumHost: PresentationBoundResource {
                                                   configuration: BeatRingConfiguration(life: life.seconds))
             generator.barCount = barCount
             return generator
+        case let .mandala(symmetry, mirror, petal):   // VIS-007
+            let generator = try MandalaGenerator(device: device, pixelFormat: .bgra8Unorm_srgb,
+                                                 configuration: MandalaConfiguration(symmetry: symmetry, mirror: mirror,
+                                                                                     petalStyle: petal))
+            generator.barCount = barCount
+            return generator
         }
     }
 
@@ -448,10 +485,17 @@ final class NativeSpectrumHost: PresentationBoundResource {
             var configuration = rings.configuration   // VIS-006: in place, from the next frame
             configuration.life = life.seconds
             rings.configuration = configuration
+        } else if case let .mandala(symmetry, mirror, petal) = newStyle, let mandala = generator as? MandalaGenerator {
+            var configuration = mandala.configuration   // VIS-007: in place, from the next frame
+            configuration.symmetry = symmetry
+            configuration.mirror = mirror
+            configuration.petalStyle = petal
+            mandala.configuration = configuration
         } else {
             let replacement = try Self.makeGenerator(device: device, style: newStyle, barCount: generator.barCount)
             generator = replacement
             applyPalette()   // ACC-003-R13: a new generator starts with the default palette
+            applyReduceMotion()   // VIS-007-R5
             samples.update(repeating: 0, count: WaveformFrameBuffer.capacity)   // VIS-004: mono and stereo histories differ
         }
         style = newStyle
@@ -561,6 +605,13 @@ final class NativeSpectrumHost: PresentationBoundResource {
     /// MOD-007: the live oscillators by position.
     var lfos: [LFO?] { lfoBank.oscillators }
 
+    /// ANL-013: records the warning and reports a change (tests call it to stand in for the bus).
+    func setPhaseInverted(_ value: Bool) {
+        guard value != phaseInverted else { return }
+        phaseInverted = value
+        onPhaseWarningChange?(value)
+    }
+
     /// MOD-006: the live threshold triggers in order.
     var triggers: [ThresholdTriggerBinding] { triggerBank.bindings }
 
@@ -568,7 +619,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
     /// applies the result. Does nothing without bindings or triggers. Called by `frame(_:)`; tests call it directly.
     func applyModulation(bands: UnsafeBufferPointer<Float>, kick: Float? = nil, centroid: Float? = nil,
                          loudness: Float? = nil, midTransient: Float? = nil, highTransient: Float? = nil,
-                         rolloff: Float? = nil, flatness: Float? = nil, timeNanoseconds: UInt64) {
+                         rolloff: Float? = nil, flatness: Float? = nil, correlation: Float? = nil,
+                         timeNanoseconds: UInt64) {
         let bound: Bool = modulator?.hasBindings ?? false
         guard bound || triggerBank.hasTriggers else { return }
         var lfos = UnsafeBufferPointer<Double>(start: nil, count: 0)
@@ -579,7 +631,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
             lfos = UnsafeBufferPointer(lfoValues)
         }
         let frame = AudioFeatureFrame(bands: bands, kick: kick, centroid: centroid, loudness: loudness, midTransient: midTransient,
-                                      highTransient: highTransient, rolloff: rolloff, flatness: flatness, lfos: lfos)
+                                      highTransient: highTransient, rolloff: rolloff, flatness: flatness,
+                                      correlation: correlation, lfos: lfos)
         if triggerBank.hasTriggers {   // MOD-006: one step per trigger, no allocation
             triggerBank.advance(frame: frame, timeNanoseconds: timeNanoseconds) { (action: ThresholdTriggerAction) -> Void in
                 onTrigger?(action)
@@ -620,6 +673,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
         case let .lissajous(mode, persistence): return "\(mode.title), Persistence \(persistence ? "on" : "off"), \(glow)"   // VIS-004-R14
         case let .radialWaveform(ring, amplitude): return "\(ring.title) ring, \(amplitude.title) amplitude, \(glow)"   // VIS-005-R11
         case let .beatRings(life): return "\(life.title) ring life, \(glow)"   // VIS-006-R11
+        case let .mandala(symmetry, mirror, petal):   // VIS-007-R11
+            return "\(symmetry)-fold, Mirror \(mirror ? "on" : "off"), \(petal.title), \(glow)"
         }
     }
 
@@ -692,6 +747,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
             highTransient = 0  // ANL-009: and its high transient
             rolloff = 0        // ANL-011: and its rolloff
             flatness = 0       // ANL-012: and its flatness
+            correlation = 0    // ANL-013: and its stereo correlation
+            setPhaseInverted(false)   // ANL-013: and its warning
             startEffectQuality()   // PERF-003: the floor at once, no fade
             if let waveform { analyzer.start(reader: waveform) }   // VIS-003: the tap through the pass-through wrapper
             let link = CADisplayLink(target: NativeSpectrumLinkProxy(self), selector: #selector(NativeSpectrumLinkProxy.fire(_:)))
@@ -702,6 +759,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             link.invalidate()
             displayLink = nil
             analyzer.stop()
+            setPhaseInverted(false)   // ANL-013: no warning while nothing is analysed
             meter.reset()
             cancelCapture()   // REC-001-R14: no frame comes while the loop is stopped
         }
@@ -792,6 +850,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
             highTransient = info.highTransient
             rolloff = info.rolloff
             flatness = info.flatness
+            correlation = info.correlation
+            setPhaseInverted(info.phaseInverted)
         }
         // ANL-003: the real interval since the previous frame (the first frame after a start snaps).
         let interval: Double = lastLinkTimestamp.map { (previous: CFTimeInterval) -> Double in link.timestamp - previous } ?? 0
@@ -804,7 +864,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
                                                        frameDuration: link.targetTimestamp - link.timestamp)
         let bandInput = UnsafeBufferPointer(start: bands, count: bandCount)
         applyModulation(bands: bandInput, kick: kickEnvelope, centroid: centroid, loudness: loudness, midTransient: midTransient,
-                        highTransient: highTransient, rolloff: rolloff, flatness: flatness,
+                        highTransient: highTransient, rolloff: rolloff, flatness: flatness, correlation: correlation,
                         timeNanoseconds: context.timeNanoseconds)   // MOD-002; no-op without bindings
         stepEffectQuality(time: link.timestamp)   // PERF-003: arithmetic; the glow changes only when the level or fade moves
         drainBeatEvents(context: context)   // VIS-006: nothing unless beat rings are shown
@@ -847,6 +907,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         }
         timer?.end(.encode)
         timer?.begin(.present)
+        frameDrops?.track(drawable, link: link)   // PERF-007: before present, so the handler is in place
         commands.present(drawable)
         commands.commit()
         timer?.end(.present)
@@ -949,6 +1010,8 @@ enum NativeSpectrumStyle: Equatable, Sendable {
     case radialWaveform(ring: RadialWaveformRing, amplitude: RadialWaveformAmplitude)
     /// VIS-006: beat pulse rings.
     case beatRings(life: BeatRingLife)
+    /// VIS-007: the mandala.
+    case mandala(symmetry: Int, mirror: Bool, petal: MandalaPetalStyle)
 
     /// The oscilloscope and the radial waveform draw the mono sample history instead of the bands.
     var drawsMonoHistory: Bool {
@@ -966,6 +1029,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .lissajous: VisualChoice.lissajous.title
         case .radialWaveform: VisualChoice.radialWaveform.title
         case .beatRings: VisualChoice.beatRings.title
+        case .mandala: VisualChoice.mandala.title
         }
     }
 
@@ -977,6 +1041,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .lissajous: "lissajous"
         case .radialWaveform: "radialWaveform"
         case .beatRings: "beatRings"
+        case .mandala: "mandala"
         }
     }
 }

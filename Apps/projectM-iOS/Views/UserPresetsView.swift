@@ -18,6 +18,7 @@
 //   Preset…" opens the import preview (PresetArchiveImportView); nothing is stored before Install.
 // * PRE-013 (specs/174-pre-013-bulk-import): "Import Folder or Archive…" (BulkImportSection) and its
 //   summary sheet (BulkImportSummaryView).
+// * PRE-018 (specs/194-pre-018-integrity-scanner): "Check Library" below Quarantine opens LibraryCheckView.
 import PresetLibrary
 import SwiftUI
 import UniformTypeIdentifiers
@@ -26,6 +27,8 @@ import UniformTypeIdentifiers
 enum UserPresetRoute: Hashable {
     case list
     case quarantine
+    /// PRE-018: the Library Check screen.
+    case check
 }
 
 struct UserPresetsView: View {
@@ -145,6 +148,10 @@ struct UserPresetsView: View {
                     .accessibilityLabel(UserPresetsCoordinator.quarantineRowLabel(count: userPresets.quarantined.count))
                 }
                 .accessibilityIdentifier("quarantineLink")
+                if userPresets.integrity != nil {   // PRE-018-R11
+                    NavigationLink(value: UserPresetRoute.check) { Text("Check Library") }
+                        .accessibilityIdentifier("libraryCheckLink")
+                }
             }
         }
         .navigationTitle(UserPresetText.scopeTitle)

@@ -73,7 +73,11 @@ final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
 
     @ObservationIgnored private(set) var routing = ExternalDisplayRouting()
     /// The visualization is drawn on an external display; the device shows the note instead.
-    private(set) var showsVisualExternally = false
+    private(set) var showsVisualExternally = false {
+        didSet { if showsVisualExternally != oldValue { onVisualOutputChange?() } }   // PERF-007: a new counting session
+    }
+    /// PERF-007: called inside `place()` when the visual moves between the device and an external display.
+    @ObservationIgnored var onVisualOutputChange: (@MainActor () -> Void)?
     /// Times the visual view changed slot (tests; an Int, no allocation).
     @ObservationIgnored private(set) var placements = 0
 
