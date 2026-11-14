@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T19:38:46Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T19:40:53Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,25 +10,24 @@
 | State | Features |
 |---|---|
 | audited | 112 |
-| implementing | 3 |
-| built | 6 |
-| unit_passed | 1 |
-| integrated | 203 |
+| implementing | 2 |
+| built | 7 |
+| integrated | 204 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 0 | 84 | 1 |
-| P1 | 32 | 2 | 6 | 1 | 110 | 0 |
-| P2 | 69 | 1 | 0 | 0 | 9 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | built | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 84 | 1 |
+| P1 | 32 | 1 | 7 | 111 | 0 |
+| P2 | 69 | 1 | 0 | 9 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 122 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-015, CAM-003)
+- 121 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-015, CAM-003)
 
 ## Integrated
 
@@ -237,6 +236,7 @@ The physical-device suite may **not** start:
 | VIS-004 | Lissajous scope | `38172fff` | `feature/vis-004` |
 | VIS-005 | Radial waveform | `9bbd8af5` | `feature/vis-005` |
 | VIS-006 | Beat pulse rings | `427617b9` | `feature/vis-006` |
+| VIS-007 | Mandala symmetry | `8bdb0122` | `feature/vis-007` |
 
 ## Proved already implemented
 
@@ -2393,7 +2393,7 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `1dd9d242b902` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-006/20261114T123352/swift-test_VisualGenerators.log`)
 - `post-merge: projectM-iOSTests 872 + UI 9 (beat rings, preset overrides, preset library, glow)`: pass at `427617b9` (log `.autonomous/logs/integration/batch37/app-tests.log`)
 
-### VIS-007 Mandala symmetry (unit_passed)
+### VIS-007 Mandala symmetry (integrated)
 - `python3 scripts/check_compliance.py`: pass at `0116459b31c6` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-007/20261114T143158/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `0116459b31c6` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-007/20261114T143158/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `0116459b31c6` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-007/20261114T143158/script-tests.log`)
@@ -2407,3 +2407,4 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `0116459b31c6` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-007/20261114T143158/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `0116459b31c6` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-007/20261114T143158/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `0116459b31c6` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-007/20261114T143158/swift-test_VisualGenerators.log`)
+- `post-merge: projectM-iOSTests 904 + UI 1 (mandala)`: pass at `8bdb0122` (log `.autonomous/logs/integration/batch45/app-tests.log`)
