@@ -41,3 +41,9 @@
 
 ## PERF-012-D7 MetricKit
 - **Decision**: not used (Clarifications): daily aggregates, not this session.
+
+## PERF-012-D8 Session duration and the required-reason API
+- **Decision**: the session duration and timeline times come from `ProcessInfo.systemUptime` differences, under the
+  app's existing SystemBootTime reason 35F9.1: only the time elapsed between events inside the app leaves the device
+  (in the user-shared file), which that reason allows. No new privacy manifest entry
+  (`check_privacy_manifest.py` OK on the Debug build).

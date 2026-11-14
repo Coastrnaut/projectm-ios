@@ -443,6 +443,7 @@ struct VisualizerView: View {
                          cameraStatus: { () -> PermissionState? in coordinator.cameraPermissionStatus },
                          recentPresets: coordinator.presets.recent,   // PRE-006
                          powerProfile: coordinator.powerProfile,   // PERF-008
+                         performanceReport: coordinator.performanceReport,   // PERF-012
                          announcer: coordinator.announcer)   // ACC-005-R7
                 .environment(\.parameterShelf, coordinator.parameterShelf)   // UIX-004-R1: Pin to Shelf in Inspect
                 .sceneRepairSheet(coordinator.sceneRepair, active: true)   // SCN-012: a show editor step's report

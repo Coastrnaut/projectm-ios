@@ -100,6 +100,8 @@ struct SettingsView: View {
     var recentPresets: RecentPresetsCoordinator?
     /// PERF-008: the power profile (nil hides the rows, e.g. in previews).
     var powerProfile: PowerProfileSetting? = nil
+    /// PERF-012: Export performance report (Settings → Performance).
+    var performanceReport: PerformanceReportExport? = nil
     /// ACC-005-R7: announces a VoiceOver swipe at a slider's end (nil: none, e.g. in previews).
     var announcer: AccessibilityAnnouncer?
     @Environment(\.dismiss) private var dismiss
@@ -496,6 +498,7 @@ struct SettingsView: View {
         }
         .id("performance")
         if let powerProfile { PowerProfileSection(setting: powerProfile).id("powerProfile") }   // PERF-008-R1
+        if let performanceReport { PerformanceReportSection(export: performanceReport).id("performanceReport") }   // PERF-012-R1
     }
 
     @ViewBuilder private var audioSections: some View {
