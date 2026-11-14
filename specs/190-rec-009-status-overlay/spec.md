@@ -40,6 +40,15 @@ human interaction); each answer is the conservative, local-first option.
 - Q: How is "min left" computed and when is storage a warning? → A: Minutes until the REC-015 guard would stop the recording: (free − the guard's stop threshold) ÷ the larger of the estimated and measured byte rate, rounded down. Under 5 minutes is "low" (warning symbol), under 1 minute is "critical" ("under 1 min left"). Unknown free storage reads "Free storage unknown" and never warns.
 - Q: Are warnings announced? → A: Yes, through the status router on the recording lane, only when a warning level rises (dropped: none → warning; storage: ok → low → critical), at most once per kind every 30 s of recording; never the plain counts. They are system rows, so they are dropped while the app is not active (ACC-011-R10).
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Is the dropped-frames warning based on the whole recording or a recent window? → A: The whole recording (cumulative slots since its first frame). It matches the count shown, the number Settings shows after the finish (`RecordedVideo.droppedFrames`), and needs no time window; once a warning, it stays a warning for that recording.
+- Q: Which byte rate gives "min left" before the file has a measured rate? → A: The REC-015 estimate until one second is recorded, then the larger of the estimate and the measured rate (the same rule the guard uses), so the overlay never promises more time than the guard allows.
+- Q: Is a warning that clears (storage freed, a falling percentage) announced? → A: No. The line updates silently; only rising levels are announced (REC-009-R4), so a value hovering at a threshold never repeats the announcement within the recording.
+- Q: How does VoiceOver read the overlay? → A: The indicator keeps its label ("Recording, 0:07 of 0:10"); the dropped-frames line and the storage line are one element each, labelled with their text and prefixed "Warning:" when warned. Nothing is announced each refresh.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - See how the recording is going (Priority: P1)
@@ -98,7 +107,8 @@ window snapshot taken during the recording shows the probe (it really was on scr
 - **REC-009-R2**: The dropped-frames line MUST show the recorder's live dropped slots (REC-006), refreshed at least every 0.25 s; it MUST be a warning when dropped ≥ 10 and dropped ≥ 2% of written + dropped slots.
 - **REC-009-R3**: The storage line MUST show the free storage (decimal GB with one decimal from 1 GB, else whole MB) and the minutes until the disk guard would stop the recording, from the REC-015 readings (at start and every 5 s); low under 5 minutes, critical under 1 minute; unknown free storage reads "Free storage unknown".
 - **REC-009-R4**: Warnings MUST be announced through the status router (recording lane, system cause) only when their level rises, at most once per kind per 30 s of recorded time.
-- **REC-009-R5**: The overlay MUST NOT animate; a warning MUST carry a symbol and words (not colour alone); VoiceOver MUST read each line, including "warning".
+- **REC-009-R5**: The overlay MUST NOT animate; a warning MUST carry a symbol and words (not colour alone); VoiceOver MUST read each line as one element, prefixed "Warning:" when warned. A level that falls MUST update silently.
+- **REC-009-R8**: Before one second is recorded, "min left" MUST use the REC-015 estimate; afterwards the larger of the estimate and the measured rate.
 - **REC-009-R6**: No app UI (controls, indicator, status overlay, notices) MUST ever be drawn into a recording; there is no option to include it.
 - **REC-009-R7**: The free storage and dropped counts MUST stay in memory only (never stored, logged or sent).
 
