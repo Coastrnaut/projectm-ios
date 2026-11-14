@@ -66,6 +66,30 @@ Decided under the owner's standing delegation (rule 4); recommended option first
   envelope: 2 flashes per second, 0.25/s rise, plus intensity limit 0.5), Strict (1 flash per second,
   0.10/s rise, intensity limit 0.25) and Custom (`ACC-012-R1`).
 
+### Session 2026-11-14 (speckit-clarify)
+
+Five questions, each answered with the recommended option under the owner's delegation (rule 4).
+
+- Q: Does the system Reduce Motion setting lower the intensity limit by itself? → A: No; it reaches the
+  profile only through Reduce flashing, which follows it by default (`ACC-012-R7`). ACC-001-R5 ("Reduce
+  Motion changes no visual parameter") stays true, and Standard keeps today's behaviour for every system
+  setting combination. Rejected: Reduce Motion floors the intensity limit at Reduced's 0.5 (would silently
+  change the visuals of every Reduce Motion user and amend ACC-001-R5).
+- Q: When the chosen profile is stricter than Standard, what does the Reduce flashing toggle show? → A:
+  The user's own choice, unchanged; the effective Reduce flashing is the toggle OR a profile stricter than
+  Standard, and the toggle's footer says the profile keeps flashing reduced (`ACC-012-R7`). Rejected:
+  forcing the toggle on and disabling it (rewrites the user's stored FR-072 choice).
+- Q: Where do the custom sliders appear and what values do they start from? → A: Only while Custom is
+  chosen; the first time, Custom starts from the preset that was selected before, then keeps its own stored
+  values (`ACC-012-R10`). Rejected: sliders always shown, moving one switches to Custom (surprising jumps
+  while VoiceOver users explore).
+- Q: Is the profile part of scenes, cues, MIDI/OSC control or modulation? → A: No; it is a device-local
+  safety setting like Reduce flashing: never recorded in scenes or cues, never externally controllable or
+  modulatable (`ACC-012-R11`). A scene can never loosen the viewer's limits.
+- Q: How does the UI test see the clamp without reading pixels? → A: A DEBUG-only probe in the Sensory
+  safety section showing the values the native visual receives (rendered glow intensity, flashes per
+  second, rise limit, intensity limit) (`ACC-012-R12`). Unit tests check the renderer inputs themselves.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Choose a stricter profile and trust it holds (Priority: P1)
@@ -150,14 +174,18 @@ on another device, and finds the same limits.
 - **ACC-012-R7**: The effective Reduce flashing setting (chosen, or following Reduce Motion) MUST raise the
   flash limit to at least Reduced's; for every limit the stricter value wins. A profile stricter than
   Standard MUST also turn on everything Reduce flashing turns on (bar slew, the "May flash" preset policy,
-  the restore fade).
+  the restore fade) without changing the user's stored Reduce flashing choice. Reduce Motion alone changes
+  no limit except through Reduce flashing (ACC-001-R5).
 - **ACC-012-R8**: The profile and custom values MUST be stored locally only, cleared by the UI-test reset
   and included in the FILE-005 library backup.
 - **ACC-012-R9**: The app has no haptic output; the profile MUST say so in its help text and the spec
   records that future haptics read the profile.
 - **ACC-012-R10**: Settings MUST show a "Sensory safety" section with the presets, custom sliders editable
   with VoiceOver (ACC-005), short help, and an announcement of each profile change (ACC-004's announcer);
-  its animations go through `MotionPolicy` (ACC-001).
+  its animations go through `MotionPolicy` (ACC-001). Custom sliders appear only while Custom is chosen;
+  Custom first starts from the previously selected preset.
+- **ACC-012-R11**: The profile MUST NOT be recorded in scenes or cues, set by MIDI or OSC, or modulated.
+- **ACC-012-R12**: DEBUG builds MUST show a probe with the values the native visual receives, for UI tests.
 
 ### Key Entities
 
