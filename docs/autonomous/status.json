@@ -13,8 +13,9 @@
   },
   "P1": {
    "audited": 126,
-   "implementing": 2,
-   "integrated": 23
+   "implementing": 1,
+   "integrated": 23,
+   "unit_passed": 1
   },
   "P2": {
    "audited": 77,
@@ -26,9 +27,10 @@
  },
  "by_state": {
   "audited": 217,
-  "implementing": 3,
+  "implementing": 2,
   "integrated": 105,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -666,12 +668,12 @@
   "AUD-013": {
    "attempts": 0,
    "branch": "feature/aud-013",
-   "branch_sha": null,
+   "branch_sha": "2e734ba8fd3181da3705922023a81f5a673c8068",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "AUD-014": {
    "attempts": 0,
@@ -4076,5 +4078,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T03:53:00Z"
+ "updated": "2026-11-14T04:01:37Z"
 }
