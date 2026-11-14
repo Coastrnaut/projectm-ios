@@ -66,8 +66,8 @@ test**: the reference gradient through the real output pass.
   `cmp_output` (the previous shader kept as a string constant in the test file only), 50 frames each, median GPU time printed and recorded in research.md (no threshold). — Verified 2026-11-14: testOutputPassGPUTimeIsRecorded: previous 0.037 ms, tone-mapped 0.070 ms median (Mac, 1920 × 1080, over-range composite; a second run 0.068 / 0.127 ms under load); recorded in research D7.
 - [X] FX-002-T14 Linux shape: the reference tests with `-DCOMPOSITOR_NO_METAL -DVISUAL_NO_METAL
   -DANALYSIS_NO_ACCELERATE`; regressions VisualGenerators, SceneFormat, ImportFuzz. — Verified 2026-11-14: Compositor in the Linux shape: 208 tests in 8 bundles pass (10 s); VisualGenerators 134 (34 s), SceneFormat 112 (18 s), ImportFuzz 16 (25 s) on the host.
-- [ ] FX-002-T15 App unit tests on an own simulator ("FX2 iPhone 17", iOS 27.2, `-only-testing:projectM-iOSTests`,
-  derived data `.autonomous/derived-data-fx-002`); PosterBoard count before and after; delete the simulator.
+- [X] FX-002-T15 App unit tests on an own simulator ("FX2 iPhone 17", iOS 27.2, `-only-testing:projectM-iOSTests`,
+  derived data `.autonomous/derived-data-fx-002`); PosterBoard count before and after; delete the simulator. — Verified 2026-11-14: projectM-iOSTests 556/556, 0 failures (37.7 s of tests; app-unit-tests.log) on own simulator C3DDF6C0 (iOS 27.2), which exercises the compositor hosts (camera, photo, text, video) with the new shader on the simulator GPU; PosterBoard reports 25 → 25; simulator deleted.
 - [X] FX-002-T16 `docs/adr/0047-output-tone-map.md` (next free number above the integration branch's highest and
   above 0045/0046 reserved for FILE-011 and ACC-012) and the compositor header notes in `Compositor.swift`. — Verified 2026-11-14: docs/adr/0047-output-tone-map.md and its README row; validate_docs OK; header notes in Compositor.swift and SceneTransitionBus.swift.
 - [X] FX-002-T17 Checks: `check_compliance.py`, `validate_docs.py`, `check_motion_policy.py`,

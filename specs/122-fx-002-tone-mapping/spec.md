@@ -4,7 +4,8 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (FX-002-T01-T17 verified on the Mac and an own iOS 27.2 simulator;
+T18 `{device}` open)
 
 **Input**: User description: "Implement FX-002 (Tone mapping) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Convert HDR-like intermediate values into display range safely."
