@@ -30,7 +30,7 @@ evidence was produced, with " — Verified <date>: <how>" appended. Logs go to `
 
 ## Phase 4: User Story 2 - same reading everywhere (P1)
 
-- [ ] ANL-010-T05 [US2] Add to `SpectralCentroidTests.swift`: a 1 kHz tone at all five FFT sizes and at 44.1 and 48 kHz reads within 1 %; 200 Hz at 512 points within 1 %; a tone at −6 and −40 dBFS reads the same within 0.1 %. Evidence: passes on both shapes.
+- [ ] ANL-010-T05 [US2] Add to `SpectralCentroidTests.swift`: a 1 kHz tone at all five FFT sizes and at 44.1 and 48 kHz reads within 1 %; 200 Hz at 512 points and 100 Hz at 1,024 points within 1 % (R3's per-size floor); a tone at −6 and −40 dBFS reads the same within 0.1 %. Evidence: passes on both shapes.
 
 ## Phase 5: User Story 3 - silence is calm (P1)
 
@@ -38,7 +38,7 @@ evidence was produced, with " — Verified <date>: <how>" appended. Logs go to `
 
 ## Phase 6: Bus integration (serves US1, US4)
 
-- [ ] ANL-010-T07 [US4] Write a pipeline test in `SpectralCentroidTests.swift` (stereo 300 Hz then 3 kHz tone, about 0.2 s each, through a `NormalizedPCMRing` tap and `AnalysisPipeline.step()`): frames well inside each tone read `centroidHz` within 1 % of it and the 3 kHz frames' `centroid` is higher; frames before any signal after a session start read 0; a configuration with a different centroid sample rate throws `.sampleRateMismatch`. Record the red run.
+- [ ] ANL-010-T07 [US4] Write a pipeline test in `SpectralCentroidTests.swift` (stereo: 0.05 s of digital silence, then a 300 Hz then a 3 kHz tone, about 0.2 s each, through a `NormalizedPCMRing` tap and `AnalysisPipeline.step()`): frames well inside each tone read `centroidHz` within 1 % of it and the 3 kHz frames' `centroid` is higher; the silent lead frames after the session start read 0 in both values; a configuration with a different centroid sample rate throws `.sampleRateMismatch`. Record the red run.
 - [ ] ANL-010-T08 [US4] Implement `AnalysisFrame.centroidHz`/`centroid` (defaulted to 0) in `AnalysisBusTypes.swift`, `centroid` with the rate check in `AnalysisPipelineConfiguration.swift`, and in `AnalysisPipeline.swift` own the estimator, reset it per session, run it per frame. Evidence: T07 passes; AnalysisFeatures whole suite on the host and in the Linux shape (delta recorded).
 
 ## Phase 7: User Story 4 - Centroid modulation source (P2)
@@ -65,3 +65,16 @@ packages and can be written together.
 
 MVP = T01-T04 (the roadmap acceptance in the package); then consistency and silence (T05, T06),
 the bus (T07, T08), the modulation source (T09-T11); polish last.
+
+## Analysis (speckit-analyze, 2026-11-13)
+
+| ID | Category | Severity | Location | Summary | Fix applied |
+|----|----------|----------|----------|---------|-------------|
+| C1 | Coverage | MEDIUM | spec R3, tasks T05 | R3's "100 Hz within 1 % from 1,024 points" had no test (T05 tested 1 kHz at every size and 200 Hz at 512) | T05 adds 100 Hz at 1,024 points |
+| F1 | Inconsistency | MEDIUM | tasks T07 | "Frames before any signal read 0" could not be observed: the fixture started with the tone | T07's fixture starts with 0.05 s of digital silence |
+| C2 | Coverage | LOW | spec R10-R12 | Real-time, clock and boundary rules are not unit-testable | Already covered: T03 evidence reads the diff (R10, R11); T12's check_compliance cites R12 |
+
+Coverage: R1-R12 and S1-S7 each map to at least one task (R1-R3 → T02-T04, R4 → T05, R5 → T06,
+R6 → T02-T03, R7 → T07-T08, R8 → T09-T10, R9 → T11, R10-R12 → T03, T12; S1-S2 → T04, S3 → T05,
+S4 → T06, S5 → T07, S6 → T09-T11, S7 → T08, T12). Constitution: no conflicts (I, VI, VII, VIII, X
+pass in plan.md). No critical issues; 0 ambiguities or duplications left.
