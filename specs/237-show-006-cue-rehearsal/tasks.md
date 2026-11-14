@@ -11,9 +11,9 @@
 
 ## Phase 2: Foundational (target model)
 
-- [ ] SHOW-006-T02 Add `ShowCueList.nextCue` (the cue Next would reach; nil at end, empty or all skipped) in Packages/ShowControl/Sources/ShowControl/ShowCueList.swift
-- [ ] SHOW-006-T03 Add `ShowRehearsalTarget` (`.followNext`, `.picked(UUID)`; `resolve(in:)` falls back to `nextCue` when a picked cue is gone; `stepped(by:in:)` picks the cue `delta` places from the resolved one, clamped, skipped cues included; never changes the list) in Packages/ShowControl/Sources/ShowControl/ShowRehearsalTarget.swift
-- [ ] SHOW-006-T04 [P] Package tests (next, skipped, end, picked, removed pick, stepping, empty) in Packages/ShowControl/Tests/ShowControlTests/ShowRehearsalTargetTests.swift
+- [X] SHOW-006-T02 Add `ShowCueList.nextCue` (the cue Next would reach; nil at end, empty or all skipped) in Packages/ShowControl/Sources/ShowControl/ShowCueList.swift — Verified 2026-11-14: `swift test --package-path Packages/ShowControl` (123 tests, 1.6 s)
+- [X] SHOW-006-T03 Add `ShowRehearsalTarget` (`.followNext`, `.picked(UUID)`; `resolve(in:)` falls back to `nextCue` when a picked cue is gone; `stepped(by:in:)` picks the cue `delta` places from the resolved one, clamped, skipped cues included; never changes the list) in Packages/ShowControl/Sources/ShowControl/ShowRehearsalTarget.swift — Verified 2026-11-14: `ShowRehearsalTargetTests` (3 tests)
+- [X] SHOW-006-T04 [P] Package tests (next, skipped, end, picked, removed pick, stepping, empty) in Packages/ShowControl/Tests/ShowControlTests/ShowRehearsalTargetTests.swift — Verified 2026-11-14: `swift test --package-path Packages/ShowControl`: 123 tests pass, 1.6 s
 
 ## Phase 3: User Story 1 - See the next cue before it goes live (P1) — MVP
 
