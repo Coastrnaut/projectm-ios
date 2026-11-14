@@ -46,6 +46,14 @@ conservative, local-first option.
 - Q: Names? → A: The copy keeps the template's scene name ("Pulse Rings"); a second copy has the same name and a different ID (Duplicate's "copy" naming is for duplicates of the user's own scenes).
 - Q: Announcements? → A: "Added <template> from templates." or the refusal, on the library lane (ACC-004, `.library`).
 
+### Session 2026-11-14 (speckit-clarify)
+
+- Q: Which folder does a template copy go into? → A: The top level (SCN-004); the user can move it like any scene.
+- Q: Does the copy record which template it came from? → A: No new scene field: the copy is an ordinary SCN-001 document (format unchanged); the tag "template" is the only marker, and the user may remove it.
+- Q: How is each licence written in the manifest? → A: As an SPDX identifier (`MIT`) with a source sentence; a test accepts only `MIT` and requires the `LICENSE` file to be MIT.
+- Q: Do backups, erase and archives treat copies specially? → A: No: copies are stored scenes in the show folder, so FILE-005 backup, FILE-011 erase and FILE-001 export apply unchanged; the bundled templates are not user data and are never backed up or erased.
+- Q: What happens when the same template is added while a refused attempt left nothing behind? → A: Each attempt generates fresh scene IDs; a refusal writes nothing, so retrying is safe.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Start from a template (Priority: P1)
@@ -86,8 +94,8 @@ The user picks "Show Starter" and gets two cues, the second fading in over 1.5 s
 
 - **SCN-011-R1**: The app bundles five templates (Clarifications) as read-only scene files with a manifest.
 - **SCN-011-R2**: Every template scene decodes as an SCN-001 document with no warnings and validates against the app's parameter registry with no warnings, using only layer kinds `spectrum.circular`, `spectrum.linear` and `text`.
-- **SCN-011-R3**: The manifest lists every asset of every template scene with its source and licence; every licence is the project's own (MIT); no asset is a photo, video, logo, preset or third-party image.
-- **SCN-011-R4**: Instantiating a template writes a copy of each scene under a new scene ID into the show store, never over an existing file, and appends one cue per scene with the template's label and transition; the copies get the tag "template".
+- **SCN-011-R3**: The manifest lists every asset of every template scene with its source and licence (SPDX `MIT`, the project's own); no asset is a photo, video, logo, preset or third-party image.
+- **SCN-011-R4**: Instantiating a template writes a copy of each scene under a new scene ID into the show store, never over an existing file, and appends one cue per scene with the template's label and transition; the copies get the tag "template" and stay at the top level (no folder); the scene document format is unchanged.
 - **SCN-011-R5**: Instantiation never writes the bundled files; editing or deleting a copy never changes the template or another copy.
 - **SCN-011-R6**: Instantiation is all or nothing (capacity checked before any file is written) and never applies a scene or moves the position.
 - **SCN-011-R7**: The gallery is reached from Settings → Show → "Add from Template…"; each row shows a preview symbol, the name and the description; VoiceOver reads name and description as one element with the hint to add it; results and refusals are announced on the library lane.
