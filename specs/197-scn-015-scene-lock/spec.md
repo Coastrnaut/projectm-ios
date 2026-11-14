@@ -54,6 +54,14 @@ local-first option.
 - Q: What does a refused edit do? → A: Nothing changes; the coordinator records "Scene locked. Unlock the scene to edit." as its message (shown where that screen shows messages) and VoiceOver announces it.
 - Q: Accessibility? → A: VoiceOver reads the lock button as "Lock scene"/"Unlock scene" with value "Locked"/"Unlocked"; Settings' section offers the same; locking announces "Scene locked", unlocking announces "Scene unlocked" (library lane, ACC-004).
 
+### Session 2026-11-14 (speckit-clarify)
+
+- Q: Do MIDI mapping edits (MIDI learn, Assign MIDI to a scene, profiles) count as scene edits? → A: No. They are device settings for the controller, stored outside the scene document; they stay available while locked (a performer may need to re-learn a control mid-show).
+- Q: Is there a keyboard shortcut for the lock? → A: No. A shortcut could toggle it by accident; the lock is a button in the controls and a section in Settings only (plus the VoiceOver action).
+- Q: Do the scene switcher (UIX-002) and Scene Folders' Go count as navigation? → A: Yes. Choosing a scene to show applies it like Go to cue and is allowed; Scene Folders' folder, move and tag edits are refused.
+- Q: Does Settings stay openable while locked? → A: Yes. Only the scene-editing sections are disabled, with the "Scene locked" note at the top; safety, audio, recording, OSC, MIDI, external display, storage and licences stay usable.
+- Q: Is the lock state part of library backups (FILE-005)? → A: No. It is session state on this device: excluded from backups, erased by Settings erase (FILE-011) like other excluded keys.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Lock before the show (Priority: P1)
@@ -104,6 +112,8 @@ After the show, the performer unlocks with a confirmation and edits again.
 - An edit sheet that was already open when the lock turned on (rename alert, transition sheet): its commit is refused by the coordinator.
 - A recovery offer (PERF-010 Reopen) and launch restore are not edits; they apply as before.
 - A scene pack import, template add or Add Current Scene while locked is refused with the message.
+- Scene switcher and Scene Folders' Go while locked apply the chosen scene (navigation).
+- MIDI learn and Assign MIDI stay available while locked (controller settings, not the scene).
 
 ## Requirements *(mandatory)*
 
