@@ -88,7 +88,11 @@ public struct ShowStore: Sendable {
     /// The scene migration chain (the app's; tests pass synthetic chains, SCN-013).
     public let migrator: SceneMigrator
 
-    public init(directory: URL, migrator: SceneMigrator = .standard) {
+    public init(directory: URL) {
+        self.init(directory: directory, migrator: .standard)
+    }
+
+    public init(directory: URL, migrator: SceneMigrator) {
         self.directory = directory
         self.migrator = migrator
     }

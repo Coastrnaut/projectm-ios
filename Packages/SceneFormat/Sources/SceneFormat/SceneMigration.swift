@@ -53,6 +53,13 @@ public struct SceneMigrationLogEntry: Sendable, Hashable, CustomStringConvertibl
     public let toVersion: Int
     public let change: SceneMigrationChange
 
+    public init(step: String, fromVersion: Int, toVersion: Int, change: SceneMigrationChange) {
+        self.step = step
+        self.fromVersion = fromVersion
+        self.toVersion = toVersion
+        self.change = change
+    }
+
     public var description: String { "v\(fromVersion)->v\(toVersion) \(step): \(change)" }
 }
 
