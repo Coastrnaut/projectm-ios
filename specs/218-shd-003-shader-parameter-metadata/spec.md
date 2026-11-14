@@ -133,7 +133,7 @@ current value; the app shows those controls for the seeded `material.plasma` lay
   (for example `cases` on a float), each with a typed error naming the document, the parameter position
   or ID, and the key.
 - **SHD-003-R3**: Validation MUST reject: malformed or duplicate parameter IDs; malformed or duplicate
-  enum case IDs; labels empty or longer than 64 characters; non-finite numbers; minimum not below maximum;
+  enum case IDs; labels (and the variant name) empty or longer than 64 characters; a summary empty or longer than 200 characters; non-finite numbers; minimum not below maximum;
   defaults outside the range or (integers) off a step; steps not positive or larger than the range; enums
   with fewer than 2 or more than 16 cases or a default that is not a case ID; colors without exactly four
   components in 0…1; more than eight parameters; a slot that is not the parameter's position; a material
@@ -155,7 +155,8 @@ current value; the app shows those controls for the seeded `material.plasma` lay
   ordered list of controls, one per parameter: `slider` (float), `stepper` (int), `picker` (enum, with its
   cases in order), `toggle` (bool), `color` (color); each with the parameter ID, label, range and step
   (numbers), unit, default and current value (falling back to the default when the stored value is
-  missing, of the wrong kind or an unknown case). No code may name a particular shader or parameter.
+  missing, of the wrong kind, non-finite or an unknown case; a number outside the range is shown clamped, as the
+  layer would store it). No code may name a particular shader or parameter.
 - **SHD-003-R8**: The layer inspector MUST show a "Material settings" section for a material layer with
   the builder's controls, each with an accessibility label (the parameter's label), value (the formatted
   value, UIX-003's spoken text) and identifier `materialControl.<parameter ID>`. While the version does

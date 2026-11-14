@@ -46,7 +46,7 @@ Tests are requested by the spec (S1-S6). Paths are relative to the repository ro
 ## Phase 6: Polish
 
 - [ ] SHD-003-T18 Linux shape build of Compositor (`-DCOMPOSITOR_NO_METAL -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE`) and type-check budget check of new app files
-- [ ] SHD-003-T19 Repo checks (compliance, docs, motion, permission catalog, status events, script tests); LibraryBackupAppTests key test; spec status
+- [ ] SHD-003-T19 Timing check of the new suites against S6 (each unit test < 10 s, Compositor suite < 1 min); repo checks (compliance, docs, motion, permission catalog, status events, script tests); LibraryBackupAppTests key test; spec status
 - [ ] SHD-003-T20 {device} On D1, open the seeded material layer and read the Material settings controls with VoiceOver
 
 ## Dependencies
