@@ -4,7 +4,12 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (PERF-001-T01-T15, T17 verified on the Mac Studio: host package tests and the
+feature's own iOS 27.2 simulator "PERF1"; no device claim). FrameTimingTests 13 (+1 on-demand bench), Compositor
+package 722 tests including CompositorStageTimingTests 2, Diagnostics 16 (FrameTimingsExportTests 4),
+FrameStageAppTests 6, FrameStageOverlayUITests 1 (13.4 s). Open: T16 `{device}` (D1 numbers and overhead).
+Linux: not run here; the pure target also passes with `-DCOMPOSITOR_NO_METAL`, and CI's Linux job tests the
+Compositor and Diagnostics packages.
 
 **Input**: User description: "Implement PERF-001 (Per-stage frame timings) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Measure audio, render, composite and encode costs separately." Acceptance,

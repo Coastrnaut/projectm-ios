@@ -67,6 +67,21 @@
   `FrameStageTimerTests.testBenchCostPerFrame` on the host (reported, not asserted) and on D1 by the
   automation mode (`{device}`).
 
-## Measurements (filled in at implementation)
+## PERF-001-D10: The drawable wait is no stage
 
-- Host bench: see tasks.md PERF-001-T05.
+- **Decision**: `nextDrawable()` (frame pacing: waiting for the display to free a drawable) is outside every
+  stage; the native host ends its audio stage before it and resumes it for the modulation after it
+  (accumulated). Otherwise a full drawable queue would show up as "audio" time.
+
+## Measurements (2026-11-14, Mac Studio; not device evidence)
+
+- Timer cost, 6 stages per frame (begin/end each, 12 clock reads), standalone release build of the target:
+  0.31, 0.39 and 0.61 µs per frame over three rounds of 2,000,000 frames (machine shared with other builds);
+  one `DispatchTime` read ≈ 10 ns. Debug (`PERF001_BENCH=1 swift test --filter testBenchCostPerFrame`):
+  2.46 µs. PERF-001-S5 (< 1 µs) holds for the release build. Off: one nil check per frame.
+- Compositor on the Mac GPU (CompositorStageTimingTests, 128 × 128, 2 layers, 6 frames): composite 0.09/1.04,
+  output 0.03/0.21, present 0.01/0.05 ms CPU; frame GPU 0.30/4.32 ms (median/p95; the first frame includes
+  pipeline creation).
+- Simulator (FrameStageOverlayUITests, circular spectrum): audio 0.01/0.02, render 0.16/0.17, present 0.01/0.02,
+  gpu 0.09/0.26 ms. The simulator reports command-buffer GPU times. Never evidence (Constitution X).
+- Device: PERF-001-T16 `{device}` (automation mode `perf001`: fps with the timer off and on, and the report).
