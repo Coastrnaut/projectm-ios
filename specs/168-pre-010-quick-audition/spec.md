@@ -4,7 +4,10 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (PRE-010-T01-T12 verified on the Mac: the feature's own iOS 27.2
+simulator "PRE10"; no device claim). App unit tests: PresetAuditionAcceptanceTests 6 (new) plus 71 in the
+touched preset suites; PresetAuditionUITests 1 (25-27 s); PresetCollectionsUITests 9, PresetTagsUITests 2 and
+RecentPresetsUITests 1 still pass. No package changes (Linux unaffected).
 
 **Input**: Roadmap row PRE-010 (P1, size M, extension of the existing preset browser). Observable
 behavior, verbatim: "Temporarily preview selection and return to active preset on cancel." Acceptance,

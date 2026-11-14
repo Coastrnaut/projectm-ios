@@ -30,7 +30,7 @@ final class PresetAuditionUITests: XCTestCase {
 
     private func preview(_ name: String) {
         app.buttons["preset:\(name)"].press(forDuration: 0.7)
-        let item = app.buttons["previewPreset"]
+        let item = app.buttons["Preview"]   // menu items are found by title (as PresetTagsUITests does)
         XCTAssertTrue(item.appears(within: 5), "Preview in the row's menu")
         item.tap()
         XCTAssertTrue(poll(10) { self.app.staticTexts["auditionName"].exists
