@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14
 
 **Input**: Roadmap row ANL-011 (docs/FEATURE_ROADMAP_AUTONOMOUS.md), verbatim: "Compute configurable
 energy percentile frequency." Acceptance, verbatim: "Rolloff matches a deterministic reference
@@ -134,6 +134,37 @@ rolloff straight to the estimator.
 - **ANL-011-S5**: Through the real pipeline, a bright noise's frames read a higher rolloff than a low tone's.
 - **ANL-011-S6**: `audio.rolloff` round-trips, binds, compiles to opcode 19 and drives the glow in the app; the inspector reads "Rolloff".
 - **ANL-011-S7**: The new package tests add well under a second to the AnalysisFeatures suite; every existing test passes.
+
+## Implementation results (2026-11-14)
+
+Reference spectra (`SpectralRolloffTests`, 2,048 points at 44.1 kHz, Δf ≈ 21.53 Hz; identical on the
+host with vDSP and in the Linux shape):
+
+| Reference | p | Rolloff (bins) | Analytic (bins) | Error |
+|---|---|---|---|---|
+| Tone at bin 10 / 93 / 500 | 0.85 | k + 0.35 | k | 0.35 |
+| Two tones, bins 50 and 200, power 9 : 1 | 0.85 | 50.444 | 50 (lower holds 90 %) | 0.444 |
+| Two tones, power 4 : 1 | 0.85 | 199.75 | 200 (lower holds 80 %) | 0.25 |
+| Flat bins 1…400, C = 400.5 bins (8,624 Hz) | 0.85 | 340.5 (7,332.1 Hz) | 0.85·C = 340.425 (7,330.4 Hz) | 0.075 |
+| Power ramp P_k = k, bins 1…400 | 0.85 | 369.2426 | C·√0.85 = 369.2428 | 0.0002 |
+
+At p = 0.5 and 0.99 every reference is again within half a bin (tone k − ½ + p; 9 : 1 falls on the
+lower tone at 0.5 and the higher at 0.99). Silence, ±1 LSB dither, NaN/±inf magnitudes and silence
+after a tone read 0 (finite, no signal); the vDSP and portable backends agree within 0.001 bin and
+repeats are bit-equal; white noise (seed 0x5EED) rolls off at 18,408 Hz (0.85·Nyquist = 18,743 Hz).
+Through `AnalysisPipeline`: silent lead frames read 0, frames inside a 300 Hz tone read 311.7 Hz
+(within two bins: the Hann main lobe), frames inside white noise ≈ 18.2 kHz, every noise frame's
+normalized value above every tone frame's.
+
+Test cost (owner rule 7): SpectralRolloffTests (9 tests) take 0.05 s on the host and 0.11 s in the
+Linux shape. The AnalysisFeatures suite in the Linux shape went from 158 to 167 tests; its wall time
+was 78.3 s before and 144.2 s after on a Mac shared with other agents' builds, which is load, not
+these tests (0.11 s); on the host all 167 pass in 93.7 s under the same load. ParameterGraph: 3 new tests, all 179 pass. App: `AudioFeatureBindingAppTests`
+8/8 on "ANL11 iPhone 17" (iOS 27.2) in 1.2 s. No type-check warning in a changed file
+(`-warn-long-function-bodies=300`, `-warn-long-expression-type-checking=150`).
+
+Audit (ANL-011-R12): the rolloff only reaches `AudioFeatureFrame` and MOD-002 bindings; no projectM
+call, setting, UserDefaults key, network API or UI was added.
 
 ## Assumptions
 
