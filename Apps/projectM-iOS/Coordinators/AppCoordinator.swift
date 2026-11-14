@@ -635,6 +635,9 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                 await userPresets.load()
                 await userPresets.prepare(library: library, bundle: .main)
                 presets.attach(library)
+                #if DEBUG
+                UITestCollectionFixture.seedIfRequested(presets)   // PresetCollectionsUITests
+                #endif
                 presets.onScopeChange { UIAccessibility.post(notification: .announcement, argument: $0) }   // FR-124
                 await presets.setUnlocked(entitlements.isUnlocked)
                 libraryReady = true
