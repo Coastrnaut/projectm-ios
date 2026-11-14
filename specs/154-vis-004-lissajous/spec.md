@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (device task VIS-004-T13 open)
 
 **Input**: User description: "Implement VIS-004 (Lissajous scope) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Plot stereo X/Y phase patterns
