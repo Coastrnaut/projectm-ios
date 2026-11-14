@@ -27,6 +27,20 @@ Identifiers carry the roadmap ID: requirements `QA-008-R1…`, success criteria 
 | Quality | REC-005 (`RecordingQualityFixtureTests`: codec, size, fps ±1, bit rate ±25 %) is being implemented in parallel on `feature/rec-005` and is not on this branch. | Its tests can adopt the validator after both merge; QA-008 does not edit them. |
 | Bad files | None: nothing proves a broken file is rejected. | The acceptance needs a corpus of bad files that fail. |
 
+## Clarifications
+
+### Session 2026-11-14
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the conservative, local-first option.
+
+- Q: Where does the validator live? → A: In the existing `FrameRecording` target (`Packages/Compositor`), next to `RecordedVideoInspector`: the rules, expectation, measurement and report are plain Swift (Linux-buildable, `RecordingValidation.swift`); the file reader is AVFoundation-only (`RecordingValidator.swift`, compiled out on Linux). No new target or package: the app's DEBUG probe can use it too, and CI already tests the target on the macOS host, the iOS simulators and Linux.
+- Q: Which fixture writer makes the corpus, and does it need a GPU? → A: No GPU. Good fixtures go through the recorder's own `VideoFileWriter` (the same AVAssetWriter settings as the app, `@testable`) fed with CPU-filled pixel buffers and LPCM chunks; bad fixtures that the real writer cannot make (wrong codec, location metadata, a repeated time) use a small test-only AVAssetWriter helper. Every fixture is 160 × 120 (or smaller), at most 2 s, written to the temporary folder and deleted after the test; nothing binary is committed.
+- Q: How is a "duplicate time" made and judged, given AVAssetWriter refuses two samples at the same time? → A: Times are judged on the recorder's 1/600 s grid (`RecordingSettings.timescale`; device files are written at that timescale, so nothing is lost): two frames on the same 1/600 s tick are duplicates. The fixture writes at a 90,000 timescale with one frame 1/90,000 s after the previous one, which lands on the same tick.
+- Q: How does each bad file fail with exactly one reason when one fault breaks several rules? → A: Root cause first: an unreadable file reports only `unreadable`; the frame-count rule is reported only when the timestamps and the duration passed (a gap or a wrong duration already explains a wrong count); a marker that is not found reports `syncMarkerMissing` instead of `syncOutOfTolerance`; audio format and sync rules are not checked when the audio track is missing; personal metadata reports `personalMetadata`, not also `unexpectedMetadata`.
+- Q: How is a device export checked? → A: No new script or executable product (an executable would also have to build on Linux and the iOS scheme). An on-demand test, `RecordingValidationCorpusTests.testExternalRecording`, runs only when `QA008_RECORDING=<path>` is set (optional `QA008_EXPECT_AUDIO=1`, `QA008_FPS=<n>`, `QA008_MARKER_SECONDS=<s>`), prints the report and fails on a bad file: `QA008_RECORDING=~/x.mp4 swift test --package-path Packages/Compositor --filter testExternalRecording`. The device run itself is a final-phase `{device}` task.
+- Q: Decode order or presentation order? → A: The recorder never reorders frames (`AVVideoAllowFrameReorderingKey` false), so the times are read in file order and must strictly increase in that order; a file with B-frames is out of scope and fails `notIncreasing`.
+
 ## User Scenarios & Testing *(mandatory)*
 
 The "users" are developers and agents who change the recorder, and the owner who checks a device
@@ -48,9 +62,9 @@ fixture fails with exactly its expected reason.
 
 1. **Given** a good video-only fixture and a good fixture with owned audio and a flash/click marker,
    **When** they are validated, **Then** both pass with no issue.
-2. **Given** each bad fixture (gap, duplicate time, wrong duration, truncated file, audio 80 ms late,
-   audio missing, wrong codec, location metadata), **When** it is validated, **Then** the report fails
-   and its issue set is exactly the expected reason.
+2. **Given** each bad fixture (gap, duplicate time, too long, too short, truncated file, wrong frame
+   rate, audio 80 ms late, audio missing, unexpected audio, wrong codec, location metadata), **When**
+   it is validated, **Then** the report fails and its issue set is exactly the expected reason.
 
 ---
 
@@ -105,9 +119,8 @@ prints the report and exits non-zero when the file fails.
   and MUST equal the last frame time plus one interval within ±1 frame interval in every case.
 - **QA-008-R5**: The frame count MUST equal duration × frame rate within ±1.
 - **QA-008-R6**: The audio track MUST be present or absent as expected. When present: the expected
-  sample rate and channel count, a sample count that is non-zero and contiguous (no break between
-  decoded buffers beyond one sample), and audio not longer than the video by more than the sync
-  tolerance.
+  sample rate and channel count, and a sample count that is non-zero and contiguous (no break between
+  decoded buffers beyond one sample). Audio may be shorter than the video (a source switch ends it).
 - **QA-008-R7**: When the expectation names a sync marker, the first bright frame and the first loud
   audio sample MUST both be found and lie within the tolerance (20 ms, REC-004-R6) of each other; and
   when the expectation names the marker time, the flash MUST be at it within one frame.
