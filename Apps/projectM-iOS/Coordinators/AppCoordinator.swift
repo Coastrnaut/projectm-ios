@@ -324,6 +324,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         }
         // FILE-005-R6, R7: a pending restore (or an interrupted one) finishes before any store reads the library.
         LibraryBackupCoordinator.finishPendingRestore(defaults: defaults)
+        Self.reconcileMediaFolders(defaults: defaults)   // FILE-008-R7, R8: after the restore, before the stores read
         settings = AppSettings(defaults: defaults, systemReduceMotion: Self.currentSystemReduceMotion())
         inputTrim = InputTrimSetting(defaults: defaults)
         channelSelection = ChannelSelectionSetting(defaults: defaults)
@@ -361,8 +362,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         texts = TextOverlayCoordinator.makeDefault(defaults: defaults)
         // SCN-002: the last committed scene wins over the settings (research SCN-002-D2).
         let sceneAutosave = SceneAutosaveCoordinator.makeDefault(defaults: defaults)
-        let stored = StoredMediaAvailability(photos: Set([photos.photo?.id.uuidString].compactMap { $0 }),
-                                             videos: Set([videos.video?.id.uuidString].compactMap { $0 }))
+        let stored = StoredMediaAvailability(photos: photos.knownIDs, videos: videos.knownIDs)   // FILE-008-R5
         if holdsScene {
             recovery.hold(recovery.decision.isCrashLoop ? nil : sceneAutosave?.holdCommittedScene(assets: stored))
         } else if let values = sceneAutosave?.restore(assets: stored) {
@@ -1307,8 +1307,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
 
     /// Which photo and video the stores hold now (SCN-001 asset availability).
     var storedMediaAvailability: StoredMediaAvailability {
-        StoredMediaAvailability(photos: Set([photos.photo?.id.uuidString].compactMap { $0 }),
-                                videos: Set([videos.video?.id.uuidString].compactMap { $0 }))
+        StoredMediaAvailability(photos: photos.knownIDs, videos: videos.knownIDs)   // FILE-008-R5
     }
 
     private func finishReopen(_ replacement: SceneAutosaveHeldScene?) {

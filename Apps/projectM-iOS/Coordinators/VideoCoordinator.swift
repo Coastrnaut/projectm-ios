@@ -67,6 +67,9 @@ final class VideoCoordinator {
         appliedLoopRegion = loopRegion
     }
 
+    /// FILE-008-R5: every stored identifier that resolves (scene and cue checks count them as present).
+    var knownIDs: Set<String> { Set((store?.knownIDs() ?? []).map(\.uuidString)) }
+
     static func makeDefault(defaults: UserDefaults) -> VideoCoordinator {
         VideoCoordinator(store: (try? VideoStore.defaultDirectory()).map { VideoStore(directory: $0, defaults: defaults) })
     }
@@ -207,9 +210,11 @@ final class VideoCoordinator {
     }
 
     /// MED-003-R8: a restored scene's, undo state's or cue's region; applied only when `storeID` is
-    /// the stored video (nil: the scene has no video, nothing changes; no loop: the whole file).
+    /// the stored video or shares its payload (FILE-008) (nil: the scene has no video, nothing changes; no loop: the whole file).
     func restoreLoop(storeID: String?, loop: SceneVideoLoop?) {
-        guard let storeID, let video, video.id.uuidString == storeID else { return }
+        // FILE-008-R5: an earlier reference to the same stored movie counts as the stored video.
+        guard let storeID, let video, let id = UUID(uuidString: storeID), id.uuidString == storeID,
+              store?.isSameVideo(id, as: video.id) ?? (id == video.id) else { return }
         let region = SceneVideoLoopBridge.region(loop)
         guard region != loopRegion else { return }
         updateLoop(region)

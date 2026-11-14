@@ -67,11 +67,12 @@ final class SceneArchiveServiceTests: XCTestCase {
     }
 
     /// Imports the fixture photo and movie into a sandbox's stores, as picked files.
-    private func seed(_ sandbox: Sandbox) async throws -> (photo: StoredPhoto, video: StoredVideo) {
+    /// `other`: a different picture and movie (FILE-008: identical media would be shared, not replaced).
+    private func seed(_ sandbox: Sandbox, other: Bool = false) async throws -> (photo: StoredPhoto, video: StoredVideo) {
         let png = sandbox.root.appendingPathComponent("picked.png")
-        try XCTUnwrap(UITestPhotoFixture.png(alpha: false)).write(to: png)
+        try XCTUnwrap(UITestPhotoFixture.png(alpha: other)).write(to: png)
         let movie = sandbox.root.appendingPathComponent("picked.mov")
-        try await UITestVideoFixture.writeCounter(to: movie)
+        try await UITestVideoFixture.writeCounter(to: movie, frames: other ? 45 : 60)
         let photo = try sandbox.photos().importImage(at: png)
         let video = try await sandbox.videos().importVideo(at: movie)
         return (photo, video)
@@ -159,8 +160,9 @@ final class SceneArchiveServiceTests: XCTestCase {
         let tracks = try await AVURLAsset(url: video.url).loadTracks(withMediaType: .video)
         XCTAssertEqual(tracks.count, 1)
         // One copy each, nothing staged left behind.
-        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: target.photosFolder.path), [photo.url.lastPathComponent])
-        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: target.videosFolder.path), [video.url.lastPathComponent])
+        let registryName = ContentAddressedMediaFolder.registryName   // FILE-008: the registry is not a copy
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: target.photosFolder.path).sorted(), [photo.url.lastPathComponent, registryName].sorted())
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: target.videosFolder.path).sorted(), [video.url.lastPathComponent, registryName].sorted())
         XCTAssertEqual(target.stagingLeftovers(), [])
     }
 
@@ -233,11 +235,30 @@ final class SceneArchiveServiceTests: XCTestCase {
         XCTAssertEqual(target.stagingLeftovers(), [])
     }
 
+    /// FILE-008-R10, S5: an archive whose photo and video are already stored adds references, not copies.
+    func testImportingAnArchiveWhoseMediaAreAlreadyStoredAddsNoCopy() async throws {
+        let source = try makeSandbox("source"), target = try makeSandbox("target")
+        defer { source.cleanUp(); target.cleanUp() }
+        let seeded = try await seed(source)
+        let previous = try await seed(target)   // the same picture and movie
+        let export = try source.service().export(try scene(photoID: seeded.photo.id.uuidString, videoID: seeded.video.id.uuidString), modified: date)
+        defer { try? source.service().cleanUpExport() }
+        let result = try await target.service().importArchive(at: export.url)
+        XCTAssertFalse(result.replacedPhoto, "identical media are not replaced")
+        XCTAssertFalse(result.replacedVideo)
+        XCTAssertEqual(target.photos().folder.payloadNames().count, 1, "no second photo payload")
+        XCTAssertEqual(target.videos().folder.payloadNames().count, 1, "no second video payload")
+        XCTAssertEqual(Set(target.photos().knownIDs()), [previous.photo.id, try XCTUnwrap(result.photo).id])
+        XCTAssertEqual(Set(target.videos().knownIDs()), [previous.video.id, try XCTUnwrap(result.video).id])
+        XCTAssertEqual(target.photos().existingFile(for: previous.photo.id), result.photo?.url, "the earlier identifier still resolves")
+        XCTAssertEqual(target.stagingLeftovers(), [])
+    }
+
     func testASuccessfulImportReplacesTheStoredPhotoAndVideo() async throws {
         let source = try makeSandbox("source"), target = try makeSandbox("target")
         defer { source.cleanUp(); target.cleanUp() }
         let seeded = try await seed(source)
-        let previous = try await seed(target)
+        let previous = try await seed(target, other: true)
         let export = try source.service().export(try scene(photoID: seeded.photo.id.uuidString, videoID: seeded.video.id.uuidString), modified: date)
         defer { try? source.service().cleanUpExport() }
         let result = try await target.service().importArchive(at: export.url)

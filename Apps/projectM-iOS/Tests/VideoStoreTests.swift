@@ -5,6 +5,7 @@
 import AVFoundation
 import Foundation
 import VideoLayer
+import LocalPortability
 import XCTest
 @testable import projectM_iOS
 
@@ -32,15 +33,17 @@ final class VideoStoreTests: XCTestCase {
                        suite: suite)
     }
 
-    /// A "picked" movie outside the store's folder.
-    private func pickedFile(in sandbox: Sandbox, name: String = "picked") async throws -> URL {
+    /// A "picked" movie outside the store's folder (`frames` other than 60: different content).
+    private func pickedFile(in sandbox: Sandbox, name: String = "picked", frames: Int = 60) async throws -> URL {
         let url = sandbox.root.appendingPathComponent("\(name).mov")
-        try await UITestVideoFixture.writeCounter(to: url)
+        try await UITestVideoFixture.writeCounter(to: url, frames: frames)
         return url
     }
 
+    /// Stored files (FILE-008: the reference registry is not a copy).
     private func files(in folder: URL) -> [String] {
-        ((try? FileManager.default.contentsOfDirectory(atPath: folder.path)) ?? []).sorted()
+        ((try? FileManager.default.contentsOfDirectory(atPath: folder.path)) ?? [])
+            .filter { (name: String) -> Bool in name != ContentAddressedMediaFolder.registryName }.sorted()
     }
 
     // MARK: - Import and relaunch (R3, R6, R8, R18; S4)
@@ -51,7 +54,8 @@ final class VideoStoreTests: XCTestCase {
         let picked = try await pickedFile(in: sandbox)
         let stored = try await sandbox.store().importVideo(at: picked)
         XCTAssertEqual(stored.url.deletingLastPathComponent().standardizedFileURL, sandbox.videos.standardizedFileURL)
-        XCTAssertEqual(stored.url.lastPathComponent, "\(stored.id.uuidString).mov")
+        XCTAssertEqual(stored.url.lastPathComponent, try MediaContentHash.digest(ofFileAt: stored.url).sha256 + ".mov",
+                       "FILE-008: the copy is named by its content")
         XCTAssertEqual(sandbox.defaults.string(forKey: AppSettings.videoIDKey), stored.id.uuidString)
         XCTAssertTrue(FileManager.default.fileExists(atPath: picked.path), "the picked original is untouched")
         XCTAssertEqual(files(in: sandbox.videos), [stored.url.lastPathComponent], "one copy, nothing else")
@@ -64,7 +68,7 @@ final class VideoStoreTests: XCTestCase {
         let sandbox = try makeSandbox()
         defer { sandbox.cleanUp() }
         let first = try await sandbox.store().importVideo(at: try await pickedFile(in: sandbox, name: "a"))
-        let second = try await sandbox.store().importVideo(at: try await pickedFile(in: sandbox, name: "b"))
+        let second = try await sandbox.store().importVideo(at: try await pickedFile(in: sandbox, name: "b", frames: 45))
         XCTAssertNotEqual(first.id, second.id)
         XCTAssertFalse(FileManager.default.fileExists(atPath: first.url.path), "the previous copy is deleted after the new one is saved")
         XCTAssertEqual(files(in: sandbox.videos), [second.url.lastPathComponent])
