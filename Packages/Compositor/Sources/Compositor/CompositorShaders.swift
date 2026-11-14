@@ -51,6 +51,71 @@ enum CompositorShaders {
         return c * clamp(d.params.x, 0.0, 1.0);
     }
 
+    // CMP-004: a layer with a blend mode other than normal (contracts/blend-modes.md in specs/099,
+    // ADR-0037). Written without fixed-function blending into the other composite texture: reads the
+    // backdrop (the composite so far) and the picture (identity: per-pixel read; transformed: as
+    // `cmp_over_transformed`), sanitizes and × opacity as `cmp_over`, then
+    //   B on sRGB-encoded straight colours clamped to 0…1, decoded to linear, and
+    //   co = cs·(1 − αb) + cb·(1 − αs) + αs·αb·B, αo = αs + αb·(1 − αs).
+    // `params`: x opacity, y 1 for a transformed layer, z the mode (1 add, 2 screen, 3 multiply,
+    // 4 overlay, 5 difference; 0 normal for completeness). Same steps as `LayerBlend` (CPU reference).
+    struct CMPBlendDraw { float4 row0; float4 row1; float4 params; };
+
+    static float cmp_encode(float x) {
+        x = clamp(x, 0.0, 1.0);
+        return x <= 0.0031308 ? x * 12.92 : 1.055 * pow(x, 1.0 / 2.4) - 0.055;
+    }
+
+    static float cmp_decode(float y) {
+        y = clamp(y, 0.0, 1.0);
+        return y <= 0.04045 ? y / 12.92 : pow((y + 0.055) / 1.055, 2.4);
+    }
+
+    static float cmp_screen(float a, float b) { return a + b - a * b; }
+
+    static float cmp_function(int mode, float cb, float cs) {
+        switch (mode) {
+        case 1: return min(cb + cs, 1.0);
+        case 2: return cmp_screen(cb, cs);
+        case 3: return cb * cs;
+        case 4: return cb <= 0.5 ? 2.0 * cb * cs : cmp_screen(cs, 2.0 * cb - 1.0);
+        case 5: return abs(cb - cs);
+        default: return cs;
+        }
+    }
+
+    fragment float4 cmp_blend(FullScreenOut in [[stage_in]], texture2d<float, access::sample> picture [[texture(0)]],
+                              texture2d<float, access::read> backdrop [[texture(1)]],
+                              constant CMPBlendDraw &d [[buffer(0)]]) {
+        uint2 pixel = uint2(in.position.xy);
+        float4 c;
+        if (d.params.y > 0.5) {
+            constexpr sampler bilinear(coord::normalized, address::clamp_to_zero, filter::linear);
+            float3 p = float3(in.position.xy, 1.0);
+            float2 src = float2(dot(d.row0.xyz, p), dot(d.row1.xyz, p));
+            float2 size = float2(float(picture.get_width()), float(picture.get_height()));
+            c = picture.sample(bilinear, src / size);
+        } else {
+            c = picture.read(pixel);
+        }
+        c = select(c, float4(0.0), isnan(c) || isinf(c));
+        c.a = clamp(c.a, 0.0, 1.0);
+        c.rgb = max(c.rgb, float3(0.0));
+        float4 s = c * clamp(d.params.x, 0.0, 1.0);
+        float4 b = backdrop.read(pixel);
+        int mode = int(d.params.z + 0.5);
+        float both = s.a * b.a;
+        float4 o = float4(0.0);
+        for (int i = 0; i < 3; i++) {
+            float sb = b.a > 0.0 ? b[i] / b.a : 0.0;
+            float ss = s.a > 0.0 ? s[i] / s.a : 0.0;
+            float blended = cmp_decode(cmp_function(mode, cmp_encode(sb), cmp_encode(ss)));
+            o[i] = s[i] * (1.0 - b.a) + b[i] * (1.0 - s.a) + both * blended;
+        }
+        o.a = s.a + b.a * (1.0 - s.a);
+        return o;
+    }
+
     // The composite times the flash guard's gain (RGB only; never brightens). The output's format
     // does the encoding (sRGB for the screen).
     fragment float4 cmp_output(FullScreenOut in [[stage_in]], texture2d<float, access::read> composite [[texture(0)]],
@@ -60,6 +125,18 @@ enum CompositorShaders {
         return float4(c.rgb * g, c.a);
     }
     """
+
+    /// `params.z` of `CMPBlendDraw` for a mode (the shader's switch).
+    static func shaderIndex(_ mode: LayerBlendMode) -> Float {
+        switch mode {
+        case .normal: 0
+        case .add: 1
+        case .screen: 2
+        case .multiply: 3
+        case .overlay: 4
+        case .difference: 5
+        }
+    }
 
     static func library(device: MTLDevice, source: String) throws(CompositorError) -> MTLLibrary {
         let options = MTLCompileOptions()
