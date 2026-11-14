@@ -52,9 +52,8 @@ final class SceneRepairCoordinator {
     @ObservationIgnored private let registry: ParameterRegistry?
     /// Which photo and video are stored now (repairs drop the ones that are not).
     @ObservationIgnored var availability: () -> StoredMediaAvailability = { StoredMediaAvailability(photos: [], videos: []) }
-    @ObservationIgnored var announce: (String) -> Void = { (message: String) in
-        UIAccessibility.post(notification: .announcement, argument: message)
-    }
+    /// ACC-011: the app points this at its status-event router (X26, kind `session`).
+    @ObservationIgnored var announce: (String) -> Void = { (_: String) -> Void in }
 
     init(registry: ParameterRegistry?) {
         self.registry = registry

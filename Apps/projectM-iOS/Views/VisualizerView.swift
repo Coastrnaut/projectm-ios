@@ -73,10 +73,11 @@ struct VisualizerView: View {
             VStack(spacing: 8) {
                 // Top status stack. OSC-007-R2, R6: the OSC listener badge, with or without the
                 // controls; then CAM-012's "Camera on" badge.
-                OSCListenerBadge(osc: coordinator.osc)
+                OSCListenerBadge(osc: coordinator.osc) { coordinator.statusEvents.post(StatusEventCatalog.osc(port: nil)) }
                 // PERF-010-R4: the recovery offer after an abnormal exit (non-blocking).
                 SessionRecoveryOfferCard(recovery: coordinator.recovery, onReopen: { coordinator.reopenLastScene() },
-                                         onStartFresh: { coordinator.startFresh() })
+                                         onStartFresh: { coordinator.startFresh() },
+                                         onShown: { coordinator.announceRecoveryOffer() })
                 let indicator = coordinator.cameraIndicator
                 if indicator.isShown {   // CAM-012-R1 to R3: never hidden with the controls
                     CameraIndicatorBadge(indicator: indicator) { coordinator.stopCamera() }
@@ -86,6 +87,7 @@ struct VisualizerView: View {
                     OutputBlackoutBadge(external: coordinator.externalDisplay)
                         .transition(.opacity)
                 }
+                StatusCaptionView(router: coordinator.statusEvents)   // ACC-011-R7: camera off, OSC off, restored, reopened
                 banners
                 Spacer()
                 // AUD-007: the short explanation of a route change, with or without the controls.
@@ -370,29 +372,15 @@ struct VisualizerView: View {
         .onChange(of: coordinator.settings.oscilloscopeWindowMilliseconds) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.spectrumSmoothing) { coordinator.visualSettingsChanged() }   // ANL-003
         .onChange(of: coordinator.settings.glowParameters) { coordinator.glowSettingsChanged() }          // FX-001
-        .onChange(of: coordinator.manager.state) { _, state in
+        .onChange(of: coordinator.manager.state) {
             coordinator.routes.refresh()   // AUD-007-R3: a source started or changed state
-            SourceStatusIndicator.announce(mode: coordinator.manager.activeMode, state: state, signal: coordinator.testSignalName,
-                                           switching: coordinator.manager.switchingTo != nil)   // FR-070, AUD-016-R16, AUD-012-R7
-        }
-        // ACC-004-R5: the output's blackout and the recording, whichever control or key caused them.
-        .onChange(of: coordinator.externalDisplay.isBlackoutRequested) { _, blackedOut in
-            coordinator.announcer.announce(AccessibilityAnnouncer.blackoutText(blackedOut), kind: .output)
-        }
-        .onChange(of: coordinator.videoRecording.state == .recording) { _, recording in
-            coordinator.announcer.announce(AccessibilityAnnouncer.recordingText(recording), kind: .recording)
-        }
-        .onChange(of: coordinator.videoRecording.notice) { _, notice in
-            if let notice { coordinator.announcer.announce(notice, kind: .recording) }
+            coordinator.announceSourceStatus()   // FR-070, AUD-016-R16, AUD-012-R7 (ACC-011 X1-X3)
         }
         .onChange(of: coordinator.manager.stopReason) { _, reason in
-            // AUD-014-R18: In-App Playback went on hold (interrupted, or the output was disconnected).
-            let manager = coordinator.manager
-            if let text = SourceStatusIndicator.holdAnnouncement(mode: manager.activeMode, state: manager.state, reason: reason,
-                                                                 signal: coordinator.testSignalName) {
-                UIAccessibility.post(notification: .announcement, argument: text)
-            }
+            // AUD-014-R18: In-App Playback went on hold; ACC-011-R5: one text per change.
+            if reason != nil { coordinator.announceSourceStatus() }
         }
+        .modifier(StatusEventChanges(coordinator: coordinator))   // ACC-011: recording, capture, blackout
     }
 
     #if DEBUG
@@ -500,7 +488,9 @@ struct VisualizerView: View {
         }
         // AUD-015-R7: what happened to the source while the app was away.
         if let notice = coordinator.visibleBackgroundNotice {
-            BackgroundNoticeView(text: notice) { coordinator.dismissBackgroundNotice() }
+            BackgroundNoticeView(text: notice, announce: { coordinator.statusEvents.post(StatusEventCatalog.background($0)) }) {
+                coordinator.dismissBackgroundNotice()
+            }
         }
         // VIS-001-R16: the chosen native visual could not be created.
         if coordinator.nativeVisualUnavailable && coordinator.settings.visual.replacesProjectM {

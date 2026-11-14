@@ -25,16 +25,17 @@ final class RouteCoordinator {
     @ObservationIgnored var context: () -> AudioRouteContext? = { nil }
     /// False while the app is in the background or locked: no explanation for changes then.
     @ObservationIgnored var isActive: () -> Bool = { true }
-    @ObservationIgnored private let announce: (String) -> Void
+    /// ACC-011: the app points this at its status-event router (kind `route`); tests record it.
+    @ObservationIgnored var announce: (String) -> Void
     @ObservationIgnored private var observer: AudioRouteObserver?
     @ObservationIgnored private var expiry: Task<Void, Never>?
     @ObservationIgnored private var shownSequence = 0
 
     /// - Parameters:
     ///   - observesSession: true in the app (the session's notifications reach the monitor); false in tests.
-    ///   - announce: posts a VoiceOver announcement (tests record it).
+    ///   - announce: the VoiceOver announcement (the app routes it through ACC-011's router; tests record it).
     init(provider: any AudioRouteProviding, observesSession: Bool,
-         announce: @escaping (String) -> Void = { UIAccessibility.post(notification: .announcement, argument: $0) }) {
+         announce: @escaping (String) -> Void = { (_: String) -> Void in }) {
         monitor = AudioRouteMonitor(provider: provider)
         self.announce = announce
         if observesSession { observer = AudioRouteObserver(monitor: monitor) }

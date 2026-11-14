@@ -213,8 +213,10 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let show: ShowCoordinator
     /// SCN-012: the repair report before a show cue's scene or Reopen opens.
     let sceneRepair: SceneRepairCoordinator
+    /// ACC-011: capture and recording status events (announcements and captions); owns ACC-004's announcer.
+    let statusEvents = StatusEventRouter()
     /// ACC-004: user-caused state changes are announced through one rate-limited path.
-    let announcer = AccessibilityAnnouncer()
+    var announcer: AccessibilityAnnouncer { statusEvents.announcer }
     /// The Text visual (MED-009), created when Text is chosen and released when another visual is.
     private(set) var textVisual: TextVisualHost?
     /// The text layer's state while the Text visual exists (`empty` otherwise).
@@ -440,6 +442,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         #if DEBUG
         UITestShowFixture.seedIfRequested(self)   // SHOW-001: ShowCueUITests
         #endif
+        connectStatusEvents()   // ACC-011
         loadLibrary()
         loadAudioLibrary()
         #if DEBUG || PROJECTM_AUTOMATION
@@ -1032,15 +1035,18 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     func stopCamera() {
         guard let host = cameraVisual else { return }
         host.stopCamera()
-        UIAccessibility.post(notification: .announcement, argument: CameraIndicator.stoppedAnnouncement)
+        statusEvents.post(StatusEventCatalog.camera(.idle))   // ACC-011 X18
         settings.visual = settings.visualBeforeCamera
         visualSettingsChanged()   // releases the Camera visual, resumes the fallback (VIS-001-R12)
     }
 
     private func cameraStateChanged(_ state: CameraFeedState) {
+        let wasShown: Bool = CameraIndicator(state: cameraState).isShown
         cameraState = state
-        if let notice = state.notice(position: settings.cameraPosition) {   // CAM-001-R14, CAM-002-R10
-            UIAccessibility.post(notification: .announcement, argument: notice)
+        if state.notice(position: settings.cameraPosition) != nil {   // CAM-001-R14, CAM-002-R10 (ACC-011 X17)
+            statusEvents.post(StatusEventCatalog.camera(state, position: settings.cameraPosition))
+        } else if !wasShown, CameraIndicator(state: state).isShown {   // ACC-011 X16: "Camera on"
+            statusEvents.post(StatusEventCatalog.camera(state, position: settings.cameraPosition))
         }
     }
 
@@ -1242,7 +1248,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         }
         if let visual { settings.visual = visual }
         sceneHistory.restart()   // SCN-010-R9: Reopen is not an edit
-        announceRecovery("Last scene reopened.")
+        statusEvents.post(StatusEventCatalog.lastSceneReopened())   // ACC-011 X25
     }
 
     /// Start fresh: keeps the fresh scene and commits it, replacing the held one.
@@ -1250,10 +1256,6 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         guard recovery.offer == .pending else { return }
         recovery.markStartedFresh()
         sceneAutosave?.commitFreshScene()
-    }
-
-    private func announceRecovery(_ text: String) {
-        UIAccessibility.post(notification: .announcement, argument: text)
     }
 
     // MARK: - Scene autosave (SCN-002)
