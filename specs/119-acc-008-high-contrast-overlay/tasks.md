@@ -53,7 +53,8 @@ fixture table.
   (OutputBlackoutBadge) and on the recovery card's Reopen; critical tint on the camera badge's Stop
   (`CameraIndicator.swift`).
 - [ ] ACC-008-T09 [US2] Extend the fixture table to every element of the audit (spec table; contract C1)
-  over the four frames, plus Increase Contrast (opaque) rows; print each row.
+  over the four frames, plus Increase Contrast (opaque) rows and the elements kept as they are
+  (performance overlay, paused label; ACC-008-R7); print each row; the table runs in under 10 s (S3).
 
 ## Phase 5: User Story 3 - Trust the measurement (P2)
 
@@ -73,7 +74,8 @@ fixture table.
 
 - [ ] ACC-008-T13 Checks: `check_compliance.py`, `validate_docs.py`, `check_motion_policy.py`,
   `check_permission_catalog.py`, `check_status_events.py`, `test_scripts.py`; no new type-check warnings
-  over the baseline.
+  over the baseline; `grep` shows no `.regularMaterial`/`.ultraThinMaterial` backing left in the audited
+  views (ACC-008-R3); the diff touches no renderer, compositor or audio file (ACC-008-R10).
 - [ ] ACC-008-T14 Test runs on the own simulator: `projectM-iOSTests`, `OverlayContrastUITests`,
   `ColorBlindControlsUITests`, `StatusUITests`; PosterBoard count after; delete the simulator.
 - [ ] ACC-008-T15 Record the measured table (before → after), the scrim level and the method in
