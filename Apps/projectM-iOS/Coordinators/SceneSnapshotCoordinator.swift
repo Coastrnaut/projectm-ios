@@ -65,6 +65,8 @@ final class SceneSnapshotCoordinator {
     @ObservationIgnored var isComparing: () -> Bool = { () -> Bool in false }
     /// SCN-009: the Compare model the Snapshots rows open (nil in previews and tests of snapshots alone).
     @ObservationIgnored weak var compare: SceneCompareCoordinator?
+    /// REC-002: the image batch export the Snapshots rows open (nil in previews and tests of snapshots alone).
+    @ObservationIgnored weak var batchExport: SnapshotBatchExportCoordinator?
     static let compareRefusal = "Finish Compare first."
 
     init(registry: ParameterRegistry? = ParameterInspectorCatalog.registry,
