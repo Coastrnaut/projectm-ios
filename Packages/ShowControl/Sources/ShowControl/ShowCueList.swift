@@ -46,6 +46,9 @@ public enum ShowStepOutcome: String, Sendable, Hashable {
     case empty
     /// Go to a cue ID the show does not have.
     case unknownCue
+    /// SHOW-003: the step waits for the next beat or bar (returned by the app's quantized gate only; `ShowCueList` never
+    /// returns it). Nothing changed yet.
+    case queued
 }
 
 /// The result of next, previous or go to: the outcome, the position and the active scene after it.
@@ -190,6 +193,9 @@ public struct ShowCueList: Sendable, Hashable {
         position = .cue(cueID)
         return step(.moved)
     }
+
+    /// SHOW-003: the current position with outcome `.queued` (the app's quantized gate; nothing changes).
+    public func queuedStep() -> ShowStep { step(.queued) }
 
     /// Back to Standby (used by tests and a later "reset show"; never applies a scene).
     public mutating func standBy() { position = .standby }
