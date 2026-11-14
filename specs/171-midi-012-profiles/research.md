@@ -73,3 +73,11 @@
   line and not a scene line; `save()` appends them after the known lines.
 - **Rationale**: A profile from a newer version keeps its lines after a learn. Readable `cc:` lines for parameters this
   build cannot drive are still dropped, as MIDI-003 specifies.
+
+## MIDI-012-D10: Placement and the in-memory stored list (implementation, 2026-11-14)
+
+- **Decision**: The Profiles section is the last section of MIDI Mappings, so the rows earlier rows' UI tests reach keep
+  their places (a section near the top pushed the mapping rows out of `MIDILearnUITests`' first screen). The mapping
+  coordinator keeps the stored lines in memory (`storedLines`, observed) and updates them on every write: "In use"
+  follows every change, and UI tests that seed `settings.midi.mappings` through the launch-argument domain (which masks
+  the app's own writes on read) see the app's real list.

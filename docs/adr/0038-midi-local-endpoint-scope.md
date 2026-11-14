@@ -51,6 +51,12 @@ devices (`CABTMIDICentralViewController`, which needs a Bluetooth usage string).
    replaces), stored as text lines in `settings.midi.mappings`, backed up (FILE-005) and erased with Settings
    (FILE-011). Received values set the live manual value of the native glow parameters, pass MOD-002 and the
    ACC-012 clamp, and are never stored. Per-device profiles are MIDI-012's.
+9. **Profiles (amended 2026-11-14 by MIDI-012, `specs/171-midi-012-profiles`; decided by Claude under owner rule 4).**
+   A mapping profile may be linked to one input by its system unique number only (never a fallback ID, never a name).
+   The link stays in the local profiles file (`Application Support/MIDIProfiles/profiles.json`), is never exported
+   (`.pmmidi` documents hold the name and the mapping lines only) and is never in a library backup (FILE-005 does not
+   carry the profiles file; FILE-011's Settings category erases it). A listed linked input only suggests its profile;
+   applying stays the user's action.
 
 ## Consequences
 

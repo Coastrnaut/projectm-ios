@@ -32,7 +32,7 @@ App:
 - `MIDIProfilesCoordinator` (new, `Coordinators/MIDIProfilesCoordinator.swift`): rows, Save Current, Apply, Rename,
   Delete, Link, Export (temporary `.pmmidi` + file mover, removed afterwards), Import (security-scoped read, bounded),
   messages and `.midi` announcements through the mapping coordinator's announcer.
-- `MIDIProfilesSection` (new, `Views/MIDIProfilesSection.swift`) in `MIDIMappingsView` after the status section;
+- `MIDIProfilesSection` (new, `Views/MIDIProfilesSection.swift`) at the end of `MIDIMappingsView` (earlier rows keep their places);
   rename alert, delete confirmation, link menu, file mover and importer on the section.
 - `AppCoordinator`: one line creating the profiles coordinator; the UI-test reset removes the profiles folder.
 - FILE-011: `LibraryErasePolicy.midiProfilesFolderName = "MIDIProfiles"` in `folders(.settings)`; FILE-005 does not

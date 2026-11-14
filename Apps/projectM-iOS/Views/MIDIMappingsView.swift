@@ -7,7 +7,7 @@
 // "Transport", with Play/Pause, Play and Pause first; a row's source may be a note, a CC button or MIDI Start/Stop.
 // MIDI-007-R9: a "Scene triggers" section, one row per scene mapping with Delete, and the "Program number selects
 // cue" picker. Scenes are assigned from Settings › Show (Assign MIDI…).
-// MIDI-012-R10: a "Profiles" section after the status (`MIDIProfilesSection`); Undo also covers Apply.
+// MIDI-012-R10: a "Profiles" section at the end (`MIDIProfilesSection`); Undo also covers Apply.
 import ParameterGraph
 import PerformanceControl
 import SwiftUI
@@ -18,10 +18,10 @@ struct MIDIMappingsView: View {
     var body: some View {
         List {
             MIDIMappingsStatusSection(mappings: mappings)
-            if let profiles = mappings.profiles { MIDIProfilesSection(profiles: profiles) }   // MIDI-012-R10
             MIDIMappingsRowsSection(mappings: mappings)
             MIDINoteTriggersSection(mappings: mappings)   // MIDI-006-R8
             MIDISceneTriggersSection(mappings: mappings)   // MIDI-007-R9
+            if let profiles = mappings.profiles { MIDIProfilesSection(profiles: profiles) }   // MIDI-012-R10 (last: earlier rows keep their places)
         }
         .navigationTitle("MIDI Mappings")
         .midiProfilesPresentation(mappings.profiles)   // MIDI-012

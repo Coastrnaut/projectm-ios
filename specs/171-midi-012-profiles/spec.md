@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (MIDI-012-T01-T14 verified on the Mac; device task T15 `{device}` open)
 
 **Input**: User description: "Implement MIDI-012 (MIDI mapping profiles) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Save controller-specific local profiles and export them as files." Acceptance,

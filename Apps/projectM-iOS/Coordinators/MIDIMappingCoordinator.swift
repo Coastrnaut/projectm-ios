@@ -115,6 +115,9 @@ final class MIDIMappingCoordinator {
     @ObservationIgnored private var undoLines: [String]?
     /// MIDI-012-R7: stored lines no list reads, kept verbatim after the known lines.
     private(set) var otherLines: [String] = []
+    /// MIDI-012: the mapping lines as last loaded or written, verbatim (observed, so "In use" follows every change; the
+    /// launch-argument domain cannot mask the app's own writes).
+    private(set) var storedLines: [String] = []
     @ObservationIgnored private let allowedTargets: Set<ParameterID>
     /// MIDI-012: the Profiles section's coordinator (nil in tests that do not need it).
     @ObservationIgnored var profiles: MIDIProfilesCoordinator?
@@ -138,6 +141,7 @@ final class MIDIMappingCoordinator {
         allowedTargets = allowed
         bindings = MIDIBindingList(storageLines: lines, allowedTargets: allowed)
         otherLines = Self.unclaimedLines(lines)   // MIDI-012-R7
+        storedLines = lines
         noteBindings = MIDINoteBindingList(storageLines: lines)   // MIDI-006-R7
         sceneBindings = MIDISceneBindingList(storageLines: lines)   // MIDI-007-R7
         lastSources = input.listedSources
@@ -391,6 +395,7 @@ final class MIDIMappingCoordinator {
     }
 
     private func write(_ lines: [String]) {
+        storedLines = lines
         if lines.isEmpty {
             defaults.removeObject(forKey: Self.mappingsKey)
         } else {
@@ -400,8 +405,6 @@ final class MIDIMappingCoordinator {
 
     // MARK: Profiles (MIDI-012, contract P2)
 
-    /// The stored mapping lines, verbatim.
-    var storedLines: [String] { defaults.stringArray(forKey: Self.mappingsKey) ?? [] }
 
     /// Lines no list reads: not a readable `cc:` line, not a trigger line and not a scene line (MIDI-012-R7).
     static func unclaimedLines(_ lines: [String]) -> [String] {
