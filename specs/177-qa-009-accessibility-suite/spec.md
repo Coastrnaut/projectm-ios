@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (QA-009-T01-T09 verified on the Mac, simulator "QA9" iOS 27.2; no device claim). PrimaryScreensAccessibilityUITests: default subset 26 passed (389 s); AX3 13 passed with `QA009_FULL=1`. Script tests 162 OK (QA009ManifestTests 3). QA-009-T10 {device} open.
 
 **Input**: Roadmap row QA-009 (P1, size M, depends on ACC-004). Observable behavior, verbatim: "Test
 primary screens at large type and VoiceOver labels." Acceptance, verbatim: "Required controls are

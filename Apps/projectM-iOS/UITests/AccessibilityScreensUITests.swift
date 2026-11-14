@@ -279,7 +279,8 @@ final class AccessibilityScreensUITests: XCTestCase {
         try audit("settings")
 
         let link = app.buttons["showEditorLink"]
-        XCTAssertTrue(app.reveal(link), "the Show row is reachable")
+        // Long drags (QA-009, 2026-11-14): Settings has grown past the 8 short drags since ACC-004.
+        XCTAssertTrue(app.reveal(link, long: true), "the Show row is reachable")
         requireControls([("showEditorLink", .button)], screen: "settings")
         link.tap()
         XCTAssertTrue(app.navigationBars["Show"].appears(within: 5))
