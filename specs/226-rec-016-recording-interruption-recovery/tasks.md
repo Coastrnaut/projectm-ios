@@ -15,7 +15,7 @@
 
 ## Phase 3: User Story 1 - A writer failure keeps what was recorded (P1) MVP
 
-- [ ] REC-016-T05 [US1] Package tests RecordingRecoveryTests.swift: append, writer and finish failures in a 2 s 64×48 fixture → ledger at baseline, nothing in flight, kept file read back within one fragment; early writer failure → nothing kept; normal finish has no `moof` and passes QA-008 (REC-016-S1, S5)
+- [ ] REC-016-T05 [US1] Package tests RecordingRecoveryTests.swift: append, writer and finish failures in a 2 s 64×48 fixture → ledger at baseline, nothing in flight, kept file read back within one fragment; early writer failure → nothing kept; an out-of-storage fault still deletes the file (REC-016-R9); normal finish has no `moof` and passes QA-008 (REC-016-S1, S5)
 - [ ] REC-016-T06 [US1] Coordinator: kept part offered with the X13 notice; StatusEvents rows (VideoRecordingCoordinator.swift, StatusEvents.swift) (contract C3.1, C4)
 - [ ] REC-016-T07 [US1] App tests RecordingRecoveryAppTests.swift: append failure mid-recording → idle, tap detached, recorder released (ledger), notice, offered file read back with the frames before the failure
 
@@ -44,3 +44,11 @@ T01 → T02 → T03 → T04 → T05 ; T04 → T06 → T07, T08, T09 ; T02 → T1
 ## Implementation Strategy
 
 MVP = Phases 1-3. Then start failure, background proof, thermal, the UI test and polish.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Applied: R9 (out-of-storage unchanged) given an explicit case in T05 besides the existing REC-015 suites in T12; T07 names the
+coordinator-side release checks of R4 (tap detached, no recorder). Coverage: R1 T03, T05; R2 T02, T03, T11; R3 T04, T05;
+R4 T04, T05, T07; R5 T06, T07; R6 T04, T08; R7 T09; R8 T02, T10; R9 T05, T12. S1-S5 map to T05, T08, T09, T10, T05. No
+constitution conflict (public AVFoundation API, nothing stored, no network). Terminology: "kept part" = salvaged file
+throughout.
