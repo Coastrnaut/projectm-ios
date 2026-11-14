@@ -29,6 +29,9 @@
 // * CAM-004: `cameraExposure` mirrors the provider's exposure state (read back from the camera) and
 //   `setCameraExposureLocked` forwards the switch; `-uitestCameraExposureLock <list|none>` (DEBUG) chooses
 //   which stand-in cameras can lock. Exposure never touches the frame loop or the audio source.
+// * CAM-006: `cameraWhiteBalance` mirrors the provider's white balance state (read back) and
+//   `setCameraWhiteBalanceLocked` forwards the switch; `-uitestCameraWhiteBalanceLock <list|none>` (DEBUG)
+//   chooses which stand-in cameras can lock. White balance never touches the frame loop or the audio.
 // * CAM-005: `focus(atWindowPoint:)` maps a double-tap through `CameraFocusMapping` (the picture drawn
 //   last, crop, mirror, the view's frame in its window) and forwards the camera point to the provider;
 //   `cameraFocus` mirrors the state read back; `-uitestCameraFocusPoint <list|none>` (DEBUG) chooses
@@ -179,6 +182,15 @@ final class CameraVisualHost: PresentationBoundResource, CompositorVisualHost {
         camera.provider.setExposureLocked(locked)
     }
 
+    /// CAM-006: the current camera's white balance, read back; `onWhiteBalanceChange` reports every change.
+    var cameraWhiteBalance: CameraWhiteBalanceState { camera.provider.whiteBalance }
+    var onWhiteBalanceChange: ((CameraWhiteBalanceState) -> Void)?
+
+    /// CAM-006-R4: locks or releases the running camera's white balance (nothing when unsupported or stopped).
+    func setCameraWhiteBalanceLocked(_ locked: Bool) {
+        camera.provider.setWhiteBalanceLocked(locked)
+    }
+
     /// CAM-005: the current camera's focus, read back; `onFocusChange` reports every change.
     var cameraFocus: CameraFocusState { camera.provider.focus }
     var onFocusChange: ((CameraFocusState) -> Void)?
@@ -273,9 +285,13 @@ final class CameraVisualHost: PresentationBoundResource, CompositorVisualHost {
             let focusable: Set<FakeCameraKey>? = arguments.firstIndex(of: "-uitestCameraFocusPoint").map { (i: Int) -> Set<FakeCameraKey> in
                 i + 1 < arguments.count ? FakeCameraKey.list(arguments[i + 1]) : []
             }   // CAM-005: the cameras that can focus on a point (nil: all)
+            let balanceable: Set<FakeCameraKey>? = arguments.firstIndex(of: "-uitestCameraWhiteBalanceLock").map { (i: Int) -> Set<FakeCameraKey> in
+                i + 1 < arguments.count ? FakeCameraKey.list(arguments[i + 1]) : []
+            }   // CAM-006: the cameras that can lock white balance (nil: all)
             return StubCameraFrameProvider(device: device, scenario: scenario, pattern: pattern, width: 64, height: 48,
                                            availablePositions: positions, lensInventory: lenses, failingLenses: failing,
-                                           exposureLockCameras: lockable, focusPointCameras: focusable)
+                                           exposureLockCameras: lockable, focusPointCameras: focusable,
+                                           whiteBalanceLockCameras: balanceable)
         }
         #endif
         #if os(iOS)
@@ -338,6 +354,9 @@ final class CameraVisualHost: PresentationBoundResource, CompositorVisualHost {
         }
         camera.provider.onFocusChange = { [weak self] (state: CameraFocusState) -> Void in   // CAM-005
             MainActor.assumeIsolated { self?.onFocusChange?(state) }
+        }
+        camera.provider.onWhiteBalanceChange = { [weak self] (state: CameraWhiteBalanceState) -> Void in   // CAM-006
+            MainActor.assumeIsolated { self?.onWhiteBalanceChange?(state) }
         }
         observeSystem()
         updateAccessibility()
