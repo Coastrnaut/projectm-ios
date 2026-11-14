@@ -5,8 +5,11 @@
 // analysis tap (stereo, 44.1 kHz) in chunks of 2,048 frames and runs, per spectrum frame: the
 // ANL-001 stream (`.silence` lead-in, ANL-004-R7), ANL-002 band reduction with decibel
 // normalization, the ANL-004 onset detector, the ANL-005 beat tracker, the ANL-007 kick detector,
-// the ANL-010 spectral centroid and the ANL-014 loudness envelope. It publishes, in ID order: the
-// feature frame (with the kick envelope, the centroid and the loudness), then the frame's onset (if any), then its beat (if any), then its kick (if any).
+// the ANL-008 mid transient detector (1–4 kHz, same magnitudes: no second FFT), the ANL-010
+// spectral centroid and the ANL-014 loudness envelope. It publishes, in ID order: the feature frame
+// (with the kick envelope, the mid transient envelope and confidence, the centroid and the
+// loudness), then the frame's onset (if any), then its beat (if any), then its kick (if any), then
+// its mid transient (if any).
 //
 // Clock (ANL-016-R5, R6): an item's session sample is the end of its window (`index + size`, the
 // first sample not yet analysed); its timeline sample adds the session's base (the samples consumed
@@ -62,6 +65,7 @@ public final class AnalysisPipeline: @unchecked Sendable {
     private let detector: SpectralFluxOnsetDetector
     private let tracker: AdaptiveBeatTracker
     private let kick: BandTransientDetector
+    private let midTransient: BandTransientDetector
     private var centroid: SpectralCentroidEstimator
     private var loudness: LoudnessEnvelope
     private let scratch: UnsafeMutablePointer<Float>
@@ -98,6 +102,7 @@ public final class AnalysisPipeline: @unchecked Sendable {
         detector = SpectralFluxOnsetDetector(configuration: configuration.onset, backend: backend)
         tracker = AdaptiveBeatTracker(configuration: configuration.beat, backend: backend)
         kick = BandTransientDetector(configuration: configuration.kick, backend: backend)
+        midTransient = BandTransientDetector(configuration: configuration.midTransient, backend: backend)
         centroid = SpectralCentroidEstimator(configuration: configuration.centroid)
         loudness = LoudnessEnvelope(configuration: configuration.loudness, size: configuration.spectrum.size)
         scratch = .allocate(capacity: AnalysisPipeline.readChunkFrames * NormalizedPCMRing.channelCount)
@@ -257,6 +262,7 @@ public final class AnalysisPipeline: @unchecked Sendable {
         detector.reset()
         tracker.reset()
         kick.reset()
+        midTransient.reset()
         centroid.reset()
         loudness.reset()
         subscribersLock.withLock { _ in
@@ -319,6 +325,7 @@ public final class AnalysisPipeline: @unchecked Sendable {
         let onset = detector.process(frame, magnitudes: magnitudes)
         let beat = tracker.process(frame, onset: onset)
         let transient = kick.process(frame, magnitudes: magnitudes)
+        let mid = midTransient.process(frame, magnitudes: magnitudes)
         let brightness = centroid.process(frame, magnitudes: magnitudes)
         let level = loudness.process(frame, magnitudes: magnitudes)
         let estimate = tracker.estimate
@@ -327,7 +334,8 @@ public final class AnalysisPipeline: @unchecked Sendable {
         let item = AnalysisFrame(id: takeID(), time: time, bandCount: count, onsetFlux: detector.lastFlux,
                                  bpm: estimate?.bpm, beatConfidence: estimate?.confidence ?? 0,
                                  kickEnvelope: kick.envelope, centroidHz: brightness.hz, centroid: brightness.normalized,
-                                 loudness: level.envelope, loudnessDecibels: level.decibels)
+                                 loudness: level.envelope, loudnessDecibels: level.decibels,
+                                 midTransientEnvelope: midTransient.envelope, midTransientConfidence: midTransient.lastConfidence)
         let bands = UnsafeBufferPointer(start: bandScratch, count: count)
         subscribersLock.withLock { _ in
             for subscription in subscribers { subscription.publish(item, bands: bands) }
@@ -340,11 +348,14 @@ public final class AnalysisPipeline: @unchecked Sendable {
             publish(AnalysisEvent(id: takeID(), time: time, eventSample: beat.sampleIndex,
                                   kind: .beat(bpm: beat.bpm, periodSamples: beat.periodSamples, confidence: beat.confidence)))
         }
-        if let transient {
-            publish(AnalysisEvent(id: takeID(), time: time, eventSample: transient.sampleIndex,
-                                  kind: .transient(band: transient.band, strength: transient.strength,
-                                                   threshold: transient.threshold, level: transient.level)))
-        }
+        if let transient { publishTransient(transient, time: time) }
+        if let mid { publishTransient(mid, time: time) }
+    }
+
+    private func publishTransient(_ event: TransientEvent, time: AnalysisTimestamp) {
+        publish(AnalysisEvent(id: takeID(), time: time, eventSample: event.sampleIndex,
+                              kind: .transient(band: event.band, strength: event.strength, threshold: event.threshold,
+                                               level: event.level, confidence: event.confidence)))
     }
 
     private func publishEvent(_ kind: AnalysisEventKind, sessionSample: Int64) {
