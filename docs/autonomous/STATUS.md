@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T11:49:12Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T11:52:44Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,8 +11,8 @@
 |---|---|
 | audited | 174 |
 | implementing | 9 |
-| unit_passed | 2 |
-| integrated | 140 |
+| unit_passed | 1 |
+| integrated | 141 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -21,13 +21,13 @@
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
 | P1 | 89 | 7 | 1 | 54 | 0 |
-| P2 | 74 | 2 | 1 | 2 | 0 |
+| P2 | 74 | 2 | 0 | 3 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 185 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)
+- 184 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)
 
 ## Integrated
 
@@ -49,6 +49,7 @@ The physical-device suite may **not** start:
 | ANL-005 | Adaptive beat tracker | `18a7b93483d6` | `feature/anl-005` |
 | ANL-006 | Tempo confidence indicator | `b0abb4e` | `feature/anl-006` |
 | ANL-007 | Kick energy detector | `cc15362` | `feature/anl-007` |
+| ANL-008 | Snare-like transient detector | `717c014ab67c` | `feature/anl-008` |
 | ANL-010 | Spectral centroid | `bf6d440f` | `feature/anl-010` |
 | ANL-014 | Loudness envelope | `c3900199` | `feature/anl-014` |
 | ANL-016 | Analysis event bus | `97e498d64a14` | `feature/anl-016` |
@@ -337,7 +338,7 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `49fef7cab8e0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-007/20261113T213750/swift-test_VisualGenerators.log`)
 - `post-merge: projectM-iOSTests 407 + NativeVisual/TempoConfidence UI tests 5; gate ran 13 package suites incl. downstream`: pass at `cc15362` (log `.autonomous/logs/integration/anl-007/app-tests.log`)
 
-### ANL-008 Snare-like transient detector (unit_passed)
+### ANL-008 Snare-like transient detector (integrated)
 - `python3 scripts/check_compliance.py`: pass at `76b015da0192` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-008/20261114T063353/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `76b015da0192` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-008/20261114T063353/docs.log`)
 - `swift test --package-path Packages/AnalysisFeatures`: pass at `76b015da0192` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-008/20261114T063353/swift-test_AnalysisFeatures.log`)
