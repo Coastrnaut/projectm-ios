@@ -28,8 +28,8 @@ final class CameraVisualTests: XCTestCase {
 
     func testCameraIsAChoiceThatReplacesProjectMButIsNotNative() {
         XCTAssertEqual(VisualChoice.camera.title, "Camera")
-        XCTAssertEqual(VisualChoice.allCases.filter(\.isNative), [.circularSpectrum, .linearSpectrum, .oscilloscope, .lissajous])   // VIS-003, VIS-004
-        XCTAssertEqual(VisualChoice.allCases.filter(\.replacesProjectM), [.circularSpectrum, .linearSpectrum, .oscilloscope, .lissajous, .camera, .photo, .video, .text])   // MED-001 adds Photo, MED-002 Video, MED-009 Text, VIS-003 Oscilloscope, VIS-004 Lissajous
+        XCTAssertEqual(VisualChoice.allCases.filter(\.isNative), [.circularSpectrum, .linearSpectrum, .oscilloscope, .lissajous, .radialWaveform])   // VIS-003, VIS-004, VIS-005
+        XCTAssertEqual(VisualChoice.allCases.filter(\.replacesProjectM), [.circularSpectrum, .linearSpectrum, .oscilloscope, .lissajous, .radialWaveform, .camera, .photo, .video, .text])   // MED-001 adds Photo, MED-002 Video, MED-009 Text, VIS-003 Oscilloscope, VIS-004 Lissajous, VIS-005 Radial Waveform
         XCTAssertEqual(VisualChoice.allCases.filter(\.usesCamera), [.camera])
     }
 

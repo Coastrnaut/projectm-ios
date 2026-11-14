@@ -168,7 +168,7 @@ final class PermissionExplainerUITests: XCTestCase {
     /// the denial shows the notice with the fallback; off and on again shows no explainer.
     func testLocalNetworkExplainerThenDeniedNoticeWithoutNagging() {
         launchVisualizer(["-settings.osc.enabled", "NO", "-settings.osc.port", "47128",
-                          "-uitestOSCFailure", "localNetworkDenied"])
+                          "-uitestOSCFailure", "localNetworkDenied", "-uitestSettingsSection", "osc"])   // Settings opens at OSC (owner rule 7)
         openSettings()
         tapOSCToggle()
         XCTAssertTrue(explainer("localNetwork").appears(within: 5), "the explainer before iOS's prompt")

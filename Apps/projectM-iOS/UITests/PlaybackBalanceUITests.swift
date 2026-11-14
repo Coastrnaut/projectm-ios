@@ -15,7 +15,8 @@ final class PlaybackBalanceUITests: XCTestCase {
 
     private func launch(_ source: [String]) {
         XCUIDevice.shared.orientation = .portrait
-        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics"] + source + Self.noStore
+        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-uitestSettingsSection", "balance"]   // Settings opens at Balance (owner rule 7)
+            + source + Self.noStore
         app.launch()
         XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
     }

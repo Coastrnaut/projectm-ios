@@ -41,13 +41,13 @@ final class MIDIDiscoveryUITests: XCTestCase {
     func testFakeDeviceAppearsAndDisappearsInSettings() {
         XCUIDevice.shared.orientation = .portrait
         app.launchArguments = ["-uitestDiagnostics", "-autostart", "inAppPlayback", "-uitestFakeMIDI",
-                               "-settings.midi.enabled", "NO"] + Self.noStore
+                               "-settings.midi.enabled", "NO", "-uitestSettingsSection", "midi"] + Self.noStore   // Settings opens at MIDI (owner rule 7)
         app.launch()
         XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
         openSettings()
 
         let toggle = app.switches["midiListenToggle"]
-        XCTAssertTrue(app.reveal(toggle, long: true), "the MIDI section is in Settings")
+        XCTAssertTrue(app.reveal(toggle), "the MIDI section is in Settings")
         XCTAssertEqual(toggle.value as? String, "0", "off at start")
         XCTAssertEqual(status(), "Off")
 

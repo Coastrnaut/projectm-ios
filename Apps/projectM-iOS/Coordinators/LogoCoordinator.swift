@@ -195,6 +195,7 @@ final class LogoCoordinator {
     }
 
     private func setLogo(_ stored: StoredPhoto?) {
+        MediaLoadSpy.shared.note(.logo)   // SCN-008: an upload
         logo = stored
         loadedSize = nil
         let content: ImageLayerContent = stored.map { (s: StoredPhoto) -> ImageLayerContent in .file(s.url) } ?? .none

@@ -9,6 +9,10 @@
 // | fair     | 60 fps, scale 1.0   | 30 fps, scale 1.0   |
 // | serious  | 30 fps, scale 1.0   | 30 fps, scale 1.0   |
 // | critical | 30 fps, scale 0.75  | 30 fps, scale 0.75  |
+//
+// PERF-003 (specs/173-perf-003-adaptive-quality, research PERF-003-D6): with `adaptiveEffects` (the visual has an
+// adaptable effect switched on, which the effect quality ladder lowers first) the serious state keeps 60 fps; the
+// critical state and Low Power cap as above. Without it the table is unchanged.
 import Foundation
 import QuartzCore
 
@@ -50,8 +54,14 @@ public enum QualityGovernor {
     public static let minimumFramesPerSecond = 30
 
     public static func settings(thermal: ThermalLevel, lowPower: Bool) -> QualitySettings {
+        settings(thermal: thermal, lowPower: lowPower, adaptiveEffects: false)
+    }
+
+    /// PERF-003-R7: effects step down before the frame rate; the serious-state cap is deferred to the effect ladder.
+    public static func settings(thermal: ThermalLevel, lowPower: Bool, adaptiveEffects: Bool) -> QualitySettings {
         var settings = QualitySettings.full
-        if lowPower || thermal == .serious || thermal == .critical {
+        let thermalCap: Bool = adaptiveEffects ? thermal == .critical : (thermal == .serious || thermal == .critical)
+        if lowPower || thermalCap {
             settings.maxFramesPerSecond = minimumFramesPerSecond
         }
         if thermal == .critical {
