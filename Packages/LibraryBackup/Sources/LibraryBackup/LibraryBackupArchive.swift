@@ -48,6 +48,9 @@ public enum LibraryBackupWriter {
             if let overrides = contents.presetOverrides, !overrides.isEmpty {   // PRE-016
                 try add(LibraryBackupFormat.overridesPath, try PresetOverridesFile.encode(overrides))
             }
+            if let smart = contents.smartCollections, !smart.isEmpty {   // PRE-008
+                try add(LibraryBackupFormat.smartCollectionsPath, try PresetSmartCollectionsFile(smartCollections: smart).encode())
+            }
             try add(LibraryBackupFormat.settingsPath, try encodedSettings(contents.settings))
             for name in contents.photos.keys.sorted() {
                 if let bytes = contents.photos[name] { try add(LibraryBackupFormat.photoPath(name), bytes) }
@@ -121,6 +124,12 @@ public enum LibraryBackupReader {
             guard let decoded = try? PresetOverridesFile.decode(overrides) else { throw .unreadableRecord(LibraryBackupFormat.overridesPath) }
             contents.presetOverrides = decoded.map
         }
+        if let smart = files[LibraryBackupFormat.smartCollectionsPath] {   // PRE-008
+            guard let decoded = try? PresetSmartCollectionsFile.decode(smart) else {
+                throw .unreadableRecord(LibraryBackupFormat.smartCollectionsPath)
+            }
+            contents.smartCollections = decoded.file.smartCollections
+        }
         contents.settings = try readSettings(files)
         contents.photos = try readPhotos(files)
         return LibraryBackupContents(manifest: manifest, contents: contents, sha256: PortableSHA256.hex(data))
@@ -129,7 +138,8 @@ public enum LibraryBackupReader {
     static func isKnownPath(_ path: String) -> Bool {
         if path == LibraryBackupFormat.showPath || path == LibraryBackupFormat.currentScenePath || path == LibraryBackupFormat.presetIndexPath
             || path == LibraryBackupFormat.collectionsPath || path == LibraryBackupFormat.settingsPath
-            || path == LibraryBackupFormat.tagsPath || path == LibraryBackupFormat.overridesPath { return true }
+            || path == LibraryBackupFormat.tagsPath || path == LibraryBackupFormat.overridesPath
+            || path == LibraryBackupFormat.smartCollectionsPath { return true }
         if let id = stripped(path, prefix: LibraryBackupFormat.scenesPrefix, suffix: LibraryBackupFormat.sceneSuffix) {
             return ShowCueList.isSceneID(id)
         }

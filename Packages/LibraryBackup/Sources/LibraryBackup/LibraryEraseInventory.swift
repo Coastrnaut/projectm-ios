@@ -59,6 +59,10 @@ public struct LibraryEraseInventory: Sendable, Equatable {
             if let data = try? Data(contentsOf: folders.overridesFile), let overrides = try? PresetOverridesFile.decode(data).map {
                 total += overrides.values.count   // PRE-016: presets with overrides
             }
+            if let data = try? Data(contentsOf: folders.smartCollectionsFile),
+               let file = try? PresetSmartCollectionsFile.decode(data).file {
+                total += file.smartCollections.count   // PRE-008
+            }
             if case let .strings(ids)? = settings[LibrarySettingsPolicy.favoritesKey] { total += ids.count }
             if case let .strings(ids)? = settings[LibrarySettingsPolicy.recentPresetsKey] { total += ids.count }   // PRE-006-R7
             return total

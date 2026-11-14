@@ -73,6 +73,9 @@ public struct LibraryContents: Sendable, Equatable {
     /// PRE-016: preset ID → parameter overrides; nil when there is no overrides file (or it could not
     /// be read: the store sets such a file aside at launch).
     public var presetOverrides: PresetOverrideMap?
+    /// PRE-008: the smart collections; nil when there is no file (or it could not be read: the store sets
+    /// such a file aside at launch).
+    public var smartCollections: [PresetSmartCollection]?
     public var settings: [String: LibrarySettingValue]
     /// File name → bytes.
     public var photos: [String: Data]
@@ -83,7 +86,8 @@ public struct LibraryContents: Sendable, Equatable {
     public init(show: Data? = nil, scenes: [String: Data] = [:], currentScene: Data? = nil, presets: [LibraryPreset] = [],
                 collections: [PresetCollection]? = nil, settings: [String: LibrarySettingValue] = [:], photos: [String: Data] = [:],
                 excluded: LibraryExclusions = LibraryExclusions(), otherPresets: [UserPreset] = [], presetTags: PresetTagMap? = nil,
-                presetOverrides: PresetOverrideMap? = nil) {
+                presetOverrides: PresetOverrideMap? = nil, smartCollections: [PresetSmartCollection]? = nil) {
+        self.smartCollections = smartCollections
         self.presetTags = presetTags
         self.presetOverrides = presetOverrides
         self.show = show
@@ -176,6 +180,7 @@ public enum LibraryContentsReader {
         try readCollections(folders, into: &contents)
         try readTags(folders, into: &contents)
         try readOverrides(folders, into: &contents)   // PRE-016
+        try readSmartCollections(folders, into: &contents)   // PRE-008
         contents.photos = try readPhotos(folders.url(.photos))
         return contents
     }
@@ -266,6 +271,18 @@ public enum LibraryContentsReader {
             throw .collectionsNewerVersion
         } catch {
             contents.presetOverrides = nil
+        }
+    }
+
+    /// PRE-008: a newer format refuses like collections; an unreadable file is left out.
+    private static func readSmartCollections(_ folders: LibraryFolders, into contents: inout LibraryContents) throws(LibraryReadError) {
+        guard let data = try? Data(contentsOf: folders.smartCollectionsFile) else { return }
+        do {
+            contents.smartCollections = try PresetSmartCollectionsFile.decode(data).file.smartCollections
+        } catch .newerVersion {
+            throw .collectionsNewerVersion
+        } catch {
+            contents.smartCollections = nil
         }
     }
 

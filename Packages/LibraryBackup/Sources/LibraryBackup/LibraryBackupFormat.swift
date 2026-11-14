@@ -15,6 +15,7 @@
 // PRE-003 (2026-11-14) added the optional record `collections/tags.json` without a version change: no
 // release has shipped FILE-005, so no reader exists that would refuse it (research PRE-003-D6).
 // PRE-016 (2026-11-14) added `collections/overrides.json` the same way (research PRE-016-D5).
+// PRE-008 (2026-11-14) added `collections/smart-collections.json` the same way (research PRE-008-D5).
 import Foundation
 import LocalPortability
 
@@ -53,6 +54,8 @@ public enum LibraryBackupFormat {
     public static let tagsPath = "collections/tags.json"
     /// PRE-016: the preset overrides document (`PresetOverridesFile`).
     public static let overridesPath = "collections/overrides.json"
+    /// PRE-008: the smart collections document (`PresetSmartCollectionsFile`).
+    public static let smartCollectionsPath = "collections/smart-collections.json"
     public static let settingsPath = "settings.json"
     public static let photosPrefix = "photos/"
 
