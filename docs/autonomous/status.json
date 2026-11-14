@@ -1,11 +1,5 @@
 {
- "blocked": [
-  {
-   "category": "conflict",
-   "id": "AUD-010",
-   "reason": "merge conflict in Apps/projectM-iOS/Coordinators/AppCoordinator.swift, Apps/projectM-iOS/Tests/LibraryBackupAppTests.swift"
-  }
- ],
+ "blocked": [],
  "budget": {
   "spent_usd": 0.0,
   "wall_seconds": 0.0
@@ -19,13 +13,11 @@
   "P1": {
    "audited": 77,
    "implementing": 6,
-   "integrated": 66,
-   "unit_passed": 2
+   "integrated": 68
   },
   "P2": {
    "audited": 74,
-   "blocked": 1,
-   "integrated": 4
+   "integrated": 5
   },
   "P3": {
    "audited": 9
@@ -33,16 +25,12 @@
  },
  "by_state": {
   "audited": 162,
-  "blocked": 1,
   "implementing": 6,
-  "integrated": 154,
-  "skipped_existing": 1,
-  "unit_passed": 2
+  "integrated": 157,
+  "skipped_existing": 1
  },
  "device_gate": {
-  "blocked": [
-   "AUD-010"
-  ],
+  "blocked": [],
   "device_prerequisites": [],
   "implementation_complete": false,
   "infeasible": [],
@@ -79,7 +67,6 @@
    "FX-016",
    "FX-017",
    "FX-018",
-   "FX-020",
    "MED-005",
    "MED-007",
    "MED-008",
@@ -162,7 +149,6 @@
    "REC-013",
    "REC-014",
    "REC-016",
-   "SCN-005",
    "SCN-006",
    "SCN-007",
    "SCN-008",
@@ -220,8 +206,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "170 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)",
-   "1 feasible features are blocked (first: AUD-010); strict completion allows none"
+   "168 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)"
   ]
  },
  "features": {
@@ -599,11 +584,11 @@
    "attempts": 3,
    "branch": "feature/aud-010",
    "branch_sha": "70c5efe6f1c253d4d4d08cd928c3c30f88cb4543",
-   "error_category": "conflict",
-   "integrated_sha": null,
+   "error_category": null,
+   "integrated_sha": "4bad23aa",
    "priority": "P2",
    "spec_dir": null,
-   "state": "blocked"
+   "state": "integrated"
   },
   "AUD-011": {
    "attempts": 0,
@@ -1410,10 +1395,10 @@
    "branch": null,
    "branch_sha": "bc8275dc34d3e13ed3828d5613912d08b2e4a885",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "4bad23aa",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "MED-001": {
    "attempts": 0,
@@ -1610,7 +1595,7 @@
    "branch": null,
    "branch_sha": "bc7e11f8e2cd865747d69737514ba9a8949e6f8e",
    "error_category": null,
-   "integrated_sha": "22974302a3edbd88731e3873019ca6fd7f43239c",
+   "integrated_sha": "4bad23aa",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
@@ -1730,7 +1715,7 @@
    "branch": "feature/mod-005",
    "branch_sha": "7d5bc9fe79dd2f5a3cf5e06b2230d15a55c12a02",
    "error_category": null,
-   "integrated_sha": "584d34846722cfd0543d966316512791a935b80d",
+   "integrated_sha": "4bad23aa",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
@@ -2270,7 +2255,7 @@
    "branch": null,
    "branch_sha": "c6b61c800d1982fb27e658813b74887069cb3d6f",
    "error_category": null,
-   "integrated_sha": "ae6c6e121b1318d6c8b64559ba1e400c0dcada3a",
+   "integrated_sha": "4bad23aa",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
@@ -2760,10 +2745,10 @@
    "branch": null,
    "branch_sha": "451647e2894a1c75f4af2fa78b0badbfc88df599",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "4bad23aa",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "SCN-006": {
    "attempts": 0,
@@ -3633,6 +3618,11 @@
    "sha": "b0abb4e"
   },
   {
+   "branch": "feature/aud-010",
+   "id": "AUD-010",
+   "sha": "4bad23aa"
+  },
+  {
    "branch": "feature/aud-011",
    "id": "AUD-011",
    "sha": "3214051"
@@ -3913,6 +3903,11 @@
    "sha": "6cfcbaabc8d039e71290067a1a0cf0069c7e67de"
   },
   {
+   "branch": null,
+   "id": "FX-020",
+   "sha": "4bad23aa"
+  },
+  {
    "branch": "feature/med-001",
    "id": "MED-001",
    "sha": "dd604d0b1d5171b68a3e305291354c2de11b8f65"
@@ -3975,7 +3970,7 @@
   {
    "branch": null,
    "id": "MIDI-006",
-   "sha": "22974302a3edbd88731e3873019ca6fd7f43239c"
+   "sha": "4bad23aa"
   },
   {
    "branch": "feature/mod-001",
@@ -4000,7 +3995,7 @@
   {
    "branch": "feature/mod-005",
    "id": "MOD-005",
-   "sha": "584d34846722cfd0543d966316512791a935b80d"
+   "sha": "4bad23aa"
   },
   {
    "branch": "feature/mod-013",
@@ -4075,7 +4070,7 @@
   {
    "branch": null,
    "id": "PRE-002",
-   "sha": "ae6c6e121b1318d6c8b64559ba1e400c0dcada3a"
+   "sha": "4bad23aa"
   },
   {
    "branch": "feature/pre-007",
@@ -4166,6 +4161,11 @@
    "branch": "feature/scn-004",
    "id": "SCN-004",
    "sha": "7b7a78050adac4aee7896f350d10b628bb8d4a47"
+  },
+  {
+   "branch": null,
+   "id": "SCN-005",
+   "sha": "4bad23aa"
   },
   {
    "branch": "feature/scn-010",
@@ -4283,5 +4283,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T13:53:41Z"
+ "updated": "2026-11-14T14:01:45Z"
 }
