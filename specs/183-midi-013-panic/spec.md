@@ -37,6 +37,16 @@ Answered by Claude under the owner's standing approval (owner rules 4 and 9).
 - Q: Where is the command? → A: A "MIDI Panic" button in the MIDI section of Settings, the keyboard shortcut ⌘⇧M on the visualizer and in Settings, a VoiceOver custom action "MIDI panic" on the visualizer, and an optional mappable trigger `midi.panic` in the Transport rows of MIDI Mappings (a trigger line, MIDI-006 format).
 - Q: What is announced? → A: "MIDI reset" on the `.midi` lane, every time the command runs (also when nothing was held, so the user hears that the command was taken).
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Which keyboard shortcut? → A: ⌘⇧M ("M" for MIDI). The app already uses the arrows, Page Up/Down, B, Escape, ⌘K, ⌘Z and ⌘⇧Z; ⌘. is avoided because UIKit treats it as Escape. ⌘⇧M is not an iPadOS system shortcut.
+- Q: Does the panic button ask for confirmation? → A: No. Panic is safe and idempotent (it only releases and forgets, never changes stored data), and a stuck blackout during a show needs one action.
+- Q: Is the MIDI Panic button disabled when nothing is held or listening is off? → A: No, it is always enabled (a disabled button would hide the command exactly when the user is unsure of the state); while idle it changes nothing and announces "MIDI reset".
+- Q: What does a `midi.panic` trigger key do with the rest of its batch? → A: Commands routed before it in the batch are performed first, then panic runs; the rest of that batch is routed normally after the reset (a later press in the same batch is a fresh press), and the panic key itself is not left down.
+- Q: Can `midi.panic` be held? → A: No: trigger mode only (a `;mode=hold` line for it is unreadable and kept verbatim, as for the other trigger-only actions). Threshold triggers (MOD-006) do not offer it.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Clear a stuck controller in one action (Priority: P1) — MVP
