@@ -73,6 +73,11 @@ public struct LibraryContents: Sendable, Equatable {
     /// PRE-016: preset ID → parameter overrides; nil when there is no overrides file (or it could not
     /// be read: the store sets such a file aside at launch).
     public var presetOverrides: PresetOverrideMap?
+    /// PRE-008: the smart collections; nil when there is no file (or it could not be read: the store sets
+    /// such a file aside at launch).
+    public var smartCollections: [PresetSmartCollection]?
+    /// UIX-011: the user palettes; nil when there is no palette file (or it could not be read).
+    public var palettes: PaletteLibrary?
     public var settings: [String: LibrarySettingValue]
     /// File name → bytes.
     public var photos: [String: Data]
@@ -83,8 +88,11 @@ public struct LibraryContents: Sendable, Equatable {
     public init(show: Data? = nil, scenes: [String: Data] = [:], currentScene: Data? = nil, presets: [LibraryPreset] = [],
                 collections: [PresetCollection]? = nil, settings: [String: LibrarySettingValue] = [:], photos: [String: Data] = [:],
                 excluded: LibraryExclusions = LibraryExclusions(), otherPresets: [UserPreset] = [], presetTags: PresetTagMap? = nil,
-                presetOverrides: PresetOverrideMap? = nil) {
+                presetOverrides: PresetOverrideMap? = nil, palettes: PaletteLibrary? = nil,
+                smartCollections: [PresetSmartCollection]? = nil) {
+        self.smartCollections = smartCollections
         self.presetTags = presetTags
+        self.palettes = palettes   // UIX-011
         self.presetOverrides = presetOverrides
         self.show = show
         self.scenes = scenes
@@ -176,6 +184,8 @@ public enum LibraryContentsReader {
         try readCollections(folders, into: &contents)
         try readTags(folders, into: &contents)
         try readOverrides(folders, into: &contents)   // PRE-016
+        try readSmartCollections(folders, into: &contents)   // PRE-008
+        try readPalettes(folders, into: &contents)   // UIX-011
         contents.photos = try readPhotos(folders.url(.photos))
         return contents
     }
@@ -266,6 +276,30 @@ public enum LibraryContentsReader {
             throw .collectionsNewerVersion
         } catch {
             contents.presetOverrides = nil
+        }
+    }
+
+    /// PRE-008: a newer format refuses like collections; an unreadable file is left out.
+    private static func readSmartCollections(_ folders: LibraryFolders, into contents: inout LibraryContents) throws(LibraryReadError) {
+        guard let data = try? Data(contentsOf: folders.smartCollectionsFile) else { return }
+        do {
+            contents.smartCollections = try PresetSmartCollectionsFile.decode(data).file.smartCollections
+        } catch .newerVersion {
+            throw .collectionsNewerVersion
+        } catch {
+            contents.smartCollections = nil
+        }
+    }
+
+    /// UIX-011: lenient like the store (damaged entries dropped); a newer format refuses like collections.
+    private static func readPalettes(_ folders: LibraryFolders, into contents: inout LibraryContents) throws(LibraryReadError) {
+        guard let data = try? Data(contentsOf: folders.palettesFile) else { return }
+        do {
+            contents.palettes = try PaletteFile.decode([UInt8](data)).library
+        } catch .newerVersion {
+            throw .collectionsNewerVersion
+        } catch {
+            contents.palettes = nil
         }
     }
 

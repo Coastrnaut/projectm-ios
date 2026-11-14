@@ -38,6 +38,7 @@ import os
 import re
 import shlex
 import shutil
+import statistics
 import subprocess
 import sys
 import tempfile
@@ -476,7 +477,7 @@ def privacy_problems(files: list[str], keys: list[str]) -> list[str]:
     for path in files:
         parts = path.split("/")
         if parts[0] in ("Documents", "tmp") and len(parts) > 1:
-            if not re.fullmatch(r"(automation-[\w-]+\.json|sc015\.json|sc101\.json)", parts[-1]):
+            if not re.fullmatch(r"(automation-[\w-]+\.json|sc015\.json|sc101\.json|perf009\.json)", parts[-1]):
                 problems.append(f"unexpected file: {path}")
         if "/com.apple.metal" in path:   # Metal's shader caches (".pcm" there is a precompiled module)
             continue
@@ -598,6 +599,47 @@ def verdicts_for(d: Path) -> dict[str, tuple[bool, str]]:
     return out
 
 
+# MARK: - PERF-009 startup warm cache (cold and warm launches)
+
+def warmstart_summary(samples: list[dict], simulator: bool) -> dict:
+    """Median of each timing per label (cold/warm) and the cache outcomes seen (PERF-009-R10)."""
+    summary: dict = {"evidence": not simulator}
+    for label in ("cold", "warm"):
+        rows = [s for s in samples if s.get("cache") == label]
+        entry: dict = {"launches": len(rows),
+                       "libraryOutcomes": sorted({str(s.get("libraryOutcome")) for s in rows})}
+        for field in ("chooserMs", "libraryReadyMs", "libraryLoadMs"):
+            values = [float(s[field]) for s in rows if isinstance(s.get(field), (int, float)) and s[field] >= 0]
+            entry[field] = round(statistics.median(values), 1) if values else None
+        summary[label] = entry
+    return summary
+
+
+def cmd_warmstart(args) -> None:
+    """PERF-009: `repeat` cold launches (cache cleared first) alternating with `repeat` warm ones, then a summary.
+    A simulator rehearsal is never evidence."""
+    target = target_from_args(args)
+    if not args.no_install:
+        install(args, target)
+    target.launch("perf009")                          # a fresh install only acknowledges the notice
+    time.sleep(0 if DRY_RUN else 8)
+    for _ in range(args.repeat):
+        for extra in ({"PROJECTM_WARMCACHE": "cold"}, None):
+            target.launch("perf009", extra)
+            time.sleep(0 if DRY_RUN else 6)
+    dest = target.out_dir / "perf009.json"
+    target.pull("Documents/perf009.json", dest)
+    if DRY_RUN or not dest.exists():
+        return
+    summary = warmstart_summary(json.loads(dest.read_text()), target.simulator)
+    (target.out_dir / "perf009-summary.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n")
+    note = "" if summary["evidence"] else " (simulator: not evidence)"
+    for label in ("cold", "warm"):
+        row = summary[label]
+        print(f"{target.label} PERF-009 {label}{note}: {row['launches']} launches, library {row['libraryOutcomes']}, "
+              f"chooser {row['chooserMs']} ms, library ready {row['libraryReadyMs']} ms, load {row['libraryLoadMs']} ms")
+
+
 # MARK: - QA-010 performance budgets (on demand, final device stage)
 
 def threshold_inputs(d: Path, extra: list[Path]) -> list[Path]:
@@ -649,14 +691,14 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("devices")
     sub.add_parser("build")
     sub.add_parser("summarize")
-    for name in ("perf", "scroll", "entitlement", "privacy", "install"):
+    for name in ("perf", "scroll", "entitlement", "privacy", "install", "warmstart"):
         p = sub.add_parser(name)
         p.add_argument("--device", choices=sorted(DEVICES))
         p.add_argument("--simulator", metavar="UDID")
         p.add_argument("--app", help="the .app to install (default: the build step's output)")
         p.add_argument("--reinstall", action="store_true", help="remove the app first (an empty container)")
         p.add_argument("--no-install", action="store_true")
-        p.add_argument("--repeat", type=int, default=10, help="recorded launches for SC-101")
+        p.add_argument("--repeat", type=int, default=10, help="recorded launches for SC-101 (warmstart: per label)")
         p.add_argument("--only", help="perf: a comma-separated subset of sc101,sc102,sc104")
         p.add_argument("--no-prewarm", action="store_true", help="perf: SC-104 with the preset warm-up off (comparison)")
         p.add_argument("--dwell", type=int, default=3, help="perf: seconds on each preset in SC-104")
@@ -688,6 +730,8 @@ def main(argv: list[str] | None = None) -> int:
         install(args, target_from_args(args))
     elif args.command == "perf":
         cmd_perf(args)
+    elif args.command == "warmstart":
+        cmd_warmstart(args)
     elif args.command == "scroll":
         cmd_scroll(args)
     elif args.command == "entitlement":

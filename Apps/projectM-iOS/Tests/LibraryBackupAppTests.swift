@@ -61,6 +61,8 @@ final class LibraryBackupAppTests: XCTestCase {
         XCTAssertEqual(LibraryFolders.Folder.presets.rawValue, UserPresetStore.directoryName)
         XCTAssertEqual(LibraryFolders.Folder.collections.rawValue, PresetCollectionStore.directoryName)
         XCTAssertEqual(LibraryFolders.Folder.photos.rawValue, PhotoStore.folderName)
+        XCTAssertEqual(LibraryFolders.Folder.palettes.rawValue, PaletteStore.folderName)   // UIX-011
+        XCTAssertEqual(LibraryFolders.palettesFileName, PaletteStore.fileName)
         XCTAssertEqual(LibraryFolders.currentSceneFileName, SceneAutosaveStore.mainName)
         XCTAssertEqual(LibraryFolders.collectionsFileName, PresetCollectionStore.fileName)
         XCTAssertEqual(LibraryFolders.presetIndexFileName, UserPresetStore.indexFileName)

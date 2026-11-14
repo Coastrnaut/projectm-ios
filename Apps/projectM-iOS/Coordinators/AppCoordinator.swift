@@ -146,6 +146,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// Presets the user imported, their quarantine and their trial (PRE-012).
     let userPresets: UserPresetsCoordinator
     @ObservationIgnored private let presetLoader = RendererPresetLoader()
+    /// PERF-009: the startup warm cache (prepared library snapshot, native pipeline archive).
+    @ObservationIgnored let warmStart: WarmStartCache = WarmStartCache.standard()
     private(set) var controlsVisible = true {
         didSet {
             #if DEBUG
@@ -243,6 +245,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let slideshow: SlideshowCoordinator
     /// The logo overlay (MED-010): the stored logo, its placement and the compositor visuals' logo layers.
     let logo: LogoCoordinator
+    /// UIX-011: palettes and the scene's palette link.
+    let palettes: PaletteCoordinator
     /// MOD-010: the current scene's parameter macros (Settings › Macros).
     let macros: MacroCoordinator
     /// MOD-012: the current scene's routes (Settings › Modulation; AppCoordinator+ModulationMatrix.swift).
@@ -454,6 +458,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         photos = PhotoCoordinator.makeDefault(defaults: defaults)
         slideshow = SlideshowCoordinator.makeDefault(defaults: defaults)   // MED-006
         logo = LogoCoordinator.makeDefault(defaults: defaults)   // MED-010
+        palettes = PaletteCoordinator.makeDefault()   // UIX-011 (after FILE-005's pending restore and FILE-011's erase)
         macros = MacroCoordinator.makeDefault(settings: settings)   // MOD-010
         videos = VideoCoordinator.makeDefault(defaults: defaults)
         texts = TextOverlayCoordinator.makeDefault(defaults: defaults)
@@ -472,6 +477,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             if let restore = values.slideshow { slideshow.restore(restore.value) }   // MED-006-R12
             if let scene = values.logo { logo.restore(storeID: scene.storeID, placement: scene.placement) }   // MED-010-R10
             macros.restore(values.macros)   // MOD-010: restored, not applied
+            palettes.restore(values.paletteID)   // UIX-011
         }
         self.sceneAutosave = sceneAutosave
         show = ShowCoordinator.makeDefault()   // SHOW-001
@@ -530,7 +536,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         // Feature 002: the library (12,941 presets) loads off the main thread (SC-101).
         presets = PresetCoordinator(store: FavoritesStore(defaults: defaults), settings: settings, loader: presetLoader,
                                     collections: PresetCollectionStore(directory: PresetCollectionStore.defaultDirectory()),
-                                    tags: PresetTagStore(directory: PresetTagStore.defaultDirectory()))   // PRE-003
+                                    tags: PresetTagStore(directory: PresetTagStore.defaultDirectory()),   // PRE-003
+                                    smart: PresetSmartCollectionStore(directory: PresetSmartCollectionStore.defaultDirectory()))   // PRE-008
         presets.recent = RecentPresetsCoordinator(store: RecentPresetsStore(defaults: defaults))   // PRE-006
         userPresets = UserPresetsCoordinator.makeDefault()
         userPresets.connect(presets: presets, loader: presetLoader)   // PRE-012
@@ -612,6 +619,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         GuidedFirstSceneCoordinator.reset(defaults)  // UIX-001: never offered
         PermissionExplainerCoordinator.reset(defaults)   // UIX-015: nothing explained
         if let shows = try? ShowStore.defaultDirectory() { try? FileManager.default.removeItem(at: shows) }   // SHOW-001: no show
+        if let palettes = try? PaletteStore.defaultDirectory() { try? FileManager.default.removeItem(at: palettes) }   // UIX-011: no palettes
     }
 
     /// The end of init, after every stored property is set: callbacks, observers and the first loads.
@@ -621,6 +629,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         photos.onPhotoChange = { [weak self] (_: StoredPhoto?) in self?.refreshPhotoContent() }   // MED-006: the slideshow wins when on
         connectSlideshow()   // MED-006
         connectLogo()   // MED-010
+        connectPalettes()   // UIX-011
         videos.onVideoChange = { [weak self] (stored: StoredVideo?) in
             guard let self, let host = videoVisual else { return }
             host.content = .none   // MED-003: the new video's region applies from its first picture
@@ -993,7 +1002,11 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                 }
                 // The index is parsed off the main thread while StoreKit's local records are read
                 // (SC-101); the price loads afterwards, since browsing does not need it.
-                async let loaded = PresetLibrary.load(from: .main)
+                #if DEBUG || PROJECTM_AUTOMATION
+                AutomationRunner.prepareWarmStart(warmStart)   // PERF-009 perf009: a cold launch clears the cache first
+                #endif
+                warmStart.openPipelineArchive()   // PERF-009: off the main actor
+                async let loaded = warmStart.loadLibrary()   // PERF-009: through the warm cache
                 await entitlements.start()
                 let library = try await loaded
                 presetLoader.library = library
@@ -1153,7 +1166,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.reduceFlashing = settings.effectiveReduceFlashing   // ACC-012-R7
             host.safetyClamp = settings.safetyClamp   // ACC-012-R4
             host.smoothing = settings.spectrumSmoothing   // ANL-003
-            host.palette = settings.spectrumPalette        // ACC-003-R13
+            host.palette = effectiveSpectrumPalette        // ACC-003-R13, UIX-011
             host.reduceMotion = settings.systemReduceMotion   // VIS-007-R5, VIS-008-R9, VIS-009-R9: the mandala's turn, the fountain's bursts, the orbit (ACC-001)
             host.externalValues = externalLiveValues.merged   // MIDI-003, OSC-003: values held while no native visual was shown
             for binding in sceneAutosave?.bindings ?? [] { try? host.addLayer(binding) }   // SCN-002: restored bindings, MOD-011 layers in order
@@ -1658,6 +1671,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             if let restore = values.slideshow { slideshow.restore(restore.value) }   // MED-006-R12
             if let scene = values.logo { logo.restore(storeID: scene.storeID, placement: scene.placement) }   // MED-010-R10
             macros.restore(values.macros)   // MOD-010: restored, not applied
+            palettes.restore(values.paletteID)   // UIX-011
         }
         if let visual { settings.visual = visual }
         resetTrailsHistory()   // FX-009-R5: a reopened scene starts without trails
@@ -1691,13 +1705,17 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                     logo: logo.sceneLogo,   // MED-010
                     effects: liveEffectSettings,   // FX-020
                     macros: macros.entries,   // MOD-010
-                    bindings: modulationMatrix.routes)   // MOD-012
+                    bindings: modulationMatrix.routes,   // MOD-012
+                    palette: ScenePaletteChoice(id: palettes.sceneLink))   // UIX-011
     }
 
     /// ACC-003-R13: the colour-blind-safe palette setting changed; the native spectrum redraws with it.
     func spectrumPaletteChanged() {
-        nativeVisual?.palette = settings.spectrumPalette
+        nativeVisual?.palette = effectiveSpectrumPalette
     }
+
+    /// UIX-011-R8: the scene's palette, unless ACC-003's colour-blind-safe switch is on.
+    var effectiveSpectrumPalette: VisualPalette { palettes.visualPalette(colorBlindSafe: settings.colorBlindSafePalette) }
 
     // MARK: - Glow (FX-001)
 
@@ -1877,6 +1895,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         if active { syncSystemReduceMotion() }   // ACC-001-R3: a change made while in the background
         osc.sceneBecame(active: active)   // OSC-001-R3: no listener outside the foreground
         midi.sceneBecame(active: active)   // MIDI-001-R7: no discovery outside the foreground
+        warmStart.sceneBecame(active: active)   // PERF-009-R6: write the pipeline archive back
         updateIdleTimer()
     }
 

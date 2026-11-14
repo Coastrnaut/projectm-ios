@@ -150,7 +150,7 @@ extension SceneDocument {
             layers.append(SceneLayer(instance: entry.id.rawValue, content: content, values: entry.descriptor.parameters,
                                      composite: SceneComposite(opacity: settings.opacity, blendMode: blend, transform: settings.transform,
                                                                fit: fit, mask: mask, gradientMask: gradient,
-                                                               lumaKey: settings.lumaKey),   // CMP-009
+                                                               lumaKey: settings.lumaKey, colorKey: settings.colorKey),   // CMP-009, CMP-010
                                      materialVariant: content.kind == "material" ? live.materialVariants[entry.id] : nil))   // SHD-004
         }
         // Canonical order (MOD-013-R10): live edges in live order, then preserved edges as stored.
@@ -193,7 +193,7 @@ extension SceneDocument {
             if let saved = layer.composite.gradientMask, gradient == nil { unknownGradients[id] = saved }
             let settings = LayerCompositeSettings(opacity: layer.composite.opacity, blendMode: mode ?? .normal,
                                                   transform: layer.composite.transform, fit: fit, mask: mask, gradientMask: gradient,
-                                                  lumaKey: layer.composite.lumaKey)   // CMP-009
+                                                  lumaKey: layer.composite.lumaKey, colorKey: layer.composite.colorKey)   // CMP-009, CMP-010
             entries.append(LayerStackEntry(id: id, descriptor: LayerDescriptor(kind: kind, parameters: layer.values), settings: settings))
             contents[id] = layer.content
             if let variant = layer.materialVariant { variants[id] = variant }   // SHD-004

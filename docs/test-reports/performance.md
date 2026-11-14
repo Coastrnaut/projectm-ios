@@ -355,3 +355,29 @@ contexts, the likely reason.
 - **Cache caveat:** Metal also keeps compiled shaders on disk between launches, so presets picked
   in an earlier run are faster later. The runs pick randomly from 12,819 pack presets, so the
   overlap between runs is small.
+
+## PERF-009: startup warm cache, cold and warm launches
+
+Spec `specs/229-perf-009-startup-warm-cache` (ADR-0062). A launch is **cold** when `Library/Caches/WarmStart` is
+empty (the measurement build's `PROJECTM_WARMCACHE=cold` clears it first, as after an install, an update or Clear
+Caches) and **warm** when the previous launch left a valid entry. What the cache skips is proven by tests that count
+steps (a warm library load runs the index decode, sort and search-key folding 0 times; warm native and compositor
+pipelines are served from the archive under `.failOnBinaryArchiveMiss`); the timings below are measurements only.
+
+Method: `python3 scripts/run_device_tests.py build`, then
+`python3 scripts/run_device_tests.py warmstart --device D1 --repeat 10` (10 cold launches alternating with 10 warm
+ones; mode `perf009`, samples in `Documents/perf009.json`, medians in `perf009-summary.json`). Each sample has the
+library and pipeline-archive outcomes, process start → chooser (`chooserMs`), process start → library ready
+(`libraryReadyMs`) and the library load alone (`libraryLoadMs`). The launch mode exits before any visual runs, so
+the pipeline archive is not exercised by it (its outcome is "miss" until a session with a native or compositor
+visual has gone to the background). Instruments: Points of Interest intervals "WarmStart library" and "WarmStart
+pipeline archive".
+
+| Device | Cold: chooser / library ready / load (median ms) | Warm: chooser / library ready / load (median ms) |
+|---|---|---|
+| D1 iPhone 15 (Release + automation) | pending device (PERF-009-T16) | pending device (PERF-009-T16) |
+| Simulator iOS 27.2, Debug (**not evidence**, 2026-11-14) | 1825 / 2082 / 121 (3 launches) | 1962 / 2146 / 73 (3 launches) |
+| Mac host, Release, synthetic 13,002-preset index (**not evidence**) | load 79 (includes writing the snapshot) | load 11 |
+
+The simulator's chooser times are dominated by Debug-build start-up and vary by hundreds of milliseconds between
+launches; only the library load column shows the cache's effect there.

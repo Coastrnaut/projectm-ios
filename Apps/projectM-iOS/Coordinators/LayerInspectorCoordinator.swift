@@ -56,6 +56,11 @@ final class LayerInspectorCoordinator {
     func addGradientStop(kind: String) { set(LayerGradientEdit.addingStop(on: composite(for: kind)), for: kind) }
     func removeGradientStop(_ index: Int, kind: String) { set(LayerGradientEdit.removingStop(index, on: composite(for: kind)), for: kind) }
 
+    /// CMP-010: the colour picker's choice (opaque, displayed sRGB components).
+    func setColorKeyColor(red: Double, green: Double, blue: Double, kind: String) {
+        set(LayerColorKeyEdit.settingColor(red: red, green: green, blue: blue, on: composite(for: kind)), for: kind)
+    }
+
     /// Reset Layer: one edit back to the default composite.
     func reset(kind: String) { set(SceneComposite(), for: kind) }
 

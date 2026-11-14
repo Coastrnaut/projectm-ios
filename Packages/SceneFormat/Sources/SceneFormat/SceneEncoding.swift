@@ -63,7 +63,14 @@ enum SceneEncoder {
         if let m = c.mask { o["mask"] = mask(m) }   // CMP-007: likewise
         if let g = c.gradientMask { o["gradientMask"] = gradientMask(g) }   // CMP-008: likewise
         if let k = c.lumaKey { o["lumaKey"] = lumaKey(k) }   // CMP-009: likewise
+        if let k = c.colorKey { o["colorKey"] = colorKey(k) }   // CMP-010: likewise
         return .object(o)
+    }
+
+    /// CMP-010's saved form (contracts/color-key.md C3 in specs/230): every field.
+    static func colorKey(_ k: LayerColorKey) -> SceneJSON {
+        .object(["red": .double(k.red), "green": .double(k.green), "blue": .double(k.blue), "tolerance": .double(k.tolerance),
+                 "feather": .double(k.feather)])
     }
 
     /// CMP-009's saved form (contracts/luma-key.md L1 in specs/220): every field.
