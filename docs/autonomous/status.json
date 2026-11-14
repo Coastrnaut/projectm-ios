@@ -267,7 +267,7 @@
    "branch": "feature/acc-003",
    "branch_sha": "1e9b0ba59fe3b66b75f9f649e0088b298e0cbe22",
    "error_category": null,
-   "integrated_sha": "b729849f81c8f1c735c735d3e4a023a948f57bf4",
+   "integrated_sha": "473ebfec",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
@@ -1077,7 +1077,7 @@
    "branch": "feature/cmp-013",
    "branch_sha": "c9ba10c0c80d45d8f58361469e94d70a4faf5467",
    "error_category": null,
-   "integrated_sha": "9688f80ac37a03ac4c0434a6a6016c52bb0b01cf",
+   "integrated_sha": "473ebfec",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
@@ -3517,7 +3517,7 @@
   {
    "branch": "feature/acc-003",
    "id": "ACC-003",
-   "sha": "b729849f81c8f1c735c735d3e4a023a948f57bf4"
+   "sha": "473ebfec"
   },
   {
    "branch": "feature/acc-004",
@@ -3802,7 +3802,7 @@
   {
    "branch": "feature/cmp-013",
    "id": "CMP-013",
-   "sha": "9688f80ac37a03ac4c0434a6a6016c52bb0b01cf"
+   "sha": "473ebfec"
   },
   {
    "branch": "feature/file-001",
@@ -4155,5 +4155,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T08:07:03Z"
+ "updated": "2026-11-14T08:21:33Z"
 }

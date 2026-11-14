@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T08:07:03Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T08:21:33Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -34,7 +34,7 @@ The physical-device suite may **not** start:
 |---|---|---|---|
 | ACC-001 | Reduce motion mode | `c5433e4` | `feature/acc-001` |
 | ACC-002 | Reduced flash preset policy | `61c926cb8b59` | `feature/acc-002` |
-| ACC-003 | Color-blind friendly controls | `b729849f81c8` | `feature/acc-003` |
+| ACC-003 | Color-blind friendly controls | `473ebfec` | `feature/acc-003` |
 | ACC-004 | VoiceOver scene browser | `ff69b64` | `feature/acc-004` |
 | ACC-006 | Dynamic Type inspector | `bb1439c7` | `feature/acc-006` |
 | ACC-011 | Captioned status events | `92196c47` | `feature/acc-011` |
@@ -91,7 +91,7 @@ The physical-device suite may **not** start:
 | CMP-007 | Shape masks | `20b9cc8a` | `feature/cmp-007` |
 | CMP-011 | Layer groups | `e7cc94cc` | `feature/cmp-011` |
 | CMP-012 | Solo and mute | `bc4817f3` | `feature/cmp-012` |
-| CMP-013 | Render caching | `9688f80ac37a` | `feature/cmp-013` |
+| CMP-013 | Render caching | `473ebfec` | `feature/cmp-013` |
 | FILE-001 | Portable scene archive | `c3886d1cb0bb` | `feature/file-001` |
 | FILE-002 | Archive manifest checksums | `77fcfa3f1e56` | `feature/file-002` |
 | FILE-003 | Import dry run | `5e7bcff1` | `feature/file-003` |
@@ -198,6 +198,7 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `1e9b0ba59fe3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-003/20261114T030205/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `1e9b0ba59fe3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-003/20261114T030205/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `1e9b0ba59fe3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-003/20261114T030205/swift-test_VisualGenerators.log`)
+- `post-merge (ACC-003 + CMP-013): projectM-iOSTests 513 + ColorBlindControls/PhotoLayer/TextOverlay/Status UI tests 13; AccessibilityScreens audit regression predates ACC-003 (fails at b4f2abf9), being bisected`: pass at `473ebfec` (log `.autonomous/logs/integration/acc-003-cmp-013/evidence.log`)
 
 ### ACC-004 VoiceOver scene browser (integrated)
 - `python3 scripts/check_compliance.py`: pass at `237e51651b67` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-004/20261113T194946/compliance.log`)
@@ -738,6 +739,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `c9ba10c0c80d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-013/20261114T030532/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `c9ba10c0c80d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-013/20261114T030532/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `c9ba10c0c80d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-013/20261114T030532/swift-test_ShowControl.log`)
+- `post-merge (ACC-003 + CMP-013): projectM-iOSTests 513 + ColorBlindControls/PhotoLayer/TextOverlay/Status UI tests 13; AccessibilityScreens audit regression predates ACC-003 (fails at b4f2abf9), being bisected`: pass at `473ebfec` (log `.autonomous/logs/integration/acc-003-cmp-013/evidence.log`)
 
 ### FILE-001 Portable scene archive (integrated)
 - `python3 scripts/check_compliance.py`: pass at `b4e63d16acf1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-001/20261113T154852/compliance.log`)
