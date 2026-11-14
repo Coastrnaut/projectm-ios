@@ -279,6 +279,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let midiInput: MIDIInputCoordinator
     /// MIDI-002: the MIDI Monitor (opened from the MIDI section; `midi.monitor` points here).
     let midiMonitor: MIDIMonitorCoordinator
+    /// MIDI-003: MIDI learn and the mapping list (opened from the MIDI section; `midi.mappings` points here).
+    let midiMappings: MIDIMappingCoordinator
     /// REC-001: Save Frame (the shown visual's next frame, to the Files exporter).
     @ObservationIgnored private(set) lazy var frameCapture = FrameCaptureCoordinator { [weak self] () -> FrameCaptureCoordinator.Context in
         guard let self else { return FrameCaptureCoordinator.Context(source: nil, outputLive: false, paused: false) }
@@ -324,6 +326,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             defaults.removeObject(forKey: NoiseGateSetting.thresholdKey)   // AUD-011: −50 dBFS
             LatencyOffsetSetting.allKeys.forEach(defaults.removeObject(forKey:))   // AUD-013: 0 ms
             ColorGradeSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-003: neutral
+            defaults.removeObject(forKey: MIDIMappingCoordinator.mappingsKey)   // MIDI-003: no mappings
             try? FileManager.default.removeItem(at: PresetCollectionStore.defaultDirectory())   // PRE-007: UI tests start without collections
             try? FileManager.default.removeItem(at: UserPresetStore.defaultDirectory())         // PRE-012: and without imported presets
             if let photos = try? PhotoStore.defaultDirectory() { try? FileManager.default.removeItem(at: photos) }   // MED-001: no photo
@@ -379,6 +382,11 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         midi.monitor = midiMonitorCoordinator   // MIDI-002-R15
         midiInput = midiInputCoordinator
         midiMonitor = midiMonitorCoordinator
+        let midiMappingCoordinator = MIDIMappingCoordinator(registry: MIDIMappingCoordinator.visualRegistry(),
+                                                            applied: MIDIMappingCoordinator.appliedIDs, input: midiInputCoordinator,
+                                                            discovery: midi, defaults: defaults, announce: announceMIDI)
+        midi.mappings = midiMappingCoordinator   // MIDI-003-R10
+        midiMappings = midiMappingCoordinator
         photos = PhotoCoordinator.makeDefault(defaults: defaults)
         slideshow = SlideshowCoordinator.makeDefault(defaults: defaults)   // MED-006
         videos = VideoCoordinator.makeDefault(defaults: defaults)
@@ -511,6 +519,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         UITestLayerInspectorFixture.seedIfRequested(self)   // CMP-015: LayerInspectorUITests (before the history starts)
         #endif
         connectSceneHistory()   // SCN-010: starts from the restored (or fresh) scene
+        midiMappings.applyValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.nativeVisual?.externalValues = values }   // MIDI-003-R8
         #if DEBUG
         UITestShowFixture.seedIfRequested(self)   // SHOW-001: ShowCueUITests
         #endif
@@ -963,6 +972,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.safetyClamp = settings.safetyClamp   // ACC-012-R4
             host.smoothing = settings.spectrumSmoothing   // ANL-003
             host.palette = settings.spectrumPalette        // ACC-003-R13
+            host.externalValues = midiMappings.liveValues   // MIDI-003: values held while no native visual was shown
             for binding in sceneAutosave?.bindings ?? [] { try? host.bind(binding) }   // SCN-002: restored bindings
             #if DEBUG
             bindGlowToLevelIfRequested(host)   // MOD-002: AudioFeatureBindingUITests

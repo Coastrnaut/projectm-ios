@@ -116,6 +116,12 @@ final class NativeSpectrumHost: PresentationBoundResource {
         didSet { if safetyClamp != oldValue { resolveEffectiveGlow() } }
     }
 
+    /// MIDI-003-R7, R8: live values of MIDI-mapped glow parameters (`BloomParameters.midiControlledIDs`). They
+    /// replace the manual glow fields before MOD-002 modulation and the ACC-012 clamp; empty is the FX-001 path.
+    var externalValues: [ParameterID: Double] = [:] {
+        didSet { if externalValues != oldValue { resolveEffectiveGlow() } }
+    }
+
     /// FX-001: the bloom and the chain that runs it; nil when the glow is unavailable.
     private let bloom: BloomEffect?
     private var chain: EffectChain?
@@ -306,9 +312,9 @@ final class NativeSpectrumHost: PresentationBoundResource {
     /// Applies `glow` with any bound intensity to the bloom and the luminance model. Unbound, this is
     /// exactly the FX-001 path.
     private func resolveEffectiveGlow() {
-        var resolved = glow
+        var resolved = glow.applying(externalValues)   // MIDI-003: a mapped control sets the live manual value
         if let modulator, glowIntensityIsBound {
-            let manual: Double = Double(glow.intensity)
+            let manual: Double = Double(resolved.intensity)
             let modulated: Double = modulator.value(for: VisualParameterIDs.bloomIntensity, manual: manual)
             resolved.intensity = Float(safetyClamp.modulated(manual: manual, modulated: modulated))   // ACC-012: depth
         }

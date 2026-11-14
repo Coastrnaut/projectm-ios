@@ -116,6 +116,10 @@ final class LibraryEraseAcceptanceTests: XCTestCase {
         XCTAssertFalse(LibraryErasePolicy.allFolders.contains(LibraryFolders.restoreFolderName))
         XCTAssertEqual(LibraryErasePolicy.list([.media, .scenes]), "Scenes and show and Photos and videos")
         XCTAssertEqual(LibraryEraseText.erased([.media, .scenes]), "Erased: scenes and show, photos and videos.")
+        // MIDI-003-R9: MIDI mappings are backed up and erased with Settings; the MIDI switch itself is not backed up.
+        XCTAssertTrue(LibrarySettingsPolicy.isIncluded("settings.midi.mappings"))
+        XCTAssertTrue(LibraryErasePolicy.settingKeys(.settings).contains("settings.midi.mappings"))
+        XCTAssertFalse(LibrarySettingsPolicy.isIncluded(LibraryErasePolicy.midiEnabledKey))
     }
 
     func testTheInventoryCountsAndSizesEachCategory() throws {

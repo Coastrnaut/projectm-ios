@@ -36,7 +36,7 @@ final class MIDIMonitorUITests: XCTestCase {
         openSettings()
 
         let plug = app.buttons["midiFakePlug"]
-        XCTAssertTrue(app.reveal(plug), "the MIDI section's stand-in panel")
+        XCTAssertTrue(app.reveal(plug, long: true), "the MIDI section's stand-in panel")
         plug.tap()
         let link = app.buttons["midiMonitorLink"]
         XCTAssertTrue(app.reveal(link), "the MIDI Monitor row")
