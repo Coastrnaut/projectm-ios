@@ -12,8 +12,9 @@
   },
   "P1": {
    "audited": 71,
-   "implementing": 8,
-   "integrated": 72
+   "implementing": 7,
+   "integrated": 72,
+   "unit_passed": 1
   },
   "P2": {
    "audited": 74,
@@ -25,9 +26,10 @@
  },
  "by_state": {
   "audited": 156,
-  "implementing": 8,
+  "implementing": 7,
   "integrated": 161,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -2099,12 +2101,12 @@
   "PERF-001": {
    "attempts": 0,
    "branch": "feature/perf-001",
-   "branch_sha": null,
+   "branch_sha": "9d87d289ba618c598054a0ac08495ba3b3309a82",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "PERF-002": {
    "attempts": 0,
@@ -2261,7 +2263,7 @@
    "branch": "feature/pre-003",
    "branch_sha": "a01ade94e32769be873eb7cb96c51c62a7731e90",
    "error_category": null,
-   "integrated_sha": "ddce4141",
+   "integrated_sha": "ddce41418d7cc402b62021ee6d4d63da5b3c5de2",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
@@ -4081,7 +4083,7 @@
   {
    "branch": "feature/pre-003",
    "id": "PRE-003",
-   "sha": "ddce4141"
+   "sha": "ddce41418d7cc402b62021ee6d4d63da5b3c5de2"
   },
   {
    "branch": "feature/pre-007",
@@ -4299,5 +4301,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T14:36:47Z"
+ "updated": "2026-11-14T14:37:35Z"
 }
