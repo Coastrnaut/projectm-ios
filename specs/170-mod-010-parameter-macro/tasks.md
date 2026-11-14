@@ -11,19 +11,19 @@ No setup: existing packages and app target.
 
 ## Phase 2: Foundational (model)
 
-- [ ] MOD-010-T01 Add `MacroTarget`, `ParameterMacro`, `MacroProblem`, `MacroAssignment`, `MacroSkip`,
+- [X] MOD-010-T01 Add `MacroTarget`, `ParameterMacro`, `MacroProblem`, `MacroAssignment`, `MacroSkip`,
   `MacroEvaluation` in `Packages/ParameterGraph/Sources/ParameterGraph/ParameterMacro.swift` per contract M1,
-  M2 ("first 8 used", "minimum ≤ maximum", boolean and color refused, duplicates skipped; pure, no Foundation)
+  M2 ("first 8 used", "minimum ≤ maximum", boolean and color refused, duplicates skipped; pure, no Foundation) — Verified 2026-11-14: ParameterMacroTests (7) pass on the host; ParameterGraph suite 131 + 45 tests pass in 2 s
 
 ## Phase 3: User Story 1 — one control moves several parameters (P1)
 
 **Independent test**: three-target macro at 0, 0.25, 0.5, 1 equals each target's curve and range.
 
-- [ ] MOD-010-T02 [US1] Acceptance and rule tests in
+- [X] MOD-010-T02 [US1] Acceptance and rule tests in
   `Packages/ParameterGraph/Tests/ParameterGraphTests/ParameterMacroTests.swift`: three targets (continuous
   easeIn, continuous log inverted, enum) at 0, 0.25, 0.5, 1 (1e-9; exact ends); invert; clamp to the registry
   range; integer step rounding; unknown, unsupported, invalid curve/range, duplicate and beyond-limit skips
-  with the other targets applied; non-finite macro value reads 0
+  with the other targets applied; non-finite macro value reads 0 — Verified 2026-11-14: `swift test --filter ParameterMacroTests` 7 tests, 0 failures, 0.002 s
 
 ## Phase 4: User Story 2 — saved with the scene, one undo step (P1)
 
