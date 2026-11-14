@@ -7,9 +7,9 @@
  "by_priority": {
   "P0": {
    "audited": 2,
-   "implementing": 1,
    "integrated": 83,
-   "skipped_existing": 1
+   "skipped_existing": 1,
+   "unit_passed": 1
   },
   "P1": {
    "audited": 116,
@@ -26,9 +26,10 @@
  },
  "by_state": {
   "audited": 204,
-  "implementing": 2,
+  "implementing": 1,
   "integrated": 119,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -3302,12 +3303,12 @@
   "UIX-015": {
    "attempts": 0,
    "branch": "feature/uix-015",
-   "branch_sha": null,
+   "branch_sha": "4f7b3b7b87908d34c7e154dfe7cc5d319e8bd974",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "VIS-001": {
    "attempts": 0,
@@ -4132,5 +4133,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T06:50:57Z"
+ "updated": "2026-11-14T07:10:20Z"
 }
