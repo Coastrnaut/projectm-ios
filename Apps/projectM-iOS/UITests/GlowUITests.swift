@@ -93,7 +93,10 @@ final class GlowUITests: XCTestCase {
         openSettings()
         XCTAssertTrue(glowToggle.appears(within: 2) || app.reveal(glowToggle))
         XCTAssertTrue(isOn(glowToggle), "the toggle persisted")
-        XCTAssertEqual(app.slider("glowIntensitySlider").value as? String, "100 percent", "the intensity persisted")
+        // The Visual section grew (2026-11-14): the slider can sit just below the fold; bring it on screen.
+        let persistedIntensity = app.slider("glowIntensitySlider")
+        XCTAssertTrue(persistedIntensity.appears(within: 2) || app.reveal(persistedIntensity))
+        XCTAssertEqual(persistedIntensity.value as? String, "100 percent", "the intensity persisted")
         flip(glowToggle)
         XCTAssertTrue(app.slider("glowIntensitySlider").disappears(within: 2))
         closeSettings()

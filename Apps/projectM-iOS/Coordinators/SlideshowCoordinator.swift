@@ -230,6 +230,16 @@ final class SlideshowCoordinator {
                               seconds: settings.seconds, beats: settings.beats)
     }
 
+    /// PERF-005: the picture the photo layer would show first after `restore(scene)` (nil: the slideshow would be
+    /// off or empty, so the stored photo shows). Changes nothing.
+    func firstURL(restoring scene: SceneSlideshow?) -> URL? {
+        guard let scene, scene.enabled else { return nil }
+        let named: [UUID] = scene.storeIDs.compactMap { (text: String) -> UUID? in UUID(uuidString: text) }
+            .filter { (id: UUID) -> Bool in settings.slides.contains(id) }
+        guard let first = named.first ?? settings.slides.first else { return nil }
+        return store?.url(for: first)
+    }
+
     /// Applies a scene's slideshow: on/off and timing; stored slides reordered (named first, in the
     /// scene's order, the rest after). Absent: the slideshow turns off. Never adds or deletes pictures.
     func restore(_ scene: SceneSlideshow?) {

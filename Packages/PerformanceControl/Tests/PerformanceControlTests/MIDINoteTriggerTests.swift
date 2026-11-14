@@ -185,7 +185,8 @@ final class MIDINoteTriggerTests: XCTestCase {
         XCTAssertTrue(notes.isEmpty)
         XCTAssertNil(MIDINoteTarget(action: .cueNext, mode: .hold))
         XCTAssertEqual(MIDINoteTarget.all.map { (t: MIDINoteTarget) -> String in t.id }, ["transport.toggle", "transport.play", "transport.pause",   // MIDI-008
-                                                                                     "cue.next", "cue.previous", "blackout", "blackout.hold"])
+                                                                                     "cue.next", "cue.previous", "blackout", "blackout.hold",
+                                                                                     "midi.panic"])   // MIDI-013
     }
 
     // MARK: Learn (T12)
