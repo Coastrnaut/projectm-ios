@@ -16,7 +16,7 @@ included. Budgets (owner rule 7): unit test about 1-2 s and at most 10 s, packag
 
 - [ ] CMP-007-T02 Add `LayerMaskShape` (`ellipse`, `rectangle(cornerRadius:)` "clamped 0…0.5 (non-finite reads 0)", `polygon([LayerPoint])` "3…32 points … each coordinate clamped −10…10; non-zero area; even-odd fill"), `LayerMaskTransform` (`center` "clamped −10…10", `scale` "clamped 0.01…20", `rotation` "non-finite reads 0; −0 stored as 0"), `LayerMask` (feather "clamped 0…1", `inverted`; `throws(LayerMaskError)`: `tooFewPoints`, `tooManyPoints`, `zeroArea`, `nonFinitePoint`; `maximumPolygonPoints = 32`) and `LayerMaskGeometry` (`signedDistance(x:y:)`, `coverage(x:y:)`, `band`; research D1) in typed `Double` steps, outside any Metal guard (CMP-007-R1, R2, R3, R4, R5, R8, R13) in Packages/Compositor/Sources/Compositor/LayerMask.swift
 - [ ] CMP-007-T03 Add `mask: LayerMask?` (default nil, additive init parameter) to `LayerCompositeSettings` in Packages/Compositor/Sources/Compositor/LayerContract.swift
-- [ ] CMP-007-T04 [P] CPU reference tests: circle distance and coverage at known pixels; ellipse sign; rounded rectangle (corner region, radius limited to half the shorter side); convex triangle and concave L polygon (notch outside); self-intersecting star centre outside (even-odd); invert; feather monotonic and exactly 0 at d ≥ band/2 and exactly 1 at d ≤ −band/2; transform (centre, scale, rotation) moves the shape; circle stays round on 16:9 and 9:16; clamping; polygon refusals (2 points, 33 points, collinear) in Packages/Compositor/Tests/CompositorTests/LayerMaskReferenceTests.swift
+- [ ] CMP-007-T04 [P] CPU reference tests: circle distance and coverage at known pixels; ellipse sign; rounded rectangle (corner region, radius limited to half the shorter side); convex triangle and concave L polygon (notch outside); self-intersecting star centre outside (even-odd); invert; feather monotonic and exactly 0 at d ≥ band/2 and exactly 1 at d ≤ −band/2; transform (centre, scale, rotation) moves the shape; circle stays round on 16:9 and 9:16; clamping; polygon refusals (2 points, 33 points, collinear); a mask scaled to the minimum far from the pixel gives 0 (inverted 1) in Packages/Compositor/Tests/CompositorTests/LayerMaskReferenceTests.swift
 
 ## Phase 3: User Story 1 - Mask a layer with a shape (P1) 🎯 MVP
 
@@ -38,7 +38,7 @@ included. Budgets (owner rule 7): unit test about 1-2 s and at most 10 s, packag
 
 **Goal**: `composite.mask` saved and restored. **Independent test**: byte-identical round trips.
 
-- [ ] CMP-007-T11 [US3] `SceneMask` (`known(LayerMask)` | `unknown(shape:object:)`, equality and hash through the encoder) and `SceneComposite.mask: SceneMask?`; decoder: `shape` required, known shapes closed (unknown keys `droppedField`), numbers clamped with `valueClamped`, polygon "< 3 or > 32 points or zero area drops the mask with `droppedField`", unknown shape kept verbatim; encoder writes every field of a known mask, only when set (CMP-007-R9, R11, R8) in Packages/SceneFormat/Sources/SceneFormat/SceneDocument.swift, SceneDecoding.swift, SceneEncoding.swift
+- [ ] CMP-007-T11 [US3] `SceneMask` (`known(LayerMask)` | `unknown(shape:object:)`, equality and hash through the encoder) and `SceneComposite.mask: SceneMask?`; decoder: `shape` required, known shapes closed (unknown keys `droppedField`), numbers clamped with `valueClamped`, polygon "< 3 or > 32 points or zero area drops the mask with `droppedField`", unknown shape kept verbatim; the point count is checked before any point is decoded (hostile input); encoder writes every field of a known mask, only when set (CMP-007-R9, R11, R8) in Packages/SceneFormat/Sources/SceneFormat/SceneDocument.swift, SceneDecoding.swift, SceneEncoding.swift
 - [ ] CMP-007-T12 [US3] Validation warning `unsupportedMaskShape` (repair report: values adjusted, a note); `liveState` maps known masks to `LayerCompositeSettings.mask`, unknown ones to nil kept in `SceneLiveState.preservedMasks`; `init(capturing:)` writes the live mask, or the preserved one while the live mask is nil (CMP-007-R10) in Packages/SceneFormat/Sources/SceneFormat/SceneIssue.swift, SceneValidation.swift, SceneRepair.swift, SceneLiveState.swift
 - [ ] CMP-007-T13 [US3] Tests: each shape with a rotated, scaled, off-centre transform decodes → encodes byte-identically and survives decode → live → capture → encode byte-identically; unknown shape warned, repair note, unmasked live, written back verbatim; clamping warnings; unusable polygons dropped with `droppedField`; scene without mask unchanged (CMP-007-S4) in Packages/SceneFormat/Tests/SceneFormatTests/SceneMaskTests.swift
 
@@ -64,3 +64,19 @@ included. Budgets (owner rule 7): unit test about 1-2 s and at most 10 s, packag
 
 MVP = Phase 2 + US1 (masks drawn with exact zeros). Then US2 (composition), then US3
 (persistence: the acceptance criterion's second half), then polish. Commit after each phase.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Findings and fixes applied:
+
+- U1 (MEDIUM, ambiguity): S1's "outside the shape plus its band" did not say how pixels right at
+  the band's outer edge are judged; aligned S1 with research D7 (0.05 px margin; those pixels are
+  edge pixels, compared within 0.01).
+- C1 (LOW, coverage): the edge case "a mask scaled so it covers nothing" had no test; added to T04.
+- C2 (LOW, robustness): a hostile scene could carry a huge `points` array; T11 now checks the count
+  before decoding points.
+
+Coverage after the fixes: R1-R13 and S1-S5 each map to at least one task (R1-R5, R8, R13: T02/T04;
+R3, R4: T07; R6, R12: T06/T09; R7: T06/T09; R9-R11: T11-T13; S1-S2: T07; S3: T09; S4: T13/T15;
+S5: T10). No constitution conflict (public Metal API, reviewed shader file, no audio, evidence
+labelled). No unresolved placeholder; no duplicated requirement.

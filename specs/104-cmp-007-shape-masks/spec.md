@@ -224,7 +224,8 @@ shape; compare bytes.
 
 - **CMP-007-S1**: For each shape (circle, rounded rectangle, convex polygon, concave polygon,
   inverted circle, feathered ellipse), 0 pixels outside the shape plus its band have non-zero alpha
-  in a GPU read-back.
+  in a GPU read-back (pixels within 0.05 px of the band's outer edge count as edge pixels, since
+  CPU and GPU round differently there; research CMP-007-D7).
 - **CMP-007-S2**: In the same read-backs, every pixel inside the shape minus its band equals the
   unmasked layer, and edge pixels match the reference coverage within 0.01.
 - **CMP-007-S3**: The same holds (0 outside violations) for a masked layer with a CMP-005
