@@ -5,6 +5,7 @@
 // stored `lfos` list back unchanged.
 // MOD-009-T09 (MOD-009-R9, S6): a 1-beat synced oscillator on the glow follows the tap tempo (120 BPM: a 0.5 s cycle)
 // read from `TempoCoordinator.snapshot` each frame, and after Reset continues smoothly at its stored rate.
+// MOD-008-T10 (MOD-008-R3, S5): a seeded sample-and-hold oscillator on the glow holds its seeded level for each step.
 import Foundation
 import Metal
 import ParameterGraph
@@ -119,5 +120,21 @@ final class LFOBindingAppTests: XCTestCase {
             XCTAssertLessThanOrEqual(abs(value - previous), 2 * Double.pi * 0.5 * 2 / 60 + 1e-6, "no jump at frame \(index)")
             previous = value
         }
+    }
+
+    func testSampleAndHoldBindingHoldsItsLevelsOnTheGlow() throws {
+        let lfo = try LFO(shape: .sampleHold, rateHz: 2, seed: 2_026)   // 0.5 s steps
+        let host = try makeHost(lfo)
+        var held: [Int64: Double] = [:]
+        for index in 0...120 {   // 2 s at 60 fps: steps 0…4
+            let elapsed = UInt64(index) * Self.frame
+            apply(host, at: Self.origin + elapsed)
+            let glow = Double(host.effectiveGlow.intensity)
+            let step: Int64 = lfo.cycle(elapsedNanoseconds: elapsed, rateHz: 2).step
+            XCTAssertEqual(glow, SteppedRandom.level(seed: 2_026, step: step), accuracy: 1e-6, "frame \(index): the seeded level")
+            if let level = held[step] { XCTAssertEqual(glow, level, "frame \(index) holds step \(step)") } else { held[step] = glow }
+        }
+        XCTAssertEqual(held.count, 5)
+        XCTAssertGreaterThan(Set(held.values).count, 1, "the level changes between steps")
     }
 }

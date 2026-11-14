@@ -14,6 +14,11 @@
 //   cycle in beats (¼…8); at a tempo the rate is BPM / 60 / beats (BPM clamped to 40…240), without one the stored
 //   rate. The bank keeps a phase segment per synced slot and starts a new one, continuous, when the slot's effective
 //   rate changes (tempo, tempo lost, Reduce flashing); at a constant rate it is the same exact closed form.
+// * MOD-008 (specs/212-mod-008-stepped-lfo, research MOD-008-D1 to D6, contract S1 to S8): square (high while φ < duty
+//   cycle, 0.05…0.95, default 0.5) and sample-and-hold (one seeded level per cycle, `SteppedRandom.level(seed:step:)`,
+//   with an optional linear glide from the previous level). The step is the whole-cycle count from the same exact sum
+//   as the phase (`cycle(…)`), and synced segments carry it across rate changes, so a level depends only on the seed
+//   and the step, never on frame timing. Without a stored seed the seed derives from the slot.
 // * Pure, allocation-free per sample; one owner (not `Sendable`), never from an audio callback
 //   (Constitution VII). Foundation-free (the C math library only): builds on Linux.
 #if canImport(Darwin)
@@ -28,10 +33,19 @@ import Musl
 public enum LFOShape: String, Sendable, Hashable, CaseIterable {
     case sine
     case triangle
+    /// MOD-008: high for the first `LFO.dutyCycle` of each cycle, low for the rest.
+    case square
+    /// MOD-008: one seeded level per cycle (stored name `sampleHold`).
+    case sampleHold
 
-    /// The bipolar waveform (−1…1) at phase `phi` in 0…<1.
+    /// The bipolar waveform (−1…1) at phase `phi` in 0…<1. Square uses a 50% duty here and sample-and-hold, which
+    /// depends on the step and seed rather than the phase, reads 0 (the centre); `LFO.value(at:slot:)` evaluates both.
     public func wave(_ phi: Double) -> Double {
         switch self {
+        case .square:
+            return phi < 0.5 ? 1 : -1
+        case .sampleHold:
+            return 0
         case .sine:
             return sin(2 * Double.pi * phi)
         case .triangle:
@@ -98,22 +112,36 @@ public struct LFO: Sendable, Hashable {
     public var center: Double
     /// MOD-009: the tempo-synced cycle length; nil runs at `rateHz` (which stays the fallback without a tempo).
     public var sync: LFOSync?
+    /// MOD-008: the fraction of a square cycle spent high (0.05…0.95).
+    public var dutyCycle: Double
+    /// MOD-008: the sample-and-hold seed; nil uses `SteppedRandom.defaultSeed(slot:)` for the oscillator's position.
+    public var seed: UInt32?
+    /// MOD-008: the fraction of a sample-and-hold step spent ramping from the previous level (0…1; 0 is a hard step).
+    public var glide: Double
 
     public static let minimumRateHz = 0.01
     public static let maximumRateHz = 20.0
     public static let defaultPhaseOffset = 0.0
     public static let defaultAmplitude = 1.0
     public static let defaultCenter = 0.5
+    public static let defaultDutyCycle = 0.5
+    public static let minimumDutyCycle = 0.05
+    public static let maximumDutyCycle = 0.95
+    public static let defaultGlide = 0.0
 
     /// A validated oscillator; throws `LFOError.invalidSettings` when `validationProblem` is not nil.
     public init(shape: LFOShape, rateHz: Double, phaseOffset: Double = LFO.defaultPhaseOffset,
-                amplitude: Double = LFO.defaultAmplitude, center: Double = LFO.defaultCenter, sync: LFOSync? = nil) throws(LFOError) {
+                amplitude: Double = LFO.defaultAmplitude, center: Double = LFO.defaultCenter, sync: LFOSync? = nil,
+                dutyCycle: Double = LFO.defaultDutyCycle, seed: UInt32? = nil, glide: Double = LFO.defaultGlide) throws(LFOError) {
         self.shape = shape
         self.rateHz = rateHz
         self.phaseOffset = phaseOffset
         self.amplitude = amplitude
         self.center = center
         self.sync = sync
+        self.dutyCycle = dutyCycle
+        self.seed = seed
+        self.glide = glide
         if let problem = validationProblem { throw .invalidSettings(reason: problem) }
     }
 
@@ -126,6 +154,10 @@ public struct LFO: Sendable, Hashable {
         guard amplitude.isFinite, amplitude >= 0, amplitude <= 1 else { return "the amplitude must be 0…1" }
         guard center.isFinite, center >= 0, center <= 1 else { return "the center must be 0…1" }
         if let sync, !LFOSync.allowedBeatsPerCycle.contains(sync.beatsPerCycle) { return "the sync length is not allowed" }
+        guard dutyCycle.isFinite, dutyCycle >= Self.minimumDutyCycle, dutyCycle <= Self.maximumDutyCycle else {
+            return "the duty cycle must be \(Self.minimumDutyCycle)…\(Self.maximumDutyCycle)"
+        }
+        guard glide.isFinite, glide >= 0, glide <= 1 else { return "the glide must be 0…1" }
         return nil
     }
 
@@ -144,14 +176,69 @@ public struct LFO: Sendable, Hashable {
     /// frac(start + rate·t) in 0…<1, exact for any running time: t is split into whole seconds and a remainder, and
     /// the rounding error of rate·seconds is recovered with a fused multiply-add (research MOD-007-D2; MOD-009 T2).
     public static func phase(from start: Double, elapsedNanoseconds: UInt64, rateHz rate: Double) -> Double {
+        cycle(from: start, elapsedNanoseconds: elapsedNanoseconds, rateHz: rate).phase
+    }
+
+    /// MOD-008: the whole cycles and the phase of `startCycle + start + rate·t` from one exact sum (research
+    /// MOD-008-D3): the phase is bit-identical to MOD-007's, and a time on a boundary is the new step at phase 0.
+    public static func cycle(from start: Double, startCycle: Int64 = 0, elapsedNanoseconds: UInt64,
+                             rateHz rate: Double) -> LFOCycle {
         let wholeSeconds = Double(elapsedNanoseconds / 1_000_000_000)   // exact below 2⁵³
         let remainder = Double(elapsedNanoseconds % 1_000_000_000) / 1e9
         let product: Double = rate * wholeSeconds
         let productError: Double = (-product).addingProduct(rate, wholeSeconds)   // exact rounding error of the product
-        let productFraction: Double = product - product.rounded(.down)            // exact
+        let productWhole: Double = product.rounded(.down)
+        let productFraction: Double = product - productWhole                     // exact
         let cycles: Double = productFraction + productError + rate * remainder + start
-        let phi: Double = cycles - cycles.rounded(.down)
-        return phi < 1 ? phi : 0
+        let cyclesWhole: Double = cycles.rounded(.down)
+        var phi: Double = cycles - cyclesWhole
+        var step: Int64 = startCycle &+ Self.wholeCycles(productWhole) &+ Self.wholeCycles(cyclesWhole)
+        if !(phi < 1) {
+            phi = 0
+            step = step &+ 1
+        }
+        return LFOCycle(step: step, phase: phi)
+    }
+
+    /// A whole number of cycles as an integer (0 for a non-finite or out-of-range value, which valid rates never give).
+    private static func wholeCycles(_ value: Double) -> Int64 {
+        guard value.isFinite, abs(value) < 9.0e18 else { return 0 }
+        return Int64(value)
+    }
+
+    /// MOD-008: the step and phase after `elapsedNanoseconds` at `rate`, from the phase offset.
+    public func cycle(elapsedNanoseconds: UInt64, rateHz rate: Double) -> LFOCycle {
+        Self.cycle(from: phaseOffset, elapsedNanoseconds: elapsedNanoseconds, rateHz: rate)
+    }
+
+    /// MOD-008: the sample-and-hold seed of the oscillator at `slot` (the stored seed, else the slot's default).
+    public func effectiveSeed(slot: Int) -> UInt64 {
+        if let seed { return UInt64(seed) }
+        return SteppedRandom.defaultSeed(slot: slot)
+    }
+
+    /// MOD-008: the output (0…1) at `cycle` for the oscillator at `slot`: square uses the duty cycle, sample-and-hold
+    /// the seeded level of the step (with its glide); sine and triangle are `value(atPhase:)`.
+    public func value(at cycle: LFOCycle, slot: Int = 0) -> Double {
+        let raw: Double
+        switch shape {
+        case .sine, .triangle:
+            return value(atPhase: cycle.phase)
+        case .square:
+            raw = center + amplitude / 2 * (cycle.phase < dutyCycle ? 1 : -1)
+        case .sampleHold:
+            raw = center + amplitude * (heldLevel(at: cycle, seed: effectiveSeed(slot: slot)) - 0.5)
+        }
+        guard raw.isFinite else { return min(max(center, 0), 1) }
+        return min(max(raw, 0), 1)
+    }
+
+    /// The step's level, ramped from the previous step's level during the glide (research MOD-008-D6).
+    private func heldLevel(at cycle: LFOCycle, seed: UInt64) -> Double {
+        let current: Double = SteppedRandom.level(seed: seed, step: cycle.step)
+        guard glide > 0, cycle.phase < glide else { return current }
+        let previous: Double = SteppedRandom.level(seed: seed, step: cycle.step &- 1)
+        return previous + (current - previous) * (cycle.phase / glide)
     }
 
     /// The output (0…1) at phase `phi` (0…<1).
@@ -164,13 +251,14 @@ public struct LFO: Sendable, Hashable {
     /// MOD-009: the output after `elapsedNanoseconds` at a constant tempo (nil: none), at the effective rate.
     public func value(elapsedNanoseconds: UInt64, tempoBPM: Double?, maximumRateHz: Double = .infinity) -> Double {
         let rate: Double = effectiveRateHz(tempoBPM: tempoBPM, maximumRateHz: maximumRateHz)
-        return value(atPhase: phase(elapsedNanoseconds: elapsedNanoseconds, rateHz: rate))
+        return value(at: cycle(elapsedNanoseconds: elapsedNanoseconds, rateHz: rate))
     }
 
-    /// The output (0…1) after `elapsedNanoseconds`, running at min(rateHz, maximumRateHz).
-    public func value(elapsedNanoseconds: UInt64, maximumRateHz: Double = .infinity) -> Double {
+    /// The output (0…1) after `elapsedNanoseconds`, running at min(rateHz, maximumRateHz); `slot` picks the default
+    /// seed of an unseeded sample-and-hold oscillator (MOD-008).
+    public func value(elapsedNanoseconds: UInt64, maximumRateHz: Double = .infinity, slot: Int = 0) -> Double {
         let rate: Double = min(rateHz, maximumRateHz)
-        return value(atPhase: phase(elapsedNanoseconds: elapsedNanoseconds, rateHz: rate))
+        return value(at: cycle(elapsedNanoseconds: elapsedNanoseconds, rateHz: rate), slot: slot)
     }
 }
 
@@ -218,10 +306,10 @@ public final class LFOBank {
         for i in output.indices {
             if i < oscillators.count, let lfo = oscillators[i] {
                 if lfo.sync == nil {
-                    output[i] = lfo.value(elapsedNanoseconds: elapsed, maximumRateHz: maximumRateHz)
+                    output[i] = lfo.value(elapsedNanoseconds: elapsed, maximumRateHz: maximumRateHz, slot: i)
                 } else {
                     let rate: Double = lfo.effectiveRateHz(tempoBPM: tempoBPM, maximumRateHz: maximumRateHz)
-                    output[i] = lfo.value(atPhase: syncedPhase(slot: i, lfo: lfo, rate: rate, origin: start, time: timeNanoseconds))
+                    output[i] = lfo.value(at: syncedCycle(slot: i, lfo: lfo, rate: rate, origin: start, time: timeNanoseconds), slot: i)
                 }
             } else {
                 output[i] = 0
@@ -229,16 +317,19 @@ public final class LFOBank {
         }
     }
 
-    /// The phase of synced slot `slot` at `time` (research MOD-009-D2): exact from the segment's start while the rate
-    /// is unchanged; a changed rate starts a new segment at this time with the phase reached under the old one.
-    private func syncedPhase(slot: Int, lfo: LFO, rate: Double, origin: UInt64, time: UInt64) -> Double {
-        var segment: LFOPhaseSegment = segments[slot] ?? LFOPhaseSegment(start: origin, phase: lfo.phaseOffset, rateHz: rate)
+    /// The step and phase of synced slot `slot` at `time` (research MOD-009-D2, MOD-008-D4): exact from the segment's
+    /// start while the rate is unchanged; a changed rate starts a new segment at this time with the step and phase
+    /// reached under the old one, so the step count continues.
+    private func syncedCycle(slot: Int, lfo: LFO, rate: Double, origin: UInt64, time: UInt64) -> LFOCycle {
+        var segment: LFOPhaseSegment = segments[slot]
+            ?? LFOPhaseSegment(start: origin, phase: lfo.phaseOffset, rateHz: rate, startCycle: 0)
         if segment.rateHz != rate {
             let at: UInt64 = max(time, segment.start)
-            segment = LFOPhaseSegment(start: at, phase: segment.phase(at: at), rateHz: rate)
+            let reached: LFOCycle = segment.cycle(at: at)
+            segment = LFOPhaseSegment(start: at, phase: reached.phase, rateHz: rate, startCycle: reached.step)
         }
         segments[slot] = segment
-        return segment.phase(at: time)
+        return segment.cycle(at: time)
     }
 }
 
@@ -248,10 +339,25 @@ struct LFOPhaseSegment: Sendable, Hashable {
     /// Cycles at `start` (0…1).
     var phase: Double
     var rateHz: Double
+    /// MOD-008: whole cycles completed before `start` (the step count continues across segments).
+    var startCycle: Int64
 
-    /// The phase at `time`; a time before `start` reads the start phase.
-    func phase(at time: UInt64) -> Double {
+    /// The step and phase at `time`; a time before `start` reads the start.
+    func cycle(at time: UInt64) -> LFOCycle {
         let elapsed: UInt64 = time > start ? time - start : 0
-        return LFO.phase(from: phase, elapsedNanoseconds: elapsed, rateHz: rateHz)
+        return LFO.cycle(from: phase, startCycle: startCycle, elapsedNanoseconds: elapsed, rateHz: rateHz)
+    }
+}
+
+/// MOD-008: whole cycles since the origin (including the phase offset) and the phase within the current one.
+public struct LFOCycle: Sendable, Hashable {
+    /// The step number: whole cycles completed.
+    public let step: Int64
+    /// The phase in the current cycle (0…<1).
+    public let phase: Double
+
+    public init(step: Int64, phase: Double) {
+        self.step = step
+        self.phase = phase
     }
 }

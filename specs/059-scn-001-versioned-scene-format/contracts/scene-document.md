@@ -138,6 +138,12 @@ warning and the oscillator runs unsynced: `invalidLFOSync` (`sync` not an object
 missing or not a finite positive number at `$.lfos[i].sync.beats`) or `unknownLFOSync` (a length this version does
 not know, at `$.lfos[i].sync.beats`). Unknown keys inside `sync` are kept.
 
+MOD-008 (specs/212-mod-008-stepped-lfo/contracts/stepped-lfo.md): the shapes `square` and `sampleHold`, and three
+optional fields: `duty` (square duty cycle 0.05…0.95, default 0.5; written for square), `seed` (whole number
+0…4294967295; written when set; without it the seed derives from the position) and `glide` (sample-and-hold ramp
+0…1, default 0; written when not 0). Out-of-range values are `invalidLFO`; an older app reports the new shapes as
+`unknownLFO` and keeps the entry.
+
 ### Macros (MOD-010, optional top-level `macros`)
 
 `[{"name": "Glow sweep", "value": 0.5, "targets": [{"parameter": "effect.bloom.intensity", "curve": "easeIn:2.0",
