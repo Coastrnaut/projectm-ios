@@ -365,6 +365,7 @@ extension AudioFeatureSource {
         case .midTransient: return "Mid transient"   // ANL-008: not a snare classifier
         case .highTransient: return "High transient"   // ANL-009: not a hi-hat classifier
         case .rolloff: return "Rolloff"   // ANL-011
+        case .flatness: return "Flatness"   // ANL-012
         case let .lfo(index): return "LFO \(index + 1)"   // MOD-007
         }
     }
