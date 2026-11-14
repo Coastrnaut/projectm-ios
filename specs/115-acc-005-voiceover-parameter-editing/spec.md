@@ -170,7 +170,8 @@ A VoiceOver user swipes up on the visual delay at 250 ms; the value cannot rise,
   announce "Maximum, <value>" or "Minimum, <value>" through the app's announcer, rate-limited so a burst
   is announced at most once per second and an identical repeat within two seconds is dropped.
 - **ACC-005-R8**: A step MUST be saved and applied exactly like a touch change (renderer, analysis,
-  persistence), and form one undo step.
+  persistence); for controls in the scene undo history (glow, text, loop; SCN-010) each step MUST form one
+  undo step. Input trim, gate and delay are app settings outside scenes and have no undo, as before.
 - **ACC-005-R9**: Existing accessibility labels and identifiers MUST NOT change.
 - **ACC-005-R10**: The shared editing behaviour MUST be one reusable piece used by every in-scope slider.
 

@@ -15,7 +15,7 @@ test about 1–2 s, at most 10 s; UI test under 30 s. Tick a task `[X]` only whe
 
 - [ ] ACC-005-T02 Create Apps/projectM-iOS/Views/AccessibleParameter.swift with `SpokenUnit`, `SpokenValueFormatter` (exact strings of contract C1.2, typed steps, no `+` chains with ternaries in modifiers), `AccessibleParameterSpec` ("step > 0", `withRange(_:)`), `ParameterStepper` (grid from the minimum, research D3; clamp; end flag) and `ParameterTarget`
 - [ ] ACC-005-T03 Add `AccessibleParameterCatalog` with the ten specs of data-model.md in Apps/projectM-iOS/Views/AccessibleParameter.swift; glow range, unit and step hint read from `VisualParameterCatalog.descriptors` (registry hint × 5)
-- [ ] ACC-005-T04 [P] Unit tests for the formatter (each unit, signs, singular), the stepper (on-grid ±1 step, off-grid to the next grid value, clamp at both ends, maximum reachable off-grid) and the catalog (glow steps are whole multiples of the registry hint; every spec ≤ 25 steps... except the controls with their own snapping step) in Apps/projectM-iOS/Tests/AccessibleParameterTests.swift
+- [ ] ACC-005-T04 [P] Unit tests for the formatter (each unit, signs, singular), the stepper (on-grid ±1 step, off-grid to the next grid value, clamp at both ends, maximum reachable off-grid) and the catalog (glow steps are whole multiples of the registry hint; every spec without its own snapping step spans at most 25 steps; identifiers and labels equal the existing ones, R9) in Apps/projectM-iOS/Tests/AccessibleParameterTests.swift
 
 ## Phase 3: User Story 1 — change a setting with VoiceOver swipes (P1) 🎯 MVP
 
