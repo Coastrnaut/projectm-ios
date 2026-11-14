@@ -2,7 +2,7 @@
 
 **Feature Branch**: `feature/shd-005` (spec directory `236-shd-005-gradient-editor`)
 **Created**: 2026-11-14
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (SHD-005-T01-T12 verified on the Mac: host GPU, Linux shape, iOS 27.2 simulator; device task T13 `{device}` open)
 **Input**: User description: "Implement SHD-005 (Gradient editor) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Edit multi-stop gradients with interpolation and alpha." Acceptance, verbatim:
 "Gradient sample at each stop matches stored color." P1, depends on SHD-001 (integrated)."
