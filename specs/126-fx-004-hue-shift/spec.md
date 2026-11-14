@@ -50,6 +50,28 @@ each answer is the conservative option.
 - Q: Which visuals? → A: FX-003's: the compositor-backed visuals on every output; the native spectra and
   projectM are not shifted. Applied to FX-004-R1 and the Assumptions.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Five questions, each answered by Claude with the recommended option (owner rule 4).
+
+- Q: Where does the hue step run in FX-003's operator order? → A: Last, after saturation and before the tone map
+  (temperature, lift, gamma, gain, saturation, hue). A luminance-keeping rotation about grey commutes with
+  saturation around the same luminance, so the place changes nothing for in-gamut colours, and appending keeps
+  every FX-003 result unchanged. Applied to FX-004-R6.
+- Q: What does the hue step do with a result that would need a negative channel? → A: It pulls that colour toward
+  the grey of the same luminance just far enough that its lowest channel is 0 (hue and luminance kept, chroma
+  reduced), as FX-002's tone map does above white; results above white are left to the tone map. Applied to
+  FX-004-R3 and Edge Cases.
+- Q: How exact must "the grey ramp stays neutral" be on the GPU? → A: Exact: for every grey-ramp pixel the three
+  output channels are equal (spread 0) in both output formats, because greys are fixed points by construction;
+  the grey's value matches the hue-0 output within FX-003's tolerances (one 8-bit step, 0.002 half float).
+  Applied to FX-004-S1.
+- Q: What steps do the slider and the parameter use? → A: The MOD-001 step hint is 1 degree; a VoiceOver swipe
+  moves 10 degrees (36 steps over the range, inside ACC-005's 60-step limit); the readout shows whole degrees with
+  a sign ("+30°") and VoiceOver speaks "plus 30 degrees". Applied to FX-004-R7, R9.
+- Q: Does ACC-012's sensory safety profile limit the hue? → A: No: the hue step keeps luminance, so it is not an
+  intensity boost; the flash guard still measures the shifted colour under every profile. Applied to FX-004-R6.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Shift the colours of a visual (Priority: P1)
@@ -131,14 +153,14 @@ engages.
   exact expected values of a red patch at 0, 120 and 240 degrees.
 - **FX-004-R5**: At hue 0 the hue step is skipped: with every other control neutral the output is bit-identical to
   the ungraded output, and with other controls active it is bit-identical to FX-003's grade.
-- **FX-004-R6**: The hue step's place in FX-003's operator order is fixed and documented; the flash limiter
-  measures the shifted, graded, tone-mapped colour.
+- **FX-004-R6**: The hue step runs last in FX-003's operator order (after saturation, before the tone map); the
+  flash limiter measures the shifted, graded, tone-mapped colour; ACC-012's profile does not cap the hue.
 - **FX-004-R7**: The hue is a registered parameter (MOD-001) with a stable ID, range, default and step hint.
 - **FX-004-R8**: The hue is saved on the device with the other grade values, restored at launch, included in
   library backups, erased with the other settings, checked on read (missing, NaN, non-number → 0; out of range →
   clamped), and reset by "Reset to neutral".
-- **FX-004-R9**: Settings → Color has a "Hue" slider with a readout and a spoken value ("plus 30 degrees"),
-  VoiceOver-adjustable in steps.
+- **FX-004-R9**: Settings → Color has a "Hue" slider with a readout ("+30°") and a spoken value ("plus 30
+  degrees"), VoiceOver-adjustable in 10-degree steps; the parameter's step hint is 1 degree.
 - **FX-004-R10**: A plain-software reference of the hue step exists, testable without a GPU (Linux), and the GPU
   output matches it within FX-003's tolerances.
 - **FX-004-R11**: No new render pass, texture or per-frame allocation; every existing golden image is unchanged.
@@ -154,7 +176,8 @@ engages.
 ### Measurable Outcomes
 
 - **FX-004-S1**: Through the real output pass at hue 30, 90, 180 and −120 degrees, every grey-ramp pixel stays
-  neutral (its red, green and blue are equal within the stated tolerance) and keeps its displayed value.
+  neutral (its red, green and blue are exactly equal, in both output formats) and keeps its displayed value
+  (within one 8-bit step or 0.002 half float of the hue-0 output).
 - **FX-004-S2**: A red patch at 0, 120 and 240 degrees matches the reference values within one 8-bit step
   (screen) and 0.002 (half float).
 - **FX-004-S3**: Over at least 10,000 sampled colours and angles, the reference keeps greys exactly neutral and
