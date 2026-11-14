@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T08:06:56Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T08:07:03Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,25 +9,24 @@
 
 | State | Features |
 |---|---|
-| audited | 199 |
-| implementing | 1 |
-| unit_passed | 1 |
-| integrated | 124 |
+| audited | 197 |
+| implementing | 3 |
+| integrated | 125 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 111 | 1 | 1 | 38 | 0 |
-| P2 | 77 | 0 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 2 | 0 | 84 | 1 |
+| P1 | 109 | 3 | 39 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 201 features are not implemented yet (first: ACC-005, ACC-007, ACC-008, ACC-009, ACC-010)
+- 200 features are not implemented yet (first: ACC-005, ACC-007, ACC-008, ACC-009, ACC-010)
 
 ## Integrated
 
@@ -92,6 +91,7 @@ The physical-device suite may **not** start:
 | CMP-007 | Shape masks | `20b9cc8a` | `feature/cmp-007` |
 | CMP-011 | Layer groups | `e7cc94cc` | `feature/cmp-011` |
 | CMP-012 | Solo and mute | `bc4817f3` | `feature/cmp-012` |
+| CMP-013 | Render caching | `9688f80ac37a` | `feature/cmp-013` |
 | FILE-001 | Portable scene archive | `c3886d1cb0bb` | `feature/file-001` |
 | FILE-002 | Archive manifest checksums | `77fcfa3f1e56` | `feature/file-002` |
 | FILE-003 | Import dry run | `5e7bcff1` | `feature/file-003` |
@@ -728,7 +728,7 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `6fdc7642b09c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-012/20261114T023547/swift-test_ShowControl.log`)
 - `post-merge: projectM-iOSTests + PhotoLayer UI test; gate ran Compositor, SceneFormat and downstream suites`: pass at `bc4817f3` (log `.autonomous/logs/integration/cmp-012/app-tests.log`)
 
-### CMP-013 Render caching (unit_passed)
+### CMP-013 Render caching (integrated)
 - `python3 scripts/check_compliance.py`: pass at `c9ba10c0c80d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-013/20261114T030532/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `c9ba10c0c80d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-013/20261114T030532/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `c9ba10c0c80d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-013/20261114T030532/sim-test_ANGLERendering.log`)

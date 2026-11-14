@@ -11,10 +11,9 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 111,
-   "implementing": 1,
-   "integrated": 38,
-   "unit_passed": 1
+   "audited": 109,
+   "implementing": 3,
+   "integrated": 39
   },
   "P2": {
    "audited": 77,
@@ -25,11 +24,10 @@
   }
  },
  "by_state": {
-  "audited": 199,
-  "implementing": 1,
-  "integrated": 124,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "audited": 197,
+  "implementing": 3,
+  "integrated": 125,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -61,7 +59,6 @@
    "CMP-008",
    "CMP-009",
    "CMP-010",
-   "CMP-013",
    "CMP-014",
    "CMP-015",
    "FILE-005",
@@ -241,7 +238,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "201 features are not implemented yet (first: ACC-005, ACC-007, ACC-008, ACC-009, ACC-010)"
+   "200 features are not implemented yet (first: ACC-005, ACC-007, ACC-008, ACC-009, ACC-010)"
   ]
  },
  "features": {
@@ -287,13 +284,13 @@
   },
   "ACC-005": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/acc-005",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "ACC-006": {
    "attempts": 1,
@@ -1080,20 +1077,20 @@
    "branch": "feature/cmp-013",
    "branch_sha": "c9ba10c0c80d45d8f58361469e94d70a4faf5467",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "9688f80ac37a03ac4c0434a6a6016c52bb0b01cf",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "CMP-014": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/cmp-014",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "CMP-015": {
    "attempts": 0,
@@ -3803,6 +3800,11 @@
    "sha": "bc4817f3"
   },
   {
+   "branch": "feature/cmp-013",
+   "id": "CMP-013",
+   "sha": "9688f80ac37a03ac4c0434a6a6016c52bb0b01cf"
+  },
+  {
    "branch": "feature/file-001",
    "id": "FILE-001",
    "sha": "c3886d1cb0bb2fc8bfeec909a094332bdfb8ff71"
@@ -4153,5 +4155,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T08:06:56Z"
+ "updated": "2026-11-14T08:07:03Z"
 }
