@@ -39,6 +39,16 @@ human interaction); each answer is the conservative, local-first option.
 - Q: What does the indicator show? → A: While a length is set, the elapsed time and the length: "0:07 / 0:10"; with Off it shows "0:07" as before.
 - Q: How is the timed stop announced? → A: Like the other automatic stops (status row X13 on the recording lane): "Recording stopped after 10 seconds." ("… after 1 minute.", "… after 5 minutes.").
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: When frames in flight at the end are dropped (encoder not ready), is the file padded to the length? → A: No. The file ends one frame interval after the last frame actually written (never a repeated or blank frame); the drop is counted as today (REC-006 dropped slots). The acceptance runs use a writer that is not real-time limited, so no frame is dropped there.
+- Q: How is an audio chunk that straddles the end handled? → A: It is cut at the exact sample of the length (441,000 samples for 10 s at 44.1 kHz); the part before is written, the rest is discarded. Nothing is added when audio ends early.
+- Q: What does VoiceOver read for "0:07 / 0:10"? → A: The indicator's value reads "0:07 of 0:10"; nothing new is announced each second (only the start and the stop are announced, as today).
+- Q: Is the length shown in the recorded picture or on an external display? → A: No. Like the recording indicator (REC-003-R16) it is app UI on the device screen only.
+- Q: Which stop reason does the file report when the length and another stop coincide? → A: Whichever stop reaches the coordinator first wins; stops are idempotent, and the file is finished once. A timed stop is reported as its own reason (`timedStop`), distinct from the 10-minute limit (`durationReached`).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Record exactly a set length (Priority: P1)
@@ -80,6 +90,9 @@ file of about 4 s with the usual notice (none for the manual stop, the low-stora
 - The visual stops drawing just before the end: the 0.25 s check stops it as today (the file is shorter).
 - A length is never longer than the 10-minute limit (5 minutes is the longest).
 - Frames slower than the target rate: the file still ends at the length; missing slots are counted as dropped (REC-006).
+- Frames in flight at the end dropped by the encoder: the file ends after the last written frame; it is never padded.
+- An audio chunk straddling the end: cut at the exact sample of the length.
+- The length and another stop at the same moment: the first stop to arrive wins; the file is finished once.
 
 ## Requirements *(mandatory)*
 
@@ -92,7 +105,7 @@ file of about 4 s with the usual notice (none for the manual stop, the low-stora
 - **REC-008-R5**: A manual stop, any automatic stop (pause, blackout, visual change, background, disk guard, writer failure) before the length MUST work as today, with its own notice.
 - **REC-008-R6**: The length MUST count from the recording's first frame; a REC-007 countdown MUST NOT be counted.
 - **REC-008-R7**: A timed stop MUST show and announce "Recording stopped after <length>." through the status router (row X13, recording lane), and the finished file MUST be offered as for any stop.
-- **REC-008-R8**: While recording with a length, the indicator MUST read "<elapsed> / <length>" ("0:07 / 0:10").
+- **REC-008-R8**: While recording with a length, the indicator MUST read "<elapsed> / <length>" ("0:07 / 0:10"), with the accessibility value "0:07 of 0:10"; it MUST NOT appear in the recorded picture or on an external display.
 - **REC-008-R9**: The setting MUST be stored on the device (key `settings.recording.timedStop`; values `off`, `10`, `30`, `60`, `300`; absent or unknown reads Off), backed up with the library settings, erased with the Settings category and reset by the UI-test reset; it MUST be in Settings as its own section with VoiceOver reading each row and its selected state.
 - **REC-008-R10**: A length change during a recording MUST NOT change that recording.
 
