@@ -25,7 +25,9 @@ struct RecentPresetsView: View {
                     .accessibilityIdentifier("recentEmpty")
             }
             ForEach(listing) { (preset: IndexedPreset) in
-                PresetRow(presets: presets, preset: preset, showsPack: true) { onChoose(preset, presets.scope) }
+                PresetRow(presets: presets, preset: preset, showsPack: true, previewScope: presets.scope) {
+                    onChoose(preset, presets.scope)
+                }
             }
             if !recent.ids.isEmpty { clearSection }
         }

@@ -29,7 +29,8 @@ struct PresetCollectionView: View {
             ForEach(listing) { preset in
                 PresetRow(presets: presets, preset: preset, showsPack: true,
                           collection: PresetRow.CollectionPlace(id: collectionID, isFirst: preset == listing.first,
-                                                                isLast: preset == listing.last)) {
+                                                                isLast: preset == listing.last),
+                          previewScope: .collection(collectionID)) {
                     onChoose(preset, .collection(collectionID))
                 }
             }
