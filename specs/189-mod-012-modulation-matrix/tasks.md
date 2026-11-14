@@ -7,13 +7,13 @@ Tests are requested by the spec (acceptance, reorder, round trip, undo, UI). Bud
 
 ## Phase 1: Foundational (evaluation and storage)
 
-- [ ] MOD-012-T01 `AudioFeatureBinding.isEnabled`; fold skips disabled layers, none enabled → base exactly;
+- [X] MOD-012-T01 `AudioFeatureBinding.isEnabled`; fold skips disabled layers, none enabled → base exactly;
   `setEnabled(_:for:layer:)`, `moveLayer(of:from:to:)`, `replaceBindings(_:)` in `AudioFeatureModulator`;
-  `ModulationRouteList` (pure edits and grouping) in ParameterGraph
-- [ ] MOD-012-T02 [US1] Acceptance in `Packages/ParameterGraph/Tests/ParameterGraphTests/ModulationMatrixTests.swift`:
+  `ModulationRouteList` (pure edits and grouping) in ParameterGraph — Verified 2026-11-14: `swift test --package-path Packages/ParameterGraph` 145 + 46 tests, 0 failures, 0.14 s (existing MOD-002 to MOD-014 tests unchanged)
+- [X] MOD-012-T02 [US1] Acceptance in `Packages/ParameterGraph/Tests/ParameterGraphTests/ModulationMatrixTests.swift`:
   A/B/C, disable B (intensity == A-only exactly, radius and A's signal bit-identical), re-enable (two-layer fold),
   all off → base, signal keeps advancing; [US3] reorder changes the fold as documented, cross/out-of-range refused;
-  list edits match the modulator; grouping order
+  list edits match the modulator; grouping order — Verified 2026-11-14: ModulationMatrixTests 6 pass in 0.003 s (`testDisablingOneRowAffectsOnlyItsDestinationRoute` asserts bit patterns of intensity vs an A-only modulator, radius and A's signal)
 - [ ] MOD-012-T03 [US5] SceneFormat `enabled` field (encode only when false, decode optional boolean, malformed
   otherwise) and `SceneBindingEnabledTests` (round trip, absent → enabled, restore keeps a disabled layer)
 
