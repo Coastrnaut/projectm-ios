@@ -33,5 +33,6 @@
 | [0034](0034-source-switch-handoff.md) | Source switch with a ducked, bounded handoff at the renderer boundary | Accepted 2026-11-13 (AUD-012; owner rule 4) |
 | [0035](0035-source-latency-delay.md) | Per-source visual delay as a sample-clock delay line on the visual feeds | Accepted 2026-11-14 (AUD-013; owner rule 4) |
 | [0036](0036-background-playback-policy.md) | Background playback policy: microphone always stops, In-App Playback pauses, System/App Capture follows the system | Accepted 2026-11-14 (AUD-015; owner rule 4) |
+| [0037](0037-blend-mode-colour-space.md) | Blend modes: W3C functions on sRGB-encoded colours, coverage in linear light, add clamped | Accepted 2026-11-14 (CMP-004; owner rule 4) |
 
 Required by Constitution X: capture API, minimum OS, renderer, dependency strategy.

@@ -62,7 +62,9 @@ rules). The format must add none of its own definitions of validity.
 - SCN-002 writes `encoded()` atomically and must merge unknown layers rather than drop them;
   SCN-012 shows the issues; SCN-013 adds migrations; MOD-013 wires the modulation section.
 - CMP-004 (blend modes) must extend the capture adapter's blend switch (it stops compiling) and the
-  list of drawn blend names.
+  list of drawn blend names. Done 2026-11-14 (ADR-0037): `normal`, `add`, `screen`, `multiply`,
+  `overlay`, `difference` are drawn; any other name is kept (through load → capture too) and warned
+  about; format version unchanged.
 - Procedural material values are registry parameters shared by layers of the same material until a
   later row adds per-instance values.
 

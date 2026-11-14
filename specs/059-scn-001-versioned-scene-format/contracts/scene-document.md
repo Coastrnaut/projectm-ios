@@ -50,7 +50,8 @@ empty when absent and are always written. Unknown top-level keys are kept (C6).
 `composite` reads defaults when absent (opacity 1, blend `normal`, identity transform) and is
 always written. `transform` is CMP-005's saved form (`version` 1). Opacity and transform components
 outside their ranges are clamped on decode with a `valueClamped` warning. `blend`: any string;
-only `normal` is drawn, others give `unsupportedBlendMode` and are kept. `values`: the layer's own
+`normal`, `add`, `screen`, `multiply`, `overlay` and `difference` are drawn (CMP-004, ADR-0037), others
+give `unsupportedBlendMode` and are kept. `values`: the layer's own
 numbers (`LayerDescriptor.parameters`), names 1…64 UTF-8 bytes without control characters.
 
 ### Parameter value (MOD-001 tagged form)

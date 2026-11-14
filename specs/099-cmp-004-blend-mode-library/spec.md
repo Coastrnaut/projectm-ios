@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (CMP-004-T01-T18 verified on the Mac and the iOS 27.2 simulator; no device run; report `docs/test-reports/blend-modes.md`)
 
 **Input**: User description: "Implement CMP-004 (Blend mode library) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Support normal, add, screen,
