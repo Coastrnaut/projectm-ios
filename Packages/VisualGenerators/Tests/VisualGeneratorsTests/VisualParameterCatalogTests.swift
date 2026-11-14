@@ -31,10 +31,10 @@ final class VisualParameterCatalogTests: XCTestCase {
             "visual.linearSpectrum.barCount", "visual.linearSpectrum.orientation", "visual.linearSpectrum.spacing",
             "visual.linearSpectrum.capThickness", "visual.linearSpectrum.peakHold", "visual.linearSpectrum.peakFall",
             "effect.bloom.enabled", "effect.bloom.intensity", "effect.bloom.radius", "effect.bloom.threshold",
-            "effect.bloom.knee",
+            "effect.bloom.knee", "visual.particleOrbit.radius",
         ])
         XCTAssertEqual(try VisualParameterCatalog.makeRegistry().ids, registry.ids)
-        XCTAssertEqual(registry.groups.map(\.id), ["visual.circularSpectrum", "visual.linearSpectrum", "effect.bloom"])
+        XCTAssertEqual(registry.groups.map(\.id), ["visual.circularSpectrum", "visual.linearSpectrum", "effect.bloom", "visual.particleOrbit"])
         XCTAssertTrue(VisualParameterCatalog.retiredIDs.isEmpty)
         // Reduce flashing is a safety setting and is never registered (MOD-001-R11).
         XCTAssertFalse(registry.ids.contains { $0.rawValue.lowercased().contains("flash") })
@@ -106,6 +106,12 @@ final class VisualParameterCatalogTests: XCTestCase {
             XCTAssertEqual([got.min, got.max, got.value],
                            [Double(expectedRange.lowerBound), Double(expectedRange.upperBound), Double(expectedDefault)], "\(id)")
         }
+
+        // Particle orbit (VIS-009-R4).
+        typealias O = ParticleOrbitConfiguration
+        let orbit = try XCTUnwrap(range(r.descriptor(for: IDs.particleOrbitRadius)))
+        XCTAssertEqual([orbit.min, orbit.max, orbit.value], [O.radiusRange.lowerBound, O.radiusRange.upperBound, O().radius])
+        XCTAssertEqual(r.descriptor(for: IDs.particleOrbitRadius)?.unit, .fractionOfOutput)
     }
 
     func testUnitsAndModulationPolicies() throws {
