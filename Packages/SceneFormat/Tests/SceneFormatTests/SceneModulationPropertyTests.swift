@@ -12,7 +12,7 @@ import XCTest
 final class SceneModulationPropertyTests: XCTestCase {
     private typealias IDs = VisualParameterIDs
 
-    private let sources = ["audio.band.0", "audio.band.7", "audio.onset", "audio.bandMean", "audio.beatConfidence", "audio.kick",
+    private let sources = ["audio.band.0", "audio.band.7", "audio.onset", "audio.bandMean", "audio.beatConfidence", "audio.legacyPulse",
                            "audio.flux", "audio.band.200", "audio.newThing", "Bad"]
     private let targets: [ParameterID] = [IDs.circularSpectrumGap, IDs.circularSpectrumInnerRadius, IDs.bloomIntensity,
                                           IDs.bloomThreshold, IDs.bloomKnee, "effect.glow.amount", "effect.glow.old",
@@ -31,7 +31,7 @@ final class SceneModulationPropertyTests: XCTestCase {
         }
         let nodes: [SceneNodeRef] = [.generator("lfo.one"), .generator("lfo.two"), .parameter(IDs.bloomKnee), .parameter(IDs.bloomRadius),
                                      .parameter("visual.future.y"), .parameter("effect.glow.amount"), .audio("audio.onset"),
-                                     .audio("audio.kick"), .audio("audio.flux"), .audio("audio.zzz")]
+                                     .audio("audio.legacyPulse"), .audio("audio.flux"), .audio("audio.zzz")]
         var connections: [SceneConnection] = []
         for _ in 0..<Int(rng.next() % 7) {
             connections.append(SceneConnection(source: pick(nodes), target: pick(nodes), input: rng.next() % 2 == 0 ? "value" : "rate"))

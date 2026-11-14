@@ -53,6 +53,22 @@ final class ExpressionEvaluationTests: XCTestCase {
         XCTAssertFalse(constant.readsTime)
     }
 
+    /// ANL-007-T09: `audio.kick` compiles to opcode 9 and reads the frame's kick envelope.
+    func testKickSourceInAFormula() throws {
+        let compiled = try CompiledExpression(source: "audio.kick * 2 + audio.onset")
+        XCTAssertEqual(compiled.audioSources, [.kick, .onset])
+        XCTAssertTrue(compiled.instructions.contains { (instruction: ExpressionInstruction) -> Bool in
+            instruction.opcode == .kick && instruction.opcode.rawValue == 9
+        })
+        let bands: [Float] = [0.5]
+        let value = bands.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> Double in
+            let frame = AudioFeatureFrame(bands: buffer, onset: 0.25, kick: 0.125)
+            return compiled.evaluate(ExpressionInputs(frame: frame, timeSeconds: 0))
+        }
+        XCTAssertEqual(value, 0.5)
+        XCTAssertEqual(compiled.evaluate(.silent), 0)
+    }
+
     func testSilentInputsReadZero() throws {
         let compiled = try CompiledExpression(source: "audio.band.0 + audio.bandMean + audio.onset + audio.beatConfidence + time")
         XCTAssertEqual(compiled.evaluate(.silent), 0)

@@ -6,11 +6,11 @@ final class ModulationIDMigrationTests: XCTestCase {
     private typealias Rule = ModulationIDMigrations.Rule
 
     /// Two versions of history: `test.a` became `test.b` (version 2), which became `test.c` (3);
-    /// `test.gone` was retired (2); `audio.kick` became `audio.onset` (2); `audio.flux` retired (3).
+    /// `test.gone` was retired (2); `audio.legacyPulse` became `audio.onset` (2); `audio.flux` retired (3).
     private let history: [Rule] = [
         .renamed("test.a", to: "test.b", since: 2),
         .retired("test.gone", since: 2),
-        .renamed("audio.kick", to: "audio.onset", since: 2),
+        .renamed("audio.legacyPulse", to: "audio.onset", since: 2),
         .renamed("test.b", to: "test.c", since: 3),
         .retired("audio.flux", since: 3),
     ]
@@ -39,7 +39,7 @@ final class ModulationIDMigrationTests: XCTestCase {
         XCTAssertEqual(table.resolve("test.b"), .renamed(to: "test.c", chain: ["test.b", "test.c"]))
         XCTAssertEqual(table.resolve("test.c"), .unchanged)
         XCTAssertEqual(table.resolve("test.gone"), .retired(chain: ["test.gone"]))
-        XCTAssertEqual(table.resolve("audio.kick"), .renamed(to: "audio.onset", chain: ["audio.kick", "audio.onset"]))
+        XCTAssertEqual(table.resolve("audio.legacyPulse"), .renamed(to: "audio.onset", chain: ["audio.legacyPulse", "audio.onset"]))
         XCTAssertEqual(table.resolve("audio.flux"), .retired(chain: ["audio.flux"]))
         // Idempotent: resolving a resolved ID changes nothing, for every rule's start.
         for rule in history {
@@ -84,7 +84,7 @@ final class ModulationIDMigrationTests: XCTestCase {
         XCTAssertEqual(r.resolveParameter("test.c"), .unchanged)
         XCTAssertEqual(r.resolveParameter("test.gone"), .retired(chain: ["test.gone"]))
         XCTAssertEqual(r.resolveParameter("test.unknown"), .unchanged)
-        XCTAssertEqual(r.resolveAudioFeature("audio.kick"), .renamed(to: "audio.onset", chain: ["audio.kick", "audio.onset"]))
+        XCTAssertEqual(r.resolveAudioFeature("audio.legacyPulse"), .renamed(to: "audio.onset", chain: ["audio.legacyPulse", "audio.onset"]))
         XCTAssertEqual(r.resolveAudioFeature("audio.band.3"), .unchanged)
         // A parameter retired without a rule resolves retired; so does a chain that ends retired.
         let quiet = try registry([.renamed("test.a", to: "test.b", since: 1)], retired: ["test.a", "test.b", "test.old"])
@@ -110,7 +110,7 @@ final class ModulationIDMigrationTests: XCTestCase {
         XCTAssertEqual(try registryProblems([.renamed("test.a", to: "test.nowhere", since: 1)], retired: ["test.a"]),
                        [.migrationTargetUnknown])
         XCTAssertEqual(try registryProblems([.retired("audio.onset", since: 1)], retired: []), [.migrationFromRegistered])
-        XCTAssertEqual(try registryProblems([.renamed("audio.kick", to: "audio.snare", since: 1)], retired: []),
+        XCTAssertEqual(try registryProblems([.renamed("audio.legacyPulse", to: "audio.legacyHit", since: 1)], retired: []),
                        [.migrationTargetUnknown])
         XCTAssertEqual(try registryProblems(history, retired: ["test.a", "test.b", "test.gone"]), [])
     }

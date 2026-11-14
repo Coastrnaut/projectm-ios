@@ -4,7 +4,7 @@
 // The frame borrows the caller's band buffer for one `advance` call, so nothing is copied or
 // allocated and this module stays independent of the analysis types (Constitution VI): the native
 // spectra pass their band scratch; a consumer of the analysis event bus (ANL-016) passes its copied
-// bands plus `AnalysisFrame.onsetFlux` and `beatConfidence`.
+// bands plus `AnalysisFrame.onsetFlux`, `beatConfidence` and `kickEnvelope` (ANL-007-R11).
 
 /// A normalized (0…1) audio feature a binding can follow.
 public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
@@ -16,18 +16,21 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
     case onset
     /// The beat tracker's confidence (ANL-005).
     case beatConfidence
+    /// The kick envelope (ANL-007): 1 on a kick, decaying to 0.
+    case kick
 
     /// The highest band index (the largest band count is 128).
     public static let maximumBandIndex = 127
 
     /// The stable identifier (MOD-013 stores it): `audio.band.<index>`, `audio.bandMean`,
-    /// `audio.onset`, `audio.beatConfidence`.
+    /// `audio.onset`, `audio.beatConfidence`, `audio.kick`.
     public var id: String {
         switch self {
         case let .band(index): "audio.band.\(index)"
         case .bandMean: "audio.bandMean"
         case .onset: "audio.onset"
         case .beatConfidence: "audio.beatConfidence"
+        case .kick: "audio.kick"
         }
     }
 
@@ -40,6 +43,7 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
         case "audio.bandMean": self = .bandMean
         case "audio.onset": self = .onset
         case "audio.beatConfidence": self = .beatConfidence
+        case "audio.kick": self = .kick
         default:
             let prefix = "audio.band."
             guard id.hasPrefix(prefix) else { return nil }
@@ -66,6 +70,8 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
             return frame.onset.map { Self.finite(Double($0)) } ?? 0
         case .beatConfidence:
             return frame.beatConfidence.map(Self.finite) ?? 0
+        case .kick:
+            return frame.kick.map { (value: Float) -> Double in Self.finite(Double(value)) } ?? 0
         }
     }
 
@@ -78,11 +84,14 @@ public struct AudioFeatureFrame {
     public var bands: UnsafeBufferPointer<Float>
     public var onset: Float?
     public var beatConfidence: Double?
+    /// ANL-007's kick envelope (0…1); nil when the producer does not feed it.
+    public var kick: Float?
 
-    public init(bands: UnsafeBufferPointer<Float>, onset: Float? = nil, beatConfidence: Double? = nil) {
+    public init(bands: UnsafeBufferPointer<Float>, onset: Float? = nil, beatConfidence: Double? = nil, kick: Float? = nil) {
         self.bands = bands
         self.onset = onset
         self.beatConfidence = beatConfidence
+        self.kick = kick
     }
 
     /// No audio: every feature reads 0.

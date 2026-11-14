@@ -48,6 +48,24 @@ final class AudioFeatureBindingAppTests: XCTestCase {
         XCTAssertEqual(host.glowModulationReadout, "unbound, manual 0.50, effective 0.50")
     }
 
+    /// ANL-007-T11: a Kick binding on the glow follows the kick envelope the frame loop passes in
+    /// (ANL-007-R11, R12).
+    func testKickBindsAndDrivesTheGlow() throws {
+        let host = try makeHost()
+        try host.bind(AudioFeatureBinding(source: .kick, target: VisualParameterIDs.bloomIntensity, outputStart: 0, outputEnd: 1))
+        XCTAssertEqual(host.bindings.map(\.source), [.kick])
+        let bands: [Float] = [0.1, 0.1, 0.1]
+        var time: UInt64 = 1_000_000
+        for envelope: Float in [1, 0.25] {
+            bands.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> Void in
+                host.applyModulation(bands: buffer, kick: envelope, timeNanoseconds: time)
+            }
+            time += 16_666_667
+            XCTAssertEqual(host.effectiveGlow.intensity, envelope)
+        }
+        XCTAssertEqual(host.glow.intensity, 0.5, "the manual intensity is unchanged")
+    }
+
     func testManualOnlyGlowSwitchCannotBeBoundAndAnOffGlowStaysOff() throws {
         let host = try makeHost(glowEnabled: false)
         XCTAssertThrowsError(try host.bind(AudioFeatureBinding(source: .band(0), target: VisualParameterIDs.bloomEnabled,

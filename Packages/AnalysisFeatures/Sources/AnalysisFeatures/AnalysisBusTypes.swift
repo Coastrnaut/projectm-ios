@@ -43,6 +43,9 @@ public enum AnalysisEventKind: Sendable, Hashable {
     case onset(strength: Float, threshold: Float)
     /// ANL-005 beat: tempo, period in samples and the estimate's confidence.
     case beat(bpm: Double, periodSamples: Double, confidence: Double)
+    /// ANL-007 band transient (today only `.kick`): the rise over the band's recent peak and the
+    /// threshold it crossed (dB), and the band level (dB re a full-scale sine in band).
+    case transient(band: TransientBand, strength: Float, threshold: Float, level: Float)
     case sessionStarted(AnalysisSessionChange)
     case sessionEnded(AnalysisSessionChange)
 }
@@ -53,8 +56,8 @@ public struct AnalysisEvent: Sendable, Hashable {
     public let id: UInt64
     /// When the event became known (the end of the window that produced it).
     public let time: AnalysisTimestamp
-    /// The event's own position on the session's sample clock: the onset's sample index, the
-    /// beat's predicted sample, or `time.sessionSample` for markers. At most `time.sessionSample`.
+    /// The event's own position on the session's sample clock: the onset's or transient's sample
+    /// index, the beat's predicted sample, or `time.sessionSample` for markers. At most `time.sessionSample`.
     public let eventSample: Int64
     public let kind: AnalysisEventKind
 
@@ -78,14 +81,18 @@ public struct AnalysisFrame: Sendable, Hashable {
     public let bpm: Double?
     /// ANL-005's confidence, 0…1 (0 without an estimate).
     public let beatConfidence: Double
+    /// ANL-007's kick envelope, 0…1: 1 on the frame of a kick, decaying with a 100 ms time constant.
+    public let kickEnvelope: Float
 
-    public init(id: UInt64, time: AnalysisTimestamp, bandCount: Int, onsetFlux: Float, bpm: Double?, beatConfidence: Double) {
+    public init(id: UInt64, time: AnalysisTimestamp, bandCount: Int, onsetFlux: Float, bpm: Double?, beatConfidence: Double,
+                kickEnvelope: Float = 0) {
         self.id = id
         self.time = time
         self.bandCount = bandCount
         self.onsetFlux = onsetFlux
         self.bpm = bpm
         self.beatConfidence = beatConfidence
+        self.kickEnvelope = kickEnvelope
     }
 }
 
@@ -94,7 +101,7 @@ public enum AnalysisBusError: Error, Equatable, Sendable {
     case invalidEventCapacity(Int)
     /// Already `AnalysisPipeline.maximumSubscribers` subscribers.
     case tooManySubscribers
-    /// The spectrum, onset and beat configurations disagree on the sample rate.
+    /// The spectrum, onset, beat and kick configurations disagree on the sample rate.
     case sampleRateMismatch
     /// The band floor must be finite and below 0 dB.
     case invalidBandFloor(Float)

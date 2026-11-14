@@ -13,13 +13,17 @@ public struct AnalysisPipelineConfiguration: Sendable, Hashable {
     public let bandFloorDecibels: Float
     public let onset: OnsetDetectorConfiguration
     public let beat: BeatTrackerConfiguration
+    /// ANL-007's kick detector.
+    public let kick: TransientDetectorConfiguration
 
     public init(spectrum: SpectrumConfiguration = AnalysisPipelineConfiguration.defaultSpectrum,
                 bandCount: BandCount = .b64,
                 bandFloorDecibels: Float = BandMath.defaultFloorDecibels,
                 onset: OnsetDetectorConfiguration = .standard,
-                beat: BeatTrackerConfiguration = .standard) throws(AnalysisBusError) {
-        guard spectrum.sampleRate == onset.sampleRate, spectrum.sampleRate == beat.sampleRate else {
+                beat: BeatTrackerConfiguration = .standard,
+                kick: TransientDetectorConfiguration = .kick) throws(AnalysisBusError) {
+        guard spectrum.sampleRate == onset.sampleRate, spectrum.sampleRate == beat.sampleRate,
+              spectrum.sampleRate == kick.sampleRate else {
             throw .sampleRateMismatch
         }
         guard bandFloorDecibels.isFinite, bandFloorDecibels < 0 else { throw .invalidBandFloor(bandFloorDecibels) }
@@ -28,5 +32,6 @@ public struct AnalysisPipelineConfiguration: Sendable, Hashable {
         self.bandFloorDecibels = bandFloorDecibels
         self.onset = onset
         self.beat = beat
+        self.kick = kick
     }
 }

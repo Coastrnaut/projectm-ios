@@ -26,6 +26,8 @@ public struct LiveBandFrameInfo: Sendable, Equatable {
     /// The frame's capture-session generation (ANL-016 `AnalysisTimestamp.session`); ANL-003's
     /// smoother restarts when it changes.
     public var session: UInt64 = 0
+    /// ANL-007's kick envelope (0…1) of the frame, for MOD-002's Kick source.
+    public var kickEnvelope: Float = 0
 }
 
 /// The frame loop's view of the analyzer's bus subscription.
@@ -39,7 +41,7 @@ public final class LiveBandOutput: Sendable {
     public func readLatest(into destination: UnsafeMutablePointer<Float>, capacity: Int) -> LiveBandFrameInfo? {
         guard let frame = subscription.latestFrame(into: destination, capacity: capacity) else { return nil }
         return LiveBandFrameInfo(count: min(frame.bandCount, max(capacity, 0)), timestampNanoseconds: frame.time.hostNanoseconds,
-                                 sequence: frame.id, session: frame.time.session)
+                                 sequence: frame.id, session: frame.time.session, kickEnvelope: frame.kickEnvelope)
     }
 }
 

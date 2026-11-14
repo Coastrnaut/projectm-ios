@@ -54,6 +54,23 @@ final class AudioFeatureModulatorTests: XCTestCase {
         XCTAssertFalse(modulator.hasBindings)
     }
 
+    // ANL-007-T09: a Kick binding follows the frame's kick envelope (ANL-007-R11).
+    func testKickBindingFollowsTheKickEnvelope() throws {
+        let registry = try Self.registry()
+        let store = ParameterStore(registry: registry)
+        let modulator = AudioFeatureModulator(registry: registry)
+        try modulator.bind(AudioFeatureBinding(source: .kick, target: Self.opacity, outputStart: 0, outputEnd: 1))
+        var time: UInt64 = 1_000
+        let bands: [Float] = [0]
+        for envelope: Float in [1, 0.5, 0] {
+            bands.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> Void in
+                modulator.advance(frame: AudioFeatureFrame(bands: buffer, kick: envelope), timeNanoseconds: time)
+            }
+            time += Self.frame
+            XCTAssertEqual(modulator.value(for: Self.opacity, in: store), .continuous(Double(envelope)))
+        }
+    }
+
     // (b) Exact endpoints and an inverted output range.
     func testEndpointsAreExactAndInputIsClamped() throws {
         let modulator = AudioFeatureModulator(registry: try Self.registry())
