@@ -31,6 +31,57 @@ The row's gap status is "Gap candidate". The audit confirms a full gap: no layer
 | Gradient masks (CMP-008, later) | Not started; depends on this row. | Leave room for more mask kinds. |
 | UI | No screen edits a layer's opacity, transform, blend, fit or mask; stacks come from code, scenes and show cues (CMP-006 confirmed). | None required. |
 
+## Clarifications
+
+### Session 2026-11-14
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the recommended, conservative option.
+
+- Q: In which space is a mask evaluated, and does it cut the fitted picture or the layer's
+  rectangle? → A: In **layer space**: the layer's own output-sized picture, before the CMP-005
+  transform, so the mask moves, scales and rotates with the layer (CMP-007-R6). For photo and
+  video, CMP-006 fits the content inside that picture, so the mask cuts the **layer rectangle**,
+  not the content rectangle: a centred circle stays centred on the layer whatever the content's
+  size or fit mode, and fit bars stay transparent (mask × transparent = transparent). Rejected:
+  output space (a mask that stays put while the layer moves is a different feature, a "window");
+  content space (the compositor does not know each layer's content placement, and it would make
+  masks behave differently per layer kind).
+- Q: In what units are shapes and the mask transform measured, so that a circle stays a circle?
+  → A: Shapes live in a local unit box (−0.5…0.5 on each axis). The mask transform places that box
+  on the layer: **centre** in layer fractions (default (0.5, 0.5); clamped −10…10), **scale** per
+  axis in units of the layer's **shorter side** (default (1, 1); clamped 0.01…20), **rotation** in
+  radians, positive clockwise on screen like CMP-005 (any finite value). Because both axes use the
+  shorter side and rotation is rigid in pixels, an ellipse with equal scales is a true circle on
+  any output aspect and stays round when the output turns landscape. Corner radius is a fraction of
+  the rectangle's shorter side (0…0.5; 0.5 gives a stadium), and polygon points are given in the
+  same local box (each coordinate clamped −10…10; the box is a reference, not a limit). Feather is
+  a fraction of the layer's shorter side (0…1); the edge band is feather plus one pixel, so even a
+  zero feather is anti-aliased. Rejected: per-axis layer fractions (a circle becomes an ellipse on
+  a non-square output and changes shape on rotation).
+- Q: What is the polygon point cap, the fill rule, and what happens to an unusable polygon?
+  → A: At most **32 points** (CMP-007-R8): one fixed-size shader parameter block (32 × 8 bytes),
+  enough for hand-drawn cut-outs. Fill rule **even-odd** (as SVG `evenodd`; a self-intersecting
+  star has a hole in the middle). A polygon with fewer than 3 points, more than 32 points or zero
+  area is **unusable**: the scene decoder **drops the whole mask** with a `droppedField` warning
+  that names the reason (SCN-012 lists it under "values adjusted"), and the live model refuses it
+  with a typed error. Truncating to 32 points was rejected: it would silently draw a different
+  shape. Drawing nothing was rejected: one bad value would hide a whole layer.
+- Q: How is a mask saved, and what does an unknown shape kind do? → A: As an optional
+  `composite.mask` object: `{"shape": "ellipse" | "rectangle" | "polygon", "cornerRadius" (rectangle),
+  "points": [{"x", "y"}…] (polygon), "feather", "inverted", "transform": {"center": {"x", "y"},
+  "scale": {"x", "y"}, "rotation"}}`, written only when set, every field written in full (so a
+  decode → encode is byte-identical); the format version stays 1, so QA-004's matrix gains no row.
+  Missing fields read defaults; out-of-range values are clamped with `valueClamped` (CMP-007-R11);
+  unknown keys of a known shape are dropped with `droppedField`. An **unknown shape kind** keeps the
+  whole mask object verbatim (decode, encode, load and capture), gives the new warning
+  `unsupportedMaskShape` (a note in SCN-012's repair report), and the layer is drawn **unmasked**,
+  as an unknown blend mode is drawn normal and an unknown fit as the default (CMP-007-R10).
+- Q: Is there a mask editor in the UI, and what does "GPU performance" cover? → A: No editor: no
+  screen edits a layer's composite settings today (CMP-006 confirmed); the inspector row that edits
+  a stack adds one. "GPU performance" is a Mac measurement of a masked full-screen layer per shape
+  (Release, GPU start/end times), recorded as not device evidence and never asserted (CMP-007-S5).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Mask a layer with a shape (Priority: P1) 🎯 MVP
@@ -79,7 +130,7 @@ non-normal blend mode, compared with the reference.
 2. **Given** a masked layer with the screen blend mode over a backdrop, **When** composited,
    **Then** the backdrop outside the shape is unchanged and inside matches the screen equation.
 3. **Given** a masked photo in fit mode, **When** composited, **Then** the mask cuts the layer's
-   picture as defined (see Clarifications) and fit bars stay transparent.
+   rectangle (not the fitted content rectangle) and fit bars stay transparent.
 4. **Given** a normal-mode masked layer, **When** composited, **Then** no extra render pass is
    added for it.
 
@@ -106,8 +157,8 @@ shape; compare bytes.
 3. **Given** a mask with an unknown shape kind, **When** loaded, **Then** the repair report lists
    it as a note, and capture writes it back verbatim.
 4. **Given** out-of-range values or an unusable polygon, **When** decoded, **Then** values are
-   clamped with a warning, and an unusable polygon is handled as decided (see Clarifications) with
-   a report entry.
+   clamped with a `valueClamped` warning, and a mask with an unusable polygon is dropped with a
+   `droppedField` warning naming the reason.
 5. **Given** a scene written before this feature, **When** decoded and encoded, **Then** the bytes
    are unchanged and the scene format version is unchanged.
 
@@ -117,7 +168,8 @@ shape; compare bytes.
 - A zero-width feather: the edge still gets a one-pixel anti-aliased band; beyond it alpha is 0.
 - A corner radius larger than half the rectangle's shorter side: limited to half (a stadium shape).
 - A polygon with fewer than three points, zero area, non-finite points or more points than the cap.
-- A self-intersecting polygon: filled by the even-odd rule (Clarifications).
+- A self-intersecting polygon: filled by the even-odd rule.
+- A fit (CMP-006) on a masked photo: the mask cuts the layer rectangle; bars stay transparent.
 - An inverted mask with a feather: the band is mirrored; deep inside the shape alpha is exactly 0.
 - An output size change (device rotation): the mask keeps its shape (a circle stays round) and its
   relative position.
@@ -138,17 +190,23 @@ shape; compare bytes.
   exactly as without a mask; coverage in the band MUST rise monotonically from 0 to 1.
 - **CMP-007-R5**: A plain reference calculation (no GPU, every platform) MUST give the coverage of
   any pixel for any mask, matching the GPU within a stated tolerance.
-- **CMP-007-R6**: The mask MUST be evaluated in the layer's own space, so it moves with the layer's
-  CMP-005 transform, and MUST work with every CMP-004 blend mode and CMP-003 opacity.
+- **CMP-007-R6**: The mask MUST be evaluated in the layer's own space (its output-sized picture,
+  before the CMP-005 transform), so it moves with the layer's transform and cuts the layer rectangle
+  of a CMP-006-fitted layer; it MUST work with every CMP-004 blend mode and CMP-003 opacity.
+- **CMP-007-R13**: Shape sizes MUST be measured in units of the layer's shorter side, so an ellipse
+  with equal scales is a circle on any output aspect; the mask transform's centre is in layer
+  fractions and its rotation is clockwise in radians, as CMP-005.
 - **CMP-007-R7**: Masking MUST NOT add a render pass for normal-mode layers, and layers without a
   mask MUST be drawn exactly as before (bit-identical; existing goldens unchanged).
-- **CMP-007-R8**: Polygons MUST be limited to a fixed maximum point count; unusable polygons MUST be
-  handled by a stated rule with a report entry.
+- **CMP-007-R8**: Polygons MUST have 3 to 32 points and non-zero area, filled by the even-odd rule;
+  the live model MUST refuse other polygons with a typed error, and the scene decoder MUST drop a
+  mask with such a polygon with a `droppedField` warning naming the reason.
 - **CMP-007-R9**: The scene format MUST store a layer's mask as an optional `composite.mask` value,
   written only when set, with the format version unchanged; scenes without it MUST encode
   byte-identically, and a mask MUST round-trip byte for byte.
 - **CMP-007-R10**: An unknown shape kind MUST be kept verbatim through decode, encode, load and
-  capture, warned about by validation and listed by SCN-012's repair report as a note.
+  capture, warned about by validation (`unsupportedMaskShape`), listed by SCN-012's repair report
+  as a note, and drawn unmasked.
 - **CMP-007-R11**: Out-of-range mask values MUST be clamped on decode with a `valueClamped` warning.
 - **CMP-007-R12**: A mask change applied to the stack MUST show from the next frame without
   re-creating the layer or its pictures.
