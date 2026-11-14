@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T07:40:50Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T07:45:44Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -93,7 +93,7 @@ The physical-device suite may **not** start:
 | FILE-001 | Portable scene archive | `c3886d1cb0bb` | `feature/file-001` |
 | FILE-002 | Archive manifest checksums | `77fcfa3f1e56` | `feature/file-002` |
 | FILE-003 | Import dry run | `5e7bcff1` | `feature/file-003` |
-| FILE-004 | Import conflict resolver | `e74970a76138` | `feature/file-004` |
+| FILE-004 | Import conflict resolver | `b211a998` | `feature/file-004` |
 | FILE-007 | Document schema validator | `d8e359893ae7` | `feature/file-007` |
 | FILE-009 | Storage usage explorer | `efddbc041837` | `feature/file-009` |
 | FILE-010 | Safe cache cleanup | `f65b410a8d7c` | `feature/file-010` |
@@ -743,6 +743,7 @@ None.
 - `swift test --package-path Packages/ImportFuzz`: pass at `e1b64695bdf4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-004/20261114T023954/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/PresetLibrary`: pass at `e1b64695bdf4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-004/20261114T023954/swift-test_PresetLibrary.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `e1b64695bdf4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-004/20261114T023954/swift-test_ShowControl.log`)
+- `post-merge (FILE-004 + UI test budget pass 2): projectM-iOSTests 502 + PresetArchiveConflict/PresetArchiveImport/SessionRecovery/Settings UI tests 9`: pass at `b211a998` (log `.autonomous/logs/integration/file-004-budget2/app-tests.log`)
 
 ### FILE-007 Document schema validator (integrated)
 - `python3 scripts/check_compliance.py`: pass at `d9f90f1e1d0f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-007/20261113T163821/compliance.log`)

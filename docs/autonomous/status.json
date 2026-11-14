@@ -1139,7 +1139,7 @@
    "branch": "feature/file-004",
    "branch_sha": "e1b64695bdf403f26d72e5da89e77228e3e08c19",
    "error_category": null,
-   "integrated_sha": "e74970a76138246a923149edb2e6876e5d9ac4f6",
+   "integrated_sha": "b211a998",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
@@ -3814,7 +3814,7 @@
   {
    "branch": "feature/file-004",
    "id": "FILE-004",
-   "sha": "e74970a76138246a923149edb2e6876e5d9ac4f6"
+   "sha": "b211a998"
   },
   {
    "branch": "feature/file-007",
@@ -4147,5 +4147,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T07:40:50Z"
+ "updated": "2026-11-14T07:45:44Z"
 }
