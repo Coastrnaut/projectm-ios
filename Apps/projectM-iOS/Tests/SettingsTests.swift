@@ -66,6 +66,7 @@ final class SettingsTests: XCTestCase {
         settings.mandalaMirror = true
         settings.mandalaPetal = .spike
         settings.particleGravity = .low        // VIS-008-R10
+        settings.particleOrbitRadius = .large  // VIS-009-R10
         settings.spectrumAttackMilliseconds = 25    // ANL-003-R6
         settings.spectrumReleaseMilliseconds = 250
         settings.oscEnabled = true             // OSC-001-R15
@@ -140,7 +141,7 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(bad.linearSpectrumSpacing, 0.2, "unknown → Narrow")
         XCTAssertTrue(AppSettings.allKeys.contains("settings.linearSpectrum.orientation"))
         XCTAssertTrue(AppSettings.allKeys.contains("settings.linearSpectrum.spacing"))
-        XCTAssertEqual(VisualChoice.allCases.filter(\.isNative), [.circularSpectrum, .linearSpectrum, .oscilloscope, .lissajous, .radialWaveform, .beatRings, .mandala, .particleFountain])   // VIS-003, VIS-004, VIS-005, VIS-006, VIS-007, VIS-008
+        XCTAssertEqual(VisualChoice.allCases.filter(\.isNative), [.circularSpectrum, .linearSpectrum, .oscilloscope, .lissajous, .radialWaveform, .beatRings, .mandala, .particleFountain, .particleOrbit])   // VIS-003, VIS-004, VIS-005, VIS-006, VIS-007, VIS-008, VIS-009
         XCTAssertEqual(VisualChoice.linearSpectrum.title, "Linear Spectrum")
     }
 

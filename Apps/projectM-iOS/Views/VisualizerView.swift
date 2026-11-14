@@ -536,6 +536,7 @@ struct VisualizerView: View {
         .onChange(of: coordinator.settings.mandalaMirror) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.mandalaPetal) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.particleGravity) { coordinator.visualSettingsChanged() }   // VIS-008
+        .onChange(of: coordinator.settings.particleOrbitRadius) { coordinator.visualSettingsChanged() }   // VIS-009
         .onChange(of: coordinator.settings.spectrumSmoothing) { coordinator.visualSettingsChanged() }   // ANL-003
     }
 
