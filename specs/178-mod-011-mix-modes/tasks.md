@@ -7,21 +7,21 @@ Linux shape). Budgets (owner rule 7): unit test ≤ 10 s, package suite < 1 min.
 
 ## Phase 1: Foundational (order)
 
-- [ ] MOD-011-T01 Add `ModulationMixOrder` (one step: mix, non-finite → running, clamp; integer finish) in
-  `Packages/ParameterGraph/Sources/ParameterGraph/ModulationMixOrder.swift` with the contract O1 comment block
-- [ ] MOD-011-T02 Layers in `AudioFeatureModulator` (`maximumBindingsPerTarget`, `addLayer`, `bindings(for:)`,
+- [X] MOD-011-T01 Add `ModulationMixOrder` (one step: mix, non-finite → running, clamp; integer finish) in
+  `Packages/ParameterGraph/Sources/ParameterGraph/ModulationMixOrder.swift` with the contract O1 comment block — Verified 2026-11-14: `swift test --package-path Packages/ParameterGraph` ParameterGraphTests 137 + 45 tests, 0 failures, 0.45 s; ModulationMixOrderTests 6 pass
+- [X] MOD-011-T02 Layers in `AudioFeatureModulator` (`maximumBindingsPerTarget`, `addLayer`, `bindings(for:)`,
   `layerCount(for:)`, `setEnvelope(_:for:layer:)`, `bind` replaces all layers, `unbind` removes all, fold in
-  `value(for:manual:)`) and `AudioFeatureBindingError.tooManyLayers` in `AudioFeatureBinding.swift`
+  `value(for:manual:)`) and `AudioFeatureBindingError.tooManyLayers` in `AudioFeatureBinding.swift` — Verified 2026-11-14: `swift test --package-path Packages/ParameterGraph` ParameterGraphTests 137 + 45 tests, 0 failures, 0.45 s; ModulationMixOrderTests 6 pass (existing MOD-002 to MOD-014 tests unchanged)
 
 ## Phase 2: User Stories 1 and 2 — documented order, single bindings unchanged (P1)
 
-- [ ] MOD-011-T03 [US1] Acceptance table in
+- [X] MOD-011-T03 [US1] Acceptance table in
   `Packages/ParameterGraph/Tests/ParameterGraphTests/ModulationMixOrderTests.swift`: manual + audio replace +
   LFO add + audio multiply in two list orders, intermediate clamps at both bounds, integer rounding once at
-  the end, exact values (1e-12); limits and `bind`/`unbind` layer semantics
-- [ ] MOD-011-T04 [US2] Bit-identity grid (≥ 500 cases: modes × manual × signals × curves × ranges, continuous
+  the end, exact values (1e-12); limits and `bind`/`unbind` layer semantics — Verified 2026-11-14: `testDocumentedOrderTable` (9 rows), `testIntegerRoundsOnceAtTheEnd`, `testPureFoldMatchesTheContract`, `testLayerLimitsBindAndUnbind` pass
+- [X] MOD-011-T04 [US2] Bit-identity grid (≥ 500 cases: modes × manual × signals × curves × ranges, continuous
   and integer) against the MOD-002 formula, and determinism (two fresh modulators, same frames → same bits),
-  in the same file
+  in the same file — Verified 2026-11-14: `testSingleBindingIsBitIdenticalToMOD002` (540 continuous bit patterns + 60 integer cases), `testDeterminism` (120 frames, 3 layers with an envelope) pass
 - [ ] MOD-011-T05 [US1] `GlowModulationOrder.resolve(base:modulator:clamp:)` in
   `Packages/VisualGenerators/Sources/VisualParameters/GlowModulationOrder.swift` (+ FlashSafety dependency) and
   `Packages/VisualGenerators/Tests/VisualGeneratorsTests/GlowModulationOrderTests.swift`: two layers on the glow
