@@ -42,6 +42,8 @@ public protocol TextureGenerator: AnyObject {
     /// Encodes one frame covering all of `target` (cleared to the background first) into
     /// `commandBuffer`, which the caller commits. Returns false, encoding nothing, when the frame
     /// was skipped: the target's pixel format differs, or no vertex buffer is free yet.
+    /// `bands` is the visual's input vector: normalized bands for the spectra, the mono sample
+    /// history (oldest first) for the oscilloscope (VIS-003).
     func encode(into target: MTLTexture, commandBuffer: MTLCommandBuffer,
                 bands: UnsafeBufferPointer<Float>, context: VisualFrameContext) -> Bool
 }
