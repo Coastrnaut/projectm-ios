@@ -24,7 +24,7 @@ Simulator results are never device evidence.
 
 - [ ] CAM-006-T05 [US1] Stand-in: `FakeCameraInput` carries its camera's `FakeCameraWhiteBalanceDevice` (one per camera, kept by `FakeCameraCaptureSession`, `whiteBalanceLockCameras`) in `Packages/Compositor/Sources/CameraLayer/CameraInputSwitch.swift`; `StubCameraFrameProvider` implements `whiteBalance`/`setWhiteBalanceLocked` through `CameraWhiteBalanceControl` in `Packages/Compositor/Sources/CameraLayer/StubCameraFrameProvider.swift`
 - [ ] CAM-006-T06 [US1] Real camera: `AVCameraFrameProvider` runs `CameraWhiteBalanceControl` on its session queue and reads the state back with the exposure (generation-checked) in `Packages/Compositor/Sources/CameraLayer/AVCameraFrameProvider.swift`; capability read from the chosen camera without starting it
-- [ ] CAM-006-T07 [US1] Package tests in `Packages/Compositor/Tests/CompositorTests/CameraWhiteBalanceTests.swift`: lock → locked and unlock → continuous inside one configuration each; 0 changes outside a configuration (R4); refused configuration unchanged (R6); gains fuzz (below 1, above maximum, NaN, infinity, bad maximum) → clamped or refused, `invalidGainsApplied` 0 (R5, S2); lock in place without custom gains; stand-in provider lock/unlock read back, `startCount` unchanged (R11)
+- [ ] CAM-006-T07 [US1] Package tests in `Packages/Compositor/Tests/CompositorTests/CameraWhiteBalanceTests.swift`: lock → locked and unlock → continuous inside one configuration each; 0 changes outside a configuration (R4); refused configuration unchanged (R6); gains fuzz (below 1, above maximum, NaN, infinity, bad maximum) → clamped or refused, `invalidGainsApplied` 0 (R5, S2); lock in place without custom gains; a camera without continuous mode keeps the reported mode on release (Edge Cases); stand-in provider lock/unlock read back, `startCount` unchanged (R11)
 
 ## Phase 4: User Story 2 - The lock lasts for the session, and only for it (P1)
 
@@ -41,7 +41,7 @@ Simulator results are never device evidence.
 
 - [ ] CAM-006-T10 [US3] `Apps/projectM-iOS/Views/CameraWhiteBalanceRow.swift` (row, notes, coordinator extension, contract C4); `Apps/projectM-iOS/Visuals/CameraVisualHost.swift` (forwarding, `-uitestCameraWhiteBalanceLock <list|none>`); `Apps/projectM-iOS/Coordinators/AppCoordinator.swift` (observed `cameraWhiteBalance`, reset on release); `Apps/projectM-iOS/Views/SettingsView.swift` (row after Lock exposure, footer sentence); `Apps/projectM-iOS/Views/VisualizerView.swift` (passes the choice) (R1, R2, R3, R13)
 - [ ] CAM-006-T11 [P] [US3] App tests in `Apps/projectM-iOS/Tests/CameraWhiteBalanceAppTests.swift`: notes per state, nothing stored (R10), host lock/release/stop with the stand-in, unsupported never configured
-- [ ] CAM-006-T12 [P] [US3] UI tests in `Apps/projectM-iOS/UITests/CameraWhiteBalanceUITests.swift`: supported lock/unlock read back without a restart; unsupported disabled with the note
+- [ ] CAM-006-T12 [P] [US3] UI tests in `Apps/projectM-iOS/UITests/CameraWhiteBalanceUITests.swift`: supported lock/unlock read back without a restart; unsupported disabled with the note; the switch's label is "Lock white balance" (R13)
 
 ## Phase 6: Polish
 
