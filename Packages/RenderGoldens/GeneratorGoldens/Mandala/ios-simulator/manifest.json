@@ -1,0 +1,28 @@
+{
+  "entries" : [
+    {
+      "file" : "mandala-six-128x96-f0.png",
+      "fileSHA256" : "ec740c2db77cb56bfb49f1a10d495864c097dd2cd43c0eb21bf7577f4b2fd67f",
+      "frame" : 0,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "33a47b5b6c4c2b1d2f7ab013cbced4cc42c5d3b62e003e72e8e0997e93bb7ff2",
+      "scene" : "mandala-six",
+      "width" : 128
+    },
+    {
+      "file" : "mandala-six-256x192-f0.png",
+      "fileSHA256" : "d8b72c207e91e5b29ffe8b29db17f72d82711e19f1862e0cc7b9a6f535e88850",
+      "frame" : 0,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "fbc3bad1ad007ac0c03af5237e99af2f72d4e6092c5234696ed30eb0d622fd33",
+      "scene" : "mandala-six",
+      "width" : 256
+    }
+  ],
+  "formatVersion" : 1,
+  "platform" : "ios-simulator",
+  "recordedGPU" : "Apple iOS simulator GPU",
+  "recordedOS" : "27.2"
+}
