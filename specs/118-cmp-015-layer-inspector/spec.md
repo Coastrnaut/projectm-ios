@@ -33,6 +33,48 @@ This is the first screen that edits a layer stack. Earlier rows built the engine
 | Help text | Footers written inline per Settings section. | One table for the inspector's parameters. |
 | ACC-005 slider helper | Not in this base (running in parallel). | Use the same adjustable-action pattern; note it for ACC-005. |
 
+## Clarifications
+
+### Session 2026-11-14
+
+Answered by Claude under the owner's standing approval (owner rules 4 and 9: best judgement, no
+human interaction); each answer is the recommended, conservative option.
+
+- Q: Which layers does the inspector show and edit? → A: **The current scene's layers, exactly as the
+  autosave would save them** (the visual's fixed layers plus carried layers, in stack order, top
+  first), and its groups when present. Only layers the shown compositor visual draws are editable:
+  photo, video, text and the circular spectrum in the Photo, Video and Text scenes. Carried layers
+  (materials, generator graphs, unknown kinds) and the single layer of the Circular and Linear
+  Spectrum scenes (drawn without the compositor) are shown read-only with the reason. Rationale: an
+  edit must be visible and saved; editing a value that never draws would mislead. Rejected: a
+  free-form stack editor (add, remove, reorder: no host can draw arbitrary stacks yet); hiding
+  undrawn layers (the scene would look smaller than the file).
+- Q: Where do layer edits live so that undo and the autosave see them? → A: **In the scene inputs**,
+  as one saved composite per drawn layer kind (opacity, blend name, transform, fit, mask). The
+  autosave writes it into the document's layer composite; launch restore and Reopen read it back;
+  the scene history records it like any other input (per-control coalescing keys
+  `layer.<kind>.<parameter>`); Undo applies it through the same path. Rationale: SCN-010's history
+  snapshots the scene inputs, so this gives exact undo and saving with no second history. Rejected:
+  a separate undo stack for the inspector (two histories would disagree under Cmd-Z).
+- Q: How is an edit shown on screen? → A: **Through the compositor's stack apply on the shown
+  host**: the host's applied stack is copied with the new composite settings per kind and applied
+  (kept layers keep their objects and cached pictures, CMP-013; an opacity change is immediate).
+  Hosts created later apply the current composites when made. Rationale: the one supported live
+  path; no re-render for placement.
+- Q: Which controls does a layer offer? → A: Opacity (0-100 %); blend mode (the six modes, picker);
+  position X and Y (−1…1 of the output), uniform scale (0.1…4) and rotation (−180°…180°); fit mode
+  and fit anchor X and Y (photo and video only); mask shape (None, Ellipse, Rectangle; an existing
+  polygon is kept and shown), mask size (0.1…2), corner radius (rectangle), feather (0…0.5) and
+  invert; group membership (read-only); the layer's own MOD-001 values the app holds (read-only,
+  "change in Settings"). A Reset Layer button returns the layer's composite to the default as one
+  undo step. Rationale: the basic, safe ranges of each CMP row; the full ranges stay available to
+  scene files.
+- Q: How do solo and mute behave in the inspector? → A: **Transient, per drawn layer kind, for the
+  shown visual only**: never in the scene inputs, the document or the history; cleared when the
+  visual changes or the inspector's scene changes; announced through the shared announcer ("Photo
+  soloed"). Groups (none in live scenes) get the same buttons when present. Rationale: CMP-012's
+  non-destructive contract.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Inspect the current scene's layers (Priority: P1) 🎯 MVP
