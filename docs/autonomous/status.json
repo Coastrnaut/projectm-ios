@@ -12,8 +12,9 @@
   },
   "P1": {
    "audited": 106,
-   "implementing": 3,
-   "integrated": 42
+   "implementing": 2,
+   "integrated": 42,
+   "unit_passed": 1
   },
   "P2": {
    "audited": 77,
@@ -25,9 +26,10 @@
  },
  "by_state": {
   "audited": 194,
-  "implementing": 3,
+  "implementing": 2,
   "integrated": 128,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -1172,12 +1174,12 @@
   "FILE-008": {
    "attempts": 0,
    "branch": "feature/file-008",
-   "branch_sha": null,
+   "branch_sha": "8439421691423311fbb048e5962694773433bea6",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "FILE-009": {
    "attempts": 0,
@@ -4167,5 +4169,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T08:59:48Z"
+ "updated": "2026-11-14T09:25:21Z"
 }
