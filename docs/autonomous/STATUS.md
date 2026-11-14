@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T12:05:21Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T12:05:34Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,8 +11,8 @@
 |---|---|
 | audited | 174 |
 | implementing | 5 |
-| unit_passed | 5 |
-| integrated | 141 |
+| unit_passed | 4 |
+| integrated | 142 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -20,14 +20,14 @@
 | Priority | audited | implementing | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 89 | 3 | 4 | 55 | 0 |
+| P1 | 89 | 3 | 3 | 56 | 0 |
 | P2 | 74 | 2 | 1 | 2 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 184 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)
+- 183 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)
 
 ## Integrated
 
@@ -142,6 +142,7 @@ The physical-device suite may **not** start:
 | PERF-010 | Crash-safe session recovery | `7d64b6b027da` | `feature/perf-010` |
 | PERF-011 | Background resource release | `6d669fcb8576` | `feature/perf-011` |
 | PERF-014 | Render failure fallback | `76a8cbf21e15` | `feature/perf-014` |
+| PRE-001 | Visual thumbnail cache | `5445bfb5211c` | `feature/pre-001` |
 | PRE-007 | Preset collections | `e834535cb98b` | `feature/pre-007` |
 | PRE-012 | Preset import validation | `4bf9f50d1af8` | `feature/pre-012` |
 | PRE-014 | Bulk preset export | `a20ba4bafb5e` | `feature/pre-014` |
@@ -1264,7 +1265,7 @@ None.
 - `swift test --package-path Packages/Diagnostics`: pass at `ab7e0c1b4872` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-014/20261113T151631/swift-test_Diagnostics.log`)
 - `post-merge: projectM-iOSTests 252 incl. RenderFaultAppTests; RenderFaultUITests 2, VideoRecording 2, Camera 2 UI tests; Compositor scheme 374 test cases pass on iPhone 17 iOS 27.2 sim; GlowUITests 2 pass twice after the shared reveal fix`: pass at `76a8cbf21e15` (log `.autonomous/logs/integration/perf-014/app-tests.log`)
 
-### PRE-001 Visual thumbnail cache (unit_passed)
+### PRE-001 Visual thumbnail cache (integrated)
 - `python3 scripts/check_compliance.py`: pass at `66ed38a3757d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-001/20261114T065814/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `66ed38a3757d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-001/20261114T065814/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `66ed38a3757d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-001/20261114T065814/sim-test_ANGLERendering.log`)
