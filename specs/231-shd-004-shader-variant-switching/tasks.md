@@ -46,8 +46,8 @@
 
 ## Phase 7: Polish
 
-- [ ] SHD-004-T18 Linux shape build of Compositor and SceneFormat with the CI `-D*_NO_*` flags; type-check budget build of the app
-- [ ] SHD-004-T19 `MaterialSourceSafetyTests` still pass (SHD-004-R9: one library, from the module constant); repo checks (`check_compliance`, `validate_docs`, `check_motion_policy`, `check_permission_catalog`, `check_status_events`, `test_scripts`), privacy manifest and network symbols on the Debug app; PosterBoard counts; delete simulator and derived data
+- [X] SHD-004-T18 Linux shape build of Compositor and SceneFormat with the CI `-D*_NO_*` flags; type-check budget build of the app — Verified 2026-11-14: Compositor and SceneFormat build and their variant tests pass with `-DCOMPOSITOR_NO_METAL -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE`; app build with the type-check flags shows no warnings in touched files; host suites: Compositor 0 failures in 40 s, SceneFormat 181 in 2.8 s, RenderGoldens 86 (1 skipped) in 10.6 s
+- [X] SHD-004-T19 `MaterialSourceSafetyTests` still pass (SHD-004-R9: one library, from the module constant); repo checks (`check_compliance`, `validate_docs`, `check_motion_policy`, `check_permission_catalog`, `check_status_events`, `test_scripts`), privacy manifest and network symbols on the Debug app; PosterBoard counts; delete simulator and derived data — Verified 2026-11-14: `MaterialSourceSafetyTests` pass; all six repo checks pass; `check_privacy_manifest` and `check_network_symbols` OK on the Debug app; PosterBoard reports 26 before and 26 after; simulator and derived data deleted
 - [ ] SHD-004-T20 {device} On D3 (iPad A16, family 8) a Plasma layer with Detailed reports the unsupported notice and draws Standard; on D2 (M5) Detailed draws (Debug build; GPU test bundle on device)
 
 ## Dependencies

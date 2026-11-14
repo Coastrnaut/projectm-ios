@@ -2,7 +2,7 @@
 
 **Feature Branch**: `feature/shd-004` (spec directory `231-shd-004-shader-variant-switching`)
 **Created**: 2026-11-14
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (SHD-004-T01-T19 verified on the Mac: host GPU, Linux shape, iOS 27.2 simulator; device task T20 `{device}` open)
 **Input**: User description: "Implement SHD-004 (Shader variant switching) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Select among precompiled visual shader
 variants at runtime." Acceptance, verbatim: "Switching preserves scene and falls back on unsupported GPU."
