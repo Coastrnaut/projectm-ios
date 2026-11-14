@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (QA-008-T01-T08, T11, T12 verified on the macOS host and the QA8 iOS 27.2 simulator; T09 Linux shape pending CI; T10 `{device}` open)
 
 **Input**: User description: "Implement QA-008 (Recording validation suite) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Decode exported fixtures and check

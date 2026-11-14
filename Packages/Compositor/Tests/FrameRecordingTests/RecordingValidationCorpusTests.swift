@@ -124,9 +124,17 @@ final class RecordingValidationCorpusTests: XCTestCase {
 
     func testWrongCodecFails() async throws {
         let times = (0..<30).map { (k: Int) -> CMTime in CMTime(value: Int64(k) * 20, timescale: 600) }
-        let raw = Fixture.RawSpec(codec: .jpeg, times: times, end: CMTime(value: 600, timescale: 600))
-        let report = await check(try await Fixture.writeRaw(raw, url: url("jpeg")), videoOnly, expect: [.codecNotAllowed])
-        XCTAssertEqual(report.measurement?.codec, "jpeg")
+        if Fixture.canWrite(.jpeg, fileType: .mp4) {
+            let raw = Fixture.RawSpec(codec: .jpeg, times: times, end: CMTime(value: 600, timescale: 600))
+            let report = await check(try await Fixture.writeRaw(raw, url: url("jpeg")), videoOnly, expect: [.codecNotAllowed])
+            XCTAssertEqual(report.measurement?.codec, "jpeg")
+        } else {
+            // The iOS simulator has no Motion JPEG encoder: an H.264 file against an HEVC-only allow-list instead.
+            let raw = Fixture.RawSpec(codec: .h264, times: times, end: CMTime(value: 600, timescale: 600))
+            let hevcOnly = RecordingExpectation(allowedCodecs: ["hvc1"], durationSeconds: 1.0)
+            let report = await check(try await Fixture.writeRaw(raw, url: url("h264")), hevcOnly, expect: [.codecNotAllowed])
+            XCTAssertEqual(report.measurement?.codec, "avc1")
+        }
     }
 
     func testLocationMetadataFails() async throws {

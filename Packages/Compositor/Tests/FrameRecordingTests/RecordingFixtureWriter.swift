@@ -165,6 +165,22 @@ enum RecordingFixtureWriter {
         return url
     }
 
+    /// True when this platform can encode `codec` into `fileType` (the iOS simulator has no Motion JPEG encoder).
+    static func canWrite(_ codec: AVVideoCodecType, fileType: AVFileType) -> Bool {
+        let probe = temporaryURL("probe")
+        defer { try? FileManager.default.removeItem(at: probe) }
+        // `canApply` says yes on the simulator; only starting the writer finds the missing encoder.
+        guard let writer = try? AVAssetWriter(outputURL: probe, fileType: fileType) else { return false }
+        let settings: [String: Any] = [AVVideoCodecKey: codec, AVVideoWidthKey: width, AVVideoHeightKey: height]
+        guard writer.canApply(outputSettings: settings, forMediaType: .video) else { return false }
+        let input = AVAssetWriterInput(mediaType: .video, outputSettings: settings)
+        guard writer.canAdd(input) else { return false }
+        writer.add(input)
+        let started = writer.startWriting()
+        if started { writer.cancelWriting() }
+        return started
+    }
+
     /// A QuickTime location item (personal metadata).
     static func locationItem() -> AVMetadataItem {
         let item = AVMutableMetadataItem()
