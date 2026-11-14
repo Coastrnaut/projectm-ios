@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T17:33:39Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T17:34:57Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 124 |
 | implementing | 7 |
-| unit_passed | 1 |
-| integrated | 193 |
+| integrated | 194 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 42 | 6 | 1 | 102 | 0 |
-| P2 | 71 | 1 | 0 | 7 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 2 | 0 | 84 | 1 |
+| P1 | 42 | 6 | 103 | 0 |
+| P2 | 71 | 1 | 7 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 132 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-012, ANL-013)
+- 131 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-012, ANL-013)
 
 ## Integrated
 
@@ -140,6 +139,7 @@ The physical-device suite may **not** start:
 | MIDI-008 | MIDI transport mapping | `265ddd1401f9` | `feature/midi-008` |
 | MIDI-011 | MIDI hot-plug recovery | `2a986abd` | `None` |
 | MIDI-012 | MIDI mapping profiles | `93aae150` | `feature/midi-012` |
+| MIDI-013 | MIDI panic | `8d194e2742f8` | `feature/midi-013` |
 | MOD-001 | Typed parameter registry | `304f3bce431a` | `feature/mod-001` |
 | MOD-002 | Audio feature binding | `006678f3d7a5` | `feature/mod-002` |
 | MOD-003 | Linear mapping | `29cd3bbb1e12` | `feature/mod-003` |
@@ -165,7 +165,7 @@ The physical-device suite may **not** start:
 | PERF-002 | GPU budget meter | `0c570bb94ccc` | `None` |
 | PERF-003 | Adaptive effect quality | `53c913bd` | `feature/perf-003` |
 | PERF-004 | Texture pool | `ea0ee43e0f04` | `feature/perf-004` |
-| PERF-005 | Preset prewarm scheduler | `0c755b4a5eb2` | `feature/perf-005` |
+| PERF-005 | Preset prewarm scheduler | `0c755b4a` | `feature/perf-005` |
 | PERF-006 | Memory warning recovery | `b4281645619e` | `feature/perf-006` |
 | PERF-010 | Crash-safe session recovery | `7d64b6b027da` | `feature/perf-010` |
 | PERF-011 | Background resource release | `6d669fcb8576` | `feature/perf-011` |
@@ -1341,7 +1341,7 @@ None.
 - `swift test --package-path Packages/PerformanceControl`: pass at `a32a7b7b6e2c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-012/20261114T115114/swift-test_PerformanceControl.log`)
 - `post-merge: projectM-iOSTests 838 + UI 7 (bulk import, archive import, user presets (flaky Done tap rerun green, hardened), MIDI profiles, learn)`: pass at `93aae150` (log `.autonomous/logs/integration/batch30/app-tests.log`)
 
-### MIDI-013 MIDI panic (unit_passed)
+### MIDI-013 MIDI panic (integrated)
 - `python3 scripts/check_compliance.py`: pass at `7e71fafba78a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-013/20261114T123209/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `7e71fafba78a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-013/20261114T123209/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `7e71fafba78a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-013/20261114T123209/script-tests.log`)
@@ -1656,6 +1656,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `71deab68b60f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-005/20261114T122523/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `71deab68b60f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-005/20261114T122523/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `71deab68b60f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-005/20261114T122523/swift-test_ShowControl.log`)
+- `post-merge: projectM-iOSTests 852/854 (2 failures in REC-008 RecordingTimedStopAppTests: real-time frame count under load, unrelated; fix in fix/ci-soak-quality) + UI 9 pass (show cues, photo, slideshow, preset library)`: pass at `0c755b4a` (log `.autonomous/logs/integration/batch35/app-tests.log`)
 
 ### PERF-006 Memory warning recovery (integrated)
 - `python3 scripts/check_compliance.py`: pass at `fd72d08eab5d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-006/20261113T143303/compliance.log`)

@@ -13,8 +13,7 @@
   "P1": {
    "audited": 42,
    "implementing": 6,
-   "integrated": 102,
-   "unit_passed": 1
+   "integrated": 103
   },
   "P2": {
    "audited": 71,
@@ -28,9 +27,8 @@
  "by_state": {
   "audited": 124,
   "implementing": 7,
-  "integrated": 193,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "integrated": 194,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -76,7 +74,6 @@
    "MIDI-005",
    "MIDI-009",
    "MIDI-010",
-   "MIDI-013",
    "MOD-008",
    "MOD-012",
    "MOD-015",
@@ -173,7 +170,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "132 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-012, ANL-013)"
+   "131 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-012, ANL-013)"
   ]
  },
  "features": {
@@ -1632,10 +1629,10 @@
    "branch": "feature/midi-013",
    "branch_sha": "7e71fafba78a7f28debf64f0f744b2bb36255430",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "8d194e2742f8cdb789f756929f946d6402ea7f4a",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "MOD-001": {
    "attempts": 0,
@@ -2112,7 +2109,7 @@
    "branch": "feature/perf-005",
    "branch_sha": "71deab68b60f4d42b0fd6cccf97cb6c8cad7867c",
    "error_category": null,
-   "integrated_sha": "0c755b4a5eb2e9a94252f8df2f60a425e315796f",
+   "integrated_sha": "0c755b4a",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
@@ -3975,6 +3972,11 @@
    "sha": "93aae150"
   },
   {
+   "branch": "feature/midi-013",
+   "id": "MIDI-013",
+   "sha": "8d194e2742f8cdb789f756929f946d6402ea7f4a"
+  },
+  {
    "branch": "feature/mod-001",
    "id": "MOD-001",
    "sha": "304f3bce431a7f6f0a1719bdced6b55b910c9668"
@@ -4102,7 +4104,7 @@
   {
    "branch": "feature/perf-005",
    "id": "PERF-005",
-   "sha": "0c755b4a5eb2e9a94252f8df2f60a425e315796f"
+   "sha": "0c755b4a"
   },
   {
    "branch": "feature/perf-006",
@@ -4430,5 +4432,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T17:33:39Z"
+ "updated": "2026-11-14T17:34:57Z"
 }
