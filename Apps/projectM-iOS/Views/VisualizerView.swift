@@ -153,6 +153,7 @@ struct VisualizerView: View {
     @ViewBuilder private var topStatus: some View {
         OSCListenerBadge(osc: coordinator.osc) { () -> Void in coordinator.statusEvents.post(StatusEventCatalog.osc(port: nil)) }
         SceneLockBadge(lock: coordinator.settings.sceneLock)   // SCN-015-R7: never hidden with the controls
+        SceneCompareBar(compare: coordinator.sceneCompare)   // SCN-009-R7: never hidden with the controls
         // PERF-010-R4: the recovery offer after an abnormal exit (non-blocking).
         SessionRecoveryOfferCard(recovery: coordinator.recovery, onReopen: { () -> Void in coordinator.reopenLastScene() },
                                  onStartFresh: { () -> Void in coordinator.startFresh() },
