@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Clarified
 
 **Input**: User description: "Implement UIX-009 (Parameter search) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Search editable parameters by name, group and unit." Acceptance, verbatim:
@@ -37,6 +37,16 @@ interaction); each answer is the conservative, local-first option.
 - Q: In what order are results listed? → A: Name starts with the word first, then name contains the word, then group, then unit; ties keep the catalog's order.
 - Q: Where is the search? → A: A "Search Parameters" row in Settings next to Modulation, opening a searchable list. Choosing a result opens that parameter's UIX-003 inspector over Settings.
 - Q: Does choosing a parameter of another layer change the visual? → A: No. The inspector is addressed by ID and works for every catalog parameter, so nothing on screen changes; a row says when its parameter belongs to the visual on screen.
+
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Does the group's internal name count as the group (e.g. "bloom" for Glow, whose ID is `effect.bloom`)? → A: Yes. The group match covers the group's display name and its stable ID, so a name someone saw in a scene file or the modulation matrix also finds it; it ranks as a group match.
+- Q: Do a parameter's choices ("Vertical", "Horizontal") or values match? → A: No. Only name, group and unit are searched (the roadmap row); choices would make "vertical" find a parameter whose name does not say so, and values change while the visual plays.
+- Q: How are matches inside a word treated? → A: A word matches the name or group when the folded text contains it anywhere; it is a name-prefix match when the name starts with it. Units match only when a unit term starts with the word, so "s" finds seconds but not every name containing "s".
+- Q: Is the query kept between visits? → A: No. The search starts empty each time it opens; nothing is saved, so no setting, backup or erase category changes.
+- Q: What does an empty query show? → A: Every parameter, grouped under its group's name in catalog order, so the screen doubles as an index; a non-empty query shows one ranked list.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -80,7 +90,7 @@ parameter), choose the result, and the inspector for `visual.linearSpectrum.orie
 ### Functional Requirements
 
 - **UIX-009-R1**: The search MUST consider every parameter of the MOD-001 visual catalog and MUST NOT depend on the visual, layer or group currently selected.
-- **UIX-009-R2**: A query is split into words; a parameter matches when every word matches its display name, group name or unit, ignoring case and diacritics.
+- **UIX-009-R2**: A query is split into words; a parameter matches when every word matches its display name (substring), group display name or group ID (substring), or a unit term (prefix), ignoring case and diacritics. Enum choices and values are not searched.
 - **UIX-009-R3**: Units MUST be searchable by name and symbol: percent ("%", "percent"), seconds ("s", "sec", "seconds", "ms"), per second ("/s", "per second", "Hz", "rate"), degrees ("°", "deg", "degrees"), count ("count", "number").
 - **UIX-009-R4**: Results MUST be ranked name-prefix > name-substring > group > unit, ties in catalog order, and returned as parameter IDs.
 - **UIX-009-R5**: Settings MUST offer "Search Parameters", a searchable list whose rows show name, group and current value (or "Read only" without a Settings control) and mark parameters of the visual on screen.
