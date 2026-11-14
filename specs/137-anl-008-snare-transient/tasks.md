@@ -13,8 +13,8 @@ created for this row and deleted afterwards. "T03" means `ANL-008-T03`. A task i
 
 ## Phase 2: Foundational
 
-- [ ] ANL-008-T02 Write `Packages/AnalysisFeatures/Tests/AnalysisFeaturesTests/MidTransientTestSupport.swift` (mid-band noise bursts, research D5) and configuration tests in `MidTransientDetectorTests.swift` (`.midTransient` values; invalid breadth weight and margin throw; `.kick` breadth weight 0). Red run = compile failure.
-- [ ] ANL-008-T03 Implement contract C1/C2 in `TransientDetectorConfiguration.swift` and `BandTransientDetector.swift` (band case, fields, preset, `TransientEvent.confidence`, `lastConfidence`, breadth from the squares on event frames only). Evidence: T02 passes; every `KickDetectorTests` test passes unchanged (ANL-008-R6).
+- [ ] ANL-008-T02 Write `Packages/AnalysisFeatures/Tests/AnalysisFeaturesTests/MidTransientTestSupport.swift` (mid-band noise bursts, research D5) and configuration tests in `MidTransientDetectorTests.swift` (`.midTransient` values; invalid breadth weight and margin throw; `.kick` breadth weight 0; `refractorySamples == 3087`, `envelopeDecay(hop: 512) == exp(−512/3528)`, ANL-008-R4, R5). Red run = compile failure.
+- [ ] ANL-008-T03 Implement contract C1/C2 in `TransientDetectorConfiguration.swift` and `BandTransientDetector.swift` (band case, fields, preset, `TransientEvent.confidence`, `lastConfidence`, breadth from the squares on event frames only). Evidence: T02 passes; every `KickDetectorTests` test passes unchanged (ANL-008-R6); diff read: no allocation, lock, log or clock in `process`, no second FFT (ANL-008-R11).
 
 ## Phase 3: User Story 1 - mid-band hits fire with a confidence (P1) 🎯 MVP
 
@@ -42,3 +42,7 @@ created for this row and deleted afterwards. "T03" means `ANL-008-T03`. A task i
 ## Dependencies
 
 T01 → T02 → T03 → T04, T05 → T06 → T07 → T08 → T09 → T10 → T11. T07 can start after T03.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Coverage check of R1-R13 and S1-S7 against T01-T11. Two findings fixed: R4/R5 had no explicit evidence (added the refractory-samples and envelope-decay assertions to T02); R11 (no second FFT, real-time rules) had no evidence step (added the diff read to T03). No duplicate, ambiguous or conflicting items remain; constitution checks pass.
