@@ -4,6 +4,9 @@
 // build copies the written archive to `-uitestExportPresetTo <path>` so the test can read it. The
 // test stops at the system share sheet (it never shares anything). Launched with the fixed fake
 // entitlement (`-uitestUnlocked NO`, no StoreKit). Simulator only; never device evidence.
+// Shortened 2026-11-13 under owner rule 7: `-autostart inAppPlayback` replaces the notice and chooser
+// taps, waits poll every 0.1 s (UITestWaits.swift), and held drags (`app.reveal`) replace flinging
+// swipes. Every assertion is unchanged.
 import XCTest
 
 @MainActor
@@ -40,46 +43,33 @@ final class UserPresetExportUITests: XCTestCase {
     private func start(importing file: URL, exportTo target: URL, extra: [String] = []) {
         XCUIDevice.shared.orientation = .portrait
         app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-uitestUnlocked", "NO",
-                               "-uitestImportPreset", file.path, "-uitestExportPresetTo", target.path] + extra
+                               "-uitestImportPreset", file.path, "-uitestExportPresetTo", target.path,
+                               "-autostart", "inAppPlayback"] + extra   // Debug: starts the reference track
         app.launch()
-        let acknowledge = app.buttons["acknowledgeNotice"]
-        XCTAssertTrue(acknowledge.waitForExistence(timeout: 10))
-        acknowledge.tap()
-        let inApp = app.buttons["In-App Playback"]
-        if !inApp.waitForExistence(timeout: 10) { app.swipeUp() }
-        XCTAssertTrue(inApp.waitForExistence(timeout: 5))
-        inApp.tap()
-        XCTAssertTrue(app.staticTexts["scopeLine"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["scopeLine"].appears(within: 15))
     }
 
     /// The overlay's controls hide after 5 s; a tap on the picture shows them again.
     private func tapControl(_ id: String) {
-        let button = app.buttons[id]
-        for _ in 0..<3 {
-            if button.waitForExistence(timeout: 2) { break }
-            app.otherElements["visualizerTapArea"].firstMatch.tap()
-        }
-        XCTAssertTrue(button.waitForExistence(timeout: 3), id)
-        button.tap()
+        app.tapFreshControl(id)
     }
 
     private func dismissImportAlert() {
         let alert = app.alerts["Import Preset"]
-        if alert.waitForExistence(timeout: 3) { alert.buttons["OK"].tap() }
+        if alert.appears(within: 3) { alert.buttons["OK"].tap() }
     }
 
     private func openMyPresets() {
         tapControl("presets")
-        XCTAssertTrue(app.buttons["node:included"].waitForExistence(timeout: 10), "library home")
+        XCTAssertTrue(app.buttons["node:included"].appears(within: 10), "library home")
         let node = app.buttons["node:myPresets"]
         // At the largest text sizes the row can sit half under the bottom edge, where a tap lands
         // on the home indicator: scroll and retry until My Presets is open.
         for _ in 0..<4 {
-            for _ in 0..<6 where !(node.exists && node.isHittable) { app.swipeUp() }
+            app.reveal(node)
             if node.exists { node.tap() }
             dismissImportAlert()
-            if app.buttons["exportPresets"].waitForExistence(timeout: 5) { return }
-            app.swipeUp()
+            if app.buttons["exportPresets"].appears(within: 5) { return }
         }
         XCTAssertTrue(app.buttons["exportPresets"].exists, "My Presets offers Export")
     }
@@ -87,7 +77,7 @@ final class UserPresetExportUITests: XCTestCase {
     /// Waits until the imported preset was tried and is listed as playable.
     private func waitForPlayable(_ name: String) {
         let row = app.buttons["preset:\(name)"]
-        XCTAssertTrue(row.waitForExistence(timeout: 20), "\(name) is playable")
+        XCTAssertTrue(row.appears(within: 20), "\(name) is playable")
     }
 
     private func keepScreenshot(_ name: String) {
@@ -123,7 +113,7 @@ final class UserPresetExportUITests: XCTestCase {
 
         app.buttons["exportPresets"].tap()
         let row = app.buttons["exportRow:Harbor Lights"]
-        XCTAssertTrue(row.waitForExistence(timeout: 10), "the exportable preset is listed")
+        XCTAssertTrue(row.appears(within: 10), "the exportable preset is listed")
         XCTAssertEqual(row.label, "Harbor Lights, selected", "every exportable preset starts selected")
         let confirm = app.buttons["exportConfirm"]
         XCTAssertTrue(confirm.isEnabled)
@@ -140,7 +130,7 @@ final class UserPresetExportUITests: XCTestCase {
         XCTAssertTrue(shareSheetShown, "the system share sheet opens with the archive")
         keepScreenshot("share sheet")
         let summary = app.descendants(matching: .any)["exportSummary"]
-        XCTAssertTrue(summary.waitForExistence(timeout: 5) || summary.exists, "the summary is shown")
+        XCTAssertTrue(summary.appears(within: 5) || summary.exists, "the summary is shown")
 
         // The archive the app wrote (copied by the DEBUG hook): a stored ZIP with the manifest and
         // the preset's text in plain bytes.
@@ -168,13 +158,12 @@ final class UserPresetExportUITests: XCTestCase {
         openMyPresets()
         waitForPlayable("Large Type")
         let export = app.buttons["exportPresets"]
-        let exportable = NSPredicate(format: "isEnabled == true")
-        let enabled = expectation(for: exportable, evaluatedWith: export)
-        wait(for: [enabled], timeout: 20)
+        XCTAssertTrue(poll(20) { export.exists && export.isEnabled }, "Export is enabled")
         export.tap()
         let row = app.buttons["exportRow:Large Type"]
         // Lists build rows only near the screen: scroll until the row is there.
-        for _ in 0..<8 where !(row.waitForExistence(timeout: 2) && row.isHittable) { app.swipeUp() }
+        _ = row.appears(within: 2)
+        app.reveal(row)
         XCTAssertTrue(row.exists)
         XCTAssertTrue(row.isHittable)
         row.tap()
