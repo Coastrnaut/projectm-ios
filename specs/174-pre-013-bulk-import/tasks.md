@@ -36,13 +36,13 @@ Independent test: the 100-file fixture folder reports added 70, duplicates 15, i
 ## Phase 5: User Story 3 — cancel (P2)
 
 - [ ] PRE-013-T13 [US3] Tests: cancel after 30 files → 30 handled, counts add up, every added preset stored and no other, 70 not handled; importing again reports the first run's presets as duplicates; bounds refusals (2,001 files, 64 MiB) store nothing; a failing batch turns its drafts into failed (`BulkImportAcceptanceTests.swift`).
-- [ ] PRE-013-T14 [US3] App tests: announcements (start, quarters once each, summary; cancelled summary) on the library lane, single import refused while a bulk import runs (`Apps/projectM-iOS/Tests/BulkPresetImportCoordinatorTests.swift`).
+- [ ] PRE-013-T14 [US3] App tests: announcements (start, quarters once each, summary; cancelled summary) on the library lane, single import refused while a bulk import runs, no file written outside the user preset store by a run (R14) (`Apps/projectM-iOS/Tests/BulkPresetImportCoordinatorTests.swift`).
 
 ## Phase 6: Polish
 
 - [ ] PRE-013-T15 [P] ImportFuzz: mutated archives through `LooseZipReader` never trap and every entry gets a verdict (`Packages/ImportFuzz/Tests/ImportFuzzTests/BulkArchiveFuzzTests.swift`).
 - [ ] PRE-013-T16 UI test under 30 s (S5): a small fixture folder written by the test, `-uitestBulkImportFolder`, open My Presets, read `bulkImportSummary` (`Apps/projectM-iOS/UITests/BulkPresetImportUITests.swift`, DEBUG flag in `Apps/projectM-iOS/Coordinators/AppCoordinator.swift`).
-- [ ] PRE-013-T17 `scripts/check_status_events.py` covers the new app files; repo checks; type-check budget; Linux-guard review; privacy manifest and network symbol checks on the Debug app.
+- [ ] PRE-013-T17 `scripts/check_status_events.py` covers the new app files; repo checks; no automatic tagging in the new code (R12, review); type-check budget; Linux-guard review; privacy manifest and network symbol checks on the Debug app.
 - [ ] PRE-013-T18 Spec status, delete the simulator and derived data, PosterBoard count.
 
 ## Dependencies

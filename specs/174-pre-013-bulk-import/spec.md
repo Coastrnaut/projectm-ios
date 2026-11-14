@@ -113,6 +113,7 @@ counts add up to the files handled, and the rest are reported as not handled.
 - A symbolic link in the folder: listed as unsupported and never followed.
 - A file named `.milk` with upper-case extension (`A.MILK`): treated as `.milk`.
 - Another import or an export is running: the action is disabled.
+- An archive entry nested more than 8 path components deep is listed as unsupported ("too deeply nested"); in a folder, such folders are not opened and only counted.
 - The app ends during an import: the batches saved before stay; the unsaved batch leaves nothing behind.
 
 ## Requirements *(mandatory)*
@@ -121,7 +122,7 @@ counts add up to the files handled, and the rest are reported as not handled.
 
 - **PRE-013-R1**: My Presets MUST offer "Import Folder or Archive…", which opens the system picker for one folder or one `.zip` file; a cancelled picker changes nothing. It is disabled while another import, archive install or export runs, and when the record is from a newer version.
 - **PRE-013-R2**: A picked folder MUST be read in place under its security scope and never written to. Symbolic links MUST NOT be followed; folders more than 8 levels below the picked folder MUST NOT be opened; hidden entries and `__MACOSX` folders MUST NOT be opened or listed. Counts of folders not opened and of hidden entries are reported.
-- **PRE-013-R3**: A picked `.zip` MUST be read as an ordinary archive of files: stored and deflate entries; per-entry problems (an unsafe path such as `../x` or `/x`, a link or special file, encryption, another compression method, a damaged entry) MUST skip that entry with its reason, not the archive. A file that is not a readable ZIP, or over 64 MiB, is refused as a whole.
+- **PRE-013-R3**: A picked `.zip` MUST be read as an ordinary archive of files: stored and deflate entries; per-entry problems (an unsafe path such as `../x` or `/x`, a link or special file, encryption, another compression method) MUST skip that entry with its reason, and a damaged entry (checksum or size mismatch) MUST be failed; neither refuses the archive. A file that is not a readable ZIP, or over 64 MiB, is refused as a whole.
 - **PRE-013-R4**: Before anything is imported, an import with more than 2,000 files or more than 64 MiB of candidate `.milk` bytes MUST be refused with the reason, and nothing stored.
 - **PRE-013-R5**: Each file MUST end as exactly one of added, skipped duplicate, skipped invalid, skipped too large, skipped unsupported, or failed, decided in this order: unsupported (not a regular `.milk` file, unsafe path, unreadable method), too large (over 512 KiB), failed (unreadable), invalid (empty), duplicate (same bytes as a preset in My Presets, an earlier file in this import, or a built-in preset), invalid (takedown list, or rejected by the PRE-012 static checks), failed (My Presets full, or could not be saved), else added.
 - **PRE-013-R6**: An added preset MUST be stored exactly as a FILE-003 archive install stores one: a content-addressed copy, waiting for its off-screen trial, with the name and author taken from its file name (PRE-012 rules) and the validator's warnings and licence lines; after the import the waiting trials run. Invalid files MUST NOT be stored or quarantined.

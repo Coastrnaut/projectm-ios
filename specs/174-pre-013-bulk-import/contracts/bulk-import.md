@@ -27,7 +27,8 @@
 ## C2. Words
 
 - Summary: "Added 70. Skipped 30: 15 duplicates, 8 invalid, 4 too large, 3 not presets. Failed 0."
-  (zero parts of "Skipped" are left out; "Skipped 0." when none).
+  (zero parts of "Skipped" are left out; "Skipped 0." when none). When nonzero, " <h> hidden items and <f>
+  deeper folders were not opened." follows (R2; each part only when nonzero).
 - Cancelled: "Import cancelled after 30 of 100 files. " + summary + " 70 files were not handled."
 - Refused: "Nothing was imported. " + reason.
 - Start: "Importing <name>: <N> files." Progress: "<p> percent imported, <n> of <N> files."
