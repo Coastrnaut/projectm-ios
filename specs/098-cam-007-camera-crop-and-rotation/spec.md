@@ -42,6 +42,13 @@ interaction); each answer is the conservative, local-first option.
 - Q: Does zoom use the camera's optical or digital zoom? → A: No. Zoom is a crop of the camera picture in the layer (CAM-007-R5); the camera's own settings are untouched, so the capture session never restarts and lens choice stays with CAM-003.
 - Q: Where is the control? → A: In CAM-002's Settings "Camera" section, shown only while Camera is the chosen visual: a "Crop" mode picker (Fill / Fit), an "Anchor" picker (Centre / Top / Bottom) and a "Zoom" picker (1×, 1.5×, 2×, 3×) (CAM-007-R7).
 
+### Session 2026-11-14 (speckit-clarify)
+
+- Q: Do Anchor and Zoom also apply in Fit, or only in Fill? → A: In both modes (CAM-007-R2, R3). In Fit the anchor decides where the whole picture sits (Top: against the top edge, bars below), and a zoom above 1× enlarges it around the anchor. One rule for both modes keeps the controls always meaningful and the acceptance test uniform. Rejected: disabling Anchor and Zoom in Fit (controls that change meaning with the mode).
+- Q: Is a change of framing animated? → A: No. A new choice, and a rotation, take effect from the next frame without an animated transition (CAM-007-R5). An animation adds motion that Reduce Motion would have to suppress and hides nothing the user needs; the system's own rotation animation of the view is unchanged.
+- Q: What does VoiceOver read for the controls? → A: Labels "Crop", "Anchor" and "Zoom"; values "Fill" or "Fit", "Centre", "Top" or "Bottom", and "1 times", "1.5 times", "2 times" or "3 times" (CAM-007-R7). The "×" sign is read inconsistently, so the zoom value is spelled out.
+- Q: Does the external display get its own framing? → A: No. The external display shows the same composite as the screen (OUT-001), so it shows the screen's framing; it is computed for the visual's own picture size (CAM-007-R8). A separate framing per output would break the one-composite rule that CAM-002 relies on.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - The framing I chose survives turning the device (Priority: P1)
@@ -111,6 +118,8 @@ recorded frame show the anchor at the same place.
   in place; the picture is flipped, not shifted.
 - Fit with a zoom above 1×: the picture is enlarged around the anchor and may then be cropped on
   one axis; it is never stretched.
+- Fit with Top or Bottom: the whole picture sits against that edge, with the bars on the other
+  side.
 - Fill when the picture and the screen have the same shape: nothing is cropped at 1×; Top and
   Bottom then look like Centre.
 - Fill where the overflow is horizontal (a landscape picture on a portrait screen): Top and Bottom
@@ -139,16 +148,19 @@ recorded frame show the anchor at the same place.
 - **CAM-007-R4**: Where Fit leaves part of the layer picture uncovered, the camera layer MUST be
   transparent there.
 - **CAM-007-R5**: Changing the crop choice MUST take effect from the next frame without stopping
-  the camera, changing its configuration, asking for permission or touching the audio source.
+  the camera, changing its configuration, asking for permission or touching the audio source, and
+  without an animated transition.
 - **CAM-007-R6**: The crop choice MUST be stored once for both cameras as user settings, cleared
   with the other settings by the UI-test reset, allowed by the device privacy check, never start
   the camera, and never be recorded in scenes or show cues. Unknown stored values MUST read as the
   defaults.
 - **CAM-007-R7**: Settings' Camera section (shown only while Camera is the chosen visual) MUST
   offer "Crop" (Fill / Fit), "Anchor" (Centre / Top / Bottom) and "Zoom" (1× / 1.5× / 2× / 3×),
-  with VoiceOver labels and values.
+  with VoiceOver labels "Crop", "Anchor" and "Zoom" and values as in Clarifications (zoom spelled
+  "1.5 times").
 - **CAM-007-R8**: The crop MUST be applied in one place, the camera layer, so the screen, a saved
-  frame, a recording and an external display show the same framing.
+  frame, a recording and an external display show the same framing (the external display shows
+  the screen's composite; it has no framing of its own).
 - **CAM-007-R9**: The transform from camera picture to layer picture MUST be a pure calculation
   testable without a graphics device, on every platform the packages' tests run on, and the
   layer's drawing MUST follow it exactly.
