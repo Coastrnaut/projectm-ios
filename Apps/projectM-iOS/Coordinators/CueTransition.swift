@@ -8,11 +8,14 @@
 //   any transition a cut (CMP-014-R10); otherwise Reduce flashing spreads a cut or a transition shorter than
 //   0.5 s over 0.5 s (a cut becomes a linear crossfade), and the FX-019 flash guard still measures every
 //   frame the bus shows.
-// * `CueTransitionDriving` receives the resolved spec just before a cue's scene is applied. The live
-//   renderer does not run the CMP-014 bus yet, so the app's driver (`CueTransitionRecorder`) records it.
+// * `CueTransitionDriving` receives the resolved spec just before a cue's scene is applied. The app's driver,
+//   `CueTransitionStage` (XFADE, specs/167-cue-transitions-on-screen), freezes the shown compositor's frame for a
+//   non-instant spec and, once the scene is applied, blends it out on the compositor shown then (Photo, Video, Text,
+//   Camera outgoing). A transition from or to a native visual or projectM stays a cut (outcome `unsupported`).
 // * `CueEasingPreset` names the editor's easing choices (exponent 2) and shows any other curve as Custom.
 import Compositor
 import Foundation
+import Metal
 import ParameterGraph
 import ShowControl
 
@@ -22,15 +25,76 @@ protocol CueTransitionDriving: AnyObject {
     func driveTransition(_ spec: SceneTransitionSpec, toScene sceneID: String)
 }
 
-/// The app's driver until the bus is in the live render path: keeps the last spec (DEBUG probe, tests).
+/// XFADE: a visual host whose output passes through a CMP-001 compositor (its frames are encoded on `queue`).
 @MainActor
-final class CueTransitionRecorder: CueTransitionDriving {
+protocol CompositorVisualHost: AnyObject {
+    var compositor: Compositor { get }
+    var queue: MTLCommandQueue { get }
+}
+
+/// XFADE-R1, R8: the app's driver. `driveTransition` (before the scene is applied) records the spec and, for a
+/// non-instant one, freezes the shown compositor's frame on that host's queue; `sceneApplied()` (after the apply)
+/// starts the transition on the compositor shown then. A cut freezes nothing (the output path is unchanged).
+@MainActor
+final class CueTransitionStage: CueTransitionDriving {
+    enum Outcome: String {
+        /// No cue applied yet.
+        case none
+        /// An instant spec (a cut, or Reduce Motion): today's change.
+        case cut
+        /// The frozen frame is blended out on the shown compositor.
+        case blended
+        /// The outgoing or incoming visual is not compositor-backed (native, projectM): a cut.
+        case unsupported
+    }
+
     private(set) var last: SceneTransitionSpec?
     private(set) var lastSceneID: String?
+    private(set) var outcome: Outcome = .none
+    /// The compositor host shown now (nil: a native visual, projectM, or no visualizer).
+    var shownHost: () -> (any CompositorVisualHost)? = { () -> (any CompositorVisualHost)? in nil }
+    private var pending: (frame: FrozenOutputFrame, spec: SceneTransitionSpec)?
+    /// The compositor running the last transition (DEBUG probe, tests).
+    private(set) weak var target: Compositor?
 
     func driveTransition(_ spec: SceneTransitionSpec, toScene sceneID: String) {
         last = spec
         lastSceneID = sceneID
+        pending = nil   // an unapplied frame goes back to the pool (FrozenOutputFrame.deinit)
+        guard !spec.isInstant else {
+            outcome = .cut
+            return
+        }
+        guard let host = shownHost(), let commands = host.queue.makeCommandBuffer(),
+              let frame = host.compositor.freezeShownFrame(commandBuffer: commands) else {
+            outcome = .unsupported
+            return
+        }
+        commands.label = "XFADE freeze"
+        commands.commit()
+        pending = (frame, spec)
+    }
+
+    /// The scene was applied: the transition starts on the compositor shown now, or the frame is dropped (a cut).
+    func sceneApplied() {
+        guard let pending else { return }
+        self.pending = nil
+        guard let host = shownHost() else {
+            outcome = .unsupported
+            return
+        }
+        host.compositor.beginOutputTransition(from: pending.frame, spec: pending.spec, reduceMotion: false)   // already resolved
+        target = host.compositor
+        outcome = .blended
+    }
+
+    /// XFADE-R9 (DEBUG probe): "outcome=blended frames=59 progress=1.00 holds=no".
+    var probe: String {
+        let frames: Int = target?.outputTransitionBlendedFrames ?? 0
+        let raw: Double = target?.outputTransitionProgress ?? 1
+        let progress: String = String(format: "%.2f", raw)
+        let holds: String = (target?.holdsOutputTransitionTextures ?? false) ? "yes" : "no"
+        return "outcome=\(outcome.rawValue) frames=\(frames) progress=\(progress) holds=\(holds)"
     }
 }
 

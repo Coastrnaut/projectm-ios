@@ -10,7 +10,8 @@ all suites pass (CompositorTests 498, 7 skipped; 4 new model tests, 1 new bus te
 app CueTransitionAcceptanceTests 3 (0.04 s), CueTransitionUITests 1 (29.6 s, 27.6 s). Linux: not run here;
 the Compositor Linux shape builds on the Mac (`-DCOMPOSITOR_NO_METAL …`). Follow-up outside this row: the live
 renderer does not run the CMP-014 bus, so a cue's transition is recorded (`CueTransitionRecorder`) but the
-scene still changes at once on screen.
+scene still changes at once on screen. Closed for compositor visuals by XFADE (`specs/167-cue-transitions-on-screen`, 2026-11-14):
+`CueTransitionStage` blends a frozen frame out on Photo, Video and Text; native visuals and projectM stay cuts.
 
 **Input**: Roadmap row SCN-007 (P1, size M, depends on CMP-014, integrated). Observable behavior,
 verbatim: "Store transition type, duration and easing with each cue." Acceptance, verbatim:

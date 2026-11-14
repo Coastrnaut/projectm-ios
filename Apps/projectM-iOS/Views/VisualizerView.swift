@@ -211,6 +211,9 @@ struct VisualizerView: View {
                 .accessibilityIdentifier("showAppliedScene")
                 .accessibilityValue(value)
         }
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") { UITestCueTransitionProbe(stage: coordinator.cueTransitions) }   // XFADE
+        #endif
         if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {   // ACC-004-R9: the last announcement
             let spoken = coordinator.announcer.lastSpoken
             Text(spoken)

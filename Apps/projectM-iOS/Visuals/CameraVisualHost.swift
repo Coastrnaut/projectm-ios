@@ -49,13 +49,13 @@ import VisualBandFeed
 import VisualGenerators
 
 @MainActor
-final class CameraVisualHost: PresentationBoundResource {
+final class CameraVisualHost: PresentationBoundResource, CompositorVisualHost {
     let view: NativeSpectrumLayerView
     let camera: CameraLayerSource
     private let spectrum: SpectrumLayerSource
     /// Internal for PERF-004's app tests (offscreen frames through the shared pool).
     let compositor: Compositor
-    private let queue: MTLCommandQueue
+    let queue: MTLCommandQueue   // XFADE: the freeze is encoded after this host's frames
     private let analyzer: LiveBandAnalyzer
     private let reader: (any NormalizedPCMReader)?
     private let bands: UnsafeMutablePointer<Float>
