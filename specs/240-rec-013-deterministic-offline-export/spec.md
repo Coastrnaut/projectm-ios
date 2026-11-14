@@ -48,6 +48,14 @@ local-first option.
 - Q: Progress and cancel? → A: "Rendering frame 120 of 600" with a progress bar and Cancel. Cancel stops before the next frame and deletes the folder: no file remains. "Export cancelled" is shown and announced.
 - Q: Does exporting touch the live scene? → A: No. The export never writes the live values, the scene file, the snapshot list or the undo history, it never draws to the screen, and the live visual keeps running. It works while the scene is locked.
 
+### Session 2026-11-14 (speckit-clarify)
+
+- Q: What happens when the app goes to the background during an export? → A: iOS does not let a background app use the GPU, so the export stops: its folder is deleted and "Export stopped: the app left the screen." is shown and announced. Nothing partial is kept.
+- Q: Does the live visual keep running while an export renders? → A: Yes. The export uses its own renderer, analysis and command queue at a lower priority than the screen; the screen may slow down meanwhile, but it never shows export frames and the export never reads the live audio.
+- Q: Which seed values are allowed? → A: Whole numbers from 0 to 4,294,967,295 (default 1), typed in a number field; anything else is refused with "Enter a whole number from 0 to 4294967295."
+- Q: What does the sidecar record to identify the GPU class and the inputs? → A: The GPU name reported by the system, the OS version, the app version, the visual and its options, the glow, Reduce flashing, the safety profile, the size, the rate, the seed, the audio source (fixture or the file's name) with the SHA-256 of the exact 44.1 kHz samples used, the frame count and the frame checksums (lowercase hex). Two sidecars are compared by their checksum lists; the GPU name says whether the comparison applies.
+- Q: Is the export's file name fixed? → A: `projectM-offline-<visual>-<seed>.mp4` and `projectM-offline-<visual>-<seed>.checksums.json`, with the visual's short name (for example `circular`); the folder is new per export, so names never collide.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Export a repeatable video of a look (Priority: P1)
@@ -96,7 +104,7 @@ a seeded visual) or the audio changes them.
 - The audio file is longer than 10 minutes: only the first 10 minutes are exported, and the sheet says so.
 - The audio file is shorter than two frames: refused ("The audio is too short.").
 - An encoder or storage failure: the export stops, its folder is deleted, "Export failed" is shown.
-- The app is backgrounded: the export continues while iOS allows; a killed app's folder is deleted at the next launch.
+- The app is backgrounded: the export stops and its folder is deleted ("Export stopped: the app left the screen."); a killed app's folder is deleted at the next launch.
 - A new export while one is offered: the earlier folder is deleted first (one export at a time).
 - A live change (cue, MIDI) during an export: the export keeps the state captured at Export.
 
@@ -104,7 +112,7 @@ a seeded visual) or the audio changes them.
 
 ### Functional Requirements
 
-- **REC-013-R1**: Settings › Visual MUST offer "Export Video Offline…", opening a sheet with the audio choice (Fixture, or a file picked with the system file picker), the seed (default 1), the shape (Landscape, Portrait, Square) and the rate (30 or 60 fps).
+- **REC-013-R1**: Settings › Visual MUST offer "Export Video Offline…", opening a sheet with the audio choice (Fixture, or a file picked with the system file picker), the seed (a whole number 0…4,294,967,295, default 1), the shape (Landscape, Portrait, Square) and the rate (30 or 60 fps).
 - **REC-013-R2**: The export MUST capture the visual, its options, the glow values, Reduce flashing and the safety profile when Export is tapped, and use them for every frame (REC-002's capture).
 - **REC-013-R3**: Frame n MUST be rendered offscreen at time n / fps with the analysis having read the audio up to sample round(n × 44,100 / fps); frames MUST NOT be paced to the real clock and none may be dropped.
 - **REC-013-R4**: The analysis MUST be the live one (bands, waveform histories and events) fed from the export's audio, with a fixed analysis clock, so the output does not depend on when the export runs.
@@ -118,11 +126,12 @@ a seeded visual) or the audio changes them.
 - **REC-013-R12**: Exporting MUST NOT write the live values, the scene, its snapshots or the undo history, and MUST NOT draw to the screen.
 - **REC-013-R13**: Outcomes MUST be announced on the library lane (ACC-004).
 - **REC-013-R14**: No new stored setting, scene field, permission or network use.
+- **REC-013-R15**: Leaving the foreground MUST stop a running export and delete its folder; the live visual MUST keep running during an export and never show export frames.
 
 ### Key Entities
 
 - **Offline export job**: captured visual state, audio source, seed, shape, rate, frame count.
-- **Checksum sidecar**: format version, inputs (visual, size, rate, seed, audio source, audio SHA-256, GPU name), frame checksums in order.
+- **Checksum sidecar**: format version, inputs (visual and options, glow, Reduce flashing, safety profile, size, rate, seed, audio source, audio SHA-256), environment (GPU name, OS version, app version), frame count, frame checksums in order (lowercase hex).
 - **Export**: temporary folder, state (idle, rendering frame N of M, finished with files, cancelled, failed).
 
 ## Success Criteria *(mandatory)*
