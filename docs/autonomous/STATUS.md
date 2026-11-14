@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T14:22:27Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T14:22:35Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 159 |
 | implementing | 7 |
-| unit_passed | 1 |
-| integrated | 158 |
+| integrated | 159 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 74 | 7 | 1 | 69 | 0 |
-| P2 | 74 | 0 | 0 | 5 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 2 | 0 | 84 | 1 |
+| P1 | 74 | 7 | 70 | 0 |
+| P2 | 74 | 0 | 5 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 167 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)
+- 166 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)
 
 ## Integrated
 
@@ -133,6 +132,7 @@ The physical-device suite may **not** start:
 | MIDI-003 | MIDI learn | `d6ec9dc5e426` | `feature/midi-003` |
 | MIDI-004 | MIDI CC scaling | `6ac0c21c` | `None` |
 | MIDI-006 | MIDI note triggers | `4bad23aa` | `None` |
+| MIDI-007 | MIDI scene selection | `42658ec3d3d7` | `feature/midi-007` |
 | MOD-001 | Typed parameter registry | `304f3bce431a` | `feature/mod-001` |
 | MOD-002 | Audio feature binding | `006678f3d7a5` | `feature/mod-002` |
 | MOD-003 | Linear mapping | `29cd3bbb1e12` | `feature/mod-003` |
@@ -1229,7 +1229,7 @@ None.
 - `swift test --package-path Packages/PerformanceControl`: pass at `bc7e11f8e2cd` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-006/20261114T084721/swift-test_PerformanceControl.log`)
 - `post-merge: projectM-iOSTests 695 + UI 24 (effects, trails, color, balance, MIDI, scenes, thumbnails, settings)`: pass at `4bad23aa` (log `.autonomous/logs/integration/batch5/app-tests.log`)
 
-### MIDI-007 MIDI scene selection (unit_passed)
+### MIDI-007 MIDI scene selection (integrated)
 - `python3 scripts/check_compliance.py`: pass at `0d3f193e7aea` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-007/20261114T092047/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `0d3f193e7aea` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-007/20261114T092047/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `0d3f193e7aea` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-007/20261114T092047/script-tests.log`)
