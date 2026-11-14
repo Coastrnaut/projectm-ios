@@ -9,12 +9,12 @@ Format: `- [ ] PRE-013-Tnn [P?] [Story?] Description (file)`.
 
 ## Phase 1: Setup
 
-- [ ] PRE-013-T01 Create the simulator "PRE13 iPhone 17" (iOS 27.2), count PosterBoard reports, `xcodegen generate` in the worktree.
+- [X] PRE-013-T01 Create the simulator "PRE13 iPhone 17" (iOS 27.2), count PosterBoard reports, `xcodegen generate` in the worktree. — Verified 2026-11-14: simulator "PRE13 iPhone 17" (iOS 27.2) created; 25 PosterBoard reports before; `xcodegen generate` OK; preset submodules initialized
 
 ## Phase 2: Foundational
 
-- [ ] PRE-013-T02 `LooseZipReader` (contract C1: per-entry verdicts, "unsafe path checked first", stored and deflate reads with "exactly the declared size and CRC-32", output never more than `limit + 1` bytes); the byte reader in `StoredZip.swift` becomes internal (`Packages/LocalPortability/Sources/LocalPortability/LooseZipReader.swift`, `StoredZip.swift`).
-- [ ] PRE-013-T03 [P] `LooseZipReaderTests`: stored and (Apple platforms) deflate entries read back; `../x.milk`, `/x.milk`, `a\\b.milk` unsafe; Unix symlink entry; encrypted flag; method 12; CRC damage throws; directories and `__MACOSX` entries; not a ZIP is refused (`Packages/LocalPortability/Tests/LocalPortabilityTests/LooseZipReaderTests.swift`).
+- [X] PRE-013-T02 `LooseZipReader` (contract C1: per-entry verdicts, "unsafe path checked first", stored and deflate reads with "exactly the declared size and CRC-32", output never more than `limit + 1` bytes); the byte reader in `StoredZip.swift` becomes internal (`Packages/LocalPortability/Sources/LocalPortability/LooseZipReader.swift`, `StoredZip.swift`). — Verified 2026-11-14: `swift test --package-path Packages/LocalPortability` 127/127 (LooseZipReaderTests 7/7, StoredZipTests unchanged)
+- [X] PRE-013-T03 [P] `LooseZipReaderTests`: stored and (Apple platforms) deflate entries read back; `../x.milk`, `/x.milk`, `a\\b.milk` unsafe; Unix symlink entry; encrypted flag; method 12; CRC damage throws; directories and `__MACOSX` entries; not a ZIP is refused (`Packages/LocalPortability/Tests/LocalPortabilityTests/LooseZipReaderTests.swift`). — Verified 2026-11-14: LooseZipReaderTests 7/7 on the macOS host (deflate case runs where Compression exists)
 - [ ] PRE-013-T04 Model and words (data model: limits "2,000 files", "64 MiB", "8 levels", "batches of 50"; kinds, items, counts, report, progress; contract C2 texts) (`Packages/PresetLibrary/Sources/PresetLibrary/BulkImport/BulkImportModel.swift`).
 - [ ] PRE-013-T05 `UserPresetLibrary` access levels; `bulkImportBaseline()` and `commitBulk(_:)` (re-check duplicates and the 1,000 cap, build records as `importFile` does, save through `commitImport`) (`Packages/PresetLibrary/Sources/PresetLibrary/UserPresets/UserPresetLibrary.swift`, `BulkImport/UserPresetLibrary+BulkImport.swift`).
 
