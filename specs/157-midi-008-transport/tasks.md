@@ -29,7 +29,7 @@ stage and stay open until a person runs them.
 
 ## Phase 5: User Story 3 - Learn a transport source (P2)
 
-- [ ] MIDI-008-T08 [US3] Trigger learn in `Apps/projectM-iOS/Coordinators/MIDIMappingCoordinator+Notes.swift` (note, CC button, real-time; not real-time on the hold row; learned press registered; texts "CC 20 · Ch 1", "MIDI Start"; CC button ↔ parameter exclusivity) and the MIDI-003 side in `Apps/projectM-iOS/Coordinators/MIDIMappingCoordinator.swift`; app tests: learn a CC button (learning press fires nothing, duplicate copy fires nothing, two later presses fire twice), learn MIDI Start, moved from a glow parameter and back, Undo (research MIDI-008-D6, D7; R6, R7)
+- [ ] MIDI-008-T08 [US3] Trigger learn in `Apps/projectM-iOS/Coordinators/MIDIMappingCoordinator+Notes.swift` (note, CC button, real-time; not real-time on the hold row; learned press registered; texts "CC 20 · Ch 1", "MIDI Start"; CC button ↔ parameter exclusivity) and the MIDI-003 side in `Apps/projectM-iOS/Coordinators/MIDIMappingCoordinator.swift`; app tests: learn a CC button (learning press fires nothing, duplicate copy fires nothing, two later presses fire twice), learn MIDI Start, moved from a glow parameter and back, Undo, a CC button held on Black out while held is released when the input stops (research MIDI-008-D6, D7; R6, R7)
 - [ ] MIDI-008-T09 [US3] View: "Transport" section header and footer in `Apps/projectM-iOS/Views/MIDIMappingsView.swift`; DEBUG "Send CC Button" in `Apps/projectM-iOS/Debug/UITestFakeMIDI.swift`
 - [ ] MIDI-008-T10 [US3] UI test `Apps/projectM-iOS/UITests/MIDITransportUITests.swift` (under 30 s): seeded show, plug Fake Keys, MIDI Mappings → Learn on Next cue, Send CC Button, read the result, press twice, cue 3 is applied (S5)
 
