@@ -4,8 +4,8 @@
 
 ## Phase 1: Foundational (search core)
 
-- [ ] UIX-009-T01 Add `ParameterSearch` (fold, word split, tiers, ranking, `search`/`ids`) and `ParameterUnit.searchTerms` in `Packages/ParameterGraph/Sources/ParameterGraph/ParameterSearch.swift` (R2-R4, D2-D4)
-- [ ] UIX-009-T02 [P] Tests in `Packages/ParameterGraph/Tests/ParameterGraphTests/ParameterSearchTests.swift`: empty query, AND of words, ranking order, group ID match, unit prefixes ("%", "ms", "Hz", "s"), diacritics and case, no enum-case match
+- [X] UIX-009-T01 Add `ParameterSearch` (fold, word split, tiers, ranking, `search`/`ids`) and `ParameterUnit.searchTerms` in `Packages/ParameterGraph/Sources/ParameterGraph/ParameterSearch.swift` (R2-R4, D2-D4) — Verified 2026-11-14: `swift test --package-path Packages/ParameterGraph --filter ParameterSearchTests` (7 tests pass, 0.003 s)
+- [X] UIX-009-T02 [P] Tests in `Packages/ParameterGraph/Tests/ParameterGraphTests/ParameterSearchTests.swift`: empty query, AND of words, ranking order, group ID match, unit prefixes ("%", "ms", "Hz", "s"), diacritics and case, no enum-case match — Verified 2026-11-14: `swift test --package-path Packages/ParameterGraph --filter ParameterSearchTests` (7 tests pass, 0.003 s)
 
 ## Phase 2: User Story 1 — find and open (P1, MVP)
 
