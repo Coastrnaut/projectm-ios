@@ -158,6 +158,33 @@ an app unit test that a Centroid binding on the native visual drives its target.
 - **ANL-010-S6**: `audio.centroid` round-trips, binds, compiles in an expression and drives a bound parameter in the app.
 - **ANL-010-S7**: The new package tests add at most a few hundred milliseconds to the AnalysisFeatures suite in the Linux shape, and every existing test passes.
 
+## Implementation results (2026-11-13)
+
+Tone table (`SpectralCentroidTests.testRisingToneFrequencyRaisesTheCentroidMonotonically`: one
+2,048-point window at 44.1 kHz, −6 dBFS, phase 0.3 rad; identical with the vDSP and the portable
+backend, on the host and in the Linux shape):
+
+| Tone (Hz) | Centroid (Hz) | Normalized |
+|---|---|---|
+| 100 | 100.0009 | 0.1308 |
+| 200 | 199.9999 | 0.2616 |
+| 400 | 400.0 | 0.3925 |
+| 800 | 800.0 | 0.5233 |
+| 1,600 | 1,600.0 | 0.6541 |
+| 3,200 | 3,200.0 | 0.7849 |
+| 6,400 | 6,400.0 | 0.9158 |
+
+Other fixtures: white noise (seed 0x5EED, ±0.5) 10,955.6 Hz against an expected 11,035.8 Hz
+(−0.7 %), normalized 1; two tones 500 Hz + 2 kHz at equal amplitude 1,250 Hz and at 1 : 0.25
+588.2 Hz (both within 1 %); 1 kHz within 1 % at all five sizes and at 44.1 and 48 kHz, 200 Hz at
+512 points and 100 Hz at 1,024 points within 1 %, −6 and −40 dBFS within 0.1 %; silence and
+±1 LSB dither read 0/0 with no signal; a tone then silence holds both values exactly. Through
+`AnalysisPipeline`: 4 silent lead frames read 0, 13 frames inside a 300 Hz tone and 13 inside a
+3 kHz tone each within 1 %.
+
+No UI was added (Clarifications). The onset and beat-confidence sources stay unfed in the app as
+before; Kick and Centroid are fed.
+
 ## Assumptions
 
 - The bus keeps 2,048-point spectra at hop 512 and 44.1 kHz; the centroid is valid at every ANL-001 size and rate.
