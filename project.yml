@@ -76,6 +76,9 @@ packages:
   # SHOW-001: the manual cue list (pure model) and its folder store (ShowStorage, on SceneFormat).
   ShowControl:
     path: Packages/ShowControl
+  # FILE-005: the local library backup (archive, logical records, restore planner and installer).
+  LibraryBackup:
+    path: Packages/LibraryBackup
 targets:
   CaptureLab:
     type: application
@@ -194,6 +197,7 @@ targets:
       - package: SceneArchive         # FILE-001: SceneArchiveService
       - package: LocalPortability     # FILE-009: StorageUsageCalculator
       - package: ShowControl          # SHOW-001: the cue list and its folder store
+      - package: LibraryBackup        # FILE-005: back up and restore the library
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.ProjectMiOS
@@ -261,6 +265,7 @@ targets:
       - package: ParameterGraph       # MOD-001 ParameterCatalogAppTests; OSC-001 coordinator tests
       - package: LocalPortability     # FILE-001 SceneArchiveServiceTests (a hand-built hostile archive)
       - package: AnalysisFeatures     # ANL-003 SpectralSmoothingAppTests (SmoothingTimes)
+      - package: LibraryBackup        # FILE-005 LibraryBackupAppTests
       - sdk: StoreKitTest.framework
     settings:
       base:
