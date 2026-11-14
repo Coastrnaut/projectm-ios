@@ -217,15 +217,17 @@ final class UserPresetEditingTests: XCTestCase {
         let copy = try await duplicate(library)
         let candidate = ContentHash.sha256Hex(Array(edited.utf8))
         let recorded = LockedFlag()
+        let ran = LockedFlag()   // set after the check; `calls` is appended before `onRun` (CI iOS 27, run 43631161188)
         let hanging = FakeTrial()
         hanging.hangs = true
         hanging.onRun = { [directory] _ in
             recorded.value = FileManager.default.fileExists(atPath: directory!.appendingPathComponent("edit.json").path)
+            ran.value = true
         }
         await library.setTrial(hanging)
         let (id, name, text, sha) = (copy.id, copy.name, edited, copy.sha256)
         let task = Task { await library.edit(id, name: name, text: text, expectedSHA256: sha) }
-        while hanging.calls.isEmpty { try await Task.sleep(for: .milliseconds(10)) }
+        while !ran.value { try await Task.sleep(for: .milliseconds(10)) }
         XCTAssertTrue(recorded.value, "the record is on disk before the engine sees the text")
         let record = try Data(contentsOf: directory.appendingPathComponent("edit.json"))
         XCTAssertTrue(String(decoding: record, as: UTF8.self).contains(candidate))

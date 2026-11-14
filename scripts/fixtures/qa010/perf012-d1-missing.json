@@ -1,0 +1,52 @@
+{
+  "app": {
+    "build": "2",
+    "version": "1.1"
+  },
+  "device": {
+    "model": "iPhone15,4",
+    "osBuild": "24A446",
+    "osVersion": "27.0.1"
+  },
+  "exportedAt": "2026-11-14T12:00:00Z",
+  "frames": {
+    "longFrames": [],
+    "measuredSeconds": 0,
+    "resolutionMs": 0.1,
+    "sampleCount": 0
+  },
+  "kind": "projectM-iOS.performanceReport",
+  "resources": {
+    "memory": {
+      "footprintBytes": 160000000,
+      "peakFootprintBytes": 182000000
+    }
+  },
+  "schemaVersion": 1,
+  "session": {
+    "durationSeconds": 75.0,
+    "overlayShown": false,
+    "visual": "projectM"
+  },
+  "states": {
+    "current": {
+      "atSeconds": 60.0,
+      "lowPower": false,
+      "maxFramesPerSecond": 60,
+      "profile": "standard",
+      "renderScale": 1.0,
+      "thermal": "nominal"
+    },
+    "timeline": [
+      {
+        "atSeconds": 0.0,
+        "lowPower": false,
+        "maxFramesPerSecond": 60,
+        "profile": "standard",
+        "renderScale": 1.0,
+        "thermal": "nominal"
+      }
+    ],
+    "truncated": false
+  }
+}

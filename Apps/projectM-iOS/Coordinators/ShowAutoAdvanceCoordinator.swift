@@ -5,7 +5,7 @@
 //   `ShowManualClock` in tests). `ShowCoordinator.cueStarted` (every step that moved, a dwell edit on the active cue)
 //   restarts it from now; `ShowCoordinator.listChanged` cancels it when its cue is no longer the active one.
 // * `tick()` re-reads the hold (pause, blackout not live, a pending repair report, the app not active; set by
-//   AppCoordinator) and, when the advance is due, calls `show.next()`: the same path as a manual Next (scene,
+//   AppCoordinator) and, when the advance is due, calls `show.timedNext()` (SHOW-003: quantized like a Next): the same path as a manual Next (scene,
 //   SCN-007 transition, SCN-012 repair, MOD-017 queued changes, the cue announcement). One advance per due time.
 // * While the timeline is not idle a main-actor task ticks every 250 ms (or sooner at the deadline); an idle show
 //   runs nothing. Tests call `tick()` themselves (`runsLoop` false).
@@ -83,7 +83,7 @@ final class ShowAutoAdvanceCoordinator {
         let now: Duration = clock.now()
         timeline.setHeld(isHeld(), at: now)
         if let cueID = timeline.due(at: now), show.list.activeCue?.id == cueID {
-            show.next()   // a move calls `cueStarted` (the next cue's countdown starts at its own now)
+            show.timedNext()   // SHOW-003: waits for the beat or bar when quantizing; a move calls `cueStarted` (the next cue's countdown starts at its own now)
         }
         refresh()
     }

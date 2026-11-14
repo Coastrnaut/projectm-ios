@@ -30,6 +30,11 @@
 // added; else the wide lens; only with nothing addable `unavailable`). The lens actually in the
 // session is read back on the session queue, so `lens` always names the running lens. A start whose
 // lens cannot be opened falls back to the wide lens.
+// CAM-004 (contracts/exposure-lock.md C3; research CAM-004-D2, D3): `setExposureLocked(_:)` runs
+// `CameraExposureControl` on the session queue against the session's device and posts the state read
+// back; every switch releases the previous device before its input is removed, and a stop or a
+// runtime error releases it before `stopRunning`. While not running, `exposure` reports only whether
+// the chosen camera can lock (read from the device, which starts nothing).
 // A generation number discards callbacks from an earlier start. Thread confinement: state,
 // session reference, observers and generation on the main thread; the cache and the slot on the
 // video queue (the slot is locked). Hence `@unchecked Sendable`.
@@ -63,14 +68,24 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
     public var availableLenses: [CameraLens] { lensInventory.backLenses }
 
     public private(set) var state: CameraFeedState = .idle {
-        didSet { if state != oldValue { onStateChange?(state) } }
+        didSet {
+            guard state != oldValue else { return }
+            if state == .running { readExposure() } else { exposure = .notRunning(canLock: chosenCameraCanLock) }   // CAM-004
+            onStateChange?(state)
+        }
     }
     public var onStateChange: ((CameraFeedState) -> Void)?
+    /// CAM-004: the current camera's exposure, read back (main thread).
+    public private(set) var exposure: CameraExposureState = .notRunning(canLock: false) {
+        didSet { if exposure != oldValue { onExposureChange?(exposure) } }
+    }
+    public var onExposureChange: ((CameraExposureState) -> Void)?
 
     public init(device: MTLDevice, lensInventory: any CameraLensInventory = AVCameraLensInventory()) {
         self.device = device
         self.lensInventory = lensInventory
         super.init()
+        exposure = .notRunning(canLock: chosenCameraCanLock)
     }
 
     /// CAM-003: the camera for the chosen position and, at the back, the chosen lens (else the wide lens).
@@ -148,7 +163,10 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
         rotationCoordinator = nil
         if let session {
             let box = Unchecked(value: session)
-            sessionQueue.async { box.value.stopRunning() }
+            sessionQueue.async {
+                Self.releaseExposure(in: box.value)   // CAM-004-R7: no lock outlives the session
+                box.value.stopRunning()
+            }
         }
         session = nil
         if let cache {
@@ -185,6 +203,7 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
         latest.setPosition(position)
         switch state {
         case .idle, .denied, .restricted, .requestingAccess:
+            exposure = .notRunning(canLock: chosenCameraCanLock)   // CAM-004: the chosen camera's capability
             return   // recorded; a pending prompt's answer configures the camera chosen last
         case .unavailable, .interrupted, .failed:
             stop()
@@ -219,6 +238,7 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
         let video = videoQueue
         sessionQueue.async { [self] in
             let (session, input) = box.value
+            Self.releaseExposure(in: session)   // CAM-004-R6: before the input is removed
             session.beginConfiguration()
             let old = session.inputs
             old.forEach(session.removeInput)
@@ -249,6 +269,7 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
         guard position == .back else { return }   // R9: recorded; the front camera keeps its wide lens
         switch state {
         case .idle, .denied, .restricted, .requestingAccess:
+            exposure = .notRunning(canLock: chosenCameraCanLock)   // CAM-004
             return
         case .unavailable, .interrupted, .failed:
             stop()
@@ -271,6 +292,7 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
         let box = Unchecked(value: session)
         let video = videoQueue
         sessionQueue.async { [self] in
+            Self.releaseExposure(in: box.value)   // CAM-004-R6: before the input is removed
             let outcome: CameraInputSwitchOutcome = CameraInputSwitch.replace(
                 in: box.value,
                 makeInput: { () -> AVCaptureInput? in Self.makeBackInput(target) },
@@ -315,6 +337,50 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
         let slot = latest
         rotationObservation = coordinator.observe(\.videoRotationAngleForHorizonLevelCapture, options: [.new]) { coordinator, _ in
             slot.setRotation(CameraRotation(degrees: Double(coordinator.videoRotationAngleForHorizonLevelCapture)))
+        }
+    }
+
+    // MARK: - Exposure (CAM-004)
+
+    /// Whether the chosen camera supports locked exposure (reading a device property starts nothing).
+    private var chosenCameraCanLock: Bool {
+        currentCamera()?.supportsExposure(.locked) ?? false
+    }
+
+    /// The device of the session's camera input (session queue).
+    private static func exposureDevice(in session: AVCaptureSession) -> AVCaptureDevice? {
+        session.inputs.lazy.compactMap { (input: AVCaptureInput) -> AVCaptureDevice? in (input as? AVCaptureDeviceInput)?.device }.first
+    }
+
+    /// Returns a locked device to continuous automatic exposure (session queue; R6, R7).
+    private static func releaseExposure(in session: AVCaptureSession) {
+        if let camera = exposureDevice(in: session) { CameraExposureControl.release(camera) }
+    }
+
+    public func setExposureLocked(_ locked: Bool) {
+        guard state == .running, exposure.canLock, let session else { return }   // R3: nothing configured
+        let box = Unchecked(value: session)
+        readExposure { () -> Void in
+            guard let camera = Self.exposureDevice(in: box.value) else { return }
+            if locked { CameraExposureControl.lock(camera) } else { CameraExposureControl.release(camera) }
+        }
+    }
+
+    /// Runs `change` on the session queue, then posts the device's state read back (R5). Discarded when
+    /// the feed has moved on (another generation or no longer running).
+    private func readExposure(_ change: @escaping @Sendable () -> Void = {}) {
+        guard let session else { return }
+        let current = generation
+        let box = Unchecked(value: session)
+        sessionQueue.async { [self] in
+            change()
+            let read: CameraExposureState? = Self.exposureDevice(in: box.value).map { (camera: AVCaptureDevice) -> CameraExposureState in
+                CameraExposureControl.state(of: camera)
+            }
+            DispatchQueue.main.async { [self] in
+                guard current == generation, state == .running, let read else { return }
+                exposure = read
+            }
         }
     }
 

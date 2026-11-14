@@ -164,6 +164,20 @@ describe the old pass; RendererLab's `flashcost` mode still compares the pass wi
 baseline, and the device re-measurement on D1 is FX-019-T22 `{device}`. (The GLES fallback also
 runs the pass since T119.)
 
+## Budgets per device class (QA-010)
+
+The performance budgets are versioned in [`docs/performance/thresholds.json`](../performance/thresholds.json)
+(contract `thresholds.schema.json`, spec `specs/223-qa-010-performance-thresholds/`): frame rate (5th percentile of
+1 s windows), frame-interval p50 and p95, dropped-frame share, peak memory, audio age p95 and cold launch, for D1,
+D2, D3 and a not-evidence simulator/host class. Thresholds version 1 (2026-11-14) takes its limits from SC-005,
+SC-008, SC-013, SC-015 and R-06; the limits decided for classes those criteria do not name are listed in the spec's
+Clarifications. `python3 scripts/check_performance_thresholds.py` judges PERF-012 reports, `perf001` reports and
+`sc015` samples; `python3 scripts/run_device_tests.py thresholds --device D1 --run --report <PERF-012 export>`
+runs it at the final device stage and writes `performance-verdict.json` next to the pulled reports. No report
+carries audio age yet, so a device verdict today is at best "incomplete".
+
+**Device verdicts: none yet** (QA-010-T12 `{device}`). Fixture verdicts are not measurements.
+
 ## Stage 2 success criteria (Gate 4)
 
 **Gate 4 waived by the owner on 2026-11-10 (T102 not required).** SC-005, SC-008, SC-013 and

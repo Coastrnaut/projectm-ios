@@ -477,6 +477,7 @@ struct VisualizerView: View {
                      explainers: coordinator.explainers,   // UIX-015
                      cameraStatus: { () -> PermissionState? in coordinator.cameraPermissionStatus },
                      cameraLens: coordinator.cameraLensChoice,   // CAM-003
+                     cameraExposure: coordinator.cameraExposureChoice,   // CAM-004
                      recentPresets: coordinator.presets.recent,   // PRE-006
                      powerProfile: coordinator.powerProfile,   // PERF-008
                      performanceReport: coordinator.performanceReport,   // PERF-012

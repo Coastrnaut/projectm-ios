@@ -199,7 +199,7 @@ struct PerformancePadLayer: View {
     private var cueReadout: some View {
         let list: ShowCueList = show.list
         var top: String
-        let bottom: String
+        var bottom: String
         if let cue = list.activeCue {
             top = list.positionText
             bottom = cue.label
@@ -214,6 +214,10 @@ struct PerformancePadLayer: View {
         if let countdown = advance?.countdownText, let said = advance?.spokenCountdown {   // SHOW-002-R9
             top += " · \(countdown.replacingOccurrences(of: "Next in ", with: ""))"
             spoken += ", \(said)"
+        }
+        if let queued = show.cueQuantizer?.queuedText {   // SHOW-003-R7
+            bottom = queued
+            spoken += ", " + queued.lowercased()
         }
         return PerformanceReadout(top: top, bottom: bottom, label: "Show", value: spoken, identifier: "perfCueReadout",
                                   alignment: .leading)

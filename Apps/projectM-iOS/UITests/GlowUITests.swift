@@ -52,7 +52,7 @@ final class GlowUITests: XCTestCase {
 
     private func chooseCircularSpectrum() {
         let row = app.visualRow("Circular Spectrum")
-        XCTAssertTrue(row.appears(within: 5))
+        XCTAssertTrue(app.reveal(row), "the visual row (below the fold as visuals grow)")
         row.tap()
     }
 

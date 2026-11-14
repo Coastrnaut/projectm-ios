@@ -216,8 +216,13 @@ final class RecordingTimedStopAppTests: XCTestCase {
         XCTAssertLessThanOrEqual(video.durationSeconds, 10 + 1e-9)
         if dropped == 0 { XCTAssertEqual(video.durationSeconds, 10, accuracy: 1e-9) }
         XCTAssertTrue(r.recording.probe.contains("frames=\(video.frameCount) duration="), r.recording.probe)
-        XCTAssertEqual(r.recording.elapsedSeconds, 10, accuracy: 1e-9)
-        XCTAssertEqual(r.recording.indicatorText, "0:10 / 0:10")
+        if dropped == 0 {
+            XCTAssertEqual(r.recording.elapsedSeconds, 10, accuracy: 1e-9)
+            XCTAssertEqual(r.recording.indicatorText, "0:10 / 0:10")
+        } else {   // trailing drops end the clock at the last written frame (a post-merge run: 9.97 s, "0:09 / 0:10")
+            XCTAssertLessThanOrEqual(r.recording.elapsedSeconds, 10 + 1e-9)
+            XCTAssertGreaterThan(r.recording.elapsedSeconds, 9.5)
+        }
     }
 
     func testOffKeepsTheTenMinuteLimitAndItsNotice() throws {

@@ -35,6 +35,8 @@ struct PerformanceReportInputs {
     var truncated: Bool
     var pools: [TexturePoolCounters]
     var memory: PerformanceReport.Resources.Memory
+    /// PERF-013: the app session's feature age figures (nil or count 0 → no section).
+    var audioSync: FeatureAgeSummary? = nil
 }
 
 enum PerformanceReportBuilder {
@@ -46,7 +48,13 @@ enum PerformanceReportBuilder {
         let resources = PerformanceReport.Resources(texturePool: poolSection(inputs.pools), memory: inputs.memory)
         return PerformanceReport(exportedAt: inputs.exportedAt, device: inputs.device, app: inputs.app, session: session,
                                  frames: frames(inputs.intervals), frameDrops: drops, frameTimings: inputs.frameTimings,
-                                 states: states, resources: resources)
+                                 audioSync: inputs.audioSync.flatMap(audioSync), states: states, resources: resources)
+    }
+
+    /// PERF-013-R9: the age percentiles and drift verdict; nil (absent) when nothing was measured.
+    static func audioSync(_ s: FeatureAgeSummary) -> PerformanceReport.AudioSync? {
+        PerformanceReport.AudioSync(sampleCount: s.count, p50Ms: s.p50Ms, p95Ms: s.p95Ms, maxMs: s.maxMs,
+                                    driftDetected: s.driftDetected, driftPpm: s.driftPPM, detections: s.detections)
     }
 
     /// PERF-012-R5: percentiles, max, counts; absent when nothing was measured.

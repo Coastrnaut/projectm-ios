@@ -11,26 +11,29 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 20,
-   "implementing": 5,
-   "integrated": 125,
-   "unit_passed": 1
+   "audited": 19,
+   "built": 1,
+   "integrated": 129,
+   "unit_passed": 2
   },
   "P2": {
-   "audited": 64,
+   "audited": 61,
+   "built": 1,
    "implementing": 1,
-   "integrated": 14
+   "integrated": 14,
+   "unit_passed": 2
   },
   "P3": {
    "audited": 9
   }
  },
  "by_state": {
-  "audited": 95,
-  "implementing": 6,
-  "integrated": 223,
+  "audited": 91,
+  "built": 2,
+  "implementing": 1,
+  "integrated": 227,
   "skipped_existing": 1,
-  "unit_passed": 1
+  "unit_passed": 4
  },
  "device_gate": {
   "blocked": [],
@@ -94,13 +97,11 @@
    "PRE-009",
    "PRE-011",
    "PRE-017",
-   "QA-009",
    "QA-010",
    "QA-011",
    "QA-012",
    "REC-002",
    "REC-013",
-   "REC-014",
    "REC-016",
    "SCN-009",
    "SHD-003",
@@ -110,7 +111,6 @@
    "SHD-007",
    "SHD-008",
    "SHD-012",
-   "SHOW-003",
    "SHOW-004",
    "SHOW-005",
    "SHOW-006",
@@ -123,7 +123,6 @@
    "SHOW-015",
    "UIX-006",
    "UIX-008",
-   "UIX-009",
    "UIX-010",
    "UIX-011",
    "UIX-012",
@@ -143,7 +142,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "102 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, CAM-004, CAM-005)"
+   "98 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, CAM-004, CAM-005)"
   ]
  },
  "features": {
@@ -760,12 +759,12 @@
   "CAM-004": {
    "attempts": 0,
    "branch": "feature/cam-004",
-   "branch_sha": null,
+   "branch_sha": "dfb2608715f96faba9f9ea8cb2b6d8340af19737",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "CAM-005": {
    "attempts": 0,
@@ -939,13 +938,13 @@
   },
   "CMP-009": {
    "attempts": 0,
-   "branch": null,
-   "branch_sha": null,
+   "branch": "feature/cmp-009",
+   "branch_sha": "09d4a222",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "built"
   },
   "CMP-010": {
    "attempts": 0,
@@ -2160,12 +2159,12 @@
   "PERF-013": {
    "attempts": 0,
    "branch": "feature/perf-013",
-   "branch_sha": null,
+   "branch_sha": "21abdf133c764eedebf45d5218e0680894561163",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "PERF-014": {
    "attempts": 0,
@@ -2219,13 +2218,13 @@
   },
   "PRE-005": {
    "attempts": 0,
-   "branch": null,
-   "branch_sha": null,
+   "branch": "feature/pre-005",
+   "branch_sha": "e2c9a9c98615d99aa81b0bf9db70f2b6ac88c1fd",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "unit_passed"
   },
   "PRE-006": {
    "attempts": 0,
@@ -2442,20 +2441,20 @@
    "branch": "feature/qa-009",
    "branch_sha": "d151e5288bc96ac39540603bd68248607aaa07db",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "5995f52e",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "QA-010": {
    "attempts": 0,
-   "branch": null,
-   "branch_sha": null,
+   "branch": "feature/qa-010",
+   "branch_sha": "db68dafe47474a714534d9aa81fa0fa82ab9e01d",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "unit_passed"
   },
   "QA-011": {
    "attempts": 0,
@@ -2610,12 +2609,12 @@
   "REC-014": {
    "attempts": 0,
    "branch": "feature/rec-014",
-   "branch_sha": null,
+   "branch_sha": "ccffa100061fc9c7e46a82a180609133f14c9e8a",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "9f17fcc3",
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "integrated"
   },
   "REC-015": {
    "attempts": 0,
@@ -2719,13 +2718,13 @@
   },
   "SCN-009": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/scn-009",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "SCN-010": {
    "attempts": 0,
@@ -2810,12 +2809,12 @@
   "SHD-003": {
    "attempts": 0,
    "branch": "feature/shd-003",
-   "branch_sha": null,
+   "branch_sha": "ad3c0f1c",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "built"
   },
   "SHD-004": {
    "attempts": 0,
@@ -2930,12 +2929,12 @@
   "SHOW-003": {
    "attempts": 0,
    "branch": "feature/show-003",
-   "branch_sha": null,
+   "branch_sha": "7cc774fa39b546ba9ec20daae88787fdf9660d1c",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "f8aefa27",
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "integrated"
   },
   "SHOW-004": {
    "attempts": 0,
@@ -3140,12 +3139,12 @@
   "UIX-009": {
    "attempts": 0,
    "branch": "feature/uix-009",
-   "branch_sha": null,
+   "branch_sha": "21fb80d34973ec42ef671d97177164588d428007",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "7a3ef2bf",
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "integrated"
   },
   "UIX-010": {
    "attempts": 0,
@@ -4270,6 +4269,11 @@
    "sha": "2a986abd"
   },
   {
+   "branch": "feature/qa-009",
+   "id": "QA-009",
+   "sha": "5995f52e"
+  },
+  {
    "branch": "feature/rec-001",
    "id": "REC-001",
    "sha": "5666cc2332ffd383299f9f9dc306a5f3d21c9ab9"
@@ -4323,6 +4327,11 @@
    "branch": "feature/rec-012",
    "id": "REC-012",
    "sha": "c3886d1cb0bb2fc8bfeec909a094332bdfb8ff71"
+  },
+  {
+   "branch": "feature/rec-014",
+   "id": "REC-014",
+   "sha": "9f17fcc3"
   },
   {
    "branch": "feature/rec-015",
@@ -4435,6 +4444,11 @@
    "sha": "d294e530"
   },
   {
+   "branch": "feature/show-003",
+   "id": "SHOW-003",
+   "sha": "f8aefa27"
+  },
+  {
    "branch": "feature/show-011",
    "id": "SHOW-011",
    "sha": "11329d52e6dc05d820e8ee931de4167b14b3d1ab"
@@ -4473,6 +4487,11 @@
    "branch": "feature/uix-007",
    "id": "UIX-007",
    "sha": "c801a438"
+  },
+  {
+   "branch": "feature/uix-009",
+   "id": "UIX-009",
+   "sha": "7a3ef2bf"
   },
   {
    "branch": "feature/uix-015",
@@ -4550,5 +4569,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T21:16:52Z"
+ "updated": "2026-11-14T21:58:11Z"
 }
