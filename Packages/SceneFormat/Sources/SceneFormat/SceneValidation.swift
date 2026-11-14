@@ -230,6 +230,7 @@ extension SceneDocument {
     private func validateModulation(_ registry: ParameterRegistry, into issues: inout [SceneIssue]) {
         issues += restoreModulation(registry: registry).issues
         if let triggers { issues += SceneTriggerEntry.read(triggers).issues }   // MOD-006 (warnings)
+        if let lfos { issues += SceneLFOEntry.read(lfos).issues }   // MOD-007 (warnings)
     }
 }
 

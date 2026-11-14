@@ -45,7 +45,9 @@ final class PresetThumbnailRunnerTests: XCTestCase {
     func testAPresetDrawsAPictureOfTheRequestedSizeAndASuspendedRunnerDrawsNothing() async throws {
         let renderer = try ANGLERenderer.make()
         let drawing = try XCTUnwrap(renderer.presetThumbnails)
-        let result = await drawing.draw(preset, width: 128, height: 72, frames: frames(3), timeout: .seconds(30))
+        // A ceiling, not a cost: CI's iOS simulator compiled this preset's shaders for more than 30 s once
+        // (run 43606989629, "The thumbnail took too long"); on the Mac it takes about 6 s.
+        let result = await drawing.draw(preset, width: 128, height: 72, frames: frames(3), timeout: .seconds(120))
         guard case .pixels(let pixels) = result else { return XCTFail("\(result)") }
         XCTAssertEqual(pixels.count, 128 * 72 * 4)
         let bytes = [UInt8](pixels)

@@ -136,6 +136,9 @@ final class VideoRecordingCoordinator {
         /// REC-004: the normalized ring's recording tap and how to arm or disarm it (nil in tests without audio).
         var audioTap: (any RecordingTapReading)? = nil
         var setAudioTapArmed: ((Bool) -> Void)? = nil
+        /// REC-005: the selected quality profile and what the device can encode (nil: VideoToolbox at 60 fps).
+        var qualityProfile: RecordingQualityProfile = .defaultProfile
+        var qualityCapabilities: (any RecordingEncoderCapabilities)? = nil
     }
 
     enum State: Equatable, CaseIterable {   // CaseIterable: ACC-011's completeness test
@@ -162,6 +165,8 @@ final class VideoRecordingCoordinator {
     private(set) var recordingAudio: RecordingAudioDecision?
     /// REC-004: the current recording's audio ended early (a switch, a new session, the setting off).
     private(set) var audioEnded = false
+    /// REC-005: the profile the current (or last) recording uses (after a fallback, the one it fell back to).
+    private(set) var recordingProfile: RecordingQualityProfile?
     @ObservationIgnored private var recordingAudioMode: AudioSourceMode?
     @ObservationIgnored private var disarmAudioTap: (() -> Void)?
 
@@ -355,7 +360,15 @@ final class VideoRecordingCoordinator {
         let audio = Self.audioDecision(for: c)   // REC-004-R4: fixed for this recording
         let tapArmer = c.setAudioTapArmed
         let url = directory.appendingPathComponent(Self.fileName(date: Date()))
-        let settings = RecordingSettings.standard
+        // REC-005-R6: the selected profile, re-checked with this drawable; a fallback is announced (X9c).
+        let capabilities: any RecordingEncoderCapabilities = c.qualityCapabilities ?? RecordingQualitySetting.encoder
+        let resolution = RecordingQualityCatalog.resolve(c.qualityProfile, drawableWidth: Int(size.width),
+                                                         drawableHeight: Int(size.height), capabilities: capabilities)
+        guard case .record(let plan, _, _) = resolution else {
+            fail(.encoderUnavailable)
+            return
+        }
+        let settings: RecordingSettings = plan.settings
         do {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             // REC-015-R1, R3: one free-storage reading before anything is written.
@@ -397,7 +410,8 @@ final class VideoRecordingCoordinator {
         audioEnded = false
         state = .recording
         elapsedSeconds = 0
-        notice = nil
+        notice = resolution.fallbackNotice   // REC-005-R6: X9c, nil without a fallback
+        recordingProfile = plan.profile
         lastStopReason = nil
         probe = "recording"
         startTicker()

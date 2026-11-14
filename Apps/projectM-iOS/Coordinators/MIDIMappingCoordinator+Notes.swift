@@ -9,6 +9,10 @@
 //   `performNotes`. Triggers announce nothing here: the actions announce on their own lanes (cue, status events).
 // * Stuck notes (MIDI-006-R6): held keys are released when the input stops receiving, when the listed inputs shrink,
 //   and when a held binding is deleted, replaced, moved or undone.
+// * MIDI-008 (specs/157-midi-008-transport, contract T4): the section is "Transport" (Play/Pause, Play, Pause and the
+//   MIDI-006 rows). Learn also accepts a CC button press (controller 0–119, value ≥ 64) and real-time Start/Continue/Stop
+//   (not on the hold row); the learned press is registered in the router's press filter so its duplicate copies fire
+//   nothing (research MIDI-008-D7). A CC learned as a button leaves the MIDI-003 list (one action per control, D6).
 import Foundation
 import PerformanceControl
 
@@ -31,7 +35,7 @@ struct MIDINoteRow: Identifiable, Equatable {
 }
 
 extension MIDIMappingCoordinator {
-    static let noteFooterText: String = "Learn waits up to 30 seconds for a key or pad (a note). Trigger rows act when the key goes down; Black out while held is black only while the key is held. A note on with velocity 0 counts as a release."
+    static let noteFooterText: String = "Learn waits up to 30 seconds for a key or pad (a note), a button that sends a control change (pressed at 64 or more, released below 64) or MIDI Start, Continue or Stop. Rows act when the key or button goes down; Black out while held is black only while it is held. Repeated copies of one press act once. Play/Pause, Play and Pause control the visualizer's Pause."
 
     /// "Note C4 · Ch 1" (channels shown 1–16).
     static func noteText(_ key: MIDIControlKey) -> String {
@@ -50,10 +54,31 @@ extension MIDIMappingCoordinator {
         "Press a key or pad on your MIDI device to map " + target.title
     }
 
+    /// MIDI-008: "Note C4 · Ch 1", "CC 20 · Ch 1", "MIDI Start", "MIDI Stop".
+    static func triggerText(_ key: MIDIControlKey) -> String {
+        switch key.kind {
+        case .start: return "MIDI Start"
+        case .stop: return "MIDI Stop"
+        case .controlChange: return controlText(key)
+        default: return noteText(key)
+        }
+    }
+
+    /// MIDI-008: "note C4 on channel 1", "CC button 20 on channel 1", "MIDI Start", "MIDI Stop".
+    static func spokenTrigger(_ key: MIDIControlKey) -> String {
+        switch key.kind {
+        case .start, .stop: return triggerText(key)
+        case .controlChange:
+            let channel: Int = Int(key.channel) + 1
+            return "CC button " + String(key.number) + " on channel " + String(channel)
+        default: return spokenNote(key)
+        }
+    }
+
     var noteRows: [MIDINoteRow] {
         MIDINoteTarget.all.map { (target: MIDINoteTarget) -> MIDINoteRow in
             let key: MIDIControlKey? = noteBindings.binding(for: target)?.key
-            let control: String? = key.map { (key: MIDIControlKey) -> String in Self.noteText(key) }
+            let control: String? = key.map { (key: MIDIControlKey) -> String in Self.triggerText(key) }
             return MIDINoteRow(target: target, control: control, isLearning: learningNoteTarget == target)
         }
     }
@@ -100,14 +125,21 @@ extension MIDIMappingCoordinator {
     /// learning press's index (MIDI-007: scene routing skips it too).
     @discardableResult
     func receiveNotes(_ batch: [MIDIEvent]) -> Int? {
-        guard noteSession.isLearning, let outcome = noteSession.handle(batch, now: clock(), isEligible: MIDILearnEligibility.isNoteEligible) else {
+        let allowsRealTime: Bool = noteSession.target?.mode != .hold   // MIDI-008: real-time has no release
+        let eligible: (MIDIEvent) -> Bool = { (event: MIDIEvent) -> Bool in
+            MIDILearnEligibility.isTriggerEligible(event, allowsRealTime: allowsRealTime)
+        }
+        guard noteSession.isLearning, let outcome = noteSession.handle(batch, now: clock(), isEligible: eligible) else {
             route(batch[...])
             return nil
         }
         switch outcome {
-        case let .bound(key, target, eventIndex):
+        case let .bound(learned, target, eventIndex):
+            let event: MIDIEvent = batch[eventIndex]
+            let key: MIDIControlKey = event.triggerKey ?? learned   // Continue learns as Start
             route(batch[..<eventIndex])
             bindNote(key, to: target)
+            if noteBindings.binding(forKey: key) != nil { noteRouter.registerPress(key, timestamp: event.timestamp) }
             route(batch[(eventIndex + 1)...])
             return eventIndex
         case .timedOut:
@@ -130,8 +162,9 @@ extension MIDIMappingCoordinator {
         var after: MIDINoteBindingList = noteBindings
         let outcome: MIDINoteBindOutcome = after.bind(key, to: target)
         endLearning()
-        let mapped: String = target.title + " mapped to " + Self.spokenNote(key)
+        let mapped: String = target.title + " mapped to " + Self.spokenTrigger(key)
         let scenesBefore: MIDISceneBindingList = sceneBindings
+        let ccBefore: MIDIBindingList = bindings
         switch outcome {
         case .full:
             lastMessage = Self.fullText
@@ -145,10 +178,15 @@ extension MIDIMappingCoordinator {
             if let freed = sceneBindings.remove(key: key) {   // MIDI-007-R8: one action per note
                 lastMessage = mapped + " (moved from " + sceneTitle(freed.sceneID) + ")."
             }
+            if let parameter = freeControlBinding(key) {   // MIDI-008-R6: a CC is a button or a parameter control
+                lastMessage = mapped + " (moved from " + name(of: parameter) + ")."
+            }
         }
         releaseNotes(changedFrom: before, to: after)
         noteBindings = after
-        if before != after || scenesBefore != sceneBindings { rememberUndo(cc: bindings, notes: before, scenes: scenesBefore) }
+        if before != after || scenesBefore != sceneBindings || ccBefore != bindings {
+            rememberUndo(cc: ccBefore, notes: before, scenes: scenesBefore)
+        }
         announce(lastMessage ?? mapped)
         listChanged()
     }
