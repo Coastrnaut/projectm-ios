@@ -55,6 +55,8 @@ extension AppCoordinator {
         sceneRepair.availability = { [weak self] () -> StoredMediaAvailability in
             self?.storedMediaAvailability ?? StoredMediaAvailability(photos: [], videos: [])
         }
+        // MIDI-006: note triggers step the show and use OUT-010's blackout (kept out of init's type-check budget).
+        midiMappings.connectNoteActions(MIDINoteActionPerformer(show: show, external: externalDisplay))
     }
 
     /// Sets a validated scene's look; returns the notes for the step's notice.

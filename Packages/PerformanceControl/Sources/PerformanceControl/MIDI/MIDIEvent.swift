@@ -67,6 +67,18 @@ public struct MIDIEvent: Sendable, Hashable {
         return MIDIControlKey(kind: keyKind, channel: channel, number: number)
     }
 
+    /// MIDI-006-R1 (contract N1): the one place that decides whether a note message presses or releases its key.
+    /// `.on` for a note on with velocity > 0; `.off` for a note off or a note on with velocity 0 (MIDI 1.0); nil
+    /// for every other kind. The parsers already build velocity-0 note ons as note offs; this also covers events
+    /// built by hand.
+    public var noteEdge: MIDINoteEdge? {
+        switch kind {
+        case .noteOn: return value == 0 ? .off : .on
+        case .noteOff: return .off
+        default: return nil
+        }
+    }
+
     /// 0…1 for 7-bit channel values (value / 127) and pitch bend (value / 16383); nil for other kinds (MIDI-004).
     public var normalizedValue: Double? {
         switch kind {
@@ -129,6 +141,12 @@ public struct MIDIEvent: Sendable, Hashable {
         }
         return MIDIEvent(kind: kind, timestamp: timestamp)
     }
+}
+
+/// A key press or release (MIDI-006, `MIDIEvent.noteEdge`).
+public enum MIDINoteEdge: Sendable, Hashable {
+    case on
+    case off
 }
 
 /// A binding key (MIDI-003): kind (note on for notes), channel and number.

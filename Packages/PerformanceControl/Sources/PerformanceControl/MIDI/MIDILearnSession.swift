@@ -14,6 +14,11 @@ public enum MIDILearnEligibility {
     public static func isEligible(_ event: MIDIEvent) -> Bool {
         event.kind == .controlChange && event.number <= highestLearnableController
     }
+
+    /// MIDI-006: a note learn accepts a key press only (note on with velocity > 0; never a release).
+    public static func isNoteEligible(_ event: MIDIEvent) -> Bool {
+        event.noteEdge == .on
+    }
 }
 
 /// How a learn session ended.
@@ -58,9 +63,15 @@ public struct MIDILearnSession<Target: Hashable & Sendable>: Sendable, Hashable 
 
     /// Expires first, then binds the first eligible event of `batch` (MIDI-003-R2, R3).
     public mutating func handle(_ batch: [MIDIEvent], now: UInt64) -> MIDILearnOutcome<Target>? {
+        handle(batch, now: now, isEligible: MIDILearnEligibility.isEligible)
+    }
+
+    /// The same with another eligibility rule (MIDI-006: `MIDILearnEligibility.isNoteEligible`).
+    public mutating func handle(_ batch: [MIDIEvent], now: UInt64,
+                                isEligible: (MIDIEvent) -> Bool) -> MIDILearnOutcome<Target>? {
         if let expired = expire(now: now) { return expired }
         guard let target else { return nil }
-        guard let index = batch.firstIndex(where: { (event: MIDIEvent) -> Bool in MIDILearnEligibility.isEligible(event) }) else {
+        guard let index = batch.firstIndex(where: { (event: MIDIEvent) -> Bool in isEligible(event) }) else {
             return nil
         }
         self.target = nil
