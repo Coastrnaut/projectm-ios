@@ -91,15 +91,19 @@ struct SplitEditorHost<Backdrop: View, Content: View, Editor: View>: View {
     /// The whole window: the reader ignores the safe area, so its size is the window's.
     private static func windowSize(_ proxy: GeometryProxy) -> CGSize { proxy.size }
 
-    private func layout(_ window: CGSize) -> SplitEditorLayout {
-        SplitEditorLayout(containerWidth: Double(window.width), containerHeight: Double(window.height),
-                          editorWidth: dragWidth ?? setting.width)
+    /// The editor and divider end at the trailing safe-area edge (the content is padded by the safe area),
+    /// so the layout's container stops there too; the output keeps the whole window's shape.
+    private func layout(_ window: CGSize, trailingInset: CGFloat) -> SplitEditorLayout {
+        let width: Double = Double(window.width) - Double(max(0, trailingInset))
+        let aspect: Double? = window.height > 0 ? Double(window.width / window.height) : nil
+        return SplitEditorLayout(containerWidth: width, containerHeight: Double(window.height),
+                                 editorWidth: dragWidth ?? setting.width, outputAspect: aspect)
     }
 
     private func available(_ layout: SplitEditorLayout) -> Bool { sizeClass == .regular && layout.fits }
 
     private func hosted(window: CGSize, safeArea: EdgeInsets) -> some View {
-        let layout: SplitEditorLayout = layout(window)
+        let layout: SplitEditorLayout = layout(window, trailingInset: safeArea.trailing)
         let available: Bool = available(layout)
         let shown: Bool = available && isOpen
         return ZStack(alignment: .topLeading) {

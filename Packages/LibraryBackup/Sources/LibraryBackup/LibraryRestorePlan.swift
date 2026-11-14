@@ -20,6 +20,9 @@
 // Preset overrides (PRE-016, key "overrides/<preset id>", section `overrides`): per preset, Keep both =
 // the device's values plus the backup's other parameters (`union`), Replace = the backup's set, Skip =
 // the device's; a Keep-both copy's overrides follow its derived identifier, as tags do.
+// Palettes (UIX-011, key "palette/<id>", section `palettes`): new → added; identical → kept; a clash takes Keep
+// both (a copy under a derived ID and "<name> copy"), Replace (the backup's content under the same ID) or Skip;
+// a palette that would exceed 64 is left out (`fellBack`).
 // Presets: a backup text already stored under another identifier is identical (each text is stored
 // once, PRE-012); a Keep both or Replace that would store a text twice keeps the device's record.
 import Foundation
@@ -47,6 +50,8 @@ public enum LibraryRestoreSection: String, Sendable, Hashable, CaseIterable {
     case tags
     /// PRE-016: preset parameter overrides, one entry per preset with overrides.
     case overrides
+    /// UIX-011: user colour palettes, one entry per palette.
+    case palettes
 }
 
 public enum LibraryRecordKind: String, Sendable, Hashable {
@@ -127,6 +132,10 @@ public struct LibraryRestorePlan: Sendable, Equatable {
     public var presetTags: PresetTagMap? = nil
     /// PRE-016: the preset overrides after the restore; nil when they do not change.
     public var presetOverrides: PresetOverrideMap? = nil
+    /// PRE-008: the smart collections after the restore; nil when they do not change.
+    public var smartCollections: [PresetSmartCollection]? = nil
+    /// UIX-011: the user palettes after the restore; nil when they do not change.
+    public var palettes: PaletteLibrary? = nil
     /// The current scene to write; nil when it does not change.
     public let currentScene: Data?
     public let photosToWrite: [String: Data]
@@ -152,8 +161,9 @@ public struct LibraryRestorePlan: Sendable, Equatable {
         if showMode == .exact || (showMode == .merge && (scenePlan?.actions.isEmpty == false)) { folders.append(.show) }
         if currentScene != nil { folders.append(.currentScene) }
         if !presetsToAdd.isEmpty || !presetsToReplace.isEmpty { folders.append(.presets) }
-        if collections != nil || presetTags != nil || presetOverrides != nil { folders.append(.collections) }
+        if collections != nil || presetTags != nil || presetOverrides != nil || smartCollections != nil { folders.append(.collections) }
         if !photosToWrite.isEmpty { folders.append(.photos) }
+        if palettes != nil { folders.append(.palettes) }   // UIX-011
         return folders
     }
 }
@@ -168,8 +178,10 @@ public enum LibraryRestorePlanner {
         builder.planCollections(backup: backup, library: library)
         builder.planTags(backup: backup, library: library)
         builder.planOverrides(backup: backup, library: library)
+        builder.planSmartCollections(backup: backup, library: library)   // PRE-008
         builder.planSettings(backup: backup, library: library)
         builder.planPhotos(backup: backup, library: library)
+        builder.planPalettes(backup: backup, library: library)   // UIX-011
         var plan = LibraryRestorePlan(choice: choice, overrides: overrides, libraryDigest: libraryDigest(library),
                                       backupDigest: LibraryRecords(backup).digest, refusal: builder.refusal, entries: builder.entries,
                                       showMode: builder.showMode, scenePlan: builder.scenePlan, presetsToAdd: builder.presetsToAdd,
@@ -177,6 +189,8 @@ public enum LibraryRestorePlanner {
                                       currentScene: builder.currentScene, photosToWrite: builder.photos, settingsToApply: builder.settings)
         plan.presetTags = builder.presetTags
         plan.presetOverrides = builder.presetOverrides
+        plan.smartCollections = builder.smartCollections
+        plan.palettes = builder.palettes
         return plan
     }
 
@@ -230,6 +244,17 @@ public enum LibraryRestorePlanner {
         }
     }
 
+    /// UIX-011 (research UIX-011-D7): an uppercase UUID from SHA-256("FILE-005|palette|<id>|<content sha256>|<n>").
+    public static func derivedPaletteID(_ id: String, contentSHA256: String, avoiding taken: Set<String>) -> String {
+        var number = 1
+        while true {
+            let seed: String = "FILE-005|palette|" + id + "|" + contentSHA256 + "|" + String(number)
+            let candidate: String = ShowSceneImportPlanner.derivedUUID(seed).uuidString
+            if !taken.contains(candidate) { return candidate }
+            number += 1
+        }
+    }
+
     /// "<name> copy", "<name> copy 2", … whose PRE-007 name key is not taken; at most 60 characters.
     public static func collectionCopyName(_ name: String, takenKeys: Set<String>) -> String {
         var number = 1
@@ -257,6 +282,8 @@ private struct Builder {
     var collections: [PresetCollection]?
     var presetTags: PresetTagMap?
     var presetOverrides: PresetOverrideMap?
+    var smartCollections: [PresetSmartCollection]?
+    var palettes: PaletteLibrary?
     var currentScene: Data?
     var photos: [String: Data] = [:]
     var settings: [String: LibrarySettingValue] = [:]
@@ -514,6 +541,46 @@ private struct Builder {
         if changed { collections = list }
     }
 
+    // MARK: Palettes (UIX-011)
+
+    mutating func planPalettes(backup: LibraryContents, library: LibraryContents) {
+        guard let incoming = backup.palettes, !incoming.user.isEmpty else { return }
+        var result: PaletteLibrary = library.palettes ?? PaletteLibrary()
+        var changed = false
+        for theirs in incoming.user {
+            let key = "palette/" + theirs.id
+            guard let mine = result.palette(theirs.id) else {
+                let added: Bool = (try? result.upsert(theirs)) != nil
+                add(key, .palettes, .new, added ? .add : .keep, fellBack: !added)
+                changed = changed || added
+                continue
+            }
+            if mine == theirs {
+                add(key, .palettes, .identical, .keep)
+                continue
+            }
+            let picked: LibraryRestoreChoice = choice(for: key)
+            switch picked {
+            case .skip:
+                add(key, .palettes, .clash, .keep, choice: picked)
+            case .replace:
+                let replaced: Bool = (try? result.upsert(theirs)) != nil
+                add(key, .palettes, .clash, replaced ? .replace : .keep, choice: picked, fellBack: !replaced)
+                changed = changed || replaced
+            case .keepBoth:
+                let taken: Set<String> = Set(result.all.map(\.id))
+                let content: String = PortableSHA256.hex(PaletteFile.encode(theirs))
+                var copy: ColorPalette = theirs
+                copy.id = LibraryRestorePlanner.derivedPaletteID(theirs.id, contentSHA256: content, avoiding: taken)
+                copy.name = PaletteLibrary.copyName(theirs.name, taken: Set(result.all.map(\.name)))
+                let added: Bool = (try? result.upsert(copy)) != nil
+                add(key, .palettes, .clash, added ? .addCopy(id: copy.id, name: copy.name) : .keep, choice: picked, fellBack: !added)
+                changed = changed || added
+            }
+        }
+        if changed { palettes = result }
+    }
+
     // MARK: Preset tags (PRE-003)
 
     /// The identifier a backup preset ends up under: a Keep-both copy's derived one, else its own.
@@ -620,6 +687,42 @@ private struct Builder {
             map = merged
         }
         if changed { presetOverrides = map }
+    }
+
+    // MARK: Smart collections (PRE-008)
+
+    /// Research PRE-008-D5: per smart collection ID, a new one is added (at most 100 in all), an identical one
+    /// is kept, and a clash follows the choice: Replace takes the backup's, Keep both and Skip keep the device's.
+    mutating func planSmartCollections(backup: LibraryContents, library: LibraryContents) {
+        guard let incoming = backup.smartCollections, !incoming.isEmpty else { return }
+        var list: [PresetSmartCollection] = library.smartCollections ?? []
+        var changed = false
+        for theirs in incoming {
+            let key = "smart/" + theirs.id
+            guard let index = list.firstIndex(where: { (c: PresetSmartCollection) -> Bool in c.id == theirs.id }) else {
+                guard list.count < PresetSmartLimits.maxCollections else {
+                    add(key, .collections, .new, .keep, fellBack: true)
+                    continue
+                }
+                list.append(theirs)
+                add(key, .collections, .new, .add)
+                changed = true
+                continue
+            }
+            if list[index] == theirs {
+                add(key, .collections, .identical, .keep)
+                continue
+            }
+            let picked: LibraryRestoreChoice = choice(for: key)
+            if picked == .replace {
+                list[index] = theirs
+                add(key, .collections, .clash, .replace, choice: picked)
+                changed = true
+            } else {
+                add(key, .collections, .clash, .keep, choice: picked)
+            }
+        }
+        if changed { smartCollections = list }
     }
 
     // MARK: Settings

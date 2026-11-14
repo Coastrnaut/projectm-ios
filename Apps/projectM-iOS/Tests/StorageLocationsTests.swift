@@ -17,7 +17,7 @@ final class StorageLocationsTests: XCTestCase {
         func roots(_ category: StorageCategory) -> [String] { (locations.roots[category] ?? []).map(path) }
         XCTAssertEqual(roots(.photos), [path(try PhotoStore.defaultDirectory())])
         XCTAssertEqual(roots(.videos), [path(try VideoStore.defaultDirectory())])
-        XCTAssertEqual(roots(.scenes), [path(try SceneAutosaveStore.defaultDirectory())])
+        XCTAssertEqual(roots(.scenes), [path(try SceneAutosaveStore.defaultDirectory()), path(try PaletteStore.defaultDirectory())])   // UIX-011
         XCTAssertEqual(roots(.presets), [path(UserPresetStore.defaultDirectory()), path(PresetCollectionStore.defaultDirectory())])
         XCTAssertEqual(roots(.importedAudio), [path(try AudioLibrary.defaultDirectory())])
         XCTAssertEqual(roots(.recordings), [path(VideoRecordingCoordinator.defaultDirectory)])
@@ -67,7 +67,7 @@ final class StorageLocationsTests: XCTestCase {
         }
         XCTAssertEqual(report.usage(.presets).fileCount, 2)
         XCTAssertEqual(report.usage(.sharesAndExports).fileCount, 3)
-        XCTAssertEqual(report.total.fileCount, 13)   // REC-010: one more folder (Saved recordings)
+        XCTAssertEqual(report.total.fileCount, 14)   // REC-010: one more folder (Saved recordings); UIX-011: Palettes
         XCTAssertEqual(report.total.contentBytes, StorageCategory.allCases.reduce(Int64(0)) { (sum: Int64, c: StorageCategory) -> Int64 in
             sum + (expected[c] ?? 0)
         })

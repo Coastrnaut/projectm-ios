@@ -20,7 +20,9 @@ final class SceneSourceSafetyTests: XCTestCase {
                                "SceneMacros.swift",   // MOD-010
                                "SceneMediaReferences.swift",   // MED-013
                                "SceneMigration.swift",
-                               "SceneModulationRestore.swift", "SceneRepair.swift", "SceneSlideshow.swift",   // MED-006
+                               "SceneModulationRestore.swift",
+                               "ScenePaletteColorNames.swift", "ScenePalettes.swift",   // UIX-011
+                               "SceneRepair.swift", "SceneSlideshow.swift",   // MED-006
                                "SceneSnapshots.swift",   // SCN-008
                                "SceneTriggers.swift",   // MOD-006
                                "SceneValidation.swift", "SceneVideoLoop.swift"])   // MED-003
