@@ -13,8 +13,7 @@
   },
   "P1": {
    "audited": 125,
-   "integrated": 25,
-   "unit_passed": 1
+   "integrated": 26
   },
   "P2": {
    "audited": 77,
@@ -27,9 +26,8 @@
  "by_state": {
   "audited": 216,
   "implementing": 1,
-  "integrated": 107,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "integrated": 108,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -53,7 +51,6 @@
    "ANL-013",
    "ANL-015",
    "AUD-010",
-   "AUD-015",
    "CAM-003",
    "CAM-004",
    "CAM-005",
@@ -258,7 +255,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "218 features are not implemented yet (first: ACC-003, ACC-005, ACC-006, ACC-007, ACC-008)"
+   "217 features are not implemented yet (first: ACC-003, ACC-005, ACC-006, ACC-007, ACC-008)"
   ]
  },
  "features": {
@@ -687,10 +684,10 @@
    "branch": "feature/aud-015",
    "branch_sha": "f708b257ad68c66d946b5e5413705f90a2dcdb7c",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "ad0aebe2",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "AUD-016": {
    "attempts": 0,
@@ -857,7 +854,7 @@
    "branch": "feature/cam-002",
    "branch_sha": "ccc35e86202be2e1dc86e6d5447b6f0aed67def2",
    "error_category": null,
-   "integrated_sha": "fdcd43aca742b615741fc3a16064bb41fd86f5a5",
+   "integrated_sha": "ad0aebe2",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
@@ -3655,6 +3652,11 @@
    "sha": "c4f03aa5e3d8d70168c21e2e42f71eb07d86a0df"
   },
   {
+   "branch": "feature/aud-015",
+   "id": "AUD-015",
+   "sha": "ad0aebe2"
+  },
+  {
    "branch": "feature/aud-016",
    "id": "AUD-016",
    "sha": "f69525cf0e8dbed847b54612e6cc98d98440be34"
@@ -3737,7 +3739,7 @@
   {
    "branch": "feature/cam-002",
    "id": "CAM-002",
-   "sha": "fdcd43aca742b615741fc3a16064bb41fd86f5a5"
+   "sha": "ad0aebe2"
   },
   {
    "branch": "feature/cam-012",
@@ -4085,5 +4087,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T04:29:08Z"
+ "updated": "2026-11-14T04:33:36Z"
 }

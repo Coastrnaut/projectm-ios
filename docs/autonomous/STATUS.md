@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T04:29:08Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T04:33:36Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 216 |
 | implementing | 1 |
-| unit_passed | 1 |
-| integrated | 107 |
+| integrated | 108 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 5 | 1 | 0 | 80 | 1 |
-| P1 | 125 | 0 | 1 | 25 | 0 |
-| P2 | 77 | 0 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 5 | 1 | 80 | 1 |
+| P1 | 125 | 0 | 26 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 218 features are not implemented yet (first: ACC-003, ACC-005, ACC-006, ACC-007, ACC-008)
+- 217 features are not implemented yet (first: ACC-003, ACC-005, ACC-006, ACC-007, ACC-008)
 
 ## Integrated
 
@@ -59,6 +58,7 @@ The physical-device suite may **not** start:
 | AUD-012 | Source crossfade | `bf6d440f` | `feature/aud-012` |
 | AUD-013 | Source latency calibration | `5fb13b98` | `feature/aud-013` |
 | AUD-014 | Audio session interruption recovery | `c4f03aa5e3d8` | `feature/aud-014` |
+| AUD-015 | Background playback policy | `ad0aebe2` | `feature/aud-015` |
 | AUD-016 | Reference tone suite | `f69525cf0e8d` | `feature/aud-016` |
 | AUTO-001 | Roadmap parser | `419cc2a999ed` | `autonomous/integration` |
 | AUTO-002 | Implementation inventory gate | `419cc2a999ed` | `autonomous/integration` |
@@ -75,7 +75,7 @@ The physical-device suite may **not** start:
 | AUTO-013 | Final device-test gate | `419cc2a999ed` | `autonomous/integration` |
 | AUTO-014 | Unattended safety budget | `419cc2a999ed` | `autonomous/integration` |
 | CAM-001 | Rear camera layer | `05ef3cb4e24b` | `feature/cam-001` |
-| CAM-002 | Front camera layer | `fdcd43aca742` | `feature/cam-002` |
+| CAM-002 | Front camera layer | `ad0aebe2` | `feature/cam-002` |
 | CAM-012 | Camera privacy status | `a188b049fc60` | `feature/cam-012` |
 | CMP-001 | Unified layer protocol | `ba60b9d3485a` | `feature/cmp-001` |
 | CMP-002 | Ordered layer stack | `4c8340e68244` | `feature/cmp-002` |
@@ -474,11 +474,12 @@ None.
 - `swift test --package-path Packages/CaptureUI`: pass at `8d270f3cbeed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-014/20261112T185431/swift-test_CaptureUI.log`)
 - `integration checkout, full preset library: xcodebuild projectM-iOS test on iPhone 17 iOS 27.2: projectM-iOSTests 102 pass; UI 25 pass (Interruption, Transport, ImportedAudio, Status, Visualizer)`: pass at `b96d30cfbd82` (log `.autonomous/logs/integration/aud-014/app-tests.log`)
 
-### AUD-015 Background playback policy (unit_passed)
+### AUD-015 Background playback policy (integrated)
 - `python3 scripts/check_compliance.py`: pass at `f708b257ad68` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-015/20261113T232820/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `f708b257ad68` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-015/20261113T232820/docs.log`)
 - `swift test --package-path Packages/CaptureKit`: pass at `f708b257ad68` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-015/20261113T232820/swift-test_CaptureKit.log`)
 - `swift test --package-path Packages/CaptureUI`: pass at `f708b257ad68` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-015/20261113T232820/swift-test_CaptureUI.log`)
+- `post-merge (CAM-002 + AUD-015): projectM-iOSTests 430 + FrontCamera/Camera/BackgroundPolicy/Status/SessionRecovery UI tests 15`: pass at `ad0aebe2` (log `.autonomous/logs/integration/cam-002-aud-015/app-tests.log`)
 
 ### AUD-016 Reference tone suite (integrated)
 - `python3 scripts/check_compliance.py`: pass at `a7e38976d177` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-016/20261112T202048/compliance.log`)
@@ -555,6 +556,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `ccc35e86202b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-002/20261113T232519/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `ccc35e86202b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-002/20261113T232519/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `ccc35e86202b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-002/20261113T232519/swift-test_ShowControl.log`)
+- `post-merge (CAM-002 + AUD-015): projectM-iOSTests 430 + FrontCamera/Camera/BackgroundPolicy/Status/SessionRecovery UI tests 15`: pass at `ad0aebe2` (log `.autonomous/logs/integration/cam-002-aud-015/app-tests.log`)
 
 ### CAM-012 Camera privacy status (integrated)
 - `python3 scripts/check_compliance.py`: pass at `3e408a740a3b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-012/20261113T120140/compliance.log`)
