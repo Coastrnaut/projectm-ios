@@ -17,7 +17,7 @@
   and a missing or shared number falls back to the name-based ID. A reconcile:
   1. builds the present sources (ID → handle, online flag);
   2. drops every entry whose source is absent, whose handle changed, whose handle was reported removed, or which is
-     no longer wanted or no longer online: `disconnect(old handle)`; the first three count as **lost**;
+     no longer wanted or went offline: `disconnect(old handle)`; all but "no longer wanted" count as **lost**;
   3. connects every wanted, present, online source without an entry: `connect(handle)`; on success the entry is stored,
      on failure nothing is stored (the next reconcile tries again).
 - **Rationale**: an entry exists iff one connection is live, so no handle is connected twice (MIDI-011-R2). CoreMIDI may

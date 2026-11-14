@@ -90,7 +90,7 @@ held from a removed endpoint are released.
 - The system keeps the same reference across a replug: the endpoint was seen absent (removed notification or missing from a snapshot), so its old connection is forgotten and it is connected again exactly once.
 - A connect call fails: the endpoint is not counted as connected and the next reconcile (notification or list change) tries again; there is no retry timer.
 - A quick replug inside one coalescing window: no announcement (discovery's list did not change), but the connection is repaired and held keys are released.
-- Offline endpoints are not wanted (MIDI-002 connects online inputs only); going offline disconnects.
+- Offline endpoints are not connected (MIDI-002 connects online inputs only); going offline disconnects and counts as a loss (held keys released), since the endpoint stopped delivering.
 - Listening stops (toggle off, background): every connection is dropped and the registry cleared.
 - A storm of notifications: one reconcile per coalescing window.
 

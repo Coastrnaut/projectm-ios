@@ -16,6 +16,7 @@ absent ──appears──▶ connected(handle h)
 connected(h) ──removed / absent──▶ absent            (disconnect h, lost)
 connected(h) ──returns as h'≠h──▶ connected(h')      (disconnect h, lost, connect h')
 connected(h) ──removed mark, returns as h──▶ connected(h)  (disconnect h, lost, connect h)
-connected(h) ──unwanted or offline──▶ idle           (disconnect h, not lost)
+connected(h) ──offline──▶ idle                       (disconnect h, lost)
+connected(h) ──unwanted──▶ idle                      (disconnect h, not lost)
 any ──close──▶ idle                                  (disconnect, registry empty)
 ```
