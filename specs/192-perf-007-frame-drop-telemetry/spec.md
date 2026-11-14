@@ -52,6 +52,16 @@ local-first option.
 - Q: How is double counting prevented? → A: Every submitted frame gets a frame ID, unique within its session and increasing. A presented report is counted only if its ID is newer than the newest one already counted for that session (presented reports arrive in presentation order), so a repeated callback for the same frame is ignored. A display-link timestamp is counted only if it is later than the previous one. Every event carries its session token; an event whose token is not the current session's is ignored (counted as stale), including one that arrives after a reset.
 - Q: May the counting lock or allocate on the frame path? → A: No. The counter is lock-free (atomic compare-and-exchange on 64-bit cells that pack the session generation with the count) and preallocated. The only per-frame allocation is Metal's own presented-handler block, attached only while counting is on.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: What exactly does the overlay line say? → A: One line per output, `frames <output>: presented N, late N, skipped N` followed by `, submitted N, discarded N` for a display; each value that a path cannot measure reads `unavailable` (for example `frames device: presented unavailable, late unavailable, skipped 2, submitted 300, discarded unavailable`). The lines are part of the overlay's combined accessibility label (identifier `overlayFrameDrops`), with no announcement and no colour cue (PERF-002 precedent).
+- Q: Is the stale count shown in the overlay? → A: No. It is a diagnostic of the counting itself; it goes into the export only, which keeps the overlay short.
+- Q: Which recording does the recording line show? → A: The running recording's live statistics; after it stops, the last recording's final statistics until the overlay is turned off or the visualizer is left (the recording counter's session is that recording). No recording in the session → no recording line.
+- Q: Where does the export get the counts? → A: The same place as `frameTimings`: the automation runner's frame-timing export (`AutomationRunner`) adds a `frameDrops` section when the counts exist. The user-facing diagnostics export of CaptureLab has no frame loop and carries none.
+- Q: Do the counts persist across launches or go into UserDefaults? → A: No. In memory only; no new stored key, no Settings row.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - See how many frames each output showed, showed late or skipped (Priority: P1)
@@ -125,6 +135,7 @@ timestamps) into a counter and check the exact counts; show the overlay in the a
 - **PERF-007-R10**: The performance overlay MUST show one "frames <output>" line for the output the visual is on, plus a recording line while a recording runs or exists in the session, only while the overlay is shown.
 - **PERF-007-R11**: The diagnostics export MUST accept an optional `frameDrops` section (per output: name, counts, unavailable as absent keys) without a schema version change.
 - **PERF-007-R12**: Nothing about these counts MUST leave the device except inside the diagnostics file the user exports by hand; no network API, no telemetry upload.
+- **PERF-007-R13**: The counts MUST be kept in memory only: no stored key, no Settings row, no announcement.
 
 ### Key Entities
 
