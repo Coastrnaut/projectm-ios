@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T05:15:38Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T05:19:20Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -81,7 +81,7 @@ The physical-device suite may **not** start:
 | CMP-001 | Unified layer protocol | `ba60b9d3485a` | `feature/cmp-001` |
 | CMP-002 | Ordered layer stack | `4c8340e68244` | `feature/cmp-002` |
 | CMP-003 | Opacity per layer | `65caf9e9e6ec` | `feature/cmp-003` |
-| CMP-004 | Blend mode library | `50a0241df033` | `feature/cmp-004` |
+| CMP-004 | Blend mode library | `6bc66e73` | `feature/cmp-004` |
 | CMP-005 | Transform controls | `dd604d0b1d51` | `feature/cmp-005` |
 | FILE-001 | Portable scene archive | `c3886d1cb0bb` | `feature/file-001` |
 | FILE-002 | Archive manifest checksums | `77fcfa3f1e56` | `feature/file-002` |
@@ -604,6 +604,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `e97da06ada5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-004/20261114T001332/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `e97da06ada5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-004/20261114T001332/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `e97da06ada5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-004/20261114T001332/swift-test_ShowControl.log`)
+- `post-merge: projectM-iOSTests 430 + FrameCapture/Camera/SceneRepair UI tests 5; gate 9 suites`: pass at `6bc66e73` (log `.autonomous/logs/integration/cmp-004/app-tests.log`)
 
 ### CMP-005 Transform controls (integrated)
 - `python3 scripts/check_compliance.py`: pass at `95bb91a901f3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-005/20261113T125428/compliance.log`)
