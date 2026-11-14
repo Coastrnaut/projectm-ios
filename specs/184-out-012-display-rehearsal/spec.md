@@ -26,6 +26,21 @@ Pixel aspect), OUT-010 (output blackout).
 | Fake display | DEBUG `UITestExternalDisplay` (1920 × 1080 off-screen window) and the `externalPlacement` probe. | Test-only; never offered to users. |
 | Hot-plug | `ExternalDisplayCoordinator` settles connects (OUT-002) and moves the one visual into the external slot. | Nothing to end when a real display arrives. |
 
+## Clarifications
+
+### Session 2026-11-14
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the conservative, local-first option, recommended option first.
+
+- Q: What picture does the preview show: the live visual or a stand-in? → A: A stand-in test card (a dark source picture with its edges outlined) laid out in the source picture's bounds, with the optional test grid on top. The live visual stays in the device slot and keeps running: there is one visual view, OUT-001-R3 forbids drawing it twice, and moving it into a preview would resize the renderer mid-show. Rejected: snapshotting or mirroring the live visual (a second render path) (OUT-012-R8).
+- Q: Does the preview show the display's pixels or what the audience sees on the glass? → A: What the audience sees: the slot (in the display's pixels) is scaled by (s · PAR, s) into the preview area, s chosen to fit, so the preview frame has the display's physical shape and a circle is round in the preview exactly when it will be round on the glass. The comparison with the real output therefore uses physical units (pixel ratio × PAR) (OUT-012-R4, S2).
+- Q: Where do Fit, Shape and Pixel aspect come from during rehearsal? → A: From the real OUT-004 setting (one source of truth). The rehearsal offers Fit and Shape segmented pickers bound to that same setting, so what you settle on is what the show uses; the Pixel aspect override stays in Settings and applies on top of the profile's own PAR, exactly as it overrides a real screen's reported PAR (OUT-012-R2).
+- Q: Is anything about the rehearsal stored? → A: No. Profile, custom size, display PAR and grid live only while the rehearsal is open; no new UserDefaults keys (so no backup, erase or reset changes) (OUT-012-R6, R9).
+- Q: When exactly does a real display end the rehearsal, and can it start while one is connected? → A: When a real connection settles (OUT-002's 0.3 s settle, the moment the real output takes over); a bounce that never settles does not end it. While a settled real display is connected "Rehearse output…" is disabled, with the footer saying the connected display already shows the real output. No extra announcement: OUT-002's X27 "connected" announcement already speaks (OUT-012-R6).
+- Q (implementation detail settled here): How does a slot without a screen know the PAR? → A: `VisualSlotView` gains an optional stand-in PAR used instead of its screen's mode; the rehearsal slot (and the tests' fake display of a profile) set it to the profile's PAR. Everything else is the unchanged OUT-004 path (OUT-012-R3).
+- Q: What does VoiceOver say? → A: The preview is one accessibility element labelled "Previewing <profile> display, <fit>, <bars>", bars being "pillarbox", "letterbox", "cropped" (Fill overflowing), "stretched" (Stretch) or "no bars", followed by ", pixel aspect <x.x>" when the applied PAR is not 1 (OUT-012-R7).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Preview the output before the projector is there (Priority: P1) MVP
