@@ -35,6 +35,20 @@ The row's gap status is "Gap candidate; re-audit at implementation". The audit c
 | Settings | Section "Camera" (while Camera is the visual): Camera Back/Front, Mirror, Crop, Anchor, Zoom. | No lens row. |
 | Permission | One iOS camera permission covers every camera; the usage text names "the front or rear camera you choose". | Nothing: a lens is a rear camera. |
 
+## Clarifications
+
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the conservative, local-first option.
+
+- Q: Which cameras count as "wide, ultrawide and telephoto devices"? → A: The back camera's single physical lenses of those three kinds only. Virtual multi-lens cameras (dual, dual wide, triple), which switch lenses on their own, front lenses, LiDAR and external cameras are never offered (CAM-003-R1). Rejected: offering the virtual triple camera with a zoom slider (not a lens choice, and it changes lenses behind the user's back).
+- Q: How are the lenses named, and what control is used? → A: A segmented choice "Lens" with Apple's names "Ultra Wide", "Wide", "Telephoto", in that order (widest first), like the existing Camera Back/Front row (CAM-003-R2, R11). Rejected: zoom factors ("0.5×", "1×", "3×"): the telephoto factor differs per device and would need per-device text.
+- Q: Where is the choice offered? → A: In Settings › Camera only, while Back is selected and the device has at least two lenses (CAM-003-R2). A one-lens device and the front camera show no row at all, so nothing disabled or unavailable is ever shown. Rejected: a lens button in the visualizer's controls (more on-screen controls over the picture; can come with CMP-015).
+- Q: What does the user see when a lens cannot be opened? → A: The previous lens keeps running and the Lens choice returns to it; no extra notice, because the camera keeps working (CAM-003-R6). Only when no lens at all can be added does CAM-002's existing "unavailable" notice appear (R7). Rejected: a new notice for a failed switch (a new status event for a rare, self-healing case).
+- Q: How is the choice stored, and what if the device lacks it? → A: As the raw identifier ("wide", "ultraWide", "telephoto") under one new settings key, included in the settings backup and the Settings erase; any unknown or missing value, and any lens this device lacks, is used as Wide, while the stored value is kept until the user picks another lens (CAM-003-R4, R5). Rejected: overwriting the stored lens with Wide on a device that lacks it (a restored backup would lose the choice for the other device).
+- Q: Does listing lenses need camera permission, and is it covert use? → A: Listing reads the system's list of built-in cameras; it opens no camera, captures nothing, shows no indicator and asks for nothing, so it is allowed before consent (CAM-003-R3). The camera itself still starts only on the user's choice of Camera with permission granted (CAM-001-R7), with iOS's indicator and the app's badge.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Pick the lens the device has (Priority: P1)
