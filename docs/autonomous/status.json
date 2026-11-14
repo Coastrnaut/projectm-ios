@@ -13,8 +13,7 @@
   "P1": {
    "audited": 102,
    "implementing": 2,
-   "integrated": 46,
-   "unit_passed": 1
+   "integrated": 47
   },
   "P2": {
    "audited": 77,
@@ -27,9 +26,8 @@
  "by_state": {
   "audited": 190,
   "implementing": 2,
-  "integrated": 132,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "integrated": 133,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -60,7 +58,6 @@
    "CMP-009",
    "CMP-010",
    "FILE-006",
-   "FILE-011",
    "FX-003",
    "FX-004",
    "FX-005",
@@ -233,7 +230,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "193 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ACC-012, ANL-008)"
+   "192 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ACC-012, ANL-008)"
   ]
  },
  "features": {
@@ -1202,10 +1199,10 @@
    "branch": "feature/file-011",
    "branch_sha": "55d6e2cccb2182294d656c9a0c46ab437039e3ad",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "2e8e134d",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "FILE-012": {
    "attempts": 0,
@@ -1242,7 +1239,7 @@
    "branch": "feature/fx-002",
    "branch_sha": "aa29cfdd52375ffdec0eae57d077e4f6a8d45684",
    "error_category": null,
-   "integrated_sha": "78df044a4b782694d24695ea0448898464d5eeed",
+   "integrated_sha": "2e8e134d",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
@@ -3865,6 +3862,11 @@
    "sha": "f65b410a8d7ca9d9f1ea31721b98f5065934b54c"
   },
   {
+   "branch": "feature/file-011",
+   "id": "FILE-011",
+   "sha": "2e8e134d"
+  },
+  {
    "branch": "feature/file-012",
    "id": "FILE-012",
    "sha": "3a8ad2044000027d98d0b3549ba232d950e05122"
@@ -3882,7 +3884,7 @@
   {
    "branch": "feature/fx-002",
    "id": "FX-002",
-   "sha": "78df044a4b782694d24695ea0448898464d5eeed"
+   "sha": "2e8e134d"
   },
   {
    "branch": "feature/fx-019",
@@ -4185,5 +4187,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T09:56:55Z"
+ "updated": "2026-11-14T09:59:38Z"
 }

@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T09:56:55Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T09:59:38Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 190 |
 | implementing | 2 |
-| unit_passed | 1 |
-| integrated | 132 |
+| integrated | 133 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 102 | 2 | 1 | 46 | 0 |
-| P2 | 77 | 0 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 2 | 0 | 84 | 1 |
+| P1 | 102 | 2 | 47 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 193 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ACC-012, ANL-008)
+- 192 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ACC-012, ANL-008)
 
 ## Integrated
 
@@ -106,10 +105,11 @@ The physical-device suite may **not** start:
 | FILE-008 | User asset deduplication | `d045d58f` | `feature/file-008` |
 | FILE-009 | Storage usage explorer | `efddbc041837` | `feature/file-009` |
 | FILE-010 | Safe cache cleanup | `f65b410a8d7c` | `feature/file-010` |
+| FILE-011 | Local data erase | `2e8e134d` | `feature/file-011` |
 | FILE-012 | No-telemetry verification | `3a8ad2044000` | `feature/file-012` |
 | FILE-013 | Privacy permission audit | `b5e4bd0` | `feature/file-013` |
 | FX-001 | Bloom | `1192e0d6503e` | `feature/fx-001` |
-| FX-002 | Tone mapping | `78df044a4b78` | `feature/fx-002` |
+| FX-002 | Tone mapping | `2e8e134d` | `feature/fx-002` |
 | FX-019 | Strobe safety envelope | `6cfcbaabc8d0` | `feature/fx-019` |
 | MED-001 | Import photo layer | `dd604d0b1d51` | `feature/med-001` |
 | MED-002 | Import video layer | `e9e04eeb62a8` | `feature/med-002` |
@@ -865,13 +865,14 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `a71cc74c8b52` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-010/20261113T174416/swift-test_SceneArchive.log`)
 - `post-merge: projectM-iOSTests 331 incl. CacheCleanupAcceptanceTests (user data byte-identical, scenes and show load); CacheCleanupUITests 15.6 s, StorageUsage, SceneDuplicate UI tests on iOS 27.2 sim; LocalPortability 93 in the gate`: pass at `f65b410a8d7c` (log `.autonomous/logs/integration/file-010/app-tests.log`)
 
-### FILE-011 Local data erase (unit_passed)
+### FILE-011 Local data erase (integrated)
 - `python3 scripts/check_compliance.py`: pass at `55d6e2cccb21` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-011/20261114T045501/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `55d6e2cccb21` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-011/20261114T045501/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `55d6e2cccb21` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-011/20261114T045501/script-tests.log`)
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `55d6e2cccb21` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-011/20261114T045501/autonomous-tests.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `55d6e2cccb21` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-011/20261114T045501/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/LibraryBackup`: pass at `55d6e2cccb21` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-011/20261114T045501/swift-test_LibraryBackup.log`)
+- `post-merge (FX-002 + FILE-011): projectM-iOSTests 559 + LibraryErase/LibraryBackup/PhotoLayer/FrameCapture UI tests 5`: pass at `2e8e134d` (log `.autonomous/logs/integration/fx-002-file-011/app-tests.log`)
 
 ### FILE-012 No-telemetry verification (integrated)
 - `python3 scripts/check_compliance.py`: pass at `51cdfefb92f2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-012/20261113T181114/compliance.log`)
@@ -906,6 +907,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `aa29cfdd5237` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-002/20261114T045152/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `aa29cfdd5237` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-002/20261114T045152/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `aa29cfdd5237` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-002/20261114T045152/swift-test_ShowControl.log`)
+- `post-merge (FX-002 + FILE-011): projectM-iOSTests 559 + LibraryErase/LibraryBackup/PhotoLayer/FrameCapture UI tests 5`: pass at `2e8e134d` (log `.autonomous/logs/integration/fx-002-file-011/app-tests.log`)
 
 ### FX-019 Strobe safety envelope (integrated)
 - `python3 scripts/check_compliance.py`: pass at `bc80d4775650` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-019/20261113T095545/compliance.log`)
