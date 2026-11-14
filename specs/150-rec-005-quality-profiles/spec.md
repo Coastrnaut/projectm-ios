@@ -41,6 +41,16 @@ human interaction); each answer is the conservative, local-first option.
 - Q: What happens when Record is tapped with a profile that is not available at that moment (the screen size changed, the selection came from an earlier state)? → A: The recording falls back to the best available profile below the selected one (Max → High → Standard → Draft), starts, and announces "Recording at <profile>: <reason>." through the status router. The stored selection is not changed. If no profile is available, Record refuses with REC-003's encoder-unavailable notice. A fallback beats a refusal: the user asked to record.
 - Q: Does High or Max fall back to H.264 inside the profile? → A: No. A profile's codec is part of its documented promise; without HEVC those profiles are disabled. Only Standard keeps REC-003's HEVC-then-H.264 order (it is today's behaviour).
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Can the profile change while a recording runs? → A: The picker stays usable, but a recording keeps the profile it started with (its encoder is fixed at Record); the change applies to the next recording. Re-configuring a running encoder would split the file.
+- Q: Which screen size do the rows describe when no visual is shown (Settings opened from the chooser)? → A: The size of the shown visual's drawable when one is shown, else the device screen's native size in pixels (portrait). Record always re-checks with the actual drawable (REC-005-R6).
+- Q: Does a profile change the audio? → A: No. REC-004's audio (AAC-LC 44.1 kHz stereo 128 kb/s, when permitted) is the same in every profile; profiles change only the video.
+- Q: Is the fallback only spoken, or also visible? → A: Both: it is shown as the recording notice and announced once through the status router as row X9c (cause: user, after X9 "Recording started"), so sighted and VoiceOver users learn the same thing.
+- Q: How is a file's average bit rate measured for the acceptance check? → A: The video track's compressed bytes × 8 divided by the video's duration, read from the compressed samples (no decoding). Audio bytes are not counted. Tolerance ±25% for the noise fixture of at least 2 s (REC-005-S1); research REC-005-D4 records the measured values.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Pick a documented recording quality (Priority: P1)
@@ -102,6 +112,7 @@ guard's 25% headroom) at its size and frame rate.
 - The stored value is unknown or not a string: Standard is used.
 - The capability check cannot run (no encoder answer): the profile is treated as unavailable; Standard keeps its H.264 fallback.
 - External display output, projectM and the 10-minute limit are unchanged.
+- The user changes the profile during a recording: the running recording keeps its profile; the next one uses the new choice.
 
 ## Requirements *(mandatory)*
 
@@ -120,11 +131,13 @@ guard's 25% headroom) at its size and frame rate.
 - **REC-005-R3**: Standard MUST produce exactly today's encoder settings (size cap, frame rate, codec order, bit rate, key frames, colour tags).
 - **REC-005-R4**: A profile MUST be available only when the device's encoder supports its codec at the size it would record on this screen, and the display can show its frame rate. Availability MUST be determined with public system interfaces only.
 - **REC-005-R5**: An unavailable profile MUST be shown disabled with a one-line reason and MUST NOT be selectable; profiles MUST never be hidden.
-- **REC-005-R6**: Record MUST check availability again with the current screen size. With an unavailable selection it MUST fall back to the best available profile below it, announce "Recording at <profile>: <reason>." through the status router, and leave the stored selection unchanged; with no available profile it MUST refuse with the encoder-unavailable notice.
+- **REC-005-R6**: Record MUST check availability again with the current screen size. With an unavailable selection it MUST fall back to the best available profile below it, show and announce "Recording at <profile>: <reason>." through the status router (row X9c), and leave the stored selection unchanged; with no available profile it MUST refuse with the encoder-unavailable notice.
 - **REC-005-R7**: The selection MUST be stored on the device (default Standard; an unknown value reads as Standard), reset by the UI-test reset, erased with the Settings category, and left out of the library backup (it depends on the device's capabilities).
 - **REC-005-R8**: The disk guard's estimate MUST use the profile's bit rate, size and frame rate.
 - **REC-005-R9**: The picker MUST be in Settings, in a "Recording quality" section next to REC-004's "Recording" section; each row MUST name the profile and what it records on this screen (size, codec, bit rate, frame rate), and VoiceOver MUST read the row, its selected state and, when disabled, its reason.
-- **REC-005-R10**: The recording's read-back facts MUST include frame rate and average bit rate, so tests can compare a file with its profile.
+- **REC-005-R10**: The recording's read-back facts MUST include frame rate and the video track's average bit rate (compressed video bytes × 8 / video duration), so tests can compare a file with its profile.
+- **REC-005-R11**: A recording MUST keep the profile it started with; audio (REC-004) MUST be identical in every profile.
+- **REC-005-R12**: The rows MUST describe the shown visual's drawable size, or the screen's native pixel size when no visual is shown.
 
 ### Key Entities
 
