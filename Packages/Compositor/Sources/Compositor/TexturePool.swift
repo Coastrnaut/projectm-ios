@@ -19,6 +19,8 @@ public final class TexturePool: @unchecked Sendable {
     public let device: MTLDevice
     private let lock = NSLock()
     private var core: TexturePoolCore<any MTLTexture, any MTLCommandBuffer>
+    /// CMP-013: `purge()` calls so far (guarded by `lock`).
+    private var purges: UInt64 = 0
     private static let signposter = OSSignposter(subsystem: "org.projectmios.compositor", category: "TexturePool")
 
     /// `limits` nil: `TexturePoolLimits.default(recommendedWorkingSetBytes: device.recommendedMaxWorkingSetSize)`.
@@ -71,13 +73,24 @@ public final class TexturePool: @unchecked Sendable {
     }
 
     /// One pool frame (the compositor calls it once per composite): ages and evicts idle textures.
-    public func tick() {
-        lock.withLock { core.tick() }
+    /// CMP-013: returns `purgeCount`, so a compositor sees a memory-warning purge with no extra lock.
+    @discardableResult
+    public func tick() -> UInt64 {
+        lock.withLock { () -> UInt64 in
+            core.tick()
+            return purges
+        }
     }
+
+    /// CMP-013: `purge()` calls so far (a render cache invalidates when it changes).
+    public var purgeCount: UInt64 { lock.withLock { purges } }
 
     /// Frees every retired texture (memory warning; PERF-004-R5). Textures in use are untouched.
     public func purge() {
-        lock.withLock { core.purge() }
+        lock.withLock {
+            core.purge()
+            purges &+= 1
+        }
         Self.signposter.emitEvent("PERF-004 texture pool purge")
     }
 

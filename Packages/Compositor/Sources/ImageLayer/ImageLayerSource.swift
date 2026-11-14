@@ -13,6 +13,11 @@
 // by alpha: the picture is linear premultiplied (CMP-001-R2); outside the image (fit) it is
 // transparent. Not Sendable: the compositor's thread (the main thread in the app) sets `content`
 // and renders; `onStateChange` is called on the main queue.
+// CMP-013 (ADR-0040): the picture depends only on the held image, the fit and the picture size, so the
+// layer declares itself still (`LayerRenderCaching`): content = the load generation of the held image,
+// parameters = a fit generation. The dependency read takes the slot exactly as `render` does, so the
+// generation reported is never newer than what `render` draws. A reused frame still counts in `framesShown`;
+// `renderCount` counts actual renders.
 import Foundation
 
 /// What the photo layer shows.
@@ -35,7 +40,7 @@ import Compositor
 import Metal
 import os
 
-public final class ImageLayerSource: LayerSource, LayerFitting {
+public final class ImageLayerSource: LayerSource, LayerFitting, LayerRenderCaching {
     public let layerName = "photo"
     public let fallback = LayerFallback.transparent
     public let device: MTLDevice
@@ -43,7 +48,9 @@ public final class ImageLayerSource: LayerSource, LayerFitting {
     public let mode: ImageScaleMode
     /// CMP-006: the stack entry's fit (set by the compositor; nil: `mode` at the centre). Shown from
     /// the next frame; the image is not reloaded.
-    public var fit: LayerFit?
+    public var fit: LayerFit? {
+        didSet { if fit != oldValue { fitGeneration &+= 1 } }   // CMP-013: a parameter change
+    }
     private let decoder: any ImageDecoding
     private let limits: ImageImportLimits
     private let loads = DispatchQueue(label: "MED-001 image load", qos: .userInitiated)
@@ -52,8 +59,13 @@ public final class ImageLayerSource: LayerSource, LayerFitting {
     private var sampler: MTLSamplerState?
     /// The texture drawn last frame (render side only).
     private var held: MTLTexture?
-    /// Frames that showed the image (diagnostics, tests).
+    /// CMP-013: the load generation of `held`, and the fit's generation.
+    private var heldGeneration: UInt64 = 0
+    private var fitGeneration: UInt64 = 0
+    /// Frames that showed the image (diagnostics, tests), including frames whose picture was reused.
     public private(set) var framesShown = 0
+    /// CMP-013: frames that drew the image (render calls that succeeded).
+    public private(set) var renderCount = 0
     /// Called on the main actor after every state change.
     public var onStateChange: (@MainActor @Sendable (ImageLayerState) -> Void)? {
         get { slot.lock.withLockUnchecked { $0.handler } }
@@ -83,6 +95,7 @@ public final class ImageLayerSource: LayerSource, LayerFitting {
                 s.state = content == .none ? .empty : .loading
                 return s.generation
             }
+            heldGeneration = generation   // CMP-013: the dropped image's key never matches again
             slot.notify()
             guard case .file(let url) = content else { return }
             let slot = self.slot, device = self.device, decoder = self.decoder, limits = self.limits
@@ -178,7 +191,7 @@ public final class ImageLayerSource: LayerSource, LayerFitting {
 
     public func render(into picture: MTLTexture, commandBuffer: MTLCommandBuffer, frame: LayerFrameContext,
                        audio: LayerAudioContext) throws(LayerSourceError) {
-        if let newest: MTLTexture? = slot.lock.withLockIfAvailableUnchecked({ $0.texture }) { held = newest }
+        takeNewest()
         guard let image = held, let pipeline, let sampler else { throw .notReady }
         let placement = LayerFitPlacement(contentWidth: image.width, contentHeight: image.height, outputWidth: picture.width,
                                           outputHeight: picture.height, fit: fit ?? LayerFit(mode: mode))
@@ -198,7 +211,24 @@ public final class ImageLayerSource: LayerSource, LayerFitting {
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
         encoder.endEncoding()
         framesShown += 1
+        renderCount += 1
     }
+
+    /// The newest loaded image, when the slot's lock is free this instant (otherwise the held one stays).
+    private func takeNewest() {
+        if let newest: (MTLTexture?, UInt64) = slot.lock.withLockIfAvailableUnchecked({ ($0.texture, $0.generation) }) {
+            held = newest.0
+            heldGeneration = newest.1
+        }
+    }
+
+    /// CMP-013: still; the held image's load generation and the fit generation.
+    public var renderDependencies: LayerRenderDependencies {
+        takeNewest()
+        return .still(content: heldGeneration, parameters: fitGeneration)
+    }
+
+    public func renderReused(frame: LayerFrameContext) { framesShown += 1 }
 
     static let shaderSource = """
     #include <metal_stdlib>

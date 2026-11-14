@@ -11,6 +11,10 @@
 // size, so the compositor shows the transparent fallback. No Metal source (SHD-011): a clear and a
 // blit need no shader. An empty message drops the texture at once. Not Sendable: the compositor's
 // thread sets `spec` and renders; `onStateChange` is called on the main actor.
+// CMP-013 (ADR-0040): the picture depends only on the held upload (and the picture size, in the cache key),
+// so the layer declares itself still (`LayerRenderCaching`) with content = the held upload's serial (bumped
+// every time the slot's upload is replaced or dropped). The dependency read takes the slot exactly as
+// `render` does. A reused frame still counts in `framesShown`; `renderCount` counts actual renders.
 
 /// The text layer's state (data-model "TextLayerState").
 public enum TextLayerState: Sendable, Equatable {
@@ -30,7 +34,7 @@ import Foundation
 import Metal
 import os
 
-public final class TextLayerSource: LayerSource {
+public final class TextLayerSource: LayerSource, LayerRenderCaching {
     public let layerName = "text"
     public let fallback = LayerFallback.transparent
     public let device: MTLDevice
@@ -38,10 +42,14 @@ public final class TextLayerSource: LayerSource {
     private let slot = TextRenderSlot()
     /// The upload drawn last frame (render side only).
     private var held: TextUpload?
+    /// CMP-013: the slot's upload serial of `held`.
+    private var heldSerial: UInt64 = 0
     /// The last prepared picture size.
     private var pictureSize: (width: Int, height: Int)?
-    /// Frames that showed the text (diagnostics, tests).
+    /// Frames that showed the text (diagnostics, tests), including frames whose picture was reused.
     public private(set) var framesShown = 0
+    /// CMP-013: frames that drew the text (render calls that succeeded).
+    public private(set) var renderCount = 0
 
     public init(device: MTLDevice) {
         self.device = device
@@ -73,14 +81,18 @@ public final class TextLayerSource: LayerSource {
     private func startRasterization() {
         let spec = self.spec
         let empty = spec.isEmpty
-        if empty { held = nil }
         let generation: UInt64 = slot.lock.withLockUnchecked { s in
             s.generation &+= 1
             if empty {
                 s.upload = nil
+                s.uploadSerial &+= 1
                 s.state = .empty
             } else if pictureSize != nil {
                 s.state = .drawing
+            }
+            if empty {   // dropped at once (CMP-013: with its serial, so no key matches it again)
+                held = nil
+                heldSerial = s.uploadSerial
             }
             return s.generation
         }
@@ -94,9 +106,11 @@ public final class TextLayerSource: LayerSource {
                 switch upload {
                 case .success(let u):
                     s.upload = u
+                    s.uploadSerial &+= 1
                     s.state = .ready(width: u.rendering.width, height: u.rendering.height, checksum: u.rendering.checksum)
                 case .failure(let message):
                     s.upload = nil
+                    s.uploadSerial &+= 1
                     s.state = .failed(message.text)
                 }
                 return true
@@ -133,7 +147,7 @@ public final class TextLayerSource: LayerSource {
 
     public func render(into picture: MTLTexture, commandBuffer: MTLCommandBuffer, frame: LayerFrameContext,
                        audio: LayerAudioContext) throws(LayerSourceError) {
-        if let newest: TextUpload? = slot.lock.withLockIfAvailableUnchecked({ $0.upload }) { held = newest }
+        takeNewest()
         guard let upload = held, upload.rendering.pictureWidth == picture.width,
               upload.rendering.pictureHeight == picture.height else { throw .notReady }
         let pass = MTLRenderPassDescriptor()
@@ -154,7 +168,24 @@ public final class TextLayerSource: LayerSource {
                   destinationLevel: 0, destinationOrigin: MTLOrigin(x: r.x, y: r.y, z: 0))
         blit.endEncoding()
         framesShown += 1
+        renderCount += 1
     }
+
+    /// The newest upload, when the slot's lock is free this instant (otherwise the held one stays).
+    private func takeNewest() {
+        if let newest: (TextUpload?, UInt64) = slot.lock.withLockIfAvailableUnchecked({ ($0.upload, $0.uploadSerial) }) {
+            held = newest.0
+            heldSerial = newest.1
+        }
+    }
+
+    /// CMP-013: still; the held upload's serial.
+    public var renderDependencies: LayerRenderDependencies {
+        takeNewest()
+        return .still(content: heldSerial)
+    }
+
+    public func renderReused(frame: LayerFrameContext) { framesShown += 1 }
 }
 
 /// One uploaded rendering.
@@ -168,6 +199,8 @@ final class TextRenderSlot: Sendable {
     struct State {
         var generation: UInt64 = 0
         var upload: TextUpload?
+        /// CMP-013: bumped whenever `upload` is replaced or dropped.
+        var uploadSerial: UInt64 = 0
         var state: TextLayerState = .empty
         var handler: (@MainActor @Sendable (TextLayerState) -> Void)?
     }

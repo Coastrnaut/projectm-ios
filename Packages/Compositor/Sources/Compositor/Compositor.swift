@@ -71,6 +71,12 @@
 // CMP-012 (contracts/solo-and-mute.md in specs/112): a `LayerSoloMute` overlay, kept beside the stack and
 // never in it, is resolved into one flag per record at `apply` and `setSoloMute`. A hidden layer keeps
 // rendering every frame; it is only left out of the composite (and so of its group's isolation decision).
+// CMP-013 (contracts/render-caching.md in specs/113, ADR-0040): a layer that adopts `LayerRenderCaching` and
+// declares no time, audio, modulation or external input is not rendered again while its key (generations,
+// picture, content scale, Reduce flashing, cache epoch) equals the key of its last good picture (level 1). When
+// no layer rendered and every draw input is unchanged, the previous composite is kept and only the layer passes
+// are skipped (level 2); the flash guard, output, capture and recording run every frame. Global triggers bump
+// the epoch. Output is bit-identical to `isRenderCachingEnabled = false`.
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import FrameCapture
 import Metal
@@ -124,10 +130,17 @@ public final class Compositor {
         var group: LayerGroupID?
         /// CMP-012: hidden by the solo/mute overlay (resolved at `apply` and `setSoloMute`).
         var overlayHidden = false
+        /// CMP-013: the layer's caching declaration (nil: unknown, rendered every frame), its cache entry,
+        /// whether this frame reused its picture, and how it was drawn into the last good composite.
+        let caching: (any LayerRenderCaching)?
+        var cache = LayerRenderCacheEntry()
+        var reusedThisFrame = false
+        var drawn: LayerDrawInput?
 
         init(id: LayerInstanceID?, layer: any LayerSource, settings: LayerCompositeSettings, group: LayerGroupID? = nil) {
             self.id = id
             self.layer = layer
+            caching = layer as? any LayerRenderCaching
             self.group = group
             slots = LayerSlots(fallback: layer.fallback)
             opacity = LayerOpacityAnimator(opacity: settings.opacity)
@@ -146,6 +159,8 @@ public final class Compositor {
         var opacity: LayerOpacityAnimator
         var transform: LayerTransform
         var isEnabled: Bool
+        /// CMP-013: the opacity drawn into the last good composite.
+        var drawnOpacity: Double?
     }
 
     public let device: MTLDevice
@@ -191,6 +206,21 @@ public final class Compositor {
     public private(set) var soloMute = LayerSoloMute()
     /// CMP-012: layers the overlay left out of the last frame (tests, diagnostics).
     public private(set) var soloMuteHiddenLayers = 0
+    /// CMP-013-R8: render caching (level 1 pictures, level 2 composite); off behaves exactly as before CMP-013.
+    public var isRenderCachingEnabled = true {
+        didSet { if isRenderCachingEnabled != oldValue { invalidateRenderCache() } }
+    }
+    /// CMP-013: bumped by every global invalidation (part of every cache key).
+    public private(set) var renderCacheEpoch: UInt64 = 0
+    /// CMP-013-R13: layers whose picture was reused in the last frame (tests, diagnostics).
+    public private(set) var renderCacheHits = 0
+    /// CMP-013-R13: whether the last frame kept the previous composite, and how many frames did so far.
+    public private(set) var compositeReused = false
+    public private(set) var compositeReuses = 0
+    /// CMP-013: the composite holds the last good frame's stack and nothing was applied or invalidated since.
+    private var compositeValid = false
+    /// CMP-013: the pool's purge count last seen (a memory-warning purge invalidates).
+    private var seenPoolPurges: UInt64 = 0
     /// REC-001: the handler waiting for the next frame.
     private var pendingCapture: (@Sendable (CapturedPixels?) -> Void)?
     /// REC-003: the command buffer of the last frame whose output pass was encoded.
@@ -231,6 +261,7 @@ public final class Compositor {
         }
         self.device = device
         self.texturePool = texturePool ?? TexturePool(device: device)
+        seenPoolPurges = self.texturePool.purgeCount
         records = layers.map { (layer: any LayerSource) -> LayerRecord in
             LayerRecord(id: nil, layer: layer, settings: layer.compositeSettings)
         }
@@ -299,7 +330,17 @@ public final class Compositor {
     public func setSoloMute(_ overlay: LayerSoloMute) {
         soloMute = overlay
         resolveSoloMute()
+        compositeValid = false   // CMP-013: composite only; layer pictures stay valid
     }
+
+    /// CMP-013: the layer pictures and the composite are drawn again from the next frame (all keys change).
+    public func invalidateRenderCache() {
+        renderCacheEpoch &+= 1
+        compositeValid = false
+    }
+
+    /// CMP-013-R13: whether layer `index`'s picture was reused (not rendered) in the last frame.
+    public func wasReused(layer index: Int) -> Bool { records[index].reusedThisFrame }
 
     /// One flag per record from the overlay and the applied stack; layers without a stack ID are never hidden.
     private func resolveSoloMute() {
@@ -390,6 +431,7 @@ public final class Compositor {
         groupRecords = nextGroups
         appliedStack = stack
         resolveSoloMute()   // CMP-012: the overlay against the new stack
+        compositeValid = false   // CMP-013: kept layers keep their cached pictures
         if let descriptor {
             for i in created { allocatePictures(i, descriptor) }
         }
@@ -404,6 +446,7 @@ public final class Compositor {
     /// kept. Call between frames (the frame loop starting, the user changing or resuming the visual).
     public func resetRenderHealth() {
         let next = frameTicks &+ 1   // work from the next tick decides the retry
+        invalidateRenderCache()   // CMP-013
         visualRetry.reset(atTick: next)
         for i in records.indices {
             records[i].retry.reset(atTick: next)
@@ -430,6 +473,8 @@ public final class Compositor {
         frameTicks &+= 1   // PERF-014-D1
         let tick = frameTicks
         defer { updateHealthState() }
+        var finished = false
+        defer { if !finished { invalidateRenderCache() } }   // CMP-013: an unfinished frame may leave pictures undrawn
         observeFinishedCommandBuffers()
         if visualRetry.isRetryDue(atTick: tick) { visualRetry.beginRetry(atTick: tick) }
         if size != descriptor {
@@ -441,7 +486,11 @@ public final class Compositor {
             }
         }
         guard var composite else { return false }
-        texturePool.tick()
+        let purges = texturePool.tick()
+        if purges != seenPoolPurges {   // CMP-013: a memory-warning purge (PERF-006)
+            seenPoolPurges = purges
+            invalidateRenderCache()
+        }
         lastCommandBuffer = commandBuffer   // PERF-004: from here on this frame may use every picture
         let frame = clock.next(presentationTimeNanoseconds: presentationTimeNanoseconds, outputWidth: size.width,
                                outputHeight: size.height, contentScale: contentScale, reduceFlashing: reduceFlashing)
@@ -450,11 +499,14 @@ public final class Compositor {
 
         // PERF-014-D3: while the visual's own part backs off, no layer renders (a black frame).
         let visualHolds = visualRetry.isHolding
+        renderCacheHits = 0
         for i in records.indices {
             records[i].shown = -1
+            records[i].reusedThisFrame = false
             records[i].opacity.advance(by: frame.frameDuration)
             if visualHolds {
                 records[i].outcome = .notRendered
+                records[i].cache.drop()
                 continue
             }
             if records[i].retry.isRetryDue(atTick: tick) {   // PERF-014-R3, R4: only at back-off ticks
@@ -464,12 +516,25 @@ public final class Compositor {
             }
             guard records[i].slots.isAvailable else {
                 records[i].outcome = .unavailable(records[i].prepareError ?? .notReady)
+                records[i].cache.drop()
                 continue
             }
             if records[i].retry.isHolding {   // a held render failure: its fallback, no render call
                 showFallback(i, records[i].heldError ?? .notReady)
+                records[i].cache.drop()
                 continue
             }
+            // CMP-013 level 1: unchanged inputs show the last good picture without a render call.
+            let key = renderCacheKey(i, frame: frame, size: size)
+            if let good = records[i].slots.lastGoodIndex, records[i].cache.canReuse(key, hasGoodPicture: true) {
+                records[i].shown = good
+                records[i].outcome = .rendered
+                records[i].reusedThisFrame = true
+                renderCacheHits += 1
+                records[i].caching?.renderReused(frame: frame)
+                continue
+            }
+            records[i].cache.drop()   // the render may overwrite the picture
             let target = records[i].pictures[records[i].slots.renderIndex]
             do throws(LayerSourceError) {
                 #if DEBUG
@@ -478,6 +543,7 @@ public final class Compositor {
                 try records[i].layer.render(into: target, commandBuffer: commandBuffer, frame: frame, audio: audio)
                 records[i].shown = records[i].slots.frameSucceeded()
                 records[i].outcome = .rendered
+                records[i].cache.rendered(key)   // CMP-013: only a successful render stores its key
                 if records[i].retry.succeeded(encodedAtTick: tick) { health.recordRecovery() }
             } catch {
                 showFallback(i, error)
@@ -488,63 +554,25 @@ public final class Compositor {
             }
         }
 
-        let pass = MTLRenderPassDescriptor()
-        pass.colorAttachments[0].texture = composite
-        pass.colorAttachments[0].loadAction = .clear
-        pass.colorAttachments[0].storeAction = .store
-        pass.colorAttachments[0].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
-        guard let over = commandBuffer.makeRenderCommandEncoder(descriptor: pass) else { return false }
-        over.label = "CMP-001 composite"
-        over.setRenderPipelineState(overPipeline)
-        transformedDraws = 0
-        blendDraws = 0
-        maskedDraws = 0
-        isolatedGroupDraws = 0
         soloMuteHiddenLayers = 0
         for i in records.indices where records[i].overlayHidden && records[i].shown >= 0 && records[i].opacity.value > 0 {   // CMP-012
             if let g = records[i].group, let group = groupRecords.first(where: { (r: GroupRecord) -> Bool in r.id == g }),
                !group.isEnabled || group.opacity.value <= 0 { continue }   // hidden by its group anyway
             soloMuteHiddenLayers += 1
         }
-        var surface = DrawSurface(texture: composite, partner: compositeAlternate, encoder: over, pipe: .plain,
-                                  label: "CMP-001 composite", partnerLabel: "CMP-004 composite")
-        defer {   // CMP-004: the two composites may have swapped (kept even when a frame fails half way)
-            self.composite = surface.texture
-            compositeAlternate = surface.partner
+        // CMP-013 level 2: nothing the composite is made of changed, so the previous composite is the stack.
+        compositeReused = canReuseComposite()
+        if compositeReused {
+            compositeReuses += 1
+        } else {   // a reused composite keeps the draw counts it was drawn with (the same draws)
+            compositeValid = false
+            transformedDraws = 0
+            blendDraws = 0
+            maskedDraws = 0
+            isolatedGroupDraws = 0
+            guard let stacked = encodeStack(onto: composite, size: size, commandBuffer: commandBuffer) else { return false }
+            composite = stacked
         }
-        var i = 0
-        while i < records.count {
-            // CMP-011: an ungrouped layer (or one whose group is unknown) is drawn as before.
-            guard let groupID = records[i].group,
-                  let g = groupRecords.firstIndex(where: { (r: GroupRecord) -> Bool in r.id == groupID }) else {
-                if isVisible(i), !drawLayer(i, on: &surface, size: size, commandBuffer: commandBuffer) { return false }
-                i += 1
-                continue
-            }
-            var end = i + 1
-            while end < records.count, records[end].group == groupID { end += 1 }
-            let run = i..<end
-            i = end
-            let groupOpacity = groupRecords[g].opacity.value
-            guard groupRecords[g].isEnabled, groupOpacity > 0 else { continue }   // hidden: its layers still rendered
-            // The rule of `LayerGroupComposition.needsIsolation`, without building a sequence per frame.
-            var anyVisible = false
-            var isolate = groupOpacity < 1
-            for k in run where isVisible(k) {
-                anyVisible = true
-                if records[k].blendMode != .normal { isolate = true }
-            }
-            guard anyVisible else { continue }
-            if isolate {
-                guard drawIsolatedGroup(run, opacity: groupOpacity, on: &surface, size: size, commandBuffer: commandBuffer) else { return false }
-            } else {
-                for k in run where isVisible(k) {
-                    guard drawLayer(k, on: &surface, size: size, commandBuffer: commandBuffer) else { return false }
-                }
-            }
-        }
-        surface.encoder.endEncoding()
-        composite = surface.texture
 
         guard flashGuard.encode(composite: composite, commandBuffer: commandBuffer, frameDuration: frame.frameDuration,
                                 reduceFlashing: reduceFlashing) else { return false }
@@ -566,7 +594,96 @@ public final class Compositor {
             encodeCapture(composite: composite, size: size, commandBuffer: commandBuffer, handler: handler)
         }
         watch(commandBuffer, tick: tick)
+        noteCompositeInputs()   // CMP-013
+        finished = true
         return true
+    }
+
+    // MARK: - Render caching (CMP-013)
+
+    /// Layer `i`'s cache key this frame (nil: render): only for an adopter, with caching on, and never for a
+    /// layer a DEBUG render fault targets (PERF-014's injected faults must reach `render`).
+    private func renderCacheKey(_ i: Int, frame: LayerFrameContext, size: LayerPictureDescriptor) -> LayerRenderCacheKey? {
+        guard isRenderCachingEnabled, let caching = records[i].caching else { return nil }
+        #if DEBUG
+        if faultInjection.failingRender.contains(records[i].layer.layerName) { return nil }
+        #endif
+        return LayerRenderCacheKey(dependencies: caching.renderDependencies, picture: size, contentScale: frame.contentScale,
+                                   reduceFlashing: frame.reduceFlashing, epoch: renderCacheEpoch)
+    }
+
+    /// How layer `i` is drawn into this frame's composite (−1: not drawn).
+    private func drawInput(_ i: Int) -> LayerDrawInput {
+        LayerDrawInput(picture: isVisible(i) ? records[i].shown : -1, opacity: records[i].opacity.value,
+                       reused: records[i].reusedThisFrame)
+    }
+
+    /// CMP-013-R6: the composite is valid and every layer and group contributes what it contributed to it.
+    private func canReuseComposite() -> Bool {
+        guard isRenderCachingEnabled, compositeValid else { return false }
+        for i in records.indices where !drawInput(i).isUnchanged(from: records[i].drawn) { return false }
+        for g in groupRecords where g.drawnOpacity != g.opacity.value { return false }
+        return true
+    }
+
+    /// A finished frame: remember what its composite is made of.
+    private func noteCompositeInputs() {
+        for i in records.indices { records[i].drawn = drawInput(i) }
+        for g in groupRecords.indices { groupRecords[g].drawnOpacity = groupRecords[g].opacity.value }
+        compositeValid = isRenderCachingEnabled
+    }
+
+    /// Draws every visible layer, bottom first, onto the cleared composite (CMP-001 to CMP-012). Returns the
+    /// composite holding the stack (the blend-mode ping-pong may have swapped it), nil when Metal cannot
+    /// create an encoder or a picture.
+    private func encodeStack(onto composite: MTLTexture, size: LayerPictureDescriptor, commandBuffer: MTLCommandBuffer) -> MTLTexture? {
+        let pass = MTLRenderPassDescriptor()
+        pass.colorAttachments[0].texture = composite
+        pass.colorAttachments[0].loadAction = .clear
+        pass.colorAttachments[0].storeAction = .store
+        pass.colorAttachments[0].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
+        guard let over = commandBuffer.makeRenderCommandEncoder(descriptor: pass) else { return nil }
+        over.label = "CMP-001 composite"
+        over.setRenderPipelineState(overPipeline)
+        var surface = DrawSurface(texture: composite, partner: compositeAlternate, encoder: over, pipe: .plain,
+                                  label: "CMP-001 composite", partnerLabel: "CMP-004 composite")
+        defer {   // CMP-004: the two composites may have swapped (kept even when a frame fails half way)
+            self.composite = surface.texture
+            compositeAlternate = surface.partner
+        }
+        var i = 0
+        while i < records.count {
+            // CMP-011: an ungrouped layer (or one whose group is unknown) is drawn as before.
+            guard let groupID = records[i].group,
+                  let g = groupRecords.firstIndex(where: { (r: GroupRecord) -> Bool in r.id == groupID }) else {
+                if isVisible(i), !drawLayer(i, on: &surface, size: size, commandBuffer: commandBuffer) { return nil }
+                i += 1
+                continue
+            }
+            var end = i + 1
+            while end < records.count, records[end].group == groupID { end += 1 }
+            let run = i..<end
+            i = end
+            let groupOpacity = groupRecords[g].opacity.value
+            guard groupRecords[g].isEnabled, groupOpacity > 0 else { continue }   // hidden: its layers still rendered
+            // The rule of `LayerGroupComposition.needsIsolation`, without building a sequence per frame.
+            var anyVisible = false
+            var isolate = groupOpacity < 1
+            for k in run where isVisible(k) {
+                anyVisible = true
+                if records[k].blendMode != .normal { isolate = true }
+            }
+            guard anyVisible else { continue }
+            if isolate {
+                guard drawIsolatedGroup(run, opacity: groupOpacity, on: &surface, size: size, commandBuffer: commandBuffer) else { return nil }
+            } else {
+                for k in run where isVisible(k) {
+                    guard drawLayer(k, on: &surface, size: size, commandBuffer: commandBuffer) else { return nil }
+                }
+            }
+        }
+        surface.encoder.endEncoding()
+        return surface.texture
     }
 
     // MARK: - Blend modes (CMP-004)
@@ -771,6 +888,7 @@ public final class Compositor {
     }
 
     private func recordVisualFault(_ reason: RenderFaultReason) {
+        invalidateRenderCache()   // CMP-013
         if visualRetry.fault(atTick: frameTicks, policy: recoveryPolicy) { health.recordFault(reason, atTick: frameTicks) }
     }
 
@@ -796,6 +914,7 @@ public final class Compositor {
             let status = entry.buffer.status
             guard status == .completed || status == .error else { continue }
             watched[k] = nil
+            if status == .error { invalidateRenderCache() }   // CMP-013: its pictures may be undrawn
             var reason: RenderFaultReason? = status == .error ? Self.renderFaultReason(for: entry.buffer.error) : nil
             #if DEBUG
             if let injected = faultInjection.gpuFault { reason = injected }
@@ -942,6 +1061,7 @@ public final class Compositor {
         groupComposite = nil
         if let groupAlternate { texturePool.recycle(groupAlternate, after: lastCommandBuffer) }
         groupAlternate = nil
+        invalidateRenderCache()   // CMP-013: a new size (the key holds it too)
         var starved = false
         #if DEBUG
         starved = faultInjection.missingPictures.contains("composite")
@@ -965,6 +1085,7 @@ public final class Compositor {
         let d = size.textureDescriptor()
         texturePool.recycle(records[i].pictures, after: lastCommandBuffer)   // PERF-004: the old size's pictures
         records[i].pictures = []
+        records[i].cache.drop()   // CMP-013
         var created: [MTLTexture] = []
         var starved = false
         #if DEBUG
@@ -997,6 +1118,7 @@ public final class Compositor {
 
     private func prepareLayer(_ i: Int, _ size: LayerPictureDescriptor) {
         guard records[i].pictures.count == records[i].slots.pictureCount else { return }
+        records[i].cache.drop()   // CMP-013: prepared pictures hold nothing good
         layerPreparations += 1
         do throws(LayerSourceError) {
             #if DEBUG
