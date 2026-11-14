@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T16:52:30Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T16:52:41Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 132 |
 | implementing | 6 |
-| unit_passed | 1 |
-| integrated | 186 |
+| integrated | 187 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 49 | 5 | 1 | 96 | 0 |
-| P2 | 72 | 1 | 0 | 6 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 2 | 0 | 84 | 1 |
+| P1 | 49 | 5 | 97 | 0 |
+| P2 | 72 | 1 | 6 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 139 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-011, ANL-012)
+- 138 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-011, ANL-012)
 
 ## Integrated
 
@@ -138,6 +137,7 @@ The physical-device suite may **not** start:
 | MIDI-007 | MIDI scene selection | `42658ec3d3d7` | `feature/midi-007` |
 | MIDI-008 | MIDI transport mapping | `265ddd1401f9` | `feature/midi-008` |
 | MIDI-011 | MIDI hot-plug recovery | `2a986abd` | `None` |
+| MIDI-012 | MIDI mapping profiles | `93aae15008da` | `feature/midi-012` |
 | MOD-001 | Typed parameter registry | `304f3bce431a` | `feature/mod-001` |
 | MOD-002 | Audio feature binding | `006678f3d7a5` | `feature/mod-002` |
 | MOD-003 | Linear mapping | `29cd3bbb1e12` | `feature/mod-003` |
@@ -1309,7 +1309,7 @@ None.
 - `swift test --package-path Packages/PerformanceControl`: pass at `ea8c44c900aa` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-011/20261114T104655/swift-test_PerformanceControl.log`)
 - `post-merge: projectM-iOSTests 782 + UI 5 (MIDI discovery, monitor, learn, video recording)`: pass at `2a986abd` (log `.autonomous/logs/integration/batch20/app-tests.log`)
 
-### MIDI-012 MIDI mapping profiles (unit_passed)
+### MIDI-012 MIDI mapping profiles (integrated)
 - `python3 scripts/check_compliance.py`: pass at `a32a7b7b6e2c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-012/20261114T115114/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `a32a7b7b6e2c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-012/20261114T115114/docs.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `a32a7b7b6e2c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-012/20261114T115114/swift-test_ImportFuzz.log`)
