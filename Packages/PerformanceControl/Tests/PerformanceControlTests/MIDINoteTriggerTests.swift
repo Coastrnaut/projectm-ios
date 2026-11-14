@@ -152,12 +152,12 @@ final class MIDINoteTriggerTests: XCTestCase {
 
     func testNoteLinesRoundTripBesideCCLines() {
         let lines: [String] = ["cc:0:7=effect.bloom.intensity;curve=easeIn:2.0;invert=1", "note:0:60=cue.next",
-                               "note:15:127=blackout;mode=hold;velocity=40", "note:0:61=cue.go:ABC", "note:0:62=blackout;mode=trigger",
+                               "note:15:127=blackout;mode=hold;velocity=40", "note:0:61=cue.fire:ABC", "note:0:62=blackout;mode=trigger",
                                "note:0:63=cue.next;mode=hold", "note:16:1=cue.next", "note:0:60=cue.previous"]
         let notes: MIDINoteBindingList = list(lines)
         XCTAssertEqual(notes.bindings.map { (b: MIDINoteBinding) -> MIDINoteTarget in b.target }, [.nextCue, .blackoutHold, .blackoutToggle])
         XCTAssertEqual(notes.storageLines, ["note:0:60=cue.next", "note:15:127=blackout;mode=hold;velocity=40", "note:0:62=blackout",
-                                            "note:0:61=cue.go:ABC", "note:0:63=cue.next;mode=hold", "note:16:1=cue.next"],
+                                            "note:0:61=cue.fire:ABC", "note:0:63=cue.next;mode=hold", "note:16:1=cue.next"],
                        "unknown action, disallowed hold and bad channel kept verbatim; a repeated note dropped")
         let cc: MIDIBindingList = MIDIBindingList(storageLines: lines, allowedTargets: [ParameterID("effect.bloom.intensity")])
         XCTAssertEqual(cc.storageLines, [lines[0]], "MIDI-003/004 reading is unchanged and ignores note lines")
