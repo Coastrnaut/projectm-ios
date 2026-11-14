@@ -15,6 +15,10 @@
 //   key `settings.linearSpectrum.orientation` (`vertical`/`horizontal`; anything else → vertical),
 //   and spacing, key `settings.linearSpectrum.spacing` (0, 0.2 or 0.5; anything else → 0.2). Bars
 //   and Glow are shared by both native spectra and keep their keys (spec 025, Clarifications).
+// * Oscilloscope (VIS-003-R10): `settings.visual` may also be `oscilloscope`; its line, key
+//   `settings.oscilloscope.line` (`thin`/`medium`/`thick`; anything else → medium), and window, key
+//   `settings.oscilloscope.window` (10, 20 or 40 ms as an Int; anything else → 20). Glow is shared with
+//   the spectra; Bars does not apply.
 // * Camera (CAM-001-R1, R11): `visual` may be `.camera` for the session only. It is never written,
 //   so the key keeps the visual chosen before it, and a stored `camera` (never written by the app)
 //   reads as projectM: the camera starts only from the user's choice in the running session.
@@ -29,7 +33,8 @@
 // * OSC receiver (OSC-001-R15): key `settings.osc.enabled` (Bool, absent → off, so a fresh install
 //   opens no listener) and `settings.osc.port` (Int, absent or outside 1024-65535 → 9000).
 // All keys are "user settings" in the FR-065 list of what may be stored (FR-123 adds the scope,
-// VIS-001-R11 the two visual keys, FX-001-R11 the four glow keys, VIS-002-R11 the two linear keys).
+// VIS-001-R11 the two visual keys, FX-001-R11 the four glow keys, VIS-002-R11 the two linear keys,
+// VIS-003-R10 the two oscilloscope keys).
 import Foundation
 import Observation
 import PerformanceControl
@@ -50,6 +55,8 @@ final class AppSettings {
     static let glowThresholdKey = "settings.circularSpectrum.glowThreshold"
     static let linearSpectrumOrientationKey = "settings.linearSpectrum.orientation"
     static let linearSpectrumSpacingKey = "settings.linearSpectrum.spacing"
+    static let oscilloscopeLineKey = "settings.oscilloscope.line"
+    static let oscilloscopeWindowKey = "settings.oscilloscope.window"
     static let oscEnabledKey = "settings.osc.enabled"
     static let oscPortKey = "settings.osc.port"
     /// MED-001: the stored photo's identifier (written by PhotoStore).
@@ -61,10 +68,13 @@ final class AppSettings {
     static let allKeys = [performanceOverlayKey, reduceFlashingKey, presetScopeKey, visualKey, circularSpectrumBarsKey,
                           glowKey, glowIntensityKey, glowRadiusKey, glowThresholdKey,
                           linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey, videoIDKey,
-                          textOverlayKey]
+                          textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey]
     /// VIS-002-R4: the spacings offered for the linear spectrum.
     static let linearSpectrumSpacingChoices: [(title: String, value: Double)] = [("None", 0), ("Narrow", 0.2), ("Wide", 0.5)]
     static let defaultLinearSpectrumSpacing = 0.2
+    /// VIS-003-R10: the oscilloscope's windows in milliseconds.
+    static let oscilloscopeWindowChoices = [10, 20, 40]
+    static let defaultOscilloscopeWindow = 20
     static let circularSpectrumBarChoices = [16, 32, 64, 128]
     static let defaultCircularSpectrumBars = 64
 
@@ -118,6 +128,21 @@ final class AppSettings {
 
     private static func isSpacingChoice(_ value: Double) -> Bool {
         linearSpectrumSpacingChoices.contains { $0.value == value }
+    }
+
+    /// VIS-003: the oscilloscope's line thickness (Medium by default).
+    var oscilloscopeLine: OscilloscopeLine {
+        didSet { defaults.set(oscilloscopeLine.rawValue, forKey: Self.oscilloscopeLineKey) }
+    }
+
+    /// VIS-003: the oscilloscope's window, one of `oscilloscopeWindowChoices` (20 otherwise).
+    var oscilloscopeWindowMilliseconds: Int {
+        didSet {
+            if !Self.oscilloscopeWindowChoices.contains(oscilloscopeWindowMilliseconds) {
+                oscilloscopeWindowMilliseconds = Self.defaultOscilloscopeWindow
+            }
+            defaults.set(oscilloscopeWindowMilliseconds, forKey: Self.oscilloscopeWindowKey)
+        }
     }
 
     /// FX-001: the native spectra's glow (off by default).
@@ -195,6 +220,9 @@ final class AppSettings {
             .flatMap(LinearSpectrumOrientation.init(rawValue:)) ?? .vertical
         let spacing = defaults.object(forKey: Self.linearSpectrumSpacingKey) as? Double
         linearSpectrumSpacing = spacing.map(Self.isSpacingChoice) == true ? spacing! : Self.defaultLinearSpectrumSpacing
+        oscilloscopeLine = defaults.string(forKey: Self.oscilloscopeLineKey).flatMap(OscilloscopeLine.init(rawValue:)) ?? .medium
+        let window = defaults.integer(forKey: Self.oscilloscopeWindowKey)
+        oscilloscopeWindowMilliseconds = Self.oscilloscopeWindowChoices.contains(window) ? window : Self.defaultOscilloscopeWindow
         glowEnabled = defaults.bool(forKey: Self.glowKey)
         oscEnabled = defaults.bool(forKey: Self.oscEnabledKey)
         let port = defaults.integer(forKey: Self.oscPortKey)
@@ -233,6 +261,8 @@ enum VisualChoice: String, CaseIterable, Sendable {
     case circularSpectrum
     /// The native linear spectrum (VIS-002).
     case linearSpectrum
+    /// The native waveform oscilloscope (VIS-003).
+    case oscilloscope
     /// The rear camera with the circular spectrum over it (CAM-001; session only).
     case camera
     /// The imported photo with the circular spectrum over it (MED-001; persisted).
@@ -247,6 +277,7 @@ enum VisualChoice: String, CaseIterable, Sendable {
         case .projectM: "projectM"
         case .circularSpectrum: "Circular Spectrum"
         case .linearSpectrum: "Linear Spectrum"
+        case .oscilloscope: "Oscilloscope"
         case .camera: "Camera"
         case .photo: "Photo"
         case .video: "Video"
@@ -255,7 +286,7 @@ enum VisualChoice: String, CaseIterable, Sendable {
     }
 
     /// Drawn by the native spectrum host instead of projectM.
-    var isNative: Bool { self == .circularSpectrum || self == .linearSpectrum }
+    var isNative: Bool { self == .circularSpectrum || self == .linearSpectrum || self == .oscilloscope }
 
     /// Shown instead of projectM (a native spectrum, the camera or the photo visual).
     var replacesProjectM: Bool { self != .projectM }
@@ -271,4 +302,26 @@ enum VisualChoice: String, CaseIterable, Sendable {
 
     /// The text visual (MED-009).
     var usesText: Bool { self == .text }
+}
+
+/// The oscilloscope's line thickness (VIS-003-R10). Stored as the raw value.
+enum OscilloscopeLine: String, CaseIterable, Sendable {
+    case thin, medium, thick
+
+    var title: String {
+        switch self {
+        case .thin: "Thin"
+        case .medium: "Medium"
+        case .thick: "Thick"
+        }
+    }
+
+    /// Fraction of the output's shorter side (OscilloscopeConfiguration.lineThickness).
+    var thickness: Double {
+        switch self {
+        case .thin: 0.004
+        case .medium: 0.008
+        case .thick: 0.016
+        }
+    }
 }

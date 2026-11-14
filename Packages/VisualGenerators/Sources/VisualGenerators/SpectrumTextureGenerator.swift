@@ -38,7 +38,8 @@ protocol FlashRegionLayout: AnyObject {
 }
 
 #if canImport(Metal) && !VISUAL_NO_METAL
-/// A band-driven native spectrum the app host can drive (VIS-001 circular, VIS-002 linear).
+/// A native visual the app host can drive (VIS-001 circular, VIS-002 linear, VIS-003 oscilloscope,
+/// whose input vector is samples and whose `barCount` is only carried).
 public protocol SpectrumTextureGenerator: TextureGenerator {
     /// Reduce flashing and the strobe safety envelope (VIS-001-R10, FX-019).
     var limiter: FlashSafetyLimiter { get }

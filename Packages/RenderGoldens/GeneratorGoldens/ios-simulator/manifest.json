@@ -1,0 +1,28 @@
+{
+  "entries" : [
+    {
+      "file" : "waveform-oscilloscope-sine-128x96-f1.png",
+      "fileSHA256" : "6b25d64b3348e57ff4356cd5bcdc09800613fe277a7976abc345332c61ba0c9e",
+      "frame" : 1,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "e1c1215112e68541f75b967bc8f424cf7525339cfda6769e111acf94205cb70e",
+      "scene" : "waveform-oscilloscope-sine",
+      "width" : 128
+    },
+    {
+      "file" : "waveform-oscilloscope-sine-256x192-f1.png",
+      "fileSHA256" : "d2c0fb55c56e5e0b35c7488a6741b9c75ad2392606be4209a8e9d6a60d2b4d23",
+      "frame" : 1,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "f811c6e178b01589ea1461395c412d242f5fccf0f98a542fe11b6ecfa9e704bc",
+      "scene" : "waveform-oscilloscope-sine",
+      "width" : 256
+    }
+  ],
+  "formatVersion" : 1,
+  "platform" : "ios-simulator",
+  "recordedGPU" : "Apple iOS simulator GPU",
+  "recordedOS" : "27.2"
+}

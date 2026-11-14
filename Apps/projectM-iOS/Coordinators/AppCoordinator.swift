@@ -719,10 +719,13 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         SpectrumBarCount(rawValue: settings.circularSpectrumBars) ?? .b64
     }
 
-    /// The native spectrum the settings ask for (VIS-002-R11; circular for any other choice).
+    /// The native visual the settings ask for (VIS-002-R11, VIS-003-R10; circular for any other choice).
     private var nativeSpectrumStyle: NativeSpectrumStyle {
-        settings.visual == .linearSpectrum
-            ? .linear(settings.linearSpectrumOrientation, spacing: settings.linearSpectrumSpacing) : .circular
+        switch settings.visual {
+        case .linearSpectrum: .linear(settings.linearSpectrumOrientation, spacing: settings.linearSpectrumSpacing)
+        case .oscilloscope: .oscilloscope(line: settings.oscilloscopeLine, windowMilliseconds: settings.oscilloscopeWindowMilliseconds)
+        default: .circular
+        }
     }
 
     private func markNativeVisualUnavailable(_ error: any Error) {

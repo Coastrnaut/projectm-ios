@@ -38,6 +38,11 @@
 //   generator's downstream luminance is a `ModulatedGlowLuminance` reference whose model follows
 //   the effective glow, so Reduce flashing (FX-019) bounds the frame actually shown. No allocation
 //   per frame. Unbinding returns to the manual glow at once.
+// * Oscilloscope (VIS-003; research VIS-003-D1): the host hands the analyzer a `WaveformTap` around
+//   the analysis tap (a pass-through: the analyzer's bands are unchanged) that also keeps the newest
+//   4,096 mono samples. While the oscilloscope is shown, each frame copies the newest history into a
+//   preallocated scratch and passes it to the generator instead of the bands; modulation still advances
+//   with the bands. The oscilloscope's line and window change only its configuration.
 // * REC-001 (research REC-001-D1): `captureFrame` turns the layer's `framebufferOnly` off until the
 //   next readable drawable is drawn, blits that drawable (the frame as shown: glow and Reduce
 //   flashing included) into a shared buffer and delivers 8-bit sRGB BGRA on the main actor; then
@@ -66,7 +71,11 @@ final class NativeSpectrumHost: PresentationBoundResource {
     private(set) var style: NativeSpectrumStyle
     private let analyzer: LiveBandAnalyzer
     private let reader: (any NormalizedPCMReader)?
+    /// VIS-003: the analyzer reads through this tap; it keeps the newest samples for the oscilloscope.
+    private let waveform: WaveformTap?
     private let bands: UnsafeMutablePointer<Float>
+    /// VIS-003: the newest sample history (zeros until the first one arrives).
+    private let samples: UnsafeMutablePointer<Float>
     private var bandCount = 0
     private var displayLink: CADisplayLink?
     private var paused = true
@@ -160,7 +169,17 @@ final class NativeSpectrumHost: PresentationBoundResource {
             return try LinearSpectrumGenerator(device: device, pixelFormat: .bgra8Unorm_srgb,
                                                configuration: LinearSpectrumConfiguration(barCount: barCount, orientation: orientation,
                                                                                           spacing: spacing))
+        case let .oscilloscope(line, window):
+            let generator = try OscilloscopeGenerator(device: device, pixelFormat: .bgra8Unorm_srgb,
+                                                      configuration: oscilloscopeConfiguration(line: line, windowMilliseconds: window))
+            generator.barCount = barCount
+            return generator
         }
+    }
+
+    /// VIS-003: the oscilloscope's configuration for the app's choices.
+    private static func oscilloscopeConfiguration(line: OscilloscopeLine, windowMilliseconds: Int) -> OscilloscopeConfiguration {
+        OscilloscopeConfiguration(windowMilliseconds: Double(windowMilliseconds), lineThickness: line.thickness)
     }
 
     private init(device: MTLDevice, queue: MTLCommandQueue, style: NativeSpectrumStyle, generator: any SpectrumTextureGenerator,
@@ -171,11 +190,14 @@ final class NativeSpectrumHost: PresentationBoundResource {
         self.generator = generator
         self.analyzer = analyzer
         self.reader = reader
+        waveform = reader.map { (r: any NormalizedPCMReader) -> WaveformTap in WaveformTap(r) }
         self.bloom = bloom
         self.chain = chain
         glowUnavailable = chain == nil
         bands = .allocate(capacity: SpectrumBarCount.maximum)
         bands.initialize(repeating: 0, count: SpectrumBarCount.maximum)
+        samples = .allocate(capacity: WaveformFrameBuffer.capacity)
+        samples.initialize(repeating: 0, count: WaveformFrameBuffer.capacity)
         view = NativeSpectrumLayerView(device: device)
         view.onLayout = { [weak self] in self?.layoutDrawable() }
         observeFrameRatePressure()
@@ -193,6 +215,12 @@ final class NativeSpectrumHost: PresentationBoundResource {
             configuration.orientation = orientation
             configuration.spacing = spacing
             linear.configuration = configuration
+        } else if case let .oscilloscope(line, window) = newStyle, let scope = generator as? OscilloscopeGenerator {
+            var configuration = scope.configuration
+            let wanted = Self.oscilloscopeConfiguration(line: line, windowMilliseconds: window)
+            configuration.lineThickness = wanted.lineThickness
+            configuration.windowMilliseconds = wanted.windowMilliseconds
+            scope.configuration = configuration
         } else {
             let replacement = try Self.makeGenerator(device: device, style: newStyle, barCount: generator.barCount)
             generator = replacement
@@ -275,11 +303,15 @@ final class NativeSpectrumHost: PresentationBoundResource {
     }
 
     /// The visual's accessibility value: the glow state, preceded by the orientation for the linear
-    /// spectrum ("Vertical, Glow off"; VIS-002-R13).
+    /// spectrum ("Vertical, Glow off"; VIS-002-R13) and the window for the oscilloscope ("20 ms, Glow
+    /// off"; VIS-003-R13).
     static func accessibilityValue(style: NativeSpectrumStyle, glowEnabled: Bool, glowUnavailable: Bool) -> String {
         let glow = glowDescription(enabled: glowEnabled, unavailable: glowUnavailable)
-        guard case let .linear(orientation, _) = style else { return glow }
-        return "\(orientation.title), \(glow)"
+        switch style {
+        case .circular: return glow
+        case let .linear(orientation, _): return "\(orientation.title), \(glow)"
+        case let .oscilloscope(_, window): return "\(window) ms, \(glow)"
+        }
     }
 
     /// The chain's textures could not be created: continue without the glow (FX-001-R13).
@@ -295,6 +327,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
         observers.forEach(NotificationCenter.default.removeObserver)
         bands.deinitialize(count: SpectrumBarCount.maximum)
         bands.deallocate()
+        samples.deinitialize(count: WaveformFrameBuffer.capacity)
+        samples.deallocate()
     }
 
     /// SHOW-011 (research SHOW-011-D3): while this visual is shown its analyzer is the analysis tap's
@@ -338,7 +372,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         let run = !paused && !isSuspended
         if run, displayLink == nil {
             generator.restartLoop()
-            if let reader { analyzer.start(reader: reader) }
+            if let waveform { analyzer.start(reader: waveform) }   // VIS-003: the tap through the pass-through wrapper
             let link = CADisplayLink(target: NativeSpectrumLinkProxy(self), selector: #selector(NativeSpectrumLinkProxy.fire(_:)))
             link.preferredFrameRateRange = quality.frameRateRange
             link.add(to: .main, forMode: .common)
@@ -421,8 +455,16 @@ final class NativeSpectrumHost: PresentationBoundResource {
         guard let drawable = layer.nextDrawable(), let commands = queue.makeCommandBuffer() else { return }
         let context = VisualFrameContext(timeNanoseconds: UInt64(max(link.targetTimestamp, 0) * 1e9),
                                          frameDuration: link.targetTimestamp - link.timestamp, reduceFlashing: reduceFlashing)
-        let input = UnsafeBufferPointer(start: bands, count: bandCount)
-        applyModulation(bands: input, timeNanoseconds: context.timeNanoseconds)   // MOD-002; no-op without bindings
+        let bandInput = UnsafeBufferPointer(start: bands, count: bandCount)
+        applyModulation(bands: bandInput, timeNanoseconds: context.timeNanoseconds)   // MOD-002; no-op without bindings
+        // VIS-003: the oscilloscope draws the newest sample history (kept when nothing new arrived).
+        let input: UnsafeBufferPointer<Float>
+        if case .oscilloscope = style {
+            _ = waveform?.output.readLatest(into: samples, capacity: WaveformFrameBuffer.capacity)
+            input = UnsafeBufferPointer(start: samples, count: WaveformFrameBuffer.capacity)
+        } else {
+            input = bandInput
+        }
         let target = drawable.texture
         var drawn = false
         if let chain, glowActive {
@@ -533,11 +575,14 @@ final class ModulatedGlowLuminance: FrameLuminanceTransfer, @unchecked Sendable 
 enum NativeSpectrumStyle: Equatable, Sendable {
     case circular
     case linear(LinearSpectrumOrientation, spacing: Double)
+    /// VIS-003: the waveform oscilloscope.
+    case oscilloscope(line: OscilloscopeLine, windowMilliseconds: Int)
 
     var title: String {
         switch self {
         case .circular: VisualChoice.circularSpectrum.title
         case .linear: VisualChoice.linearSpectrum.title
+        case .oscilloscope: VisualChoice.oscilloscope.title
         }
     }
 
@@ -545,6 +590,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         switch self {
         case .circular: "circularSpectrum"
         case .linear: "linearSpectrum"
+        case .oscilloscope: "oscilloscope"
         }
     }
 }

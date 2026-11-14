@@ -66,6 +66,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID", "settings.performanceOverlay", "set
                 "settings.circularSpectrum.glow", "settings.circularSpectrum.glowIntensity",
                 "settings.circularSpectrum.glowRadius", "settings.circularSpectrum.glowThreshold",
                 "settings.linearSpectrum.orientation", "settings.linearSpectrum.spacing",   # VIS-002-R11
+                "settings.oscilloscope.line", "settings.oscilloscope.window",   # VIS-003-R10
                 "settings.osc.enabled", "settings.osc.port",   # OSC-001 (off by default)
                 "settings.photo.id", "settings.video.id", "settings.text.overlay",   # MED-001, MED-008, MED-009
                 "guide.firstScene",   # UIX-001
