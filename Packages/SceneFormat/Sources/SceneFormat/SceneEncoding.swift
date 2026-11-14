@@ -119,6 +119,7 @@ enum SceneEncoder {
         // MOD-004: only a non-linear curve is written, so linear bindings are stored as before; an
         // unreadable stored curve in `extra` passes through unchanged.
         if b.curve != .linear { o["curve"] = curve(b.curve) }
+        if !b.isEnabled { o["enabled"] = .bool(false) }   // MOD-012-R5: written only when off
         return .object(o)
     }
 

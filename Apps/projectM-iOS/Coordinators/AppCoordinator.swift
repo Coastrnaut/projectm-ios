@@ -227,6 +227,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let logo: LogoCoordinator
     /// MOD-010: the current scene's parameter macros (Settings › Macros).
     let macros: MacroCoordinator
+    /// MOD-012: the current scene's routes (Settings › Modulation; AppCoordinator+ModulationMatrix.swift).
+    let modulationMatrix = ModulationMatrixCoordinator()
     /// The Photo visual (MED-001), created when Photo is chosen and released when another visual is.
     private(set) var photoVisual: PhotoVisualHost?
     /// The photo layer's state while the Photo visual exists (`empty` otherwise).
@@ -615,6 +617,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         #if DEBUG
         UITestLayerInspectorFixture.seedIfRequested(self)   // CMP-015: LayerInspectorUITests (before the history starts)
         #endif
+        connectModulationMatrix()   // MOD-012 (and its DEBUG seed; before the history starts)
         connectSceneHistory()   // SCN-010: starts from the restored (or fresh) scene
         connectSceneSnapshots()   // SCN-008
         midiMappings.applyValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.nativeVisual?.externalValues = values }   // MIDI-003-R8
@@ -1101,6 +1104,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             #endif
             presentation.register(host)   // PERF-011: starts suspended while the app cannot present
             nativeVisual = host
+            modulationMatrix.refresh()   // MOD-012: the host's list is now the live one
         } catch {
             markNativeVisualUnavailable(error)
         }
@@ -1571,6 +1575,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         }
         if let visual { settings.visual = visual }
         resetTrailsHistory()   // FX-009-R5: a reopened scene starts without trails
+        modulationMatrix.refresh()   // MOD-012
         sceneHistory.restart()   // SCN-010-R9: Reopen is not an edit
         statusEvents.post(StatusEventCatalog.lastSceneReopened())   // ACC-011 X25
     }
@@ -1580,6 +1585,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         guard recovery.offer == .pending else { return }
         recovery.markStartedFresh()
         sceneAutosave?.commitFreshScene()
+        modulationMatrix.refresh()   // MOD-012
     }
 
     // MARK: - Scene autosave (SCN-002)
@@ -1598,7 +1604,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                     layerComposites: layers.composites,   // CMP-015
                     logo: logo.sceneLogo,   // MED-010
                     effects: liveEffectSettings,   // FX-020
-                    macros: macros.entries)   // MOD-010
+                    macros: macros.entries,   // MOD-010
+                    bindings: modulationMatrix.routes)   // MOD-012
     }
 
     /// ACC-003-R13: the colour-blind-safe palette setting changed; the native spectrum redraws with it.
@@ -1637,7 +1644,10 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// "bound, manual 0.50, effective 0.73", or a note when no native visual exists.
     var glowModulationReadout: String { nativeVisual?.glowModulationReadout ?? "no native visual" }
 
-    func unbindGlowTest() { nativeVisual?.unbind(VisualParameterIDs.bloomIntensity) }
+    func unbindGlowTest() {
+        nativeVisual?.unbind(VisualParameterIDs.bloomIntensity)
+        modulationMatrix.refresh()   // MOD-012
+    }
     #endif
 
     /// The system Reduce Motion setting changed.
