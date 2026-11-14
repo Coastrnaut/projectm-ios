@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T05:43:53Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T05:47:04Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -85,7 +85,7 @@ The physical-device suite may **not** start:
 | CMP-003 | Opacity per layer | `65caf9e9e6ec` | `feature/cmp-003` |
 | CMP-004 | Blend mode library | `6bc66e73` | `feature/cmp-004` |
 | CMP-005 | Transform controls | `dd604d0b1d51` | `feature/cmp-005` |
-| CMP-006 | Aspect fitting | `804f39376431` | `feature/cmp-006` |
+| CMP-006 | Aspect fitting | `53ddd8c4` | `feature/cmp-006` |
 | FILE-001 | Portable scene archive | `c3886d1cb0bb` | `feature/file-001` |
 | FILE-002 | Archive manifest checksums | `77fcfa3f1e56` | `feature/file-002` |
 | FILE-007 | Document schema validator | `d8e359893ae7` | `feature/file-007` |
@@ -647,6 +647,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `9169b95d3c27` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-006/20261114T004058/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `9169b95d3c27` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-006/20261114T004058/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `9169b95d3c27` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-006/20261114T004058/swift-test_ShowControl.log`)
+- `post-merge: projectM-iOSTests 442 + PhotoLayer/VideoLayer/SceneRepair UI tests 3; gate 9 suites`: pass at `53ddd8c4` (log `.autonomous/logs/integration/cmp-006/app-tests.log`)
 
 ### FILE-001 Portable scene archive (integrated)
 - `python3 scripts/check_compliance.py`: pass at `b4e63d16acf1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-001/20261113T154852/compliance.log`)

@@ -1020,7 +1020,7 @@
    "branch": "feature/cmp-006",
    "branch_sha": "9169b95d3c276a18f4e91f98a704ff71fe1038dc",
    "error_category": null,
-   "integrated_sha": "804f39376431e82f78e69e98c48b957de574ee4b",
+   "integrated_sha": "53ddd8c4",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
@@ -3785,7 +3785,7 @@
   {
    "branch": "feature/cmp-006",
    "id": "CMP-006",
-   "sha": "804f39376431e82f78e69e98c48b957de574ee4b"
+   "sha": "53ddd8c4"
   },
   {
    "branch": "feature/file-001",
@@ -4108,5 +4108,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T05:43:53Z"
+ "updated": "2026-11-14T05:47:04Z"
 }
