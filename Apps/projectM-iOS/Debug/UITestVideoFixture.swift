@@ -57,8 +57,11 @@ enum UITestVideoFixture {
                 waited += 1
             }
             var buffer: CVPixelBuffer?
-            guard let pool = adaptor.pixelBufferPool,
-                  CVPixelBufferPoolCreatePixelBuffer(kCFAllocatorDefault, pool, &buffer) == kCVReturnSuccess, let buffer else {
+            // Its own buffer, not one from adaptor.pixelBufferPool: the writer's pool crashed a test process
+            // inside CoreVideo with a null dictionary (2026-11-14, intermittent).
+            let attributes: [String: Any] = [kCVPixelBufferIOSurfacePropertiesKey as String: [String: Any]()]
+            guard CVPixelBufferCreate(kCFAllocatorDefault, width, height, kCVPixelFormatType_32BGRA,
+                                      attributes as CFDictionary, &buffer) == kCVReturnSuccess, let buffer else {
                 throw CocoaError(.fileWriteUnknown)
             }
             CVPixelBufferLockBaseAddress(buffer, [])

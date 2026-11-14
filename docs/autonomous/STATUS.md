@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T11:11:39Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T11:18:13Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,24 +9,24 @@
 
 | State | Features |
 |---|---|
-| audited | 185 |
-| unit_passed | 1 |
-| integrated | 139 |
+| audited | 176 |
+| implementing | 9 |
+| integrated | 140 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | unit_passed | integrated | skipped_existing |
+| Priority | audited | implementing | integrated | skipped_existing |
 |---|---|---|---|---|
 | P0 | 2 | 0 | 84 | 1 |
-| P1 | 97 | 1 | 53 | 0 |
-| P2 | 77 | 0 | 2 | 0 |
+| P1 | 89 | 8 | 54 | 0 |
+| P2 | 76 | 1 | 2 | 0 |
 | P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 186 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)
+- 185 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)
 
 ## Integrated
 
@@ -118,11 +118,12 @@ The physical-device suite may **not** start:
 | MED-002 | Import video layer | `e9e04eeb62a8` | `feature/med-002` |
 | MED-003 | Video loop region | `5e7bcff1` | `feature/med-003` |
 | MED-004 | Video playback speed | `c61dedd2` | `feature/med-004` |
-| MED-006 | Image slideshow | `6526d81917ea` | `feature/med-006` |
+| MED-006 | Image slideshow | `d6ec9dc5e426` | `feature/med-006` |
 | MED-009 | Text overlay | `beca43d66718` | `feature/med-009` |
 | MED-014 | Safe media decoder | `31e16534f057` | `feature/med-014` |
 | MIDI-001 | MIDI endpoint discovery | `5e7bcff1` | `feature/midi-001` |
 | MIDI-002 | MIDI input monitor | `c7cd1169` | `feature/midi-002` |
+| MIDI-003 | MIDI learn | `d6ec9dc5e426` | `feature/midi-003` |
 | MOD-001 | Typed parameter registry | `304f3bce431a` | `feature/mod-001` |
 | MOD-002 | Audio feature binding | `006678f3d7a5` | `feature/mod-002` |
 | MOD-003 | Linear mapping | `29cd3bbb1e12` | `feature/mod-003` |
@@ -1031,6 +1032,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `c2f29e10032e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-006/20261114T060820/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `c2f29e10032e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-006/20261114T060820/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `c2f29e10032e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-006/20261114T060820/swift-test_ShowControl.log`)
+- `post-merge: projectM-iOSTests 609 + Slideshow/MIDI* UI 4, checks`: pass at `d6ec9dc5e426` (log `.autonomous/logs/integration/med-006-midi-003/app-tests.log`)
 
 ### MED-009 Text overlay (integrated)
 - `python3 scripts/check_compliance.py`: pass at `5adba5200543` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-009/20261113T142110/compliance.log`)
@@ -1064,7 +1066,7 @@ None.
 - `swift test --package-path Packages/PerformanceControl`: pass at `44b1f9f38d32` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-002/20261114T053552/swift-test_PerformanceControl.log`)
 - `post-merge: projectM-iOSTests 589 + MIDIMonitor/MIDIDiscovery UI tests 2; network-symbol scan OK`: pass at `c7cd1169` (log `.autonomous/logs/integration/midi-002/app-tests.log`)
 
-### MIDI-003 MIDI learn (unit_passed)
+### MIDI-003 MIDI learn (integrated)
 - `python3 scripts/check_compliance.py`: pass at `e796e3a1a8b0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-003/20261114T061050/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `e796e3a1a8b0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-003/20261114T061050/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `e796e3a1a8b0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-003/20261114T061050/script-tests.log`)
@@ -1072,6 +1074,7 @@ None.
 - `swift test --package-path Packages/ImportFuzz`: pass at `e796e3a1a8b0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-003/20261114T061050/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/LibraryBackup`: pass at `e796e3a1a8b0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-003/20261114T061050/swift-test_LibraryBackup.log`)
 - `swift test --package-path Packages/PerformanceControl`: pass at `e796e3a1a8b0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-003/20261114T061050/swift-test_PerformanceControl.log`)
+- `post-merge: projectM-iOSTests 609 + Slideshow/MIDI* UI 4, checks`: pass at `d6ec9dc5e426` (log `.autonomous/logs/integration/med-006-midi-003/app-tests.log`)
 
 ### MOD-001 Typed parameter registry (integrated)
 - `python3 scripts/check_compliance.py`: pass at `c62c162f633a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-001/20261113T104902/compliance.log`)
