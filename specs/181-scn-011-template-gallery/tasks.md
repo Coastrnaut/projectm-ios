@@ -5,13 +5,13 @@
 
 ## Phase 1: Setup
 
-- [ ] SCN-011-T01 Add the five templates' scene files and `manifest.json` (format `projectm-ios.scene-templates`, version 1; asset licence SPDX `MIT`; layer kinds only `spectrum.circular`, `spectrum.linear`, `text`) in Apps/projectM-iOS/Resources/SceneTemplates/
+- [X] SCN-011-T01 Add the five templates' scene files and `manifest.json` (format `projectm-ios.scene-templates`, version 1; asset licence SPDX `MIT`; layer kinds only `spectrum.circular`, `spectrum.linear`, `text`) in Apps/projectM-iOS/Resources/SceneTemplates/ — Verified 2026-11-14: `SceneTemplateTests` (6 pass, 0.02 s) decodes all six files with zero warnings
 - [ ] SCN-011-T02 Bundle `Resources/SceneTemplates` as a folder resource (excluded from sources) in project.yml
 
 ## Phase 2: Foundational
 
-- [ ] SCN-011-T03 Implement `SceneTemplateManifest`, `SceneTemplateCatalog.load(directory:)` (contract T1) and `ShowStore.storeTemplateCopy(_:newID:name:)` (contract T2) in Packages/ShowControl/Sources/ShowStorage/SceneTemplates.swift
-- [ ] SCN-011-T04 [P] Package tests: every bundled template decodes with zero warnings; licence records cover every asset key with `MIT` and `LICENSE` is MIT; copy twice → two IDs and files; edit copy 1 → copy 2 and the template byte-identical; delete copy 1 → copy 2 loads; bad manifest and missing file are skipped; a copy onto a stored ID is refused (`sceneIDTaken`) and writes nothing, in Packages/ShowControl/Tests/ShowControlTests/SceneTemplateTests.swift
+- [X] SCN-011-T03 Implement `SceneTemplateManifest`, `SceneTemplateCatalog.load(directory:)` (contract T1) and `ShowStore.storeTemplateCopy(_:newID:name:)` (contract T2) in Packages/ShowControl/Sources/ShowStorage/SceneTemplates.swift — Verified 2026-11-14: `swift test --package-path Packages/ShowControl` 84 pass (2.2 s)
+- [X] SCN-011-T04 [P] Package tests: every bundled template decodes with zero warnings; licence records cover every asset key with `MIT` and `LICENSE` is MIT; copy twice → two IDs and files; edit copy 1 → copy 2 and the template byte-identical; delete copy 1 → copy 2 loads; bad manifest and missing file are skipped; a copy onto a stored ID is refused (`sceneIDTaken`) and writes nothing, in Packages/ShowControl/Tests/ShowControlTests/SceneTemplateTests.swift — Verified 2026-11-14: 6 tests pass on the macOS host
 
 ## Phase 3: User Story 1 — Start from a template (P1)
 
