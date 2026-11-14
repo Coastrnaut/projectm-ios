@@ -4,7 +4,10 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (SCN-011-T01-T10 verified on the Mac: host package tests and the feature's own
+iOS 27.2 simulator "SCN11 iPhone 17"; no device claim). ShowControl 84 tests (2.2 s; 6 new), app
+SceneTemplateAcceptanceTests 4 (0.03 s), SceneTemplateUITests 1 (22.4 s). Linux: not run here; the new ShowStorage
+code is Foundation-only and the package test finds the templates through `#filePath`.
 
 **Input**: Roadmap row SCN-011 (P1, size M, depends on SCN-001, integrated). Observable behavior,
 verbatim: "Bundle a small licensed set of editable starter scenes." Acceptance, verbatim: "Template
