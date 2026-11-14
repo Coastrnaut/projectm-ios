@@ -13,8 +13,8 @@
   "P1": {
    "audited": 70,
    "implementing": 4,
-   "integrated": 72,
-   "unit_passed": 5
+   "integrated": 74,
+   "unit_passed": 3
   },
   "P2": {
    "audited": 74,
@@ -27,9 +27,9 @@
  "by_state": {
   "audited": 155,
   "implementing": 4,
-  "integrated": 161,
+  "integrated": 163,
   "skipped_existing": 1,
-  "unit_passed": 5
+  "unit_passed": 3
  },
  "device_gate": {
   "blocked": [],
@@ -74,7 +74,6 @@
    "MED-008",
    "MED-011",
    "MED-012",
-   "MED-013",
    "MIDI-005",
    "MIDI-008",
    "MIDI-009",
@@ -131,7 +130,6 @@
    "PRE-016",
    "PRE-017",
    "PRE-018",
-   "QA-006",
    "QA-008",
    "QA-009",
    "QA-010",
@@ -204,7 +202,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "164 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)"
+   "162 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)"
   ]
  },
  "features": {
@@ -1523,10 +1521,10 @@
    "branch": "feature/med-013",
    "branch_sha": "3e9e52be2928530db8e0ce106a16244ab8ef66d8",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "52fabb13",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "MED-014": {
    "attempts": 0,
@@ -2473,10 +2471,10 @@
    "branch": null,
    "branch_sha": "86203d89d8971f3a54ac96ab609aeb431a1082df",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "dc341318c32b5aa1eac78cd5f2c409388d98329d",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "QA-007": {
    "attempts": 0,
@@ -3941,6 +3939,11 @@
    "sha": "6ac0c21c"
   },
   {
+   "branch": "feature/med-013",
+   "id": "MED-013",
+   "sha": "52fabb13"
+  },
+  {
    "branch": "feature/med-014",
    "id": "MED-014",
    "sha": "31e16534f057b12cf870f7a854464076a0c39955"
@@ -4126,6 +4129,11 @@
    "sha": "d7faef231370e244e64dba2d096cd1ec1a77c97c"
   },
   {
+   "branch": null,
+   "id": "QA-006",
+   "sha": "dc341318c32b5aa1eac78cd5f2c409388d98329d"
+  },
+  {
    "branch": "feature/qa-007",
    "id": "QA-007",
    "sha": "32172fdd5795d12b9a6386c3f56d1d33936b5344"
@@ -4301,5 +4309,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T14:53:04Z"
+ "updated": "2026-11-14T14:54:11Z"
 }
