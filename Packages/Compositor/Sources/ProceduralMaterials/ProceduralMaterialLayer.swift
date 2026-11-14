@@ -19,6 +19,7 @@ import Compositor
 import Metal
 import ParameterGraph
 import ShaderParameterMetadata
+import VisualGenerators
 
 public final class ProceduralMaterialLayer: LayerSource {
     public let definition: MaterialDefinition
@@ -34,6 +35,10 @@ public final class ProceduralMaterialLayer: LayerSource {
     private var library: MTLLibrary?
     private var pipelines: [String: MTLRenderPipelineState] = [:]
     private var pipeline: MTLRenderPipelineState?
+    /// SHD-005: the multi-stop gradient the Gradient Field draws (nil = its two colours, unchanged); other materials
+    /// ignore it.
+    public private(set) var gradient: GradientRamp?
+    private var rampUniforms = GradientRampUniforms.none
     private let speedSlot: Int
     private let reactivitySlot: Int
 
@@ -73,6 +78,12 @@ public final class ProceduralMaterialLayer: LayerSource {
     }
 
     public var layerName: String { definition.id }
+
+    /// SHD-005-R6: sets (or clears) the gradient drawn from the next frame. Call between frames.
+    public func setGradient(_ ramp: GradientRamp?) {
+        gradient = ramp
+        rampUniforms = GradientRampUniforms(ramp: ramp)
+    }
 
     /// Sets one parameter, clamped (SHD-001-R6); takes effect from the next frame.
     @discardableResult
@@ -156,6 +167,7 @@ public final class ProceduralMaterialLayer: LayerSource {
         encoder.label = "SHD-001 \(definition.id)"
         encoder.setRenderPipelineState(pipeline)
         encoder.setFragmentBytes(&uniforms, length: MemoryLayout<MaterialUniforms>.stride, index: 0)
+        encoder.setFragmentBytes(&rampUniforms, length: MemoryLayout<GradientRampUniforms>.stride, index: 1)
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
         encoder.endEncoding()
     }

@@ -62,6 +62,10 @@ Five questions, each answered with the recommended option (owner rules 4 and 9).
 
 - Consistency pass over spec, plan and tasks: R1 → T05, T09; R2 → T09; R3 → T05, T06, T09; R4 → T05, T12; R5 → T02, T03, T11; R6 → T02, T10, T11, T12; R7 → T05, T10, T12; R8 → T08, T13, T14; R9 → T10, T12; R10 → T16; R11 → T07. S1-S2 → T09, S3 → T11, T12, S4 → T11, S5 → T14. No constitution conflict. Two fixes applied: T12 now tests that Duplicate Scene copies the flag (R9 had no test), and T11 tests that skipping the active cue keeps the position (an edge case without a test).
 
+### Session 2026-11-14 (show editor fix)
+
+- Q: Are all the cue row's swipe actions reachable on an iPhone? → A: Decided (best judgement, owner rule 4): eight leading swipe actions (Go, Duplicate, Name, Transition, Into, Advance, MIDI) pushed the later ones off a 402 pt iPhone (MIDI at x = 475, not tappable; MIDISceneSelectionUITests). Each swipe edge now has at most three actions: leading Go, MIDI (when MIDI is available) and More…, which opens a dialog with Duplicate Scene, Rename Scene…, Transition…, Transition Into This Cue… and Advance After… (More… hidden while the scene is locked, SCN-015-R6); trailing Delete and Skip. The context menu and VoiceOver actions are unchanged, and the accessibility identifiers move with their actions into the dialog. For this feature, this supersedes the note that the leading row is wider than an iPhone: Skip stays on the trailing edge next to Delete (Delete first, so a full swipe still deletes).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Hold the timed show (Priority: P1) — MVP

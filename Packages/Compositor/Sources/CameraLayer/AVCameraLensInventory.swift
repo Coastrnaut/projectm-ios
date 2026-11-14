@@ -131,4 +131,65 @@ extension AVCaptureDevice: CameraFocusConfiguring {
         unlockForConfiguration()
     }
 }
+
+/// CAM-006 (contract C1; research CAM-006-D1): the device's white balance through the documented
+/// `lockForConfiguration` / `unlockForConfiguration` pair. Gains are re-checked against
+/// `maxWhiteBalanceGain` right before `setWhiteBalanceModeLocked(with:)`, which raises on any gain
+/// outside 1…maximum (R5). Called on the provider's session queue.
+extension AVCaptureDevice: CameraWhiteBalanceConfiguring {
+    static func avWhiteBalanceMode(_ mode: CameraWhiteBalanceMode) -> AVCaptureDevice.WhiteBalanceMode? {
+        switch mode {
+        case .locked: .locked
+        case .continuousAuto: .continuousAutoWhiteBalance
+        case .other: nil
+        }
+    }
+
+    public func supportsWhiteBalance(_ mode: CameraWhiteBalanceMode) -> Bool {
+        Self.avWhiteBalanceMode(mode).map { (avMode: AVCaptureDevice.WhiteBalanceMode) -> Bool in
+            isWhiteBalanceModeSupported(avMode)
+        } ?? false
+    }
+
+    public var currentWhiteBalanceMode: CameraWhiteBalanceMode {
+        switch whiteBalanceMode {
+        case .locked: .locked
+        case .continuousAutoWhiteBalance: .continuousAuto
+        default: .other
+        }
+    }
+
+    public var currentWhiteBalanceGains: CameraWhiteBalanceGains {
+        let gains: AVCaptureDevice.WhiteBalanceGains = deviceWhiteBalanceGains
+        return CameraWhiteBalanceGains(red: gains.redGain, green: gains.greenGain, blue: gains.blueGain)
+    }
+
+    public var maximumWhiteBalanceGain: Float { maxWhiteBalanceGain }
+
+    public var supportsLockingWithGains: Bool { isLockingWhiteBalanceWithCustomDeviceGainsSupported }
+
+    public func beginWhiteBalanceConfiguration() -> Bool {
+        (try? lockForConfiguration()) != nil
+    }
+
+    public func applyWhiteBalanceLocked(gains: CameraWhiteBalanceGains?) {
+        guard isWhiteBalanceModeSupported(.locked) else { return }
+        guard let gains else {
+            whiteBalanceMode = .locked
+            return
+        }
+        guard isLockingWhiteBalanceWithCustomDeviceGainsSupported, gains.isValid(maximum: maxWhiteBalanceGain) else { return }
+        let avGains = AVCaptureDevice.WhiteBalanceGains(redGain: gains.red, greenGain: gains.green, blueGain: gains.blue)
+        setWhiteBalanceModeLocked(with: avGains, completionHandler: nil)
+    }
+
+    public func applyWhiteBalanceContinuous() {
+        guard isWhiteBalanceModeSupported(.continuousAutoWhiteBalance) else { return }
+        whiteBalanceMode = .continuousAutoWhiteBalance
+    }
+
+    public func endWhiteBalanceConfiguration() {
+        unlockForConfiguration()
+    }
+}
 #endif

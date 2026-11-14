@@ -38,6 +38,9 @@
 // CAM-005 (contracts/focus-point.md C3): `setFocusPoint(_:)` runs `CameraFocusControl` the same way,
 // and every place that releases the exposure lock also resets the focus to continuous automatic focus
 // at the centre (R8); `focus` is read back with the exposure.
+// CAM-006 (contracts/white-balance-lock.md C3): `setWhiteBalanceLocked(_:)` runs `CameraWhiteBalanceControl`
+// the same way; every place that releases the exposure lock also releases white balance (R8, R9), an
+// interruption keeps it (R7), and `whiteBalance` is read back with the exposure.
 // A generation number discards callbacks from an earlier start. Thread confinement: state,
 // session reference, observers and generation on the main thread; the cache and the slot on the
 // video queue (the slot is locked). Hence `@unchecked Sendable`.
@@ -88,6 +91,11 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
         didSet { if focus != oldValue { onFocusChange?(focus) } }
     }
     public var onFocusChange: ((CameraFocusState) -> Void)?
+    /// CAM-006: the current camera's white balance, read back (main thread).
+    public private(set) var whiteBalance: CameraWhiteBalanceState = .notRunning(canLock: false) {
+        didSet { if whiteBalance != oldValue { onWhiteBalanceChange?(whiteBalance) } }
+    }
+    public var onWhiteBalanceChange: ((CameraWhiteBalanceState) -> Void)?
 
     public init(device: MTLDevice, lensInventory: any CameraLensInventory = AVCameraLensInventory()) {
         self.device = device
@@ -361,6 +369,7 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
         guard let camera = exposureDevice(in: session) else { return }
         CameraExposureControl.release(camera)
         CameraFocusControl.reset(camera)
+        CameraWhiteBalanceControl.release(camera)   // CAM-006-R8, R9
     }
 
     /// While not running: only whether the chosen camera can lock exposure and focus on a point
@@ -369,6 +378,7 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
         let camera: AVCaptureDevice? = currentCamera()
         exposure = .notRunning(canLock: camera?.supportsExposure(.locked) ?? false)
         focus = .notRunning(canFocus: camera.map { (device: AVCaptureDevice) -> Bool in CameraFocusControl.canFocus(device) } ?? false)
+        whiteBalance = .notRunning(canLock: camera?.supportsWhiteBalance(.locked) ?? false)   // CAM-006
     }
 
     // MARK: - Focus (CAM-005)
@@ -381,6 +391,17 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
         readExposure { () -> Void in
             guard let camera = Self.exposureDevice(in: box.value) else { return }
             CameraFocusControl.focus(at: point, on: camera)
+        }
+    }
+
+    /// CAM-006-R4: locks or releases the running camera's white balance on the session queue; the state
+    /// read back is posted. Unsupported or not running: nothing is configured.
+    public func setWhiteBalanceLocked(_ locked: Bool) {
+        guard state == .running, whiteBalance.canLock, let session else { return }
+        let box = Unchecked(value: session)
+        readExposure { () -> Void in
+            guard let camera = Self.exposureDevice(in: box.value) else { return }
+            if locked { CameraWhiteBalanceControl.lock(camera) } else { CameraWhiteBalanceControl.release(camera) }
         }
     }
 
@@ -408,10 +429,14 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
             let readFocus: CameraFocusState? = camera.map { (camera: AVCaptureDevice) -> CameraFocusState in
                 CameraFocusControl.state(of: camera)   // CAM-005-R12
             }
+            let readWhiteBalance: CameraWhiteBalanceState? = camera.map { (camera: AVCaptureDevice) -> CameraWhiteBalanceState in
+                CameraWhiteBalanceControl.state(of: camera)   // CAM-006-R6
+            }
             DispatchQueue.main.async { [self] in
-                guard current == generation, state == .running, let read, let readFocus else { return }
+                guard current == generation, state == .running, let read, let readFocus, let readWhiteBalance else { return }
                 exposure = read
                 focus = readFocus
+                whiteBalance = readWhiteBalance
             }
         }
     }

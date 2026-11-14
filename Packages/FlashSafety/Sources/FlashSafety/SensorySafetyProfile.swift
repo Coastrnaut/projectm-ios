@@ -8,7 +8,8 @@
 // * Presets: Standard = today's app (`FlashEnvelopeConfiguration.alwaysOn`, no intensity cap); Reduced =
 //   today's Reduce flashing envelope (`.reduceFlashing`) plus intensity 0.5; Strict = 1 flash per second,
 //   0.10/s rise, intensity 0.25. Custom values are clamped so they are never looser than Standard.
-// Haptics: the app has no haptic output (ACC-012-R9), so there is no haptics limit to store.
+// Haptics: ACC-007's beat pulses read the effective intensity limit (no separate haptics limit is stored);
+// at Strict's 0.25 or lower they stop (ACC-012-R9, ACC-007-R5).
 // Plain Swift; builds and is tested on Linux.
 
 /// The profiles offered in Settings. Raw values are stored (`settings.sensorySafety.profile`).

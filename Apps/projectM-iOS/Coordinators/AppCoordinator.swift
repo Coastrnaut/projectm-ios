@@ -237,6 +237,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     private(set) var cameraExposure: CameraExposureState = .notRunning(canLock: false)
     /// CAM-005: the camera's focus, read back, and the ring/explanation shown after a focus tap (CameraFocusRing.swift).
     private(set) var cameraFocus: CameraFocusState = .notRunning(canFocus: false)
+    /// CAM-006: the camera's white balance, read back (session state; CameraWhiteBalanceRow.swift).
+    private(set) var cameraWhiteBalance: CameraWhiteBalanceState = .notRunning(canLock: false)
     @ObservationIgnored let cameraFocusFeedback = CameraFocusFeedback()
     /// CAM-003-R6: a lens the user chose waits for the switch's end (CameraLensRow.swift).
     @ObservationIgnored var cameraLensChoicePending = false
@@ -370,8 +372,13 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     @ObservationIgnored private(set) lazy var recordingCountdown = RecordingCountdownSetting(defaults: defaults)
     /// UIX-013: the scene performance HUD preference (Settings → Show HUD; off by default).
     @ObservationIgnored private(set) lazy var sceneHUD = SceneHUDSetting(defaults: defaults)
+    /// SHOW-006: cue rehearsal (session only; device-only panel).
+    @ObservationIgnored private(set) lazy var cueRehearsal: CueRehearsalCoordinator = makeCueRehearsal()
     /// PERF-008: the power profile (made in `init`, so the first frame loop already runs under it).
     @ObservationIgnored private(set) lazy var powerProfile = PowerProfileSetting(defaults: defaults)
+    /// ACC-007: haptic beat pulses (Settings → Haptics; off by default), fed by the tempo poll while on.
+    @ObservationIgnored private(set) lazy var hapticBeat = HapticBeatCoordinator(
+        defaults: defaults, tempo: tempo, clamp: { [unowned self] () -> SafetyClamp in self.settings.safetyClamp })
     /// OUT-004: the external display's output correction (Settings › External Display).
     @ObservationIgnored private(set) lazy var externalOutput = ExternalOutputSetting(defaults: defaults, external: externalDisplay)
     /// REC-008: the recording length (Settings → Stop recording after; Off by default).
@@ -634,6 +641,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// The end of init, after every stored property is set: callbacks, observers and the first loads.
     private func connectAfterInit(defaults: UserDefaults) {
         midiMappings.profiles = MIDIProfilesCoordinator.makeDefault(mappings: midiMappings)   // MIDI-012
+        _ = hapticBeat   // ACC-007-R7: a stored "on" installs the tempo observer before any visual starts
         osc.peers = OSCPeersCoordinator(allowlist: osc.peerAllowlist, defaults: defaults)   // OSC-008 (outside init: type-check budget)
         photos.onPhotoChange = { [weak self] (_: StoredPhoto?) in self?.refreshPhotoContent() }   // MED-006: the slideshow wins when on
         connectSlideshow()   // MED-006
@@ -661,6 +669,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         routes.isActive = { [weak self] in self?.appIsActive ?? true }
         self.memoryPressure.register(presetLoader)   // PERF-006-R11: the archive's decompressed chunk
         presets.thumbnails = Self.makeThumbnails(loader: presetLoader, renderer: { [weak self] in self?.renderer })   // PRE-001
+        presets.comparison = makeComparison(loader: presetLoader)   // PRE-009
         self.memoryPressure.register(self)           // PERF-006-R12: an idle native spectrum
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains(UITestMemoryPanel.argument) {
@@ -1223,6 +1232,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             cameraExposure = host.cameraExposure
             host.onFocusChange = { [weak self] (state: CameraFocusState) -> Void in self?.cameraFocus = state }   // CAM-005
             cameraFocus = host.cameraFocus
+            host.onWhiteBalanceChange = { [weak self] (state: CameraWhiteBalanceState) -> Void in self?.cameraWhiteBalance = state }   // CAM-006
+            cameraWhiteBalance = host.cameraWhiteBalance
             host.onRecoveryChange = { [weak self, weak host] () -> Void in   // CAM-013
                 self?.cameraRetryPending = host?.retryPending ?? false
             }
@@ -1394,6 +1405,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         cameraState = .idle
         cameraExposure = .notRunning(canLock: false)   // CAM-004-R7: the host's stop released the camera
         cameraFocus = .notRunning(canFocus: false)   // CAM-005-R8: the host's stop reset the focus
+        cameraWhiteBalance = .notRunning(canLock: false)   // CAM-006-R9: the host's stop released it
         cameraStopReason = nil   // CAM-013
         cameraRetryPending = false
         cameraNoticeDismissed = false   // UIX-015-R7
@@ -1455,6 +1467,19 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         host.crop = settings.cameraCrop   // CAM-007-R5: from the next frame, the camera untouched
         host.cameraLens = cameraLensInventory.resolve(settings.cameraLens)   // CAM-003-R5, R6
     }
+
+    /// PRE-009-R10: the shown visual pauses while the Compare sheet's previews run.
+    func pauseVisualsForComparison() {
+        renderer?.pause()
+        nativeVisual?.pause()
+        cameraVisual?.pause()
+        photoVisual?.pause()
+        videoVisual?.pause()
+        textVisual?.pause()
+    }
+
+    /// PRE-009-R10: the normal visual switch restores whichever visual is shown.
+    func resumeVisualsAfterComparison() { resumeActiveVisual() }
 
     /// Runs whichever visual is shown and keeps the others paused.
     private func resumeActiveVisual() {

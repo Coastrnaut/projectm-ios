@@ -163,6 +163,7 @@ struct VisualizerView: View {
             SceneHUDLayer(show: coordinator.show, advance: coordinator.showAutoAdvance, tempo: coordinator.tempo,
                           source: coordinator.sourceStatusText)
         }
+        if coordinator.cueRehearsal.isOn { CueRehearsalPanel(rehearsal: coordinator.cueRehearsal) }   // SHOW-006-R1, R10: device only
         OSCListenerBadge(osc: coordinator.osc) { () -> Void in coordinator.statusEvents.post(StatusEventCatalog.osc(port: nil)) }
         SceneLockBadge(lock: coordinator.settings.sceneLock)   // SCN-015-R7: never hidden with the controls
         SceneCompareBar(compare: coordinator.sceneCompare)   // SCN-009-R7: never hidden with the controls
@@ -493,9 +494,11 @@ struct VisualizerView: View {
                      cameraStatus: { () -> PermissionState? in coordinator.cameraPermissionStatus },
                      cameraLens: coordinator.cameraLensChoice,   // CAM-003
                      cameraExposure: coordinator.cameraExposureChoice,   // CAM-004
+                     cameraWhiteBalance: coordinator.cameraWhiteBalanceChoice,   // CAM-006
                      cameraCanFocus: { () -> Bool in coordinator.cameraFocus.canFocus },   // CAM-005
                      recentPresets: coordinator.presets.recent,   // PRE-006
                      powerProfile: coordinator.powerProfile,   // PERF-008
+                     hapticBeat: coordinator.hapticBeat,   // ACC-007
                      performanceReport: coordinator.performanceReport,   // PERF-012
                      announcer: coordinator.announcer)   // ACC-005-R7
             .environment(\.parameterShelf, coordinator.parameterShelf)   // UIX-004-R1: Pin to Shelf in Inspect

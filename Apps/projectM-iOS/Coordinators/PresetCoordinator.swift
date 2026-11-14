@@ -157,6 +157,8 @@ final class PresetCoordinator {
     @ObservationIgnored var overrides: PresetOverridesCoordinator?
     /// PRE-006: the recently played history (set by AppCoordinator; nil in tests that do not need it).
     @ObservationIgnored var recent: RecentPresetsCoordinator?
+    /// PRE-009: the browser's preset comparison (set by AppCoordinator; nil in tests that do not need it).
+    @ObservationIgnored var comparison: PresetComparisonModel?
     /// PRE-010: the preview in progress (or its failure notice); in memory only.
     var audition: PresetAudition?
     /// PRE-010-D3: bumped by every preview, Keep, Cancel and committed selection; a preview load that

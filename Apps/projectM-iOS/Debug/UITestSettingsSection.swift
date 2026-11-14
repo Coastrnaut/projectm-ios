@@ -4,7 +4,7 @@
 // under 30 s, 2026-11-14). The tests still reveal and assert the same rows. `-uitestSettingsSectionOnce`
 // limits it to the first Settings of a launch. The IDs are the `.id(...)`
 // strings on SettingsView's sections, top to bottom: "video", "color", "trails", "effects", "safety",
-// "reduceFlashing", "performance", "trim", "channel", "gate", "balance", "latency", "osc", "midi", "quality",
+// "reduceFlashing", "haptics", "performance", "trim", "channel", "gate", "balance", "latency", "osc", "midi", "quality",
 // "recording", "recordingFrameRate", "show", "guide", "recentPresets", "storage" (the rest added 2026-11-14 so every UI test that
 // works below the first screens opens there; an ID whose section is not shown, such as "video" before a video
 // is chosen, scrolls nowhere). An identity only, so Release builds carry no new code: this modifier returns
