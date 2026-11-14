@@ -8,6 +8,10 @@
 // queue and the slot is released. Frames are appended in submission order (command buffers of one
 // queue complete in order; the writer queue is serial).
 //
+// REC-004 (contract C3): with `audio: true` the file also has an AAC track. `appendAudio` (any thread)
+// places host-timed chunks relative to the first video frame (`RecordingAudioTimeline`) and appends them
+// on the same serial queue; `endAudio` ends the audio for good (a source switch: no silence follows).
+//
 // `finish` stops accepting frames, waits (asynchronously) for the frames in flight, then ends the
 // session one interval after the last appended frame. Fewer than two frames, a writer failure or
 // `cancel` delete the file.
@@ -41,6 +45,8 @@ public final class MetalFrameRecorder: @unchecked Sendable {
         var stopped = false
         var writerFailed = false
         var finishTask: Task<Result<RecordedVideo, RecordingFailure>, Never>?
+        /// REC-004: where audio goes in the file (origin = the first admitted frame's time).
+        var audio = RecordingAudioTimeline()
     }
 
     public let geometry: RecordingGeometry
@@ -55,15 +61,20 @@ public final class MetalFrameRecorder: @unchecked Sendable {
     private let shared = Mutex(Shared())
     /// Frame-loop thread only.
     private var timeline: RecordingTimeline
+    /// Frame-loop thread only: the origin was handed to the audio timeline.
+    private var audioOriginSet = false
+
+    /// REC-004: true when the file has an AAC input (the recording's audio decision was "include").
+    public var hasAudioTrack: Bool { sink.hasAudio }
 
     /// A recorder writing to `url` at the drawable's (even-cropped) size, scaled to fit the settings.
     /// `fault` (REC-015 tests) makes the writer fail after some frames.
     public convenience init(device: MTLDevice, url: URL, drawableWidth: Int, drawableHeight: Int,
                             settings: RecordingSettings = .standard, realTime: Bool = true,
-                            fault: RecordingWriterFault? = nil) throws(RecordingFailure) {
+                            fault: RecordingWriterFault? = nil, audio: Bool = false) throws(RecordingFailure) {
         guard let geometry = RecordingGeometry(drawableWidth: drawableWidth, drawableHeight: drawableHeight,
                                                maxLongSide: settings.maxLongSide) else { throw .pixelBufferUnavailable }
-        let writer = try VideoFileWriter.make(url: url, geometry: geometry, settings: settings, realTime: realTime)
+        let writer = try VideoFileWriter.make(url: url, geometry: geometry, settings: settings, realTime: realTime, audio: audio)
         // REC-015-R12: tests may make the writer fail after N frames (nil in the app's normal use).
         let sink: any RecordingSampleSink = fault.map { (f: RecordingWriterFault) -> any RecordingSampleSink in
             FaultInjectingSink(wrapping: writer, fault: f)
@@ -98,7 +109,12 @@ public final class MetalFrameRecorder: @unchecked Sendable {
         if failed { return .failed }
         guard geometry.matches(drawableWidth: drawableWidth, drawableHeight: drawableHeight) else { return .sizeChanged }
         let tick: Int64
-        switch timeline.admit(presentationNanoseconds: presentationNanoseconds) {
+        let admission = timeline.admit(presentationNanoseconds: presentationNanoseconds)
+        if !audioOriginSet, let origin = timeline.originNanoseconds {   // REC-004: audio is placed from the video's origin
+            audioOriginSet = true
+            shared.withLock { (s: inout Shared) -> Void in s.audio.setOrigin(nanoseconds: origin) }
+        }
+        switch admission {
         case .candidate(let t): tick = t
         case .skippedRate:
             count { (s: inout RecordingStatistics) -> Void in s.skippedRate += 1 }
@@ -152,6 +168,45 @@ public final class MetalFrameRecorder: @unchecked Sendable {
         }
         return .submitted
     }
+
+    // MARK: - Audio (REC-004, any thread)
+
+    /// Offers `frames` interleaved stereo Float32 frames at 44.1 kHz whose first frame was captured at
+    /// `firstSampleNanoseconds` (uptime clock, like the frames). Ignored without an audio track, after
+    /// `endAudio()` or finish, and before the first video frame. Copies the samples; never waits.
+    public func appendAudio(_ samples: UnsafePointer<Float>, frames: Int, firstSampleNanoseconds: UInt64) {
+        guard sink.hasAudio, frames > 0 else { return }
+        let pending = pending
+        let placement = shared.withLock { (s: inout Shared) -> RecordingAudioTimeline.Placement? in
+            guard !s.stopped, !s.writerFailed,
+                  let placed = s.audio.place(frames: frames, firstSampleNanoseconds: firstSampleNanoseconds) else { return nil }
+            pending.enter()   // inside the lock: `finish` cannot start between the check and the enter
+            return placed
+        }
+        guard let placement else { return }
+        let start = placement.skipFrames * 2
+        let chunk = Array(UnsafeBufferPointer(start: samples + start, count: placement.frames * 2))
+        let sink = sink
+        sink.queue.async { [self] in
+            defer { pending.leave() }
+            switch sink.appendAudio(chunk, startSample: placement.startSample) {
+            case .appended:
+                count { (s: inout RecordingStatistics) -> Void in s.audioFramesWritten += placement.frames }
+            case .notReady:
+                count { (s: inout RecordingStatistics) -> Void in s.audioFramesDropped += placement.frames }
+            case .failed:
+                shared.withLock { (s: inout Shared) -> Void in s.writerFailed = true }
+            }
+        }
+    }
+
+    /// Ends the audio for good (REC-004-R5): later chunks are ignored; no silence is added.
+    public func endAudio() {
+        shared.withLock { (s: inout Shared) -> Void in s.audio.end() }
+    }
+
+    /// True after `endAudio()`.
+    public var audioEnded: Bool { shared.withLock { (s: inout Shared) -> Bool in s.audio.ended } }
 
     private func makeTexture(_ buffer: CVPixelBuffer) -> CVMetalTexture? {
         let attributes: [String: Any] = [
