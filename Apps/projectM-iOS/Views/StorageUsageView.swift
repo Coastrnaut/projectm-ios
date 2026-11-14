@@ -88,11 +88,11 @@ struct StorageUsageView: View {
             let text = value(bytes)
             NavigationLink { RecordingLibraryView(model: recordingLibrary) } label: {
                 HStack {
-                    Text(category.title)
+                    Text(category.title).accessibilityIdentifier(id + ".title")   // audit filters name it (QA-009)
                     Spacer()
                     // Post-merge a11y (2026-11-14): primary colour like the other rows (QA-009); the secondary grey
                     // "nearly passed" the contrast audit.
-                    Text(text).monospacedDigit()
+                    Text(text).monospacedDigit().accessibilityIdentifier(id + ".size")   // the size varies ("Zero KB", "8 KB")
                 }
             }
             .accessibilityLabel(category.title)
