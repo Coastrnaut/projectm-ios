@@ -12,8 +12,8 @@
   },
   "P1": {
    "audited": 111,
-   "implementing": 2,
-   "integrated": 37,
+   "implementing": 1,
+   "integrated": 38,
    "unit_passed": 1
   },
   "P2": {
@@ -26,8 +26,8 @@
  },
  "by_state": {
   "audited": 199,
-  "implementing": 2,
-  "integrated": 123,
+  "implementing": 1,
+  "integrated": 124,
   "skipped_existing": 1,
   "unit_passed": 1
  },
@@ -37,7 +37,6 @@
   "implementation_complete": false,
   "infeasible": [],
   "pending": [
-   "ACC-003",
    "ACC-005",
    "ACC-007",
    "ACC-008",
@@ -242,7 +241,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "202 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)"
+   "201 features are not implemented yet (first: ACC-005, ACC-007, ACC-008, ACC-009, ACC-010)"
   ]
  },
  "features": {
@@ -271,10 +270,10 @@
    "branch": "feature/acc-003",
    "branch_sha": "1e9b0ba59fe3b66b75f9f649e0088b298e0cbe22",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "b729849f81c8f1c735c735d3e4a023a948f57bf4",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "ACC-004": {
    "attempts": 0,
@@ -1079,12 +1078,12 @@
   "CMP-013": {
    "attempts": 0,
    "branch": "feature/cmp-013",
-   "branch_sha": null,
+   "branch_sha": "c9ba10c0c80d45d8f58361469e94d70a4faf5467",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "CMP-014": {
    "attempts": 0,
@@ -3519,6 +3518,11 @@
    "sha": "61c926cb8b59869ba551d8e31ca369b560f649c9"
   },
   {
+   "branch": "feature/acc-003",
+   "id": "ACC-003",
+   "sha": "b729849f81c8f1c735c735d3e4a023a948f57bf4"
+  },
+  {
    "branch": "feature/acc-004",
    "id": "ACC-004",
    "sha": "ff69b64"
@@ -4149,5 +4153,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T08:05:27Z"
+ "updated": "2026-11-14T08:06:56Z"
 }

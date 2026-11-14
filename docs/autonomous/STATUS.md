@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T08:05:27Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T08:06:56Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,9 +10,9 @@
 | State | Features |
 |---|---|
 | audited | 199 |
-| implementing | 2 |
+| implementing | 1 |
 | unit_passed | 1 |
-| integrated | 123 |
+| integrated | 124 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -20,14 +20,14 @@
 | Priority | audited | implementing | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 111 | 2 | 1 | 37 | 0 |
+| P1 | 111 | 1 | 1 | 38 | 0 |
 | P2 | 77 | 0 | 0 | 2 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 202 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)
+- 201 features are not implemented yet (first: ACC-005, ACC-007, ACC-008, ACC-009, ACC-010)
 
 ## Integrated
 
@@ -35,6 +35,7 @@ The physical-device suite may **not** start:
 |---|---|---|---|
 | ACC-001 | Reduce motion mode | `c5433e4` | `feature/acc-001` |
 | ACC-002 | Reduced flash preset policy | `61c926cb8b59` | `feature/acc-002` |
+| ACC-003 | Color-blind friendly controls | `b729849f81c8` | `feature/acc-003` |
 | ACC-004 | VoiceOver scene browser | `ff69b64` | `feature/acc-004` |
 | ACC-006 | Dynamic Type inspector | `bb1439c7` | `feature/acc-006` |
 | ACC-011 | Captioned status events | `92196c47` | `feature/acc-011` |
@@ -183,7 +184,7 @@ None.
 - `post-merge (main checkout, packs present): projectM-iOSTests 157 incl. FlashPolicyTests and PresetTests full-library scope, FlashPolicyUITests 14.8 s, SettingsUITests reduce flashing 15.5 s on iPhone 17 iOS 27.2 sim`: pass at `61c926cb8b59` (log `.autonomous/logs/integration/acc-002/app-tests.log`)
 - `post-merge: PresetLibrary xcodebuild test on iPhone 17 sim (201, 1 skipped)`: pass at `61c926cb8b59` (log `.autonomous/logs/integration/acc-002/presetlibrary-sim.log`)
 
-### ACC-003 Color-blind friendly controls (unit_passed)
+### ACC-003 Color-blind friendly controls (integrated)
 - `python3 scripts/check_compliance.py`: pass at `1e9b0ba59fe3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-003/20261114T030205/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `1e9b0ba59fe3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-003/20261114T030205/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `1e9b0ba59fe3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-003/20261114T030205/script-tests.log`)
@@ -726,6 +727,17 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `6fdc7642b09c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-012/20261114T023547/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `6fdc7642b09c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-012/20261114T023547/swift-test_ShowControl.log`)
 - `post-merge: projectM-iOSTests + PhotoLayer UI test; gate ran Compositor, SceneFormat and downstream suites`: pass at `bc4817f3` (log `.autonomous/logs/integration/cmp-012/app-tests.log`)
+
+### CMP-013 Render caching (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `c9ba10c0c80d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-013/20261114T030532/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `c9ba10c0c80d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-013/20261114T030532/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `c9ba10c0c80d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-013/20261114T030532/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `c9ba10c0c80d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-013/20261114T030532/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `c9ba10c0c80d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-013/20261114T030532/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `c9ba10c0c80d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-013/20261114T030532/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `c9ba10c0c80d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-013/20261114T030532/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `c9ba10c0c80d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-013/20261114T030532/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `c9ba10c0c80d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-013/20261114T030532/swift-test_ShowControl.log`)
 
 ### FILE-001 Portable scene archive (integrated)
 - `python3 scripts/check_compliance.py`: pass at `b4e63d16acf1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-001/20261113T154852/compliance.log`)
