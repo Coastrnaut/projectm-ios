@@ -235,6 +235,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     private(set) var cameraExposure: CameraExposureState = .notRunning(canLock: false)
     /// CAM-005: the camera's focus, read back, and the ring/explanation shown after a focus tap (CameraFocusRing.swift).
     private(set) var cameraFocus: CameraFocusState = .notRunning(canFocus: false)
+    /// CAM-006: the camera's white balance, read back (session state; CameraWhiteBalanceRow.swift).
+    private(set) var cameraWhiteBalance: CameraWhiteBalanceState = .notRunning(canLock: false)
     @ObservationIgnored let cameraFocusFeedback = CameraFocusFeedback()
     /// CAM-003-R6: a lens the user chose waits for the switch's end (CameraLensRow.swift).
     @ObservationIgnored var cameraLensChoicePending = false
@@ -1224,6 +1226,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             cameraExposure = host.cameraExposure
             host.onFocusChange = { [weak self] (state: CameraFocusState) -> Void in self?.cameraFocus = state }   // CAM-005
             cameraFocus = host.cameraFocus
+            host.onWhiteBalanceChange = { [weak self] (state: CameraWhiteBalanceState) -> Void in self?.cameraWhiteBalance = state }   // CAM-006
+            cameraWhiteBalance = host.cameraWhiteBalance
             host.onRecoveryChange = { [weak self, weak host] () -> Void in   // CAM-013
                 self?.cameraRetryPending = host?.retryPending ?? false
             }
@@ -1395,6 +1399,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         cameraState = .idle
         cameraExposure = .notRunning(canLock: false)   // CAM-004-R7: the host's stop released the camera
         cameraFocus = .notRunning(canFocus: false)   // CAM-005-R8: the host's stop reset the focus
+        cameraWhiteBalance = .notRunning(canLock: false)   // CAM-006-R9: the host's stop released it
         cameraStopReason = nil   // CAM-013
         cameraRetryPending = false
         cameraNoticeDismissed = false   // UIX-015-R7

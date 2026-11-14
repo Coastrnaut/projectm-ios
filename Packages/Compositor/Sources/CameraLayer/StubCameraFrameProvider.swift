@@ -15,6 +15,10 @@
 // CAM-005: each stand-in camera also has a `FakeCameraFocusDevice` (`focusPointCameras` chooses which
 // can focus on a point); `setFocusPoint` runs `CameraFocusControl` on the running input's device, and
 // every place that releases the exposure lock also resets the focus (R8).
+// CAM-006: each stand-in camera also has a `FakeCameraWhiteBalanceDevice` (`whiteBalanceLockCameras`
+// chooses which can lock); `setWhiteBalanceLocked` runs `CameraWhiteBalanceControl` on the running input's
+// device; every place that releases the exposure lock also releases white balance (R8, R9), and an
+// interruption keeps it (R7).
 // CAM-004: each stand-in camera has a `FakeCameraExposureDevice` (`exposureLockCameras` chooses which
 // can lock); `setExposureLocked` runs `CameraExposureControl` on the running input's device, and the
 // session's setup (every start and camera switch), a lens switch, `stop()` and `fail(_:)` release it
@@ -94,6 +98,11 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
         didSet { if focus != oldValue { onFocusChange?(focus) } }
     }
     public var onFocusChange: ((CameraFocusState) -> Void)?
+    /// CAM-006: the current camera's white balance, read back from its fake device (main thread).
+    public private(set) var whiteBalance: CameraWhiteBalanceState = .notRunning(canLock: false) {
+        didSet { if whiteBalance != oldValue { onWhiteBalanceChange?(whiteBalance) } }
+    }
+    public var onWhiteBalanceChange: ((CameraWhiteBalanceState) -> Void)?
     public var onStateChange: ((CameraFeedState) -> Void)?
     /// How many times `start()` asked for access (a real prompt is never shown).
     public private(set) var accessRequests = 0
@@ -105,12 +114,14 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
                 width: Int = 64, height: Int = 48, rotation: CameraRotation = .none, position: CameraPosition = .back,
                 availablePositions: Set<CameraPosition> = [.back, .front],
                 lensInventory: (any CameraLensInventory)? = nil, failingLenses: Set<CameraLens> = [], lens: CameraLens = .wide,
-                exposureLockCameras: Set<FakeCameraKey>? = nil, focusPointCameras: Set<FakeCameraKey>? = nil) {
+                exposureLockCameras: Set<FakeCameraKey>? = nil, focusPointCameras: Set<FakeCameraKey>? = nil,
+                whiteBalanceLockCameras: Set<FakeCameraKey>? = nil) {
         let inventory: any CameraLensInventory = lensInventory ?? FixedCameraLensInventory([.wide])
         self.lensInventory = inventory
         self.session = FakeCameraCaptureSession(failingLenses: failingLenses)
         session.exposureLockCameras = exposureLockCameras
         session.focusPointCameras = focusPointCameras   // CAM-005
+        session.whiteBalanceLockCameras = whiteBalanceLockCameras   // CAM-006
         self.lens = inventory.resolve(lens)
         self.device = device
         self.position = position
@@ -305,6 +316,7 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
     private func releaseExposure() {
         if let device = runningExposureDevice { CameraExposureControl.release(device) }
         if let focusDevice = runningFocusDevice { CameraFocusControl.reset(focusDevice) }
+        if let whiteBalanceDevice = runningWhiteBalanceDevice { CameraWhiteBalanceControl.release(whiteBalanceDevice) }   // CAM-006
     }
 
     /// Reads exposure and (CAM-005-R12) focus back from the running camera, or the chosen camera's capability.
@@ -319,6 +331,27 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
         } else {
             focus = .notRunning(canFocus: chosenCameraCanFocus)
         }
+        if state == .running, let whiteBalanceDevice = runningWhiteBalanceDevice {   // CAM-006-R6
+            whiteBalance = CameraWhiteBalanceControl.state(of: whiteBalanceDevice)
+        } else {
+            whiteBalance = .notRunning(canLock: chosenCameraCanLockWhiteBalance)
+        }
+    }
+
+    // MARK: - White balance (CAM-006)
+
+    private var runningWhiteBalanceDevice: FakeCameraWhiteBalanceDevice? { session.configuredInputs.first?.whiteBalanceDevice }
+
+    /// Whether the chosen camera can lock white balance (known without starting it).
+    private var chosenCameraCanLockWhiteBalance: Bool {
+        guard scenario != .unavailable, availablePositions.contains(position) else { return false }
+        return session.whiteBalanceDevice(lens: position == .back ? lens : .wide, position: position).supportsWhiteBalance(.locked)
+    }
+
+    public func setWhiteBalanceLocked(_ locked: Bool) {
+        guard state == .running, let device = runningWhiteBalanceDevice, device.supportsWhiteBalance(.locked) else { return }   // R3
+        if locked { CameraWhiteBalanceControl.lock(device) } else { CameraWhiteBalanceControl.release(device) }
+        refreshExposure()   // R6: read back
     }
 
     // MARK: - Focus (CAM-005)

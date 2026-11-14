@@ -55,6 +55,10 @@ local-first option.
 
 - Consistency pass over spec, plan and tasks: R1 → T02; R2 → T03, T06; R3 → T04, T05; R4 → T05; R5 → T07-T09; R6 → T04, T05; R7 → T04, T05; R8 → T11; S1 → T05, S2-S3 → T06, S4 → T09. No constitution conflict. One fix applied: T05 also checks Reduce flashing on a Cut override (the edge case names it; the safety resolution is the reason an override cannot bypass ACC-012).
 
+### Session 2026-11-14 (show editor fix)
+
+- Q: Are all the cue row's swipe actions reachable on an iPhone? → A: Decided (best judgement, owner rule 4): eight leading swipe actions (Go, Duplicate, Name, Transition, Into, Advance, MIDI) pushed the later ones off a 402 pt iPhone (MIDI at x = 475, not tappable; MIDISceneSelectionUITests). Each swipe edge now has at most three actions: leading Go, MIDI (when MIDI is available) and More…, which opens a dialog with Duplicate Scene, Rename Scene…, Transition…, Transition Into This Cue… and Advance After… (More… hidden while the scene is locked, SCN-015-R6); trailing Delete and Skip. The context menu and VoiceOver actions are unchanged, and the accessibility identifiers move with their actions into the dialog. For this feature, the leading swipe "Into" is now "Transition Into This Cue…" in More…'s dialog; SHOW-004-R5's "swipe action" means the swipe's More… action.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - One cue enters differently (Priority: P1) — MVP

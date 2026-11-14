@@ -74,13 +74,17 @@ public final class FakeCameraInput {
     public let device: FakeCameraExposureDevice
     /// CAM-005: the camera's focus controls (one device per camera, as on iOS).
     public let focusDevice: FakeCameraFocusDevice
+    /// CAM-006: the camera's white balance controls (one device per camera, as on iOS).
+    public let whiteBalanceDevice: FakeCameraWhiteBalanceDevice
 
     public init(lens: CameraLens, position: CameraPosition = .back, device: FakeCameraExposureDevice = FakeCameraExposureDevice(),
-                focusDevice: FakeCameraFocusDevice = FakeCameraFocusDevice()) {
+                focusDevice: FakeCameraFocusDevice = FakeCameraFocusDevice(),
+                whiteBalanceDevice: FakeCameraWhiteBalanceDevice = FakeCameraWhiteBalanceDevice()) {
         self.lens = lens
         self.position = position
         self.device = device
         self.focusDevice = focusDevice
+        self.whiteBalanceDevice = whiteBalanceDevice
     }
 }
 
@@ -105,6 +109,10 @@ public final class FakeCameraCaptureSession: CameraInputConfiguring {
     /// device is first made, so set it before the first start.
     public var focusPointCameras: Set<FakeCameraKey>?
     private var focusDevices: [FakeCameraKey: FakeCameraFocusDevice] = [:]
+    /// CAM-006: the cameras that can lock white balance (`nil`: every camera). Read when a camera's white
+    /// balance device is first made, so set it before the first start.
+    public var whiteBalanceLockCameras: Set<FakeCameraKey>?
+    private var whiteBalanceDevices: [FakeCameraKey: FakeCameraWhiteBalanceDevice] = [:]
 
     public init(failingLenses: Set<CameraLens> = []) {
         self.failingLenses = failingLenses
@@ -128,12 +136,22 @@ public final class FakeCameraCaptureSession: CameraInputConfiguring {
         return device
     }
 
+    /// CAM-006: the white balance device of a camera (the same object every time, as `AVCaptureDevice`).
+    public func whiteBalanceDevice(lens: CameraLens, position: CameraPosition = .back) -> FakeCameraWhiteBalanceDevice {
+        let key = FakeCameraKey(lens: lens, position: position)
+        if let device = whiteBalanceDevices[key] { return device }
+        let device = FakeCameraWhiteBalanceDevice(canLock: whiteBalanceLockCameras?.contains(key) ?? true)
+        whiteBalanceDevices[key] = device
+        return device
+    }
+
     /// The input for a lens, or nil when that lens fails (stands in for `AVCaptureDeviceInput(device:)`).
     public func makeInput(lens: CameraLens, position: CameraPosition = .back) -> FakeCameraInput? {
         let effective: CameraLens = position == .back ? lens : .wide
         guard position == .front || !failingLenses.contains(effective) else { return nil }
         return FakeCameraInput(lens: effective, position: position, device: exposureDevice(lens: effective, position: position),
-                               focusDevice: focusDevice(lens: effective, position: position))
+                               focusDevice: focusDevice(lens: effective, position: position),
+                               whiteBalanceDevice: whiteBalanceDevice(lens: effective, position: position))
     }
 
     public func beginConfiguration() {
@@ -186,7 +204,8 @@ public struct FakeCameraKey: Hashable, Sendable {
     }
 
     /// A comma-separated list of lens raw values and `front` ("wide,front"); `none` or unknown names add
-    /// nothing (DEBUG `-uitestCameraExposureLock`, CAM-005 `-uitestCameraFocusPoint`).
+    /// nothing (DEBUG `-uitestCameraExposureLock`, CAM-005 `-uitestCameraFocusPoint`, CAM-006
+    /// `-uitestCameraWhiteBalanceLock`).
     public static func list(_ text: String) -> Set<FakeCameraKey> {
         var keys = Set<FakeCameraKey>()
         for name in text.split(separator: ",") {

@@ -52,6 +52,10 @@ local-first option.
 - Q: Does an open scene repair report (SCN-012) hold the countdown? → A: Yes. While the repair report waits for the performer, the countdown holds, so the show never moves past a cue whose repair the performer is reading; it continues when the report closes.
 - Q: Which dwell values does the editor offer? → A: Off, 1, 2, 3, 5, 10, 15, 20, 30 and 45 s, and 1, 1.5, 2, 3, 5, 10, 15, 20, 30, 45 and 60 min; a stored value not in the list (any whole second 1…3600 from a file) is shown and kept as its own entry. The performance pad's cue readout shows the same countdown.
 
+### Session 2026-11-14 (show editor fix)
+
+- Q: Are all the cue row's swipe actions reachable on an iPhone? → A: Decided (best judgement, owner rule 4): eight leading swipe actions (Go, Duplicate, Name, Transition, Into, Advance, MIDI) pushed the later ones off a 402 pt iPhone (MIDI at x = 475, not tappable; MIDISceneSelectionUITests). Each swipe edge now has at most three actions: leading Go, MIDI (when MIDI is available) and More…, which opens a dialog with Duplicate Scene, Rename Scene…, Transition…, Transition Into This Cue… and Advance After… (More… hidden while the scene is locked, SCN-015-R6); trailing Delete and Skip. The context menu and VoiceOver actions are unchanged, and the accessibility identifiers move with their actions into the dialog. For this feature, the leading swipe "Advance" is now "Advance After…" in More…'s dialog; SHOW-002-R10's "swipe action" means the swipe's More… action.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A self-running show (Priority: P1)

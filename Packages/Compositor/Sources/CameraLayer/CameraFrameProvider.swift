@@ -87,6 +87,15 @@ public protocol CameraFrameProvider: AnyObject {
     /// Unsupported or not running: nothing is configured (R5). A lens or position switch and every stop
     /// return the camera to continuous automatic focus at the centre (R8).
     func setFocusPoint(_ point: CameraFocusPoint)
+    /// CAM-006 (contracts/white-balance-lock.md C3): the current camera's white balance, read back from
+    /// the camera (main thread). `canLock` is known without starting the camera; `isRunning` only while running.
+    var whiteBalance: CameraWhiteBalanceState { get }
+    /// CAM-006: called on the main thread after every change of `whiteBalance`.
+    var onWhiteBalanceChange: ((CameraWhiteBalanceState) -> Void)? { get set }
+    /// CAM-006-R4: locks (true) at the current, validated gains or releases (false) the running camera's
+    /// white balance. Unsupported or not running: nothing is configured. An interruption keeps the lock;
+    /// a lens or position switch and every stop release it (R7 to R9).
+    func setWhiteBalanceLocked(_ locked: Bool)
 }
 
 extension CameraFrameProvider {
@@ -113,6 +122,13 @@ extension CameraFrameProvider {
         set {}
     }
     public func setFocusPoint(_ point: CameraFocusPoint) {}
+    /// CAM-006: a provider without white balance controls cannot lock.
+    public var whiteBalance: CameraWhiteBalanceState { .notRunning(canLock: false) }
+    public var onWhiteBalanceChange: ((CameraWhiteBalanceState) -> Void)? {
+        get { nil }
+        set {}
+    }
+    public func setWhiteBalanceLocked(_ locked: Bool) {}
 }
 
 /// The newest-picture slot shared by a provider's camera thread and the render thread.
