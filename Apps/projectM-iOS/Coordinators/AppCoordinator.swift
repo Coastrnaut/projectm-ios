@@ -187,6 +187,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let channelSelection: ChannelSelectionSetting
     /// AUD-011: the analysis-only noise gate (Settings → Audio Analysis; microphone source only).
     let noiseGate: NoiseGateSetting
+    /// AUD-013: the per-source visual delay (Settings → Visual Delay; analysis and projectM's feed).
+    let latencyOffset: LatencyOffsetSetting
     /// The native spectra (VIS-001 circular, VIS-002 linear), created the first time one is needed.
     private(set) var nativeVisual: NativeSpectrumHost?
     /// The Camera visual (CAM-001), created when Camera is chosen and released when another visual is.
@@ -239,7 +241,12 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// `manager.normalizedOutput`, which the trim never touches.
     /// AUD-009-R5 (contract C4): the channel selection sits inside the trim (tap → selection → trim).
     /// AUD-011-R1 (contract C5): the noise gate sits after the trim (tap → selection → trim → gate).
-    var trimmedAnalysisTap: (any NormalizedPCMReader)? { noiseGate.gated(inputTrim.trimmed(channelSelection.selected(manager.analysisTap))) }
+    /// AUD-013-R2 (contract C4): the visual delay is outermost (tap → selection → trim → gate → delay),
+    /// so every analysis consumer is shifted by the same amount.
+    var trimmedAnalysisTap: (any NormalizedPCMReader)? {
+        let gated: (any NormalizedPCMReader)? = noiseGate.gated(inputTrim.trimmed(channelSelection.selected(manager.analysisTap)))
+        return latencyOffset.analysisDelayed(gated)
+    }
 
     /// Tap tempo and the tempo estimate (SHOW-011).
     let tempo: TempoCoordinator
@@ -288,6 +295,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             defaults.removeObject(forKey: ChannelSelectionSetting.modeKey)   // AUD-009: Mix
             defaults.removeObject(forKey: NoiseGateSetting.enabledKey)   // AUD-011: off
             defaults.removeObject(forKey: NoiseGateSetting.thresholdKey)   // AUD-011: −50 dBFS
+            LatencyOffsetSetting.allKeys.forEach(defaults.removeObject(forKey:))   // AUD-013: 0 ms
             try? FileManager.default.removeItem(at: PresetCollectionStore.defaultDirectory())   // PRE-007: UI tests start without collections
             try? FileManager.default.removeItem(at: UserPresetStore.defaultDirectory())         // PRE-012: and without imported presets
             if let photos = try? PhotoStore.defaultDirectory() { try? FileManager.default.removeItem(at: photos) }   // MED-001: no photo
@@ -301,6 +309,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         inputTrim = InputTrimSetting(defaults: defaults)
         channelSelection = ChannelSelectionSetting(defaults: defaults)
         noiseGate = NoiseGateSetting(defaults: defaults)
+        latencyOffset = LatencyOffsetSetting(defaults: defaults)
         self.externalDisplay.reduceFlashing = settings.reduceFlashing   // OUT-010-R6
         // PERF-010 (contract C1): decide before the OSC receiver exists, so an abnormal exit never
         // reopens the listener; a pending offer holds the scene instead of restoring it.
@@ -409,6 +418,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         // AUD-012-R12: the noise gate's microphone flag changes when a session (or a switch) begins.
         manager.onSessionMode = { [weak self] (mode: AudioSourceMode) in
             self?.noiseGate.control.isMicrophoneSource = mode == .microphone
+            self?.latencyOffset.activeMode = mode   // AUD-013-R8: the new session's delay
         }
         routes.isActive = { [weak self] in self?.appIsActive ?? true }
         self.memoryPressure.register(presetLoader)   // PERF-006-R11: the archive's decompressed chunk
@@ -598,6 +608,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
 
     private func start(_ mode: AudioSourceMode) {
         noiseGate.control.isMicrophoneSource = mode == .microphone   // AUD-011-R3
+        latencyOffset.activeMode = mode   // AUD-013-R8
         prepareRenderer()
         sourceStarts += 1
         screen = .visualizer
@@ -642,6 +653,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// Stop (FR-007): stops the source and returns to the chooser.
     func stop() {
         noiseGate.control.isMicrophoneSource = false   // AUD-011-R3
+        latencyOffset.activeMode = nil   // AUD-013-R8
         hideTask?.cancel()
         pauseActiveVisual()
         screen = .chooser
@@ -683,7 +695,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         // PERF-011: a renderer created while the app cannot present starts suspended.
         renderer?.presentationResources.forEach(presentation.register)
         renderer?.memoryPressureResponders.forEach(memoryPressure.register)   // PERF-006-R9, R10
-        renderer?.attach(pcm: manager.normalizedOutput)
+        renderer?.attach(pcm: latencyOffset.rendererDelayed(manager.normalizedOutput))   // AUD-013-R2
         applyReduceFlashing()
         if let textures = Bundle.main.resourceURL?.appendingPathComponent("PresetTextures") {
             renderer?.setTextureSearchPaths([textures])   // feature 002 T215
