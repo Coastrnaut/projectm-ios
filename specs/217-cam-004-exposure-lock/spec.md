@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (CAM-004-T01-T07, T09-T15 verified on the Mac with the stand-in camera; device task T08 `{device}` open)
 
 **Input**: User description: "Implement CAM-004 (Camera exposure lock) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Lock and release supported
