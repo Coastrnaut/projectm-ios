@@ -16,8 +16,8 @@ Tests are short (owner rule 7): unit tests about 1 s, each UI test under 30 s.
 - [ ] UIX-005-T04 [US1] `PerformancePadBlackout` state from `OutputBlackout.Phase` and its unit tests in `Apps/projectM-iOS/Tests/PerformancePadTests.swift` (UIX-005-R7, R8)
 - [ ] UIX-005-T05 [US1] `Apps/projectM-iOS/Views/PerformancePad.swift`: layer, bar, grid, columns, targets, readouts, insets callback, safe-area probe (UIX-005-R2-R4, R9, R10)
 - [ ] UIX-005-T06 [US1] "Performance layout"/"Standard layout" button in `ControlsOverlay.swift` (UIX-005-R1)
-- [ ] UIX-005-T07 [US1] `VisualizerView.swift`: pad layer, status-stack insets, emergency button hidden while the pad shows (UIX-005-R2, R4, R8, R11)
-- [ ] UIX-005-T08 [US1] UI test portrait: toggle from the controls, geometry and safe area, pad survives the auto-hide, Next applies cue 2 (probe), Blackout toggles, Tap reads "Tap 1 of 4" in `Apps/projectM-iOS/UITests/PerformanceLayoutUITests.swift` (UIX-005-S1)
+- [ ] UIX-005-T07 [US1] `VisualizerView.swift`: pad layer, status-stack insets, emergency button hidden while the pad shows; the pad's appearance is not animated, so Reduce Motion needs no case (UIX-005-R2, R4, R8, R11)
+- [ ] UIX-005-T08 [US1] UI test portrait: toggle from the controls, geometry and safe area, pad survives the auto-hide, Next applies cue 2 (probe), Blackout toggles, Tap reads "Tap 1 of 4", "Standard layout" removes the pad and brings back the emergency button, in `Apps/projectM-iOS/UITests/PerformanceLayoutUITests.swift` (UIX-005-S1)
 - [ ] UIX-005-T09 [US2] UI test landscape: geometry, safe area, side columns clear of the centre, Next and Blackout (UIX-005-S1)
 - [ ] UIX-005-T10 [US2] UI test AX5 (portrait): geometry and safe area (UIX-005-S2)
 
@@ -33,3 +33,10 @@ Tests are short (owner rule 7): unit tests about 1 s, each UI test under 30 s.
 ## Dependencies
 
 T01 → T02; T03 → T05 → T06, T07 → T08-T11 → T12. T04 before T05.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Coverage: R1 T03/T06; R2 T05/T07; R3 T01/T05; R4 T01/T05/T07; R5-R6 T03/T08; R7 T04/T08; R8 T04/T07/T11;
+R9 T05/T10; R10 T05/T11; R11 T07/T12. S1 T08/T09; S2 T10; S3 T11; S4 T02; S5 T12. Fixes applied: the
+Reduce Motion edge case (spec) had no task (now in T07: no animation); acceptance scenario US1-6
+(Standard layout restores the emergency button) had no test (now in T08). No constitution conflicts.
