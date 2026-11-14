@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T12:15:23Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T12:24:29Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,8 +10,8 @@
 | State | Features |
 |---|---|
 | audited | 172 |
-| implementing | 4 |
-| unit_passed | 3 |
+| implementing | 3 |
+| unit_passed | 4 |
 | integrated | 146 |
 | skipped_existing | 1 |
 
@@ -21,7 +21,7 @@
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
 | P1 | 87 | 2 | 2 | 60 | 0 |
-| P2 | 74 | 2 | 1 | 2 | 0 |
+| P2 | 74 | 1 | 2 | 2 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
@@ -519,6 +519,23 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `09b61291a19e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-009/20261113T205831/swift-test_VisualGenerators.log`)
 - `post-merge (AUD-009 + ANL-006): projectM-iOSTests 402 + ChannelSelection/InputTrim/TempoConfidence/TapTempo/AccessibilityScreens UI tests 11`: pass at `b0abb4e` (log `.autonomous/logs/integration/aud-009-anl-006/app-tests.log`)
 
+### AUD-010 Channel balance (implementing)
+- `python3 scripts/check_compliance.py`: pass at `70c5efe6f1c2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-010/20261114T071523/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `70c5efe6f1c2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-010/20261114T071523/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `70c5efe6f1c2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-010/20261114T071523/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `70c5efe6f1c2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-010/20261114T071523/autonomous-tests.log`)
+- `swift test --package-path Packages/AnalysisFeatures`: pass at `70c5efe6f1c2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-010/20261114T071523/swift-test_AnalysisFeatures.log`)
+- `swift test --package-path Packages/AudioCore`: pass at `70c5efe6f1c2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-010/20261114T071523/swift-test_AudioCore.log`)
+- `swift test --package-path Packages/CaptureKit`: pass at `70c5efe6f1c2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-010/20261114T071523/swift-test_CaptureKit.log`)
+- `swift test --package-path Packages/CaptureUI`: pass at `70c5efe6f1c2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-010/20261114T071523/swift-test_CaptureUI.log`)
+- `swift test --package-path Packages/Compositor`: pass at `70c5efe6f1c2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-010/20261114T071523/swift-test_Compositor.log`)
+- `swift test --package-path Packages/Diagnostics`: pass at `70c5efe6f1c2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-010/20261114T071523/swift-test_Diagnostics.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `70c5efe6f1c2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-010/20261114T071523/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `70c5efe6f1c2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-010/20261114T071523/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/PerformanceControl`: pass at `70c5efe6f1c2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-010/20261114T071523/swift-test_PerformanceControl.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `70c5efe6f1c2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-010/20261114T071523/swift-test_RenderGoldens.log`)
+- `xcodebuild -scheme Rendering-Package -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: exit 74 at `70c5efe6f1c2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-010/20261114T071523/sim-test_Rendering.log`)
+
 ### AUD-011 Input noise gate (integrated)
 - `python3 scripts/check_compliance.py`: pass at `679e3fdd25a8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-011/20261113T212538/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `679e3fdd25a8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-011/20261113T212538/docs.log`)
@@ -872,6 +889,14 @@ None.
 - `swift test --package-path Packages/ImportFuzz`: pass at `b708bb292a84` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-005/20261114T032536/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/LibraryBackup`: pass at `b708bb292a84` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-005/20261114T032536/swift-test_LibraryBackup.log`)
 - `post-merge: projectM-iOSTests 517 (after adding ACC-003's palette key to the backup list) + LibraryBackup/StorageUsage UI tests 2; network-symbol scan OK`: pass at `31456ffe` (log `.autonomous/logs/integration/file-005/final.log`)
+
+### FILE-006 Incremental backup manifest (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `0b4f7072d509` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-006/20261114T071915/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `0b4f7072d509` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-006/20261114T071915/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `0b4f7072d509` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-006/20261114T071915/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `0b4f7072d509` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-006/20261114T071915/autonomous-tests.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `0b4f7072d509` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-006/20261114T071915/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `0b4f7072d509` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-006/20261114T071915/swift-test_LibraryBackup.log`)
 
 ### FILE-007 Document schema validator (integrated)
 - `python3 scripts/check_compliance.py`: pass at `d9f90f1e1d0f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-007/20261113T163821/compliance.log`)
@@ -1392,6 +1417,23 @@ None.
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `482f39d4b03f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-003/20261113T150813/sim-test_ANGLERendering.log`)
 - `swift test --package-path Packages/Compositor`: pass at `482f39d4b03f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-003/20261113T150813/swift-test_Compositor.log`)
 - `post-merge: Compositor scheme on iPhone 17 sim (CompositorTests 185, FrameRecordingTests 21 incl. 10 s fixture with monotonic timestamps); projectM-iOSTests; VideoRecordingUITests 2, FrameCapture 2, SafeMedia UI tests`: pass at `bf82b49836a5` (log `.autonomous/logs/integration/rec-003/compositor-sim.log`)
+
+### REC-004 Recording audio mux (implementing)
+- `python3 scripts/check_compliance.py`: pass at `d6750ce74405` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-004/20261114T072000/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `d6750ce74405` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-004/20261114T072000/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `d6750ce74405` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-004/20261114T072000/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `d6750ce74405` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-004/20261114T072000/autonomous-tests.log`)
+- `swift test --package-path Packages/AnalysisFeatures`: pass at `d6750ce74405` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-004/20261114T072000/swift-test_AnalysisFeatures.log`)
+- `swift test --package-path Packages/AudioCore`: pass at `d6750ce74405` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-004/20261114T072000/swift-test_AudioCore.log`)
+- `swift test --package-path Packages/CaptureKit`: pass at `d6750ce74405` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-004/20261114T072000/swift-test_CaptureKit.log`)
+- `swift test --package-path Packages/CaptureUI`: pass at `d6750ce74405` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-004/20261114T072000/swift-test_CaptureUI.log`)
+- `swift test --package-path Packages/Compositor`: pass at `d6750ce74405` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-004/20261114T072000/swift-test_Compositor.log`)
+- `swift test --package-path Packages/Diagnostics`: pass at `d6750ce74405` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-004/20261114T072000/swift-test_Diagnostics.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `d6750ce74405` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-004/20261114T072000/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `d6750ce74405` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-004/20261114T072000/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/PerformanceControl`: pass at `d6750ce74405` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-004/20261114T072000/swift-test_PerformanceControl.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `d6750ce74405` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-004/20261114T072000/swift-test_RenderGoldens.log`)
+- `xcodebuild -scheme Rendering-Package -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: exit 74 at `d6750ce74405` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-004/20261114T072000/sim-test_Rendering.log`)
 
 ### REC-012 Share via Files (integrated)
 - `python3 scripts/check_compliance.py`: pass at `8909040fb290` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-012/20261113T152825/compliance.log`)
