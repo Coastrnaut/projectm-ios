@@ -49,6 +49,51 @@ them (its doc comment: "Choosing a channel in the UI is AUD-009's job").
 | Consistency between bars and oscilloscope | Both use (L + R)/2. | One choice must reach both. |
 | Settings | AUD-008's "Audio Analysis" section (input trim). | One more control next to it. |
 
+## Clarifications
+
+### Session 2026-11-13
+
+Answered by Claude under the owner's standing approval (owner rule 4: routine decisions delegated,
+no human interaction); each answer is the conservative, local-first option, recommended option
+first.
+
+- Q: How does "mid" differ from "stereo mix", given that the usual mid (L + R)/2 is exactly the
+  mix? → A: Mix keeps today's analyzer behaviour, (L + R)·0.5 (the sum at half level, bit-exact).
+  Mid is the M of the orthonormal (equal-power) mid/side transform, (L + R)/√2, and the row adds its
+  partner Side, (L − R)/√2, so that M² + S² = L² + R² (no energy lost or invented). The two modes
+  are therefore never identical: on a one-sided signal Mix is −6.02 dB and Mid −3.01 dB relative to
+  that channel, on a correlated (mono-like) signal Mid is +3.01 dB above Mix, and only Side reveals
+  anti-phase content (Mix and Mid are silent on it). Rejected: Mid = (L + R)/2 (a duplicate of Mix
+  under another name); a non-linear "centre extraction" (generates harmonics that light upper
+  bands, and needs a frequency-domain upmixer to work properly) (AUD-009-R2).
+- Q: What does each mode give for a mono source (a mono microphone arrives as L = R)? → A: Mix,
+  Left and Right give the mono signal bit for bit ((x + x)·0.5 = x exactly in floating point). Mid
+  gives the same waveform 3.01 dB louder (√2·x) and Side gives silence, because that is what M/S
+  means for a centred signal; the Settings footer says Mix, Left and Right behave the same for a mono
+  source. No linear mode can both differ from Mix and pass a mono signal unchanged, so "every mode
+  gives the mono signal" holds for the waveform's shape, not for Mid's level and not for Side
+  (recorded deviation from the brief, tested) (AUD-009-R2, User Story 2 scenario 5).
+- Q: In which order do channel selection and the input trim apply? → A: Selection first, then the
+  trim: tap → channel selection → `InputTrimReader` → `WaveformTap` → analysis pipeline. The trim's
+  soft clip then bounds Mid's and Side's possible +3 dB overshoot, and the trim's level law applies
+  to the signal the user actually chose. The selection writes the selected signal s into both
+  channels of the consumer's buffer (L′ = R′ = s), so every downstream mono mix ((L′ + R′)·0.5,
+  `.left`, `.right`) yields s exactly and the pipeline and `WaveformTap` stay unchanged
+  (AUD-009-R3, R5).
+- Q: What happens when the mode changes while audio flows, or the session changes? → A: The next
+  read uses the new mode; no crossfade (a mode change is a deliberate, rare user action, and a
+  crossfade would need two signals' state per reader). The selection has no state, so capture
+  sessions need no handling; the session generation (ANL-016-R9) is forwarded unchanged
+  (AUD-009-R10).
+- Q: Which control, and how is the choice stored? → A: A segmented picker "Analysis channel" with
+  segments Mix, Left, Right, Mid, Side (VoiceOver: "Stereo mix", "Left", "Right", "Mid", "Side") in
+  its own Settings section directly below AUD-008's "Audio Analysis" section, with a footer that
+  explains each mode in one line. Stored as a string raw value (`mix`, `left`, `right`, `mid`,
+  `side`) under `settings.analysisChannel.mode`; missing or unknown reads as Mix. Like the trim it
+  is a device-level user setting, not part of scenes, show cues, archives or CaptureLab. Rejected:
+  a menu picker (one more tap and harder to test); per-source modes (no use case yet)
+  (AUD-009-R6, R7, R8).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Choose which channel drives the visuals (Priority: P1)
@@ -118,10 +163,10 @@ without the feature.
 - **AUD-009-R2**: Modes and maths, per frame with s the analysed signal: Mix s = (L + R)·0.5; Left s = L; Right s = R; Mid s = (L + R)·(1/√2); Side s = (L − R)·(1/√2). Default Mix.
 - **AUD-009-R3**: Every analyzer and the oscilloscope MUST see the same selected signal s.
 - **AUD-009-R4**: In Mix the analysis output MUST be bit-identical to today's.
-- **AUD-009-R5**: The selection MUST come before AUD-008's input trim (selection → trim → oscilloscope history → analysis pipeline).
-- **AUD-009-R6**: One global mode, persisted as a user setting; not part of scenes, show cues or scene archives; CaptureLab has none. This amends FR-065 by exactly one key, and the device privacy check's allowed list gains it.
+- **AUD-009-R5**: The selection MUST come before AUD-008's input trim (selection → trim → oscilloscope history → analysis pipeline). It writes s into both channels of the consumer's buffer and forwards the frame count and session generation unchanged.
+- **AUD-009-R6**: One global mode, persisted as a user setting under `settings.analysisChannel.mode` (a string: `mix`, `left`, `right`, `mid`, `side`; missing or unknown → Mix); not part of scenes, show cues or scene archives; CaptureLab has none. This amends FR-065 by exactly one key, and the device privacy check's allowed list gains it.
 - **AUD-009-R7**: Settings MUST offer the mode next to AUD-008's input trim, with a footer explaining the modes and that the choice does not change what is heard, projectM or recordings.
-- **AUD-009-R8**: Accessibility (FR-070): the control's label is "Analysis channel"; each option's spoken name is its full name ("Stereo mix", "Left", "Right", "Mid", "Side"); stable identifiers for the control.
+- **AUD-009-R8**: Accessibility (FR-070): the control's label is "Analysis channel"; each option's spoken name is its full name ("Stereo mix", "Left", "Right", "Mid", "Side"); stable identifiers `analysisChannelPicker` and `analysisChannelValue`.
 - **AUD-009-R9**: Real-time safety (Constitution VII): no allocation after creation, no lock (one atomic load per read), never on an audio callback.
 - **AUD-009-R10**: A mode change MUST reach the running analysis at its next read without restarting the source or the visual.
 
