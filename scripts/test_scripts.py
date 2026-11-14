@@ -285,6 +285,19 @@ class ComplianceTests(unittest.TestCase):
             self.assertIn(expected, text)
         self.assertEqual(check_compliance.main(["--paths", str(FIXTURES / "Violations.swift.txt")]), 1)
 
+    def test_network_and_bluetooth_midi_are_flagged(self):
+        """MIDI-001-R2, R14 (ADR-0038): network MIDI and Bluetooth pairing in source fail; discovery passes."""
+        with tempfile.TemporaryDirectory() as d:
+            bad = Path(d) / "Bad.swift"
+            bad.write_text("let s = MIDINetworkSession.default()\nlet v = CABTMIDICentralViewController()\n", encoding="utf-8")
+            text = "\n".join(check_compliance.check_file(bad))
+            self.assertIn("network MIDI", text)
+            self.assertIn("Bluetooth MIDI pairing", text)
+            ok = Path(d) / "Ok.swift"
+            ok.write_text("import CoreMIDI\nlet n = MIDIGetNumberOfSources()\n// MIDINetworkSession is not used\n",
+                          encoding="utf-8")
+            self.assertEqual(check_compliance.check_file(ok), [])
+
     def test_comments_are_ignored(self):
         with tempfile.TemporaryDirectory() as d:
             p = Path(d) / "Ok.swift"
@@ -1402,6 +1415,16 @@ class NetworkSymbolScanTests(unittest.TestCase):
 
     def test_harmless_lookalikes_pass(self):
         self.assertEqual(self.findings([("_socketpair", ""), ("_OBJC_CLASS_$_NSURL", ""), ("_connectionCount", "")]), [])
+
+    def test_network_midi_fails_and_local_coremidi_passes(self):
+        """MIDI-001-R14 (ADR-0038): the network MIDI session fails; discovery calls pass."""
+        bad = ["_OBJC_CLASS_$_MIDINetworkSession", "_OBJC_CLASS_$_MIDINetworkHost", "_OBJC_CLASS_$_MIDINetworkConnection"]
+        found = self.findings([(s, "CoreMIDI") for s in bad])
+        self.assertEqual(len(found), 3)
+        self.assertTrue(all(not f.allowed for f in found))
+        local = ["_MIDIClientCreateWithBlock", "_MIDIGetNumberOfSources", "_MIDIGetSource", "_MIDIObjectGetIntegerProperty",
+                 "_kMIDIPropertyUniqueID", "_MIDIEndpointGetEntity"]
+        self.assertEqual(self.findings([(s, "CoreMIDI") for s in local]), [])
 
     def test_network_symbols_need_the_osc_image_and_the_allowlist(self):
         imports = [("_$sListenerStart", "Network"), ("_$sConnOut", "Network"), ("_$sBrowser", "Network"),

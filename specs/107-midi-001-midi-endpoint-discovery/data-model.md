@@ -26,7 +26,7 @@ MIDI-001-R2). Derived from the device's driver owner (research MIDI-001-D5).
 
 ## MIDIEndpointID
 
-`system(Int32)` | `fallback(hash: UInt64, ordinal: Int)`; `isFallback`; `description`
+`unique(Int32)` | `fallback(hash: UInt64, ordinal: Int)`; `isFallback`; `description`
 `"midi:<n>"` or `"midi-fb:<16 hex>-<ordinal>"`. Rule: research MIDI-001-D2.
 
 ## MIDIEndpoint

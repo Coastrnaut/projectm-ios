@@ -16,7 +16,7 @@ final class MIDIEndpointModelTests: XCTestCase {
 
     func testSystemNumberIsTheIDWhenNonZeroAndUnique() {
         let ids: [MIDIEndpointID] = MIDIEndpointIdentity.assign([rec(11, .source, "A"), rec(12, .destination, "A")])
-        XCTAssertEqual(ids, [.system(11), .system(12)])
+        XCTAssertEqual(ids, [.unique(11), .unique(12)])
         XCTAssertEqual(ids[0].description, "midi:11")
         XCTAssertFalse(ids[0].isFallback)
     }
@@ -32,7 +32,7 @@ final class MIDIEndpointModelTests: XCTestCase {
         XCTAssertTrue(ids[0].isFallback)
         XCTAssertTrue(ids[1].isFallback)
         XCTAssertTrue(ids[2].isFallback)
-        XCTAssertEqual(ids[3], .system(8))
+        XCTAssertEqual(ids[3], .unique(8))
         XCTAssertEqual(Set(ids).count, 4, "every endpoint has its own ID")
         if case let .fallback(h1, o1) = ids[1], case let .fallback(h2, o2) = ids[2] {
             XCTAssertEqual(h1, h2, "identical names hash alike")
@@ -67,8 +67,8 @@ final class MIDIEndpointModelTests: XCTestCase {
         ])
         let names: [String] = list.endpoints.map { (e: MIDIEndpoint) -> String in e.name }
         XCTAssertEqual(names, ["alpha", "Beta", "BT Keys", "MIDI output", "zeta"])
-        XCTAssertNil(list.endpoint(.system(2)), "network endpoints are never listed")
-        XCTAssertEqual(list.endpoint(.system(6))?.transport, .bluetooth)
+        XCTAssertNil(list.endpoint(.unique(2)), "network endpoints are never listed")
+        XCTAssertEqual(list.endpoint(.unique(6))?.transport, .bluetooth)
     }
 
     func testIdenticalNamesGetDistinctIDsAndOnScreenNames() {
@@ -78,9 +78,9 @@ final class MIDIEndpointModelTests: XCTestCase {
         ])
         XCTAssertEqual(Set(list.endpoints.map { (e: MIDIEndpoint) -> MIDIEndpointID in e.id }).count, 3)
         let names: [MIDIEndpointID: String] = list.displayNames
-        XCTAssertEqual(names[.system(21)], "Keys")
-        XCTAssertEqual(names[.system(22)], "Keys (2)")
-        XCTAssertEqual(names[.system(23)], "Keys", "an output of the same name is not numbered against inputs")
+        XCTAssertEqual(names[.unique(21)], "Keys")
+        XCTAssertEqual(names[.unique(22)], "Keys (2)")
+        XCTAssertEqual(names[.unique(23)], "Keys", "an output of the same name is not numbered against inputs")
     }
 
     // MARK: Diff table (R5, S5)

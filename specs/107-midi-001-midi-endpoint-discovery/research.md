@@ -14,7 +14,7 @@ Decisions by Claude under owner rule 4 (best judgement; conservative, local-firs
 
 ## MIDI-001-D2: The stable ID
 
-- **Decision**: `MIDIEndpointID` is `system(Int32)` when the endpoint's `kMIDIPropertyUniqueID` is
+- **Decision**: `MIDIEndpointID` is `unique(Int32)` when the endpoint's `kMIDIPropertyUniqueID` is
   non-zero and no other endpoint in the same snapshot has it; otherwise
   `fallback(hash: UInt64, ordinal: Int)`, the hash an FNV-1a 64 over
   `direction|device|entity|endpoint name` (UTF-8, `|` separated), the ordinal counting identical

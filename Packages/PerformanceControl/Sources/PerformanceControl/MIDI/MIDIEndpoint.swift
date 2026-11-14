@@ -54,7 +54,7 @@ public struct MIDIEndpointRecord: Sendable, Hashable {
 /// A stable endpoint ID (MIDI-001-R3, R4; research MIDI-001-D2).
 public enum MIDIEndpointID: Sendable, Hashable, Comparable, CustomStringConvertible {
     /// The system's unique number (non-zero and not shared in the snapshot).
-    case system(Int32)
+    case unique(Int32)
     /// Name-based fallback: FNV-1a 64 of direction and names, plus an ordinal for identical hashes.
     case fallback(hash: UInt64, ordinal: Int)
 
@@ -65,7 +65,7 @@ public enum MIDIEndpointID: Sendable, Hashable, Comparable, CustomStringConverti
 
     public var description: String {
         switch self {
-        case .system(let number):
+        case .unique(let number):
             return "midi:" + String(number)
         case let .fallback(hash, ordinal):
             let hex: String = String(hash, radix: 16)

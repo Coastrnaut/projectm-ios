@@ -59,7 +59,7 @@ final class MIDIEndpointDiscoveryTests: XCTestCase {
         h.provider.plug(keys(100))
         h.scheduler.runAll()
         let firstIDs: [MIDIEndpointID] = ids(h.discovery.endpoints)
-        XCTAssertEqual(firstIDs, [.system(100), .system(101)])
+        XCTAssertEqual(firstIDs, [.unique(100), .unique(101)])
         XCTAssertEqual(h.recorder.all.last?.changes.map(MIDIEndpointModelTests.describe), ["appeared midi:100", "appeared midi:101"])
         XCTAssertEqual(h.recorder.all.last?.isInitial, false)
 
@@ -82,12 +82,12 @@ final class MIDIEndpointDiscoveryTests: XCTestCase {
         h.scheduler.runAll()
         let list: MIDIEndpointList = h.discovery.endpoints
         XCTAssertEqual(Set(ids(list)).count, 4)
-        XCTAssertEqual(list.displayNames[.system(300)], "Keys (2)")
+        XCTAssertEqual(list.displayNames[.unique(300)], "Keys (2)")
 
         h.provider.rename(uniqueID: 300, to: "Keys B")
         h.scheduler.runAll()
         XCTAssertEqual(h.recorder.all.last?.changes.map(MIDIEndpointModelTests.describe), ["renamed midi:300 Keys→Keys B"])
-        XCTAssertEqual(h.discovery.endpoints.endpoint(.system(300))?.name, "Keys B")
+        XCTAssertEqual(h.discovery.endpoints.endpoint(.unique(300))?.name, "Keys B")
     }
 
     // MARK: S3 — bursts
@@ -116,7 +116,7 @@ final class MIDIEndpointDiscoveryTests: XCTestCase {
         h.provider.setOffline(uniqueID: 500, true)
         h.scheduler.runAll()
         XCTAssertEqual(h.recorder.all.last?.changes.map(MIDIEndpointModelTests.describe), ["online midi:500 false"])
-        XCTAssertEqual(h.discovery.endpoints.endpoint(.system(500))?.isOnline, false)
+        XCTAssertEqual(h.discovery.endpoints.endpoint(.unique(500))?.isOnline, false)
         h.provider.setOffline(uniqueID: 500, false)
         h.scheduler.runAll()
         XCTAssertEqual(h.recorder.all.last?.changes.map(MIDIEndpointModelTests.describe), ["online midi:500 true"])
@@ -133,7 +133,7 @@ final class MIDIEndpointDiscoveryTests: XCTestCase {
         h.scheduler.runAll()
         h.provider.plug([MIDIEndpointRecord(uniqueID: 600, direction: .source, displayName: "Synth App", isVirtual: true)])
         h.scheduler.runAll()
-        XCTAssertEqual(h.discovery.endpoints.endpoint(.system(600))?.isVirtual, true)
+        XCTAssertEqual(h.discovery.endpoints.endpoint(.unique(600))?.isVirtual, true)
     }
 
     // MARK: R7, R8 — stop, unavailable, network

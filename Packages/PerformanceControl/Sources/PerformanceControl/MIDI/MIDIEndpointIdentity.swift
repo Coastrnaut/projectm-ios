@@ -21,7 +21,7 @@ public enum MIDIEndpointIdentity {
         ids.reserveCapacity(records.count)
         for record in records {
             if record.uniqueID != 0, numberCounts[record.uniqueID] == 1 {
-                ids.append(.system(record.uniqueID))
+                ids.append(.unique(record.uniqueID))
                 continue
             }
             let hash: UInt64 = fallbackHash(record)

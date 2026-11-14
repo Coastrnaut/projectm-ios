@@ -9,7 +9,7 @@ symbols and the library each comes from). It fails on:
   MultipeerConnectivity, NetworkExtension, SystemConfiguration, CloudKit, PushKit, MapKit, GameKit,
   libresolv;
 * an imported BSD socket or resolver function, or a URL-loading, socket-stream, reachability, Bonjour,
-  web-view or browser symbol;
+  web-view, browser or network MIDI (`MIDINetwork*`, MIDI-001-R14) symbol;
 * any Network.framework import (or linkage) outside the image that defines the OSC transport
   (`NetworkDatagramTransport`), any C-level `nw_*` import, and any Network Swift API that is not on the
   listener-side allowlist. The outbound pair `NWConnection(host:port:using:)` and `NWConnection.send`
@@ -62,6 +62,7 @@ FORBIDDEN_SUBSTRINGS = (
     "CFReadStreamCreateForHTTPRequest", "CFSocket", "CFStreamCreatePairWithSocket", "SCNetworkReachability",
     "NSNetService", "WKWebView", "UIWebView", "SFSafariViewController", "ASWebAuthenticationSession",
     "MCSession", "MCNearbyService", "NEHotspot",
+    "MIDINetwork",   # MIDI-001-R14 (ADR-0038): the network MIDI session, host and connection classes
 )
 
 # Network Swift APIs (demangled, simplified) that only listen or receive (OSC-001 listener).
