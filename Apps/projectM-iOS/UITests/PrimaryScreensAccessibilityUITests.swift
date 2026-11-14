@@ -270,10 +270,11 @@ final class PrimaryScreensAccessibilityUITests: XCTestCase {
             } + [
             Filter(screen: "storage", type: .dynamicType, element: "storageRefresh", reason: bar),
             Filter(screen: "parameterInspector", type: .dynamicType, element: "parameterInspector.reset", reason: bottom),
-            Filter(screen: "sceneSwitcher", type: .contrast, element: "", elementless: true, limit: 1,
-                   reason: "one finding the audit attributes to a bare SwiftUI.AccessibilityNode with no element, over a "
-                       + "blacked-out output; the card's own texts (title, Close, count, rows, placeholder) are attributed "
-                       + "and pass. Open item; bounded to one, so a new one fails"),
+            Filter(screen: "sceneSwitcher", type: .contrast, element: "", elementless: true, limit: 2,
+                   reason: "findings the audit attributes to a bare SwiftUI.AccessibilityNode with no element (one or two "
+                       + "per run): dimmed content behind the switcher's backdrop, over a blacked-out output; the card's own "
+                       + "texts are attributed and pass, and the controls behind are hidden while it is open. Open item; "
+                       + "bounded to two, so a new one fails"),
             Filter(screen: "sceneSwitcher", type: .contrast, element: "Visual unavailable",
                    reason: "PERF-014's placeholder behind the switcher, caught while fading or behind the live visual "
                        + "(ACC-004's filter for the controls; at full opacity its grey on black is about 6:1)"),
