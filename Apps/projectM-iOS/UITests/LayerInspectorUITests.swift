@@ -1,5 +1,6 @@
 // LayerInspectorUITests.swift — CMP-015-T18 on the iOS Simulator: the roadmap acceptance "Selecting
-// different layers shows correct parameters and undo restores prior value" (CMP-015-S1 to S3).
+// different layers shows correct parameters and undo restores prior value" (CMP-015-S1 to S3); CMP-008-T16 adds
+// the gradient editor (CMP-008-S6: add, adjust and undo a stop).
 // `-uitestLayerInspectorSeed` with `-uitestSeedPhoto solid` makes the three-layer Photo scene of
 // contract L5 before the scene history starts. Inspector sliders are ACC-005 accessible elements
 // (UITestSliders.swift). Simulator results are never device evidence (Constitution X). Waits are
@@ -100,5 +101,34 @@ final class LayerInspectorUITests: XCTestCase {
         undo.tap()
         XCTAssertTrue(poll(5) { (opacity.value as? String) == "60 percent" }, "restored: \(String(describing: opacity.value))")
         XCTAssertTrue(poll(5) { !undo.isEnabled }, "the drag was one step")
+    }
+
+    /// CMP-008-S6: choose Linear, add a stop, drag stop 2's alpha up (one undo step), and undo it.
+    func testGradientStopsCanBeAddedEditedAndUndone() {
+        launch()
+        openLayers()
+        open(1, title: "Photo")
+        let picker = app.buttons["layerControl.gradientKind"]
+        XCTAssertTrue(app.reveal(picker, long: true), "the Gradient picker")
+        picker.tap()
+        let linear = app.buttons["Linear"].firstMatch
+        XCTAssertTrue(linear.appears(within: 5), "the menu offers Linear")
+        linear.tap()
+        let add = app.buttons["layerGradientAddStop"]
+        XCTAssertTrue(app.reveal(add), "Add Stop")
+        add.tap()
+        XCTAssertTrue(poll(5) { self.value("layerValue.gradientStops") == "3 stops" }, "a third stop")
+        let alpha = app.slider("layerControl.gradientStop2.alpha")
+        XCTAssertTrue(app.reveal(alpha), "stop 2's alpha")
+        XCTAssertEqual(alpha.value as? String, "0.50", "the new stop takes the gradient's own alpha")
+        // A quick drag along the slider's line (the element is the slider alone; `dragSlider`'s slow drag took 6 s).
+        let line = alpha.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        line.press(forDuration: 0.05, thenDragTo: alpha.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.5)))
+        XCTAssertTrue(poll(5) { (Double(alpha.value as? String ?? "") ?? 0) > 0.6 }, "raised: \(String(describing: alpha.value))")
+        let undo = app.navigationBars["Photo"].buttons["sceneUndo"]
+        XCTAssertTrue(poll(5) { undo.label.hasPrefix("Undo Photo Gradient Stop 2 Alpha") }, undo.label)
+        undo.tap()
+        XCTAssertTrue(poll(5) { (alpha.value as? String) == "0.50" }, "restored")
+        XCTAssertTrue(poll(5) { undo.label.hasPrefix("Undo Photo Gradient Stops") }, "the add is the step before: \(undo.label)")
     }
 }

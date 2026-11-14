@@ -43,6 +43,8 @@ enum SharedTexturePool {
     /// Retired (idle or waiting) bytes and textures across the pools.
     static var retiredBytes: Int { pools.values.reduce(0) { $0 + $1.counters.retiredBytes } }
     static var retiredTextures: Int { pools.values.reduce(0) { $0 + $1.counters.retiredTextures } }
+    /// PERF-012: every pool's counters, for the performance report.
+    static var allCounters: [TexturePoolCounters] { pools.values.map { (pool: TexturePool) -> TexturePoolCounters in pool.counters } }
 
     #if DEBUG
     /// Under `-uitestMemoryPressure`: idle pictures are not aged out, so a rotation's retired pictures

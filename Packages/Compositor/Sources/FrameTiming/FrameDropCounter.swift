@@ -1,5 +1,6 @@
 // FrameDropCounter.swift — frame drop counts per output (PERF-007-R1 to R9; specs/192-perf-007-frame-drop-telemetry,
 // contracts/frame-drop-counter.md C1, C2; research PERF-007-D1 to D4).
+// PERF-012: an optional `FrameIntervalRecorder` receives the interval since the previous accepted submit.
 //
 // * Local, in-memory counting only: nothing here leaves the device (PERF-007-R12).
 // * `submit` (the frame thread, once per frame handed to the display) counts the frame and the refresh slots skipped
@@ -111,8 +112,12 @@ public final class FrameDropCounter: Sendable {
     /// The frame thread's own state: the previous timestamp's bit pattern and the last issued frame ID.
     private let lastTimestamp = Atomic<UInt64>(0)
     private let nextFrameID = Atomic<UInt32>(0)
+    /// PERF-012: the app session's frame intervals (not reset by `beginSession`); nil = not recorded.
+    private let intervals: FrameIntervalRecorder?
 
-    public init() {}
+    public init(intervals: FrameIntervalRecorder? = nil) {
+        self.intervals = intervals
+    }
 
     /// The current session (generation 0 before the first `beginSession`).
     public var session: FrameDropSession { FrameDropSession(generation: generation.load(ordering: .acquiring)) }
@@ -149,6 +154,7 @@ public final class FrameDropCounter: Sendable {
         let hasPrevious: Bool = previous != 0
         if hasPrevious && timestamp <= previous { return nil }
         lastTimestamp.store(timestamp.bitPattern, ordering: .relaxed)
+        if hasPrevious { intervals?.record(seconds: timestamp - previous) }   // PERF-012-D1
         let interval: Double = targetTimestamp - timestamp
         let valid: Bool = interval.isFinite && interval > 0
         if hasPrevious && valid {

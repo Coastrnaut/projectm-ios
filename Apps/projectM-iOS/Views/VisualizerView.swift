@@ -205,7 +205,8 @@ struct VisualizerView: View {
     /// UIX-005-R2: the performance pad, with or without the controls, while the layout is on.
     @ViewBuilder private var performancePadLayer: some View {
         if coordinator.performanceLayout {
-            PerformancePadLayer(show: coordinator.show, tempo: coordinator.tempo, external: coordinator.externalDisplay) {
+            PerformancePadLayer(show: coordinator.show, tempo: coordinator.tempo, external: coordinator.externalDisplay,
+                                advance: coordinator.showAutoAdvance) {   // SHOW-002
                 (insets: EdgeInsets) -> Void in performanceInsets = insets
             }
         }
@@ -475,8 +476,10 @@ struct VisualizerView: View {
                      recordingTimedStop: coordinator.recordingTimedStop,   // REC-008
                      explainers: coordinator.explainers,   // UIX-015
                      cameraStatus: { () -> PermissionState? in coordinator.cameraPermissionStatus },
+                     cameraLens: coordinator.cameraLensChoice,   // CAM-003
                      recentPresets: coordinator.presets.recent,   // PRE-006
                      powerProfile: coordinator.powerProfile,   // PERF-008
+                     performanceReport: coordinator.performanceReport,   // PERF-012
                      announcer: coordinator.announcer)   // ACC-005-R7
             .environment(\.parameterShelf, coordinator.parameterShelf)   // UIX-004-R1: Pin to Shelf in Inspect
             .sceneRepairSheet(coordinator.sceneRepair, active: true)   // SCN-012: a show editor step's report
@@ -765,7 +768,7 @@ struct VisualizerView: View {
         }
         // REC-012: "Frame ready" / "Recording ready" with Save…, Share…, Discard; the share notice.
         CaptureResultPanels(frameCapture: coordinator.frameCapture, videoRecording: coordinator.videoRecording,
-                            share: coordinator.captureShare)
+                            share: coordinator.captureShare, photos: coordinator.photosSave)   // REC-011
         // REC-003: the recording indicator (app UI, never part of the recorded picture; REC-003-R16).
         RecordingCountdownView(recording: coordinator.videoRecording)   // REC-007-R7: the number and Cancel
         if coordinator.videoRecording.state.hasRecording {

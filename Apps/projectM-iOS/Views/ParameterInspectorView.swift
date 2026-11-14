@@ -91,10 +91,11 @@ private struct ParameterInspectorSheetModifier: ViewModifier {
 
     @ViewBuilder private func sheet(_ selected: InspectedParameter) -> some View {
         if let descriptor = ParameterInspectorCatalog.descriptor(selected.id) {
-            let target: ParameterInspectorTarget? = ParameterInspectorTargets.target(for: selected.id, settings: settings)
+            let target: ParameterInspectorTarget? = ParameterInspectorTargets.quantizedTarget(for: selected.id, settings: settings)   // MOD-017
             ParameterInspectorView(descriptor: descriptor, target: target, reader: reader(for: selected.id),
                                    endCoalescing: { [history] () -> Void in history?.endCoalescing() },
-                                   announce: { [announcer] (text: String) -> Void in announcer?.announce(text, kind: .parameter) })
+                                   announce: { [announcer] (text: String) -> Void in announcer?.announce(text, kind: .parameter) },
+                                   quantizer: settings.parameterQuantizer)
                 .environment(\.parameterShelf, shelf)
         }
     }
@@ -125,6 +126,8 @@ struct ParameterInspectorView: View {
     let reader: (@MainActor () -> ParameterModulationReading?)?
     let endCoalescing: @MainActor () -> Void
     let announce: @MainActor (String) -> Void
+    /// MOD-017: shows "Queued for the next beat" under the editor while a change waits.
+    var quantizer: ParameterQuantizer? = nil
     @Environment(\.dismiss) private var dismiss
     @Environment(\.parameterShelf) private var shelf
 
@@ -180,6 +183,7 @@ struct ParameterInspectorView: View {
                 ParameterInspectorRow(title: "Value", value: ParameterValueText.display(current, descriptor: descriptor),
                                       spoken: ParameterValueText.spoken(current, descriptor: descriptor), id: "parameterInspector.value")
                 ParameterInspectorEditor(descriptor: descriptor, target: target, endCoalescing: endCoalescing)
+                if let quantizer { QueuedChangeLabel(quantizer: quantizer, id: descriptor.id) }   // MOD-017-R9
                 Button("Reset to Default") { reset(target) }
                     .accessibilityHint("Sets " + descriptor.displayName + " to " + summary.spokenDefault)
                     .accessibilityIdentifier("parameterInspector.reset")

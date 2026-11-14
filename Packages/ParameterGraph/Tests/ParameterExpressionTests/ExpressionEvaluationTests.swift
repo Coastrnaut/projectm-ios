@@ -101,6 +101,22 @@ final class ExpressionEvaluationTests: XCTestCase {
         XCTAssertEqual(compiled.evaluate(.silent), 0)
     }
 
+    /// ANL-015-T08: `audio.sectionChange` compiles to opcode 35 and reads the envelope.
+    func testSectionChangeSourceInAFormula() throws {
+        let compiled = try CompiledExpression(source: "audio.sectionChange * 2")
+        XCTAssertEqual(compiled.audioSources, [.sectionChange])
+        XCTAssertTrue(compiled.instructions.contains { (instruction: ExpressionInstruction) -> Bool in
+            instruction.opcode == .sectionChange && instruction.opcode.rawValue == 35
+        })
+        let bands: [Float] = [0.5]
+        let value = bands.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> Double in
+            let frame = AudioFeatureFrame(bands: buffer, sectionChange: 0.25)
+            return compiled.evaluate(ExpressionInputs(frame: frame, timeSeconds: 0))
+        }
+        XCTAssertEqual(value, 0.5)
+        XCTAssertEqual(compiled.evaluate(.silent), 0, "no feed reads 0")
+    }
+
     /// ANL-013-T09: `audio.correlation` compiles to opcode 34 and reads (r + 1)/2.
     func testCorrelationSourceInAFormula() throws {
         let compiled = try CompiledExpression(source: "audio.correlation * 2 - 1")

@@ -121,10 +121,13 @@ struct ParameterShelfControl: View {
 
     var body: some View {
         if let descriptor = ParameterInspectorCatalog.descriptor(id),
-           let target = ParameterInspectorTargets.target(for: id, settings: settings) {
-            control(descriptor, target)
-                .frame(width: typeSize.isAccessibilitySize ? nil : width, alignment: .leading)
-                .frame(maxWidth: typeSize.isAccessibilitySize ? .infinity : nil, alignment: .leading)
+           let target = ParameterInspectorTargets.quantizedTarget(for: id, settings: settings) {   // MOD-017
+            VStack(alignment: .leading, spacing: 2) {
+                control(descriptor, target)
+                QueuedChangeLabel(quantizer: settings.parameterQuantizer, id: id)   // MOD-017-R9
+            }
+            .frame(width: typeSize.isAccessibilitySize ? nil : width, alignment: .leading)
+            .frame(maxWidth: typeSize.isAccessibilitySize ? .infinity : nil, alignment: .leading)
         }
     }
 

@@ -7,6 +7,8 @@
 // * Delete asks first ("Delete Recording?"); the row disappears in the same update as the confirmation.
 // * Play: an AVKit player for the local file. Share…: REC-012's presenter with the file itself (Save to Photos and
 //   Assign to Contact excluded). Rename: an alert with the name without its extension.
+// * REC-011: Save to Photos on readable rows (also an accessibility action); the outcome shows in a notice row with
+//   Open Settings (denied, restricted). While a row's file is being saved, its Rename and Delete wait (REC-011-R10).
 import AVKit
 import SwiftUI
 
@@ -25,6 +27,7 @@ struct RecordingLibraryView: View {
             if let message = model.message {
                 Section { Text(message).accessibilityIdentifier("recordingLibraryMessage") }
             }
+            if let photos = model.photos, let notice = photos.notice { photosNoticeSection(photos, notice: notice) }
         }
         .navigationTitle("Recordings")
         .onAppear { model.refresh() }
@@ -73,8 +76,26 @@ struct RecordingLibraryView: View {
         }
     }
 
+    /// REC-011-R9: the Save to Photos outcome (contract C3 identifiers).
+    private func photosNoticeSection(_ photos: PhotosSaveCoordinator, notice: String) -> some View {
+        Section {
+            Text(notice).accessibilityIdentifier("photosSaveNoticeText")
+            if photos.noticeOffersSettings {
+                Button("Open Settings") { photos.openSettings() }
+                    .accessibilityIdentifier("photosSaveNoticeSettings")
+            }
+            Button("Dismiss") { photos.clearNotice() }
+                .accessibilityIdentifier("photosSaveNoticeDismiss")
+        }
+        .accessibilityIdentifier("photosSaveNotice")
+    }
+
     private func actions(for item: RecordingLibraryItem) -> RecordingLibraryRow.Actions {
-        RecordingLibraryRow.Actions(
+        let photos: PhotosSaveCoordinator? = model.photos
+        let toPhotos: (() -> Void)? = photos.map { (coordinator: PhotosSaveCoordinator) -> () -> Void in
+            { () -> Void in coordinator.save(.recording(item.file.url)) }
+        }
+        return RecordingLibraryRow.Actions(
             play: { () -> Void in player = AVPlayer(url: item.file.url) },
             share: { () -> Void in shareRequest = CaptureShareCoordinator.Request(id: UUID(), kind: .recording, url: item.file.url) },
             rename: { () -> Void in
@@ -82,7 +103,10 @@ struct RecordingLibraryView: View {
                 renameError = nil
                 renaming = item
             },
-            delete: { () -> Void in model.requestDelete(item) })
+            delete: { () -> Void in model.requestDelete(item) },
+            toPhotos: toPhotos,
+            photosBusy: photos?.isSaving ?? false,
+            busy: photos?.isSaving(PhotosSaveItem.key(for: item.file.url)) ?? false)
     }
 
     // MARK: - Presentation
@@ -120,6 +144,12 @@ struct RecordingLibraryRow: View {
         let share: () -> Void
         let rename: () -> Void
         let delete: () -> Void
+        /// REC-011: nil hides Save to Photos.
+        var toPhotos: (() -> Void)? = nil
+        /// Any Save to Photos is running.
+        var photosBusy = false
+        /// This row's file is being saved to Photos (REC-011-R10).
+        var busy = false
     }
 
     let item: RecordingLibraryItem
@@ -176,9 +206,16 @@ struct RecordingLibraryRow: View {
             if !item.isIncomplete && item.facts != nil {
                 Button("Play", action: actions.play).accessibilityIdentifier("recordingLibraryPlay")
                 Button("Share…", action: actions.share).accessibilityIdentifier("recordingLibraryShare")
+                if let toPhotos = actions.toPhotos {   // REC-011-R1
+                    Button("Save to Photos", action: toPhotos)
+                        .accessibilityIdentifier("recordingLibraryPhotos")
+                        .disabled(actions.photosBusy)
+                }
                 Button("Rename", action: actions.rename).accessibilityIdentifier("recordingLibraryRename")
+                    .disabled(actions.busy)
             }
             Button("Delete", role: .destructive, action: actions.delete).accessibilityIdentifier("recordingLibraryDelete")
+                .disabled(actions.busy)
         }
         .buttonStyle(.borderless)
         .font(.caption.weight(.semibold))
@@ -189,6 +226,7 @@ struct RecordingLibraryRow: View {
         if item.facts != nil {
             Button("Play", action: actions.play)
             Button("Share", action: actions.share)
+            if let toPhotos = actions.toPhotos { Button("Save to Photos", action: toPhotos) }
             Button("Rename", action: actions.rename)
         }
         Button("Delete", action: actions.delete)

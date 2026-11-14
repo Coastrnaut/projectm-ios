@@ -120,6 +120,7 @@ final class CaptureShareCoordinator {
     enum Kind: String, Sendable {
         case frame
         case recording
+        case performanceReport   // PERF-012: Settings → Performance
     }
 
     /// The share sheet to show: the copy and which result it came from.

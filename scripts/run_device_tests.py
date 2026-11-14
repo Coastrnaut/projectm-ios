@@ -70,6 +70,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.visual", "settings.circularSpectrum.bars",
                 "settings.camera.position", "settings.camera.mirrorFront", "settings.camera.mirrorBack",
                 "settings.camera.cropMode", "settings.camera.cropAnchor", "settings.camera.zoom",   # CAM-007
+                "settings.camera.lens",   # CAM-003
                 "settings.visual.colorBlindSafePalette",   # ACC-003-R13
                 "settings.sensorySafety.profile", "settings.sensorySafety.flashesPerSecond",   # ACC-012-R8
                 "settings.sensorySafety.riseLimit", "settings.sensorySafety.intensityLimit",   # ACC-012-R8
@@ -94,6 +95,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.midi.mappings",  # MIDI-003 (channel, controller and parameter ID per line; no device)
                 "settings.parameterShelf.pins",  # UIX-004-R10 (ordered pinned parameter IDs)
                 "settings.scene.locked",  # SCN-015 (scene lock; absent = unlocked)
+                "settings.modulation.quantize",  # MOD-017 (quantize mode; absent = off)
                 "settings.inputTrim.decibels",   # AUD-008-R6 (analysis-only input trim)
                 "settings.analysisChannel.mode",   # AUD-009-R6 (analysis-only channel selection)
                 "settings.playbackBalance.position",   # AUD-010-R7 (In-App Playback monitoring balance)

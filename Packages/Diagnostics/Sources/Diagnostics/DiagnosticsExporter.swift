@@ -3,6 +3,7 @@
 // Writes a schema-valid JSON file and a human-readable .txt into a temporary directory and
 // returns their URLs for the system share sheet. Called only from a user action (the Export
 // button). Nothing is sent anywhere by this code (FR-068).
+// PERF-012: also names and encodes the user-initiated performance report (PerformanceReport.swift).
 import Foundation
 
 public enum DiagnosticsExporter {
@@ -81,6 +82,22 @@ public enum DiagnosticsExporter {
         let flagged: String = b.flaggedPasses.isEmpty ? "none" : b.flaggedPasses.joined(separator: ", ")
         lines.append("  over budget: " + flagged)
         return lines
+    }
+
+    /// PERF-012-R2: `projectM-performance-<UTC yyyyMMdd-HHmmss>.json`; no device or user identifiers in the name.
+    public static func performanceReportName(for date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        formatter.dateFormat = "yyyyMMdd-HHmmss"
+        return "projectM-performance-\(formatter.string(from: date)).json"
+    }
+
+    /// PERF-012-R3: the performance report as pretty-printed JSON with sorted keys (contract C1).
+    public static func encode(_ report: PerformanceReport) throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+        return try encoder.encode(report)
     }
 
     /// Writes both files and returns [json, txt] URLs.

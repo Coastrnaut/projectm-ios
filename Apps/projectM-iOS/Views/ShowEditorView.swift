@@ -10,6 +10,8 @@
 // SCN-007-R9: Transition… per cue (context menu, a leading "Transition" swipe action, VoiceOver action) opens
 // `CueTransitionView`; a cue with a transition shows "Transition: Crossfade 1.5 s, Ease Out" under its label
 // and VoiceOver reads ", transition Crossfade 1.5 seconds, Ease Out".
+// SHOW-002-R10: Advance After… per cue (context menu, a leading "Advance" swipe action, VoiceOver action) opens
+// `CueDwellView`; a cue with a dwell shows "Advance after 0:30" and VoiceOver reads ", advances after 30 seconds".
 // SCN-011-R7: Add from Template… opens `SceneTemplateGalleryView` (bundled starter scenes added as copies).
 import SceneFormat
 import ShowControl
@@ -27,6 +29,7 @@ struct ShowEditorView: View {
     @State private var sceneNameText = ""
     @State private var assigningMIDI: ShowCue?
     @State private var editingTransition: ShowCue?
+    @State private var editingDwell: ShowCue?   // SHOW-002
     /// SCN-011: the template gallery (catalog read when it opens).
     @State private var templateCatalog: SceneTemplateCatalog?
 
@@ -34,7 +37,7 @@ struct ShowEditorView: View {
     private var locked: Bool { show.isEditLocked }
 
     var body: some View {
-        cueList
+        listWithSheets
         .navigationTitle("Show")
         .toolbar { if !show.list.cues.isEmpty && !locked { EditButton() } }   // SCN-015-R6
         .alert("Rename Cue", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
@@ -57,6 +60,13 @@ struct ShowEditorView: View {
         } message: {
             Text("Every cue that shows this scene uses the new name. 1 to \(SceneLimits.maximumNameLength) characters.")
         }
+        .accessibilityIdentifier("showEditor")
+    }
+
+    /// The list with its sheets (SHOW-002, 2026-11-14: with a fourth sheet in `body`, `body` took 390 ms to type-check,
+    /// past the 300 ms budget).
+    private var listWithSheets: some View {
+        cueList
         .sheet(isPresented: Binding(get: { assigningMIDI != nil }, set: { if !$0 { assigningMIDI = nil } })) {
             assignSheet
         }
@@ -66,7 +76,9 @@ struct ShowEditorView: View {
         .sheet(isPresented: Binding(get: { templateCatalog != nil }, set: { if !$0 { templateCatalog = nil } })) {
             templateSheet
         }
-        .accessibilityIdentifier("showEditor")
+        .sheet(isPresented: Binding(get: { editingDwell != nil }, set: { if !$0 { editingDwell = nil } })) {
+            dwellSheet
+        }
     }
 
     /// The editor's list (its own property since SCN-011, 2026-11-14: with the template sheet `body` took 316 ms to
@@ -125,6 +137,13 @@ struct ShowEditorView: View {
     @ViewBuilder private var transitionSheet: some View {
         if let cue = editingTransition {
             CueTransitionView(show: show, cueID: cue.id, dismiss: { () -> Void in editingTransition = nil })
+        }
+    }
+
+    /// SHOW-002: the Advance After sheet for the chosen cue.
+    @ViewBuilder private var dwellSheet: some View {
+        if let cue = editingDwell {
+            CueDwellView(show: show, cueID: cue.id, dismiss: { () -> Void in editingDwell = nil })
         }
     }
 
@@ -187,6 +206,9 @@ struct ShowEditorView: View {
                 if let transition = CueTransitionResolver.summary(cue.transition) {   // SCN-007
                     Text("Transition: \(transition)").font(.caption).foregroundStyle(.secondary)
                 }
+                if let dwell = cue.dwell {   // SHOW-002
+                    Text("Advance after \(dwell.clockText)").font(.caption).foregroundStyle(.secondary)
+                }
                 if missing {
                     Label("Scene missing", systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.orange)
                 }
@@ -208,6 +230,7 @@ struct ShowEditorView: View {
             let spoken: String = transition.replacingOccurrences(of: " s,", with: " seconds,")
             value += ", transition \(spoken)"
         }
+        if let dwell = cue.dwell { value += ", advances after \(dwell.spokenText)" }   // SHOW-002
         let selectedTraits: AccessibilityTraits = active ? .isSelected : []
         return content
             .accessibilityElement(children: .ignore)
@@ -243,6 +266,7 @@ struct ShowEditorView: View {
             .disabled(missing || full)
         Button("Rename Scene…") { startSceneRename(cue) }.disabled(missing)
         Button("Transition…") { editingTransition = cue }   // SCN-007
+        Button("Advance After…") { editingDwell = cue }   // SHOW-002
         Button("Delete", role: .destructive) { show.remove(cue.id) }
     }
 
@@ -262,6 +286,10 @@ struct ShowEditorView: View {
         Button("Transition") { editingTransition = cue }   // SCN-007
             .tint(.orange)
             .accessibilityIdentifier("showCueTransition")
+        Button("Advance") { editingDwell = cue }   // SHOW-002
+            .tint(.mint)
+            .accessibilityLabel("Advance After")
+            .accessibilityIdentifier("showCueDwell")
     }
 
     private func rowActions(_ content: AnyView, cue: ShowCue, number: Int) -> some View {
@@ -276,6 +304,7 @@ struct ShowEditorView: View {
         Button("Duplicate Scene") { show.duplicateScene(of: cue.id) }
         Button("Rename Scene") { startSceneRename(cue) }
         Button("Transition") { editingTransition = cue }   // SCN-007
+        Button("Advance After") { editingDwell = cue }   // SHOW-002
         // ACC-004-R3: reordering without Edit mode's drag handles.
         Button("Move Up") { move(number - 1, by: -1) }
         Button("Move Down") { move(number - 1, by: 1) }

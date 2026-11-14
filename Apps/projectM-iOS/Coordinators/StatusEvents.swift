@@ -130,6 +130,11 @@ enum StatusEventCatalog {
         StatusEvent(id: "X8", kind: .capture, visibleText: notice, announcement: notice, cause: .user)
     }
 
+    /// X8a (REC-011-R9): a Save to Photos outcome (saved, denied, restricted, failed), shown in its notice.
+    static func photosNotice(_ notice: String) -> StatusEvent {
+        StatusEvent(id: "X8a", kind: .capture, visibleText: notice, announcement: notice, cause: .user)
+    }
+
     // MARK: Recording (X9-X14a; X9c REC-005; X9d, X9e REC-007)
 
     /// X9-X11: the recording state. `idle` is reached through the offered panel (X11); a stop reason or a

@@ -74,6 +74,8 @@ final class StatusEventsTests: XCTestCase {
             Expected(event: StatusEventCatalog.frameNotice("Frame saved."), id: "X6", visible: "Frame saved.", spoken: "Frame saved."),
             Expected(event: StatusEventCatalog.frameOffered(), id: "X7", visible: "Frame ready", spoken: "Frame ready"),
             Expected(event: StatusEventCatalog.shareNotice("Shared."), id: "X8", visible: "Shared.", spoken: "Shared."),
+            Expected(event: StatusEventCatalog.photosNotice("Saved to Photos."), id: "X8a", visible: "Saved to Photos.",
+                     spoken: "Saved to Photos."),   // REC-011-R9
             Expected(event: StatusEventCatalog.recording(.recording, elapsed: "0:03"), id: "X9", visible: "REC 0:03",
                      spoken: "Recording started"),
             Expected(event: StatusEventCatalog.recording(.finishing), id: "X10", visible: "Finishing…", spoken: "Recording stopped"),
@@ -126,7 +128,7 @@ final class StatusEventsTests: XCTestCase {
             let captioned = row.event.presentation == .caption
             XCTAssertEqual(harness.router.caption, captioned ? row.visible : nil, row.id)
         }
-        XCTAssertEqual(Set(rows.map(\.id)).count, 27, "every row of contract C1 is walked (X1-X26 and X14a)")
+        XCTAssertEqual(Set(rows.map(\.id)).count, 28, "every row of contract C1 is walked (X1-X26, X8a and X14a)")
     }
 
     // MARK: - Rate rule and one text per change (S3, R5)

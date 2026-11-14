@@ -51,6 +51,7 @@ final class LibraryBackupAppTests: XCTestCase {
                         RecentPresetsStore.historyKey,   // PRE-006-R7: history never travels
                         SceneLock.key,   // SCN-015: the lock is session state of this device
                         OSCPeersCoordinator.enabledKey, OSCPeersCoordinator.approvedKey,   // OSC-008-R10: this device's network
+                        ParameterQuantizer.key,   // MOD-017: a performance timing choice of this device
                         SplitEditorSetting.key])   // UIX-007-R7
         XCTAssertEqual(LibraryFolders.Folder.show.rawValue, StorageLocations.showFolderName)
         XCTAssertEqual(LibraryFolders.Folder.currentScene.rawValue, SceneAutosaveStore.folderName)

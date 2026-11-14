@@ -263,6 +263,8 @@ targets:
         # OSC-001-R17 (FR-068 amendment, ADR-0008): shown when the user turns on OSC receiver. No
         # NSBonjourServices: OSC-001 advertises and browses nothing (OSC-011 adds discovery).
         NSLocalNetworkUsageDescription: "When you turn on OSC receiver in Settings, projectM listens on your local network for OSC control messages. It never connects to the internet."
+        # REC-011-R3 (ADR-0059): add-only Photos access, asked only when the user taps Save to Photos.
+        NSPhotoLibraryAddUsageDescription: "Save to Photos adds the frame or recording you choose to your photo library. projectM can only add items; it never sees or reads your library."
   projectM-iOSTests:
     # Unit tests hosted in the app (T086 idle-timer policy; later T088 presets).
     type: bundle.unit-test
@@ -270,6 +272,8 @@ targets:
     sources:
       - path: Apps/projectM-iOS/Tests
       - path: Apps/projectM-iOS/Store/projectM-iOS.storekit   # SKTestSession (feature 002 T225)
+        buildPhase: resources
+      - path: specs/209-perf-012-performance-report/contracts/performance-report.schema.json   # PERF-012-T13
         buildPhase: resources
     dependencies:
       - target: projectM-iOS

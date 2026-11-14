@@ -48,6 +48,14 @@ final class LayerInspectorCoordinator {
     func setFit(_ name: String?, kind: String) { set(LayerCompositeEdit.settingFit(name, on: composite(for: kind)), for: kind) }
     func setMask(_ name: String?, kind: String) { set(LayerCompositeEdit.settingMask(name, on: composite(for: kind)), for: kind) }
 
+    // CMP-008: the gradient mask (kind; stops by index in position order).
+    func setGradientKind(_ name: String?, kind: String) { set(LayerGradientEdit.settingKind(name, on: composite(for: kind)), for: kind) }
+    func setGradientStop(_ index: Int, _ field: LayerGradientField, _ value: Double, kind: String) {
+        set(LayerGradientEdit.settingStop(index, field, to: value, on: composite(for: kind)), for: kind)
+    }
+    func addGradientStop(kind: String) { set(LayerGradientEdit.addingStop(on: composite(for: kind)), for: kind) }
+    func removeGradientStop(_ index: Int, kind: String) { set(LayerGradientEdit.removingStop(index, on: composite(for: kind)), for: kind) }
+
     /// Reset Layer: one edit back to the default composite.
     func reset(kind: String) { set(SceneComposite(), for: kind) }
 
