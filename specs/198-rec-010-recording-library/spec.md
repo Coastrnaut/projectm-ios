@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (REC-010-T01-T12 verified on the Mac: LocalPortability and LibraryBackup package tests on the host, app unit tests and UI tests on the REC10 iOS 27.2 simulator; device task T13 `{device}` open).
 
 **Input**: User description: "Implement REC-010 (Recording library) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "List and manage local recordings with preview and file size." Acceptance,
@@ -35,7 +35,7 @@ Answered by Claude under the owner's standing approval (owner rules 4 and 9: bes
 human interaction); each answer is the conservative, local-first option.
 
 - Q: How does a recording get into the library, given that today nothing is kept? → A: Only by the user's choice: the "Recording ready" panel gains a fourth action, **Keep**, which moves the offered file into the app's recording library folder (`Application Support/RecordingLibrary`). Save…, Share… and Discard are unchanged, and a recording that is not kept is still deleted at the next launch. Keeping every recording automatically would silently fill storage and change REC-003-R13's "nothing outlives the session".
-- Q: Where is the library shown? → A: Settings › Storage › **Recordings** (a link with the number of saved recordings), next to the storage totals it affects.
+- Q: Where is the library shown? → A: Settings › Storage: the "Saved recordings" row opens the **Recordings** screen, next to the storage totals it affects (no extra row, so Storage's layout and its tests stay as they are).
 - Q: Is the list backed by an index? → A: No. The list is a scan of the library folder each time the screen opens and after each change; there is no database to drift from the files.
 - Q: Is Rename in scope? → A: Yes: a validated new name (not empty, no "/" or ":", not starting with ".", at most 100 characters, unique in the folder); the extension is kept.
 - Q: Is Save to Photos offered? → A: No. The app declares no Photos permission (a constitution-checked catalog rule); Share… offers Save to Files and other apps, as REC-012 does.
@@ -113,7 +113,7 @@ The user plays a saved take in the app, shares it, or gives it a clearer name.
 ### Functional Requirements
 
 - **REC-010-R1**: The "Recording ready" panel MUST offer Keep, which moves the offered file into the library folder (a new unique name on collision), ends the offer and reports "Recording kept in Recordings." A failed move MUST leave the recording offered with a failure notice.
-- **REC-010-R2**: Settings › Storage MUST offer a Recordings screen listing the library folder's non-hidden regular files, newest first (file modification date, then name), scanned from the folder with no separate index.
+- **REC-010-R2**: Settings › Storage's "Saved recordings" row MUST open a Recordings screen listing the library folder's non-hidden regular files, newest first (file modification date, then name), scanned from the folder with no separate index.
 - **REC-010-R3**: Each readable row MUST show a thumbnail (the frame at 1 s, or at half the duration when shorter), the duration, the file size, the date, the resolution, the frame rate and the codec. Facts MUST come from a quick header read; thumbnails MUST be made off the main thread and cached in memory and in `Caches/RecordingThumbnails` keyed by name and size.
 - **REC-010-R4**: A file that cannot be read as a video MUST be listed as "Incomplete" with its size and Delete only.
 - **REC-010-R5**: Delete MUST ask for confirmation naming the recording; on confirm it MUST remove the file, remove the row in the same update, update the count and total, and remove the thumbnail cache entry; Cancel MUST change nothing.

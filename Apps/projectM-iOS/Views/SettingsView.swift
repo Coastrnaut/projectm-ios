@@ -55,6 +55,8 @@ struct SettingsView: View {
     var cacheFilesInUse: @MainActor () -> Set<String> = { () -> Set<String> in [] }
     /// MED-013: Settings › Storage › Missing Media (nil hides the row).
     var missingMedia: MissingMediaCoordinator? = nil
+    /// REC-010: Settings › Storage › Recordings (nil hides the row).
+    var recordingLibrary: RecordingLibraryModel? = nil
     /// UIX-001: opens the guided first scene (nil hides the row, e.g. in previews).
     var openGuide: (() -> Void)?
     /// SCN-010: Undo and Redo in the navigation bar (nil hides them, e.g. in previews).
@@ -499,8 +501,9 @@ struct SettingsView: View {
         if let recentPresets { RecentHistorySection(recent: recentPresets).id("recentPresets") }   // PRE-006-R3, R4
         if let externalOutput { ExternalDisplaySection(setting: externalOutput).id("externalDisplay") }   // OUT-004-R9
         Section {
-            NavigationLink("Storage") {   // FILE-009, FILE-010, FILE-005, MED-013
-                StorageUsageView(filesInUse: cacheFilesInUse, libraryBackup: libraryBackup, missingMedia: missingMedia)
+            NavigationLink("Storage") {   // FILE-009, FILE-010, FILE-005, MED-013, REC-010
+                StorageUsageView(filesInUse: cacheFilesInUse, libraryBackup: libraryBackup, missingMedia: missingMedia,
+                                 recordingLibrary: recordingLibrary)   // REC-010
             }
                 .accessibilityIdentifier("storageLink")
             NavigationLink("Licenses") { LicensesView() }

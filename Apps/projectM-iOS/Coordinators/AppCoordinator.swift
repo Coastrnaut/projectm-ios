@@ -251,6 +251,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let sceneRepair: SceneRepairCoordinator
     /// MED-013: missing imported media (Settings › Storage › Missing Media) and the visualizer's placeholder.
     let missingMedia = MissingMediaCoordinator()
+    /// REC-010: Settings › Storage › Recordings (announces on the `library` lane).
+    @ObservationIgnored private(set) lazy var recordingLibrary: RecordingLibraryModel = makeRecordingLibrary()
     /// ACC-011: capture and recording status events (announcements and captions); owns ACC-004's announcer.
     let statusEvents = StatusEventRouter()
     /// FILE-005: Settings › Storage › Backup (announces on the `library` lane, set in init).
@@ -312,10 +314,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// leftover share copies runs at launch (REC-012-R6).
     @ObservationIgnored let captureShare = CaptureShareCoordinator()
     /// REC-003: Record (the shown visual's frames into a video file, handed to the file mover).
-    @ObservationIgnored private(set) lazy var videoRecording = VideoRecordingCoordinator { [weak self] () -> VideoRecordingCoordinator.Context in
-        guard let self else { return VideoRecordingCoordinator.Context(source: nil, visualShown: false, outputLive: false, paused: false) }
-        return self.videoRecordingContext
-    }
+    @ObservationIgnored private(set) lazy var videoRecording: VideoRecordingCoordinator = makeVideoRecording()
     /// REC-004: "Include microphone audio" for recordings (Settings → Recording; off by default).
     let recordingAudio: RecordingAudioSetting
     /// REC-005: the record quality profile (Settings → Recording quality; Standard by default). The rows
@@ -1430,6 +1429,23 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// REC-003: the shown visual's recording source; nil for projectM (not recordable in this row,
     /// ADR-0027) and when no visual is shown.
     /// REC-003/REC-004: what the recording coordinator reads (visual, output, pause; source mode, consent, tap).
+    /// REC-010-R9: the library's results are announced on the `library` lane.
+    private func makeRecordingLibrary() -> RecordingLibraryModel {
+        let library = RecordingLibraryModel()
+        library.announce = { [weak self] (text: String) in self?.announcer.announce(text, kind: .library) }
+        return library
+    }
+
+    /// REC-003's coordinator; REC-010-R9: Keep announces on the `library` lane.
+    private func makeVideoRecording() -> VideoRecordingCoordinator {
+        let recording = VideoRecordingCoordinator { [weak self] () -> VideoRecordingCoordinator.Context in
+            guard let self else { return VideoRecordingCoordinator.Context(source: nil, visualShown: false, outputLive: false, paused: false) }
+            return self.videoRecordingContext
+        }
+        recording.onKept = { [weak self] (text: String) in self?.announcer.announce(text, kind: .library) }
+        return recording
+    }
+
     var videoRecordingContext: VideoRecordingCoordinator.Context {
         let manager = manager
         var context = VideoRecordingCoordinator.Context(source: activeVideoRecordingSource, visualShown: screen == .visualizer,

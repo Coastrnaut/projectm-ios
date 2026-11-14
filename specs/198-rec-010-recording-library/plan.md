@@ -6,7 +6,7 @@
 ## Summary
 
 Recordings become keepable: the REC-012 "Recording ready" panel gains **Keep**, which moves the offered
-temporary file into `Application Support/RecordingLibrary` (a rename on one volume). Settings › Storage gains a
+temporary file into `Application Support/RecordingLibrary` (a rename on one volume). Settings › Storage's "Saved recordings" row opens a
 **Recordings** screen that scans that folder (no index), lists the files newest first with a cached thumbnail
 (frame at 1 s) and the facts of a quick header read (duration, size, date, resolution, frame rate, codec), and
 offers Play (AVKit player, local file), Share… (REC-012's `ActivitySharePresenter`, same excluded activities),
@@ -69,7 +69,7 @@ Apps/projectM-iOS/
 ├── Coordinators/VideoRecordingCoordinator.swift   # keepOffered()
 ├── Views/CaptureResultPanels.swift                # Keep button
 ├── Coordinators/StorageLocations.swift            # .savedRecordings root
-├── Views/StorageUsageView.swift                   # Recordings link, kept note
+├── Views/StorageUsageView.swift                   # Saved recordings row opens Recordings, kept note
 ├── Views/SettingsView.swift, VisualizerView.swift, Coordinators/AppCoordinator.swift   # wiring (one line each)
 ├── Tests/RecordingLibraryAcceptanceTests.swift    # NEW
 └── UITests/RecordingLibraryUITests.swift          # NEW
