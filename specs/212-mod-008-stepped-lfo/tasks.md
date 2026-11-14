@@ -20,7 +20,7 @@ production change. Budgets (owner rule 7): each unit test ≲ 1-2 s, each suite 
 
 ## Phase 3: User Story 1 - random steps that repeat for the same seed (P1) MVP
 
-**Independent test**: `SteppedLFOTests.testSameSeedAndTimebaseYieldIdenticalStepValues`.
+**Independent test**: `SteppedLFOTests.testSameSeedAndTimebaseYieldIdenticalStepValues` (MOD-008-R3 to R6, S1).
 
 - [ ] MOD-008-T03 [US1] Write `Packages/ParameterGraph/Tests/ParameterGraphTests/SteppedLFOTests.swift` (acceptance): two banks with the same sample-and-hold settings and seed, driven at 60 Hz, 120 Hz and jittery frame times (deterministic pseudo-random gaps 1…40 ms) over ≥ 100 steps, record each step's level: identical (exact `==`) in all three, and equal to `center + amplitude·(SteppedRandom.level(seed, n) − 0.5)`; a level holds within a step; a different seed gives a different sequence; two unseeded slots differ; step number exact after 10 h.
 - [ ] MOD-008-T04 [US1] Implement `LFOShape.sampleHold`, `LFO.seed` (`UInt32?`, nil = position default), `LFO.glide` ("0…1, default 0"), `LFO.value(at: LFOCycle, slot:)` and slot-aware `LFOBank.values` in `Packages/ParameterGraph/Sources/ParameterGraph/LFO.swift`; T03 passes.
@@ -28,7 +28,7 @@ production change. Budgets (owner rule 7): each unit test ≲ 1-2 s, each suite 
 
 ## Phase 4: User Story 2 - square with duty cycle (P1)
 
-**Independent test**: `SteppedLFOTests.testSquareTransitionsLandExactlyAtDutyBoundaries`.
+**Independent test**: `SteppedLFOTests.testSquareTransitionsLandExactlyAtDutyBoundaries` (MOD-008-R2, S2).
 
 - [ ] MOD-008-T06 [US2] Test and implement `LFOShape.square` and `LFO.dutyCycle` ("0.05…0.95, default 0.5"): for duty 0.25, 0.5, 0.8 a free 1 Hz square is high 1 ns before the duty boundary, low at and after it, low 1 ns before the cycle boundary and high at it; duty 0.04, 0.96, NaN refused (`SteppedLFOTests`, `LFO.swift`).
 - [ ] MOD-008-T07 [US2] Update the shape switches in `Packages/ParameterGraph/Tests/ParameterGraphTests/LFOTests.swift` and `LFOSyncTests.swift` so the suites build with the new cases.
@@ -43,7 +43,7 @@ production change. Budgets (owner rule 7): each unit test ≲ 1-2 s, each suite 
 
 ## Phase 6: Polish
 
-- [ ] MOD-008-T11 Update the scene-document contract (`specs/059-scn-001-versioned-scene-format/contracts/scene-document.md`) and the file headers; run the repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), the type-check budget build, `LibraryBackupAppTests`, and count PosterBoard reports; mark the spec Implemented.
+- [ ] MOD-008-T11 Update the scene-document contract (`specs/059-scn-001-versioned-scene-format/contracts/scene-document.md`) and the file headers; confirm the new source imports no Foundation (Linux shape, MOD-008-R10; CI's Linux job builds it) and `LFOBank.values` allocates nothing new per frame; run the repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), the type-check budget build, `LibraryBackupAppTests`, and count PosterBoard reports; mark the spec Implemented.
 
 ## Dependencies
 
