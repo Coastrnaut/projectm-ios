@@ -13,10 +13,10 @@ owner rule 7 (short tests, injected values, no wall clock).
 
 - [ ] PERF-012-T02 [P] `FrameIntervalHistogram` ("0.1 ms buckets, 2500 buckets, exact max, sum, count, long frames ≥ 25/50/100 ms; percentile = upper edge of the nearest-rank bucket capped by maxMs; nil when count is 0") and `FrameIntervalRecorder` (`Mutex`, never reset) in Packages/Compositor/Sources/FrameTiming/FrameIntervalHistogram.swift
 - [ ] PERF-012-T03 `FrameDropCounter.init(intervals:)` records `timestamp − previous` on each accepted `submit` (duplicates ignored as today) in Packages/Compositor/Sources/FrameTiming/FrameDropCounter.swift
-- [ ] PERF-012-T04 [P] Percentile maths and feed tests (known sets: exact p50/p90/p95/p99 within 0.1 ms, max exact, empty → nil, overflow bucket, non-finite ignored, counter feed skips the first and duplicate timestamps) in Packages/Compositor/Tests/FrameTimingTests/FrameIntervalHistogramTests.swift
+- [ ] PERF-012-T04 [P] Percentile maths and feed tests (known sets: exact p50/p90/p95/p99 within 0.1 ms, max exact, empty → nil, overflow bucket, non-finite ignored, counter feed skips the first and duplicate timestamps; the recorder's bucket storage is allocated once at init, PERF-012-R11) in Packages/Compositor/Tests/FrameTimingTests/FrameIntervalHistogramTests.swift
 - [ ] PERF-012-T05 [P] `PerformanceReport` model (schemaVersion 1, kind `projectM-iOS.performanceReport`; fixed-set strings map unknown → `unknown`; system strings keep `[A-Za-z0-9 .,_()-]`, at most 40 characters; "timeline ≤ 200") in Packages/Diagnostics/Sources/Diagnostics/PerformanceReport.swift
 - [ ] PERF-012-T06 `DiagnosticsExporter.performanceReportName(for:)` (`projectM-performance-<UTC yyyyMMdd-HHmmss>.json`) and `encode(_: PerformanceReport)`; `DiagnosticsLog.performanceReport(_:)` signpost event in Packages/Diagnostics/Sources/Diagnostics/DiagnosticsExporter.swift and Logging.swift
-- [ ] PERF-012-T07 [P] Report tests: schema validation against the copied contract, `schemaVersion` == 1, absent-not-zero, sanitising, file name, round trip in Packages/Diagnostics/Tests/DiagnosticsTests/PerformanceReportTests.swift; script test that the schema copy equals the contract in scripts/test_scripts.py
+- [ ] PERF-012-T07 [P] Report tests: schema validation against the copied contract, `schemaVersion` == 1, absent-not-zero, sanitising, file name, round trip, the signpost summary carries counts only (PERF-012-R10) in Packages/Diagnostics/Tests/DiagnosticsTests/PerformanceReportTests.swift; script test that the schema copy equals the contract in scripts/test_scripts.py
 
 ## Phase 3: User Story 1 - Export a performance report (P1) MVP
 
@@ -37,7 +37,7 @@ owner rule 7 (short tests, injected values, no wall clock).
 
 ## Phase 5: Polish
 
-- [ ] PERF-012-T16 Repo checks (compliance, docs, motion, permission catalog, status events, script tests), privacy manifest and network symbol checks on the Debug app, type-check budget, `LibraryBackupAppTests` (no new key), PosterBoard counts
+- [ ] PERF-012-T16 Repo checks (compliance, docs, motion, permission catalog, status events, script tests), privacy manifest and network symbol checks on the Debug app, type-check budget, `LibraryBackupAppTests` (no new key, PERF-012-R11), PosterBoard counts
 - [ ] PERF-012-T17 {device} D1: export after a 1-minute session with the overlay shown; the file validates and shows plausible percentiles and counters (PERF-012-S5)
 
 ## Dependencies
@@ -48,3 +48,10 @@ Parallel: T02/T04 with T05/T07.
 ## Implementation strategy
 
 MVP = Phases 2-3 (US1); US2 is a test of the same code path.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+- C1 (medium): PERF-012-R10 had no test → T07 now tests the signpost summary.
+- C2 (medium): PERF-012-R11 had no task → T04 (no per-frame allocation) and T16 (no stored key).
+- F1 (low): "longer than" vs "≥" thresholds → the spec now says "at least".
+- Coverage: R1 T12, T14; R2 T06, T11, T14; R3 T05, T07; R4 T05, T10; R5 T02-T04, T10; R6 T10; R7 T09; R8 T09, T10; R9 T05, T13; R10 T06, T07; R11 T03, T04, T16; S1 T13; S2 T07, T13; S3 T04; S4 T14; S5 T17. No constitution conflict.

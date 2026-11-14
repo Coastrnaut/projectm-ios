@@ -85,7 +85,7 @@ unavailable (absent, never 0), and the footer explains that frame figures need t
   and the session duration since launch; no device name, user name, serial, vendor or advertising identifier.
 - **PERF-012-R5**: The report carries frame-interval percentiles p50, p90, p95, p99 and the exact maximum in
   milliseconds over every frame measured this session, the sample count, measured seconds, the histogram
-  resolution, and counts of frames longer than fixed thresholds. Unavailable values are absent, never 0.
+  resolution, and counts of frames at least as long as fixed thresholds (25, 50, 100 ms). Unavailable values are absent, never 0.
 - **PERF-012-R6**: The report carries the PERF-007 drop counts per output and, when available, the PERF-001/002
   stage timings in the existing diagnostics formats.
 - **PERF-012-R7**: The report carries the thermal state, Low Power Mode, power profile, frame-rate cap and render
