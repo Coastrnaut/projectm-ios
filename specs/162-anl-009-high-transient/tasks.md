@@ -14,11 +14,11 @@ A task is ticked only with " — Verified 2026-11-14: <how>".
 ## Phase 2: Foundational
 
 - [ ] ANL-009-T02 Write `HighTransientTestSupport.swift` (high-pass noise clicks, continuous high noise, 1 s span counter, uncapped configuration; research D5) and `testHighTransientDefaults` (data-model values; `refractorySamples == 1764`; `envelopeDecay(hop: 512) == exp(−512/2205)`; `rateWindowSamples == 44100`; kick and mid uncapped; −1 and 65 throw) (ANL-009-R3, R4, R5). Red run = compile failure.
-- [ ] ANL-009-T03 Implement contracts C1/C2 in `TransientDetectorConfiguration.swift` and `BandTransientDetector.swift`. Evidence: T02 passes; every `KickDetectorTests` and `MidTransientDetectorTests` test passes unchanged; diff read: the rate ring is allocated in `init`, `process` adds no allocation, lock, log or clock, no second FFT (ANL-009-R10).
+- [ ] ANL-009-T03 Implement contracts C1/C2 in `TransientDetectorConfiguration.swift` and `BandTransientDetector.swift`. Evidence: T02 passes; every `KickDetectorTests` and `MidTransientDetectorTests` test passes unchanged; diff read: the rate ring is allocated in `init`, `process` adds no allocation, lock, log or clock, no second FFT (ANL-009-R10); constructing the detector builds the 6–16 kHz weight tables for every ANL-001 size (its `init` preconditions a non-empty band per size; ANL-009-R2).
 
 ## Phase 3: User Story 1 - high-band clicks fire (P1) 🎯 MVP
 
-- [ ] ANL-009-T04 [US1] `testHighBandClicksFireOnceEachWithinOneHop`: 4 clicks (−12 dBFS) → 4 events within one hop, band `.highTransient`, confidence ≥ 0.5, no extras; identical positions at −30 and −6 dBFS (ANL-009-S1).
+- [ ] ANL-009-T04 [US1] `testHighBandClicksFireOnceEachWithinOneHop`: 4 clicks (−12 dBFS) → 4 events within one hop, band `.highTransient`, confidence ≥ 0.5, no extras; positions are sample-clock indices (ANL-004's rule, no clock read; ANL-009-R7); identical positions at −30 and −6 dBFS (ANL-009-S1).
 
 ## Phase 4: User Story 2 - bounded event counts (P1)
 
@@ -40,9 +40,19 @@ A task is ticked only with " — Verified 2026-11-14: <how>".
 
 ## Phase 8: Polish
 
-- [ ] ANL-009-T11 Linux shape (`-DANALYSIS_NO_ACCELERATE`) for `HighTransient|MidTransient|KickDetector`; type-check budget flags on the app build; repo checks (`check_compliance`, `validate_docs`, `check_motion_policy`, `check_permission_catalog`, `check_status_events`, `test_scripts`); `check_privacy_manifest` and `check_network_symbols` on the Debug app; naming audit (`grep -riE "hi-?hat|cymbal"` in changed sources shows only disclaimers) (ANL-009-R1, R11, S7).
+- [ ] ANL-009-T11 Linux shape (`-DANALYSIS_NO_ACCELERATE`) for `HighTransient|MidTransient|KickDetector`; type-check budget flags on the app build; repo checks (`check_compliance`, `validate_docs`, `check_motion_policy`, `check_permission_catalog`, `check_status_events`, `test_scripts`); `check_privacy_manifest` and `check_network_symbols` on the Debug app; naming audit (`grep -riE "hi-?hat|cymbal"` in changed sources shows only disclaimers); boundary audit of the diff: no new UserDefaults key, setting or projectM call (ANL-009-R1, R11, R12, S7).
 - [ ] ANL-009-T12 Record results (fixture table, test cost) in spec.md; status Implemented.
 
 ## Dependencies
 
 T01 → T02 → T03 → T04, T05, T06 → T07 → T08 → T09 → T10 → T11 → T12. T08 can start after T03.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Coverage check of R1-R12 and S1-S7 against T01-T12. Three findings fixed: R2 (every FFT size) had
+no evidence step (added to T03: the detector's `init` builds and checks the band for every size);
+R7 (sample-clock timestamps) was only implied (stated in T04); R12 (no settings, nothing to
+projectM) had no evidence step (boundary audit added to T11). No duplicate, ambiguous or
+conflicting items remain; the constitution checks in plan.md pass; terminology ("High transient",
+`highTransient`, `audio.highTransient`, opcode 18) is consistent across spec, plan, data model,
+contract and tasks.
