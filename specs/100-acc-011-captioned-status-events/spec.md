@@ -4,7 +4,12 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (ACC-011-T01-T16 verified on the Mac, own iOS 27.2 simulator; no device
+claim). projectM-iOSTests 438/438 (StatusEventsTests 8), StatusEventsUITests 2/2 (each < 30 s), regression UI
+suites pass, scripts OK. ACC-004's note "other features' existing one-shot announcements still post directly;
+ACC-011 can move them" is resolved for capture and recording statuses (contract C2; the remaining direct posts
+are out of scope: scope change, native visual and glow unavailable, media, tempo, library and My Presets).
+Open: ACC-011-T17 `{device}` (VoiceOver pass on D1).
 
 **Input**: Roadmap row ACC-011 (docs/FEATURE_ROADMAP_AUTONOMOUS.md line 459). Observable behavior,
 verbatim: "Provide accessible textual feedback for capture and recording state." P0, size M, depends on
