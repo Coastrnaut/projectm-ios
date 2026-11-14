@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T02:05:41Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T02:09:19Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 224 |
 | implementing | 1 |
-| unit_passed | 1 |
-| integrated | 99 |
+| integrated | 100 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 5 | 1 | 0 | 80 | 1 |
-| P1 | 133 | 0 | 1 | 17 | 0 |
-| P2 | 77 | 0 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 5 | 1 | 80 | 1 |
+| P1 | 133 | 0 | 18 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 226 features are not implemented yet (first: ACC-003, ACC-005, ACC-006, ACC-007, ACC-008)
+- 225 features are not implemented yet (first: ACC-003, ACC-005, ACC-006, ACC-007, ACC-008)
 
 ## Integrated
 
@@ -41,6 +40,7 @@ The physical-device suite may **not** start:
 | ANL-003 | Spectral smoothing | `214fa36` | `feature/anl-003` |
 | ANL-004 | Spectral flux onset detector | `e1ae49c81d34` | `feature/anl-004` |
 | ANL-005 | Adaptive beat tracker | `18a7b93483d6` | `feature/anl-005` |
+| ANL-006 | Tempo confidence indicator | `b0abb4e` | `feature/anl-006` |
 | ANL-016 | Analysis event bus | `97e498d64a14` | `feature/anl-016` |
 | AUD-001 | Import DRM-free audio files | `a2813ab3fa4f` | `feature/aud-001` |
 | AUD-002 | Support common audio containers | `f886b7ce7c76` | `feature/aud-002` |
@@ -50,7 +50,7 @@ The physical-device suite may **not** start:
 | AUD-006 | Seekable transport | `03b23a8ae6a0` | `feature/aud-006` |
 | AUD-007 | Audio output route indicator | `902d1734d42a` | `feature/aud-007` |
 | AUD-008 | Input trim | `214fa36` | `feature/aud-008` |
-| AUD-009 | Channel selection | `57b18a2a663d` | `feature/aud-009` |
+| AUD-009 | Channel selection | `b0abb4e` | `feature/aud-009` |
 | AUD-014 | Audio session interruption recovery | `c4f03aa5e3d8` | `feature/aud-014` |
 | AUD-016 | Reference tone suite | `f69525cf0e8d` | `feature/aud-016` |
 | AUTO-001 | Roadmap parser | `419cc2a999ed` | `autonomous/integration` |
@@ -213,11 +213,12 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `cff52d8eb33b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-005/20261113T094159/swift-test_VisualGenerators.log`)
 - `integration checkout: AnalysisFeatures 91 on iOS 27.2 sim in 34 s; 91 (1 skipped) with -DANALYSIS_NO_ACCELERATE in 50 s; test-speed UI run with the full library 11/11 in 235 s; 0 PosterBoard reports`: pass at `18a7b93` (log `.autonomous/logs/integration/anl-005/analysis-sim.log`)
 
-### ANL-006 Tempo confidence indicator (unit_passed)
+### ANL-006 Tempo confidence indicator (integrated)
 - `python3 scripts/check_compliance.py`: pass at `020487c9f27a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-006/20261113T210514/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `020487c9f27a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-006/20261113T210514/docs.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `020487c9f27a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-006/20261113T210514/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/PerformanceControl`: pass at `020487c9f27a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-006/20261113T210514/swift-test_PerformanceControl.log`)
+- `post-merge (AUD-009 + ANL-006): projectM-iOSTests 402 + ChannelSelection/InputTrim/TempoConfidence/TapTempo/AccessibilityScreens UI tests 11`: pass at `b0abb4e` (log `.autonomous/logs/integration/aud-009-anl-006/app-tests.log`)
 
 ### ANL-016 Analysis event bus (integrated)
 - `python3 scripts/check_compliance.py`: pass at `1e9e7eec69b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-016/20261113T101323/compliance.log`)
@@ -342,6 +343,7 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `09b61291a19e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-009/20261113T205831/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `09b61291a19e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-009/20261113T205831/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `09b61291a19e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-009/20261113T205831/swift-test_VisualGenerators.log`)
+- `post-merge (AUD-009 + ANL-006): projectM-iOSTests 402 + ChannelSelection/InputTrim/TempoConfidence/TapTempo/AccessibilityScreens UI tests 11`: pass at `b0abb4e` (log `.autonomous/logs/integration/aud-009-anl-006/app-tests.log`)
 
 ### AUD-014 Audio session interruption recovery (integrated)
 - `python3 scripts/check_compliance.py`: pass at `8d270f3cbeed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-014/20261112T185431/compliance.log`)
