@@ -52,7 +52,8 @@ final class AccessibilityScreensUITests: XCTestCase {
     /// Dynamic Type: navigation-bar items do not scale by design (iOS offers the Large Content Viewer).
     /// Contrast: the audit samples the glass, which shows the live visualization at the sheet's top
     /// edge; the button's black-on-white text is the system's (screenshot audit-browser, 2026-11-13).
-    nonisolated private static func systemDone(_ screen: String) -> [AuditFilter] {
+    /// Shared with QA-009's manifest suite (the same system Done on the sheets it opens).
+    nonisolated static func systemDone(_ screen: String) -> [AuditFilter] {
         [AuditFilter(screen: screen, type: .dynamicType, element: "Done",
                      reason: "system navigation-bar Done; bar items do not scale with Dynamic Type (Large Content Viewer)"),
          AuditFilter(screen: screen, type: .contrast, element: "Done",
@@ -64,8 +65,9 @@ final class AccessibilityScreensUITests: XCTestCase {
     /// `testBrowserRowsScaleWithAccessibilityTextSizes` (ACC-004-T10). ACC-006 re-checked (2026-11-13):
     /// still reported when the screen starts at the default size; a walk that starts at AX3 or AX5
     /// (DynamicTypeInspectorUITests) reports nothing for these rows, so the filter stays here only.
+    /// QA-009 (2026-11-14): PRE-006's "Recently Played" row now sits last and shows the same artefact.
     nonisolated private static func bottomRows(_ screen: String) -> [AuditFilter] {
-        ["Collections", "My Presets", "0"].map { (label: String) -> AuditFilter in
+        ["Collections", "My Presets", "0", "Recently Played"].map { (label: String) -> AuditFilter in
             AuditFilter(screen: screen, type: .dynamicType, element: label,
                         reason: "row pushed off screen at the audit's larger sizes; scaling proven by a separate test")
         }

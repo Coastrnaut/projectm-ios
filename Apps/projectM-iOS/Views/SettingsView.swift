@@ -408,7 +408,7 @@ struct SettingsView: View {
         if settings.visual.isNative { SpectrumColorsSection(settings: settings) }   // ACC-003-R13
         if let colorGrade { ColorGradeSection(setting: colorGrade).id("color") }   // FX-003-R9 (IDs: UITestSettingsSection)
         if let motionFeedback { TrailsSection(setting: motionFeedback, clamp: settings.safetyClamp) }   // FX-009-R9
-        if let layerInspector { EffectChainSection(coordinator: layerInspector) }   // FX-020-R9 (the app coordinator)
+        if let layerInspector { EffectChainSection(coordinator: layerInspector).id("effectOrder") }   // FX-020-R9 (the app coordinator)
         SensorySafetySection(settings: settings, announcer: announcer)   // ACC-012-R10
         ReduceFlashingSection(settings: settings, available: reduceFlashingAvailable).id("reduceFlashing")   // FR-072 (own view: ACC-012 body budget)
     }
@@ -430,8 +430,8 @@ struct SettingsView: View {
         if let latencyOffset { LatencyOffsetSection(setting: latencyOffset) }   // AUD-013-R10
         oscSection.id("osc")
         if let midi { MIDISettingsSection(midi: midi).id("midi") }   // MIDI-001-R8
-        if let recordingQuality { RecordingQualitySection(setting: recordingQuality) }   // REC-005-R9
-        if let recordingQuality { RecordingFrameRateSection(setting: recordingQuality) }   // REC-006-R9
+        if let recordingQuality { RecordingQualitySection(setting: recordingQuality).id("recordingQuality") }   // REC-005-R9
+        if let recordingQuality { RecordingFrameRateSection(setting: recordingQuality).id("recordingFrameRate") }   // REC-006-R9
         if let recordingAudio { RecordingAudioSection(setting: recordingAudio, status: recordingAudioStatus) }   // REC-004-R13
     }
 
