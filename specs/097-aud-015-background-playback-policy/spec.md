@@ -93,6 +93,18 @@ first.
   background" section, kept consistent with FILE-013's permission catalog check), in the
   feature's contract, and in an ADR, because it is a policy that later features must follow
   (AUD-015-R9).
+- Q: Does the policy also apply to CaptureLab, the capture test harness that shares the capture
+  layer? → A: Yes for the guarantees in the capture layer (microphone held while away, no resume
+  on an unlock in the background), because they live in the shared manager; no for the return
+  notice, which is a projectM-iOS screen. CaptureLab's UI is unchanged (AUD-015-R5, R7).
+- Q: When a return cannot resume (permission revoked, input gone), is the notice shown as well as
+  the FR-015 reason? → A: No. The reason banner already explains the state and offers the
+  one-tap restart; a second message would compete with it. The notice shows only when the source
+  is not showing a stop or pause reason (AUD-015-R7).
+- Q: Should the diagnostics export record the policy's decisions? → A: No new export field. The
+  export already logs every background, foreground, lock and unlock event and every state
+  transition (`lifecycleEvents`, `transitions`); the schema stays unchanged, so earlier exports
+  and `check_capturelab_export.py` keep working.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -195,7 +207,8 @@ and resumes on return unless the user paused it.
   away MUST be held Paused (no capture, no playback) until the next real return.
 - **AUD-015-R7**: On a real return after the app paused playback or stopped the microphone, the
   app MUST show a non-blocking notice naming the source and what happened, announced to VoiceOver,
-  that clears after 8 seconds, on Dismiss, or on the next start, Stop, pause or resume.
+  that clears after 8 seconds, on Dismiss, or on the next start, Stop, pause or resume. It is not
+  shown while the source shows a stop or pause reason (FR-015), and it is not shown in CaptureLab.
 - **AUD-015-R8**: The visualization and every presentation-bound resource MUST be suspended while
   the app is in the background or locked, in every source mode (PERF-011, FR-050).
 - **AUD-015-R9**: The policy MUST be documented for users in the privacy policy and for developers
