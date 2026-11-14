@@ -53,6 +53,9 @@ public struct LibraryEraseInventory: Sendable, Equatable {
             if let data = try? Data(contentsOf: folders.collectionsFile), let file = try? PresetCollectionsFile.decode(data).file {
                 total += file.collections.count
             }
+            if let data = try? Data(contentsOf: folders.tagsFile), let tags = try? PresetTagsFile.decode(data).map {
+                total += tags.tags.count   // PRE-003: tagged presets
+            }
             if case let .strings(ids)? = settings[LibrarySettingsPolicy.favoritesKey] { total += ids.count }
             return total
         case .media:

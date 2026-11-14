@@ -12,6 +12,8 @@
 //
 // Records inside are migrated by their own readers (SCN-013 scenes, PRE-012 index versions 1-2,
 // PRE-007 collections), so an older record inside a version-1 backup restores as the current format.
+// PRE-003 (2026-11-14) added the optional record `collections/tags.json` without a version change: no
+// release has shipped FILE-005, so no reader exists that would refuse it (research PRE-003-D6).
 import Foundation
 import LocalPortability
 
@@ -46,6 +48,8 @@ public enum LibraryBackupFormat {
     public static let presetTextsPrefix = "presets/texts/"
     public static let presetTextSuffix = ".milk"
     public static let collectionsPath = "collections/collections.json"
+    /// PRE-003: the preset tags document (`PresetTagsFile`).
+    public static let tagsPath = "collections/tags.json"
     public static let settingsPath = "settings.json"
     public static let photosPrefix = "photos/"
 

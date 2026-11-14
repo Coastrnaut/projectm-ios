@@ -47,6 +47,11 @@ enum UITestFakeMIDI {
         inputProvider.send([0x90, 0x3C, 0x64], timestamp: DispatchTime.now().uptimeNanoseconds)
     }
 
+    /// MIDI-007: program change, channel 1, program 5.
+    static func sendProgramChange() {
+        inputProvider.send([0xC0, 0x05], timestamp: DispatchTime.now().uptimeNanoseconds)
+    }
+
     /// Discovery over the stand-in when the launch arguments ask for it.
     static func discoveryIfRequested() -> MIDIEndpointDiscovery? {
         isRequested ? MIDIEndpointDiscovery(provider: provider) : nil
@@ -88,6 +93,8 @@ struct UITestFakeMIDIInputPanel: View {
             .accessibilityIdentifier("midiFakeSendCC")
         Button("Send Note") { UITestFakeMIDI.sendNote() }
             .accessibilityIdentifier("midiFakeSendNote")
+        Button("Send Program") { UITestFakeMIDI.sendProgramChange() }   // MIDI-007
+            .accessibilityIdentifier("midiFakeSendProgram")
     }
 }
 #endif

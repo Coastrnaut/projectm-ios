@@ -138,7 +138,7 @@ final class LibraryEraseAppTests: XCTestCase {
         screen.announce = { (text: String) in spoken.append(text) }
         screen.erase.refresh()
         XCTAssertNil(screen.erase.pending)
-        XCTAssertEqual(screen.erase.message, "Erased: scenes and show, collections and favorites, settings.")
+        XCTAssertEqual(screen.erase.message, "Erased: scenes and show, collections, tags and favorites, settings.")
         XCTAssertEqual(spoken.last, screen.erase.message)
         let again = LibraryBackupCoordinator(folders: LibraryFolders(root: root), defaults: defaults, temporaryRoot: temporaryFolder("t3"))
         again.erase.refresh()

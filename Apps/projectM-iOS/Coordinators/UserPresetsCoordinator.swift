@@ -241,7 +241,11 @@ final class UserPresetsCoordinator: UserPresetGuarding {
     /// Removes an imported preset or deletes a quarantined file, with its stored copy (R24).
     func remove(_ preset: UserPreset) async {
         if provingID == preset.id { await abandonProving() }
-        if await !library.remove(preset.id) { resultMessage = PresetImportRefusal.saveFailed.message }
+        if await !library.remove(preset.id) {
+            resultMessage = PresetImportRefusal.saveFailed.message
+        } else {
+            presets?.pruneTags(preset.id)   // PRE-003-R7: its tags go with it
+        }
         await refresh()
     }
 

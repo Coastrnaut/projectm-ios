@@ -8,6 +8,7 @@
 //                          text SHA-256 and size, blob hash, licence, origin, import and edit dates,
 //                          warnings) + the SHA-256 of the text bytes; never the check state
 //   collections         → canonical PresetCollectionsFile bytes (order kept); absent when there are none
+//   preset-tags         → canonical PresetTagsFile bytes (PRE-003); absent when there are none
 //   setting/<key>       → the typed value's canonical JSON (favorites and the last preset included)
 //   photo/<name>        → the file's bytes
 // File dates, store-chosen file names and recovery copies are not records. Two libraries hold the same
@@ -32,6 +33,9 @@ public struct LibraryRecords: Sendable, Equatable, CustomStringConvertible {
         if let collections = contents.collections, !collections.isEmpty,
            let bytes = try? PresetCollectionsFile(collections: collections).encode() {
             map["collections"] = PortableSHA256.hex(bytes)
+        }
+        if let tags = contents.presetTags, !tags.isEmpty, let bytes = try? PresetTagsFile.encode(tags) {
+            map["preset-tags"] = PortableSHA256.hex(bytes)
         }
         for (key, value) in contents.settings { map["setting/" + key] = PortableSHA256.hex(value.canonicalBytes) }
         for (name, bytes) in contents.photos { map["photo/" + name] = PortableSHA256.hex(bytes) }
