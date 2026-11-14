@@ -92,6 +92,16 @@ first.
   style readout and a "Reset to 0 dB" button, in an "Audio Analysis" section of Settings, shown
   for every visual; VoiceOver reads "Input trim" and the signed value. Rejected: a stepper alone (36
   taps across the range) (AUD-008-R8, R9).
+- Q (clarify, 2026-11-13): Do MOD-002 audio-feature bindings (for example glow following the level)
+  see the trimmed analysis? → A: Yes. They read the same analysis pipeline's frames, so they follow
+  the trim like the bars; nothing else to configure (AUD-008-R11).
+- Q (clarify, 2026-11-13): Is the trim part of a scene, a show cue or a scene archive? → A: No. It is
+  a device-level user setting like Reduce flashing: scenes and cues describe the look, the trim
+  describes the room's audio level. SceneFormat, autosave and show documents are unchanged
+  (AUD-008-R6).
+- Q (clarify, 2026-11-13): Does CaptureLab or a diagnostics export carry the trim? → A: No.
+  CaptureLab measures sources at their real level (FR-031 evidence must be unaltered); the trim lives
+  only in the projectM-iOS app (AUD-008-R1).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -168,12 +178,12 @@ without the trim.
 - **AUD-008-R3**: The oscilloscope (VIS-003) MUST show the trimmed samples: the trim sits in front of `WaveformTap`.
 - **AUD-008-R4**: Range −12…+24 dB, default 0 dB; values are clamped to the range and NaN reads as 0 dB. Linear gain = 10^(dB/20).
 - **AUD-008-R5**: At unity gain with no ramp in progress the reader MUST return the wrapped reader's samples bit-identical. Otherwise each sample y = softClip(x · g): |v| ≤ 0.5 → v; 0.5 < |v| < 1.25 → sign(v)·(0.5 + 0.5·(u − 4u³/27)) with u = (|v| − 0.5)/0.5; |v| ≥ 1.25 → sign(v); NaN → 0. Outputs MUST be finite and within [−1, 1].
-- **AUD-008-R6**: One global trim for all sources, persisted under the user-setting key `settings.inputTrim.decibels` (a Double). This amends FR-065: exactly this one key is added to what may be stored, and the device privacy check's allowed list gains it.
+- **AUD-008-R6**: One global trim for all sources, persisted under the user-setting key `settings.inputTrim.decibels` (a Double); it is not part of scenes, show cues or scene archives, and CaptureLab has no trim. This amends FR-065: exactly this one key is added to what may be stored, and the device privacy check's allowed list gains it.
 - **AUD-008-R7**: Gain changes MUST ramp linearly in linear gain over 2,048 frames per change, carried across reads, so the per-frame gain change never exceeds (g(+24) − g(−12)) / 2,048; a new reader starts at the target, and a change of the session generation snaps to the target.
 - **AUD-008-R8**: Settings MUST offer, for every visual, an "Audio Analysis" section with an "Input trim" slider (−12…+24 dB, 1 dB steps), a readout of the signed whole-dB value, a "Reset to 0 dB" button, and a footer saying the trim changes only how strongly the native visuals and tempo detection react, not what is heard, projectM or recordings.
 - **AUD-008-R9**: Accessibility (FR-070): the slider's label is "Input trim" and its value the signed readout ("+6 dB", "0 dB", "−12 dB"); the button's label is "Reset to 0 dB"; stable identifiers `inputTrimSlider`, `inputTrimValue`, `inputTrimReset`.
 - **AUD-008-R10**: Real-time safety (Constitution VII): the reader holds only scalar state, allocates nothing after creation, takes no lock (one atomic load per read) and never runs on an audio callback (it runs on the analysis worker).
-- **AUD-008-R11**: Every native host and the tap tempo's own analysis MUST receive the trimmed tap; a trim change applies to the running analysis without restarting the source or the visual.
+- **AUD-008-R11**: Every native host (and with it MOD-002's audio-feature bindings) and the tap tempo's own analysis MUST receive the trimmed tap; a trim change applies to the running analysis without restarting the source or the visual.
 
 ### Key Entities
 
