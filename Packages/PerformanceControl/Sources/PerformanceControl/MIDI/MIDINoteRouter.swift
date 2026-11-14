@@ -95,6 +95,17 @@ public struct MIDINoteRouter: Sendable, Hashable {
         release(keys: Array(down), bindings: bindings)
     }
 
+    /// MIDI-013 (specs/183-midi-013-panic, contract P1): the user's panic. The same releases as `releaseAll` (a lost
+    /// source), then the press rule forgets everything.
+    public mutating func panic(bindings: MIDINoteBindingList) -> [MIDINoteCommand] {
+        let commands: [MIDINoteCommand] = releaseAll(bindings: bindings)
+        filter.reset()
+        return commands
+    }
+
+    /// MIDI-013: no key down and no press remembered.
+    public var isIdle: Bool { filter.isEmpty }
+
     /// Puts the given keys up; `release` for each one that was down and is bound to a hold target.
     public mutating func release<S: Sequence>(keys: S, bindings: MIDINoteBindingList) -> [MIDINoteCommand]
     where S.Element == MIDIControlKey {

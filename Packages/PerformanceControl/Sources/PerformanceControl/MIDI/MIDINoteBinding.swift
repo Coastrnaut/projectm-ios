@@ -14,6 +14,8 @@
 // (`ccbtn:<channel>:<controller 0-119>=<action>`, key kind `.controlChange`) or a real-time source (`rt:start=<action>`
 // for Start and Continue, `rt:stop=<action>`; key kinds `.start`/`.stop`, channel and number 0). A real-time source has
 // no release, so `rt:` lines with `mode=hold` are unreadable (kept verbatim). The list reads all three tags.
+//
+// MIDI-013 (specs/183-midi-013-panic, research MIDI-013-D4): `midi.panic`, trigger only; the app runs its panic on the press.
 
 /// What a note can do (research MIDI-006-D5). Stored by its raw value.
 public enum MIDINoteAction: String, Sendable, Hashable, CaseIterable {
@@ -26,6 +28,8 @@ public enum MIDINoteAction: String, Sendable, Hashable, CaseIterable {
     case transportPlay = "transport.play"
     /// MIDI-008: pause only.
     case transportPause = "transport.pause"
+    /// MIDI-013: the MIDI panic (releases every held key; handled by the app's mapping coordinator).
+    case panic = "midi.panic"
 
     /// Only the blackout can be held (black while the key is down).
     public var allowsHold: Bool { self == .blackout }
@@ -61,9 +65,12 @@ public struct MIDINoteTarget: Sendable, Hashable, Identifiable {
     public static let playPause = MIDINoteTarget(unchecked: .transportToggle, .trigger)
     public static let play = MIDINoteTarget(unchecked: .transportPlay, .trigger)
     public static let pause = MIDINoteTarget(unchecked: .transportPause, .trigger)
+    /// MIDI-013: "MIDI panic" (trigger only).
+    public static let panic = MIDINoteTarget(unchecked: .panic, .trigger)
 
     /// The rows MIDI Mappings shows ("Transport", MIDI-008), in order.
-    public static let all: [MIDINoteTarget] = [playPause, play, pause, nextCue, previousCue, blackoutToggle, blackoutHold]
+    public static let all: [MIDINoteTarget] = [playPause, play, pause, nextCue, previousCue, blackoutToggle, blackoutHold,
+                                                panic]
 
     /// `cue.next`, `cue.previous`, `blackout`, `blackout.hold`, `transport.toggle`, …
     public var id: String { mode == .hold ? action.rawValue + ".hold" : action.rawValue }
@@ -78,6 +85,7 @@ public struct MIDINoteTarget: Sendable, Hashable, Identifiable {
         case (.transportToggle, _): "Play/Pause"
         case (.transportPlay, _): "Play"
         case (.transportPause, _): "Pause"
+        case (.panic, _): "MIDI panic"
         }
     }
 }

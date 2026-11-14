@@ -101,6 +101,17 @@ public struct MIDIPressFilter: Sendable, Hashable {
         down.remove(key) != nil
     }
 
+    /// MIDI-013 (specs/183-midi-013-panic, research MIDI-013-D1): forgets everything: down keys, last-press times and
+    /// same-batch presses, so the next press of any key is a fresh press.
+    public mutating func reset() {
+        down.removeAll()
+        lastPress.removeAll()
+        pressedInBatch.removeAll()
+    }
+
+    /// MIDI-013: true when no key is down and no press is remembered.
+    public var isEmpty: Bool { down.isEmpty && lastPress.isEmpty && pressedInBatch.isEmpty }
+
     private func isWithinWindow(_ key: MIDIControlKey, _ timestamp: UInt64) -> Bool {
         guard timestamp != 0, let last = lastPress[key] else { return false }
         let gap: UInt64 = timestamp >= last ? timestamp - last : last - timestamp

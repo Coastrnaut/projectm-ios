@@ -120,3 +120,21 @@ struct UITestFakeMIDIInputPanel: View {
     }
 }
 #endif
+
+#if DEBUG
+/// MIDI-013: "Hold Note" (note on 60, channel 1, no release) and a readout of the held trigger keys ("1 held"), polled
+/// because the router state is not observed.
+struct UITestFakeMIDIPanicProbe: View {
+    let mappings: MIDIMappingCoordinator
+
+    var body: some View {
+        Button("Hold Note") { UITestFakeMIDI.sendNote() }
+            .accessibilityIdentifier("midiFakeHoldNote")
+        TimelineView(.periodic(from: .now, by: 0.2)) { (_: TimelineViewDefaultContext) in
+            Text(String(mappings.heldKeyCount) + " held")
+                .font(.caption2)
+                .accessibilityIdentifier("midiHeldProbe")
+        }
+    }
+}
+#endif
