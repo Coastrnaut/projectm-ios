@@ -82,6 +82,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.linearSpectrum.orientation", "settings.linearSpectrum.spacing",   # VIS-002-R11
                 "settings.oscilloscope.line", "settings.oscilloscope.window",   # VIS-003-R10
                 "settings.lissajous.mode", "settings.lissajous.persistence",   # VIS-004-R11
+                "settings.radialWaveform.ring", "settings.radialWaveform.amplitude",   # VIS-005-R9
                 "settings.spectrum.attack", "settings.spectrum.release",   # ANL-003-R6
                 "settings.osc.enabled", "settings.osc.port",   # OSC-001 (off by default)
                 "settings.midi.enabled",   # MIDI-001 (off by default; no device names stored)

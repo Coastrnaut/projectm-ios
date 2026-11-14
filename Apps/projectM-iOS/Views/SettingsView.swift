@@ -299,6 +299,7 @@ struct SettingsView: View {
                     .accessibilityIdentifier("oscilloscopeWindowPicker")
                 }
                 if settings.visual == .lissajous { lissajousOptions }   // VIS-004-R11
+                if settings.visual == .radialWaveform { radialWaveformOptions }   // VIS-005-R9
                 if settings.visual == .linearSpectrum {
                     Picker("Orientation", selection: $settings.linearSpectrumOrientation) {
                         ForEach(LinearSpectrumOrientation.allCases, id: \.self) { Text($0.title).tag($0) }
@@ -335,7 +336,7 @@ struct SettingsView: View {
                     .accessibilityIdentifier("nativeVisualUnavailableFooter")
             } else {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Oscilloscope draws the sound's waveform, held still when the sound repeats. Lissajous plots the left channel against the right: mono sound is a straight line, wide stereo fills the space; Mid/Side turns it so mono is vertical. Camera shows your rear or front camera behind a circular spectrum, only while it is on screen; the picture is never sent. Photo shows a picture you choose behind a circular spectrum. Video plays a video you choose, without its sound, behind a circular spectrum. Text shows your own words over a circular spectrum.")
+                    Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Oscilloscope draws the sound's waveform, held still when the sound repeats. Lissajous plots the left channel against the right: mono sound is a straight line, wide stereo fills the space; Mid/Side turns it so mono is vertical. Radial Waveform wraps the waveform around a ring: louder sound pushes it out and pulls it in, silence is a still circle. Camera shows your rear or front camera behind a circular spectrum, only while it is on screen; the picture is never sent. Photo shows a picture you choose behind a circular spectrum. Video plays a video you choose, without its sound, behind a circular spectrum. Text shows your own words over a circular spectrum.")
                     if settings.visual.isNative {
                         if glowUnavailable {
                             Text(AppCoordinator.glowUnavailableMessage)
@@ -359,6 +360,22 @@ struct SettingsView: View {
         .accessibilityIdentifier("lissajousModePicker")
         Toggle("Persistence", isOn: $settings.lissajousPersistence)
             .accessibilityIdentifier("lissajousPersistenceToggle")
+    }
+
+    /// VIS-005-R9: the radial waveform's ring size and amplitude.
+    @ViewBuilder private var radialWaveformOptions: some View {
+        Picker("Ring", selection: $settings.radialWaveformRing) {
+            ForEach(RadialWaveformRing.allCases, id: \.self) { (ring: RadialWaveformRing) in Text(ring.title).tag(ring) }
+        }
+        .segmentedUnlessAccessibilitySize()   // ACC-006-R1
+        .accessibilityLabel("Ring")
+        .accessibilityIdentifier("radialWaveformRingPicker")
+        Picker("Amplitude", selection: $settings.radialWaveformAmplitude) {
+            ForEach(RadialWaveformAmplitude.allCases, id: \.self) { (amplitude: RadialWaveformAmplitude) in Text(amplitude.title).tag(amplitude) }
+        }
+        .segmentedUnlessAccessibilitySize()   // ACC-006-R1
+        .accessibilityLabel("Amplitude")
+        .accessibilityIdentifier("radialWaveformAmplitudePicker")
     }
 
     @ViewBuilder private var smoothingSection: some View {

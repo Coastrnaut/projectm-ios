@@ -1023,6 +1023,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         case .linearSpectrum: .linear(settings.linearSpectrumOrientation, spacing: settings.linearSpectrumSpacing)
         case .oscilloscope: .oscilloscope(line: settings.oscilloscopeLine, windowMilliseconds: settings.oscilloscopeWindowMilliseconds)
         case .lissajous: .lissajous(mode: settings.lissajousMode, persistence: settings.lissajousPersistence)   // VIS-004
+        case .radialWaveform: .radialWaveform(ring: settings.radialWaveformRing, amplitude: settings.radialWaveformAmplitude)   // VIS-005
         default: .circular
         }
     }

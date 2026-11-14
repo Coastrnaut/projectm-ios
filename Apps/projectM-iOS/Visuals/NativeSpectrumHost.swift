@@ -48,6 +48,8 @@
 //   generator. Its plot and persistence change only its configuration; the persistence half-life is the
 //   ACC-012-capped one (`LissajousConfiguration.persistenceHalfLife(enabled:clamp:)`), re-applied whenever
 //   the style or `safetyClamp` changes.
+// * Radial waveform (VIS-005): draws the same mono history as the oscilloscope, wrapped around a ring; its
+//   ring size and amplitude change only its configuration (no new generator).
 // * REC-001 (research REC-001-D1): `captureFrame` turns the layer's `framebufferOnly` off until the
 //   next readable drawable is drawn, blits that drawable (the frame as shown: glow and Reduce
 //   flashing included) into a shared buffer and delivers 8-bit sRGB BGRA on the main actor; then
@@ -169,6 +171,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             ?? (generator as? LinearSpectrumGenerator)?.configuration.palette
             ?? (generator as? OscilloscopeGenerator)?.configuration.palette
             ?? (generator as? LissajousGenerator)?.configuration.palette
+            ?? (generator as? RadialWaveformGenerator)?.configuration.palette
     }
 
     private func applyPalette() {
@@ -188,8 +191,15 @@ final class NativeSpectrumHost: PresentationBoundResource {
             var configuration = lissajous.configuration
             configuration.palette = palette
             lissajous.configuration = configuration
+        } else if let radial = generator as? RadialWaveformGenerator {
+            var configuration = radial.configuration
+            configuration.palette = palette
+            radial.configuration = configuration
         }
     }
+
+    /// VIS-005: the radial waveform's generator (tests; nil for another visual).
+    var radialWaveformGenerator: RadialWaveformGenerator? { generator as? RadialWaveformGenerator }
 
     /// VIS-004-R9: the Lissajous's persistence half-life under the safety clamp (0 = off).
     private func applyLissajousPersistence() {
@@ -299,6 +309,12 @@ final class NativeSpectrumHost: PresentationBoundResource {
                                                    configuration: LissajousConfiguration(mode: mode))
             generator.barCount = barCount
             return generator
+        case let .radialWaveform(ring, amplitude):   // VIS-005
+            let generator = try RadialWaveformGenerator(device: device, pixelFormat: .bgra8Unorm_srgb,
+                                                        configuration: RadialWaveformConfiguration(baseRadius: ring.value,
+                                                                                                   amplitude: amplitude.value))
+            generator.barCount = barCount
+            return generator
         }
     }
 
@@ -351,6 +367,11 @@ final class NativeSpectrumHost: PresentationBoundResource {
             var configuration = lissajous.configuration
             configuration.mode = mode   // a mode change clears the ghosts (VIS-004-R8)
             lissajous.configuration = configuration
+        } else if case let .radialWaveform(ring, amplitude) = newStyle, let radial = generator as? RadialWaveformGenerator {
+            var configuration = radial.configuration   // VIS-005: in place, from the next frame
+            configuration.baseRadius = ring.value
+            configuration.amplitude = amplitude.value
+            radial.configuration = configuration
         } else {
             let replacement = try Self.makeGenerator(device: device, style: newStyle, barCount: generator.barCount)
             generator = replacement
@@ -488,6 +509,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         case let .linear(orientation, _): return "\(orientation.title), \(glow)"
         case let .oscilloscope(_, window): return "\(window) ms, \(glow)"
         case let .lissajous(mode, persistence): return "\(mode.title), Persistence \(persistence ? "on" : "off"), \(glow)"   // VIS-004-R14
+        case let .radialWaveform(ring, amplitude): return "\(ring.title) ring, \(amplitude.title) amplitude, \(glow)"   // VIS-005-R11
         }
     }
 
@@ -669,7 +691,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
                         highTransient: highTransient, timeNanoseconds: context.timeNanoseconds)   // MOD-002; no-op without bindings
         // VIS-003: the oscilloscope draws the newest sample history (kept when nothing new arrived).
         let input: UnsafeBufferPointer<Float>
-        if case .oscilloscope = style {
+        if style.drawsMonoHistory {   // VIS-003, VIS-005
             _ = waveform?.output.readLatest(into: samples, capacity: WaveformFrameBuffer.capacity)
             input = UnsafeBufferPointer(start: samples, count: WaveformFrameBuffer.capacity)
         } else if case .lissajous = style {   // VIS-004: the newest stereo history (interleaved)
@@ -800,6 +822,16 @@ enum NativeSpectrumStyle: Equatable, Sendable {
     case oscilloscope(line: OscilloscopeLine, windowMilliseconds: Int)
     /// VIS-004: the Lissajous scope.
     case lissajous(mode: LissajousMode, persistence: Bool)
+    /// VIS-005: the radial waveform.
+    case radialWaveform(ring: RadialWaveformRing, amplitude: RadialWaveformAmplitude)
+
+    /// The oscilloscope and the radial waveform draw the mono sample history instead of the bands.
+    var drawsMonoHistory: Bool {
+        switch self {
+        case .oscilloscope, .radialWaveform: true
+        default: false
+        }
+    }
 
     var title: String {
         switch self {
@@ -807,6 +839,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .linear: VisualChoice.linearSpectrum.title
         case .oscilloscope: VisualChoice.oscilloscope.title
         case .lissajous: VisualChoice.lissajous.title
+        case .radialWaveform: VisualChoice.radialWaveform.title
         }
     }
 
@@ -816,6 +849,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .linear: "linearSpectrum"
         case .oscilloscope: "oscilloscope"
         case .lissajous: "lissajous"
+        case .radialWaveform: "radialWaveform"
         }
     }
 }
