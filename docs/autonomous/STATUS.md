@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T22:44:03Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T22:51:56Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,10 +10,10 @@
 | State | Features |
 |---|---|
 | audited | 80 |
-| implementing | 4 |
-| built | 3 |
+| implementing | 2 |
+| built | 4 |
 | unit_passed | 1 |
-| integrated | 237 |
+| integrated | 238 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -21,14 +21,14 @@
 | Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 0 | 84 | 1 |
-| P1 | 13 | 3 | 0 | 0 | 135 | 0 |
-| P2 | 56 | 1 | 3 | 1 | 18 | 0 |
+| P1 | 13 | 1 | 2 | 0 | 135 | 0 |
+| P2 | 56 | 1 | 2 | 1 | 19 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 88 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, CAM-005, CAM-006)
+- 87 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, CAM-005, CAM-006)
 
 ## Integrated
 
@@ -196,6 +196,7 @@ The physical-device suite may **not** start:
 | PRE-005 | Preset energy facets | `08dba02d` | `feature/pre-005` |
 | PRE-006 | Recently played history | `b4fe95151be2` | `feature/pre-006` |
 | PRE-007 | Preset collections | `e834535cb98b` | `feature/pre-007` |
+| PRE-008 | Smart collections | `3cf788cf` | `feature/pre-008` |
 | PRE-010 | Preset quick audition | `a653f631` | `feature/pre-010` |
 | PRE-012 | Preset import validation | `4bf9f50d1af8` | `feature/pre-012` |
 | PRE-013 | Bulk preset import | `ae03002a` | `feature/pre-013` |
@@ -1067,6 +1068,18 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `42eaf9affd5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-009/20261114T170246/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `42eaf9affd5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-009/20261114T170246/swift-test_ShowControl.log`)
 - `post-merge batch67: Compositor 931, SceneFormat 178, RenderGoldens 84, projectM-iOSTests 1025, UI 7 (layer inspector 4, material inspector, scene compare, scene snapshot)`: pass at `95142688` (log `.autonomous/logs/integration/batch67/app-tests.log`)
+
+### CMP-010 Color key (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `ff65c8102c03` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-010/20261114T174216/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `ff65c8102c03` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-010/20261114T174216/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `ff65c8102c03` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-010/20261114T174216/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `ff65c8102c03` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-010/20261114T174216/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `ff65c8102c03` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-010/20261114T174216/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `ff65c8102c03` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-010/20261114T174216/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `ff65c8102c03` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-010/20261114T174216/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `ff65c8102c03` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-010/20261114T174216/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `ff65c8102c03` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-010/20261114T174216/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `ff65c8102c03` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-010/20261114T174216/swift-test_ShowControl.log`)
 
 ### CMP-011 Layer groups (integrated)
 - `python3 scripts/check_compliance.py`: pass at `9917ce69ab67` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-011/20261114T021531/compliance.log`)
@@ -2083,12 +2096,13 @@ None.
 - `swift test --package-path Packages/PresetLibrary`: pass at `c9aefe517159` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-007/20261112T163519/swift-test_PresetLibrary.log`)
 - `integration checkout, full preset library: xcodebuild -scheme projectM-iOS -destination id=4E32B01D (iPhone 17, iOS 27.2) test: projectM-iOSTests 84 pass; UI tests 16 pass (PresetCollections 3, PresetLibrary, Purchase, ImportedAudio)`: pass at `e834535cb98b` (log `.autonomous/logs/integration/pre-007/app-tests.log`)
 
-### PRE-008 Smart collections (unit_passed)
+### PRE-008 Smart collections (integrated)
 - `python3 scripts/check_compliance.py`: pass at `8a107417aea4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-008/20261114T174028/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `8a107417aea4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-008/20261114T174028/docs.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `8a107417aea4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-008/20261114T174028/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/LibraryBackup`: pass at `8a107417aea4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-008/20261114T174028/swift-test_LibraryBackup.log`)
 - `swift test --package-path Packages/PresetLibrary`: pass at `8a107417aea4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-008/20261114T174028/swift-test_PresetLibrary.log`)
+- `post-merge batch72: LibraryBackup 83, PresetLibrary 330, projectM-iOSTests 1038, UI 10 (preset collections 9, smart collections)`: pass at `3cf788cf` (log `.autonomous/logs/integration/batch72/app-tests.log`)
 
 ### PRE-010 Preset quick audition (integrated)
 - `python3 scripts/check_compliance.py`: pass at `e9ec9e9eeee3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-010/20261114T105402/compliance.log`)
