@@ -21,6 +21,21 @@ extension XCUIElement {
 
     /// True as soon as the element is gone (at once when it already is); false after `timeout`.
     func disappears(within timeout: TimeInterval = 10) -> Bool { poll(timeout) { !self.exists } }
+
+    /// True once the element's frame holds still for 0.2 s (three equal frames 0.1 s apart); false
+    /// after `timeout`. A tap is resolved to a point before it is sent, so a tap on a button that is
+    /// still moving (an alert lifted by the keyboard) lands where the button was.
+    @discardableResult
+    func settles(within timeout: TimeInterval = 2) -> Bool {
+        var previous: CGRect = exists ? frame : .null
+        var still = 0
+        return poll(timeout) {
+            let now: CGRect = self.exists ? self.frame : .null
+            still = now == previous && !now.isNull ? still + 1 : 0
+            previous = now
+            return still >= 2
+        }
+    }
 }
 
 extension XCUIApplication {
