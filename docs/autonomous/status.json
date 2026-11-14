@@ -11,8 +11,8 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 109,
-   "implementing": 1,
+   "audited": 108,
+   "implementing": 2,
    "integrated": 40,
    "unit_passed": 1
   },
@@ -25,8 +25,8 @@
   }
  },
  "by_state": {
-  "audited": 197,
-  "implementing": 1,
+  "audited": 196,
+  "implementing": 2,
   "integrated": 126,
   "skipped_existing": 1,
   "unit_passed": 1
@@ -1175,13 +1175,13 @@
   },
   "FILE-008": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/file-008",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "FILE-009": {
    "attempts": 0,
@@ -4161,5 +4161,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T08:33:19Z"
+ "updated": "2026-11-14T08:33:35Z"
 }
