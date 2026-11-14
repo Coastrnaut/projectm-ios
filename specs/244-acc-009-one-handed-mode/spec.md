@@ -42,6 +42,14 @@ each answer is the conservative, local-first option.
 - Q: Target sizes? → A: Square targets of at least 44 pt that grow with Dynamic Type up to 56 pt; the four pad actions keep the UIX-005 size (60 pt, 72 pt when both size classes are regular) while the pad is on. If the larger size does not fit the zone, targets shrink in 4 pt steps, never below 44 pt or the pad size (`ACC-009-R4`).
 - Q: Which devices? → A: iPhone only (every phone size, portrait and landscape). On iPad the choice is not offered and a stored value is ignored, so iPad layouts are unchanged (`ACC-009-R6`).
 
+### Session 2026-11-14 (speckit-clarify)
+
+- Q: Is there a quick switch in the controls card as well as Settings? → A: No. The choice lives in Settings only: switching hands mid-show is rare, and a fourteenth icon would crowd FR-087's rows again (`ACC-009-R1`).
+- Q: In what order are the targets placed? → A: Rows fill from the bottom of the zone upward, each row aligned to the chosen edge and in reading order: the pad group (Previous cue, Next cue, Tap tempo, Black out) first, nearest the thumb, then Previous, Next, Random, Pause/Resume, Presets, Settings and Stop, so Stop (it leaves the visualizer) is farthest from the thumb (`ACC-009-R3`).
+- Q: What happens when the targets do not fit the zone? → A: Main targets shrink in 4 pt steps to 44 pt; if they still do not fit, every action is still placed (rows continue upward) and the layout reports that it does not fit. No action is ever dropped; the tests require a fit for every phone size in the table (`ACC-009-R4`).
+- Q: Does SHOW-014's emergency Black out corner button change? → A: No. It stays in the status stack (inset clear of the cluster) while the output is live and the pad is off; the cluster's Black out is OUT-010's toggle, as in the standard layout (`ACC-009-R5`).
+- Q: Is the switch announced to VoiceOver? → A: No status event: the Settings choice is a labelled control whose value VoiceOver reads; the cluster's targets keep the standard labels (`ACC-009-R8`).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Every critical action under the thumb (Priority: P1) — MVP
@@ -99,6 +107,7 @@ with the HUD on checks that no target intersects it.
 ### Edge Cases
 
 - The smallest supported iPhone (375 × 667 pt) in landscape at an accessibility text size with the pad and a show: the zone holds all 11 targets (pad targets wrap to two rows of three and one).
+- SHOW-014's emergency Black out button stays where it is, above (portrait) or beside (landscape) the cluster.
 - Rotation: the zone and arrangement follow the area's shape, not the device orientation (as UIX-005).
 - Controls hidden, pad off: nothing is drawn (as the standard layout); a tap shows the controls and the cluster.
 - iPad or a stored value restored from a backup onto an iPad: ignored; iPad layouts unchanged.
