@@ -4,7 +4,10 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (PRE-003-T01-T18 verified on the Mac: host package tests and the
+feature's own iOS 27.2 simulator "PRE3"; no device claim). PresetLibrary 275 tests (16 new), LibraryBackup
+72 (4 new), projectM-iOSTests 699 (PresetTagAcceptanceTests 4), PresetTagsUITests 2 (each under 30 s
+warm). Linux: not run here; CI's Linux job builds and tests PresetLibrary and LibraryBackup.
 
 **Input**: Roadmap row PRE-003 (P1, size M, no dependencies). Observable behavior, verbatim: "Assign
 local searchable tags to presets without editing bundled assets." Acceptance, verbatim: "Tag filter
