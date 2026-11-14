@@ -101,9 +101,18 @@ reference per operator; setting tests; UI test.
 - [ ] FX-003-T22 {device} On D1: Photo visual graded (warm, gain 1.5, saturation 0 → grey), reset → identical;
   frame rate unchanged in the performance overlay (FX-003-S7).
 
+## Analysis fixes (speckit-analyze, 2026-11-14)
+
+- A1: T07 binds the grade block in the flash guard, so T17 lands in the same change (ordering fixed below).
+- A2: FX-003-R11 "no per-frame allocation": T07 builds the block on set and binds it with `setFragmentBytes` /
+  `setBytes` (copied into the command stream); checked in T07's review.
+- A3: the ADR number in plan.md (0049) is provisional; T20 checks `docs/adr/` right before committing.
+- Coverage: R1 T07/T14, R2 T04, R3 T03/T06, R4 T03, R5 T03, R6 T17/T18, R7 T10/T11, R8 T12/T13, R9 T15/T16,
+  R10 T02/T09, R11 T07/T08/T19; S1 T06, S2 T09, S3 T03, S4 T18, S5 T08, S6 T16, S7 T19/T22. No gaps.
+
 ## Dependencies
 
-T02 → T03, T04 → T05 → T06, T09, T18; T04 → T07, T17; T02 → T10 → T11; T12 → T13, T14, T15 → T16. US2 (the
+T02 → T03, T04 → T05 → T06, T09, T18; T04 → T17 → T07 (T07 binds the guard's block, so the guard's shader change lands with it); T02 → T10 → T11; T12 → T13, T14, T15 → T16. US2 (the
 acceptance) first, then US1, then US3; T21 after all; T22 last.
 
 ## Parallel examples
