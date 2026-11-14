@@ -648,6 +648,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         connectSceneHistory()   // SCN-010: starts from the restored (or fresh) scene
         connectSceneSnapshots()   // SCN-008
         connectSceneLock()   // SCN-015
+        connectParameterQuantizer()   // MOD-017
         midiMappings.applyValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.midi, values) }   // MIDI-003-R8
         osc.applyLiveValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.osc, values) }   // OSC-003-R5
         #if DEBUG
