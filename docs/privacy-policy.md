@@ -10,18 +10,22 @@ Photo visual (MED-001; `specs/044-med-001-import-photo-layer`, in app versions t
 the Video visual (MED-002; `specs/048-med-002-import-video-layer`, in app versions that offer it), and for
 the Text visual (MED-009; `specs/053-med-009-text-overlay`, in app versions that offer it), and for
 Save Frame (REC-001; `specs/055-rec-001-still-frame-capture`, in app versions that offer it), and for
-Record (REC-003; `specs/058-rec-003-video-recording`, in app versions that offer it), and for Share…
+Record (REC-003; `specs/058-rec-003-video-recording`, and its sound, REC-004; `specs/134-rec-004-recording-audio`,
+in app versions that offer them), and for Share…
 (REC-012; `specs/060-rec-012-share-via-files`, in app versions that offer it). Applies to the projectM app for
 iPhone and iPad published by Robert Pancoast.
 
 **Summary: the app collects no data. Audio is processed only in memory on your device, and nothing
-is recorded or sent anywhere. The only audio the app stores is audio files you choose to import,
+is recorded or sent anywhere unless you yourself tap Record. The only audio the app stores is audio files you choose to import,
 which stay on your device until you remove them, and the one photo you may choose for the Photo
 visual and the one video you may choose for the Video visual, which also stay on your device until
 you remove them (a video's own sound is removed and never played or analysed). If you choose the Camera visual, the picture of the camera you
 pick (rear or front) is shown on screen while that visual is on; it is never recorded, stored, sent or analysed
-unless you yourself tap Save Frame or Record. Record makes a silent video of the visualization only
-while you record; you then save it to Files, share it or discard it, and the app keeps nothing after
+unless you yourself tap Save Frame or Record. Record makes a video of the visualization only
+while you record. Its sound is the app's own audio when In-App Playback is the source; the
+microphone's sound only if you turn on Settings › Recording › Include microphone audio (off by default)
+and allow microphone access; other apps' audio (System/App Capture) is never recorded, so those
+recordings are silent; you then save it to Files, share it or discard it, and the app keeps nothing after
 the session. Share… sends a picture or video only to the app or person you pick in the share sheet. The only network traffic is Apple's own App Store traffic
 when you buy or restore the full preset library, and, only if you turn it on, OSC control messages
 that devices on your own local network send to the app.**
@@ -35,7 +39,9 @@ The app turns audio into visuals. It starts no source until you choose one.
   time. Only the audio of that shared content is used; the app does not use the screen image, and
   the capture excludes the microphone.
 - **Microphone** visualizes sound in the room through your device's microphone. It does not
-  capture audio directly from other apps. The microphone is used only while this mode runs.
+  capture audio directly from other apps. The microphone is used only while this mode runs. Its sound
+  goes into a recording only if you turn on Include microphone audio (Settings › Recording, off by
+  default, kept on this device only and not in library backups) and tap Record.
 - **In-App Playback** visualizes a reference track built into the app, or an audio file you
   imported into the app (see "Audio files you import"). It opens no input.
 

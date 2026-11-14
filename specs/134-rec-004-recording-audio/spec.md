@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (REC-004-T01-T18 verified on the Mac: package fixtures on the host, app tests on the REC4 iOS 27.2 simulator; device task T19 `{device}` open)
 
 **Input**: User description: "Implement REC-004 (Recording audio mux) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Include only audio that the app owns or is legally permitted to
@@ -124,7 +124,7 @@ setting's value; app unit tests check the status texts and the announcement for 
 
 ### Edge Cases
 
-- The source stops (pause, interruption, end of the queue) during a recording: the audio track ends; the video goes on.
+- The source stops or restarts (stop, interruption, a new capture session) during a recording: the audio track ends; the video goes on. A pause inside In-App Playback is not a new session: no samples arrive while paused and, on resume, the track re-anchors (a gap with no samples, never padded).
 - A seek or track change inside In-App Playback is not a source switch: audio continues, with a re-anchor when the timing jumps.
 - Audio arrives in bursts or late: samples are placed by their host time; a gap or overlap above the tolerance re-anchors the track (an overlap is trimmed, a gap is left empty, never padded).
 - The recording ends with fewer than two video frames: no file (REC-003), audio included.
@@ -147,7 +147,7 @@ setting's value; app unit tests check the status texts and the announcement for 
 - **REC-004-R10**: Only files that passed the import check (which refuses protected content) MUST be the In-App Playback source of recorded audio; the app MUST NOT add any decryption or protected-stream path.
 - **REC-004-R12**: The recorded audio MUST be the normalized source audio, before input trim, noise gate and latency offset.
 - **REC-004-R13**: "Include microphone audio" MUST be in a "Recording" section of Settings; it MUST NOT request the microphone permission itself.
-- **REC-004-R11**: The microphone usage description and the privacy policy MUST say that microphone audio is in recordings only when the user turns it on.
+- **REC-004-R11**: The privacy policy MUST say what audio recordings contain and that microphone audio is in recordings only when the user turns it on. The microphone usage description stays as it is (FR-019 keeps it identical to the Microphone explainer, and it remains accurate: the microphone is used only in Microphone mode); the in-app opt-in is the point-of-use disclosure (ADR-0051).
 
 ### Key Entities
 
