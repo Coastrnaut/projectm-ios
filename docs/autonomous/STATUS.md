@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T14:28:42Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T14:28:52Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 158 |
 | implementing | 7 |
-| unit_passed | 1 |
-| integrated | 159 |
+| integrated | 160 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 73 | 7 | 1 | 70 | 0 |
-| P2 | 74 | 0 | 0 | 5 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 2 | 0 | 84 | 1 |
+| P1 | 73 | 7 | 71 | 0 |
+| P2 | 74 | 0 | 5 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 166 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)
+- 165 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)
 
 ## Integrated
 
@@ -174,6 +173,7 @@ The physical-device suite may **not** start:
 | SCN-003 | Scene duplicate and rename | `4936d8fcd1d3` | `feature/scn-003` |
 | SCN-004 | Scene folder organization | `7b7a78050ada` | `feature/scn-004` |
 | SCN-005 | Scene tags | `4bad23aa` | `None` |
+| SCN-006 | Scene preview image | `546e69643d04` | `feature/scn-006` |
 | SCN-010 | Scene undo/redo | `01b155c6c3d0` | `feature/scn-010` |
 | SCN-012 | Scene validation | `2a86515` | `feature/scn-012` |
 | SCN-013 | Scene migration | `7f597d2` | `feature/scn-013` |
@@ -1635,7 +1635,7 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `451647e2894a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-005/20261114T085155/swift-test_ShowControl.log`)
 - `post-merge: projectM-iOSTests 695 + UI 24 (effects, trails, color, balance, MIDI, scenes, thumbnails, settings)`: pass at `4bad23aa` (log `.autonomous/logs/integration/batch5/app-tests.log`)
 
-### SCN-006 Scene preview image (unit_passed)
+### SCN-006 Scene preview image (integrated)
 - `python3 scripts/check_compliance.py`: pass at `a56c9083faa8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-006/20261114T092504/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `a56c9083faa8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-006/20261114T092504/docs.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `a56c9083faa8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-006/20261114T092504/swift-test_ImportFuzz.log`)
