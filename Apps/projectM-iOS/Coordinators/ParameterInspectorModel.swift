@@ -371,6 +371,7 @@ extension AudioFeatureSource {
         case .rolloff: return "Rolloff"   // ANL-011
         case .flatness: return "Flatness"   // ANL-012
         case .correlation: return "Correlation"   // ANL-013
+        case .sectionChange: return "Section change"   // ANL-015
         case let .lfo(index): return "LFO \(index + 1)"   // MOD-007
         }
     }

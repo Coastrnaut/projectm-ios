@@ -123,6 +123,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
     private var flatness: Float = 0
     /// ANL-013: the newest frame's stereo correlation (−1…1), fed to the bindings (MOD-002's Correlation source).
     private(set) var correlation: Float = 0
+    /// ANL-015: the newest frame's section-change envelope (0…1), fed to the bindings (MOD-002's Section change source).
+    private var sectionChange: Float = 0
     /// ANL-013: the newest frame's phase-inversion warning; changes go to `onPhaseWarningChange`.
     private(set) var phaseInverted = false
     /// ANL-013: called on the main actor when the warning is raised or cleared (cleared on start and stop).
@@ -584,7 +586,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
     func applyModulation(bands: UnsafeBufferPointer<Float>, kick: Float? = nil, centroid: Float? = nil,
                          loudness: Float? = nil, midTransient: Float? = nil, highTransient: Float? = nil,
                          rolloff: Float? = nil, flatness: Float? = nil, correlation: Float? = nil,
-                         timeNanoseconds: UInt64) {
+                         sectionChange: Float? = nil, timeNanoseconds: UInt64) {
         let bound: Bool = modulator?.hasBindings ?? false
         guard bound || triggerBank.hasTriggers else { return }
         var lfos = UnsafeBufferPointer<Double>(start: nil, count: 0)
@@ -596,7 +598,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         }
         let frame = AudioFeatureFrame(bands: bands, kick: kick, centroid: centroid, loudness: loudness, midTransient: midTransient,
                                       highTransient: highTransient, rolloff: rolloff, flatness: flatness,
-                                      correlation: correlation, lfos: lfos)
+                                      correlation: correlation, sectionChange: sectionChange, lfos: lfos)
         if triggerBank.hasTriggers {   // MOD-006: one step per trigger, no allocation
             triggerBank.advance(frame: frame, timeNanoseconds: timeNanoseconds) { (action: ThresholdTriggerAction) -> Void in
                 onTrigger?(action)
@@ -710,6 +712,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             rolloff = 0        // ANL-011: and its rolloff
             flatness = 0       // ANL-012: and its flatness
             correlation = 0    // ANL-013: and its stereo correlation
+            sectionChange = 0  // ANL-015: and its section-change envelope
             setPhaseInverted(false)   // ANL-013: and its warning
             startEffectQuality()   // PERF-003: the floor at once, no fade
             if let waveform { analyzer.start(reader: waveform) }   // VIS-003: the tap through the pass-through wrapper
@@ -813,6 +816,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             rolloff = info.rolloff
             flatness = info.flatness
             correlation = info.correlation
+            sectionChange = info.sectionChange
             setPhaseInverted(info.phaseInverted)
         }
         // ANL-003: the real interval since the previous frame (the first frame after a start snaps).
@@ -827,7 +831,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         let bandInput = UnsafeBufferPointer(start: bands, count: bandCount)
         applyModulation(bands: bandInput, kick: kickEnvelope, centroid: centroid, loudness: loudness, midTransient: midTransient,
                         highTransient: highTransient, rolloff: rolloff, flatness: flatness, correlation: correlation,
-                        timeNanoseconds: context.timeNanoseconds)   // MOD-002; no-op without bindings
+                        sectionChange: sectionChange, timeNanoseconds: context.timeNanoseconds)   // MOD-002; no-op without bindings
         stepEffectQuality(time: link.timestamp)   // PERF-003: arithmetic; the glow changes only when the level or fade moves
         drainBeatEvents(context: context)   // VIS-006: nothing unless beat rings are shown
         // VIS-003: the oscilloscope draws the newest sample history (kept when nothing new arrived).

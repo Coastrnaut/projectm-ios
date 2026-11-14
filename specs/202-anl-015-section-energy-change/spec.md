@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (device task ANL-015-T12 open)
 
 **Input**: Roadmap row ANL-015 (docs/FEATURE_ROADMAP_AUTONOMOUS.md), verbatim: "Detect sustained
 transitions between quiet and loud sections." Acceptance, verbatim: "Quiet-to-loud fixture triggers
@@ -149,6 +149,49 @@ itself, not on every hit.
 - **ANL-015-S5**: Through the real pipeline, the quiet-to-loud fixture yields exactly one section-change event, and the envelope is 1 on its frame and lower afterwards.
 - **ANL-015-S6**: `audio.sectionChange` round-trips, binds, compiles to opcode 35 and drives a bound parameter in the app; the inspector reads "Section change".
 - **ANL-015-S7**: The new package tests take under 2 s each on the host; every existing test passes.
+
+## Implementation results (2026-11-14)
+
+Acceptance (`SectionEnergyChangeTests.testQuietToLoudFiresOnceAfterDwell`, 44.1 kHz, real
+2,048-point spectrum stream and ANL-014 level; identical on the host and in the Linux shape): 4 s of
+a 1 kHz tone at −40 dBFS then 6 s at −10 dBFS fires exactly one rising change. It starts 752 samples
+after the step (the first frame whose window holds enough of the loud tone) and is confirmed on the
+frame ending 1,128 samples after step + dwell (dwell 88,200 samples; bound: one 2,048-sample
+window), moving from −43.0 dB to −13.0 dB.
+
+| Case | Result |
+|---|---|
+| Quiet → loud (−40 → −10 dBFS) | one `.rising`, confirmed step + dwell + 1,128 samples |
+| Loud → quiet (−10 → −40 dBFS) and loud → silence | one `.falling` each, confirmed after step + dwell (the slow window adds up to 0.41 s) |
+| Silence 3 s, then a −30 dBFS tone | one `.rising` |
+| 1.0 s and 1.5 s loud bursts in a quiet tone | none |
+| Step inside the 2 s settling period | none |
+| Steady level, silence, ±2 dB seeded jitter, 0.5 dB/s drift | none |
+| 4 dB/s fade (−50 → −10 dB over 10 s) | two `.rising`, 265,216 samples (6.0 s) apart (Clarifications, implementation finding) |
+| Rise, then a fall inside the 4 s refractory | `.rising`, then `.falling` starting after the refractory ends |
+| NaN, ±∞ levels | slow level ≥ −70 and finite; envelope in 0…1 |
+| 333- vs 4,096-sample chunks | identical frames, levels, changes and envelopes; a reset detector repeats exactly |
+
+Envelope: exactly 1 on each change frame, 0 before the first, e^(−t/1 s) after (checked 86 frames
+later), exactly 0 about 6.9 s after a change. Through `AnalysisPipeline` (settle 0.5 s, dwell 1 s;
+quiet 1.2 s then loud 1.6 s): one `.sectionChange(.rising, …)` event, `eventSample` after the step,
+`time.sessionSample` ≥ eventSample + dwell and ≤ step + dwell + 2,048; the frame at that time carries
+envelope 1 and its slow level; earlier frames 0; a session restart reads 0.
+
+Test cost (owner rule 7): SectionEnergyChangeTests (7 tests) take 1.99 s on the host (each ≤ 0.73 s)
+and 4.7 s in the Linux-shape Debug build (each ≤ 1.67 s). AnalysisFeatures in the Linux shape: 186
+tests, 1 skipped, 0 failures (92.7 s, dominated by existing suites on a loaded Mac). ParameterGraph:
+200 tests (151 + 49, 1 skipped), 0 failures, 3 new. PerformanceControl `Tempo` filter 48/48 and
+VisualGenerators `BeatRing|LiveBand` 16/16 (the event kind is ignored by their exhaustive switches).
+App: `AudioFeatureBindingAppTests` 11/11 on "ANL15 iPhone 17" (iOS 27.2) in 1.5 s. Type-check budget
+(`-warn-long-function-bodies=300`, `-warn-long-expression-type-checking=150`): no warning in any file
+this feature touched; untouched files show 191-216 ms expressions (machine load; VisualizerView.swift:61
+216 ms, also reported by ANL-013). PosterBoard reports: 25 before, 25 after.
+
+Audit (ANL-015-R12): values reach only `AnalysisFrame`, `AnalysisEvent`, `LiveBandFrameInfo`,
+`AudioFeatureFrame` and the bindings; no projectM call, setting, UserDefaults key, status event,
+network API or Settings row was added. Repo checks, `check_privacy_manifest` and
+`check_network_symbols` pass on the built Debug app.
 
 ## Assumptions
 
