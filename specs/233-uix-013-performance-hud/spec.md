@@ -43,6 +43,16 @@ interaction); each answer is the conservative, local-first option.
 - Q: Is it on the external display, in recordings or in saved frames? → A: Never. It is device UI only; there is no option to include it.
 - Q: How is the tempo source named? → A: Tap for a tapped (manual) tempo, Estimated for the analysis estimate (stable or uncertain; uncertain shows "≈"), None while searching.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Does the HUD stay while UIX-005's performance pad shows (both have cue and tempo readouts)? → A: Yes. The HUD adds the next cue and the audio source, which the pad lacks, and sits in the top band; the pad keeps the bottom bar or side columns. Both stay inside the pad's reserved edges.
+- Q: Does the HUD show in OUT-012's rehearsal preview or any other picture of the output? → A: No. Every output picture (external display, rehearsal preview, recording, saved frame) is the visual alone; the HUD is only in the device's overlay layer.
+- Q: Does VoiceOver announce HUD changes? → A: No. Cue steps, tempo and source changes already announce through their own status events (SHOW-001, SHOW-011, FR-070); the HUD is read on focus only, so nothing is said twice.
+- Q: Does it hide while paused or blacked out? → A: No. It stays while the switch is on: a performer needs the cue state most during a blackout; the paused label and the blackout badge keep their own places.
+- Q: How does it look at the largest text sizes? → A: The four lines stack in one column; each line wraps to at most two lines and then truncates; the panel scrolls never and keeps its 360 pt width cap (narrower screens: the safe-area width).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - See where the show is at a glance (Priority: P1) — MVP
@@ -86,6 +96,8 @@ never covers the middle of the picture.
 - No tempo yet: "— BPM · None".
 - Output blacked out: the HUD stays on the device (it never reached the output anyway).
 - Settings opened as a sheet on iPhone: the HUD is under the sheet like every other overlay.
+- Performance layout on: the HUD keeps the top band; the pad keeps its bottom bar or side columns.
+- Rehearsal preview (OUT-012): shows the visual only, never the HUD.
 
 ## Requirements *(mandatory)*
 
@@ -100,7 +112,7 @@ never covers the middle of the picture.
 - **UIX-013-R7**: The HUD MUST sit at the top of the status stack inside the safe area, the performance pad's reserved edges and the split editor's output pane, at most 360 pt wide, and MUST NOT cover the output's centre.
 - **UIX-013-R8**: The HUD MUST NOT appear on an external display; that display's picture MUST be identical with the HUD on or off.
 - **UIX-013-R9**: Recordings and saved frames MUST NOT contain the HUD; a file made with the HUD on MUST be pixel-identical to one made with it off.
-- **UIX-013-R10**: The HUD MUST use the ACC-008 overlay surface, scale with Dynamic Type (each line at most two lines), and expose each line to VoiceOver with a label and value; it posts no announcements.
+- **UIX-013-R10**: The HUD MUST use the ACC-008 overlay surface, scale with Dynamic Type (each line at most two lines), and expose each line to VoiceOver with a label and value; it posts no announcements (cue, tempo and source changes already announce through their own status events).
 - **UIX-013-R11**: The preference MUST be in FILE-005's included settings, erased with FILE-011's Settings category, and removed by the UI-test reset.
 
 ### Key Entities
