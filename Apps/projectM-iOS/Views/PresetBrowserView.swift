@@ -99,12 +99,8 @@ struct PresetBrowserView: View {
                 results = presets.searchResults(query)   // PRE-003-R9: names, authors and tags, narrowed by chips
             }
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
-            .safeAreaInset(edge: .bottom) {
-                VStack(spacing: 0) {
-                    PresetComparePickBar(model: presets.comparison)   // PRE-009
-                    PresetAuditionBar(presets: presets) { dismiss() }   // PRE-010
-                }
-            }
+            .safeAreaInset(edge: .bottom) { PresetAuditionBar(presets: presets) { dismiss() } }   // PRE-010
+            .safeAreaInset(edge: .bottom) { PresetComparePickBar(model: presets.comparison) }   // PRE-009
             .sheet(item: compareSession) { (session: PresetComparisonModel.Session) in   // PRE-009
                 if let model = presets.comparison { PresetCompareView(model: model, session: session, onChoose: onChoose) }
             }

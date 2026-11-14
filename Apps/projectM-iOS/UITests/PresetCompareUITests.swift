@@ -20,7 +20,7 @@ final class PresetCompareUITests: XCTestCase {
 
     /// Touch and hold the row, then the menu item with this title (menu items are found by title).
     private func menu(_ name: String, _ title: String) {
-        app.buttons["preset:\(name)"].press(forDuration: 0.7)
+        app.pressRow(app.buttons["preset:\(name)"], clearOf: app.otherElements["compareBar"])
         let item = app.buttons[title]
         XCTAssertTrue(item.appears(within: 5), "\(title) in the row's menu")
         item.tap()
@@ -61,5 +61,20 @@ final class PresetCompareUITests: XCTestCase {
         XCTAssertTrue(poll(15) { self.app.staticTexts["currentPreset"].exists && self.app.staticTexts["currentPreset"].label == b },
                       "B plays and the browser closed")
         XCTAssertFalse(app.buttons["compareChooseB"].exists)
+    }
+}
+
+extension XCUIApplication {
+    /// Touches and holds a browser row, first dragging the list up (in the right margin, as `reveal`) while the row
+    /// reaches under a bottom bar, which would otherwise take the press. Since the PRE-004/PRE-005 chip rows the third
+    /// row of a short list sits under the audition or compare bar on an iPhone 17 (found 2026-11-14, PRE-009).
+    func pressRow(_ row: XCUIElement, clearOf bar: XCUIElement) {
+        var drags = 0
+        while bar.exists && row.frame.maxY > bar.frame.minY - 4 && drags < 3 {
+            let start = coordinate(withNormalizedOffset: CGVector(dx: 0.96, dy: 0.62))
+            start.press(forDuration: 0.05, thenDragTo: coordinate(withNormalizedOffset: CGVector(dx: 0.96, dy: 0.42)))
+            drags += 1
+        }
+        row.press(forDuration: 0.7)
     }
 }
