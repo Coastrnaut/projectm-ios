@@ -23,19 +23,23 @@ Format: `- [ ] CAM-003-Txx [P?] [Story] description`. `{device}` = needs a physi
 
 ## Phase 3: User Story 2 — switching never crashes (P1, acceptance second half)
 
-- [ ] CAM-003-T05 [US2] Write `Packages/Compositor/Tests/CompositorTests/CameraLensTests.swift`: switch routine outcomes (switched; creation fails → keptPrevious, session untouched; refused → keptPrevious; old also refused → wide; nothing → noInput); 30 switches on a running stand-in, a third to a failing lens: running, exactly one input, `lens` equals the input's lens after every switch (S2); stand-in select while idle/denied only records; front ignores the lens.
+- [ ] CAM-003-T05 [US2] Write `Packages/Compositor/Tests/CompositorTests/CameraLensTests.swift`: switch routine outcomes (switched; creation fails → keptPrevious, session untouched; refused → keptPrevious; old also refused → wide; nothing → noInput); 30 switches on a running stand-in, a third to a failing lens: running, exactly one input, `lens` equals the input's lens after every switch (S2); stand-in select while idle/denied only records; front ignores the lens; after each switch the held picture is a new one (sequence increases, R8).
 - [ ] CAM-003-T06 [US2] Protocol additions in `CameraFrameProvider.swift` (contract C1); stand-in provider in `StubCameraFrameProvider.swift` (inventory, failing lenses, fake session); `AVCameraFrameProvider.swift` (camera for position and lens, `selectLens` through `CameraInputSwitch` on the session queue, revert on keptPrevious, unavailable on noInput) (R6 to R9). Evidence: T05 passes.
 
 ## Phase 4: User Story 1 — only available lenses (P1, acceptance first half)
 
 - [ ] CAM-003-T07 [US1] App: `settings.camera.lens` in `AppSettings.swift` (+ `allKeys`), `LibrarySettings.swift`, `scripts/run_device_tests.py`; lens inventory and forwarding in `AppCoordinator.swift`; `cameraLens` and stand-in args (`-uitestCameraLenses`, `-uitestCameraLensFails`) in `CameraVisualHost.swift`; the Lens row in `SettingsView.swift` `cameraSection` (R2, R4, R5, R9, R11).
-- [ ] CAM-003-T08 [US1] Write `Apps/projectM-iOS/Tests/CameraLensTests.swift`: row lenses for the three inventories (0, 2, 3; front → 0) (S1); settings round trip, unknown → wide, missing on device → wide with the stored value kept (S3); key in `allKeys` and the backup policy; host forwards the lens to a running stand-in and keeps running when the lens fails.
+- [ ] CAM-003-T08 [US1] Write `Apps/projectM-iOS/Tests/CameraLensTests.swift`: row lenses for the three inventories (0, 2, 3; front → 0) (S1); settings round trip, unknown → wide, missing on device → wide with the stored value kept (S3); key in `allKeys` and the backup policy; host forwards the lens to a running stand-in and keeps running when the lens fails; reading the inventory never starts the stand-in camera (startCount 0, R3).
 - [ ] CAM-003-T09 [US1] Write `Apps/projectM-iOS/UITests/CameraLensUITests.swift` (< 30 s each): wide-only stand-in → no Lens row; three-lens stand-in → row with exactly 3 segments, switching through every lens including a failing telephoto leaves the camera visual "Live".
 
 ## Phase 5: Polish
 
 - [ ] CAM-003-T10 Repo checks (compliance, docs, motion, permission catalog, status events, script tests), privacy manifest and network symbols on the Debug app; type-check budget on changed files; PosterBoard count; delete the simulator and derived data.
 - [ ] CAM-003-T11 {device} D1: Wide ↔ Ultra Wide ten times while running (picture follows, badge stays, no crash); D2 and D3: no Lens row (S4).
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Coverage: R1 T02/T04/T08; R2 T07-T09; R3 T04, T08 (no start from listing); R4, R5 T07/T08; R6, R7 T03/T05; R8 T05 (new picture after a switch); R9 T05; R10 T03/T06; R11 T09. S1 T08/T09; S2 T05; S3 T08; S4 T11. Fixes applied: R8 and R3 assertions added to T05 and T08. No constitution conflicts.
 
 ## Dependencies
 
