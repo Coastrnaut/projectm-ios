@@ -31,9 +31,11 @@
 
 ## CAM-005-D4: Gesture
 
-- **Decision**: SwiftUI `onTapGesture(count: 2, coordinateSpace: .global)` attached before the single
-  tap only while the Camera visual is shown, so the single tap waits for a possible double tap only
-  there. Global coordinates are compared with the visual view's frame in its window.
+- **Decision**: a SwiftUI `SpatialTapGesture(count: 2, coordinateSpace: .global)` attached with
+  `simultaneousGesture` after the single tap, only while the Camera visual is shown: the single tap
+  is never delayed (an exclusive double-tap made it wait about 0.3 s, which raced with the existing
+  UI tests' tap helpers), and a double-tap toggles the controls twice (unchanged). Global coordinates
+  are compared with the visual view's frame in its window.
 - **Alternatives**: single tap (breaks controls), long press (less familiar).
 
 ## CAM-005-D5: Feedback

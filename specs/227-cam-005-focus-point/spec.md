@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (CAM-005-T01-T11, T13, T15 verified on the Mac with the stand-in camera; T12 code done, VoiceOver action unverified; device task T14 `{device}` open)
 
 **Input**: User description: "Implement CAM-005 (Camera focus point) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Set tap-to-focus location on
@@ -38,7 +38,7 @@ stored data. This specification extends CAM-001's to CAM-004's review (section "
 Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
 interaction); each answer is the conservative, local-first option.
 
-- Q: Which gesture sets the focus point, given that a single tap already shows and hides the controls? → A: A double-tap on the Camera visual, only while the camera runs; the single tap keeps toggling the controls (CAM-005-R1, R10). The double-tap gesture exists only while the Camera visual is shown, so other visuals keep an immediate single tap. Rejected: single tap (it would break the controls toggle that every user relies on) and long press (slower, and conflicts with nothing but is less discoverable than the camera-app double-tap habit).
+- Q: Which gesture sets the focus point, given that a single tap already shows and hides the controls? → A: A double-tap on the Camera visual, only while the camera runs; the single tap keeps toggling the controls (CAM-005-R1, R10). The double-tap gesture exists only while the Camera visual is shown and is recognised alongside the single tap, so the single tap is never delayed; the double-tap's two taps toggle the controls twice, leaving them as they were (a first version that made the single tap wait for a possible second tap raced with existing UI tests' tap helpers and slowed the controls). Rejected: single tap (it would break the controls toggle that every user relies on) and long press (slower, and conflicts with nothing but is less discoverable than the camera-app double-tap habit).
 - Q: How is the touch turned into the camera's focus point? → A: One pure mapping: the touch's position inside the picture's on-screen rect → the same platform-free picture geometry the camera layer draws with (crop mode, anchor, zoom, mirror, rotation for the interface orientation) → the camera picture point, which is the sensor's unrotated, unmirrored picture in 0…1, AVFoundation's point-of-interest space (landscape, home button on the right). Touches in Fit's bars or outside the rect are ignored; results are clamped to 0…1 (CAM-005-R2, R3). Rejected: AVCaptureVideoPreviewLayer conversion (the app draws the camera itself; there is no preview layer).
 - Q: Which focus mode does a tap set, and what happens on unsupported cameras? → A: Single-shot automatic focus at the point when supported, else continuous automatic focus at the point; a camera without point-of-interest support is never configured and "This camera can't focus on a point." is shown as a short caption and spoken on the camera announcement lane, and also shown in Settings › Camera (CAM-005-R4, R5). Exposure point is not changed (CAM-004 owns exposure).
 - Q: What feedback does a tap give, including for VoiceOver and Reduce Motion? → A: A 64-point ring at the touch for 1 s; it fades in and out, or appears and disappears at once with Reduce Motion. VoiceOver users get an accessibility action "Focus at centre" on the visualization (focuses at the centre of the visible picture) and the announcement "Focusing at centre" (CAM-005-R6, R7).

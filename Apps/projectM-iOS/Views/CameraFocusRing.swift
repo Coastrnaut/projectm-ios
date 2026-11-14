@@ -2,9 +2,10 @@
 // research CAM-005-D4, D5; contracts/focus-point.md C4).
 //
 // * `CameraFocusGesture` adds a double-tap (window coordinates) to the visualization's tap area only
-//   while the Camera visual is shown, so every other visual keeps an immediate single tap; the single
-//   tap still shows and hides the controls (R10). It also adds the VoiceOver action "Focus at centre"
-//   while the camera can focus on a point (R7).
+//   while the Camera visual is shown. It is recognised alongside the single tap, so the single tap
+//   keeps toggling the controls at once, with no wait for a second tap (R10); a double-tap's two
+//   single taps toggle the controls twice, leaving them as they were. It also adds the VoiceOver
+//   action "Focus at centre" while the camera can focus on a point (R7).
 // * `CameraFocusFeedback` holds the ring (1 s at the touch) and the short explanation for a camera
 //   that cannot focus on a point (2.5 s). `CameraFocusLayer` draws both above the visual, without
 //   taking touches; the ring's fade goes through MotionPolicy (instant with Reduce Motion, R6).
@@ -119,16 +120,20 @@ extension AppCoordinator {
 }
 
 /// The double-tap and the VoiceOver action on the visualization's tap area (CAM-005-R1, R7, R10).
-/// Applied before the single tap, so a double-tap is never also a controls toggle.
+/// Applied after the single tap, simultaneously with it (no delay for the controls toggle).
 struct CameraFocusGesture: ViewModifier {
     let coordinator: AppCoordinator
+
+    private var doubleTap: some Gesture {
+        SpatialTapGesture(count: 2, coordinateSpace: .global).onEnded { (value: SpatialTapGesture.Value) -> Void in
+            coordinator.focusCamera(atWindowPoint: value.location)
+        }
+    }
 
     func body(content: Content) -> some View {
         if coordinator.cameraFocusGestureEnabled {
             content
-                .onTapGesture(count: 2, coordinateSpace: .global) { (location: CGPoint) -> Void in
-                    coordinator.focusCamera(atWindowPoint: location)
-                }
+                .simultaneousGesture(doubleTap)
                 .modifier(CameraFocusAction(coordinator: coordinator))
         } else {
             content

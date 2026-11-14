@@ -68,8 +68,7 @@ struct VisualizerView: View {
             RenderPlaceholderView(shown: coordinator.showsRenderPlaceholder)
             externalDisplayLayer
             pausedLayer
-            tapArea
-            CameraFocusLayer(coordinator: coordinator)   // CAM-005-R5, R6: ring and explanation
+            tapLayers
             statusLayers
             keyCommandLayers
             SceneSwitcherLayer(coordinator: coordinator)   // UIX-002: the quick scene switcher
@@ -124,13 +123,20 @@ struct VisualizerView: View {
         }
     }
 
+    /// The tap target and, above it, CAM-005's focus ring and explanation (no touches; one property
+    /// keeps `layers` quick to type-check).
+    @ViewBuilder private var tapLayers: some View {
+        tapArea
+        CameraFocusLayer(coordinator: coordinator)   // CAM-005-R5, R6
+    }
+
     /// A full-screen tap target above the renderer (the renderer's UIView takes no taps).
     private var tapArea: some View {
         Color.clear
             .contentShape(Rectangle())
             .ignoresSafeArea()
-            .modifier(CameraFocusGesture(coordinator: coordinator))   // CAM-005-R1, R7: double-tap, before the single tap
             .onTapGesture { () -> Void in coordinator.toggleControls() }
+            .modifier(CameraFocusGesture(coordinator: coordinator))   // CAM-005-R1, R7: double-tap alongside the single tap
             .accessibilityIdentifier("visualizerTapArea")
             .accessibilityLabel("Visualization")
             .accessibilityHint("Shows or hides the controls")
