@@ -57,6 +57,7 @@ public struct LibraryEraseInventory: Sendable, Equatable {
                 total += tags.tags.count   // PRE-003: tagged presets
             }
             if case let .strings(ids)? = settings[LibrarySettingsPolicy.favoritesKey] { total += ids.count }
+            if case let .strings(ids)? = settings[LibrarySettingsPolicy.recentPresetsKey] { total += ids.count }   // PRE-006-R7
             return total
         case .media:
             let photos = ContentAddressedMediaFolder(directory: folders.url(.photos), extensions: LibraryErasePolicy.photoExtensions)

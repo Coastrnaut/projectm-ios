@@ -349,6 +349,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             defaults.removeObject(forKey: Self.noticeKey)
             defaults.removeObject(forKey: FavoritesStore.favoritesKey)
             defaults.removeObject(forKey: FavoritesStore.lastPresetKey)
+            RecentPresetsStore.allKeys.forEach(defaults.removeObject(forKey:))   // PRE-006: no history, switch off (the default)
             AppSettings.allKeys.forEach(defaults.removeObject(forKey:))
             defaults.removeObject(forKey: InputTrimSetting.decibelsKey)   // AUD-008: 0 dB
             defaults.removeObject(forKey: ChannelSelectionSetting.modeKey)   // AUD-009: Mix
@@ -504,6 +505,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         presets = PresetCoordinator(store: FavoritesStore(defaults: defaults), settings: settings, loader: presetLoader,
                                     collections: PresetCollectionStore(directory: PresetCollectionStore.defaultDirectory()),
                                     tags: PresetTagStore(directory: PresetTagStore.defaultDirectory()))   // PRE-003
+        presets.recent = RecentPresetsCoordinator(store: RecentPresetsStore(defaults: defaults))   // PRE-006
         userPresets = UserPresetsCoordinator.makeDefault()
         userPresets.connect(presets: presets, loader: presetLoader)   // PRE-012
         #if DEBUG || PROJECTM_AUTOMATION
@@ -905,6 +907,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                 presets.announceFavorite = { [weak self] (text: String) in self?.announcer.announce(text, kind: .favorite) }   // ACC-004
                 userPresets.announceLibrary = { [weak self] (text: String) in self?.announcer.announce(text, kind: .library) }   // FILE-003-R13
                 presets.announceLibrary = { [weak self] (text: String) in self?.announcer.announce(text, kind: .library) }   // PRE-003-R12
+                presets.recent?.announce = { [weak self] (text: String) in self?.announcer.announce(text, kind: .library) }   // PRE-006-R6
                 presets.announceSearch = { [weak self] (text: String) in self?.announcer.announce(text, kind: .search) }
                 await presets.setUnlocked(entitlements.isUnlocked)
                 libraryReady = true
