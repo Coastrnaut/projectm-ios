@@ -7,12 +7,12 @@ Tests are requested by the spec (UIX-007-S1-S3). Budgets (owner rule 7): unit te
 
 ## Phase 1: Setup
 
-- [ ] UIX-007-T01 Create an iPad simulator "UIX7 iPad" (iOS 27.2) and run `xcodegen generate` in the worktree (no file change)
+- [X] UIX-007-T01 Create an iPad simulator "UIX7 iPad" (iOS 27.2) and run `xcodegen generate` in the worktree (no file change) — Verified 2026-11-14: `simctl create` AF46A8D8, `xcodegen generate` OK
 
 ## Phase 2: Foundational (geometry)
 
-- [ ] UIX-007-T02 [P] Implement `SplitEditorLayout` in `Packages/ShowControl/Sources/ShowControl/SplitEditorLayout.swift` per data-model.md: `fits` (≥ 664 pt), `editorWidth` clamped to "320–min(560, container − 24 − 320)", non-finite → 400, `outputPane`, `scale`, `outputRect` (exact output aspect, centred), `snapped` (snaps 320/400/480 within 24 pt), `nextSnap`, `previousSnap`, `snapName`
-- [ ] UIX-007-T03 [P] Write `Packages/ShowControl/Tests/ShowControlTests/SplitEditorLayoutTests.swift`: sweep editor widths (min, each snap, max, odd values 333.3/517.7, out-of-range, NaN) × window sizes (13" landscape 1376×1032, 13" portrait 1032×1376, 11" portrait 834×1210, a 700-wide window, an odd 1024.5×700.25) × output aspects (window, 16:9, 4:3); assert aspect within 1e-6, rect inside pane, rect touches the pane on one axis, `fits` false below 664; snapping and step tests (UIX-007-S1)
+- [X] UIX-007-T02 [P] Implement `SplitEditorLayout` in `Packages/ShowControl/Sources/ShowControl/SplitEditorLayout.swift` per data-model.md: `fits` (≥ 664 pt), `editorWidth` clamped to "320–min(560, container − 24 − 320)", non-finite → 400, `outputPane`, `scale`, `outputRect` (exact output aspect, centred), `snapped` (snaps 320/400/480 within 24 pt), `nextSnap`, `previousSnap`, `snapName` — Verified 2026-11-14: `swift test --package-path Packages/ShowControl` 94 tests pass (SplitEditorLayoutTests 5, sweep of 216 layouts)
+- [X] UIX-007-T03 [P] Write `Packages/ShowControl/Tests/ShowControlTests/SplitEditorLayoutTests.swift`: sweep editor widths (min, each snap, max, odd values 333.3/517.7, out-of-range, NaN) × window sizes (13" landscape 1376×1032, 13" portrait 1032×1376, 11" portrait 834×1210, a 700-wide window, an odd 1024.5×700.25) × output aspects (window, 16:9, 4:3); assert aspect within 1e-6, rect inside pane, rect touches the pane on one axis, `fits` false below 664; snapping and step tests (UIX-007-S1) — Verified 2026-11-14: `swift test --package-path Packages/ShowControl` 94 tests pass (SplitEditorLayoutTests 5, sweep of 216 layouts)
 
 ## Phase 3: User Story 1 — Edit beside the live output (P1)
 
