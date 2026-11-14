@@ -44,6 +44,9 @@
 // * Camera crop (CAM-007-R1, R6): `settings.camera.cropMode` (`fill`/`fit`; else fill),
 //   `settings.camera.cropAnchor` (`center`/`top`/`bottom`; else center) and `settings.camera.zoom`
 //   (1, 1.5, 2 or 3; else 1), one set for both cameras. Same rules as position and mirror.
+// * Camera lens (CAM-003-R4, R5): `settings.camera.lens` (`ultraWide`/`wide`/`telephoto`; else wide),
+//   the back camera's last chosen lens. A lens this device lacks is used as wide (the coordinator
+//   resolves it against the device's lenses); the stored value is kept. Same rules as position.
 // * Photo (MED-001-R8): `visual` may be `photo`, stored like the spectra (no sensor is involved).
 //   The chosen photo's identifier is `settings.photo.id` (PhotoStore.idKey; absent = no photo); the
 //   copy itself lives in Application Support/Photos.
@@ -105,6 +108,7 @@ final class AppSettings {
     static let cameraCropModeKey = "settings.camera.cropMode"       // CAM-007
     static let cameraCropAnchorKey = "settings.camera.cropAnchor"
     static let cameraZoomKey = "settings.camera.zoom"
+    static let cameraLensKey = "settings.camera.lens"               // CAM-003
     /// MED-001: the stored photo's identifier (written by PhotoStore).
     static let photoIDKey = PhotoStore.idKey
     /// MED-006: the image slideshow (written by SlideshowStore).
@@ -125,7 +129,7 @@ final class AppSettings {
                           linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey, slideshowKey, videoIDKey, videoLoopKey, videoSpeedKey,
                           textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, lissajousModeKey, lissajousPersistenceKey, radialWaveformRingKey, radialWaveformAmplitudeKey, beatRingsLifeKey, mandalaSymmetryKey, mandalaMirrorKey, mandalaPetalKey, spectrumAttackKey, spectrumReleaseKey,
                           cameraPositionKey, cameraMirrorFrontKey, cameraMirrorBackKey,
-                          cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey, midiEnabledKey,
+                          cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey, cameraLensKey, midiEnabledKey,
                           colorBlindSafePaletteKey, logoIDKey, logoPlacementKey] + SensorySafetySetting.allKeys   // ACC-012-R8, MED-010
     /// VIS-002-R4: the spacings offered for the linear spectrum.
     static let linearSpectrumSpacingChoices: [(title: String, value: Double)] = [("None", 0), ("Narrow", 0.2), ("Wide", 0.5)]
@@ -169,6 +173,11 @@ final class AppSettings {
     /// CAM-002-R1: which camera the Camera visual uses (back by default). Never starts the camera.
     var cameraPosition: CameraPosition {
         didSet { defaults.set(cameraPosition.rawValue, forKey: Self.cameraPositionKey) }
+    }
+
+    /// CAM-003-R4: the back camera's chosen lens (wide by default). Never starts the camera.
+    var cameraLens: CameraLens {
+        didSet { defaults.set(cameraLens.rawValue, forKey: Self.cameraLensKey) }
     }
 
     /// CAM-002-R3: the front camera's mirror (on by default).
@@ -411,6 +420,7 @@ final class AppSettings {
         let storedVisual = defaults.string(forKey: Self.visualKey).flatMap(VisualChoice.init(rawValue:)) ?? .projectM
         visual = storedVisual.usesCamera ? .projectM : storedVisual   // CAM-001-R11
         cameraPosition = defaults.string(forKey: Self.cameraPositionKey).flatMap(CameraPosition.init(rawValue:)) ?? .back
+        cameraLens = CameraLens(stored: defaults.string(forKey: Self.cameraLensKey))   // CAM-003
         cameraMirrorFront = defaults.object(forKey: Self.cameraMirrorFrontKey) as? Bool ?? CameraPosition.front.defaultMirrored
         cameraMirrorBack = defaults.object(forKey: Self.cameraMirrorBackKey) as? Bool ?? CameraPosition.back.defaultMirrored
         cameraCropMode = defaults.string(forKey: Self.cameraCropModeKey).flatMap(CameraCropMode.init(rawValue:)) ?? .fill   // CAM-007

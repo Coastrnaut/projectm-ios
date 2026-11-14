@@ -420,6 +420,7 @@ struct VisualizerView: View {
                          recordingTimedStop: coordinator.recordingTimedStop,   // REC-008
                          explainers: coordinator.explainers,   // UIX-015
                          cameraStatus: { () -> PermissionState? in coordinator.cameraPermissionStatus },
+                         cameraLens: coordinator.cameraLensChoice,   // CAM-003
                          recentPresets: coordinator.presets.recent,   // PRE-006
                          announcer: coordinator.announcer)   // ACC-005-R7
                 .environment(\.parameterShelf, coordinator.parameterShelf)   // UIX-004-R1: Pin to Shelf in Inspect

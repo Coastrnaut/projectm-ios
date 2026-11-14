@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (CAM-003-T01-T10 verified on the Mac with the stand-in camera; device task T11 `{device}` open)
 
 **Input**: User description: "Implement CAM-003 (Camera lens selection) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Offer available wide, ultrawide
@@ -47,6 +47,7 @@ interaction); each answer is the conservative, local-first option.
 - Q: Where is the choice offered? → A: In Settings › Camera only, while Back is selected and the device has at least two lenses (CAM-003-R2). A one-lens device and the front camera show no row at all, so nothing disabled or unavailable is ever shown. Rejected: a lens button in the visualizer's controls (more on-screen controls over the picture; can come with CMP-015).
 - Q: What does the user see when a lens cannot be opened? → A: The previous lens keeps running and the Lens choice returns to it; no extra notice, because the camera keeps working (CAM-003-R6). Only when no lens at all can be added does CAM-002's existing "unavailable" notice appear (R7). Rejected: a new notice for a failed switch (a new status event for a rare, self-healing case).
 - Q: How is the choice stored, and what if the device lacks it? → A: As the raw identifier ("wide", "ultraWide", "telephoto") under one new settings key, included in the settings backup and the Settings erase; any unknown or missing value, and any lens this device lacks, is used as Wide, while the stored value is kept until the user picks another lens (CAM-003-R4, R5). Rejected: overwriting the stored lens with Wide on a device that lacks it (a restored backup would lose the choice for the other device).
+- Q: When a chosen lens cannot be opened, does the stored choice change? → A: Yes, after the user's own choice: once the switch ends, the stored lens follows the lens actually running, so the row, the next start and a return from Front all agree (CAM-003-R6). A lens that is merely missing on this device (restored backup) keeps its stored value (R5). Found while running CAM-003-T09: without it, returning from Front retried the failing lens and fell back to Wide.
 - Q: Does listing lenses need camera permission, and is it covert use? → A: Listing reads the system's list of built-in cameras; it opens no camera, captures nothing, shows no indicator and asks for nothing, so it is allowed before consent (CAM-003-R3). The camera itself still starts only on the user's choice of Camera with permission granted (CAM-001-R7), with iOS's indicator and the app's badge.
 
 ## User Scenarios & Testing *(mandatory)*

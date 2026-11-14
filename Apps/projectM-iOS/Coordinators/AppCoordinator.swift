@@ -217,6 +217,10 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     private(set) var cameraVisual: CameraVisualHost?
     /// The camera feed's state while the Camera visual exists (`idle` otherwise; CAM-001-R5 to R8).
     private(set) var cameraState: CameraFeedState = .idle
+    /// CAM-003: the device's back lenses (the stand-in's in DEBUG UI tests); listing starts no camera.
+    @ObservationIgnored let cameraLensInventory: any CameraLensInventory = CameraVisualHost.makeLensInventory()
+    /// CAM-003-R6: a lens the user chose waits for the switch's end (CameraLensRow.swift).
+    @ObservationIgnored var cameraLensChoicePending = false
     /// CAM-013: why the camera is interrupted or failed (nil otherwise), and whether a Retry waits.
     private(set) var cameraStopReason: CameraStopReason?
     private(set) var cameraRetryPending = false
@@ -1152,7 +1156,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             #endif
             let host = try CameraVisualHost.make(device: device, reader: trimmedAnalysisTap, barCount: circularSpectrumBarCount,
                                                  position: settings.cameraPosition, mirrored: settings.cameraMirrored,   // CAM-002
-                                                 crop: settings.cameraCrop)   // CAM-007
+                                                 crop: settings.cameraCrop,   // CAM-007
+                                                 lens: cameraLensInventory.resolve(settings.cameraLens), lenses: cameraLensInventory)   // CAM-003
             host.reduceFlashing = settings.effectiveReduceFlashing   // ACC-012-R7
             host.compositor.flashLimits = settings.safetyClamp.flashLimitsOverride   // ACC-012-R5
             host.colorGrade = colorGrade.effectiveGrade(clamp: settings.safetyClamp)   // FX-003, ACC-012 gain cap
@@ -1368,6 +1373,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         let wasShown: Bool = CameraIndicator(state: cameraState).isShown
         cameraState = state
         cameraStopReason = cameraVisual?.stopReason   // CAM-013-R3
+        reconcileCameraLensChoice()   // CAM-003-R6
         let reason: CameraStopReason? = cameraStopReason
         // CAM-001-R14, CAM-002-R10, CAM-013-R12 (ACC-011 X17): the notice with its reason, through the router.
         if state.notice(position: settings.cameraPosition, reason: reason) != nil {
@@ -1390,6 +1396,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         host.cameraPosition = settings.cameraPosition
         host.mirrored = settings.cameraMirrored
         host.crop = settings.cameraCrop   // CAM-007-R5: from the next frame, the camera untouched
+        host.cameraLens = cameraLensInventory.resolve(settings.cameraLens)   // CAM-003-R5, R6
     }
 
     /// Runs whichever visual is shown and keeps the others paused.

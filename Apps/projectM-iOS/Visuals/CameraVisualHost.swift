@@ -23,6 +23,9 @@
 //   layer (`mirrored`). Neither touches the frame loop, the analysis or the audio source; the mirror
 //   lives only in the camera layer, so the screen, Save Frame, Record and the external display (one
 //   composite) agree.
+// * CAM-003: `cameraLens` is forwarded to the provider (`selectLens`): a switch on the running session,
+//   the previous lens kept when the new one cannot be opened. The provider and the Settings row share
+//   one lens inventory (`makeLensInventory`; the stand-in's for `-uitestCameraLenses`).
 // * CAM-007: `crop` is forwarded to the camera layer the same way; the layer recomputes the fit every
 //   frame from the drawable's size and the picture's rotation, so a device rotation keeps it.
 // * CAM-013 (ADR-0017 decisions 11-14): an interruption or a runtime error already clears the picture
@@ -138,6 +141,16 @@ final class CameraVisualHost: PresentationBoundResource, CompositorVisualHost {
         }
     }
 
+    /// CAM-003-R6: the back lens in use; a change while running switches lenses without a restart. Reads
+    /// back the lens actually running (the previous one when the new one could not be opened).
+    var cameraLens: CameraLens {
+        get { camera.provider.lens }
+        set {
+            guard newValue != camera.provider.lens else { return }
+            camera.provider.selectLens(newValue)
+        }
+    }
+
     /// CAM-002-R3, R5: flip the camera picture left to right, from the next frame.
     var mirrored: Bool {
         get { camera.mirrored }
@@ -163,7 +176,23 @@ final class CameraVisualHost: PresentationBoundResource, CompositorVisualHost {
     /// The camera provider: the stand-in for `-uitestCamera <scenario>` (DEBUG; CAM-001-R13), the
     /// real camera otherwise. CAM-002: `-uitestCameraPattern marker` gives the stand-in a red marker
     /// in its top-left quarter, and `-uitestNoFrontCamera` removes its front camera.
-    static func makeProvider(device: MTLDevice) -> any CameraFrameProvider {
+    /// CAM-003: the back lenses: the stand-in's for `-uitestCamera` (DEBUG; `-uitestCameraLenses
+    /// wide,ultraWide,telephoto`, default wide only), the device's otherwise. Listing starts no camera.
+    static func makeLensInventory(arguments: [String] = ProcessInfo.processInfo.arguments) -> any CameraLensInventory {
+        #if DEBUG
+        if arguments.contains("-uitestCamera") {
+            let list: String = arguments.firstIndex(of: "-uitestCameraLenses").flatMap { (i: Int) -> String? in
+                i + 1 < arguments.count ? arguments[i + 1] : nil
+            } ?? "wide"
+            return FixedCameraLensInventory(list: list)
+        }
+        #endif
+        #if os(iOS)
+        return AVCameraLensInventory()
+        #endif
+    }
+
+    static func makeProvider(device: MTLDevice, lenses: any CameraLensInventory = makeLensInventory()) -> any CameraFrameProvider {
         #if DEBUG
         let arguments = ProcessInfo.processInfo.arguments
         if let i = arguments.firstIndex(of: "-uitestCamera"), i + 1 < arguments.count,
@@ -173,12 +202,15 @@ final class CameraVisualHost: PresentationBoundResource, CompositorVisualHost {
             let pattern: StubCameraFrameProvider.Pattern = arguments.contains("-uitestCameraPattern")
                 ? .marker(background: orange, marker: red) : .solid(orange)
             let positions: Set<CameraPosition> = arguments.contains("-uitestNoFrontCamera") ? [.back] : [.back, .front]
+            let failing: Set<CameraLens> = Set(arguments.firstIndex(of: "-uitestCameraLensFails").map { (i: Int) -> [CameraLens] in
+                i + 1 < arguments.count ? FixedCameraLensInventory(list: arguments[i + 1]).backLenses : []
+            } ?? [])   // CAM-003: lenses whose input cannot be opened
             return StubCameraFrameProvider(device: device, scenario: scenario, pattern: pattern, width: 64, height: 48,
-                                           availablePositions: positions)
+                                           availablePositions: positions, lensInventory: lenses, failingLenses: failing)
         }
         #endif
         #if os(iOS)
-        return AVCameraFrameProvider(device: device)
+        return AVCameraFrameProvider(device: device, lensInventory: lenses)
         #endif
     }
 
@@ -186,14 +218,18 @@ final class CameraVisualHost: PresentationBoundResource, CompositorVisualHost {
     /// cannot be built; the caller falls back to projectM with a notice (spec Edge Cases).
     static func make(device: MTLDevice?, reader: (any NormalizedPCMReader)?, barCount: SpectrumBarCount,
                      position: CameraPosition = .back, mirrored: Bool = false, crop: CameraCrop = .fill,
+                     lens: CameraLens = .wide, lenses: (any CameraLensInventory)? = nil,
                      provider: ((MTLDevice) -> any CameraFrameProvider)? = nil) throws -> CameraVisualHost {
         guard let device, let queue = device.makeCommandQueue() else { throw VisualGeneratorError.noDevice }
         let transparent = LinearColor(red: 0, green: 0, blue: 0, alpha: 0)
         let generator = try CircularSpectrumGenerator(device: device, pixelFormat: LayerPictureDescriptor.metalPixelFormat,
                                                       configuration: CircularSpectrumConfiguration(barCount: barCount, background: transparent))
         let spectrum = try SpectrumLayerSource(device: device, generator: generator, name: "spectrum")
-        let camera = CameraLayerSource(provider: (provider ?? makeProvider)(device))
+        let inventory: any CameraLensInventory = lenses ?? makeLensInventory()
+        let made: any CameraFrameProvider = provider?(device) ?? makeProvider(device: device, lenses: inventory)
+        let camera = CameraLayerSource(provider: made)
         camera.provider.select(position)   // CAM-002: before any start, so only the chosen camera ever runs
+        camera.provider.selectLens(lens)   // CAM-003: likewise for the back lens
         camera.mirrored = mirrored
         camera.crop = crop   // CAM-007
         // CMP-002: the stack, bottom first: the camera (one per stack), then the circular spectrum.
