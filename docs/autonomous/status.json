@@ -6,8 +6,8 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 7,
-   "implementing": 2,
+   "audited": 6,
+   "implementing": 3,
    "integrated": 77,
    "skipped_existing": 1
   },
@@ -24,8 +24,8 @@
   }
  },
  "by_state": {
-  "audited": 230,
-  "implementing": 2,
+  "audited": 229,
+  "implementing": 3,
   "integrated": 93,
   "skipped_existing": 1
  },
@@ -2516,13 +2516,13 @@
   },
   "QA-004": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/qa-004",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "QA-005": {
    "attempts": 0,
@@ -4027,5 +4027,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T00:07:05Z"
+ "updated": "2026-11-14T00:07:21Z"
 }
