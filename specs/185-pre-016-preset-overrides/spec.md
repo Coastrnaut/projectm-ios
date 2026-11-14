@@ -54,6 +54,17 @@ the conservative, local-first choice.
   user preset). A locked preset offers the purchase instead (FR-106). Applied in R12.
 - Q: Thumbnails and the warm-up? → A: They keep using the original text (a thumbnail shows the
   preset as shipped); only the visible load applies overrides. Applied in R7.
+- Q: When does a slider drag store and reload? → A: The shown value follows the finger; the
+  override is stored, announced and (for the preset on screen) reloaded once, when the drag ends,
+  so one gesture is one change and one engine load. VoiceOver increments are each a finished
+  change. (Rejected: reloading on every drag step, which recompiles shaders many times a second.)
+  Applied in R14.
+- Q: What happens to overrides of a pack preset when the purchase is revoked? → A: They are kept
+  (never deleted); the preset cannot play while locked, so nothing applies until the unlock
+  returns. The sheet is not offered for a locked preset. Applied in R12, Edge Cases.
+- Q: How precise is a stored value? → A: Rounded to 4 decimals on storing (after clamping) and
+  written to the text with the same 4 decimals, POSIX locale, trailing zeros trimmed, so the shown,
+  stored and loaded values agree exactly. Applied in R3, R5.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -114,6 +125,7 @@ them.
   file's line ending.
 - An override equal to the original value: still stored (the user chose it) until reset.
 - A user preset is removed: its overrides are removed with it (as its tags are, PRE-003-R7).
+- Purchase revoked: overrides of pack presets are kept; nothing applies while the preset is locked.
 - Saved overrides from a newer app version: shown as unavailable, never interpreted or overwritten.
 - Unreadable overrides file: set aside (one copy kept), never deleted.
 - More than 20,000 presets with overrides, or a file over 1 MiB: the change is refused.
@@ -127,8 +139,8 @@ them.
 - **PRE-016-R2**: Only these parameters MUST be accepted, with these ranges: zoom 0.8-1.2, rot
   -0.2-0.2, warp 0-2, fDecay 0.9-1.0, wave_r/wave_g/wave_b 0-1, fGammaAdj 1-3. Names match without
   regard to case and are stored in this spelling.
-- **PRE-016-R3**: A value outside its range MUST be clamped to it; a non-finite value or an unknown
-  name MUST be rejected with nothing stored.
+- **PRE-016-R3**: A value outside its range MUST be clamped to it, then rounded to 4 decimals; a
+  non-finite value or an unknown name MUST be rejected with nothing stored.
 - **PRE-016-R4**: Every change MUST be saved before it is shown; a refused change or failed save MUST
   leave memory and disk unchanged.
 - **PRE-016-R5**: When a preset with overrides loads for display, the engine MUST receive the
@@ -153,8 +165,9 @@ them.
   each showing the current value and the original value, a per-row reset, and "Reset to Original".
 - **PRE-016-R13**: The sheet MUST say that adjustments set starting values and that the preset's own
   code may still change them.
-- **PRE-016-R14**: Each change and reset MUST be announced on the announcer's library lane; a change
-  to the preset on screen MUST reload it so it looks adjusted.
+- **PRE-016-R14**: Each finished change (a drag's end, one VoiceOver increment) and each reset MUST
+  be stored and announced on the announcer's library lane; a finished change to the preset on screen
+  MUST reload it once so it looks adjusted.
 - **PRE-016-R15**: "Reset to Original" MUST remove every override of the preset; its next load MUST
   hand the engine its original bytes exactly.
 - **PRE-016-R16**: Removing a user preset MUST remove its overrides.
@@ -186,6 +199,6 @@ them.
 ## Assumptions
 
 - Overrides affect what the engine starts from; per-frame code is not analysed.
-- Values are written with up to 4 decimals in the POSIX locale (the engine parses them with `stof`).
+- Values are stored and written with up to 4 decimals in the POSIX locale (the engine parses them with `stof`).
 - Thumbnails and FILE-003 snapshots are unaffected.
 - Simulator results are not device evidence; the feature changes no capture or performance path.
