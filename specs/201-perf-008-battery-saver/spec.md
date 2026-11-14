@@ -89,6 +89,9 @@ saver budgets apply while Low Power Mode is on and Standard applies otherwise.
 - **PERF-008-R7**: Each profile change is marked with a signpost event (no user content) so a device trace can
   line up frame time and power with the change.
 - **PERF-008-R8**: The recording render limit (REC-006) reflects the profile's cap with the reason "Battery saver".
+- **PERF-008-R9**: While the performance overlay is shown and the active budget is not Standard's, the overlay shows
+  one line `power <profile> <fps> fps <scale>x`.
+- **PERF-008-R10**: The profile is a device preference: never stored in scenes, shows or presets.
 
 ### Key Entities
 
@@ -119,3 +122,13 @@ local-first option.
 - Q: Which profiles? → A: Standard (default, unchanged behaviour), Follow Low Power Mode, Battery saver. No "performance" profile above Standard: the roadmap asks for lower power only.
 - Q: What does Battery saver cap? → A: 30 fps (the FR-049 floor), render scale 0.75 (the critical-state value, already proven on D1-D3), and background warm-ups (SC-104 preset warm-up skipped; PERF-005 media prewarm keeps only the next cue, its Low Power rule). Audio analysis is not touched.
 - Q: How does it combine with the thermal governor? → A: Per-value minimum; the governor can lower further but never above the profile cap; caps do not compound.
+
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Does Battery saver also force the native spectrum's effect quality (PERF-003 ladder) down? → A: No. The ladder keeps reacting to thermal state and the frame budget; the lower frame-rate and scale caps already cut GPU work, and forcing a level would change the look more than asked.
+- Q: Is the profile saved in scenes or show cues? → A: No. It is a device preference (like the performance overlay), never part of a scene, a show or a preset; loading a scene never changes it.
+- Q: Does the profile apply on the external display and to recordings? → A: Yes, through the same frame loop (one visual, one loop, OUT-001). A recording's render limit (REC-006) shows the profile's cap with the reason "Battery saver limits the visual to 30 fps." (PERF-008-R8).
+- Q: Is the active profile visible while performing? → A: Yes, in the performance overlay only (FR-048, shown when the overlay is on): one line `power <profile> <fps> fps <scale>x` when the profile is not Standard. No new diagnostics-export field.
+- Q: What happens to background warm-up work that is already queued when Battery saver is picked? → A: The SC-104 preset warm-up for future switches is skipped; media prewarm drops to the next cue at once (PERF-005's Low Power rule, which releases nothing that is live). Nothing in flight is interrupted mid-GPU-step.
