@@ -36,11 +36,11 @@
 
 ## Phase 5: User Story 3 - No surprise prompts (P1)
 
-- [ ] REC-011-T14 [US3] Acceptance test: launching the coordinator graph (`AppCoordinator` init), a frame offer, a recording offer, Keep and a Recordings refresh make zero `status()`/`request()` calls on the injected access, in Apps/projectM-iOS/Tests/PhotosSaveAcceptanceTests.swift
+- [ ] REC-011-T14 [US3] Acceptance test: creating `PhotosSaveCoordinator` with counting fakes, then a recording offered and kept (REC-010 fixture through `VideoRecordingCoordinator`), and a Recordings refresh make zero `status()`/`request()` calls; plus a source check that `PHPhotoLibrary` appears only in PhotosSaveCoordinator.swift, in Apps/projectM-iOS/Tests/PhotosSaveAcceptanceTests.swift (REC-011-R2, S3)
 
 ## Phase 6: Polish
 
-- [ ] REC-011-T15 Repo checks (compliance, validate_docs, motion policy, permission catalog, status events, script tests), `check_privacy_manifest.py` and `check_network_symbols` on the Debug app; type-check budget build
+- [ ] REC-011-T15 Repo checks (compliance, validate_docs, motion policy, permission catalog, status events, script tests), `check_privacy_manifest.py` and `check_network_symbols` on the Debug app; type-check budget build; review that no album, conversion, explainer or saved-item record exists (REC-011-R14)
 - [ ] REC-011-T16 {device} D1: record, Save to Photos, Allow → video in Photos, recording still offered; save a frame; turn Photos off for projectM in Settings → denied notice, file still offered (quickstart step 5)
 
 ## Dependencies
