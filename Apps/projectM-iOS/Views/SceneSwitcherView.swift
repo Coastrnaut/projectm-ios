@@ -90,6 +90,10 @@ struct SceneSwitcherView: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 12)
             }
+            // QA-009 (2026-11-14): modal for VoiceOver. The visualizer's controls dimmed behind the backdrop stayed
+            // reachable (and the audit sampled their dimmed text: "Contrast failed" on the visual's name).
+            .accessibilityElement(children: .contain)
+            .accessibilityAddTraits(.isModal)
         }
         .sheet(item: $tagging) { (target: SceneTagsTarget) in
             SceneTagsView(show: coordinator.show, sceneID: target.sceneID,
@@ -158,11 +162,15 @@ struct SceneSwitcherView: View {
     /// one line: Return chooses (queryBinding). Standard sizes keep the one-line field.
     @ViewBuilder private var fieldBase: some View {
         if typeSize.isAccessibilitySize {
-            TextField("Search scenes", text: queryBinding, axis: .vertical).lineLimit(1...3)
+            TextField(text: queryBinding, prompt: prompt, axis: .vertical) { Text("Search scenes") }.lineLimit(1...3)
         } else {
-            TextField("Search scenes", text: queryBinding)
+            TextField(text: queryBinding, prompt: prompt) { Text("Search scenes") }
         }
     }
+
+    /// QA-009 (2026-11-14): the placeholder in the secondary style. The system placeholder grey on the card's dark
+    /// surface failed the contrast audit (about 2:1); the secondary label colour reads about 6:1 there.
+    private var prompt: Text { Text("Search scenes").foregroundStyle(.secondary) }
 
     private var field: some View {
         fieldBase

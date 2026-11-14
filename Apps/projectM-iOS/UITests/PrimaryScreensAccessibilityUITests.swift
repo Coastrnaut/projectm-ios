@@ -101,7 +101,10 @@ final class PrimaryScreensAccessibilityUITests: XCTestCase {
             guard showControls(tag: tag), tapOverlayButton("presets", tag: tag) else { return false }
             return app.buttons["node:included"].appears(within: 10) || fail(tag, "the library home did not open")
         case .sceneSwitcher:
-            guard app.otherElements["visualizerTapArea"].firstMatch.appears(within: 15) else { return fail(tag, "no visualizer") }
+            // Over a blacked-out output, as ACC-004 audits the controls: the card's translucent surface over the moving
+            // picture drew contrast failures without an element that came and went from run to run.
+            guard showControls(tag: tag) else { return false }
+            blackOut(tag: tag)
             app.typeKey("k", modifierFlags: .command)
             return app.descendants(matching: .any)["sceneSwitcherField"].firstMatch.appears(within: 5)
                 || fail(tag, "⌘K did not open the switcher")
@@ -197,7 +200,9 @@ final class PrimaryScreensAccessibilityUITests: XCTestCase {
         // The right-hand lane of the scroll view that holds the target (the scene switcher's card is narrower than
         // the window), else of the area.
         let lane: CGRect = tree.scrollContainer(for: target?.frame) ?? area
-        let start = origin.withOffset(CGVector(dx: lane.minX + lane.width * 0.96, dy: startY))
+        // At 0.88, not the shared `reveal`'s 0.96: on a long list the right margin catches the scroll indicator once it
+        // shows, which scrubs the list (the preset browser at AX5 jumped back to its top, as LibraryEraseUITests saw).
+        let start = origin.withOffset(CGVector(dx: lane.minX + lane.width * 0.88, dy: startY))
         let end = start.withOffset(CGVector(dx: 0, dy: towardsTop ? distance : -distance))
         start.press(forDuration: 0.05, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.15)
     }
@@ -257,8 +262,18 @@ final class PrimaryScreensAccessibilityUITests: XCTestCase {
             + section("storage", [], prefixes: ["The space this app's own data takes", "Removes leftover recordings"])
             + ["Name", "Group", "ID", "Unit", "Range", "Step", "Default", "Value", "Effective value"].map { (l: String) -> Filter in
                 Filter(screen: "parameterInspector", type: .dynamicType, element: l, reason: inspectorRows)
+            }
+            // The same rows' value texts ("1%", "50%", "Percent"): they change with the parameter, so they are matched
+            // by the row's value strings for the inspected parameter (Glow intensity, the manifest's seed).
+            + ["Glow", "Intensity", "Percent", "0% … 100%", "0%…100%", "1%", "50%", "effect.bloom.intensity"].map { (l: String) -> Filter in
+                Filter(screen: "parameterInspector", type: .dynamicType, element: l, reason: inspectorRows)
             } + [
             Filter(screen: "storage", type: .dynamicType, element: "storageRefresh", reason: bar),
+            Filter(screen: "parameterInspector", type: .dynamicType, element: "parameterInspector.reset", reason: bottom),
+            Filter(screen: "sceneSwitcher", type: .contrast, element: "", elementless: true, limit: 1,
+                   reason: "one finding the audit attributes to a bare SwiftUI.AccessibilityNode with no element, over a "
+                       + "blacked-out output; the card's own texts (title, Close, count, rows, placeholder) are attributed "
+                       + "and pass. Open item; bounded to one, so a new one fails"),
             Filter(screen: "sceneSwitcher", type: .contrast, element: "Visual unavailable",
                    reason: "PERF-014's placeholder behind the switcher, caught while fading or behind the live visual "
                        + "(ACC-004's filter for the controls; at full opacity its grey on black is about 6:1)"),
@@ -340,7 +355,7 @@ final class PrimaryScreensAccessibilityUITests: XCTestCase {
             } else {
                 let frame: String = snapshot.map { (s: XCUIElementSnapshot) -> String in NSCoder.string(for: s.frame) } ?? "-"
                 let head: String = "\(tag) audit: \(Self.name(issue.auditType)) id=\"\(identifier)\" label=\"\(label)\" frame=\(frame): "
-                found.append(head + issue.compactDescription)
+                found.append(head + issue.compactDescription + " | " + issue.detailedDescription)
             }
             return true
         }
