@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T04:28:11Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T04:28:12Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 216 |
 | implementing | 2 |
-| unit_passed | 1 |
-| integrated | 106 |
+| integrated | 107 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 5 | 1 | 0 | 80 | 1 |
-| P1 | 125 | 1 | 1 | 24 | 0 |
-| P2 | 77 | 0 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 5 | 1 | 80 | 1 |
+| P1 | 125 | 1 | 25 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 219 features are not implemented yet (first: ACC-003, ACC-005, ACC-006, ACC-007, ACC-008)
+- 218 features are not implemented yet (first: ACC-003, ACC-005, ACC-006, ACC-007, ACC-008)
 
 ## Integrated
 
@@ -75,6 +74,7 @@ The physical-device suite may **not** start:
 | AUTO-013 | Final device-test gate | `419cc2a999ed` | `autonomous/integration` |
 | AUTO-014 | Unattended safety budget | `419cc2a999ed` | `autonomous/integration` |
 | CAM-001 | Rear camera layer | `05ef3cb4e24b` | `feature/cam-001` |
+| CAM-002 | Front camera layer | `fdcd43aca742` | `feature/cam-002` |
 | CAM-012 | Camera privacy status | `a188b049fc60` | `feature/cam-012` |
 | CMP-001 | Unified layer protocol | `ba60b9d3485a` | `feature/cmp-001` |
 | CMP-002 | Ordered layer stack | `4c8340e68244` | `feature/cmp-002` |
@@ -536,7 +536,7 @@ None.
 - `post-merge (with the VIS-002-F1 picker rows): projectM-iOSTests 172 incl. CameraVisualTests, CameraUITests 2 (10.0 s, 11.2 s), NativeVisual 4, Glow 2, LinearSpectrum 1, OSC 1 UI tests on iPhone 17 iOS 27.2 sim; SettingsUITests 4 pass after the scroll fix`: pass at `05ef3cb4e24b` (log `.autonomous/logs/integration/cam-001/app-tests.log`)
 - `post-merge: Compositor xcodebuild test on iPhone 17 sim (61)`: pass at `05ef3cb4e24b` (log `.autonomous/logs/integration/cam-001/compositor-sim.log`)
 
-### CAM-002 Front camera layer (unit_passed)
+### CAM-002 Front camera layer (integrated)
 - `python3 scripts/check_compliance.py`: pass at `ccc35e86202b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-002/20261113T232519/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `ccc35e86202b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-002/20261113T232519/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `ccc35e86202b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-002/20261113T232519/script-tests.log`)
