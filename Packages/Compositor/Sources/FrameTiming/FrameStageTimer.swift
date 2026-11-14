@@ -135,6 +135,23 @@ public final class FrameStageTimer {
         return true
     }
 
+    /// Records one call split in two stages at a clock reading taken inside it (the compositor's output-pass
+    /// mark, contract C4): `first` = mark − start, `second` = end − mark. Without a mark (0) the whole call is
+    /// `first`. Readings out of order are rejected (counted).
+    public func recordSplit(_ first: FrameStage, _ second: FrameStage, start: UInt64, mark: UInt64, end: UInt64) {
+        guard mark != 0 else {
+            guard end >= start else { rejectedSamples &+= 1; return }
+            record(first, cpuSeconds: Double(end - start) / 1e9)
+            return
+        }
+        guard mark >= start, end >= mark else {
+            rejectedSamples &+= 1
+            return
+        }
+        record(first, cpuSeconds: Double(mark - start) / 1e9)
+        record(second, cpuSeconds: Double(end - mark) / 1e9)
+    }
+
     /// Records the whole frame's GPU time (all stages in one command buffer). False (and counted) when rejected.
     @discardableResult
     public func recordFrameGPU(seconds: Double) -> Bool {

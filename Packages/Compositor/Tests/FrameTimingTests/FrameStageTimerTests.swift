@@ -200,6 +200,24 @@ final class FrameStageTimerTests: XCTestCase {
         assertMeasured(timer.report().stages[0].cpu, samples: 1, median: 3, p95: 3)
     }
 
+    func testSplitAtAMark() {
+        let (timer, _) = makeTimer([.composite, .output])
+        timer.beginFrame()
+        timer.recordSplit(.composite, .output, start: 1_000_000, mark: 3_000_000, end: 3_500_000)
+        timer.endFrame()
+        var report = timer.report()
+        assertMeasured(report.stages[0].cpu, samples: 1, median: 2, p95: 2)
+        assertMeasured(report.stages[1].cpu, samples: 1, median: 0.5, p95: 0.5)
+        timer.beginFrame()
+        timer.recordSplit(.composite, .output, start: 1_000_000, mark: 0, end: 2_000_000)   // no mark: all composite
+        timer.recordSplit(.composite, .output, start: 5_000_000, mark: 4_000_000, end: 6_000_000)   // out of order
+        timer.endFrame()
+        report = timer.report()
+        assertMeasured(report.stages[0].cpu, samples: 2, median: 1.5, p95: 2)
+        XCTAssertEqual(report.stages[1].cpu, .measured(samples: 1, medianMs: 0.5, p95Ms: 0.5))
+        XCTAssertEqual(report.rejectedSamples, 1)
+    }
+
     // MARK: - Cost (PERF-001-S5): on demand only, reported and not asserted.
 
     func testBenchCostPerFrame() throws {
