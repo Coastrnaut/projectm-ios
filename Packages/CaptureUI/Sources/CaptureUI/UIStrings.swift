@@ -28,6 +28,27 @@ public enum UIStrings {
     // MARK: Microphone explainer (FR-005); also the NSMicrophoneUsageDescription text (FR-019)
     public static let microphoneExplainer = "Microphone mode listens to sound in the room through your device's microphone. It does not capture audio directly from other apps."
 
+    // MARK: Audio state symbols (ACC-003-R2, research ACC-003-D1)
+
+    /// The SF Symbol drawn next to an audio state's words: a different outline for every state, so the
+    /// states stay apart without colour (grayscale, colour filters). Decorative: hidden from VoiceOver.
+    public static func stateSymbol(_ state: AudioState) -> String {
+        switch state {
+        case .notStarted: return "circle.dashed"
+        case .waiting: return "hourglass"
+        case .noAudioReceived: return "waveform.slash"
+        case .silent: return "speaker.slash"
+        case .active: return "waveform"
+        case .paused: return "pause.circle"
+        case .interrupted: return "exclamationmark.triangle"
+        case .stopped: return "stop.circle"
+        case .endedBySystem: return "xmark.octagon"
+        }
+    }
+
+    /// The symbol for "Switching source…" (AUD-012), distinct from every state's.
+    public static let switchingSymbol = "arrow.triangle.2.circlepath"
+
     // MARK: Audio states (FR-010)
     public static func state(_ state: AudioState) -> String {
         switch state {

@@ -892,6 +892,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                                                    forceGlowFailure: forceGlowFailure)
             host.reduceFlashing = settings.reduceFlashing
             host.smoothing = settings.spectrumSmoothing   // ANL-003
+            host.palette = settings.spectrumPalette        // ACC-003-R13
             for binding in sceneAutosave?.bindings ?? [] { try? host.bind(binding) }   // SCN-002: restored bindings
             #if DEBUG
             bindGlowToLevelIfRequested(host)   // MOD-002: AudioFeatureBindingUITests
@@ -1337,6 +1338,11 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                     glowIntensity: settings.glowIntensity, glowRadius: settings.glowRadius, glowThreshold: settings.glowThreshold,
                     text: texts.spec, photoID: photos.photo?.id, videoID: videos.video?.id,
                     videoLoop: SceneVideoLoopBridge.scene(videos.loopRegion))   // MED-003
+    }
+
+    /// ACC-003-R13: the colour-blind-safe palette setting changed; the native spectrum redraws with it.
+    func spectrumPaletteChanged() {
+        nativeVisual?.palette = settings.spectrumPalette
     }
 
     // MARK: - Glow (FX-001)

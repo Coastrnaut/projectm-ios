@@ -119,6 +119,35 @@ final class NativeSpectrumHost: PresentationBoundResource {
         didSet { applyGlow() }
     }
 
+    /// ACC-003-R13: the bars' palette (VIS-001's spectrum, or the colour-blind-safe ramp); applied to the
+    /// current generator and to every generator a style change builds.
+    var palette: VisualPalette = .spectrum {
+        didSet { if palette != oldValue { applyPalette() } }
+    }
+
+    /// The palette the current generator draws with (tests).
+    var generatorPalette: VisualPalette? {
+        (generator as? CircularSpectrumGenerator)?.configuration.palette
+            ?? (generator as? LinearSpectrumGenerator)?.configuration.palette
+            ?? (generator as? OscilloscopeGenerator)?.configuration.palette
+    }
+
+    private func applyPalette() {
+        if let circular = generator as? CircularSpectrumGenerator {
+            var configuration = circular.configuration
+            configuration.palette = palette
+            circular.configuration = configuration
+        } else if let linear = generator as? LinearSpectrumGenerator {
+            var configuration = linear.configuration
+            configuration.palette = palette
+            linear.configuration = configuration
+        } else if let scope = generator as? OscilloscopeGenerator {
+            var configuration = scope.configuration
+            configuration.palette = palette
+            scope.configuration = configuration
+        }
+    }
+
     /// The bloom runs (available and the effective glow not pass-through).
     var glowActive: Bool { chain != nil && !effectiveGlow.isPassThrough }
 
@@ -249,6 +278,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         } else {
             let replacement = try Self.makeGenerator(device: device, style: newStyle, barCount: generator.barCount)
             generator = replacement
+            applyPalette()   // ACC-003-R13: a new generator starts with the default palette
         }
         style = newStyle
         applyGlow()

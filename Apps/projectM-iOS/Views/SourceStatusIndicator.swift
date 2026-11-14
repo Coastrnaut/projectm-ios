@@ -2,6 +2,7 @@
 // FR-070). Mode label (contracts/ui-states.md) plus the audio state, e.g. "In-App Playback · Active
 // audio", with a test signal's name between them while one plays (AUD-016); always visible in the visualizer, inside the controls or on its own when they are hidden.
 // AUD-012: "Switching source…" while a source switch waits for the new source's audio.
+// ACC-003-R2, R9: a symbol per state; an opaque, bordered background with Increase Contrast.
 import AudioCore
 import CaptureKit
 import CaptureUI
@@ -30,13 +31,20 @@ struct SourceStatusIndicator: View {
         UIStrings.playbackHoldAnnouncement(status: text(mode: mode, state: state, signal: signal), mode: mode, reason: reason)
     }
 
+    /// ACC-003-R2: the symbol whose outline tells the audio state (or a source switch) apart.
+    static func cue(state: AudioState, switching: Bool) -> StatusCue {
+        switching ? StatusCueCatalog.switching : StatusCueCatalog.source(state)
+    }
+
     var body: some View {
-        Text(text)
-            .font(.footnote.weight(.semibold))
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(.ultraThinMaterial, in: Capsule())
+        // ACC-003: the symbol is inline in the identified static text; VoiceOver reads the words only.
+        let cue: StatusCue = Self.cue(state: coordinator.manager.state, switching: coordinator.manager.switchingTo != nil)
+        StatusCueLabel.text(cue, words: text)
             .accessibilityIdentifier("sourceIndicator")
             .accessibilityLabel(text)
+            .font(.footnote.weight(.semibold))
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .statusBadgeBackground(Capsule(), material: .ultraThinMaterial)   // ACC-003-R9
     }
 }

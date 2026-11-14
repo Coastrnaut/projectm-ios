@@ -12,6 +12,15 @@ final class UIStringsTests: XCTestCase {
         XCTAssertEqual(UIStrings.state(.noAudioReceived), "No audio received")
     }
 
+    /// ACC-003-R2: every audio state (and "Switching source…") has its own symbol outline.
+    func testEveryStateHasDistinctSymbol() {
+        let symbols = AudioState.allCases.map(UIStrings.stateSymbol) + [UIStrings.switchingSymbol]
+        XCTAssertEqual(Set(symbols).count, symbols.count)
+        XCTAssertEqual(UIStrings.stateSymbol(.active), "waveform")
+        XCTAssertEqual(UIStrings.stateSymbol(.silent), "speaker.slash")
+        XCTAssertEqual(UIStrings.stateSymbol(.noAudioReceived), "waveform.slash")
+    }
+
     func testFallbacksNeverLabeledAsSystemCapture() {
         XCTAssertNotEqual(UIStrings.label(.microphone), UIStrings.label(.systemAppCapture))
         XCTAssertNotEqual(UIStrings.label(.inAppPlayback), UIStrings.label(.systemAppCapture))

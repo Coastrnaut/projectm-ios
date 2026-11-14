@@ -61,7 +61,7 @@ Filtered (each entry in `AccessibilityScreensUITests.filters` with its reason):
 | browser | dynamicType | Collections, My Presets, 0 | rows pushed off screen at the audit's larger sizes; `testBrowserRowsScaleWithAccessibilityTextSizes` proves they scale (52 → 69.7 pt at AX L) |
 | settings | dynamicType | Glow | same off-screen effect for a system Toggle |
 | settings | contrast | "Visual" headers (≤ 2), element-less findings (≤ 3), the Visual footer | system header and footer styles (secondary grey); bounded counts |
-| showEditor | contrast | Add Current Scene; footer; "Cues" header | system accent list button (systemBlue ≈ 4:1) and system header/footer styles; an app-wide accent is left to ACC-003/ACC-008 |
+| showEditor | contrast | footer; "Cues" header | system header/footer styles. The "Add Current Scene" filter was removed by ACC-003 (2026-11-14, ACC-003-R11): the app's AccentColor (`0062CC`, 5.8:1 on white) replaced systemBlue (≈ 4:1) |
 | controls | contrast | Visual unavailable | PERF-014 placeholder caught mid-fade; 0.55 grey on black ≈ 6:1 at full opacity |
 | controls, showRow | contrast | "—" (tempo readout) | one-point em dash the pixel sampler cannot measure; VoiceOver reads "Tempo, Searching for tempo" (ANL-006; was "No tempo") |
 
@@ -86,4 +86,5 @@ default size: ACC-006's inspector, which starts each screen at AX3 or AX5, repor
 rows. The system Done filter stays too (navigation-bar items never scale; iOS offers the Large
 Content Viewer). ACC-006's layout fixes (contract C2 of spec 087) changed no element this suite
 declares: `controls` is still an "other" element, the show editor's "Add Current Scene" keeps its
-label.
+label. ACC-003 (spec 110) removed the "Add Current Scene" contrast filter: the audit passes with the
+app's contrast-checked accent.

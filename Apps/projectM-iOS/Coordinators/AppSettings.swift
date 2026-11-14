@@ -44,7 +44,8 @@
 //   opens no listener) and `settings.osc.port` (Int, absent or outside 1024-65535 → 9000).
 // All keys are "user settings" in the FR-065 list of what may be stored (FR-123 adds the scope,
 // VIS-001-R11 the two visual keys, FX-001-R11 the four glow keys, VIS-002-R11 the two linear keys,
-// VIS-003-R10 the two oscilloscope keys, ANL-003-R6 the two smoothing keys).
+// VIS-003-R10 the two oscilloscope keys, ANL-003-R6 the two smoothing keys, ACC-003-R13 the palette key
+// `settings.visual.colorBlindSafePalette`).
 import AnalysisFeatures
 import CameraLayer
 import Foundation
@@ -74,6 +75,7 @@ final class AppSettings {
     static let oscEnabledKey = "settings.osc.enabled"
     static let oscPortKey = "settings.osc.port"
     static let midiEnabledKey = "settings.midi.enabled"   // MIDI-001-R8
+    static let colorBlindSafePaletteKey = "settings.visual.colorBlindSafePalette"   // ACC-003-R13
     static let cameraPositionKey = "settings.camera.position"       // CAM-002
     static let cameraMirrorFrontKey = "settings.camera.mirrorFront"
     static let cameraMirrorBackKey = "settings.camera.mirrorBack"
@@ -93,7 +95,8 @@ final class AppSettings {
                           linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey, videoIDKey, videoLoopKey,
                           textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, spectrumAttackKey, spectrumReleaseKey,
                           cameraPositionKey, cameraMirrorFrontKey, cameraMirrorBackKey,
-                          cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey, midiEnabledKey]
+                          cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey, midiEnabledKey,
+                          colorBlindSafePaletteKey]
     /// VIS-002-R4: the spacings offered for the linear spectrum.
     static let linearSpectrumSpacingChoices: [(title: String, value: Double)] = [("None", 0), ("Narrow", 0.2), ("Wide", 0.5)]
     static let defaultLinearSpectrumSpacing = 0.2
@@ -248,6 +251,14 @@ final class AppSettings {
         milliseconds == 0 ? "Instant" : "\(milliseconds) ms"
     }
 
+    /// ACC-003-R13: the native spectra's colour-blind-safe palette (Bool, absent → off).
+    var colorBlindSafePalette: Bool {
+        didSet { defaults.set(colorBlindSafePalette, forKey: Self.colorBlindSafePaletteKey) }
+    }
+
+    /// The palette the native spectra draw with (VIS-001's default, or ACC-003's colour-blind-safe ramp).
+    var spectrumPalette: VisualPalette { colorBlindSafePalette ? .colorBlindSafe : .spectrum }
+
     /// FX-001: the native spectra's glow (off by default).
     var glowEnabled: Bool {
         didSet { defaults.set(glowEnabled, forKey: Self.glowKey) }
@@ -343,6 +354,7 @@ final class AppSettings {
         let release = defaults.integer(forKey: Self.spectrumReleaseKey)
         spectrumReleaseMilliseconds = Self.spectrumReleaseChoices.contains(release) ? release : 0
         glowEnabled = defaults.bool(forKey: Self.glowKey)
+        colorBlindSafePalette = defaults.bool(forKey: Self.colorBlindSafePaletteKey)   // ACC-003-R13
         oscEnabled = defaults.bool(forKey: Self.oscEnabledKey)
         midiEnabled = defaults.bool(forKey: Self.midiEnabledKey)
         let port = defaults.integer(forKey: Self.oscPortKey)

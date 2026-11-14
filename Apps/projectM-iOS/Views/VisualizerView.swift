@@ -30,6 +30,8 @@
 // REC-012: the ready panels (Save…, Share…, Discard) and the share notice (`CaptureResultPanels`).
 // SHOW-001: the show's keyboard shortcuts (arrows, Page Up/Down; with or without the controls), its
 // step notice, Settings → Show, and the DEBUG probe `showAppliedScene` (applied scene ID | visual).
+// ACC-003: status symbols on the recording and blackout badges, opaque bordered badges with Increase
+// Contrast, the visualization ignores Smart Invert; DEBUG probe `statusAppearanceProbe`.
 import AudioCore
 import CaptureKit
 import CaptureUI
@@ -56,6 +58,7 @@ struct VisualizerView: View {
         ZStack {
             Color.black.ignoresSafeArea()
             visual
+                .accessibilityIgnoresInvertColors()   // ACC-003-R10: Smart Invert leaves the visualization alone
             // PERF-014-R10: a visual that can show nothing fades to the placeholder (0.5 s, linear).
             RenderPlaceholderView(shown: coordinator.showsRenderPlaceholder)
             if coordinator.externalDisplay.showsVisualExternally {
@@ -208,6 +211,9 @@ struct VisualizerView: View {
                 .allowsHitTesting(false)
                 .accessibilityIdentifier("announcementProbe")
                 .accessibilityValue(spoken)
+        }
+        if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {   // ACC-003 contract C3
+            StatusAppearanceProbe()
         }
         if AppCoordinator.reduceMotionPanelRequested {   // ACC-001: ReduceMotionUITests (contract C2)
             VStack { HStack { reduceMotionPanel; Spacer() }; Spacer() }
@@ -405,6 +411,7 @@ struct VisualizerView: View {
         .onChange(of: coordinator.settings.oscilloscopeWindowMilliseconds) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.spectrumSmoothing) { coordinator.visualSettingsChanged() }   // ANL-003
         .onChange(of: coordinator.settings.glowParameters) { coordinator.glowSettingsChanged() }          // FX-001
+        .onChange(of: coordinator.settings.colorBlindSafePalette) { coordinator.spectrumPaletteChanged() } // ACC-003-R13
         .onChange(of: coordinator.manager.state) {
             coordinator.routes.refresh()   // AUD-007-R3: a source started or changed state
             coordinator.announceSourceStatus()   // FR-070, AUD-016-R16, AUD-012-R7 (ACC-011 X1-X3)
@@ -601,14 +608,12 @@ struct VisualizerView: View {
         // REC-003: the recording indicator (app UI, never part of the recorded picture; REC-003-R16).
         if coordinator.videoRecording.state != .idle {
             let finishing = coordinator.videoRecording.state == .finishing
-            HStack(spacing: 8) {
-                Circle().fill(finishing ? Color.secondary : Color.red).frame(width: 10, height: 10)
-                Text(finishing ? "Finishing…" : "REC \(coordinator.videoRecording.elapsedText)")
-                    .font(.footnote.monospacedDigit().bold())
-            }
+            // ACC-003-R3: the record symbol, or an hourglass while finishing (was a red or grey dot).
+            StatusCueLabel(cue: StatusCueCatalog.recording(finishing: finishing, elapsed: coordinator.videoRecording.elapsedText),
+                           font: .footnote.monospacedDigit().bold())
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(.regularMaterial, in: Capsule())
+            .statusBadgeBackground(Capsule())   // ACC-003-R9
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(finishing ? "Finishing the recording" : "Recording, \(coordinator.videoRecording.elapsedText)")
             .accessibilityIdentifier("recordingIndicator")
@@ -654,24 +659,25 @@ struct OutputBlackoutBadge: View {
             VStack(alignment: .leading, spacing: 8) { label; restore }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                .statusBadgeBackground(RoundedRectangle(cornerRadius: 12))   // ACC-003-R9
                 .modifier(BadgeAccessibility(external: external))
         } else {
             HStack(spacing: 10) { label; restore }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(.regularMaterial, in: Capsule())
+                .statusBadgeBackground(Capsule())   // ACC-003-R9
                 .modifier(BadgeAccessibility(external: external))
         }
     }
 
     private var label: some View {
-        let requested = external.isBlackoutRequested
-        return Label(requested && external.blackoutPhase == .blackedOut ? "Output blacked out" : "Restoring output",
-                     systemImage: "eye.slash")
+        // ACC-003-R3: eye.slash while blacked out, eye while restoring (the words are unchanged).
+        let cue: StatusCue = StatusCueCatalog.blackout(blackedOut: external.isBlackoutRequested && external.blackoutPhase == .blackedOut)
+        return StatusCueLabel.text(cue)
             .font(.footnote.bold())
             .fixedSize(horizontal: false, vertical: true)
-            .accessibilityIdentifier("blackoutBadgeText")
+            .accessibilityLabel(cue.text)
+            .accessibilityIdentifier("blackoutBadgeText")   // the identified static text, as before
     }
 
     @ViewBuilder private var restore: some View {

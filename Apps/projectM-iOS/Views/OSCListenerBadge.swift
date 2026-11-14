@@ -13,7 +13,7 @@ struct OSCListenerBadge: View {
     var body: some View {
         if let port = osc.badgePort {
             HStack(spacing: 10) {
-                Image(systemName: "dot.radiowaves.left.and.right")
+                Image(systemName: StatusCueCatalog.oscSymbol)
                     .accessibilityHidden(true)
                 Text(OSCReceiverCoordinator.badgeText(port: port))
                     .font(.footnote.weight(.semibold))
@@ -31,7 +31,7 @@ struct OSCListenerBadge: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(.regularMaterial, in: Capsule())
+            .statusBadgeBackground(Capsule())   // ACC-003-R9
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("oscListenerBadge")
         }

@@ -43,6 +43,22 @@ final class PaletteTests: XCTestCase {
         XCTAssertEqual(b, LinearColor.fromSRGB(red: 0xE8, green: 0xF7, blue: 0xFF))
     }
 
+    /// ACC-003-R13: luminance rises strictly bar by bar (the order survives grayscale and every colour
+    /// vision deficiency), and the first bar has at least 3:1 against black.
+    func testColorBlindSafeRampRisesInLuminanceAndStartsVisible() {
+        for n in [16, 64, 128] {
+            var previous: Float = -1
+            for k in 0..<n {
+                let y = VisualPalette.colorBlindSafe.color(bar: k, of: n).relativeLuminance
+                XCTAssertGreaterThan(y, previous, "bar \(k)/\(n)")
+                previous = y
+            }
+        }
+        let first = VisualPalette.colorBlindSafe.color(bar: 0, of: 64).relativeLuminance
+        XCTAssertGreaterThanOrEqual((first + 0.05) / 0.05, 3, "first bar against black")
+        XCTAssertEqual(VisualPalette.colorBlindSafe.color(bar: 63, of: 64), LinearColor.fromSRGB(red: 0xFD, green: 0xE7, blue: 0x38))
+    }
+
     func testEveryColorIsInRangeAndOpaque() {
         for palette in VisualPalette.allCases {
             for n in [16, 32, 64, 128] {

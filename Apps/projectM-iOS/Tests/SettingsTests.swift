@@ -68,6 +68,7 @@ final class SettingsTests: XCTestCase {
         settings.cameraCropMode = .fit         // CAM-007-R6
         settings.cameraCropAnchor = .top
         settings.cameraZoom = 2
+        settings.colorBlindSafePalette = true  // ACC-003-R13
         let keys = Set(defaults.persistentDomain(forName: suite)?.keys ?? [:].keys)
         // MED-001, MED-002, MED-003, MED-009: `settings.photo.id`, `settings.video.id`, `settings.video.loop`
         // and `settings.text.overlay` are in allKeys (the UI-test reset) but written by PhotoStore,

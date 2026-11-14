@@ -26,9 +26,14 @@ public struct StatusBanner: View {
                     Text(UIStrings.label(mode)).font(.headline)
                 }
                 Spacer()
+                // ACC-003-R2: a symbol per state carries the shape (and, for Active, the colour); the
+                // words stay in the primary colour (green text on the light material was about 2:1).
+                Image(systemName: UIStrings.stateSymbol(state))
+                    .font(.headline)
+                    .foregroundStyle(state == .active ? AnyShapeStyle(.green) : AnyShapeStyle(.primary))
+                    .accessibilityHidden(true)
                 Text(UIStrings.state(state))
                     .font(.headline)
-                    .foregroundStyle(state == .active ? .green : .primary)
             }
             if let message = detail {
                 Text(message).font(.subheadline)
