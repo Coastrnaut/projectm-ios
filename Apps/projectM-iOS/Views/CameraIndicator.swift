@@ -55,8 +55,9 @@ struct CameraIndicatorBadge: View {
                 Label(CameraIndicator.stopTitle, systemImage: "stop.fill")
                     .font(.footnote.bold())
             }
-            .buttonStyle(.bordered)
-            .tint(.red)
+            // ACC-008-R5: white on a dark red fill (6:1); red text on a red-tinted bordered fill was about 3:1.
+            .buttonStyle(.borderedProminent)
+            .tint(OverlayContrast.criticalFill)
             .controlSize(.small)
             .accessibilityLabel(CameraIndicator.stopTitle)
             .accessibilityIdentifier("stopCamera")

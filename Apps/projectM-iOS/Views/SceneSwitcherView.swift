@@ -84,7 +84,7 @@ struct SceneSwitcherView: View {
             list(maxHeight: maxList)
         }
         .padding(14)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .overlaySurface(RoundedRectangle(cornerRadius: 16))   // ACC-008-R2
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("sceneSwitcher")
     }

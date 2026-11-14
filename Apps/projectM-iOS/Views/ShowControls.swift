@@ -89,7 +89,7 @@ struct ShowNotice: View {
             .multilineTextAlignment(.center)
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(.regularMaterial, in: Capsule())
+            .overlaySurface(Capsule())   // ACC-008-R2
             .accessibilityIdentifier("showNotice")
     }
 }

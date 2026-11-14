@@ -107,7 +107,7 @@ struct VisualizerView: View {
                         .font(.footnote)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(.regularMaterial, in: Capsule())
+                        .overlaySurface(Capsule())   // ACC-008-R2
                         .transition(.opacity)
                         .accessibilityIdentifier("routeExplanation")
                 }
@@ -212,8 +212,9 @@ struct VisualizerView: View {
                 .accessibilityIdentifier("announcementProbe")
                 .accessibilityValue(spoken)
         }
-        if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {   // ACC-003 contract C3
+        if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {   // ACC-003 contract C3; ACC-008 C4
             StatusAppearanceProbe()
+            OverlaySurfaceProbe()
         }
         if AppCoordinator.reduceMotionPanelRequested {   // ACC-001: ReduceMotionUITests (contract C2)
             VStack { HStack { reduceMotionPanel; Spacer() }; Spacer() }
@@ -553,7 +554,7 @@ struct VisualizerView: View {
             StatusBanner(mode: manager.activeMode, state: manager.state, reason: manager.stopReason,
                          prolongedSilence: manager.prolongedSilenceHint) { coordinator.handle($0) }
                 .padding(12)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                .overlaySurface(RoundedRectangle(cornerRadius: 12))   // ACC-008-R2
         }
         // AUD-015-R7: what happened to the source while the app was away.
         if let notice = coordinator.visibleBackgroundNotice {
@@ -565,7 +566,7 @@ struct VisualizerView: View {
         if coordinator.nativeVisualUnavailable && coordinator.settings.visual.replacesProjectM {
             Text(AppCoordinator.nativeVisualUnavailableMessage(for: coordinator.settings.visual))
                 .padding(10)
-                .background(.regularMaterial, in: Capsule())
+                .overlaySurface(Capsule())   // ACC-008-R2
                 .accessibilityIdentifier("nativeVisualUnavailable")
         }
         // CAM-001-R5, R6, R8: never blocks; stays while the camera cannot show pictures.
@@ -593,7 +594,7 @@ struct VisualizerView: View {
                     .accessibilityIdentifier("photoNoticeDismiss")
             }
             .padding(10)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .overlaySurface(RoundedRectangle(cornerRadius: 12))   // ACC-008-R2
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("photoNotice")
         }
@@ -610,7 +611,7 @@ struct VisualizerView: View {
                     .accessibilityIdentifier("videoNoticeDismiss")
             }
             .padding(10)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .overlaySurface(RoundedRectangle(cornerRadius: 12))   // ACC-008-R2
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("videoNotice")
         }
@@ -627,7 +628,7 @@ struct VisualizerView: View {
                     .accessibilityIdentifier("frameCaptureNoticeDismiss")
             }
             .padding(10)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .overlaySurface(RoundedRectangle(cornerRadius: 12))   // ACC-008-R2
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("frameCaptureNotice")
         }
@@ -660,14 +661,14 @@ struct VisualizerView: View {
                     .accessibilityIdentifier("videoRecordingNoticeDismiss")
             }
             .padding(10)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .overlaySurface(RoundedRectangle(cornerRadius: 12))   // ACC-008-R2
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("videoRecordingNotice")
         }
         if let failure = coordinator.presets.failureMessage {
             Text(failure)
                 .padding(10)
-                .background(.regularMaterial, in: Capsule())
+                .overlaySurface(Capsule())   // ACC-008-R2
                 .accessibilityIdentifier("presetFailedBanner")
         }
     }
@@ -714,6 +715,7 @@ struct OutputBlackoutBadge: View {
             Button("Restore") { external.setBlackout(false) }
                 .font(.footnote)
                 .buttonStyle(.borderedProminent)
+                .overlayProminentTint()   // ACC-008-R5
                 .keyboardShortcut("b", modifiers: [])   // SHOW-014-R6: B again restores
 
                 .accessibilityLabel("Restore output")

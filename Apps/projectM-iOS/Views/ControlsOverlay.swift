@@ -91,10 +91,8 @@ struct ControlsOverlay: View {
     /// lift the background enough to fail small captions (scope line) either.
     private struct ControlsBacking: ViewModifier {
         func body(content: Content) -> some View {
-            content
-                .background(Color.black.opacity(0.45), in: RoundedRectangle(cornerRadius: 16))
-                .background(.thickMaterial, in: RoundedRectangle(cornerRadius: 16))
-                .environment(\.colorScheme, .dark)
+            // ACC-008-R2: the shared overlay surface; its scrim (was 45% black) meets 4.5:1 over white by itself.
+            content.overlaySurface(RoundedRectangle(cornerRadius: 16), material: .thickMaterial)
         }
     }
 

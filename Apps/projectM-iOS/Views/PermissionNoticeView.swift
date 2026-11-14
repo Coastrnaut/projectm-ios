@@ -33,7 +33,7 @@ struct PermissionNoticeView: View {
             }
         }
         .padding(10)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .overlaySurface(RoundedRectangle(cornerRadius: 12))   // ACC-008-R2
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("\(identifierPrefix)Notice")
     }

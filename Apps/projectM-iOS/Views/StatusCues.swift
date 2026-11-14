@@ -338,11 +338,12 @@ private struct StatusBadgeBackground<S: InsettableShape>: ViewModifier {
     func body(content: Content) -> some View {
         switch StatusBadgeStyle.resolve(increasedContrast: appearance.increasedContrast) {
         case .material:
-            content.background(material, in: shape)
+            content.overlaySurface(shape, material: material)   // ACC-008-R2
         case .opaqueBordered:
             content
                 .background(Color(uiColor: .systemBackground), in: shape)
                 .overlay(shape.strokeBorder(Color.primary, lineWidth: 1))
+                .environment(\.colorScheme, .dark)   // ACC-008-R4: one dark appearance over the visual
         }
     }
 }
