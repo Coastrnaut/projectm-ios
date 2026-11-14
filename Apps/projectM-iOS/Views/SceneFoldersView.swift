@@ -126,7 +126,7 @@ struct SceneFoldersView: View {
         let link = NavigationLink {
             SceneFoldersView(show: show, folderID: folder.id)
         } label: {
-            Label(folder.name, systemImage: "folder")
+            IconTitleRow(title: folder.name, systemImage: "folder")   // ACC-006-R1: no Label wrap under the icon
         }
         return link
             .accessibilityLabel(folder.name)

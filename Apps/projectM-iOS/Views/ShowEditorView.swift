@@ -39,19 +39,9 @@ struct ShowEditorView: View {
                 }
                 .disabled(show.list.cues.count >= ShowCueList.maximumCues)
                 .accessibilityIdentifier("showAddCurrentScene")
+                if !show.list.cues.isEmpty { sceneFoldersLink }   // SCN-004
             } footer: {
                 Text("Adds a cue that keeps the visual and its settings as they are now. Next and Previous in the controls, or the arrow keys, step through the cues.")
-            }
-            // SCN-004: the show's scenes organized in logical folders.
-            if !show.list.cues.isEmpty {
-                Section {
-                    NavigationLink {
-                        SceneFoldersView(show: show, folderID: nil)
-                    } label: {
-                        Label("Scene Folders", systemImage: "folder")
-                    }
-                    .accessibilityIdentifier("showSceneFoldersLink")
-                }
             }
             Section(show.list.cues.isEmpty ? "No cues" : "Cues") {
                 ForEach(Array(show.list.cues.enumerated()), id: \.element.id) { (index: Int, cue: ShowCue) in
@@ -86,6 +76,20 @@ struct ShowEditorView: View {
             Text("Every cue that shows this scene uses the new name. 1 to \(SceneLimits.maximumNameLength) characters.")
         }
         .accessibilityIdentifier("showEditor")
+    }
+
+    /// SCN-004: the show's scenes organized in logical folders. ACC-006-R1 (testShowEditorAX3, 2026-11-14):
+    /// as its own section below the footer, the row sat at the bottom edge of the screen at AX3, and its
+    /// `Label` wrapped the title under the icon; the audit reported clipped text and partly unsupported
+    /// Dynamic Type. Now an icon-and-title row (the title wraps in its own column, as Add Current Scene's)
+    /// in the first section, next to Add Current Scene. The link reads "Scene Folders".
+    private var sceneFoldersLink: some View {
+        NavigationLink {
+            SceneFoldersView(show: show, folderID: nil)
+        } label: {
+            IconTitleRow(title: "Scene Folders", systemImage: "folder")
+        }
+        .accessibilityIdentifier("showSceneFoldersLink")
     }
 
     // Split into short parts (2026-11-14): as one function this row took 4.4 s to type-check on
