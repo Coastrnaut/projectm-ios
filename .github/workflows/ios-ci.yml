@@ -199,7 +199,7 @@ jobs:
     # newest iOS 26 simulator the selected Xcode 26 can run (xcodebuild test). Same Xcode, same
     # tests and same needs as before the split. Estimated 21-23 minutes per group (run
     # 43605358225: host 23.5 and simulator 47 minutes for all packages together).
-    needs: [docs-and-compliance, angle-xcframeworks]
+    needs: [docs-and-compliance]   # no xcframeworks needed: starts without waiting for the ANGLE build (2026-11-14)
     runs-on: macos-26
     timeout-minutes: 45
     strategy:
