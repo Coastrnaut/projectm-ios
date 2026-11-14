@@ -17,6 +17,17 @@ final class CameraCropUITests: XCTestCase {
     private var anchor: XCUIElement { app.segmentedControls["cameraCropAnchorPicker"] }
     private var zoom: XCUIElement { app.segmentedControls["cameraZoomPicker"] }
 
+    /// Taps a segment and waits for the picker's value; taps once more if the first tap was lost
+    /// (seen once under heavy load on the merged tree, 2026-11-14: Zoom stayed "1 times").
+    private func choose(_ segment: XCUIElement, in picker: XCUIElement, expect value: String) -> Bool {
+        for _ in 0..<2 {
+            _ = poll(2) { segment.isHittable }
+            segment.tap()
+            if poll(3, { (picker.value as? String) == value }) { return true }
+        }
+        return false
+    }
+
     private func showControls() {
         let controls = app.otherElements["controls"], area = app.otherElements["visualizerTapArea"].firstMatch
         if controls.exists { area.tap() }
@@ -43,19 +54,16 @@ final class CameraCropUITests: XCTestCase {
         XCTAssertTrue(app.reveal(mode), "Crop appears in the Camera section")
         XCTAssertEqual(mode.label, "Crop")
         XCTAssertEqual(mode.value as? String, "Fill", "Fill by default")
-        mode.buttons["Fit"].tap()
-        XCTAssertTrue(poll(3) { (self.mode.value as? String) == "Fit" }, "Crop: \(String(describing: mode.value))")
+        XCTAssertTrue(choose(mode.buttons["Fit"], in: mode, expect: "Fit"), "Crop: \(String(describing: mode.value))")
 
         XCTAssertTrue(app.reveal(anchor))
         XCTAssertEqual(anchor.value as? String, "Center", "Center by default")
-        anchor.buttons["Top"].tap()
-        XCTAssertTrue(poll(3) { (self.anchor.value as? String) == "Top" }, "Anchor: \(String(describing: anchor.value))")
+        XCTAssertTrue(choose(anchor.buttons["Top"], in: anchor, expect: "Top"), "Anchor: \(String(describing: anchor.value))")
 
         XCTAssertTrue(app.reveal(zoom))
         XCTAssertEqual(zoom.value as? String, "1 times", "1× by default")
         XCTAssertEqual(zoom.buttons.count, 4, "1×, 1.5×, 2×, 3×")
-        zoom.buttons.element(boundBy: 2).tap()
-        XCTAssertTrue(poll(3) { (self.zoom.value as? String) == "2 times" }, "Zoom: \(String(describing: zoom.value))")
+        XCTAssertTrue(choose(zoom.buttons.element(boundBy: 2), in: zoom, expect: "2 times"), "Zoom: \(String(describing: zoom.value))")
 
         app.navigationBars["Settings"].buttons["Done"].tap()
         XCTAssertTrue(app.navigationBars["Settings"].disappears(within: 5))
