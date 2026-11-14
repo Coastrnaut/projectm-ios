@@ -247,6 +247,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let texts: TextOverlayCoordinator
     /// SHOW-001: the manual cue list.
     let show: ShowCoordinator
+    /// UIX-005-R1: the performance layout (large cue, tempo and blackout targets); session only, off at launch.
+    var performanceLayout = AppCoordinator.startsInPerformanceLayout
     /// SCN-007, XFADE: the cues' resolved transitions, blended out on the shown compositor visual.
     @ObservationIgnored let cueTransitions = CueTransitionStage()
     /// UIX-002: the quick scene switcher's overlay state (AppCoordinator+SceneSwitcher.swift).
@@ -259,6 +261,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let missingMedia = MissingMediaCoordinator()
     /// ACC-011: capture and recording status events (announcements and captions); owns ACC-004's announcer.
     let statusEvents = StatusEventRouter()
+    /// ANL-013: the native visual's stereo phase-inversion warning (source indicator, overlay, X3a/X3b).
+    let stereoPhase = StereoPhaseWarningPresenter()
     /// FILE-005: Settings › Storage › Backup (announces on the `library` lane, set in init).
     @ObservationIgnored let libraryBackup = LibraryBackupCoordinator()
     /// ACC-004: user-caused state changes are announced through one rate-limited path.
@@ -512,6 +516,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         userPresets = UserPresetsCoordinator.makeDefault()
         userPresets.connect(presets: presets, loader: presetLoader)   // PRE-012
         presets.overrides = Self.makeOverrides(presets: presets, loader: presetLoader)   // PRE-016
+        userPresets.integrity = LibraryIntegrityCoordinator(presets: presets, userPresets: userPresets)   // PRE-018
         #if DEBUG || PROJECTM_AUTOMATION
         entitlements = AutomationRunner.entitlementsOverride() ?? FakeEntitlements.fromLaunchArguments() ?? LibraryStore()
         #else
@@ -867,7 +872,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// The indicator's text (FR-042) with AUD-012's switching label.
     var sourceStatusText: String {
         SourceStatusIndicator.text(mode: manager.activeMode, state: manager.state, signal: testSignalName,
-                                   switching: manager.switchingTo != nil)
+                                   switching: manager.switchingTo != nil, phaseWarning: stereoPhase.isRaised)   // ANL-013
     }
 
     /// Stop (FR-007): stops the source and returns to the chooser.
@@ -970,10 +975,14 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                 presetLoader.library = library
                 // PRE-012: the imported presets are read first (a preset that ended the last launch
                 // is quarantined there), so the library never lists one that must not play.
+                #if DEBUG
+                UITestBrokenLibraryFixture.seedFilesIfRequested()   // LibraryCheckUITests (PRE-018)
+                #endif
                 await userPresets.load()
                 await userPresets.prepare(library: library, bundle: .main)
                 presets.attach(library)
                 #if DEBUG
+                UITestBrokenLibraryFixture.seedReferencesIfRequested(presets)
                 UITestCollectionFixture.seedIfRequested(presets)   // PresetCollectionsUITests
                 UITestPresetTagFixture.seedIfRequested(presets)    // PresetTagsUITests (PRE-003)
                 #endif
@@ -981,6 +990,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                 presets.announceFavorite = { [weak self] (text: String) in self?.announcer.announce(text, kind: .favorite) }   // ACC-004
                 userPresets.announceLibrary = { [weak self] (text: String) in self?.announcer.announce(text, kind: .library) }   // FILE-003-R13
                 presets.announceLibrary = { [weak self] (text: String) in self?.announcer.announce(text, kind: .library) }   // PRE-003-R12
+                userPresets.integrity?.announce = { [weak self] (text: String) in self?.announcer.announce(text, kind: .library) }   // PRE-018-R12
                 presets.recent?.announce = { [weak self] (text: String) in self?.announcer.announce(text, kind: .library) }   // PRE-006-R6
                 presets.announceSearch = { [weak self] (text: String) in self?.announcer.announce(text, kind: .search) }
                 await presets.setUnlocked(entitlements.isUnlocked)
@@ -1086,6 +1096,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         case .lissajous: .lissajous(mode: settings.lissajousMode, persistence: settings.lissajousPersistence)   // VIS-004
         case .radialWaveform: .radialWaveform(ring: settings.radialWaveformRing, amplitude: settings.radialWaveformAmplitude)   // VIS-005
         case .beatRings: .beatRings(life: settings.beatRingsLife)   // VIS-006
+        case .mandala: .mandala(symmetry: settings.mandalaSymmetry, mirror: settings.mandalaMirror, petal: settings.mandalaPetal)   // VIS-007
         default: .circular
         }
     }
@@ -1117,10 +1128,12 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.safetyClamp = settings.safetyClamp   // ACC-012-R4
             host.smoothing = settings.spectrumSmoothing   // ANL-003
             host.palette = settings.spectrumPalette        // ACC-003-R13
+            host.reduceMotion = settings.systemReduceMotion   // VIS-007-R5: the mandala's turn (ACC-001)
             host.externalValues = externalLiveValues.merged   // MIDI-003, OSC-003: values held while no native visual was shown
             for binding in sceneAutosave?.bindings ?? [] { try? host.addLayer(binding) }   // SCN-002: restored bindings, MOD-011 layers in order
             connectThresholdTriggers(host)   // MOD-006
             connectLFOs(host)   // MOD-007
+            connectStereoPhase(host)   // ANL-013
             #if DEBUG
             bindGlowToLevelIfRequested(host)   // MOD-002: AudioFeatureBindingUITests
             #endif
@@ -1675,6 +1688,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// The system Reduce Motion setting changed.
     func systemReduceMotionChanged(_ enabled: Bool) {
         settings.systemReduceMotion = enabled
+        nativeVisual?.reduceMotion = enabled   // VIS-007-R5
         applyReduceFlashing()
     }
 

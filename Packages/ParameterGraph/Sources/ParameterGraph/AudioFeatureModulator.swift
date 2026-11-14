@@ -285,7 +285,7 @@ public final class AudioFeatureModulator {
         let policy = descriptor.modulation
         guard policy.isModulatable else { throw .notModulatable(id) }
         guard policy.mixModes.contains(binding.mixMode) else { throw .mixModeNotAllowed(id, binding.mixMode) }
-        if case let .band(index) = binding.source, !(0...AudioFeatureSource.maximumBandIndex).contains(index) {
+        if let index = binding.source.bandIndex, !(0...AudioFeatureSource.maximumBandIndex).contains(index) {   // MOD-015: envelopes too
             throw .bandIndexOutOfRange(id, index)
         }
         if case let .lfo(index) = binding.source, !(0...AudioFeatureSource.maximumLFOIndex).contains(index) {

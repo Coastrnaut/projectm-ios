@@ -23,6 +23,8 @@ struct PerformanceOverlay: View {
     var renderHealth: () -> String? = { nil }
     /// PERF-001: the stage timer's lines (`FrameStageReport.lines`); empty when nothing is measured.
     var stageLines: () -> [String] = { [] }
+    /// ANL-013: "stereo: r 0.98" (and "phase-inverted" while warned); nil without a native visual.
+    var stereoLine: () -> String? = { nil }
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { _ in
@@ -40,6 +42,10 @@ struct PerformanceOverlay: View {
                 if let render = renderHealth() {
                     Text("render: \(render)")
                         .accessibilityIdentifier("overlayRender")
+                }
+                if let stereo = stereoLine() {
+                    Text(stereo)
+                        .accessibilityIdentifier("overlayStereo")
                 }
                 stageSection(stageLines())
             }
