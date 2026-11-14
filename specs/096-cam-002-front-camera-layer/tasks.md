@@ -18,7 +18,7 @@ stage and stay open until a person runs them on D1-D3.
 - [ ] CAM-002-T05 `CameraFrame.position`, `LatestCameraFrame.store(_:owner:position:)` and `setPosition`, protocol `position` / `select(_:)` with default implementations in `Packages/Compositor/Sources/CameraLayer/CameraFrameProvider.swift`
 - [ ] CAM-002-T06 `CameraLayerSource.mirrored` (uniform `mirror` replaces `pad`, 32 bytes) and the position filter (draw only `frame.position == provider.position`) in `Packages/Compositor/Sources/CameraLayer/CameraLayerSource.swift`
 - [ ] CAM-002-T07 `StubCameraFrameProvider`: `position`, `availablePositions`, `select(_:)` per data-model.md (clear the slot, restart into the new position, `selectCount`), pattern `.marker(background:marker:)` (top-left quarter) in `Packages/Compositor/Sources/CameraLayer/StubCameraFrameProvider.swift`
-- [ ] CAM-002-T08 GPU tests in `Packages/Compositor/Tests/CompositorTests/CameraLayerTests.swift`: the marker is top-left unmirrored and top-right mirrored; toggling `mirrored` flips the next frame without a restart; a switch to front shows the front picture, never a stale back picture; missing front → `unavailable`, transparent fallback
+- [ ] CAM-002-T08 GPU tests in `Packages/Compositor/Tests/CompositorTests/CameraLayerTests.swift`: the marker is top-left unmirrored and top-right mirrored; toggling `mirrored` flips the next frame without a restart; a switch to front shows the front picture, never a stale back picture; missing front → `unavailable`, transparent fallback; Front selected during the (simulated) prompt shows the front picture after Allow
 
 ## Phase 3: User Story 1 - The front camera behind the music (P1) — MVP
 
@@ -30,13 +30,13 @@ stage and stay open until a person runs them on D1-D3.
 - [ ] CAM-002-T12 [US1] Settings "Camera" section (segmented `cameraPositionPicker` "Camera" Back/Front, `cameraMirrorToggle` "Mirror"), footer text, Visual footer mentions front or rear in `Apps/projectM-iOS/Views/SettingsView.swift`
 - [ ] CAM-002-T13 [US1] Badge "Front camera on" (`CameraIndicator(state:position:)`) in `Apps/projectM-iOS/Views/CameraIndicator.swift`; `PermissionCatalog.cameraNotice(for:position:)` in `Apps/projectM-iOS/Coordinators/PermissionCatalog.swift`
 - [ ] CAM-002-T14 [US1] Usage description (spec Clarifications) in `project.yml`, `PermissionCatalog.swift` and `docs/privacy-policy.md` together; `python3 scripts/check_permission_catalog.py` passes
-- [ ] CAM-002-T15 [US1] App unit tests `Apps/projectM-iOS/Tests/FrontCameraTests.swift`: settings defaults, per-position mirror, persistence through a new `AppSettings`, reset keys, not in scenes; badge label; host forwards position and mirror without restarting the loop or re-asking
+- [ ] CAM-002-T15 [US1] App unit tests `Apps/projectM-iOS/Tests/FrontCameraTests.swift`: settings defaults, per-position mirror, persistence through a new `AppSettings`, reset keys, not in scenes; badge label; the status-bar rule does not depend on position (R8); host forwards position and mirror without restarting the loop or re-asking
 
 ## Phase 4: User Story 2 - Mirror and saved output match the screen (P1)
 
 **Independent test**: marker picture; for mirror on and off the marker is on the same side in the composite, a REC-001 capture and the REC-003 output pass.
 
-- [ ] CAM-002-T16 [US2] Acceptance test in `Apps/projectM-iOS/Tests/FrontCameraTests.swift`: one frame of the Camera visual host composited offscreen with the composite's REC-001 capture requested and the REC-003 output pass encoded in the same command buffer; read pixels from all three; marker side equal for mirror on and off, front and back (CAM-002-S2, S3)
+- [ ] CAM-002-T16 [US2] Acceptance test in `Apps/projectM-iOS/Tests/FrontCameraTests.swift`: one frame of the Camera visual host composited offscreen with the composite's REC-001 capture requested and the REC-003 output pass encoded in the same command buffer; read pixels from all three; marker side equal for mirror on and off, front and back (CAM-002-S2, S3). OUT-001 shows the same host view and compositor (research CAM-002-D2), so the composite stands for the external display
 
 ## Phase 5: User Story 3 - Switching cameras safely (P1)
 
@@ -66,3 +66,7 @@ T01 → T02-T08 (T02, T03 parallel; T05 before T06, T07) → US1 (T09-T15) → U
 ## Implementation strategy
 
 MVP is US1 (front camera with mirror on screen); US2 proves the acceptance; US3 hardens switching.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+100 % of R1-R12 and S1-S7 have tasks; no critical finding. Applied: C1 (OUT-001 noted in T16), C2 (prompt-time switch in T08), C3 (status-bar rule in T15).
