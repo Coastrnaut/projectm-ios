@@ -45,7 +45,47 @@ manager-level switch:
 
 ### Session 2026-11-13
 
-(Filled by `/speckit-clarify`.)
+Answered by Claude under the owner's standing approval (owner rule 4: routine decisions delegated,
+no human interaction); each answer is the conservative, local-first option, recommended option
+first.
+
+- Q: Should a switch crossfade two running sources, or duck the old one to silence and fade the new
+  one in? → A: Duck: fade the old source out to exact silence, hold a short silence, fade the new
+  source in; the two sources never run at the same time. A real crossfade needs both sources
+  delivering at once, which breaks FR-001 (exactly one active source) and Constitution IV (the
+  audio would be a mix of, say, the room microphone and app audio under one label); the PCM sink is
+  single-producer, and the microphone (`.record`) and playback audio-session configurations cannot
+  both be active. Ducking also adds no new capture, permission or API (Constitution I, privacy)
+  (AUD-012-R2, R3).
+- Q: What are the ramp, the silence, the fade-out limit and the handoff bound? → A: Linear ramps
+  of 100 ms (4,410 frames at 44.1 kHz) out and in; a silence of 1,024 frames (23 ms) between them;
+  the fade-out waits at most 150 ms for the old source's audio. If it has to complete without
+  audio, it ramps from the last delivered sample to 0 over min(remaining ramp, 1,024) frames, so a
+  reader that keeps only its newest 50 ms (R-06's freshness rule, 2,205 frames) still sees the ramp
+  and the silence. Handoff bound N = 300 ms (150 + 23 + 100 = 273 ms). Ramp bound: a step the
+  handoff adds is at most |a| / 1,024, where |a| ≤ 2 is the sample being ramped (≤ 0.002 absolute;
+  a / 4,410 for a fade that had audio) (AUD-012-R3 to R6).
+- Q: Which bound do samples handed to the renderer have, and what replaces a bad sample? → A:
+  ±2.0 (+6 dBFS): NaN and ±Inf become 0, finite values beyond ±2 are clamped to ±2, each
+  replacement is counted. ±2 rather than ±1 so legitimate float audio slightly over full scale
+  (inter-sample peaks, converter overshoot) stays bit-identical; the count is a number in
+  diagnostics and the performance overlay, never audio content. Before level metering and
+  conversion only non-finite values are replaced (to 0), so levels stay true for loud audio
+  (AUD-012-R9, R10).
+- Q: What does the indicator show during a switch, and when exactly does it change? → A:
+  "Switching source…" (no source named) from the moment the switch is requested until the new
+  session's first audio is observed, or its attempt ends (failure, cancel), or the classifier
+  decides a state other than Waiting (for example "No audio received"); then "<B> · <state>". The
+  old label disappears at the request, so it never lingers after the old source stops; the new
+  source is not named before its audio flows, as Constitution IV asks of labels. VoiceOver hears
+  the same text; the AUD-007 route indicator is hidden in that window (AUD-012-R7).
+- Q: Where does the user switch, and what about Microphone's explainer? → A: A "Switch Source"
+  button in the visualizer controls opens a list of the other available modes (System/App Capture,
+  Microphone, In-App Playback, each with its chooser label; In-App Playback plays the reference
+  track as its chooser row does). Choosing Microphone while its explainer is still pending returns
+  to the chooser and shows the explainer, exactly as the chooser row does (FR-005); imported tracks
+  and test signals stay in the chooser. The status banner's "Choose source" keeps going back to the
+  chooser (AUD-012-R1, R13, R15).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -82,7 +122,7 @@ and during a switch.
 
 **Acceptance Scenarios**:
 
-1. **Given** a source that writes NaN or ±Inf, **When** the audio is normalized, **Then** projectM's ring and the analysis tap contain only finite samples, each bad sample is replaced by 0 and counted, and the audio-state levels are computed from the sanitized audio.
+1. **Given** a source that writes NaN or ±Inf, **When** the audio is normalized, **Then** projectM's ring and the analysis tap contain only finite samples within ±2, each bad sample is replaced by 0 and counted, and the audio-state levels are computed from the sanitized audio.
 2. **Given** a switch between two constant-level sources, **When** the written stream is read in order, **Then** no sample-to-sample change caused by the handoff exceeds the ramp bound, and the stream reaches exactly 0 between the sources.
 3. **Given** a switch, **When** it completes, **Then** the whole handoff (fade-out, gap, fade-in) took no longer than the handoff bound measured on the sample clock.
 4. **Given** a switch, **When** the analysis consumers read the tap after the switch point, **Then** no frame of the old source's session is delivered to them, and the session generation tells them a new session began.
@@ -118,13 +158,13 @@ state of the last command, with no duplicate sessions and no stale label.
 
 - **AUD-012-R1**: The visualizer MUST offer a "Switch Source" control that lists the other available source modes and switches to the chosen one without leaving the visualizer; the visual MUST keep running (not paused, not recreated). Only modes the user already may start from the chooser are offered; nothing new is captured or permitted (FR-002).
 - **AUD-012-R2**: A switch MUST keep exactly one source active (FR-001): the old source is stopped before the new one starts (FR-016).
-- **AUD-012-R3**: Handoff shape: the audio handed to the renderer and to the analysis copy fades from the old source to silence over a fixed ramp, holds a short silence, then fades in from silence to the new source over the same ramp. The ramp and the bound are fixed values (set in Clarifications).
-- **AUD-012-R4**: Ramp bound: every sample-to-sample change the handoff adds to the written stream MUST stay within a documented bound, and the stream MUST reach exactly 0 between the two sources.
-- **AUD-012-R5**: The fade-out MUST NOT wait longer than a fixed limit; if the old source does not deliver enough audio within it (paused, interrupted, silent stream), the fade-out completes from the last delivered sample with a ramp that respects R4.
-- **AUD-012-R6**: Handoff bound: fade-out wait + silence + fade-in ≤ the handoff bound (Clarifications), on the sample clock. The new source's own start time (a prompt, the picker) is not part of the bound.
+- **AUD-012-R3**: Handoff shape: the audio handed to the renderer and to the analysis copy fades from the old source to silence over a linear 100 ms ramp (4,410 frames), holds 1,024 frames (23 ms) of exact silence, then fades in from silence to the new source over the same 100 ms ramp.
+- **AUD-012-R4**: Ramp bound: every sample-to-sample change the handoff adds to the written stream MUST be at most |a| / 1,024 (|a| ≤ 2, the sample being ramped; ≤ 0.002 absolute), and the stream MUST reach exactly 0 between the two sources.
+- **AUD-012-R5**: The fade-out MUST NOT wait longer than 150 ms; if the old source does not deliver enough audio within it (paused, interrupted, silent stream), the fade-out completes from the last delivered sample over min(remaining ramp, 1,024) frames, which respects R4.
+- **AUD-012-R6**: Handoff bound: fade-out wait + silence + fade-in ≤ 300 ms (150 + 23 + 100 = 273 ms), on the sample clock. The new source's own start time (a prompt, the picker) is not part of the bound.
 - **AUD-012-R7**: Label rule: from the switch request until the new source's first audio has been observed (or its attempt has ended or its state is decided), the source-and-state indicator, its accessibility label and announcements read "Switching source…" and name no source; the old label MUST NOT be shown after the request; the new label is shown from that point on. The AUD-007 route indicator is hidden during the same window.
 - **AUD-012-R8**: Generation rule: at the switch point (old source stopped) the analysis tap is emptied and only then the capture-session generation advances (ANL-016-R9), so analysis consumers can detect and drop frames of the old session; no old-session frame may be written to the tap after the generation advanced.
-- **AUD-012-R9**: Sanitizer: every sample handed to the renderer's ring and the analysis tap MUST be finite and within a fixed bound; non-finite samples become 0 and out-of-range samples are clamped, and each replacement is counted in diagnostics (a count only; no audio content is logged or stored). Non-finite samples MUST also be replaced before level metering and conversion, so they cannot hide audio from the classifier or poison the converter.
+- **AUD-012-R9**: Sanitizer: every sample handed to the renderer's ring and the analysis tap MUST be finite and within ±2.0; non-finite samples become 0 and out-of-range samples are clamped, and each replacement is counted in diagnostics (a count only; no audio content is logged or stored). Non-finite samples MUST also be replaced before level metering and conversion, so they cannot hide audio from the classifier or poison the converter.
 - **AUD-012-R10**: The sanitizer MUST leave clean audio bit-identical and cost no copy when the audio is clean, and MUST NOT allocate, lock or log; it runs on the analysis queue, never on an audio callback (Constitution VII).
 - **AUD-012-R11**: Stop during a switch stops the old source, starts nothing and returns to the chooser (FR-007); a second switch during a switch supersedes the first (FR-052) and continues the gain from its current value.
 - **AUD-012-R12**: AUD-011's microphone flag follows the source at the switch point; the gate restarts closed for the new session (AUD-011-R9).
@@ -143,8 +183,8 @@ state of the last command, with no duplicate sessions and no stale label.
 ### Measurable Outcomes
 
 - **AUD-012-S1**: Across switches A → B, B → A and A → B → A (switch during a switch) with sources that inject NaN and ±Inf, 0 non-finite and 0 out-of-bound samples reach projectM's ring or the analysis tap; every injected bad sample is counted.
-- **AUD-012-S2**: With constant-level sources, the largest sample-to-sample change in the written stream during a switch is within the ramp bound, and the stream holds exactly 0 between the sources.
-- **AUD-012-S3**: Every handoff completes within the handoff bound on the sample clock.
+- **AUD-012-S2**: With constant-level sources, the largest sample-to-sample change in the written stream during a switch is at most a / 1,024 for a source level a (a / 4,410 when the fade had audio), and the stream holds exactly 0 between the sources.
+- **AUD-012-S3**: Every handoff completes within 300 ms on the sample clock.
 - **AUD-012-S4**: The label sequence during a switch is exactly "A", "Switching source…", "B" (unit test on the manager and one UI test).
 - **AUD-012-S5**: 0 frames of the old session are read from the tap after the switch point.
 - **AUD-012-S6**: Clean audio through the boundary is bit-identical (projectM's ring equals the written frames).
