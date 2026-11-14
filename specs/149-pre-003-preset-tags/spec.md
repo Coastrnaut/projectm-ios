@@ -48,6 +48,16 @@ conservative, local-first option.
 - Q: Where are tags edited? → A: A "Tags…" action on every preset row (context menu and the VoiceOver action "Tags") opens a Tags sheet for that preset: its tags with Remove, a field with Add (Return adds) and suggestions from the other presets' tags. Changes save at once, never load a preset and announce on the library lane.
 - Q: Do backups carry tags? → A: Yes. FILE-005 backups hold the tags as their own record (`collections/tags.json`); restore merges them per preset by the restore choice (Keep both = union up to 16, Replace = the backup's tags, Skip = the device's); tags of a user preset restored as a copy follow the copy's new ID. FILE-011's erase of "Collections, tags and favorites" removes them.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Is the chip row also shown while searching and in Favorites? → A: Yes: the chip row stays at the top of the list in the home, in Favorites and in search results, so the filter that narrows the list is always visible and can be cleared where it applies.
+- Q: Does a preset row show its tags visually, not only to VoiceOver? → A: Yes: a row with tags adds a caption line listing them ("Calm · Slow") under the author line; rows without tags are unchanged, so existing layouts and tests are untouched.
+- Q: Do tag edits have undo, or a show-wide rename? → A: No (as SCN-005): a tag is removed in the preset's Tags sheet and disappears when no listed preset carries it. Rename and bulk tagging can come later.
+- Q: How are the browser's chips cleared? → A: Tapping a selected chip deselects it; a "Clear" chip at the end of the row (shown while any chip is selected) deselects all. Selection survives closing the browser while the app runs.
+- Q: Is the tag scope's member list alphabetical or by tag order? → A: Alphabetical across packs (feature 002 FR-115's order for cross-pack lists such as Favorites), playable only.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - I tag presets and filter by tag, and it survives a relaunch (Priority: P1) — MVP
@@ -114,7 +124,7 @@ removes them; damaged files load leniently.
 - **PRE-003-R5**: Tags are saved in one versioned, bounded file, replaced atomically on every change; every change is saved before it is shown.
 - **PRE-003-R6**: Reading is lenient: entries breaking a rule are dropped and counted; an unreadable file is set aside (one copy) with a one-time notice; a newer-format file is kept untouched and tagging is unavailable with a message.
 - **PRE-003-R7**: Tags of IDs the library does not list are kept and hidden; removing a user preset prunes its tags.
-- **PRE-003-R8**: The browser shows a chip row of the vocabulary under the All/Favorites picker; selected chips combine with AND and replace the home with the tagged presets (alphabetical across packs, locked marked), narrowed to favorites when Favorites is selected; selection is in memory only.
+- **PRE-003-R8**: The browser shows a chip row of the vocabulary under the All/Favorites picker; selected chips combine with AND and replace the home with the tagged presets (alphabetical across packs, locked marked), narrowed to favorites when Favorites is selected; selection is in memory only. The chip row is shown in the home, in Favorites and in search results; tapping a selected chip deselects it and a "Clear" chip deselects all. A row with tags shows them in a caption line.
 - **PRE-003-R9**: Search matches name, author or any tag (folded substring); selected chips narrow the search results.
 - **PRE-003-R10**: Choosing a preset from tag results makes "Tagged: <tags>" the scope; Next, Previous and Random walk its playable presets alphabetically; the scope is stored as All.
 - **PRE-003-R11**: Every preset row offers "Tags…" (context menu) and the VoiceOver action "Tags", opening a Tags sheet with the preset's tags (Remove button and VoiceOver action), a field with Add and suggestions from the vocabulary narrowed by the field's text.
