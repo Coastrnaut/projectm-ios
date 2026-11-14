@@ -67,7 +67,14 @@ struct ControlsOverlay: View {
             }
         }
         .padding(12)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .background(Color.black.opacity(0.45), in: RoundedRectangle(cornerRadius: 16))
+        .background(.thickMaterial, in: RoundedRectangle(cornerRadius: 16))
+        // ACC-004 (audit, 2026-11-13): the controls float over a moving, often bright visualization. With
+        // the ultra-thin material in light mode, black and grey text over a bright preset failed the
+        // contrast audit (titles, times, scope, route, tempo). Like a video player's controls they are
+        // now always dark, on a thick material darkened further, so a white preset behind them cannot
+        // lift the background enough to fail small captions (scope line) either.
+        .environment(\.colorScheme, .dark)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("controls")
     }
@@ -109,7 +116,6 @@ struct ControlsOverlay: View {
                 Text(coordinator.showsCameraVisual ? "Rear camera" : coordinator.showsPhotoVisual ? "Your photo"
                      : coordinator.showsVideoVisual ? "Your video" : "Native visual")   // CAM-001, MED-001, MED-002
                     .font(.caption)
-                    .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
         } else {
@@ -144,7 +150,6 @@ struct ControlsOverlay: View {
             // Feature 002 FR-120: the scope Next/Previous/Random walk, and its playable count.
             Text(coordinator.presets.scopeLine)
                 .font(.caption)
-                .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .accessibilityIdentifier("scopeLine")
         }
@@ -181,6 +186,7 @@ struct ControlsOverlay: View {
                     }
                     .accessibilityLabel(item.title)
                     .accessibilityValue(item.value ?? "")
+                    .accessibilityHint(item.hint ?? "")
                     .accessibilityIdentifier(item.id)
                 }
             }
@@ -203,6 +209,7 @@ struct ControlsOverlay: View {
                     }
                     .buttonStyle(.bordered)
                     .accessibilityValue(item.value ?? "")
+                    .accessibilityHint(item.hint ?? "")
                     .accessibilityIdentifier(item.id)
                 }
                 TempoControls(coordinator: coordinator)   // SHOW-011
@@ -215,6 +222,8 @@ struct ControlsOverlay: View {
         let title: String
         let icon: String
         var value: String? = nil
+        /// ACC-004-R4: what a short label acts on, for VoiceOver.
+        var hint: String? = nil
         let action: () -> Void
     }
 
@@ -228,7 +237,8 @@ struct ControlsOverlay: View {
         let external = coordinator.externalDisplay
         let requested = external.isBlackoutRequested
         return Item(id: "blackout", title: requested ? "Restore output" : "Black out output",
-                    icon: requested ? "eye" : "eye.slash", value: external.blackoutPhase.accessibilityValue) {
+                    icon: requested ? "eye" : "eye.slash", value: external.blackoutPhase.accessibilityValue,
+                    hint: requested ? "Shows the visualization on the output again" : "Makes the output black") {
             external.toggleBlackout()
         }
     }
@@ -255,10 +265,12 @@ struct ControlsOverlay: View {
                 coordinator.frameCapture.requestSave()
             },
             recordItem,
-            Item(id: "previous", title: "Previous", icon: "backward.fill") { coordinator.previous() },
-            Item(id: "next", title: "Next", icon: "forward.fill") { coordinator.next() },
-            Item(id: "random", title: "Random", icon: "shuffle") { coordinator.random() },
-            Item(id: "presets", title: "Presets", icon: "list.bullet") {
+            Item(id: "previous", title: "Previous", icon: "backward.fill", hint: "Plays the previous preset in the list") {
+                coordinator.previous()
+            },
+            Item(id: "next", title: "Next", icon: "forward.fill", hint: "Plays the next preset in the list") { coordinator.next() },
+            Item(id: "random", title: "Random", icon: "shuffle", hint: "Plays a random preset from the list") { coordinator.random() },
+            Item(id: "presets", title: "Presets", icon: "list.bullet", hint: "Opens the preset browser") {
                 coordinator.showPresetBrowser = true
             },
             Item(id: "settings", title: "Settings", icon: "gearshape") { coordinator.showSettings = true },

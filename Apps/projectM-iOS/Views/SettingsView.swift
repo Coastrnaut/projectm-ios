@@ -89,7 +89,7 @@ struct SettingsView: View {
                             settings.visual = choice
                         } label: {
                             HStack {
-                                Text(choice.title).foregroundStyle(.primary)
+                                Text(choice.title).foregroundStyle(Color.primary)   // ACC-004: label colour; `.primary` in a button resolves to the tint (blue failed the contrast audit)
                                 Spacer(minLength: 8)
                                 if settings.visual == choice {
                                     Image(systemName: "checkmark").foregroundStyle(.tint).accessibilityHidden(true)

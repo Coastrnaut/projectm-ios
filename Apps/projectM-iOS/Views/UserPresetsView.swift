@@ -44,7 +44,6 @@ struct UserPresetsView: View {
         List {
             if let unavailable = userPresets.unavailableMessage {
                 Text(unavailable)
-                    .foregroundStyle(.secondary)
                     .accessibilityIdentifier("userPresetsUnavailable")
             }
             if let notice = userPresets.notice {
@@ -70,7 +69,6 @@ struct UserPresetsView: View {
             Section {
                 if userPresets.playable.isEmpty && userPresets.pending.isEmpty && !userPresets.isImporting {
                     Text(UserPresetText.empty)
-                        .foregroundStyle(.secondary)
                         .accessibilityIdentifier("userPresetsEmpty")
                 }
                 ForEach(playableRows, id: \.record.id) { row in
@@ -86,9 +84,9 @@ struct UserPresetsView: View {
                         Button { userPresets.chooseHeld(preset) } label: {
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(preset.name).foregroundStyle(.primary)
+                                    Text(preset.name).foregroundStyle(Color.primary)   // ACC-004: label colour, not the tint
                                     Text(preset.duplicateOf.map(UserPresetsCoordinator.originText) ?? "")
-                                        .font(.caption).foregroundStyle(.secondary)
+                                        .font(.caption)
                                 }
                                 Spacer()
                                 Image(systemName: "lock.fill").foregroundStyle(.secondary)
@@ -116,7 +114,7 @@ struct UserPresetsView: View {
                     ForEach(userPresets.pending) { preset in
                         VStack(alignment: .leading, spacing: 2) {
                             Text(preset.name)
-                            Text("It will be checked before it can play.").font(.caption).foregroundStyle(.secondary)
+                            Text("It will be checked before it can play.").font(.caption)
                         }
                         .accessibilityElement(children: .ignore)
                         .accessibilityLabel(UserPresetsCoordinator.pendingLabel(name: preset.name))
@@ -133,7 +131,7 @@ struct UserPresetsView: View {
                     HStack {
                         Text("Quarantine")
                         Spacer()
-                        Text(userPresets.quarantined.count.formatted()).foregroundStyle(.secondary)
+                        Text(userPresets.quarantined.count.formatted())
                     }
                     .accessibilityElement(children: .combine)
                     .accessibilityLabel(UserPresetsCoordinator.quarantineRowLabel(count: userPresets.quarantined.count))
@@ -216,7 +214,6 @@ struct PresetQuarantineView: View {
         List {
             Section {
                 Text(userPresets.quarantined.isEmpty ? UserPresetText.quarantineEmpty : UserPresetText.quarantineExplanation)
-                    .foregroundStyle(.secondary)
                     .accessibilityIdentifier(userPresets.quarantined.isEmpty ? "quarantineEmpty" : "quarantineExplanation")
             }
             ForEach(userPresets.quarantined) { preset in
@@ -226,7 +223,6 @@ struct PresetQuarantineView: View {
                         Text(preset.originalFileName)
                         Text(reason)
                             .font(.callout)
-                            .foregroundStyle(.secondary)
                             .accessibilityIdentifier("quarantineReason:\(preset.originalFileName)")
                     }
                     .accessibilityElement(children: .ignore)
@@ -284,7 +280,6 @@ struct UserPresetInfoView: View {
                             .accessibilityIdentifier("presetOrigin")
                         row("Pack's statement", origin.licenseStatement.isEmpty ? "None" : origin.licenseStatement)
                         Text(UserPresetsCoordinator.duplicateRightsText)
-                            .foregroundStyle(.secondary)
                     }
                 }
                 Section("Author and license") {
@@ -297,12 +292,11 @@ struct UserPresetInfoView: View {
                     }
                     if preset.license.linesFound.isEmpty {
                         Text(PresetLicenseMetadata.noLicenseText)
-                            .foregroundStyle(.secondary)
                             .accessibilityIdentifier("presetNoLicense")
                     } else {
                         ForEach(Array(preset.license.linesFound.enumerated()), id: \.offset) { item in
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Found in the file").font(.caption).foregroundStyle(.secondary)
+                                Text("Found in the file").font(.caption)
                                 Text(item.element).font(.callout.monospaced())
                             }
                             .accessibilityElement(children: .combine)
@@ -312,7 +306,7 @@ struct UserPresetInfoView: View {
                 }
                 Section("Checks") {
                     if preset.warnings.isEmpty {
-                        Text("No warnings.").foregroundStyle(.secondary)
+                        Text("No warnings.")
                     }
                     ForEach(Array(preset.warnings.enumerated()), id: \.offset) { item in
                         Label(item.element.message, systemImage: "exclamationmark.triangle")
@@ -320,7 +314,6 @@ struct UserPresetInfoView: View {
                     }
                     Text(preset.provenOnScreen ? "Checked off screen and shown without a problem."
                                                : "Checked off screen. Not shown for long enough yet to count as proven.")
-                        .foregroundStyle(.secondary)
                 }
             }
             .navigationTitle("Preset Information")
@@ -333,7 +326,7 @@ struct UserPresetInfoView: View {
     /// A label above its value, so long values wrap at any text size.
     private func row(_ title: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(title).font(.caption).foregroundStyle(.secondary)
+            Text(title).font(.caption)
             Text(value)
         }
         .accessibilityElement(children: .ignore)

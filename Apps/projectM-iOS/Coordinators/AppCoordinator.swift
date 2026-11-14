@@ -102,6 +102,13 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
 
     static let noticeKey = "notice.photosensitivityAcknowledged"
     static let controlsAutoHide: Duration = .seconds(5)
+    /// ACC-004: `-uitestKeepControls` keeps the controls up as VoiceOver does, so the accessibility
+    /// audit (several seconds) never races the auto-hide. Always false in Release.
+    #if DEBUG
+    static let keepsControlsForAccessibilityTests = ProcessInfo.processInfo.arguments.contains("-uitestKeepControls")
+    #else
+    static let keepsControlsForAccessibilityTests = false
+    #endif
 
     private(set) var screen: Screen {
         didSet { externalDisplay.visualizerActive(screen == .visualizer) }   // OUT-001: only the visualizer is shown externally
@@ -190,6 +197,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let show: ShowCoordinator
     /// SCN-012: the repair report before a show cue's scene or Reopen opens.
     let sceneRepair: SceneRepairCoordinator
+    /// ACC-004: user-caused state changes are announced through one rate-limited path.
+    let announcer = AccessibilityAnnouncer()
     /// The Text visual (MED-009), created when Text is chosen and released when another visual is.
     private(set) var textVisual: TextVisualHost?
     /// The text layer's state while the Text visual exists (`empty` otherwise).
@@ -655,6 +664,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                 await userPresets.prepare(library: library, bundle: .main)
                 presets.attach(library)
                 presets.onScopeChange { UIAccessibility.post(notification: .announcement, argument: $0) }   // FR-124
+                presets.announceFavorite = { [weak self] (text: String) in self?.announcer.announce(text, kind: .favorite) }   // ACC-004
                 await presets.setUnlocked(entitlements.isUnlocked)
                 libraryReady = true
                 Task { [weak self] in await self?.entitlements.loadProduct() }
@@ -1248,17 +1258,28 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         userPaused ? pauseActiveVisual() : resumeActiveVisual()
         updateIdleTimer()
         showControls()
+        announcer.announce(AccessibilityAnnouncer.pausedText(userPaused), kind: .playback)   // ACC-004-R5
     }
 
-    func next() { showControls(); Task { await presets.next() } }
-    func previous() { showControls(); Task { await presets.previous() } }
-    func random() { showControls(); Task { await presets.random() } }
+    func next() { showControls(); Task { await announcingPresetChange { await presets.next() } } }
+    func previous() { showControls(); Task { await announcingPresetChange { await presets.previous() } } }
+    func random() { showControls(); Task { await announcingPresetChange { await presets.random() } } }
+
+    /// ACC-004-R5, R6: a user's Previous, Next, Random or browser choice announces the preset it
+    /// showed; nothing is announced when the preset did not change (a failed load, an empty scope, a
+    /// warning still waiting). No other path announces a preset.
+    func announcingPresetChange(_ change: () async -> Void) async {
+        let before = presets.current
+        await change()
+        guard let shown = presets.current, shown != before else { return }
+        announcer.announce(AccessibilityAnnouncer.presetText(shown.name), kind: .preset)
+    }
 
     /// A preset chosen in the browser, from the list that becomes the scope (FR-116).
     func choose(_ preset: IndexedPreset, from scope: PresetScope) {
         showControls()
         Task {
-            await presets.choose(preset, from: scope)
+            await announcingPresetChange { await presets.choose(preset, from: scope) }   // ACC-004-R5
             // ACC-002: the browser stays open while a flagged preset's warning waits for an answer.
             if !presets.purchaseRequested && presets.flashWarning == nil { showPresetBrowser = false }
         }
@@ -1287,7 +1308,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     func showControls() {
         controlsVisible = true
         hideTask?.cancel()
-        guard !UIAccessibility.isVoiceOverRunning else { return }
+        guard !UIAccessibility.isVoiceOverRunning, !Self.keepsControlsForAccessibilityTests else { return }
         hideTask = Task { [weak self] in
             try? await Task.sleep(for: Self.controlsAutoHide)
             guard !Task.isCancelled else { return }

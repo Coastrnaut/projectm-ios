@@ -254,6 +254,15 @@ final class PresetCoordinator {
         favoritesVersion += 1
     }
 
+    /// ACC-004: set by AppCoordinator; speaks a favorite change the user made.
+    @ObservationIgnored var announceFavorite: (String) -> Void = { (_: String) in }
+
+    /// The star and the rotor action (ACC-004-R3, R5): toggles and announces the new state.
+    func toggleFavoriteAnnounced(_ preset: IndexedPreset) {
+        toggleFavorite(preset)
+        announceFavorite(AccessibilityAnnouncer.favoriteText(preset.name, added: isFavorite(preset)))
+    }
+
     /// "<scope> · <count>" under the preset name (FR-120).
     var scopeLine: String {
         guard let library else { return "" }

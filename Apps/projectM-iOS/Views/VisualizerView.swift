@@ -175,6 +175,15 @@ struct VisualizerView: View {
                     .accessibilityIdentifier("showAppliedScene")
                     .accessibilityValue(value)
             }
+            if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {   // ACC-004-R9: the last announcement
+                let spoken = coordinator.announcer.lastSpoken
+                Text(spoken)
+                    .font(.caption2)
+                    .opacity(0.01)
+                    .allowsHitTesting(false)
+                    .accessibilityIdentifier("announcementProbe")
+                    .accessibilityValue(spoken)
+            }
             if AppCoordinator.reduceMotionPanelRequested {   // ACC-001: ReduceMotionUITests (contract C2)
                 VStack { HStack { reduceMotionPanel; Spacer() }; Spacer() }
                     .padding(.top, 190)
@@ -343,6 +352,16 @@ struct VisualizerView: View {
         .onChange(of: coordinator.manager.state) { _, state in
             coordinator.routes.refresh()   // AUD-007-R3: a source started or changed state
             SourceStatusIndicator.announce(mode: coordinator.manager.activeMode, state: state, signal: coordinator.testSignalName)   // FR-070, AUD-016-R16
+        }
+        // ACC-004-R5: the output's blackout and the recording, whichever control or key caused them.
+        .onChange(of: coordinator.externalDisplay.isBlackoutRequested) { _, blackedOut in
+            coordinator.announcer.announce(AccessibilityAnnouncer.blackoutText(blackedOut), kind: .output)
+        }
+        .onChange(of: coordinator.videoRecording.state == .recording) { _, recording in
+            coordinator.announcer.announce(AccessibilityAnnouncer.recordingText(recording), kind: .recording)
+        }
+        .onChange(of: coordinator.videoRecording.notice) { _, notice in
+            if let notice { coordinator.announcer.announce(notice, kind: .recording) }
         }
         .onChange(of: coordinator.manager.stopReason) { _, reason in
             // AUD-014-R18: In-App Playback went on hold (interrupted, or the output was disconnected).

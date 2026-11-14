@@ -39,6 +39,8 @@ extension AppCoordinator {
         }
         // SCN-012: a cue's scene that needs review shows the repair report first.
         show.requestRepair = { [weak self] (request: SceneRepairRequest) in self?.sceneRepair.present(request) }
+        // ACC-004-R7: cue announcements share the rate-limited path (a clicker can step quickly).
+        show.announce = { [weak self] (message: String) in self?.announcer.announce(message, kind: .cue) }
         sceneRepair.availability = { [weak self] () -> StoredMediaAvailability in
             self?.storedMediaAvailability ?? StoredMediaAvailability(photos: [], videos: [])
         }
