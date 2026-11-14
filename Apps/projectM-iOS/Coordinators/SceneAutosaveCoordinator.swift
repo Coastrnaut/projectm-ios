@@ -30,6 +30,9 @@ final class SceneAutosaveCoordinator {
 
     var isPending: Bool { editRevision > committedRevision }
 
+    /// SCN-009 (research SCN-009-D1): while true no trigger notes an edit or writes (A/B Compare previews).
+    private(set) var isSuspended = false
+
     /// The bindings the app binds to a native spectrum when it is created: the restored ones, then the
     /// last captured live ones (contract A5).
     var bindings: [AudioFeatureBinding] { carry.bindings }
@@ -179,6 +182,7 @@ final class SceneAutosaveCoordinator {
     func inputsChanged() {
         let previous = lastInputs
         track()
+        if isSuspended { return }   // SCN-009: observation stays armed; nothing is noted
         guard let previous, let current = lastInputs, current != previous else { return }
         noteEdit()
         if current.visual != previous.visual { commitNow() }   // A4: a visual change commits at once
@@ -200,7 +204,7 @@ final class SceneAutosaveCoordinator {
 
     /// Commits when the pending edit is due (the timer, or tests with a fake clock).
     func tick() {
-        guard debouncer.isPending else { return }
+        guard debouncer.isPending, !isSuspended else { return }
         if debouncer.isDue(at: clock()) { commit(synchronously: false) } else if let deadline = debouncer.deadline, schedulesTimer {
             let delay = max(0, deadline - clock())
             timer = Task { @MainActor [weak self] in
@@ -214,7 +218,7 @@ final class SceneAutosaveCoordinator {
     /// Catches up with an input change whose observation callback has not run yet (a trigger can
     /// arrive first, for example Settings closing right after a tap).
     private func catchUp() {
-        guard let previous = lastInputs else { return }
+        guard !isSuspended, let previous = lastInputs else { return }
         let current = inputs()
         guard current != previous else { return }
         lastInputs = current
@@ -224,19 +228,19 @@ final class SceneAutosaveCoordinator {
     /// Settings closed or the visual changed: commit a pending edit at once (asynchronous write).
     func commitNow() {
         catchUp()
-        guard isPending else { return }
+        guard isPending, !isSuspended else { return }
         commit(synchronously: false)
     }
 
     /// Terminate: commit a pending edit and wait for the write.
     func flushSynchronously() {
         catchUp()
-        if isPending { commit(synchronously: true) } else { drain() }
+        if isPending && !isSuspended { commit(synchronously: true) } else { drain() }
     }
 
     private func appEnteredBackground() {
         catchUp()
-        guard isPending else { return }
+        guard isPending, !isSuspended else { return }
         if backgroundTask == .invalid {
             backgroundTask = UIApplication.shared.beginBackgroundTask(withName: "SCN-002 commit scene") { [weak self] in
                 MainActor.assumeIsolated { self?.endBackgroundTask() }
@@ -249,6 +253,28 @@ final class SceneAutosaveCoordinator {
         guard backgroundTask != .invalid else { return }
         UIApplication.shared.endBackgroundTask(backgroundTask)
         backgroundTask = .invalid
+    }
+
+    // MARK: - Suspend (SCN-009-R2, R4, R5; research SCN-009-D1, D2)
+
+    /// A/B Compare started: from now on no trigger notes an edit or writes the scene. Call after committing any
+    /// pending edit (`flushSynchronously`), so the files hold the pre-Compare scene.
+    func suspend() {
+        isSuspended = true
+        timer?.cancel()
+        timer = nil
+        debouncer.reset()
+    }
+
+    /// Compare ended: tracking resumes against `baseline` (the inputs when Compare started). One edit is noted under
+    /// the normal rules when the live inputs differ from it (a visual change commits at once, A4); none when equal.
+    func resume(from baseline: SceneInputs) {
+        guard isSuspended else { return }
+        isSuspended = false
+        track()
+        guard let current = lastInputs, current != baseline else { return }
+        noteEdit()
+        if current.visual != baseline.visual { commitNow() }
     }
 
     // MARK: - Commit

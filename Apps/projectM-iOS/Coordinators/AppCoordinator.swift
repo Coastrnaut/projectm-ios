@@ -178,6 +178,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     @ObservationIgnored let sceneHistory = SceneHistoryCoordinator()
     /// SCN-008: named parameter snapshots of the current scene (AppCoordinator+SceneSnapshots.swift).
     @ObservationIgnored let sceneSnapshots = SceneSnapshotCoordinator()
+    /// SCN-009: A/B compare of two scene states (AppCoordinator+SceneCompare.swift).
+    @ObservationIgnored let sceneCompare = SceneCompareCoordinator()
     /// CMP-015: the layer inspector's composites (a scene input) and transient solo/mute.
     let layers = LayerInspectorCoordinator()
     /// SCN-002: the current scene's autosave (nil only if its folder cannot be made).
@@ -672,6 +674,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         connectSceneHistory()   // SCN-010: starts from the restored (or fresh) scene
         connectSceneSnapshots()   // SCN-008
         connectSceneLock()   // SCN-015
+        connectSceneCompare()   // SCN-009 (after the snapshots, the history and the lock)
         connectParameterQuantizer()   // MOD-017
         midiMappings.applyValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.midi, values) }   // MIDI-003-R8
         osc.applyLiveValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.osc, values) }   // OSC-003-R5

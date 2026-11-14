@@ -6,13 +6,25 @@
 // "Default" removes the transition (the scene appears at once). Duration and easing are disabled for
 // Default and Cut. Every change saves the show at once and applies nothing. Navigation-link pickers keep
 // each choice on its own full-width row, so the sheet reads well at the largest accessibility sizes.
+// SHOW-004-R5: with `target: .override` the same sheet edits the cue's transition override ("Transition Into This Cue"):
+// the first type choice is "Use Scene Default" (removes the override), the footer names the scene default, and every
+// change goes to `setTransitionOverride`, never to the scene default.
 import ParameterGraph
 import ShowControl
 import SwiftUI
 
+/// SHOW-004: which of a cue's transitions the sheet edits.
+enum CueTransitionTarget {
+    /// SCN-007: the scene default (`ShowCue.transition`).
+    case sceneDefault
+    /// SHOW-004: the override for the edge into this cue (`ShowCue.transitionOverride`).
+    case override
+}
+
 struct CueTransitionView: View {
     let show: ShowCoordinator
     let cueID: UUID
+    var target: CueTransitionTarget = .sceneDefault
     let dismiss: () -> Void
     @State private var duration: Double = ShowCueTransition.defaultCrossfade.durationSeconds
 
@@ -21,7 +33,25 @@ struct CueTransitionView: View {
     static let defaultTag = "default"
 
     private var cue: ShowCue? { show.list.cues.first { (c: ShowCue) -> Bool in c.id == cueID } }
-    private var transition: ShowCueTransition? { cue?.transition }
+    private var transition: ShowCueTransition? { target == .override ? cue?.transitionOverride : cue?.transition }
+    private var title: String { target == .override ? "Transition Into This Cue" : "Transition" }
+    private var defaultTitle: String { target == .override ? "Use Scene Default" : "Default" }
+
+    private var footer: String {
+        guard target == .override else {
+            return "Default and Cut show the scene at once. Reduce Motion makes every transition a cut; Reduce flashing spreads a cut or a short transition over half a second."
+        }
+        let scene: String = CueTransitionResolver.summary(cue?.transition) ?? "at once"
+        return "Used only when the show steps into this cue; the scene default (\(scene)) stays as it is. Reduce Motion and Reduce flashing still apply."
+    }
+
+    /// Saves to the edited transition (SCN-007 default or SHOW-004 override).
+    private func save(_ value: ShowCueTransition?) {
+        switch target {
+        case .sceneDefault: show.setTransition(cueID, to: value)
+        case .override: show.setTransitionOverride(cueID, to: value)
+        }
+    }
     /// Duration and easing apply only to a known, non-cut type.
     private var shapesTransition: Bool {
         guard let type = transition?.type else { return false }
@@ -38,10 +68,10 @@ struct CueTransitionView: View {
                 } header: {
                     Text(cue?.label ?? "Cue")
                 } footer: {
-                    Text("Default and Cut show the scene at once. Reduce Motion makes every transition a cut; Reduce flashing spreads a cut or a short transition over half a second.")
+                    Text(footer)
                 }
             }
-            .navigationTitle("Transition")
+            .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -56,7 +86,7 @@ struct CueTransitionView: View {
     // MARK: Type
 
     private var typeTags: [(tag: String, title: String)] {
-        var tags: [(tag: String, title: String)] = [(Self.defaultTag, "Default")]
+        var tags: [(tag: String, title: String)] = [(Self.defaultTag, defaultTitle)]
         for type in ShowTransitionType.known { tags.append((type.text, type.displayName)) }
         if let type = transition?.type, !type.isKnown { tags.append((type.text, type.displayName)) }
         return tags
@@ -79,12 +109,12 @@ struct CueTransitionView: View {
 
     private func setType(_ tag: String) {
         guard tag != Self.defaultTag else {
-            show.setTransition(cueID, to: nil)
+            save(nil)
             return
         }
         guard let type = ShowTransitionType(text: tag) else { return }
         let base: ShowCueTransition = transition ?? ShowCueTransition.defaultCrossfade
-        if let updated = try? base.with(type: type) { show.setTransition(cueID, to: updated) }
+        if let updated = try? base.with(type: type) { save(updated) }
     }
 
     // MARK: Duration
@@ -116,7 +146,7 @@ struct CueTransitionView: View {
         duration = snapped
         guard let transition, transition.durationSeconds != snapped,
               let updated = try? transition.with(durationSeconds: snapped) else { return }
-        show.setTransition(cueID, to: updated)
+        save(updated)
     }
 
     // MARK: Easing
@@ -149,6 +179,6 @@ struct CueTransitionView: View {
 
     private func setEasing(_ preset: CueEasingPreset) {
         guard let curve = preset.curve, let transition, let updated = try? transition.with(easing: curve) else { return }
-        show.setTransition(cueID, to: updated)
+        save(updated)
     }
 }

@@ -147,7 +147,8 @@ extension SceneDocument {
                 ?? live.preservedGradientMasks[entry.id]   // CMP-008
             layers.append(SceneLayer(instance: entry.id.rawValue, content: content, values: entry.descriptor.parameters,
                                      composite: SceneComposite(opacity: settings.opacity, blendMode: blend, transform: settings.transform,
-                                                               fit: fit, mask: mask, gradientMask: gradient)))
+                                                               fit: fit, mask: mask, gradientMask: gradient,
+                                                               lumaKey: settings.lumaKey)))   // CMP-009
         }
         // Canonical order (MOD-013-R10): live edges in live order, then preserved edges as stored.
         let bindings = SceneBinding.list(live.bindings, expressions: live.expressions) + live.preserved.bindings
@@ -187,7 +188,8 @@ extension SceneDocument {
             let gradient: LayerGradientMask? = layer.composite.gradientMask?.layerGradientMask   // CMP-008
             if let saved = layer.composite.gradientMask, gradient == nil { unknownGradients[id] = saved }
             let settings = LayerCompositeSettings(opacity: layer.composite.opacity, blendMode: mode ?? .normal,
-                                                  transform: layer.composite.transform, fit: fit, mask: mask, gradientMask: gradient)
+                                                  transform: layer.composite.transform, fit: fit, mask: mask, gradientMask: gradient,
+                                                  lumaKey: layer.composite.lumaKey)   // CMP-009
             entries.append(LayerStackEntry(id: id, descriptor: LayerDescriptor(kind: kind, parameters: layer.values), settings: settings))
             contents[id] = layer.content
         }

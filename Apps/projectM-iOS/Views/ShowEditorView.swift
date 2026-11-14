@@ -12,6 +12,8 @@
 // and VoiceOver reads ", transition Crossfade 1.5 seconds, Ease Out".
 // SHOW-002-R10: Advance After… per cue (context menu, a leading "Advance" swipe action, VoiceOver action) opens
 // `CueDwellView`; a cue with a dwell shows "Advance after 0:30" and VoiceOver reads ", advances after 30 seconds".
+// SHOW-004-R5: Transition Into This Cue… per cue (context menu, a leading "Into" swipe action, VoiceOver action) opens
+// `CueTransitionView` on the cue's override; a cue with one shows "Into this cue: Cut" and VoiceOver reads ", into this cue Cut".
 // SCN-011-R7: Add from Template… opens `SceneTemplateGalleryView` (bundled starter scenes added as copies).
 import SceneFormat
 import ShowControl
@@ -30,6 +32,7 @@ struct ShowEditorView: View {
     @State private var assigningMIDI: ShowCue?
     @State private var editingTransition: ShowCue?
     @State private var editingDwell: ShowCue?   // SHOW-002
+    @State private var editingOverride: ShowCue?   // SHOW-004
     /// SCN-011: the template gallery (catalog read when it opens).
     @State private var templateCatalog: SceneTemplateCatalog?
 
@@ -78,6 +81,9 @@ struct ShowEditorView: View {
         }
         .sheet(isPresented: Binding(get: { editingDwell != nil }, set: { if !$0 { editingDwell = nil } })) {
             dwellSheet
+        }
+        .sheet(isPresented: Binding(get: { editingOverride != nil }, set: { if !$0 { editingOverride = nil } })) {
+            overrideSheet
         }
     }
 
@@ -140,6 +146,13 @@ struct ShowEditorView: View {
         }
     }
 
+    /// SHOW-004: the Transition Into This Cue sheet (the cue's override) for the chosen cue.
+    @ViewBuilder private var overrideSheet: some View {
+        if let cue = editingOverride {
+            CueTransitionView(show: show, cueID: cue.id, target: .override, dismiss: { () -> Void in editingOverride = nil })
+        }
+    }
+
     /// SHOW-002: the Advance After sheet for the chosen cue.
     @ViewBuilder private var dwellSheet: some View {
         if let cue = editingDwell {
@@ -147,7 +160,9 @@ struct ShowEditorView: View {
         }
     }
 
-    /// SCN-011-R7: Add from Template… opens the gallery of bundled starter scenes (disabled when the show is full).
+    /// SHOW-004-R5: Transition Into This Cue… per cue (context menu, a leading "Into" swipe action, VoiceOver action) opens
+// `CueTransitionView` on the cue's override; a cue with one shows "Into this cue: Cut" and VoiceOver reads ", into this cue Cut".
+// SCN-011-R7: Add from Template… opens the gallery of bundled starter scenes (disabled when the show is full).
     private var addFromTemplateButton: some View {
         Button {
             templateCatalog = ShowCoordinator.bundledTemplates()
@@ -206,6 +221,9 @@ struct ShowEditorView: View {
                 if let transition = CueTransitionResolver.summary(cue.transition) {   // SCN-007
                     Text("Transition: \(transition)").font(.caption).foregroundStyle(.secondary)
                 }
+                if let into = CueTransitionResolver.summary(cue.transitionOverride) {   // SHOW-004
+                    Text("Into this cue: \(into)").font(.caption).foregroundStyle(.secondary)
+                }
                 if let dwell = cue.dwell {   // SHOW-002
                     Text("Advance after \(dwell.clockText)").font(.caption).foregroundStyle(.secondary)
                 }
@@ -229,6 +247,10 @@ struct ShowEditorView: View {
         if let transition = CueTransitionResolver.summary(cue.transition) {   // SCN-007
             let spoken: String = transition.replacingOccurrences(of: " s,", with: " seconds,")
             value += ", transition \(spoken)"
+        }
+        if let into = CueTransitionResolver.summary(cue.transitionOverride) {   // SHOW-004
+            let spoken: String = into.replacingOccurrences(of: " s,", with: " seconds,")
+            value += ", into this cue \(spoken)"
         }
         if let dwell = cue.dwell { value += ", advances after \(dwell.spokenText)" }   // SHOW-002
         let selectedTraits: AccessibilityTraits = active ? .isSelected : []
@@ -266,6 +288,7 @@ struct ShowEditorView: View {
             .disabled(missing || full)
         Button("Rename Scene…") { startSceneRename(cue) }.disabled(missing)
         Button("Transition…") { editingTransition = cue }   // SCN-007
+        Button("Transition Into This Cue…") { editingOverride = cue }   // SHOW-004
         Button("Advance After…") { editingDwell = cue }   // SHOW-002
         Button("Delete", role: .destructive) { show.remove(cue.id) }
     }
@@ -286,6 +309,10 @@ struct ShowEditorView: View {
         Button("Transition") { editingTransition = cue }   // SCN-007
             .tint(.orange)
             .accessibilityIdentifier("showCueTransition")
+        Button("Into") { editingOverride = cue }   // SHOW-004
+            .tint(.purple)
+            .accessibilityLabel("Transition Into This Cue")
+            .accessibilityIdentifier("showCueTransitionOverride")
         Button("Advance") { editingDwell = cue }   // SHOW-002
             .tint(.mint)
             .accessibilityLabel("Advance After")
@@ -304,6 +331,7 @@ struct ShowEditorView: View {
         Button("Duplicate Scene") { show.duplicateScene(of: cue.id) }
         Button("Rename Scene") { startSceneRename(cue) }
         Button("Transition") { editingTransition = cue }   // SCN-007
+        Button("Transition Into This Cue") { editingOverride = cue }   // SHOW-004
         Button("Advance After") { editingDwell = cue }   // SHOW-002
         // ACC-004-R3: reordering without Edit mode's drag handles.
         Button("Move Up") { move(number - 1, by: -1) }

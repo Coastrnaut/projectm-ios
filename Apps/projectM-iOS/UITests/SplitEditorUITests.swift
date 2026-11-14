@@ -50,7 +50,7 @@ final class SplitEditorUITests: XCTestCase {
 
     /// Waits for the output to settle (the snap animates for 0.2 s), then checks it (UIX-007-R3, R4).
     @discardableResult
-    private func assertUndistorted(inside paneMaxX: CGFloat?, file: StaticString = #filePath, line: UInt = #line) -> Probe? {
+    private func assertUndistorted(inside paneEdge: @autoclosure () -> CGFloat?, file: StaticString = #filePath, line: UInt = #line) -> Probe? {
         var last: Probe?
         _ = poll(2) {
             let next = self.probe(file: file, line: line)
@@ -60,7 +60,7 @@ final class SplitEditorUITests: XCTestCase {
         guard let p = last else { return nil }
         XCTAssertEqual(p.aspect, p.windowAspect, accuracy: p.windowAspect * 0.01, "output aspect \(p.frame) vs window \(p.window)", file: file, line: line)
         XCTAssertEqual(p.bounds, p.window, "the visual itself keeps the window's size (not re-laid out)", file: file, line: line)
-        if let paneMaxX {
+        if let paneMaxX = paneEdge() {   // read after the output settled: the divider moves with the same animation
             XCTAssertGreaterThanOrEqual(p.frame.minX, -0.5, file: file, line: line)
             XCTAssertLessThanOrEqual(p.frame.maxX, paneMaxX + 0.5, "inside the output pane", file: file, line: line)
             XCTAssertGreaterThanOrEqual(p.frame.minY, -0.5, file: file, line: line)

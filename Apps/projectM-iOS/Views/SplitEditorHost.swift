@@ -76,24 +76,34 @@ struct SplitEditorHost<Backdrop: View, Content: View, Editor: View>: View {
     @State private var dragWidth: Double?
 
     var body: some View {
-        GeometryReader { (proxy: GeometryProxy) in
-            hosted(window: Self.windowSize(proxy))
+        // The outer reader keeps the safe area, so it can hand the window's insets to the content: the
+        // inner reader ignores the safe area to measure the whole window, and every view inside it would
+        // otherwise lay out from the screen's very edges (CAM-013's notice and its Retry button sat under
+        // the status bar, out of reach; fix 2026-11-14).
+        GeometryReader { (safe: GeometryProxy) in
+            GeometryReader { (proxy: GeometryProxy) in
+                hosted(window: Self.windowSize(proxy), safeArea: safe.safeAreaInsets)
+            }
+            .ignoresSafeArea()
         }
-        .ignoresSafeArea()
     }
 
     /// The whole window: the reader ignores the safe area, so its size is the window's.
     private static func windowSize(_ proxy: GeometryProxy) -> CGSize { proxy.size }
 
-    private func layout(_ window: CGSize) -> SplitEditorLayout {
-        SplitEditorLayout(containerWidth: Double(window.width), containerHeight: Double(window.height),
-                          editorWidth: dragWidth ?? setting.width)
+    /// The editor and divider end at the trailing safe-area edge (the content is padded by the safe area),
+    /// so the layout's container stops there too; the output keeps the whole window's shape.
+    private func layout(_ window: CGSize, trailingInset: CGFloat) -> SplitEditorLayout {
+        let width: Double = Double(window.width) - Double(max(0, trailingInset))
+        let aspect: Double? = window.height > 0 ? Double(window.width / window.height) : nil
+        return SplitEditorLayout(containerWidth: width, containerHeight: Double(window.height),
+                                 editorWidth: dragWidth ?? setting.width, outputAspect: aspect)
     }
 
     private func available(_ layout: SplitEditorLayout) -> Bool { sizeClass == .regular && layout.fits }
 
-    private func hosted(window: CGSize) -> some View {
-        let layout: SplitEditorLayout = layout(window)
+    private func hosted(window: CGSize, safeArea: EdgeInsets) -> some View {
+        let layout: SplitEditorLayout = layout(window, trailingInset: safeArea.trailing)
         let available: Bool = available(layout)
         let shown: Bool = available && isOpen
         return ZStack(alignment: .topLeading) {
@@ -101,6 +111,7 @@ struct SplitEditorHost<Backdrop: View, Content: View, Editor: View>: View {
                 .frame(width: window.width, height: window.height)
                 .environment(\.splitOutputPlacement, shown ? Self.placement(layout, window: window) : .identity(window))
             insetContent(layout, shown: shown)
+                .safeAreaPadding(safeArea)   // views that respect the safe area keep clear of the bars
         }
         .onAppear { onAvailabilityChange(available) }
         .onChange(of: available) { (_: Bool, now: Bool) -> Void in onAvailabilityChange(now) }

@@ -4,7 +4,7 @@
 // * Editable layers read and write the inspector's live composite for their kind; read-only layers show
 //   the scene's saved values and the reason (footer).
 // * Sections: Appearance (opacity, blend), Placement (position, scale, rotation), Fit (photo and video),
-//   Mask, Gradient (CMP-008, LayerGradientSection), Layer (group, own MOD-001 values, Reset Layer). Every parameter has a "?" help button. Read-only
+//   Mask, Gradient (CMP-008, LayerGradientSection), Luma Key (CMP-009, LayerLumaKeySection), Layer (group, own MOD-001 values, Reset Layer). Every parameter has a "?" help button. Read-only
 //   parameters show a read-out (`layerValue.<parameter>`); editable sliders a visible read-out over an
 //   ACC-005 slider (`layerControl.<parameter>`), editable choices their picker or toggle.
 // * Pickers record one undo step per choice; sliders one per drag (LayerParameterSlider).
@@ -28,6 +28,8 @@ struct LayerDetailView: View {
             if showsFit { fitSection }
             maskSection
             LayerGradientSection(row: row, layers: layers)   // CMP-008
+            LayerLumaKeySection(row: row, layers: layers)   // CMP-009
+            MaterialParametersSection(controls: row.materialControls)   // SHD-003: read-only until materials are drawn
             layerSection
         }
         .navigationTitle(row.title)
