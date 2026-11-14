@@ -19,12 +19,16 @@ struct RequiredControl: Sendable {
     /// two controls grows with the text size and the rows in between are content, not controls (the browser's
     /// pack rows at AX5); each exception names its reason in the manifest.
     var scrolls = 1
+    /// Checked while the output is live: the visualizer's controls are otherwise walked over a blacked-out
+    /// output, and the emergency blackout is offered only while the output is live (SHOW-014).
+    var live = false
 
-    init(_ id: String, _ type: XCUIElement.ElementType, bar: Bool = false, scrolls: Int = 1) {
+    init(_ id: String, _ type: XCUIElement.ElementType, bar: Bool = false, scrolls: Int = 1, live: Bool = false) {
         self.id = id
         self.type = type
         self.bar = bar
         self.scrolls = scrolls
+        self.live = live
     }
 }
 
@@ -82,7 +86,7 @@ enum PrimaryScreens {
 
     static let all: [PrimaryScreen] = [
         PrimaryScreen(name: "controls", feature: "ACC-004", auditKey: "controls", route: .controls, controls: [
-            RequiredControl("emergencyBlackout", .button),
+            RequiredControl("emergencyBlackout", .button, live: true),
             RequiredControl("tapTempo", .button),
             RequiredControl("stop", .button),
             RequiredControl("switchSource", .button),
@@ -99,8 +103,11 @@ enum PrimaryScreens {
         PrimaryScreen(name: "parameterShelf", feature: "UIX-004", auditKey: "controls",
                       launch: ["-settings.parameterShelf.pins", "(effect.bloom.enabled, effect.bloom.intensity)"],
                       route: .controls, controls: [
-            RequiredControl("shelf.effect.bloom.enabled", .switch),
-            RequiredControl("shelf.effect.bloom.intensity", .any),
+            // Walked while the output is live: blacked out, the badge pushes the controls down. At AX5 the controls
+            // open at their bottom (ACC-006-R2) and the shelf sits above the transport and the status, three
+            // drags up (ParameterShelfUITests needs the same); content rows, not controls, lie between.
+            RequiredControl("shelf.effect.bloom.enabled", .switch, scrolls: 3, live: true),
+            RequiredControl("shelf.effect.bloom.intensity", .any, live: true),
         ]),
         PrimaryScreen(name: "settings", feature: "VIS-002", auditKey: "settings", route: .settings, controls: [
             RequiredControl("visual.projectM", .button),
@@ -159,14 +166,14 @@ enum PrimaryScreens {
             RequiredControl("effectChain.row.fx.grade", .switch),
             RequiredControl("effectChain.savePreset", .button),
         ]),
-        PrimaryScreen(name: "recordingQuality", feature: "REC-005", auditKey: "settings", launch: section("recordingQuality"),
+        PrimaryScreen(name: "recordingQuality", feature: "REC-005", auditKey: "settingsRecording", launch: section("recordingQuality"),
                       route: .settings, controls: [
             RequiredControl("recordingQuality.draft", .button),
             RequiredControl("recordingQuality.standard", .button),
             RequiredControl("recordingQuality.high", .button),
             RequiredControl("recordingQuality.max", .button),
         ]),
-        PrimaryScreen(name: "recordingFrameRate", feature: "REC-006", auditKey: "settings", launch: section("recordingFrameRate"),
+        PrimaryScreen(name: "recordingFrameRate", feature: "REC-006", auditKey: "settingsRecording", launch: section("recordingFrameRate"),
                       route: .settings, controls: [
             RequiredControl("recordingFrameRate.profile", .button),
             RequiredControl("recordingFrameRate.24", .button),

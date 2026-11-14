@@ -54,6 +54,15 @@ Answered by Claude under owner rules 4 and 9 (recommended option first).
 - Q: Does a screen opened inside Settings (recording quality, frame rate) count as its own screen? → A: Yes: each is a manifest entry opened at its own Settings section, because a user reaches it as a distinct group of controls.
 - Q: Are VoiceOver custom actions (Move up/down, Pin) checked? → A: No; this suite checks reachability, labels and the audit. Custom actions stay covered by their features' tests (ACC-005, FX-020, UIX-004).
 
+### Session 2026-11-14 (speckit-implement)
+
+Decided by Claude during implementation (owner rules 4 and 9).
+
+- Q: A control separated from the previous one by content that grows with the text (the preset browser's pack rows before Collections at AX5: four screens) cannot be one scroll away. Fail it? → A: No: the manifest may give such a control an explicit scroll allowance with its reason (`scrolls:`), never a blanket one. Every other control keeps one scroll.
+- Q: A pinned control cut off at the side of a row that scrolls sideways (the parameter shelf's strip at standard size)? → A: The one scroll may be sideways, along the row: what a user does there.
+- Q: Are the visualizer's controls walked over the moving picture? → A: No: over a blacked-out output, as ACC-004 audits them (over the moving picture every query waited for the app to idle, about 1 s per control). The emergency blackout, offered only while the output is live, is checked first (`live:`).
+- Q: Disabled system toolbar items that fail contrast (MIDI Mappings' Undo before any change)? → A: A per-element filter with its reason (system glass item; inactive controls are exempt from contrast), like ACC-004's system Done.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A VoiceOver user can find and name every control they need (Priority: P1) — MVP

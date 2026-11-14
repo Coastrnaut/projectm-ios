@@ -267,7 +267,11 @@ struct SceneSwitcherView: View {
         let fill: Color = isHighlighted ? Color.accentColor.opacity(0.28) : Color.clear
         return Button { coordinator.chooseSwitcherScene(entry.cueID) } label: {
             HStack(alignment: .center, spacing: 8) {
+                // QA-009 (2026-11-14): the thumbnail and the play mark are decorative (the row's value says
+                // "current"); exposed, they read "Stack Of Rectangles" and "Play" inside the row, and the current
+                // row could not be hit-tested as one control.
                 ScenePreviewView(sceneID: entry.sceneID, model: coordinator.scenePreviews)   // SCN-006
+                    .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(entry.label)
                         .font(.body)
@@ -279,7 +283,7 @@ struct SceneSwitcherView: View {
                 }
                 Spacer(minLength: 4)
                 if entry.isActive {
-                    Image(systemName: "play.fill").font(.caption)
+                    Image(systemName: "play.fill").font(.caption).accessibilityHidden(true)
                 }
             }
             .padding(.vertical, 8)

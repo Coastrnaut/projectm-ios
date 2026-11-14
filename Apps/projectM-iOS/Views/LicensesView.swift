@@ -69,8 +69,7 @@ struct LicensesView: View {
                             } label: {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(component.name)
-                                    // QA-009: primary colour; the secondary grey "nearly passed" the contrast audit (caption size).
-                                    Text(component.license).font(.caption)
+                                    Text(component.license).font(.caption).foregroundStyle(.secondary)
                                 }
                             }
                             .accessibilityIdentifier("license:\(component.id)")

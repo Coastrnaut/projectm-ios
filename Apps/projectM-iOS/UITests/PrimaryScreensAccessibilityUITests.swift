@@ -32,8 +32,9 @@ final class PrimaryScreensAccessibilityUITests: XCTestCase {
         if case .controls = screen.route { overlay = true }
         // The controls over a blacked-out output, a stable background (ACC-004 C3), for the walk too: over the
         // moving picture every query waited for the app to idle (about 1 s per control, 2026-11-14).
+        for control in screen.controls where control.live { check(control, tag: tag, overlay: overlay) }
         if overlay { blackOut(tag: tag) }
-        for control in screen.controls { check(control, tag: tag, overlay: overlay) }
+        for control in screen.controls where !control.live { check(control, tag: tag, overlay: overlay) }
         try audit(screen, layout, tag: tag)
         if !problems.isEmpty {
             attachScreenshot("qa009-\(screen.name)-\(layout.rawValue)")
@@ -127,14 +128,14 @@ final class PrimaryScreensAccessibilityUITests: XCTestCase {
     /// shelf's strip at standard sizes).
     private func check(_ control: RequiredControl, tag: String, overlay: Bool) {
         let prefix = "\(tag) \(control.id):"
-        var tree = ScreenTree(app)
-        if tree.find(control) == nil { _ = poll(2) { () -> Bool in tree = ScreenTree(self.app); return tree.find(control) != nil } }
+        var tree = ScreenTree(app, live: { () -> XCUIElement in self.app.descendants(matching: control.type)[control.id].firstMatch })
+        if tree.find(control) == nil { _ = poll(2) { () -> Bool in tree = tree.refreshed(self.app); return tree.find(control) != nil } }
         var gestures = 0
         while gestures < control.scrolls {
             if let snapshot = tree.find(control), tree.visible(snapshot, bar: control.bar) { break }
             scroll(tree, towards: tree.find(control), overlay: overlay)
             gestures += 1
-            tree = ScreenTree(app)
+            tree = tree.refreshed(app)
         }
         let limit: String = control.scrolls == 1 ? "one scroll" : "\(control.scrolls) scrolls"
         guard let snapshot = tree.find(control) else {
@@ -208,13 +209,38 @@ final class PrimaryScreensAccessibilityUITests: XCTestCase {
 
     /// Per-element filters for system-drawn elements on screens new to the audit (contract M2; never the app's
     /// own content, never a whole type or screen).
-    private static let qa009Filters: [AccessibilityScreensUITests.AuditFilter] = [
-        AccessibilityScreensUITests.AuditFilter(
-            screen: "midiMappings", type: .contrast, element: "midiMappingsUndo",
-            reason: "the toolbar's system glass Undo, disabled until there is something to undo (an inactive control is "
-                + "exempt from contrast, WCAG 1.4.3); the audit samples the live visualization behind the sheet's glass, "
-                + "as for the sheets' system Done (ACC-004)"),
-    ]
+    private static let qa009Filters: [AccessibilityScreensUITests.AuditFilter] = {
+        typealias Filter = AccessibilityScreensUITests.AuditFilter
+        let glass = "a system glass navigation-bar item; the audit samples the live visualization behind the sheet's "
+            + "glass, as for ACC-004's system Done"
+        let bar = "a navigation-bar item: iOS keeps bar items at a fixed size and shows them in the Large Content Viewer (ACC-006)"
+        let footer = "the system section footer style (Apple's secondary grey), as ACC-004's Settings and Show footers"
+        let header = "the system section header style, as ACC-004's \"Cues\" and \"Visual\" headers"
+        let bottom = "the last row of a list at the bottom of the screen, pushed out of the visible list at the audit's larger "
+            + "sizes (ACC-004's bottom-row artefact); the walk reaches it and its label wraps at AX5 (QA-009 screenshots)"
+        return [
+            Filter(screen: "midiMappings", type: .contrast, element: "midiMappingsUndo",
+                   reason: "disabled until there is something to undo (an inactive control is exempt from contrast, "
+                       + "WCAG 1.4.3); " + glass),
+            Filter(screen: "midiMappings", type: .contrast, element: "Learn waits up to 30 seconds", labelPrefix: true, reason: footer),
+            Filter(screen: "midiMappings", type: .dynamicType, element: "Mappings", reason: header),
+            Filter(screen: "effectOrder", type: .contrast, element: "Effects run from top to bottom", labelPrefix: true, reason: footer),
+            Filter(screen: "effectOrder", type: .dynamicType, element: "effectChain.savePreset", reason: bottom),
+            Filter(screen: "effectOrder", type: .dynamicType, element: "effectChain.edit", reason: bar),
+            Filter(screen: "licenses", type: .contrast, element: "This app", reason: header),
+            Filter(screen: "licenses", type: .textClipped, element: "", elementless: true, limit: 1,
+                   reason: "a row cut by the bottom edge of the screen (ANGLE's section at AX5, reported without an element); "
+                       + "bounded to one, so a new one fails"),
+            Filter(screen: "parameterInspector", type: .contrast, element: "parameterInspector.done", reason: glass),
+            Filter(screen: "parameterInspector", type: .contrast, element: "parameterInspector.pin", reason: glass),
+            Filter(screen: "parameterInspector", type: .dynamicType, element: "parameterInspector.done", reason: bar),
+            Filter(screen: "parameterInspector", type: .dynamicType, element: "parameterInspector.pin", reason: bar),
+            Filter(screen: "settingsRecording", type: .contrast, element: "", elementless: true, limit: 4,
+                   reason: "\"nearly passed\" findings without an element at the recording sections: their system section "
+                       + "headers and footers in Apple's secondary grey (ACC-004 bounds the same class at 3 for Settings' top); "
+                       + "bounded, so a new one fails"),
+        ]
+    }()
 
     private struct Rule {
         let limit: Int
@@ -224,12 +250,15 @@ final class PrimaryScreensAccessibilityUITests: XCTestCase {
     private static func rules(_ layout: PrimaryLayout, key: String) -> [Rule] {
         if layout == .standard {
             var filters = AccessibilityScreensUITests.filters
-            if !acc004Keys.contains(key) { filters += AccessibilityScreensUITests.systemDone(key) + qa009Filters }
+            if !acc004Keys.contains(key) { filters += AccessibilityScreensUITests.systemDone(key) }
+            filters += qa009Filters
             return filters.map { (f: AccessibilityScreensUITests.AuditFilter) -> Rule in
                 Rule(limit: f.limit, matches: f.matches(screen:type:identifier:label:hasElement:))
             }
         }
         return DynamicTypeInspectorUITests.filters.map { (f: DynamicTypeInspectorUITests.AuditFilter) -> Rule in
+            Rule(limit: f.limit, matches: f.matches(screen:type:identifier:label:hasElement:))
+        } + qa009Filters.map { (f: AccessibilityScreensUITests.AuditFilter) -> Rule in
             Rule(limit: f.limit, matches: f.matches(screen:type:identifier:label:hasElement:))
         }
     }
@@ -336,12 +365,18 @@ struct ScreenTree {
     private var searchFields: [CGRect] = []
     private var overlay: XCUIElementSnapshot?
     private var overlayScroll: CGRect?
+    /// The control's live element, asked only when the app snapshot does not reach it: a deep element (the
+    /// parameter inspector's slider, a row deep in the browser's list) can lie below the snapshot's depth limit.
+    private let live: (@MainActor () -> XCUIElement)?
 
-    init(_ app: XCUIApplication) {
+    init(_ app: XCUIApplication, live: (@MainActor () -> XCUIElement)? = nil) {
         root = try? app.snapshot()
         window = root?.frame ?? .zero
+        self.live = live
         if let root { collect(root, scroll: nil) }
     }
+
+    func refreshed(_ app: XCUIApplication) -> ScreenTree { ScreenTree(app, live: live) }
 
     private mutating func collect(_ node: XCUIElementSnapshot, scroll: CGRect?) {
         switch node.elementType {
@@ -368,14 +403,16 @@ struct ScreenTree {
 
     /// The first element in tree order with the control's identifier and type (`.any` matches every type).
     func find(_ control: RequiredControl) -> XCUIElementSnapshot? {
-        root.flatMap { (r: XCUIElementSnapshot) -> XCUIElementSnapshot? in Self.first(control, in: r) }
+        if let found = root.flatMap({ (r: XCUIElementSnapshot) -> XCUIElementSnapshot? in Self.first(control, in: r) }) { return found }
+        guard let element = live?(), element.exists else { return nil }
+        return try? element.snapshot()
     }
 
     /// The overlay's scroll area when `element` is inside the visualizer's controls and nothing with a bar covers them.
     private func overlayArea(_ element: XCUIElementSnapshot?) -> CGRect? {
         guard bars.isEmpty, let overlay else { return nil }
         if let element {
-            guard Self.contains(overlay, element) else { return nil }
+            guard Self.contains(overlay, element) || overlay.frame.contains(element.frame) else { return nil }
         }
         return overlayScroll.map { (s: CGRect) -> CGRect in window.intersection(s) } ?? window
     }
