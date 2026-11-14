@@ -11,8 +11,8 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 36,
-   "implementing": 8,
+   "audited": 35,
+   "implementing": 9,
    "integrated": 107
   },
   "P2": {
@@ -25,8 +25,8 @@
   }
  },
  "by_state": {
-  "audited": 117,
-  "implementing": 9,
+  "audited": 116,
+  "implementing": 10,
   "integrated": 199,
   "skipped_existing": 1
  },
@@ -2584,20 +2584,20 @@
    "branch": "feature/rec-009",
    "branch_sha": "e53fbaff2a00cb5702edf6471d698458ef75398b",
    "error_category": null,
-   "integrated_sha": "ed68646f6610e1e44abd9c9a8bdefdfe4700db2d",
+   "integrated_sha": "ed68646f",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
   },
   "REC-010": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/rec-010",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "REC-011": {
    "attempts": 0,
@@ -4254,7 +4254,7 @@
   {
    "branch": "feature/rec-009",
    "id": "REC-009",
-   "sha": "ed68646f6610e1e44abd9c9a8bdefdfe4700db2d"
+   "sha": "ed68646f"
   },
   {
    "branch": "feature/rec-012",
@@ -4452,5 +4452,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T18:59:56Z"
+ "updated": "2026-11-14T19:02:25Z"
 }
