@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (OUT-004-T01-T09 verified on the Mac, iOS 27.2 simulator; T10 `{device}` open)
 
 **Input**: User description: "Implement OUT-004 (Aspect correction) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Handle pillarbox, letterbox and
