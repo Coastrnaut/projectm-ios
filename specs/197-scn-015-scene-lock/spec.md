@@ -4,7 +4,10 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (SCN-015-T01-T10 verified on the Mac, simulator "SCN15 iPhone 17", iOS 27.2; no
+device claim). SceneLockAcceptanceTests 3 (0.07 s), regression 77 unit tests (1.3 s), SceneLockUITests 1 (15.1 s, 14.4 s),
+ShowCueUITests 2, SceneUndoUITests 1, SceneSnapshotUITests 1; LibraryBackup package 77. Follow-up: MOD-012's matrix
+toggles (not in this tree) need the same `refusesEdit()` guard when they merge.
 
 **Input**: Roadmap row SCN-015 (P1, size S, depends on SCN-001, integrated). Observable behavior, verbatim:
 "Prevent accidental editing while in performance mode." Acceptance, verbatim: "Locked scene ignores edit
