@@ -44,3 +44,16 @@ device evidence.
 ## Dependencies
 
 T01 → T02 → T03-T09 (parallel, different files except T03/T04) → T10 → T11 → T12 (last, device).
+
+## Analysis (speckit-analyze, 2026-11-13)
+
+Cross-check of spec, plan, contract and tasks; fixes applied in the same commit:
+
+| ID | Severity | Finding | Fix |
+|---|---|---|---|
+| A1 | High | The suite named `UICTContentSizeCategoryAccessibilityL` "AX3"; in UIKit's order it is AX2 (M, L, XL, XXL, XXXL = AX1-AX5) | middle size is `…AccessibilityXL` in the suite, data model and quickstart |
+| A2 | Medium | The `controls` element must stay an "other" element for every suite (`otherElements["controls"]`); a scroll view at the root would change its type at AX sizes | plan D2 implementation wraps the content or its scroll fallback in a plain container; T04 verifies with the existing suites |
+| A3 | Low | R4's alternative clause (VoiceOver actions for swipe and context-menu actions) is decided in Clarifications but not tested by the inspector | covered by ACC-004's suite (rotor actions exist); stated in contract C1 ("the inspector checks the visible ones") |
+| A4 | Low | Every requirement maps to a task: R1 → T03, T05-T07, T09; R2 → T04, T08; R3 → T07, T01; R4 → T01; R5 → T11 (regression suites); R6 → T01; R7 → T10; R8 → T11 | none |
+
+No constitution conflicts. Coverage: 8/8 requirements, 5/5 success criteria have tasks.
