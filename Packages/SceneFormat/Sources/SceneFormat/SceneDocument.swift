@@ -223,7 +223,35 @@ public enum SceneMask: Sendable, Hashable {
     public func hash(into hasher: inout Hasher) { hasher.combine(SceneEncoder.mask(self)) }
 }
 
-/// Opacity, blend mode, transform, fit and mask (CMP-003, CMP-004, CMP-005, CMP-006, CMP-007).
+/// CMP-008: a layer's saved gradient mask: a live gradient (`linear`, `radial`), or the whole object of a kind
+/// this version does not draw, kept verbatim (drawn without a gradient and warned about, `unsupportedMaskShape`).
+/// Equality and hashing go through the saved form.
+public enum SceneGradientMask: Sendable, Hashable {
+    case known(LayerGradientMask)
+    case unknown(kind: String, object: [String: SceneJSON])
+
+    /// The saved `kind` name.
+    public var kind: String {
+        switch self {
+        case let .known(gradient): gradient.kind.kindName
+        case let .unknown(kind, _): kind
+        }
+    }
+
+    /// The live gradient, nil for a kind this version does not draw.
+    public var layerGradientMask: LayerGradientMask? {
+        if case let .known(gradient) = self { return gradient }
+        return nil
+    }
+
+    public static func == (lhs: SceneGradientMask, rhs: SceneGradientMask) -> Bool {
+        SceneEncoder.gradientMask(lhs) == SceneEncoder.gradientMask(rhs)
+    }
+
+    public func hash(into hasher: inout Hasher) { hasher.combine(SceneEncoder.gradientMask(self)) }
+}
+
+/// Opacity, blend mode, transform, fit, mask and gradient mask (CMP-003, CMP-004, CMP-005, CMP-006, CMP-007, CMP-008).
 public struct SceneComposite: Sendable, Hashable {
     /// 0…1.
     public var opacity: Double
@@ -235,16 +263,19 @@ public struct SceneComposite: Sendable, Hashable {
     public var fit: SceneFit?
     /// CMP-007: nil when the layer has no mask (the field is not written).
     public var mask: SceneMask?
+    /// CMP-008: nil when the layer has no gradient mask (the field is not written).
+    public var gradientMask: SceneGradientMask?
 
     public static let normalBlendMode = "normal"
 
     public init(opacity: Double = 1, blendMode: String = SceneComposite.normalBlendMode, transform: LayerTransform = .identity,
-                fit: SceneFit? = nil, mask: SceneMask? = nil) {
+                fit: SceneFit? = nil, mask: SceneMask? = nil, gradientMask: SceneGradientMask? = nil) {
         self.opacity = opacity
         self.blendMode = blendMode
         self.transform = transform
         self.fit = fit
         self.mask = mask
+        self.gradientMask = gradientMask
     }
 
     public static func == (lhs: SceneComposite, rhs: SceneComposite) -> Bool {

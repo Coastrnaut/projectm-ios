@@ -124,6 +124,10 @@ extension SceneDocument {
                 issues.append(SceneIssue(.unsupportedMaskShape, path: path + ".composite.mask.shape",
                                          "Layer \(i) uses the mask shape \"\(mask.shape)\", which this version draws unmasked."))
             }
+            if let gradient = layer.composite.gradientMask, gradient.layerGradientMask == nil {   // CMP-008: two kinds are drawn
+                issues.append(SceneIssue(.unsupportedMaskShape, path: path + ".composite.gradientMask.kind",
+                                         "Layer \(i) uses the gradient kind \"\(gradient.kind)\", which this version draws without a gradient."))
+            }
             if case let .material(id) = layer.content, ProceduralMaterialCatalog.material(withID: id) == nil {
                 issues.append(SceneIssue(.unknownMaterial, path: path + ".content.material",
                                          "Layer \(i) uses the unknown material \"\(id)\"."))
