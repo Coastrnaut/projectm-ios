@@ -20,6 +20,9 @@
 //   reached by flinging the list to its end (`scrollTo(fromEnd:)`, 3-5 flings), then held drags back.
 //   Faster held drags were tried and dropped: a hold at the end does not remove the momentum of a fast
 //   drag, so the precise drags overshot and oscillated.
+// - Once visible, `scrollTo` waits for the row to stop moving, and counts a search field floating at
+//   the bottom (the preset browser's) as the end of the visible area: without the old idle re-checks,
+//   Collections at AX5 was tapped under the search field and did not open.
 // - Moved assertions, each kept unchanged: Licenses (reached, opened, audited) moved from the Storage
 //   test to testLicensesAX5/AX3; the Text message field input (reached, typed) moved from the Text rows
 //   test to testTextMessageFieldAX5/AX3, which reaches it on the way down; the Rename Scene alert
@@ -191,6 +194,15 @@ final class DynamicTypeInspectorUITests: XCTestCase {
             let bar = app.navigationBars.firstMatch
             return bar.exists ? min(bar.frame.maxY, window.frame.minY + 130) : window.frame.minY
         }
+        // Above a search field floating at the bottom (the preset browser's): a row under it is
+        // "hittable" but a tap lands on the field (Collections at AX5 failed this way, 2026-11-14).
+        let search = app.searchFields.firstMatch
+        func bottom() -> CGFloat {
+            let maxY = window.frame.maxY
+            guard search.exists else { return maxY }
+            let field = search.frame
+            return field.minY > window.frame.midY ? min(maxY, field.minY) : maxY
+        }
         let controlsScroll = app.scrollViews.containing(.other, identifier: "controls").firstMatch
         let controlsContent = app.otherElements["controls"]
         // Frames only: `isHittable` fails the test outright for an element caught mid-scroll ("activation
@@ -200,7 +212,7 @@ final class DynamicTypeInspectorUITests: XCTestCase {
             let frame = element.frame
             var area = window.frame
             area.origin.y = top()
-            area.size.height = window.frame.maxY - top()
+            area.size.height = bottom() - top()
             // Inside the visualizer controls' scroll view: its own frame is the visible part.
             if controlsScroll.exists, controlsContent.exists, controlsContent.frame.contains(frame) {
                 area = area.intersection(controlsScroll.frame)
@@ -257,7 +269,7 @@ final class DynamicTypeInspectorUITests: XCTestCase {
             }
             let area: XCUIElement = inControls ? controlsScroll : window
             let upper: CGFloat = inControls ? controlsScroll.frame.minY : top()
-            let lower: CGFloat = inControls ? controlsScroll.frame.maxY : window.frame.maxY
+            let lower: CGFloat = inControls ? controlsScroll.frame.maxY : bottom()
             let towardsTop = known ? element.frame.minY < upper : down   // above the visible area: drag down
             // Drag by what is missing (plus a margin), at most 60 % of the area, so a tall row does not
             // overshoot back and forth; held at the end, so there is no momentum.
