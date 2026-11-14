@@ -103,6 +103,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.noiseGate.thresholdDecibels",   # AUD-011-R8
                 "settings.recording.includeMicrophone",   # REC-004-R3 (microphone audio in recordings; off by default)
                 "settings.recording.qualityProfile",   # REC-005-R7 (record quality profile; Standard by default)
+                "settings.splitEditor.width",   # UIX-007-R7 (iPad split editor width; Standard by default)
                 "settings.recording.frameRate",   # REC-006-R8 (record frame rate; Profile default by default)
                 "settings.recording.countdown",   # REC-007-R8 (recording countdown; Off by default)
                 "settings.performance.powerProfile",   # PERF-008-R6 (power profile; Standard by default)

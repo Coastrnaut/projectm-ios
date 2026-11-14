@@ -107,6 +107,8 @@ struct SettingsView: View {
     /// ACC-005-R7: announces a VoiceOver swipe at a slider's end (nil: none, e.g. in previews).
     var announcer: AccessibilityAnnouncer?
     @Environment(\.dismiss) private var dismiss
+    /// UIX-007-R8: set while Settings is in the iPad split editor (Done closes the pane instead of a sheet).
+    @Environment(\.splitEditorClose) private var splitEditorClose: (@MainActor () -> Void)?
     @State private var pickedPhoto: PhotosPickerItem?
     @State private var showPhotoFileImporter = false
     @State private var pickedVideo: PhotosPickerItem?
@@ -248,7 +250,7 @@ struct SettingsView: View {
             .uitestSettingsSection()   // DEBUG: `-uitestSettingsSection <id>` (UI tests, owner rule 7)
             .navigationTitle("Settings")
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) { Button("Done") { if let splitEditorClose { splitEditorClose() } else { dismiss() } } }
                 if let history { ToolbarItem(placement: .topBarLeading) { SceneUndoRedoButtons(history: history) } }   // SCN-010
             }
         }
