@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (PRE-001-T01-T13 verified on the Mac and the simulator; device task T14 `{device}` (S7, frame-rate cost on D1) open)
 
 **Input**: User description: "Implement PRE-001 (visual thumbnail cache) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Generate thumbnails for owned

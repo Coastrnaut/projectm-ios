@@ -4,7 +4,7 @@ Decisions recorded 2026-11-14 under owner rules 4 and 9.
 
 ## PRE-001-D1: How is a thumbnail drawn?
 
-- **Decision**: A `PresetThumbnailRunner` in `ANGLERendering`, built like `PresetTrialRunner` (PRE-012): each draw runs on its own thread (utility priority, 768 KiB stack) with an unshared EGL context on the renderer's display, a fresh engine and a BGRA8 framebuffer of 128 × 72; it loads the preset text, feeds 45 frames of synthetic audio (one `addPCMInterleavedStereo` of 735 frames before each `renderFrame`), waits for the GPU and reads the pixels back with `PMANGLEReadPixelsRGBA`, flipped to top-down rows. A timeout (5 s) abandons a draw that never returns; while one is abandoned the runner answers `unavailable`.
+- **Decision**: A `PresetThumbnailRunner` in `ANGLERendering`, built like `PresetTrialRunner` (PRE-012): each draw runs on its own thread (utility priority, 768 KiB stack) with an unshared EGL context on the renderer's display, a fresh engine and a BGRA8 framebuffer of 128 × 72; it loads the preset text, feeds 45 frames of synthetic audio (one `addPCMInterleavedStereo` of 735 frames before each `renderFrame`), waits for the GPU and reads the pixels back with `PMANGLEReadPixelsRGBA`, flipped to top-down rows. A timeout (20 s; a heavy preset takes about 1 s on a device and up to about 5 s on a simulator, measured 2026-11-14) abandons a draw that never returns; while one is abandoned the runner answers `unavailable`.
 - **Rationale**: The proven pattern (CLAUDE.md performance lessons: own thread, unshared context, own engine, window pixel format). The same BGRA format means each draw also warms Metal's pipeline cache for that preset, so playing it from the browser is cheaper afterwards. Per-draw contexts keep no GPU resources while idle (PERF-006).
 - **Alternatives**: Reusing the prewarmer's persistent thread (it never reads pixels and its queue semantics replace work); rendering in the visible engine (would disturb the picture); a persistent context (holds memory while the browser is closed).
 
@@ -44,6 +44,10 @@ Decisions recorded 2026-11-14 under owner rules 4 and 9.
 - **Decision**: `PresetThumbnailView` at the leading edge of the shared `PresetRow` (all browser lists), 64 × 36 points, rounded, with a placeholder (a neutral tile with a `sparkles` symbol; a `lock` symbol for locked presets). `.task(id:)` requests the image when the row appears; SwiftUI cancels it when the row disappears. The image is decorative: it adds no spoken text and no VoiceOver stop, so the row's spoken label is unchanged (R12); it keeps an identifier for tests. For the UI test the image carries the identifier `thumbnail:<preset name>` and the placeholder `thumbnailPlaceholder:<preset name>`.
 - **Decoded images**: an `NSCache` of `UIImage` keyed by stable ID (evicted by the system under memory pressure).
 - **Owned presets**: the model asks for a thumbnail only when the preset is playable (`PresetCoordinator.isPlayable`); user presets load from the user library's playable copy (`userPresetData`), so waiting or quarantined presets are never drawn.
+
+## PRE-001-D10: UI test renderer
+
+- **Decision**: DEBUG `-uitestThumbnailFixture YES` swaps in an instant fixture renderer (a two-colour picture from the preset's bytes) behind the same cache and PNG encoder, so the UI test stays under 30 s; real drawings take seconds each on the simulator (first engine about 6 s, shader compiles about 4 s) and are tested in `PresetThumbnailRunnerTests`.
 
 ## PRE-001-D9: Frame-rate cost
 
