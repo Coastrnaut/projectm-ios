@@ -88,17 +88,17 @@ struct StorageUsageView: View {
             } footer: {
                 Text("The space this app's own data takes on this device. The app and its bundled presets are not included.")
             }
-            if model.sharedSavings > 0 {
-                Section {
-                    Text(Self.sharedSavingsNote(model.sharedSavings)).accessibilityIdentifier("storageSharedSavings")   // FILE-008
-                }
-            }
             if let report, !report.isComplete {
                 Section {
                     Text(Self.incompleteNote).accessibilityIdentifier("storageIncomplete")
                 }
             }
             cleanupSection
+            if model.sharedSavings > 0 {
+                Section {
+                    Text(Self.sharedSavingsNote(model.sharedSavings)).accessibilityIdentifier("storageSharedSavings")   // FILE-008
+                }
+            }
             if let libraryBackup { LibraryBackupSection(model: libraryBackup) }   // FILE-005
             #if DEBUG
             if UITestStorageFixture.isEnabled {

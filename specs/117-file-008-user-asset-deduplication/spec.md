@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (FILE-008-T01-T16 verified on the Mac Studio: LocalPortability 108, Compositor 382 (6 skipped), LibraryBackup 31 package tests on the host; projectM-iOSTests 528/528 (about 55 s wall) and PhotoLayer, VideoLayer, LibraryBackup, StorageUsage and CacheCleanup UI tests (5/5, 132 s) on an own iOS 27.2 simulator; the Linux job is left to CI). ADR-0043.
 
 **speckit-analyze (2026-11-14)**: 0 critical, 0 high; every requirement and success criterion maps to a task (R1 T02, R2 T01/T02, R3 T06, R4 T02/T06, R5 T07, R6 T04/T05, R7 T02/T10/T11, R8 T02/T10, R9 T12/T13, R10 T08/T09, R11 T14, R12 T15; S1 T03/T09, S2 T03/T09, S3 T03/T11, S4 T12/T13, S5 T09, S6 T14). Fixes applied: R12 and R3 named in their tasks; the concurrent-import edge case gets a test in T03.
 
