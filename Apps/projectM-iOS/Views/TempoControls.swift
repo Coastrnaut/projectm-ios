@@ -3,7 +3,7 @@
 //
 // The readout, the Tap button and, only while a manual tempo is set, Reset tempo. ANL-006: the
 // readout shows the BPM over a state word ("120 BPM"/"Stable", "≈120 BPM"/"Uncertain",
-// "—"/"Searching", "120 BPM"/"Manual"), with no dimming (ACC-004's contrast audit) and no
+// "— BPM"/"Searching", "120 BPM"/"Manual"), with no dimming (ACC-004's contrast audit) and no
 // animation. VoiceOver reads it as one element ("Tempo, About 120 BPM, uncertain"); the Tap
 // button's value is the progress ("Tap 2 of 4") or the same words. Text styles scale
 // with Dynamic Type; `compact` shows the buttons as icons (the one-row layout, FR-087).

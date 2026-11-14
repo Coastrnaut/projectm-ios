@@ -125,7 +125,9 @@ final class TempoCoordinator: PresentationBoundResource {
 
     static func wholeBPM(_ bpm: Double) -> Int { Int(bpm.rounded()) }
 
-    /// "120 BPM", "≈120 BPM" or "—" (searching: no number).
+    /// "120 BPM", "≈120 BPM" or "— BPM" (searching: no number). The unit keeps the searching line
+    /// measurable: a lone em dash failed the accessibility audit's contrast check as an element-less
+    /// node whenever no tempo had been found yet (2026-11-14 regression).
     static func readoutText(_ readout: TempoReadout) -> String {
         switch readout {
         case .manual(let bpm), .stable(let bpm):
@@ -135,7 +137,7 @@ final class TempoCoordinator: PresentationBoundResource {
             let whole: Int = wholeBPM(bpm)
             return "≈\(whole) BPM"
         case .searching:
-            return "—"
+            return "— BPM"
         }
     }
 

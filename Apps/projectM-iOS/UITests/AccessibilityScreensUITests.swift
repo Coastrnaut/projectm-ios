@@ -99,11 +99,8 @@ final class AccessibilityScreensUITests: XCTestCase {
                            + "browser's bottom rows are; DynamicTypeInspectorUITests audits the editor at AX3 and AX5"),
            AuditFilter(screen: "showEditor", type: .contrast, element: "Cues",
                        reason: "the system section header style (Apple's secondary grey)")]
-        + ["controls", "showRow"].map { (screen: String) -> AuditFilter in
-            AuditFilter(screen: screen, type: .contrast, element: "—",
-                        reason: "the tempo readout's em dash (searching, ANL-006): a one-point white stroke on the dark "
-                            + "controls that the pixel sampler cannot measure; VoiceOver reads it as \"Tempo, Searching for tempo\"")
-        }
+        // The tempo readout's em-dash filter is gone (2026-11-14): the readout is one element, so the dash's
+        // failure came without an element and never matched it; searching now reads "— BPM" and passes.
 
     private static let auditTypes: XCUIAccessibilityAuditType = [
         .sufficientElementDescription, .hitRegion, .contrast, .dynamicType, .trait,
