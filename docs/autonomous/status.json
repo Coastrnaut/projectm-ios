@@ -361,7 +361,7 @@
    "branch": "feature/acc-011",
    "branch_sha": "2b76f6f1015b819d36ae28f2f7caff09b12fb72a",
    "error_category": null,
-   "integrated_sha": "7a4e26e0fa6cc97c167e6921bef9900ca13a0d29",
+   "integrated_sha": "92196c47",
    "priority": "P0",
    "spec_dir": null,
    "state": "integrated"
@@ -3541,7 +3541,7 @@
   {
    "branch": "feature/acc-011",
    "id": "ACC-011",
-   "sha": "7a4e26e0fa6cc97c167e6921bef9900ca13a0d29"
+   "sha": "92196c47"
   },
   {
    "branch": "feature/anl-001",
@@ -4104,5 +4104,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T05:34:04Z"
+ "updated": "2026-11-14T05:40:57Z"
 }
