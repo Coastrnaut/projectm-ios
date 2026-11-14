@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T06:47:18Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T06:50:57Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 204 |
 | implementing | 2 |
-| unit_passed | 2 |
-| integrated | 117 |
+| integrated | 119 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 1 | 0 | 83 | 1 |
-| P1 | 116 | 1 | 2 | 32 | 0 |
-| P2 | 77 | 0 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 2 | 1 | 83 | 1 |
+| P1 | 116 | 1 | 34 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 208 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)
+- 206 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)
 
 ## Integrated
 
@@ -91,6 +90,7 @@ The physical-device suite may **not** start:
 | CMP-007 | Shape masks | `20b9cc8a` | `feature/cmp-007` |
 | FILE-001 | Portable scene archive | `c3886d1cb0bb` | `feature/file-001` |
 | FILE-002 | Archive manifest checksums | `77fcfa3f1e56` | `feature/file-002` |
+| FILE-003 | Import dry run | `5e7bcff1` | `feature/file-003` |
 | FILE-007 | Document schema validator | `d8e359893ae7` | `feature/file-007` |
 | FILE-009 | Storage usage explorer | `efddbc041837` | `feature/file-009` |
 | FILE-010 | Safe cache cleanup | `f65b410a8d7c` | `feature/file-010` |
@@ -100,9 +100,10 @@ The physical-device suite may **not** start:
 | FX-019 | Strobe safety envelope | `6cfcbaabc8d0` | `feature/fx-019` |
 | MED-001 | Import photo layer | `dd604d0b1d51` | `feature/med-001` |
 | MED-002 | Import video layer | `e9e04eeb62a8` | `feature/med-002` |
-| MED-003 | Video loop region | `b75c685f96f7` | `feature/med-003` |
+| MED-003 | Video loop region | `5e7bcff1` | `feature/med-003` |
 | MED-009 | Text overlay | `beca43d66718` | `feature/med-009` |
 | MED-014 | Safe media decoder | `31e16534f057` | `feature/med-014` |
+| MIDI-001 | MIDI endpoint discovery | `5e7bcff1` | `feature/midi-001` |
 | MOD-001 | Typed parameter registry | `304f3bce431a` | `feature/mod-001` |
 | MOD-002 | Audio feature binding | `006678f3d7a5` | `feature/mod-002` |
 | MOD-003 | Linear mapping | `29cd3bbb1e12` | `feature/mod-003` |
@@ -701,11 +702,12 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `fd80d903f84b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-002/20261113T161716/swift-test_SceneArchive.log`)
 - `post-merge: projectM-iOSTests incl. SceneArchiveTamperImportTests on iOS 27.2 sim; LocalPortability 58, SceneArchive 21, PresetLibrary in the gate`: pass at `77fcfa3f1e56` (log `.autonomous/logs/integration/file-002/app-tests.log`)
 
-### FILE-003 Import dry run (unit_passed)
+### FILE-003 Import dry run (integrated)
 - `python3 scripts/check_compliance.py`: pass at `2dbb99af1390` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-003/20261114T014156/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `2dbb99af1390` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-003/20261114T014156/docs.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `2dbb99af1390` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-003/20261114T014156/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/PresetLibrary`: pass at `2dbb99af1390` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-003/20261114T014156/swift-test_PresetLibrary.log`)
+- `post-merge (FILE-003 + MIDI-001 + MED-003): projectM-iOSTests 487 + PresetArchiveImport/MIDIDiscovery/VideoLoop/VideoLayer/OSCReceiver UI tests 5; network-symbol scan OK`: pass at `5e7bcff1` (log `.autonomous/logs/integration/file-003-midi-001-med-003/app-tests.log`)
 
 ### FILE-007 Document schema validator (integrated)
 - `python3 scripts/check_compliance.py`: pass at `d9f90f1e1d0f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-007/20261113T163821/compliance.log`)
@@ -795,6 +797,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `ef4ad61613e9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-003/20261114T014458/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `ef4ad61613e9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-003/20261114T014458/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `ef4ad61613e9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-003/20261114T014458/swift-test_ShowControl.log`)
+- `post-merge (FILE-003 + MIDI-001 + MED-003): projectM-iOSTests 487 + PresetArchiveImport/MIDIDiscovery/VideoLoop/VideoLayer/OSCReceiver UI tests 5; network-symbol scan OK`: pass at `5e7bcff1` (log `.autonomous/logs/integration/file-003-midi-001-med-003/app-tests.log`)
 
 ### MED-009 Text overlay (integrated)
 - `python3 scripts/check_compliance.py`: pass at `5adba5200543` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-009/20261113T142110/compliance.log`)
@@ -810,13 +813,14 @@ None.
 - `swift test --package-path Packages/Compositor`: pass at `0f694e45ec38` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-014/20261113T145558/swift-test_Compositor.log`)
 - `post-merge: Compositor scheme on iPhone 17 sim (CompositorTests 183 incl. SafeDecoderIsolationTests, MediaSniffing 20, others); projectM-iOSTests 234; SafeMediaUITests 21.0 s, Photo, Video UI tests`: pass at `31e16534f057` (log `.autonomous/logs/integration/med-014/compositor-sim.log`)
 
-### MIDI-001 MIDI endpoint discovery (unit_passed)
+### MIDI-001 MIDI endpoint discovery (integrated)
 - `python3 scripts/check_compliance.py`: pass at `b12c71c61e6a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-001/20261114T014257/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `b12c71c61e6a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-001/20261114T014257/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `b12c71c61e6a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-001/20261114T014257/script-tests.log`)
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `b12c71c61e6a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-001/20261114T014257/autonomous-tests.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `b12c71c61e6a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-001/20261114T014257/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/PerformanceControl`: pass at `b12c71c61e6a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-001/20261114T014257/swift-test_PerformanceControl.log`)
+- `post-merge (FILE-003 + MIDI-001 + MED-003): projectM-iOSTests 487 + PresetArchiveImport/MIDIDiscovery/VideoLoop/VideoLayer/OSCReceiver UI tests 5; network-symbol scan OK`: pass at `5e7bcff1` (log `.autonomous/logs/integration/file-003-midi-001-med-003/app-tests.log`)
 
 ### MOD-001 Typed parameter registry (integrated)
 - `python3 scripts/check_compliance.py`: pass at `c62c162f633a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-001/20261113T104902/compliance.log`)
