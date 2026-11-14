@@ -203,11 +203,12 @@ struct SceneSwitcherView: View {
         .accessibilityIdentifier("sceneSwitcherEntry.\(entry.number)")
     }
 
-    /// "Cue 3", "Cue 3 · Drop copy", "Cue 3 · Scene missing".
+    /// "Cue 3", "Cue 3 · Drop copy", "Cue 3 · Scene missing", "Cue 3 · Set A / Encore" (SCN-004).
     private func rowSubtitle(_ entry: SceneSwitcherEntry) -> String {
         var parts: [String] = ["Cue \(entry.number)"]
         if let name = entry.sceneName { parts.append(name) }
         if entry.isMissing { parts.append("Scene missing") }
+        if let path = entry.folderPath { parts.append(path) }   // SCN-004
         return parts.joined(separator: " · ")
     }
 }
