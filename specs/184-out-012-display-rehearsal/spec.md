@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (OUT-012-T01-T10 verified on the Mac, iOS 27.2 simulator; T11 `{device}` open)
 
 **Input**: User description: "Implement OUT-012 (External display rehearsal) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Preview crop and mapping on device
