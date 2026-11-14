@@ -23,6 +23,8 @@
 //   layer (`mirrored`). Neither touches the frame loop, the analysis or the audio source; the mirror
 //   lives only in the camera layer, so the screen, Save Frame, Record and the external display (one
 //   composite) agree.
+// * CAM-007: `crop` is forwarded to the camera layer the same way; the layer recomputes the fit every
+//   frame from the drawable's size and the picture's rotation, so a device rotation keeps it.
 // * Per frame this file allocates nothing: the band scratch is preallocated and the audio context is
 //   a view of it; Metal's command buffer and drawable are the system's.
 import AudioCore
@@ -97,6 +99,12 @@ final class CameraVisualHost: PresentationBoundResource {
         set { camera.mirrored = newValue }
     }
 
+    /// CAM-007-R1, R5: the camera picture's crop (Fill or Fit, anchor, zoom), from the next frame.
+    var crop: CameraCrop {
+        get { camera.crop }
+        set { camera.crop = newValue }
+    }
+
     var barCount: SpectrumBarCount {
         get { spectrum.generator.barCount }
         set {
@@ -132,7 +140,7 @@ final class CameraVisualHost: PresentationBoundResource {
     /// Throws `VisualGeneratorError`, `LayerStackError` or `CompositorError` when there is no Metal device or a pipeline
     /// cannot be built; the caller falls back to projectM with a notice (spec Edge Cases).
     static func make(device: MTLDevice?, reader: (any NormalizedPCMReader)?, barCount: SpectrumBarCount,
-                     position: CameraPosition = .back, mirrored: Bool = false,
+                     position: CameraPosition = .back, mirrored: Bool = false, crop: CameraCrop = .fill,
                      provider: ((MTLDevice) -> any CameraFrameProvider)? = nil) throws -> CameraVisualHost {
         guard let device, let queue = device.makeCommandQueue() else { throw VisualGeneratorError.noDevice }
         let transparent = LinearColor(red: 0, green: 0, blue: 0, alpha: 0)
@@ -142,6 +150,7 @@ final class CameraVisualHost: PresentationBoundResource {
         let camera = CameraLayerSource(provider: (provider ?? makeProvider)(device))
         camera.provider.select(position)   // CAM-002: before any start, so only the chosen camera ever runs
         camera.mirrored = mirrored
+        camera.crop = crop   // CAM-007
         // CMP-002: the stack, bottom first: the camera (one per stack), then the circular spectrum.
         var stack = LayerStack()
         try stack.add(LayerDescriptor(kind: .camera))

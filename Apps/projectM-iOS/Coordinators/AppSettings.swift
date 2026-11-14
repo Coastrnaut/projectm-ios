@@ -29,6 +29,9 @@
 //   anything else → back), `settings.camera.mirrorFront` (Bool, absent → on) and
 //   `settings.camera.mirrorBack` (Bool, absent → off). Ordinary settings: they never start the camera
 //   (the Camera choice stays session only) and are not recorded in scenes or cues.
+// * Camera crop (CAM-007-R1, R6): `settings.camera.cropMode` (`fill`/`fit`; else fill),
+//   `settings.camera.cropAnchor` (`center`/`top`/`bottom`; else center) and `settings.camera.zoom`
+//   (1, 1.5, 2 or 3; else 1), one set for both cameras. Same rules as position and mirror.
 // * Photo (MED-001-R8): `visual` may be `photo`, stored like the spectra (no sensor is involved).
 //   The chosen photo's identifier is `settings.photo.id` (PhotoStore.idKey; absent = no photo); the
 //   copy itself lives in Application Support/Photos.
@@ -73,6 +76,9 @@ final class AppSettings {
     static let cameraPositionKey = "settings.camera.position"       // CAM-002
     static let cameraMirrorFrontKey = "settings.camera.mirrorFront"
     static let cameraMirrorBackKey = "settings.camera.mirrorBack"
+    static let cameraCropModeKey = "settings.camera.cropMode"       // CAM-007
+    static let cameraCropAnchorKey = "settings.camera.cropAnchor"
+    static let cameraZoomKey = "settings.camera.zoom"
     /// MED-001: the stored photo's identifier (written by PhotoStore).
     static let photoIDKey = PhotoStore.idKey
     /// MED-002: the stored video's identifier (written by VideoStore).
@@ -83,7 +89,8 @@ final class AppSettings {
                           glowKey, glowIntensityKey, glowRadiusKey, glowThresholdKey,
                           linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey, videoIDKey,
                           textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, spectrumAttackKey, spectrumReleaseKey,
-                          cameraPositionKey, cameraMirrorFrontKey, cameraMirrorBackKey]
+                          cameraPositionKey, cameraMirrorFrontKey, cameraMirrorBackKey,
+                          cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey]
     /// VIS-002-R4: the spacings offered for the linear spectrum.
     static let linearSpectrumSpacingChoices: [(title: String, value: Double)] = [("None", 0), ("Narrow", 0.2), ("Wide", 0.5)]
     static let defaultLinearSpectrumSpacing = 0.2
@@ -136,6 +143,30 @@ final class AppSettings {
     /// CAM-002-R3: the rear camera's mirror (off by default).
     var cameraMirrorBack: Bool {
         didSet { defaults.set(cameraMirrorBack, forKey: Self.cameraMirrorBackKey) }
+    }
+
+    /// CAM-007-R1: Fill (default) or Fit, for both cameras. Never starts the camera.
+    var cameraCropMode: CameraCropMode {
+        didSet { defaults.set(cameraCropMode.rawValue, forKey: Self.cameraCropModeKey) }
+    }
+
+    /// CAM-007-R1: the point of the picture a crop keeps (Center by default).
+    var cameraCropAnchor: CameraCropAnchor {
+        didSet { defaults.set(cameraCropAnchor.rawValue, forKey: Self.cameraCropAnchorKey) }
+    }
+
+    /// CAM-007-R1: 1, 1.5, 2 or 3 (1 by default); any other value is stored as its valid step.
+    var cameraZoom: Double {
+        didSet {
+            let valid: Double = Double(CameraCrop.validZoom(Float(cameraZoom)))
+            if valid != cameraZoom { cameraZoom = valid }   // inside didSet: no second didSet
+            defaults.set(cameraZoom, forKey: Self.cameraZoomKey)
+        }
+    }
+
+    /// CAM-007: the crop the camera layer draws with.
+    var cameraCrop: CameraCrop {
+        CameraCrop(mode: cameraCropMode, anchor: cameraCropAnchor, zoom: Float(cameraZoom))
     }
 
     /// CAM-002-R3: the mirror of the chosen camera (each camera keeps its own).
@@ -286,6 +317,10 @@ final class AppSettings {
         cameraPosition = defaults.string(forKey: Self.cameraPositionKey).flatMap(CameraPosition.init(rawValue:)) ?? .back
         cameraMirrorFront = defaults.object(forKey: Self.cameraMirrorFrontKey) as? Bool ?? CameraPosition.front.defaultMirrored
         cameraMirrorBack = defaults.object(forKey: Self.cameraMirrorBackKey) as? Bool ?? CameraPosition.back.defaultMirrored
+        cameraCropMode = defaults.string(forKey: Self.cameraCropModeKey).flatMap(CameraCropMode.init(rawValue:)) ?? .fill   // CAM-007
+        cameraCropAnchor = defaults.string(forKey: Self.cameraCropAnchorKey).flatMap(CameraCropAnchor.init(rawValue:)) ?? .center
+        let storedZoom: Double = defaults.object(forKey: Self.cameraZoomKey) as? Double ?? 1
+        cameraZoom = Double(CameraCrop.validZoom(Float(storedZoom)))
         let bars = defaults.integer(forKey: Self.circularSpectrumBarsKey)
         circularSpectrumBars = Self.circularSpectrumBarChoices.contains(bars) ? bars : Self.defaultCircularSpectrumBars
         linearSpectrumOrientation = defaults.string(forKey: Self.linearSpectrumOrientationKey)

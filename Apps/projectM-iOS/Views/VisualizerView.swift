@@ -360,6 +360,9 @@ struct VisualizerView: View {
         .onChange(of: coordinator.settings.visual) { coordinator.visualSettingsChanged() }                 // VIS-001
         .onChange(of: coordinator.settings.cameraPosition) { coordinator.cameraSettingsChanged() }         // CAM-002
         .onChange(of: coordinator.settings.cameraMirrored) { coordinator.cameraSettingsChanged() }
+        .onChange(of: coordinator.settings.cameraCropMode) { coordinator.cameraSettingsChanged() }         // CAM-007
+        .onChange(of: coordinator.settings.cameraCropAnchor) { coordinator.cameraSettingsChanged() }
+        .onChange(of: coordinator.settings.cameraZoom) { coordinator.cameraSettingsChanged() }
         .onChange(of: coordinator.settings.circularSpectrumBars) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.linearSpectrumOrientation) { coordinator.visualSettingsChanged() }   // VIS-002
         .onChange(of: coordinator.settings.linearSpectrumSpacing) { coordinator.visualSettingsChanged() }
