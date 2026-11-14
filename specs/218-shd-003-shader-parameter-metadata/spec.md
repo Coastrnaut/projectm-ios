@@ -2,7 +2,7 @@
 
 **Feature Branch**: `feature/shd-003` (spec directory `218-shd-003-shader-parameter-metadata`)
 **Created**: 2026-11-14
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (SHD-003-T01-T19 verified on the Mac: host, host GPU, Linux shape and the iOS 27.2 simulator; device task T20 `{device}` open)
 **Input**: User description: "Implement SHD-003 (Shader parameter metadata) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Define typed sliders and enums for
 bundled shader variants." Acceptance, verbatim: "Inspector builds controls directly from validated
