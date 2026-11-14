@@ -40,6 +40,16 @@ interaction); each answer is the conservative, local-first option.
 - Q: Where is the colour index kept? → A: In `Library/Caches/PresetColors/colors.json`, a versioned JSON file next to the thumbnails, excluded from backup. It is rebuildable from the thumbnails, so it is counted in Storage's "Caches", emptied by Clear Caches (FILE-010) and is not a FILE-011 erase category.
 - Q: How do the colour chips combine with other filters? → A: Selected colour chips combine with AND (a preset must have every selected colour among its dominant colours), and with the selected tags, Favorites and the search text, all at once. Selections are in memory only, like the tag chips.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: What does the list show when only colour chips are selected? → A: The same filtered list the tag chips use (alphabetical across packs, locked presets marked by their rows), now driven by tags AND colours; its empty text becomes "No presets match these filters" whenever a colour is selected (the PRE-003 text stays for tags alone).
+- Q: What do the chip counts count? → A: Listed presets (built-in and playable user presets) whose current dominant colours include the family, independent of the other selections, like the PRE-003 tag counts. Only families with a count above zero get a chip, in the fixed family order.
+- Q: Does a preset row show or say its colours? → A: No. The row stays as PRE-001/PRE-003 left it; colours are a filter, and adding them to every row's VoiceOver label would lengthen 12,847 labels for little gain. The chips carry the names.
+- Q: When is the index written? → A: After the first new colour, at most once per second (a coalescing delay injected for tests), atomically; and once more when the app goes to the background is not needed, because an unwritten colour is simply learned again from the cached thumbnail.
+- Q: Is a cached thumbnail read again just to learn its colours? → A: Only when its row asks for the picture anyway (the row's existing decode path); the colours are computed from the same decoded pixels on the same utility task, so no extra file read happens.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Find presets by colour (Priority: P1) — MVP
