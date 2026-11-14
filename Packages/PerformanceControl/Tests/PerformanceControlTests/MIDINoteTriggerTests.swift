@@ -16,11 +16,17 @@ final class MIDINoteTriggerTests: XCTestCase {
         let edge: MIDINoteEdge
     }
 
+    /// MIDI-008: each parsed batch is 100 ms after the previous one (MIDIPressFilter's 30 ms window reads timestamps).
+    private var timestamp: UInt64 = 7
+    private var advancesTime: Bool = true
+
     private func parse(_ bytes: [UInt8]) -> [MIDIEvent] {
         var parser = MIDIByteStreamParser()
         var sink = MIDIEventCollector()
+        if advancesTime { timestamp += 100_000_000 }
+        let stamp: UInt64 = timestamp
         bytes.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<UInt8>) -> Void in
-            parser.feed(buffer, timestamp: 7, into: &sink)
+            parser.feed(buffer, timestamp: stamp, into: &sink)
         }
         return sink.events
     }
@@ -29,7 +35,7 @@ final class MIDINoteTriggerTests: XCTestCase {
         var decoder = MIDIUMPDecoder()
         var sink = MIDIEventCollector()
         words.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<UInt32>) -> Void in
-            decoder.decode(buffer, timestamp: 7, into: &sink)
+            decoder.decode(buffer, timestamp: timestamp, into: &sink)
         }
         return sink.events
     }
@@ -62,6 +68,7 @@ final class MIDINoteTriggerTests: XCTestCase {
     /// The three sequences, as bytes: (on v>0, on v=0), (on v>0, off v=0), (on v>0, running-status v=0 with a clock
     /// byte in the middle). Identical event streams (velocity 0 note on becomes note off, value 0) and identical edges.
     func testVelocityZeroNoteOnNoteOffAndRunningStatusGiveIdenticalStreams() {
+        advancesTime = false   // compares whole events, timestamps included
         let onOn: [MIDIEvent] = parse([0x91, 0x3C, 0x64, 0x91, 0x3C, 0x00])
         let onOff: [MIDIEvent] = parse([0x91, 0x3C, 0x64, 0x81, 0x3C, 0x00])
         let running: [MIDIEvent] = parse([0x91, 0x3C, 0x64, 0x3C, 0xF8, 0x00]).filter { (e: MIDIEvent) -> Bool in e.kind != .clock }
@@ -177,7 +184,8 @@ final class MIDINoteTriggerTests: XCTestCase {
         XCTAssertNotNil(notes.remove(target: .previousCue))
         XCTAssertTrue(notes.isEmpty)
         XCTAssertNil(MIDINoteTarget(action: .cueNext, mode: .hold))
-        XCTAssertEqual(MIDINoteTarget.all.map { (t: MIDINoteTarget) -> String in t.id }, ["cue.next", "cue.previous", "blackout", "blackout.hold"])
+        XCTAssertEqual(MIDINoteTarget.all.map { (t: MIDINoteTarget) -> String in t.id }, ["transport.toggle", "transport.play", "transport.pause",   // MIDI-008
+                                                                                     "cue.next", "cue.previous", "blackout", "blackout.hold"])
     }
 
     // MARK: Learn (T12)

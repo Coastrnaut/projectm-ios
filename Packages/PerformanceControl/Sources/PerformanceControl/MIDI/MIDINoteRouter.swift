@@ -10,6 +10,11 @@
 //   keys; `releaseAll` and `release(keys:)` are called by the app when the input stops, a source goes away or a
 //   held binding is removed.
 // Unbound keys are not tracked, so the state is bounded by the bindings (≤ 64).
+//
+// MIDI-008 (specs/157-midi-008-transport, contract T2): the down set and the press rule live in `MIDIPressFilter`, shared
+// by notes, CC buttons (≥ 64 press, < 64 release) and real-time Start/Continue/Stop (momentary). A press is also dropped
+// when the source was pressed in the same batch (for hold targets too) or less than 30 ms earlier by message timestamp,
+// so a duplicated packet never fires twice. A CC that is not bound as a button never reaches the filter.
 
 /// What a command asks the app to do.
 public enum MIDINotePhase: Sendable, Hashable {
@@ -39,17 +44,25 @@ public struct MIDINoteRouter: Sendable, Hashable {
     public static let allSoundOff: UInt8 = 120
     public static let allNotesOff: UInt8 = 123
 
-    /// The bound keys that are down.
-    public private(set) var down: Set<MIDIControlKey> = []
+    /// MIDI-008: the shared press rule (and the down set).
+    public private(set) var filter = MIDIPressFilter()
 
     public init() {}
+
+    /// The bound keys that are down.
+    public var down: Set<MIDIControlKey> { filter.down }
+
+    /// MIDI-008-D7: records a learning press so its duplicate copies fire nothing.
+    public mutating func registerPress(_ key: MIDIControlKey, timestamp: UInt64) {
+        filter.registerPress(key, timestamp: timestamp, momentary: MIDINoteBinding.isRealTimeKey(key))
+    }
 
     public var hasKeysDown: Bool { !down.isEmpty }
 
     /// Routes one batch in arrival order.
     public mutating func route(_ batch: [MIDIEvent], bindings: MIDINoteBindingList) -> [MIDINoteCommand] {
         var commands: [MIDINoteCommand] = []
-        var fired: Set<MIDIControlKey> = []
+        filter.beginBatch()
         for event in batch {
             if event.kind == .controlChange, event.number == Self.allSoundOff || event.number == Self.allNotesOff {
                 let channel: UInt8 = event.channel
@@ -61,29 +74,20 @@ public struct MIDINoteRouter: Sendable, Hashable {
                 commands.append(contentsOf: releaseAll(bindings: bindings))
                 continue
             }
-            guard let edge = event.noteEdge else { continue }
-            let key: MIDIControlKey = event.controlKey
-            guard let binding = bindings.binding(forKey: key) else { continue }
-            switch edge {
-            case .on:
-                guard !down.contains(key) else { continue }
-                down.insert(key)
-                switch binding.target.mode {
-                case .trigger:
-                    guard !fired.contains(key) else { continue }
-                    fired.insert(key)
-                    commands.append(MIDINoteCommand(target: binding.target, phase: .fire, key: key))
-                case .hold:
-                    commands.append(MIDINoteCommand(target: binding.target, phase: .engage, key: key))
-                }
-            case .off:
-                guard down.remove(key) != nil else { continue }
-                if binding.target.mode == .hold {
-                    commands.append(MIDINoteCommand(target: binding.target, phase: .release, key: key))
-                }
-            }
+            guard let edge = MIDIPressFilter.rawEdge(event), let binding = bindings.binding(forKey: edge.key),
+                  let decision = filter.accept(edge, timestamp: event.timestamp) else { continue }
+            if let command = Self.command(for: decision, binding: binding) { commands.append(command) }
         }
         return commands
+    }
+
+    private static func command(for decision: MIDIPressDecision, binding: MIDINoteBinding) -> MIDINoteCommand? {
+        switch (decision, binding.target.mode) {
+        case (.press, .trigger): return MIDINoteCommand(target: binding.target, phase: .fire, key: binding.key)
+        case (.press, .hold): return MIDINoteCommand(target: binding.target, phase: .engage, key: binding.key)
+        case (.release, .hold): return MIDINoteCommand(target: binding.target, phase: .release, key: binding.key)
+        case (.release, .trigger): return nil
+        }
     }
 
     /// Puts every key up; `release` for each one bound to a hold target, ordered by channel then note.
@@ -99,7 +103,7 @@ public struct MIDINoteRouter: Sendable, Hashable {
         }
         var commands: [MIDINoteCommand] = []
         for key in sorted {
-            guard down.remove(key) != nil else { continue }
+            guard filter.forceUp(key) else { continue }
             guard let binding = bindings.binding(forKey: key), binding.target.mode == .hold else { continue }
             commands.append(MIDINoteCommand(target: binding.target, phase: .release, key: key))
         }
