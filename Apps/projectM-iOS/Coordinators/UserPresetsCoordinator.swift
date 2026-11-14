@@ -268,6 +268,7 @@ final class UserPresetsCoordinator: UserPresetGuarding {
             resultMessage = PresetImportRefusal.saveFailed.message
         } else {
             presets?.pruneTags(preset.id)   // PRE-003-R7: its tags go with it
+            presets?.overrides?.prune(preset.id)   // PRE-016-R16: and its adjustments
         }
         await refresh()
     }
