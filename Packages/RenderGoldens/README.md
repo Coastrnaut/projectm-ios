@@ -49,6 +49,11 @@ rule, record switch, CI guard, diff artifacts and integrity check as the scene g
 `MandalaGenerator` (`Tests/RenderGoldensTests/MandalaGoldenTests.swift`); record with `--filter MandalaGoldenTests` or
 `-only-testing:RenderGoldensTests/MandalaGoldenTests`.
 
+`GeneratorGoldens/ParticleFountain/<class>/` (VIS-008) holds the particle fountain's golden the same way:
+`particle-fountain-<w>x<h>-f0.png` (seed 0x5EED0008, Medium gravity; onsets at 0 s and 0.25 s; 60 Hz frames, captured
+at 0.6 s), through `ParticleFountainGenerator` (`Tests/RenderGoldensTests/ParticleFountainGoldenTests.swift`); record
+with `--filter ParticleFountainGolden` or `-only-testing:RenderGoldensTests/ParticleFountainGoldenTests`.
+
 ## Run
 
 ```bash

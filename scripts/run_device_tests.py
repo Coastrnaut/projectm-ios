@@ -85,6 +85,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.radialWaveform.ring", "settings.radialWaveform.amplitude",   # VIS-005-R9
                 "settings.beatRings.life",   # VIS-006-R9
                 "settings.mandala.symmetry", "settings.mandala.mirror", "settings.mandala.petal",   # VIS-007-R9
+                "settings.particleFountain.gravity",   # VIS-008-R10
                 "settings.spectrum.attack", "settings.spectrum.release",   # ANL-003-R6
                 "settings.osc.enabled", "settings.osc.port",   # OSC-001 (off by default)
                 "settings.osc.disabledRoutes", "settings.osc.aliases",   # OSC-003 (route addresses and parameter IDs)
@@ -93,6 +94,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.midi.mappings",  # MIDI-003 (channel, controller and parameter ID per line; no device)
                 "settings.parameterShelf.pins",  # UIX-004-R10 (ordered pinned parameter IDs)
                 "settings.scene.locked",  # SCN-015 (scene lock; absent = unlocked)
+                "settings.modulation.quantize",  # MOD-017 (quantize mode; absent = off)
                 "settings.inputTrim.decibels",   # AUD-008-R6 (analysis-only input trim)
                 "settings.analysisChannel.mode",   # AUD-009-R6 (analysis-only channel selection)
                 "settings.playbackBalance.position",   # AUD-010-R7 (In-App Playback monitoring balance)

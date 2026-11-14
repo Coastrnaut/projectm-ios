@@ -29,6 +29,8 @@ public struct AnalysisPipelineConfiguration: Sendable, Hashable {
     public let flatness: SpectralFlatnessConfiguration
     /// ANL-013's stereo correlation (1,024-frame blocks, τ 0.1 s, −70 dB floor, warning hysteresis).
     public let correlation: StereoCorrelationConfiguration
+    /// ANL-015's section change detector (35-frame slow level, 6/3 dB hysteresis, 2 s dwell, 4 s refractory).
+    public let sectionChange: SectionChangeConfiguration
 
     public init(spectrum: SpectrumConfiguration = AnalysisPipelineConfiguration.defaultSpectrum,
                 bandCount: BandCount = .b64,
@@ -42,13 +44,15 @@ public struct AnalysisPipelineConfiguration: Sendable, Hashable {
                 loudness: LoudnessConfiguration = .standard,
                 rolloff: SpectralRolloffConfiguration = .standard,
                 flatness: SpectralFlatnessConfiguration = .standard,
-                correlation: StereoCorrelationConfiguration = .standard) throws(AnalysisBusError) {
+                correlation: StereoCorrelationConfiguration = .standard,
+                sectionChange: SectionChangeConfiguration = .standard) throws(AnalysisBusError) {
         guard spectrum.sampleRate == onset.sampleRate, spectrum.sampleRate == beat.sampleRate,
               spectrum.sampleRate == kick.sampleRate, spectrum.sampleRate == midTransient.sampleRate,
               spectrum.sampleRate == highTransient.sampleRate,
               spectrum.sampleRate == centroid.sampleRate, spectrum.sampleRate == rolloff.sampleRate,
               spectrum.sampleRate == flatness.sampleRate, spectrum.sampleRate == correlation.sampleRate,
-              spectrum.sampleRate == loudness.sampleRate else {
+              spectrum.sampleRate == loudness.sampleRate,
+              spectrum.sampleRate == sectionChange.sampleRate, spectrum.hop == sectionChange.hop else {
             throw .sampleRateMismatch
         }
         guard bandFloorDecibels.isFinite, bandFloorDecibels < 0 else { throw .invalidBandFloor(bandFloorDecibels) }
@@ -65,5 +69,6 @@ public struct AnalysisPipelineConfiguration: Sendable, Hashable {
         self.rolloff = rolloff
         self.flatness = flatness
         self.correlation = correlation
+        self.sectionChange = sectionChange
     }
 }

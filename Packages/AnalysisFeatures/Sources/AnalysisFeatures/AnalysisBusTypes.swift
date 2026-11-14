@@ -47,6 +47,10 @@ public enum AnalysisEventKind: Sendable, Hashable {
     /// recent peak and the threshold it crossed (dB), the band level (dB re a full-scale sine in
     /// band) and the event's confidence 0…1 (ANL-008-R6; never an instrument identity).
     case transient(band: TransientBand, strength: Float, threshold: Float, level: Float, confidence: Float)
+    /// ANL-015 section change: a sustained level change (`.rising` quiet → loud, `.falling` loud →
+    /// quiet) confirmed after the dwell; the slow level and the reference it left (dB, LKFS-like). The
+    /// event's `eventSample` is where the change was first seen; its `time` is the confirming frame.
+    case sectionChange(direction: SectionChangeDirection, levelDecibels: Float, referenceDecibels: Float)
     case sessionStarted(AnalysisSessionChange)
     case sessionEnded(AnalysisSessionChange)
 }
@@ -122,6 +126,12 @@ public struct AnalysisFrame: Sendable, Hashable {
     public let correlation: Float
     /// ANL-013's phase-inversion warning (r < −0.5 for 1 s raises it, r > −0.3 for 1 s clears it).
     public let phaseInverted: Bool
+    /// ANL-015's section-change envelope, 0…1: 1 on the frame that confirmed a section change,
+    /// decaying with a 1 s time constant (0 at a session start).
+    public let sectionChangeEnvelope: Float
+    /// ANL-015's slow level: the K-weighted mean power of the last 35 frames (≈ 0.41 s), dB, at least
+    /// the detector's −70 dB floor.
+    public let sectionLevelDecibels: Float
 
     public init(id: UInt64, time: AnalysisTimestamp, bandCount: Int, onsetFlux: Float, bpm: Double?, beatConfidence: Double,
                 kickEnvelope: Float = 0, centroidHz: Float = 0, centroid: Float = 0,
@@ -129,7 +139,8 @@ public struct AnalysisFrame: Sendable, Hashable {
                 midTransientEnvelope: Float = 0, midTransientConfidence: Float = 0,
                 highTransientEnvelope: Float = 0, highTransientConfidence: Float = 0,
                 rolloffHz: Float = 0, rolloff: Float = 0, flatness: Float = 0,
-                correlation: Float = 0, phaseInverted: Bool = false) {
+                correlation: Float = 0, phaseInverted: Bool = false,
+                sectionChangeEnvelope: Float = 0, sectionLevelDecibels: Float = SectionChangeConfiguration.standard.floorDecibels) {
         self.id = id
         self.time = time
         self.bandCount = bandCount
@@ -150,6 +161,8 @@ public struct AnalysisFrame: Sendable, Hashable {
         self.flatness = flatness
         self.correlation = correlation
         self.phaseInverted = phaseInverted
+        self.sectionChangeEnvelope = sectionChangeEnvelope
+        self.sectionLevelDecibels = sectionLevelDecibels
     }
 }
 
@@ -158,7 +171,7 @@ public enum AnalysisBusError: Error, Equatable, Sendable {
     case invalidEventCapacity(Int)
     /// Already `AnalysisPipeline.maximumSubscribers` subscribers.
     case tooManySubscribers
-    /// The spectrum, onset, beat, kick, mid and high transient, centroid, rolloff, flatness and loudness configurations disagree on the sample rate.
+    /// The spectrum, onset, beat, kick, mid and high transient, centroid, rolloff, flatness, loudness, correlation and section-change configurations disagree on the sample rate (or the section-change hop differs from the spectrum's).
     case sampleRateMismatch
     /// The band floor must be finite and below 0 dB.
     case invalidBandFloor(Float)

@@ -313,6 +313,7 @@ struct SettingsView: View {
                 if settings.visual == .radialWaveform { radialWaveformOptions }   // VIS-005-R9
                 if settings.visual == .beatRings { beatRingsOptions }   // VIS-006-R9
                 if settings.visual == .mandala { mandalaOptions }   // VIS-007-R9
+                if settings.visual == .particleFountain { particleFountainOptions }   // VIS-008-R10
                 if settings.visual == .linearSpectrum {
                     Picker("Orientation", selection: $settings.linearSpectrumOrientation) {
                         ForEach(LinearSpectrumOrientation.allCases, id: \.self) { Text($0.title).tag($0) }
@@ -350,7 +351,7 @@ struct SettingsView: View {
                     .accessibilityIdentifier("nativeVisualUnavailableFooter")
             } else {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Oscilloscope draws the sound's waveform, held still when the sound repeats. Lissajous plots the left channel against the right: mono sound is a straight line, wide stereo fills the space; Mid/Side turns it so mono is vertical. Radial Waveform wraps the waveform around a ring: louder sound pushes it out and pulls it in, silence is a still circle. Beat Rings sends a ring out from the centre on each beat that grows and fades; with Reduce flashing on, at most three rings start per second. Mandala repeats a petal around the centre 3 to 12 times, optionally mirrored, shaped by the low, mid and high sound and turning slowly (half as fast with Reduce Motion). Camera shows your rear or front camera behind a circular spectrum, only while it is on screen; the picture is never sent. Photo shows a picture you choose behind a circular spectrum. Video plays a video you choose, without its sound, behind a circular spectrum. Text shows your own words over a circular spectrum.")
+                    Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Oscilloscope draws the sound's waveform, held still when the sound repeats. Lissajous plots the left channel against the right: mono sound is a straight line, wide stereo fills the space; Mid/Side turns it so mono is vertical. Radial Waveform wraps the waveform around a ring: louder sound pushes it out and pulls it in, silence is a still circle. Beat Rings sends a ring out from the centre on each beat that grows and fades; with Reduce flashing on, at most three rings start per second. Mandala repeats a petal around the centre 3 to 12 times, optionally mirrored, shaped by the low, mid and high sound and turning slowly (half as fast with Reduce Motion). Particle Fountain throws a burst of particles up from the bottom on each onset, a sudden new sound: stronger onsets throw more; they arc under gravity, slow down and fade; with Reduce Motion there are fewer and they move more slowly. Camera shows your rear or front camera behind a circular spectrum, only while it is on screen; the picture is never sent. Photo shows a picture you choose behind a circular spectrum. Video plays a video you choose, without its sound, behind a circular spectrum. Text shows your own words over a circular spectrum.")
                     if settings.visual.isNative {
                         if glowUnavailable {
                             Text(AppCoordinator.glowUnavailableMessage)
@@ -375,6 +376,16 @@ struct SettingsView: View {
         .accessibilityIdentifier("lissajousModePicker")
         Toggle("Persistence", isOn: $settings.lissajousPersistence)
             .accessibilityIdentifier("lissajousPersistenceToggle")
+    }
+
+    /// VIS-008-R10: the particle fountain's gravity.
+    private var particleFountainOptions: some View {
+        Picker("Gravity", selection: $settings.particleGravity) {
+            ForEach(ParticleGravity.allCases, id: \.self) { (gravity: ParticleGravity) in Text(gravity.title).tag(gravity) }
+        }
+        .segmentedUnlessAccessibilitySize()   // ACC-006-R1
+        .accessibilityLabel("Gravity")
+        .accessibilityIdentifier("particleGravityPicker")
     }
 
     /// VIS-007-R9: the mandala's symmetry, mirror and petal style.
@@ -451,6 +462,7 @@ struct SettingsView: View {
         if let shelf = layerInspector?.parameterShelf { ParameterShelfSection(shelf: shelf) }   // UIX-004-R6
         if let coordinator = layerInspector, !coordinator.macros.isEmpty { macrosSection(coordinator) }   // MOD-010-R10
         if let coordinator = layerInspector { ModulationMatrixLinkSection(coordinator: coordinator).id("modulation") }   // MOD-012-R1
+        QuantizeChangesSection(quantizer: settings.parameterQuantizer).id("quantize")   // MOD-017-R1
         if settings.visual.usesCamera {   // CAM-002-R1: which camera, and its mirror
             cameraSection
         }
@@ -510,7 +522,7 @@ struct SettingsView: View {
         oscSection.id("osc")
         if let midi { MIDISettingsSection(midi: midi).id("midi") }   // MIDI-001-R8
         if let recordingQuality { RecordingQualitySection(setting: recordingQuality).id("quality") }   // REC-005-R9
-        if let recordingQuality { RecordingFrameRateSection(setting: recordingQuality) }   // REC-006-R9
+        if let recordingQuality { RecordingFrameRateSection(setting: recordingQuality).id("recordingFrameRate") }   // REC-006-R9; QA-009 anchor
         if let recordingCountdown { RecordingCountdownSection(setting: recordingCountdown) }   // REC-007-R9
         if let recordingTimedStop { RecordingTimedStopSection(setting: recordingTimedStop) }   // REC-008-R9
         if let recordingAudio { RecordingAudioSection(setting: recordingAudio, status: recordingAudioStatus).id("recording") }   // REC-004-R13

@@ -70,7 +70,9 @@ struct StorageUsageView: View {
         return HStack {
             Text(title).fontWeight(bold ? .semibold : .regular)
             Spacer()
-            Text(text).monospacedDigit().foregroundStyle(.secondary)
+            // QA-009 (2026-11-14): primary colour; the sizes are the screen's content, and in the secondary grey
+            // they "nearly passed" the contrast audit.
+            Text(text).monospacedDigit()
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(title)

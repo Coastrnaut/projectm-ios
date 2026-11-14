@@ -38,6 +38,7 @@ extension AppCoordinator {
         show.applyScene = { [weak self] (document: SceneDocument, warnings: [SceneIssue]) -> [String] in
             guard let self else { return [] }
             let notes = self.applyShowScene(document, warnings: warnings, refresh: true)
+            self.settings.parameterQuantizer.cueApplied()   // MOD-017-R8: Cue mode applies on top of the cue; Beat/Bar clear
             self.cueTransitions.sceneApplied()   // XFADE-R1: the frozen frame blends out on the visual shown now
             self.sceneSwitchReached(.applied)   // UIX-002-R8: the switcher's latency ends at the applied state
             self.scenePreviews.sceneApplied(document.id)   // SCN-006: a picture after the settle, when it has none
