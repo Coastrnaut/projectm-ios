@@ -403,7 +403,7 @@
    "branch": null,
    "branch_sha": "1de4c76557bedfe57f469889add379d6b1adf791",
    "error_category": null,
-   "integrated_sha": "a69be2403c0f6d2864fb06f2022d2281f8a49806",
+   "integrated_sha": "a69be240",
    "priority": "P2",
    "spec_dir": null,
    "state": "integrated"
@@ -3548,7 +3548,7 @@
   {
    "branch": null,
    "id": "ANL-009",
-   "sha": "a69be2403c0f6d2864fb06f2022d2281f8a49806"
+   "sha": "a69be240"
   },
   {
    "branch": "feature/anl-010",
@@ -4341,5 +4341,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T15:34:32Z"
+ "updated": "2026-11-14T15:38:43Z"
 }

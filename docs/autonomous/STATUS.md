@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T15:34:32Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T15:38:43Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -50,7 +50,7 @@ The physical-device suite may **not** start:
 | ANL-006 | Tempo confidence indicator | `b0abb4e` | `feature/anl-006` |
 | ANL-007 | Kick energy detector | `cc15362` | `feature/anl-007` |
 | ANL-008 | Snare-like transient detector | `ae0249ac` | `feature/anl-008` |
-| ANL-009 | High-frequency transient detector | `a69be2403c0f` | `None` |
+| ANL-009 | High-frequency transient detector | `a69be240` | `None` |
 | ANL-010 | Spectral centroid | `bf6d440f` | `feature/anl-010` |
 | ANL-014 | Loudness envelope | `c3900199` | `feature/anl-014` |
 | ANL-016 | Analysis event bus | `97e498d64a14` | `feature/anl-016` |
@@ -402,6 +402,7 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `1de4c76557be` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-009/20261114T102124/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `1de4c76557be` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-009/20261114T102124/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `1de4c76557be` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-009/20261114T102124/swift-test_VisualGenerators.log`)
+- `post-merge: projectM-iOSTests 775 + UI 4 (glow, inspector)`: pass at `a69be240` (log `.autonomous/logs/integration/batch18/app-tests.log`)
 
 ### ANL-010 Spectral centroid (integrated)
 - `python3 scripts/check_compliance.py`: pass at `4db22e27a1e2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-010/20261113T220936/compliance.log`)
