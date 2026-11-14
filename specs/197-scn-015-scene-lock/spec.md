@@ -70,6 +70,7 @@ local-first option.
 
 - Q: Are MOD-012 modulation-matrix edits (turning a route layer on or off, reordering layers) scene edits? → A: Yes. The routes are part of the scene document (its bindings); `ModulationMatrixCoordinator`'s edits call `refusesEdit()` and change nothing while locked. Its Settings link sits in the disabled scene sections. Restoring a list (launch, Reopen, undo state) is not an edit; undo itself is refused.
 - Q: Are OSC-003 route edits (turning an OSC route off, adding or removing an alias) scene edits? → A: No. They are controller settings stored on the device (`settings.osc.disabledRoutes`, `settings.osc.aliases`), outside the scene document, like MIDI mappings; they stay available while locked, and OSC values keep driving parameters as performance input.
+- Q: Where does "Lock scene" sit in compact width? → A: In the compact layout's secondary row of icon buttons, above the FR-082 main row (FR-087 fix 2026-11-14): one grid of 13 buttons wrapped on an iPhone and split the main row. Still one tap, same label, value and hint.
 
 ## User Scenarios & Testing *(mandatory)*
 
