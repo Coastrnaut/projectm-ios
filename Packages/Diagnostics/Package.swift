@@ -13,7 +13,7 @@ let package = Package(
         .testTarget(
             name: "DiagnosticsTests",
             dependencies: ["Diagnostics", "AudioCore"],
-            resources: [.copy("Resources/diagnostics-export.schema.json")]
+            resources: [.copy("Resources/diagnostics-export.schema.json"), .copy("Resources/performance-report.schema.json")]
         ),
     ]
 )

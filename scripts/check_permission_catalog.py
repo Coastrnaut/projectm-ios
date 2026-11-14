@@ -4,8 +4,9 @@
 Checks (specs/078-file-013-privacy-permission-audit, plan D10):
   * every `NS...UsageDescription` key in the projectM-iOS target of project.yml has a catalog entry
     with the identical text, and every catalog entry has its key there;
-  * no Photos library key (`NSPhotoLibraryUsageDescription`, `NSPhotoLibraryAddUsageDescription`)
-    appears anywhere in project.yml (the Photos picker needs none);
+  * the full-library key `NSPhotoLibraryUsageDescription` appears nowhere in project.yml (the Photos
+    picker needs none, and the app never reads the library); the add-only key
+    `NSPhotoLibraryAddUsageDescription` (REC-011, ADR-0059) is allowed only in the app target;
   * the privacy policy's "Permissions and why" section lists exactly the catalog's permissions.
 
 Usage: python3 scripts/check_permission_catalog.py [--root DIR] [--json]
@@ -24,7 +25,8 @@ CATALOG = Path("Apps/projectM-iOS/Coordinators/PermissionCatalog.swift")
 PROJECT = Path("project.yml")
 POLICY = Path("docs/privacy-policy.md")
 POLICY_SECTION = "## Permissions and why"
-PHOTOS_KEYS = ("NSPhotoLibraryUsageDescription", "NSPhotoLibraryAddUsageDescription")
+PHOTOS_KEYS = ("NSPhotoLibraryUsageDescription",)   # full library access: never
+PHOTOS_ADD_KEY = "NSPhotoLibraryAddUsageDescription"   # REC-011 (ADR-0059): the app target only
 
 _KEY_LINE = re.compile(r'^\s+(NS\w+UsageDescription):\s*"((?:[^"\\]|\\.)*)"\s*$')
 _ENTRY = re.compile(r'name:\s*"((?:[^"\\]|\\.)*)",\s*infoPlistKey:\s*"(\w+)",\s*'
@@ -90,6 +92,8 @@ def problems(yml: str, swift: str, policy: str) -> list[str]:
     for key in PHOTOS_KEYS:
         if key in yml:
             found.append(f"{key}: Photos library keys are not allowed (the picker needs no permission)")
+    if yml.count(PHOTOS_ADD_KEY) > target_block(yml, APP_TARGET).count(PHOTOS_ADD_KEY):
+        found.append(f"{PHOTOS_ADD_KEY}: allowed only in the {APP_TARGET} target (REC-011, ADR-0059)")
     names = [name for name, _, _ in entries]
     listed = policy_names(policy)
     if not listed:
@@ -120,7 +124,7 @@ def main(argv: list[str] | None = None) -> int:
         for problem in found:
             print(f"FAIL {problem}")
     else:
-        print(f"OK: {len(permissions)} permissions ({', '.join(permissions)}); no Photos library key")
+        print(f"OK: {len(permissions)} permissions ({', '.join(permissions)}); no full Photos library key")
     return 1 if found else 0
 
 

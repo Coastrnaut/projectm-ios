@@ -96,13 +96,19 @@ struct SettingsView: View {
     var explainers: PermissionExplainerCoordinator?
     /// UIX-015-R1: the camera's permission status when Camera is picked.
     var cameraStatus: @MainActor () -> PermissionState? = { () -> PermissionState? in nil }
+    /// CAM-003: the Lens row (nil: no row, e.g. in previews).
+    var cameraLens: CameraLensChoice? = nil
     /// PRE-006: Recently Played (nil hides its section, e.g. in previews).
     var recentPresets: RecentPresetsCoordinator?
     /// PERF-008: the power profile (nil hides the rows, e.g. in previews).
     var powerProfile: PowerProfileSetting? = nil
+    /// PERF-012: Export performance report (Settings → Performance).
+    var performanceReport: PerformanceReportExport? = nil
     /// ACC-005-R7: announces a VoiceOver swipe at a slider's end (nil: none, e.g. in previews).
     var announcer: AccessibilityAnnouncer?
     @Environment(\.dismiss) private var dismiss
+    /// UIX-007-R8: set while Settings is in the iPad split editor (Done closes the pane instead of a sheet).
+    @Environment(\.splitEditorClose) private var splitEditorClose: (@MainActor () -> Void)?
     @State private var pickedPhoto: PhotosPickerItem?
     @State private var showPhotoFileImporter = false
     @State private var pickedVideo: PhotosPickerItem?
@@ -176,13 +182,14 @@ struct SettingsView: View {
             .accessibilityLabel("Camera")
             .accessibilityValue(settings.cameraPosition.title)
             .accessibilityIdentifier("cameraPositionPicker")
+            if let cameraLens { CameraLensRow(choice: cameraLens) }   // CAM-003-R2
             Toggle("Mirror", isOn: $settings.cameraMirrored)
                 .accessibilityIdentifier("cameraMirrorToggle")
             cameraCropRows
         } header: {
             Text("Camera")
         } footer: {
-            Text("Mirror flips the camera picture left to right, like a mirror; saved frames and recordings show it the same way. Each camera keeps its own setting: on for Front, off for Back unless you change it. Fill covers the screen and crops the rest; Fit shows the whole picture with bars. Anchor keeps that part of the picture in place, and Zoom enlarges it; both cameras use the same framing, also after you turn the device.")
+            Text("Mirror flips the camera picture left to right, like a mirror; saved frames and recordings show it the same way. Each camera keeps its own setting: on for Front, off for Back unless you change it. Lens lists only the back lenses this device has. Fill covers the screen and crops the rest; Fit shows the whole picture with bars. Anchor keeps that part of the picture in place, and Zoom enlarges it; both cameras use the same framing, also after you turn the device.")
         }
     }
 
@@ -243,7 +250,7 @@ struct SettingsView: View {
             .uitestSettingsSection()   // DEBUG: `-uitestSettingsSection <id>` (UI tests, owner rule 7)
             .navigationTitle("Settings")
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) { Button("Done") { if let splitEditorClose { splitEditorClose() } else { dismiss() } } }
                 if let history { ToolbarItem(placement: .topBarLeading) { SceneUndoRedoButtons(history: history) } }   // SCN-010
             }
         }
@@ -312,6 +319,7 @@ struct SettingsView: View {
                 if settings.visual == .beatRings { beatRingsOptions }   // VIS-006-R9
                 if settings.visual == .mandala { mandalaOptions }   // VIS-007-R9
                 if settings.visual == .particleFountain { particleFountainOptions }   // VIS-008-R10
+                if settings.visual == .particleOrbit { particleOrbitOptions }   // VIS-009-R10
                 if settings.visual == .linearSpectrum {
                     Picker("Orientation", selection: $settings.linearSpectrumOrientation) {
                         ForEach(LinearSpectrumOrientation.allCases, id: \.self) { Text($0.title).tag($0) }
@@ -349,7 +357,7 @@ struct SettingsView: View {
                     .accessibilityIdentifier("nativeVisualUnavailableFooter")
             } else {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Oscilloscope draws the sound's waveform, held still when the sound repeats. Lissajous plots the left channel against the right: mono sound is a straight line, wide stereo fills the space; Mid/Side turns it so mono is vertical. Radial Waveform wraps the waveform around a ring: louder sound pushes it out and pulls it in, silence is a still circle. Beat Rings sends a ring out from the centre on each beat that grows and fades; with Reduce flashing on, at most three rings start per second. Mandala repeats a petal around the centre 3 to 12 times, optionally mirrored, shaped by the low, mid and high sound and turning slowly (half as fast with Reduce Motion). Particle Fountain throws a burst of particles up from the bottom on each onset, a sudden new sound: stronger onsets throw more; they arc under gravity, slow down and fade; with Reduce Motion there are fewer and they move more slowly. Camera shows your rear or front camera behind a circular spectrum, only while it is on screen; the picture is never sent. Photo shows a picture you choose behind a circular spectrum. Video plays a video you choose, without its sound, behind a circular spectrum. Text shows your own words over a circular spectrum.")
+                    Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Oscilloscope draws the sound's waveform, held still when the sound repeats. Lissajous plots the left channel against the right: mono sound is a straight line, wide stereo fills the space; Mid/Side turns it so mono is vertical. Radial Waveform wraps the waveform around a ring: louder sound pushes it out and pulls it in, silence is a still circle. Beat Rings sends a ring out from the centre on each beat that grows and fades; with Reduce flashing on, at most three rings start per second. Mandala repeats a petal around the centre 3 to 12 times, optionally mirrored, shaped by the low, mid and high sound and turning slowly (half as fast with Reduce Motion). Particle Fountain throws a burst of particles up from the bottom on each onset, a sudden new sound: stronger onsets throw more; they arc under gravity, slow down and fade; with Reduce Motion there are fewer and they move more slowly. Particle Orbit circles particles around the centre: the ring swells with the bass and the centre pulses on each beat; with Reduce Motion they turn at half speed and swell more gently. Camera shows your rear or front camera behind a circular spectrum, only while it is on screen; the picture is never sent. Photo shows a picture you choose behind a circular spectrum. Video plays a video you choose, without its sound, behind a circular spectrum. Text shows your own words over a circular spectrum.")
                     if settings.visual.isNative {
                         if glowUnavailable {
                             Text(AppCoordinator.glowUnavailableMessage)
@@ -374,6 +382,16 @@ struct SettingsView: View {
         .accessibilityIdentifier("lissajousModePicker")
         Toggle("Persistence", isOn: $settings.lissajousPersistence)
             .accessibilityIdentifier("lissajousPersistenceToggle")
+    }
+
+    /// VIS-009-R10: the particle orbit's radius.
+    private var particleOrbitOptions: some View {
+        Picker("Radius", selection: $settings.particleOrbitRadius) {
+            ForEach(ParticleOrbitRadius.allCases, id: \.self) { (radius: ParticleOrbitRadius) in Text(radius.title).tag(radius) }
+        }
+        .segmentedUnlessAccessibilitySize()   // ACC-006-R1
+        .accessibilityLabel("Radius")
+        .accessibilityIdentifier("particleOrbitRadiusPicker")
     }
 
     /// VIS-008-R10: the particle fountain's gravity.
@@ -508,6 +526,7 @@ struct SettingsView: View {
         }
         .id("performance")
         if let powerProfile { PowerProfileSection(setting: powerProfile).id("powerProfile") }   // PERF-008-R1
+        if let performanceReport { PerformanceReportSection(export: performanceReport).id("performanceReport") }   // PERF-012-R1
     }
 
     @ViewBuilder private var audioSections: some View {

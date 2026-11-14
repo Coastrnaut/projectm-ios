@@ -54,6 +54,11 @@ rule, record switch, CI guard, diff artifacts and integrity check as the scene g
 at 0.6 s), through `ParticleFountainGenerator` (`Tests/RenderGoldensTests/ParticleFountainGoldenTests.swift`); record
 with `--filter ParticleFountainGolden` or `-only-testing:RenderGoldensTests/ParticleFountainGoldenTests`.
 
+`GeneratorGoldens/ParticleOrbit/<class>/` (VIS-009) holds the particle orbit's golden the same way:
+`particle-orbit-<w>x<h>-f0.png` (seed 0x5EED0009, 160 particles, base 0.5, steady bass 0.5, one beat at 0.2 s; 60 Hz
+frames, captured at 0.5 s), through `ParticleOrbitGenerator` (`Tests/RenderGoldensTests/ParticleOrbitGoldenTests.swift`);
+record with `--filter ParticleOrbitGolden` or `-only-testing:RenderGoldensTests/ParticleOrbitGoldenTests`.
+
 ## Run
 
 ```bash

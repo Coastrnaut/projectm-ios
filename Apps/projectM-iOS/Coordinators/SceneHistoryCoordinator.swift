@@ -198,6 +198,11 @@ enum LayerHistoryEdit {
         let after: SceneComposite = new[kind] ?? SceneComposite()
         let title: String = layerTitle(kind)
         let parameters: [LayerInspectorParameter] = changedParameters(from: before, to: after)
+        if parameters == [.gradientStops], let edit = LayerGradientEdit.stopEdit(from: before, to: after) {   // CMP-008: one stop field
+            let n: Int = edit.index + 1
+            let label: String = "\(title) Gradient Stop \(n) \(edit.field.title) \(LayerGradientEdit.stopText(edit.value))"
+            return (label, "layer.\(kind).gradientStop\(n).\(edit.field.rawValue)")
+        }
         guard parameters.count == 1, let parameter = parameters.first else {
             return (after == SceneComposite() ? "Reset \(title)" : "\(title) Layer", nil)
         }
@@ -230,6 +235,9 @@ enum LayerHistoryEdit {
         let wasInverted: Bool = LayerCompositeEdit.knownMask(old)?.inverted ?? false
         let isInverted: Bool = LayerCompositeEdit.knownMask(new)?.inverted ?? false
         if wasInverted != isInverted { result.append(.maskInverted) }
+        if old.gradientMask?.kind != new.gradientMask?.kind { result.append(.gradientKind) }   // CMP-008
+        else if LayerGradientEdit.stops(old) != LayerGradientEdit.stops(new) { result.append(.gradientStops) }
+        if result.isEmpty && old.gradientMask != new.gradientMask { result.append(.gradientKind) }   // e.g. an unknown gradient replaced
         if result.isEmpty && old != new { result.append(.maskShape) }   // e.g. an unknown mask replaced
         return result
     }

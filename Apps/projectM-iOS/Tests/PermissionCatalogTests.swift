@@ -2,7 +2,8 @@
 // * Every framework status maps to the expected PermissionState (injected statuses, FILE-013-R2, R5).
 // * Denied and restricted give the expected notice text and Open Settings for all four permissions
 //   (FILE-013-S1); notDetermined and granted give none.
-// * The catalog's usage texts equal the built app's Info.plist, and no Photos library key exists.
+// * The catalog's usage texts equal the built app's Info.plist, and no full Photos library key exists
+//   (REC-011, ADR-0059: the add-only key is the fifth entry).
 // Pure value checks; each test well under a second (owner rule 7).
 import AVFoundation
 import AudioCore
@@ -21,14 +22,18 @@ final class PermissionCatalogTests: XCTestCase {
     private static let cameraRestricted = "Camera access is restricted on this device. It can be allowed in Settings if your restrictions permit."
     private static let networkDenied = "Local network access is off for projectM in Settings › Privacy & Security › Local Network."
     private static let screenDenied = "Screen recording not allowed"
+    private static let photosDenied = "Photos access is off. To save to Photos, allow adding photos for projectM in Settings."
+    private static let photosRestricted = "Saving to Photos is restricted on this device."
 
     // MARK: Entries
 
     func testOneEntryPerPermissionWithItsKey() {
         XCTAssertEqual(C.entries.map(\.permission), AppPermission.allCases)
         XCTAssertEqual(C.entries.map(\.infoPlistKey), ["NSMicrophoneUsageDescription", "NSCameraUsageDescription",
-                                                      "NSLocalNetworkUsageDescription", "NSScreenCaptureUsageDescription"])
-        XCTAssertEqual(C.entries.map(\.name), ["Microphone", "Camera", "Local Network", "Screen recording (System/App Capture)"])
+                                                      "NSLocalNetworkUsageDescription", "NSScreenCaptureUsageDescription",
+                                                      "NSPhotoLibraryAddUsageDescription"])
+        XCTAssertEqual(C.entries.map(\.name), ["Microphone", "Camera", "Local Network", "Screen recording (System/App Capture)",
+                                               "Photos (add only)"])
         for entry in C.entries {
             XCTAssertFalse(entry.features.isEmpty, entry.name)
             XCTAssertFalse(entry.askedWhen.isEmpty, entry.name)
@@ -50,7 +55,7 @@ final class PermissionCatalogTests: XCTestCase {
         let usageKeys = Set(info.keys.filter { (key: String) -> Bool in key.hasSuffix("UsageDescription") })
         XCTAssertEqual(usageKeys, Set(C.entries.map(\.infoPlistKey)))
         XCTAssertNil(info["NSPhotoLibraryUsageDescription"])
-        XCTAssertNil(info["NSPhotoLibraryAddUsageDescription"])
+        XCTAssertNotNil(info["NSPhotoLibraryAddUsageDescription"])   // REC-011 (ADR-0059)
         XCTAssertFalse(C.photosLibrary.isEmpty)
     }
 
@@ -66,14 +71,25 @@ final class PermissionCatalogTests: XCTestCase {
             (.localNetwork, .restricted, Self.networkDenied, true), // no restricted state in iOS
             (.screenCapture, .denied, Self.screenDenied, false),    // no per-app switch in Settings
             (.screenCapture, .restricted, Self.screenDenied, false),
+            (.photosAdd, .denied, Self.photosDenied, true),         // REC-011-R7
+            (.photosAdd, .restricted, Self.photosRestricted, true),
         ]
         for (permission, state, text, settings) in expected {
             let notice = C.notice(permission, state)
             // UIX-015-R7, R8: camera and Local Network name their fallback; only the camera offers Dismiss.
-            let fallback: String? = permission == .camera ? C.cameraFallback : permission == .localNetwork ? C.localNetworkFallback : nil
+            let fallback: String? = Self.fallback(permission)
             XCTAssertEqual(notice, PermissionNotice(permission: permission, state: state, text: text, offersSettings: settings,
                                                     fallback: fallback, offersDismiss: permission == .camera),
                            "\(permission) \(state)")
+        }
+    }
+
+    private static func fallback(_ permission: AppPermission) -> String? {
+        switch permission {
+        case .camera: C.cameraFallback
+        case .localNetwork: C.localNetworkFallback
+        case .photosAdd: "The file is still in the app."   // REC-011-R6
+        case .microphone, .screenCapture: nil
         }
     }
 

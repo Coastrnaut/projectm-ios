@@ -55,7 +55,10 @@ enum CompositorShaders {
     // `LayerMaskGeometry` (CPU reference) from the same numbers: `rot` = (cos, sin, centre x, centre y)
     // in layer pixels, `shape` = (kind 1 ellipse / 2 rectangle / 3 polygon, half width, half height,
     // corner radius), `edge` = (band, inverted, point count, 0), points in local pixels. Kind 0: no mask.
-    struct CMPMask { float4 rot; float4 shape; float4 edge; float2 points[32]; };
+    // CMP-008 (contracts/gradient-masks.md in specs/207): `grad` = (kind 1 linear / 2 radial, stop count, 0, 0),
+    // `axis` = linear (start x, y, end x, y) / radial (centre x, y, radius, 0) in layer pixels, `stops` =
+    // (position, alpha). Kind 0: no gradient. The same steps as `LayerGradientGeometry`.
+    struct CMPMask { float4 rot; float4 shape; float4 edge; float2 points[32]; float4 grad; float4 axis; float2 stops[8]; };
 
     static float cmp_mask_distance(constant CMPMask &m, float2 p) {
         float2 dp = p - m.rot.zw;
@@ -95,12 +98,44 @@ enum CompositorShaders {
         return s * sqrt(best);
     }
 
-    // Exactly 0 at distance >= band/2, exactly 1 at <= -band/2 (swapped when inverted).
+    // CMP-008: piecewise-linear alpha between sorted stops, clamped outside; monotonic between adjacent stops.
+    static float cmp_gradient_alpha(constant CMPMask &m, float2 p) {
+        int kind = int(m.grad.x + 0.5);
+        int n = clamp(int(m.grad.y + 0.5), 0, 8);
+        if (kind == 0 || n < 1) return 1.0;
+        float t;
+        if (kind == 2) {
+            t = length(p - m.axis.xy) / m.axis.z;
+        } else {
+            float2 e = m.axis.zw - m.axis.xy;
+            t = dot(p - m.axis.xy, e) / dot(e, e);
+        }
+        float a = m.stops[0].y;
+        for (int i = 1; i < n; i++) {
+            float2 previous = m.stops[i - 1];
+            float2 next = m.stops[i];
+            if (t >= next.x) { a = next.y; continue; }
+            if (t > previous.x) {
+                float f = (t - previous.x) / (next.x - previous.x);
+                a = previous.y + (next.y - previous.y) * f;
+            }
+            break;
+        }
+        return a;
+    }
+
+    // Shape: exactly 0 at distance >= band/2, exactly 1 at <= -band/2 (swapped when inverted); shape kind 0
+    // (CMP-008: a gradient alone) gives 1. Times the gradient's alpha (1 without a gradient).
     static float cmp_mask_coverage(constant CMPMask &m, float2 p) {
-        float w = m.edge.x;
-        float t = clamp((0.5 * w - cmp_mask_distance(m, p)) / w, 0.0, 1.0);
-        float c = t * t * (3.0 - 2.0 * t);
-        return m.edge.y > 0.5 ? 1.0 - c : c;
+        float c = 1.0;
+        if (m.shape.x > 0.5) {
+            float w = m.edge.x;
+            float t = clamp((0.5 * w - cmp_mask_distance(m, p)) / w, 0.0, 1.0);
+            float s = t * t * (3.0 - 2.0 * t);
+            c = m.edge.y > 0.5 ? 1.0 - s : s;
+        }
+        if (m.grad.x > 0.5) c *= cmp_gradient_alpha(m, p);
+        return c;
     }
 
     // CMP-007: a normal-mode masked layer, drawn in the open "over" pass (fixed-function blending, no
@@ -179,7 +214,7 @@ enum CompositorShaders {
         c.a = clamp(c.a, 0.0, 1.0);
         c.rgb = max(c.rgb, float3(0.0));
         float4 s = c * clamp(d.params.x, 0.0, 1.0);
-        if (m.shape.x > 0.5) s *= cmp_mask_coverage(m, layerPixel);   // CMP-007; kind 0 leaves s untouched
+        if (m.shape.x > 0.5 || m.grad.x > 0.5) s *= cmp_mask_coverage(m, layerPixel);   // CMP-007, CMP-008; none leaves s untouched
         float4 b = backdrop.read(pixel);
         int mode = int(d.params.z + 0.5);
         float both = s.a * b.a;
@@ -302,7 +337,8 @@ enum CompositorShaders {
         }
     }
 
-    /// CMP-007: `CMPMask` in the shader (304 bytes, copied by `setFragmentBytes`; research CMP-007-D3).
+    /// CMP-007: `CMPMask` in the shader (400 bytes since CMP-008, copied by `setFragmentBytes`; research
+    /// CMP-007-D3, CMP-008-D3).
     struct MaskBlock {
         var rot: SIMD4<Float> = .zero
         var shape: SIMD4<Float> = .zero
@@ -312,9 +348,32 @@ enum CompositorShaders {
                      SIMD4<Float>, SIMD4<Float>, SIMD4<Float>, SIMD4<Float>, SIMD4<Float>, SIMD4<Float>, SIMD4<Float>,
                      SIMD4<Float>, SIMD4<Float>) = (.zero, .zero, .zero, .zero, .zero, .zero, .zero, .zero,
                                                     .zero, .zero, .zero, .zero, .zero, .zero, .zero, .zero)
+        /// CMP-008: (kind, stop count, 0, 0), the axis in pixels, 8 float2 stops (two per SIMD4).
+        var grad: SIMD4<Float> = .zero
+        var axis: SIMD4<Float> = .zero
+        var stops: (SIMD4<Float>, SIMD4<Float>, SIMD4<Float>, SIMD4<Float>) = (.zero, .zero, .zero, .zero)
 
         /// Kind 0: no mask (`cmp_blend` leaves the source untouched).
         static let none = MaskBlock()
+
+        /// A shape, a gradient or both (CMP-008); nil leaves that part's kind 0.
+        init(shape: LayerMaskGeometry?, gradient: LayerGradientGeometry?) {
+            if let shape { self.init(shape) } else { self.init() }
+            if let gradient { setGradient(gradient) }
+        }
+
+        private mutating func setGradient(_ g: LayerGradientGeometry) {
+            let count: Int = min(g.stops.count, LayerGradientMask.maximumStops)
+            grad = SIMD4<Float>(Float(g.kind), Float(count), 0, 0)
+            axis = SIMD4<Float>(Float(g.axis.0), Float(g.axis.1), Float(g.axis.2), Float(g.axis.3))
+            withUnsafeMutableBytes(of: &stops) { (raw: UnsafeMutableRawBufferPointer) in
+                let floats = raw.bindMemory(to: Float.self)
+                for k in 0..<count {
+                    floats[2 * k] = Float(g.stops[k].position)
+                    floats[2 * k + 1] = Float(g.stops[k].alpha)
+                }
+            }
+        }
 
         /// The block for `geometry` (the CPU reference's numbers, rounded to `Float`).
         init(_ geometry: LayerMaskGeometry) {

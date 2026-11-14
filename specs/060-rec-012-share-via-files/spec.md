@@ -121,7 +121,7 @@ temporary file is deleted.
 - **REC-012-R4**: When the share sheet reports completion, cancellation or an error, the app MUST delete that share's temporary copy and its folder.
 - **REC-012-R5**: A cancelled, completed or failed share MUST leave the original offered and unchanged (the acceptance: "Share cancellation retains original and cleans temporary copy").
 - **REC-012-R6**: At launch, the app MUST delete everything in `<tmp>/Sharing` (a directory listing only; no file dates are read).
-- **REC-012-R7**: The share sheet MUST exclude Save to Photos and Assign to Contact; the app MUST NOT request any Photos or Contacts permission.
+- **REC-012-R7**: The share sheet MUST exclude Save to Photos and Assign to Contact; the app MUST NOT request any Photos or Contacts permission. *(Amended 2026-11-14 by ADR-0059: REC-011's own Save to Photos button may request add-only Photos access; the sheet's exclusions are unchanged.)*
 - **REC-012-R8**: The result stays offered until Save… completes, the user taps Discard, or (stills only) a new Save Frame replaces it. A cancelled Save… keeps it.
 - **REC-012-R9**: Discard of a recording MUST delete its temporary file; a completed Save… moves it (REC-003); nothing is kept beyond the session (FR-065).
 - **REC-012-R10**: While a recording is offered, Record MUST refuse with "Save, share or discard the last recording first." and start nothing.

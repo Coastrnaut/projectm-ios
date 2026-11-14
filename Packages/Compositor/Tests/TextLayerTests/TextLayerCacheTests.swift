@@ -37,11 +37,14 @@ final class TextLayerCacheTests: XCTestCase {
         XCTAssertEqual(layer.framesShown, 10, "and is shown in all ten")
         XCTAssertTrue(compositor.wasReused(layer: 0))
 
+        // Counted before the change: "B" may render during the next frame or only after it (CI's iOS 27 simulator,
+        // run 43627986850, rendered it before `waitUntilRendered` was reached), but exactly once in all.
+        let before = layer.renderCount
         layer.spec = TextOverlaySpec(message: "B", size: 0.25)
         try frames(1)   // the old rendering may still show while "B" is drawn (MED-009), never a stale "B"
         layer.waitUntilRendered()
-        let before = layer.renderCount
         try frames(5)
+        layer.waitUntilRendered()
         XCTAssertEqual(layer.renderCount, before + 1, "the new message renders exactly once")
         XCTAssertTrue(compositor.wasReused(layer: 0))
 
