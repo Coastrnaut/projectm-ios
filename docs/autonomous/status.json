@@ -11,10 +11,10 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 71,
+   "audited": 70,
    "implementing": 4,
-   "integrated": 74,
-   "unit_passed": 2
+   "integrated": 72,
+   "unit_passed": 5
   },
   "P2": {
    "audited": 74,
@@ -25,11 +25,11 @@
   }
  },
  "by_state": {
-  "audited": 156,
+  "audited": 155,
   "implementing": 4,
-  "integrated": 163,
+  "integrated": 161,
   "skipped_existing": 1,
-  "unit_passed": 2
+  "unit_passed": 5
  },
  "device_gate": {
   "blocked": [],
@@ -74,6 +74,7 @@
    "MED-008",
    "MED-011",
    "MED-012",
+   "MED-013",
    "MIDI-005",
    "MIDI-008",
    "MIDI-009",
@@ -172,6 +173,7 @@
    "SHOW-012",
    "SHOW-013",
    "SHOW-015",
+   "UIX-004",
    "UIX-005",
    "UIX-006",
    "UIX-007",
@@ -202,7 +204,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "162 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)"
+   "164 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)"
   ]
  },
  "features": {
@@ -1521,10 +1523,10 @@
    "branch": "feature/med-013",
    "branch_sha": "3e9e52be2928530db8e0ce106a16244ab8ef66d8",
    "error_category": null,
-   "integrated_sha": "52fabb13f5753a280301a619269a627a5997b5b1",
+   "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "integrated"
+   "state": "unit_passed"
   },
   "MED-014": {
    "attempts": 0,
@@ -2469,12 +2471,12 @@
   "QA-006": {
    "attempts": 0,
    "branch": null,
-   "branch_sha": null,
+   "branch_sha": "86203d89d8971f3a54ac96ab609aeb431a1082df",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "unit_passed"
   },
   "QA-007": {
    "attempts": 0,
@@ -3151,10 +3153,10 @@
    "branch": "feature/uix-004",
    "branch_sha": "55450ba74bdca5d9cbdd916df5f6b8f8cfea833a",
    "error_category": null,
-   "integrated_sha": "327bf363",
+   "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "integrated"
+   "state": "unit_passed"
   },
   "UIX-005": {
    "attempts": 0,
@@ -3939,11 +3941,6 @@
    "sha": "6ac0c21c"
   },
   {
-   "branch": "feature/med-013",
-   "id": "MED-013",
-   "sha": "52fabb13f5753a280301a619269a627a5997b5b1"
-  },
-  {
    "branch": "feature/med-014",
    "id": "MED-014",
    "sha": "31e16534f057b12cf870f7a854464076a0c39955"
@@ -4259,11 +4256,6 @@
    "sha": "7b7a78050adac4aee7896f350d10b628bb8d4a47"
   },
   {
-   "branch": "feature/uix-004",
-   "id": "UIX-004",
-   "sha": "327bf363"
-  },
-  {
    "branch": "feature/uix-015",
    "id": "UIX-015",
    "sha": "ae498579"
@@ -4309,5 +4301,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T14:50:53Z"
+ "updated": "2026-11-14T14:53:04Z"
 }
