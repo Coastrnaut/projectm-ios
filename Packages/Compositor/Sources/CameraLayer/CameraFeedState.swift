@@ -33,8 +33,18 @@ public enum CameraFeedState: Sendable, Equatable {
         case .denied: "Camera access is off. To show the camera, allow it in Settings."
         case .restricted: "Camera access is restricted on this device. It can be allowed in Settings if your restrictions permit."
         case .unavailable: "No rear camera is available. Showing the spectrum only."
-        case .interrupted, .failed: "The camera is paused by the system. It comes back when the camera is free."
+        case .interrupted: CameraStopReason.otherInterruption.notice   // CAM-013: generic, with Retry
+        case .failed: CameraStopReason.runtimeError.notice   // CAM-013: no promised return
         }
+    }
+
+    /// CAM-013-R2: the notice offers Retry (interrupted or stopped by a runtime error).
+    public var offersRetry: Bool { self == .interrupted || self == .failed }
+
+    /// CAM-013-R3: the reason's notice while interrupted or failed; otherwise `notice(position:)`.
+    public func notice(position: CameraPosition, reason: CameraStopReason?) -> String? {
+        guard offersRetry, let reason else { return notice(position: position) }
+        return reason.notice
     }
 
     /// The notice offers a button that opens the app's page in iOS Settings.
