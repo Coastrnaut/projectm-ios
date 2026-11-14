@@ -369,6 +369,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         let manager = CaptureManager(sources: sources, signposts: DiagnosticsLog.pipeline,
                                      analysisTapCapacityFrames: NormalizedPCMRing.analysisTapDefaultCapacityFrames)
         self.manager = manager
+        manager.backgroundConfiguration = Self.backgroundConfiguration(infoDictionary: Bundle.main.infoDictionary)   // AUD-015-R3
         transport = PlaybackTransport(manager: manager, source: inAppPlayback)
         let lifecycle = LifecycleObserver()
         self.lifecycle = lifecycle

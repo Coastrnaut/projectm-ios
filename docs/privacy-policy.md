@@ -224,6 +224,21 @@ Audio from every source is processed only in memory, on your device, to draw the
 What the app hears or captures is never recorded, never written to storage, and never transmitted.
 There is no setting that changes this.
 
+## When the app is in the background
+
+When you leave the app (the Home Screen, another app) or lock your device:
+
+- **Microphone** stops at once and stays off while the app is away, even if you unlock your device
+  onto another app. The app never listens in the background. When you return to the app it starts
+  listening again (iOS shows its microphone indicator) and a short notice says the microphone was
+  off.
+- **In-App Playback** pauses at its position and continues when you return, with a short notice.
+  The app does not keep playing in the background.
+- **System/App Capture** follows iOS: the shared content's audio may keep arriving while iOS keeps
+  the capture running, with its recording indicator visible the whole time. Locking the device ends
+  it; the app then shows "Ended by system" and never restarts it without the iOS picker.
+- The visualization draws nothing while the app is in the background or the device is locked.
+
 ## Audio files you import
 
 If you tap "Import Audio…" and pick audio files, the app copies those files into its own storage

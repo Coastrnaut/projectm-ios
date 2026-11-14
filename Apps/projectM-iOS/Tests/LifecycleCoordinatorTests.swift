@@ -269,11 +269,14 @@ final class LifecycleCoordinatorTests: XCTestCase {
         XCTAssertTrue(coordinator.suspended)
         XCTAssertTrue(visualization.suspended)
         XCTAssertEqual(coordinator.presentation.activeCount, 0)
-        // The capture layer still receives the event, as before this feature.
-        XCTAssertEqual(sources[.microphone]?.resumes, 1)
+        // AUD-015-R5: the capture layer receives the event but resumes nothing (before AUD-015 the
+        // microphone restarted here, while the app was still in the background).
+        XCTAssertEqual(sources[.microphone]?.resumes, 0)
+        XCTAssertEqual(manager.state, .paused)
 
         await coordinator.handle(.foreground)
         XCTAssertEqual(order, ["resume loop", "resume warm-up", "resume visualization"])
+        XCTAssertEqual(sources[.microphone]?.resumes, 1, "the real return resumes once (FR-050)")
     }
 
     func testForegroundClearsALockWithoutAnUnlockEvent() async {
@@ -334,8 +337,12 @@ final class LifecycleCoordinatorTests: XCTestCase {
 
     func testAVisualizationStartedWhileSuspendedResumesOnForeground() async {
         await coordinator.handle(.background)
-        await start(.inAppPlayback)
+        await manager.select(.inAppPlayback)
+        coordinator.visualizationStarted()
+        // AUD-015-R6: a start that completes while away is held Paused until the return.
+        XCTAssertEqual(manager.state, .paused)
         await coordinator.handle(.foreground)
         XCTAssertEqual(visualization.calls, ["resume"])
+        XCTAssertEqual(manager.state, .waiting, "resumed on the return (FR-050)")
     }
 }

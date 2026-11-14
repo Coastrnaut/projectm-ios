@@ -495,6 +495,10 @@ struct VisualizerView: View {
                 .padding(12)
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
         }
+        // AUD-015-R7: what happened to the source while the app was away.
+        if let notice = coordinator.visibleBackgroundNotice {
+            BackgroundNoticeView(text: notice) { coordinator.dismissBackgroundNotice() }
+        }
         // VIS-001-R16: the chosen native visual could not be created.
         if coordinator.nativeVisualUnavailable && coordinator.settings.visual.replacesProjectM {
             Text(AppCoordinator.nativeVisualUnavailableMessage(for: coordinator.settings.visual))

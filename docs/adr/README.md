@@ -32,5 +32,6 @@
 | [0033](0033-show-cue-list-document.md) | Show cue list document, version 1 | Accepted 2026-11-13 (SHOW-001; owner rule 4); 0031 is unused (skipped during parallel work) |
 | [0034](0034-source-switch-handoff.md) | Source switch with a ducked, bounded handoff at the renderer boundary | Accepted 2026-11-13 (AUD-012; owner rule 4) |
 | [0035](0035-source-latency-delay.md) | Per-source visual delay as a sample-clock delay line on the visual feeds | Accepted 2026-11-14 (AUD-013; owner rule 4) |
+| [0036](0036-background-playback-policy.md) | Background playback policy: microphone always stops, In-App Playback pauses, System/App Capture follows the system | Accepted 2026-11-14 (AUD-015; owner rule 4) |
 
 Required by Constitution X: capture API, minimum OS, renderer, dependency strategy.

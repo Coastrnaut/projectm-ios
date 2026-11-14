@@ -75,6 +75,12 @@ User pause of the **visualization** (FR-046) is not an AudioState transition; it
 | OS ends session | endedBySystem | not applicable | not applicable |
 | One-tap restart | re-presents system picker (FR-055) | restarts engine | restarts playback |
 
+AUD-015 (ADR-0036, `specs/097-aud-015-background-playback-policy/contracts/background-policy.md`):
+background and lock are independent; "Foreground" above means in the foreground **and** unlocked
+(an unlock while still in the background resumes nothing), and a start or resume that completes
+while away is held Paused. In-App Playback could continue only with the `audio` background mode
+and the user's wish, neither of which the app has.
+
 ## VisualizationState (enum)
 
 `running` · `paused` (user, FR-046) · `suspended` (app backgrounded, FR-050). Independent of
