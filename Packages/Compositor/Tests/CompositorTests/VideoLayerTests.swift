@@ -224,6 +224,64 @@ final class VideoLayerTests: XCTestCase {
         XCTAssertEqual(layer.state, .playing(width: 64, height: 48))
     }
 
+    /// MED-004-T06 (S1, R9): the real H.264 counter fixture at 0.5× and 2×: at every injected 60 Hz
+    /// presentation time the picture read from pixels is the one of the video time (presentation ×
+    /// speed), and 2 s of presentation advance the video by 1 s / 4 s. The decoder is waited for at
+    /// each step (a ceiling, not a timing budget); dropped pictures at 2× are reported, not asserted.
+    func testSpeedOnARealFileShowsThePictureOfTheVideoTime() async throws {
+        let rig = try GPURig()
+        let url = try await fixture("counter.mov")
+        let runs: [(Int, Int64)] = [(50, 1_000_000_000), (200, 4_000_000_000)]
+        for (percent, expectedAdvance) in runs {
+            let layer = VideoLayerSource(device: rig.device)
+            let compositor = try Compositor(device: rig.device, layers: [layer])
+            layer.playbackSpeed = try XCTUnwrap(VideoPlaybackSpeed(percent: percent))
+            layer.content = .file(url)
+            let output = try rig.output()
+            // Step 0 at `base` (video 0); then 10 ms + i/60 s, so the video times stay ≥ 5 ms from a picture edge.
+            var first: Int64 = 0
+            for i in 0...121 {
+                let t: UInt64 = i == 0 ? base : base + 10_000_000 + UInt64(i - 1) * 1_000_000_000 / 60
+                XCTAssertTrue(layer.waitUntilBuffered())
+                try rig.frame(compositor, into: output, time: t)
+                let video: Int64 = layer.playbackNanoseconds
+                if i == 1 { first = video }
+                let expected = Int(video * 30 / 1_000_000_000) % 30
+                XCTAssertEqual(try shownIndex(rig, output), expected, "\(percent) %, step \(i): video \(video) ns")
+            }
+            XCTAssertEqual(layer.playbackNanoseconds - first, expectedAdvance, "\(percent) %: 2 s presented")
+            XCTAssertEqual(layer.state, .playing(width: 64, height: 48))
+            print("MED-004 real file \(percent) %: dropped \(layer.statistics.dropped), seeks \(layer.statistics.seeks), loops \(layer.statistics.loops)")
+        }
+    }
+
+    /// MED-004-T16 on a real file (S3): region [0.5 s, 1.0 s) at 0.5× and 2×: every shown picture inside
+    /// across at least three wraps; the joint's measured gap is reported and, with the decoder waited for
+    /// at each step, below one picture.
+    func testLoopRegionAtHalfAndDoubleSpeedOnARealFile() async throws {
+        let rig = try GPURig()
+        let url = try await fixture("counter.mov")
+        let runs: [(Int, Int)] = [(50, 200), (200, 60)]
+        for (percent, steps) in runs {
+            let layer = VideoLayerSource(device: rig.device)
+            let compositor = try Compositor(device: rig.device, layers: [layer])
+            layer.playbackSpeed = try XCTUnwrap(VideoPlaybackSpeed(percent: percent))
+            layer.loopRegion = VideoLoopRegion(inMilliseconds: 500, outMilliseconds: 1000)
+            layer.content = .file(url)
+            let output = try rig.output()
+            for i in 0..<steps {
+                let t: UInt64 = i == 0 ? base : base + 10_000_000 + UInt64(i - 1) * 1_000_000_000 / 60
+                XCTAssertTrue(layer.waitUntilBuffered())
+                try rig.frame(compositor, into: output, time: t)
+                let index = try XCTUnwrap(try shownIndex(rig, output), "\(percent) %, step \(i)")
+                XCTAssertTrue((15...29).contains(index), "\(percent) %, step \(i): picture \(index) inside")
+            }
+            XCTAssertGreaterThanOrEqual(layer.wraps, 3, "\(percent) %")
+            XCTAssertLessThan(layer.maxWrapLatenessNanoseconds, 1_000_000_000 / 30, "\(percent) %: gap 0 frames at the joint")
+            print("MED-004 real loop \(percent) %: wraps \(layer.wraps), joint gap \(layer.maxWrapLatenessNanoseconds) ns, prepared \(layer.statistics.prepared)")
+        }
+    }
+
     /// New content restarts at 0; a rotated (portrait) video reports its upright size.
     func testNewContentRestartsAndRotationIsUpright() async throws {
         let rig = try GPURig()

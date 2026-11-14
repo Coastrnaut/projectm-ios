@@ -85,6 +85,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID", "settings.performanceOverlay", "set
                 "settings.latencyOffset.inAppPlayback", "settings.latencyOffset.systemAppCapture",   # AUD-013-R11
                 "settings.photo.id", "settings.video.id", "settings.text.overlay",   # MED-001, MED-008, MED-009
                 "settings.video.loop",   # MED-003 (the stored video's loop region)
+                "settings.video.speed",  # MED-004 (the stored video's playback speed)
                 "guide.firstScene",   # UIX-001
                 "permission.explained.camera", "permission.explained.localNetwork",   # UIX-015 (a yes each)
                 "session.recovery.open", "session.recovery.sessionsSinceReopen",

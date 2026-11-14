@@ -49,4 +49,39 @@ final class SceneVideoLoopTests: XCTestCase {
         photo.videoLoop = SceneVideoLoop(inMilliseconds: 0, outMilliseconds: 10)
         XCTAssertNil(photo.extra["loop"], "only video assets loop")
     }
+
+    // MARK: MED-004-T17 (MED-004-R7): the optional `speedPercent` field
+
+    func testSpeedRoundTripsBesideTheLoop() throws {
+        var document = try SceneFixtures.allKinds()
+        XCTAssertNil(document.assets["clip"]?.videoSpeedPercent, "the fixture has no speed (1×)")
+        document.assets["clip"]?.videoSpeedPercent = 50
+        document.assets["clip"]?.videoLoop = SceneVideoLoop(inMilliseconds: 500, outMilliseconds: 1000)
+        let text = String(decoding: document.encoded(), as: UTF8.self)
+        XCTAssertTrue(text.contains("\"speedPercent\":50"), text)
+        let decoded = try roundTrip(document)
+        XCTAssertEqual(decoded.document.assets["clip"]?.videoSpeedPercent, 50)
+        XCTAssertEqual(decoded.document.assets["clip"]?.videoLoop, SceneVideoLoop(inMilliseconds: 500, outMilliseconds: 1000))
+        XCTAssertFalse(decoded.warnings.contains { (w: SceneIssue) -> Bool in w.path.contains("speed") }, "no warning for the field")
+        XCTAssertEqual(decoded.document.encoded(), document.encoded(), "re-saved byte-identically (carried verbatim)")
+        var cleared = decoded.document
+        cleared.assets["clip"]?.videoSpeedPercent = nil
+        XCTAssertNil(cleared.assets["clip"]?.extra[SceneAsset.videoSpeedKey])
+    }
+
+    func testMalformedSpeedsReadAsNormalAndOnlyVideosCarryOne() {
+        let bad: [SceneJSON] = [.string("50"), .double(0.5), .integer(0), .integer(-25), .null, .object([:]),
+                                .integer(Int64(Int32.max) + 1)]
+        for value in bad {
+            var asset = SceneAsset.video(storeID: "A")
+            asset.extra[SceneAsset.videoSpeedKey] = value
+            XCTAssertNil(asset.videoSpeedPercent, "\(value)")
+        }
+        var odd = SceneAsset.video(storeID: "A")
+        odd.extra[SceneAsset.videoSpeedKey] = .integer(33)
+        XCTAssertEqual(odd.videoSpeedPercent, 33, "SceneFormat keeps any positive integer; the app maps it to its safe set")
+        var photo = SceneAsset.photo(storeID: "A")
+        photo.videoSpeedPercent = 200
+        XCTAssertNil(photo.extra[SceneAsset.videoSpeedKey], "only video assets have a speed")
+    }
 }

@@ -71,11 +71,12 @@ final class SettingsTests: XCTestCase {
         settings.colorBlindSafePalette = true  // ACC-003-R13
         settings.sensorySafety.preset = .custom   // ACC-012-R8: the profile and its three custom keys
         let keys = Set(defaults.persistentDomain(forName: suite)?.keys ?? [:].keys)
-        // MED-001, MED-002, MED-003, MED-009: `settings.photo.id`, `settings.video.id`, `settings.video.loop`
-        // and `settings.text.overlay` are in allKeys (the UI-test reset) but written by PhotoStore,
-        // VideoStore and TextOverlayStore only.
+        // MED-001, MED-002, MED-003, MED-004, MED-009: `settings.photo.id`, `settings.video.id`,
+        // `settings.video.loop`, `settings.video.speed` and `settings.text.overlay` are in allKeys (the UI-test
+        // reset) but written by PhotoStore, VideoStore and TextOverlayStore only.
         XCTAssertEqual(keys, Set(AppSettings.allKeys).subtracting([AppSettings.photoIDKey, AppSettings.videoIDKey,
-                                                                   AppSettings.videoLoopKey, AppSettings.textOverlayKey]), "FR-065")
+                                                                   AppSettings.videoLoopKey, AppSettings.videoSpeedKey,
+                                                                   AppSettings.textOverlayKey]), "FR-065")
     }
 
     /// VIS-001-T19 (VIS-001-R11): the visual choice and the bar count, with safe readings of bad values.

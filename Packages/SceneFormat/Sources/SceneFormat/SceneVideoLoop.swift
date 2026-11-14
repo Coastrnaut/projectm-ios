@@ -53,3 +53,25 @@ extension SceneAsset {
         }
     }
 }
+
+// MED-004-R7 (research MED-004-D6): a video asset's playback speed is the optional integer field
+// `speedPercent`, written only when the speed is not 1×. Carried verbatim by apps without MED-004
+// (`SceneAsset.extra`); no version change. SceneFormat accepts any integer in 1…Int32.max; the app
+// accepts only its safe set and reads anything else as 1×.
+extension SceneAsset {
+    public static let videoSpeedKey = "speedPercent"
+
+    /// MED-004: the speed of a `video` asset in percent (nil: 1×, also for other kinds and a malformed
+    /// value). Setting nil removes the field; setting a value on another kind does nothing.
+    public var videoSpeedPercent: Int? {
+        get {
+            guard case .video = kind, let value = extra[Self.videoSpeedKey], case let .number(n) = value,
+                  let integer = n.int64Value, integer >= 1, integer <= Int64(Int32.max) else { return nil }
+            return Int(integer)
+        }
+        set {
+            guard case .video = kind else { return }
+            extra[Self.videoSpeedKey] = newValue.map { (p: Int) -> SceneJSON in .integer(Int64(p)) }
+        }
+    }
+}

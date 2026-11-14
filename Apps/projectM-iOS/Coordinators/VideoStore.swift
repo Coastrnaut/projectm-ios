@@ -18,6 +18,9 @@
 // MED-003 (research MED-003-D7): the stored video's loop region is `settings.video.loop` =
 // `{id, inMilliseconds, outMilliseconds}`, read only while `id` is the stored video's; a foreign or
 // malformed value reads as none and is removed. Remove Video and a new current video remove it.
+// MED-004 (research MED-004-D5): the stored video's playback speed is `settings.video.speed` =
+// `{id, percent}` (1× is no key), read only for the stored video's id and a percent in the safe set;
+// anything else is removed. Remove Video and a new current video remove it, like the loop.
 // FILE-008 (ADR-0043): the folder is content-addressed like the photo's (`ContentAddressedMediaFolder`):
 // one `<sha256>.mov` payload per content plus `references.json`; the sanitized copy has zeroed header
 // times (`MovieHeaderTimes`), so importing the same movie again adds a reference, not a file. Making a
@@ -37,6 +40,8 @@ struct VideoStore: @unchecked Sendable {
     static let idKey = "settings.video.id"
     /// MED-003: the stored video's loop region.
     static let loopKey = "settings.video.loop"
+    /// MED-004: the stored video's playback speed.
+    static let speedKey = "settings.video.speed"
     static let fileExtension = "mov"
 
     let directory: URL
@@ -141,7 +146,10 @@ struct VideoStore: @unchecked Sendable {
     func makeCurrent(_ video: StoredVideo) {
         let previous = current()
         defaults.set(video.id.uuidString, forKey: Self.idKey)
-        if previous?.id != video.id { defaults.removeObject(forKey: Self.loopKey) }   // MED-003: a new video plays whole
+        if previous?.id != video.id {
+            defaults.removeObject(forKey: Self.loopKey)    // MED-003: a new video plays whole
+            defaults.removeObject(forKey: Self.speedKey)   // MED-004: and at 1×
+        }
         if let previous, previous.id != video.id, !folder.sharesPayload(previous.id, video.id) {
             try? folder.releaseSharing(payloadOf: previous.id, keeping: [video.id])
         }
@@ -163,6 +171,7 @@ struct VideoStore: @unchecked Sendable {
         }
         defaults.removeObject(forKey: Self.idKey)
         defaults.removeObject(forKey: Self.loopKey)   // MED-003
+        defaults.removeObject(forKey: Self.speedKey)  // MED-004
     }
 
     // MARK: FILE-008 launch (research FILE-008-D5)
@@ -197,6 +206,30 @@ struct VideoStore: @unchecked Sendable {
         let value: [String: Any] = ["id": id.uuidString, "inMilliseconds": region.inMilliseconds,
                                     "outMilliseconds": region.outMilliseconds]
         defaults.set(value, forKey: Self.loopKey)
+    }
+
+    // MARK: Playback speed (MED-004-R6)
+
+    /// The speed saved for the video `id` (1× when none). A value for another video, a malformed one
+    /// or a percent outside the safe set is removed.
+    func speed(for id: UUID) -> VideoPlaybackSpeed {
+        guard let stored = defaults.dictionary(forKey: Self.speedKey) else { return .normal }
+        guard let raw = stored["id"] as? String, raw == id.uuidString, let percent = stored["percent"] as? Int,
+              let speed = VideoPlaybackSpeed(percent: percent) else {
+            defaults.removeObject(forKey: Self.speedKey)
+            return .normal
+        }
+        return speed
+    }
+
+    /// Saves `speed` for the video `id`; 1× removes the key.
+    func setSpeed(_ speed: VideoPlaybackSpeed, for id: UUID) {
+        guard !speed.isNormal else {
+            defaults.removeObject(forKey: Self.speedKey)
+            return
+        }
+        let value: [String: Any] = ["id": id.uuidString, "percent": speed.percent]
+        defaults.set(value, forKey: Self.speedKey)
     }
 
     /// The only place the picked URL is touched: its size is checked, then it is copied once into

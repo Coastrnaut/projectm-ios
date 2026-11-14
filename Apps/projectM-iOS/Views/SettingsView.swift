@@ -7,7 +7,8 @@
 // photo's size and the import notice.
 // MED-002: with Video chosen, a Video section offers the same for one video (Photos picker with the
 // videos filter, Files with movie types), Remove Video, the playing size and the import notice;
-// MED-003 adds the loop region's In and Out sliders and Reset Loop (VideoLoopControls).
+// MED-003 adds the loop region's In and Out sliders and Reset Loop (VideoLoopControls); MED-004 the
+// Speed picker above them (VideoSpeedControls).
 // MED-009: with Text chosen, a Text section edits the message (multi-line field), font, weight, size,
 // color, alignment, vertical position, outline, background box and Reset Text; every change is saved
 // and drawn at once. It is a standard List section, so Dynamic Type and VoiceOver apply.
@@ -497,6 +498,7 @@ struct SettingsView: View {
             Button("Choose from Files…") { showVideoFileImporter = true }
                 .disabled(videos.isImporting)
                 .accessibilityIdentifier("chooseVideoFromFiles")
+            VideoSpeedControls(videos: videos)   // MED-004
             VideoLoopControls(videos: videos, endCoalescing: { [history] () -> Void in history?.endCoalescing() })   // MED-003
             if videos.video != nil {
                 Button("Remove Video", role: .destructive) { videos.remove() }
@@ -511,7 +513,7 @@ struct SettingsView: View {
         } header: {
             Text("Video")
         } footer: {
-            Text("H.264 or HEVC, up to 4K, 60 frames per second and 500 MB. The video is copied into the app on this device without its sound, location or other details, and is never uploaded. It plays without sound; the music comes from your chosen source. Loop in and Loop out repeat only that part. Remove Video deletes the copy.")
+            Text("H.264 or HEVC, up to 4K, 60 frames per second and 500 MB. The video is copied into the app on this device without its sound, location or other details, and is never uploaded. It plays without sound; the music comes from your chosen source. Speed changes only the video, never the music. Loop in and Loop out repeat only that part. Remove Video deletes the copy.")
         }
         .onChange(of: pickedVideo) { _, item in
             guard let item else { return }

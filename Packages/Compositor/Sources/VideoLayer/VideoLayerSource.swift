@@ -18,6 +18,9 @@
 // at the shown picture when that lies inside the new region, otherwise at in, keeping the clock (a
 // held picture outside the new region is dropped at once). `resumeDecoding()` restarts at the shown
 // picture. A wrap (the shown picture's file time going back) records its lateness, the joint's gap.
+// MED-004: `playbackSpeed` scales the clock's steps (video time = presentation time × speed) and the
+// pipeline's pre-roll lead; a change never stops, starts or seeks the decoder and keeps the held
+// picture (the timeline is video time, so queued pictures stay valid; research MED-004-D4).
 // Not Sendable: the compositor's thread (the main thread in the app) sets `content`, renders and
 // suspends; `onStateChange` is called on the main actor.
 import CameraLayer
@@ -93,6 +96,20 @@ public final class VideoLayerSource: LayerSource, LayerFitting {
         }
     }
 
+    /// MED-004: the playback speed (1× by default). Applied from the next frame, without a restart.
+    public var playbackSpeed: VideoPlaybackSpeed = .normal {
+        didSet {
+            guard playbackSpeed != oldValue else { return }
+            clock.setSpeed(playbackSpeed)
+            pipeline?.setSpeed(playbackSpeed)
+        }
+    }
+
+    /// MED-004 diagnostics: presentation time counted and video time added since the last speed change.
+    public var speedMeasurement: (presentation: Int64, playback: Int64) {
+        (clock.presentationSinceSpeedChange, clock.playbackSinceSpeedChange)
+    }
+
     /// Called on the main actor after every state change.
     public var onStateChange: (@MainActor @Sendable (VideoLayerState) -> Void)? {
         get { slot.lock.withLockUnchecked { $0.handler } }
@@ -142,6 +159,7 @@ public final class VideoLayerSource: LayerSource, LayerFitting {
             }, makeReader: { () -> AVVideoFrameReader in
                 AVVideoFrameReader(url: url, device: device)
             })
+            pipeline?.setSpeed(playbackSpeed)   // MED-004: the new session's pre-roll lead
             if !suspended { pipeline?.start(atNanoseconds: 0, region: loopRegion, mediaStartNanoseconds: nil) }
         }
     }

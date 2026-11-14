@@ -34,6 +34,8 @@ struct ShowLook: Equatable, Sendable {
     var videoID: UUID?
     /// MED-003-R8: the stored video's loop region (nil: the whole file).
     var videoLoop: SceneVideoLoop? = nil
+    /// MED-004-R7: the stored video's speed in percent (nil: 1×).
+    var videoSpeedPercent: Int? = nil
 }
 
 /// What applying a scene sets (contract S4).
@@ -49,6 +51,8 @@ struct ShowSceneApply: Equatable, Sendable {
     /// MED-003-R8: the first video layer's stored-video ID and loop (nil: none).
     var videoStoreID: String? = nil
     var videoLoop: SceneVideoLoop? = nil
+    /// MED-004-R7: the video asset's speed in percent (nil: 1×).
+    var videoSpeedPercent: Int? = nil
 }
 
 enum ShowSceneSnapshot {
@@ -87,7 +91,7 @@ enum ShowSceneSnapshot {
             contents.append(.circularSpectrum)
         case .video:
             if let id = look.videoID {
-                assets[videoKey] = SceneVideoLoopBridge.asset(storeID: id, loop: look.videoLoop)   // MED-003
+                assets[videoKey] = SceneVideoLoopBridge.asset(storeID: id, loop: look.videoLoop, speedPercent: look.videoSpeedPercent)   // MED-003, MED-004
                 contents.append(.video(asset: videoKey))
             }
             contents.append(.circularSpectrum)
@@ -160,7 +164,7 @@ enum ShowSceneSnapshot {
         let missingMedia = warnings.contains { (issue: SceneIssue) -> Bool in issue.code == .missingAsset }
         let video = SceneVideoLoopBridge.video(in: document)   // MED-003-R8
         return ShowSceneApply(visual: visual, parameters: parameters, text: text, omittedKinds: omitted, missingMedia: missingMedia,
-                              videoStoreID: video?.storeID, videoLoop: video?.loop)
+                              videoStoreID: video?.storeID, videoLoop: video?.loop, videoSpeedPercent: video?.speedPercent)
     }
 
     // MARK: JSON

@@ -91,11 +91,13 @@ final class AppSettings {
     static let videoIDKey = VideoStore.idKey
     /// MED-003: the stored video's loop region (written by VideoStore).
     static let videoLoopKey = VideoStore.loopKey
+    /// MED-004: the stored video's playback speed (written by VideoStore).
+    static let videoSpeedKey = VideoStore.speedKey
     /// MED-009: the Text visual's message and style (written by TextOverlayStore).
     static let textOverlayKey = TextOverlayStore.key
     static let allKeys = [performanceOverlayKey, reduceFlashingKey, presetScopeKey, visualKey, circularSpectrumBarsKey,
                           glowKey, glowIntensityKey, glowRadiusKey, glowThresholdKey,
-                          linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey, videoIDKey, videoLoopKey,
+                          linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey, videoIDKey, videoLoopKey, videoSpeedKey,
                           textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, spectrumAttackKey, spectrumReleaseKey,
                           cameraPositionKey, cameraMirrorFrontKey, cameraMirrorBackKey,
                           cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey, midiEnabledKey,

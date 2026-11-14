@@ -46,6 +46,7 @@ public enum LibraryErasePolicy {
 
     public static let videoKey = "settings.video.id"
     public static let videoLoopKey = "settings.video.loop"
+    public static let videoSpeedKey = "settings.video.speed"   // MED-004
     public static let reduceFlashingKey = "settings.reduceFlashing"
     public static let colorBlindSafePaletteKey = "settings.visual.colorBlindSafePalette"
     public static let oscEnabledKey = "settings.osc.enabled"
@@ -69,7 +70,7 @@ public enum LibraryErasePolicy {
         switch category {
         case .scenes, .presets, .importedAudio: []
         case .collections: [LibrarySettingsPolicy.favoritesKey]
-        case .media: [LibrarySettingsPolicy.photoKey, videoKey, videoLoopKey]
+        case .media: [LibrarySettingsPolicy.photoKey, videoKey, videoLoopKey, videoSpeedKey]
         case .settings: settingsCategoryKeys
         }
     }

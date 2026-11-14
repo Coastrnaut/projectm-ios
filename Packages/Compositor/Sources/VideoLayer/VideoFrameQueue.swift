@@ -31,6 +31,11 @@
 //   or a reader error after the pass queued a picture start the next pass at in and are counted; a
 //   failed open, three passes in a row without a picture, or three passes in a row ending in an
 //   error end the session as `.failed`.
+// * MED-004 (speed; research MED-004-D1, D3, D4): the timeline stays the video's own time (the clock
+//   scales presentation steps), so speed changes nothing here except the pre-roll lead, which is
+//   `speed.prerollLeadNanoseconds` (0.5 s × the speed above 1×). `setSpeed` updates the running
+//   session under its lock: no restart, no seek, the queued pictures stay valid. Above 1× a decoder
+//   that falls behind is handled by the catch-up and seek rules above; playback never waits for it.
 import Dispatch
 import Foundation
 
@@ -127,6 +132,8 @@ public final class VideoDecodePipeline<Reader: VideoFrameReading>: @unchecked Se
     private let onEvent: (@Sendable (VideoPipelineEvent) -> Void)?
     /// Owner side only (the compositor's thread).
     private var session: VideoDecodeSession<Reader>?
+    /// MED-004: the speed whose pre-roll lead every session uses.
+    public private(set) var speed: VideoPlaybackSpeed = .normal
 
     /// `makeReader` runs on each session's decode thread; so does `onEvent`.
     public init(capacity: Int = 3, seekThresholdNanoseconds: Int64 = 1_000_000_000,
@@ -152,9 +159,17 @@ public final class VideoDecodePipeline<Reader: VideoFrameReading>: @unchecked Se
         session?.cancel()
         let new = VideoDecodeSession<Reader>(capacity: capacity, seekThreshold: seekThresholdNanoseconds,
                                              start: max(playbackNanoseconds, 0), region: region, mediaHint: mediaStartNanoseconds,
-                                             onEvent: onEvent, makeReader: makeReader)
+                                             prerollLead: speed.prerollLeadNanoseconds, onEvent: onEvent, makeReader: makeReader)
         session = new
         new.launch()
+    }
+
+    /// MED-004: the pre-roll lead of `speed` for the running session (under its lock; no restart) and
+    /// every later one.
+    public func setSpeed(_ speed: VideoPlaybackSpeed) {
+        guard speed != self.speed else { return }
+        self.speed = speed
+        session?.setPrerollLead(speed.prerollLeadNanoseconds)
     }
 
     /// Stops the session; its thread exits and its pictures are released.
@@ -207,6 +222,8 @@ final class VideoDecodeSession<Reader: VideoFrameReading>: @unchecked Sendable {
     private var state = VideoPipelineState.running
     private var info: VideoTrackInfo?
     private var statistics = VideoPipelineStatistics()
+    /// MED-004: the pre-roll lead in video time (the speed's).
+    private var prerollLead: Int64
 
     /// MED-003: the pass at in is prepared when the picture read is this close to out.
     static var prerollNanoseconds: Int64 { 500_000_000 }
@@ -214,7 +231,7 @@ final class VideoDecodeSession<Reader: VideoFrameReading>: @unchecked Sendable {
     static var badPassLimit: Int { 3 }
 
     init(capacity: Int, seekThreshold: Int64, start: Int64, region: VideoLoopRegion?, mediaHint: Int64?,
-         onEvent: (@Sendable (VideoPipelineEvent) -> Void)?, makeReader: @escaping @Sendable () -> Reader) {
+         prerollLead: Int64, onEvent: (@Sendable (VideoPipelineEvent) -> Void)?, makeReader: @escaping @Sendable () -> Reader) {
         self.onEvent = onEvent
         self.requestedRegion = region
         self.mediaHint = mediaHint
@@ -223,6 +240,7 @@ final class VideoDecodeSession<Reader: VideoFrameReading>: @unchecked Sendable {
         self.startNanoseconds = start
         self.makeReader = makeReader
         target = start
+        self.prerollLead = max(prerollLead, Self.prerollNanoseconds)
         queue.reserveCapacity(capacity)
         for _ in 0..<capacity { freeSlots.signal() }
     }
@@ -242,6 +260,11 @@ final class VideoDecodeSession<Reader: VideoFrameReading>: @unchecked Sendable {
         if case .running = state { state = .stopped }
         lock.unlock()
         freeSlots.signal()   // wake the thread if it waits for a slot
+    }
+
+    func setPrerollLead(_ lead: Int64) {
+        let value: Int64 = max(lead, Self.prerollNanoseconds)
+        lock.withLock { prerollLead = value }
     }
 
     var currentState: VideoPipelineState { lock.withLock { state } }
@@ -396,7 +419,8 @@ final class VideoDecodeSession<Reader: VideoFrameReading>: @unchecked Sendable {
                     lastPts = pts
                     let time: Int64 = base + pass * length + (pts - regionIn)
                     nextExpected = time
-                    if !preparedThisPass, regionOut - pts <= Self.prerollNanoseconds {
+                    let lead: Int64 = lock.withLock { prerollLead }
+                    if !preparedThisPass, regionOut - pts <= lead {
                         preparedThisPass = true
                         reader.prepare(startNanoseconds: regionIn, endNanoseconds: end)
                         lock.withLock { statistics.prepared += 1 }
