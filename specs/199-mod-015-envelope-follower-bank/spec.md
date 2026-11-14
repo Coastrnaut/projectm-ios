@@ -38,6 +38,7 @@ interaction); each answer is the conservative, local-first option, recommended o
 - Q: How are they exposed? → A: As new bindable sources, one per band and profile, `audio.bandEnvelope.<fast|medium|slow>.<band>` (band 0…127), named "Band 4 fast" (1-based) in the inspector and the matrix. Bindings (MOD-002/MOD-011 layers) and threshold triggers (MOD-006) accept them; scenes store them by ID like other sources, and an older version orphans the unknown ID (MOD-013 path). They are **not** formula names in expressions (as MOD-007-D4 for LFOs), so no new expression opcode is needed (MOD-015-R5, R6).
 - Q: Where is state kept and when does it start? → A: In one bank per modulation host, preallocated for 128 bands × 3 profiles. Each envelope starts at 0 and the bank resets to 0 when the band count changes. It advances on every frame the host evaluates modulation (MOD-015-R3, R7).
 - Q: Robustness? → A: A non-finite band reads 0, an input above 1 reads 1 and below 0 reads 0; outputs are always finite and in 0…1. Splitting one interval of constant input into several advances gives the same envelope to 1e-12 (chunking invariance) (MOD-015-R8, R9).
+- Q: Does the bank run while nothing uses modulation? → A: No. It advances only on frames where the host evaluates modulation (at least one binding or trigger), so an idle host spends nothing; while idle the state is held, and the first frame after idle advances by at most 0.25 s (the Δt cap), so a binding added later starts from the held state, not from a jump. Binding the first envelope source therefore starts from 0 on a fresh host (MOD-015-R7).
 - Q: How is acceptance tested? → A: A package step test: silence 1 s → band 2 at full for 2 s → silence 3 s at 60 fps, other bands held at fixed levels. Each profile matches its closed-form rise and fall to 1e-9; the fast envelope reaches 90 % first, then medium, then slow; other bands' envelopes are bit-identical to a run without the step; changing one profile's constants does not change the others (independence). Also 120 fps and a seeded jittery clock (MOD-015-S1 to S3).
 
 ## User Scenarios & Testing *(mandatory)*
@@ -75,6 +76,7 @@ trigger accepts the source; the ID round-trips.
 - NaN or ±∞ band input: read as 0; outputs stay finite.
 - Band count changes (another layout): every envelope restarts at 0.
 - Time going backwards or standing still: no change; a gap over 0.25 s counts as 0.25 s.
+- No binding or trigger at all: the bank does not advance and holds its state.
 - An expression naming `audio.bandEnvelope.fast.0`: refused as an unknown name.
 
 ## Requirements *(mandatory)*
