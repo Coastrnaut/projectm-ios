@@ -354,6 +354,7 @@ extension AudioFeatureSource {
         case .centroid: return "Brightness"
         case .loudness: return "Loudness"
         case .midTransient: return "Mid transient"   // ANL-008: not a snare classifier
+        case let .lfo(index): return "LFO \(index + 1)"   // MOD-007
         }
     }
 }

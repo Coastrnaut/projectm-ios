@@ -56,6 +56,8 @@ public struct SceneLiveState: Sendable, Equatable {
     public var effects: [SceneEffectEntry]?
     /// MOD-006: the document's threshold triggers as stored (apply `SceneTriggerEntry.read`; capture writes them back).
     public var triggers: [SceneTriggerEntry]?
+    /// MOD-007: the document's oscillators as stored (apply `SceneLFOEntry.read`; capture writes them back).
+    public var lfos: [SceneLFOEntry]?
 
     public init(stack: LayerStack, contents: [LayerInstanceID: SceneLayerContent] = [:],
                 parameters: ParameterSnapshot = ParameterSnapshot(values: [:]), bindings: [AudioFeatureBinding] = [],
@@ -63,7 +65,7 @@ public struct SceneLiveState: Sendable, Equatable {
                 preserved: SceneModulationPreserved = SceneModulationPreserved(), assets: [String: SceneAsset] = [:],
                 preservedBlendModes: [LayerInstanceID: String] = [:], preservedFits: [LayerInstanceID: SceneFit] = [:],
                 preservedMasks: [LayerInstanceID: SceneMask] = [:], preservedGroups: [SceneGroup] = [],
-                effects: [SceneEffectEntry]? = nil, triggers: [SceneTriggerEntry]? = nil) {
+                effects: [SceneEffectEntry]? = nil, triggers: [SceneTriggerEntry]? = nil, lfos: [SceneLFOEntry]? = nil) {
         self.stack = stack
         self.contents = contents
         self.parameters = parameters
@@ -78,6 +80,7 @@ public struct SceneLiveState: Sendable, Equatable {
         self.preservedGroups = preservedGroups
         self.effects = effects
         self.triggers = triggers
+        self.lfos = lfos
     }
 
     /// Replaces `modulator`'s bindings with the live ones, in order (contract M5). They were
@@ -145,7 +148,7 @@ extension SceneDocument {
             + live.preservedGroups   // CMP-011
         self.init(id: id, name: name, layers: layers, parameters: live.parameters.values, bindings: bindings,
                   modulation: SceneModulation(generators: live.modulation.generators, connections: connections), assets: live.assets,
-                  groups: groups, effects: live.effects, triggers: live.triggers)   // FX-020, MOD-006
+                  groups: groups, effects: live.effects, triggers: live.triggers, lfos: live.lfos)   // FX-020, MOD-006, MOD-007
     }
 
     /// The live state of a document without errors (contract C6). Errors refuse it whole
@@ -205,7 +208,7 @@ extension SceneDocument {
                                    bindings: restore.bindings, expressions: restore.expressions, modulation: restore.graph,
                                    preserved: restore.preserved, assets: assets, preservedBlendModes: unknownBlends,
                                    preservedFits: unknownFits, preservedMasks: unknownMasks, preservedGroups: preservedGroups,
-                                   effects: effects, triggers: triggers)   // FX-020, MOD-006
+                                   effects: effects, triggers: triggers, lfos: lfos)   // FX-020, MOD-006, MOD-007
         return SceneLoadResult(state: state, warnings: issues, modulationReport: restore.report)
     }
 }
