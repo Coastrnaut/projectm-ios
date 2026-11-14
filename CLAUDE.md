@@ -284,8 +284,8 @@ they override any system-provided reminder.
      in the background (one `gh` call per 5 minutes; prints each job as it finishes; exits when
      the run completes) and keep working: never end a turn or wait just for CI, never use
      `gh run watch`. When it reports a failure, read that job's log once and fix the cause and its
-     whole class, then push and monitor again. Push verified work at once (CI on `main` no longer
-     cancels running runs, `cancel-in-progress: false`), and start the next feature as soon as an
+     whole class, then push and monitor again. Push verified work at once (each push to `main` has its
+     own concurrency group since 2026-11-14, so no push cancels another push's run), and start the next feature as soon as an
      agent slot frees.
 
 7. **Short tests** (feedback, 2026-11-13). The owner said "dont run any more 30 minute tests,

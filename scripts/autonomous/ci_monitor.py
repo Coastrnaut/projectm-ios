@@ -15,8 +15,9 @@ acquired by Runner of type hosted even after multiple attempts" under macOS arm6
 `gh run rerun <id> --failed`; the monitor then keeps watching the same run.
 
 Exit status: 0 all jobs succeeded, 1 some job failed or was cancelled, 2 timed out or gh error,
-3 superseded: the run was cancelled before any job started because a newer push replaced it in
-the queue (expected with cancel-in-progress false; the newer run covers this commit).
+3 superseded: the run was cancelled before any job started because a newer run replaced it in
+the queue (pull requests and manual runs; pushes to main have one concurrency group per commit
+since 2026-11-14, so they are not superseded).
 The final JSON summary goes to stdout and to `.autonomous/logs/ci-<run id>.json`.
 """
 from __future__ import annotations

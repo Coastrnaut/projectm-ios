@@ -10,11 +10,13 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: ci-${{ github.ref }}
-  # false (2026-11-13): the macOS jobs take 50-90 minutes, so cancelling on every push meant no
-  # run on main ever finished them. Now a running run completes and GitHub keeps at most one newer
-  # run waiting (an even newer push replaces the waiting one), so pushes never need holding back.
-  cancel-in-progress: false
+  # Pushes to main get one group per commit, so no push run ever cancels another (2026-11-14).
+  # A shared group with cancel-in-progress false still had every running run on main cancelled
+  # the moment the next push queued (runs e13af72, 9f6839e, 08d7747...: each ended exactly when
+  # the next was created), so build-ios27 (50-90 minutes) never finished. Runners are free for this
+  # public repository; extra runs queue. Pull requests and manual runs still replace older runs.
+  group: ci-${{ github.event_name == 'push' && github.sha || github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'push' }}
 
 jobs:
   docs-and-compliance:
