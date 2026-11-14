@@ -7,8 +7,8 @@ Tests are short (owner rule 7): unit tests about 1 s, each UI test under 30 s.
 
 ## Phase 1: Foundational
 
-- [ ] UIX-005-T01 Write `PerformanceLayout` (arrangement, target, spacing, margin, column width, reserved insets) in `Packages/ShowControl/Sources/ShowControl/PerformanceLayout.swift` (data-model; UIX-005-R3, R4)
-- [ ] UIX-005-T02 Unit tests `Packages/ShowControl/Tests/ShowControlTests/PerformanceLayoutTests.swift`: iPhone portrait (bar, 60), iPhone landscape (columns, 60, insets), iPad regular (72), narrow width (grid), square area (bar) (UIX-005-S4)
+- [X] UIX-005-T01 Write `PerformanceLayout` (arrangement, target, spacing, margin, column width, reserved insets) in `Packages/ShowControl/Sources/ShowControl/PerformanceLayout.swift` (data-model; UIX-005-R3, R4) — Verified 2026-11-14: PerformanceLayoutTests (5 pass, host)
+- [X] UIX-005-T02 Unit tests `Packages/ShowControl/Tests/ShowControlTests/PerformanceLayoutTests.swift`: iPhone portrait (bar, 60), iPhone landscape (columns, 60, insets), iPad regular (72), narrow width (grid), square area (bar) (UIX-005-S4) — Verified 2026-11-14: `swift test --package-path Packages/ShowControl --filter PerformanceLayoutTests`, 5 tests pass in 0.004 s
 - [ ] UIX-005-T03 Session state: `performanceLayout` in `AppCoordinator.swift`; `AppCoordinator+PerformanceLayout.swift` with toggle, cue and tap actions that do not show the controls, DEBUG `-uitestPerformanceLayout` (UIX-005-R1, R5, R6)
 
 ## Phase 2: User Story 1 + 2 (P1) — the pad in every orientation
