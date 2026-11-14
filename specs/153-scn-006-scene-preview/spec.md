@@ -45,6 +45,16 @@ conservative, local-first option.
 - Q: Does a duplicated scene (SCN-003) get its source's preview? → A: No: the copy is a different file; it shows the placeholder until applied.
 - Q: How do previews look to VoiceOver? → A: Decorative: no label, no extra stop; each row's label and value are unchanged.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Is a new preview captured on every apply, or only when the scene has none? → A: Only when the scene's current file has no preview. The first capture stays until the file changes or Clear Caches; each later apply costs nothing, and pictures do not flicker between apply moments. Add Current Scene always captures (the scene is new).
+- Q: How does the app know the live look changed during the settle? → A: It compares the show look (the values Add Current Scene would store) at the apply with the one at capture time; any difference drops the capture. Audio-driven motion is not a change.
+- Q: How do edits reach the previews, since the app has no scene parameter editor? → A: Every scene write in the app goes through the show coordinator (Add, SCN-003 Rename and Duplicate, removing cues), which reports the touched scene IDs; the previews then compare each scene's current file hash and drop stale entries. Writes outside the session (FILE-005 restore, which applies at launch; a hand-edited file) are caught by the launch reconciliation. Tests edit a parameter by writing the scene through the show store and reporting it.
+- Q: When does the launch reconciliation run, and on which thread? → A: Once after launch, off the main actor (reading the show's scene files and hashing them), before rows ask for pictures; rows that ask earlier see a placeholder and refresh when it ends.
+- Q: Is the placeholder the same in both lists? → A: Yes: a rounded 64 × 36 tile with the existing scene symbol (`rectangle.stack`), so rows keep their height whether a preview exists or not.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - I see what each scene looks like (Priority: P1) — MVP
@@ -62,7 +72,7 @@ content hash; reopen the store and check it is still there.
 **Acceptance Scenarios**:
 
 1. **Given** the live output, **When** scene S is saved, **Then** S's preview equals the captured image and is keyed to S's file hash.
-2. **Given** a scene without a preview, **When** its cue is applied and 1 s passes, **Then** it has a preview.
+2. **Given** a scene without a preview, **When** its cue is applied and 1 s passes, **Then** it has a preview; applying it again captures nothing new.
 3. **Given** previews stored, **When** the app is relaunched, **Then** the same previews are shown.
 4. **Given** a scene never applied or saved on this device, **When** its row is shown, **Then** a placeholder is shown.
 
@@ -112,7 +122,7 @@ capture and sees that row show an image while another row shows a placeholder.
 ### Functional Requirements
 
 - **SCN-006-R1**: When a scene is stored by Add Current Scene, the app MUST capture the live output's next frame and store it as that scene's preview.
-- **SCN-006-R2**: When a scene is applied through the cue path, the app MUST capture the live output after a 1 s settle and store it as that scene's preview, replacing an earlier preview of the same file.
+- **SCN-006-R2**: When a scene is applied through the cue path, the app MUST capture the live output after a 1 s settle and store it as that scene's preview, when the scene's current file has no preview yet.
 - **SCN-006-R3**: A capture MUST be dropped when, at capture time, the scene is no longer the applied one, its file hash changed, the live look changed since the apply, the output is not live, or no frame arrived in time. A later apply MUST cancel a pending capture. A capture MUST NOT start while a user Save Frame is in progress.
 - **SCN-006-R4**: A preview MUST be identified by the scene ID and the SHA-256 of the scene file's bytes (plus a preview format version); a preview is shown only when its hash equals the stored file's current hash.
 - **SCN-006-R5**: When a scene's file changes, the app MUST remove that scene's previews for any other hash (index entries and files) and leave every other scene's previews untouched.
