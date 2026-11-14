@@ -24,7 +24,7 @@ ticked only when verified, with " — Verified 2026-11-14: <how>".
 - [ ] OSC-008-T06 [US1] Acceptance test (S1): unapproved host's glow route and test-value messages leave store values and live values unchanged and add to `droppedUnapproved` only; approved host (any port, mapped form) applies; allowlist off applies from anyone; unknown host dropped while on — in `OSCPeerAllowlistTests.swift`.
 - [ ] OSC-008-T07 [US1] Seeded fuzz (S1): 500 datagrams, seeded generator, random malformed/valid bytes from random local, foreign and unknown hosts; only approved valid messages may change the store; unapproved ones never reach the decoder (`rejected` unchanged) — in `OSCPeerAllowlistTests.swift`.
 - [ ] OSC-008-T08 [US1] Loopback integration: real UDP to 127.0.0.1 with the allowlist on and nothing approved changes nothing and lists 127.0.0.1 as blocked; after approval it applies — in `Packages/PerformanceControl/Tests/PerformanceControlTests/OSCLoopbackIntegrationTests.swift`.
-- [ ] OSC-008-T09 [US1] `OSCPeersCoordinator` (load/validate/store `settings.osc.peerAllowlist.enabled` and `settings.osc.approvedPeers`, push to the receiver, refresh from counters, clear blocked on OSC off) in `Apps/projectM-iOS/Coordinators/OSCPeersCoordinator.swift`; wiring in `OSCReceiverCoordinator.swift` and `AppCoordinator.swift`.
+- [ ] OSC-008-T09 [US1] `OSCPeersCoordinator` (load/validate/store `settings.osc.peerAllowlist.enabled` and `settings.osc.approvedPeers`, push to the receiver, refresh from counters on OSC-009's gated refresh only (S4: no main-thread work per datagram), clear blocked on OSC off) in `Apps/projectM-iOS/Coordinators/OSCPeersCoordinator.swift`; wiring in `OSCReceiverCoordinator.swift` and `AppCoordinator.swift`.
 
 ## Phase 4: User Story 2 - Approve the device that just tried (P2)
 
@@ -35,7 +35,7 @@ ticked only when verified, with " — Verified 2026-11-14: <how>".
 
 ## Phase 5: Polish
 
-- [ ] OSC-008-T14 [P] Keys: `ALLOWED_KEYS` in `scripts/run_device_tests.py`, `LibrarySettingsPolicy.excludedKeys` in `Packages/LibraryBackup/Sources/LibraryBackup/LibrarySettings.swift`, the `-uitestResetNotice` reset in `AppCoordinator.swift`.
+- [ ] OSC-008-T14 [P] Keys: `ALLOWED_KEYS` in `scripts/run_device_tests.py`, `LibrarySettingsPolicy.excludedKeys` in `Packages/LibraryBackup/Sources/LibraryBackup/LibrarySettings.swift`, `LibraryErasePolicy.settingsCategoryKeys` (FILE-011 erase does not derive excluded keys; R10) in `Packages/LibraryBackup/Sources/LibraryBackup/LibraryErasePolicy.swift`, the `-uitestResetNotice` reset in `AppCoordinator.swift`.
 - [ ] OSC-008-T15 [P] Privacy policy section and ADR-0058 (`docs/privacy-policy.md`, `docs/adr/0058-osc-peer-allowlist.md`).
 - [ ] OSC-008-T16 Repo checks, `check_network_symbols` and `check_privacy_manifest.py` on the Debug app, type-check budget build.
 
@@ -50,3 +50,10 @@ T05 with T14 and T15 (different files).
 ## Implementation strategy
 
 MVP is US1 (package filter + acceptance); US2 adds the Settings screen.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Coverage: R1-R13 and S1-S4 each map to at least one task (R1-R3 T02, T09; R4-R5 T02, T10; R6-R7 T03, T06, T07;
+R8 T06, T08; R9 T11, T12; R10 T14; R11 T09, T10; R12 T15; R13 T04, T16; S3 T12). No constitution conflict; the
+privacy narrowing is recorded in ADR-0058. Fixes applied: (1) MEDIUM — FILE-011's Settings erase lists excluded
+keys by hand, so T14 now names `LibraryErasePolicy`; (2) LOW — S4 made explicit in T09.
