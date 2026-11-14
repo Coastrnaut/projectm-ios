@@ -14,14 +14,14 @@ Budgets (owner rule 7): unit ≤ 10 s, package suite < 1 min, UI test < 30 s.
 - [ ] PRE-016-T03 [P] `PresetOverrideMap` + `PresetOverrideError` (unknown parameter, invalid value, invalid preset ID, too many presets 20,000, newer format, save failed) in `Packages/PresetLibrary/Sources/PresetLibrary/Overrides/PresetOverrideMap.swift`
 - [ ] PRE-016-T04 `PresetTextOverlay` (`originalValues`, `apply`, `valueText`; research D2-D3) in `Packages/PresetLibrary/Sources/PresetLibrary/Overrides/PresetTextOverlay.swift`
 - [ ] PRE-016-T05 `PresetOverridesFile` (version 1, FILE-007 schema, 1 MiB, lenient) and `PresetOverrideStore` (transactions, newer/unreadable) in `Packages/PresetLibrary/Sources/PresetLibrary/Overrides/`
-- [ ] PRE-016-T06 Unit tests: allow-list rejection, clamping, rounding, overlay (rewrite first occurrence, case, insert after header, CRLF, Latin-1 bytes kept, no overrides → identical), original values, document round trip / newer / unreadable / repaired, store relaunch in `Packages/PresetLibrary/Tests/PresetLibraryTests/PresetOverride*Tests.swift`
+- [ ] PRE-016-T06 Unit tests: allow-list rejection, clamping, rounding, overlay (rewrite first occurrence, case, insert after header, CRLF, Latin-1 bytes kept, no overrides → identical; R17: `PresetFlashRisk.rules` of a flagged fixture unchanged by an overlay), original values, document round trip / newer / unreadable / repaired, store relaunch in `Packages/PresetLibrary/Tests/PresetLibraryTests/PresetOverride*Tests.swift`
 
 ## Phase 3: User Story 1 — Adjust a preset's look (P1) 🎯 MVP
 
 **Independent test**: overrides for 2-3 parameters of a fixture preset → loaded data carries them, source byte-identical, survives a new store.
 
 - [ ] PRE-016-T07 [US1] Loader hook: `RendererPresetLoader.overrides` and overlay of the original bytes in `load`; `originalData(for:)` in `Apps/projectM-iOS/Coordinators/AppCoordinator.swift`
-- [ ] PRE-016-T08 [US1] `PresetOverridesCoordinator` (store, originals, set on drag end, reload on screen, library-lane announcements) in `Apps/projectM-iOS/Coordinators/PresetOverridesCoordinator.swift`; `overrides` property on `PresetCoordinator`; construction in `AppCoordinator`
+- [ ] PRE-016-T08 [US1] `PresetOverridesCoordinator` (store, originals, set on drag end, reload on screen, library-lane announcements) in `Apps/projectM-iOS/Coordinators/PresetOverridesCoordinator.swift`; `overrides` property on `PresetCoordinator`; construction in `AppCoordinator` (R11: the store lives in `PresetCollections/`, which `-uitestResetNotice` already removes; verified by the UI test starting with Original values)
 - [ ] PRE-016-T09 [US1] `PresetOverridesView` sheet (sliders with `.accessibleParameter`, value + original labels, per-row reset, Reset to Original, note) in `Apps/projectM-iOS/Views/PresetOverridesView.swift`; menu item "Adjust Parameters…" + sheet in `Apps/projectM-iOS/Views/PresetBrowserView.swift`
 - [ ] PRE-016-T10 [US1] Acceptance test (overlay applied on load, Included file byte-identical, relaunch) in `Apps/projectM-iOS/Tests/PresetOverridesAcceptanceTests.swift`
 
