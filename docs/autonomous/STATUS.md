@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T19:08:32Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T19:10:54Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,25 +10,24 @@
 | State | Features |
 |---|---|
 | audited | 116 |
-| implementing | 7 |
-| built | 2 |
-| unit_passed | 1 |
-| integrated | 199 |
+| implementing | 6 |
+| built | 3 |
+| integrated | 200 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 0 | 84 | 1 |
-| P1 | 35 | 7 | 1 | 1 | 107 | 0 |
-| P2 | 70 | 0 | 1 | 0 | 8 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | built | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 84 | 1 |
+| P1 | 35 | 6 | 2 | 108 | 0 |
+| P2 | 70 | 0 | 1 | 8 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 126 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-013, ANL-015)
+- 125 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-013, ANL-015)
 
 ## Integrated
 
@@ -153,6 +152,7 @@ The physical-device suite may **not** start:
 | MOD-009 | Tempo-synced LFO | `5d85f165` | `None` |
 | MOD-010 | Parameter macro | `5703e0c5` | `feature/mod-010` |
 | MOD-011 | Modulation mix modes | `b962a87c` | `feature/mod-011` |
+| MOD-012 | Modulation matrix UI | `d63b2fb9` | `feature/mod-012` |
 | MOD-013 | Modulation serialization | `d08b5103b0ef` | `feature/mod-013` |
 | MOD-014 | Modulation feedback prevention | `3b3a60649025` | `feature/mod-014` |
 | OSC-001 | OSC receiver | `13d9883531b9` | `feature/osc-001` |
@@ -1529,7 +1529,7 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `40717e7c59ae` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-011/20261114T121929/swift-test_VisualGenerators.log`)
 - `post-merge: projectM-iOSTests 853 + UI 5 (glow, inspector, effect quality)`: pass at `b962a87c` (log `.autonomous/logs/integration/batch34/app-tests.log`)
 
-### MOD-012 Modulation matrix UI (unit_passed)
+### MOD-012 Modulation matrix UI (integrated)
 - `python3 scripts/check_compliance.py`: pass at `542bdbd0f994` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-012/20261114T140014/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `542bdbd0f994` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-012/20261114T140014/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `542bdbd0f994` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-012/20261114T140014/sim-test_ANGLERendering.log`)
@@ -1543,6 +1543,7 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `542bdbd0f994` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-012/20261114T140014/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `542bdbd0f994` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-012/20261114T140014/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `542bdbd0f994` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-012/20261114T140014/swift-test_VisualGenerators.log`)
+- `post-merge: projectM-iOSTests 885 + UI 1 (modulation matrix)`: pass at `d63b2fb9` (log `.autonomous/logs/integration/batch41/app-tests.log`)
 
 ### MOD-013 Modulation serialization (integrated)
 - `python3 scripts/check_compliance.py`: pass at `bbdb65cb39c4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-013/20261113T160144/compliance.log`)
