@@ -32,6 +32,9 @@ CHECKED = [
     "Views/CameraIndicator.swift",
     "Views/MIDISettingsSection.swift",                 # MIDI-001-R11
     "Coordinators/MIDIDiscoveryCoordinator.swift",     # MIDI-001-R11
+    "Coordinators/MIDIInputCoordinator.swift",         # MIDI-002-R10: no announcement for live traffic
+    "Coordinators/MIDIMonitorCoordinator.swift",       # MIDI-002-R10
+    "Views/MIDIMonitorView.swift",                     # MIDI-002-R10
     "Views/CaptureResultPanels.swift",
     "Views/StatusCaptionView.swift",
     "Views/SceneSwitcherView.swift",   # UIX-002-R9: the switcher announces through the announcer
