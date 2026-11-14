@@ -15,6 +15,7 @@ from types import SimpleNamespace
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import agent_driver  # noqa: E402
+import ci_prune  # noqa: E402
 import device_gate  # noqa: E402
 import gates  # noqa: E402
 import report  # noqa: E402
@@ -734,6 +735,15 @@ class OrchestratorCommandTests(unittest.TestCase):
                 self.assertTrue((out / "STATUS.md").exists())
             finally:
                 report.write_reports.__defaults__ = (None, None, original)
+
+
+class CIPruneTests(unittest.TestCase):
+    def test_keeps_running_and_newest_queued_cancels_older_queued(self):
+        runs = [{"databaseId": 5, "status": "queued"}, {"databaseId": 4, "status": "in_progress"},
+                {"databaseId": 3, "status": "queued"}, {"databaseId": 2, "status": "waiting"},
+                {"databaseId": 1, "status": "completed"}]
+        self.assertEqual([r["databaseId"] for r in ci_prune.plan(runs)], [3, 2])
+        self.assertEqual(ci_prune.plan([{"databaseId": 1, "status": "in_progress"}]), [])
 
 
 if __name__ == "__main__":
