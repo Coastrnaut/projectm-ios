@@ -58,6 +58,13 @@ struct SceneInputs: Equatable, Sendable {
     /// MOD-012 (research MOD-012-D5): the current scene's routes as the modulation matrix shows them (nil: the caller
     /// does not track them; the live or carried list is written). Undoable: a toggle or a move is one history step.
     var bindings: [AudioFeatureBinding]? = nil
+    /// UIX-011-R4, R7: the scene's palette link (nil: the caller does not track it; the carried link is kept).
+    var palette: ScenePaletteChoice? = nil
+}
+
+/// UIX-011: the scene's palette choice as a scene input (`id` nil: no link, Spectrum).
+struct ScenePaletteChoice: Equatable, Sendable {
+    var id: String?
 }
 
 /// What a restore hands back to the app (contract A5).
@@ -81,6 +88,8 @@ struct SceneRestoredValues: Sendable, Equatable {
     var effects: [SceneEffectEntry]? = nil
     /// MOD-010: the document's macros (nil: no list); restored without being applied.
     var macros: [SceneMacroEntry]? = nil
+    /// UIX-011: the document's palette link, else its first palette layer's (nil: none).
+    var paletteID: String? = nil
 }
 
 /// The restored document's content the app does not own (research SCN-002-D6).
@@ -245,14 +254,30 @@ enum SceneAutosaveCapture {
         let sceneBindings = SceneBinding.list(bindings, expressions: carry.expressions) + carry.preserved.bindings   // MOD-011-R7
         let connections = carry.modulation.edges.map { (e: ModulationEdge) -> SceneConnection in SceneConnection(e) }
             + carry.preserved.connections
-        let document = SceneDocument(id: carry.id, name: carry.name, layers: layers, parameters: parameters,
+        var document = SceneDocument(id: carry.id, name: carry.name, layers: layers, parameters: parameters,
                                      bindings: sceneBindings,
                                      modulation: SceneModulation(generators: carry.modulation.generators, connections: connections),
                                      assets: assets, effects: effects(inputs.effects, carry: carry.effects),
                                      triggers: carry.triggers, lfos: carry.lfos,   // MOD-006, MOD-007: as stored
                                      macros: inputs.macros ?? carry.macros,   // MOD-010
                                      snapshots: carry.snapshots, extra: carry.extra)   // SCN-008: as stored
+        if let choice = inputs.palette { linkPalette(choice.id, in: &document) }   // UIX-011
         return (document, events)
+    }
+
+    /// UIX-011 (contract P2): the scene's palette on the document and on every app-built palette layer.
+    static func linkPalette(_ id: String?, in document: inout SceneDocument) {
+        document.paletteID = id
+        for index in document.layers.indices where ScenePaletteLink.paletteKinds.contains(document.layers[index].kind) {
+            document.layers[index].paletteID = id
+        }
+    }
+
+    /// UIX-011: the document's link, else its first palette layer's.
+    static func paletteLink(in document: SceneDocument) -> String? {
+        if let id = document.paletteID { return id }
+        let layer: SceneLayer? = document.layers.first { (l: SceneLayer) -> Bool in ScenePaletteLink.paletteKinds.contains(l.kind) }
+        return layer?.paletteID
     }
 
     /// FX-020 (research FX-020-D7): the list to write, or nil to leave the field out.
@@ -333,7 +358,8 @@ enum SceneAutosaveCapture {
                                    layerComposites: layerComposites(in: document),
                                    logo: document.logo,   // MED-010
                                    effects: document.effects,   // FX-020
-                                   macros: document.macros)   // MOD-010
+                                   macros: document.macros,   // MOD-010
+                                   paletteID: paletteLink(in: document))   // UIX-011
     }
 
     /// CMP-015: the composite of the first layer of each kind the app draws in a compositor, defaults

@@ -11,6 +11,7 @@
 //   preset-tags         → canonical PresetTagsFile bytes (PRE-003); absent when there are none
 //   preset-overrides    → canonical PresetOverridesFile bytes (PRE-016); absent when there are none
 //   smart-collections   → canonical PresetSmartCollectionsFile bytes (PRE-008); absent when there are none
+//   palettes            → canonical PaletteFile bytes (UIX-011); absent when there are no user palettes
 //   setting/<key>       → the typed value's canonical JSON (favorites and the last preset included)
 //   photo/<name>        → the file's bytes
 // File dates, store-chosen file names and recovery copies are not records. Two libraries hold the same
@@ -18,6 +19,7 @@
 import Foundation
 import LocalPortability
 import PresetLibrary
+import SceneFormat
 
 public struct LibraryRecords: Sendable, Equatable, CustomStringConvertible {
     public let digests: [String: String]
@@ -44,6 +46,9 @@ public struct LibraryRecords: Sendable, Equatable, CustomStringConvertible {
         }
         if let smart = contents.smartCollections, !smart.isEmpty, let bytes = try? PresetSmartCollectionsFile(smartCollections: smart).encode() {
             map["smart-collections"] = PortableSHA256.hex(bytes)
+        }
+        if let palettes = contents.palettes, !palettes.user.isEmpty {   // UIX-011
+            map["palettes"] = PortableSHA256.hex(PaletteFile.encode(palettes))
         }
         for (key, value) in contents.settings { map["setting/" + key] = PortableSHA256.hex(value.canonicalBytes) }
         for (name, bytes) in contents.photos { map["photo/" + name] = PortableSHA256.hex(bytes) }

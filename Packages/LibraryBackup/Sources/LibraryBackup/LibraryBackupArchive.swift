@@ -51,6 +51,9 @@ public enum LibraryBackupWriter {
             if let smart = contents.smartCollections, !smart.isEmpty {   // PRE-008
                 try add(LibraryBackupFormat.smartCollectionsPath, try PresetSmartCollectionsFile(smartCollections: smart).encode())
             }
+            if let palettes = contents.palettes, !palettes.user.isEmpty {   // UIX-011
+                try add(LibraryBackupFormat.palettesPath, Data(PaletteFile.encode(palettes)))
+            }
             try add(LibraryBackupFormat.settingsPath, try encodedSettings(contents.settings))
             for name in contents.photos.keys.sorted() {
                 if let bytes = contents.photos[name] { try add(LibraryBackupFormat.photoPath(name), bytes) }
@@ -130,6 +133,10 @@ public enum LibraryBackupReader {
             }
             contents.smartCollections = decoded.file.smartCollections
         }
+        if let palettes = files[LibraryBackupFormat.palettesPath] {   // UIX-011
+            guard let decoded = try? PaletteFile.decode([UInt8](palettes)) else { throw .unreadableRecord(LibraryBackupFormat.palettesPath) }
+            contents.palettes = decoded.library
+        }
         contents.settings = try readSettings(files)
         contents.photos = try readPhotos(files)
         return LibraryBackupContents(manifest: manifest, contents: contents, sha256: PortableSHA256.hex(data))
@@ -139,7 +146,8 @@ public enum LibraryBackupReader {
         if path == LibraryBackupFormat.showPath || path == LibraryBackupFormat.currentScenePath || path == LibraryBackupFormat.presetIndexPath
             || path == LibraryBackupFormat.collectionsPath || path == LibraryBackupFormat.settingsPath
             || path == LibraryBackupFormat.tagsPath || path == LibraryBackupFormat.overridesPath
-            || path == LibraryBackupFormat.smartCollectionsPath { return true }
+            || path == LibraryBackupFormat.smartCollectionsPath
+            || path == LibraryBackupFormat.palettesPath { return true }
         if let id = stripped(path, prefix: LibraryBackupFormat.scenesPrefix, suffix: LibraryBackupFormat.sceneSuffix) {
             return ShowCueList.isSceneID(id)
         }

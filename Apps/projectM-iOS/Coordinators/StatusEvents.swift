@@ -232,7 +232,7 @@ enum StatusEventCatalog {
 
     static func recordingRefusal(_ refusal: RecordingRefusal) -> StatusEvent {
         switch refusal {
-        case .noVisual, .notRecordable, .outputBlackedOut, .paused, .busy, .lowStorage:
+        case .noVisual, .notRecordable, .outputBlackedOut, .paused, .busy, .lowStorage, .thermal:
             StatusEvent(id: "X12", kind: .recording, visibleText: refusal.notice, announcement: refusal.notice, cause: .user)
         }
     }
@@ -243,7 +243,7 @@ enum StatusEventCatalog {
         case .user:
             return recording(.finishing)
         case .durationReached, .background, .paused, .blackedOut, .visualChanged, .sizeChanged, .presentationLost,
-             .writerFailed, .lowStorage, .timedStop:
+             .writerFailed, .lowStorage, .timedStop, .thermal:
             let notice: String = reason.notice ?? ""
             return StatusEvent(id: "X13", kind: .recording, visibleText: notice, announcement: notice, cause: .system)
         }
@@ -269,8 +269,11 @@ enum StatusEventCatalog {
         if let refusal = RecordingRefusal.allCases.first(where: { $0.notice == notice }) {
             return recordingRefusal(refusal)
         }
-        if let reason = RecordingStopReason.allCases.first(where: { $0.notice == notice }), reason != .writerFailed {
+        if let reason = RecordingStopReason.allCases.first(where: { $0.notice == notice }) {   // REC-016: incl. the kept part
             return recordingStop(reason)
+        }
+        if notice == RecordingThermalGuard.warningNotice {   // REC-016-R8: the hot-device warning (system)
+            return StatusEvent(id: "X13", kind: .recording, visibleText: notice, announcement: notice, cause: .system)
         }
         return StatusEvent(id: "X14", kind: .recording, visibleText: notice, announcement: notice, cause: .system)
     }

@@ -44,7 +44,11 @@ public struct LibraryEraseInventory: Sendable, Equatable {
         switch category {
         case .scenes:
             let stored: Int = ShowStore(directory: folders.url(.show)).storedSceneIDs().count
-            return stored + (FileManager.default.fileExists(atPath: folders.currentSceneFile.path) ? 1 : 0)
+            var palettes = 0   // UIX-011: user palettes
+            if let data = try? Data(contentsOf: folders.palettesFile), let file = try? PaletteFile.decode([UInt8](data)) {
+                palettes = file.library.user.count
+            }
+            return stored + palettes + (FileManager.default.fileExists(atPath: folders.currentSceneFile.path) ? 1 : 0)
         case .presets:
             guard let data = try? Data(contentsOf: folders.presetIndexFile), let file = try? UserPresetsFile.decode(data).file else { return 0 }
             return file.presets.count

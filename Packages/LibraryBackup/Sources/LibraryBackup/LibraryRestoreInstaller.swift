@@ -224,6 +224,8 @@ public final class LibraryRestoreInstaller {
                 if let overrides = plan.presetOverrides {   // PRE-016
                     try write(try PresetOverridesFile.encode(overrides), to: staged.overridesFile)
                 }
+            case .palettes:   // UIX-011
+                if let palettes = plan.palettes { try write(Data(PaletteFile.encode(palettes)), to: staged.palettesFile) }
             case .photos:
                 for name in plan.photosToWrite.keys.sorted() {
                     guard let bytes = plan.photosToWrite[name] else { continue }
