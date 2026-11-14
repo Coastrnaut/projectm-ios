@@ -25,7 +25,7 @@ UI test under 30 s.
 
 - [ ] CMP-009-T05 [US1] Shaders: append `float4 luma` (low, high, softness, mode 0 none / 1 key / 2 inverted) to `CMPMask`; add `cmp_luma_keep(m, c)` (contract K1, same encode as `cmp_encode`); `cmp_over_masked` multiplies it on the sanitised colour; `cmp_blend` applies coverage × keep when any part is set; `MaskBlock` grows to 416 bytes and is built from optional shape, gradient and key (research D3) in Packages/Compositor/Sources/Compositor/CompositorShaders.swift
 - [ ] CMP-009-T06 [US1] Compositor: records keep `lumaKey` (init and every apply; a change clears the cached block); a layer with a key takes the masked routes; unkeyed layers unchanged (CMP-009-R7, R11) in Packages/Compositor/Sources/Compositor/Compositor.swift
-- [ ] CMP-009-T07 [US1] GPU acceptance tests (CMP-009-S1, S2): fixture layer with a black region (0, 0, 0, 1), a near-black region, a bright patch and a luminance ramp over a coloured opaque backdrop; black key (0, 0.1, 0): every dark-region pixel equals the backdrop (layer alpha ≤ 1/255) and every bright-patch pixel equals the unkeyed draw within 1/255; with softness the ramp's composite alpha is monotonic and matches the CPU reference within 1/255; invert; key × circle shape × linear gradient equals the product; screen blend; transformed layer; normal mode adds no pass (`maskedDraws` 1, `blendDraws` 0); a change at apply shows next frame without re-creating the layer; a key that keys nothing draws equal to unkeyed within 1/255 in Packages/Compositor/Tests/CompositorTests/LayerLumaKeyCompositeTests.swift
+- [ ] CMP-009-T07 [US1] GPU acceptance tests (CMP-009-S1, S2): fixture layer with a black region (0, 0, 0, 1), a near-black region, a bright patch and a luminance ramp over a coloured opaque backdrop; black key (0, 0.1, 0): every dark-region pixel equals the backdrop (layer alpha ≤ 1/255) and every bright-patch pixel equals the unkeyed draw within 1/255; with softness the ramp's composite alpha is monotonic and matches the CPU reference within 1/255; at opacity 0.5 the same pixels are keyed (opacity does not move the threshold, R3); invert; key × circle shape × linear gradient equals the product; screen blend; transformed layer; normal mode adds no pass (`maskedDraws` 1, `blendDraws` 0); a change at apply shows next frame without re-creating the layer; a key that keys nothing draws equal to unkeyed within 1/255 in Packages/Compositor/Tests/CompositorTests/LayerLumaKeyCompositeTests.swift
 - [ ] CMP-009-T08 [US1] Opt-in GPU bench (`CMP009_BENCH=1`): GPU time of a full-screen keyed layer vs unkeyed at 1920 × 1080, printed, never asserted (CMP-009-S5) in Packages/Compositor/Tests/CompositorTests/LayerLumaKeyCompositeTests.swift
 - [ ] CMP-009-T09 [US1] Golden (CMP-009-S3): `luma-key-black` through the real compositor at both QA-002 resolutions, recorded on the host and the "CMP9 iPhone 17" simulator into Packages/RenderGoldens/GeneratorGoldens/LumaKey/{macos,ios-simulator}/, test in Packages/RenderGoldens/Tests/RenderGoldensTests/LumaKeyGoldenTests.swift
 - [ ] CMP-009-T10 [US1] Linux shape builds and the reference tests pass: `swift build` and `swift test --filter LayerLumaKeyReferenceTests` with `-DCOMPOSITOR_NO_METAL -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE` on Packages/Compositor
@@ -51,6 +51,12 @@ UI test under 30 s.
 
 - [ ] CMP-009-T18 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), type-check budget, test report docs/test-reports/luma-key.md, spec status
 - [ ] CMP-009-T19 {device} GPU time of a full-screen keyed layer on D1 (CMP-009-S5)
+
+## Analysis fixes (speckit-analyze 2026-11-14)
+
+- U1 (MEDIUM): US2 scenario 2 said "never empty-inverted"; now "low ≤ high always holds".
+- C1 (MEDIUM): R3/R6 "independent of opacity" had no test; T07 adds an opacity 0.5 case.
+- Coverage: R1-R11 and S1-S6 each map to at least one task (R1-R5 T02-T07, R6-R7 T05-T07, R8-R9 T11-T12, R10 T14-T17, R11 T06-T07; S5 T08/T19); no constitution conflicts.
 
 ## Dependencies
 

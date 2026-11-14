@@ -112,8 +112,8 @@ flips Invert. Every control has help, is adjustable with VoiceOver and is one un
 
 1. **Given** a layer without a key, **When** the author turns the key on, **Then** a black key
    appears with default values.
-2. **Given** Low dragged above High (or High below Low), **Then** the other end follows, so the range
-   is never empty-inverted.
+2. **Given** Low dragged above High (or High below Low), **Then** the other end follows, so low ≤ high
+   always holds.
 3. **Given** an edit, **When** the author undoes, **Then** the previous key returns.
 
 ---
