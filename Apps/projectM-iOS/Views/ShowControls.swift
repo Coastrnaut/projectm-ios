@@ -11,6 +11,8 @@
 // * SHOW-002-R9: while a timed advance counts down, the status shows "Next in 0:42" (", held" while held) under the
 //   cue, and VoiceOver reads it in the row's value ("Cue 2 of 5, Intro, next cue in 42 seconds").
 // * SHOW-003-R7: while a cue step waits for the beat or bar, "Cue queued for the next beat" shows under the cue.
+// * SHOW-005-R8: the row's Hold toggle (pause.circle) freezes timed advances; VoiceOver "Hold timed advances", value
+//   On/Off. Next and Previous stay available while it is on.
 // * UIX-002: the row's "Scenes" button opens the quick scene switcher; ⌘K toggles it from the keyboard.
 //   While it is open the arrow and Page keys belong to its search field, so they are not registered
 //   here. After a close without a choice VoiceOver focus returns to the Scenes button.
@@ -38,6 +40,7 @@ struct ShowCueRow: View {
             .disabled(!show.list.canGoNext)
             .accessibilityLabel("Next cue")
             .accessibilityIdentifier("showNextCue")
+            holdButton   // SHOW-005
             Button { coordinator.openSceneSwitcher() } label: {   // UIX-002-R1
                 Image(systemName: "magnifyingglass.circle.fill").font(.title2)
             }
@@ -49,6 +52,20 @@ struct ShowCueRow: View {
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("showCueRow")
         .onChange(of: coordinator.sceneSwitcher.focusReturnRevision) { scenesFocused = true }
+    }
+
+    /// SHOW-005-R8: the performer's Hold (session only).
+    private var holdButton: some View {
+        let held: Bool = coordinator.showAutoAdvance.isOperatorHeld
+        let icon: String = held ? "pause.circle.fill" : "pause.circle"
+        return Button { coordinator.toggleShowHold() } label: {
+            Image(systemName: icon).font(.title2)
+        }
+        .tint(held ? .orange : nil)
+        .accessibilityLabel("Hold timed advances")
+        .accessibilityValue(held ? "On" : "Off")
+        .accessibilityAddTraits(.isToggle)
+        .accessibilityIdentifier("showHold")
     }
 
     /// The position and label, with SHOW-002's countdown under it while one runs. The status text stays the

@@ -4,7 +4,9 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (SHOW-005-T01-T16 verified on the Mac, simulator "SHOW5 iPhone 17", iOS 27.2; no
+device claim). ShowControl package 120 tests (1.8 s; 6 new in `ShowSkipTests`); app `CueHoldSkipAcceptanceTests` 7
+(0.09 s, the roadmap acceptance); `CueHoldSkipUITests` 1 (12.8 s).
 
 **Input**: Roadmap row SHOW-005 (P1, size S, depends on SHOW-001, integrated). Observable behavior, verbatim: "Pause
 automation or skip selected cue without deleting it." Acceptance, verbatim: "Hold prevents automatic advances; manual
@@ -40,7 +42,7 @@ local-first option.
 - Q: Where is Skip stored? → A: In the show, as an optional per-cue boolean `skip`, written only when true (shows without skipped cues keep their bytes), read leniently (a value that is not a boolean is dropped with a counted warning). No format version change.
 - Q: How does Skip change stepping? → A: Next and Previous (manual, timed or quantized, from every source) pass over skipped cues to the nearest cue that is not skipped. Go to Cue on a skipped cue still goes there (an explicit choice; the scene switcher and MIDI scene selection use Go to Cue). From a skipped cue, Next and Previous go to the nearest cue that is not skipped.
 - Q: What if every cue is skipped? → A: Next and Previous do not move; a notice "All cues are skipped." shows and is announced on the cue lane; the Next and Previous buttons are disabled (SHOW-001-R13) and the status reads "All cues skipped".
-- Q: How is it shown? → A: Hold: a "Hold" toggle button in the visualizer's cue row (VoiceOver "Hold timed advances", value on/off), the countdown line reads "Next in 0:42, held", and the performance pad's cue readout shows "Hold" (VoiceOver ", hold on") with a VoiceOver action to toggle it. Skip: a skipped cue's row is dimmed with "Skipped" under its label (VoiceOver ", skipped"); actions "Skip Cue" / "Don't Skip Cue" in the context menu, a leading swipe "Skip"/"Unskip" and a VoiceOver action.
+- Q: How is it shown? → A: Hold: a "Hold" toggle button in the visualizer's cue row (VoiceOver "Hold timed advances", value on/off), the countdown line reads "Next in 0:42, held", and the performance pad's cue readout shows "Hold" (VoiceOver ", hold on") with a VoiceOver action to toggle it. Skip: a skipped cue's row is dimmed with "Skipped" under its label (VoiceOver ", skipped"); actions "Skip Cue" / "Don't Skip Cue" in the context menu, a trailing swipe "Skip"/"Unskip" next to Delete and a VoiceOver action.
 
 ### Session 2026-11-14 (speckit-clarify)
 
@@ -51,6 +53,10 @@ Five questions, each answered with the recommended option (owner rules 4 and 9).
 - Q: Does the next-cue media warm-up (PERF-005) follow Skip? → A: Not in this feature. It may warm a skipped cue's media; that costs a little memory, never correctness. Recorded as out of scope.
 - Q: Does Hold change the show file or a backup? → A: No. Hold is never written; FILE-005 backups carry the `skip` flags automatically because they re-encode `show.json` through the show's own decode and encode.
 - Q: What does a skip value other than `true` in a file do? → A: `false` and absent mean not skipped (a writer never writes `false`); any other JSON type (number, string, object) is dropped with a counted warning `droppedSkipFlags(n)` and the show loads.
+
+### Session 2026-11-14 (speckit-implement)
+
+- Q: Which swipe edge carries Skip? → A: The trailing edge, next to Delete (Delete first, so a full swipe still deletes). The leading row (Go, Duplicate, Name, Transition, Into, Advance, MIDI) is already wider than an iPhone screen: in the simulator a seventh leading action sat at x = 475 on a 402-point screen and could not be tapped. Custom trailing actions replace `onDelete`'s automatic swipe, so Delete is declared there too (hidden while locked) and Edit mode keeps `onDelete` (research SHOW-005-D8).
 
 ### Session 2026-11-14 (speckit-analyze)
 

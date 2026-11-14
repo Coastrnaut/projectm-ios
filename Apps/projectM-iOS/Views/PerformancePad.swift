@@ -13,6 +13,8 @@
 // Dynamic Type and wrap to two lines (then truncate); in a side column the readout gives way to the
 // targets (lower layout priority), so the targets stay on screen in a landscape iPhone at AX5.
 // The pad is drawn on the device only (R11).
+// SHOW-005-R8: the cue readout shows "Hold" while the performer's Hold is on (VoiceOver ", hold on") and offers a
+// VoiceOver action to turn it on or off; no fifth target (research SHOW-005-D7).
 import PerformanceControl
 import PresentationLifecycle
 import ShowControl
@@ -63,6 +65,8 @@ struct PerformancePadLayer: View {
     let external: ExternalDisplayCoordinator
     /// SHOW-002-R9: the timed advance's countdown for the cue readout (nil in previews).
     var advance: ShowAutoAdvanceCoordinator? = nil
+    /// SHOW-005: turns the performer's Hold on or off (announced by AppCoordinator); nil in previews.
+    var onSetHold: ((Bool) -> Void)? = nil
     /// The edges the pad uses (UIX-005-R4, research UIX-005-D3).
     let onReservedInsets: (EdgeInsets) -> Void
     @Environment(\.horizontalSizeClass) private var horizontalClass
@@ -219,9 +223,18 @@ struct PerformancePadLayer: View {
             bottom = queued
             spoken += ", " + queued.lowercased()
         }
-        return PerformanceReadout(top: top, bottom: bottom, label: "Show", value: spoken, identifier: "perfCueReadout",
-                                  alignment: .leading)
+        let held: Bool = advance?.isOperatorHeld ?? false
+        if held {   // SHOW-005-R8
+            top += " · Hold"
+            spoken += ", hold on"
+        }
+        let readout = PerformanceReadout(top: top, bottom: bottom, label: "Show", value: spoken, identifier: "perfCueReadout",
+                                         alignment: .leading)
+        return readout.accessibilityAction(named: held ? "Release Hold" : "Hold") { () -> Void in setHold(!held) }
     }
+
+    /// SHOW-005: the pad's Hold action (set by the visualizer; nil in previews).
+    private func setHold(_ held: Bool) { onSetHold?(held) }
 
     private var tempoReadout: some View {
         let readout: TempoReadout = tempo.readout

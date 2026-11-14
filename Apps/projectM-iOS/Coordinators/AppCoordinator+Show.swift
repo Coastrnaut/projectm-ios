@@ -9,6 +9,7 @@
 //   blacked out stays black; Restore fades in the active cue's look.
 // * SHOW-002: `showAutoAdvance` advances a cue with a dwell through `show.next()`; its hold reads pause, blackout,
 //   the repair report and the scene phase.
+// * SHOW-005: `setShowHold` turns the performer's Hold on or off (session only) and announces it on the cue lane.
 // * The buttons in the controls restart the controls' hide delay; the keyboard shortcuts do not show
 //   the controls.
 import Foundation
@@ -168,4 +169,18 @@ extension AppCoordinator {
     func showPreviousCue() { showControls(); show.previous() }
     func keyNextCue() { show.next() }
     func keyPreviousCue() { show.previous() }
+
+    // MARK: Hold (SHOW-005)
+
+    static let showHoldOnAnnouncement = "Hold on, timed advances paused"
+    static let showHoldOffAnnouncement = "Hold off"
+
+    /// SHOW-005-R1, R11: allowed while the scene is locked (performance state, not an edit).
+    func setShowHold(_ held: Bool) {
+        guard held != showAutoAdvance.isOperatorHeld else { return }
+        showAutoAdvance.setOperatorHold(held)
+        announcer.announce(held ? Self.showHoldOnAnnouncement : Self.showHoldOffAnnouncement, kind: .cue)
+    }
+
+    func toggleShowHold() { showControls(); setShowHold(!showAutoAdvance.isOperatorHeld) }
 }
