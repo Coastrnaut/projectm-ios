@@ -5,6 +5,7 @@
 import AVFoundation
 import Compositor
 import Metal
+import os
 import VideoLayer
 import XCTest
 
@@ -208,6 +209,80 @@ final class VideoLayerTests: XCTestCase {
         try rig.frame(compositor, into: output, time: base + 700_000_000)
         XCTAssertEqual(compositor.outcome(ofLayer: 0), .fallbackTransparent(.notReady))
     }
+
+    /// Regression (SIGSEGV in `CVMetalTextureCache::bufferBackingNotInUse`, CAM-013 gate 2026-11-14):
+    /// the crash report showed the decode thread finalizing an `AVVideoFrameReader`'s texture cache
+    /// (a failed reopen ended the session) while the render thread released the picture it held, whose
+    /// release reports back to that cache. A picture must keep its cache alive, so the cache can only
+    /// be finalized after its last picture. This races the two releases many times.
+    func testPictureReleaseRacesItsReadersRelease() async throws {
+        guard let device = MTLCreateSystemDefaultDevice() else { throw XCTSkip("no Metal device") }
+        try Self.raceReleases(url: try await fixture("race.mov"), device: device, rounds: 120)
+    }
+
+    /// Sequential: every reader (and its cache) is released before its pictures, which stay valid.
+    func testPictureOutlivesItsReaderAndCache() async throws {
+        guard let device = MTLCreateSystemDefaultDevice() else { throw XCTSkip("no Metal device") }
+        let url = try await fixture("outlive.mov")
+        var frames: [VideoTextureFrame] = []
+        for _ in 0..<10 {
+            var reader: AVVideoFrameReader? = AVVideoFrameReader(url: url, device: device)
+            _ = try reader?.open(startNanoseconds: 0)
+            for _ in 0..<3 {
+                if let next = try reader?.next() { frames.append(next.frame) }
+            }
+            reader = nil
+            XCTAssertNil(reader)
+        }
+        XCTAssertEqual(frames.count, 30)
+        XCTAssertTrue(frames.allSatisfy { (frame: VideoTextureFrame) -> Bool in frame.texture.width > 0 })
+        frames.removeAll()
+    }
+
+    /// Synchronous: each round a second thread, started by a spin handshake, drops the reader (and its cache)
+    /// while this thread drops the pictures, at an offset swept over the rounds. Before the fix about 7 in
+    /// 10 runs of 60 rounds crashed. Rounds stop at a 4 s cap.
+    private static func raceReleases(url: URL, device: MTLDevice, rounds: Int) throws {
+        let deadline = Date().addingTimeInterval(4)   // a time cap for a loaded host (short tests)
+        for round in 0..<rounds where Date() < deadline {
+            let box = ReaderBox(AVVideoFrameReader(url: url, device: device))   // the only strong reference
+            _ = try box.reader?.open(startNanoseconds: 0)
+            var frames: [VideoTextureFrame] = []
+            for _ in 0..<3 {
+                if let next = try box.reader?.next() { frames.append(next.frame) }
+            }
+            XCTAssertEqual(frames.count, 3, "round \(round)")
+            box.reader?.close()   // the reopen's close: only the cache's release is left for the race
+            // Handshake by try-lock spins (neither side sleeps on the lock): 1 = releaser ready, 2 = go.
+            let phase = OSAllocatedUnfairLock(initialState: 0)
+            let releaser = Thread { () -> Void in
+                while phase.withLockIfAvailable({ (p: inout Int) -> Void in p = max(p, 1) }) == nil {}
+                while phase.withLockIfAvailable({ (p: inout Int) -> Int in p }) != 2 {}
+                box.reader = nil   // the decode thread's side: releases the reader and its cache
+                box.finished.signal()
+            }
+            releaser.qualityOfService = .userInitiated
+            releaser.start()
+            while phase.withLockIfAvailable({ (p: inout Int) -> Int in p }) != 1 {}
+            while phase.withLockIfAvailable({ (p: inout Int) -> Void in p = 2 }) == nil {}
+            spin(round % 16)      // sweep the offset between the two releases
+            frames.removeAll()    // the render side: drops the held pictures at the same moment
+            box.finished.wait()
+        }
+    }
+
+    private static func spin(_ steps: Int) {
+        var x: UInt64 = 0
+        for i in 0..<(steps * 200) { x = x &+ UInt64(i) }
+        withExtendedLifetime(x) { () -> Void in }
+    }
+}
+
+/// Hands the last reference to another thread.
+private final class ReaderBox: @unchecked Sendable {
+    var reader: AVVideoFrameReader?
+    let finished = DispatchSemaphore(value: 0)
+    init(_ reader: AVVideoFrameReader) { self.reader = reader }
 }
 
 private func XCTUnwrapAsync<T>(_ value: T?, file: StaticString = #filePath, line: UInt = #line) async throws -> T {

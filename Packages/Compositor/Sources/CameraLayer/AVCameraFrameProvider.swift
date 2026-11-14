@@ -309,7 +309,7 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
         guard CVMetalTextureCacheCreateTextureFromImage(kCFAllocatorDefault, cache, pixels, nil, .bgra8Unorm_srgb, width, height, 0,
                                                         &wrapper) == kCVReturnSuccess,
               let wrapper, let texture = CVMetalTextureGetTexture(wrapper) else { return }
-        latest.store(texture, owner: wrapper, position: Self.position(of: connection))
+        latest.store(texture, owner: CVMetalTextureHold(texture: wrapper, cache: cache), position: Self.position(of: connection))
     }
 
     /// CAM-002-D3: the camera a buffer came from (nil: the slot's position).
