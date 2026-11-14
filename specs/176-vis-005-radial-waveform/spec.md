@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (device task VIS-005-T12 open)
 
 **Input**: User description: "Implement VIS-005 (Radial waveform) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Wrap time-domain waveform around an adjustable ring." Acceptance,
