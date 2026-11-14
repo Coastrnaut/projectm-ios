@@ -100,10 +100,7 @@ struct StorageUsageView: View {
                     Text(Self.sharedSavingsNote(model.sharedSavings)).accessibilityIdentifier("storageSharedSavings")   // FILE-008
                 }
             }
-            if let libraryBackup {
-                LibraryBackupSection(model: libraryBackup)   // FILE-005
-                LibraryEraseSection(model: libraryBackup.erase)   // FILE-011
-            }
+            if let libraryBackup { LibraryBackupSection(model: libraryBackup) }   // FILE-005
             #if DEBUG
             if UITestStorageFixture.isEnabled {
                 Section {
@@ -112,6 +109,7 @@ struct StorageUsageView: View {
                 }
             }
             #endif
+            if let libraryBackup { LibraryEraseSection(model: libraryBackup.erase) }   // FILE-011: last (destructive)
         }
         .navigationTitle("Storage")
         .libraryBackupPresentation(libraryBackup)   // FILE-005

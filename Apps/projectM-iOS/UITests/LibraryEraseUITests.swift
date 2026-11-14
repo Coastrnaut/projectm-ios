@@ -52,14 +52,14 @@ final class LibraryEraseUITests: XCTestCase {
         XCTAssertTrue(alert.staticTexts["Erase 1 category?"].exists)
         let named = alert.staticTexts.containing(NSPredicate(format: "label BEGINSWITH %@", "Scenes and show (")).firstMatch
         XCTAssertTrue(named.exists, "the message names the category with its count")
-        alert.buttons["Cancel"].tap()
+        alert.buttons.matching(identifier: "Cancel").firstMatch.tap()
         app.buttons["libraryEraseDismiss"].tap()
         XCTAssertFalse(app.staticTexts["libraryErasePending"].exists, "Cancel records nothing")
         XCTAssertEqual(probe(), original, "nothing was erased")
 
         chooseScenesAndContinue()
         XCTAssertTrue(alert.appears(within: 5))
-        alert.buttons["Erase at Next Launch"].tap()
+        alert.buttons.matching(identifier: "Erase at Next Launch").firstMatch.tap()
         let pending = app.staticTexts["libraryErasePending"]
         XCTAssertTrue(app.reveal(pending))
         XCTAssertTrue(pending.label.contains("Scenes and show will be erased."), pending.label)
