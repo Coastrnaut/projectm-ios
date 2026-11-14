@@ -41,11 +41,23 @@ devices (`CABTMIDICentralViewController`, which needs a Bluetooth usage string).
    counted) with no allocation, lock or logging; the main actor drains it at display rate. Messages
    carry no source (`connRefCon` nil, no source field), and nothing received is stored or logged.
    MIDI-003 onward reuse the input and its `MIDIEvent` model.
+8. **Bindings (amended 2026-11-14 by MIDI-003, `specs/128-midi-003-midi-learn`; decided by Claude under owner
+   rule 4).** A learned binding is keyed by message kind, MIDI channel and controller number only, from any
+   connected device; no endpoint ID, unique number or name is stored with it or added to `MIDIEvent`. Reasons:
+   Decision 7 keeps no source on messages; fallback IDs (Decision 4) are not stable across reconnects; and the
+   mapping list is in the library backup, where a device identifier would fingerprint the user's equipment.
+   Learn accepts control change on controllers 0–119 only (channel mode messages 120–127 are commands). The
+   list is global (not per scene), at most 64 bindings, one per control and one per parameter (rebinding
+   replaces), stored as text lines in `settings.midi.mappings`, backed up (FILE-005) and erased with Settings
+   (FILE-011). Received values set the live manual value of the native glow parameters, pass MOD-002 and the
+   ACC-012 clamp, and are never stored. Per-device profiles are MIDI-012's.
 
 ## Consequences
 
 - MIDI-002 onward build on `MIDIEndpointDiscovery` and `MIDIEndpointID`; MIDI-003 onward also on
   MIDI-002's shared input and `MIDIEvent` (Decision 7).
 - A physical controller check of receiving (MIDI-002-T20) is a device task.
+- MIDI-004 onward extend a binding (range, curve, inversion, 14-bit, notes) without changing its key (Decision 8);
+  a physical controller check of learn (MIDI-003-T17) is a device task.
 - A physical controller check (MIDI-001-S8) remains a device task; the driver-owner strings used
   for attribution are confirmed there.

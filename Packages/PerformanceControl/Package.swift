@@ -25,6 +25,9 @@
 // * MIDI-002 (specs/125-midi-002-midi-input-monitor/contracts/midi-input.md): the MIDI 1.0 event model, UMP decoder,
 //   byte-stream parser, the 512-event real-time ring and the shared input service are pure Swift in `MIDI/`; the
 //   CoreMIDI input port (MIDI 1.0 protocol) is `MIDISystem/CoreMIDIInputProvider.swift` (ADR-0038 Decision 7).
+// * MIDI-003 (specs/128-midi-003-midi-learn/contracts/midi-learn.md): learn session, eligibility (CC 0-119), the
+//   binding list (one per control and per parameter, 64 max, text lines with no device identifier) and linear
+//   values are pure Swift in `MIDI/` (ADR-0038 Decision 8).
 // Nothing here feeds projectM (Constitution VIII, ADR-0008 decision 5).
 // One library product, so CI's `-scheme PerformanceControl` builds and tests every target.
 import PackageDescription

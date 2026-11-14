@@ -128,7 +128,7 @@ Apps/projectM-iOS/
 ├── Visuals/NativeSpectrumHost.swift                                        # externalValues
 ├── Views/MIDIMappingsView.swift                                            # new
 ├── Views/MIDISettingsSection.swift                                         # one row
-├── Debug/UITestFakeMIDI.swift                                              # Send CC 8 helper
+├── Debug/UITestFakeMIDI.swift                                              # unchanged: its Send CC panel is reused
 ├── Tests/MIDIMappingCoordinatorTests.swift                                 # new
 └── UITests/MIDILearnUITests.swift                                          # new
 scripts/check_status_events.py, scripts/run_device_tests.py

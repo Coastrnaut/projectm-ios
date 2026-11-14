@@ -35,6 +35,8 @@ CHECKED = [
     "Coordinators/MIDIInputCoordinator.swift",         # MIDI-002-R10: no announcement for live traffic
     "Coordinators/MIDIMonitorCoordinator.swift",       # MIDI-002-R10
     "Views/MIDIMonitorView.swift",                     # MIDI-002-R10
+    "Coordinators/MIDIMappingCoordinator.swift",       # MIDI-003-R11: learn announces through the announcer
+    "Views/MIDIMappingsView.swift",                    # MIDI-003-R11
     "Views/CaptureResultPanels.swift",
     "Views/StatusCaptionView.swift",
     "Views/SceneSwitcherView.swift",   # UIX-002-R9: the switcher announces through the announcer
