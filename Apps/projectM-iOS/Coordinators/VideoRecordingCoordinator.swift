@@ -144,7 +144,11 @@ final class VideoRecordingCoordinator {
         case finishing
     }
 
-    private(set) var state: State = .idle
+    private(set) var state: State = .idle {
+        didSet { if state != oldValue { onStateChange?(state) } }   // OUT-002-R4: the external display's hold
+    }
+    /// OUT-002: told of every state change (AppCoordinator holds the visual's placement while recording).
+    @ObservationIgnored var onStateChange: ((State) -> Void)?
     /// Seconds of video recorded so far (media time, shown by the indicator).
     private(set) var elapsedSeconds: Double = 0
     /// The latest user-visible notice, nil when none.

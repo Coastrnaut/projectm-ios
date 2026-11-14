@@ -19,16 +19,50 @@
 //   the next composited frame is black; `place()` covers every slot before it moves the visual, so a
 //   connect, disconnect or visual change never reveals it. The visual stays in its slot and keeps
 //   running. A display link runs only while the restore fade or the restore spacing needs frames.
+// * OUT-002 (spec specs/161-out-002-display-hotplug; research OUT-002-D1 to D5): hot-plug. Events
+//   arrive through `ExternalDisplayEventSink` (scene delegate, iOS 27 accessory, DEBUG fake, tests).
+//   A connect settles for 0.3 s (`HotPlugSettle`) before the visual moves; a disconnect cancels a
+//   pending connect (nothing moves, nothing is announced) or is applied inside the call. While a
+//   recording runs (`holdsPlacement`), the visual stays where it is unless its slot is gone, so the
+//   recording's size never changes. The internal render session is never touched: only its view
+//   changes window. `externalResources` counts what the external side holds (0 after disconnect).
 import OSLog
 import PresentationLifecycle
 import SwiftUI
 import UIKit
 
+/// OUT-002-R7 (contract C1): the one seam through which external display connections arrive.
+@MainActor
+protocol ExternalDisplayEventSink: AnyObject {
+    func externalConnected(id: String, slot: VisualSlotView, geometry: ExternalDisplayGeometry, foreground: Bool)
+    func externalResized(id: String, geometry: ExternalDisplayGeometry)
+    func externalForeground(id: String, _ foreground: Bool)
+    func externalDisconnected(id: String)
+}
+
+/// OUT-002-R6: a settled connection or the disconnect of a settled display (announced as X27, X28).
+enum ExternalDisplayConnectionChange: Equatable, Sendable {
+    /// `heldByRecording`: a running recording keeps the visualization where it is for now.
+    case connected(heldByRecording: Bool)
+    case disconnected
+}
+
+/// OUT-002-R8: what the external side holds (tests, DEBUG probe).
+struct ExternalResourceCounts: Equatable, Sendable {
+    var slots = 0
+    var pending = 0
+    var slotsHoldingVisual = 0
+    static let zero = ExternalResourceCounts()
+}
+
 @MainActor
 @Observable
-final class ExternalDisplayCoordinator {
-    /// The app's coordinator; the external scene delegates report to it.
-    static let shared = ExternalDisplayCoordinator()
+final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
+    /// The app's coordinator; the external scene delegates report to it. Connects settle (OUT-002-R3).
+    static let shared = ExternalDisplayCoordinator(connectSettle: HotPlugSettle.defaultInterval)
+
+    /// Runs `body` on the main actor after `seconds` (the settle timer; tests inject a manual one).
+    typealias SettleScheduler = (_ seconds: Double, _ body: @escaping @MainActor () -> Void) -> Void
 
     @ObservationIgnored private(set) var routing = ExternalDisplayRouting()
     /// The visualization is drawn on an external display; the device shows the note instead.
@@ -50,7 +84,23 @@ final class ExternalDisplayCoordinator {
     @ObservationIgnored var usesDisplayLink = true
     @ObservationIgnored private var frameDriver: BlackoutFrameDriver?
 
-    init() {
+    // OUT-002: hot-plug.
+    @ObservationIgnored private(set) var settle: HotPlugSettle
+    @ObservationIgnored private let scheduleSettle: SettleScheduler
+    /// The target a running recording holds the visual on (OUT-002-R4); nil without a hold.
+    @ObservationIgnored private var heldTarget: VisualOutputTarget?
+    /// Settled connections and disconnections (OUT-002-R6); AppCoordinator posts them as status events.
+    @ObservationIgnored var onConnectionChange: ((ExternalDisplayConnectionChange) -> Void)?
+
+    /// `connectSettle` 0 (the default): a connect moves the visual inside the call (OUT-001-R6 tests).
+    init(connectSettle: Double = 0, scheduleSettle: SettleScheduler? = nil) {
+        settle = HotPlugSettle(interval: connectSettle)
+        self.scheduleSettle = scheduleSettle ?? { (seconds: Double, body: @escaping @MainActor () -> Void) -> Void in
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: UInt64(max(seconds, 0) * 1_000_000_000))
+                body()
+            }
+        }
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("-uitestStartBlackedOut") {   // quickstart C
             blackout.blackOut()
@@ -92,15 +142,39 @@ final class ExternalDisplayCoordinator {
 
     // MARK: - External scenes
 
+    /// OUT-002-R3, R5: the slot is kept (weakly) and covered at once with the current blackout, and
+    /// stays empty until the connection settles.
     func externalConnected(id: String, slot: VisualSlotView, geometry: ExternalDisplayGeometry, foreground: Bool) {
         externalSlots[id] = WeakSlot(slot: slot)
         slot.onGeometryChange = { [weak self] (geometry: ExternalDisplayGeometry) in self?.externalResized(id: id, geometry: geometry) }
-        routing.apply(.connected(id: id, geometry: geometry, foreground: foreground))
         log.info("external display connected: \(geometry.width, privacy: .public) × \(geometry.height, privacy: .public) @\(geometry.scale, privacy: .public), foreground \(foreground, privacy: .public)")
+        if routing.displays.contains(where: { (d: ExternalDisplay) -> Bool in d.id == id }) || settle.isImmediate {
+            settleConnection(id: id, geometry: geometry, foreground: foreground)   // a known display, or no settle time
+            return
+        }
+        let token = settle.connect(id: id, geometry: geometry, foreground: foreground)
+        place()   // covers the new slot (OUT-010) and keeps it empty
+        scheduleSettle(settle.interval) { [weak self] () -> Void in self?.settleFired(token: token) }
+    }
+
+    /// The settle timer: a connection still pending with this token joins the routing (OUT-002-R3).
+    func settleFired(token: Int) {
+        guard let connection = settle.settle(token: token) else { return }   // cancelled or replaced
+        settleConnection(id: connection.id, geometry: connection.geometry, foreground: connection.foreground)
+    }
+
+    private func settleConnection(id: String, geometry: ExternalDisplayGeometry, foreground: Bool) {
+        let known = routing.displays.contains(where: { (d: ExternalDisplay) -> Bool in d.id == id })
+        routing.apply(.connected(id: id, geometry: geometry, foreground: foreground))
         place()
+        guard !known else { return }
+        let held = heldTarget != nil && effectiveTarget != routing.target
+        log.info("external display settled\(held ? " (held by a recording)" : "", privacy: .public)")
+        onConnectionChange?(.connected(heldByRecording: held))
     }
 
     func externalResized(id: String, geometry: ExternalDisplayGeometry) {
+        if settle.update(id: id, geometry: geometry) { return }   // still settling
         guard routing.apply(.resized(id: id, geometry: geometry)) else { return }
         log.info("external display size: \(geometry.width, privacy: .public) × \(geometry.height, privacy: .public) @\(geometry.scale, privacy: .public)")
         place()
@@ -108,18 +182,51 @@ final class ExternalDisplayCoordinator {
 
     func externalForeground(id: String, _ foreground: Bool) {
         log.info("external display foreground: \(foreground, privacy: .public)")
+        if settle.update(id: id, foreground: foreground) { return }   // still settling
         if routing.apply(.foreground(id: id, foreground)) { place() }
     }
 
+    /// Inside the call: the visual leaves the slot, the slot is forgotten (OUT-002-R8). A connection
+    /// that had not settled is cancelled: nothing moved and nothing is announced (OUT-002-R3).
     func externalDisconnected(id: String) {
+        let cancelled = settle.cancel(id: id)
+        let known = routing.displays.contains(where: { (d: ExternalDisplay) -> Bool in d.id == id })
         routing.apply(.disconnected(id: id))
-        log.info("external display disconnected")
+        log.info("external display disconnected\(cancelled ? " before it settled" : "", privacy: .public)")
         if let slot = externalSlots.removeValue(forKey: id)?.slot {
             slot.onGeometryChange = nil
             slot.removeVisuals()
         }
         place()
+        if !cancelled, known { onConnectionChange?(.disconnected) }
     }
+
+    // MARK: - Recording hold (OUT-002-R4)
+
+    /// True while a recording runs: the visual stays on its current target unless that display is gone.
+    /// Turning it off places the visual by OUT-001's rules.
+    var holdsPlacement: Bool {
+        get { heldTarget != nil }
+        set {
+            guard newValue != holdsPlacement else { return }
+            heldTarget = newValue ? effectiveTarget : nil
+            log.info("placement hold: \(newValue, privacy: .public)")
+            place()
+        }
+    }
+
+    /// Where the visual is drawn now: OUT-001's target, or the target a recording holds.
+    var effectiveTarget: VisualOutputTarget { routing.effectiveTarget(held: heldTarget) }
+
+    /// What the external side holds (OUT-002-R8).
+    var externalResources: ExternalResourceCounts {
+        let live = externalSlots.values.compactMap { (w: WeakSlot) -> VisualSlotView? in w.slot }
+        let holding = live.filter { (slot: VisualSlotView) -> Bool in !slot.subviews.isEmpty }.count
+        return ExternalResourceCounts(slots: live.count, pending: settle.pending.count, slotsHoldingVisual: holding)
+    }
+
+    /// The visual view the coordinator places (tests).
+    var currentVisual: UIView? { visual }
 
     // MARK: - Output blackout (OUT-010)
 
@@ -187,13 +294,15 @@ final class ExternalDisplayCoordinator {
     /// the visual never appears uncovered while the output is blacked out.
     func place() {
         applyCovers()
+        let target = effectiveTarget
+        if heldTarget != nil { heldTarget = target }   // a held display that is gone: the hold follows the fallback
         let targetSlot: VisualSlotView?
-        switch routing.target {
+        switch target {
         case .device: targetSlot = deviceSlot
         case let .external(id): targetSlot = externalSlots[id]?.slot
         }
         let external: Bool
-        if case .external = routing.target { external = true } else { external = false }
+        if case .external = target { external = true } else { external = false }
         if external != showsVisualExternally {
             showsVisualExternally = external
             log.info("visualization target: \(external ? "external display" : "device", privacy: .public)")

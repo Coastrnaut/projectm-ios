@@ -238,6 +238,26 @@ enum StatusEventCatalog {
         }
     }
 
+    // MARK: External display (X27, X28; OUT-002-R6)
+
+    static let externalDisplayConnected = "External display connected"
+    static let externalDisplayHeld = "External display connected. It shows the visualization when the recording ends."
+    static let externalDisplayDisconnected = "External display disconnected"
+
+    /// X27 for a settled connection (`held`: a running recording keeps the visualization on the device for
+    /// now), X28 for the disconnect of a settled display. System rows with a transient caption.
+    static func externalDisplay(_ change: ExternalDisplayConnectionChange) -> StatusEvent {
+        switch change {
+        case let .connected(held):
+            let text: String = held ? externalDisplayHeld : externalDisplayConnected
+            return StatusEvent(id: "X27", kind: .display, visibleText: text, announcement: text, cause: .system,
+                               presentation: .caption)
+        case .disconnected:
+            return StatusEvent(id: "X28", kind: .display, visibleText: externalDisplayDisconnected,
+                               announcement: externalDisplayDisconnected, cause: .system, presentation: .caption)
+        }
+    }
+
     // MARK: Session (X24-X26)
 
     static func recoveryOffer(title: String, message: String) -> StatusEvent {
