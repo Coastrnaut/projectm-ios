@@ -104,6 +104,7 @@ struct VisualizerView: View {
             .accessibilityIdentifier("visualizerTapArea")
             .accessibilityLabel("Visualization")
             .accessibilityHint("Shows or hides the controls")
+            .modifier(MIDIPanicVisualizerCommands(coordinator: coordinator))   // MIDI-013-R7: ⌘⇧M, VoiceOver action
     }
 
     private var statusStack: some View {

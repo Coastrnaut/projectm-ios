@@ -41,6 +41,7 @@ extension AppCoordinator {
             self.cueTransitions.sceneApplied()   // XFADE-R1: the frozen frame blends out on the visual shown now
             self.sceneSwitchReached(.applied)   // UIX-002-R8: the switcher's latency ends at the applied state
             self.scenePreviews.sceneApplied(document.id)   // SCN-006: a picture after the settle, when it has none
+            self.replanMediaPrewarm()   // PERF-005: the next cues' media, after this scene is live
             return notes
         }
         connectCueTransitions()   // SCN-007
