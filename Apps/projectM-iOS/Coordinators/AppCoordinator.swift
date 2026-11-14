@@ -483,7 +483,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         #endif
         // Feature 002: the library (12,941 presets) loads off the main thread (SC-101).
         presets = PresetCoordinator(store: FavoritesStore(defaults: defaults), settings: settings, loader: presetLoader,
-                                    collections: PresetCollectionStore(directory: PresetCollectionStore.defaultDirectory()))
+                                    collections: PresetCollectionStore(directory: PresetCollectionStore.defaultDirectory()),
+                                    tags: PresetTagStore(directory: PresetTagStore.defaultDirectory()))   // PRE-003
         userPresets = UserPresetsCoordinator.makeDefault()
         userPresets.connect(presets: presets, loader: presetLoader)   // PRE-012
         #if DEBUG || PROJECTM_AUTOMATION
@@ -878,10 +879,13 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                 presets.attach(library)
                 #if DEBUG
                 UITestCollectionFixture.seedIfRequested(presets)   // PresetCollectionsUITests
+                UITestPresetTagFixture.seedIfRequested(presets)    // PresetTagsUITests (PRE-003)
                 #endif
                 presets.onScopeChange { UIAccessibility.post(notification: .announcement, argument: $0) }   // FR-124
                 presets.announceFavorite = { [weak self] (text: String) in self?.announcer.announce(text, kind: .favorite) }   // ACC-004
                 userPresets.announceLibrary = { [weak self] (text: String) in self?.announcer.announce(text, kind: .library) }   // FILE-003-R13
+                presets.announceLibrary = { [weak self] (text: String) in self?.announcer.announce(text, kind: .library) }   // PRE-003-R12
+                presets.announceSearch = { [weak self] (text: String) in self?.announcer.announce(text, kind: .search) }
                 await presets.setUnlocked(entitlements.isUnlocked)
                 libraryReady = true
                 Task { [weak self] in await self?.entitlements.loadProduct() }
