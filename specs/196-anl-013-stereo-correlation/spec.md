@@ -122,6 +122,7 @@ own a little after the problem is fixed, without flickering.
 ### Edge Cases
 
 - A session restart resets the correlation to 0 and clears the warning.
+- Stopping the native visual (or switching to projectM) clears the warning in the app; the stop reports it as cleared, without the X3b announcement unless the raise was announced (covered by T10, T11).
 - One loud channel and one silent channel: 0 (no shared signal), never ±1.
 - Chunks of any size, including 1 frame: the same blocks and the same values.
 
