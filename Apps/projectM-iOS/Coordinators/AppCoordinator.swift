@@ -324,6 +324,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         rowSize: { [weak self] () -> CGSize in
             self?.activeVideoRecordingSource?.recordingDrawableSize ?? RecordingQualitySetting.screenPixelSize()
         })
+    /// REC-007: the recording countdown (Settings → Recording countdown; Off by default).
+    @ObservationIgnored private(set) lazy var recordingCountdown = RecordingCountdownSetting(defaults: defaults)
     /// UIX-004: the favorite parameter shelf (pinned controls in the visualizer's controls).
     let parameterShelf: ParameterShelf
     /// REC-004: reads the microphone permission (never asks for it).
@@ -819,6 +821,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
 
     /// Stop (FR-007): stops the source and returns to the chooser.
     func stop() {
+        videoRecording.cancelCountdown(.leftVisualizer)   // REC-007-R5
         noiseGate.control.isMicrophoneSource = false   // AUD-011-R3
         latencyOffset.activeMode = nil   // AUD-013-R8
         hideTask?.cancel()
@@ -1398,7 +1401,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// REC-003/REC-004: what the recording coordinator reads (visual, output, pause; source mode, consent, tap).
     var videoRecordingContext: VideoRecordingCoordinator.Context {
         let manager = manager
-        return VideoRecordingCoordinator.Context(source: activeVideoRecordingSource, visualShown: screen == .visualizer,
+        var context = VideoRecordingCoordinator.Context(source: activeVideoRecordingSource, visualShown: screen == .visualizer,
                                                  outputLive: externalDisplay.blackoutPhase == .live, paused: userPaused,
                                                  audioMode: manager.activeMode,
                                                  microphoneGranted: microphonePermissionProbe.permission == .granted,
@@ -1408,6 +1411,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                                                  qualityProfile: recordingQuality.profile,   // REC-005
                                                  qualityCapabilities: RecordingQualitySetting.deviceCapabilities(),
                                                  frameRateChoice: recordingQuality.frameRate)   // REC-006
+        context.countdown = recordingCountdown.length   // REC-007
+        return context
     }
 
     var activeVideoRecordingSource: (any VideoRecordingSource)? {
