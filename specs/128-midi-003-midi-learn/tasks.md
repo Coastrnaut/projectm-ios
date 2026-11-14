@@ -24,12 +24,12 @@ Tests are required by the spec (MIDI-003-S1 to S8). Budgets (owner rule 7): unit
 - [ ] MIDI-003-T06 [US1] `Apps/projectM-iOS/Coordinators/MIDIMappingCoordinator.swift`: list, session, live values, rows, status texts (data-model "Status"), input client `"mappings"` iff learning or bindings exist (R12), storage key `settings.midi.mappings` (`[String]`), timeout scheduler (injected), `.midi` announcements (learning started, bound, timed out), `applyValues` closure (contract L2)
 - [ ] MIDI-003-T07 [US1] `NativeSpectrumHost.externalValues` replacing the glow's manual intensity, radius, threshold and knee before MOD-002 and the ACC-012 clamp in `Apps/projectM-iOS/Visuals/NativeSpectrumHost.swift` (contract L3, research MIDI-003-D6); wiring in `Apps/projectM-iOS/Coordinators/AppCoordinator.swift` (create the coordinator, `midi.mappings`, `applyValues` → `nativeVisual?.externalValues`, push on host creation) and a weak `mappings` pointer in `Coordinators/MIDIDiscoveryCoordinator.swift`
 - [ ] MIDI-003-T08 [US1] `Apps/projectM-iOS/Views/MIDIMappingsView.swift` (status with Cancel, rows with Learn and Delete, Undo; identifiers of contract L4) and a "MIDI Mappings" row in `Views/MIDISettingsSection.swift`; DEBUG Send CC panel on the screen with `-uitestFakeMIDI` (`Debug/UITestFakeMIDI.swift`)
-- [ ] MIDI-003-T09 [US1] App tests `Apps/projectM-iOS/Tests/MIDIMappingCoordinatorTests.swift`: the acceptance through `UITestFakeMIDI`-style scripted input and `MIDIInputCoordinator.drain()` (S1), batch (S2), values drive `liveValues` and `applyValues` without changing `AppSettings.glowIntensity` (R7, R8)
+- [ ] MIDI-003-T09 [US1] App tests `Apps/projectM-iOS/Tests/MIDIMappingCoordinatorTests.swift`: the acceptance through `UITestFakeMIDI`-style scripted input and `MIDIInputCoordinator.drain()` (S1), batch (S2), values drive `liveValues` and `applyValues` without changing `AppSettings.glowIntensity` (R7, R8); learning started and bound are announced through the injected announcer with kind `.midi` (R11); the client `"mappings"` is registered only while learning or with bindings (R12)
 - [ ] MIDI-003-T10 [US1] UI test `Apps/projectM-iOS/UITests/MIDILearnUITests.swift` (`-uitestFakeMIDI`, listening on): open MIDI Mappings, Learn on Glow intensity, Send CC, the row reads "CC 7 · Ch 1" and the status says mapped (S7, under 30 s)
 
 ## Phase 4: User Story 2 - Learning never grabs the wrong message (P1)
 
-- [ ] MIDI-003-T11 [US2] App tests in `MIDIMappingCoordinatorTests.swift`: ineligible messages keep learning; Cancel; timeout through the injected scheduler announces (S3); listening off ends learning and disables Learn (R6)
+- [ ] MIDI-003-T11 [US2] App tests in `MIDIMappingCoordinatorTests.swift`: ineligible messages keep learning; Cancel; timeout through the injected scheduler announces (S3); listening off (which is also what leaving the foreground does through MIDI-001) ends learning, disables Learn and shows the reason (R6)
 
 ## Phase 5: User Story 3 - I manage my mappings (P2)
 
@@ -38,7 +38,7 @@ Tests are required by the spec (MIDI-003-S1 to S8). Budgets (owner rule 7): unit
 
 ## Phase 6: User Story 4 - Mapped values stay within my safety limits (P1)
 
-- [ ] MIDI-003-T14 [US4] App test: a host with Glow intensity driven to 1.0 by `externalValues` renders at most the Strict cap (`effectiveGlow.intensity`), and empty `externalValues` leaves the FX-001 path unchanged (S5; skips without Metal) in `MIDIMappingCoordinatorTests.swift`
+- [ ] MIDI-003-T14 [US4] App test: a host with Glow intensity driven to 1.0 by `externalValues` renders at most the Strict cap (`effectiveGlow.intensity`), and empty `externalValues` leaves the FX-001 path unchanged (S5; skips without Metal) in `MIDIMappingCoordinatorTests.swift`; the coordinator's `applyValues` output reaches a host made after the values arrived through the same push AppCoordinator does on host creation (edge case "native visual not shown")
 
 ## Phase 7: Polish
 

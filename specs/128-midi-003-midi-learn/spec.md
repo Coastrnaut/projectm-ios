@@ -170,6 +170,9 @@ the profile's cap, not the range top.
 
 ### Key Entities
 
+Terminology: a *mapping* is what the user sees in MIDI Mappings; a *binding* is the same thing in the model (one control key → one parameter). The two words name one concept.
+
+
 - **Control key**: kind (control change in this row), channel 0–15, number 0–127 (learnable 0–119). From MIDI-002.
 - **Binding**: control key → parameter ID. Stored as one text line per binding.
 - **Mapping list**: ordered bindings, at most 64, one per control and one per parameter.
