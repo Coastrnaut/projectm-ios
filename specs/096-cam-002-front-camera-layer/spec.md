@@ -47,6 +47,12 @@ interaction); each answer is the conservative, local-first option.
 - Q: Does the usage description change? → A: Yes: "The Camera visual shows the live view from the front or rear camera you choose, behind the visualization. The picture stays on your device: it is never sent, and it is saved only when you save a frame or record the visualization yourself." (CAM-002-R9). It names both cameras and corrects "never recorded", which REC-001 and REC-003 made inaccurate for a user's own saves.
 - Q: Does the badge name the camera? → A: Yes: "Camera on" for the rear camera (unchanged), "Front camera on" for the front camera; Stop camera is unchanged (CAM-002-R8).
 
+### Session 2026-11-14 (speckit-clarify)
+
+- Q: Does Mirror flip the whole visual or only the camera picture? → A: Only the camera picture. The spectrum and anything else drawn over it keep their orientation, so the spectrum still runs low to high clockwise from the top (CAM-002-R3). Flipping the whole composite would reverse the spectrum and any Text visual words.
+- Q: Where are the camera choice and Mirror offered: in Settings only, or also in the visualizer's controls? → A: In Settings only, in a "Camera" section shown while Camera is the chosen visual (CAM-002-R1). The visualizer keeps CAM-012's badge with Stop camera; a quick switch in the controls can come with CMP-015 or CAM-003 (lens selection), which also add camera controls.
+- Q: How long may the fallback last after a camera switch before the user is told something is wrong? → A: The badge stays "starting" until the new camera delivers; if it does not start, the usual unavailable or "paused by the system" notice appears (CAM-002-R7). No extra timer: the camera's own failure reports end the wait, and the device stage measures the switch time on D1-D3 (CAM-002-S7).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - The front camera behind the music, mirrored like a mirror (Priority: P1)
@@ -137,16 +143,16 @@ camera shows the "no front camera" notice.
 
 ### Functional Requirements
 
-- **CAM-002-R1**: When Camera is the chosen visual, Settings MUST offer a camera choice "Back" or
-  "Front" (default Back) and a "Mirror" switch for the chosen camera. The choice applies to the
-  Camera visual; there is no separate front camera visual.
+- **CAM-002-R1**: When Camera is the chosen visual, Settings MUST offer, in a "Camera" section, a
+  camera choice "Back" or "Front" (default Back) and a "Mirror" switch for the chosen camera. The
+  choice applies to the Camera visual; there is no separate front camera visual.
 - **CAM-002-R2**: With Front chosen, the Camera visual MUST show the front camera's live picture
   under the circular spectrum with every CAM-001 rule (layer contract, linear color, aspect fill,
   upright for the device orientation, transparent fallback, run only while shown, never stored,
   sent or analysed).
 - **CAM-002-R3**: Mirror MUST flip the camera picture left to right about its vertical center
   line, after it is made upright and before it is scaled to fill, so that the crop stays centered.
-  Its default MUST be on for the front camera and off for the rear camera, and each camera MUST
+  Only the camera picture is flipped; layers drawn over it (the spectrum) are not. Its default MUST be on for the front camera and off for the rear camera, and each camera MUST
   keep its own setting.
 - **CAM-002-R4**: The mirror MUST be applied in one place, the camera layer, so that the screen,
   a saved frame (REC-001), a recording (REC-003) and an external display (OUT-001) all show the
@@ -158,7 +164,8 @@ camera shows the "no front camera" notice.
   NOT be recorded in scenes or show cues (Camera is never recorded there).
 - **CAM-002-R7**: Switching the camera while the visual runs MUST NOT restart the audio source, MUST
   NOT draw any picture from the previously chosen camera after the switch, and MUST show the
-  layer's fallback until the newly chosen camera delivers a picture.
+  layer's fallback until the newly chosen camera delivers a picture. If the new camera cannot
+  start, the usual unavailable or paused notice MUST appear (CAM-001-R6, R8).
 - **CAM-002-R8**: While the front camera is starting or running, the in-app badge MUST read "Front
   camera on" (the rear camera keeps "Camera on"), keep Stop camera, and the status bar MUST NOT be
   hidden (CAM-001-R10, CAM-012).
@@ -218,6 +225,9 @@ tasks.
   camera on" and the controls' values (Front; Mirror on, then off) within 5 seconds each.
 - **CAM-002-S6**: The permission catalog check, the compliance check and the privacy manifest
   check pass; no file writing, network or image analysis is added to the camera path.
+- **CAM-002-S7** (device stage): on D1-D3 the real front camera shows an upright, mirrored
+  picture in portrait and landscape, a saved frame and a recording match the screen, and a switch
+  between cameras shows the new camera within 2 seconds.
 
 ## Assumptions
 
