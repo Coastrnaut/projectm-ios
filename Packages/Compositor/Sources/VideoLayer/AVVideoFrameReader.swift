@@ -18,10 +18,11 @@ import CoreVideo
 import Foundation
 import Metal
 
-/// One decoded picture: the texture and the Core Video object that keeps its pixels alive.
+/// One decoded picture: the texture and the Core Video object that keeps its pixels alive (with the
+/// reader's cache, which the picture may outlive: `CVMetalTextureHold`).
 public struct VideoTextureFrame: @unchecked Sendable {
     public let texture: MTLTexture
-    let wrapper: CVMetalTexture
+    let wrapper: CVMetalTextureHold
     /// Quarter turns clockwise to upright (the track's transform).
     public let rotation: CameraRotation
 }
@@ -91,7 +92,8 @@ public final class AVVideoFrameReader: VideoFrameReading {
             guard CVMetalTextureCacheCreateTextureFromImage(kCFAllocatorDefault, cache, pixels, nil, .bgra8Unorm_srgb, width, height, 0,
                                                             &wrapper) == kCVReturnSuccess,
                   let wrapper, let texture = CVMetalTextureGetTexture(wrapper) else { throw .damaged }
-            return (VideoProbe.nanoseconds(time), VideoTextureFrame(texture: texture, wrapper: wrapper, rotation: loaded.info.rotation))
+            let hold = CVMetalTextureHold(texture: wrapper, cache: cache)
+            return (VideoProbe.nanoseconds(time), VideoTextureFrame(texture: texture, wrapper: hold, rotation: loaded.info.rotation))
         }
     }
 
