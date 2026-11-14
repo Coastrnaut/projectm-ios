@@ -41,12 +41,45 @@ the OS version (major.minor) its golden was recorded on.
 
 ## Review a failure
 
-Rule (until QA-003): pixels identical, or the same size with at most 0.1 % of pixels differing by more
-than 2/255 in any channel. Each failed capture writes `expected.png`, `actual.png`, `diff.png` and
-`summary.txt` to `.build/golden-diffs/<class>/<capture>/` (set `GOLDEN_DIFF_DIR` to change it) and
-appends a line to `.build/golden-diffs/<class>/summary.txt`; the same files are attachments of the
-failed test in the `.xcresult`. In `diff.png`, grey = unchanged, yellow = within 2/255, red = above
-(brighter = larger), magenta = outside the overlap of differently sized images.
+Rule (QA-003, `ImageDiffTolerance.golden`; `specs/133-qa-003-visual-diff`): equal pixel hashes are
+"identical"; otherwise the images must have the same size and, counting only pixels whose largest
+channel difference (alpha included) is above 2/255:
+
+1. a pixel is *forgiven* when, within one pixel, the other image has a matching pixel in both
+   directions (a one-pixel rasterization shift);
+2. at most ⌊0.1 % × pixels⌋ pixels may remain *unmatched* (12 at 128 × 96, 49 at 256 × 192);
+3. no 8-connected cluster of unmatched pixels may exceed 8 pixels (scattered noise passes; a moved,
+   scaled or missing shape fails even when its pixel count is small).
+
+Each failed capture writes `expected.png`, `actual.png`, `diff.png` and `summary.txt` to
+`.build/golden-diffs/<class>/<capture>/` (set `GOLDEN_DIFF_DIR` to change it) and appends a line to
+`.build/golden-diffs/<class>/summary.txt`; the same files are attachments of the failed test in the
+`.xcresult`. The summary names the failed rules (`count`, `cluster`, `ssim`, `size`) and gives the
+changed, exceeding, forgiven and unmatched counts, the largest channel difference, the largest
+cluster, the bounding box of the differences and the mean luma SSIM. In `diff.png`, grey = unchanged,
+yellow = within 2/255, orange = forgiven as a shift, red = unmatched (brighter = larger), magenta =
+outside the overlap of differently sized images, cyan = outline of the bounding box.
+
+## Compare images in other tests (QA-003)
+
+`ImageDiff` (module `GoldenImages`, Foundation-free, runs on Linux) compares any two RGBA8
+`GoldenImage`s:
+
+```swift
+let report = ImageDiff.compare(expected: golden, actual: frame, tolerance: .golden)
+XCTAssertTrue(report.passed, report.summary)
+```
+
+| Preset | Colour | Allowed unmatched | Shift radius | Largest cluster | Use |
+|---|---|---|---|---|---|
+| `.exact` | 0 | 0 | 0 | — | output that is deterministic by construction |
+| `.qa002` | 2/255 | 0.1 % | 0 | — | QA-002's original colour-only rule |
+| `.golden` (default) | 2/255 | 0.1 % | 1 | 8 | GPU goldens |
+
+Custom: `ImageDiffTolerance(channelThreshold:allowedFraction:maxExceedingPixels:neighborhoodRadius:maxClusterPixels:minimumSSIM:)`
+(colour 0-255, radius 0-8; `maxExceedingPixels` caps the fraction's count; `minimumSSIM` is opt-in,
+because single noise pixels lower SSIM sharply). Run-to-run determinism checks keep comparing pixel
+hashes.
 
 ## Re-record on purpose
 

@@ -36,8 +36,10 @@ final class SceneForwardCompatibilityTests: XCTestCase {
         XCTAssertEqual(d.extra.keys.sorted(), ["cues"])
 
         // It still opens: the unknown kind and blend mode are warnings, the unknown layer is not shown.
+        // MOD-004 defined `curve`; this one ("power" instead of "exponent") cannot be read, so its binding is
+        // kept verbatim (above) and reported, not applied.
         let loaded = try d.liveState(registry: try SceneFixtures.registry(), assets: FakeAvailability())
-        XCTAssertEqual(loaded.warnings.map(\.code), [.unknownLayerKind, .unsupportedBlendMode, .unknownAssetType])
+        XCTAssertEqual(loaded.warnings.map(\.code), [.unknownLayerKind, .unsupportedBlendMode, .unknownAssetType, .unsupportedCurve])
         XCTAssertEqual(loaded.state.stack.ids.map(\.rawValue), [4])
     }
 

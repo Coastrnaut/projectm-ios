@@ -488,9 +488,55 @@ struct SceneDecoder {
         let expression = try o["expression"].map { (e: SceneJSON) throws(SceneDecodeError) -> String in
             try string(e, ScenePath.key(path, "expression"))
         }
-        let known: Set<String> = ["source", "target", "input", "output", "mix", "envelope", "expression"]
+        // MOD-004: a readable curve is decoded; anything else stays in `extra` verbatim and restore rejects
+        // the binding (`unsupportedCurve`), so a newer curve kind is never lost or guessed.
+        var curve = MappingCurve.linear
+        var known: Set<String> = ["source", "target", "input", "output", "mix", "envelope", "expression"]
+        if let stored = o["curve"], let read = self.curve(stored, ScenePath.key(path, "curve")) {
+            curve = read
+            known.insert("curve")
+        }
         return SceneBinding(sourceID: sourceID, target: target, mapping: mapping, mix: mix, envelope: envelope, expression: expression,
-                            extra: o.filter { (key: String, _: SceneJSON) -> Bool in !known.contains(key) })
+                            curve: curve, extra: o.filter { (key: String, _: SceneJSON) -> Bool in !known.contains(key) })
+    }
+
+    /// MOD-004's stored curve (contract K8), or nil when this version cannot read it. Unknown fields of a
+    /// readable curve (and of its points) are dropped with `droppedField`; ranges are checked at restore.
+    private mutating func curve(_ value: SceneJSON, _ path: String) -> MappingCurve? {
+        guard let o = value.objectValue, let kind = o["kind"]?.stringValue else { return nil }
+        let number = { (object: [String: SceneJSON], key: String) -> Double? in object[key]?.numberValue?.doubleValue }
+        let curve: MappingCurve
+        var known: Set<String> = ["kind"]
+        var pointObjects: [[String: SceneJSON]] = []
+        switch kind {
+        case "linear":
+            curve = .linear
+        case "easeIn", "easeOut", "easeInOut":
+            guard let p = number(o, "exponent") else { return nil }
+            known.insert("exponent")
+            curve = kind == "easeIn" ? .easeIn(exponent: p) : kind == "easeOut" ? .easeOut(exponent: p) : .easeInOut(exponent: p)
+        case "logarithmic", "exponential":
+            guard let k = number(o, "strength") else { return nil }
+            known.insert("strength")
+            curve = kind == "logarithmic" ? .logarithmic(strength: k) : .exponential(strength: k)
+        case "piecewise":
+            guard let items = o["points"]?.arrayValue else { return nil }
+            known.insert("points")
+            var points: [CurvePoint] = []
+            for item in items {
+                guard let po = item.objectValue, let x = number(po, "x"), let y = number(po, "y") else { return nil }
+                points.append(CurvePoint(x: x, y: y))
+                pointObjects.append(po)
+            }
+            curve = .piecewise(points)
+        default:
+            return nil
+        }
+        dropUnknown(o, known: known, path: path)
+        for (i, po) in pointObjects.enumerated() {
+            dropUnknown(po, known: ["x", "y"], path: ScenePath.index(ScenePath.key(path, "points"), i))
+        }
+        return curve
     }
 
     private mutating func modulation(_ value: SceneJSON, _ path: String) throws(SceneDecodeError) -> SceneModulation {

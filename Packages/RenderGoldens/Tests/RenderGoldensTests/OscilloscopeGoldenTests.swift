@@ -117,7 +117,7 @@ final class OscilloscopeGoldenTests: XCTestCase {
             var comparison: GoldenComparisonResult?
             if let entry = manifest?.entry(scene: run.name, width: resolution.width, frame: frame), let golden = store?.image(entry) {
                 expected = golden
-                comparison = GoldenComparison.compare(expected: golden, actual: actual)
+                comparison = GoldenComparison.compare(expected: golden, actual: actual, tolerance: .golden)
             }
             let verdict = GoldenDecision.decide(capture: capture, platform: platform, policy: policy, comparison: comparison,
                                                 osSensitive: false, recordedOS: manifest?.recordedOS, currentOS: GoldenOS.currentVersion)
