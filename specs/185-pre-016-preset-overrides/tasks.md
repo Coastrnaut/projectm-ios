@@ -20,27 +20,27 @@ Budgets (owner rule 7): unit ≤ 10 s, package suite < 1 min, UI test < 30 s.
 
 **Independent test**: overrides for 2-3 parameters of a fixture preset → loaded data carries them, source byte-identical, survives a new store.
 
-- [ ] PRE-016-T07 [US1] Loader hook: `RendererPresetLoader.overrides` and overlay of the original bytes in `load`; `originalData(for:)` in `Apps/projectM-iOS/Coordinators/AppCoordinator.swift`
-- [ ] PRE-016-T08 [US1] `PresetOverridesCoordinator` (store, originals, set on drag end, reload on screen, library-lane announcements) in `Apps/projectM-iOS/Coordinators/PresetOverridesCoordinator.swift`; `overrides` property on `PresetCoordinator`; construction in `AppCoordinator` (R11: the store lives in `PresetCollections/`, which `-uitestResetNotice` already removes; verified by the UI test starting with Original values)
-- [ ] PRE-016-T09 [US1] `PresetOverridesView` sheet (sliders with `.accessibleParameter`, value + original labels, per-row reset, Reset to Original, note) in `Apps/projectM-iOS/Views/PresetOverridesView.swift`; menu item "Adjust Parameters…" + sheet in `Apps/projectM-iOS/Views/PresetBrowserView.swift`
-- [ ] PRE-016-T10 [US1] Acceptance test (overlay applied on load, Included file byte-identical, relaunch) in `Apps/projectM-iOS/Tests/PresetOverridesAcceptanceTests.swift`
+- [X] PRE-016-T07 [US1] Loader hook: `RendererPresetLoader.overrides` and overlay of the original bytes in `load`; `originalData(for:)` in `Apps/projectM-iOS/Coordinators/AppCoordinator.swift` — Verified 2026-11-14: `PresetOverridesAcceptanceTests` (2 tests, 0.2 s) pass on simulator PRE16 iPhone 17 (iOS 27.2): loaded data carries 3 overrides, Included file byte-identical, relaunch applies them, Reset loads the original file (no data) and reads the original values
+- [X] PRE-016-T08 [US1] `PresetOverridesCoordinator` (store, originals, set on drag end, reload on screen, library-lane announcements) in `Apps/projectM-iOS/Coordinators/PresetOverridesCoordinator.swift`; `overrides` property on `PresetCoordinator`; construction in `AppCoordinator` (R11: the store lives in `PresetCollections/`, which `-uitestResetNotice` already removes; verified by the UI test starting with Original values) — Verified 2026-11-14: `PresetOverridesAcceptanceTests` (2 tests, 0.2 s) pass on simulator PRE16 iPhone 17 (iOS 27.2): loaded data carries 3 overrides, Included file byte-identical, relaunch applies them, Reset loads the original file (no data) and reads the original values
+- [X] PRE-016-T09 [US1] `PresetOverridesView` sheet (sliders with `.accessibleParameter`, value + original labels, per-row reset, Reset to Original, note) in `Apps/projectM-iOS/Views/PresetOverridesView.swift`; menu item "Adjust Parameters…" + sheet in `Apps/projectM-iOS/Views/PresetBrowserView.swift` — Verified 2026-11-14: `PresetOverridesUITests.testAdjustZoomThenResetReturnsTheOriginalValue` passes in 22.5 s (simulator, not device evidence)
+- [X] PRE-016-T10 [US1] Acceptance test (overlay applied on load, Included file byte-identical, relaunch) in `Apps/projectM-iOS/Tests/PresetOverridesAcceptanceTests.swift` — Verified 2026-11-14: `PresetOverridesAcceptanceTests` (2 tests, 0.2 s) pass on simulator PRE16 iPhone 17 (iOS 27.2): loaded data carries 3 overrides, Included file byte-identical, relaunch applies them, Reset loads the original file (no data) and reads the original values
 
 ## Phase 4: User Story 2 — Reset to original (P1)
 
-- [ ] PRE-016-T11 [US2] Reset in coordinator and store; acceptance: after reset the loaded bytes equal the original exactly, in `Apps/projectM-iOS/Tests/PresetOverridesAcceptanceTests.swift`
-- [ ] PRE-016-T12 [US2] Prune overrides when a user preset is removed in `Apps/projectM-iOS/Coordinators/UserPresetsCoordinator.swift`
-- [ ] PRE-016-T13 [US2] UI test < 30 s: adjust Zoom, reset, label returns to the original, in `Apps/projectM-iOS/UITests/PresetOverridesUITests.swift`
+- [X] PRE-016-T11 [US2] Reset in coordinator and store; acceptance: after reset the loaded bytes equal the original exactly, in `Apps/projectM-iOS/Tests/PresetOverridesAcceptanceTests.swift` — Verified 2026-11-14: `PresetOverridesAcceptanceTests` (2 tests, 0.2 s) pass on simulator PRE16 iPhone 17 (iOS 27.2): loaded data carries 3 overrides, Included file byte-identical, relaunch applies them, Reset loads the original file (no data) and reads the original values
+- [X] PRE-016-T12 [US2] Prune overrides when a user preset is removed in `Apps/projectM-iOS/Coordinators/UserPresetsCoordinator.swift` — Verified 2026-11-14: build plus `UserPresetsCoordinatorTests` (27) pass; prune path covered by `testRefusalsAndRowResetsChangeOnlyWhatTheySay`
+- [X] PRE-016-T13 [US2] UI test < 30 s: adjust Zoom, reset, label returns to the original, in `Apps/projectM-iOS/UITests/PresetOverridesUITests.swift` — Verified 2026-11-14: `PresetOverridesUITests.testAdjustZoomThenResetReturnsTheOriginalValue` passes in 22.5 s (simulator, not device evidence)
 
 ## Phase 5: User Story 3 — Overrides travel with the library (P2)
 
 - [X] PRE-016-T14 [US3] FILE-005: folders, format path, contents read, archive write/read, records, restore plan (section `overrides`), installer staging in `Packages/LibraryBackup/Sources/LibraryBackup/` — Verified 2026-11-14: `swift test --package-path Packages/LibraryBackup`, 77 tests pass (3 new) in 13.6 s
-- [ ] PRE-016-T15 [US3] FILE-011: Collections inventory counts presets with overrides in `Packages/LibraryBackup/Sources/LibraryBackup/LibraryEraseInventory.swift`; restore section label in `Apps/projectM-iOS/Coordinators/LibraryBackupCoordinator.swift`
+- [X] PRE-016-T15 [US3] FILE-011: Collections inventory counts presets with overrides in `Packages/LibraryBackup/Sources/LibraryBackup/LibraryEraseInventory.swift`; restore section label in `Apps/projectM-iOS/Coordinators/LibraryBackupCoordinator.swift` — Verified 2026-11-14: `LibraryBackupPresetOverrideTests.testEraseOfCollectionsRemovesOverrides`; app builds with the section label; LibraryBackupAppTests/LibraryEraseAppTests pass
 - [X] PRE-016-T16 [US3] Tests: backup round trip, restore choices, erase count in `Packages/LibraryBackup/Tests/LibraryBackupTests/LibraryBackupPresetOverrideTests.swift` — Verified 2026-11-14: `swift test --package-path Packages/LibraryBackup`, 77 tests pass (3 new) in 13.6 s
 
 ## Phase 6: Polish
 
-- [ ] PRE-016-T17 Type-check budget build (`-warn-long-function-bodies=300 -warn-long-expression-type-checking=150`), no new warnings
-- [ ] PRE-016-T18 Repo checks (compliance, validate_docs, motion policy, permission catalog, status events, script tests), privacy manifest and network symbols on the built Debug app
+- [X] PRE-016-T17 Type-check budget build (`-warn-long-function-bodies=300 -warn-long-expression-type-checking=150`), no new warnings — Verified 2026-11-14: build-for-testing with -warn-long-function-bodies=300 -warn-long-expression-type-checking=150 shows no warning in any touched file
+- [X] PRE-016-T18 Repo checks (compliance, validate_docs, motion policy, permission catalog, status events, script tests), privacy manifest and network symbols on the built Debug app — Verified 2026-11-14: compliance, validate_docs, motion policy, permission catalog, status events OK; test_scripts 159 OK; check_privacy_manifest OK; check_network_symbols OK (19 images)
 - [ ] PRE-016-T19 Delete simulator and derived data, PosterBoard count after
 
 ## Dependencies
