@@ -6,6 +6,7 @@
 //   (ACC-006), shown and hidden without animation (ACC-011-R7).
 // * `StatusEventChanges`: the `.onChange`s that post rows X6-X14a and X21-X23, kept out of
 //   VisualizerView's body (one modifier line there).
+import PresentationLifecycle
 import SwiftUI
 
 struct StatusCaptionView: View {
@@ -31,25 +32,39 @@ struct StatusCaptionView: View {
 struct StatusEventChanges: ViewModifier {
     let coordinator: AppCoordinator
 
+    // Three typed steps in the original order: one chain of seven `onChange`s took 229 ms to type-check
+    // (budget 200 ms, 2026-11-14; CI's Xcode 26 gives up on long chains).
     func body(content: Content) -> some View {
-        content
+        captureChanges(recordingResultChanges(recordingChanges(content)))
+    }
+
+    /// Blackout and recording state rows (X9, X10, X21-X23).
+    private func recordingChanges(_ view: some View) -> some View {
+        view
             // X21-X23 (ACC-004-R5 texts, research D3): by phase, whichever control or key caused it.
-            .onChange(of: coordinator.externalDisplay.blackoutPhase) { _, phase in
+            .onChange(of: coordinator.externalDisplay.blackoutPhase) { (_: OutputBlackout.Phase, phase: OutputBlackout.Phase) in
                 post(StatusEventCatalog.blackout(phase))
             }
             // X9, X10: entering recording or finishing (a direct recording → idle also says "Recording stopped").
-            .onChange(of: coordinator.videoRecording.state) { old, new in
-                let state: VideoRecordingCoordinator.State = new == .idle && old == .recording ? .finishing : new
-                if state != .idle {
-                    post(StatusEventCatalog.recording(state, elapsed: coordinator.videoRecording.elapsedText))
-                }
+            .onChange(of: coordinator.videoRecording.state) { (old: VideoRecordingCoordinator.State, new: VideoRecordingCoordinator.State) in
+                recordingStateChanged(from: old, to: new)
             }
+    }
+
+    /// Recording notices and the finished recording's offer (X11-X14a).
+    private func recordingResultChanges(_ view: some View) -> some View {
+        view
             .onChange(of: coordinator.videoRecording.notice) { _, notice in   // X12-X14a
                 if let notice { post(StatusEventCatalog.recordingNotice(notice)) }
             }
             .onChange(of: coordinator.videoRecording.offered != nil) { _, offered in   // X11
                 if offered { post(StatusEventCatalog.recording(.idle)) }
             }
+    }
+
+    /// Frame capture and sharing rows (X6-X8).
+    private func captureChanges(_ view: some View) -> some View {
+        view
             .onChange(of: coordinator.frameCapture.notice) { _, notice in   // X6
                 if let notice { post(StatusEventCatalog.frameNotice(notice)) }
             }
@@ -59,6 +74,13 @@ struct StatusEventChanges: ViewModifier {
             .onChange(of: coordinator.captureShare.notice) { _, notice in   // X8
                 if let notice { post(StatusEventCatalog.shareNotice(notice)) }
             }
+    }
+
+    private func recordingStateChanged(from old: VideoRecordingCoordinator.State, to new: VideoRecordingCoordinator.State) {
+        let state: VideoRecordingCoordinator.State = new == .idle && old == .recording ? .finishing : new
+        if state != .idle {
+            post(StatusEventCatalog.recording(state, elapsed: coordinator.videoRecording.elapsedText))
+        }
     }
 
     private func post(_ event: StatusEvent) {
