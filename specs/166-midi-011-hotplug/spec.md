@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (MIDI-011-T01-T11 verified on the Mac with the scripted MIDI system; device task T12 `{device}` open)
 
 **Input**: User description: "Implement MIDI-011 (MIDI hot-plug recovery) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Reattach matching endpoints without duplicate subscriptions." Acceptance, verbatim:
