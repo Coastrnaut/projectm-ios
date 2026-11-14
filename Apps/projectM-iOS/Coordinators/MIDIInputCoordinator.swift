@@ -8,6 +8,8 @@
 //   change (plug, unplug). Network MIDI is never listed (ADR-0038), so it is never connected.
 // * The ring is drained on the main actor by a `CADisplayLink` capped at 30 Hz; each non-empty batch (or a change
 //   of the clock, active sensing or dropped counters) goes to every client. Tests drive `drain()` directly.
+// * MIDI-011: the provider repairs connections on hot-plug by itself; when it reports a lost source, the next drain
+//   runs the state observers first (held keys are released).
 // Nothing here logs or stores messages or names an endpoint (MIDI-002-R7).
 import Foundation
 import Observation
@@ -28,6 +30,8 @@ final class MIDIInputCoordinator {
     private let drivesDisplayLink: Bool
     private var batch: [MIDIEvent] = []
     private var lastCounters: Int = 0
+    /// MIDI-011-R5: the provider's loss count at the last drain.
+    private var lastLossCount: Int = 0
 
     init(service: MIDIInputService, discovery: MIDIDiscoveryCoordinator, drivesDisplayLink: Bool = true) {
         self.service = service
@@ -41,6 +45,8 @@ final class MIDIInputCoordinator {
     var isReceiving: Bool { service.state.isReceiving }
     var isDiscoveryListening: Bool { discovery.state.isListening }
     var hasClients: Bool { !clients.isEmpty }
+    /// MIDI-011-R5: increases each time the input saw a connected source go away (even if it came straight back).
+    var sourceLossCount: Int { service.sourceLossCount }
 
     func addClient(_ name: String, handler: @escaping BatchHandler) {
         clients[name] = handler
@@ -92,6 +98,11 @@ final class MIDIInputCoordinator {
 
     /// Moves queued events to the clients (display rate in the app; called directly by tests).
     func drain() {
+        let losses: Int = service.sourceLossCount
+        if losses != lastLossCount {   // MIDI-011-R5: observers release held keys before newer messages arrive
+            lastLossCount = losses
+            for observer in stateObservers { observer() }
+        }
         batch.removeAll(keepingCapacity: true)
         service.ring.drain(into: &batch, maxCount: Self.drainLimit)
         let counters: Int = service.ring.clockCount &+ service.ring.activeSensingCount &+ service.ring.dropped

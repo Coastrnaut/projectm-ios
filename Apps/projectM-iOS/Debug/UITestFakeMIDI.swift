@@ -5,6 +5,8 @@
 // output ("Fake Synth", an app's endpoint); the panel's buttons plug and unplug "Fake Keys", a device
 // with one input and one output and fixed unique numbers, so a replug keeps its IDs. Discovery, the
 // coalescing delay and the list are the app's real code.
+// MIDI-011: the input runs over a scripted source system with endpoint handles (a new handle per plug), so the
+// app's input reattaches Fake Keys through its own subscriptions, as after a real replug.
 #if DEBUG
 import Foundation
 import PerformanceControl
@@ -17,9 +19,9 @@ enum UITestFakeMIDI {
     static let keysInputID: Int32 = 0x5000_0010
     static let keysOutputID: Int32 = 0x5000_0011
 
-    static let provider = ScriptedMIDIEndpointProvider(records: [
-        MIDIEndpointRecord(uniqueID: synthID, direction: .destination, displayName: "Fake Synth", isVirtual: true),
-    ])
+    static let synth = MIDIEndpointRecord(uniqueID: synthID, direction: .destination, displayName: "Fake Synth", isVirtual: true)
+
+    static let provider = ScriptedMIDIEndpointProvider(records: [synth])
 
     static let keys: [MIDIEndpointRecord] = [
         MIDIEndpointRecord(uniqueID: keysInputID, direction: .source, displayName: "Fake Keys",
@@ -28,9 +30,13 @@ enum UITestFakeMIDI {
                            endpointName: "Port 1", entityName: "Fake Keys", deviceName: "Fake Keys"),
     ]
 
-    /// MIDI-002: the stand-in input; it delivers only while the monitor receives and Fake Keys (an input) is
-    /// connected, like a real port.
-    static let inputProvider = ScriptedMIDIInputProvider()
+    /// MIDI-011: the stand-in system behind the input, with endpoint handles: every plug of Fake Keys gets a new
+    /// handle, and the input reconnects it through its own subscriptions (one live connection per endpoint).
+    static let sourceSystem = ScriptedMIDISourceSystem(records: [synth])
+
+    /// MIDI-002: the stand-in input; it delivers only while a client receives and Fake Keys (an input) is connected,
+    /// once per live connection, like a real port.
+    static let inputProvider = ScriptedMIDISourceInputProvider(system: sourceSystem)
 
     /// MIDI-002: the input over the stand-in when the launch arguments ask for it.
     static func inputServiceIfRequested() -> MIDIInputService? {
@@ -39,22 +45,27 @@ enum UITestFakeMIDI {
 
     /// Control change, channel 1, controller 7, value 100.
     static func sendControlChange() {
-        inputProvider.send([0xB0, 0x07, 0x64], timestamp: DispatchTime.now().uptimeNanoseconds)
+        send([0xB0, 0x07, 0x64], timestamp: DispatchTime.now().uptimeNanoseconds)
     }
 
     /// Note on, channel 1, note 60 (C4), velocity 100.
     static func sendNote() {
-        inputProvider.send([0x90, 0x3C, 0x64], timestamp: DispatchTime.now().uptimeNanoseconds)
+        send([0x90, 0x3C, 0x64], timestamp: DispatchTime.now().uptimeNanoseconds)
     }
 
     /// MIDI-007: program change, channel 1, program 5.
     static func sendProgramChange() {
-        inputProvider.send([0xC0, 0x05], timestamp: DispatchTime.now().uptimeNanoseconds)
+        send([0xC0, 0x05], timestamp: DispatchTime.now().uptimeNanoseconds)
     }
 
     /// MIDI-008: a CC button press and release, channel 1, controller 20: 127 then 0 (one packet list).
     static func sendControlButton() {
-        inputProvider.send([0xB0, 0x14, 0x7F, 0xB0, 0x14, 0x00], timestamp: DispatchTime.now().uptimeNanoseconds)
+        send([0xB0, 0x14, 0x7F, 0xB0, 0x14, 0x00], timestamp: DispatchTime.now().uptimeNanoseconds)
+    }
+
+    /// Fake Keys' input sends these bytes now.
+    private static func send(_ bytes: [UInt8], timestamp: UInt64) {
+        inputProvider.send(bytes, from: keysInputID, timestamp: timestamp)
     }
 
     /// Discovery over the stand-in when the launch arguments ask for it.
@@ -64,10 +75,14 @@ enum UITestFakeMIDI {
 
     static func plugKeys() {
         let present: Bool = provider.currentEndpoints().contains { (record: MIDIEndpointRecord) -> Bool in record.uniqueID == keysInputID }
-        if !present { provider.plug(keys) }
+        if !present {
+            sourceSystem.plug(keys)   // MIDI-011: new handles, as after a real replug
+            provider.plug(keys)
+        }
     }
 
     static func unplugKeys() {
+        sourceSystem.unplug(uniqueIDs: [keysInputID, keysOutputID])
         provider.unplug(uniqueIDs: [keysInputID, keysOutputID])
     }
 }

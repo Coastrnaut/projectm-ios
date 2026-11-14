@@ -8,6 +8,7 @@
 // * Triggers: every batch goes through `MIDINoteRouter` (edges only, velocity 0 = release); its commands go to
 //   `performNotes`. Triggers announce nothing here: the actions announce on their own lanes (cue, status events).
 // * Stuck notes (MIDI-006-R6): held keys are released when the input stops receiving, when the listed inputs shrink,
+//   when the input reports a lost source (MIDI-011-R5: a quick replug),
 //   and when a held binding is deleted, replaced, moved or undone.
 // * MIDI-008 (specs/157-midi-008-transport, contract T4): the section is "Transport" (Play/Pause, Play, Pause and the
 //   MIDI-006 rows). Learn also accepts a CC button press (controller 0–119, value ≥ 64) and real-time Start/Continue/Stop
@@ -214,8 +215,10 @@ extension MIDIMappingCoordinator {
     /// Called on every input state change: release all when the input stops or a listed input disappears.
     func releaseNotesIfInputChanged() {
         let sources: Set<MIDIEndpointID> = input.listedSources
-        let lost: Bool = !lastSources.isSubset(of: sources)
+        let losses: Int = input.sourceLossCount   // MIDI-011-R5: a source went away, even briefly
+        let lost: Bool = !lastSources.isSubset(of: sources) || losses != lastLossCount
         lastSources = sources
+        lastLossCount = losses
         if !input.isReceiving || lost { releaseAllNotes() }
     }
 }

@@ -95,6 +95,8 @@ final class MIDIMappingCoordinator {
     @ObservationIgnored var sceneSession = MIDILearnSession<String>()
     /// MIDI-006-R6: the listed inputs at the last state change (a shrink releases held notes).
     @ObservationIgnored var lastSources: Set<MIDIEndpointID> = []
+    /// MIDI-011-R5: the input's loss count at the last state change (a change releases held notes).
+    @ObservationIgnored var lastLossCount: Int = 0
 
     @ObservationIgnored let learnable: [ParameterDescriptor]
     @ObservationIgnored private let registry: ParameterRegistry
