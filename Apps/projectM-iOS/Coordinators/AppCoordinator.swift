@@ -237,8 +237,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let texts: TextOverlayCoordinator
     /// SHOW-001: the manual cue list.
     let show: ShowCoordinator
-    /// SCN-007: the cues' resolved transitions (recorded until the CMP-014 bus drives the live output).
-    @ObservationIgnored let cueTransitions = CueTransitionRecorder()
+    /// SCN-007, XFADE: the cues' resolved transitions, blended out on the shown compositor visual.
+    @ObservationIgnored let cueTransitions = CueTransitionStage()
     /// UIX-002: the quick scene switcher's overlay state (AppCoordinator+SceneSwitcher.swift).
     let sceneSwitcher = SceneSwitcherModel()
     /// SCN-006: scene preview pictures for the switcher and Scene Folders (AppCoordinator+ScenePreviews.swift).

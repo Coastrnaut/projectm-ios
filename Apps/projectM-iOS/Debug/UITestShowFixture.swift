@@ -5,6 +5,8 @@
 // SCN-012: `-uitestShowRepairSeed` instead seeds three cues for SceneRepairUITests: "Opening" (Circular,
 // applied), "Broken" (a photo that is not stored, a Circular layer and a mapping to a parameter this
 // version does not know) and "Future" (a scene file of format version 2).
+// XFADE: `-uitestShowTransitionSeed` seeds two Text cues, "Intro" (applied) and "Outro" with a 2 s linear
+// crossfade (CueTransitionUITests: the transition shows on screen).
 #if DEBUG
 import Foundation
 import ParameterGraph
@@ -22,6 +24,7 @@ enum UITestShowFixture {
 
     static func seedIfRequested(_ coordinator: AppCoordinator) {
         if ProcessInfo.processInfo.arguments.contains(repairArgument) { return seedRepairShow(coordinator) }
+        if ProcessInfo.processInfo.arguments.contains(transitionArgument) { return seedTransitionShow(coordinator) }
         guard ProcessInfo.processInfo.arguments.contains(argument), let store = coordinator.show.store else { return }
         var looks: [ShowLook] = []
         var base = coordinator.showLook
@@ -58,6 +61,36 @@ enum UITestShowFixture {
         coordinator.show.replaceForUITests(list)
         let first = ShowSceneSnapshot.document(looks[0], id: sceneID(1), name: labels[0])
         coordinator.applyShowScene(first, warnings: [], refresh: false)
+        coordinator.show.markAppliedForUITests(sceneID(1))
+    }
+
+    // MARK: XFADE
+
+    static let transitionArgument = "-uitestShowTransitionSeed"
+
+    private static func seedTransitionShow(_ coordinator: AppCoordinator) {
+        guard let store = coordinator.show.store else { return }
+        var intro = coordinator.showLook
+        intro.photoID = nil
+        intro.videoID = nil
+        intro.glowEnabled = false
+        intro.visual = .text
+        intro.text = TextOverlaySpec(message: "Intro")
+        var outro = intro
+        outro.text = TextOverlaySpec(message: "Outro")
+        let documents = [ShowSceneSnapshot.document(intro, id: sceneID(1), name: "Intro"),
+                         ShowSceneSnapshot.document(outro, id: sceneID(2), name: "Outro")]
+        var list = ShowCueList(id: UUID(uuidString: "5E0E0000-0000-4000-8000-000000000003")!, name: "UI Test Transition Show")
+        for (index, document) in documents.enumerated() {
+            try? store.saveScene(document)
+            _ = try? list.append(sceneID: document.id, label: document.name, cueID: cueID(index + 1))
+        }
+        if let fade = try? ShowCueTransition(type: .crossfade, durationSeconds: 2, easing: .linear) {
+            _ = try? list.setTransition(cueID(2), to: fade)
+        }
+        list.go(to: cueID(1))
+        coordinator.show.replaceForUITests(list)
+        coordinator.applyShowScene(documents[0], warnings: [], refresh: false)
         coordinator.show.markAppliedForUITests(sceneID(1))
     }
 

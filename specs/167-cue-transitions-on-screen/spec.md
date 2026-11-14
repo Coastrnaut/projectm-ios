@@ -4,7 +4,10 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (XFADE-T01-T08 verified on the Mac: Compositor host tests and the feature's own
+iOS 27.2 simulator "XFADE"; no device claim). Compositor 518 tests (7 skipped, pre-existing; 9 new), app
+`CueTransitionStageTests` 2, `CueTransitionUITests.testACueCrossfadeShowsOnScreen` 7.5 s. Open follow-up: native
+visuals and projectM still change with a cut (their frames do not pass through a compositor output pass).
 
 **Input**: Follow-up to CMP-014 (transition bus, ADR-0042) and SCN-007 (transition presets,
 `specs/158-scn-007-transition-presets`); not a new roadmap row. SCN-007 stores a transition per cue and
