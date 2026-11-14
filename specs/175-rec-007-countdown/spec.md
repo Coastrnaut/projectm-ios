@@ -37,6 +37,15 @@ human interaction); each answer is the conservative, local-first option.
 - Q: How is a countdown cancelled? → A: By tapping Record again (it reads "Cancel countdown" while counting), by the on-screen Cancel button, or by Escape on a hardware keyboard. Leaving the visualizer, going to the background, the shown visual changing or being lost, the output being blacked out and Pause also cancel it.
 - Q: What does "starts once" mean for a tap at the last instant? → A: A Record tap in the last 0.25 s of the countdown or in the first 0.5 s of the recording it started is ignored: it neither cancels, starts a second recording nor stops the one just started. The Cancel button and Escape are explicit and still cancel up to completion.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Is the countdown number shown in the recording or on an external display? → A: No. It is app UI on the device screen only, like the recording indicator (REC-003-R16); the recorded picture and the external output never show it.
+- Q: How is a cancellation shown? → A: As a transient status caption (4 s, ACC-011-R7) and an announcement on the recording lane: "Countdown cancelled" for the user's own cancel, "Countdown cancelled: <reason>." for an automatic one (for example "Countdown cancelled: the app went to the background."). No persistent notice: nothing needs the user's action.
+- Q: Does the countdown stay visible when the controls hide? → A: Yes. The number and its Cancel button sit with the recording indicator, which never hides; the controls keep their own auto-hide.
+- Q: Does the countdown count toward the 10-minute limit or the recording's elapsed time? → A: No. The recording, its elapsed time and its limit start at zero when the countdown completes.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Start a recording after a countdown (Priority: P1)
@@ -80,6 +89,8 @@ recordings folder, state idle; advancing the clock past 3 s still starts nothing
 - The setting changed during a countdown: the running countdown keeps its length; the change applies to the next Record.
 - VoiceOver: each second is announced on the recording lane ("Recording in 3", "2", "1"), then "Recording started".
 - Reduce Motion, and always: the number changes without any animation (no pulsing, no scaling).
+- The controls auto-hide during a countdown: the number and Cancel stay visible.
+- An external display or the recorded picture never shows the countdown.
 
 ## Requirements *(mandatory)*
 
@@ -87,11 +98,11 @@ recordings folder, state idle; advancing the clock past 3 s still starts nothing
 
 - **REC-007-R1**: The app MUST offer a recording countdown with exactly these values: Off (default), 3 s, 5 s, 10 s. Off MUST start a recording at the Record tap as before.
 - **REC-007-R2**: With a countdown, Record MUST first apply the existing start refusals; when none applies it MUST enter a counting-down state with the remaining whole seconds, and MUST NOT create a file or a writer, arm the audio tap or read storage until the countdown completes.
-- **REC-007-R3**: The remaining seconds MUST decrease by one each second from the countdown's own start time (no drift), and at zero exactly one recording MUST start through the normal start path (all refusals, profile, rate, storage checks applied again).
+- **REC-007-R3**: The remaining seconds MUST decrease by one each second from the countdown's own start time (no drift), and at zero exactly one recording MUST start through the normal start path (all refusals, profile, rate, storage checks applied again); its elapsed time and 10-minute limit start at zero then.
 - **REC-007-R4**: Tapping Record during a countdown, the countdown's Cancel button and Escape MUST cancel it; a Record tap in the last 0.25 s of the countdown or the first 0.5 s of the recording it started MUST be ignored.
 - **REC-007-R5**: Going to the background, leaving the visualizer, the shown visual changing or being lost, a stopped frame loop, a blackout and Pause MUST cancel a countdown.
-- **REC-007-R6**: A cancelled countdown MUST leave the state idle, no file, no writer and nothing scheduled; it MUST show and announce "Countdown cancelled" (with the reason for automatic cancellations).
-- **REC-007-R7**: While counting, the visualizer MUST show the remaining number as an accessible element ("Recording in 3") with a Cancel button, the Record control MUST read "Cancel countdown", and each second MUST be announced through the status router on the recording lane. Nothing MUST animate.
+- **REC-007-R6**: A cancelled countdown MUST leave the state idle, no file, no writer and nothing scheduled; it MUST show a transient caption and announce "Countdown cancelled" (user) or "Countdown cancelled: <reason>." (automatic).
+- **REC-007-R7**: While counting, the visualizer MUST show the remaining number as an accessible element ("Recording in 3") with a Cancel button, the Record control MUST read "Cancel countdown", and each second MUST be announced through the status router on the recording lane. Nothing MUST animate. The number and Cancel MUST stay visible while the controls are hidden and MUST NOT appear in the recorded picture or on an external display.
 - **REC-007-R8**: The setting MUST be stored on the device (key `settings.recording.countdown`; values `off`, `3`, `5`, `10`; absent or unknown reads as Off), backed up with the library settings, erased with the Settings category and reset by the UI-test reset.
 - **REC-007-R9**: The setting MUST be in Settings as its own "Recording countdown" section under "Recording frame rate"; VoiceOver MUST read each row and its selected state.
 - **REC-007-R10**: Only the Record control starts a countdown; no other trigger (OSC, MIDI, transport) starts, completes or cancels one except the automatic cancellations of R5.
