@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (FX-020-T01-T18 verified on the Mac; device task T19 `{device}` open)
 
 **Input**: User description: "Implement FX-020 (Effect chain presets) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Save ordered filter stacks with parameters in scene documents."
