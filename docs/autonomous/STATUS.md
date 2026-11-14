@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T19:17:18Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T19:20:40Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,26 +9,25 @@
 
 | State | Features |
 |---|---|
-| audited | 115 |
-| implementing | 4 |
+| audited | 113 |
+| implementing | 6 |
 | built | 4 |
-| unit_passed | 1 |
-| integrated | 201 |
+| integrated | 202 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 0 | 84 | 1 |
-| P1 | 34 | 4 | 3 | 1 | 109 | 0 |
-| P2 | 70 | 0 | 1 | 0 | 8 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | built | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 84 | 1 |
+| P1 | 32 | 6 | 3 | 110 | 0 |
+| P2 | 70 | 0 | 1 | 8 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 124 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-013, ANL-015)
+- 123 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-013, ANL-015)
 
 ## Integrated
 
@@ -172,6 +171,7 @@ The physical-device suite may **not** start:
 | PERF-004 | Texture pool | `ea0ee43e0f04` | `feature/perf-004` |
 | PERF-005 | Preset prewarm scheduler | `0c755b4a` | `feature/perf-005` |
 | PERF-006 | Memory warning recovery | `b4281645619e` | `feature/perf-006` |
+| PERF-007 | Frame drop telemetry | `f089007a` | `feature/perf-007` |
 | PERF-010 | Crash-safe session recovery | `7d64b6b027da` | `feature/perf-010` |
 | PERF-011 | Background resource release | `6d669fcb8576` | `feature/perf-011` |
 | PERF-014 | Render failure fallback | `76a8cbf21e15` | `feature/perf-014` |
@@ -1721,7 +1721,7 @@ None.
 - `xcodebuild -scheme Rendering-Package -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `fd72d08eab5d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-006/20261113T143303/sim-test_Rendering.log`)
 - `post-merge: projectM-iOSTests 234 incl. MemoryPressureAppTests; MemoryPressureUITests 3 (projectM, Camera, Photo keep rendering, sourceStarts 1), Video, FrameCapture 2 UI tests on iPhone 17 iOS 27.2 sim; gate ANGLERendering, Rendering, Diagnostics, PresentationLifecycle`: pass at `b4281645619e` (log `.autonomous/logs/integration/perf-006/app-tests.log`)
 
-### PERF-007 Frame drop telemetry (unit_passed)
+### PERF-007 Frame drop telemetry (integrated)
 - `python3 scripts/check_compliance.py`: pass at `ec9d7e48153f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-007/20261114T141129/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `ec9d7e48153f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-007/20261114T141129/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `ec9d7e48153f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-007/20261114T141129/sim-test_ANGLERendering.log`)
@@ -1733,6 +1733,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `ec9d7e48153f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-007/20261114T141129/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `ec9d7e48153f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-007/20261114T141129/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `ec9d7e48153f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-007/20261114T141129/swift-test_ShowControl.log`)
+- `post-merge: projectM-iOSTests 896 + UI 1 (frame-drop overlay)`: pass at `f089007a` (log `.autonomous/logs/integration/batch43/app-tests.log`)
 
 ### PERF-010 Crash-safe session recovery (integrated)
 - `python3 scripts/check_compliance.py`: pass at `26108200f9d2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-010/20261113T170914/compliance.log`)

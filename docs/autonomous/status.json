@@ -11,11 +11,10 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 34,
+   "audited": 32,
    "built": 3,
-   "implementing": 4,
-   "integrated": 109,
-   "unit_passed": 1
+   "implementing": 6,
+   "integrated": 110
   },
   "P2": {
    "audited": 70,
@@ -27,12 +26,11 @@
   }
  },
  "by_state": {
-  "audited": 115,
+  "audited": 113,
   "built": 4,
-  "implementing": 4,
-  "integrated": 201,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "implementing": 6,
+  "integrated": 202,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -97,7 +95,6 @@
    "OUT-011",
    "OUT-013",
    "OUT-014",
-   "PERF-007",
    "PERF-008",
    "PERF-009",
    "PERF-012",
@@ -167,7 +164,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "124 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-013, ANL-015)"
+   "123 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-013, ANL-015)"
   ]
  },
  "features": {
@@ -1873,13 +1870,13 @@
   },
   "OSC-008": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/osc-008",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "OSC-009": {
    "attempts": 0,
@@ -2126,20 +2123,20 @@
    "branch": "feature/perf-007",
    "branch_sha": "ec9d7e48153fadd9d803097fe7f23d8caf407c29",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "f089007a",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "PERF-008": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/perf-008",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "PERF-009": {
    "attempts": 0,
@@ -4124,6 +4121,11 @@
    "sha": "b4281645619e9e3630a0dd6dd5cce9ddd4182046"
   },
   {
+   "branch": "feature/perf-007",
+   "id": "PERF-007",
+   "sha": "f089007a"
+  },
+  {
    "branch": "feature/perf-010",
    "id": "PERF-010",
    "sha": "7d64b6b027dabb9281dfe9505a19e70893d172d6"
@@ -4464,5 +4466,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T19:17:18Z"
+ "updated": "2026-11-14T19:20:40Z"
 }
