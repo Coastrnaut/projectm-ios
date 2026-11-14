@@ -13,8 +13,7 @@
   "P1": {
    "audited": 72,
    "implementing": 7,
-   "integrated": 71,
-   "unit_passed": 1
+   "integrated": 72
   },
   "P2": {
    "audited": 74,
@@ -27,9 +26,8 @@
  "by_state": {
   "audited": 157,
   "implementing": 7,
-  "integrated": 160,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "integrated": 161,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -120,7 +118,6 @@
    "PERF-009",
    "PERF-012",
    "PERF-013",
-   "PRE-003",
    "PRE-004",
    "PRE-005",
    "PRE-006",
@@ -205,7 +202,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "165 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)"
+   "164 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)"
   ]
  },
  "features": {
@@ -2264,10 +2261,10 @@
    "branch": "feature/pre-003",
    "branch_sha": "a01ade94e32769be873eb7cb96c51c62a7731e90",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "ddce41418d7cc402b62021ee6d4d63da5b3c5de2",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "PRE-004": {
    "attempts": 0,
@@ -4082,6 +4079,11 @@
    "sha": "4bad23aa"
   },
   {
+   "branch": "feature/pre-003",
+   "id": "PRE-003",
+   "sha": "ddce41418d7cc402b62021ee6d4d63da5b3c5de2"
+  },
+  {
    "branch": "feature/pre-007",
    "id": "PRE-007",
    "sha": "e834535cb98bf0feac22839feba139ba53f2c2a7"
@@ -4297,5 +4299,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T14:32:19Z"
+ "updated": "2026-11-14T14:32:26Z"
 }
