@@ -6,6 +6,9 @@
 // are marked with `MotionPolicy.safetyFade` so they are never shortened. The visualization itself is
 // content: Reduce Motion changes none of its parameters (Reduce flashing governs flashes, FR-072).
 // `scripts/check_motion_policy.py` fails on an app animation that bypasses this file.
+// CMP-014-R10: a scene transition (the compositor's transition bus) is decorative, so `sceneTransition`
+// resolves it to a cut while Reduce Motion is on; the bus applies the same rule.
+import Compositor
 import SwiftUI
 
 struct MotionPolicy: Equatable {
@@ -38,6 +41,9 @@ struct MotionPolicy: Equatable {
 
     /// Marks a safety fade: returned unchanged whatever the Reduce Motion state (ACC-001-R4).
     static func safetyFade(_ animation: Animation) -> Animation { animation }
+
+    /// CMP-014-R10: the scene transition to run: a cut while Reduce Motion is on, else `spec` unchanged.
+    func sceneTransition(_ spec: SceneTransitionSpec) -> SceneTransitionSpec { spec.resolved(reduceMotion: reduceMotion) }
 }
 
 extension View {

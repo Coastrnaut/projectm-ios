@@ -2,6 +2,7 @@
 // S1-S3). The policy turns decorative animations instant with Reduce Motion on and leaves safety
 // fades alone; a change of the system state reaches observers at once; Reduce flashing still follows
 // Reduce Motion when set to "Follow system" (FR-072). No clock is read.
+import Compositor
 import Observation
 import SwiftUI
 import XCTest
@@ -28,6 +29,15 @@ final class MotionPolicyTests: XCTestCase {
         XCTAssertNil(policy.controlsAnimation)
         XCTAssertEqual(policy.seconds(0.3), 0)
         XCTAssertEqual(policy.controlsTransitionSeconds, 0)
+    }
+
+    /// CMP-014-T11: a scene crossfade is decorative: a cut with Reduce Motion on, unchanged with it off.
+    func testSceneTransitionIsACutWithReduceMotion() throws {
+        let fade = try SceneTransitionSpec(style: .dipToBlack, durationSeconds: 2)
+        XCTAssertEqual(MotionPolicy(reduceMotion: true).sceneTransition(fade), .cut)
+        XCTAssertEqual(MotionPolicy(reduceMotion: true).sceneTransition(.defaultCrossfade), .cut)
+        XCTAssertEqual(MotionPolicy(reduceMotion: false).sceneTransition(fade), fade)
+        XCTAssertEqual(MotionPolicy(reduceMotion: false).sceneTransition(.cut), .cut)
     }
 
     func testReduceMotionOffKeepsDecoration() {
