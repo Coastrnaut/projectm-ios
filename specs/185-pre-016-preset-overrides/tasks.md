@@ -41,7 +41,7 @@ Budgets (owner rule 7): unit ≤ 10 s, package suite < 1 min, UI test < 30 s.
 
 - [X] PRE-016-T17 Type-check budget build (`-warn-long-function-bodies=300 -warn-long-expression-type-checking=150`), no new warnings — Verified 2026-11-14: build-for-testing with -warn-long-function-bodies=300 -warn-long-expression-type-checking=150 shows no warning in any touched file
 - [X] PRE-016-T18 Repo checks (compliance, validate_docs, motion policy, permission catalog, status events, script tests), privacy manifest and network symbols on the built Debug app — Verified 2026-11-14: compliance, validate_docs, motion policy, permission catalog, status events OK; test_scripts 159 OK; check_privacy_manifest OK; check_network_symbols OK (19 images)
-- [ ] PRE-016-T19 Delete simulator and derived data, PosterBoard count after
+- [X] PRE-016-T19 Delete simulator and derived data, PosterBoard count after — Verified 2026-11-14: `xcrun simctl delete` PRE16, derived data removed; PosterBoard reports 25 before and 25 after
 
 ## Dependencies
 
