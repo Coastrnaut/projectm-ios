@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Draft (clarified 2026-11-14)
 
 **Input**: User description: "Implement ACC-008 (High contrast overlay) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Improve readability of control UI over
@@ -69,6 +69,34 @@ interaction); each answer is the conservative option.
 - Q: Which elements are "control UI"? → A: Every element of the audit table: anything with text or a symbol
   drawn over the visualization, shown with or without the controls. Sheets and Settings are not over the
   visual and are out of scope. Applied to ACC-008-R3.
+
+### Session 2026-11-14 (speckit-clarify)
+
+Five questions, each answered by Claude with the recommended option (owner rule 4).
+
+- Q: When does a text style "meet" the target in a fixture, given anti-aliased edges and busy
+  backgrounds? → A: Its glyph core pixels (where the text changes the picture by at least 75% of the
+  style's strong difference) are compared one by one with the same pixel rendered without the text; the
+  5th percentile of those per-pixel ratios must reach the target. Edges and a few unlucky pixels cannot
+  pass a weak style or fail a strong one. Applied to ACC-008-R1, R8.
+- Q: Should the app read the visual's brightness and strengthen the backing only over bright frames (an
+  automatic "Increase backing" mode)? → A: No. A static backing that passes over pure white already covers
+  every frame; reading frames back from the GPU would add work next to the render path (ACC-008-R10) for
+  a difference visible only over dark visuals, where the backing is barely visible anyway. Recorded in
+  research ACC-008-D3. Applied to ACC-008-R2, R10.
+- Q: How dark is the shared backing? → A: The lightest black scrim (in steps of 0.01 opacity) at which the
+  weakest text style still meets 4.5:1 over pure white with the material counted as transparent, kept on
+  top of the element's material, so dark visuals look as before. Opaque with Increase Contrast. Applied to
+  ACC-008-R2, R6, R7.
+- Q: How do accent-coloured text and prominent buttons pass on a dark backing, when no single blue does
+  both? → A: Inside overlays the tint is a lighter blue (ACC-003's increased dark accent, 0x409CFF) for
+  accent text and bordered buttons, and prominent buttons (white text on a filled background) use a darker
+  blue (ACC-003's light accent, 0x0062CC). The camera badge's red bordered Stop uses ACC-003's critical
+  colour. Applied to ACC-008-R5.
+- Q: Is a UI test needed, given the fixtures run as unit tests? → A: One short UI test: a DEBUG probe
+  reports the shared backing's level, and the test checks it is the standard scrim normally and opaque with
+  the Increase Contrast override. It proves the running app uses the measured backing; the contrast
+  numbers come from the fixtures. Applied to ACC-008-R6, S5.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -173,6 +201,8 @@ a deliberately low-contrast label proves the check can fail.
 - **ACC-008-S3**: The fixture table runs in under 10 seconds.
 - **ACC-008-S4**: On D1, over the brightest presets, every control and badge text is readable
   (`{device}`, last stage).
+- **ACC-008-S5**: In the running app the shared backing is at the standard level normally and opaque with
+  Increase Contrast (UI test under 30 seconds).
 
 ## Assumptions
 
