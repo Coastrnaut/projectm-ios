@@ -86,6 +86,21 @@ interaction); each answer is the conservative option that fits the constitution.
   half-float composite (half-float spacing below 1 is at most 4.9e-4, plus float32 transfer-function
   error) and at most 1/255 per channel after 8-bit sRGB output encoding (CMP-004-S1, S2).
 
+### Session 2026-11-14 (speckit-clarify)
+
+- Q: Is there a GPU time limit per mode that the feature must meet? → A: No pass/fail limit on the
+  Mac: the row's "GPU performance" is a measurement of a full-screen two-layer composite per mode
+  (Release, Mac host), recorded with normal as the baseline and labelled "not device evidence"
+  (CMP-004-S6). The owner's short-test rule forbids wall-clock assertions; a device budget belongs to
+  a device stage.
+- Q: Are new RenderGoldens images added for the modes? → A: No. The "snapshots" are the GPU read-back
+  tests, which compare every pixel of a rendered backdrop × source grid with the reference equations
+  (stronger than a stored image, and nothing to re-record). Existing goldens must stay unchanged
+  (CMP-004-S4); adding a golden scene per mode would add six images for no extra coverage.
+- Q: When a mode changes during an opacity fade, is the mode change animated? → A: No. The mode
+  switches at the next frame (like a CMP-005 transform); a running opacity fade continues with the new
+  mode (CMP-004-R6). Cross-fading between two modes would need two composites of the same layer.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Layers combine with the six standard modes (Priority: P1)
