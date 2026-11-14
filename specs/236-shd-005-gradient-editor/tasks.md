@@ -34,3 +34,10 @@
 
 - [ ] SHD-005-T12 Linux shape (VisualGenerators `-DVISUAL_NO_METAL`, Compositor `-DCOMPOSITOR_NO_METAL`), package suites, type-check budget, repo checks (compliance, docs, motion, permission catalog, status events, scripts), privacy manifest and network symbols on the Debug app, `LibraryBackupAppTests` keys test; spec status
 - [ ] SHD-005-T13 {device} Look at a gradient palette with moved stops, alpha and Step on D1
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Coverage: R1-R2 → T02-T03, T05; R3-R4 → T06-T07; R5 → T08, T10; R6 → T04-T05; R7 → T09, T11; R8 → T12.
+S1-S2 → T05; S3 → T05 (Gradient Field golden), T07 (bytes), T10 (mapping); S4 → T11; S5 → T12. Fix applied: T05
+also checks the Step mode's sample just before the next stop equals the held stop (spec edge case "Step exactly at a
+stop"). No constitution conflicts; no unmapped tasks.
