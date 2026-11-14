@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T21:10:54Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T21:16:52Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,10 +9,10 @@
 
 | State | Features |
 |---|---|
-| audited | 97 |
-| implementing | 4 |
-| unit_passed | 2 |
-| integrated | 222 |
+| audited | 95 |
+| implementing | 6 |
+| unit_passed | 1 |
+| integrated | 223 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -20,14 +20,14 @@
 | Priority | audited | implementing | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 22 | 3 | 1 | 125 | 0 |
-| P2 | 64 | 1 | 1 | 13 | 0 |
+| P1 | 20 | 5 | 1 | 125 | 0 |
+| P2 | 64 | 1 | 0 | 14 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 103 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, CAM-004, CAM-005)
+- 102 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, CAM-004, CAM-005)
 
 ## Integrated
 
@@ -188,6 +188,7 @@ The physical-device suite may **not** start:
 | PRE-001 | Visual thumbnail cache | `7b7a78050ada` | `feature/pre-001` |
 | PRE-002 | Thumbnail invalidation | `4bad23aa` | `None` |
 | PRE-003 | Preset tags | `ddce41418d7c` | `feature/pre-003` |
+| PRE-004 | Preset color facets | `0002a60f` | `feature/pre-004` |
 | PRE-006 | Recently played history | `b4fe95151be2` | `feature/pre-006` |
 | PRE-007 | Preset collections | `e834535cb98b` | `feature/pre-007` |
 | PRE-010 | Preset quick audition | `a653f631` | `feature/pre-010` |
@@ -1989,12 +1990,13 @@ None.
 - `swift test --package-path Packages/LibraryBackup`: pass at `a01ade94e327` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-003/20261114T093007/swift-test_LibraryBackup.log`)
 - `swift test --package-path Packages/PresetLibrary`: pass at `a01ade94e327` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-003/20261114T093007/swift-test_PresetLibrary.log`)
 
-### PRE-004 Preset color facets (unit_passed)
+### PRE-004 Preset color facets (integrated)
 - `python3 scripts/check_compliance.py`: pass at `41d0a28b2b8e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-004/20261114T160823/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `41d0a28b2b8e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-004/20261114T160823/docs.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `41d0a28b2b8e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-004/20261114T160823/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/LibraryBackup`: pass at `41d0a28b2b8e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-004/20261114T160823/swift-test_LibraryBackup.log`)
 - `swift test --package-path Packages/PresetLibrary`: pass at `41d0a28b2b8e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-004/20261114T160823/swift-test_PresetLibrary.log`)
+- `post-merge batch59: PresetLibrary 321 (clean build), projectM-iOSTests 982 + UI 2 (color facets, thumbnails)`: pass at `0002a60f` (log `.autonomous/logs/integration/batch59/app-tests.log`)
 
 ### PRE-006 Recently played history (integrated)
 - `python3 scripts/check_compliance.py`: pass at `a1029e8c7b89` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-006/20261114T101617/compliance.log`)
