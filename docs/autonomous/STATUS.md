@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T01:04:13Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T01:08:23Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,18 +10,19 @@
 | State | Features |
 |---|---|
 | audited | 226 |
-| implementing | 2 |
+| implementing | 1 |
+| unit_passed | 1 |
 | integrated | 97 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 5 | 1 | 80 | 1 |
-| P1 | 135 | 1 | 15 | 0 |
-| P2 | 77 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 5 | 1 | 0 | 80 | 1 |
+| P1 | 135 | 0 | 1 | 15 | 0 |
+| P2 | 77 | 0 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -178,6 +179,22 @@ None.
 - `python3 scripts/validate_docs.py`: pass at `bf549085819b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-002/20261113T071424/docs.log`)
 - `swift test --package-path Packages/AnalysisFeatures`: pass at `bf549085819b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-002/20261113T071424/swift-test_AnalysisFeatures.log`)
 - `integration checkout: AnalysisFeatures 46 on iOS 27.2 sim; 46 (1 skipped) with -DANALYSIS_NO_ACCELERATE on the host; 0 PosterBoard reports`: pass at `493269c` (log `.autonomous/logs/integration/anl-002/analysis-sim.log`)
+
+### ANL-003 Spectral smoothing (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `68e2fe502cf5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-003/20261113T200418/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `68e2fe502cf5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-003/20261113T200418/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `68e2fe502cf5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-003/20261113T200418/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `68e2fe502cf5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-003/20261113T200418/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `68e2fe502cf5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-003/20261113T200418/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/AnalysisFeatures`: pass at `68e2fe502cf5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-003/20261113T200418/swift-test_AnalysisFeatures.log`)
+- `swift test --package-path Packages/Compositor`: pass at `68e2fe502cf5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-003/20261113T200418/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `68e2fe502cf5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-003/20261113T200418/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/PerformanceControl`: pass at `68e2fe502cf5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-003/20261113T200418/swift-test_PerformanceControl.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `68e2fe502cf5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-003/20261113T200418/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `68e2fe502cf5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-003/20261113T200418/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `68e2fe502cf5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-003/20261113T200418/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `68e2fe502cf5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-003/20261113T200418/swift-test_ShowControl.log`)
+- `swift test --package-path Packages/VisualGenerators`: pass at `68e2fe502cf5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-003/20261113T200418/swift-test_VisualGenerators.log`)
 
 ### ANL-004 Spectral flux onset detector (integrated)
 - `python3 scripts/check_compliance.py`: pass at `e1aeb82495a0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-004/20261113T082643/compliance.log`)
