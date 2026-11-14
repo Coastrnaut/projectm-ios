@@ -63,23 +63,23 @@ reference per operator; setting tests; UI test.
   group `effect.colorGrade` "Color", ranges/defaults/steps from `ColorGrade`, `.continuousDefault`;
   `Packages/Compositor/Tests/ColorGradeParametersTests/ColorGradeCatalogTests.swift` (validates in a registry,
   matches `ColorGrade`, IDs unique against `VisualParameterCatalog` and `ProceduralMaterialCatalog`). — Verified 2026-11-14: ColorGradeCatalogTests 3/3 (validates, matches ColorGrade ranges/defaults/steps, IDs unique with the visual and material catalogs).
-- [ ] FX-003-T11 [US1] Register the catalog in the app registry
+- [X] FX-003-T11 [US1] Register the catalog in the app registry
   (`Apps/projectM-iOS/Coordinators/SceneArchiveService.swift`) and the golden renderer
-  (`Packages/RenderGoldens/Sources/SceneRenderHarness/GoldenSceneRenderer.swift`).
-- [ ] FX-003-T12 [US1] Create `Apps/projectM-iOS/Coordinators/ColorGradeSetting.swift` (five keys
+  (`Packages/RenderGoldens/Sources/SceneRenderHarness/GoldenSceneRenderer.swift`). — Verified 2026-11-14: SceneArchiveService.appRegistry and GoldenSceneRenderer.registry include ColorGradeCatalog; app unit tests 575/575 (scene, archive, repair suites use appRegistry) and RenderGoldens 39/39.
+- [X] FX-003-T12 [US1] Create `Apps/projectM-iOS/Coordinators/ColorGradeSetting.swift` (five keys
   `settings.colorGrade.*`, "absent, non-number or NaN → neutral; out of range → clamped", `grade`,
-  `resetToNeutral()`, `onChange`, readout texts) and `Apps/projectM-iOS/Tests/ColorGradeSettingTests.swift`.
-- [ ] FX-003-T13 [US1] Add the keys to `Packages/LibraryBackup/Sources/LibraryBackup/LibrarySettings.swift`
-  (`includedKeys`) and `scripts/run_device_tests.py` (`ALLOWED_KEYS`); run LibraryBackup tests and script tests.
-- [ ] FX-003-T14 [US1] Wire the grade: `AppCoordinator` owns `ColorGradeSetting` and pushes `grade` to the Camera,
+  `resetToNeutral()`, `onChange`, readout texts) and `Apps/projectM-iOS/Tests/ColorGradeSettingTests.swift`. — Verified 2026-11-14: ColorGradeSettingTests 7/7 on an own iOS 27.2 simulator (defaults, persistence incl. 0.0 not read as Bool, read rule, clamping, reset, readouts, ACC-012 gain cap).
+- [X] FX-003-T13 [US1] Add the keys to `Packages/LibraryBackup/Sources/LibraryBackup/LibrarySettings.swift`
+  (`includedKeys`) and `scripts/run_device_tests.py` (`ALLOWED_KEYS`); run LibraryBackup tests and script tests. — Verified 2026-11-14: LibraryBackup 44/44; LibraryBackupAppTests and LibraryEraseAppTests key checks pass in the 575 app tests; script tests 153 OK.
+- [X] FX-003-T14 [US1] Wire the grade: `AppCoordinator` owns `ColorGradeSetting` and pushes `grade` to the Camera,
   Photo, Video and Text hosts (`colorGrade` on each host → its compositor) on creation and on change
-  (`Apps/projectM-iOS/Coordinators/AppCoordinator.swift`, `Apps/projectM-iOS/Visuals/*VisualHost.swift`).
-- [ ] FX-003-T15 [US1] Create `Apps/projectM-iOS/Views/ColorGradeSection.swift` (five sliders with
+  (`Apps/projectM-iOS/Coordinators/AppCoordinator.swift`, `Apps/projectM-iOS/Visuals/*VisualHost.swift`). — Verified 2026-11-14: testPhotoHostPassesTheGradeToItsCompositor; AppCoordinator applies effectiveGrade on creation, on change and on a safety-profile change; app build succeeded.
+- [X] FX-003-T15 [US1] Create `Apps/projectM-iOS/Views/ColorGradeSection.swift` (five sliders with
   `.accessibleParameter`, readouts, help naming the graded visuals, "Reset to neutral") and show it in
   `Apps/projectM-iOS/Views/SettingsView.swift`; check body length with `-warn-long-function-bodies=300
-  -warn-long-expression-type-checking=150`.
-- [ ] FX-003-T16 [US1] `Apps/projectM-iOS/UITests/ColorGradeUITests.swift`: open Settings, find Color, move the
-  gain slider, check the readout, tap Reset to neutral, check the readout and the disabled button (FX-003-S6).
+  -warn-long-expression-type-checking=150`. — Verified 2026-11-14: build-for-testing with -warn-long-function-bodies=300 -warn-long-expression-type-checking=150: no warning in the new or edited files (only two pre-existing Debug fixtures at 156-157 ms); testSectionTargetsWriteTheSetting.
+- [X] FX-003-T16 [US1] `Apps/projectM-iOS/UITests/ColorGradeUITests.swift`: open Settings, find Color, move the
+  gain slider, check the readout, tap Reset to neutral, check the readout and the disabled button (FX-003-S6). — Verified 2026-11-14: ColorGradeUITests.testColorSectionAdjustAndReset passed in 18.2 s on an own iOS 27.2 simulator (logs-fx-003/ui.log).
 
 ## Phase 5: User Story 3 - Grading can never defeat the flash limiter (P1)
 
@@ -93,11 +93,11 @@ reference per operator; setting tests; UI test.
 
 - [X] FX-003-T19 [P] GPU timing (FX-003-S7): output pass at 1920 × 1080, neutral vs all operators active, median
   of 30 after 5 warm-ups; record in research D9. — Verified 2026-11-14: testOutputPassGPUTimeIsRecorded (Mac, 1920×1080): neutral 0.033 ms, all operators 0.044 ms median of 30; recorded in research D9.
-- [ ] FX-003-T20 ADR for the output pipeline order (grade → tone map → × gain; guard measures it) in
-  `docs/adr/` (next free number) and `docs/adr/README.md`.
-- [ ] FX-003-T21 Regressions: Compositor (host and Linux shape), VisualGenerators, RenderGoldens, SceneFormat,
+- [X] FX-003-T20 ADR for the output pipeline order (grade → tone map → × gain; guard measures it) in
+  `docs/adr/` (next free number) and `docs/adr/README.md`. — Verified 2026-11-14: docs/adr/0050-output-color-grade.md (0049 was taken by ACC-012) and the README row; validate_docs OK.
+- [X] FX-003-T21 Regressions: Compositor (host and Linux shape), VisualGenerators, RenderGoldens, SceneFormat,
   ImportFuzz, LibraryBackup; app unit tests and the Color UI test on an own iOS 27.2 simulator; the six repo
-  checks (compliance, docs, motion policy, permission catalog, status events, script tests).
+  checks (compliance, docs, motion policy, permission catalog, status events, script tests). — Verified 2026-11-14: Compositor host 602 tests (7 skipped, 0 failures, 30 s), Linux shape 367/367 (7 s), VisualGenerators 136/136 (41 s), RenderGoldens 39/39, SceneFormat 112/112, ImportFuzz 16/16, LibraryBackup 44/44, app unit 575/575 (39 s) and the Color UI test on an own simulator (deleted after; PosterBoard reports 25 → 25); compliance, docs, motion policy, permission catalog, status events OK; script tests 153 OK.
 - [ ] FX-003-T22 {device} On D1: Photo visual graded (warm, gain 1.5, saturation 0 → grey), reset → identical;
   frame rate unchanged in the performance overlay (FX-003-S7).
 
