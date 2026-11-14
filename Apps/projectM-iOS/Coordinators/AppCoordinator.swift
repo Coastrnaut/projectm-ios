@@ -223,6 +223,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let slideshow: SlideshowCoordinator
     /// The logo overlay (MED-010): the stored logo, its placement and the compositor visuals' logo layers.
     let logo: LogoCoordinator
+    /// MOD-010: the current scene's parameter macros (Settings › Macros).
+    let macros: MacroCoordinator
     /// The Photo visual (MED-001), created when Photo is chosen and released when another visual is.
     private(set) var photoVisual: PhotoVisualHost?
     /// The photo layer's state while the Photo visual exists (`empty` otherwise).
@@ -431,6 +433,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         photos = PhotoCoordinator.makeDefault(defaults: defaults)
         slideshow = SlideshowCoordinator.makeDefault(defaults: defaults)   // MED-006
         logo = LogoCoordinator.makeDefault(defaults: defaults)   // MED-010
+        macros = MacroCoordinator.makeDefault(settings: settings)   // MOD-010
         videos = VideoCoordinator.makeDefault(defaults: defaults)
         texts = TextOverlayCoordinator.makeDefault(defaults: defaults)
         // SCN-002: the last committed scene wins over the settings (research SCN-002-D2).
@@ -447,6 +450,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             videos.restoreSpeed(storeID: values.videoStoreID, speedPercent: values.videoSpeedPercent)   // MED-004-R7
             if let restore = values.slideshow { slideshow.restore(restore.value) }   // MED-006-R12
             if let scene = values.logo { logo.restore(storeID: scene.storeID, placement: scene.placement) }   // MED-010-R10
+            macros.restore(values.macros)   // MOD-010: restored, not applied
         }
         self.sceneAutosave = sceneAutosave
         show = ShowCoordinator.makeDefault()   // SHOW-001
@@ -456,6 +460,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         UITestVideoFixture.seedIfRequested(videos)   // MED-002: VideoLayerUITests
         UITestTextFixture.seedIfRequested(texts)     // MED-009: TextOverlayUITests
         UITestLogoFixture.seedIfRequested(logo)      // MED-010: LogoOverlayUITests
+        UITestMacroFixture.seedIfRequested(macros)   // MOD-010: ParameterMacroUITests
         #endif
         let initialScreen: Screen = defaults.bool(forKey: Self.noticeKey) ? .chooser : .notice
         screen = initialScreen
@@ -1512,6 +1517,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             videos.restoreSpeed(storeID: values.videoStoreID, speedPercent: values.videoSpeedPercent)   // MED-004-R7
             if let restore = values.slideshow { slideshow.restore(restore.value) }   // MED-006-R12
             if let scene = values.logo { logo.restore(storeID: scene.storeID, placement: scene.placement) }   // MED-010-R10
+            macros.restore(values.macros)   // MOD-010: restored, not applied
         }
         if let visual { settings.visual = visual }
         resetTrailsHistory()   // FX-009-R5: a reopened scene starts without trails
@@ -1541,7 +1547,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                     slideshow: slideshow.sceneValue,   // MED-006
                     layerComposites: layers.composites,   // CMP-015
                     logo: logo.sceneLogo,   // MED-010
-                    effects: liveEffectSettings)   // FX-020
+                    effects: liveEffectSettings,   // FX-020
+                    macros: macros.entries)   // MOD-010
     }
 
     /// ACC-003-R13: the colour-blind-safe palette setting changed; the native spectrum redraws with it.

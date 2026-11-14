@@ -36,23 +36,23 @@ No setup: existing packages and app target.
 - [X] MOD-010-T04 [US2] `Packages/SceneFormat/Tests/SceneFormatTests/SceneMacroTests.swift`: the acceptance
   macro on the real visual catalog round-trips verbatim and gives identical values at 0, 0.25, 0.5, 1; a scene
   without macros encodes unchanged; issues at their paths with the entry kept — Verified 2026-11-14: SceneMacroTests 5 tests pass on the host (real visual catalog)
-- [ ] MOD-010-T05 [US2] App: `Apps/projectM-iOS/Coordinators/MacroCoordinator.swift` (entries, live macros,
+- [X] MOD-010-T05 [US2] App: `Apps/projectM-iOS/Coordinators/MacroCoordinator.swift` (entries, live macros,
   `setValue(_:at:)` through `ParameterInspectorTargets`, skip report, `restore`); `SceneInputs.macros`,
   carry, restored values in `SceneAutosaveCapture.swift`; history label/key in `SceneHistoryCoordinator.swift`;
   wiring in `AppCoordinator.swift` (property, `sceneInputs`, launch restore, reopen) and
-  `AppCoordinator+SceneHistory.swift` (`applySceneInputs`)
-- [ ] MOD-010-T06 [US2] `Apps/projectM-iOS/Tests/ParameterMacroAppTests.swift`: settings follow the acceptance
+  `AppCoordinator+SceneHistory.swift` (`applySceneInputs`) — Verified 2026-11-14: app build-for-testing on the MOD10 simulator (iOS 27.2), no type-check warnings in touched files; T06 tests below
+- [X] MOD-010-T06 [US2] `Apps/projectM-iOS/Tests/ParameterMacroAppTests.swift`: settings follow the acceptance
   macro at 0, 0.25, 0.5, 1; a target without an app control is skipped and reported; capture → restore round
-  trip; one undo step restores macro and targets
+  trip; one undo step restores macro and targets — Verified 2026-11-14: ParameterMacroAppTests 4/4 pass, with SceneHistoryCoordinatorTests, SceneAutosaveCaptureTests, SceneAutosaveMigrationMatrixTests (14 tests, 0.11 s)
 
 ## Phase 5: User Story 3 — macro control in the app (P2)
 
-- [ ] MOD-010-T07 [US3] `Apps/projectM-iOS/Views/MacrosSection.swift` (slider `macro.<index>` with
+- [X] MOD-010-T07 [US3] `Apps/projectM-iOS/Views/MacrosSection.swift` (slider `macro.<index>` with
   `.accessibleParameter`, read-only rows `macroTarget.<index>.<id>`), one line in `Views/SettingsView.swift`
   `mediaSections`, `.id("macros")`; DEBUG seed `Apps/projectM-iOS/Debug/UITestMacroFixture.swift`
-  (`-uitestSeedMacro`)
-- [ ] MOD-010-T08 [US3] `Apps/projectM-iOS/UITests/ParameterMacroUITests.swift`: move the slider, target labels
-  change (< 30 s)
+  (`-uitestSeedMacro`) — Verified 2026-11-14: rendered in Settings (accessibility tree: slider `macro.0`, three target rows) and driven by T08
+- [X] MOD-010-T08 [US3] `Apps/projectM-iOS/UITests/ParameterMacroUITests.swift`: move the slider, target labels
+  change (< 30 s) — Verified 2026-11-14: ParameterMacroUITests passed twice, 22.2 s and 18.3 s
 
 ## Phase 6: Polish
 
