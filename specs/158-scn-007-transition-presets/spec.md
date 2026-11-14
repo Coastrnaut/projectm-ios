@@ -66,6 +66,10 @@ Answered by Claude under owner rules 4 and 9 (recommended option first).
 - Q: Do merge restore and FILE-004 import carry transitions of incoming cues? → A: Incoming scenes arrive as new cues without a transition (they carry scenes, not cues); existing cues keep theirs. Exact restore carries every transition.
 - Q: Are unknown keys inside a transition object kept? → A: No: only `type`, `duration` and `easing` are read and written; extra keys inside the object are dropped (counted in no warning, as other optional keys in `show.json`).
 
+### Session 2026-11-14 (show editor fix)
+
+- Q: Are all the cue row's swipe actions reachable on an iPhone? → A: Decided (best judgement, owner rule 4): eight leading swipe actions (Go, Duplicate, Name, Transition, Into, Advance, MIDI) pushed the later ones off a 402 pt iPhone (MIDI at x = 475, not tappable; MIDISceneSelectionUITests). Each swipe edge now has at most three actions: leading Go, MIDI (when MIDI is available) and More…, which opens a dialog with Duplicate Scene, Rename Scene…, Transition…, Transition Into This Cue… and Advance After… (More… hidden while the scene is locked, SCN-015-R6); trailing Delete and Skip. The context menu and VoiceOver actions are unchanged, and the accessibility identifiers move with their actions into the dialog. For this feature, the leading swipe "Transition" is now "Transition…" in More…'s dialog; SCN-007-R9's "swipe" means the swipe's More… action.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - I give each cue its own transition and it comes back exactly (Priority: P1) — MVP

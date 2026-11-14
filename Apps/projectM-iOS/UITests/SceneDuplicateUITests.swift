@@ -27,10 +27,15 @@ final class SceneDuplicateUITests: XCTestCase {
     /// Swipes a cue row right (a short drag, so a full swipe never runs Go) and picks one of its
     /// leading actions — the same actions as the context menu, whose live blur over the visualizer
     /// kept XCUITest waiting 60 s for idle. Matched by identifier or by its short or VoiceOver title.
-    private func swipeAction(_ row: XCUIElement, id: String, titles: [String]) {
+    private func swipeAction(_ row: XCUIElement, id: String, titles: [String], viaMore: Bool = false) {
         let start = row.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.5))
         start.press(forDuration: 0.05, thenDragTo: row.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.5)),
                     withVelocity: .fast, thenHoldForDuration: 0.05)
+        if viaMore {   // the cue's edit actions are in the leading swipe's More… dialog (show editor fix, 2026-11-14)
+            let more = app.buttons.matching(NSPredicate(format: "identifier == %@ OR label == %@", "showCueMore", "More Actions")).firstMatch
+            XCTAssertTrue(more.appears(within: 3), "More is offered")
+            more.tap()
+        }
         let predicate = NSPredicate(format: "identifier == %@ OR label IN %@", id, titles)
         let button = app.buttons.matching(predicate).firstMatch
         XCTAssertTrue(button.appears(within: 3), "\(id) is offered")
@@ -55,14 +60,14 @@ final class SceneDuplicateUITests: XCTestCase {
         // Duplicate Scene on cue 2 ("Build"): cue 3 "Build copy", six cues.
         let second = app.descendants(matching: .any)["showCue2"]
         XCTAssertTrue(second.appears(within: 5))
-        swipeAction(second, id: "showDuplicateScene", titles: ["Duplicate", "Duplicate Scene"])
+        swipeAction(second, id: "showDuplicateScene", titles: ["Duplicate Scene"], viaMore: true)
         let copy = app.descendants(matching: .any)["showCue3"]
         XCTAssertTrue(poll(3) { copy.exists && copy.label == "Build copy" }, "the copy's cue follows its source")
         XCTAssertEqual(copy.value as? String, "Cue 3 of 6")
         XCTAssertEqual(second.label, "Build", "the source cue is unchanged")
 
         // Rename Scene… "Build B": the cue label stays, the scene name shows.
-        swipeAction(copy, id: "showRenameScene", titles: ["Name", "Rename Scene"])
+        swipeAction(copy, id: "showRenameScene", titles: ["Rename Scene…"], viaMore: true)
         let alert = app.alerts["Rename Scene"]
         XCTAssertTrue(alert.appears(within: 3), "the Rename Scene alert")
         let field = alert.textFields.firstMatch   // SwiftUI alert fields do not carry their identifier

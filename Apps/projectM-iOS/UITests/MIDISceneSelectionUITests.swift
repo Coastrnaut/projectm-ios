@@ -32,6 +32,10 @@ final class MIDISceneSelectionUITests: XCTestCase {
         let predicate = NSPredicate(format: "identifier == %@ OR label IN %@", id, titles)
         let button = app.buttons.matching(predicate).firstMatch
         XCTAssertTrue(button.appears(within: 3), "\(id) is offered")
+        // Show editor fix (2026-11-14): every leading action fits on the iPhone (eight had pushed MIDI to x = 475).
+        let more = app.buttons["showCueMore"]
+        XCTAssertTrue(more.appears(within: 3), "More is offered")
+        XCTAssertTrue(button.isHittable && more.isHittable, "MIDI \(button.frame), More \(more.frame)")
         button.tap()
     }
 
