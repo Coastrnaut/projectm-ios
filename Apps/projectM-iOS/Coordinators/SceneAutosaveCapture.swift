@@ -12,6 +12,10 @@
 //   graphs) at their index, matched layers' instance IDs, values and composites, the assets those
 //   layers use and assets of unknown types, parameter values the app does not hold, the bindings when
 //   no native spectrum is live, expressions, the modulation section and MOD-013's preserved edges.
+// * FX-020 (specs/142-fx-020-effect-chains, research FX-020-D7): `SceneInputs.effects` is the live effect chain
+//   (order, Color, Trails). The document's `effects` list is written when the opened scene had one (carried) or the
+//   live chain is not the default; it keeps unknown entries at their index. A restore hands the list back (nil: none,
+//   which restores the standard order and leaves the Color and Trails values alone).
 // * Pure functions; the coordinator calls them on the main actor.
 import Compositor
 import Foundation
@@ -44,6 +48,8 @@ struct SceneInputs: Equatable, Sendable {
     /// composite (callers that do not track composites); non-nil is authoritative, a missing kind
     /// writing the default composite. Default composites are never stored.
     var layerComposites: [String: SceneComposite]? = nil
+    /// FX-020: the live effect chain (nil: the caller does not track it; the carried list is kept).
+    var effects: SceneEffectSettings? = nil
 }
 
 /// What a restore hands back to the app (contract A5).
@@ -61,6 +67,8 @@ struct SceneRestoredValues: Sendable, Equatable {
     var slideshow: SceneSlideshowRestore? = nil
     /// CMP-015: the document's drawn-layer composites (first layer of each kind; defaults left out).
     var layerComposites: [String: SceneComposite] = [:]
+    /// FX-020: the document's effect chain (nil: no list).
+    var effects: [SceneEffectEntry]? = nil
 }
 
 /// The restored document's content the app does not own (research SCN-002-D6).
@@ -75,6 +83,8 @@ struct SceneAutosaveCarry: Sendable {
     var expressions: [ParameterID: String] = [:]
     var modulation = ModulationGraph()
     var preserved = SceneModulationPreserved()
+    /// FX-020: the opened scene's effect list (nil: none).
+    var effects: [SceneEffectEntry]?
 
     static let defaultName = "Current Scene"
 
@@ -99,6 +109,7 @@ struct SceneAutosaveCarry: Sendable {
         expressions = live.expressions
         modulation = live.modulation
         preserved = live.preserved
+        effects = document.effects   // FX-020
     }
 }
 
@@ -211,8 +222,45 @@ enum SceneAutosaveCapture {
         let document = SceneDocument(id: carry.id, name: carry.name, layers: layers, parameters: parameters,
                                      bindings: sceneBindings,
                                      modulation: SceneModulation(generators: carry.modulation.generators, connections: connections),
-                                     assets: assets, extra: carry.extra)
+                                     assets: assets, effects: effects(inputs.effects, carry: carry.effects), extra: carry.extra)
         return (document, events)
+    }
+
+    /// FX-020 (research FX-020-D7): the list to write, or nil to leave the field out.
+    static func effects(_ live: SceneEffectSettings?, carry: [SceneEffectEntry]?) -> [SceneEffectEntry]? {
+        guard let live, carry != nil || !live.isDefault else { return carry }
+        return live.entries(over: carry)
+    }
+
+    /// FX-020: a restored list on the settings: order, Color and Trails as the list gives them (each setter keeps its own
+    /// range rules; ACC-012 caps still apply when rendering); nil restores the standard order only.
+    @MainActor
+    static func applyEffects(_ entries: [SceneEffectEntry]?, chain: EffectChainSetting, grade: ColorGradeSetting,
+                             trails: MotionFeedbackSetting) {
+        guard let entries else {
+            chain.order = .standard
+            return
+        }
+        applyEffects(SceneEffectSettings.read(entries).settings, chain: chain, grade: grade, trails: trails)
+    }
+
+    @MainActor
+    static func applyEffects(_ settings: SceneEffectSettings, chain: EffectChainSetting, grade: ColorGradeSetting,
+                             trails: MotionFeedbackSetting) {
+        chain.order = settings.order
+        if let g = settings.grade {
+            if grade.temperature != g.temperature { grade.temperature = g.temperature }
+            if grade.lift != g.lift { grade.lift = g.lift }
+            if grade.gamma != g.gamma { grade.gamma = g.gamma }
+            if grade.gain != g.gain { grade.gain = g.gain }
+            if grade.saturation != g.saturation { grade.saturation = g.saturation }
+            if grade.hue != g.hue { grade.hue = g.hue }
+        }
+        if let enabled = settings.gradeEnabled { grade.isEnabled = enabled }
+        if let t = settings.trails {
+            if trails.halfLifeSeconds != t.halfLifeSeconds { trails.halfLifeSeconds = t.halfLifeSeconds }
+            trails.isEnabled = t.isEnabled
+        }
     }
 
     /// The seven app-held values as MOD-001 values.
@@ -253,7 +301,8 @@ enum SceneAutosaveCapture {
         return SceneRestoredValues(parameters: parameters, text: text, bindings: live.bindings,
                                    videoStoreID: video?.storeID, videoLoop: video?.loop, videoSpeedPercent: video?.speedPercent,
                                    slideshow: SceneSlideshowBridge.restore(in: document),   // MED-006
-                                   layerComposites: layerComposites(in: document))
+                                   layerComposites: layerComposites(in: document),
+                                   effects: document.effects)   // FX-020
     }
 
     /// CMP-015: the composite of the first layer of each kind the app draws in a compositor, defaults

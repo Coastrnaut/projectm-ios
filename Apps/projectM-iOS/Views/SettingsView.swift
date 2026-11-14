@@ -377,6 +377,7 @@ struct SettingsView: View {
         if settings.visual.isNative { SpectrumColorsSection(settings: settings) }   // ACC-003-R13
         if let colorGrade { ColorGradeSection(setting: colorGrade) }   // FX-003-R9
         if let motionFeedback { TrailsSection(setting: motionFeedback, clamp: settings.safetyClamp) }   // FX-009-R9
+        if let layerInspector { EffectChainSection(coordinator: layerInspector) }   // FX-020-R9 (the app coordinator)
         SensorySafetySection(settings: settings, announcer: announcer)   // ACC-012-R10
         ReduceFlashingSection(settings: settings, available: reduceFlashingAvailable)   // FR-072 (own view: ACC-012 body budget)
     }

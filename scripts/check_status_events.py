@@ -48,6 +48,7 @@ CHECKED = [
     "Views/LibraryEraseSection.swift",
     "Views/SensorySafetySection.swift",  # ACC-012-R10: profile changes announce through the announcer
     "Views/SceneFoldersView.swift",  # SCN-004-R13: folder edits announce on the library lane
+    "Views/EffectChainView.swift",  # FX-020-R9: moves and presets announce through the announcer
 ]
 COORDINATOR = "Coordinators/AppCoordinator.swift"
 ALLOWED_IN_COORDINATOR = ("onScopeChange", "nativeVisualUnavailableMessage", "glowUnavailableMessage")
