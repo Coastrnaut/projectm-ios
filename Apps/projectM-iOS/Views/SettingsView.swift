@@ -327,6 +327,7 @@ struct SettingsView: View {
                                text: Self.percent(settings.glowThreshold), inspect: VisualParameterIDs.bloomThreshold)
                 }
             }
+            if let layerInspector { SceneSnapshotRows(snapshots: layerInspector.sceneSnapshots) }   // SCN-008-R9: under what it holds
         } header: {
             Text("Visual")
         } footer: {
@@ -387,7 +388,6 @@ struct SettingsView: View {
     }
 
     @ViewBuilder private var mediaSections: some View {
-        if let layerInspector { SceneSnapshotsSection(snapshots: layerInspector.sceneSnapshots).id("snapshots") }   // SCN-008-R9
         if let layerInspector { layersSection(layerInspector) }   // CMP-015
         if let shelf = layerInspector?.parameterShelf { ParameterShelfSection(shelf: shelf) }   // UIX-004-R6
         if settings.visual.usesCamera {   // CAM-002-R1: which camera, and its mirror

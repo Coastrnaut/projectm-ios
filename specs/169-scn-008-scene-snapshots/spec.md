@@ -4,7 +4,13 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (SCN-008-T01-T14 verified on the Mac: host package tests and the feature's own
+iOS 27.2 simulator "SCN8 iPhone 17"; no device claim). SceneFormat 156 tests (13.8 s; 5 new), app
+SceneSnapshotAcceptanceTests 3 (0.04 s), SceneSnapshotUITests 1 (24.5 s, 18.3 s, 17.6 s). Linux: not run here; the new
+SceneFormat code is plain Swift without Foundation. Two existing UI tests were adjusted for the longer Visual section
+(`NativeVisualUITests` reveals the Visual footer; `AccessibilityScreensUITests` uses a long reveal for the Show row).
+Seen while checking regressions, not caused by this row: `SceneUndoUITests` fails at its intensity drag (line 45) with
+the snapshot rows removed too.
 
 **Input**: Roadmap row SCN-008 (P1, size M, depends on SCN-001, integrated). Observable behavior,
 verbatim: "Capture named parameter snapshots inside a scene." Acceptance, verbatim: "Recall restores
@@ -44,7 +50,7 @@ conservative, local-first option.
 - Q: How does Recall apply values? → A: Through the Settings write path (`ParameterInspectorTargets`), in parameter-ID order, writing only values that differ from the current ones, after validating each against the registry (MOD-001 clamping; a rejected value is skipped). It is one undo step labelled "Recall <name>". It never reloads or touches media, the visual, the preset, the effect chain, text or layers.
 - Q: Missing parameters? → A: A value whose ID the registry does not know, or that the app has no control for, is skipped and reported: the status line and the announcement say "Recalled S1; 1 value skipped", and the status line names the skipped IDs.
 - Q: Is recall eased over the scene's transition curve? → A: No: recall applies at once, exactly as a Settings edit. Easing would need the transition bus in the live renderer (SCN-007's follow-up); recorded as out of scope.
-- Q: Where is the UI? → A: A "Snapshots" section in Settings, right below the visual options (the glow and spectrum controls a snapshot holds), for the current scene. Actions: Save Snapshot; per row Recall, Rename, Delete (swipe, context menu and VoiceOver actions). Delete asks for confirmation. Announcements go on the library lane (`AccessibilityAnnouncer`, kind `.library`).
+- Q: Where is the UI? → A: Snapshot rows at the end of Settings' Visual section, right under the glow and spectrum controls a snapshot holds, for the current scene (rows rather than a section of their own, so no control above them moves; implementation note 2026-11-14: a separate section above the visual options pushed the Bars picker off screen for existing UI tests, and one below them cost the UI test several scrolls). Actions: Save Snapshot; per row Recall, Rename, Delete (swipe, context menu and VoiceOver actions). Delete asks for confirmation. Announcements go on the library lane (`AccessibilityAnnouncer`, kind `.library`).
 - Q: Triggers? → A: MIDI/OSC recall is a later row; this row reserves the action ID `scene.snapshot.recall` only.
 
 ### Session 2026-11-14 (speckit-clarify)
@@ -122,7 +128,7 @@ write targets and a real SceneHistoryCoordinator over a scene with a photo; a me
 - **SCN-008-R6**: Recall writes the snapshot's values through the Settings write path, only values that differ, validated against the registry; it is one undo step labelled "Recall <name>"; it never reloads or touches media, the visual, the preset, the effect chain, text or layers.
 - **SCN-008-R7**: A value whose parameter the registry does not know, that the app cannot set, or that the registry rejects is skipped and reported (status, announcement and the row).
 - **SCN-008-R8**: Rename (1…64 characters, trimmed, unique case-insensitively) and Delete (confirmed) edit the list and commit the current scene; they are not undo steps.
-- **SCN-008-R9**: Settings shows a Snapshots section below the visual options with Save Snapshot and one row per snapshot (name, value count, Recall button); Rename and Delete by swipe and context menu; VoiceOver actions Recall, Rename, Delete; announcements on the library lane; layout works at AX sizes.
+- **SCN-008-R9**: Settings shows snapshot rows at the end of the Visual section, under the controls they hold, with Save Snapshot and one row per snapshot (name, value count, Recall button); Rename and Delete by swipe and context menu; VoiceOver actions Recall, Rename, Delete; announcements on the library lane; layout works at AX sizes.
 - **SCN-008-R10**: The current scene's snapshots survive commit and restore (relaunch) and ride in FILE-005 backups as part of the scene bytes.
 - **SCN-008-R11**: The action ID `scene.snapshot.recall` is reserved for a later MIDI/OSC row; no networking, no new settings keys.
 

@@ -1,61 +1,64 @@
-// SceneSnapshotsSection.swift — Settings › Snapshots (roadmap SCN-008, specs/169-scn-008-scene-snapshots; R9):
-// Save Snapshot, then one row per snapshot of the current scene with a Recall button; Rename and Delete by
-// swipe and context menu; VoiceOver actions Recall, Rename, Delete. Delete asks first. The last action's
-// message shows under the list (the coordinator also announces it on the library lane). DEBUG builds show the
-// media-load probe that SceneSnapshotUITests reads.
+// SceneSnapshotRows.swift — Settings › Visual › snapshots (roadmap SCN-008, specs/169-scn-008-scene-snapshots; R9):
+// rows at the end of the Visual section, right under the glow and spectrum controls a snapshot holds (rows, not a
+// section of their own, so nothing above them moves): Save Snapshot, then one row per snapshot of the current scene
+// with a Recall button; Rename and Delete by swipe and context menu; VoiceOver actions Recall, Rename, Delete.
+// Delete asks first. The last action's message shows in a status row (the coordinator also announces it on the
+// library lane). DEBUG builds show the media-load probe that SceneSnapshotUITests reads in that row.
 import SwiftUI
 
-struct SceneSnapshotsSection: View {
+struct SceneSnapshotRows: View {
     let snapshots: SceneSnapshotCoordinator
     @State private var renaming: SceneSnapshotRow?
     @State private var newName = ""
     @State private var deleting: SceneSnapshotRow?
 
     var body: some View {
-        Section {
-            saveButton
-            ForEach(snapshots.rows) { (row: SceneSnapshotRow) in
-                SceneSnapshotRowView(row: row, recall: { () -> Void in snapshots.recall(at: row.index) },
-                                     rename: { () -> Void in startRename(row) }, delete: { () -> Void in deleting = row })
+        saveButton
+            .onAppear { snapshots.reload() }
+            .alert("Rename Snapshot", isPresented: renameShown) {
+                TextField("Name", text: $newName)
+                    .accessibilityIdentifier("snapshotNameField")
+                Button("Cancel", role: .cancel) { renaming = nil }
+                Button("Rename") { finishRename() }
             }
-        } header: {
-            Text("Snapshots")
-        } footer: {
-            footer
+            .confirmationDialog(deleteTitle, isPresented: deleteShown, titleVisibility: .visible) {
+                Button("Delete", role: .destructive) { finishDelete() }
+                    .accessibilityIdentifier("snapshotDeleteConfirm")
+                Button("Cancel", role: .cancel) { deleting = nil }
+            }
+        ForEach(snapshots.rows) { (row: SceneSnapshotRow) in
+            SceneSnapshotRowView(row: row, recall: { () -> Void in snapshots.recall(at: row.index) },
+                                 rename: { () -> Void in startRename(row) }, delete: { () -> Void in deleting = row })
         }
-        .onAppear { snapshots.reload() }
-        .alert("Rename Snapshot", isPresented: renameShown) {
-            TextField("Name", text: $newName)
-                .accessibilityIdentifier("snapshotNameField")
-            Button("Cancel", role: .cancel) { renaming = nil }
-            Button("Rename") { finishRename() }
-        }
-        .confirmationDialog(deleteTitle, isPresented: deleteShown, titleVisibility: .visible) {
-            Button("Delete", role: .destructive) { finishDelete() }
-                .accessibilityIdentifier("snapshotDeleteConfirm")
-            Button("Cancel", role: .cancel) { deleting = nil }
-        }
+        statusRow
     }
 
     private var saveButton: some View {
-        Button("Save Snapshot") { snapshots.save() }
-            .disabled(!snapshots.canSave)
-            .accessibilityIdentifier("snapshotSave")
-            .accessibilityHint("Saves the glow and spectrum values in the current scene.")
+        Button { snapshots.save() } label: {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Save Snapshot")
+                Text("Keeps these glow and spectrum values in the scene, up to 16. Recall changes no visual, preset, photo, video or logo.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .disabled(!snapshots.canSave)
+        .accessibilityLabel("Save Snapshot")
+        .accessibilityIdentifier("snapshotSave")
+        .accessibilityHint("Saves the glow and spectrum values in the current scene.")
     }
 
-    @ViewBuilder private var footer: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("A snapshot keeps the glow and spectrum values of the current scene. Recall sets them again without changing the visual, the preset or any photo, video or logo. Up to 16 per scene.")
-            if let status = snapshots.status {
-                Text(status).accessibilityIdentifier("snapshotStatus")
-            }
-            #if DEBUG
+    @ViewBuilder private var statusRow: some View {
+        #if DEBUG
+        VStack(alignment: .leading, spacing: 4) {
+            if let status = snapshots.status { Text(status).accessibilityIdentifier("snapshotStatus") }
             Text(MediaLoadSpy.shared.summary + " | " + (snapshots.status ?? ""))
                 .font(.caption2)
                 .accessibilityIdentifier("snapshotMediaProbe")
-            #endif
         }
+        #else
+        if let status = snapshots.status { Text(status).accessibilityIdentifier("snapshotStatus") }
+        #endif
     }
 
     private var renameShown: Binding<Bool> {

@@ -39,7 +39,7 @@ CHECKED = [
     "Views/PresetTagChips.swift",                      # PRE-003-R12: chip counts announce through the announcer
     "Coordinators/PresetCoordinator+Tags.swift",       # PRE-003-R12
     "Coordinators/SceneSnapshotCoordinator.swift",     # SCN-008-R9: snapshot messages announce through the announcer
-    "Views/SceneSnapshotsSection.swift",               # SCN-008-R9
+    "Views/SceneSnapshotRows.swift",                   # SCN-008-R9
     "Coordinators/RecentPresetsCoordinator.swift",     # PRE-006-R6: history changes announce through the announcer
     "Views/RecentPresetsView.swift",                   # PRE-006-R6
     "Views/RecentHistorySection.swift",                # PRE-006-R6

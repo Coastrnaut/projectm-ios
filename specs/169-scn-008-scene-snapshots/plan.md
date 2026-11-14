@@ -47,8 +47,8 @@ Apps/projectM-iOS/Coordinators/AppCoordinator+SceneSnapshots.swift   # new: wiri
 Apps/projectM-iOS/Coordinators/AppCoordinator.swift                  # property + connect call (2 lines)
 Apps/projectM-iOS/Visuals/MediaLoadSpy.swift                         # new: DEBUG counters
 Apps/projectM-iOS/Visuals/PhotoVisualHost.swift, VideoVisualHost.swift, Coordinators/LogoCoordinator.swift  # spy calls
-Apps/projectM-iOS/Views/SceneSnapshotsSection.swift                  # new: the Settings section
-Apps/projectM-iOS/Views/SettingsView.swift                           # one line in `mediaSections`
+Apps/projectM-iOS/Views/SceneSnapshotRows.swift                      # new: rows at the end of the Visual section
+Apps/projectM-iOS/Views/SettingsView.swift                           # one line in `visualOptionsSection`
 ```
 
 Tests: `SceneSnapshotTests` (SceneFormat), app `SceneSnapshotAcceptanceTests`, UI `SceneSnapshotUITests`.
