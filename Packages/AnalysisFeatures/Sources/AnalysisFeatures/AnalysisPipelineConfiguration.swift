@@ -17,6 +17,8 @@ public struct AnalysisPipelineConfiguration: Sendable, Hashable {
     public let kick: TransientDetectorConfiguration
     /// ANL-010's spectral centroid.
     public let centroid: SpectralCentroidConfiguration
+    /// ANL-014's loudness envelope (built for the spectrum's FFT size).
+    public let loudness: LoudnessConfiguration
 
     public init(spectrum: SpectrumConfiguration = AnalysisPipelineConfiguration.defaultSpectrum,
                 bandCount: BandCount = .b64,
@@ -24,9 +26,11 @@ public struct AnalysisPipelineConfiguration: Sendable, Hashable {
                 onset: OnsetDetectorConfiguration = .standard,
                 beat: BeatTrackerConfiguration = .standard,
                 kick: TransientDetectorConfiguration = .kick,
-                centroid: SpectralCentroidConfiguration = .standard) throws(AnalysisBusError) {
+                centroid: SpectralCentroidConfiguration = .standard,
+                loudness: LoudnessConfiguration = .standard) throws(AnalysisBusError) {
         guard spectrum.sampleRate == onset.sampleRate, spectrum.sampleRate == beat.sampleRate,
-              spectrum.sampleRate == kick.sampleRate, spectrum.sampleRate == centroid.sampleRate else {
+              spectrum.sampleRate == kick.sampleRate, spectrum.sampleRate == centroid.sampleRate,
+              spectrum.sampleRate == loudness.sampleRate else {
             throw .sampleRateMismatch
         }
         guard bandFloorDecibels.isFinite, bandFloorDecibels < 0 else { throw .invalidBandFloor(bandFloorDecibels) }
@@ -37,5 +41,6 @@ public struct AnalysisPipelineConfiguration: Sendable, Hashable {
         self.beat = beat
         self.kick = kick
         self.centroid = centroid
+        self.loudness = loudness
     }
 }

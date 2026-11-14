@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: In progress (implementation)
 
 **Input**: User description: "Implement ANL-014 (Loudness envelope) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Expose normalized short-term
@@ -138,6 +138,43 @@ and an app unit test that a Loudness binding on the native visual drives its tar
 - **ANL-014-S4**: Through the real pipeline, a loud tone's frames read higher than a quiet tone's.
 - **ANL-014-S5**: `audio.loudness` round-trips, binds, compiles in an expression and drives a bound parameter in the app.
 - **ANL-014-S6**: The new package tests add at most a few hundred milliseconds to the AnalysisFeatures suite in the Linux shape, and every existing test (and every dependent package's) passes.
+
+## Implementation results (2026-11-14)
+
+### Documented lag
+
+Whole chain (2,048-point Hann window every 512 samples, then the attack/release smoother), for a
+1 kHz tone stepping −40 → −10 → −40 dBFS at 44.1 kHz, measured on the sample clock from the step to
+the end of the first frame at or past 90 % of the change (`LoudnessEnvelopeTests.
+testStepIsFollowedWithTheDocumentedLag`; identical with the vDSP and the portable backend):
+
+| Step | Envelope before → after | 90 % time | Smoother alone (τ) | Window part |
+|---|---|---|---|---|
+| Rise −40 → −10 dBFS | 0.283 → 0.783 | **115.3 ms** (5,086 samples) | 100 ms | +15.3 ms |
+| Fall −10 → −40 dBFS | 0.783 → 0.283 | **433.4 ms** (19,115 samples) | 400 ms | +33.4 ms |
+
+The test holds each within one frame (512 samples, 11.6 ms) and within [τ − one frame, τ + one
+window]. Because smoothing works on the decibel-normalized value, the lag does not depend on the
+step's size. From −10 dBFS to digital silence the envelope reaches exactly 0 after 1.19 s.
+
+### Levels and weighting
+
+Single 2,048-point windows (fresh envelope, so the envelope is the frame's normalized level):
+
+| Input | Level (dB, LKFS-like) | Envelope |
+|---|---|---|
+| 997 Hz sine, 0 dBFS | −3.007 (BS.1770 reference −3.01) | 0.950 |
+| 1 kHz sine, −10 dBFS | −13.0 | 0.783 |
+| 1 kHz sine, −20 dBFS | −23.0 | 0.617 |
+| 1 kHz sine, −30 dBFS | −33.0 | 0.450 |
+| 1 kHz sine, −40 dBFS | −43.0 | 0.283 |
+| 1 kHz sine, −50 dBFS | −53.0 | 0.117 |
+| White noise ±1 (seeded) | −1.63 | 0.973 |
+| Square wave ±1, 1 kHz | +0.83 | 1 (clamped) |
+| Digital silence | −120 | 0 |
+
+Equal amplitude (−20 dBFS), K-weighted: 20 Hz −34.61 dB < 100 Hz −24.87 dB < 1 kHz −23.00 dB <
+2 kHz −20.63 dB (2 kHz reads 4.2 dB above 100 Hz, as the standard's curve predicts).
 
 ## Assumptions
 

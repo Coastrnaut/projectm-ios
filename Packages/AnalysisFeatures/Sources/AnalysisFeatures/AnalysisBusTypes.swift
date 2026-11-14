@@ -87,9 +87,15 @@ public struct AnalysisFrame: Sendable, Hashable {
     public let centroidHz: Float
     /// ANL-010's centroid normalized 0…1 (log frequency, 50 Hz → 0, 10 kHz → 1; held / 0 likewise).
     public let centroid: Float
+    /// ANL-014's loudness envelope, 0…1: K-weighted level normalized −60…0 dB, attack 100 ms,
+    /// release 400 ms (0 at silence and before any signal in the session).
+    public let loudness: Float
+    /// ANL-014's unsmoothed K-weighted level of the frame, LKFS-like dB (−120 at silence).
+    public let loudnessDecibels: Float
 
     public init(id: UInt64, time: AnalysisTimestamp, bandCount: Int, onsetFlux: Float, bpm: Double?, beatConfidence: Double,
-                kickEnvelope: Float = 0, centroidHz: Float = 0, centroid: Float = 0) {
+                kickEnvelope: Float = 0, centroidHz: Float = 0, centroid: Float = 0,
+                loudness: Float = 0, loudnessDecibels: Float = LoudnessReading.silent.decibels) {
         self.id = id
         self.time = time
         self.bandCount = bandCount
@@ -99,6 +105,8 @@ public struct AnalysisFrame: Sendable, Hashable {
         self.kickEnvelope = kickEnvelope
         self.centroidHz = centroidHz
         self.centroid = centroid
+        self.loudness = loudness
+        self.loudnessDecibels = loudnessDecibels
     }
 }
 
@@ -107,7 +115,7 @@ public enum AnalysisBusError: Error, Equatable, Sendable {
     case invalidEventCapacity(Int)
     /// Already `AnalysisPipeline.maximumSubscribers` subscribers.
     case tooManySubscribers
-    /// The spectrum, onset, beat, kick and centroid configurations disagree on the sample rate.
+    /// The spectrum, onset, beat, kick, centroid and loudness configurations disagree on the sample rate.
     case sampleRateMismatch
     /// The band floor must be finite and below 0 dB.
     case invalidBandFloor(Float)
