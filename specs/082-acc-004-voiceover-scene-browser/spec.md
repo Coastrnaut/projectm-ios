@@ -7,7 +7,7 @@
 **Status**: Implemented 2026-11-13 (ACC-004-T01-T11 verified on the Mac, own iOS 27.2 simulator; no
 device claim). projectM-iOSTests 376/376 (AccessibilityAnnouncerTests 8), AccessibilityScreensUITests 7/7, each
 under 30 s (7.3-24.0 s), zero unfiltered audit issues in three consecutive runs; regression UI suites pass
-(UserPresets' known tapControl race failed once and passed on rerun). Audit: 12 issue kinds fixed in the app,
+(UserPresets' known tapControl race failed once and passed on rerun). Audit: five groups of issues fixed in the app,
 system-owned findings filtered per element with reasons (contracts/accessibility-tree.md C3). Open:
 ACC-004-T12 `{device}` (VoiceOver pass on D1).
 
