@@ -36,6 +36,8 @@ struct ShowLook: Equatable, Sendable {
     var videoLoop: SceneVideoLoop? = nil
     /// MED-004-R7: the stored video's speed in percent (nil: 1×).
     var videoSpeedPercent: Int? = nil
+    /// MED-006-R12: the image slideshow (nil: off and empty).
+    var slideshow: SceneSlideshow? = nil
 }
 
 /// What applying a scene sets (contract S4).
@@ -53,6 +55,8 @@ struct ShowSceneApply: Equatable, Sendable {
     var videoLoop: SceneVideoLoop? = nil
     /// MED-004-R7: the video asset's speed in percent (nil: 1×).
     var videoSpeedPercent: Int? = nil
+    /// MED-006-R12: the photo layer's slideshow (nil: no photo layer).
+    var slideshow: SceneSlideshowRestore? = nil
 }
 
 enum ShowSceneSnapshot {
@@ -84,8 +88,8 @@ enum ShowSceneSnapshot {
         case .linearSpectrum:
             contents = [.linearSpectrum]
         case .photo:
-            if let id = look.photoID {
-                assets[photoKey] = .photo(storeID: id.uuidString)
+            if let asset = SceneSlideshowBridge.photoAsset(photoID: look.photoID, slideshow: look.slideshow) {   // MED-006
+                assets[photoKey] = asset
                 contents.append(.photo(asset: photoKey))
             }
             contents.append(.circularSpectrum)
@@ -164,7 +168,8 @@ enum ShowSceneSnapshot {
         let missingMedia = warnings.contains { (issue: SceneIssue) -> Bool in issue.code == .missingAsset }
         let video = SceneVideoLoopBridge.video(in: document)   // MED-003-R8
         return ShowSceneApply(visual: visual, parameters: parameters, text: text, omittedKinds: omitted, missingMedia: missingMedia,
-                              videoStoreID: video?.storeID, videoLoop: video?.loop, videoSpeedPercent: video?.speedPercent)
+                              videoStoreID: video?.storeID, videoLoop: video?.loop, videoSpeedPercent: video?.speedPercent,
+                              slideshow: SceneSlideshowBridge.restore(in: document))   // MED-006
     }
 
     // MARK: JSON

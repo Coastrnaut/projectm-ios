@@ -35,6 +35,8 @@ struct SettingsView: View {
     var glowUnavailable = false
     /// MED-001: the imported photo (nil hides the Photo section, e.g. in previews).
     var photos: PhotoCoordinator?
+    /// MED-006: the image slideshow (nil hides its section).
+    var slideshow: SlideshowCoordinator?
     /// MED-002: the imported video (nil hides the Video section).
     var videos: VideoCoordinator?
     /// MED-009: the Text visual's message and style (nil hides the Text section).
@@ -337,6 +339,9 @@ struct SettingsView: View {
         }
         if settings.visual.usesPhoto, let photos {
             photoSection(photos)
+            if let slideshow {   // MED-006
+                SlideshowSection(slideshow: slideshow, endCoalescing: { [history] () -> Void in history?.endCoalescing() })
+            }
         }
         if settings.visual.usesVideo, let videos {
             videoSection(videos)

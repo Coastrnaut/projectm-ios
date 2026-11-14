@@ -68,6 +68,8 @@ public enum LibrarySettingsPolicy {
     public static let favoritesKey = "favorites"
     public static let lastPresetKey = "lastPresetID"
     public static let photoKey = "settings.photo.id"
+    /// MED-006-R10: the image slideshow (order and timing); its pictures are photos of the folder.
+    public static let slideshowKey = "settings.photo.slideshow"
 
     public static let includedKeys: [String] = [
         favoritesKey, lastPresetKey,
@@ -88,7 +90,7 @@ public enum LibrarySettingsPolicy {
         "settings.inputTrim.decibels", "settings.analysisChannel.mode",
         "settings.noiseGate.enabled", "settings.noiseGate.thresholdDecibels",
         "settings.latencyOffset.microphone", "settings.latencyOffset.inAppPlayback", "settings.latencyOffset.systemAppCapture",
-        photoKey, "settings.text.overlay",
+        photoKey, slideshowKey, "settings.text.overlay",
     ]
 
     /// Read by the app but deliberately left out (documented; a test checks none is included).

@@ -28,7 +28,8 @@ extension AppCoordinator {
                  glowIntensity: settings.glowIntensity, glowRadius: settings.glowRadius, glowThreshold: settings.glowThreshold,
                  text: texts.spec, photoID: photos.photo?.id, videoID: videos.video?.id,
                  videoLoop: SceneVideoLoopBridge.scene(videos.loopRegion),   // MED-003
-                 videoSpeedPercent: videos.sceneSpeedPercent)   // MED-004
+                 videoSpeedPercent: videos.sceneSpeedPercent,   // MED-004
+                 slideshow: slideshow.sceneValue)   // MED-006
     }
 
     /// Wires the show to this coordinator (called once at the end of init).
@@ -62,6 +63,7 @@ extension AppCoordinator {
         Self.set(apply, settings: settings, texts: texts)
         videos.restoreLoop(storeID: apply.videoStoreID, loop: apply.videoLoop)   // MED-003-R8
         videos.restoreSpeed(storeID: apply.videoStoreID, speedPercent: apply.videoSpeedPercent)   // MED-004-R7
+        if let restore = apply.slideshow { slideshow.restore(restore.value) }   // MED-006-R12
         sceneHistory.restart()   // SCN-010-R9: a cue is not an edit
         if refresh {
             visualSettingsChanged()

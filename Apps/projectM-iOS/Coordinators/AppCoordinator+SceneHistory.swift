@@ -37,6 +37,7 @@ extension AppCoordinator {
             videos.restoreLoop(storeID: id.uuidString, loop: inputs.videoLoop)   // MED-003-R8
             videos.restoreSpeed(storeID: id.uuidString, speedPercent: inputs.videoSpeedPercent)   // MED-004-R7
         }
+        slideshow.restore(inputs.slideshow)   // MED-006-R12: order, on/off and timing (pictures are not undone)
         let recorded = SceneAutosaveCapture.recordedVisual(settings.visual, beforeCamera: settings.visualBeforeCamera)
         if recorded != inputs.visual { settings.visual = inputs.visual }
         visualSettingsChanged()

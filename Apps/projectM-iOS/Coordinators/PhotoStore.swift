@@ -23,6 +23,8 @@
 //   find the picture) and releases the previous content; Remove releases every reference to the
 //   current content, so its bytes leave the device. Legacy `<UUID>.png|jpg` files still resolve and are
 //   migrated at launch (`prepareFolder`, `reconcileFolder`).
+// * MED-006-R11: the image slideshow's pictures are references in this folder too; making a photo current,
+//   trimming and Remove keep them (`SlideshowStore.protectedIDs`), even when they share the photo's picture.
 // Synchronous and Sendable: imports run off the main actor (PhotoCoordinator).
 import Foundation
 import ImageLayer
@@ -127,10 +129,11 @@ struct PhotoStore: @unchecked Sendable {
     func makeCurrent(_ photo: StoredPhoto) {
         let previous = current()
         defaults.set(photo.id.uuidString, forKey: Self.idKey)
+        let slides: Set<UUID> = SlideshowStore.protectedIDs(defaults)   // MED-006-R11
         if let previous, previous.id != photo.id, !folder.sharesPayload(previous.id, photo.id) {
-            try? folder.releaseSharing(payloadOf: previous.id, keeping: [photo.id])
+            try? folder.releaseSharing(payloadOf: previous.id, keeping: slides.union([photo.id]))
         }
-        try? folder.trim(payloadOf: photo.id, keeping: [photo.id])
+        try? folder.trim(payloadOf: photo.id, keeping: slides.union([photo.id]))
     }
 
     /// FILE-001: deletes a copy that never became current (staged or adopted, then abandoned). FILE-008:
@@ -144,7 +147,7 @@ struct PhotoStore: @unchecked Sendable {
     /// picture is released, so its payload is deleted.
     func remove() {
         if let raw = defaults.string(forKey: Self.idKey), let id = UUID(uuidString: raw), id.uuidString == raw {
-            try? folder.releaseSharing(payloadOf: id)
+            try? folder.releaseSharing(payloadOf: id, keeping: SlideshowStore.protectedIDs(defaults))   // MED-006-R11
         }
         defaults.removeObject(forKey: Self.idKey)
     }

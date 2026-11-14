@@ -17,6 +17,7 @@ final class LibraryEraseAcceptanceTests: XCTestCase {
         case .presets: return key.hasPrefix("preset/") || key == "setting/" + LibrarySettingsPolicy.lastPresetKey
         case .collections: return key == "collections" || key == "setting/" + LibrarySettingsPolicy.favoritesKey
         case .media: return key.hasPrefix("photo/") || key == "setting/" + LibrarySettingsPolicy.photoKey
+            || key == "setting/" + LibrarySettingsPolicy.slideshowKey   // MED-006
         case .importedAudio: return false
         case .settings: return key.hasPrefix("setting/") && LibraryErasePolicy.settingKeys(.settings).contains(String(key.dropFirst(8)))
         }
@@ -108,6 +109,10 @@ final class LibraryEraseAcceptanceTests: XCTestCase {
         XCTAssertTrue(LibrarySettingsPolicy.excludedKeys.contains(LibraryErasePolicy.videoSpeedKey))
         XCTAssertFalse(LibrarySettingsPolicy.isIncluded(LibraryErasePolicy.videoSpeedKey))
         XCTAssertTrue(LibraryErasePolicy.settingKeys(.media).contains(LibraryErasePolicy.videoSpeedKey))
+        // MED-006-R10: the slideshow goes with the photos: backed up, erased with "Photos and videos".
+        XCTAssertTrue(LibrarySettingsPolicy.isIncluded(LibrarySettingsPolicy.slideshowKey))
+        XCTAssertTrue(LibraryErasePolicy.settingKeys(.media).contains(LibrarySettingsPolicy.slideshowKey))
+        XCTAssertFalse(LibraryErasePolicy.settingKeys(.settings).contains(LibrarySettingsPolicy.slideshowKey))
         XCTAssertFalse(LibraryErasePolicy.allFolders.contains(LibraryFolders.restoreFolderName))
         XCTAssertEqual(LibraryErasePolicy.list([.media, .scenes]), "Scenes and show and Photos and videos")
         XCTAssertEqual(LibraryEraseText.erased([.media, .scenes]), "Erased: scenes and show, photos and videos.")

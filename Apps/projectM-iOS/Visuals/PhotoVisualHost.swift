@@ -72,6 +72,13 @@ final class PhotoVisualHost: PresentationBoundResource {
     /// Frames that showed the photo (diagnostics, UI tests).
     var framesShown: Int { photo.framesShown }
 
+    /// MED-006 (research MED-006-D6): called at the start of every frame the loop draws, before
+    /// compositing (the slideshow's tick); never while paused, suspended or in the background.
+    var beforeFrame: (() -> Void)?
+
+    /// MED-006-R9: decodes a picture ahead so that setting it as `content` later is a one-render cut.
+    func preload(_ url: URL) { photo.preload(url) }
+
     /// What the photo layer shows.
     var content: ImageLayerContent {
         get { photo.content }
@@ -241,6 +248,7 @@ final class PhotoVisualHost: PresentationBoundResource {
     fileprivate func frame(_ link: CADisplayLink) {
         let layer = view.metalLayer
         guard view.window != nil, layer.drawableSize.width >= 1, layer.drawableSize.height >= 1 else { return }
+        beforeFrame?()   // MED-006: a due slide becomes the content of this frame
         if let info = analyzer.output.readLatest(into: bands, capacity: SpectrumBarCount.maximum) {
             bandCount = info.count
         }

@@ -87,6 +87,8 @@ final class AppSettings {
     static let cameraZoomKey = "settings.camera.zoom"
     /// MED-001: the stored photo's identifier (written by PhotoStore).
     static let photoIDKey = PhotoStore.idKey
+    /// MED-006: the image slideshow (written by SlideshowStore).
+    static let slideshowKey = SlideshowStore.key
     /// MED-002: the stored video's identifier (written by VideoStore).
     static let videoIDKey = VideoStore.idKey
     /// MED-003: the stored video's loop region (written by VideoStore).
@@ -97,7 +99,7 @@ final class AppSettings {
     static let textOverlayKey = TextOverlayStore.key
     static let allKeys = [performanceOverlayKey, reduceFlashingKey, presetScopeKey, visualKey, circularSpectrumBarsKey,
                           glowKey, glowIntensityKey, glowRadiusKey, glowThresholdKey,
-                          linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey, videoIDKey, videoLoopKey, videoSpeedKey,
+                          linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey, slideshowKey, videoIDKey, videoLoopKey, videoSpeedKey,
                           textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, spectrumAttackKey, spectrumReleaseKey,
                           cameraPositionKey, cameraMirrorFrontKey, cameraMirrorBackKey,
                           cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey, midiEnabledKey,
