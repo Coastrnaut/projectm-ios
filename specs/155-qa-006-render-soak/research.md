@@ -9,7 +9,10 @@
 - **Rationale**: it is the device-wide figure, so it sees every Metal allocation (pool, layer
   generators, photo textures, pipelines' buffers, capture buffers), not only pooled textures. A host
   probe (2026-11-14, Mac Studio) showed it exact to the allocation: each 256 × 192 `rgba16Float`
-  texture added 409,600 bytes and releasing them returned the figure to near its start.
+  texture added 409,600 bytes and releasing them returned the figure to near its start. The iOS 27.2
+  Simulator reports 0 (QA6 run, 2026-11-14), so simulator soaks use the pool fallback and also record the
+  process footprint (`TASK_VM_INFO.phys_footprint`) per cycle for information (never judged: it includes CPU
+  memory). The macOS host (and later the device) is where the device-wide figure is judged.
 - **Alternatives**: pool counters only (blind to non-pooled leaks); process RSS (includes CPU memory
   and is noisy; not a GPU figure); Instruments (not automatable in tests).
 

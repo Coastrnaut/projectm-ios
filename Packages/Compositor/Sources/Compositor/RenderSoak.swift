@@ -60,15 +60,20 @@ public struct RenderSoakCycleSample: Sendable, Equatable, Codable {
     /// Textures the pool had to create so far (cumulative).
     public var poolMisses: Int
     public var frames: Int
+    /// The process's physical footprint at the cycle's end, when the driver can read it. Reported only, never
+    /// judged (it includes CPU memory); it is the only whole-process figure where the GPU reports no allocated size
+    /// (the iOS Simulator).
+    public var processFootprintBytes: Int?
 
     public init(cycle: Int, memoryHighWaterBytes: Int, memoryEndBytes: Int, poolLiveBytes: Int = 0, poolMisses: Int = 0,
-                frames: Int = 0) {
+                frames: Int = 0, processFootprintBytes: Int? = nil) {
         self.cycle = cycle
         self.memoryHighWaterBytes = memoryHighWaterBytes
         self.memoryEndBytes = memoryEndBytes
         self.poolLiveBytes = poolLiveBytes
         self.poolMisses = poolMisses
         self.frames = frames
+        self.processFootprintBytes = processFootprintBytes
     }
 }
 

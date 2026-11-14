@@ -101,3 +101,34 @@ recording is refused: the test fails and writes nothing. Without the switch a mi
 
 Write the scene as canonical SCN-001 bytes (`SceneDocument.encoded()`), add its run to
 `GoldenSceneCatalog.runs` and a test method to `GoldenRenderSuiteTests`, then record both classes.
+
+## Render soak (QA-006)
+
+`RenderSoakDriver` (module `SceneRenderHarness`; `specs/155-qa-006-render-soak`) switches six of the
+scenes above (all but strobe-guarded) through CMP-014's `SceneTransitionBus` with one shared texture
+pool: each switch builds the next scene anew from its document, crossfades for 0.25 s (every third
+switch is a cut), dwells 30 frames, and feeds seeded fixture bands on an injected 60 Hz clock. Frames
+are committed and awaited, so the soak runs faster than real time; nothing asserts wall time.
+
+The verdict (`RenderSoakRecorder`, Compositor) passes only with zero render errors (build, encode,
+command buffer, PERF-014 faults), a flat memory trend (after 2 warm-up cycles, the least-squares slope of
+the per-cycle high-water marks ≤ max(64 KiB, 0.5 %) per cycle and no high-water above warm-up +
+max(2 MiB, 10 %)), pool checkouts equal to each scene's baseline at every dwell end, one scene alive per
+dwell end, and nothing checked out or alive after release. Memory is `MTLDevice.currentAllocatedSize`;
+the iOS Simulator reports 0 there, so it falls back to the pool's live bytes (the report's
+`memorySource` says which) and also records the process footprint for information.
+
+| Test (`RenderSoakTests`) | What |
+|---|---|
+| `testDefaultSoakIsBoundedAndErrorFree` | 30 s simulated, 60 scenes shown, must pass |
+| `testPooledLeakFailsTheSoak`, `testDeviceLeakFailsTheSoak` | negative controls: one leaked texture per cycle must fail |
+| `testOnDemandLongSoak` | skipped unless `QA006_SOAK_SECONDS=<n>` |
+
+`ProjectMPresetSoakTests` (Packages/ANGLERendering, simulator) soaks projectM preset switches the same way.
+Each run writes a JSON report to `QA006_REPORT_DIR` (else `<tmp>/qa006-render-soak/`) and attaches it.
+Long soak on demand:
+
+```bash
+python3 scripts/run_render_soak.py --seconds 600                                # macOS host
+python3 scripts/run_render_soak.py --seconds 600 --simulator <udid> --angle     # simulator, + projectM
+```

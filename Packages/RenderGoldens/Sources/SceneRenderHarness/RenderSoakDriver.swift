@@ -14,6 +14,7 @@
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import AnalysisFeatures
 import Compositor
+import Darwin
 import Foundation
 import GoldenImages
 import Metal
@@ -320,7 +321,8 @@ public final class RenderSoakDriver {
         let counters = pool.counters
         state.recorder.record(cycle: RenderSoakCycleSample(cycle: cycle, memoryHighWaterBytes: state.cycleHighWater,
                                                            memoryEndBytes: state.memory, poolLiveBytes: counters.liveBytes,
-                                                           poolMisses: counters.misses, frames: cycleFrames))
+                                                           poolMisses: counters.misses, frames: cycleFrames,
+                                                           processFootprintBytes: Self.processFootprintBytes()))
         state.cycleHighWater = 0
     }
 
@@ -337,6 +339,18 @@ public final class RenderSoakDriver {
                 state.leakedBytes += t.allocatedSize > 0 ? t.allocatedSize : TexturePool.estimatedBytes(d)
             }
         }
+    }
+
+    /// The process's physical footprint (`TASK_VM_INFO`), nil when unavailable. Reported only.
+    public static func processFootprintBytes() -> Int? {
+        var info = task_vm_info_data_t()
+        var count = mach_msg_type_number_t(MemoryLayout<task_vm_info_data_t>.size / MemoryLayout<integer_t>.size)
+        let result = withUnsafeMutablePointer(to: &info) { (p: UnsafeMutablePointer<task_vm_info_data_t>) -> kern_return_t in
+            p.withMemoryRebound(to: integer_t.self, capacity: Int(count)) { (q: UnsafeMutablePointer<integer_t>) -> kern_return_t in
+                task_info(mach_task_self_, task_flavor_t(TASK_VM_INFO), q, &count)
+            }
+        }
+        return result == KERN_SUCCESS ? Int(info.phys_footprint) : nil
     }
 
     // MARK: - Reports
