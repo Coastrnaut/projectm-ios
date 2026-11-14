@@ -43,7 +43,7 @@ test**: the reference gradient through the real output pass.
   through `Compositor.composite` into both formats: monotonic per channel along each row, no NaN, 0…1, matches
   the reference within one 8-bit step / 0.002 (FX-002-S1).
 - [ ] FX-002-T08 [US1] Same file: the non-finite counter counts the NaN/Inf pixels of a frame once (screen pass
-  only) and stays 0 for the gradient.
+  only) and stays 0 for the gradient; the same for `SceneTransitionBus.nonFiniteOutputPixels` (FX-002-R7).
 - [ ] FX-002-T09 [US1] Run the RenderGoldens suite: zero golden changes (FX-002-S2), and the Compositor suite.
 
 ## Phase 4: User Story 2 - Recordings and captures match the screen (P1)
@@ -63,7 +63,7 @@ test**: the reference gradient through the real output pass.
 ## Phase 6: Polish
 
 - [ ] FX-002-T13 GPU timing (FX-002-S7): the output pass at 1920 × 1080 with the previous and the new
-  `cmp_output`, 50 frames each, median GPU time printed and recorded in research.md (no threshold).
+  `cmp_output` (the previous shader kept as a string constant in the test file only), 50 frames each, median GPU time printed and recorded in research.md (no threshold).
 - [ ] FX-002-T14 Linux shape: the reference tests with `-DCOMPOSITOR_NO_METAL -DVISUAL_NO_METAL
   -DANALYSIS_NO_ACCELERATE`; regressions VisualGenerators, SceneFormat, ImportFuzz.
 - [ ] FX-002-T15 App unit tests on an own simulator ("FX2 iPhone 17", iOS 27.2, `-only-testing:projectM-iOSTests`,
@@ -71,7 +71,9 @@ test**: the reference gradient through the real output pass.
 - [ ] FX-002-T16 `docs/adr/0047-output-tone-map.md` (next free number above the integration branch's highest and
   above 0045/0046 reserved for FILE-011 and ACC-012) and the compositor header notes in `Compositor.swift`.
 - [ ] FX-002-T17 Checks: `check_compliance.py`, `validate_docs.py`, `check_motion_policy.py`,
-  `check_permission_catalog.py`, `check_status_events.py`, `test_scripts.py`; remove the audit scratch test.
+  `check_permission_catalog.py`, `check_status_events.py`, `test_scripts.py`; remove the audit scratch test;
+  `git diff` shows no new `makeRenderCommandEncoder`, `makeTexture` or per-frame `makeBuffer` in the frame path
+  (FX-002-R9).
 - [ ] FX-002-T18 {device} On D1, a scene with a glowing spectrum layer over a bright photo: no hue-shifted
   clipping or broken pixels; frame rate as before (FX-002-S6, last stage).
 
