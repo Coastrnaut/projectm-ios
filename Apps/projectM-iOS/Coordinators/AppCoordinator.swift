@@ -345,34 +345,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         self.defaults = defaults
         self.memoryPressure = memoryPressure ?? .shared
         self.externalDisplay = externalDisplay ?? .shared
-        if ProcessInfo.processInfo.arguments.contains("-uitestResetNotice") {
-            defaults.removeObject(forKey: Self.noticeKey)
-            defaults.removeObject(forKey: FavoritesStore.favoritesKey)
-            defaults.removeObject(forKey: FavoritesStore.lastPresetKey)
-            RecentPresetsStore.allKeys.forEach(defaults.removeObject(forKey:))   // PRE-006: no history, switch off (the default)
-            AppSettings.allKeys.forEach(defaults.removeObject(forKey:))
-            defaults.removeObject(forKey: InputTrimSetting.decibelsKey)   // AUD-008: 0 dB
-            defaults.removeObject(forKey: ChannelSelectionSetting.modeKey)   // AUD-009: Mix
-            defaults.removeObject(forKey: PlaybackBalanceSetting.positionKey)   // AUD-010: centred
-            defaults.removeObject(forKey: NoiseGateSetting.enabledKey)   // AUD-011: off
-            defaults.removeObject(forKey: NoiseGateSetting.thresholdKey)   // AUD-011: −50 dBFS
-            defaults.removeObject(forKey: RecordingAudioSetting.includeMicrophoneKey)   // REC-004: off
-            defaults.removeObject(forKey: ParameterShelf.pinsKey)   // UIX-004: no pins
-            LatencyOffsetSetting.allKeys.forEach(defaults.removeObject(forKey:))   // AUD-013: 0 ms
-            ColorGradeSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-003: neutral
-            MotionFeedbackSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-009: Trails off
-            EffectChainSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-020: standard order, no presets
-            defaults.removeObject(forKey: MIDIMappingCoordinator.mappingsKey)   // MIDI-003: no mappings
-            try? FileManager.default.removeItem(at: PresetCollectionStore.defaultDirectory())   // PRE-007: UI tests start without collections
-            try? FileManager.default.removeItem(at: UserPresetStore.defaultDirectory())         // PRE-012: and without imported presets
-            if let photos = try? PhotoStore.defaultDirectory() { try? FileManager.default.removeItem(at: photos) }   // MED-001: no photo
-            if let videos = try? VideoStore.defaultDirectory() { try? FileManager.default.removeItem(at: videos) }   // MED-002: no video
-            if let scenes = try? SceneAutosaveStore.defaultDirectory() { try? FileManager.default.removeItem(at: scenes) }   // SCN-002: no scene
-            SessionRecoveryCoordinator.reset(defaults)   // PERF-010: no previous session
-            GuidedFirstSceneCoordinator.reset(defaults)  // UIX-001: never offered
-            PermissionExplainerCoordinator.reset(defaults)   // UIX-015: nothing explained
-            if let shows = try? ShowStore.defaultDirectory() { try? FileManager.default.removeItem(at: shows) }   // SHOW-001: no show
-        }
+        if ProcessInfo.processInfo.arguments.contains("-uitestResetNotice") { Self.resetForUITests(defaults) }
         // FILE-005-R6, R7: a pending restore (or an interrupted one) finishes before any store reads the library.
         LibraryBackupCoordinator.finishPendingRestore(defaults: defaults)
         Self.reconcileMediaFolders(defaults: defaults)   // FILE-008-R7, R8: after the restore, before the stores read
@@ -528,6 +501,45 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         lifecycleForwarding = Task { @MainActor in
             for await event in lifecycle.events { await lifecycleCoordinator.handle(event) }
         }
+        connectAfterInit(defaults: defaults)
+    }
+
+    // AppCoordinator.init is split in three (2026-11-14) to keep each body under the 300 ms
+    // type-check budget that Xcode 26 on CI enforces: the UI-test reset and the wiring that runs
+    // once every stored property is set moved out unchanged, called at the same points.
+
+    /// `-uitestResetNotice`: UI tests start from a clean library and settings.
+    private static func resetForUITests(_ defaults: UserDefaults) {
+        defaults.removeObject(forKey: Self.noticeKey)
+        defaults.removeObject(forKey: FavoritesStore.favoritesKey)
+        defaults.removeObject(forKey: FavoritesStore.lastPresetKey)
+        RecentPresetsStore.allKeys.forEach(defaults.removeObject(forKey:))   // PRE-006: no history, switch off (the default)
+        AppSettings.allKeys.forEach(defaults.removeObject(forKey:))
+        defaults.removeObject(forKey: InputTrimSetting.decibelsKey)   // AUD-008: 0 dB
+        defaults.removeObject(forKey: ChannelSelectionSetting.modeKey)   // AUD-009: Mix
+        defaults.removeObject(forKey: PlaybackBalanceSetting.positionKey)   // AUD-010: centred
+        defaults.removeObject(forKey: NoiseGateSetting.enabledKey)   // AUD-011: off
+        defaults.removeObject(forKey: NoiseGateSetting.thresholdKey)   // AUD-011: −50 dBFS
+        defaults.removeObject(forKey: RecordingAudioSetting.includeMicrophoneKey)   // REC-004: off
+        defaults.removeObject(forKey: ParameterShelf.pinsKey)   // UIX-004: no pins
+        LatencyOffsetSetting.allKeys.forEach(defaults.removeObject(forKey:))   // AUD-013: 0 ms
+        ColorGradeSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-003: neutral
+        MotionFeedbackSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-009: Trails off
+        EffectChainSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-020: standard order, no presets
+        defaults.removeObject(forKey: MIDIMappingCoordinator.mappingsKey)   // MIDI-003: no mappings
+        try? FileManager.default.removeItem(at: PresetCollectionStore.defaultDirectory())   // PRE-007: UI tests start without collections
+        try? FileManager.default.removeItem(at: UserPresetStore.defaultDirectory())         // PRE-012: and without imported presets
+        if let photos = try? PhotoStore.defaultDirectory() { try? FileManager.default.removeItem(at: photos) }   // MED-001: no photo
+        if let videos = try? VideoStore.defaultDirectory() { try? FileManager.default.removeItem(at: videos) }   // MED-002: no video
+        if let scenes = try? SceneAutosaveStore.defaultDirectory() { try? FileManager.default.removeItem(at: scenes) }   // SCN-002: no scene
+        SessionRecoveryCoordinator.reset(defaults)   // PERF-010: no previous session
+        GuidedFirstSceneCoordinator.reset(defaults)  // UIX-001: never offered
+        PermissionExplainerCoordinator.reset(defaults)   // UIX-015: nothing explained
+        if let shows = try? ShowStore.defaultDirectory() { try? FileManager.default.removeItem(at: shows) }   // SHOW-001: no show
+    }
+
+    /// The end of init, after every stored property is set: callbacks, observers and the first loads.
+    private func connectAfterInit(defaults: UserDefaults) {
         photos.onPhotoChange = { [weak self] (_: StoredPhoto?) in self?.refreshPhotoContent() }   // MED-006: the slideshow wins when on
         connectSlideshow()   // MED-006
         connectLogo()   // MED-010
