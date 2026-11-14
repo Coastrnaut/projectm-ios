@@ -38,7 +38,42 @@ outputs, and no two scene outputs ever exist at the same time.
 
 ### Session 2026-11-14
 
-(Filled by `/speckit-clarify`.)
+Answered by Claude under the owner's standing approval (owner rules 4 and 9: best judgement, no
+human interaction); each answer is the recommended, conservative option.
+
+- Q: What happens when a new transition starts while one is running (interruption)? → A: **Snap,
+  then start.** The running transition jumps to its end (its incoming scene becomes the live scene,
+  its outgoing scene and blend target are released at once), and the new transition starts from
+  there at progress 0. At most two scene outputs are ever live, so memory stays bounded. The jump is
+  a frame change like any cut and goes through the bus's flash guard. Rejected: chaining three live
+  scenes (unbounded memory), freezing a snapshot of the mixed frame (an extra texture and a frozen
+  picture).
+- Q: What does cancel do? → A: **Back to the outgoing scene, at once.** The incoming scene and the
+  blend target are released; the outgoing scene is live again. A separate "finish now" snaps to the
+  incoming scene. Both are cuts through the flash guard.
+- Q: Where does the flash guard run during a transition? → A: **Once, on the frame the bus shows.**
+  The bus owns one composite flash guard for its whole life: the scene compositors only produce their
+  composites (the stack phase), and the bus runs the guard and the output pass on the live scene's
+  composite (no transition) or on the blend (transition). The guard's history is continuous across
+  scenes and transitions, so no transition frame bypasses it and a cut back and forth is a flash the
+  guard sees. The compositor's own `composite(into:)` is unchanged for single-scene hosts.
+- Q: Does this row store a transition with each cue (show.json or scene format)? → A: **No.**
+  SCN-007 ("store transition type, duration and easing with each cue") depends on CMP-014 and owns
+  persistence; SHOW-004 owns the per-cue override. This row adds the validated, Codable transition
+  spec those rows will store, and changes no file format (QA-004 fixtures unaffected). A cue without a
+  stored transition keeps SHOW-001's cut; the bus's default for a crossfade is 1 s, ease in-out.
+- Q: Is the app's live output switched to the bus in this row? → A: **No, the bus and its rules land
+  in the compositor package; the app gets the Reduce Motion rule.** The app's visuals are separate
+  hosts (projectM on ANGLE, the native spectra, one compositor per photo, text, video and camera), so
+  a whole-scene output exists only where a scene is one compositor stack (the compositor package and
+  the RenderGoldens harness). Moving the device slot, the external display and recording onto a
+  scene compositor is a separate, larger change and is recorded as follow-up in the plan; until then
+  cue changes stay cuts, which is also what Reduce Motion asks for. `MotionPolicy` gains the scene
+  transition rule (decorative → cut) so the wiring has one place to ask.
+- Q (plan detail recorded here): How does the clock treat stalls and pauses? → A: It sums the frame
+  durations of shown frames, each clamped to 0.1 s like the compositor's frame clock; `pause()` makes
+  the next frame add nothing, so a pause of any length leaves progress where it was. Durations are
+  integer nanoseconds, so the end is exact.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -103,8 +138,10 @@ not asserted).
 ### Edge Cases
 
 - A transition of duration 0, or any transition while Reduce Motion is on: a cut on the next frame.
-- A new transition while one runs (interruption): decided in Clarifications.
-- Cancel during a transition: decided in Clarifications.
+- A new transition while one runs (interruption): the running one snaps to its end, then the new
+  one starts at progress 0 (Clarifications).
+- Cancel during a transition: the outgoing scene is live again at once; "finish now" snaps to the
+  incoming scene.
 - An output size change during a transition: the blend target is replaced from the pool; nothing leaks.
 - A frame that fails to encode during a transition: the transition does not advance past what was shown.
 - Blackout during a transition: the slot's black cover stays above the output; the transition keeps
@@ -128,8 +165,9 @@ not asserted).
   history).
 - **CMP-014-R5**: No leaks: the blend target comes from the texture pool; it and the outgoing
   scene's resources go back to the pool when the transition ends, is cancelled or is interrupted.
-- **CMP-014-R6**: Interruption and cancel follow the Clarifications; at most two scene outputs are
-  live at any time.
+- **CMP-014-R6**: A new transition during a transition snaps the running one to its end and starts
+  from there; cancel returns to the outgoing scene; finish-now snaps to the incoming scene. At most
+  two scene outputs are live at any time.
 - **CMP-014-R7**: Flash safety: the bus runs the composite flash guard (FX-019) on the frame it
   shows, transition frames included; no transition frame reaches an output without it.
 - **CMP-014-R8**: Render caching: a scene compositor's level-2 reuse stays correct for that scene,
@@ -137,7 +175,10 @@ not asserted).
 - **CMP-014-R9**: Every output fed from the bus (device, external display, recording) shows the
   same frame: the bus's output pass, repeated through `encodeOutput` like REC-003.
 - **CMP-014-R10**: Reduce Motion: a scene transition is decorative, so with Reduce Motion on it
-  resolves to a cut; blackout, Restore and the PERF-014 placeholder stay safety fades.
+  resolves to a cut (the transition model and the app's `MotionPolicy` both apply the rule);
+  blackout, Restore and the PERF-014 placeholder stay safety fades.
+- **CMP-014-R13**: No file format changes: show.json v1 and the scene format are unchanged; a cue
+  without a stored transition is a cut (SCN-007 and SHOW-004 add storage and overrides).
 - **CMP-014-R11**: The compositor's existing single-scene output is unchanged (goldens unchanged).
 - **CMP-014-R12**: The clock, easing and weights are plain Swift and build on Linux.
 
