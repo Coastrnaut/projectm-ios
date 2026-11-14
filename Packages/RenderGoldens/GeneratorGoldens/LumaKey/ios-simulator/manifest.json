@@ -1,0 +1,28 @@
+{
+  "entries" : [
+    {
+      "file" : "luma-key-black-128x96-f0.png",
+      "fileSHA256" : "f7035a5aafcbe38248ff60277246e624337b52f73bb02ccba45cddb80f9625bd",
+      "frame" : 0,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "f32430d0089a892f47a8eb281e550d8279146c1a13d97d9f1b4373a0211c78f7",
+      "scene" : "luma-key-black",
+      "width" : 128
+    },
+    {
+      "file" : "luma-key-black-256x192-f0.png",
+      "fileSHA256" : "bf19192a63f7197c1f5d36da30d3b7289b1d1874f594bc092bced9fc94ec1e8f",
+      "frame" : 0,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "2b4eb5e3f5aab0d93dda95c32fe8cf4e63d84c8baff7005e460d6298041338d5",
+      "scene" : "luma-key-black",
+      "width" : 256
+    }
+  ],
+  "formatVersion" : 1,
+  "platform" : "ios-simulator",
+  "recordedGPU" : "Apple iOS simulator GPU",
+  "recordedOS" : "27.2"
+}

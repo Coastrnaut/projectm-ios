@@ -143,6 +143,8 @@ public final class Compositor {
         var mask: LayerMask?
         /// CMP-008: the gradient shown from the next frame (same block as the mask).
         var gradientMask: LayerGradientMask?
+        /// CMP-009: the luma key shown from the next frame (same block as the mask).
+        var lumaKey: LayerLumaKey?
         var maskBlock: CompositorShaders.MaskBlock?
         var maskBlockSize: LayerPictureDescriptor?
         /// PERF-014: the layer's back-off, and the render error shown while it holds.
@@ -170,6 +172,7 @@ public final class Compositor {
             blendMode = settings.blendMode
             mask = settings.mask
             gradientMask = settings.gradientMask
+            lumaKey = settings.lumaKey   // CMP-009
             // CMP-006: a stack entry's fit always reaches the layer (the stack is the source of
             // truth); a layer given to `init(device:layers:)` keeps its own fit unless its settings set one.
             if let fitting = layer as? any LayerFitting, id != nil || settings.fit != nil { fitting.fit = settings.fit }
@@ -473,9 +476,11 @@ public final class Compositor {
                 }
                 kept.transform = entry.settings.transform
                 kept.blendMode = entry.settings.blendMode
-                if kept.mask != entry.settings.mask || kept.gradientMask != entry.settings.gradientMask {   // CMP-007, CMP-008
+                if kept.mask != entry.settings.mask || kept.gradientMask != entry.settings.gradientMask
+                    || kept.lumaKey != entry.settings.lumaKey {   // CMP-007, CMP-008, CMP-009
                     kept.mask = entry.settings.mask
                     kept.gradientMask = entry.settings.gradientMask
+                    kept.lumaKey = entry.settings.lumaKey
                     kept.maskBlock = nil
                 }
                 if let fitting = kept.layer as? any LayerFitting { fitting.fit = entry.settings.fit }   // CMP-006
@@ -1060,10 +1065,12 @@ public final class Compositor {
     private func maskBlock(_ i: Int, size: LayerPictureDescriptor) -> CompositorShaders.MaskBlock? {
         let mask: LayerMask? = records[i].mask
         let gradient: LayerGradientMask? = records[i].gradientMask
-        guard mask != nil || gradient != nil else { return nil }
+        let key: LayerLumaKey? = records[i].lumaKey   // CMP-009
+        guard mask != nil || gradient != nil || key != nil else { return nil }
         if let block = records[i].maskBlock, records[i].maskBlockSize == size { return block }
         let block = CompositorShaders.MaskBlock(shape: mask?.geometry(width: size.width, height: size.height),
-                                                gradient: gradient?.geometry(width: size.width, height: size.height))
+                                                gradient: gradient?.geometry(width: size.width, height: size.height),
+                                                lumaKey: key)
         records[i].maskBlock = block
         records[i].maskBlockSize = size
         return block

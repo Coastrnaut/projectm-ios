@@ -129,6 +129,8 @@ final class MaterialRenderTests: XCTestCase {
                     case .color:
                         let v = useMaximum ? 1.0 : 0.0
                         try layer.set(.color(ParameterColor(red: v, green: v, blue: v)), for: d.id)
+                    case let .enumeration(cases, _):   // SHD-003: first and last case
+                        try layer.set(.enumeration((useMaximum ? cases.last : cases.first)?.id ?? ""), for: d.id)
                     default:
                         XCTFail("\(d.id)")
                     }

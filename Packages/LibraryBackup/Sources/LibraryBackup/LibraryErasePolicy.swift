@@ -79,7 +79,8 @@ public enum LibraryErasePolicy {
     /// Folder names under the library root (FILE-011-R4).
     public static func folders(_ category: LibraryEraseCategory) -> [String] {
         switch category {
-        case .scenes: [LibraryFolders.Folder.show.rawValue, LibraryFolders.Folder.currentScene.rawValue]
+        case .scenes: [LibraryFolders.Folder.show.rawValue, LibraryFolders.Folder.currentScene.rawValue,
+                       LibraryFolders.Folder.palettes.rawValue]   // UIX-011: palettes go with the scenes that link them
         case .presets: [LibraryFolders.Folder.presets.rawValue]
         case .collections: [LibraryFolders.Folder.collections.rawValue]
         case .media: [LibraryFolders.Folder.photos.rawValue, videosFolderName]

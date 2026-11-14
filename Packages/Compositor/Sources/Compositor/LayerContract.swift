@@ -81,15 +81,20 @@ public struct LayerCompositeSettings: Sendable, Equatable {
     /// CMP-008: a linear or radial alpha gradient in the same layer space, multiplying the shape's coverage;
     /// nil draws without one.
     public var gradientMask: LayerGradientMask?
+    /// CMP-009: a luminance range of the layer's own colour made transparent (keep factor × the masks' coverage);
+    /// nil draws without one.
+    public var lumaKey: LayerLumaKey?
 
     public init(opacity: Double = 1, blendMode: LayerBlendMode = .normal, transform: LayerTransform = .identity,
-                fit: LayerFit? = nil, mask: LayerMask? = nil, gradientMask: LayerGradientMask? = nil) {
+                fit: LayerFit? = nil, mask: LayerMask? = nil, gradientMask: LayerGradientMask? = nil,
+                lumaKey: LayerLumaKey? = nil) {
         self.opacity = opacity.isFinite ? min(max(opacity, 0), 1) : 1
         self.blendMode = blendMode
         self.transform = transform
         self.fit = fit
         self.mask = mask
         self.gradientMask = gradientMask
+        self.lumaKey = lumaKey
     }
 
     /// CMP-001 accepts only opacity 1, normal blending and the identity transform (CMP-001-R11).

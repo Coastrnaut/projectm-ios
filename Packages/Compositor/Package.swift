@@ -62,6 +62,9 @@
 //   `RecordingValidator` that reads a file for them; a generated corpus of good and bad files tests both.
 // Nothing here imports projectM, ANGLE, capture or the app (Constitution VI). The projectM layer is
 // target `ProjectMLayer` in Packages/ANGLERendering.
+// * `ShaderParameterMetadata` (SHD-003, specs/218-shd-003-shader-parameter-metadata) reads and validates the
+//   data-only parameter documents of bundled shader variants (unknown keys, ranges, enums, slots checked against
+//   the shader's reads), maps them to MOD-001 descriptors and builds generic inspector controls. Linux-buildable.
 // * `ColorGradeParameters` (FX-003, specs/123-fx-003-color-grading) holds the colour grade's MOD-001 descriptors; the
 //   grade value, its plain-Swift reference and its shader stage are in `Compositor` (output pass).
 // One library product, so CI's `-scheme Compositor` builds and tests every target.
@@ -70,7 +73,7 @@ import PackageDescription
 let package = Package(
     name: "Compositor",
     platforms: [.iOS("26.0"), .macOS(.v15)],
-    products: [.library(name: "Compositor", targets: ["Compositor", "SpectrumLayers", "CameraLayer", "ProceduralMaterials", "GeneratorGraph", "GeneratorGraphImport", "ImageLayer", "VideoLayer", "TextLayer", "FrameCapture", "MediaSniffing", "FrameRecording", "ColorGradeParameters", "FrameTiming"])],
+    products: [.library(name: "Compositor", targets: ["Compositor", "SpectrumLayers", "CameraLayer", "ShaderParameterMetadata", "ProceduralMaterials", "GeneratorGraph", "GeneratorGraphImport", "ImageLayer", "VideoLayer", "TextLayer", "FrameCapture", "MediaSniffing", "FrameRecording", "ColorGradeParameters", "FrameTiming"])],
     dependencies: [
         .package(path: "../AnalysisFeatures"),
         .package(path: "../FlashSafety"),
@@ -89,7 +92,10 @@ let package = Package(
         .target(name: "Compositor", dependencies: ["AnalysisFeatures", "FlashSafety", "FrameCapture", "ParameterGraph"]),
         .target(name: "SpectrumLayers", dependencies: ["Compositor", .product(name: "VisualGenerators", package: "VisualGenerators")]),
         .target(name: "CameraLayer", dependencies: ["Compositor"]),
-        .target(name: "ProceduralMaterials", dependencies: ["Compositor", "ParameterGraph"]),
+        // SHD-003: declarative shader parameter metadata (strict JSON reader, validator, slot check, MOD-001
+        // descriptors, generic inspector controls). Foundation + ParameterGraph only; builds on Linux.
+        .target(name: "ShaderParameterMetadata", dependencies: ["ParameterGraph"]),
+        .target(name: "ProceduralMaterials", dependencies: ["Compositor", "ParameterGraph", "ShaderParameterMetadata"]),
         // FX-003: the colour grade's MOD-001 descriptors (the value and its shader live in Compositor).
         .target(name: "ColorGradeParameters", dependencies: ["Compositor", "ParameterGraph"]),
         .target(name: "GeneratorGraph", dependencies: ["Compositor"]),
@@ -102,7 +108,8 @@ let package = Package(
                     dependencies: ["Compositor", "SpectrumLayers", "CameraLayer", "ImageLayer", "VideoLayer", "MediaSniffing", "AnalysisFeatures", "FlashSafety", "FrameCapture", "FrameRecording", "FrameTiming", "ParameterGraph",
                                    .product(name: "VisualGenerators", package: "VisualGenerators")]),
         .testTarget(name: "ProceduralMaterialsTests",
-                    dependencies: ["ProceduralMaterials", "Compositor", "ParameterGraph", "FlashSafety", "AnalysisFeatures"]),
+                    dependencies: ["ProceduralMaterials", "ShaderParameterMetadata", "Compositor", "ParameterGraph", "FlashSafety", "AnalysisFeatures"]),
+        .testTarget(name: "ShaderParameterMetadataTests", dependencies: ["ShaderParameterMetadata", "ParameterGraph"]),
         .testTarget(name: "GeneratorGraphTests",
                     dependencies: ["GeneratorGraph", "Compositor", "FlashSafety", "AnalysisFeatures", "ProceduralMaterials"]),
         .testTarget(name: "ColorGradeParametersTests",

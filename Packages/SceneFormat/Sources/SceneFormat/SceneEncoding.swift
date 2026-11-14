@@ -61,7 +61,13 @@ enum SceneEncoder {
         if let f = c.fit { o["fit"] = fit(f) }   // CMP-006: only when set, so older scenes stay byte-identical
         if let m = c.mask { o["mask"] = mask(m) }   // CMP-007: likewise
         if let g = c.gradientMask { o["gradientMask"] = gradientMask(g) }   // CMP-008: likewise
+        if let k = c.lumaKey { o["lumaKey"] = lumaKey(k) }   // CMP-009: likewise
         return .object(o)
+    }
+
+    /// CMP-009's saved form (contracts/luma-key.md L1 in specs/220): every field.
+    static func lumaKey(_ k: LayerLumaKey) -> SceneJSON {
+        .object(["low": .double(k.low), "high": .double(k.high), "softness": .double(k.softness), "invert": .bool(k.inverted)])
     }
 
     /// CMP-008's saved form: every field of a known kind; an unknown kind's object verbatim.

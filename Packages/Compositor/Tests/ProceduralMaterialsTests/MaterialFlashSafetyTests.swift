@@ -92,6 +92,30 @@ final class MaterialFlashSafetyTests: XCTestCase {
         }
     }
 
+    /// SHD-003-R6: Gradient Field's Radial shape at its fastest, brightest settings with full music stays
+    /// inside the always-on budget, and at defaults inside the Reduce flashing envelope.
+    func testGradientRadialShapeStaysInsideTheBudgets() throws {
+        let rig = try MaterialGPURig()
+        let shape = ProceduralMaterialCatalog.definition(.gradient).parameterID("shape")
+        let calm = ProceduralMaterialCatalog.makeLayer(.gradient)
+        try calm.set(.enumeration("radial"), for: shape)
+        let calmWorst = try worstTransitions(try MaterialGPURig.Driver(rig: rig, layer: calm), bands: [], configuration: .reduceFlashing)
+        XCTAssertLessThanOrEqual(calmWorst, 2, "radial at defaults")
+        let layer = ProceduralMaterialCatalog.makeLayer(.gradient)
+        try layer.set(.enumeration("radial"), for: shape)
+        for name in ["speed", "brightness", "audioReactivity"] {
+            let id = layer.definition.parameterID(name)
+            if case let .continuous(_, maximum, _, _, _)? = layer.definition.parameters.first(where: { $0.id == id })?.kind {
+                try layer.set(.continuous(maximum), for: id)
+            }
+        }
+        try layer.set(.color(ParameterColor(red: 0, green: 0, blue: 0)), for: layer.definition.parameterID("colorA"))
+        try layer.set(.color(ParameterColor(red: 1, green: 1, blue: 1)), for: layer.definition.parameterID("colorB"))
+        let worst = try worstTransitions(try MaterialGPURig.Driver(rig: rig, layer: layer), bands: [Float](repeating: 1, count: 32),
+                                         configuration: .alwaysOn)
+        XCTAssertLessThanOrEqual(worst, FlashEnvelopeConfiguration.alwaysOn.transitionBudget, "radial at extremes")
+    }
+
     /// R10: music changes motion only; with speed 0 a frame with music equals one without.
     func testMusicChangesOnlyMotion() throws {
         let rig = try MaterialGPURig()
