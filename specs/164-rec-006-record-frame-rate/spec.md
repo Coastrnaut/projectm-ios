@@ -39,6 +39,16 @@ human interaction); each answer is the conservative, local-first option.
 - Q: When is a rate unavailable? → A: When the display cannot show it (`maximumFramesPerSecond` below it), when the visual's render loop is capped below it (Low Power Mode or serious thermal state cap the loop at 30 fps), or when the encoder reports a lower frame-rate limit for the planned codec and size. Unavailable rates are shown disabled with a reason, never hidden, and cannot be picked.
 - Q: What happens at Record with an explicit rate that is unavailable at that moment (Low Power Mode switched on)? → A: The recording uses the highest supported rate below it that is available, starts, and announces "Recording at 30 fps: <reason>." through the status router (row X9c, the same row as a profile fallback). The stored choice is unchanged. 24 fps is always available on a working display, so a rate fallback never refuses.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Does an explicit rate change a profile's bit rate? → A: Only through the profile's own rule. Fixed-rate profiles (Draft 4, High 20, Max 40 Mb/s) keep their bit rate at any frame rate; Standard keeps REC-003's per-pixel-per-frame rule, so its bit rate follows the effective rate (about 6 Mb/s at 1080p24 HEVC). The disk guard's estimate uses the same effective rate and bit rate.
+- Q: Where is the dropped-frame count shown? → A: In the recording result (the recorder's result and the coordinator's last-recording facts, read by tests and the DEBUG probe). No new user-facing notice: a drop count means nothing to most users, and the notices already cover stops and fallbacks.
+- Q: Where does the picker live in Settings? → A: Its own section, "Recording frame rate", directly under "Recording quality", with four rows built like the profile rows (buttons, not a menu Picker, so a disabled row stays visible with its reason).
+- Q: What does "jittery rendering" mean in the acceptance fixture? → A: Deterministic: a 120 Hz loop whose frame times each move by a pseudo-random offset of up to ±2 ms (fixed seed), and a 60 Hz loop with up to ±3 ms. Both stay at or above every target on average; at most 1% of slots may be dropped (REC-006-S2).
+- Q: Does the rate fallback apply to Profile default too? → A: Only the render cap and the encoder limit do: a 60 fps profile in Low Power Mode records at 30 fps with the rate notice. The display limit keeps REC-005's profile fallback for Profile default (High on a 30 fps display still falls back to Standard), so REC-005's behaviour is unchanged wherever no render cap applies.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Record at a chosen export frame rate (Priority: P1)
@@ -115,9 +125,10 @@ encoder limit of 30 fps; the 60 fps row is disabled with the matching reason; 24
 - **REC-006-R6**: A rate MUST be available only when the display can show it, the render loop is not capped below it (Low Power Mode, serious thermal state), and the encoder's frame-rate limit for the planned codec and size allows it. Unavailable rates MUST be shown disabled with a one-line reason and MUST NOT be selectable.
 - **REC-006-R7**: Record MUST check the rate again. With an unavailable explicit rate (or a profile rate above the render cap or encoder limit) it MUST record at the highest available supported rate below it and show and announce "Recording at <rate> fps: <reason>." (row X9c); the stored choice MUST stay unchanged.
 - **REC-006-R8**: The choice MUST be stored on the device (key `settings.recording.frameRate`; absent or unknown reads as Profile default), reset by the UI-test reset, erased with the Settings category, and left out of the library backup.
-- **REC-006-R9**: The choice MUST be in Settings → Recording quality as a "Frame rate" list next to the profiles; each row MUST name the rate (Profile default shows the profile's rate) and, when disabled, its reason; VoiceOver MUST read the row, its selected state and its reason. The profile rows MUST describe the effective rate.
+- **REC-006-R9**: The choice MUST be in Settings as its own "Recording frame rate" section directly under "Recording quality"; each row MUST name the rate (Profile default shows the profile's rate) and, when disabled, its reason; VoiceOver MUST read the row, its selected state and its reason. The profile rows MUST describe the effective rate.
 - **REC-006-R10**: A running recording MUST keep the rate it started with; a change applies to the next recording.
 - **REC-006-R11**: Pacing MUST stay within the frame loop's existing budget: no waiting, no extra GPU copy, constant work per frame.
+- **REC-006-R12**: An explicit rate MUST change a profile's bit rate only through the profile's own rule (fixed rates stay fixed; Standard's per-pixel rule uses the effective rate), and the disk guard MUST estimate with the effective rate.
 
 ### Key Entities
 
