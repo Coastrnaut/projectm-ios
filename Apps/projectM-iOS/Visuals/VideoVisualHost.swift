@@ -18,6 +18,7 @@
 //   a view of it.
 import AudioCore
 import Compositor
+import FrameTiming
 import Metal
 import PerformanceControlAnalysis
 import PresentationLifecycle
@@ -46,6 +47,12 @@ final class VideoVisualHost: PresentationBoundResource {
     private var inBackground = false
     private var sceneDisconnected = false
     private var meter = FrameRateMeter()
+    /// PERF-001: the stage timer while the performance overlay is shown (nil: no timing work), and the
+    /// frames' command buffers until their GPU times are known.
+    var stageTimer: FrameStageTimer? {
+        didSet { attachStageTimer(stageTimer, compositor: compositor, gpuTimes: gpuTimes) }
+    }
+    private let gpuTimes = MetalGPUFrameTimes()
     private var quality = QualityGovernor.current()
     private var observers: [NSObjectProtocol] = []
 
@@ -289,12 +296,19 @@ final class VideoVisualHost: PresentationBoundResource {
     fileprivate func frame(_ link: CADisplayLink) {
         let layer = view.metalLayer
         guard view.window != nil, layer.drawableSize.width >= 1, layer.drawableSize.height >= 1 else { return }
+        let timer: FrameStageTimer? = stageTimer   // PERF-001
+        timer?.beginFrame()
+        defer { timer?.endFrame() }
+        if let timer { gpuTimes.drain(into: timer) }
+        timer?.begin(.audio)
         if let info = analyzer.output.readLatest(into: bands, capacity: SpectrumBarCount.maximum) {
             bandCount = info.count
         }
+        timer?.end(.audio)
         guard let drawable = layer.nextDrawable(), let commands = queue.makeCommandBuffer() else { return }
         let audio = LayerAudioContext(frame: nil, bands: UnsafeBufferPointer(start: bands, count: bandCount),
                                       events: UnsafeBufferPointer(start: nil, count: 0), droppedEvents: 0)
+        let compositeStart: UInt64 = timer?.now() ?? 0
         guard compositor.composite(into: drawable.texture, commandBuffer: commands,
                                    presentationTimeNanoseconds: UInt64(max(link.targetTimestamp, 0) * 1e9),
                                    contentScale: Double(view.contentScaleFactor), reduceFlashing: reduceFlashing,
@@ -302,14 +316,20 @@ final class VideoVisualHost: PresentationBoundResource {
             reportRenderHealth()
             return
         }
+        timer?.recordComposite(of: compositor, start: compositeStart)
         reportRenderHealth()
+        if videoRecording != nil { timer?.begin(.encode) }
         // REC-003: the shown frame once more into the recording's pixel buffer (nothing without a recording).
         videoRecording?.record(commandBuffer: commands, presentationNanoseconds: UInt64(max(link.targetTimestamp, 0) * 1e9),
                                drawable: drawable.texture) { (texture: MTLTexture) -> Bool in
             compositor.encodeOutput(into: texture, commandBuffer: commands)
         }
+        timer?.end(.encode)
+        timer?.begin(.present)
         commands.present(drawable)
         commands.commit()
+        timer?.end(.present)
+        if timer != nil { gpuTimes.track(commands) }
         framesComposited &+= 1
         if meter.record(presentedAt: link.timestamp) { metrics = meter.metrics }
     }

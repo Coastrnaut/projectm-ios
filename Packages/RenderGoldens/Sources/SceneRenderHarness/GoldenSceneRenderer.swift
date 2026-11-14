@@ -47,6 +47,17 @@ private final class CaptureBox: @unchecked Sendable {
     }
 }
 
+/// QA-006: a built scene (its compositor and the layers it holds).
+final class GoldenBuiltScene {
+    let compositor: Compositor
+    let layers: GoldenSceneLayers
+
+    init(compositor: Compositor, layers: GoldenSceneLayers) {
+        self.compositor = compositor
+        self.layers = layers
+    }
+}
+
 public final class GoldenSceneRenderer {
     public let device: MTLDevice
     private let queue: MTLCommandQueue
@@ -89,39 +100,10 @@ public final class GoldenSceneRenderer {
     /// kinds); every other warning still refuses the scene.
     public func render(run: GoldenSceneRun, document: SceneDocument, resolution: GoldenResolution,
                        allowEffectWarnings: Bool = false) throws(GoldenRenderError) -> [Int: GoldenImage] {
-        let registry: ParameterRegistry
-        do {
-            registry = try Self.registry()
-        } catch {
-            throw .sceneInvalid("registry: \(error)")
-        }
-        let load: SceneLoadResult
-        do {
-            load = try document.liveState(registry: registry)
-        } catch {
-            throw .sceneInvalid("\(error)")
-        }
-        let effectCodes: Set<SceneIssue.Code> = allowEffectWarnings ? [.unknownEffectKind, .fixedEffectStage, .duplicateEffect] : []
-        let refused = load.warnings.filter { (w: SceneIssue) -> Bool in !effectCodes.contains(w.code) }
-        guard refused.isEmpty else { throw .sceneInvalid("warnings: \(refused)") }
-        let store = ParameterStore(registry: registry)
-        _ = store.restore(load.state.parameters)
-
-        let layers = try GoldenLayerFactory.build(state: load.state, run: run, store: store, device: device,
-                                                  graphPipeline: graphPipeline)
+        let scene = try buildScene(run: run, document: document, allowEffectWarnings: allowEffectWarnings)
+        let layers = scene.layers
         defer { layers.cleanUp() }
-        let compositor: Compositor
-        do {
-            compositor = try Compositor(device: device)
-            let built = layers.byID
-            try compositor.apply(load.state.stack) { (entry: LayerStackEntry) throws(LayerSourceError) -> any LayerSource in
-                guard let layer = built[entry.id] else { throw .resourceUnavailable("no golden layer for \(entry.id.rawValue)") }
-                return layer
-            }
-        } catch {
-            throw .renderFailed("compositor: \(error)")
-        }
-        if let effects = document.effectSettings { Self.apply(effects: effects, to: compositor) }   // FX-020
+        let compositor = scene.compositor
 
         let d = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba16Float, width: resolution.width,
                                                          height: resolution.height, mipmapped: false)
@@ -166,6 +148,47 @@ public final class GoldenSceneRenderer {
             images[frame] = image
         }
         return images
+    }
+
+    /// QA-006: one scene's live compositor and layers, built as `render` builds them (decode → live state → store →
+    /// layers → stack → effects). `texturePool` nil gives the compositor a private pool. The caller renders it and
+    /// calls `layers.cleanUp()` (temporary photo files) when done.
+    func buildScene(run: GoldenSceneRun, document: SceneDocument, texturePool: TexturePool? = nil,
+                    allowEffectWarnings: Bool = false) throws(GoldenRenderError) -> GoldenBuiltScene {
+        let registry: ParameterRegistry
+        do {
+            registry = try Self.registry()
+        } catch {
+            throw .sceneInvalid("registry: \(error)")
+        }
+        let load: SceneLoadResult
+        do {
+            load = try document.liveState(registry: registry)
+        } catch {
+            throw .sceneInvalid("\(error)")
+        }
+        let effectCodes: Set<SceneIssue.Code> = allowEffectWarnings ? [.unknownEffectKind, .fixedEffectStage, .duplicateEffect] : []
+        let refused = load.warnings.filter { (w: SceneIssue) -> Bool in !effectCodes.contains(w.code) }
+        guard refused.isEmpty else { throw .sceneInvalid("warnings: \(refused)") }
+        let store = ParameterStore(registry: registry)
+        _ = store.restore(load.state.parameters)
+
+        let layers = try GoldenLayerFactory.build(state: load.state, run: run, store: store, device: device,
+                                                  graphPipeline: graphPipeline)
+        let compositor: Compositor
+        do {
+            compositor = try Compositor(device: device, texturePool: texturePool)
+            let built = layers.byID
+            try compositor.apply(load.state.stack) { (entry: LayerStackEntry) throws(LayerSourceError) -> any LayerSource in
+                guard let layer = built[entry.id] else { throw .resourceUnavailable("no golden layer for \(entry.id.rawValue)") }
+                return layer
+            }
+        } catch {
+            layers.cleanUp()
+            throw .renderFailed("compositor: \(error)")
+        }
+        if let effects = document.effectSettings { Self.apply(effects: effects, to: compositor) }   // FX-020
+        return GoldenBuiltScene(compositor: compositor, layers: layers)
     }
 
     /// FX-020: a scene chain's live values on a compositor (a missing effect keeps the compositor's value).

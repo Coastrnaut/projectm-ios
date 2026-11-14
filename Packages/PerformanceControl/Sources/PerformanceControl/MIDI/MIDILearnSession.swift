@@ -21,6 +21,13 @@ public enum MIDILearnEligibility {
     }
 
     /// MIDI-007: a scene learn accepts a program change or a key press (note on with velocity > 0).
+    /// MIDI-008: a trigger learn accepts a press of any trigger source: a key press, a CC button press (controller
+    /// 0–119, value ≥ 64) or a real-time Start, Continue or Stop (only when `allowsRealTime`; a hold row does not).
+    public static func isTriggerEligible(_ event: MIDIEvent, allowsRealTime: Bool) -> Bool {
+        guard let edge = MIDIPressFilter.rawEdge(event), edge.edge == .on else { return false }
+        return allowsRealTime || !edge.isMomentary
+    }
+
     public static func isSceneEligible(_ event: MIDIEvent) -> Bool {
         event.kind == .programChange || event.noteEdge == .on
     }

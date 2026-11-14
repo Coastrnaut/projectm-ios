@@ -107,6 +107,8 @@ public enum AudioFeatureBindingError: Error, Sendable, Hashable, CustomStringCon
     case notModulatable(ParameterID)
     case mixModeNotAllowed(ParameterID, ModulationMixMode)
     case bandIndexOutOfRange(ParameterID, Int)
+    /// MOD-007: an oscillator index outside 0…`AudioFeatureSource.maximumLFOIndex`.
+    case lfoIndexOutOfRange(ParameterID, Int)
     case invalidInputRange(ParameterID)
     case outputOutOfRange(ParameterID, ModulationMixMode, minimum: Double, maximum: Double)
     case invalidEnvelope(ParameterID)
@@ -128,6 +130,8 @@ public enum AudioFeatureBindingError: Error, Sendable, Hashable, CustomStringCon
             "\"\(id)\" does not allow the \(mode.rawValue) mix mode"
         case let .bandIndexOutOfRange(id, index):
             "band \(index) bound to \"\(id)\" is outside 0…\(AudioFeatureSource.maximumBandIndex)"
+        case let .lfoIndexOutOfRange(id, index):
+            "oscillator \(index) bound to \"\(id)\" is outside 0…\(AudioFeatureSource.maximumLFOIndex)"
         case let .invalidInputRange(id):
             "the input range bound to \"\(id)\" must be finite with its minimum below its maximum"
         case let .outputOutOfRange(id, mode, minimum, maximum):

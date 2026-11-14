@@ -37,6 +37,9 @@ final class SceneAutosaveCoordinator {
     /// MOD-006: the current scene's usable threshold triggers (a native spectrum gets them when it is created).
     var triggerBindings: [ThresholdTriggerBinding] { SceneTriggerEntry.read(carry.triggers ?? []).bindings }
 
+    /// MOD-007: the current scene's oscillators by position (a native spectrum gets them when it is created).
+    var lfoOscillators: [LFO?] { SceneLFOEntry.read(carry.lfos ?? []).oscillators }
+
     /// SCN-010: the content the current scene carries (the history captures its states over it).
     var carrySnapshot: SceneAutosaveCarry { carry }
 

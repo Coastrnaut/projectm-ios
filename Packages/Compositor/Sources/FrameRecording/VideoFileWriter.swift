@@ -190,8 +190,8 @@ final class VideoFileWriter: RecordingSampleSink, @unchecked Sendable {
     /// Research REC-003-D2: size, bit rate, key frames, Rec. 709 tags, scaling when the output is smaller.
     static func outputSettings(codec: RecordingCodec, geometry: RecordingGeometry, settings: RecordingSettings) -> [String: Any] {
         var compression: [String: Any] = [
-            AVVideoAverageBitRateKey: codec.averageBitRate(width: geometry.outputWidth, height: geometry.outputHeight,
-                                                           frameRate: settings.maxFrameRate),
+            AVVideoAverageBitRateKey: settings.averageBitRate(codec: codec, width: geometry.outputWidth,
+                                                              height: geometry.outputHeight),   // REC-005: profile rate
             AVVideoMaxKeyFrameIntervalDurationKey: 2,
             AVVideoExpectedSourceFrameRateKey: settings.maxFrameRate,
             AVVideoAllowFrameReorderingKey: false,

@@ -4,9 +4,14 @@
 // renderer or the circular spectrum). PERF-014-R14: a "render:" line with the shown visual's render
 // health while anything was recorded (state, last reason, counts). AUD-012-R9: a "sanitized:" line
 // with the number of samples the renderer boundary replaced, only when it is not zero (a count, never
-// audio content).
+// audio content). PERF-001-R9: per-stage frame timings (median/p95 ms per stage, the frame's GPU time) while
+// the overlay is shown; asking for them each second also keeps the stage timer on the shown visual.
+// PERF-002-R8: the budget lines follow the stage lines; "over budget:" lines are drawn in a highlight colour (the
+// text itself says it, so colour is never the only cue) and stay inside the combined accessibility label, so
+// VoiceOver reads them with the overlay. No announcement (research PERF-002-D5).
 import CaptureKit
 import CaptureUI
+import FrameTiming
 import Rendering
 import SwiftUI
 
@@ -15,6 +20,8 @@ struct PerformanceOverlay: View {
     let manager: CaptureManager
     /// PERF-014: nil while the shown visual's record is pristine.
     var renderHealth: () -> String? = { nil }
+    /// PERF-001: the stage timer's lines (`FrameStageReport.lines`); empty when nothing is measured.
+    var stageLines: () -> [String] = { [] }
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { _ in
@@ -33,6 +40,7 @@ struct PerformanceOverlay: View {
                     Text("render: \(render)")
                         .accessibilityIdentifier("overlayRender")
                 }
+                stageSection(stageLines())
             }
             .font(.system(.caption, design: .monospaced))
             .foregroundStyle(.white)
@@ -42,6 +50,28 @@ struct PerformanceOverlay: View {
             .accessibilityIdentifier("performanceOverlay")
         }
         .allowsHitTesting(false)
+    }
+
+    /// PERF-001: one text line per stage line; PERF-002: the budget's flag lines highlighted below them.
+    @ViewBuilder private func stageSection(_ lines: [String]) -> some View {
+        let split: (plain: [String], flags: [String]) = Self.splitBudgetFlags(lines)
+        if !split.plain.isEmpty {
+            Text(split.plain.joined(separator: "\n"))
+                .accessibilityIdentifier("overlayStages")
+        }
+        if !split.flags.isEmpty {
+            Text(split.flags.joined(separator: "\n"))
+                .foregroundStyle(Color.orange)
+                .fontWeight(.bold)
+                .accessibilityIdentifier("overlayBudgetFlags")
+        }
+    }
+
+    /// PERF-002: separates the "over budget:" lines (highlighted) from the rest, keeping each group's order.
+    static func splitBudgetFlags(_ lines: [String]) -> (plain: [String], flags: [String]) {
+        let flags: [String] = lines.filter { (line: String) -> Bool in line.hasPrefix(FrameBudgetVerdict.flagPrefix) }
+        let plain: [String] = lines.filter { (line: String) -> Bool in !line.hasPrefix(FrameBudgetVerdict.flagPrefix) }
+        return (plain, flags)
     }
 
     /// AUD-012-R9: "sanitized: 12 samples", or nil when nothing was replaced.

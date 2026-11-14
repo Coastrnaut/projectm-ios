@@ -22,6 +22,14 @@ public struct RecordedVideoInfo: Sendable, Equatable {
     public var audioCodec: String? = nil
     public var audioSampleRate: Double? = nil
     public var audioChannelCount: Int? = nil
+    /// REC-005-R10: the video track's compressed bytes (audio excluded).
+    public var videoBytes: Int = 0
+
+    /// REC-005: frames per second of the file (frames / duration).
+    public var nominalFrameRate: Double { durationSeconds > 0 ? Double(frameCount) / durationSeconds : 0 }
+
+    /// REC-005-R10: the video's average bit rate, bits per second (video bytes × 8 / duration).
+    public var averageVideoBitRate: Double { durationSeconds > 0 ? Double(videoBytes) * 8 / durationSeconds : 0 }
 
     /// "video hvc1 1178x2556 frames=58 duration=1.93 audio=0" (the DEBUG probe).
     public var summary: String {
@@ -44,11 +52,12 @@ public enum RecordedVideoInspector {
               let duration = try? await asset.load(.duration) else { return nil }
         let metadata = (try? await asset.load(.metadata)) ?? []
         let codec = descriptions.first.map { (d: CMFormatDescription) -> String in fourCC(CMFormatDescriptionGetMediaSubType(d)) } ?? "?"
-        guard let ticks = presentationTicks(asset: asset, track: track) else { return nil }
+        guard let (ticks, bytes) = compressedSamples(asset: asset, track: track) else { return nil }
         var info = RecordedVideoInfo(codec: codec, width: Int(size.width.rounded()), height: Int(size.height.rounded()),
                                      frameCount: ticks.count, presentationTicks: ticks, durationSeconds: duration.seconds,
                                      videoTrackCount: videoTracks.count, audioTrackCount: audioTracks.count,
                                      metadataCount: metadata.count)
+        info.videoBytes = bytes
         if let audio = audioTracks.first, let audioDescriptions = try? await audio.load(.formatDescriptions),
            let description = audioDescriptions.first {
             info.audioCodec = fourCC(CMFormatDescriptionGetMediaSubType(description))
@@ -60,7 +69,8 @@ public enum RecordedVideoInspector {
         return info
     }
 
-    private static func presentationTicks(asset: AVAsset, track: AVAssetTrack) -> [Int64]? {
+    /// Every sample's presentation time and the total compressed size (REC-005-R10), without decoding.
+    private static func compressedSamples(asset: AVAsset, track: AVAssetTrack) -> ([Int64], Int)? {
         guard let reader = try? AVAssetReader(asset: asset) else { return nil }
         let output = AVAssetReaderTrackOutput(track: track, outputSettings: nil)   // compressed samples: no decoding
         output.alwaysCopiesSampleData = false
@@ -68,12 +78,14 @@ public enum RecordedVideoInspector {
         reader.add(output)
         guard reader.startReading() else { return nil }
         var ticks: [Int64] = []
+        var bytes = 0
         while let sample = output.copyNextSampleBuffer() {
             guard CMSampleBufferGetNumSamples(sample) > 0 else { continue }
+            bytes += CMSampleBufferGetTotalSampleSize(sample)
             let time = CMSampleBufferGetPresentationTimeStamp(sample)
             ticks.append(CMTimeConvertScale(time, timescale: RecordingSettings.timescale, method: .roundHalfAwayFromZero).value)
         }
-        return reader.status == .completed ? ticks : nil
+        return reader.status == .completed ? (ticks, bytes) : nil
     }
 
     static func fourCC(_ code: FourCharCode) -> String {

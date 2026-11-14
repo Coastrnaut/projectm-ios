@@ -19,6 +19,96 @@ public struct DiagnosticsSnapshot: Codable, Sendable, Equatable {
     public var device: Device
     public var app: App
     public var session: Session
+    /// PERF-001: per-stage frame timings (the visualizer's automation runs); nil in CaptureLab, which has no
+    /// frame loop. Optional and additive: schema version 2 is unchanged and the key is absent when nil.
+    public var frameTimings: FrameTimings? = nil
+
+    /// PERF-001-R10 (specs/152-perf-001-stage-timings, data-model.md): medians and nearest-rank 95th
+    /// percentiles in milliseconds; an unavailable value is an absent key, never 0.
+    public struct FrameTimings: Codable, Sendable, Equatable {
+        public static let stageNames: [String] = ["audio", "render", "composite", "output", "encode", "present"]
+
+        public var windowFrames: Int
+        public var rejectedSamples: Int
+        public var frameGPUMedianMs: Double?
+        public var frameGPUP95Ms: Double?
+        public var stages: [Stage]
+        /// PERF-002 (specs/160-perf-002-gpu-budget): the budget verdict for the same window; absent when not judged.
+        public var budget: Budget? = nil
+
+        /// PERF-002-R9: the frame deadline, the threshold and clear shares, the estimates and the flagged passes.
+        public struct Budget: Codable, Sendable, Equatable {
+            /// Every pass label the meter can flag (6 stages × cpu/gpu, then the whole frame's GPU time).
+            public static let passNames: [String] = FrameTimings.stageNames.flatMap { (name: String) -> [String] in
+                [name + " cpu", name + " gpu"]
+            } + ["gpu frame"]
+
+            public var framesPerSecond: Double
+            public var deadlineMs: Double
+            public var thresholdShare: Double
+            public var clearShare: Double
+            public var thresholdMs: Double
+            public var cpuEstimateMs: Double?
+            public var gpuEstimateMs: Double?
+            /// Over-budget pass labels, frame order (at most 13).
+            public var flaggedPasses: [String]
+
+            /// Keeps known pass names (at most 13) and only finite, non-negative values (others become absent or 0).
+            public init(framesPerSecond: Double, deadlineMs: Double, thresholdShare: Double, clearShare: Double,
+                        thresholdMs: Double, cpuEstimateMs: Double? = nil, gpuEstimateMs: Double? = nil, flaggedPasses: [String]) {
+                self.framesPerSecond = FrameTimings.clean(framesPerSecond) ?? 0
+                self.deadlineMs = FrameTimings.clean(deadlineMs) ?? 0
+                self.thresholdShare = FrameTimings.clean(thresholdShare) ?? 0
+                self.clearShare = FrameTimings.clean(clearShare) ?? 0
+                self.thresholdMs = FrameTimings.clean(thresholdMs) ?? 0
+                self.cpuEstimateMs = FrameTimings.clean(cpuEstimateMs)
+                self.gpuEstimateMs = FrameTimings.clean(gpuEstimateMs)
+                self.flaggedPasses = Array(flaggedPasses.filter { (name: String) -> Bool in Self.passNames.contains(name) }.prefix(13))
+            }
+        }
+
+        public struct Stage: Codable, Sendable, Equatable {
+            /// One of `stageNames`.
+            public var name: String
+            /// CPU samples in the window.
+            public var samples: Int
+            public var cpuMedianMs: Double?
+            public var cpuP95Ms: Double?
+            public var gpuMedianMs: Double?
+            public var gpuP95Ms: Double?
+
+            public init(name: String, samples: Int, cpuMedianMs: Double? = nil, cpuP95Ms: Double? = nil,
+                        gpuMedianMs: Double? = nil, gpuP95Ms: Double? = nil) {
+                self.name = name
+                self.samples = samples
+                self.cpuMedianMs = cpuMedianMs
+                self.cpuP95Ms = cpuP95Ms
+                self.gpuMedianMs = gpuMedianMs
+                self.gpuP95Ms = gpuP95Ms
+            }
+        }
+
+        /// Keeps known stage names (at most 6) and only finite, non-negative values (others become absent).
+        public init(windowFrames: Int, rejectedSamples: Int, frameGPUMedianMs: Double? = nil, frameGPUP95Ms: Double? = nil,
+                    stages: [Stage], budget: Budget? = nil) {
+            self.budget = budget
+            self.windowFrames = max(0, windowFrames)
+            self.rejectedSamples = max(0, rejectedSamples)
+            self.frameGPUMedianMs = Self.clean(frameGPUMedianMs)
+            self.frameGPUP95Ms = Self.clean(frameGPUP95Ms)
+            self.stages = stages.filter { (stage: Stage) -> Bool in Self.stageNames.contains(stage.name) }.prefix(6).map {
+                (stage: Stage) -> Stage in
+                Stage(name: stage.name, samples: max(0, stage.samples), cpuMedianMs: Self.clean(stage.cpuMedianMs),
+                      cpuP95Ms: Self.clean(stage.cpuP95Ms), gpuMedianMs: Self.clean(stage.gpuMedianMs),
+                      gpuP95Ms: Self.clean(stage.gpuP95Ms))
+            }
+        }
+
+        static func clean(_ value: Double?) -> Double? {
+            guard let value, value.isFinite, value >= 0 else { return nil }
+            return value
+        }
+    }
 
     public struct Device: Codable, Sendable, Equatable {
         /// Hardware model identifier, e.g. "iPhone17,1".

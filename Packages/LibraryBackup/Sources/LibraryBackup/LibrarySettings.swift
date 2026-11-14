@@ -93,11 +93,13 @@ public enum LibrarySettingsPolicy {
         "settings.feedback.enabled", "settings.feedback.halfLife",   // FX-009-R11: Trails
         "settings.colorGrade.enabled", "settings.effectChain.order", "settings.effectChain.presets",   // FX-020-R8, R10
         "settings.oscilloscope.line", "settings.oscilloscope.window",
+        "settings.lissajous.mode", "settings.lissajous.persistence",   // VIS-004-R11
         "settings.spectrum.attack", "settings.spectrum.release",
         "settings.camera.position", "settings.camera.mirrorFront", "settings.camera.mirrorBack",
         "settings.camera.cropMode", "settings.camera.cropAnchor", "settings.camera.zoom",
         "settings.osc.port",
         "settings.midi.mappings",   // MIDI-003-R9: channel, controller and parameter ID per line; erased with Settings
+        "settings.parameterShelf.pins",   // UIX-004-R10: ordered pinned parameter IDs; erased with Settings
         "settings.inputTrim.decibels", "settings.analysisChannel.mode",
         "settings.playbackBalance.position",   // AUD-010-R7: the In-App Playback monitoring balance
         "settings.noiseGate.enabled", "settings.noiseGate.thresholdDecibels",
@@ -111,6 +113,7 @@ public enum LibrarySettingsPolicy {
     public static let excludedKeys: [String] = [
         "settings.osc.enabled", "settings.midi.enabled",
         "settings.recording.includeMicrophone",   // REC-004-R3: a consent never travels to another device
+        "settings.recording.qualityProfile",   // REC-005-R7: depends on this device's encoder and screen
         "settings.video.id", "settings.video.loop", "settings.video.speed",
         recentPresetsKey,   // PRE-006-R7: recently played history stays on this device
         "notice.photosensitivityAcknowledged", "permission.explained.camera", "permission.explained.localNetwork",

@@ -228,7 +228,9 @@ public final class LibraryEraser {
         let directory = root.appendingPathComponent(folder, isDirectory: true)
         guard FileManager.default.fileExists(atPath: directory.path) else { return }
         try perform(.release, directory) { (url: URL) in
-            try ContentAddressedMediaFolder(directory: url, extensions: extensions).release(uuids)
+            let folder = ContentAddressedMediaFolder(directory: url, extensions: extensions)
+            try folder.release(uuids)
+            try folder.forget(uuids)   // MED-013-R9: erased scenes' media leaves no relink hint
         }
     }
 

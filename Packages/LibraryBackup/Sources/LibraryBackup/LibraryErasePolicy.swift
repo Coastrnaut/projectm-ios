@@ -53,6 +53,8 @@ public enum LibraryErasePolicy {
     public static let midiEnabledKey = "settings.midi.enabled"
     /// REC-004-R3: "Include microphone audio" (a device switch: not backed up, erased with Settings).
     public static let recordingMicrophoneKey = "settings.recording.includeMicrophone"
+    /// REC-005-R7: the record quality profile (device-dependent: not backed up, erased with Settings).
+    public static let recordingQualityKey = "settings.recording.qualityProfile"
 
     /// Folder names under the library root (FILE-011-R4).
     public static func folders(_ category: LibraryEraseCategory) -> [String] {
@@ -100,7 +102,7 @@ public enum LibraryErasePolicy {
                                   LibrarySettingsPolicy.logoKey, LibrarySettingsPolicy.logoPlacementKey,   // MED-010: erased with the media
                                   reduceFlashingKey, colorBlindSafePaletteKey]
         let included: [String] = LibrarySettingsPolicy.includedKeys.filter { (key: String) -> Bool in !owned.contains(key) }
-        return included + [oscEnabledKey, midiEnabledKey, recordingMicrophoneKey]
+        return included + [oscEnabledKey, midiEnabledKey, recordingMicrophoneKey, recordingQualityKey]
     }()
 
     /// Every key some category can remove.

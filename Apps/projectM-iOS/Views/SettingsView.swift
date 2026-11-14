@@ -53,6 +53,8 @@ struct SettingsView: View {
     var libraryBackup: LibraryBackupCoordinator?
     /// FILE-010: the files Clear Caches must keep (absolute paths).
     var cacheFilesInUse: @MainActor () -> Set<String> = { () -> Set<String> in [] }
+    /// MED-013: Settings › Storage › Missing Media (nil hides the row).
+    var missingMedia: MissingMediaCoordinator? = nil
     /// UIX-001: opens the guided first scene (nil hides the row, e.g. in previews).
     var openGuide: (() -> Void)?
     /// SCN-010: Undo and Redo in the navigation bar (nil hides them, e.g. in previews).
@@ -80,6 +82,8 @@ struct SettingsView: View {
     /// REC-004: "Include microphone audio" and the next recording's audio status (nil hides the section).
     var recordingAudio: RecordingAudioSetting?
     var recordingAudioStatus: (() -> String)?
+    /// REC-005: the record quality profile (nil hides the section, e.g. in previews).
+    var recordingQuality: RecordingQualitySetting?
     /// UIX-015: the explainer before the camera and local network prompts (nil: none, e.g. in previews).
     var explainers: PermissionExplainerCoordinator?
     /// UIX-015-R1: the camera's permission status when Camera is picked.
@@ -271,7 +275,7 @@ struct SettingsView: View {
     @ViewBuilder private var visualOptionsSection: some View {
         Section {
             if settings.visual.isNative {
-                if settings.visual != .oscilloscope {   // VIS-003: no bars on a waveform
+                if settings.visual.usesBars {   // VIS-003, VIS-004: no bars on a waveform or a phase plot
                     Picker("Bars", selection: $settings.circularSpectrumBars) {
                         ForEach(AppSettings.circularSpectrumBarChoices, id: \.self) { Text("\($0)").tag($0) }
                     }
@@ -294,6 +298,7 @@ struct SettingsView: View {
                     .accessibilityLabel("Window")
                     .accessibilityIdentifier("oscilloscopeWindowPicker")
                 }
+                if settings.visual == .lissajous { lissajousOptions }   // VIS-004-R11
                 if settings.visual == .linearSpectrum {
                     Picker("Orientation", selection: $settings.linearSpectrumOrientation) {
                         ForEach(LinearSpectrumOrientation.allCases, id: \.self) { Text($0.title).tag($0) }
@@ -330,7 +335,7 @@ struct SettingsView: View {
                     .accessibilityIdentifier("nativeVisualUnavailableFooter")
             } else {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Oscilloscope draws the sound's waveform, held still when the sound repeats. Camera shows your rear or front camera behind a circular spectrum, only while it is on screen; the picture is never sent. Photo shows a picture you choose behind a circular spectrum. Video plays a video you choose, without its sound, behind a circular spectrum. Text shows your own words over a circular spectrum.")
+                    Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Oscilloscope draws the sound's waveform, held still when the sound repeats. Lissajous plots the left channel against the right: mono sound is a straight line, wide stereo fills the space; Mid/Side turns it so mono is vertical. Camera shows your rear or front camera behind a circular spectrum, only while it is on screen; the picture is never sent. Photo shows a picture you choose behind a circular spectrum. Video plays a video you choose, without its sound, behind a circular spectrum. Text shows your own words over a circular spectrum.")
                     if settings.visual.isNative {
                         if glowUnavailable {
                             Text(AppCoordinator.glowUnavailableMessage)
@@ -342,6 +347,18 @@ struct SettingsView: View {
                 }
             }
         }
+    }
+
+    /// VIS-004-R11: the Lissajous's plot and persistence.
+    @ViewBuilder private var lissajousOptions: some View {
+        Picker("Plot", selection: $settings.lissajousMode) {
+            ForEach(LissajousMode.allCases, id: \.self) { (mode: LissajousMode) in Text(mode.title).tag(mode) }
+        }
+        .segmentedUnlessAccessibilitySize()   // ACC-006-R1
+        .accessibilityLabel("Plot")
+        .accessibilityIdentifier("lissajousModePicker")
+        Toggle("Persistence", isOn: $settings.lissajousPersistence)
+            .accessibilityIdentifier("lissajousPersistenceToggle")
     }
 
     @ViewBuilder private var smoothingSection: some View {
@@ -371,6 +388,7 @@ struct SettingsView: View {
 
     @ViewBuilder private var mediaSections: some View {
         if let layerInspector { layersSection(layerInspector) }   // CMP-015
+        if let shelf = layerInspector?.parameterShelf { ParameterShelfSection(shelf: shelf) }   // UIX-004-R6
         if settings.visual.usesCamera {   // CAM-002-R1: which camera, and its mirror
             cameraSection
         }
@@ -412,6 +430,7 @@ struct SettingsView: View {
         if let latencyOffset { LatencyOffsetSection(setting: latencyOffset) }   // AUD-013-R10
         oscSection.id("osc")
         if let midi { MIDISettingsSection(midi: midi).id("midi") }   // MIDI-001-R8
+        if let recordingQuality { RecordingQualitySection(setting: recordingQuality) }   // REC-005-R9
         if let recordingAudio { RecordingAudioSection(setting: recordingAudio, status: recordingAudioStatus) }   // REC-004-R13
     }
 
@@ -437,7 +456,9 @@ struct SettingsView: View {
         }
         if let recentPresets { RecentHistorySection(recent: recentPresets).id("recentPresets") }   // PRE-006-R3, R4
         Section {
-            NavigationLink("Storage") { StorageUsageView(filesInUse: cacheFilesInUse, libraryBackup: libraryBackup) }   // FILE-009, FILE-010, FILE-005
+            NavigationLink("Storage") {   // FILE-009, FILE-010, FILE-005, MED-013
+                StorageUsageView(filesInUse: cacheFilesInUse, libraryBackup: libraryBackup, missingMedia: missingMedia)
+            }
                 .accessibilityIdentifier("storageLink")
             NavigationLink("Licenses") { LicensesView() }
                 .accessibilityIdentifier("licensesLink")
