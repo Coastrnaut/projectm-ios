@@ -79,6 +79,6 @@ final class LibraryBackupPresetTagTests: XCTestCase {
         XCTAssertEqual(LibraryEraseInventory.count(.collections, root: sandbox.root, settings: [:]), 3, "two collections and one tagged preset")
         try EraseFixtures.erase([.collections], in: sandbox, defaults: EraseFixtures.Defaults())
         XCTAssertFalse(FileManager.default.fileExists(atPath: sandbox.folders.tagsFile.path))
-        XCTAssertEqual(LibraryEraseCategory.collections.title, "Collections, tags and favorites")
+        XCTAssertEqual(LibraryEraseCategory.collections.title, "Collections, tags, favorites and history")   // PRE-006-R7
     }
 }

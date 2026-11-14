@@ -82,7 +82,7 @@ final class MIDINoteTriggerCoordinatorTests: XCTestCase {
     }
 
     private func send(_ h: Harness, _ bytes: [UInt8]) {
-        h.log.now += 10_000_000
+        h.log.now += 100_000_000   // MIDI-008: beyond the press filter's 30 ms repeat window
         h.inputProvider.send(bytes, timestamp: h.log.now)
         h.input.drain()
     }
@@ -162,7 +162,7 @@ final class MIDINoteTriggerCoordinatorTests: XCTestCase {
         h.mappings.startLearningNote(.nextCue)
         XCTAssertTrue(h.mappings.isLearning)
         XCTAssertEqual(h.mappings.statusText, "Press a key or pad on your MIDI device to map Next cue…")
-        send(h, [0xB0, 0x07, 0x40, 0x90, 0x3C, 0x00])   // a CC and a release: not learned
+        send(h, [0xB0, 0x07, 0x20, 0x90, 0x3C, 0x00])   // a CC below 64 (MIDI-008: not a button press) and a release
         XCTAssertTrue(h.mappings.isLearning)
         send(h, [0x90, 0x3C, 0x64])
         XCTAssertFalse(h.mappings.isLearning)
@@ -173,7 +173,7 @@ final class MIDINoteTriggerCoordinatorTests: XCTestCase {
         XCTAssertEqual(h.log.actions, ["next"])
         XCTAssertEqual(h.log.announcements, ["Press a key or pad on your MIDI device to map Next cue.",
                                              "Next cue mapped to note C4 on channel 1."])
-        let row = try XCTUnwrap(h.mappings.noteRows.first)
+        let row = try XCTUnwrap(h.mappings.noteRows.first { (r: MIDINoteRow) -> Bool in r.target == .nextCue })   // MIDI-008 rows
         XCTAssertEqual(row.control, "Note C4 · Ch 1")
         XCTAssertEqual(row.accessibilityLabel, "Next cue, note C4, channel 1")
         XCTAssertEqual(h.defaults.stringArray(forKey: MIDIMappingCoordinator.mappingsKey),

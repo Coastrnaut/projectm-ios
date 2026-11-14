@@ -43,7 +43,7 @@ public enum AnalysisEventKind: Sendable, Hashable {
     case onset(strength: Float, threshold: Float)
     /// ANL-005 beat: tempo, period in samples and the estimate's confidence.
     case beat(bpm: Double, periodSamples: Double, confidence: Double)
-    /// ANL-007 band transient (`.kick`, or ANL-008's `.midTransient`): the rise over the band's
+    /// ANL-007 band transient (`.kick`, ANL-008's `.midTransient` or ANL-009's `.highTransient`): the rise over the band's
     /// recent peak and the threshold it crossed (dB), the band level (dB re a full-scale sine in
     /// band) and the event's confidence 0…1 (ANL-008-R6; never an instrument identity).
     case transient(band: TransientBand, strength: Float, threshold: Float, level: Float, confidence: Float)
@@ -101,11 +101,20 @@ public struct AnalysisFrame: Sendable, Hashable {
 
     /// ANL-008: envelope × confidence, 0…1, what MOD-002's "Mid transient" source reads.
     public var midTransient: Float { midTransientEnvelope * midTransientConfidence }
+    /// ANL-009's high transient envelope, 0…1: 1 on the frame of a high-band (6–16 kHz) transient,
+    /// decaying with a 50 ms time constant. Not a hi-hat detector: no instrument is implied.
+    public let highTransientEnvelope: Float
+    /// ANL-009: the last high transient's confidence, 0…1, held until the next one (0 at a session start).
+    public let highTransientConfidence: Float
+
+    /// ANL-009: envelope × confidence, 0…1, what MOD-002's "High transient" source reads.
+    public var highTransient: Float { highTransientEnvelope * highTransientConfidence }
 
     public init(id: UInt64, time: AnalysisTimestamp, bandCount: Int, onsetFlux: Float, bpm: Double?, beatConfidence: Double,
                 kickEnvelope: Float = 0, centroidHz: Float = 0, centroid: Float = 0,
                 loudness: Float = 0, loudnessDecibels: Float = LoudnessReading.silent.decibels,
-                midTransientEnvelope: Float = 0, midTransientConfidence: Float = 0) {
+                midTransientEnvelope: Float = 0, midTransientConfidence: Float = 0,
+                highTransientEnvelope: Float = 0, highTransientConfidence: Float = 0) {
         self.id = id
         self.time = time
         self.bandCount = bandCount
@@ -119,6 +128,8 @@ public struct AnalysisFrame: Sendable, Hashable {
         self.loudnessDecibels = loudnessDecibels
         self.midTransientEnvelope = midTransientEnvelope
         self.midTransientConfidence = midTransientConfidence
+        self.highTransientEnvelope = highTransientEnvelope
+        self.highTransientConfidence = highTransientConfidence
     }
 }
 
@@ -127,7 +138,7 @@ public enum AnalysisBusError: Error, Equatable, Sendable {
     case invalidEventCapacity(Int)
     /// Already `AnalysisPipeline.maximumSubscribers` subscribers.
     case tooManySubscribers
-    /// The spectrum, onset, beat, kick, mid transient, centroid and loudness configurations disagree on the sample rate.
+    /// The spectrum, onset, beat, kick, mid and high transient, centroid and loudness configurations disagree on the sample rate.
     case sampleRateMismatch
     /// The band floor must be finite and below 0 dB.
     case invalidBandFloor(Float)

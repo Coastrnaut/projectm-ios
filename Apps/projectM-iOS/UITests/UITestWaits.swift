@@ -101,8 +101,11 @@ extension XCUIApplication {
                 _ = button.disappears(within: 2)
             }
             area.tap()
-            if button.appears(within: 2) {
-                button.tap()
+            // Tap the frame read from a snapshot: `button.tap()` fails the whole test when the overlay
+            // hides between `appears` and the tap (seen under load, 2026-11-14); a lost tap retries.
+            if button.appears(within: 2), let frame = try? button.snapshot().frame, !frame.isEmpty {
+                coordinate(withNormalizedOffset: .zero)
+                    .withOffset(CGVector(dx: frame.midX, dy: frame.midY)).tap()
                 return
             }
         }

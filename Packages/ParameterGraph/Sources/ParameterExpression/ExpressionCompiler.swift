@@ -215,6 +215,8 @@ struct ExpressionCompiler {
             case .centroid: ExpressionInstruction(opcode: .centroid)
             case .loudness: ExpressionInstruction(opcode: .loudness)
             case .midTransient: ExpressionInstruction(opcode: .midTransient)
+            case .highTransient: ExpressionInstruction(opcode: .highTransient)
+            case .lfo: ExpressionInstruction(opcode: .constant, literal: 0)   // unreachable: the catalog refuses LFO names
             }
             try append(instruction, at: position)
         case let .binding(slot, position):

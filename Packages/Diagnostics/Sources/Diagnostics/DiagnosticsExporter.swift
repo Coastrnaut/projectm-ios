@@ -64,6 +64,19 @@ public enum DiagnosticsExporter {
         }
         lines.append("  frame GPU: \(pair(t.frameGPUMedianMs, t.frameGPUP95Ms))")
         if t.rejectedSamples > 0 { lines.append("  rejected samples: \(t.rejectedSamples)") }
+        if let budget = t.budget { lines.append(contentsOf: budgetLines(budget)) }
+        return lines
+    }
+
+    /// PERF-002: "Frame budget: 16.67 ms at 60 fps, limit 13.33 ms (80%)", the estimates and the flagged passes.
+    static func budgetLines(_ b: DiagnosticsSnapshot.FrameTimings.Budget) -> [String] {
+        func value(_ ms: Double?) -> String { ms.map { (v: Double) -> String in String(format: "%.2f ms", v) } ?? "n/a" }
+        let percent: Int = Int((b.thresholdShare * 100).rounded())
+        let fps: Int = Int(b.framesPerSecond.rounded())
+        var lines: [String] = [String(format: "Frame budget: %.2f ms at %d fps, limit %.2f ms (%d%%)", b.deadlineMs, fps, b.thresholdMs, percent)]
+        lines.append("  estimate: CPU \(value(b.cpuEstimateMs)), GPU \(value(b.gpuEstimateMs))")
+        let flagged: String = b.flaggedPasses.isEmpty ? "none" : b.flaggedPasses.joined(separator: ", ")
+        lines.append("  over budget: " + flagged)
         return lines
     }
 

@@ -15,11 +15,14 @@ public struct ShowCue: Sendable, Hashable, Identifiable {
     public let sceneID: String
     /// Trimmed, 1…80 characters, no line breaks.
     public internal(set) var label: String
+    /// SCN-007: how the cue's scene comes in (nil = the default, an instant change).
+    public internal(set) var transition: ShowCueTransition?
 
-    public init(id: UUID, sceneID: String, label: String) {
+    public init(id: UUID, sceneID: String, label: String, transition: ShowCueTransition? = nil) {
         self.id = id
         self.sceneID = sceneID
         self.label = label
+        self.transition = transition
     }
 }
 
@@ -207,15 +210,16 @@ public struct ShowCueList: Sendable, Hashable {
     }
 
     /// Inserts a cue right after the cue `after` (SCN-003 Duplicate Scene). The label is trimmed; the
-    /// position keeps its cue.
+    /// position keeps its cue. SCN-007: `transition` is the new cue's transition (a duplicate passes its source's).
     @discardableResult
-    public mutating func insert(sceneID: String, label: String, after: UUID, cueID: UUID = UUID()) throws(ShowEditError) -> ShowCue {
+    public mutating func insert(sceneID: String, label: String, after: UUID, cueID: UUID = UUID(),
+                                transition: ShowCueTransition? = nil) throws(ShowEditError) -> ShowCue {
         guard let index = cues.firstIndex(where: { (cue: ShowCue) -> Bool in cue.id == after }) else { throw .unknownCue(after) }
         guard cues.count < Self.maximumCues else { throw .tooManyCues(limit: Self.maximumCues) }
         guard Self.isSceneID(sceneID) else { throw .invalidSceneID(sceneID) }
         guard let label = Self.normalizedLabel(label) else { throw .invalidLabel }
         guard !cues.contains(where: { (cue: ShowCue) -> Bool in cue.id == cueID }) else { throw .duplicateCueID(cueID) }
-        let cue = ShowCue(id: cueID, sceneID: sceneID, label: label)
+        let cue = ShowCue(id: cueID, sceneID: sceneID, label: label, transition: transition)
         cues.insert(cue, at: index + 1)
         return cue
     }
@@ -248,6 +252,12 @@ public struct ShowCueList: Sendable, Hashable {
         guard let index = cues.firstIndex(where: { (cue: ShowCue) -> Bool in cue.id == cueID }) else { throw .unknownCue(cueID) }
         guard let label = Self.normalizedLabel(label) else { throw .invalidLabel }
         cues[index].label = label
+    }
+
+    /// SCN-007: sets (or, with nil, removes) a cue's transition. Never changes the position or the order.
+    public mutating func setTransition(_ cueID: UUID, to transition: ShowCueTransition?) throws(ShowEditError) {
+        guard let index = cues.firstIndex(where: { (cue: ShowCue) -> Bool in cue.id == cueID }) else { throw .unknownCue(cueID) }
+        cues[index].transition = transition
     }
 
     // MARK: - Scene folders (SCN-004: never changes cues, their order, the position or a scene ID)

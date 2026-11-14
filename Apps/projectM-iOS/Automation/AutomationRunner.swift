@@ -37,7 +37,7 @@
 // PERF-001 (specs/152-perf-001-stage-timings, PERF-001-R12, T15-T16):
 //   perf001 In-App Playback on the visual chosen in Settings: 5 s of frame rate with no stage timer, then a
 //           timer attached to the shown visual (no overlay, so only the timer's cost differs) for 5 s, then the
-//           per-stage report in the diagnostics format (`frameTimings`). Report: automation-perf001-*.json.
+//           per-stage report in the diagnostics format (`frameTimings`, with the PERF-002 `budget` verdict). Report: automation-perf001-*.json.
 #if DEBUG || PROJECTM_AUTOMATION
 import ANGLERendering
 import AudioCore
@@ -384,10 +384,12 @@ enum AutomationRunner {
         let timer = FrameStageTimer()
         visual.stageTimer = timer
         let fpsOn = await fpsSamples(coordinator, seconds: 5)
-        let timings = AppCoordinator.exportTimings(timer.report())
+        let report: FrameStageReport = timer.report()
+        let verdict: FrameBudgetVerdict = FrameBudgetMeter().evaluate(report, deadline: AppCoordinator.frameDeadline())   // PERF-002
+        let timings = AppCoordinator.exportTimings(report, budget: verdict)
         visual.stageTimer = nil
         var body: [String: Any] = ["visual": coordinator.settings.visual.rawValue, "fpsTimerOff": fpsOff, "fpsTimerOn": fpsOn,
-                                   "lines": timer.report().lines]
+                                   "lines": report.lines + verdict.lines]
         if let data = try? JSONEncoder().encode(timings), let object = try? JSONSerialization.jsonObject(with: data) {
             body["frameTimings"] = object
         }

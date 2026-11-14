@@ -22,11 +22,12 @@ let package = Package(
         .package(path: "../SceneFormat"),
         // FILE-004: SHA-256 for derived scene IDs and the import's library digest (Foundation only).
         .package(path: "../LocalPortability"),
-        // Tests only (SCN-003): a parameter registry for SCN-001 `liveState` in the load tests.
+        // SCN-003 tests: a parameter registry for SCN-001 `liveState`; SCN-007: the cue transition's curve.
         .package(path: "../ParameterGraph"),
     ],
     targets: [
-        .target(name: "ShowControl"),
+        // SCN-007: a cue transition's easing is a MOD-004 `MappingCurve` (pure Swift).
+        .target(name: "ShowControl", dependencies: [.product(name: "ParameterGraph", package: "ParameterGraph")]),
         .target(name: "ShowStorage", dependencies: ["ShowControl", .product(name: "SceneFormat", package: "SceneFormat"),
                                                     .product(name: "LocalPortability", package: "LocalPortability")]),
         .testTarget(name: "ShowControlTests",

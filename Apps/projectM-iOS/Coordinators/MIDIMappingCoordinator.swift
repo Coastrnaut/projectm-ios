@@ -23,6 +23,8 @@
 //   position mode, after the note lines) select show scenes through `performScenes`; scene learn, rows and routing
 //   live in `MIDIMappingCoordinator+Scenes.swift`. Still one learn session at a time; Undo covers the three lists.
 //   Selecting a scene never saves: only learn, delete, Undo and the mode picker write the mappings (MIDI-007-R3).
+// * MIDI-008 (specs/157-midi-008-transport): trigger bindings may also be CC buttons and real-time sources (`ccbtn:`, `rt:`
+//   lines among the note lines). A CC is either a button or a parameter control: learning one frees the other.
 import Foundation
 import Observation
 import ParameterGraph
@@ -419,8 +421,16 @@ final class MIDIMappingCoordinator {
         applyValues(merged)
     }
 
+    /// MIDI-008-R6: removes the MIDI-003 binding of a CC key (it becomes a button); returns its parameter.
+    func freeControlBinding(_ key: MIDIControlKey) -> ParameterID? {
+        guard key.kind == .controlChange, let target = bindings.target(for: key) else { return nil }
+        bindings.remove(target: target)
+        return target
+    }
+
     private func bind(_ key: MIDIControlKey, to target: ParameterID) {
         let before: MIDIBindingList = bindings
+        let notesBefore: MIDINoteBindingList = noteBindings
         let outcome: MIDIBindOutcome = bindings.bind(key, to: target)
         endLearning()
         let mapped: String = name(of: target) + " mapped to " + Self.spokenControl(key)
@@ -434,8 +444,15 @@ final class MIDIMappingCoordinator {
             lastMessage = mapped + " (moved from " + name(of: from) + ")."
         case .added, .replaced:
             lastMessage = mapped + "."
+            if let button = noteBindings.binding(forKey: key)?.target {   // MIDI-008-R6: no longer a button
+                var after: MIDINoteBindingList = noteBindings
+                after.remove(target: button)
+                releaseNotes(changedFrom: noteBindings, to: after)
+                noteBindings = after
+                lastMessage = mapped + " (moved from " + button.title + ")."
+            }
         }
-        if before != bindings { rememberUndo(before) }
+        if before != bindings || notesBefore != noteBindings { rememberUndo(cc: before, notes: notesBefore) }
         announce(lastMessage ?? mapped)
         listChanged()
     }

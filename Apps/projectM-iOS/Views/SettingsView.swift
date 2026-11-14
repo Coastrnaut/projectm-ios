@@ -82,10 +82,14 @@ struct SettingsView: View {
     /// REC-004: "Include microphone audio" and the next recording's audio status (nil hides the section).
     var recordingAudio: RecordingAudioSetting?
     var recordingAudioStatus: (() -> String)?
+    /// REC-005: the record quality profile (nil hides the section, e.g. in previews).
+    var recordingQuality: RecordingQualitySetting?
     /// UIX-015: the explainer before the camera and local network prompts (nil: none, e.g. in previews).
     var explainers: PermissionExplainerCoordinator?
     /// UIX-015-R1: the camera's permission status when Camera is picked.
     var cameraStatus: @MainActor () -> PermissionState? = { () -> PermissionState? in nil }
+    /// PRE-006: Recently Played (nil hides its section, e.g. in previews).
+    var recentPresets: RecentPresetsCoordinator?
     /// ACC-005-R7: announces a VoiceOver swipe at a slider's end (nil: none, e.g. in previews).
     var announcer: AccessibilityAnnouncer?
     @Environment(\.dismiss) private var dismiss
@@ -426,6 +430,7 @@ struct SettingsView: View {
         if let latencyOffset { LatencyOffsetSection(setting: latencyOffset) }   // AUD-013-R10
         oscSection.id("osc")
         if let midi { MIDISettingsSection(midi: midi).id("midi") }   // MIDI-001-R8
+        if let recordingQuality { RecordingQualitySection(setting: recordingQuality) }   // REC-005-R9
         if let recordingAudio { RecordingAudioSection(setting: recordingAudio, status: recordingAudioStatus) }   // REC-004-R13
     }
 
@@ -449,6 +454,7 @@ struct SettingsView: View {
                 Text("A short guide to making a scene. Everything stays on this device.")
             }
         }
+        if let recentPresets { RecentHistorySection(recent: recentPresets).id("recentPresets") }   // PRE-006-R3, R4
         Section {
             NavigationLink("Storage") {   // FILE-009, FILE-010, FILE-005, MED-013
                 StorageUsageView(filesInUse: cacheFilesInUse, libraryBackup: libraryBackup, missingMedia: missingMedia)

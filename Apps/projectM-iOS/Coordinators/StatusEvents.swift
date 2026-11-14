@@ -116,7 +116,7 @@ enum StatusEventCatalog {
         StatusEvent(id: "X8", kind: .capture, visibleText: notice, announcement: notice, cause: .user)
     }
 
-    // MARK: Recording (X9-X14a)
+    // MARK: Recording (X9-X14a; X9c REC-005)
 
     /// X9-X11: the recording state. `idle` is reached through the offered panel (X11); a stop reason or a
     /// failure shows its notice instead (X13, X14).
@@ -145,6 +145,12 @@ enum StatusEventCatalog {
     static func recordingAudioEnded() -> StatusEvent {
         let text: String = RecordingAudioDecision.endedText
         return StatusEvent(id: "X9b", kind: .recording, visibleText: text, announcement: text, cause: .system)
+    }
+
+    /// REC-005-R6: X9c, the recording that just started uses a lower profile than the one selected
+    /// ("Recording at Standard: Needs HEVC, which this device cannot encode.").
+    static func recordingQualityFallback(_ notice: String) -> StatusEvent {
+        StatusEvent(id: "X9c", kind: .recording, visibleText: notice, announcement: notice, cause: .user)
     }
 
     static func recordingRefusal(_ refusal: RecordingRefusal) -> StatusEvent {
@@ -179,6 +185,7 @@ enum StatusEventCatalog {
         if notice == recordingSaved {
             return StatusEvent(id: "X14a", kind: .recording, visibleText: notice, announcement: notice, cause: .user)
         }
+        if notice.hasPrefix(RecordingQualityCatalog.fallbackPrefix) { return recordingQualityFallback(notice) }   // X9c
         if let refusal = RecordingRefusal.allCases.first(where: { $0.notice == notice }) {
             return recordingRefusal(refusal)
         }
@@ -235,6 +242,26 @@ enum StatusEventCatalog {
             let text: String = AccessibilityAnnouncer.blackoutText(false)
             return StatusEvent(id: "X23", kind: .output, visibleText: text, announcement: text, cause: .user,
                                presentation: .caption)
+        }
+    }
+
+    // MARK: External display (X27, X28; OUT-002-R6)
+
+    static let externalDisplayConnected = "External display connected"
+    static let externalDisplayHeld = "External display connected. It shows the visualization when the recording ends."
+    static let externalDisplayDisconnected = "External display disconnected"
+
+    /// X27 for a settled connection (`held`: a running recording keeps the visualization on the device for
+    /// now), X28 for the disconnect of a settled display. System rows with a transient caption.
+    static func externalDisplay(_ change: ExternalDisplayConnectionChange) -> StatusEvent {
+        switch change {
+        case let .connected(held):
+            let text: String = held ? externalDisplayHeld : externalDisplayConnected
+            return StatusEvent(id: "X27", kind: .display, visibleText: text, announcement: text, cause: .system,
+                               presentation: .caption)
+        case .disconnected:
+            return StatusEvent(id: "X28", kind: .display, visibleText: externalDisplayDisconnected,
+                               announcement: externalDisplayDisconnected, cause: .system, presentation: .caption)
         }
     }
 

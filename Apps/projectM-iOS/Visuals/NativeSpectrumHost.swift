@@ -103,6 +103,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
     private var loudness: Float = 0
     /// ANL-008: the newest frame's mid transient value, fed to the bindings (MOD-002's Mid transient source).
     private var midTransient: Float = 0
+    /// ANL-009: the newest frame's high transient value, fed to the bindings (MOD-002's High transient source).
+    private var highTransient: Float = 0
     private var lastLinkTimestamp: CFTimeInterval?
     private var displayLink: CADisplayLink?
     private var paused = true
@@ -214,6 +216,9 @@ final class NativeSpectrumHost: PresentationBoundResource {
     private let triggerBank = ThresholdTriggerBank()
     /// MOD-006: performs a fired trigger's action (the app connects MIDI-006's performer).
     var onTrigger: (@MainActor (ThresholdTriggerAction) -> Void)?
+    /// MOD-007: the current scene's oscillators and the per-frame values the bindings read (`audio.lfo.<index>`).
+    private let lfoBank = LFOBank()
+    private let lfoValues = UnsafeMutableBufferPointer<Double>.allocate(capacity: LFOBank.maximumOscillators)
     /// MOD-002: the luminance model the generator sees while the glow intensity is bound.
     private let glowLuminance = ModulatedGlowLuminance()
     /// REC-001: the handler waiting for the next readable frame.
@@ -416,16 +421,32 @@ final class NativeSpectrumHost: PresentationBoundResource {
         try triggerBank.set(bindings)
     }
 
+    /// MOD-007: replaces the scene's oscillators by position (validated); their shared origin restarts at the next frame.
+    func setLFOs(_ oscillators: [LFO?]) throws(LFOError) {
+        try lfoBank.set(oscillators)
+    }
+
+    /// MOD-007: the live oscillators by position.
+    var lfos: [LFO?] { lfoBank.oscillators }
+
     /// MOD-006: the live threshold triggers in order.
     var triggers: [ThresholdTriggerBinding] { triggerBank.bindings }
 
     /// Advances the bindings and the threshold triggers with one frame's features at the frame's display time and
     /// applies the result. Does nothing without bindings or triggers. Called by `frame(_:)`; tests call it directly.
     func applyModulation(bands: UnsafeBufferPointer<Float>, kick: Float? = nil, centroid: Float? = nil,
-                         loudness: Float? = nil, midTransient: Float? = nil, timeNanoseconds: UInt64) {
+                         loudness: Float? = nil, midTransient: Float? = nil, highTransient: Float? = nil,
+                         timeNanoseconds: UInt64) {
         let bound: Bool = modulator?.hasBindings ?? false
         guard bound || triggerBank.hasTriggers else { return }
-        let frame = AudioFeatureFrame(bands: bands, kick: kick, centroid: centroid, loudness: loudness, midTransient: midTransient)
+        var lfos = UnsafeBufferPointer<Double>(start: nil, count: 0)
+        if lfoBank.hasOscillators {   // MOD-007: at most 8 values, no allocation; ≤ 3 Hz under Reduce flashing (ACC-012)
+            let cap: Double = reduceFlashing ? LFOBank.reduceFlashingMaximumRateHz : .infinity
+            lfoBank.values(atNanoseconds: timeNanoseconds, maximumRateHz: cap, into: lfoValues)
+            lfos = UnsafeBufferPointer(lfoValues)
+        }
+        let frame = AudioFeatureFrame(bands: bands, kick: kick, centroid: centroid, loudness: loudness, midTransient: midTransient,
+                                      highTransient: highTransient, lfos: lfos)
         if triggerBank.hasTriggers {   // MOD-006: one step per trigger, no allocation
             triggerBank.advance(frame: frame, timeNanoseconds: timeNanoseconds) { (action: ThresholdTriggerAction) -> Void in
                 onTrigger?(action)
@@ -482,6 +503,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         bands.deallocate()
         samples.deinitialize(count: WaveformFrameBuffer.capacity)
         samples.deallocate()
+        lfoValues.deallocate()   // MOD-007
     }
 
     /// SHOW-011 (research SHOW-011-D3): while this visual is shown its analyzer is the analysis tap's
@@ -531,6 +553,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             centroid = 0       // ANL-010: the analysis session restarts, so its centroid does too
             loudness = 0       // ANL-014: and its loudness envelope
             midTransient = 0   // ANL-008: and its mid transient
+            highTransient = 0  // ANL-009: and its high transient
             if let waveform { analyzer.start(reader: waveform) }   // VIS-003: the tap through the pass-through wrapper
             let link = CADisplayLink(target: NativeSpectrumLinkProxy(self), selector: #selector(NativeSpectrumLinkProxy.fire(_:)))
             link.preferredFrameRateRange = quality.frameRateRange
@@ -627,6 +650,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             centroid = info.centroid
             loudness = info.loudness
             midTransient = info.midTransient
+            highTransient = info.highTransient
         }
         // ANL-003: the real interval since the previous frame (the first frame after a start snaps).
         let interval: Double = lastLinkTimestamp.map { (previous: CFTimeInterval) -> Double in link.timestamp - previous } ?? 0
@@ -639,7 +663,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
                                                        frameDuration: link.targetTimestamp - link.timestamp)
         let bandInput = UnsafeBufferPointer(start: bands, count: bandCount)
         applyModulation(bands: bandInput, kick: kickEnvelope, centroid: centroid, loudness: loudness, midTransient: midTransient,
-                        timeNanoseconds: context.timeNanoseconds)   // MOD-002; no-op without bindings
+                        highTransient: highTransient, timeNanoseconds: context.timeNanoseconds)   // MOD-002; no-op without bindings
         // VIS-003: the oscilloscope draws the newest sample history (kept when nothing new arrived).
         let input: UnsafeBufferPointer<Float>
         if case .oscilloscope = style {

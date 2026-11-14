@@ -39,6 +39,8 @@ enum EraseFixtures {
         LibrarySettingsPolicy.logoPlacementKey: .data(Data("{\"corner\":\"topLeft\"}".utf8)),
         LibraryErasePolicy.colorBlindSafePaletteKey: .bool(true),
         "settings.performanceOverlay": .bool(true),
+        LibrarySettingsPolicy.recentPresetsKey: .strings(["included/Alpha.milk", "included/Beta.milk", "included/Gamma.milk"]),   // PRE-006
+        LibrarySettingsPolicy.recentPresetsEnabledKey: .bool(true),
     ]) { (_: LibrarySettingValue, new: LibrarySettingValue) -> LibrarySettingValue in new }
 
     static func sandbox(_ test: XCTestCase, _ label: String = "erase") throws -> EraseSandbox {

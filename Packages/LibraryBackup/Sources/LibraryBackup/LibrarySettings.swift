@@ -73,6 +73,11 @@ public enum LibrarySettingsPolicy {
     /// MED-010-R9: the logo overlay's picture (a reference in the photo folder) and its placement.
     public static let logoKey = "settings.logo.id"
     public static let logoPlacementKey = "settings.logo.placement"
+    /// PRE-006-R7: the recently played preset IDs: personal usage data, never backed up or restored
+    /// (excluded), erased with "Collections, tags, favorites and history".
+    public static let recentPresetsKey = "recentPresets"
+    /// PRE-006-R3: "Remember Recently Played" (a preference: backed up, erased with Settings).
+    public static let recentPresetsEnabledKey = "settings.recentPresets.enabled"
 
     public static let includedKeys: [String] = [
         favoritesKey, lastPresetKey,
@@ -101,13 +106,16 @@ public enum LibrarySettingsPolicy {
         "settings.latencyOffset.microphone", "settings.latencyOffset.inAppPlayback", "settings.latencyOffset.systemAppCapture",
         photoKey, slideshowKey, "settings.text.overlay",
         logoKey, logoPlacementKey,   // MED-010
+        recentPresetsEnabledKey,   // PRE-006-R7
     ]
 
     /// Read by the app but deliberately left out (documented; a test checks none is included).
     public static let excludedKeys: [String] = [
         "settings.osc.enabled", "settings.midi.enabled",
         "settings.recording.includeMicrophone",   // REC-004-R3: a consent never travels to another device
+        "settings.recording.qualityProfile",   // REC-005-R7: depends on this device's encoder and screen
         "settings.video.id", "settings.video.loop", "settings.video.speed",
+        recentPresetsKey,   // PRE-006-R7: recently played history stays on this device
         "notice.photosensitivityAcknowledged", "permission.explained.camera", "permission.explained.localNetwork",
         "session.recovery.open", "session.recovery.heldVisual", "session.recovery.sessionsSinceReopen", "guide.firstScene",
     ]
