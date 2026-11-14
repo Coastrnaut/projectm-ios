@@ -17,6 +17,9 @@
 // (the device's tags, then the backup's, folded, at most 16; capped = `fellBack`), Replace = the
 // backup's tags, Skip = the device's. Tags of a user preset that the presets section adds as a copy
 // under a derived identifier follow that identifier.
+// Preset overrides (PRE-016, key "overrides/<preset id>", section `overrides`): per preset, Keep both =
+// the device's values plus the backup's other parameters (`union`), Replace = the backup's set, Skip =
+// the device's; a Keep-both copy's overrides follow its derived identifier, as tags do.
 // Presets: a backup text already stored under another identifier is identical (each text is stored
 // once, PRE-012); a Keep both or Replace that would store a text twice keeps the device's record.
 import Foundation
@@ -42,6 +45,8 @@ public enum LibraryRestoreSection: String, Sendable, Hashable, CaseIterable {
     case scenes, currentScene, presets, collections, settings, photos
     /// PRE-003: preset tags, one entry per tagged preset.
     case tags
+    /// PRE-016: preset parameter overrides, one entry per preset with overrides.
+    case overrides
 }
 
 public enum LibraryRecordKind: String, Sendable, Hashable {
@@ -120,6 +125,8 @@ public struct LibraryRestorePlan: Sendable, Equatable {
     public let collections: [PresetCollection]?
     /// PRE-003: the preset tags after the restore; nil when they do not change.
     public var presetTags: PresetTagMap? = nil
+    /// PRE-016: the preset overrides after the restore; nil when they do not change.
+    public var presetOverrides: PresetOverrideMap? = nil
     /// The current scene to write; nil when it does not change.
     public let currentScene: Data?
     public let photosToWrite: [String: Data]
@@ -145,7 +152,7 @@ public struct LibraryRestorePlan: Sendable, Equatable {
         if showMode == .exact || (showMode == .merge && (scenePlan?.actions.isEmpty == false)) { folders.append(.show) }
         if currentScene != nil { folders.append(.currentScene) }
         if !presetsToAdd.isEmpty || !presetsToReplace.isEmpty { folders.append(.presets) }
-        if collections != nil || presetTags != nil { folders.append(.collections) }
+        if collections != nil || presetTags != nil || presetOverrides != nil { folders.append(.collections) }
         if !photosToWrite.isEmpty { folders.append(.photos) }
         return folders
     }
@@ -160,6 +167,7 @@ public enum LibraryRestorePlanner {
         builder.planPresets(backup: backup, library: library)
         builder.planCollections(backup: backup, library: library)
         builder.planTags(backup: backup, library: library)
+        builder.planOverrides(backup: backup, library: library)
         builder.planSettings(backup: backup, library: library)
         builder.planPhotos(backup: backup, library: library)
         var plan = LibraryRestorePlan(choice: choice, overrides: overrides, libraryDigest: libraryDigest(library),
@@ -168,6 +176,7 @@ public enum LibraryRestorePlanner {
                                       presetsToReplace: builder.presetsToReplace, collections: builder.collections,
                                       currentScene: builder.currentScene, photosToWrite: builder.photos, settingsToApply: builder.settings)
         plan.presetTags = builder.presetTags
+        plan.presetOverrides = builder.presetOverrides
         return plan
     }
 
@@ -247,6 +256,7 @@ private struct Builder {
     var presetsToReplace: [LibraryPreset] = []
     var collections: [PresetCollection]?
     var presetTags: PresetTagMap?
+    var presetOverrides: PresetOverrideMap?
     var currentScene: Data?
     var photos: [String: Data] = [:]
     var settings: [String: LibrarySettingValue] = [:]
@@ -569,6 +579,47 @@ private struct Builder {
             }
         }
         return (result, dropped)
+    }
+
+    // MARK: Preset overrides (PRE-016)
+
+    mutating func planOverrides(backup: LibraryContents, library: LibraryContents) {
+        guard let incoming = backup.presetOverrides, !incoming.isEmpty else { return }
+        var map: PresetOverrideMap = library.presetOverrides ?? PresetOverrideMap()
+        var changed = false
+        for backupID in incoming.values.keys.sorted() {
+            let theirs: [String: Double] = incoming.overrides(for: backupID)
+            let id: String = restoredPresetID(backupID)
+            let key = "overrides/" + backupID
+            let mine: [String: Double] = map.overrides(for: id)
+            if mine == theirs {
+                add(key, .overrides, .identical, .keep)
+                continue
+            }
+            let picked: LibraryRestoreChoice = choice(for: key)
+            if !mine.isEmpty, picked == .skip {
+                add(key, .overrides, .clash, .keep, choice: picked)
+                continue
+            }
+            var merged: PresetOverrideMap = map
+            if !mine.isEmpty, picked == .replace { merged.reset(id) }
+            var dropped = false
+            for name in theirs.keys.sorted() {
+                guard let value = theirs[name] else { continue }
+                if !mine.isEmpty, picked == .keepBoth, mine[name] != nil { continue }   // the device's value wins
+                do { try merged.set(value, for: name, preset: id) } catch { dropped = true }
+            }
+            if mine.isEmpty {
+                add(key, .overrides, .new, .add, fellBack: dropped)
+            } else if picked == .replace {
+                add(key, .overrides, .clash, .replace, choice: picked, fellBack: dropped)
+            } else {
+                add(key, .overrides, .clash, merged == map ? .keep : .union, choice: picked, fellBack: dropped)
+            }
+            changed = changed || merged != map
+            map = merged
+        }
+        if changed { presetOverrides = map }
     }
 
     // MARK: Settings

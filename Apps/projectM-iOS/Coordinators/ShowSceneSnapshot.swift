@@ -85,8 +85,8 @@ enum ShowSceneSnapshot {
         var contents: [SceneLayerContent] = []
         var assets: [String: SceneAsset] = [:]
         switch look.visual {
-        case .projectM, .camera, .oscilloscope, .lissajous, .radialWaveform:
-            break   // camera never reaches here (recordedVisual); projectM, the oscilloscope (VIS-003-R12) the Lissajous (VIS-004-R12) and the radial waveform (VIS-005-R10) are no compositor layer
+        case .projectM, .camera, .oscilloscope, .lissajous, .radialWaveform, .beatRings:
+            break   // camera never reaches here (recordedVisual); projectM, the oscilloscope (VIS-003-R12) the Lissajous (VIS-004-R12) the radial waveform (VIS-005-R10) and beat rings (VIS-006-R10) are no compositor layer
         case .circularSpectrum:
             contents = [.circularSpectrum]
         case .linearSpectrum:

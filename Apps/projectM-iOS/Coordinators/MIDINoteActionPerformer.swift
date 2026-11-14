@@ -60,6 +60,7 @@ final class MIDINoteActionPerformer {
         case .transportToggle: actions.setPaused(!actions.isPaused())
         case .transportPlay: if actions.isPaused() { actions.setPaused(false) }
         case .transportPause: if !actions.isPaused() { actions.setPaused(true) }
+        case .panic: break   // MIDI-013: the mapping coordinator runs the panic
         }
     }
 
@@ -76,8 +77,8 @@ final class MIDINoteActionPerformer {
             guard holdBlackedOut else { return }
             holdBlackedOut = false
             if actions.isBlackoutRequested() { actions.setBlackout(false) }
-        case (.cueNext, _), (.cuePrevious, _), (.transportToggle, _), (.transportPlay, _), (.transportPause, _):
-            break   // cue and transport actions are trigger-only
+        case (.cueNext, _), (.cuePrevious, _), (.transportToggle, _), (.transportPlay, _), (.transportPause, _), (.panic, _):
+            break   // cue and transport actions are trigger-only; MIDI-013: panic is run by the mapping coordinator
         }
     }
 }

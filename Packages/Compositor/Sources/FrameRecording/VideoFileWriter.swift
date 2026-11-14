@@ -121,6 +121,10 @@ final class VideoFileWriter: RecordingSampleSink, @unchecked Sendable {
     private let adaptor: AVAssetWriterInputPixelBufferAdaptor
     private let pool: CVPixelBufferPool
     private let realTime: Bool
+    /// Offline (tests' fixtures; the app always records live): how long `append` waits for a not-ready input before
+    /// it drops the frame as `notReady`. Only a hang guard: a slow software encoder (CI's iOS Simulator took 432 s
+    /// for REC-005's 2 s 1440 × 2880 HEVC fixture) must never lose a frame to it. Was 5 s until run 43612171768.
+    static let offlineReadyTimeoutSeconds = 30.0
     /// REC-004: the AAC input and the LPCM format of its chunks (nil without audio).
     private let audioInput: AVAssetWriterInput?
     private let audioFormat: CMAudioFormatDescription?
@@ -223,7 +227,7 @@ final class VideoFileWriter: RecordingSampleSink, @unchecked Sendable {
         if !input.isReadyForMoreMediaData {
             if realTime { return .notReady }       // REC-003-R7: never wait while live
             var waited = 0.0
-            while !input.isReadyForMoreMediaData && writer.status == .writing && waited < 5 {
+            while !input.isReadyForMoreMediaData && writer.status == .writing && waited < Self.offlineReadyTimeoutSeconds {
                 Thread.sleep(forTimeInterval: 0.002)   // offline only, on the writer queue
                 waited += 0.002
             }
@@ -239,7 +243,7 @@ final class VideoFileWriter: RecordingSampleSink, @unchecked Sendable {
         if !audioInput.isReadyForMoreMediaData {
             if realTime { return .notReady }
             var waited = 0.0
-            while !audioInput.isReadyForMoreMediaData && writer.status == .writing && waited < 5 {
+            while !audioInput.isReadyForMoreMediaData && writer.status == .writing && waited < Self.offlineReadyTimeoutSeconds {
                 Thread.sleep(forTimeInterval: 0.002)   // offline only, on the writer queue
                 waited += 0.002
             }

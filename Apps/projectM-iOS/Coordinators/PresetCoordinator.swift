@@ -134,6 +134,8 @@ final class PresetCoordinator {
     /// PRE-003-R12: set by AppCoordinator; tag edits (library lane) and chip counts (search lane).
     @ObservationIgnored var announceLibrary: (String) -> Void = { (_: String) in }
     @ObservationIgnored var announceSearch: (String) -> Void = { (_: String) in }
+    /// PRE-016: preset parameter overrides (set by AppCoordinator; nil in tests that do not need them).
+    @ObservationIgnored var overrides: PresetOverridesCoordinator?
     /// PRE-006: the recently played history (set by AppCoordinator; nil in tests that do not need it).
     @ObservationIgnored var recent: RecentPresetsCoordinator?
     /// PRE-010: the preview in progress (or its failure notice); in memory only.

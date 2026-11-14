@@ -47,6 +47,7 @@ CHECKED = [
     "Views/PresetAuditionBar.swift",                   # PRE-010-R9
     "Coordinators/MIDIMappingCoordinator.swift",       # MIDI-003-R11: learn announces through the announcer
     "Coordinators/MIDIMappingCoordinator+Notes.swift", # MIDI-006-R9: note learn announces through the announcer
+    "Coordinators/MIDIMappingCoordinator+Panic.swift", # MIDI-013-R6: "MIDI reset" through the announcer
     "Coordinators/MIDINoteActionPerformer.swift",      # MIDI-006-R9: triggers add no announcement of their own
     "Coordinators/MIDIMappingCoordinator+Scenes.swift",  # MIDI-007-R10: scene learn announces through the announcer
     "Coordinators/MIDISceneActionPerformer.swift",     # MIDI-007-R10: "not found" on the .midi lane
@@ -69,6 +70,7 @@ CHECKED = [
     "Views/LogoSection.swift",
     "Views/RecordingAudioSection.swift",  # REC-004-R9: recording audio announces through the router (X9a, X9b)
     "Coordinators/RecordingAudioSetting.swift",
+    "Views/RecordingStatusLines.swift",  # REC-009-R4: recording warnings announce through the router (X9f, X9g)
     "Views/RecordingQualitySection.swift",  # REC-005-R6: the fallback announces through the router (X9c)
     "Coordinators/RecordingQualitySetting.swift",
     "Views/SceneFoldersView.swift",  # SCN-004-R13: folder edits announce on the library lane

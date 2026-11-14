@@ -348,6 +348,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     private var lifecycleForwarding: Task<Void, Never>?
     /// Presentation-bound resources (PERF-011): the renderer registers its own in prepareRenderer().
     @ObservationIgnored let presentation = PresentationResourceRegistry()
+    /// PERF-005: the next cues' media decoded ahead (AppCoordinator+Prewarm).
+    @ObservationIgnored let mediaPrewarm = MediaPrewarmCoordinator.makeDefault()
     @ObservationIgnored private var lifecycleCoordinator: LifecycleCoordinator!
     /// PERF-006: the one receiver of memory warnings; the app's recovery steps are registered there.
     @ObservationIgnored let memoryPressure: MemoryPressureCoordinator
@@ -496,6 +498,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         presets.recent = RecentPresetsCoordinator(store: RecentPresetsStore(defaults: defaults))   // PRE-006
         userPresets = UserPresetsCoordinator.makeDefault()
         userPresets.connect(presets: presets, loader: presetLoader)   // PRE-012
+        presets.overrides = Self.makeOverrides(presets: presets, loader: presetLoader)   // PRE-016
         #if DEBUG || PROJECTM_AUTOMATION
         entitlements = AutomationRunner.entitlementsOverride() ?? FakeEntitlements.fromLaunchArguments() ?? LibraryStore()
         #else
@@ -522,6 +525,17 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     // AppCoordinator.init is split in three (2026-11-14) to keep each body under the 300 ms
     // type-check budget that Xcode 26 on CI enforces: the UI-test reset and the wiring that runs
     // once every stored property is set moved out unchanged, called at the same points.
+
+    /// PRE-016: the overrides store (beside the tags, so `-uitestResetNotice` removes it), handed to the
+    /// loader (applied on load) and to the coordinator (the Adjust Parameters sheet).
+    private static func makeOverrides(presets: PresetCoordinator, loader: RendererPresetLoader) -> PresetOverridesCoordinator {
+        let store = PresetOverrideStore(directory: PresetOverrideStore.defaultDirectory())
+        loader.overrides = store
+        return PresetOverridesCoordinator(store: store, presets: presets) { [weak loader] (preset: IndexedPreset) async throws -> Data in
+            guard let loader else { throw CocoaError(.featureUnsupported) }
+            return try await loader.originalData(for: preset)
+        }
+    }
 
     /// `-uitestResetNotice`: UI tests start from a clean library and settings.
     private static func resetForUITests(_ defaults: UserDefaults) {
@@ -595,6 +609,9 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         if recovery.decision.isCrashLoop { sceneAutosave?.commitFreshScene() }
         recovery.startObservingLifecycle()
         connectShow()   // SHOW-001
+        presetLoader.prewarmScheduler = mediaPrewarm.scheduler   // PERF-005-R8: preset picks pass through unchanged
+        connectMediaPrewarm()   // PERF-005
+        connectScenePacks(defaults: defaults)   // SCN-014
         connectMissingMedia(defaults: defaults)   // MED-013 (and its DEBUG seed)
         connectLayerInspector()   // CMP-015
         #if DEBUG
@@ -1046,6 +1063,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         case .oscilloscope: .oscilloscope(line: settings.oscilloscopeLine, windowMilliseconds: settings.oscilloscopeWindowMilliseconds)
         case .lissajous: .lissajous(mode: settings.lissajousMode, persistence: settings.lissajousPersistence)   // VIS-004
         case .radialWaveform: .radialWaveform(ring: settings.radialWaveformRing, amplitude: settings.radialWaveformAmplitude)   // VIS-005
+        case .beatRings: .beatRings(life: settings.beatRingsLife)   // VIS-006
         default: .circular
         }
     }
@@ -1154,6 +1172,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.onImageStateChange = { [weak self] (state: ImageLayerState) in self?.photoStateChanged(state) }
             slideshow.restartPlayback()   // MED-006: from the first slide
             host.beforeFrame = { [weak self] () -> Void in self?.slideshowTick() }
+            mediaPrewarm.attach(host.photo)   // PERF-005-R11: a prewarmed picture is adopted, not decoded again
             host.content = photoLayerContent
             if let next = slideshow.nextURL { host.preload(next) }
             presentation.register(host)   // PERF-011: starts suspended while the app cannot present
@@ -1856,6 +1875,10 @@ final class RendererPresetLoader: PresetLoading, MemoryPressureResponder {
     var library: PresetLibrary?
     /// The stored bytes of a playable imported preset (PRE-012); set by UserPresetsCoordinator.
     var userPresetData: ((String) async -> Data?)?
+    /// PERF-005-R8: the app's prewarm scheduler; preset picks are forwarded through it at once (nil: direct).
+    var prewarmScheduler: PrewarmScheduler?
+    /// PRE-016: the user's parameter overrides, applied to the bytes of a preset loaded for display.
+    var overrides: PresetOverrideStore?
     private var archive: PresetArchive?
 
     /// Included presets load from their bundled file; pack presets from PresetArchive.bin
@@ -1872,7 +1895,22 @@ final class RendererPresetLoader: PresetLoading, MemoryPressureResponder {
         } else if !preset.isIncluded {
             playable.data = try packArchive(resources).contents(of: preset.id)
         }
+        // PRE-016-R5: overrides apply to a copy of the bytes; the file itself is never written.
+        let adjustments: [String: Double] = overrides?.overrides(for: preset.id) ?? [:]
+        if !adjustments.isEmpty {
+            let original: Data = try playable.data ?? Data(contentsOf: fileURL)
+            playable.data = PresetTextOverlay.apply(adjustments, to: original)
+        }
         try await renderer.setPreset(playable)
+    }
+
+    /// PRE-016: a preset's own bytes (user copy, bundle file or archive), read-only.
+    func originalData(for preset: IndexedPreset) async throws -> Data {
+        if preset.source == PresetLibrary.userSource {
+            guard let data = await userPresetData?(preset.id) else { throw CocoaError(.fileNoSuchFile) }
+            return data
+        }
+        return try bundledData(for: preset)
     }
 
     /// A built-in preset's bytes, read-only, for "Duplicate to My Presets" (PRE-015-R2): Included
@@ -1896,7 +1934,11 @@ final class RendererPresetLoader: PresetLoading, MemoryPressureResponder {
             }
             return item
         }
-        renderer.prewarm(playable)
+        if let prewarmScheduler {
+            prewarmScheduler.forwardPresets(playable.map(\.id)) { renderer.prewarm(playable) }
+        } else {
+            renderer.prewarm(playable)
+        }
     }
 
     // MARK: - Memory pressure (PERF-006-R11)

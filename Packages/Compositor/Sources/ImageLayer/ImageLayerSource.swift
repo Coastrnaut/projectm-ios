@@ -23,6 +23,11 @@
 // MED-006 (specs/127-med-006-image-slideshow, contract C3): `preload` decodes the next slide ahead into a
 // one-entry prepared slot; setting `content` to that URL adopts it synchronously, so a slide change is a
 // cut that renders once (no transparent frame) and changes the cache key exactly once.
+// PERF-005 (specs/179-perf-005-prewarm-scheduler, R11): `prewarmedTexture` is a lookup the app's prewarm scheduler
+// answers. When `content` becomes a file that the prepared slot does not hold, a texture the lookup returns is
+// adopted synchronously (ready at once, no load of this layer's own). `decodeStored` and `makeLayerTexture` are the
+// two halves of a load, so the scheduler can decode off the main thread and upload inside its graphics gate;
+// `loadsStarted` counts the loads this layer started itself.
 import Foundation
 
 /// What the photo layer shows.
@@ -71,6 +76,12 @@ public final class ImageLayerSource: LayerSource, LayerFitting, LayerRenderCachi
     public private(set) var framesShown = 0
     /// CMP-013: frames that drew the image (render calls that succeeded).
     public private(set) var renderCount = 0
+    /// PERF-005: a texture decoded ahead for a URL (the prewarm cache), taken when `content` becomes that URL.
+    public var prewarmedTexture: ((URL) -> MTLTexture?)?
+    /// PERF-005: loads this layer started itself (content changes that were neither prepared nor prewarmed).
+    public var loadsStarted: Int { slot.lock.withLockUnchecked { $0.loadsStarted } }
+    /// PERF-005: content changes served by `prewarmedTexture`.
+    public private(set) var prewarmedAdoptions = 0
     /// Called on the main actor after every state change.
     public var onStateChange: (@MainActor @Sendable (ImageLayerState) -> Void)? {
         get { slot.lock.withLockUnchecked { $0.handler } }
@@ -106,9 +117,21 @@ public final class ImageLayerSource: LayerSource, LayerFitting, LayerRenderCachi
                 slot.notify()
                 return
             }
+            // PERF-005-R11: a picture the prewarm scheduler decoded ahead is adopted now.
+            if case .file(let url) = content, let texture = prewarmedTexture?(url) {
+                slot.lock.withLockUnchecked { s in
+                    guard s.generation == generation else { return }
+                    s.texture = texture
+                    s.state = .ready(width: texture.width, height: texture.height)
+                }
+                prewarmedAdoptions += 1
+                slot.notify()
+                return
+            }
             slot.notify()
             guard case .file(let url) = content else { return }
             let slot = self.slot, device = self.device, decoder = self.decoder, limits = self.limits
+            slot.lock.withLockUnchecked { $0.loadsStarted += 1 }
             loads.async {
                 let result: Result<MTLTexture, ImageImportError> = slot.takePrepared(url).map {
                     (texture: MTLTexture) -> Result<MTLTexture, ImageImportError> in .success(texture)
@@ -164,14 +187,42 @@ public final class ImageLayerSource: LayerSource, LayerFitting, LayerRenderCachi
     /// Reads, decodes and uploads one stored copy (background queue).
     static func load(_ url: URL, device: MTLDevice, decoder: any ImageDecoding,
                      limits: ImageImportLimits) -> Result<MTLTexture, ImageImportError> {
-        do throws(ImageImportError) {
-            let data = try ImageSanitizer.readBounded(url, limits: limits)
-            let image = try decoder.decode(data, limits: limits)
+        switch decodeStored(url, decoder: decoder, limits: limits) {
+        case .success(let image):
             guard let texture = makeTexture(image, device: device) else { return .failure(.damaged) }
             return .success(texture)
+        case .failure(let error):
+            return .failure(error)
+        }
+    }
+
+    /// PERF-005: the CPU half of a load: a bounded read of the stored copy and the decode (any thread).
+    public static func decodeStored(_ url: URL, decoder: any ImageDecoding = ImageIODecoder(),
+                                    limits: ImageImportLimits = .standard) -> Result<DecodedImage, ImageImportError> {
+        do throws(ImageImportError) {
+            let data = try ImageSanitizer.readBounded(url, limits: limits)
+            return .success(try decoder.decode(data, limits: limits))
         } catch {
             return .failure(error)
         }
+    }
+
+    /// PERF-005: the GPU half of a load: the layer's mipmapped texture for a decoded picture (nil on failure).
+    public static func makeLayerTexture(_ image: DecodedImage, device: MTLDevice) -> MTLTexture? {
+        makeTexture(image, device: device)
+    }
+
+    /// PERF-005: the memory a layer texture of `width` × `height` holds with its mip chain (RGBA8, about 4/3).
+    public static func textureBytes(width: Int, height: Int) -> Int {
+        var total = 0
+        var w = max(1, width), h = max(1, height)
+        while true {
+            total += w * h * 4
+            if w == 1 && h == 1 { break }
+            w = max(1, w / 2)
+            h = max(1, h / 2)
+        }
+        return total
     }
 
     static func makeTexture(_ image: DecodedImage, device: MTLDevice) -> MTLTexture? {
@@ -356,6 +407,8 @@ final class ImageLoadSlot: Sendable {
         var preparedURL: URL?
         var preparedTexture: MTLTexture?
         var preparedToken: UInt64 = 0
+        /// PERF-005: loads started by `content` changes.
+        var loadsStarted = 0
     }
     let lock = OSAllocatedUnfairLock(uncheckedState: State())
 

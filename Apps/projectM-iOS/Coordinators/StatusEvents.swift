@@ -189,6 +189,28 @@ enum StatusEventCatalog {
         StatusEvent(id: "X9c", kind: .recording, visibleText: notice, announcement: notice, cause: .user)
     }
 
+    /// REC-009-R4 (contract C2): X9f, the recording is dropping frames; X9g, storage is low or almost full.
+    /// System rows on the recording lane; the overlay line stays on screen (persistent).
+    static func recordingWarning(_ warning: RecordingStatusWarning) -> StatusEvent {
+        let text: String = recordingWarningText(warning)
+        let id: String = warning.kind == .droppedFrames ? "X9f" : "X9g"
+        return StatusEvent(id: id, kind: .recording, visibleText: text, announcement: text, cause: .system)
+    }
+
+    static let droppingFramesText = "Recording is dropping frames"
+
+    /// "Storage low: about 3 min of recording left", "Storage almost full: under 1 min of recording left".
+    static func recordingWarningText(_ warning: RecordingStatusWarning) -> String {
+        switch warning.kind {
+        case .droppedFrames:
+            return droppingFramesText
+        case .storage:
+            let seconds: Int64 = warning.secondsLeft ?? 0
+            if warning.storageLevel == .critical || seconds < 60 { return "Storage almost full: under 1 min of recording left" }
+            return "Storage low: about \(seconds / 60) min of recording left"
+        }
+    }
+
     static func recordingRefusal(_ refusal: RecordingRefusal) -> StatusEvent {
         switch refusal {
         case .noVisual, .notRecordable, .outputBlackedOut, .paused, .busy, .lowStorage:
