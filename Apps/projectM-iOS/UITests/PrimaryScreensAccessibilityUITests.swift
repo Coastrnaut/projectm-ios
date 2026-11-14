@@ -276,6 +276,18 @@ final class PrimaryScreensAccessibilityUITests: XCTestCase {
                 Filter(screen: "parameterInspector", type: .dynamicType, element: l, reason: inspectorRows)
             } + [
             Filter(screen: "storage", type: .dynamicType, element: "storageRefresh", reason: bar),
+        ] + ["Collections", "My Presets", "0", "Recently Played"].map { (l: String) -> Filter in
+            // ACC-004's bottom rows (its `bottomRows` filter), reported at AX3 too when they sit at the screen's foot.
+            Filter(screen: "browser", type: .dynamicType, element: l, reason: bottom)
+        } + [
+            Filter(screen: "browser", type: .dynamicType, element: "", elementless: true, limit: 2,
+                   reason: "the same bottom rows reported without an element (AX3); bounded to two"),
+            Filter(screen: "midiMappings", type: .textClipped, element: "", elementless: true, limit: 3,
+                   reason: "a text cut by the top or bottom edge of the screen, reported without an element (AX3; the AX3 "
+                       + "screenshot shows no clipped text); bounded to three"),
+            Filter(screen: "settingsRecording", type: .textClipped, element: "", elementless: true, limit: 3,
+                   reason: "the recording sections' long footer cut by the bottom edge of the screen, reported without an "
+                       + "element (AX3; the screenshot shows no clipped text); bounded to three"),
             Filter(screen: "parameterInspector", type: .dynamicType, element: "parameterInspector.reset", reason: bottom),
             Filter(screen: "sceneSwitcher", type: .contrast, element: "", elementless: true, limit: 6,
                    reason: "the rows' preview placeholders (five) and the current row's play mark: decorative images hidden "
