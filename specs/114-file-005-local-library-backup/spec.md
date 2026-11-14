@@ -6,6 +6,8 @@
 
 **Status**: Draft
 
+**speckit-analyze (2026-11-14)**: 0 critical, 0 high; every requirement and success criterion maps to a task (R1 T03/T05/T06, R2 T05/T12, R3 T02/T12, R4 T14/T15, R5 T07/T14, R6 T13/T14, R7 T08/T11, R8 T09, R9 T04/T09, R10 T07/T10, R11 T09, R12 T14/T16, R13 T17/T18; S1 T09, S2 T11, S3 T10, S4 T12, S5 T06, S6 T16). Fixes applied: the older-version path of R3 gets a test in T12; the launch-time result reports the counts actually installed, which can differ from the preview when the library changed in between (R6).
+
 **Input**: User description: "Implement FILE-005 (Local library backup) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Export scenes, collections and
 mappings into one user-selected file." Acceptance, verbatim: "Restore on fresh sandbox recreates exact
@@ -147,7 +149,7 @@ a clear message before anything is written.
 - **FILE-005-R3**: A backup of a newer format version is refused with "update the app"; an older format version is read through a migration table (one row today); records inside are migrated by their own readers.
 - **FILE-005-R4**: The backup is offered to the system exporter; the temporary copy is deleted when it closes, saved or cancelled. No copy leaves the device except where the user saves it.
 - **FILE-005-R5**: Restore from Backup reads the picked file once, validates it and shows a dry-run preview: per record kind the numbers of new, identical and clashing records, what is left out, and the "Apply to all" choice (Keep both by default, Replace, Skip). Nothing is written by the preview.
-- **FILE-005-R6**: Restore records the request (the backup and the choice) and takes effect at the next launch before any store loads; the request can be cancelled until then; its result is shown once in Settings › Storage and announced.
+- **FILE-005-R6**: Restore records the request (the backup and the choice) and takes effect at the next launch before any store loads; the request can be cancelled until then; its result (the counts actually installed) is shown once in Settings › Storage and announced.
 - **FILE-005-R7**: At launch the restore plans again against the library with the recorded choice and installs all or nothing: every changed folder is built in a staging area and verified, swapped in under a journal, and settings applied after the commit point; any failure before the commit restores the library byte for byte; an interrupted restore is rolled back or completed at the next launch.
 - **FILE-005-R8**: Into a library with none of the backup's records, the restore recreates every included record exactly (FILE-005-R9's comparison).
 - **FILE-005-R9**: "Exact logical records" is one function over a library: the show (canonical bytes), each stored scene (canonical bytes by ID), the current scene (canonical bytes), each included preset (identifier, name, author, file name, text, license, origin, import and edit dates; not the check state), the collections (canonical bytes, order kept), each included setting (typed value), the favorites set, the last preset and each photo (bytes). Two libraries are equal when the function's results are equal; it is tested.

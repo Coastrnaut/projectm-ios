@@ -37,7 +37,7 @@
 
 ## Phase 7: User Story 5 - Damaged files refused (P1)
 
-- [ ] FILE-005-T12 [US5] Package tests: truncated, corrupted, tampered, foreign, newer-version, oversize, unsafe-path, mismatched-scene-ID and excluded-record archives refused in LibraryBackupHostileTests.swift; an ImportFuzz suite Packages/ImportFuzz/Tests/ImportFuzzTests/LibraryBackupFuzzTests.swift with seeds made by the writer (FILE-005-S4)
+- [ ] FILE-005-T12 [US5] Package tests: truncated, corrupted, tampered, foreign, newer-version, oversize, unsafe-path, mismatched-scene-ID and excluded-record archives refused, and a backup holding an older-version scene read through SCN-013 migration, in LibraryBackupHostileTests.swift; an ImportFuzz suite Packages/ImportFuzz/Tests/ImportFuzzTests/LibraryBackupFuzzTests.swift with seeds made by the writer (FILE-005-S4)
 
 ## Phase 8: App
 
