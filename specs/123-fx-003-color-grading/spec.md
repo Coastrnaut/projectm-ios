@@ -63,6 +63,23 @@ each answer is the conservative option.
   map, so graded colours above display white are tone-mapped safely, and before the flash guard measures, so
   the limiter judges the graded, tone-mapped colour. Applied to FX-003-R2, R6.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Four questions, each answered by Claude with the recommended option (owner rule 4).
+
+- Q: What ranges do the controls have? → A: Temperature −1…+1 (cool to warm, neutral 0), lift −0.1…+0.1
+  (linear-light offset of black, neutral 0), gamma 0.5…2 (neutral 1; above 1 brightens mid-tones), gain
+  0.5…2 (neutral 1), saturation 0…2 (neutral 1). Lift and gain stay well inside the ranges where luminance
+  ordering holds (gain > 0, lift < 1). Applied to FX-003-R4, R7 and Key Entities.
+- Q: Are lift, gamma and gain master controls or per colour channel (colour wheels)? → A: Master controls,
+  one value each for all three channels; per-channel wheels are a later option. Applied to FX-003-R1.
+- Q: Is temperature in Kelvin? → A: No: a unitless cool-to-warm scale (red and blue gains moved in opposite
+  directions, normalised so a grey keeps its luminance). The UI says "Cool" or "Warm" with the amount, never
+  a Kelvin value it cannot back up. Applied to FX-003-R5, R9.
+- Q: What tolerances do the GPU comparisons use? → A: FX-002's: one 8-bit step (1/255 of the encoded value)
+  for the sRGB screen format and 0.002 absolute for the half-float format; bit-identity is checked separately
+  for in-range pixels at neutral. Applied to FX-003-S1, S2.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Grade the look of a composited visual (Priority: P1)
@@ -136,7 +153,8 @@ with a high gain they become a visible flash, and the limiter lowers its gain.
 
 ### Functional Requirements
 
-- **FX-003-R1**: Five grading controls — temperature, lift, gamma, gain and saturation — apply to the
+- **FX-003-R1**: Five master grading controls (one value for all channels) — temperature, lift, gamma, gain
+  and saturation — apply to the
   compositor-backed visuals on every output they write (screen, external display, recording, capture, the
   transition bus).
 - **FX-003-R2**: The operators run in linear light on the finished composite, in a fixed, documented order
@@ -154,7 +172,8 @@ with a high gain they become a visible flash, and the limiter lowers its gain.
 - **FX-003-R8**: The values are one global visual setting saved on the device, restored at launch, included in
   library backups, and checked on read (missing, NaN or non-number → neutral; out of range → clamped).
 - **FX-003-R9**: Settings has a "Color" section with one slider per control (VoiceOver-adjustable in the
-  control's step, with a spoken value), short help text and a "Reset to neutral" button.
+  control's step, with a spoken value; temperature reads "Cool" or "Warm" with its amount, never Kelvin),
+  short help text naming the graded visuals, and a "Reset to neutral" button.
 - **FX-003-R10**: A plain-software reference of the grading exists, testable without a GPU (Linux), and the GPU
   output matches it within half-float and 8-bit tolerance.
 - **FX-003-R11**: No new render pass, texture or per-frame allocation; cached layers stay reusable (grading is
@@ -162,7 +181,8 @@ with a high gain they become a visible flash, and the limiter lowers its gain.
 
 ### Key Entities
 
-- **Color grade**: the five values (temperature, lift, gamma, gain, saturation), each with a range and neutral.
+- **Color grade**: the five values, each with a range and neutral: temperature −1…+1 (0), lift −0.1…+0.1 (0),
+  gamma 0.5…2 (1), gain 0.5…2 (1), saturation 0…2 (1). Master values (the same for all three channels).
 - **Reference image**: horizontal grey and colour ramps, the primaries and secondaries, and fixed greys.
 
 ## Success Criteria *(mandatory)*
