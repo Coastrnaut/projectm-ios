@@ -6,7 +6,8 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 6,
+   "audited": 5,
+   "implementing": 1,
    "integrated": 80,
    "skipped_existing": 1
   },
@@ -24,8 +25,8 @@
   }
  },
  "by_state": {
-  "audited": 227,
-  "implementing": 2,
+  "audited": 226,
+  "implementing": 3,
   "integrated": 96,
   "skipped_existing": 1
  },
@@ -323,13 +324,13 @@
   },
   "ACC-006": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/acc-006",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "ACC-007": {
    "attempts": 0,
@@ -4039,5 +4040,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T00:54:18Z"
+ "updated": "2026-11-14T00:54:30Z"
 }
