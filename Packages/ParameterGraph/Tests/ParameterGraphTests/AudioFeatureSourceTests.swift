@@ -65,6 +65,20 @@ final class AudioFeatureSourceTests: XCTestCase {
         XCTAssertEqual(AudioFeatureSource.loudness.value(in: .silent), 0)
     }
 
+    /// ANL-009-T07: the high transient source (ANL-009-R8).
+    func testHighTransientSourceRoundTripsAndReadsTheValue() {
+        XCTAssertEqual(AudioFeatureSource.highTransient.id, "audio.highTransient")
+        XCTAssertEqual(AudioFeatureSource(id: "audio.highTransient"), .highTransient)
+        XCTAssertNil(AudioFeatureSource(id: "audio.hihat"), "no instrument-named source exists")
+        let bands: [Float] = [0.2]
+        bands.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> Void in
+            XCTAssertEqual(AudioFeatureSource.highTransient.value(in: AudioFeatureFrame(bands: buffer, highTransient: 0.625)), 0.625)
+            XCTAssertEqual(AudioFeatureSource.highTransient.value(in: AudioFeatureFrame(bands: buffer, highTransient: .nan)), 0)
+            XCTAssertEqual(AudioFeatureSource.highTransient.value(in: AudioFeatureFrame(bands: buffer, midTransient: 1)), 0, "no feed reads 0")
+        }
+        XCTAssertEqual(AudioFeatureSource.highTransient.value(in: .silent), 0)
+    }
+
     /// ANL-008-T07: the mid transient source (ANL-008-R8).
     func testMidTransientSourceRoundTripsAndReadsTheValue() {
         XCTAssertEqual(AudioFeatureSource.midTransient.id, "audio.midTransient")

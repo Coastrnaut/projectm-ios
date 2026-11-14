@@ -130,6 +130,14 @@ in the list); an unusable or missing oscillator reads 0. At most 64 entries deco
 used. An unusable entry is kept and reported with a warning: `invalidLFO` (a missing or wrong field, values out
 of range, beyond 8) or `unknownLFO` (unknown shape), at the field's path or `$.lfos[i]`.
 
+MOD-009 (specs/165-mod-009-tempo-lfo/contracts/tempo-lfo.md): an entry may carry `"sync": {"beats": n}` with n one
+of 0.25, 0.5, 1, 2, 4, 8 (beats per cycle; one beat is a quarter note), written only when set. The oscillator then
+follows the current tempo (manual tap tempo, else a detected tempo with confidence ≥ 0.5) at BPM / 60 / n cycles per
+second, and its required `rate` is the fallback without a tempo (and what an older version runs). A bad sync is a
+warning and the oscillator runs unsynced: `invalidLFOSync` (`sync` not an object at `$.lfos[i].sync`; `beats`
+missing or not a finite positive number at `$.lfos[i].sync.beats`) or `unknownLFOSync` (a length this version does
+not know, at `$.lfos[i].sync.beats`). Unknown keys inside `sync` are kept.
+
 ### Modulation
 
 `generators`: `[{"id": "lfo.one", "inputs": ["rate"], "name": "LFO One"}]`;

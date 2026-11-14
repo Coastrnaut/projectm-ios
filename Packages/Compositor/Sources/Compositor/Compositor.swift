@@ -261,6 +261,8 @@ public final class Compositor {
     private let gradePass: OutputGradePass
     private var outputGradeBlock = CompositorShaders.GradeBlock.neutral
     private var trailsHistoryGraded = false
+    /// XFADE (specs/167): the frozen-frame transition of `composite(into:)`; nil until the first one (idle: no work).
+    private var outputTransition: OutputTransitionPass?
 
     /// FX-020 (ADR-0054): the order of Trails and Color, set between frames. The flash guard and the tone map always
     /// run after both. `.standard` (the default) renders exactly as before FX-020; a change resets the trails.
@@ -372,6 +374,7 @@ public final class Compositor {
         for record in records { texturePool.recycle(record.pictures, after: lastCommandBuffer) }
         trails.release(to: texturePool, after: lastCommandBuffer)   // FX-009
         gradePass.release(to: texturePool, after: lastCommandBuffer)   // FX-020
+        outputTransition?.end(pool: texturePool, fence: lastCommandBuffer)   // XFADE-R6
     }
 
     public var layerCount: Int { records.count }
@@ -750,6 +753,10 @@ public final class Compositor {
         } else if gradePass.holdsPicture {
             gradePass.release(to: texturePool, after: lastCommandBuffer)   // FX-020: not used while Trails are off
         }
+        if allowGradePass, let pass = outputTransition, pass.isActive {   // XFADE-R2: `composite(into:)` only, never the bus's
+            shown = pass.shown(live: shown, commandBuffer: commandBuffer, presentationTimeNanoseconds: presentationTimeNanoseconds,
+                               pool: texturePool, fence: lastCommandBuffer)
+        }
         shownComposite = shown
         guard finish(shown, frame) else { return false }   // CMP-014: the guard and output, or the bus's
         watch(commandBuffer, tick: tick)
@@ -1118,6 +1125,58 @@ public final class Compositor {
         default: return .gpuError
         }
     }
+
+    // MARK: - Frozen-frame transitions (XFADE, specs/167-cue-transitions-on-screen; OutputTransition.swift)
+
+    /// XFADE-R1: copies the last shown frame (what the flash guard and output pass used, the blend during a transition)
+    /// into a pooled texture in `commandBuffer`, which the caller commits; the copy signals the frame's event and fences
+    /// this compositor's pictures. nil before the first frame or when Metal cannot encode the copy.
+    public func freezeShownFrame(commandBuffer: MTLCommandBuffer) -> FrozenOutputFrame? {
+        guard let shown = shownComposite, let size = LayerPictureDescriptor(width: shown.width, height: shown.height),
+              let event = device.makeEvent(), let texture = texturePool.makeTexture(descriptor: size.textureDescriptor()) else {
+            return nil
+        }
+        guard let blit = commandBuffer.makeBlitCommandEncoder() else {
+            texturePool.recycle(texture, after: nil)
+            return nil
+        }
+        texture.label = "XFADE frozen frame"
+        blit.label = "XFADE freeze"
+        blit.copy(from: shown, to: texture)
+        blit.endEncoding()
+        commandBuffer.encodeSignalEvent(event, value: FrozenOutputFrame.signalValue)
+        lastCommandBuffer = commandBuffer   // PERF-004: nothing this compositor holds is handed out before the copy ran
+        return FrozenOutputFrame(texture: texture, pool: texturePool, event: event, copy: commandBuffer)
+    }
+
+    /// XFADE-R2, R4, R5, R7: blends from `frame` to this compositor's live frames with `spec` (resolved with Reduce Motion
+    /// first). An instant spec releases the frame and ends any transition (a cut: the output path is unchanged);
+    /// otherwise any running transition is replaced (it restarts from `frame`) and the trails start clean.
+    public func beginOutputTransition(from frame: FrozenOutputFrame, spec: SceneTransitionSpec, reduceMotion: Bool) {
+        let resolved: SceneTransitionSpec = spec.resolved(reduceMotion: reduceMotion)
+        guard !resolved.isInstant else {
+            frame.release(after: nil)
+            endOutputTransition()
+            return
+        }
+        let pass: OutputTransitionPass = outputTransition ?? OutputTransitionPass(device: device)
+        outputTransition = pass
+        pass.begin(frame, spec: resolved, pool: texturePool, fence: lastCommandBuffer)
+        trails.resetPending = true   // FX-009-R5: a transition start clears the trails
+    }
+
+    /// Ends any running transition at once (the live frames alone); its textures go back to the pool.
+    public func endOutputTransition() { outputTransition?.end(pool: texturePool, fence: lastCommandBuffer) }
+
+    /// True while a frozen frame is being blended out.
+    public var isOutputTransitioning: Bool { outputTransition?.isActive ?? false }
+    /// True while the transition holds a pooled texture (tests, diagnostics).
+    public var holdsOutputTransitionTextures: Bool { outputTransition?.holdsTextures ?? false }
+    /// Frames drawn through the mix pass, and transitions started so far (tests, diagnostics).
+    public var outputTransitionBlendedFrames: Int { outputTransition?.blendedFrames ?? 0 }
+    public var outputTransitionsStarted: Int { outputTransition?.started ?? 0 }
+    /// The raw clock progress of the last frame (1 with no transition).
+    public var outputTransitionProgress: Double { outputTransition?.lastProgress ?? 1 }
 
     // MARK: - Recording output (REC-003)
 

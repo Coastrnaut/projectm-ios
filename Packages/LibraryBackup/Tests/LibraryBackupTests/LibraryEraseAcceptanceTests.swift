@@ -134,7 +134,7 @@ final class LibraryEraseAcceptanceTests: XCTestCase {
         let inventory = LibraryEraseInventory.measure(root: sandbox.root, settings: EraseFixtures.settings)
         XCTAssertEqual(inventory.item(.scenes).count, 4, "three stored scenes and the current scene")
         XCTAssertEqual(inventory.item(.presets).count, 5, "every record of the index")
-        XCTAssertEqual(inventory.item(.collections).count, 4, "two collections and two favorites")
+        XCTAssertEqual(inventory.item(.collections).count, 7, "two collections, two favorites and three history entries (PRE-006)")
         XCTAssertEqual(inventory.item(.media).count, 2, "one photo and one video")
         XCTAssertEqual(inventory.item(.importedAudio).count, 1)
         XCTAssertGreaterThan(inventory.item(.settings).count, 5)
@@ -142,5 +142,25 @@ final class LibraryEraseAcceptanceTests: XCTestCase {
         for category in LibraryEraseCategory.allCases where category != .settings {
             XCTAssertGreaterThan(inventory.item(category).bytes ?? 0, 0, "\(category) has a size")
         }
+    }
+
+    /// PRE-006-R7: the recently played history is never backed up and is erased with "Collections, tags,
+    /// favorites and history"; its switch is a backed-up preference erased with Settings.
+    func testRecentHistoryIsNeverBackedUpAndIsErasedWithFavorites() throws {
+        XCTAssertTrue(LibrarySettingsPolicy.excludedKeys.contains(LibrarySettingsPolicy.recentPresetsKey))
+        XCTAssertFalse(LibrarySettingsPolicy.isIncluded(LibrarySettingsPolicy.recentPresetsKey))
+        XCTAssertNil(LibrarySettingsPolicy.filtered(EraseFixtures.settings)[LibrarySettingsPolicy.recentPresetsKey], "not in a backup's settings")
+        XCTAssertTrue(LibrarySettingsPolicy.isIncluded(LibrarySettingsPolicy.recentPresetsEnabledKey))
+        XCTAssertEqual(LibraryErasePolicy.settingKeys(.collections), [LibrarySettingsPolicy.favoritesKey, LibrarySettingsPolicy.recentPresetsKey])
+        XCTAssertTrue(LibraryErasePolicy.settingKeys(.settings).contains(LibrarySettingsPolicy.recentPresetsEnabledKey))
+        XCTAssertEqual(LibraryEraseCategory.collections.title, "Collections, tags, favorites and history")
+
+        let sandbox = try EraseFixtures.sandbox(self, "recent")
+        let defaults = EraseFixtures.Defaults()
+        try EraseFixtures.erase([.collections], in: sandbox, defaults: defaults)
+        XCTAssertNil(defaults.values[LibrarySettingsPolicy.recentPresetsKey])
+        XCTAssertNil(defaults.values[LibrarySettingsPolicy.favoritesKey])
+        XCTAssertEqual(defaults.values[LibrarySettingsPolicy.lastPresetKey], EraseFixtures.settings[LibrarySettingsPolicy.lastPresetKey])
+        XCTAssertEqual(defaults.values[LibrarySettingsPolicy.recentPresetsEnabledKey], .bool(true), "the switch stays")
     }
 }

@@ -67,6 +67,11 @@ class StateStore:
     def __init__(self, path: Path = DEFAULT_STATE):
         self.path = Path(path)
         self.data: dict = {}
+        # Features this process changed since it loaded (2026-11-14): `save` merges only these into
+        # the file as it is now, so a gate that ran for minutes no longer overwrites a transition
+        # another orchestrator process recorded meanwhile (three `integrated` records were lost).
+        self._dirty: set[str] = set()
+        self._budget_dirty = False
 
     # -- lifecycle ---------------------------------------------------------------------
     def exists(self) -> bool:
@@ -105,7 +110,30 @@ class StateStore:
 
     def save(self) -> None:
         self.data["updated"] = now()
-        atomic_write_json(self.path, self.data)
+        if not self.path.exists() or (not self._dirty and not self._budget_dirty):
+            atomic_write_json(self.path, self.data)
+            return
+        import fcntl
+        lock_path = self.path.with_name(self.path.name + ".lock")
+        with open(lock_path, "w") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            try:
+                current = json.loads(self.path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                current = None
+            if current is None or current.get("schema_version") != SCHEMA_VERSION:
+                merged = self.data
+            else:
+                merged = current
+                for fid in self._dirty:
+                    merged["features"][fid] = self.data["features"][fid]
+                if self._budget_dirty:
+                    merged["budget"] = self.data["budget"]
+                merged["updated"] = self.data["updated"]
+            atomic_write_json(self.path, merged)
+            self.data = merged
+            self._dirty.clear()
+            self._budget_dirty = False
 
     # -- access ------------------------------------------------------------------------
     def feature(self, feature_id: str) -> dict:
@@ -157,6 +185,7 @@ class StateStore:
         if state not in ("blocked", "infeasible"):
             rec["blocker"], rec["error_category"] = None, None
         rec["history"].append({"at": now(), "from": old, "to": state, "note": note})
+        self._dirty.add(feature_id)
         self.save()
         return rec
 
@@ -173,6 +202,7 @@ class StateStore:
         rec["state"] = "audited"
         for key in ("branch", "worktree"):
             rec[key] = None
+        self._dirty.add(feature_id)
         self.save()
         return rec
 
@@ -180,6 +210,7 @@ class StateStore:
                      log: str | None = None, sha: str | None = None) -> None:
         self.feature(feature_id)["evidence"].append(
             {"at": now(), "command": command, "exit_code": exit_code, "log": log, "sha": sha})
+        self._dirty.add(feature_id)
         self.save()
 
     def record_attempt(self, feature_id: str, category: str, reason: str) -> bool:
@@ -187,6 +218,7 @@ class StateStore:
         the feature becomes blocked with the last reason."""
         rec = self.feature(feature_id)
         rec["attempts"] += 1
+        self._dirty.add(feature_id)
         if rec["attempts"] >= MAX_ATTEMPTS:
             self.set_state(feature_id, "blocked", blocker=reason, error_category=category,
                            note=f"attempt {rec['attempts']} of {MAX_ATTEMPTS} failed")
@@ -199,6 +231,8 @@ class StateStore:
     def add_cost(self, feature_id: str | None, usd: float, seconds: float) -> None:
         self.data["budget"]["spent_usd"] += usd
         self.data["budget"]["wall_seconds"] += seconds
+        self._budget_dirty = True
         if feature_id:
             self.feature(feature_id)["cost_usd"] += usd
+            self._dirty.add(feature_id)
         self.save()
