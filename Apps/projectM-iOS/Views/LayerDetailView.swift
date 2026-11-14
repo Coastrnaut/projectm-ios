@@ -4,8 +4,9 @@
 // * Editable layers read and write the inspector's live composite for their kind; read-only layers show
 //   the scene's saved values and the reason (footer).
 // * Sections: Appearance (opacity, blend), Placement (position, scale, rotation), Fit (photo and video),
-//   Mask, Layer (group, own MOD-001 values, Reset Layer). Every parameter has a header read-out
-//   (`layerValue.<parameter>`) with a "?" help button; editable ones have a control below it.
+//   Mask, Layer (group, own MOD-001 values, Reset Layer). Every parameter has a "?" help button. Read-only
+//   parameters show a read-out (`layerValue.<parameter>`); editable sliders a visible read-out over an
+//   ACC-005 slider (`layerControl.<parameter>`), editable choices their picker or toggle.
 // * Pickers record one undo step per choice; sliders one per drag (LayerParameterSlider).
 // Bodies stay small (Xcode 26 type-check budget): each section is its own property.
 import SceneFormat
@@ -38,8 +39,7 @@ struct LayerDetailView: View {
     private var appearanceSection: some View {
         Section {
             parameter(.opacity)
-            LayerParameterHeader(parameter: .blendMode, value: LayerCompositeEdit.text(.blendMode, of: composite))
-            if row.isEditable { blendPicker }
+            choice(.blendMode) { blendPicker }
         } header: {
             Text("Appearance")
         } footer: {
@@ -58,8 +58,7 @@ struct LayerDetailView: View {
 
     private var fitSection: some View {
         Section("Fit") {
-            LayerParameterHeader(parameter: .fitMode, value: LayerCompositeEdit.text(.fitMode, of: composite))
-            if row.isEditable { fitPicker }
+            choice(.fitMode) { fitPicker }
             parameter(.fitAnchorX)
             parameter(.fitAnchorY)
         }
@@ -67,8 +66,7 @@ struct LayerDetailView: View {
 
     private var maskSection: some View {
         Section("Mask") {
-            LayerParameterHeader(parameter: .maskShape, value: LayerCompositeEdit.text(.maskShape, of: composite))
-            if row.isEditable { maskPicker }
+            choice(.maskShape) { maskPicker }
             if LayerCompositeEdit.knownMask(composite) != nil { maskDetails }
         }
     }
@@ -77,8 +75,7 @@ struct LayerDetailView: View {
         parameter(.maskSize)
         if case .rectangle? = LayerCompositeEdit.knownMask(composite)?.shape { parameter(.maskCornerRadius) }
         parameter(.maskFeather)
-        LayerParameterHeader(parameter: .maskInverted, value: LayerCompositeEdit.text(.maskInverted, of: composite))
-        if row.isEditable { invertToggle }
+        choice(.maskInverted) { invertToggle }
     }
 
     private var layerSection: some View {
@@ -94,6 +91,19 @@ struct LayerDetailView: View {
     @ViewBuilder private func parameter(_ parameter: LayerInspectorParameter) -> some View {
         if row.isEditable {
             LayerParameterSlider(parameter: parameter, kind: kind, layers: layers)
+        } else {
+            LayerParameterHeader(parameter: parameter, value: LayerCompositeEdit.text(parameter, of: composite))
+        }
+    }
+
+    /// An editable choice: its control (which shows the title and value) and the help button; read-only:
+    /// the header read-out.
+    @ViewBuilder private func choice(_ parameter: LayerInspectorParameter, @ViewBuilder control: () -> some View) -> some View {
+        if row.isEditable {
+            HStack(spacing: 8) {
+                control()
+                LayerHelpButton(parameter: parameter)
+            }
         } else {
             LayerParameterHeader(parameter: parameter, value: LayerCompositeEdit.text(parameter, of: composite))
         }

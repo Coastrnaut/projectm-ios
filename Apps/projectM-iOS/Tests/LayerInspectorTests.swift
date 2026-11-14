@@ -34,6 +34,7 @@ final class LayerInspectorTests: XCTestCase {
     }
 
     /// The app's inputs and its inspector; the history applies states as AppCoordinator does.
+    @MainActor
     private final class World {
         let layers = LayerInspectorCoordinator()
         var base = LayerInspectorTests.seededInputs([:])
@@ -106,7 +107,7 @@ final class LayerInspectorTests: XCTestCase {
         let world = World()
         let history = make(world)
         let before = world.layers.composite(for: "spectrum.circular")
-        for value in stride(from: 0.58, through: 0.40, by: -0.02) {   // a drag: many values, one control
+        for value in [0.58, 0.55, 0.5, 0.47, 0.44, 0.4] {   // a drag: many values, one control
             world.layers.setValue(.opacity, value, kind: "spectrum.circular")
             history.capture()
         }

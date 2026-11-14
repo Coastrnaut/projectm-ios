@@ -28,6 +28,10 @@ enum SpokenUnit: Sendable, Equatable {
     case decibelsFullScale
     case milliseconds
     case seconds
+    /// CMP-015: a plain number ("0.25"), degrees ("30 degrees") and a factor ("1.50 times").
+    case number(decimals: Int)
+    case degrees
+    case multiplier
 }
 
 enum SpokenValueFormatter {
@@ -38,7 +42,18 @@ enum SpokenValueFormatter {
         case .decibelsFullScale: return decibelsFullScale(value)
         case .milliseconds: return milliseconds(value)
         case .seconds: return seconds(value)
+        case .number(let decimals): return value.formatted(.number.precision(.fractionLength(decimals)))
+        case .degrees: return degrees(value)
+        case .multiplier: return value.formatted(.number.precision(.fractionLength(2))) + " times"
         }
+    }
+
+    /// "30 degrees", "minus 1 degree" (whole degrees; CMP-015).
+    static func degrees(_ value: Double) -> String {
+        let whole: Int = Int(value.rounded())
+        let sign: String = whole < 0 ? "minus " : ""
+        let noun: String = abs(whole) == 1 ? "degree" : "degrees"
+        return sign + String(abs(whole)) + " " + noun
     }
 
     /// 0.5 → "50 percent"; 0.025 with one decimal → "2.5 percent".

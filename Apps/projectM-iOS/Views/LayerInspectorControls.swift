@@ -4,10 +4,9 @@
 // * `LayerParameterHeader`: a parameter's title and shown value as one accessibility element
 //   (`layerValue.<parameter>`), side by side or stacked at accessibility text sizes, with its help button.
 // * `LayerHelpButton`: "?" opens the parameter's entry from `LayerInspectorHelp` in a popover.
-// * `LayerParameterSlider`: a labelled slider; releasing it ends the history step (one drag = one undo
-//   step); VoiceOver increment and decrement move by the parameter's fixed step, each its own step.
-//   ACC-005's shared `.accessibleParameter(...)` helper was not in this base: this is the same pattern,
-//   left for ACC-005 to adopt.
+// * `LayerParameterSlider`: a slider; releasing it ends the history step (one drag = one undo step).
+//   VoiceOver uses ACC-005's `.accessibleParameter` (one element: label, spoken value with its unit,
+//   identifier `layerControl.<parameter>`, swipe by the parameter's step, each swipe its own undo step).
 // Bodies stay small (Xcode 26 type-check budget): each piece is its own view.
 import SceneFormat
 import SwiftUI
@@ -38,6 +37,8 @@ struct LayerHelpButton: View {
 struct LayerParameterHeader: View {
     let parameter: LayerInspectorParameter
     let value: String
+    /// False when a control below carries the title and value for VoiceOver (no duplicate element).
+    var isAccessibilityElement = true
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -62,6 +63,7 @@ struct LayerParameterHeader: View {
         .accessibilityLabel(parameter.title)
         .accessibilityValue(value)
         .accessibilityIdentifier("layerValue.\(parameter.rawValue)")
+        .accessibilityHidden(!isAccessibilityElement)
     }
 }
 
@@ -70,47 +72,52 @@ struct LayerParameterSlider: View {
     let kind: String
     let layers: LayerInspectorCoordinator
 
-    private var composite: SceneCompositeBox { SceneCompositeBox(layers.composite(for: kind)) }
+    private var composite: SceneComposite { layers.composite(for: kind) }
+    private var spec: AccessibleParameterSpec { LayerParameterSpecs.spec(parameter) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            LayerParameterHeader(parameter: parameter, value: composite.text(parameter))
+            LayerParameterHeader(parameter: parameter, value: LayerCompositeEdit.text(parameter, of: composite), isAccessibilityElement: false)
             slider
         }
     }
 
+    private var target: ParameterTarget { LayerParameterSpecs.target(parameter, kind: kind, layers: layers) }
+
     private var binding: Binding<Double> {
-        Binding<Double>(get: { () -> Double in composite.value(parameter) },
-                        set: { (v: Double) -> Void in layers.setValue(parameter, v, kind: kind) })
+        let target: ParameterTarget = self.target
+        return Binding<Double>(get: { () -> Double in target.get() }, set: { (v: Double) -> Void in target.set(v) })
     }
 
     private var slider: some View {
-        Slider(value: binding, in: LayerCompositeEdit.range(parameter)) { (editing: Bool) in
+        Slider(value: binding, in: spec.range) { (editing: Bool) in
             if !editing { layers.endEdit() }   // SCN-010-R4: a drag is one step
         }
-        .accessibilityLabel(parameter.title)
-        .accessibilityValue(composite.text(parameter))
-        .accessibilityIdentifier("layerControl.\(parameter.rawValue)")
-        .accessibilityAdjustableAction { (direction: AccessibilityAdjustmentDirection) in adjust(direction) }
-    }
-
-    private func adjust(_ direction: AccessibilityAdjustmentDirection) {
-        let step: Double = LayerCompositeEdit.step(parameter)
-        let range: ClosedRange<Double> = LayerCompositeEdit.range(parameter)
-        let current: Double = composite.value(parameter)
-        let delta: Double = direction == .increment ? step : (direction == .decrement ? -step : 0)
-        let next: Double = min(max(current + delta, range.lowerBound), range.upperBound)
-        layers.setValue(parameter, next, kind: kind)
-        layers.endEdit()   // each VoiceOver step is its own undo step
+        .accessibleParameter(spec, target: target, didStep: { [layers] () -> Void in layers.endEdit() })   // ACC-005: each swipe is one step
     }
 }
 
-/// A saved composite with the inspector's read helpers (keeps call sites short).
-struct SceneCompositeBox {
-    let composite: SceneComposite
+/// ACC-005 specs and targets of the inspector's sliders (identifier `layerControl.<parameter>`).
+@MainActor
+enum LayerParameterSpecs {
+    static func spec(_ parameter: LayerInspectorParameter) -> AccessibleParameterSpec {
+        AccessibleParameterSpec(id: "layerControl.\(parameter.rawValue)", label: parameter.title,
+                                range: LayerCompositeEdit.range(parameter), step: LayerCompositeEdit.step(parameter),
+                                unit: unit(parameter))
+    }
 
-    init(_ composite: SceneComposite) { self.composite = composite }
+    static func unit(_ parameter: LayerInspectorParameter) -> SpokenUnit {
+        switch parameter {
+        case .opacity: .percent(decimals: 0)
+        case .rotation: .degrees
+        case .scale: .multiplier
+        default: .number(decimals: 2)
+        }
+    }
 
-    func value(_ parameter: LayerInspectorParameter) -> Double { LayerCompositeEdit.value(parameter, of: composite) }
-    func text(_ parameter: LayerInspectorParameter) -> String { LayerCompositeEdit.text(parameter, of: composite) }
+    /// Get and set over the inspector's live composite (the view's own write path).
+    static func target(_ parameter: LayerInspectorParameter, kind: String, layers: LayerInspectorCoordinator) -> ParameterTarget {
+        ParameterTarget(get: { () -> Double in LayerCompositeEdit.value(parameter, of: layers.composite(for: kind)) },
+                        set: { (value: Double) -> Void in layers.setValue(parameter, value, kind: kind) })
+    }
 }
