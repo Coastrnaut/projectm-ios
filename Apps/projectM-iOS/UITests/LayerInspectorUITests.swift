@@ -79,6 +79,13 @@ final class LayerInspectorUITests: XCTestCase {
         XCTAssertEqual(value("layerValue.opacity"), "50%")
         XCTAssertEqual(value("layerValue.blendMode"), "Add")
         XCTAssertTrue(app.descendants(matching: .any)["layerReadOnlyReason"].exists, "the reason is shown")
+        app.buttons["layerHelp.blendMode"].tap()   // US3: contextual help
+        let help = app.descendants(matching: .any)["layerHelpText"]
+        XCTAssertTrue(help.appears(within: 5), "the help popover opens")
+        XCTAssertTrue(help.label.hasPrefix("How the layer mixes"), help.label)
+        let dismiss = app.otherElements["PopoverDismissRegion"]   // UIKit's tap-outside region
+        if dismiss.exists { dismiss.tap() } else { app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.9)).tap() }
+        XCTAssertTrue(help.disappears(within: 5))
         back()
 
         open(2, title: "Circular Spectrum")

@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (CMP-015-T01-T19 verified on the iOS 27.2 simulator; no device run; report `docs/test-reports/layer-inspector.md`; ADR-0044)
 
 **Input**: User description: "Implement CMP-015 (Layer inspector) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Expose per-layer controls with undo and contextual help." Acceptance,
@@ -74,6 +74,11 @@ human interaction); each answer is the recommended, conservative option.
   visual changes or the inspector's scene changes; announced through the shared announcer ("Photo
   soloed"). Groups (none in live scenes) get the same buttons when present. Rationale: CMP-012's
   non-destructive contract.
+- Q: (implementation, 2026-11-14) Footers or popovers for help, and how do VoiceOver swipes count for
+  undo? → A: Help is a "?" popover per parameter from the one table; section footers carry only a
+  read-only reason (lists stay short at accessibility sizes). Sliders use ACC-005's `.accessibleParameter`
+  (merged into this branch from integration): each VoiceOver swipe is its own undo step, a touch drag is
+  one step. The Layers row sits right after the visual's own sections in Settings. Recorded in ADR-0044.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -126,8 +131,7 @@ rendered frame with those before the edit.
 
 ### User Story 3 - Contextual help (Priority: P2)
 
-Every parameter has a short explanation, shown as a footer under its control group and in a "?"
-popover next to it, so the user can learn what opacity, a blend mode, fit or a mask does.
+Every parameter has a short explanation in a "?" popover next to it, so the user can learn what opacity, a blend mode, fit or a mask does.
 
 **Independent Test**: a table test asserts each parameter has non-empty help; a UI test opens one
 popover.
@@ -185,8 +189,8 @@ compositor hides the other layers.
 - **CMP-015-R6**: Every edit MUST go through the scene history; a slider drag (or a continuous
   adjustment of one control) MUST be one undo step; Undo and Redo MUST restore the exact prior value
   in the model and on screen.
-- **CMP-015-R7**: Each parameter MUST have contextual help from one table, shown as a "?" popover and
-  section footers.
+- **CMP-015-R7**: Each parameter MUST have contextual help from one table, shown as a "?" popover next
+  to it; a read-only layer's reason is the section footer.
 - **CMP-015-R8**: Solo and mute buttons MUST be offered per layer and group; they MUST NOT enter the
   scene, the autosave or the history, and MUST be cleared when the visual changes.
 - **CMP-015-R9**: Unknown saved values (blend, fit, mask) MUST survive viewing and unrelated edits.
