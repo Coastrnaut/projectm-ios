@@ -2,24 +2,34 @@
 
 Decisions are labelled D1… (not R-numbers, which belong to feature 001's research index).
 
-## D1 Adjustable action on a SwiftUI Slider
+## D1 Adjustable action on a SwiftUI Slider (revised at implementation, 2026-11-14)
 
-- **Decision**: keep the `Slider` and attach `.accessibilityAdjustableAction` to it, plus
-  `.accessibilityValue`. The custom action replaces the slider's built-in increment, so the step is
-  ours; the element stays a slider for XCUITest (`app.sliders[id]`).
-- **Rationale**: no new element tree, touch dragging unchanged, identifiers unchanged (R9).
-- **Verification**: the UI test increments the glow intensity from 50 %; the system default step would
-  give 60 %, ours gives 55 %, so the test proves which action ran.
-- **Alternatives**: `.accessibilityElement(children: .ignore)` wrapper with a representation (changes
-  the element type, breaks existing tests); `accessibilityRepresentation` (same).
+- **Planned**: keep the `Slider`'s own element and attach `.accessibilityAdjustableAction` to it.
+- **Finding**: on iOS a SwiftUI `Slider` is backed by a `UISlider`, and that `UISlider` is the
+  accessibility element (it carries the identifier, label and value). Calling its
+  `accessibilityIncrement()` in the running app (simulator, iOS 27.2) changed nothing: SwiftUI does not
+  route the platform slider's increment to `.accessibilityAdjustableAction`, so VoiceOver would get the
+  system's own slider step (10 % of the range) at best, never the parameter's step.
+- **Decision**: `.accessibilityElement(children: .ignore)` on the slider, then label, spoken value,
+  identifier and the adjustable action on that element. SwiftUI's own element implements increment
+  and decrement by calling the action; the same call that did nothing on the `UISlider` now moves the
+  glow intensity from 50 % to exactly 55 % (UI test). Touch dragging is unchanged (the `UISlider` still
+  takes touches); identifiers and labels are unchanged (R9).
+- **Cost**: XCTest now reports the element as "other", not "slider", so `app.sliders[id]` and
+  `adjust(toNormalizedSliderPosition:)` no longer apply. The existing slider UI tests find it with
+  `app.slider(id)` and drag its thumb by coordinates (`UITestSliders.swift`).
 
-## D2 How a UI test invokes increment
+## D2 How a UI test invokes increment (revised at implementation, 2026-11-14)
 
-- **Decision**: `XCUIElement.increment()` and `decrement()`. XCTest documents them as "Increments/
-  Decrements a slider or picker"; for an adjustable element they call the accessibility increment and
-  decrement actions, the same entry points VoiceOver's swipe up and down use.
-- **Rejected**: `adjust(toNormalizedSliderPosition:)` (sets a position by touch, never calls the
-  action); `swipeUp()` with VoiceOver off (scrolls the list).
+- **Planned**: `XCUIElement.increment()`/`decrement()`. **Finding**: those exist only in the macOS
+  XCTest SDK; on iOS `adjust(toNormalizedSliderPosition:)` drags by touch and never reaches the action,
+  and `swipeUp()` without VoiceOver scrolls the list.
+- **Decision**: a DEBUG-only probe (`Debug/UITestAccessibilityActionProbe.swift`, launch argument
+  `-uitestAccessibilityActions`): two small buttons beside each accessible slider. A tap searches the
+  app's accessibility tree (window subviews and accessibility children) for the on-screen element with
+  the slider's identifier and calls `accessibilityIncrement()` / `accessibilityDecrement()` on it, the
+  UIAccessibility entry points VoiceOver's swipes use. The probe never calls the app's closure, so the
+  test covers SwiftUI's bridge and the app's action. Release builds contain none of it.
 
 ## D3 Step grid
 

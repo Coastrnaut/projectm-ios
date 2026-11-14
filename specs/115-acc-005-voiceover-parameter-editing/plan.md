@@ -13,9 +13,10 @@ milliseconds, seconds), `ParameterStepper` (grid step from the range's minimum, 
 range and step hint come from MOD-001's `VisualParameterCatalog`). Each section exposes a
 `ParameterTarget` (get/set over the real setting) that both the view and the table test use, so the
 test exercises the view's own write path. End swipes announce "Maximum, …"/"Minimum, …" through the
-shared `AccessibilityAnnouncer` on a new `parameter` lane (rate-limited by the existing gate). A UI test
-calls `XCUIElement.increment()`/`decrement()` (the accessibility increment and decrement actions) and
-checks the spoken value and the persisted value after a relaunch.
+shared `AccessibilityAnnouncer` on a new `parameter` lane (rate-limited by the existing gate). Each
+slider becomes one accessibility element of its own (research D1, revised). A UI test reaches the
+accessibility increment and decrement through a DEBUG probe that calls `accessibilityIncrement()` on
+the element (research D2, revised) and checks the spoken value and the persisted value after a relaunch.
 
 ## Technical Context
 

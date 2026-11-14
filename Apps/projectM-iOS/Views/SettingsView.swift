@@ -61,6 +61,8 @@ struct SettingsView: View {
     var explainers: PermissionExplainerCoordinator?
     /// UIX-015-R1: the camera's permission status when Camera is picked.
     var cameraStatus: @MainActor () -> PermissionState? = { () -> PermissionState? in nil }
+    /// ACC-005-R7: announces a VoiceOver swipe at a slider's end (nil: none, e.g. in previews).
+    var announcer: AccessibilityAnnouncer?
     @Environment(\.dismiss) private var dismiss
     @State private var pickedPhoto: PhotosPickerItem?
     @State private var showPhotoFileImporter = false
@@ -75,9 +77,13 @@ struct SettingsView: View {
         String(format: "%.\(decimals)f%%", value * 100)
     }
 
-    /// A labeled glow slider; VoiceOver reads the label and the percentage (FR-070).
-    private func glowSlider(_ title: String, value: Binding<Double>, range: ClosedRange<Float>, text: String, id: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+    /// A labeled percentage slider; VoiceOver reads the label and "50 percent", and swipes move it by
+    /// one step of `spec` (FR-070; ACC-005). Each swipe is one undo step, as a drag is (SCN-010-R4).
+    private func glowSlider(_ spec: AccessibleParameterSpec, target: ParameterTarget, text: String) -> some View {
+        let title: String = spec.label
+        let value = Binding<Double>(get: { () -> Double in target.get() },
+                                    set: { (newValue: Double) -> Void in target.set(newValue) })
+        return VStack(alignment: .leading, spacing: 2) {
             // ACC-006-R1: title and value side by side, or stacked when they do not fit (clipped at AX5).
             ViewThatFits(in: .horizontal) {
                 HStack {
@@ -91,13 +97,23 @@ struct SettingsView: View {
                 }
             }
             .accessibilityHidden(true)
-            Slider(value: value, in: Double(range.lowerBound)...Double(range.upperBound)) { (editing: Bool) in
+            Slider(value: value, in: spec.range) { (editing: Bool) in
                 if !editing { history?.endCoalescing() }   // SCN-010-R4: a drag is one step
             }
-                .accessibilityLabel(title)
-                .accessibilityValue(text)
-                .accessibilityIdentifier(id)
+                .accessibleParameter(spec, target: target, didStep: { [history] () -> Void in history?.endCoalescing() })
         }
+    }
+
+    /// ACC-005: the glow's real settings (AppSettings: saved, applied to the glow at once).
+    static func glowTarget(_ settings: AppSettings, _ path: ReferenceWritableKeyPath<AppSettings, Double>) -> ParameterTarget {
+        ParameterTarget(get: { () -> Double in settings[keyPath: path] },
+                        set: { (value: Double) -> Void in settings[keyPath: path] = value })
+    }
+
+    /// ACC-005: a text style value (TextOverlayCoordinator: saved and drawn at once).
+    static func textTarget(_ texts: TextOverlayCoordinator, _ path: WritableKeyPath<TextOverlaySpec, Double>) -> ParameterTarget {
+        ParameterTarget(get: { () -> Double in texts.spec[keyPath: path] },
+                        set: { (value: Double) -> Void in texts.spec[keyPath: path] = value })
     }
 
     /// CAM-002-R1, R3, R11: Back or Front and the chosen camera's Mirror. Changing either never restarts
@@ -230,12 +246,12 @@ struct SettingsView: View {
                         Toggle("Glow", isOn: $settings.glowEnabled)
                             .accessibilityIdentifier("glowToggle")
                         if settings.glowEnabled {
-                            glowSlider("Intensity", value: $settings.glowIntensity, range: BloomParameters.intensityRange,
-                                       text: Self.percent(settings.glowIntensity), id: "glowIntensitySlider")
-                            glowSlider("Radius", value: $settings.glowRadius, range: BloomParameters.radiusRange,
-                                       text: Self.percent(settings.glowRadius, decimals: 1), id: "glowRadiusSlider")
-                            glowSlider("Threshold", value: $settings.glowThreshold, range: BloomParameters.thresholdRange,
-                                       text: Self.percent(settings.glowThreshold), id: "glowThresholdSlider")
+                            glowSlider(AccessibleParameterCatalog.glowIntensity, target: Self.glowTarget(settings, \.glowIntensity),
+                                       text: Self.percent(settings.glowIntensity))
+                            glowSlider(AccessibleParameterCatalog.glowRadius, target: Self.glowTarget(settings, \.glowRadius),
+                                       text: Self.percent(settings.glowRadius, decimals: 1))
+                            glowSlider(AccessibleParameterCatalog.glowThreshold, target: Self.glowTarget(settings, \.glowThreshold),
+                                       text: Self.percent(settings.glowThreshold))
                         }
                     }
                 } header: {
@@ -366,6 +382,7 @@ struct SettingsView: View {
             }
         }
         .accessibilityIdentifier("settings")
+        .environment(\.parameterAnnouncer, announcer)   // ACC-005-R7
         .permissionExplainerSheet(explainers)   // UIX-015: over Settings, right before iOS's prompt
     }
 
@@ -510,8 +527,7 @@ struct SettingsView: View {
                 ForEach(TextFontWeight.allCases, id: \.self) { Text($0.title).tag($0) }
             }
             .accessibilityIdentifier("textWeightPicker")
-            glowSlider("Size", value: field(texts, \.size), range: Float(TextOverlaySpec.sizeRange.lowerBound)...Float(TextOverlaySpec.sizeRange.upperBound),
-                       text: Self.percent(texts.spec.size), id: "textSizeSlider")
+            glowSlider(AccessibleParameterCatalog.textSize, target: Self.textTarget(texts, \.size), text: Self.percent(texts.spec.size))
             ColorPicker("Color", selection: color(texts, \.color), supportsOpacity: true)
                 .accessibilityIdentifier("textColorPicker")
             Picker("Alignment", selection: field(texts, \.alignment)) {
@@ -526,9 +542,8 @@ struct SettingsView: View {
             .segmentedUnlessAccessibilitySize()   // ACC-006-R1
             .accessibilityLabel("Position")
             .accessibilityIdentifier("textPositionPicker")
-            glowSlider("Outline", value: field(texts, \.outlineWidth),
-                       range: Float(TextOverlaySpec.outlineWidthRange.lowerBound)...Float(TextOverlaySpec.outlineWidthRange.upperBound),
-                       text: Self.percent(texts.spec.outlineWidth), id: "textOutlineSlider")
+            glowSlider(AccessibleParameterCatalog.textOutline, target: Self.textTarget(texts, \.outlineWidth),
+                       text: Self.percent(texts.spec.outlineWidth))
             ColorPicker("Outline color", selection: color(texts, \.outlineColor), supportsOpacity: true)
                 .accessibilityIdentifier("textOutlineColorPicker")
             Toggle("Background box", isOn: field(texts, \.showsBox))

@@ -3,13 +3,15 @@
 ## C1.1 Modifier
 
 ```swift
-func accessibleParameter(_ spec: AccessibleParameterSpec, value: Double,
-                         set: @escaping (Double) -> Void, didStep: @escaping () -> Void = {}) -> some View
+func accessibleParameter(_ spec: AccessibleParameterSpec, target: ParameterTarget,
+                         didStep: @escaping @MainActor () -> Void = {}) -> some View
 ```
 
-Applies, in order: `accessibilityLabel(spec.label)`, `accessibilityValue(spoken)`,
+Applies, in order: `accessibilityElement(children: .ignore)` (one element of our own; research D1),
+`accessibilityLabel(spec.label)`, `accessibilityValue(spoken)`,
 `accessibilityIdentifier(spec.id)`, `accessibilityAdjustableAction`. An adjustment computes
-`ParameterStepper.step(value, direction, spec)`; when it moved, `set(result.value)` then `didStep()`;
+`ParameterStepper.step(target.get(), direction, spec)`; when it moved, `target.set(result.value)` then
+`didStep()`;
 when it could not move, it announces the end text (C1.3) on lane `parameter`. A disabled view is not
 adjusted.
 
@@ -31,5 +33,6 @@ adjusted.
 
 ## C1.4 Unchanged
 
-Accessibility identifiers and labels of all ten sliders; visible readouts ("+6 dB", "−50 dBFS",
+Accessibility identifiers and labels of all ten sliders (XCTest now reports them as "other" elements,
+not sliders: research D1); visible readouts ("+6 dB", "−50 dBFS",
 "180 ms", "50%", "1.5 s").

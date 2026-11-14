@@ -7,6 +7,8 @@
 // * A slider change is saved at once (VideoCoordinator clamps it: at least 0.25 s, inside the file)
 //   and reaches the player when the drag ends (`commitLoop`) or 0.4 s after the last change.
 // * Title and time sit side by side, or stacked when they do not fit (ACC-006-R1); no animation.
+// * ACC-005: VoiceOver reads "1.5 seconds" and swipes move the saved point by 0.1 s; each swipe
+//   reaches the player and is one undo step (`commit`).
 // Bodies are kept small (CI's Xcode 26 type-checks each one separately).
 import SwiftUI
 import VideoLayer
@@ -18,12 +20,11 @@ struct VideoLoopControls: View {
 
     var body: some View {
         if let loop = videos.effectiveLoop, let duration = videos.durationNanoseconds {
-            VideoLoopSlider(title: "Loop in", id: "videoLoopIn", seconds: Self.seconds(loop.inNanoseconds),
-                            maximum: Self.seconds(duration), set: { (value: Double) -> Void in videos.setLoop(inSeconds: value) },
-                            commit: commit)
-            VideoLoopSlider(title: "Loop out", id: "videoLoopOut", seconds: Self.seconds(loop.outNanoseconds),
-                            maximum: Self.seconds(duration), set: { (value: Double) -> Void in videos.setLoop(outSeconds: value) },
-                            commit: commit)
+            let upper: Double = max(Self.seconds(duration), 0.1)
+            VideoLoopSlider(spec: AccessibleParameterCatalog.videoLoopIn.withRange(0...upper), title: "Loop in",
+                            seconds: Self.seconds(loop.inNanoseconds), target: Self.inTarget(videos), commit: commit)
+            VideoLoopSlider(spec: AccessibleParameterCatalog.videoLoopOut.withRange(0...upper), title: "Loop out",
+                            seconds: Self.seconds(loop.outNanoseconds), target: Self.outTarget(videos), commit: commit)
             if videos.hasLoopRegion {
                 Button("Reset Loop") { videos.resetLoop() }
                     .accessibilityIdentifier("videoLoopReset")
@@ -34,6 +35,18 @@ struct VideoLoopControls: View {
     private func commit() {
         videos.commitLoop()
         endCoalescing()
+    }
+
+    /// ACC-005: the saved loop's In point (VideoCoordinator saves and clamps it, MED-003-R9).
+    static func inTarget(_ videos: VideoCoordinator) -> ParameterTarget {
+        ParameterTarget(get: { () -> Double in seconds(videos.effectiveLoop?.inNanoseconds ?? 0) },
+                        set: { (value: Double) -> Void in videos.setLoop(inSeconds: value) })
+    }
+
+    /// ACC-005: the saved loop's Out point.
+    static func outTarget(_ videos: VideoCoordinator) -> ParameterTarget {
+        ParameterTarget(get: { () -> Double in seconds(videos.effectiveLoop?.outNanoseconds ?? 0) },
+                        set: { (value: Double) -> Void in videos.setLoop(outSeconds: value) })
     }
 
     static func seconds(_ nanoseconds: Int64) -> Double {
@@ -55,21 +68,19 @@ struct VideoLoopControls: View {
         return value + " s"
     }
 
-    /// "1.5 seconds" (VoiceOver).
+    /// "1.5 seconds" (VoiceOver; ACC-005's seconds formatter).
     static func spokenText(_ seconds: Double) -> String {
-        let value: String = number(seconds)
-        return value + " seconds"
+        SpokenValueFormatter.seconds(seconds)
     }
 }
 
 /// One loop point: title and time, then the slider.
 private struct VideoLoopSlider: View {
+    let spec: AccessibleParameterSpec
     let title: String
-    let id: String
     let seconds: Double
-    let maximum: Double
-    let set: (Double) -> Void
-    let commit: () -> Void
+    let target: ParameterTarget
+    let commit: @MainActor () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -95,14 +106,10 @@ private struct VideoLoopSlider: View {
     }
 
     private var slider: some View {
-        let binding = Binding<Double>(get: { () -> Double in seconds }, set: { (value: Double) -> Void in set(value) })
-        let upper: Double = max(maximum, 0.1)
-        let spoken: String = VideoLoopControls.spokenText(seconds)
-        return Slider(value: binding, in: 0...upper, step: 0.1) { (editing: Bool) in
+        let binding = Binding<Double>(get: { () -> Double in seconds }, set: { (value: Double) -> Void in target.set(value) })
+        return Slider(value: binding, in: spec.range, step: spec.step) { (editing: Bool) in
             if !editing { commit() }
         }
-        .accessibilityLabel(title)
-        .accessibilityValue(spoken)
-        .accessibilityIdentifier(id)
+        .accessibleParameter(spec, target: target, didStep: commit)
     }
 }

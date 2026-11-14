@@ -27,7 +27,7 @@ test about 1–2 s, at most 10 s; UI test under 30 s. Tick a task `[X]` only whe
 - [ ] ACC-005-T08 [P] [US1] Visual delay uses the modifier with `LatencyOffsetSection.target(_:mode:)` (the picked source only) in Apps/projectM-iOS/Views/LatencyOffsetSection.swift
 - [ ] ACC-005-T09 [P] [US1] Loop in and out use the modifier with the duration as the range's upper bound and `VideoLoopControls.inTarget(_:)` / `outTarget(_:)`; a step commits the loop (player and undo) in Apps/projectM-iOS/Views/VideoLoopControls.swift
 - [ ] ACC-005-T10 [US1] Table test over all ten controls: through each section's own target, one increment and one decrement change the real setting by exactly one step, and a fresh setting on the same UserDefaults suite reads the stepped value (persisted) in Apps/projectM-iOS/Tests/AccessibleParameterTests.swift
-- [ ] ACC-005-T11 [US1] UI test `VoiceOverParameterUITests`: `increment()` on the glow intensity (50 % → "55 percent"), `decrement()` on the input trim ("minus 1 decibel"), relaunch, both kept, in Apps/projectM-iOS/UITests/VoiceOverParameterUITests.swift
+- [ ] ACC-005-T11 [US1] UI test `VoiceOverParameterUITests` (accessibility increment and decrement through the DEBUG probe, research D2): increment on the glow intensity (50 % → "55 percent"), decrement on the input trim ("minus 1 decibel"), relaunch, both kept, in Apps/projectM-iOS/UITests/VoiceOverParameterUITests.swift
 
 ## Phase 4: User Story 2 — values with units (P1)
 

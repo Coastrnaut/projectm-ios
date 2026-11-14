@@ -16,8 +16,8 @@ controls, and one announcement for a burst of end swipes.
 
 ## B. UI test
 
-`-only-testing:projectM-iOSUITests/VoiceOverParameterUITests`: `increment()` on the glow intensity
-(50 % → 55 %, value "55 percent"), `decrement()` on the input trim (0 → "minus 1 decibel"), relaunch,
+`-only-testing:projectM-iOSUITests/VoiceOverParameterUITests`: the accessibility increment (DEBUG probe, research D2) on the glow intensity
+(50 % → 55 %, value "55 percent"), the decrement on the input trim (0 → "minus 1 decibel"), relaunch,
 both values kept. Under 30 s.
 
 ## C. Device `{device}` (D1, owner)

@@ -35,6 +35,7 @@ CHECKED = [
     "Views/CaptureResultPanels.swift",
     "Views/StatusCaptionView.swift",
     "Views/SceneSwitcherView.swift",   # UIX-002-R9: the switcher announces through the announcer
+    "Views/AccessibleParameter.swift",   # ACC-005-R7: slider ends announce through the announcer
 ]
 COORDINATOR = "Coordinators/AppCoordinator.swift"
 ALLOWED_IN_COORDINATOR = ("onScopeChange", "nativeVisualUnavailableMessage", "glowUnavailableMessage")

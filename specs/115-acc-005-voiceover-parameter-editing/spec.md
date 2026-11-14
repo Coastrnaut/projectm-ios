@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (ACC-005-T01-T15 verified on the Mac and an own iOS 27.2 simulator; T16 `{device}` open)
 
 **Input**: User description: "Implement ACC-005 (VoiceOver parameter editing) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Expose adjustable actions and numeric
@@ -198,5 +198,7 @@ A VoiceOver user swipes up on the visual delay at 250 ms; the value cannot rise,
 
 - MOD-001's registry describes the glow parameters only among these controls; text, audio and loop
   ranges stay with their owning settings.
-- XCTest's increment and decrement on an element invoke the same accessibility actions VoiceOver uses.
+- A user interface test can reach the accessibility increment and decrement VoiceOver uses. (Revised at
+  implementation: XCTest's `increment()` is macOS-only, so a DEBUG probe calls the element's
+  accessibility increment; research D2.)
 - The announcer (ACC-004) is reachable from Settings.
