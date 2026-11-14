@@ -160,7 +160,9 @@ extension SceneDocument {
         do {
             try modulator.bind(live)
         } catch {
-            return finish(.rejected, error.description, issue: SceneIssue(.invalidBinding, path: path, "Binding \(i): \(error.description)."))
+            // MOD-005-R10: an invalid attack or release time is reported at the envelope itself.
+            let at: String = if case .invalidEnvelope = error { path + ".envelope" } else { path }
+            return finish(.rejected, error.description, issue: SceneIssue(.invalidBinding, path: at, "Binding \(i): \(error.description)."))
         }
         firstIndexByTarget[targetID] = i
         restore.bindings.append(live)

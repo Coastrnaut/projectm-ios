@@ -109,14 +109,18 @@ public final class AudioFeatureModulator {
             } else {
                 slots[i].lastTime = timeNanoseconds
             }
-            let current = slots[i].signal
-            let tau = target > current ? binding.envelope.attackSeconds : binding.envelope.releaseSeconds
-            if tau <= 0 {
-                slots[i].signal = target
-            } else if elapsed > 0 {
-                slots[i].signal = current + (target - current) * (1 - exp(-elapsed / tau))
-            }
+            // MOD-005 contract E2: one-pole step, attack up and release down, bounded and NaN-safe.
+            slots[i].signal = binding.envelope.step(from: slots[i].signal, toward: target, elapsedSeconds: elapsed)
         }
+    }
+
+    /// Replaces the bound target's attack and release times without restarting its signal
+    /// (MOD-005-R8, contract E6): the next advance continues from the current signal with the new
+    /// times. Refuses an unbound target and invalid times; nothing changes when it throws.
+    public func setEnvelope(_ envelope: AudioFeatureEnvelope, for target: ParameterID) throws(AudioFeatureBindingError) {
+        guard let i = index(of: target) else { throw .unknownTarget(target) }
+        guard envelope.isValid else { throw .invalidEnvelope(target) }
+        slots[i].binding.envelope = envelope
     }
 
     /// The effective value of `target` given its manual value: `manual` itself when unbound.
