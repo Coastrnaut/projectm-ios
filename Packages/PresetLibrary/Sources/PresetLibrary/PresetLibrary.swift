@@ -157,6 +157,11 @@ public final class PresetLibrary: Sendable {
         return Self.alphabetical(ids.compactMap { (id: String) -> IndexedPreset? in preset(id: id) })
     }
 
+    /// PRE-004-R8: the listed presets among `ids`, alphabetical across packs, locked ones included.
+    public func alphabeticalListing(_ ids: Set<String>) -> [IndexedPreset] {
+        Self.alphabetical(ids.compactMap { (id: String) -> IndexedPreset? in preset(id: id) })
+    }
+
     /// A display title for a scope (FR-120). `collectionNames` maps a collection id to its name.
     public func title(of scope: PresetScope, collectionNames: [String: String] = [:]) -> String {
         switch scope {

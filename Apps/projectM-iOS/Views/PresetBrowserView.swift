@@ -11,6 +11,7 @@
 // Roadmap PRE-003: tag chips under the picker and above search results (AND, in memory); selected
 // chips replace the home with the tagged presets; search matches tags; every row offers "Tags…".
 // Roadmap PRE-006: the home leads to Recently Played (RecentPresetsView).
+// Roadmap PRE-004: colour chips under the tag chips; tags and colours together narrow the home and search.
 // Roadmap PRE-010: every playable row offers "Preview" (menu, leading swipe, VoiceOver action); the
 // audition bar sits under the stack, and closing the browser cancels a preview.
 import PresetLibrary
@@ -30,6 +31,7 @@ struct PresetBrowserView: View {
             List {
                 if !query.trimmingCharacters(in: .whitespaces).isEmpty {
                     PresetTagChipRow(presets: presets)
+                    PresetColorChipRow(presets: presets)   // PRE-004
                     searchResults
                 } else {
                     Picker("Show", selection: $presets.favoritesOnly) {
@@ -40,7 +42,8 @@ struct PresetBrowserView: View {
                     .accessibilityLabel("Show presets")   // ACC-004-R1: a segmented picker hides its title
                     .accessibilityIdentifier("favoritesFilter")
                     PresetTagChipRow(presets: presets)   // PRE-003
-                    if !presets.activeTags.isEmpty {
+                    PresetColorChipRow(presets: presets)   // PRE-004
+                    if presets.hasActiveFilter {
                         TaggedPresetList(presets: presets, onChoose: onChoose)
                     } else if presets.favoritesOnly {
                         favorites
@@ -82,7 +85,7 @@ struct PresetBrowserView: View {
                 Text(presets.tagsNotice ?? "")
             }
             .searchable(text: $query, prompt: "Presets and authors")
-            .task(id: "\(query)|\(presets.tagsVersion)|\(presets.selectedTags.joined(separator: "\u{1F}"))") {
+            .task(id: searchTaskID) {
                 // Debounced search over the in-memory index (FR-113, research R-26).
                 try? await Task.sleep(for: .milliseconds(150))
                 guard !Task.isCancelled else { return }
@@ -101,6 +104,13 @@ struct PresetBrowserView: View {
         }
         .environment(userPresets)   // PRE-015: rows duplicate and edit through it
         .accessibilityIdentifier("presetBrowser")
+    }
+
+    /// Restarts the debounced search when the query, tags or colours change (PRE-003, PRE-004).
+    private var searchTaskID: String {
+        let tags: String = presets.selectedTags.joined(separator: "\u{1F}")
+        let colors: String = presets.selectedColors.map(\.rawValue).joined(separator: ",")
+        return "\(query)|\(presets.tagsVersion)|\(tags)|\(presets.colorsVersion)|\(colors)"
     }
 
     @ViewBuilder private var home: some View {

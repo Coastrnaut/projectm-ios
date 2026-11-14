@@ -14,7 +14,8 @@ extension AppCoordinator {
         if FixtureThumbnailRenderer.isEnabled { thumbnailRenderer = FixtureThumbnailRenderer() }
         #endif
         let cache = PresetThumbnailCache(directory: PresetThumbnailModel.defaultDirectory(), renderer: thumbnailRenderer)
-        return PresetThumbnailModel(cache: cache) { [weak loader] (preset: IndexedPreset) async throws -> Data in
+        let colors = PresetColorStore(directory: PresetThumbnailModel.defaultColorDirectory())   // PRE-004
+        return PresetThumbnailModel(cache: cache, colors: colors) { [weak loader] (preset: IndexedPreset) async throws -> Data in
             guard let loader else { throw PresetThumbnailError.unavailable("No preset loader.") }
             if preset.source == PresetLibrary.userSource {
                 guard let data = await loader.userPresetData?(preset.id) else {

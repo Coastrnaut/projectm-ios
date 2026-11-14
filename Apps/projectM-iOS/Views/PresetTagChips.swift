@@ -58,17 +58,18 @@ struct PresetTagChipRow: View {
     }
 }
 
-/// The presets carrying every selected tag (R8): alphabetical across packs, locked ones marked by
-/// their rows. Choosing one makes "Tagged: …" the scope (R10).
+/// The presets carrying every selected tag (R8) and, PRE-004, every selected colour: alphabetical across
+/// packs, locked ones marked by their rows. Choosing one makes "Tagged: …" the scope (R10), or All
+/// presets when only colours are selected (PRE-004-R11).
 struct TaggedPresetList: View {
     let presets: PresetCoordinator
     let onChoose: (IndexedPreset, PresetScope) -> Void
 
     var body: some View {
-        let listing: [IndexedPreset] = presets.taggedListing
-        let scope: PresetScope = .tagged(presets.activeTags)
+        let listing: [IndexedPreset] = presets.filteredListing   // PRE-004: tags AND colours
+        let scope: PresetScope = presets.filteredScope   // PRE-004-R11
         if listing.isEmpty {
-            Text(PresetCoordinator.taggedEmptyText).accessibilityIdentifier("taggedEmpty")
+            Text(presets.filteredEmptyText).accessibilityIdentifier("taggedEmpty")
         }
         ForEach(listing) { (preset: IndexedPreset) in
             PresetRow(presets: presets, preset: preset, showsPack: true, previewScope: scope) { onChoose(preset, scope) }
