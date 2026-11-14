@@ -52,6 +52,7 @@ conservative, local-first option.
 - Q: Which folder does an imported scene go into? → A: The top level (SCN-004), as SCN-011 templates do; the user can move it.
 - Q: Does Import move the show to the new cue or apply it? → A: No: the cue is appended, the position and output stay (SHOW-001-R6); the result is announced ("Imported <name> as cue <n>.") on the library lane.
 - Q: Are archives exported before SCN-014 (FILE-001 packs without slides) accepted? → A: Yes: they are the same format; only the `slides` field is new and optional.
+- Q: Must re-imported pictures be byte-identical even though opaque pictures are JPEG? → A: Yes (research SCN-014-D9): the import keeps the pack's bytes when they carry no more metadata than a fresh sanitized copy, so export → import never re-encodes; any other picture is sanitized as before.
 - Q: How is long work shown? → A: Export and import run off the main actor; the row shows a progress indicator and is disabled until done. No time limit is promised (videos may be large).
 
 ## User Scenarios & Testing *(mandatory)*

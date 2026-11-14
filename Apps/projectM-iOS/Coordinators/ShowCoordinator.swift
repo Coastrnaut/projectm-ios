@@ -29,6 +29,7 @@
 //   `transitionDriver` just before `applyScene`; `setTransition` saves at once and applies nothing; a
 //   duplicate's cue gets its source cue's transition.
 // * SCN-011: `addCopies` stores bundled template scenes as new scenes (new IDs) with their cues, all or nothing.
+// * SCN-014: `installImportedScene` installs a scene pack's scene with FILE-004 (copy on a taken ID, one cue).
 // Main actor; file I/O is small (≤ 1 MiB per file, typically a few KB) and only on user action.
 import Foundation
 import Observation
@@ -84,6 +85,8 @@ final class ShowCoordinator {
     }
     /// SCN-006: the scene previews Scene Folders shows (set by AppCoordinator; nil in tests of the show alone).
     @ObservationIgnored weak var previews: ScenePreviewModel?
+    /// SCN-014: scene pack export and import for Scene Folders (set by AppCoordinator; nil in tests of the show alone).
+    @ObservationIgnored var scenePacks: ScenePackCoordinator?
 
     init(store: ShowStore?, registry: ParameterRegistry?) {
         self.store = store
@@ -299,6 +302,24 @@ final class ShowCoordinator {
         save()
         sceneFilesChanged(Set(copies.map(\.id)))   // SCN-006
         return cues
+    }
+
+    // MARK: - Scene pack import (SCN-014-R6, R10: never applies anything, the position stays)
+
+    /// Installs an imported scene through FILE-004 (Keep both: a taken ID gives a copy; one cue appended);
+    /// on `.installed` the coordinator takes the stored show. `plan` is the preview's plan for `[document]`.
+    func installImportedScene(_ document: SceneDocument, plan: ShowSceneImportPlan) -> ShowSceneImportOutcome {
+        guard let store else { return .refused(Self.saveFailedMessage) }
+        let outcome = store.installImportedScenes([document], plan: plan)
+        if case let .installed(installed, scenes) = outcome {
+            list = installed
+            for scene in scenes {
+                sceneNames[scene.id] = scene.name
+                unreadableScenes.remove(scene.id)
+            }
+            sceneFilesChanged(Set(scenes.map(\.id)))   // SCN-006
+        }
+        return outcome
     }
 
     // MARK: - Duplicate and rename scenes (SCN-003-R6: never applies anything, the position stays)
