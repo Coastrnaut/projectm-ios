@@ -66,6 +66,11 @@ NS_SWIFT_NAME(ProjectMEngine)
 /// Length of the blend into a newly loaded preset, in seconds (projectm_set/get_soft_cut_duration).
 @property (nonatomic) double softCutDuration;
 
+/// Pins the engine clock to `seconds` since the first frame for the next frames
+/// (projectm_set_frame_time); a negative value returns to the wall clock. Roadmap PRE-005: the
+/// thumbnail drawing uses it so a preset that moves with `time` is drawn the same way every time.
+- (void)setFrameTime:(double)seconds;
+
 /// Renders one frame into the framebuffer object `fbo` (projectm_opengl_render_frame_fbo).
 - (void)renderFrameToFramebuffer:(uint32_t)fbo;
 

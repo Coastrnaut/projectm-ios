@@ -46,7 +46,7 @@ extension PresetCoordinator {
     func isSelected(color: PresetColorFamily) -> Bool { selectedColors.contains(color) }
 
     /// Tags or colours narrow the browser.
-    var hasActiveFilter: Bool { !activeTags.isEmpty || !activeColors.isEmpty }
+    var hasActiveFilter: Bool { !activeTags.isEmpty || !activeColors.isEmpty || !selectedEnergies.isEmpty }   // PRE-005: or energy
 
     /// The preset IDs matching every selected tag and colour; nil when nothing is selected.
     var filterMatches: Set<String>? {
@@ -55,6 +55,9 @@ extension PresetCoordinator {
         if !colors.isEmpty {
             let byColor: Set<String> = colorFilter.matching(all: colors)
             ids = ids.map { (tagged: Set<String>) -> Set<String> in tagged.intersection(byColor) } ?? byColor
+        }
+        if let byEnergy = energyMatches {   // PRE-005-R9: AND with the energy selection (OR inside it)
+            ids = ids.map { (narrowed: Set<String>) -> Set<String> in narrowed.intersection(byEnergy) } ?? byEnergy
         }
         return ids
     }
@@ -73,7 +76,7 @@ extension PresetCoordinator {
     var filteredScope: PresetScope { activeTags.isEmpty ? .all : .tagged(activeTags) }
 
     /// The empty text: PRE-003's for tags alone, otherwise the combined one.
-    var filteredEmptyText: String { activeColors.isEmpty ? Self.taggedEmptyText : Self.filteredEmptyText }
+    var filteredEmptyText: String { activeColors.isEmpty && selectedEnergies.isEmpty ? Self.taggedEmptyText : Self.filteredEmptyText }
 
     func toggleColor(_ color: PresetColorFamily) {
         if let index = selectedColors.firstIndex(of: color) {

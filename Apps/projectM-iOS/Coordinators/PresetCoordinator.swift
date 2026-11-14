@@ -91,8 +91,16 @@ final class PresetCoordinator {
     @ObservationIgnored var retainedUserPresetIDs: Set<String> = []
     /// PRE-001: the rows' thumbnails (set by the app; nil in tests that do not need them).
     @ObservationIgnored var thumbnails: PresetThumbnailModel? {
-        didSet { thumbnails?.onColorsChanged = { [weak self] () -> Void in self?.colorsVersion += 1 } }   // PRE-004
+        didSet {
+            thumbnails?.onColorsChanged = { [weak self] () -> Void in self?.colorsVersion += 1 }   // PRE-004
+            thumbnails?.onMotionChanged = { [weak self] () -> Void in self?.motionVersion += 1 }   // PRE-005
+        }
     }
+    /// PRE-005: bumped whenever learned motion scores change, so the energy chips and lists refresh.
+    var motionVersion = 0
+    /// PRE-005-R9: the browser's selected energy chips (OR among them), in memory only.
+    var selectedEnergies: [PresetEnergy] = []
+    @ObservationIgnored var cachedEnergyFilter: (version: Int, library: ObjectIdentifier, filter: PresetEnergyFilter)?
     /// PRE-004: bumped whenever learned colours change, so the colour chips and lists refresh.
     var colorsVersion = 0
     /// PRE-004-R8: the browser's selected colour chips (AND), in memory only.
@@ -189,12 +197,19 @@ final class PresetCoordinator {
         thumbnailsCollected = true
         let cache: PresetThumbnailCache = thumbnails.cache
         let colors: PresetColorStore? = thumbnails.colors
+        let motion: PresetMotionStore? = thumbnails.motion
         let spec: PresetThumbnailSpec = cache.spec
         thumbnailCollection = Task.detached(priority: .utility) { [weak thumbnails] in
             await cache.retainOnly(PresetThumbnailModel.listing(library))
-            guard let colors else { return }   // PRE-004-R10: the colour index follows the same listing
-            let loaded = await PresetThumbnailModel.loadColors(colors, listing: PresetThumbnailModel.colorListing(library, spec: spec))
-            await MainActor.run { thumbnails?.mergeLoadedColors(loaded) }
+            let listing: [String: String] = PresetThumbnailModel.colorListing(library, spec: spec)
+            if let colors {   // PRE-004-R10: the colour index follows the same listing
+                let loaded = await PresetThumbnailModel.loadColors(colors, listing: listing)
+                await MainActor.run { thumbnails?.mergeLoadedColors(loaded) }
+            }
+            if let motion {   // PRE-005-R11: so does the motion index
+                let loaded = await PresetThumbnailModel.loadMotion(motion, listing: listing)
+                await MainActor.run { thumbnails?.mergeLoadedMotion(loaded) }
+            }
         }
     }
 
