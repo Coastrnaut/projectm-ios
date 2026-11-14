@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Planned 2026-11-14
+**Status**: Implemented 2026-11-14 (device task VIS-008-T14 open)
 
 **Input**: User description: "Implement VIS-008 (Particle fountain) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Spawn particles from onset events with gravity and drag." Acceptance,

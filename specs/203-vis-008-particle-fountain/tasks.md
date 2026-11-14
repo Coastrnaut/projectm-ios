@@ -41,7 +41,7 @@ Format: `- [ ] VIS-008-Txx [P?] [Story] description`. `{device}` = needs a physi
 
 ## Phase 6: Polish
 
-- [ ] VIS-008-T13 Full VisualGenerators suite on the host and in the Linux shape, RenderGoldens on the host (VIS-008-R14, S9); repo checks, privacy manifest and network symbols on the Debug app, type-check budget, PosterBoard count; delete the derived data and the simulator.
+- [X] VIS-008-T13 Full VisualGenerators suite on the host and in the Linux shape, RenderGoldens on the host (VIS-008-R14, S9); repo checks, privacy manifest and network symbols on the Debug app, type-check budget, PosterBoard count; delete the derived data and the simulator. — Verified 2026-11-14: VisualGenerators 234 tests pass on the host (61 s wall, of which 57.6 s in tests; the suite was already near the minute before VIS-008, whose 15 tests take < 1 s apart from the shared Metal warm-up) and 198 in the Linux shape (66 s); RenderGoldens 78 (1 skipped, 37 s); LibraryBackup 77; LibraryBackupAppTests 5 on VIS8; check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts OK; check_privacy_manifest and check_network_symbols OK on the Debug simulator app; PosterBoard 25 before and after; derived data and the simulator deleted.
 - [ ] VIS-008-T14 {device} On D1 with music, choose Particle Fountain: bursts follow onsets, arcs under gravity and drag, Reduce Motion fewer and slower; frame time in the performance overlay.
 
 ## Dependencies
