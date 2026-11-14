@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (PRE-008-T01-T15 verified on the Mac: PresetLibrary and LibraryBackup package tests on the host, app unit and UI tests on a private iOS 27.2 simulator; no ADR; the Linux build of the packages is not run on this host, it runs in CI)
 
 **Input**: User description: "Implement PRE-008 (Smart collections) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Filter presets by local tags, pack and motion traits."
@@ -52,6 +52,7 @@ Answered by Claude under owner rules 4 and 9 (recommended option first).
 - Q: How do colour conditions combine inside one condition? → A: Any of the listed families (like the other kinds); the user adds a second colour condition with All to require both. This keeps one rule for every kind.
 - Q: Are locked presets members? → A: Yes, as in manual collections: the list shows them locked and the walk (`members`) skips them, so the count shown is the listed members, locked included.
 - Q: Can smart collections be reordered? → A: Not in this feature: they keep creation order; manual collections keep their own reorder. A later feature can add it without a format change (order is the array order).
+- Q: How does the editor express the rules? → A: One condition per kind (the choices of a kind are alternatives) and the match mode across kinds; the live count is pinned at the bottom of the editor so it stays in view while scrolling. The format allows several conditions of one kind (a later editor may offer it); this editor shows them merged.
 - Q: Is a smart collection's count in the Collections home row? → A: The home row counts manual and smart collections together.
 
 ## User Scenarios & Testing *(mandatory)*
