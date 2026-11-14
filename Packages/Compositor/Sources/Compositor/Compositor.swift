@@ -62,6 +62,12 @@
 // REC-003 (contracts/video-recording.md in specs/058): `encodeOutput(into:commandBuffer:)` encodes the
 // output pass of the frame just composited once more into another target (a video recorder's pixel
 // buffer texture), cropped to that target from the top left. Nothing changes for frames shown.
+// CMP-011 (contracts/layer-groups.md in specs/109, ADR-0039): a grouped layer is drawn with G(a)·L(a), its
+// group's placement after its own (its own path, bit for bit, while the group transform is the identity).
+// A group is an isolated group: a disabled group or one at opacity 0 draws nothing (its layers still render);
+// at opacity exactly 1 with only normal visible layers it is drawn flattened in the open pass (exact, since
+// "over" is associative); otherwise its layers are drawn onto a cleared pooled group picture (with its own
+// blend-mode partner) and that picture is drawn over the composite × the group's animated opacity.
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import FrameCapture
 import Metal
@@ -111,10 +117,13 @@ public final class Compositor {
         /// PERF-014: the layer's back-off, and the render error shown while it holds.
         var retry = RenderRetryState()
         var heldError: LayerSourceError?
+        /// CMP-011: the layer's group (nil: ungrouped).
+        var group: LayerGroupID?
 
-        init(id: LayerInstanceID?, layer: any LayerSource, settings: LayerCompositeSettings) {
+        init(id: LayerInstanceID?, layer: any LayerSource, settings: LayerCompositeSettings, group: LayerGroupID? = nil) {
             self.id = id
             self.layer = layer
+            self.group = group
             slots = LayerSlots(fallback: layer.fallback)
             opacity = LayerOpacityAnimator(opacity: settings.opacity)
             transform = settings.transform
@@ -126,8 +135,21 @@ public final class Compositor {
         }
     }
 
+    /// CMP-011: one group's live state: its shown opacity and fade, placement and enabled flag.
+    private struct GroupRecord {
+        let id: LayerGroupID
+        var opacity: LayerOpacityAnimator
+        var transform: LayerTransform
+        var isEnabled: Bool
+    }
+
     public let device: MTLDevice
     private var records: [LayerRecord]
+    /// CMP-011: in stack order.
+    private var groupRecords: [GroupRecord] = []
+    /// CMP-011: the isolated groups' picture and its blend-mode partner (nil until first needed at a size).
+    private var groupComposite: MTLTexture?
+    private var groupAlternate: MTLTexture?
     private var composite: MTLTexture?
     /// CMP-004: the other composite of the blend-mode ping-pong (nil until a mode layer is drawn).
     private var compositeAlternate: MTLTexture?
@@ -156,6 +178,8 @@ public final class Compositor {
     public private(set) var blendDraws = 0
     /// Normal-mode draws through the masked "over" path in the last frame (CMP-007; tests, diagnostics).
     public private(set) var maskedDraws = 0
+    /// Groups drawn through their own picture in the last frame (CMP-011; tests, diagnostics).
+    public private(set) var isolatedGroupDraws = 0
     /// The stack last applied (nil before the first `apply`, and for `init(device:layers:)`).
     public private(set) var appliedStack: LayerStack?
     /// REC-001: the handler waiting for the next frame.
@@ -226,6 +250,8 @@ public final class Compositor {
     deinit {
         if let composite { texturePool.recycle(composite, after: lastCommandBuffer) }
         if let compositeAlternate { texturePool.recycle(compositeAlternate, after: lastCommandBuffer) }
+        if let groupComposite { texturePool.recycle(groupComposite, after: lastCommandBuffer) }   // CMP-011
+        if let groupAlternate { texturePool.recycle(groupAlternate, after: lastCommandBuffer) }
         for record in records { texturePool.recycle(record.pictures, after: lastCommandBuffer) }
     }
 
@@ -246,6 +272,11 @@ public final class Compositor {
     /// The mask layer `index` is drawn with (CMP-007; tests, diagnostics).
     public func shownMask(ofLayer index: Int) -> LayerMask? { records[index].mask }
 
+    /// The opacity group `id` was drawn with in the last frame (CMP-011; nil for an unknown group).
+    public func shownGroupOpacity(of id: LayerGroupID) -> Double? {
+        groupRecords.first { (g: GroupRecord) -> Bool in g.id == id }?.opacity.value
+    }
+
     /// The stack ID of layer `index` (nil for a layer given to `init(device:layers:)`).
     public func layerID(at index: Int) -> LayerInstanceID? { records[index].id }
 
@@ -260,6 +291,8 @@ public final class Compositor {
     /// the opacity shown last); a new layer starts at its entry's opacity.
     /// CMP-005: every layer is drawn with its entry's transform from the next frame (no animation).
     /// CMP-004: and with its entry's blend mode (no animation; a running opacity fade continues).
+    /// CMP-011: groups as layers: a changed group opacity fades with `opacityTransition`, transform and
+    /// enabled flag show from the next frame.
     public func apply(_ stack: LayerStack, opacityTransition: LayerOpacityTransition = .immediate,
                       makeLayer: LayerFactory) throws(CompositorError) {
         if let appliedStack, appliedStack == stack { return }
@@ -282,6 +315,7 @@ public final class Compositor {
                     kept.maskBlock = nil
                 }
                 if let fitting = kept.layer as? any LayerFitting { fitting.fit = entry.settings.fit }   // CMP-006
+                kept.group = entry.group   // CMP-011
                 next.append(kept)
                 continue
             }
@@ -291,7 +325,7 @@ public final class Compositor {
             } catch {
                 throw .layerCreationFailed(index: i, error)
             }
-            next.append(LayerRecord(id: entry.id, layer: layer, settings: entry.settings))
+            next.append(LayerRecord(id: entry.id, layer: layer, settings: entry.settings, group: entry.group))
             created.append(i)
         }
         for i in next.indices where next[..<i].contains(where: { (r: LayerRecord) -> Bool in r.layer === next[i].layer }) {
@@ -300,7 +334,23 @@ public final class Compositor {
         for old in records where !next.contains(where: { (r: LayerRecord) -> Bool in r.layer === old.layer }) {
             texturePool.recycle(old.pictures, after: lastCommandBuffer)   // PERF-004: back to the pool
         }
+        var nextGroups: [GroupRecord] = []   // CMP-011
+        nextGroups.reserveCapacity(stack.groups.count)
+        for group in stack.groups {
+            if var kept = groupRecords.first(where: { (g: GroupRecord) -> Bool in g.id == group.id }) {
+                if appliedStack?.group(group.id)?.settings.opacity != group.settings.opacity {
+                    kept.opacity.setOpacity(group.settings.opacity, transition: opacityTransition)
+                }
+                kept.transform = group.settings.transform
+                kept.isEnabled = group.settings.isEnabled
+                nextGroups.append(kept)
+            } else {
+                nextGroups.append(GroupRecord(id: group.id, opacity: LayerOpacityAnimator(opacity: group.settings.opacity),
+                                              transform: group.settings.transform, isEnabled: group.settings.isEnabled))
+            }
+        }
         records = next   // records no longer listed are released here
+        groupRecords = nextGroups
         appliedStack = stack
         if let descriptor {
             for i in created { allocatePictures(i, descriptor) }
@@ -358,6 +408,8 @@ public final class Compositor {
         let frame = clock.next(presentationTimeNanoseconds: presentationTimeNanoseconds, outputWidth: size.width,
                                outputHeight: size.height, contentScale: contentScale, reduceFlashing: reduceFlashing)
 
+        for g in groupRecords.indices { groupRecords[g].opacity.advance(by: frame.frameDuration) }   // CMP-011
+
         // PERF-014-D3: while the visual's own part backs off, no layer renders (a black frame).
         let visualHolds = visualRetry.isHolding
         for i in records.indices {
@@ -403,60 +455,52 @@ public final class Compositor {
         pass.colorAttachments[0].loadAction = .clear
         pass.colorAttachments[0].storeAction = .store
         pass.colorAttachments[0].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
-        guard var over = commandBuffer.makeRenderCommandEncoder(descriptor: pass) else { return false }
+        guard let over = commandBuffer.makeRenderCommandEncoder(descriptor: pass) else { return false }
         over.label = "CMP-001 composite"
-        var pipe = OverPipe.plain
         over.setRenderPipelineState(overPipeline)
         transformedDraws = 0
         blendDraws = 0
         maskedDraws = 0
-        for i in records.indices where records[i].shown >= 0 && records[i].opacity.value > 0 {
-            let transform = records[i].transform
-            if records[i].blendMode != .normal {
-                if !transform.isIdentity, case .none = Self.transformedDraw(transform, size: size, opacity: 1) { continue }
-                // CMP-004: end the "over" pass, blend into the other composite, swap, re-open.
-                over.endEncoding()
-                guard let target = alternateComposite(like: composite),
-                      encodeBlend(i, backdrop: composite, into: target, size: size, commandBuffer: commandBuffer) else { return false }
-                compositeAlternate = composite
-                composite = target
-                self.composite = target
-                let reopen = MTLRenderPassDescriptor()
-                reopen.colorAttachments[0].texture = composite
-                reopen.colorAttachments[0].loadAction = .load
-                reopen.colorAttachments[0].storeAction = .store
-                guard let next = commandBuffer.makeRenderCommandEncoder(descriptor: reopen) else { return false }
-                next.label = "CMP-001 composite"
-                next.setRenderPipelineState(overPipeline)
-                over = next
-                pipe = .plain
+        isolatedGroupDraws = 0
+        var surface = DrawSurface(texture: composite, partner: compositeAlternate, encoder: over, pipe: .plain,
+                                  label: "CMP-001 composite", partnerLabel: "CMP-004 composite")
+        defer {   // CMP-004: the two composites may have swapped (kept even when a frame fails half way)
+            self.composite = surface.texture
+            compositeAlternate = surface.partner
+        }
+        var i = 0
+        while i < records.count {
+            // CMP-011: an ungrouped layer (or one whose group is unknown) is drawn as before.
+            guard let groupID = records[i].group,
+                  let g = groupRecords.firstIndex(where: { (r: GroupRecord) -> Bool in r.id == groupID }) else {
+                if isVisible(i), !drawLayer(i, on: &surface, size: size, commandBuffer: commandBuffer) { return false }
+                i += 1
                 continue
             }
-            over.setFragmentTexture(records[i].pictures[records[i].shown], index: 0)
-            if var block = maskBlock(i, size: size) {   // CMP-007: same pass, coverage multiplied in
-                var draw = TransformedDraw(row0: .zero, row1: .zero, params: SIMD4<Float>(Float(records[i].opacity.value), 0, 0, 0))
-                if !transform.isIdentity {
-                    guard let placed = Self.transformedDraw(transform, size: size, opacity: records[i].opacity.value) else { continue }
-                    draw = placed
-                    draw.params.y = 1
-                }
-                if pipe != .masked { over.setRenderPipelineState(maskedPipeline); pipe = .masked }
-                over.setFragmentBytes(&draw, length: MemoryLayout<TransformedDraw>.stride, index: 0)
-                over.setFragmentBytes(&block, length: MemoryLayout<CompositorShaders.MaskBlock>.stride, index: 1)
-                maskedDraws += 1
-            } else if transform.isIdentity {
-                if pipe != .plain { over.setRenderPipelineState(overPipeline); pipe = .plain }
-                var opacity = Float(records[i].opacity.value)
-                over.setFragmentBytes(&opacity, length: MemoryLayout<Float>.size, index: 0)
-            } else {
-                guard var draw = Self.transformedDraw(transform, size: size, opacity: records[i].opacity.value) else { continue }
-                if pipe != .transformed { over.setRenderPipelineState(transformedPipeline); pipe = .transformed }
-                over.setFragmentBytes(&draw, length: MemoryLayout<TransformedDraw>.stride, index: 0)
-                transformedDraws += 1
+            var end = i + 1
+            while end < records.count, records[end].group == groupID { end += 1 }
+            let run = i..<end
+            i = end
+            let groupOpacity = groupRecords[g].opacity.value
+            guard groupRecords[g].isEnabled, groupOpacity > 0 else { continue }   // hidden: its layers still rendered
+            // The rule of `LayerGroupComposition.needsIsolation`, without building a sequence per frame.
+            var anyVisible = false
+            var isolate = groupOpacity < 1
+            for k in run where isVisible(k) {
+                anyVisible = true
+                if records[k].blendMode != .normal { isolate = true }
             }
-            over.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
+            guard anyVisible else { continue }
+            if isolate {
+                guard drawIsolatedGroup(run, opacity: groupOpacity, on: &surface, size: size, commandBuffer: commandBuffer) else { return false }
+            } else {
+                for k in run where isVisible(k) {
+                    guard drawLayer(k, on: &surface, size: size, commandBuffer: commandBuffer) else { return false }
+                }
+            }
         }
-        over.endEncoding()
+        surface.encoder.endEncoding()
+        composite = surface.texture
 
         guard flashGuard.encode(composite: composite, commandBuffer: commandBuffer, frameDuration: frame.frameDuration,
                                 reduceFlashing: reduceFlashing) else { return false }
@@ -483,32 +527,30 @@ public final class Compositor {
 
     // MARK: - Blend modes (CMP-004)
 
-    /// The ping-pong partner of `current` (taken from the pool the first time; an allocation point).
-    private func alternateComposite(like current: MTLTexture) -> MTLTexture? {
-        if let compositeAlternate, compositeAlternate.width == current.width, compositeAlternate.height == current.height {
-            return compositeAlternate
-        }
-        if let compositeAlternate { texturePool.recycle(compositeAlternate, after: lastCommandBuffer) }
-        compositeAlternate = nil
+    /// A pooled picture the size of `current`: `existing` when it matches, else a new one from the pool
+    /// (an allocation point: the first blend-mode or isolated-group draw at a size).
+    private func partnerTexture(like current: MTLTexture, existing: MTLTexture?, label: String) -> MTLTexture? {
+        if let existing, existing.width == current.width, existing.height == current.height { return existing }
+        if let existing { texturePool.recycle(existing, after: lastCommandBuffer) }
         guard let d = LayerPictureDescriptor(width: current.width, height: current.height),
               let made = texturePool.makeTexture(descriptor: d.textureDescriptor()) else { return nil }
-        made.label = "CMP-004 composite"
+        made.label = label
         pictureAllocations += 1
-        compositeAlternate = made
         return made
     }
 
-    /// One full-screen `cmp_blend` pass: layer `i` with its mode over `backdrop`, written to `target`.
-    private func encodeBlend(_ i: Int, backdrop: MTLTexture, into target: MTLTexture, size: LayerPictureDescriptor,
-                             commandBuffer: MTLCommandBuffer) -> Bool {
+    /// One full-screen `cmp_blend` pass: layer `i` with its mode over `backdrop`, written to `target`;
+    /// `matrix` is its placement (nil: identity).
+    private func encodeBlend(_ i: Int, matrix: LayerTransformMatrix?, backdrop: MTLTexture, into target: MTLTexture,
+                             size: LayerPictureDescriptor, commandBuffer: MTLCommandBuffer) -> Bool {
         let opacity = records[i].opacity.value
         var draw: TransformedDraw
-        if records[i].transform.isIdentity {
-            draw = TransformedDraw(row0: .zero, row1: .zero, params: SIMD4<Float>(Float(opacity), 0, 0, 0))
-        } else {
-            guard let placed = Self.transformedDraw(records[i].transform, size: size, opacity: opacity) else { return false }   // checked by the caller
+        if let matrix {
+            guard let placed = Self.transformedDraw(matrix, size: size, opacity: opacity) else { return false }   // checked by the caller
             draw = placed
             draw.params.y = 1
+        } else {
+            draw = TransformedDraw(row0: .zero, row1: .zero, params: SIMD4<Float>(Float(opacity), 0, 0, 0))
         }
         draw.params.z = CompositorShaders.shaderIndex(records[i].blendMode)
         let pass = MTLRenderPassDescriptor()
@@ -526,6 +568,134 @@ public final class Compositor {
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
         encoder.endEncoding()
         blendDraws += 1
+        return true
+    }
+
+    // MARK: - Drawing layers (CMP-001 to CMP-007; CMP-011 surfaces)
+
+    /// A picture being composited onto: the composite, or an isolated group's picture (CMP-011), with its
+    /// blend-mode partner and the open "over" pass.
+    private struct DrawSurface {
+        var texture: MTLTexture
+        var partner: MTLTexture?
+        var encoder: MTLRenderCommandEncoder
+        var pipe: OverPipe
+        let label: String
+        let partnerLabel: String
+    }
+
+    /// Whether layer `i` has a picture to composite this frame.
+    private func isVisible(_ i: Int) -> Bool { records[i].shown >= 0 && records[i].opacity.value > 0 }
+
+    /// CMP-011: the placement layer `i` is drawn with: nil for its own identity (the exact per-pixel paths),
+    /// its own matrix while its group (if any) has the identity transform, else G(a)·L(a).
+    private func placement(_ i: Int, size: LayerPictureDescriptor) -> LayerTransformMatrix? {
+        let local = records[i].transform
+        if let groupID = records[i].group,
+           let group = groupRecords.first(where: { (g: GroupRecord) -> Bool in g.id == groupID }), !group.transform.isIdentity {
+            return LayerGroupComposition.matrix(group: group.transform, local: local, outputWidth: size.width, outputHeight: size.height)
+        }
+        return local.isIdentity ? nil : local.matrix(outputWidth: size.width, outputHeight: size.height)
+    }
+
+    /// An "over" pass that keeps `texture`'s contents (after a blend-mode pass or a group).
+    private func reopenOver(_ texture: MTLTexture, label: String, commandBuffer: MTLCommandBuffer) -> MTLRenderCommandEncoder? {
+        let reopen = MTLRenderPassDescriptor()
+        reopen.colorAttachments[0].texture = texture
+        reopen.colorAttachments[0].loadAction = .load
+        reopen.colorAttachments[0].storeAction = .store
+        guard let next = commandBuffer.makeRenderCommandEncoder(descriptor: reopen) else { return nil }
+        next.label = label
+        next.setRenderPipelineState(overPipeline)
+        return next
+    }
+
+    /// Draws visible layer `i` onto `surface`: normal layers in the open pass (identity, transformed or
+    /// masked), other modes by ending the pass, blending into the partner, swapping and re-opening. False
+    /// only when Metal cannot create an encoder or a picture (the frame fails; the pass may be ended).
+    private func drawLayer(_ i: Int, on surface: inout DrawSurface, size: LayerPictureDescriptor,
+                           commandBuffer: MTLCommandBuffer) -> Bool {
+        let matrix = placement(i, size: size)
+        if records[i].blendMode != .normal {
+            if let matrix, matrix.inverse == nil { return true }   // not drawable (ruled out by the scale bounds)
+            // CMP-004: end the "over" pass, blend into the partner, swap, re-open.
+            surface.encoder.endEncoding()
+            guard let target = partnerTexture(like: surface.texture, existing: surface.partner, label: surface.partnerLabel) else {
+                return false
+            }
+            surface.partner = target
+            guard encodeBlend(i, matrix: matrix, backdrop: surface.texture, into: target, size: size, commandBuffer: commandBuffer) else {
+                return false
+            }
+            surface.partner = surface.texture
+            surface.texture = target
+            guard let next = reopenOver(target, label: surface.label, commandBuffer: commandBuffer) else { return false }
+            surface.encoder = next
+            surface.pipe = .plain
+            return true
+        }
+        let over = surface.encoder
+        over.setFragmentTexture(records[i].pictures[records[i].shown], index: 0)
+        if var block = maskBlock(i, size: size) {   // CMP-007: same pass, coverage multiplied in
+            var draw = TransformedDraw(row0: .zero, row1: .zero, params: SIMD4<Float>(Float(records[i].opacity.value), 0, 0, 0))
+            if let matrix {
+                guard let placed = Self.transformedDraw(matrix, size: size, opacity: records[i].opacity.value) else { return true }
+                draw = placed
+                draw.params.y = 1
+            }
+            if surface.pipe != .masked { over.setRenderPipelineState(maskedPipeline); surface.pipe = .masked }
+            over.setFragmentBytes(&draw, length: MemoryLayout<TransformedDraw>.stride, index: 0)
+            over.setFragmentBytes(&block, length: MemoryLayout<CompositorShaders.MaskBlock>.stride, index: 1)
+            maskedDraws += 1
+        } else if let matrix {
+            guard var draw = Self.transformedDraw(matrix, size: size, opacity: records[i].opacity.value) else { return true }
+            if surface.pipe != .transformed { over.setRenderPipelineState(transformedPipeline); surface.pipe = .transformed }
+            over.setFragmentBytes(&draw, length: MemoryLayout<TransformedDraw>.stride, index: 0)
+            transformedDraws += 1
+        } else {
+            if surface.pipe != .plain { over.setRenderPipelineState(overPipeline); surface.pipe = .plain }
+            var opacity = Float(records[i].opacity.value)
+            over.setFragmentBytes(&opacity, length: MemoryLayout<Float>.size, index: 0)
+        }
+        over.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
+        return true
+    }
+
+    /// CMP-011: the visible layers of `run` drawn in order onto the cleared group picture, which is then
+    /// drawn over `surface` with premultiplied "over" × `opacity` (ADR-0039).
+    private func drawIsolatedGroup(_ run: Range<Int>, opacity: Double, on surface: inout DrawSurface,
+                                   size: LayerPictureDescriptor, commandBuffer: MTLCommandBuffer) -> Bool {
+        surface.encoder.endEncoding()
+        guard let picture = partnerTexture(like: surface.texture, existing: groupComposite, label: "CMP-011 group composite") else {
+            return false
+        }
+        groupComposite = picture
+        let pass = MTLRenderPassDescriptor()
+        pass.colorAttachments[0].texture = picture
+        pass.colorAttachments[0].loadAction = .clear
+        pass.colorAttachments[0].storeAction = .store
+        pass.colorAttachments[0].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
+        guard let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: pass) else { return false }
+        encoder.label = "CMP-011 group"
+        encoder.setRenderPipelineState(overPipeline)
+        var inner = DrawSurface(texture: picture, partner: groupAlternate, encoder: encoder, pipe: .plain,
+                                label: "CMP-011 group", partnerLabel: "CMP-011 group composite")
+        defer {   // the group's two pictures may have swapped
+            groupComposite = inner.texture
+            groupAlternate = inner.partner
+        }
+        for k in run where isVisible(k) {
+            guard drawLayer(k, on: &inner, size: size, commandBuffer: commandBuffer) else { return false }
+        }
+        inner.encoder.endEncoding()
+        guard let outer = reopenOver(surface.texture, label: surface.label, commandBuffer: commandBuffer) else { return false }
+        surface.encoder = outer
+        surface.pipe = .plain
+        outer.setFragmentTexture(inner.texture, index: 0)
+        var groupOpacity = Float(opacity)
+        outer.setFragmentBytes(&groupOpacity, length: MemoryLayout<Float>.size, index: 0)
+        outer.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
+        isolatedGroupDraws += 1
         return true
     }
 
@@ -704,10 +874,11 @@ public final class Compositor {
     }
 
     /// Output pixel → layer pixel: `D·M⁻¹·D⁻¹` with `D = diag(W, H)` (pictures are output-sized).
-    /// nil only for a non-invertible matrix, which the scale bounds rule out.
-    private static func transformedDraw(_ transform: LayerTransform, size: LayerPictureDescriptor,
+    /// nil only for a non-invertible matrix, which the scale bounds rule out. CMP-011: any placement matrix
+    /// (a group's composed one included).
+    private static func transformedDraw(_ matrix: LayerTransformMatrix, size: LayerPictureDescriptor,
                                         opacity: Double) -> TransformedDraw? {
-        guard let inv = transform.matrix(outputWidth: size.width, outputHeight: size.height).inverse else { return nil }
+        guard let inv = matrix.inverse else { return nil }
         let w = Double(size.width), h = Double(size.height)
         return TransformedDraw(row0: SIMD4<Float>(Float(inv.m00), Float(inv.m01 * w / h), Float(inv.m02 * w), 0),
                                row1: SIMD4<Float>(Float(inv.m10 * h / w), Float(inv.m11), Float(inv.m12 * h), 0),
@@ -723,6 +894,10 @@ public final class Compositor {
         composite = nil
         if let compositeAlternate { texturePool.recycle(compositeAlternate, after: lastCommandBuffer) }   // CMP-004
         compositeAlternate = nil
+        if let groupComposite { texturePool.recycle(groupComposite, after: lastCommandBuffer) }   // CMP-011
+        groupComposite = nil
+        if let groupAlternate { texturePool.recycle(groupAlternate, after: lastCommandBuffer) }
+        groupAlternate = nil
         var starved = false
         #if DEBUG
         starved = faultInjection.missingPictures.contains("composite")
