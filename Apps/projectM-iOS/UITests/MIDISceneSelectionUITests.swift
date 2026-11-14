@@ -2,7 +2,7 @@
 // (`-uitestFakeMIDI`) and the SHOW-001 seed (`-uitestShowSeed`: five cues over five scenes, standing on cue 1)
 // (MIDI-007-R8, R12; S5). Listening on at launch and no stored mappings; plug Fake Keys in Settings' MIDI section, open
 // Settings › Show, swipe cue 3 ("Drop") and pick MIDI (Assign MIDI…), send program 5 through the stand-in input, read
-// the result, send it again: cue 3 becomes the active cue. Simulator results are never device evidence; a physical
+// the result, send it again, close the sheet: cue 3 is the active cue. Simulator results are never device evidence; a physical
 // controller is the {device} task MIDI-007-T15. Budget: under 30 s (owner rule 7).
 import XCTest
 
@@ -69,12 +69,8 @@ final class MIDISceneSelectionUITests: XCTestCase {
                       "status: \(String(describing: status.value))")
         XCTAssertEqual(app.descendants(matching: .any)["midiSceneAssignControl"].value as? String, "Program 5 · Ch 1")
 
-        app.buttons["midiSceneAssignDone"].tap()
-        XCTAssertTrue(poll(3) { (drop.value as? String) == "Cue 3 of 5" }, "the learning message selected nothing")
-        swipeAction(drop, id: "showAssignMIDI", titles: ["MIDI", "Assign MIDI"])
-        XCTAssertTrue(send.appears(within: 3))
-        app.buttons["midiSceneAssignCancel"].tap()   // the sheet starts learning; cancel it, then trigger
-        send.tap()   // the mapping now selects Drop
+        XCTAssertTrue(app.buttons["midiSceneAssignLearn"].exists, "learn mode exited")
+        send.tap()   // learning is over: the mapping now selects Drop (the learning message itself: app tests)
         app.buttons["midiSceneAssignDone"].tap()
         XCTAssertTrue(poll(5) { (drop.value as? String) == "Cue 3 of 5, active" }, "cue 3 is active: \(drop.value ?? "nil")")
     }
