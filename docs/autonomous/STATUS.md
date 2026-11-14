@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T09:25:21Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T09:25:36Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,9 +10,9 @@
 | State | Features |
 |---|---|
 | audited | 194 |
-| implementing | 2 |
+| implementing | 1 |
 | unit_passed | 1 |
-| integrated | 128 |
+| integrated | 129 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -20,14 +20,14 @@
 | Priority | audited | implementing | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 106 | 2 | 1 | 42 | 0 |
+| P1 | 106 | 1 | 1 | 43 | 0 |
 | P2 | 77 | 0 | 0 | 2 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 197 features are not implemented yet (first: ACC-007, ACC-008, ACC-009, ACC-010, ACC-012)
+- 196 features are not implemented yet (first: ACC-007, ACC-008, ACC-009, ACC-010, ACC-012)
 
 ## Integrated
 
@@ -101,6 +101,7 @@ The physical-device suite may **not** start:
 | FILE-004 | Import conflict resolver | `b211a998` | `feature/file-004` |
 | FILE-005 | Local library backup | `31456ffe` | `feature/file-005` |
 | FILE-007 | Document schema validator | `d8e359893ae7` | `feature/file-007` |
+| FILE-008 | User asset deduplication | `0025fbd29268` | `feature/file-008` |
 | FILE-009 | Storage usage explorer | `efddbc041837` | `feature/file-009` |
 | FILE-010 | Safe cache cleanup | `f65b410a8d7c` | `feature/file-010` |
 | FILE-012 | No-telemetry verification | `3a8ad2044000` | `feature/file-012` |
@@ -764,6 +765,12 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `601485f4c499` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-014/20261114T033034/swift-test_ShowControl.log`)
 - `post-merge: projectM-iOSTests 518 + ReduceMotion/PhotoLayer UI tests 2; gate ran Compositor and downstream suites`: pass at `90032727` (log `.autonomous/logs/integration/cmp-014/app-tests.log`)
 
+### CMP-015 Layer inspector (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `69def87e9547` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-015/20261114T042522/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `69def87e9547` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-015/20261114T042522/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `69def87e9547` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-015/20261114T042522/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `69def87e9547` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-015/20261114T042522/autonomous-tests.log`)
+
 ### FILE-001 Portable scene archive (integrated)
 - `python3 scripts/check_compliance.py`: pass at `b4e63d16acf1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-001/20261113T154852/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `b4e63d16acf1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-001/20261113T154852/docs.log`)
@@ -817,7 +824,7 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `d9f90f1e1d0f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-007/20261113T163821/swift-test_SceneFormat.log`)
 - `post-merge: app builds and projectM-iOSTests pass on iOS 27.2 sim (incl. preset import/export and scene archive tests through the new shape check); gate LocalPortability, PresetLibrary, SceneArchive, SceneFormat, Compositor, RenderGoldens`: pass at `d8e359893ae7` (log `.autonomous/logs/integration/file-007/app-tests.log`)
 
-### FILE-008 User asset deduplication (unit_passed)
+### FILE-008 User asset deduplication (integrated)
 - `python3 scripts/check_compliance.py`: pass at `843942169142` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-008/20261114T042047/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `843942169142` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-008/20261114T042047/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `843942169142` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-008/20261114T042047/sim-test_ANGLERendering.log`)
