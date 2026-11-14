@@ -71,6 +71,14 @@ public final class CaptureManager {
     /// True while In-App Playback is paused at the user's request (AUD-006): from `pause()` until
     /// `resume()`, a stop, a failure, the end by the system, or a new attempt.
     public private(set) var isPausedByUser = false
+    /// AUD-012: the target of a source switch while the label must read "Switching source…" (C3).
+    public private(set) var switchingTo: AudioSourceMode?
+    /// AUD-012-R9: samples the renderer boundary replaced (non-finite or out of range) since launch.
+    public private(set) var sanitizedSampleCount = 0
+    /// AUD-012: how long a switch's fade-out may wait for the old source's audio.
+    @ObservationIgnored public var handoffTiming: HandoffTiming = .default
+    /// AUD-012-R12: called on the main actor when an attempt sets `activeMode` (AUD-011's flag).
+    @ObservationIgnored public var onSessionMode: ((AudioSourceMode) -> Void)?
 
     private let sources: [AudioSourceMode: any AudioSource]
     private let sink = PCMSink()
@@ -93,6 +101,10 @@ public final class CaptureManager {
     @ObservationIgnored private var isPresentable = true
     /// The user pause is the transport's Stop playback (AUD-014: the policy's "stopped").
     @ObservationIgnored private var userPauseIsStop = false
+    /// AUD-012: the cancel generation of the latest attempt, and whether that attempt came from a
+    /// switch whose label still waits for its first audio.
+    @ObservationIgnored private var attemptGeneration = 0
+    @ObservationIgnored private var awaitingSwitchAudio = false
 
     /// What is remembered about an interruption of In-App Playback (data-model.md).
     private struct OpenInterruption {
@@ -167,6 +179,7 @@ public final class CaptureManager {
     /// Selects and starts a source, stopping any current source first (FR-016). A start still in
     /// flight is cancelled first, so choosing another source never waits on an open picker.
     public func select(_ mode: AudioSourceMode) async {
+        switchingTo = nil   // AUD-012-R15: not a switch
         let generation = await cancelPendingStart()
         await serialized { await self.startInner(mode, generation: generation) }
     }
@@ -174,6 +187,7 @@ public final class CaptureManager {
     /// Stops the active source within 1 s (FR-007). Idempotent. A start still in flight (for
     /// example waiting on the system picker) is cancelled and ends as "Not started — cancelled".
     public func stop() async {
+        switchingTo = nil   // AUD-012-R11: the target is never shown
         _ = await cancelPendingStart()
         await serialized {
             guard self.current != nil else { return }
@@ -186,12 +200,23 @@ public final class CaptureManager {
     /// system picker, because `start` always does (FR-002). A start still in flight is cancelled
     /// first.
     public func restart() async {
+        switchingTo = nil   // AUD-012-R15
         let generation = await cancelPendingStart()
         await serialized {
             guard let mode = self.activeMode else { return }
             await self.stopCurrent()
             await self.startInner(mode, generation: generation)
         }
+    }
+
+    /// AUD-012 (contract C2): switches to `mode` with a bounded handoff, keeping the visualization.
+    /// No effect when `mode` is already the running (or starting) source or the switch's target.
+    public func switchSource(to mode: AudioSourceMode) async {
+        if switchingTo == mode { return }
+        if switchingTo == nil, mode == activeMode, current != nil || isStarting { return }
+        switchingTo = mode   // C3: the old label is gone from the request on
+        let generation = await cancelPendingStart()
+        await serialized { await self.switchInner(mode, generation: generation) }
     }
 
     /// Resumes a Paused source (e.g. after "Paused — audio route changed"), and ends a user pause.
@@ -290,11 +315,41 @@ public final class CaptureManager {
         return generation
     }
 
-    private func startInner(_ mode: AudioSourceMode, generation: Int) async {
+    /// The serialized part of a switch: fade-out, then a handoff attempt (C2.3).
+    private func switchInner(_ mode: AudioSourceMode, generation: Int) async {
+        let cancelled = { generation != self.cancelGeneration }
+        if cancelled() { return }   // superseded before it began; the newer command owns the label
+        let fades = current != nil
+        if fades {
+            analyzer.beginHandoffFadeOut()
+            // A source that is not delivering (paused, interrupted) cannot fade with audio.
+            if state.isRunning { await waitForFadeOut(cancelled: cancelled) }
+            analyzer.completeHandoffFadeOut()
+        }
+        if cancelled() { return }
+        // A switch that superseded another one mid-way continues its ramp (no jump to unity).
+        let handoff = fades || analyzer.handoffInProgress
+        await startInner(mode, generation: generation, handoff: handoff, switching: true)
+    }
+
+    /// Polls until the fade-out reached silence, a newer command arrived, or the wait limit passed.
+    private func waitForFadeOut(cancelled: () -> Bool) async {
+        let clock = ContinuousClock()
+        let deadline = clock.now.advanced(by: handoffTiming.fadeOutWaitLimit)
+        while !analyzer.handoffFadeOutDone, !cancelled(), clock.now < deadline {
+            try? await Task.sleep(for: handoffTiming.pollInterval)
+        }
+    }
+
+    private func startInner(_ mode: AudioSourceMode, generation: Int, handoff: Bool = false,
+                            switching: Bool = false) async {
         let cancelled = { generation != self.cancelGeneration }
         await stopCurrent()
         activeMode = mode
-        beginAttempt()
+        attemptGeneration = generation
+        awaitingSwitchAudio = switching
+        onSessionMode?(mode)
+        beginAttempt(handoff: handoff)
         guard let source = sources[mode] else {
             apply(.startFailed(.unsupportedOS))
             return
@@ -349,9 +404,9 @@ public final class CaptureManager {
 
     /// Resets every per-session field for a new start attempt. The source is stopped and the
     /// analysis timer is off, so nothing writes the sink and nothing new is published.
-    private func beginAttempt() {
+    private func beginAttempt(handoff: Bool = false) {
         sink.reset()
-        let update = analyzer.beginAttempt()
+        let update = analyzer.beginAttempt(handoff: handoff)
         // Updates published before this point belong to the previous session; `receive` drops them.
         lastSequence = update.sequence
         pauseReason = nil
@@ -529,6 +584,13 @@ public final class CaptureManager {
         }
         let update = analyzer.apply(event)
         lastSequence = max(lastSequence, update.sequence)
+        sanitizedSampleCount = analyzer.normalizedOutput.sanitizedSampleCount
+        switch event {
+        case .startFailed, .failed, .endedBySystem, .userStopped:
+            endSwitchLabelIfCurrent()   // C3: the attempt ended
+        default:
+            break
+        }
         syncTransitions()
         state = update.state
         stopReason = displayedReason(update.reason)
@@ -538,6 +600,13 @@ public final class CaptureManager {
         // A failed start has no session, so its duration stays 0.
         if case .startFailed = event { return }
         sessionSeconds = update.sessionSeconds
+    }
+
+    /// Clears the switching label, unless a newer command is pending (it owns the label then).
+    private func endSwitchLabelIfCurrent() {
+        guard awaitingSwitchAudio, attemptGeneration == cancelGeneration else { return }
+        awaitingSwitchAudio = false
+        switchingTo = nil
     }
 
     /// The reason shown with the state. A user pause shows none (AUD-006-R20): the reason of an
@@ -566,6 +635,12 @@ public final class CaptureManager {
         prolongedSilenceHint = update.prolongedSilenceHint
         hasVerifiedActiveAudio = update.hasVerifiedActiveAudio
         sessionSeconds = update.sessionSeconds
+        sanitizedSampleCount = analyzer.normalizedOutput.sanitizedSampleCount
+        // C3: the new source's first audio, or a decided state, ends "Switching source…".
+        if awaitingSwitchAudio, current != nil, update.state.isRunning,
+           update.statistics.sampleCount > 0 || update.state != .waiting {
+            endSwitchLabelIfCurrent()
+        }
         if let reason = update.conversionFailure, update.state.isRunning, let source = current {
             // FR-017: an unconvertible format stops the source with an error, like a source failure.
             Task { await self.failForConversion(reason, source: source) }
@@ -614,6 +689,25 @@ public final class CaptureManager {
         receive(update)
     }
 
+    /// Analyzer access for handoff tests (tests only).
+    var analyzerForTesting: AudioAnalyzer { analyzer }
+
     /// The sink, for test sources (tests only).
     var sinkForTesting: PCMSink { sink }
+}
+
+/// AUD-012: how long a switch's fade-out may wait for the old source's audio (research AUD-012-D5).
+public struct HandoffTiming: Sendable, Equatable {
+    public var fadeOutWaitLimit: Duration
+    public var pollInterval: Duration
+
+    public init(fadeOutWaitLimit: Duration, pollInterval: Duration) {
+        self.fadeOutWaitLimit = fadeOutWaitLimit
+        self.pollInterval = pollInterval
+    }
+
+    /// 150 ms, polled every 5 ms (the 100 ms ramp plus delivery jitter).
+    public static let `default` = HandoffTiming(fadeOutWaitLimit: .milliseconds(150), pollInterval: .milliseconds(5))
+    /// No wait: the fade-out is completed from the last sample at once (deterministic tests).
+    public static let immediate = HandoffTiming(fadeOutWaitLimit: .zero, pollInterval: .milliseconds(1))
 }

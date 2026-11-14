@@ -160,6 +160,11 @@ public final class AudioAnalyzer: @unchecked Sendable {
         queue.sync { normalizedOutput.beginFadeOut() }
     }
 
+    /// True while a switch's envelope is not at unity (fading out, silent or fading in).
+    public var handoffInProgress: Bool {
+        queue.sync { normalizedOutput.handoffPhase != .unity }
+    }
+
     /// True once the fade-out reached silence.
     public var handoffFadeOutDone: Bool {
         queue.sync { normalizedOutput.handoffPhase == .silent }
