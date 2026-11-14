@@ -150,7 +150,8 @@ public final class AudioFeatureModulator {
 
     private func effective(_ slot: Slot, manual: Double) -> Double {
         let s = slot.signal
-        let mapped = slot.binding.mapping.interpolate(s)   // exact ends, bounded, monotonic (MOD-003)
+        let shaped = slot.binding.curve.apply(s)            // 0…1, exact ends, monotonic; linear returns s (MOD-004)
+        let mapped = slot.binding.mapping.interpolate(shaped)   // exact ends, bounded, monotonic (MOD-003)
         let combined: Double = switch slot.binding.mixMode {
         case .replace: mapped
         case .add: manual + mapped
@@ -196,6 +197,7 @@ public final class AudioFeatureModulator {
             throw .outputOutOfRange(id, binding.mixMode, minimum: allowed.minimum, maximum: allowed.maximum)
         }
         guard binding.envelope.isValid else { throw .invalidEnvelope(id) }
+        if let problem = binding.curve.validationProblem { throw .invalidCurve(id, reason: problem) }
         guard otherBindings < maximumBindings else { throw .tooManyBindings(id, limit: maximumBindings) }
         return descriptor
     }
