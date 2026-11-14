@@ -75,6 +75,7 @@ public enum LibrarySettingsPolicy {
         "settings.circularSpectrum.bars", "settings.circularSpectrum.glow", "settings.circularSpectrum.glowIntensity",
         "settings.circularSpectrum.glowRadius", "settings.circularSpectrum.glowThreshold",
         "settings.linearSpectrum.orientation", "settings.linearSpectrum.spacing",
+        "settings.visual.colorBlindSafePalette",   // ACC-003-R13 (integrated alongside FILE-005)
         "settings.oscilloscope.line", "settings.oscilloscope.window",
         "settings.spectrum.attack", "settings.spectrum.release",
         "settings.camera.position", "settings.camera.mirrorFront", "settings.camera.mirrorBack",
