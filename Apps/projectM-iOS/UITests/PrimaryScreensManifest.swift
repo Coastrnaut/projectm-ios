@@ -146,7 +146,9 @@ enum PrimaryScreens {
                       route: .settingsLink("showEditorLink", title: "Show"), controls: [
             RequiredControl("showAddCurrentScene", .button),
             RequiredControl("showSceneFoldersLink", .button),
-            RequiredControl("showCue1", .any),
+            // Below Add Current Scene, SCN-011's Add from Template…, the folders link and the long footer: more than a
+            // screen at AX5, and not built until the first drag reaches it (post-merge, 2026-11-14).
+            RequiredControl("showCue1", .any, scrolls: 2),
             RequiredControl("showCue2", .any),
         ]),
         PrimaryScreen(name: "midiMappings", feature: "MIDI-003", auditKey: "midiMappings", launch: section("midi"),
