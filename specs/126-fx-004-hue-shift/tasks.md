@@ -43,15 +43,17 @@ finish. Logs go to `.autonomous/logs-fx-004/`.
   `Packages/Compositor/Sources/ColorGradeParameters/ColorGradeCatalog.swift` and `grade(from:)`; update
   `Packages/Compositor/Tests/ColorGradeParametersTests/ColorGradeCatalogTests.swift` (six descriptors).
 - [ ] FX-004-T07 [US1] App setting: `hue` and `settings.colorGrade.hue` in
-  `Apps/projectM-iOS/Coordinators/ColorGradeSetting.swift` (in `allKeys`, so the UI-test reset and FILE-011's
-  erase include it; reset; readout `hueText` "+30°" / "0°" / "−120°"); the key in
-  `Packages/LibraryBackup/Sources/LibraryBackup/LibrarySettings.swift` (FILE-005 included keys) and
+  `Apps/projectM-iOS/Coordinators/ColorGradeSetting.swift` (in `allKeys`, so the UI-test reset includes it;
+  reset; readout `hueText` "+30°" / "0°" / "−120°"); the key in
+  `Packages/LibraryBackup/Sources/LibraryBackup/LibrarySettings.swift` (FILE-005 included keys; FILE-011's
+  "Settings" erase category is derived from them in `LibraryErasePolicy.settingsCategoryKeys`) and
   `scripts/run_device_tests.py` (privacy allow-list).
 - [ ] FX-004-T08 [US1] Settings → Color: a "Hue" row (`colorHueSlider`, VoiceOver step 10°, spoken via a new
   `SpokenUnit.signedDegrees` "plus 30 degrees") in `Apps/projectM-iOS/Views/ColorGradeSection.swift` and
   `Apps/projectM-iOS/Views/AccessibleParameter.swift`; footer unchanged.
 - [ ] FX-004-T09 [US1] App tests: hue persistence, read rule, reset and readouts in
-  `Apps/projectM-iOS/Tests/ColorGradeSettingTests.swift`; spoken value in the same file; the Hue slider's presence
+  `Apps/projectM-iOS/Tests/ColorGradeSettingTests.swift`; spoken value and ACC-012's `effective(_:clamp:)`
+  leaving the hue unchanged under Strict (FX-004-R6) in the same file; the Hue slider's presence
   in `Apps/projectM-iOS/UITests/ColorGradeUITests.swift`; backup/erase key tests still pass.
 
 ## Phase 4: User Story 2 - Zero is exactly "off" (P1)
