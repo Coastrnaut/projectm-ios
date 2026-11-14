@@ -81,6 +81,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID", "settings.performanceOverlay", "set
                 "settings.photo.id", "settings.video.id", "settings.text.overlay",   # MED-001, MED-008, MED-009
                 "settings.video.loop",   # MED-003 (the stored video's loop region)
                 "guide.firstScene",   # UIX-001
+                "permission.explained.camera", "permission.explained.localNetwork",   # UIX-015 (a yes each)
                 "session.recovery.open", "session.recovery.sessionsSinceReopen",
                 "session.recovery.heldVisual"}   # PERF-010
 # Every key the app stores must be listed above; test_scripts.py checks this against the app's

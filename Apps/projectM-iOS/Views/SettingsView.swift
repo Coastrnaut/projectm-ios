@@ -57,6 +57,10 @@ struct SettingsView: View {
     var latencyOffset: LatencyOffsetSetting?
     /// MIDI-001: MIDI endpoint discovery (nil hides its section, e.g. in previews).
     var midi: MIDIDiscoveryCoordinator?
+    /// UIX-015: the explainer before the camera and local network prompts (nil: none, e.g. in previews).
+    var explainers: PermissionExplainerCoordinator?
+    /// UIX-015-R1: the camera's permission status when Camera is picked.
+    var cameraStatus: @MainActor () -> PermissionState? = { () -> PermissionState? in nil }
     @Environment(\.dismiss) private var dismiss
     @State private var pickedPhoto: PhotosPickerItem?
     @State private var showPhotoFileImporter = false
@@ -170,7 +174,7 @@ struct SettingsView: View {
                 Section("Visual") {
                     ForEach(VisualChoice.allCases, id: \.self) { choice in
                         Button {
-                            settings.visual = choice
+                            choose(choice)   // UIX-015-R1: Camera may explain first
                         } label: {
                             HStack {
                                 Text(choice.title).foregroundStyle(Color.primary)   // ACC-004: label colour; `.primary` in a button resolves to the tint (blue failed the contrast audit)
@@ -361,6 +365,31 @@ struct SettingsView: View {
             }
         }
         .accessibilityIdentifier("settings")
+        .permissionExplainerSheet(explainers)   // UIX-015: over Settings, right before iOS's prompt
+    }
+
+    // MARK: UIX-015 explainer gates
+
+    /// A visual row's tap: Camera goes through the explainer while iOS has never asked (UIX-015-R1).
+    private func choose(_ choice: VisualChoice) {
+        guard choice.usesCamera, settings.visual != choice, let explainers else {
+            settings.visual = choice
+            return
+        }
+        let status: PermissionState? = cameraStatus()
+        let settings: AppSettings = self.settings
+        explainers.request(.camera, status: status) { () -> Void in settings.visual = choice }
+    }
+
+    /// The OSC toggle: turning it on goes through the explainer first (UIX-015-R2); off is immediate.
+    private func setOSCEnabled(_ on: Bool) {
+        guard on, let explainers else {
+            osc.setEnabled(on)
+            return
+        }
+        let osc: OSCReceiverCoordinator = self.osc
+        let status: PermissionState = PermissionStatusSource.localNetwork(state: osc.state)
+        explainers.request(.localNetwork, status: status) { () -> Void in osc.setEnabled(true) }
     }
 
     // MARK: Photo (MED-001-R2, R7, R11, R15)
@@ -520,7 +549,7 @@ struct SettingsView: View {
 
     private var oscSection: some View {
         Section {
-            Toggle("OSC receiver", isOn: Binding(get: { osc.isEnabled }, set: { osc.setEnabled($0) }))
+            Toggle("OSC receiver", isOn: Binding(get: { osc.isEnabled }, set: { setOSCEnabled($0) }))
                 .accessibilityIdentifier("oscReceiverToggle")
             HStack {
                 Text("Port")

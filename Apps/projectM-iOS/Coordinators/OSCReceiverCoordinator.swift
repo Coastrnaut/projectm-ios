@@ -38,6 +38,9 @@ final class OSCReceiverCoordinator {
     @ObservationIgnored private let refreshClock = OSCMonotonicClock.continuous()
     /// Main-actor refreshes so far (tests: a flood must not add one per message).
     @ObservationIgnored private(set) var refreshCount = 0
+    /// UIX-015-R2: called when the listener shows that iOS has answered the local network prompt
+    /// (listening or denied).
+    @ObservationIgnored var onLocalNetworkDecided: (() -> Void)?
 
     init(settings: AppSettings, receiver: OSCReceiver = .system(), appIsActive: Bool = true) {
         self.settings = settings
@@ -103,6 +106,7 @@ final class OSCReceiverCoordinator {
         testValue = receiver.testValue
         let counters = receiver.counters
         rateLimitedCount = counters.rateLimited + counters.coalesced
+        if PermissionCatalog.state(localNetwork: state) != nil { onLocalNetworkDecided?() }
     }
 
     // MARK: Listener badge (OSC-007; specs/038-osc-007-osc-network-access-switch, contract)
