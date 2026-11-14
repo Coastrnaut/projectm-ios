@@ -26,11 +26,11 @@ evidence was produced, with " — Verified <date>: <how>" appended. Logs go to `
 
 **Independent test**: `LoudnessEnvelopeTests` acceptance cases.
 
-- [ ] ANL-014-T04 [US1] Add to `LoudnessEnvelopeTests.swift`: (a) calibration: one window of a full-scale 997 Hz sine reads −3.01 ± 0.2 dB (`decibels`); (b) step: a 1 kHz tone at −40 dBFS for 0.5 s, −10 dBFS for 0.75 s, −40 dBFS for 0.75 s, streamed through `SpectrumStream` (2,048 points, hop 512) into one envelope; measure on the sample clock (frame end = index + size) the 90 % rise and fall times from each step to the first frame at or past 90 % of the settled change; assert each equals the documented value (spec Implementation results) within one hop (512 samples) and print both; the envelope stays in 0…1; (c) weighting: equal-amplitude (−20 dBFS) 100 Hz and 2 kHz read 2 kHz higher, and 20 Hz lower than 1 kHz; (d) monotonic: a 1 kHz tone at −50, −40, −30, −20, −10 dBFS gives strictly increasing settled envelopes (print the table). Evidence: passes on both shapes; tables in spec.md.
+- [ ] ANL-014-T04 [US1] Add to `LoudnessEnvelopeTests.swift`: (a) calibration: one window of a full-scale 997 Hz sine reads −3.01 ± 0.2 dB (`decibels`); (b) step: a 1 kHz tone at −40 dBFS for 0.5 s, −10 dBFS for 0.75 s, −40 dBFS for 0.75 s, streamed through `SpectrumStream` (2,048 points, hop 512) into one envelope; measure on the sample clock (frame end = index + size) the 90 % rise and fall times from each step to the first frame at or past 90 % of the settled change; first run it printing both times and record them in spec.md as the documented lag ("Documented lag" under Implementation results, with the smoother-only part τ and the window part), then assert each equals that recorded constant within one hop (512 samples) and also lies between the smoother's own 90 % time and that time plus one window (2,048 samples), so the constant is tied to the model, not only to the run; the envelope stays in 0…1; (c) weighting: equal-amplitude (−20 dBFS) 100 Hz and 2 kHz read 2 kHz higher, and 20 Hz lower than 1 kHz; (d) monotonic: a 1 kHz tone at −50, −40, −30, −20, −10 dBFS gives strictly increasing settled envelopes (print the table). Evidence: passes on both shapes; tables in spec.md.
 
 ## Phase 4: User Story 2 - the value never breaks (P1)
 
-- [ ] ANL-014-T05 [US2] Add to `LoudnessEnvelopeTests.swift`: seeded full-scale white noise (±1), a ±1 square wave clipped at ±1 (1 kHz), magnitudes containing NaN and ±Inf, and digital silence from the start each keep `decibels` finite (≥ −120) and `envelope` in 0…1 over many frames; silence after the −10 dBFS tone decays to exactly 0 within 1.0 s and stays 0; `reset()` returns `.silent` and the next frame snaps; a frame at another rate, another size, or with a wrong magnitude count leaves the reading unchanged. Evidence: passes on both shapes.
+- [ ] ANL-014-T05 [US2] Add to `LoudnessEnvelopeTests.swift`: seeded full-scale white noise (±1), a ±1 square wave clipped at ±1 (1 kHz), magnitudes containing NaN and ±Inf, and digital silence from the start each keep `decibels` finite (≥ −120) and `envelope` in 0…1 over many frames; silence after the −10 dBFS tone decays to exactly 0 within 1.5 s (from ≈ 0.78 to below 0.001 is ≈ 2.9 decades of a 0.4 s-per-decade release, ≈ 1.16 s, plus the window) and stays 0; `reset()` returns `.silent` and the next frame snaps; a frame at another rate, another size, or with a wrong magnitude count leaves the reading unchanged. Evidence: passes on both shapes.
 
 ## Phase 5: User Story 3 - Loudness modulation source (P2)
 
@@ -42,7 +42,7 @@ evidence was produced, with " — Verified <date>: <how>" appended. Logs go to `
 
 ## Phase 6: Polish
 
-- [ ] ANL-014-T11 Build and test the remaining dependants (PerformanceControl, Compositor, RenderGoldens, ShowControl); record the step, weighting and level tables and the test cost in `spec.md`; run the five scripts (check_compliance covers ANL-014-R12); count PosterBoard reports; delete the row's simulator; mark the spec Implemented.
+- [ ] ANL-014-T11 Build and test the remaining dependants (PerformanceControl, Compositor, RenderGoldens, ShowControl); record the step, weighting and level tables and the test cost in `spec.md`; run the five scripts (check_compliance covers ANL-014-R12); confirm with `git diff --stat main -- Packages/AudioCore` that the level meter and classifier are untouched (R12); count PosterBoard reports; delete the row's simulator; mark the spec Implemented.
 
 ## Dependencies
 
@@ -58,3 +58,18 @@ packages and can be written together.
 
 MVP = T01-T04 (the roadmap acceptance in the package); then bounds and silence (T05), the bus (T06,
 T07), the modulation source (T08-T10); polish last.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+| ID | Category | Severity | Location | Summary | Fix applied |
+|----|----------|----------|----------|---------|-------------|
+| F1 | Inconsistency | HIGH | spec R4, tasks T04 | T04 asserted "the documented value" before any value was documented: circular | T04 records the measured lag in spec.md first, then asserts that constant within one hop and also against the model bound (smoother's 90 % time ≤ lag ≤ that + one window) |
+| F2 | Inconsistency | MEDIUM | spec Clarifications (release 0.4 s, snap 0.001), tasks T05 | "decays to exactly 0 within 1.0 s" contradicted the release time: ≈ 2.9 decades × 0.4 s ≈ 1.16 s plus the window | T05 allows 1.5 s with the arithmetic stated |
+| C1 | Coverage | LOW | spec R12 | "the existing level meter is unchanged" had no check | T11 checks `git diff --stat` on Packages/AudioCore |
+| C2 | Coverage | LOW | spec R10, R11 | Real-time and clock rules are not unit-testable | Already covered: T03 evidence reads the diff |
+
+Coverage: R1-R12 and S1-S6 each map to at least one task (R1 → T02-T04, R2 → T02, R3-R4 → T04,
+R5 → T05, R6 → T04, R7 → T06-T07, R8 → T08-T09, R9 → T10, R10-R11 → T03, R12 → T11;
+S1 → T04, S2 → T05, S3 → T04, S4 → T06, S5 → T08-T10, S6 → T07, T11). Constitution: no
+conflicts (I, VI, VII, VIII, X pass in plan.md). No critical issues; 0 ambiguities or
+duplications left.
