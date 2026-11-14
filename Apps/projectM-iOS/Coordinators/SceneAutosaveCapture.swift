@@ -35,6 +35,11 @@ struct SceneInputs: Equatable, Sendable {
     var videoID: UUID?
     /// MED-003-R8: the stored video's loop region (nil: the whole file).
     var videoLoop: SceneVideoLoop? = nil
+    /// CMP-015-R5 (research CMP-015-D2): the saved composite of each drawn layer kind (`photo`, `video`,
+    /// `text`, `spectrum.circular`), edited in the layer inspector. nil keeps a matched layer's carried
+    /// composite (callers that do not track composites); non-nil is authoritative, a missing kind
+    /// writing the default composite. Default composites are never stored.
+    var layerComposites: [String: SceneComposite]? = nil
 }
 
 /// What a restore hands back to the app (contract A5).
@@ -46,6 +51,8 @@ struct SceneRestoredValues: Sendable, Equatable {
     /// MED-003-R8: the first video layer's stored-video ID and loop (nil: none).
     var videoStoreID: String? = nil
     var videoLoop: SceneVideoLoop? = nil
+    /// CMP-015: the document's drawn-layer composites (first layer of each kind; defaults left out).
+    var layerComposites: [String: SceneComposite] = [:]
 }
 
 /// The restored document's content the app does not own (research SCN-002-D6).
@@ -148,14 +155,18 @@ enum SceneAutosaveCapture {
         var largest = carry.layers.map(\.instance).max() ?? 0
         var layers: [SceneLayer] = []
         for content in contents {
+            var layer: SceneLayer
             if let i = unmatched.firstIndex(where: { (l: SceneLayer) -> Bool in l.kind == content.kind }) {
-                var layer = unmatched.remove(at: i)
+                layer = unmatched.remove(at: i)
                 layer.content = content
-                layers.append(layer)
             } else {
                 largest += 1
-                layers.append(SceneLayer(instance: largest, content: content))
+                layer = SceneLayer(instance: largest, content: content)
             }
+            if let composites = inputs.layerComposites {   // CMP-015-R5: the inspector's composite is authoritative
+                layer.composite = composites[content.kind] ?? SceneComposite()
+            }
+            layers.append(layer)
         }
 
         // Carried layers (kinds the app does not build) at their index; renumber on collision; cap at 8.
@@ -232,7 +243,21 @@ enum SceneAutosaveCapture {
         }
         let video = SceneVideoLoopBridge.video(in: document)   // MED-003-R8
         return SceneRestoredValues(parameters: parameters, text: text, bindings: live.bindings,
-                                   videoStoreID: video?.storeID, videoLoop: video?.loop)
+                                   videoStoreID: video?.storeID, videoLoop: video?.loop,
+                                   layerComposites: layerComposites(in: document))
+    }
+
+    /// CMP-015: the composite of the first layer of each kind the app draws in a compositor, defaults
+    /// left out (so a reset removes the key and equal scenes give equal inputs).
+    static func layerComposites(in document: SceneDocument) -> [String: SceneComposite] {
+        var composites: [String: SceneComposite] = [:]
+        var seen: Set<String> = []
+        let defaultComposite = SceneComposite()
+        for layer in document.layers where LayerInspectorScene.composedKinds.contains(layer.kind) {
+            guard seen.insert(layer.kind).inserted else { continue }
+            if layer.composite != defaultComposite { composites[layer.kind] = layer.composite }
+        }
+        return composites
     }
 
     /// Applies restored parameter values to the settings (each setter keeps its own range rules).

@@ -13,6 +13,7 @@
 // * Undo/redo hand the state to `apply` (AppCoordinator: the Settings/cue path). The change is then
 //   observed like any other: its bytes equal the history's current state, so nothing is recorded, and
 //   SCN-002 commits it under its own rules. The history is in memory only.
+import Compositor
 import Foundation
 import Observation
 import SceneFormat
@@ -134,6 +135,9 @@ enum SceneHistoryEdit {
         if old.glowRadius != new.glowRadius { changes.append(("Glow Radius \(percent(new.glowRadius, decimals: 1))", "glow.radius")) }
         if old.glowThreshold != new.glowThreshold { changes.append(("Glow Threshold \(percent(new.glowThreshold))", "glow.threshold")) }
         if old.text != new.text { changes.append(text(from: old.text, to: new.text)) }
+        if old.layerComposites != new.layerComposites {   // CMP-015-R6
+            changes.append(LayerHistoryEdit.describe(from: old.layerComposites ?? [:], to: new.layerComposites ?? [:]))
+        }
         return changes.count == 1 ? changes[0] : ("Scene", nil)
     }
 
@@ -154,5 +158,55 @@ enum SceneHistoryEdit {
     /// "50%", or "2.0%" with one decimal (as Settings shows it).
     static func percent(_ value: Double, decimals: Int = 0) -> String {
         String(format: "%.\(decimals)f%%", value * 100)
+    }
+}
+
+/// CMP-015 (research CMP-015-D4): a layer edit's name and coalescing key. One parameter of one layer: its
+/// own name ("Photo Opacity 40%") and, for a slider, the key `layer.<kind>.<parameter>`; anything else
+/// ("Reset Photo", several layers) is its own step.
+@MainActor
+enum LayerHistoryEdit {
+    static func describe(from old: [String: SceneComposite], to new: [String: SceneComposite]) -> (label: String, key: String?) {
+        let kinds: Set<String> = Set(old.keys).union(new.keys)
+        let changed: [String] = kinds.filter { (k: String) -> Bool in old[k] != new[k] }.sorted()
+        guard changed.count == 1, let kind = changed.first else { return ("Layers", nil) }
+        let before: SceneComposite = old[kind] ?? SceneComposite()
+        let after: SceneComposite = new[kind] ?? SceneComposite()
+        let title: String = layerTitle(kind)
+        let parameters: [LayerInspectorParameter] = changedParameters(from: before, to: after)
+        guard parameters.count == 1, let parameter = parameters.first else {
+            return (after == SceneComposite() ? "Reset \(title)" : "\(title) Layer", nil)
+        }
+        let label: String = "\(title) \(parameter.title) \(LayerCompositeEdit.text(parameter, of: after))"
+        let key: String? = LayerInspectorParameter.sliders.contains(parameter) ? "layer.\(kind).\(parameter.rawValue)" : nil
+        return (label, key)
+    }
+
+    static func layerTitle(_ kind: String) -> String {
+        switch kind {
+        case "photo": "Photo"
+        case "video": "Video"
+        case "text": "Text"
+        case "spectrum.circular": "Circular Spectrum"
+        default: kind
+        }
+    }
+
+    static func changedParameters(from old: SceneComposite, to new: SceneComposite) -> [LayerInspectorParameter] {
+        var result: [LayerInspectorParameter] = []
+        for parameter in LayerInspectorParameter.sliders
+        where LayerCompositeEdit.value(parameter, of: old) != LayerCompositeEdit.value(parameter, of: new) {
+            result.append(parameter)
+        }
+        if old.blendMode != new.blendMode { result.append(.blendMode) }
+        let anchorMoved: Bool = result.contains(.fitAnchorX) || result.contains(.fitAnchorY)
+        let fitAppeared: Bool = old.fit == nil && new.fit?.mode == LayerFitMode.fill.rawValue
+        if old.fit?.mode != new.fit?.mode && !(anchorMoved && fitAppeared) { result.append(.fitMode) }   // an anchor drag sets the default fit
+        if old.mask?.shape != new.mask?.shape { result.append(.maskShape) }
+        let wasInverted: Bool = LayerCompositeEdit.knownMask(old)?.inverted ?? false
+        let isInverted: Bool = LayerCompositeEdit.knownMask(new)?.inverted ?? false
+        if wasInverted != isInverted { result.append(.maskInverted) }
+        if result.isEmpty && old != new { result.append(.maskShape) }   // e.g. an unknown mask replaced
+        return result
     }
 }

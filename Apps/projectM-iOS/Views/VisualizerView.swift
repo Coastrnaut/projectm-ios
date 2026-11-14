@@ -347,6 +347,7 @@ struct VisualizerView: View {
                          cacheFilesInUse: { () -> Set<String> in coordinator.cacheFilesInUse() },
                          openGuide: { coordinator.openGuidedFirstScene() },
                          history: coordinator.sceneHistory,      // UIX-001, SCN-010
+                         layerInspector: coordinator,            // CMP-015
                          inputTrim: coordinator.inputTrim,       // AUD-008
                          channelSelection: coordinator.channelSelection,   // AUD-009
                          noiseGate: coordinator.noiseGate,   // AUD-011
