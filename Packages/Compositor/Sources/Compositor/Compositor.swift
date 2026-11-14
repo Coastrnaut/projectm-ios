@@ -55,6 +55,10 @@
 // `cmp_blend` full screen into a second composite (pooled, created the first time a mode layer is drawn
 // at a size), reading the composite so far as its backdrop; the two composites then swap and the "over"
 // pass re-opens on the new one with load action load. A mode change at apply shows from the next frame.
+// CMP-007 (contracts/shape-masks.md in specs/104): a layer with a mask is drawn with its coverage (a signed
+// distance at the layer pixel, exactly 0 beyond the band) multiplied in: normal layers by `cmp_over_masked`
+// in the open "over" pass (no extra pass), other modes by `cmp_blend` with the mask block. Unmasked layers
+// keep their pipelines. The block is cached per record and size; a mask change at apply shows next frame.
 // REC-003 (contracts/video-recording.md in specs/058): `encodeOutput(into:commandBuffer:)` encodes the
 // output pass of the frame just composited once more into another target (a video recorder's pixel
 // buffer texture), cropped to that target from the top left. Nothing changes for frames shown.
@@ -100,6 +104,10 @@ public final class Compositor {
         var transform: LayerTransform
         /// CMP-004: the blend mode shown from the next frame.
         var blendMode: LayerBlendMode
+        /// CMP-007: the mask shown from the next frame, and its shader block for `maskBlockSize`.
+        var mask: LayerMask?
+        var maskBlock: CompositorShaders.MaskBlock?
+        var maskBlockSize: LayerPictureDescriptor?
         /// PERF-014: the layer's back-off, and the render error shown while it holds.
         var retry = RenderRetryState()
         var heldError: LayerSourceError?
@@ -111,6 +119,7 @@ public final class Compositor {
             opacity = LayerOpacityAnimator(opacity: settings.opacity)
             transform = settings.transform
             blendMode = settings.blendMode
+            mask = settings.mask
             // CMP-006: a stack entry's fit always reaches the layer (the stack is the source of
             // truth); a layer given to `init(device:layers:)` keeps its own fit unless its settings set one.
             if let fitting = layer as? any LayerFitting, id != nil || settings.fit != nil { fitting.fit = settings.fit }
@@ -129,6 +138,7 @@ public final class Compositor {
     private let overPipeline: MTLRenderPipelineState
     private let transformedPipeline: MTLRenderPipelineState
     private let blendPipeline: MTLRenderPipelineState
+    private let maskedPipeline: MTLRenderPipelineState
     private var outputPipelines: [(format: MTLPixelFormat, state: MTLRenderPipelineState)] = []
     private let flashGuard: CompositeFlashGuard
     /// PERF-004: where pictures come from and go back to.
@@ -144,6 +154,8 @@ public final class Compositor {
     public private(set) var transformedDraws = 0
     /// Draws through the blend-mode path in the last frame (CMP-004; tests, diagnostics).
     public private(set) var blendDraws = 0
+    /// Normal-mode draws through the masked "over" path in the last frame (CMP-007; tests, diagnostics).
+    public private(set) var maskedDraws = 0
     /// The stack last applied (nil before the first `apply`, and for `init(device:layers:)`).
     public private(set) var appliedStack: LayerStack?
     /// REC-001: the handler waiting for the next frame.
@@ -203,6 +215,10 @@ public final class Compositor {
                                                        fragment: try CompositorShaders.function(library, "cmp_blend"),
                                                        format: LayerPictureDescriptor.metalPixelFormat, blendOver: false,
                                                        label: "CMP-004 blend")
+        maskedPipeline = try CompositorShaders.pipeline(device: device, vertex: fullScreen,
+                                                        fragment: try CompositorShaders.function(library, "cmp_over_masked"),
+                                                        format: LayerPictureDescriptor.metalPixelFormat, blendOver: true,
+                                                        label: "CMP-007 masked over")
         flashGuard = try CompositeFlashGuard(device: device)
     }
 
@@ -226,6 +242,9 @@ public final class Compositor {
 
     /// The transform layer `index` is drawn with (CMP-005; tests, diagnostics).
     public func shownTransform(ofLayer index: Int) -> LayerTransform { records[index].transform }
+
+    /// The mask layer `index` is drawn with (CMP-007; tests, diagnostics).
+    public func shownMask(ofLayer index: Int) -> LayerMask? { records[index].mask }
 
     /// The stack ID of layer `index` (nil for a layer given to `init(device:layers:)`).
     public func layerID(at index: Int) -> LayerInstanceID? { records[index].id }
@@ -258,6 +277,10 @@ public final class Compositor {
                 }
                 kept.transform = entry.settings.transform
                 kept.blendMode = entry.settings.blendMode
+                if kept.mask != entry.settings.mask {   // CMP-007: rebuilt on the next draw
+                    kept.mask = entry.settings.mask
+                    kept.maskBlock = nil
+                }
                 if let fitting = kept.layer as? any LayerFitting { fitting.fit = entry.settings.fit }   // CMP-006
                 next.append(kept)
                 continue
@@ -382,10 +405,11 @@ public final class Compositor {
         pass.colorAttachments[0].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
         guard var over = commandBuffer.makeRenderCommandEncoder(descriptor: pass) else { return false }
         over.label = "CMP-001 composite"
-        var plain = true
+        var pipe = OverPipe.plain
         over.setRenderPipelineState(overPipeline)
         transformedDraws = 0
         blendDraws = 0
+        maskedDraws = 0
         for i in records.indices where records[i].shown >= 0 && records[i].opacity.value > 0 {
             let transform = records[i].transform
             if records[i].blendMode != .normal {
@@ -405,17 +429,28 @@ public final class Compositor {
                 next.label = "CMP-001 composite"
                 next.setRenderPipelineState(overPipeline)
                 over = next
-                plain = true
+                pipe = .plain
                 continue
             }
             over.setFragmentTexture(records[i].pictures[records[i].shown], index: 0)
-            if transform.isIdentity {
-                if !plain { over.setRenderPipelineState(overPipeline); plain = true }
+            if var block = maskBlock(i, size: size) {   // CMP-007: same pass, coverage multiplied in
+                var draw = TransformedDraw(row0: .zero, row1: .zero, params: SIMD4<Float>(Float(records[i].opacity.value), 0, 0, 0))
+                if !transform.isIdentity {
+                    guard let placed = Self.transformedDraw(transform, size: size, opacity: records[i].opacity.value) else { continue }
+                    draw = placed
+                    draw.params.y = 1
+                }
+                if pipe != .masked { over.setRenderPipelineState(maskedPipeline); pipe = .masked }
+                over.setFragmentBytes(&draw, length: MemoryLayout<TransformedDraw>.stride, index: 0)
+                over.setFragmentBytes(&block, length: MemoryLayout<CompositorShaders.MaskBlock>.stride, index: 1)
+                maskedDraws += 1
+            } else if transform.isIdentity {
+                if pipe != .plain { over.setRenderPipelineState(overPipeline); pipe = .plain }
                 var opacity = Float(records[i].opacity.value)
                 over.setFragmentBytes(&opacity, length: MemoryLayout<Float>.size, index: 0)
             } else {
                 guard var draw = Self.transformedDraw(transform, size: size, opacity: records[i].opacity.value) else { continue }
-                if plain { over.setRenderPipelineState(transformedPipeline); plain = false }
+                if pipe != .transformed { over.setRenderPipelineState(transformedPipeline); pipe = .transformed }
                 over.setFragmentBytes(&draw, length: MemoryLayout<TransformedDraw>.stride, index: 0)
                 transformedDraws += 1
             }
@@ -486,10 +521,28 @@ public final class Compositor {
         encoder.setFragmentTexture(records[i].pictures[records[i].shown], index: 0)
         encoder.setFragmentTexture(backdrop, index: 1)
         encoder.setFragmentBytes(&draw, length: MemoryLayout<TransformedDraw>.stride, index: 0)
+        var block = maskBlock(i, size: size) ?? CompositorShaders.MaskBlock.none   // CMP-007
+        encoder.setFragmentBytes(&block, length: MemoryLayout<CompositorShaders.MaskBlock>.stride, index: 1)
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
         encoder.endEncoding()
         blendDraws += 1
         return true
+    }
+
+    // MARK: - Masks (CMP-007)
+
+    /// Which pipeline the open "over" pass has set.
+    private enum OverPipe { case plain, transformed, masked }
+
+    /// Layer `i`'s mask block for `size` (nil: unmasked); built from `LayerMaskGeometry` only when the
+    /// mask or the size changed, so a steady frame creates nothing.
+    private func maskBlock(_ i: Int, size: LayerPictureDescriptor) -> CompositorShaders.MaskBlock? {
+        guard let mask = records[i].mask else { return nil }
+        if let block = records[i].maskBlock, records[i].maskBlockSize == size { return block }
+        let block = CompositorShaders.MaskBlock(mask.geometry(width: size.width, height: size.height))
+        records[i].maskBlock = block
+        records[i].maskBlockSize = size
+        return block
     }
 
     // MARK: - Render health (PERF-014)

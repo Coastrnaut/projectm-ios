@@ -118,6 +118,10 @@ extension SceneDocument {
                 issues.append(SceneIssue(.unsupportedFitMode, path: path + ".composite.fit.mode",
                                          "Layer \(i) uses the fit mode \"\(fit.mode)\", which this version draws as the layer's default."))
             }
+            if let mask = layer.composite.mask, mask.layerMask == nil {   // CMP-007: three shapes are drawn
+                issues.append(SceneIssue(.unsupportedMaskShape, path: path + ".composite.mask.shape",
+                                         "Layer \(i) uses the mask shape \"\(mask.shape)\", which this version draws unmasked."))
+            }
             if case let .material(id) = layer.content, ProceduralMaterialCatalog.material(withID: id) == nil {
                 issues.append(SceneIssue(.unknownMaterial, path: path + ".content.material",
                                          "Layer \(i) uses the unknown material \"\(id)\"."))

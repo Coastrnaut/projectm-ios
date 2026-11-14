@@ -7,14 +7,13 @@
  "by_priority": {
   "P0": {
    "audited": 3,
-   "implementing": 1,
-   "integrated": 82,
+   "integrated": 83,
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 120,
-   "implementing": 1,
-   "integrated": 30
+   "audited": 117,
+   "implementing": 3,
+   "integrated": 31
   },
   "P2": {
    "audited": 77,
@@ -25,9 +24,9 @@
   }
  },
  "by_state": {
-  "audited": 209,
-  "implementing": 2,
-  "integrated": 114,
+  "audited": 206,
+  "implementing": 3,
+  "integrated": 116,
   "skipped_existing": 1
  },
  "device_gate": {
@@ -58,7 +57,6 @@
    "CAM-009",
    "CAM-010",
    "CAM-011",
-   "CMP-007",
    "CMP-008",
    "CMP-009",
    "CMP-010",
@@ -216,7 +214,6 @@
    "SHOW-012",
    "SHOW-013",
    "SHOW-015",
-   "UIX-002",
    "UIX-003",
    "UIX-004",
    "UIX-005",
@@ -250,7 +247,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "211 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)"
+   "209 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)"
   ]
  },
  "features": {
@@ -1027,12 +1024,12 @@
   "CMP-007": {
    "attempts": 0,
    "branch": "feature/cmp-007",
-   "branch_sha": null,
+   "branch_sha": "389bfc89e1bd63b7e4d9c17022d22daca76e770b",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "20b9cc8a",
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "integrated"
   },
   "CMP-008": {
    "attempts": 0,
@@ -1136,13 +1133,13 @@
   },
   "FILE-003": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/file-003",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "FILE-004": {
    "attempts": 0,
@@ -1466,13 +1463,13 @@
   },
   "MED-003": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/med-003",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "MED-004": {
    "attempts": 0,
@@ -1586,13 +1583,13 @@
   },
   "MIDI-001": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/midi-001",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "MIDI-002": {
    "attempts": 0,
@@ -3177,12 +3174,12 @@
   "UIX-002": {
    "attempts": 0,
    "branch": "feature/uix-002",
-   "branch_sha": null,
+   "branch_sha": "fcf53a475301d226a513db527ace774048e27e1a",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "20b9cc8a",
    "priority": "P0",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "integrated"
   },
   "UIX-003": {
    "attempts": 0,
@@ -3792,6 +3789,11 @@
    "sha": "53ddd8c4"
   },
   {
+   "branch": "feature/cmp-007",
+   "id": "CMP-007",
+   "sha": "20b9cc8a"
+  },
+  {
    "branch": "feature/file-001",
    "id": "FILE-001",
    "sha": "c3886d1cb0bb2fc8bfeec909a094332bdfb8ff71"
@@ -4072,6 +4074,11 @@
    "sha": "f8f54e2ac93878ef06a7d92ffee436d68631c10e"
   },
   {
+   "branch": "feature/uix-002",
+   "id": "UIX-002",
+   "sha": "20b9cc8a"
+  },
+  {
    "branch": "feature/vis-001",
    "id": "VIS-001",
    "sha": "48285d49c422576ac32986029ee731b214fcde63"
@@ -4112,5 +4119,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T05:59:05Z"
+ "updated": "2026-11-14T06:14:00Z"
 }

@@ -69,6 +69,12 @@ rules). The format must add none of its own definitions of validity.
   `composite.fit` (`mode`, `anchor`), written only when set, so existing scenes encode
   byte-identically; unknown mode names are kept and warned (`unsupportedFitMode`); format version
   unchanged (no QA-004 matrix row). An older version drops `fit` with `droppedField`.
+- CMP-007 (shape masks, 2026-11-14, specs/104-cmp-007-shape-masks) adds the optional
+  `composite.mask` (shape, its parameters, feather, inverted and the mask's own transform), written
+  only when set, so existing scenes encode byte-identically; unknown shapes are kept verbatim and
+  warned (`unsupportedMaskShape`); unusable polygons drop the mask with `droppedField`; format
+  version unchanged (no QA-004 matrix row). An older version drops `mask` with `droppedField` and
+  shows the layer unmasked.
 - Procedural material values are registry parameters shared by layers of the same material until a
   later row adds per-instance values.
 

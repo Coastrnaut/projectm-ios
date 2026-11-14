@@ -55,7 +55,13 @@ give `unsupportedBlendMode` and are kept. `fit` (CMP-006, optional, written only
 `{"mode": <string>, "anchor": {"x", "y"}}`; `mode` required inside it, `fill`, `fit`, `stretch` and
 `pixelAccurate` are drawn by photo and video layers, others give `unsupportedFitMode` and are kept
 (through load → capture too); `anchor` optional (centre), components clamped to 0…1 with
-`valueClamped`; absent means the layer's default (fill, centre). `values`: the layer's own
+`valueClamped`; absent means the layer's default (fill, centre). `mask` (CMP-007, optional, written
+only when set, every field written): `{"shape": <string>, "cornerRadius" (rectangle), "points": [{"x",
+"y"}…] (polygon, 3…32), "feather", "inverted", "transform": {"center", "scale", "rotation"}}`; `shape`
+required; `ellipse`, `rectangle` and `polygon` are drawn, any other shape keeps the whole object
+verbatim (through load → capture too), gives `unsupportedMaskShape` and the layer is drawn unmasked;
+numbers out of range are clamped with `valueClamped`; a polygon with < 3 or > 32 points or zero area
+drops the mask with `droppedField` (specs/104-cmp-007-shape-masks/contracts/shape-masks.md). `values`: the layer's own
 numbers (`LayerDescriptor.parameters`), names 1…64 UTF-8 bytes without control characters.
 
 ### Parameter value (MOD-001 tagged form)
@@ -144,6 +150,7 @@ order (layers, assets, parameters, bindings, modulation). Errors block `liveStat
 | `unknownLayerKind` | warning | `Layer <i> has the unknown kind "<kind>"; it is kept but not shown.` |
 | `unsupportedBlendMode` | warning | `Layer <i> uses the blend mode "<mode>", which this version draws as normal.` |
 | `unsupportedFitMode` | warning | `Layer <i> uses the fit mode "<mode>", which this version draws as the layer's default.` (CMP-006) |
+| `unsupportedMaskShape` | warning | `Layer <i> uses the mask shape "<shape>", which this version draws unmasked.` (CMP-007) |
 | `valueClamped` | warning | `<path>: <value> is outside <range>; read as <clamped>.` |
 | `droppedField` | warning | `<path> has the unknown field "<key>"; it was dropped.` |
 | `unknownMaterial` | error | `Layer <i> uses the unknown material "<id>".` |

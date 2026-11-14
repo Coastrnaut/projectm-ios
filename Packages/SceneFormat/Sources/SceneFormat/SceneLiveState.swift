@@ -17,6 +17,10 @@
 // CMP-006: `composite.fit` with one of the four mode names maps to `LayerCompositeSettings.fit`; an
 // unknown name maps to nil (the layer's default) and the saved fit is kept in `preservedFits`, which
 // capture writes back while that layer still has no live fit (CMP-006-R10).
+//
+// CMP-007: a known `composite.mask` maps to `LayerCompositeSettings.mask`; an unknown shape maps to nil
+// (drawn unmasked) and the saved mask is kept in `preservedMasks`, which capture writes back while that
+// layer still has no live mask (CMP-007-R10).
 import Compositor
 import ParameterGraph
 
@@ -40,12 +44,15 @@ public struct SceneLiveState: Sendable, Equatable {
     public var preservedBlendModes: [LayerInstanceID: String]
     /// CMP-006: saved fits with an unknown mode name, by instance, kept verbatim for re-save.
     public var preservedFits: [LayerInstanceID: SceneFit]
+    /// CMP-007: saved masks with an unknown shape kind, by instance, kept verbatim for re-save.
+    public var preservedMasks: [LayerInstanceID: SceneMask]
 
     public init(stack: LayerStack, contents: [LayerInstanceID: SceneLayerContent] = [:],
                 parameters: ParameterSnapshot = ParameterSnapshot(values: [:]), bindings: [AudioFeatureBinding] = [],
                 expressions: [ParameterID: String] = [:], modulation: ModulationGraph = ModulationGraph(),
                 preserved: SceneModulationPreserved = SceneModulationPreserved(), assets: [String: SceneAsset] = [:],
-                preservedBlendModes: [LayerInstanceID: String] = [:], preservedFits: [LayerInstanceID: SceneFit] = [:]) {
+                preservedBlendModes: [LayerInstanceID: String] = [:], preservedFits: [LayerInstanceID: SceneFit] = [:],
+                preservedMasks: [LayerInstanceID: SceneMask] = [:]) {
         self.stack = stack
         self.contents = contents
         self.parameters = parameters
@@ -56,6 +63,7 @@ public struct SceneLiveState: Sendable, Equatable {
         self.assets = assets
         self.preservedBlendModes = preservedBlendModes
         self.preservedFits = preservedFits
+        self.preservedMasks = preservedMasks
     }
 
     /// Replaces `modulator`'s bindings with the live ones, in order (contract M5). They were
@@ -108,9 +116,10 @@ extension SceneDocument {
             let preserved = settings.blendMode == .normal ? live.preservedBlendModes[entry.id] : nil
             let blend = preserved ?? settings.blendMode.rawValue
             let fit: SceneFit? = settings.fit.map(SceneFit.init) ?? live.preservedFits[entry.id]   // CMP-006
+            let mask: SceneMask? = settings.mask.map(SceneMask.known) ?? live.preservedMasks[entry.id]   // CMP-007
             layers.append(SceneLayer(instance: entry.id.rawValue, content: content, values: entry.descriptor.parameters,
                                      composite: SceneComposite(opacity: settings.opacity, blendMode: blend, transform: settings.transform,
-                                                               fit: fit)))
+                                                               fit: fit, mask: mask)))
         }
         // Canonical order (MOD-013-R10): live edges in live order, then preserved edges as stored.
         let bindings = live.bindings.map { (b: AudioFeatureBinding) -> SceneBinding in
@@ -134,6 +143,7 @@ extension SceneDocument {
         var contents: [LayerInstanceID: SceneLayerContent] = [:]
         var unknownBlends: [LayerInstanceID: String] = [:]
         var unknownFits: [LayerInstanceID: SceneFit] = [:]
+        var unknownMasks: [LayerInstanceID: SceneMask] = [:]
         for layer in layers {
             guard let kind = layer.content.layerKind else { continue }
             let id = LayerInstanceID(rawValue: layer.instance)
@@ -141,8 +151,10 @@ extension SceneDocument {
             if mode == nil { unknownBlends[id] = layer.composite.blendMode }
             let fit: LayerFit? = layer.composite.fit?.layerFit
             if let saved = layer.composite.fit, fit == nil { unknownFits[id] = saved }
+            let mask: LayerMask? = layer.composite.mask?.layerMask
+            if let saved = layer.composite.mask, mask == nil { unknownMasks[id] = saved }
             let settings = LayerCompositeSettings(opacity: layer.composite.opacity, blendMode: mode ?? .normal,
-                                                  transform: layer.composite.transform, fit: fit)
+                                                  transform: layer.composite.transform, fit: fit, mask: mask)
             entries.append(LayerStackEntry(id: id, descriptor: LayerDescriptor(kind: kind, parameters: layer.values), settings: settings))
             contents[id] = layer.content
         }
@@ -156,7 +168,7 @@ extension SceneDocument {
         let state = SceneLiveState(stack: stack, contents: contents, parameters: ParameterSnapshot(values: parameters),
                                    bindings: restore.bindings, expressions: restore.expressions, modulation: restore.graph,
                                    preserved: restore.preserved, assets: assets, preservedBlendModes: unknownBlends,
-                                   preservedFits: unknownFits)
+                                   preservedFits: unknownFits, preservedMasks: unknownMasks)
         return SceneLoadResult(state: state, warnings: issues, modulationReport: restore.report)
     }
 }

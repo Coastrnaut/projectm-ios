@@ -8,11 +8,16 @@
 //   controls are shown: Right Arrow and Page Down → Next cue, Left Arrow and Page Up → Previous cue,
 //   no modifiers. B stays SHOW-014's. A presented sheet takes the keyboard (as for B).
 // * `ShowNotice`: the step's notice (missing scene, layers left out) for about 4 s.
+// * UIX-002: the row's "Scenes" button opens the quick scene switcher; ⌘K toggles it from the keyboard.
+//   While it is open the arrow and Page keys belong to its search field, so they are not registered
+//   here. After a close without a choice VoiceOver focus returns to the Scenes button.
 import ShowControl
 import SwiftUI
 
 struct ShowCueRow: View {
     let coordinator: AppCoordinator
+    /// UIX-002-R11: VoiceOver focus returns here after the switcher closes without a choice.
+    @AccessibilityFocusState private var scenesFocused: Bool
 
     var body: some View {
         let show = coordinator.show
@@ -37,9 +42,17 @@ struct ShowCueRow: View {
             .disabled(!show.list.canGoNext)
             .accessibilityLabel("Next cue")
             .accessibilityIdentifier("showNextCue")
+            Button { coordinator.openSceneSwitcher() } label: {   // UIX-002-R1
+                Image(systemName: "magnifyingglass.circle.fill").font(.title2)
+            }
+            .accessibilityLabel("Scenes")
+            .accessibilityHint("Search the show's scenes")
+            .accessibilityIdentifier("showSceneSwitcher")
+            .accessibilityFocused($scenesFocused)
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("showCueRow")
+        .onChange(of: coordinator.sceneSwitcher.focusReturnRevision) { scenesFocused = true }
     }
 }
 
@@ -48,10 +61,13 @@ struct ShowKeyCommands: View {
 
     var body: some View {
         ZStack {
-            key(.rightArrow) { coordinator.keyNextCue() }
-            key(.pageDown) { coordinator.keyNextCue() }
-            key(.leftArrow) { coordinator.keyPreviousCue() }
-            key(.pageUp) { coordinator.keyPreviousCue() }
+            if !coordinator.sceneSwitcher.isOpen {   // UIX-002 contract C2: the search field owns the arrows
+                key(.rightArrow) { coordinator.keyNextCue() }
+                key(.pageDown) { coordinator.keyNextCue() }
+                key(.leftArrow) { coordinator.keyPreviousCue() }
+                key(.pageUp) { coordinator.keyPreviousCue() }
+            }
+            Button("") { coordinator.toggleSceneSwitcher() }.keyboardShortcut("k", modifiers: .command)   // UIX-002-R1
         }
         .frame(width: 0, height: 0)
         .opacity(0)
