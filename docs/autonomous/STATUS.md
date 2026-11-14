@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T07:40:42Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T07:40:50Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,25 +9,24 @@
 
 | State | Features |
 |---|---|
-| audited | 200 |
-| implementing | 2 |
-| unit_passed | 1 |
-| integrated | 122 |
+| audited | 199 |
+| implementing | 3 |
+| integrated | 123 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 112 | 2 | 1 | 36 | 0 |
-| P2 | 77 | 0 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 2 | 0 | 84 | 1 |
+| P1 | 111 | 3 | 37 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 203 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)
+- 202 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)
 
 ## Integrated
 
@@ -94,6 +93,7 @@ The physical-device suite may **not** start:
 | FILE-001 | Portable scene archive | `c3886d1cb0bb` | `feature/file-001` |
 | FILE-002 | Archive manifest checksums | `77fcfa3f1e56` | `feature/file-002` |
 | FILE-003 | Import dry run | `5e7bcff1` | `feature/file-003` |
+| FILE-004 | Import conflict resolver | `e74970a76138` | `feature/file-004` |
 | FILE-007 | Document schema validator | `d8e359893ae7` | `feature/file-007` |
 | FILE-009 | Storage usage explorer | `efddbc041837` | `feature/file-009` |
 | FILE-010 | Safe cache cleanup | `f65b410a8d7c` | `feature/file-010` |
@@ -737,7 +737,7 @@ None.
 - `swift test --package-path Packages/PresetLibrary`: pass at `2dbb99af1390` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-003/20261114T014156/swift-test_PresetLibrary.log`)
 - `post-merge (FILE-003 + MIDI-001 + MED-003): projectM-iOSTests 487 + PresetArchiveImport/MIDIDiscovery/VideoLoop/VideoLayer/OSCReceiver UI tests 5; network-symbol scan OK`: pass at `5e7bcff1` (log `.autonomous/logs/integration/file-003-midi-001-med-003/app-tests.log`)
 
-### FILE-004 Import conflict resolver (unit_passed)
+### FILE-004 Import conflict resolver (integrated)
 - `python3 scripts/check_compliance.py`: pass at `e1b64695bdf4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-004/20261114T023954/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `e1b64695bdf4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-004/20261114T023954/docs.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `e1b64695bdf4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-004/20261114T023954/swift-test_ImportFuzz.log`)
