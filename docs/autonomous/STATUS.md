@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T05:22:43Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T05:22:55Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,25 +9,24 @@
 
 | State | Features |
 |---|---|
-| audited | 212 |
-| implementing | 2 |
-| unit_passed | 1 |
-| integrated | 110 |
+| audited | 211 |
+| implementing | 3 |
+| integrated | 111 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 4 | 1 | 0 | 81 | 1 |
-| P1 | 122 | 1 | 1 | 27 | 0 |
-| P2 | 77 | 0 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 4 | 1 | 81 | 1 |
+| P1 | 121 | 2 | 28 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 215 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)
+- 214 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)
 
 ## Integrated
 
@@ -78,6 +77,7 @@ The physical-device suite may **not** start:
 | AUTO-014 | Unattended safety budget | `419cc2a999ed` | `autonomous/integration` |
 | CAM-001 | Rear camera layer | `05ef3cb4e24b` | `feature/cam-001` |
 | CAM-002 | Front camera layer | `ad0aebe2` | `feature/cam-002` |
+| CAM-007 | Camera crop and rotation | `0ee7468c62f6` | `feature/cam-007` |
 | CAM-012 | Camera privacy status | `a188b049fc60` | `feature/cam-012` |
 | CMP-001 | Unified layer protocol | `ba60b9d3485a` | `feature/cmp-001` |
 | CMP-002 | Ordered layer stack | `4c8340e68244` | `feature/cmp-002` |
@@ -567,7 +567,7 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `ccc35e86202b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-002/20261113T232519/swift-test_ShowControl.log`)
 - `post-merge (CAM-002 + AUD-015): projectM-iOSTests 430 + FrontCamera/Camera/BackgroundPolicy/Status/SessionRecovery UI tests 15`: pass at `ad0aebe2` (log `.autonomous/logs/integration/cam-002-aud-015/app-tests.log`)
 
-### CAM-007 Camera crop and rotation (unit_passed)
+### CAM-007 Camera crop and rotation (integrated)
 - `python3 scripts/check_compliance.py`: pass at `bbfa49c59ca0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-007/20261114T001920/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `bbfa49c59ca0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-007/20261114T001920/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `bbfa49c59ca0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-007/20261114T001920/script-tests.log`)

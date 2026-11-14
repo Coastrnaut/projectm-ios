@@ -12,10 +12,9 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 122,
-   "implementing": 1,
-   "integrated": 27,
-   "unit_passed": 1
+   "audited": 121,
+   "implementing": 2,
+   "integrated": 28
   },
   "P2": {
    "audited": 77,
@@ -26,11 +25,10 @@
   }
  },
  "by_state": {
-  "audited": 212,
-  "implementing": 2,
-  "integrated": 110,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "audited": 211,
+  "implementing": 3,
+  "integrated": 111,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -57,7 +55,6 @@
    "CAM-004",
    "CAM-005",
    "CAM-006",
-   "CAM-007",
    "CAM-008",
    "CAM-009",
    "CAM-010",
@@ -256,7 +253,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "215 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)"
+   "214 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)"
   ]
  },
  "features": {
@@ -905,10 +902,10 @@
    "branch": "feature/cam-007",
    "branch_sha": "bbfa49c59ca08238e101fbcf6530653bc98fc602",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "0ee7468c62f657efb0bff7f3a6118551f7cdbe95",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "CAM-008": {
    "attempts": 0,
@@ -962,13 +959,13 @@
   },
   "CAM-013": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/cam-013",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "CMP-001": {
    "attempts": 0,
@@ -3748,6 +3745,11 @@
    "sha": "ad0aebe2"
   },
   {
+   "branch": "feature/cam-007",
+   "id": "CAM-007",
+   "sha": "0ee7468c62f657efb0bff7f3a6118551f7cdbe95"
+  },
+  {
    "branch": "feature/cam-012",
    "id": "CAM-012",
    "sha": "a188b049fc60834422a2fee6fe53022ab3a32f8f"
@@ -4098,5 +4100,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T05:22:43Z"
+ "updated": "2026-11-14T05:22:55Z"
 }
