@@ -508,6 +508,7 @@ struct VisualizerView: View {
         .onChange(of: coordinator.settings.lissajousPersistence) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.radialWaveformRing) { coordinator.visualSettingsChanged() }   // VIS-005
         .onChange(of: coordinator.settings.radialWaveformAmplitude) { coordinator.visualSettingsChanged() }
+        .onChange(of: coordinator.settings.beatRingsLife) { coordinator.visualSettingsChanged() }   // VIS-006
         .onChange(of: coordinator.settings.spectrumSmoothing) { coordinator.visualSettingsChanged() }   // ANL-003
     }
 
