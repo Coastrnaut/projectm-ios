@@ -29,6 +29,44 @@ transparent by its hue.
 | Layer inspector (CMP-015, CMP-009) | Mask, Gradient and Luma Key sections with help, undo and ACC-005 sliders. | No colour key editor and no colour picker. |
 | Goldens (QA-002) | `LumaKey` goldens on the Mac host and the iOS simulator. | No colour key golden. |
 
+## Clarifications
+
+### Session 2026-11-14
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the recommended, conservative option.
+
+- Q: In which colour space is the distance between a pixel and the key colour measured? → A: The
+  **Rec. 709 Y′CbCr chroma plane of the displayed values**: the straight colour (premultiplied ÷
+  alpha, alpha 0 reads black), each channel clamped to 0…1 and sRGB-encoded with the CMP-004 curve,
+  then Cb = (B′ − Y′)/1.8556 and Cr = (R′ − Y′)/1.5748 with Y′ the CMP-009 Rec. 709 luma; distance
+  d = √(ΔCb² + ΔCr²). Luma itself is ignored (as in video chroma keyers), so shading of one hue counts
+  less than a hue change, while dim or desaturated colours sit nearer the neutral centre and so farther
+  from a saturated key (pure green to sRGB (0, 0.3, 0) is 0.42). Rejected: OKLab (cube roots per pixel,
+  and its lightness axis would need its own weight); RGB distance (brightness and hue mixed).
+- Q: What are the controls' ranges, defaults and transition shape? → A: **Tolerance 0…1** (the
+  chroma plane's diameter is about 1.2), **feather 0…0.5**, linear ramp: keyed k = 1 for d ≤ tolerance,
+  k = 1 − (d − tolerance)/feather beyond, clamped to 0…1 (feather 0: a hard cut); keep = 1 − k. No
+  invert (luma key has it; a colour key's complement is rarely wanted and keeps the editor small).
+  Default when turned on: pure green sRGB (0, 1, 0), tolerance 0.2, feather 0.1. Non-finite values
+  read the default; −0 is stored as 0.
+- Q: Is spill suppression part of this row? → A: **No.** It recolours kept pixels, which the
+  acceptance ("unrelated colors remain opaque", checked as unchanged colour and alpha) forbids by
+  construction; recorded as out of scope in Assumptions.
+- Q: How is the key stored in a scene, and how is the colour given? → A: `composite.colorKey` =
+  `{"red", "green", "blue", "tolerance", "feather"}`, each a number; red/green/blue are the key's
+  displayed sRGB components 0…1 (what the user picked). Written only when set, every field written;
+  missing fields take the defaults, out-of-range values are clamped with `valueClamped`, unknown keys
+  dropped with `droppedField`; no version bump.
+- Q: What does the inspector offer and how does undo group the edits? → A: A "Color Key" section
+  after Luma Key: a **Color Key** toggle (`layerControl.colorKey`); when on, a system colour picker
+  named **Key Color** (`layerControl.colorKeyColor`, no opacity; a wide-gamut pick is converted to
+  sRGB and clamped), **Tolerance** (0…1, step 0.02) and **Feather** (0…0.5, step 0.02) ACC-005
+  sliders (`layerControl.colorTolerance|colorFeather`). Each toggle, colour choice or drag is one undo
+  step; picker updates coalesce under `layer.<kind>.colorKeyColor`, sliders under
+  `layer.<kind>.colorTolerance` and `layer.<kind>.colorFeather`. "GPU performance" is an opt-in Mac
+  bench (never asserted, "not device evidence") plus a `{device}` task for D1.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Key out a colour (Priority: P1) 🎯 MVP
@@ -119,8 +157,8 @@ A scene stores each layer's colour key. Opening and saving keeps it exactly.
 - **CMP-010-R2**: The key's keep factor at colour distance d from the key colour MUST be 0 for
   d ≤ tolerance, 1 for d ≥ tolerance + feather, and rise linearly in between (monotonic in d).
 - **CMP-010-R3**: The colour distance MUST be measured on the layer's own straight (unpremultiplied)
-  colour, clamped to 0…1, as displayed, in a space where brightness differences of the same hue count
-  less than hue differences (see Clarifications), independent of the layer's opacity.
+  colour, clamped to 0…1 and sRGB-encoded, as the Rec. 709 chroma (Cb, Cr) distance, so brightness
+  alone does not count (see Clarifications), independent of the layer's opacity.
 - **CMP-010-R4**: The keep factor MUST multiply the layer's colour and alpha (premultiplied), so a kept
   pixel's colour and alpha are unchanged.
 - **CMP-010-R5**: A plain reference calculation (no GPU, every platform) MUST give the keep factor of
@@ -142,8 +180,9 @@ A scene stores each layer's colour key. Opening and saving keeps it exactly.
 
 ### Key Entities
 
-- **Colour key**: key colour (displayed red, green, blue, each 0…1), tolerance, feather; absent means
-  no key. Default when turned on: pure green.
+- **Colour key**: key colour (displayed sRGB red, green, blue, each 0…1), tolerance (0…1), feather
+  (0…0.5); absent means no key. Default when turned on: pure green (0, 1, 0), tolerance 0.2,
+  feather 0.1.
 - **Keep factor**: 0…1 per pixel from the pixel's distance to the key colour, multiplying the layer's
   colour and alpha (with the other masks' factors when set).
 
