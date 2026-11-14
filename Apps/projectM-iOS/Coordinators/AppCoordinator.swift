@@ -179,6 +179,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let recovery: SessionRecoveryCoordinator
     /// UIX-001: the guided first scene (stored state and whether it is shown).
     let guide: GuidedFirstSceneCoordinator
+    /// UIX-015: the explainer shown before the camera and local network prompts.
+    let explainers: PermissionExplainerCoordinator
     /// Performance overlay and Reduce flashing (T103).
     let settings: AppSettings
     /// AUD-008: the analysis-only input trim (Settings → Audio Analysis).
@@ -198,6 +200,9 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// CAM-013: why the camera is interrupted or failed (nil otherwise), and whether a Retry waits.
     private(set) var cameraStopReason: CameraStopReason?
     private(set) var cameraRetryPending = false
+    /// UIX-015-R7: the user dismissed the camera's denied or restricted notice for this attempt
+    /// (reset whenever the Camera visual is created or released).
+    private(set) var cameraNoticeDismissed = false
     /// The imported photo (MED-001): the store, the pickers' results and the notice.
     let photos: PhotoCoordinator
     /// The Photo visual (MED-001), created when Photo is chosen and released when another visual is.
@@ -312,6 +317,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             if let scenes = try? SceneAutosaveStore.defaultDirectory() { try? FileManager.default.removeItem(at: scenes) }   // SCN-002: no scene
             SessionRecoveryCoordinator.reset(defaults)   // PERF-010: no previous session
             GuidedFirstSceneCoordinator.reset(defaults)  // UIX-001: never offered
+            PermissionExplainerCoordinator.reset(defaults)   // UIX-015: nothing explained
             if let shows = try? ShowStore.defaultDirectory() { try? FileManager.default.removeItem(at: shows) }   // SHOW-001: no show
         }
         settings = AppSettings(defaults: defaults, systemReduceMotion: Self.currentSystemReduceMotion())
@@ -332,6 +338,12 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         #else
         osc = OSCReceiverCoordinator(settings: settings)
         #endif
+        // UIX-015-R2: OSC already on means iOS has already asked for local network access, and so
+        // does a listener seen listening or denied.
+        let explainers = PermissionExplainerCoordinator(defaults: defaults)
+        if settings.oscEnabled { explainers.markExplained(.localNetwork) }
+        osc.onLocalNetworkDecided = { [weak explainers] () -> Void in explainers?.markExplained(.localNetwork) }
+        self.explainers = explainers
         let midiAnnouncer: AccessibilityAnnouncer = statusEvents.announcer   // MIDI-001-R11: the shared path
         let announceMIDI: @MainActor (String) -> Void = { (text: String) -> Void in midiAnnouncer.announce(text, kind: .midi) }
         #if DEBUG
@@ -913,6 +925,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             }
             presentation.register(host)   // PERF-011: starts suspended while the app cannot present
             cameraVisual = host
+            cameraNoticeDismissed = false   // UIX-015-R7: a new attempt
         } catch {
             markNativeVisualUnavailable(error)
         }
@@ -1054,6 +1067,17 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         cameraState = .idle
         cameraStopReason = nil   // CAM-013
         cameraRetryPending = false
+        cameraNoticeDismissed = false   // UIX-015-R7
+    }
+
+    /// UIX-015-R7: Dismiss on the camera's denied or restricted notice (this attempt only).
+    func dismissCameraNotice() {
+        cameraNoticeDismissed = true
+    }
+
+    /// UIX-015-R1: the camera's status for the explainer (the chosen camera).
+    var cameraPermissionStatus: PermissionState? {
+        PermissionStatusSource.camera(position: settings.cameraPosition)
     }
 
     /// CAM-012-R1, R2: the in-app camera badge, from the feed state only (hidden off the visualizer).

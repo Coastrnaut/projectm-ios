@@ -339,7 +339,9 @@ struct VisualizerView: View {
                          channelSelection: coordinator.channelSelection,   // AUD-009
                          noiseGate: coordinator.noiseGate,   // AUD-011
                          latencyOffset: coordinator.latencyOffset,   // AUD-013
-                         midi: coordinator.midi)   // MIDI-001
+                         midi: coordinator.midi,   // MIDI-001
+                         explainers: coordinator.explainers,   // UIX-015
+                         cameraStatus: { () -> PermissionState? in coordinator.cameraPermissionStatus })
                 .sceneRepairSheet(coordinator.sceneRepair, active: true)   // SCN-012: a show editor step's report
         }
         // SCN-012: the repair report before a cue's scene or Reopen opens (over Settings while it is shown).
@@ -534,9 +536,13 @@ struct VisualizerView: View {
         // FILE-013-R3: denied and restricted come from the permission catalog; the other states
         // (no camera, paused) keep CAM-001's notice without Open Settings. One notice view for both.
         // CAM-013-R2, R3: interrupted or failed name the reason and offer Retry.
-        if coordinator.showsCameraVisual, let notice = PermissionCatalog.cameraNotice(for: coordinator.cameraState, position: coordinator.settings.cameraPosition, reason: coordinator.cameraStopReason) {
+        // UIX-015-R7: denied and restricted add the fallback and Dismiss (hidden for this attempt).
+        if coordinator.showsCameraVisual, let notice = PermissionCatalog.cameraNotice(for: coordinator.cameraState, position: coordinator.settings.cameraPosition, reason: coordinator.cameraStopReason),
+           !(notice.offersDismiss && coordinator.cameraNoticeDismissed) {
             PermissionNoticeView(notice: notice, symbol: "video.slash", identifierPrefix: "camera",
-                                 retryPending: coordinator.cameraRetryPending) { coordinator.retryCamera() }
+                                 retryPending: coordinator.cameraRetryPending,
+                                 onRetry: { coordinator.retryCamera() },
+                                 onDismiss: { coordinator.dismissCameraNotice() })
         }
         // MED-001-R11: never blocks; clears itself after a few seconds.
         if coordinator.showsPhotoVisual, !coordinator.showSettings, let notice = coordinator.photos.notice {

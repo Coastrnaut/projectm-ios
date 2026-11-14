@@ -40,6 +40,10 @@ struct PermissionNotice: Equatable, Sendable {
     let offersSettings: Bool
     /// CAM-013-R2: the notice offers Retry (the camera is interrupted or stopped by an error).
     var offersRetry: Bool = false
+    /// UIX-015-R7, R8: what still works without the permission (nil when the text already says it).
+    var fallback: String? = nil
+    /// UIX-015-R7: the notice offers Dismiss for the current attempt (camera denied or restricted).
+    var offersDismiss: Bool = false
 }
 
 /// The catalog's description of one permission.
@@ -109,6 +113,34 @@ enum PermissionCatalog {
     static let localNetworkDenied =
         "Local network access is off for projectM in Settings › Privacy & Security › Local Network."
 
+    // MARK: Explainer and fallbacks (UIX-015; research D6)
+
+    /// The camera notice's fallback (CAM-001's wording for a missing camera).
+    static let cameraFallback = "Showing the spectrum only."
+    /// The Local Network notice's fallback.
+    static let localNetworkFallback = "OSC control is unavailable; everything else works as usual."
+    /// The explainer's last line, before Continue and Not now.
+    static let explainerNote = "iOS asks next. You can change this later in Settings."
+
+    /// What happens if the user declines, said before iOS's prompt; nil where no explainer exists.
+    static func explainerFallback(_ permission: AppPermission) -> String? {
+        switch permission {
+        case .camera: "If you don't allow it, the Camera visual shows the spectrum only."
+        case .localNetwork: "If you don't allow it, OSC control stays unavailable and everything else works."
+        case .microphone, .screenCapture: nil
+        }
+    }
+
+    /// The decorative symbol of a permission's explainer.
+    static func explainerSymbol(_ permission: AppPermission) -> String {
+        switch permission {
+        case .camera: "video"
+        case .localNetwork: "network"
+        case .microphone: "mic"
+        case .screenCapture: "rectangle.on.rectangle"
+        }
+    }
+
     /// The notice for a denied or restricted permission; nil for notDetermined and granted.
     static func notice(_ permission: AppPermission, _ state: PermissionState) -> PermissionNotice? {
         guard state == .denied || state == .restricted else { return nil }
@@ -123,8 +155,14 @@ enum PermissionCatalog {
         case .screenCapture:
             text = UIStrings.message(.screenRecordingNotAllowed)
         }
+        let fallback: String? = switch permission {
+        case .camera: cameraFallback
+        case .localNetwork: localNetworkFallback
+        case .microphone, .screenCapture: nil   // contract-fixed banners; Choose source is the fallback
+        }
         return PermissionNotice(permission: permission, state: state, text: text,
-                                offersSettings: entry(permission).settingsCanChange)
+                                offersSettings: entry(permission).settingsCanChange,
+                                fallback: fallback, offersDismiss: permission == .camera)
     }
 
     /// The camera visual's notice: the catalog's for denied and restricted, otherwise CAM-001's notice

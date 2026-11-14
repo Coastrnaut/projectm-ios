@@ -90,7 +90,7 @@ final class CameraUITests: XCTestCase {
         XCTAssertTrue(app.buttons["pauseResume"].exists)
         openSettings()
         closeSettings()
-        XCTAssertTrue(notice.exists, "the notice stays while access is off; nothing to dismiss")
+        XCTAssertTrue(notice.exists, "the notice stays while access is off until dismissed (UIX-015-R7)")
         XCTAssertEqual(starts, "1", "the source is not restarted")
     }
 }

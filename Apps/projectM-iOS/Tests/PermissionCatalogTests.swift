@@ -69,7 +69,10 @@ final class PermissionCatalogTests: XCTestCase {
         ]
         for (permission, state, text, settings) in expected {
             let notice = C.notice(permission, state)
-            XCTAssertEqual(notice, PermissionNotice(permission: permission, state: state, text: text, offersSettings: settings),
+            // UIX-015-R7, R8: camera and Local Network name their fallback; only the camera offers Dismiss.
+            let fallback: String? = permission == .camera ? C.cameraFallback : permission == .localNetwork ? C.localNetworkFallback : nil
+            XCTAssertEqual(notice, PermissionNotice(permission: permission, state: state, text: text, offersSettings: settings,
+                                                    fallback: fallback, offersDismiss: permission == .camera),
                            "\(permission) \(state)")
         }
     }
