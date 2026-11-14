@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T23:48:26Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T23:52:31Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -12,23 +12,22 @@
 | audited | 70 |
 | implementing | 4 |
 | built | 1 |
-| unit_passed | 1 |
-| integrated | 249 |
+| integrated | 250 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 0 | 84 | 1 |
-| P1 | 10 | 1 | 0 | 1 | 139 | 0 |
-| P2 | 49 | 3 | 1 | 0 | 26 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | built | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 84 | 1 |
+| P1 | 10 | 1 | 0 | 140 | 0 |
+| P2 | 49 | 3 | 1 | 26 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 76 features are not implemented yet (first: ACC-009, ACC-010, CAM-008, CAM-009, CAM-010)
+- 75 features are not implemented yet (first: ACC-009, ACC-010, CAM-008, CAM-009, CAM-010)
 
 ## Integrated
 
@@ -253,6 +252,7 @@ The physical-device suite may **not** start:
 | SHD-002 | Node-based generator graph | `e91692538b99` | `feature/shd-002` |
 | SHD-003 | Shader parameter metadata | `510cb12a` | `feature/shd-003` |
 | SHD-004 | Shader variant switching | `3b813137` | `feature/shd-004` |
+| SHD-005 | Gradient editor | `5d186c3c` | `feature/shd-005` |
 | SHD-009 | Expression mapping DSL | `d84b02f95a85` | `feature/shd-009` |
 | SHD-010 | Expression sandbox budgets | `e906db183292` | `feature/shd-010` |
 | SHD-011 | User-authored shader policy | `26de54ff2c0b` | `feature/shd-011` |
@@ -2684,7 +2684,7 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `1eff7d369c70` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-004/20261114T175839/swift-test_ShowControl.log`)
 - `post-merge batch75: Compositor 976, SceneFormat 190, RenderGoldens 87, ShowControl 120, projectM-iOSTests 1059, UI 7 of 8 (camera exposure 2, camera focus 2, cue hold/skip, material inspector, scene lock); MIDISceneSelectionUITests fails: show editor leading swipe overflow (pre-existing, fix/show-swipe-actions in progress)`: pass at `3b813137` (log `.autonomous/logs/integration/batch75/app-tests.log`)
 
-### SHD-005 Gradient editor (unit_passed)
+### SHD-005 Gradient editor (integrated)
 - `python3 scripts/check_compliance.py`: pass at `8c516784eda1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-005/20261114T184415/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `8c516784eda1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-005/20261114T184415/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `8c516784eda1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-005/20261114T184415/sim-test_ANGLERendering.log`)
@@ -2696,6 +2696,7 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `8c516784eda1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-005/20261114T184415/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `8c516784eda1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-005/20261114T184415/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `8c516784eda1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-005/20261114T184415/swift-test_VisualGenerators.log`)
+- `post-merge batch81: VisualGenerators 260, Compositor 991, SceneFormat 195, projectM-iOSTests 1097, UI 2 (palette gradient editor, palette picker)`: pass at `5d186c3c` (log `.autonomous/logs/integration/batch81/app-tests.log`)
 
 ### SHD-009 Expression mapping DSL (integrated)
 - `python3 scripts/check_compliance.py`: pass at `269a293b8d9d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-009/20261113T125934/compliance.log`)
