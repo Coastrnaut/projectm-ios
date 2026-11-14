@@ -64,8 +64,8 @@ final class SceneValidationTests: XCTestCase {
             $0.layers.append(SceneLayer(instance: 77, content: .unknown(kind: "aurora")))
         }
         try check("blend", [(.unsupportedBlendMode, "$.layers[1].composite.blend",
-                             "Layer 1 uses the blend mode \"screen\", which this version draws as normal.")]) {
-            $0.layers[1].composite.blendMode = "screen"
+                             "Layer 1 uses the blend mode \"softLight\", which this version draws as normal.")]) {
+            $0.layers[1].composite.blendMode = "softLight"
         }
         try check("material", [(.unknownMaterial, "$.layers[5].content.material", "Layer 5 uses the unknown material \"material.lava\".")]) {
             $0.layers[5].content = .material(id: "material.lava")
@@ -188,7 +188,7 @@ final class SceneValidationTests: XCTestCase {
     func testErrorsBlockOpeningAndWarningsDoNot() throws {
         var warningsOnly = try clean()
         warningsOnly.parameters["visual.retired.thing"] = .continuous(1)
-        warningsOnly.layers[1].composite.blendMode = "screen"
+        warningsOnly.layers[1].composite.blendMode = "softLight"
         let loaded = try warningsOnly.liveState(registry: try SceneFixtures.registry(), assets: FakeAvailability(photos: []))
         XCTAssertEqual(loaded.warnings.map(\.code), [.unsupportedBlendMode, .missingAsset, .orphanedParameter])
         XCTAssertEqual(loaded.state.stack.count, 7)

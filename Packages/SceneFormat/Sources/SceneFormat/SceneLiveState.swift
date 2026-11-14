@@ -9,6 +9,10 @@
 // MOD-013: modulation is restored per edge (`restoreModulation`): only restored and rewritten edges
 // are live; orphaned and rejected edges ride along in `preserved` and capture writes them back after
 // the live ones (contract M5, M6), so capture → encode → decode → restore → capture is a fixed point.
+//
+// CMP-004: the six blend mode names map to `LayerBlendMode`; any other `composite.blend` string is drawn
+// as normal and kept in `preservedBlendModes`, which capture writes back while that layer is still
+// drawn as normal (CMP-004-R8), so an unknown mode also survives load → capture.
 import Compositor
 import ParameterGraph
 
@@ -28,11 +32,14 @@ public struct SceneLiveState: Sendable, Equatable {
     /// Orphaned and rejected edges, kept verbatim for re-save (MOD-013-R9).
     public var preserved: SceneModulationPreserved
     public var assets: [String: SceneAsset]
+    /// CMP-004: unknown blend mode names by instance, kept verbatim for re-save.
+    public var preservedBlendModes: [LayerInstanceID: String]
 
     public init(stack: LayerStack, contents: [LayerInstanceID: SceneLayerContent] = [:],
                 parameters: ParameterSnapshot = ParameterSnapshot(values: [:]), bindings: [AudioFeatureBinding] = [],
                 expressions: [ParameterID: String] = [:], modulation: ModulationGraph = ModulationGraph(),
-                preserved: SceneModulationPreserved = SceneModulationPreserved(), assets: [String: SceneAsset] = [:]) {
+                preserved: SceneModulationPreserved = SceneModulationPreserved(), assets: [String: SceneAsset] = [:],
+                preservedBlendModes: [LayerInstanceID: String] = [:]) {
         self.stack = stack
         self.contents = contents
         self.parameters = parameters
@@ -41,6 +48,7 @@ public struct SceneLiveState: Sendable, Equatable {
         self.modulation = modulation
         self.preserved = preserved
         self.assets = assets
+        self.preservedBlendModes = preservedBlendModes
     }
 
     /// Replaces `modulator`'s bindings with the live ones, in order (contract M5). They were
@@ -90,9 +98,8 @@ extension SceneDocument {
                 throw .contentMismatch(instance: entry.id.rawValue, stackKind: kind, contentKind: content.kind)
             }
             let settings = entry.settings
-            let blend = switch settings.blendMode {
-            case .normal: SceneComposite.normalBlendMode
-            }
+            let preserved = settings.blendMode == .normal ? live.preservedBlendModes[entry.id] : nil
+            let blend = preserved ?? settings.blendMode.rawValue
             layers.append(SceneLayer(instance: entry.id.rawValue, content: content, values: entry.descriptor.parameters,
                                      composite: SceneComposite(opacity: settings.opacity, blendMode: blend, transform: settings.transform)))
         }
@@ -116,10 +123,13 @@ extension SceneDocument {
         guard errors.isEmpty else { throw .invalid(errors) }
         var entries: [LayerStackEntry] = []
         var contents: [LayerInstanceID: SceneLayerContent] = [:]
+        var unknownBlends: [LayerInstanceID: String] = [:]
         for layer in layers {
             guard let kind = layer.content.layerKind else { continue }
             let id = LayerInstanceID(rawValue: layer.instance)
-            let settings = LayerCompositeSettings(opacity: layer.composite.opacity, blendMode: .normal,
+            let mode = LayerBlendMode(rawValue: layer.composite.blendMode)
+            if mode == nil { unknownBlends[id] = layer.composite.blendMode }
+            let settings = LayerCompositeSettings(opacity: layer.composite.opacity, blendMode: mode ?? .normal,
                                                   transform: layer.composite.transform)
             entries.append(LayerStackEntry(id: id, descriptor: LayerDescriptor(kind: kind, parameters: layer.values), settings: settings))
             contents[id] = layer.content
@@ -133,7 +143,7 @@ extension SceneDocument {
         }
         let state = SceneLiveState(stack: stack, contents: contents, parameters: ParameterSnapshot(values: parameters),
                                    bindings: restore.bindings, expressions: restore.expressions, modulation: restore.graph,
-                                   preserved: restore.preserved, assets: assets)
+                                   preserved: restore.preserved, assets: assets, preservedBlendModes: unknownBlends)
         return SceneLoadResult(state: state, warnings: issues, modulationReport: restore.report)
     }
 }

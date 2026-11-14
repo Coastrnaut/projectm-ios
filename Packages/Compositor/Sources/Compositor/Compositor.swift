@@ -47,6 +47,11 @@
 // composite texture that cannot be created; while it backs off no layer renders and the frame is
 // black. `health` is the visual's record. DEBUG builds can arm `faultInjection`, which makes creation
 // or the status check fail (no faulty shader exists).
+// CMP-004 (contracts/blend-modes.md in specs/099, ADR-0037): each layer has a blend mode. Normal layers
+// keep the fixed-function "over" in the open pass. A layer with another mode ends that pass and draws
+// `cmp_blend` full screen into a second composite (pooled, created the first time a mode layer is drawn
+// at a size), reading the composite so far as its backdrop; the two composites then swap and the "over"
+// pass re-opens on the new one with load action load. A mode change at apply shows from the next frame.
 // REC-003 (contracts/video-recording.md in specs/058): `encodeOutput(into:commandBuffer:)` encodes the
 // output pass of the frame just composited once more into another target (a video recorder's pixel
 // buffer texture), cropped to that target from the top left. Nothing changes for frames shown.
@@ -59,7 +64,8 @@ public enum CompositorError: Error, Equatable, Sendable {
     case pipelineUnavailable(String)
     /// The same layer object appears twice (at this index).
     case duplicateLayer(index: Int)
-    /// The layer at this index asks for a blend mode the compositor does not support yet (CMP-004).
+    /// The layer at this index asks for settings the compositor cannot draw. Not thrown since CMP-004
+    /// (every mode is drawn); kept for source compatibility.
     case unsupportedCompositeSettings(index: Int)
     /// The factory could not create the layer of the stack entry at this index (CMP-002-R9).
     case layerCreationFailed(index: Int, LayerSourceError)
@@ -89,6 +95,8 @@ public final class Compositor {
         var opacity: LayerOpacityAnimator
         /// CMP-005: the placement shown from the next frame.
         var transform: LayerTransform
+        /// CMP-004: the blend mode shown from the next frame.
+        var blendMode: LayerBlendMode
         /// PERF-014: the layer's back-off, and the render error shown while it holds.
         var retry = RenderRetryState()
         var heldError: LayerSourceError?
@@ -99,18 +107,22 @@ public final class Compositor {
             slots = LayerSlots(fallback: layer.fallback)
             opacity = LayerOpacityAnimator(opacity: settings.opacity)
             transform = settings.transform
+            blendMode = settings.blendMode
         }
     }
 
     public let device: MTLDevice
     private var records: [LayerRecord]
     private var composite: MTLTexture?
+    /// CMP-004: the other composite of the blend-mode ping-pong (nil until a mode layer is drawn).
+    private var compositeAlternate: MTLTexture?
     private var descriptor: LayerPictureDescriptor?
     private var clock = LayerFrameClock()
     private let library: MTLLibrary
     private let fullScreen: MTLFunction
     private let overPipeline: MTLRenderPipelineState
     private let transformedPipeline: MTLRenderPipelineState
+    private let blendPipeline: MTLRenderPipelineState
     private var outputPipelines: [(format: MTLPixelFormat, state: MTLRenderPipelineState)] = []
     private let flashGuard: CompositeFlashGuard
     /// PERF-004: where pictures come from and go back to.
@@ -124,6 +136,8 @@ public final class Compositor {
     public private(set) var layerPreparations = 0
     /// Draws through the transformed path in the last frame (CMP-005; tests, diagnostics).
     public private(set) var transformedDraws = 0
+    /// Draws through the blend-mode path in the last frame (CMP-004; tests, diagnostics).
+    public private(set) var blendDraws = 0
     /// The stack last applied (nil before the first `apply`, and for `init(device:layers:)`).
     public private(set) var appliedStack: LayerStack?
     /// REC-001: the handler waiting for the next frame.
@@ -179,12 +193,17 @@ public final class Compositor {
                                                              fragment: try CompositorShaders.function(library, "cmp_over_transformed"),
                                                              format: LayerPictureDescriptor.metalPixelFormat, blendOver: true,
                                                              label: "CMP-005 transformed over")
+        blendPipeline = try CompositorShaders.pipeline(device: device, vertex: fullScreen,
+                                                       fragment: try CompositorShaders.function(library, "cmp_blend"),
+                                                       format: LayerPictureDescriptor.metalPixelFormat, blendOver: false,
+                                                       label: "CMP-004 blend")
         flashGuard = try CompositeFlashGuard(device: device)
     }
 
     /// PERF-004: every picture goes back to the pool, reusable once the last frame completed.
     deinit {
         if let composite { texturePool.recycle(composite, after: lastCommandBuffer) }
+        if let compositeAlternate { texturePool.recycle(compositeAlternate, after: lastCommandBuffer) }
         for record in records { texturePool.recycle(record.pictures, after: lastCommandBuffer) }
     }
 
@@ -195,6 +214,9 @@ public final class Compositor {
 
     /// The opacity layer `index` was drawn with in the last frame (CMP-003; tests, diagnostics).
     public func shownOpacity(ofLayer index: Int) -> Double { records[index].opacity.value }
+
+    /// The blend mode layer `index` is drawn with (CMP-004; tests, diagnostics).
+    public func shownBlendMode(ofLayer index: Int) -> LayerBlendMode { records[index].blendMode }
 
     /// The transform layer `index` is drawn with (CMP-005; tests, diagnostics).
     public func shownTransform(ofLayer index: Int) -> LayerTransform { records[index].transform }
@@ -212,6 +234,7 @@ public final class Compositor {
     /// CMP-003: a kept layer whose entry opacity changed fades to it with `opacityTransition` (from
     /// the opacity shown last); a new layer starts at its entry's opacity.
     /// CMP-005: every layer is drawn with its entry's transform from the next frame (no animation).
+    /// CMP-004: and with its entry's blend mode (no animation; a running opacity fade continues).
     public func apply(_ stack: LayerStack, opacityTransition: LayerOpacityTransition = .immediate,
                       makeLayer: LayerFactory) throws(CompositorError) {
         if let appliedStack, appliedStack == stack { return }
@@ -228,6 +251,7 @@ public final class Compositor {
                     kept.opacity.setOpacity(entry.settings.opacity, transition: opacityTransition)
                 }
                 kept.transform = entry.settings.transform
+                kept.blendMode = entry.settings.blendMode
                 next.append(kept)
                 continue
             }
@@ -298,7 +322,7 @@ public final class Compositor {
                 return false
             }
         }
-        guard let composite else { return false }
+        guard var composite else { return false }
         texturePool.tick()
         lastCommandBuffer = commandBuffer   // PERF-004: from here on this frame may use every picture
         let frame = clock.next(presentationTimeNanoseconds: presentationTimeNanoseconds, outputWidth: size.width,
@@ -349,13 +373,34 @@ public final class Compositor {
         pass.colorAttachments[0].loadAction = .clear
         pass.colorAttachments[0].storeAction = .store
         pass.colorAttachments[0].clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
-        guard let over = commandBuffer.makeRenderCommandEncoder(descriptor: pass) else { return false }
+        guard var over = commandBuffer.makeRenderCommandEncoder(descriptor: pass) else { return false }
         over.label = "CMP-001 composite"
         var plain = true
         over.setRenderPipelineState(overPipeline)
         transformedDraws = 0
+        blendDraws = 0
         for i in records.indices where records[i].shown >= 0 && records[i].opacity.value > 0 {
             let transform = records[i].transform
+            if records[i].blendMode != .normal {
+                if !transform.isIdentity, case .none = Self.transformedDraw(transform, size: size, opacity: 1) { continue }
+                // CMP-004: end the "over" pass, blend into the other composite, swap, re-open.
+                over.endEncoding()
+                guard let target = alternateComposite(like: composite),
+                      encodeBlend(i, backdrop: composite, into: target, size: size, commandBuffer: commandBuffer) else { return false }
+                compositeAlternate = composite
+                composite = target
+                self.composite = target
+                let reopen = MTLRenderPassDescriptor()
+                reopen.colorAttachments[0].texture = composite
+                reopen.colorAttachments[0].loadAction = .load
+                reopen.colorAttachments[0].storeAction = .store
+                guard let next = commandBuffer.makeRenderCommandEncoder(descriptor: reopen) else { return false }
+                next.label = "CMP-001 composite"
+                next.setRenderPipelineState(overPipeline)
+                over = next
+                plain = true
+                continue
+            }
             over.setFragmentTexture(records[i].pictures[records[i].shown], index: 0)
             if transform.isIdentity {
                 if !plain { over.setRenderPipelineState(overPipeline); plain = true }
@@ -391,6 +436,52 @@ public final class Compositor {
             encodeCapture(composite: composite, size: size, commandBuffer: commandBuffer, handler: handler)
         }
         watch(commandBuffer, tick: tick)
+        return true
+    }
+
+    // MARK: - Blend modes (CMP-004)
+
+    /// The ping-pong partner of `current` (taken from the pool the first time; an allocation point).
+    private func alternateComposite(like current: MTLTexture) -> MTLTexture? {
+        if let compositeAlternate, compositeAlternate.width == current.width, compositeAlternate.height == current.height {
+            return compositeAlternate
+        }
+        if let compositeAlternate { texturePool.recycle(compositeAlternate, after: lastCommandBuffer) }
+        compositeAlternate = nil
+        guard let d = LayerPictureDescriptor(width: current.width, height: current.height),
+              let made = texturePool.makeTexture(descriptor: d.textureDescriptor()) else { return nil }
+        made.label = "CMP-004 composite"
+        pictureAllocations += 1
+        compositeAlternate = made
+        return made
+    }
+
+    /// One full-screen `cmp_blend` pass: layer `i` with its mode over `backdrop`, written to `target`.
+    private func encodeBlend(_ i: Int, backdrop: MTLTexture, into target: MTLTexture, size: LayerPictureDescriptor,
+                             commandBuffer: MTLCommandBuffer) -> Bool {
+        let opacity = records[i].opacity.value
+        var draw: TransformedDraw
+        if records[i].transform.isIdentity {
+            draw = TransformedDraw(row0: .zero, row1: .zero, params: SIMD4<Float>(Float(opacity), 0, 0, 0))
+        } else {
+            guard let placed = Self.transformedDraw(records[i].transform, size: size, opacity: opacity) else { return false }   // checked by the caller
+            draw = placed
+            draw.params.y = 1
+        }
+        draw.params.z = CompositorShaders.shaderIndex(records[i].blendMode)
+        let pass = MTLRenderPassDescriptor()
+        pass.colorAttachments[0].texture = target
+        pass.colorAttachments[0].loadAction = .dontCare
+        pass.colorAttachments[0].storeAction = .store
+        guard let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: pass) else { return false }
+        encoder.label = "CMP-004 blend \(records[i].blendMode.rawValue)"
+        encoder.setRenderPipelineState(blendPipeline)
+        encoder.setFragmentTexture(records[i].pictures[records[i].shown], index: 0)
+        encoder.setFragmentTexture(backdrop, index: 1)
+        encoder.setFragmentBytes(&draw, length: MemoryLayout<TransformedDraw>.stride, index: 0)
+        encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
+        encoder.endEncoding()
+        blendDraws += 1
         return true
     }
 
@@ -570,6 +661,8 @@ public final class Compositor {
         let d = size.textureDescriptor()
         if let composite { texturePool.recycle(composite, after: lastCommandBuffer) }   // PERF-004
         composite = nil
+        if let compositeAlternate { texturePool.recycle(compositeAlternate, after: lastCommandBuffer) }   // CMP-004
+        compositeAlternate = nil
         var starved = false
         #if DEBUG
         starved = faultInjection.missingPictures.contains("composite")

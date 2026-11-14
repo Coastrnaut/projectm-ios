@@ -48,10 +48,24 @@ public enum LayerOutcome: Sendable, Equatable {
 }
 
 /// How a layer is combined with what is below it. CMP-003 adds opacity (premultiplied channels ×
-/// opacity before "over"), CMP-005 transforms (`LayerTransform.swift`); CMP-004 adds blend modes.
-public enum LayerBlendMode: Sendable, Equatable {
-    /// Premultiplied "over".
+/// opacity before the mode), CMP-005 transforms (`LayerTransform.swift`), CMP-004 the blend modes
+/// (specs/099-cmp-004-blend-mode-library/contracts/blend-modes.md, ADR-0037): W3C Compositing and
+/// Blending Level 1 separable functions with source-over, the function on sRGB-encoded straight
+/// colours and the coverage in linear light. `LayerBlend` is the plain-Swift reference.
+/// The raw value is the stable name (the scene format's `composite.blend`).
+public enum LayerBlendMode: String, Sendable, Equatable, CaseIterable {
+    /// Premultiplied "over" (B = Cs); drawn with fixed-function blending exactly as before CMP-004.
     case normal
+    /// B = min(1, Cb + Cs) (separable, clamped; not Porter-Duff "plus").
+    case add
+    /// B = Cb + Cs − Cb·Cs.
+    case screen
+    /// B = Cb·Cs.
+    case multiply
+    /// B = HardLight(Cs, Cb): 2·Cb·Cs for Cb ≤ 0.5, else screen(Cs, 2·Cb − 1).
+    case overlay
+    /// B = |Cb − Cs|.
+    case difference
 }
 
 public struct LayerCompositeSettings: Sendable, Equatable {
@@ -71,11 +85,9 @@ public struct LayerCompositeSettings: Sendable, Equatable {
         opacity == 1 && blendMode == .normal && transform.isIdentity
     }
 
-    /// What the compositor draws today: any opacity (CMP-003), any transform (CMP-005) and normal
-    /// blending (until CMP-004; `CompositorError.unsupportedCompositeSettings` stays for it).
-    public var isSupportedByCompositor: Bool {
-        blendMode == .normal
-    }
+    /// What the compositor draws: any opacity (CMP-003), any transform (CMP-005) and every blend mode
+    /// (CMP-004). Always true since CMP-004; kept so callers written against CMP-001 still compile.
+    public var isSupportedByCompositor: Bool { true }
 }
 
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
@@ -85,7 +97,7 @@ public protocol LayerSource: AnyObject {
     var layerName: String { get }
     /// Read once when the compositor is built.
     var fallback: LayerFallback { get }
-    /// Read once when the compositor is built; any opacity and transform, normal blend.
+    /// Read once when the compositor is built; any opacity, transform and blend mode.
     var compositeSettings: LayerCompositeSettings { get }
     /// Called once before the first frame and once per size change. The only place a source may
     /// create its own working resources.

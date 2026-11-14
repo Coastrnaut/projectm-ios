@@ -110,7 +110,7 @@ extension SceneDocument {
                 issues.append(SceneIssue(.unknownLayerKind, path: path + ".kind",
                                          "Layer \(i) has the unknown kind \"\(kind)\"; it is kept but not shown."))
             }
-            if layer.composite.blendMode != SceneComposite.normalBlendMode {
+            if LayerBlendMode(rawValue: layer.composite.blendMode) == nil {   // CMP-004: the six names are drawn
                 issues.append(SceneIssue(.unsupportedBlendMode, path: path + ".composite.blend",
                                          "Layer \(i) uses the blend mode \"\(layer.composite.blendMode)\", which this version draws as normal."))
             }
