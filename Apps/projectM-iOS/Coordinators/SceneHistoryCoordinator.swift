@@ -122,6 +122,7 @@ final class SceneHistoryCoordinator {
 @MainActor
 enum SceneHistoryEdit {
     static func describe(from old: SceneInputs, to new: SceneInputs) -> (label: String, key: String?) {
+        if let macro = MacroHistoryEdit.describe(from: old.macros, to: new.macros) { return macro }   // MOD-010: wins over its targets
         var changes: [(label: String, key: String?)] = []
         if old.visual != new.visual { changes.append(("Visual \(new.visual.title)", nil)) }
         if old.bars != new.bars { changes.append(("Bars \(new.bars)", nil)) }
@@ -208,5 +209,24 @@ enum LayerHistoryEdit {
         if wasInverted != isInverted { result.append(.maskInverted) }
         if result.isEmpty && old != new { result.append(.maskShape) }   // e.g. an unknown mask replaced
         return result
+    }
+}
+
+/// MOD-010 (research MOD-010-D4): one macro's value changed: "Macro <name> <percent>", key `macro.<index>`, whatever
+/// targets changed with it (one drag or step = one undo step). Nil when the macro list did not change that way.
+@MainActor
+enum MacroHistoryEdit {
+    static func describe(from old: [SceneMacroEntry]?, to new: [SceneMacroEntry]?) -> (label: String, key: String?)? {
+        guard old != new else { return nil }
+        let before: [SceneMacroEntry] = old ?? []
+        let after: [SceneMacroEntry] = new ?? []
+        guard before.count == after.count else { return ("Macros", nil) }
+        var changed: [Int] = []
+        for index in after.indices where before[index] != after[index] { changed.append(index) }
+        guard changed.count == 1, let index = changed.first else { return ("Macros", nil) }
+        let entry: SceneMacroEntry = after[index]
+        let name: String = entry.fields["name"]?.stringValue ?? "\(index + 1)"
+        let value: Double = entry.fields["value"]?.numberValue?.doubleValue ?? 0
+        return ("Macro \(name) \(SceneHistoryEdit.percent(value))", "macro.\(index)")
     }
 }
