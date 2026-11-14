@@ -83,6 +83,9 @@ final class PresetCoordinator {
     @ObservationIgnored var retainedUserPresetIDs: Set<String> = []
     /// PRE-001: the rows' thumbnails (set by the app; nil in tests that do not need them).
     @ObservationIgnored var thumbnails: PresetThumbnailModel?
+    /// PRE-002: the launch collection runs once; tests await `thumbnailCollection`.
+    @ObservationIgnored private var thumbnailsCollected = false
+    @ObservationIgnored private(set) var thumbnailCollection: Task<Void, Never>?
     private(set) var current: IndexedPreset?
     private(set) var scope: PresetScope
     private(set) var unlocked = false
@@ -133,6 +136,18 @@ final class PresetCoordinator {
         for id in missing { store.toggle(id) }
         if !missing.isEmpty { favoritesVersion += 1 }
         resolveScope()
+        collectThumbnailGarbage(library)
+    }
+
+    /// PRE-002-R7: once the library (built-in and playable user presets) is listed, cached thumbnails
+    /// of presets no longer listed, or listed with another hash, are removed (off the main actor).
+    private func collectThumbnailGarbage(_ library: PresetLibrary) {
+        guard let thumbnails, !thumbnailsCollected else { return }
+        thumbnailsCollected = true
+        let cache: PresetThumbnailCache = thumbnails.cache
+        thumbnailCollection = Task.detached(priority: .utility) {
+            await cache.retainOnly(PresetThumbnailModel.listing(library))
+        }
     }
 
     func onScopeChange(_ announce: @escaping (String) -> Void) { scopeAnnouncer = announce }
