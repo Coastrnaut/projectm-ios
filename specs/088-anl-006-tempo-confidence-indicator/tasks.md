@@ -1,0 +1,57 @@
+# Tasks: ANL-006 Tempo Confidence Indicator
+
+**Input**: Design documents in `specs/088-anl-006-tempo-confidence-indicator/` (spec.md, plan.md,
+research.md, data-model.md, contracts/tempo-confidence.md, quickstart.md).
+
+**Tests**: test-first. Each test task comes before the code it covers; the red run (compile failure)
+is recorded before the production change. Budgets (owner rule 7): a unit test about 1-2 s (≤ 10 s),
+each package suite under 1 minute, a UI test under 30 s; representative cases only.
+
+**Format**: `- [ ] ID [P?] [Story?] Description with file path`. `[P]` = can run in parallel.
+`{sim}` = needs the row's own iOS 27.2 simulator "ANL6 iPhone 17" (created for this row, deleted
+afterwards). Inside descriptions "T03" is short for `ANL-006-T03`. A task is ticked only when its
+evidence was produced, with " — Verified <date>: <how>" appended. Logs go to `.build/scratch/`.
+
+## Phase 1: Setup
+
+- [ ] ANL-006-T01 Record the baseline: `swift test --package-path Packages/PerformanceControl` on the host; the five scripts (`check_compliance.py`, `validate_docs.py`, `check_motion_policy.py`, `check_permission_catalog.py`, `test_scripts.py`); the PosterBoard report count.
+
+## Phase 2: Foundational - the indicator (blocks every story)
+
+- [ ] ANL-006-T02 Write `Packages/PerformanceControl/Tests/PerformanceControlTests/TempoConfidenceIndicatorTests.swift` against contract C1 on an injected clock: starts searching; first usable estimate → uncertain; ≥ 0.7 at one BPM for 2.0 s → stable (not at 1.75 s); confidence between 0.5 and 0.7 holds stable and never enters it; a dip below 0.5 shorter than 1.0 s stays stable, ≥ 1.0 s → uncertain; BPM beyond 3 % of the locked BPM for 1.0 s → searching (no BPM), then uncertain after 3.0 s if still not stable; a BPM wandering beyond 3 % while uncertain restarts the dwell; nil, NaN, out-of-range BPM → searching; confidence clamped; backwards time adds no elapsed time; `reset()`; the `TempoReadout` mapping (manual wins; stable/uncertain/searching). (US1, US3)
+- [ ] ANL-006-T03 Record the T02 red run; implement `Packages/PerformanceControl/Sources/PerformanceControl/TempoConfidenceIndicator.swift` (`TempoConfidenceState`, `TempoConfidenceRules.standard` = enter 0.7, exit 0.5, enter dwell 2 s, exit dwell 1 s, reacquire 3 s, tolerance 0.03, 60…200 BPM with "enterConfidence > exitConfidence" preconditions, `TempoConfidenceIndicator`, `TempoReadout`; research ANL-006-D3). Evidence: T02 passes on the host and with `-Xswiftc -DANALYSIS_NO_ACCELERATE`.
+
+## Phase 3: User Story 2 - noise never claims a confident tempo (P1, roadmap acceptance)
+
+**Independent test**: `TempoConfidenceAcceptanceTests`.
+
+- [ ] ANL-006-T04 [US2] Write `Packages/PerformanceControl/Tests/PerformanceControlTests/TempoConfidenceAcceptanceTests.swift`: synthetic stereo PCM through `NormalizedPCMRing`'s analysis tap, a real `AnalysisPipeline` stepped synchronously, `TempoSubscriptionReader`, `TempoSource` and the indicator updated every 250 ms of audio on the sample clock (research ANL-006-D6). Cases: white noise seeds 1-3 and pink noise seeds 4-5 (12 s, peak 0.5) and 12 s of silence never reach stable, the largest confidence is < 0.7 and the snapshot is never `.estimated` (print the maximum per input); 120 and 90 BPM pulses reach stable at ±1 BPM within 10 s and stay stable; 12 s at 120 then 14 s at 90 leaves stable and is stable at 90 within 12 s of the change (ANL-006-S1 to S3). Evidence: passes on the host and in the Linux shape; each test ≤ 10 s; whole suite < 1 minute.
+
+## Phase 4: User Story 3 - no flicker (P2)
+
+- [ ] ANL-006-T05 [US3] Add to `TempoConfidenceIndicatorTests.swift`: a seeded random confidence uniform in 0.45…0.75 at 120 BPM, 4 Hz for 60 s, changes state at most twice (`stateChanges`); confidence alternating 0.45/0.75 every poll after stable stays stable (ANL-006-S4). Evidence: passes on the host.
+
+## Phase 5: User Story 1 - the readout shows the state (P1)
+
+**Independent test**: `TempoCoordinatorTests`, `TempoConfidenceUITests`.
+
+- [ ] ANL-006-T06 [US1] Update `Apps/projectM-iOS/Tests/TempoCoordinatorTests.swift`: an injected `stateClock`; the readout text, word and accessibility value for manual, stable, uncertain and searching (contract C1 app table); Reset returns to the analysis's current state without a new dwell; the Reset announcement per state; stopping the analysis returns to searching; the Tap value uses the new words.
+- [ ] ANL-006-T07 [US1] Implement in `Apps/projectM-iOS/Coordinators/TempoCoordinator.swift` (indicator, `stateClock`, `readout`, text functions on `TempoReadout`, announcement, reset on stop, DEBUG estimate override) and `Apps/projectM-iOS/Views/TempoControls.swift` (two lines and accessibility value from `TempoReadout`, strings built in typed steps); the DEBUG launch argument `-uitestTempoEstimate` in `Apps/projectM-iOS/Coordinators/AppCoordinator.swift`. Evidence: T06 passes `{sim}`; projectM-iOSTests all pass.
+- [ ] ANL-006-T08 [US1] Write `Apps/projectM-iOS/UITests/TempoConfidenceUITests.swift` (`-uitestTempoEstimate 120:0.9:40:0.3`: the readout reaches "120 BPM, stable", then "About 120 BPM, uncertain") and update `Apps/projectM-iOS/UITests/TapTempoUITests.swift`'s post-reset expectation for the new words. Evidence: passes in < 30 s `{sim}` with TapTempoUITests, AccessibilityScreensUITests and NativeVisualUITests green.
+
+## Phase 6: Polish
+
+- [ ] ANL-006-T09 Add a note to `specs/027-show-011-tap-tempo/contracts/tempo-source.md` (readout words and the Tap value now follow ANL-006; the snapshot is unchanged); run the five scripts; count PosterBoard reports; delete the row's simulator; mark the spec Implemented.
+
+## Dependencies
+
+T01 → T02 → T03 → (T04, T05 in parallel) ; T03 → T06 → T07 → T08 → T09.
+
+## Parallel example
+
+After T03: T04 (package acceptance, host CPU) and T06 (app test edits, no build) can be written in
+parallel; the app build waits for T07.
+
+## Implementation strategy
+
+MVP = T01-T04 (the roadmap acceptance in the package); then the readout (T06-T08); polish last.
