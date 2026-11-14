@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T09:28:52Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T09:28:54Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,18 +10,19 @@
 | State | Features |
 |---|---|
 | audited | 193 |
-| implementing | 2 |
+| implementing | 1 |
+| unit_passed | 1 |
 | integrated | 130 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 2 | 0 | 84 | 1 |
-| P1 | 105 | 2 | 44 | 0 |
-| P2 | 77 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 84 | 1 |
+| P1 | 105 | 1 | 1 | 44 | 0 |
+| P2 | 77 | 0 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -222,6 +223,10 @@ None.
 - `python3 scripts/validate_docs.py`: pass at `a356ef676c45` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-006/20261113T233346/docs.log`)
 - `swift test --package-path Packages/CaptureUI`: pass at `a356ef676c45` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-006/20261113T233346/swift-test_CaptureUI.log`)
 - `post-merge in 3 batches: projectM-iOSTests 430 + AccessibilityScreens 7 + DynamicTypeInspector 30, all pass; inspector tests 14-103 s each (over the 30 s budget; shortening in chore/ui-test-budget-2)`: pass at `bb1439c7` (log `.autonomous/logs/integration/acc-006/app-tests.log`)
+
+### ACC-008 High contrast overlay (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `6b23f3bd600a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-008/20261114T042852/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `6b23f3bd600a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-008/20261114T042852/docs.log`)
 
 ### ACC-011 Captioned status events (integrated)
 - `python3 scripts/check_compliance.py`: pass at `2b76f6f1015b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-011/20261114T003341/compliance.log`)
