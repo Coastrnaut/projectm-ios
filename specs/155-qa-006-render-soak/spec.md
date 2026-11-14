@@ -31,6 +31,7 @@ Identifiers carry the roadmap ID: requirements `QA-006-R1…`, success criteria 
 ## Clarifications
 
 ### Session 2026-11-14
+- Q: (CI fix, 2026-11-14) CI run 43612171768 failed the default soak on GitHub's macOS VM (Apple Paravirtual device): slope 188,221 B/cycle, while the pool baselines, live objects and release stayed clean, and the next two soaks in the same process grew by exactly their injected leak (98,304 B/cycle). Leak or driver? → A: Driver warm-up (research QA-006-D2a): the same object graph is flat on the Mac Studio's GPU, nothing in the soak path branches on the device, and the growth stopped within the process. The default soak runs 20 cycles and judges the last 10 (warm-up = the first half of a scene soak's cycles, at least 2 and at most 10; also used by the long soak). The rule (slope ε, bound, pool, live, release) is unchanged; the negative controls keep K = 2 and still fail; a verdict test models CI's growth and still catches a 98,304 B/cycle leak on top of it. Every soak prints its per-cycle samples to the log.
 
 Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
 interaction); each answer is the conservative, local-first option.
@@ -45,7 +46,7 @@ interaction); each answer is the conservative, local-first option.
 - Q: What is "bounded"? → A: After a warm-up of K = 2 cycles: (1) the least-squares slope of the per-cycle memory high-water marks over the remaining cycles is at most ε = max(64 KiB, 0.5 % of the warm-up high-water) per cycle; (2) no later cycle's high-water exceeds the warm-up high-water plus a tolerance of max(2 MiB, 10 %). At least 3 measured cycles are needed after the warm-up, or the verdict is "inconclusive" (a failure in tests). The slope catches a slow leak a single absolute bound would miss; the bound catches a step.
 - Q: What does "pool checkouts return to baseline" mean? → A: At the end of each scene's dwell (no transition running), the pool's checked-out texture count equals the count recorded the first time that scene finished its dwell after the warm-up; exactly 1 scene compositor is alive at the end of a dwell (the outgoing one of a transition has been released); after the soak releases everything, nothing is checked out.
 - Q: How is the detector proven? → A: Negative controls in the normal suite: the same short soak with an injected leak — (a) a fake resource that checks a texture out of the pool per cycle and never returns it, and (b) one that keeps a device texture (not pooled) per cycle — must fail with the expected rule (pool baseline and memory slope for (a), memory slope for (b)).
-- Q: How short is the default? → A: 30 s simulated (1,800 frames at 128 × 96, dwell 30 frames = 0.5 s, transition 0.25 s: 60 switches, 10 cycles), well under 60 s wall time on the host; the projectM soak runs 20 s simulated (1,200 frames at 64 × 64, a preset switch every 40 frames, 5 presets: 30 switches, 6 cycles) on the simulator. Each negative control runs a shorter soak (6 cycles).
+- Q: How short is the default? → A: 60 s simulated (3,600 frames at 128 × 96, dwell 30 frames = 0.5 s, transition 0.25 s: 120 switches, 20 cycles, the first 10 of them warm-up; was 30 s and 10 cycles with K = 2 until the CI fix of 2026-11-14 below), well under 60 s wall time on the host; the projectM soak runs 20 s simulated (1,200 frames at 64 × 64, a preset switch every 40 frames, 5 presets: 30 switches, 6 cycles) on the simulator. Each negative control runs a shorter soak (6 cycles).
 - Q: How is the long soak run? → A: `QA006_SOAK_SECONDS=<n>` turns on a bench test (skipped otherwise) that runs n simulated seconds with the same rule and writes the report; `scripts/run_render_soak.py` runs it on the host or a named simulator (passing the variable through as `TEST_RUNNER_QA006_SOAK_SECONDS`) and prints the verdict. The device run is a FINAL-stage task `{device}`.
 - Q: Where does the report go? → A: A JSON report (configuration, per-cycle samples, slope, bounds, errors, verdict) is written to `QA006_REPORT_DIR` when set, else to the test's temporary folder, and attached to the test; the script collects it.
 - Q: Does the default soak run in CI? → A: Yes. It is an ordinary RenderGoldens test, so CI runs it on the macOS host and the iOS simulator jobs that already test the package (skipped without a Metal device, and compiled out in the Linux shape, where the verdict tests still run); the projectM soak runs in CI's existing ANGLERendering simulator step. The long soak never runs in CI.
@@ -171,7 +172,7 @@ the final QA phase) a device and gets a JSON report and a verdict.
 
 ### Measurable Outcomes
 
-- **QA-006-S1**: The default scene soak (30 s simulated, 60 switches) passes on the macOS host and the
+- **QA-006-S1**: The default scene soak (60 s simulated, 120 switches) passes on the macOS host and the
   iOS 27.2 Simulator with zero render errors in under 60 s wall time each.
 - **QA-006-S2**: Both negative controls fail with the expected rules.
 - **QA-006-S3**: The verdict unit tests (flat, noisy, ramp, step, too few cycles, errors, baseline

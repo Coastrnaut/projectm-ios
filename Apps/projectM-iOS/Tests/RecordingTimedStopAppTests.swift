@@ -203,9 +203,13 @@ final class RecordingTimedStopAppTests: XCTestCase {
         XCTAssertEqual(event.id, "X13")
         XCTAssertEqual(event.announcement, "Recording stopped after 10 seconds.")
         let video = try XCTUnwrap(r.recording.lastRecording)
-        XCTAssertEqual(video.frameCount, 300, "exactly 30 fps × 10 s")
+        // The live writer may drop a frame on a loaded machine (a busy queue or a not-ready encoder; a post-merge
+        // run on the simulator wrote 292). REC-006's grid accounts for it: every one of the 300 slots of 30 fps × 10 s
+        // holds a frame or is counted as dropped, and the end is exact (no frame at or past 10 s).
+        XCTAssertEqual(video.frameCount + video.droppedFrames, 300, "frames + dropped slots = 30 fps × 10 s; \(video.statistics)")
+        XCTAssertEqual(video.droppedFrames, video.statistics.dropped, "every empty slot is a frame the live writer dropped")
         XCTAssertEqual(video.durationSeconds, 10, accuracy: 1e-9)
-        XCTAssertTrue(r.recording.probe.contains("frames=300 duration=10.00"), r.recording.probe)
+        XCTAssertTrue(r.recording.probe.contains("frames=\(video.frameCount) duration=10.00"), r.recording.probe)
         XCTAssertEqual(r.recording.elapsedSeconds, 10, accuracy: 1e-9)
         XCTAssertEqual(r.recording.indicatorText, "0:10 / 0:10")
     }
@@ -263,8 +267,10 @@ final class RecordingTimedStopAppTests: XCTestCase {
         XCTAssertEqual(r.recording.lastStopReason, .user)
         // The user's own stop has no stop notice; the DEBUG folder mode then says "Recording saved." (never a timed stop).
         XCTAssertEqual(r.recording.notice, "Recording saved.", "no timed-stop notice for the user's own stop")
-        XCTAssertEqual(r.recording.lastRecording?.frameCount, 12)
-        XCTAssertEqual(r.recording.lastRecording?.durationSeconds ?? 0, 0.4, accuracy: 1e-9)
+        let video = try XCTUnwrap(r.recording.lastRecording)
+        // The live writer may drop a frame under load; the 12 slots of 0.4 s are accounted for (REC-006-R4).
+        XCTAssertEqual(video.frameCount + video.droppedFrames, 12, "frames + dropped slots; \(video.statistics)")
+        XCTAssertEqual(video.durationSeconds, 0.4, accuracy: 1e-9)
     }
 
     func testADiskGuardStopBeforeTheTargetKeepsItsOwnNotice() async throws {
@@ -279,6 +285,7 @@ final class RecordingTimedStopAppTests: XCTestCase {
         }
         XCTAssertTrue(r.recording.probe.hasPrefix("video"), r.recording.probe)
         XCTAssertEqual(r.recording.notice, RecordingStopReason.lowStorage.notice)
-        XCTAssertEqual(r.recording.lastRecording?.frameCount, 12)
+        let video = try XCTUnwrap(r.recording.lastRecording)
+        XCTAssertEqual(video.frameCount + video.droppedFrames, 12, "frames + dropped slots (live writer); \(video.statistics)")
     }
 }

@@ -26,6 +26,8 @@
 //   Photos folder by its store ID, staged through the logo's import path (PNG, logo limits), adopted into
 //   the Photos folder (FILE-008 dedup) and made the current logo with the scene's placement. The logo is made
 //   current before the photo, keeping the adopted photo's reference, so neither release can drop the other.
+// * SCN-014: a scene's slideshow pictures travel too (`exportSlides`; staged, adopted and remapped on import,
+//   never made the current slideshow). The library import that adds a pack to the show is `ScenePackImporter`.
 // No networking; nothing from an archive is executed. Runs off the main actor.
 import ColorGradeParameters
 import Foundation
@@ -203,6 +205,7 @@ struct SceneArchiveService: Sendable {
             guard let file, let data = try? Data(contentsOf: file, options: .mappedIfSafe) else { throw .archive(.missingMedia(key: asset.key)) }
             media.append(SceneArchiveMedia(key: asset.key, type: asset.type, fileExtension: file.pathExtension, data: data))
         }
+        let slides = try exportSlides(of: document)   // SCN-014
         cleanUpExport()
         let url = exportFolder.appendingPathComponent(Self.exportFileName(for: modified), isDirectory: false)
         let handle: FileHandle
@@ -215,7 +218,8 @@ struct SceneArchiveService: Sendable {
             throw .saveFailed
         }
         do throws(SceneArchiveError) {
-            try SceneArchiveWriter.write(document: document, media: media, registry: registry, modified: modified, limits: limits) { (chunk: Data) in
+            try SceneArchiveWriter.write(document: document, media: media, slides: slides, registry: registry, modified: modified,
+                                         limits: limits) { (chunk: Data) in
                 try handle.write(contentsOf: chunk)
             }
             try? handle.close()
@@ -225,6 +229,19 @@ struct SceneArchiveService: Sendable {
             throw .archive(error)
         }
         return SceneArchiveExport(url: url)
+    }
+
+    /// SCN-014: the photo asset's slideshow pictures from the Photos folder, by store ID, in slide order.
+    func exportSlides(of document: SceneDocument) throws(SceneArchiveServiceError) -> [SceneArchiveSlide] {
+        var slides: [SceneArchiveSlide] = []
+        for entry in document.slideStoreIDs {
+            for (offset, raw) in entry.storeIDs.enumerated() {
+                guard let id = UUID(uuidString: raw), id.uuidString == raw, let file = photos.existingFile(for: id),
+                      let data = try? Data(contentsOf: file, options: .mappedIfSafe) else { throw .archive(.missingMedia(key: entry.key)) }
+                slides.append(SceneArchiveSlide(key: entry.key, index: offset + 1, fileExtension: file.pathExtension, data: data))
+            }
+        }
+        return slides
     }
 
     /// Removes the exported file (call when the hand-off ends, done or cancelled).
@@ -275,13 +292,21 @@ struct SceneArchiveService: Sendable {
             }
             steps.append(.staged(item.path))
         }
+        var slidePlaceholders: [String: [String]] = [:]   // SCN-014
+        for (offset, slide) in contents.slides.enumerated() {
+            let number = placeholders.count + offset + 1
+            let placeholder = UUID(uuidString: String(format: "00000000-0000-4000-8000-%012d", number))?.uuidString ?? slide.key
+            photoIDs.insert(placeholder)
+            slidePlaceholders[slide.key, default: []].append(placeholder)
+            steps.append(.staged(slide.path))
+        }
         let types: [SceneArchiveAssetType] = [.photo, .video, .logo].filter { (type: SceneArchiveAssetType) -> Bool in
             contents.media.contains { (item: SceneArchiveMedia) -> Bool in item.type == type }
         }
         steps += types.map { (type: SceneArchiveAssetType) -> SceneArchiveImportStep in .adopted(type) }
         let currentOrder: [SceneArchiveAssetType] = [.logo, .photo, .video].filter { (type: SceneArchiveAssetType) -> Bool in types.contains(type) }
         steps += currentOrder.map { (type: SceneArchiveAssetType) -> SceneArchiveImportStep in .madeCurrent(type) }
-        let document = contents.document.remappingStoreIDs(placeholders)
+        let document = contents.document.remappingStoreIDs(placeholders).remappingSlideIDs(slidePlaceholders)
         let decodeOnly = contents.warnings.filter { (issue: SceneIssue) -> Bool in
             issue.code == .valueClamped || issue.code == .droppedField
         }
@@ -366,9 +391,20 @@ struct SceneArchiveService: Sendable {
             }
         }
 
+        // SCN-014: the slideshow's pictures, staged like photos.
+        var stagedSlides: [StoredPhoto] = []
+        var slideIDs: [String: [String]] = [:]
+        for slide in contents.slides {
+            let staged = try stageSlide(slide, into: stagingPhotos, incoming: incoming, id: UUID())
+            stagedSlides.append(staged)
+            slideIDs[slide.key, default: []].append(staged.id.uuidString)
+        }
+
         // Remap and check every reference against the staged copies before touching the stores.
-        let document = contents.document.remappingStoreIDs(storeIDs)
-        let staged = StoredMediaAvailability(photos: Set([stagedPhoto?.id.uuidString, stagedLogo?.id.uuidString].compactMap { $0 }),
+        let document = contents.document.remappingStoreIDs(storeIDs).remappingSlideIDs(slideIDs)
+        let stagedPhotoIDs = Set([stagedPhoto?.id.uuidString, stagedLogo?.id.uuidString].compactMap { $0 })
+            .union(stagedSlides.map(\.id.uuidString))
+        let staged = StoredMediaAvailability(photos: stagedPhotoIDs,
                                              videos: Set([stagedVideo?.id.uuidString].compactMap { $0 }))
         let unresolved = document.validate(registry: registry, assets: staged)
             .filter { (issue: SceneIssue) -> Bool in issue.isError || issue.code == .missingAsset }
@@ -379,7 +415,9 @@ struct SceneArchiveService: Sendable {
         var adoptedPhoto: StoredPhoto?
         var adoptedVideo: StoredVideo?
         var adoptedLogo: StoredPhoto?
+        var adoptedSlides: [StoredPhoto] = []
         do {
+            for slide in stagedSlides { adoptedSlides.append(try photos.adopt(slide)) }   // SCN-014
             if let stagedPhoto {
                 adoptedPhoto = try photos.adopt(stagedPhoto)
                 observer?(.adopted(.photo))
@@ -396,6 +434,7 @@ struct SceneArchiveService: Sendable {
             if let adoptedPhoto { photos.discard(adoptedPhoto) }
             if let adoptedVideo { videos.discard(adoptedVideo) }
             if let adoptedLogo { logos.discard(adoptedLogo) }
+            for slide in adoptedSlides { photos.discard(slide) }
             throw .saveFailed
         }
         // FILE-008-R10: media equal to the stored ones (the same payload) are not "replaced".
@@ -429,13 +468,32 @@ struct SceneArchiveService: Sendable {
                                         warnings: contents.warnings, repairReport: report)
     }
 
-    private func newStagingFolder() -> URL {
+    /// SCN-014: writes a slide's bytes into `incoming` and stages it through the photo import path.
+    func stageSlide(_ slide: SceneArchiveSlide, into store: PhotoStore, incoming: URL, id: UUID,
+                    keepingCleanOriginal: Bool = false) throws(SceneArchiveServiceError) -> StoredPhoto {
+        let file = incoming.appendingPathComponent("\(slide.key)-slide-\(slide.index).\(slide.fileExtension)", isDirectory: false)
+        do {
+            try FileManager.default.createDirectory(at: incoming, withIntermediateDirectories: true)
+            try slide.data.write(to: file, options: .atomic)
+        } catch {
+            throw .saveFailed
+        }
+        do throws(ImageImportError) {
+            let staged = try store.stage(at: file, id: id, keepingCleanOriginal: keepingCleanOriginal)
+            observer?(.staged(slide.path))
+            return staged
+        } catch {
+            throw .media(path: slide.path, message: error.message)
+        }
+    }
+
+    func newStagingFolder() -> URL {
         temporaryRoot.appendingPathComponent(Self.stagingFolderName, isDirectory: true)
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
     }
 
     /// Creates `staging`, copies the picked file into it once, and reads the copy.
-    private func readPicked(_ source: URL, staging: URL) throws(SceneArchiveServiceError) -> Data {
+    func readPicked(_ source: URL, staging: URL) throws(SceneArchiveServiceError) -> Data {
         do {
             try FileManager.default.createDirectory(at: staging, withIntermediateDirectories: true)
         } catch {

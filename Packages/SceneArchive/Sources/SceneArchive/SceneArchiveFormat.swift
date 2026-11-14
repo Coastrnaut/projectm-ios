@@ -65,8 +65,8 @@ public struct SceneArchiveLimits: Sendable, Equatable {
     public static let standard = SceneArchiveLimits(maxArchiveBytes: 600_000_000, maxManifestBytes: 65_536,
                                                     maxPhotoBytes: 40 * 1_024 * 1_024, maxVideoBytes: 500 * 1_024 * 1_024)
 
-    /// Scene, one photo, one video, one logo (MED-010).
-    public static let maximumFiles = 4
+    /// Scene, one photo, one video, one logo (MED-010) and up to 20 slideshow pictures (SCN-014).
+    public static let maximumFiles = 4 + SceneArchiveFormat.maximumSlides
 
     public func maxBytes(for type: SceneArchiveAssetType) -> Int {
         switch type {

@@ -96,6 +96,21 @@ final class MIDIInputCoordinator {
         }
     }
 
+    /// MIDI-013 (research MIDI-013-D2): drops the queued messages without delivering them (the user's panic); the
+    /// clock, active-sensing and dropped counters are untouched. Returns how many were dropped.
+    @discardableResult
+    func discardPending() -> Int {
+        var scratch: [MIDIEvent] = []
+        service.ring.drain(into: &scratch, maxCount: Self.drainLimit)
+        var count: Int = scratch.count
+        while !scratch.isEmpty {
+            scratch.removeAll(keepingCapacity: true)
+            service.ring.drain(into: &scratch, maxCount: Self.drainLimit)
+            count += scratch.count
+        }
+        return count
+    }
+
     /// Moves queued events to the clients (display rate in the app; called directly by tests).
     func drain() {
         let losses: Int = service.sourceLossCount

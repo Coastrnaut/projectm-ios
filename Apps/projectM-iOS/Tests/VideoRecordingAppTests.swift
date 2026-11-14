@@ -143,7 +143,11 @@ final class VideoRecordingAppTests: XCTestCase {
         XCTAssertEqual(recording.lastStopReason, expected, file: file, line: line)
         XCTAssertEqual(recording.notice, expected.notice ?? "Recording saved.", file: file, line: line)
         XCTAssertNil(source.videoRecording, "the tap is detached", file: file, line: line)
-        XCTAssertTrue(recording.probe.hasSuffix("64x48 frames=3 duration=0.10 audio=0"), "probe: \(recording.probe)", file: file, line: line)
+        // Live writer: a frame dropped under load is counted (REC-006-R4); the 3 slots and the 0.1 s end are exact.
+        let video = try XCTUnwrap(recording.lastRecording, file: file, line: line)
+        XCTAssertEqual(video.frameCount + video.droppedFrames, 3, "\(video.statistics)", file: file, line: line)
+        XCTAssertTrue(recording.probe.hasSuffix("64x48 frames=\(video.frameCount) duration=0.10 audio=0"), "probe: \(recording.probe)",
+                      file: file, line: line)
     }
 
     func testUserStop() throws {
@@ -338,7 +342,9 @@ final class VideoRecordingAppTests: XCTestCase {
         }
         await fulfillment(of: [done], timeout: 10)
         XCTAssertEqual(recording.notice, "Recording stopped because storage is almost full.")
-        XCTAssertTrue(recording.probe.hasSuffix("64x48 frames=3 duration=0.10 audio=0"), recording.probe)
+        let video = try XCTUnwrap(recording.lastRecording)
+        XCTAssertEqual(video.frameCount + video.droppedFrames, 3, "frames + dropped slots (live writer); \(video.statistics)")
+        XCTAssertTrue(recording.probe.hasSuffix("64x48 frames=\(video.frameCount) duration=0.10 audio=0"), recording.probe)
     }
 
     /// REC-015-R6: outside the DEBUG folder mode, the low-storage recording is offered (REC-012).

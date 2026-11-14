@@ -104,6 +104,7 @@ struct VisualizerView: View {
             .accessibilityIdentifier("visualizerTapArea")
             .accessibilityLabel("Visualization")
             .accessibilityHint("Shows or hides the controls")
+            .modifier(MIDIPanicVisualizerCommands(coordinator: coordinator))   // MIDI-013-R7: ⌘⇧M, VoiceOver action
     }
 
     private var statusStack: some View {
@@ -507,6 +508,7 @@ struct VisualizerView: View {
         .onChange(of: coordinator.settings.lissajousPersistence) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.radialWaveformRing) { coordinator.visualSettingsChanged() }   // VIS-005
         .onChange(of: coordinator.settings.radialWaveformAmplitude) { coordinator.visualSettingsChanged() }
+        .onChange(of: coordinator.settings.beatRingsLife) { coordinator.visualSettingsChanged() }   // VIS-006
         .onChange(of: coordinator.settings.spectrumSmoothing) { coordinator.visualSettingsChanged() }   // ANL-003
     }
 

@@ -306,6 +306,7 @@ struct SettingsView: View {
                 }
                 if settings.visual == .lissajous { lissajousOptions }   // VIS-004-R11
                 if settings.visual == .radialWaveform { radialWaveformOptions }   // VIS-005-R9
+                if settings.visual == .beatRings { beatRingsOptions }   // VIS-006-R9
                 if settings.visual == .linearSpectrum {
                     Picker("Orientation", selection: $settings.linearSpectrumOrientation) {
                         ForEach(LinearSpectrumOrientation.allCases, id: \.self) { Text($0.title).tag($0) }
@@ -343,7 +344,7 @@ struct SettingsView: View {
                     .accessibilityIdentifier("nativeVisualUnavailableFooter")
             } else {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Oscilloscope draws the sound's waveform, held still when the sound repeats. Lissajous plots the left channel against the right: mono sound is a straight line, wide stereo fills the space; Mid/Side turns it so mono is vertical. Radial Waveform wraps the waveform around a ring: louder sound pushes it out and pulls it in, silence is a still circle. Camera shows your rear or front camera behind a circular spectrum, only while it is on screen; the picture is never sent. Photo shows a picture you choose behind a circular spectrum. Video plays a video you choose, without its sound, behind a circular spectrum. Text shows your own words over a circular spectrum.")
+                    Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Oscilloscope draws the sound's waveform, held still when the sound repeats. Lissajous plots the left channel against the right: mono sound is a straight line, wide stereo fills the space; Mid/Side turns it so mono is vertical. Radial Waveform wraps the waveform around a ring: louder sound pushes it out and pulls it in, silence is a still circle. Beat Rings sends a ring out from the centre on each beat that grows and fades; with Reduce flashing on, at most three rings start per second. Camera shows your rear or front camera behind a circular spectrum, only while it is on screen; the picture is never sent. Photo shows a picture you choose behind a circular spectrum. Video plays a video you choose, without its sound, behind a circular spectrum. Text shows your own words over a circular spectrum.")
                     if settings.visual.isNative {
                         if glowUnavailable {
                             Text(AppCoordinator.glowUnavailableMessage)
@@ -371,6 +372,16 @@ struct SettingsView: View {
     }
 
     /// VIS-005-R9: the radial waveform's ring size and amplitude.
+    /// VIS-006-R9: how long a beat ring lasts.
+    private var beatRingsOptions: some View {
+        Picker("Ring life", selection: $settings.beatRingsLife) {
+            ForEach(BeatRingLife.allCases, id: \.self) { (life: BeatRingLife) in Text(life.title).tag(life) }
+        }
+        .segmentedUnlessAccessibilitySize()   // ACC-006-R1
+        .accessibilityLabel("Ring life")
+        .accessibilityIdentifier("beatRingsLifePicker")
+    }
+
     @ViewBuilder private var radialWaveformOptions: some View {
         Picker("Ring", selection: $settings.radialWaveformRing) {
             ForEach(RadialWaveformRing.allCases, id: \.self) { (ring: RadialWaveformRing) in Text(ring.title).tag(ring) }

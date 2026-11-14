@@ -25,6 +25,8 @@ public struct AnalysisPipelineConfiguration: Sendable, Hashable {
     public let loudness: LoudnessConfiguration
     /// ANL-011's spectral rolloff (fraction 0.85 by default).
     public let rolloff: SpectralRolloffConfiguration
+    /// ANL-012's spectral flatness (20 Hz to Nyquist, −70 dB floor).
+    public let flatness: SpectralFlatnessConfiguration
 
     public init(spectrum: SpectrumConfiguration = AnalysisPipelineConfiguration.defaultSpectrum,
                 bandCount: BandCount = .b64,
@@ -36,11 +38,13 @@ public struct AnalysisPipelineConfiguration: Sendable, Hashable {
                 highTransient: TransientDetectorConfiguration = .highTransient,
                 centroid: SpectralCentroidConfiguration = .standard,
                 loudness: LoudnessConfiguration = .standard,
-                rolloff: SpectralRolloffConfiguration = .standard) throws(AnalysisBusError) {
+                rolloff: SpectralRolloffConfiguration = .standard,
+                flatness: SpectralFlatnessConfiguration = .standard) throws(AnalysisBusError) {
         guard spectrum.sampleRate == onset.sampleRate, spectrum.sampleRate == beat.sampleRate,
               spectrum.sampleRate == kick.sampleRate, spectrum.sampleRate == midTransient.sampleRate,
               spectrum.sampleRate == highTransient.sampleRate,
               spectrum.sampleRate == centroid.sampleRate, spectrum.sampleRate == rolloff.sampleRate,
+              spectrum.sampleRate == flatness.sampleRate,
               spectrum.sampleRate == loudness.sampleRate else {
             throw .sampleRateMismatch
         }
@@ -56,5 +60,6 @@ public struct AnalysisPipelineConfiguration: Sendable, Hashable {
         self.centroid = centroid
         self.loudness = loudness
         self.rolloff = rolloff
+        self.flatness = flatness
     }
 }

@@ -114,13 +114,16 @@ public struct AnalysisFrame: Sendable, Hashable {
     public let rolloffHz: Float
     /// ANL-011's rolloff normalized 0…1 (log frequency, 50 Hz → 0, 20 kHz → 1; 0 at silence).
     public let rolloff: Float
+    /// ANL-012's spectral flatness (Wiener entropy of the bin power), 0 tonal … 1 flat; ≈ 0.56 for
+    /// white noise; 0 at silence and before any signal in the session.
+    public let flatness: Float
 
     public init(id: UInt64, time: AnalysisTimestamp, bandCount: Int, onsetFlux: Float, bpm: Double?, beatConfidence: Double,
                 kickEnvelope: Float = 0, centroidHz: Float = 0, centroid: Float = 0,
                 loudness: Float = 0, loudnessDecibels: Float = LoudnessReading.silent.decibels,
                 midTransientEnvelope: Float = 0, midTransientConfidence: Float = 0,
                 highTransientEnvelope: Float = 0, highTransientConfidence: Float = 0,
-                rolloffHz: Float = 0, rolloff: Float = 0) {
+                rolloffHz: Float = 0, rolloff: Float = 0, flatness: Float = 0) {
         self.id = id
         self.time = time
         self.bandCount = bandCount
@@ -138,6 +141,7 @@ public struct AnalysisFrame: Sendable, Hashable {
         self.highTransientConfidence = highTransientConfidence
         self.rolloffHz = rolloffHz
         self.rolloff = rolloff
+        self.flatness = flatness
     }
 }
 
@@ -146,7 +150,7 @@ public enum AnalysisBusError: Error, Equatable, Sendable {
     case invalidEventCapacity(Int)
     /// Already `AnalysisPipeline.maximumSubscribers` subscribers.
     case tooManySubscribers
-    /// The spectrum, onset, beat, kick, mid and high transient, centroid, rolloff and loudness configurations disagree on the sample rate.
+    /// The spectrum, onset, beat, kick, mid and high transient, centroid, rolloff, flatness and loudness configurations disagree on the sample rate.
     case sampleRateMismatch
     /// The band floor must be finite and below 0 dB.
     case invalidBandFloor(Float)
