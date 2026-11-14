@@ -139,4 +139,5 @@ In MIDI Mappings › Transport, Learn on a row accepts the next note press, CC b
 
 - The trigger list keeps MIDI-006's capacity of 64 bindings across all source kinds.
 - 30 ms is below any deliberate re-press and above packet duplication by interfaces and bridges.
+- Every message from CoreMIDI carries a timestamp (the input substitutes the arrival time for a zero timestamp); a message built without one (timestamp 0) is judged by the down state and the same-batch rule only.
 - A physical controller check is the `{device}` task in the last stage; simulator results are never device evidence.
