@@ -87,6 +87,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
     /// ANL-003: the smoother, the newest frame's session and the previous display-link timestamp.
     private let smoother = BandSmoother()
     private var bandSession: UInt64 = 0
+    /// ANL-007: the newest frame's kick envelope, fed to the bindings (MOD-002's Kick source).
+    private var kickEnvelope: Float = 0
     private var lastLinkTimestamp: CFTimeInterval?
     private var displayLink: CADisplayLink?
     private var paused = true
@@ -296,9 +298,9 @@ final class NativeSpectrumHost: PresentationBoundResource {
 
     /// Advances the bindings with one frame's bands at the frame's display time and applies the
     /// result. Does nothing without bindings. Called by `frame(_:)`; tests call it directly.
-    func applyModulation(bands: UnsafeBufferPointer<Float>, timeNanoseconds: UInt64) {
+    func applyModulation(bands: UnsafeBufferPointer<Float>, kick: Float? = nil, timeNanoseconds: UInt64) {
         guard let modulator, modulator.hasBindings else { return }
-        modulator.advance(frame: AudioFeatureFrame(bands: bands), timeNanoseconds: timeNanoseconds)
+        modulator.advance(frame: AudioFeatureFrame(bands: bands, kick: kick), timeNanoseconds: timeNanoseconds)
         resolveEffectiveGlow()
     }
 
@@ -392,6 +394,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             generator.restartLoop()
             smoother.reset()   // ANL-003-R5: no ramp from the picture before the pause
             lastLinkTimestamp = nil
+            kickEnvelope = 0   // ANL-007: no kick carried over a pause
             if let waveform { analyzer.start(reader: waveform) }   // VIS-003: the tap through the pass-through wrapper
             let link = CADisplayLink(target: NativeSpectrumLinkProxy(self), selector: #selector(NativeSpectrumLinkProxy.fire(_:)))
             link.preferredFrameRateRange = quality.frameRateRange
@@ -472,6 +475,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         if let info = analyzer.output.readLatest(into: bands, capacity: SpectrumBarCount.maximum) {
             bandCount = info.count
             bandSession = info.session
+            kickEnvelope = info.kickEnvelope
         }
         // ANL-003: the real interval since the previous frame (the first frame after a start snaps).
         let interval: Double = lastLinkTimestamp.map { (previous: CFTimeInterval) -> Double in link.timestamp - previous } ?? 0
@@ -481,7 +485,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         let context = VisualFrameContext(timeNanoseconds: UInt64(max(link.targetTimestamp, 0) * 1e9),
                                          frameDuration: link.targetTimestamp - link.timestamp, reduceFlashing: reduceFlashing)
         let bandInput = UnsafeBufferPointer(start: bands, count: bandCount)
-        applyModulation(bands: bandInput, timeNanoseconds: context.timeNanoseconds)   // MOD-002; no-op without bindings
+        applyModulation(bands: bandInput, kick: kickEnvelope, timeNanoseconds: context.timeNanoseconds)   // MOD-002; no-op without bindings
         // VIS-003: the oscilloscope draws the newest sample history (kept when nothing new arrived).
         let input: UnsafeBufferPointer<Float>
         if case .oscilloscope = style {
