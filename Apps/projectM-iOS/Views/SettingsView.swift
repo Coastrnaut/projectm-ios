@@ -47,6 +47,8 @@ struct SettingsView: View {
     var history: SceneHistoryCoordinator?
     /// AUD-008: the analysis-only input trim (nil hides its section, e.g. in previews).
     var inputTrim: InputTrimSetting?
+    /// AUD-009: the analysis-only channel selection (nil hides its section, e.g. in previews).
+    var channelSelection: ChannelSelectionSetting?
     @Environment(\.dismiss) private var dismiss
     @State private var pickedPhoto: PhotosPickerItem?
     @State private var showPhotoFileImporter = false
@@ -228,6 +230,7 @@ struct SettingsView: View {
                     Text("Shows the frame rate and the audio state over the visualization.")
                 }
                 if let inputTrim { InputTrimSection(inputTrim: inputTrim) }   // AUD-008-R8
+                if let channelSelection { ChannelSelectionSection(selection: channelSelection) }   // AUD-009-R7
                 oscSection
                 if let show {   // SHOW-001-R14
                     Section {
