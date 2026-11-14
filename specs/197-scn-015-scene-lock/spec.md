@@ -138,7 +138,7 @@ After the show, the performer unlocks with a confirmation and edits again.
 
 ### Measurable Outcomes
 
-- **SCN-015-S1**: With the scene locked, 7 of 7 representative edit attempts (inspector write, macro move, snapshot recall, cue delete, cue reorder, transition edit, undo) are refused and the scene document, show file and settings are byte-identical.
+- **SCN-015-S1**: With the scene locked, 7 of 7 representative edit attempts (inspector write, macro move, snapshot recall, cue delete, cue reorder, transition edit, undo) are refused and the scene document (the autosaved scene file's bytes), the show file's bytes and the settings (every `AppSettings` key's stored value plus the live scene inputs) are byte-identical.
 - **SCN-015-S2**: With the scene locked, Next, Previous and Go to cue each apply their cue's scene (3 of 3); blackout and tap tempo work.
 - **SCN-015-S3**: After unlocking, the same edits succeed.
 - **SCN-015-S4**: The lock survives a relaunch.

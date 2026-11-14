@@ -12,7 +12,7 @@
 
 - [ ] SCN-015-T03 [US1] Guards (contract L2): `ParameterInspectorTargets.target(for:settings:)` in Apps/projectM-iOS/Coordinators/ParameterInspectorModel.swift; `MacroCoordinator.setValue` in Apps/projectM-iOS/Coordinators/MacroCoordinator.swift; snapshot save/rename/delete/recall in Apps/projectM-iOS/Coordinators/SceneSnapshotCoordinator.swift (wired in AppCoordinator+SceneSnapshots.swift); undo/redo and canUndo/canRedo in Apps/projectM-iOS/Coordinators/SceneHistoryCoordinator.swift
 - [ ] SCN-015-T04 [US1] Show guards (every edit method; refusal into `editorMessage` and the library lane) in Apps/projectM-iOS/Coordinators/ShowCoordinator.swift; wiring of `sceneLock` into show and history and the announcer in Apps/projectM-iOS/Coordinators/AppCoordinator.swift
-- [ ] SCN-015-T05 [US1] UI: Settings "Scene lock" section and disabled scene sections (Apps/projectM-iOS/Views/SettingsView.swift, Apps/projectM-iOS/Views/SceneLockViews.swift); show editor without Edit, add buttons, swipe-to-delete, drag reorder and edit menu items (Apps/projectM-iOS/Views/ShowEditorView.swift); shelf strip disabled (Apps/projectM-iOS/Views/ControlsOverlay.swift)
+- [ ] SCN-015-T05 [US1] UI: Settings "Scene lock" section and disabled scene sections (Apps/projectM-iOS/Views/SettingsView.swift, Apps/projectM-iOS/Views/SceneLockViews.swift); show editor without Edit, add buttons, swipe-to-delete, drag reorder, edit menu items and the edit VoiceOver actions (Rename, Duplicate Scene, Rename Scene, Transition, Move Up, Move Down; Go to Cue and Assign MIDI stay) plus a "Scene locked" note (Apps/projectM-iOS/Views/ShowEditorView.swift); shelf strip disabled (Apps/projectM-iOS/Views/ControlsOverlay.swift)
 
 ## Phase 3: User Story 2 — Perform while locked (P1)
 
@@ -38,3 +38,13 @@ T01 → T02, T03, T04 → T05, T06, T07 → T08, T09 → T10.
 ## Implementation strategy
 
 The model and coordinator guards first (they carry the acceptance), then UI, then tests.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Coverage: R1 → T01, T08; R2 → T06, T07, T09; R3, R4 → T03, T04, T08; R5 → T06 (navigation untouched), T08, T09;
+R6 → T05, T09; R7 → T06; R8 → T07; R9 → T01, T02; R10 → T10. S1-S4 → T08; S5 → T09. Findings applied:
+(1) the show editor's VoiceOver edit actions (Move Up/Down, Rename…) were not named by any task, so a VoiceOver
+user could still reorder through the UI path (the coordinator would refuse, but the UI would offer it); T05 now
+gates them. (2) "byte-identical settings" was undefined; the spec's S1 now says which values are compared.
+Noted, not tasked: MOD-012's matrix is not in this tree; its coordinator needs the same guard when it merges.
+No constitution conflicts, no unmapped tasks.
