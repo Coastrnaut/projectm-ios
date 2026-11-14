@@ -19,8 +19,9 @@
 
 ## REC-005-D4: Bit-rate measurement and tolerance
 
-- **Decision**: average video bit rate = sum of the video track's compressed sample sizes × 8 / the asset's duration (read from compressed samples, no decoding; audio excluded). The fixture draws per-frame hash noise (a fragment shader with the frame number as seed) so the encoder spends its target; 2 s per profile (60 or 120 frames). Tolerance ±25% (spec REC-005-S1); frame rate = frames / duration within ±1 fps; size exact; codec exact.
-- **Measured** (host Mac, Apple silicon, 2026-11-14): filled in by REC-005-T05 below.
+- **Decision**: average video bit rate = sum of the video track's compressed sample sizes × 8 / the asset's duration (read from compressed samples, no decoding; audio excluded). The fixture draws moving detail: 25% per-pixel, per-frame hash noise over a moving colour gradient (a fragment shader with the frame number as seed), so the encoder spends its target; 2 s per profile (60 or 120 frames) from a 1440×2880 drawable. Tolerance ±25% (spec REC-005-S1); frame rate = frames / duration within ±1 fps; size exact; codec exact.
+- **Measured** (Mac Studio host, Apple silicon, 2026-11-14; identical in three runs): Draft avc1 640×1280 30 fps 3.997 Mb/s (0.999 of target), Standard hvc1 960×1920 30 fps 6.90 Mb/s (1.039 of 6.64), High hvc1 1280×2560 60 fps 21.0 Mb/s (1.051), Max hvc1 1440×2880 60 fps 42.4 Mb/s (1.061).
+- **Content sweep** (same day, ratio measured/target, Draft/Standard/High/Max): pure noise 2 s 1.08/1.15/1.26/1.55, 4 s 1.02/1.04/1.09/1.25; 50% noise 2 s 1.06/1.19/1.29/1.56, 4 s 1.02/1.03/1.04/1.04; 25% noise 2 s 1.00/1.04/1.05/1.06. Coarser noise (4 or 8 px cells) overshoots 1.6-4.8× in 2 s. Pure noise is beyond what HEVC can hold at these rates in one key-frame interval, so the fixture uses 25% noise; real visuals are closer to it than to pure noise. A VideoToolbox data-rate cap was tried and dropped: not an AVFoundation-documented key, and it made Draft undershoot (0.70).
 - **Rationale**: the target is an average with 2 s key frames; a 2 s clip holds one key-frame interval, so ±25% covers start-up and rate-control overshoot while still catching a wrong profile (the nearest two targets differ by 2× or more at the fixture size).
 
 ## REC-005-D5: Fallback at Record
