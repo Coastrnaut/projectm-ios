@@ -3291,7 +3291,7 @@
    "branch": "feature/vis-005",
    "branch_sha": "8f2ddb1d74820f0b55e377d720db01535d928aa5",
    "error_category": null,
-   "integrated_sha": "9bbd8af54c948a6d89ef7344efe202ea8f1e8978",
+   "integrated_sha": "9bbd8af5",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
@@ -4366,7 +4366,7 @@
   {
    "branch": "feature/vis-005",
    "id": "VIS-005",
-   "sha": "9bbd8af54c948a6d89ef7344efe202ea8f1e8978"
+   "sha": "9bbd8af5"
   }
  ],
  "integration_branch": "autonomous/integration",
@@ -4394,5 +4394,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T16:48:20Z"
+ "updated": "2026-11-14T16:50:18Z"
 }
