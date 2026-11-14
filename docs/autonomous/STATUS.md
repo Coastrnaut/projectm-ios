@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T22:40:05Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T22:43:35Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,10 +10,10 @@
 | State | Features |
 |---|---|
 | audited | 81 |
-| implementing | 6 |
-| built | 1 |
+| implementing | 3 |
+| built | 3 |
 | unit_passed | 1 |
-| integrated | 236 |
+| integrated | 237 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -21,14 +21,14 @@
 | Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 0 | 84 | 1 |
-| P1 | 13 | 3 | 0 | 1 | 134 | 0 |
-| P2 | 57 | 3 | 1 | 0 | 18 | 0 |
+| P1 | 13 | 3 | 0 | 0 | 135 | 0 |
+| P2 | 57 | 0 | 3 | 1 | 18 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 89 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, CAM-005, CAM-006)
+- 88 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, CAM-005, CAM-006)
 
 ## Integrated
 
@@ -225,6 +225,7 @@ The physical-device suite may **not** start:
 | REC-012 | Share via Files | `c3886d1cb0bb` | `feature/rec-012` |
 | REC-014 | Export aspect presets | `9f17fcc3` | `feature/rec-014` |
 | REC-015 | Recording disk guard | `d1a76394fab1` | `feature/rec-015` |
+| REC-016 | Recording interruption recovery | `96ab6cb1` | `feature/rec-016` |
 | SCN-001 | Versioned scene format | `c3886d1cb0bb` | `feature/scn-001` |
 | SCN-002 | Scene autosave | `1aa354c0b623` | `feature/scn-002` |
 | SCN-003 | Scene duplicate and rename | `4936d8fcd1d3` | `feature/scn-003` |
@@ -2082,6 +2083,13 @@ None.
 - `swift test --package-path Packages/PresetLibrary`: pass at `c9aefe517159` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-007/20261112T163519/swift-test_PresetLibrary.log`)
 - `integration checkout, full preset library: xcodebuild -scheme projectM-iOS -destination id=4E32B01D (iPhone 17, iOS 27.2) test: projectM-iOSTests 84 pass; UI tests 16 pass (PresetCollections 3, PresetLibrary, Purchase, ImportedAudio)`: pass at `e834535cb98b` (log `.autonomous/logs/integration/pre-007/app-tests.log`)
 
+### PRE-008 Smart collections (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `8a107417aea4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-008/20261114T174028/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `8a107417aea4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-008/20261114T174028/docs.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `8a107417aea4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-008/20261114T174028/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `8a107417aea4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-008/20261114T174028/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/PresetLibrary`: pass at `8a107417aea4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-008/20261114T174028/swift-test_PresetLibrary.log`)
+
 ### PRE-010 Preset quick audition (integrated)
 - `python3 scripts/check_compliance.py`: pass at `e9ec9e9eeee3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-010/20261114T105402/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `e9ec9e9eeee3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-010/20261114T105402/docs.log`)
@@ -2384,7 +2392,7 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `74c0bc1fd8b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-015/20261113T155416/swift-test_SceneFormat.log`)
 - `post-merge: projectM-iOSTests 275; RecordingDiskGuardUITests 2, VideoRecording 2, CaptureShare UI tests; check_privacy_manifest OK on the merged Debug app (DiskSpace E174.1 declared, scanner reads the debug dylib)`: pass at `d1a76394fab1` (log `.autonomous/logs/integration/rec-015/app-tests.log`)
 
-### REC-016 Recording interruption recovery (unit_passed)
+### REC-016 Recording interruption recovery (integrated)
 - `python3 scripts/check_compliance.py`: pass at `a119be84c3b9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-016/20261114T173156/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `a119be84c3b9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-016/20261114T173156/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `a119be84c3b9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-016/20261114T173156/sim-test_ANGLERendering.log`)
@@ -2395,6 +2403,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `a119be84c3b9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-016/20261114T173156/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `a119be84c3b9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-016/20261114T173156/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `a119be84c3b9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-016/20261114T173156/swift-test_ShowControl.log`)
+- `post-merge batch71: FrameRecording 149, projectM-iOSTests 1036, UI 5 (recording recovery, disk guard 2, video recording 2)`: pass at `96ab6cb1` (log `.autonomous/logs/integration/batch71/app-tests.log`)
 
 ### SCN-001 Versioned scene format (integrated)
 - `python3 scripts/check_compliance.py`: pass at `65ce45cdc91d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-001/20261113T152510/compliance.log`)
