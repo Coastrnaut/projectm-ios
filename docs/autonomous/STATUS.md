@@ -11,23 +11,22 @@
 |---|---|
 | audited | 229 |
 | implementing | 2 |
-| unit_passed | 1 |
-| integrated | 93 |
+| integrated | 94 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 6 | 2 | 1 | 77 | 1 |
-| P1 | 137 | 0 | 0 | 14 | 0 |
-| P2 | 77 | 0 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 6 | 2 | 78 | 1 |
+| P1 | 137 | 0 | 14 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 232 features are not implemented yet (first: ACC-003, ACC-004, ACC-005, ACC-006, ACC-007)
+- 231 features are not implemented yet (first: ACC-003, ACC-004, ACC-005, ACC-006, ACC-007)
 
 ## Integrated
 
@@ -126,6 +125,7 @@ The physical-device suite may **not** start:
 | UIX-001 | Guided first scene | `f8f54e2ac938` | `feature/uix-001` |
 | VIS-001 | Circular spectrum | `48285d49c422` | `feature/vis-001` |
 | VIS-002 | Linear spectrum | `c2b2f75c11bb` | `feature/vis-002` |
+| VIS-003 | Waveform oscilloscope | `4d6ff248f09a` | `feature/vis-003` |
 
 ## Proved already implemented
 
@@ -862,7 +862,7 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `f3a531c11e88` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-002/20261113T102444/swift-test_VisualGenerators.log`)
 - `integration checkout: VisualGenerators 95 on iOS 27.2 sim; app: projectM-iOSTests 135, UI 3 (LinearSpectrum, Glow x2), 100 s wall; 0 PosterBoard reports`: pass at `c2b2f75` (log `.autonomous/logs/integration/vis-002/app-tests.log`)
 
-### VIS-003 Waveform oscilloscope (unit_passed)
+### VIS-003 Waveform oscilloscope (integrated)
 - `python3 scripts/check_compliance.py`: pass at `46e784d122d5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-003/20261113T192029/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `46e784d122d5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-003/20261113T192029/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `46e784d122d5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-003/20261113T192029/script-tests.log`)
