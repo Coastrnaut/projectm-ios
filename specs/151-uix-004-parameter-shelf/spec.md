@@ -39,7 +39,7 @@ conservative, local-first option.
 - Q: Where is the shelf? → A: A strip inside the visualizer's controls overlay, shown only while the controls are visible and only when it has pins (or a missing-pins note). It scrolls horizontally at standard text sizes and stacks vertically at accessibility sizes (the overlay already scrolls there).
 - Q: What controls does the shelf hold? → A: A compact control built from the registry descriptor: a slider for continuous values (with `.accessibleParameter`), a toggle for booleans, a menu picker for enums and choice-only values. Each writes through the same setting as Settings.
 - Q: How are pins ordered and managed? → A: A "Parameter Shelf" section in Settings lists the pins in shelf order with Edit (drag to reorder, delete) and VoiceOver actions "Move up", "Move down" and "Remove from Shelf". New pins are added at the end.
-- Q: How many pins? → A: At most 8 available pins; at the limit "Pin to Shelf" is disabled with the reason ("The shelf is full (8)").
+- Q: How many pins? → A: At most 8 available pins; at the limit the menu item is disabled and reads "Shelf Full (8)" (the reason, also read by VoiceOver).
 
 ### Session 2026-11-14 (speckit-clarify)
 

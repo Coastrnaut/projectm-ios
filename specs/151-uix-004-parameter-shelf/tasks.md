@@ -35,7 +35,7 @@ safely"). Budgets (owner rule 7): unit tests ≤ 10 s each, the UI test < 30 s.
 ## Phase 6: UI test and polish
 
 - [ ] UIX-004-T11 UI test (< 30 s): `-uitestInspectParameter effect.bloom.intensity`, tap `parameterInspector.pin`, close the sheet and Settings, find `shelf.effect.bloom.intensity` in `controls`, move it, relaunch without the reset flag and find it still pinned — in `Apps/projectM-iOS/UITests/ParameterShelfUITests.swift`
-- [ ] UIX-004-T12 Type-check budget build, repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), privacy manifest and network symbols on the Debug app; LibraryBackup package tests (the key lists)
+- [ ] UIX-004-T12 Type-check budget build, repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), privacy manifest and network symbols on the Debug app; LibraryBackup package tests (the key lists); a `simctl` screenshot of the shelf at the AX5 text size shows it stacked and unclipped (UIX-004-R9)
 - [ ] UIX-004-T13 Spec status, verified ticks, PosterBoard counts; delete the simulator and derived data (leave the `Build` symlink)
 
 ## Dependencies
@@ -47,3 +47,11 @@ T07, T09 and T10 share one test file (sequential); T04 and T05 are different fil
 
 MVP = US1 with US2's persistence (the model saves from T02). US3 is mostly the model's decode path,
 proven by T10.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Applied fixes: the limit's wording differed between the spec ("The shelf is full (8)") and the contract
+("Shelf Full (8)") → the spec now uses the contract's title; UIX-004-R9 (stacking at accessibility sizes)
+had no verification → T12 adds an AX5 screenshot check. Coverage: R1, R4 → T04-T07, T11; R2 → T02, T07;
+R3 → T06, T11; R5, S1 → T02, T09, T11; R6 → T08, T09; R7, R8, S2 → T02, T10; R9 → T04, T12;
+R10 → T03, T12; S3 → T07; S4 → T11. No constitution conflicts; no duplicates; no placeholders.
