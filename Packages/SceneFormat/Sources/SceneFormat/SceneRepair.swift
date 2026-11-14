@@ -270,6 +270,8 @@ extension SceneRepairReport {
         case .invalidModulation: (.invalidMappings, .dropInvalidModulation)
         case .unknownLayerKind: (.unknownContent, .keepUnknownContent)
         case .unknownEffectKind: (.unknownContent, nil)   // FX-020: kept verbatim
+        case .invalidTrigger: (.invalidMappings, nil)   // MOD-006: kept verbatim, not used
+        case .unknownTrigger: (.unknownContent, nil)
         case .fixedEffectStage, .duplicateEffect: (.valuesAdjusted, nil)   // FX-020: kept, ignored
         case .unknownAssetType, .unusedAsset, .orphanedParameter: (.unknownContent, nil)
         case .unsupportedBlendMode, .unsupportedFitMode, .unsupportedMaskShape, .valueClamped, .droppedField, .parameterClamped, .rejectedParameter, .migratedReference:
@@ -301,7 +303,7 @@ extension SceneRepairReport {
         case .invalidGroup: return "The group's layers are drawn ungrouped; the group is kept in the scene."
         case .retiredReference: return "It is dropped and not saved again."
         case .invalidBinding, .duplicateBindingTarget, .invalidExpression, .orphanedBinding, .orphanedConnection, .rejectedConnection,
-             .unsupportedCurve:
+             .unsupportedCurve, .invalidTrigger, .unknownTrigger:
             return "It is kept in the scene but has no effect."
         case .unknownLayerKind: return "The layer is kept but not shown."
         case .unknownAssetType, .unusedAsset, .orphanedParameter, .unknownEffectKind: return "It is kept but not used by this version."

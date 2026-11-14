@@ -28,6 +28,7 @@ enum SceneEncoder {
         }
         if !d.groups.isEmpty { o["groups"] = .array(d.groups.map(group)) }   // CMP-011: only when set (older scenes byte-identical)
         if let effects = d.effects { o["effects"] = .array(effects.map(\.json)) }   // FX-020: likewise
+        if let triggers = d.triggers { o["triggers"] = .array(triggers.map(\.json)) }   // MOD-006: likewise
         return .object(o)
     }
 

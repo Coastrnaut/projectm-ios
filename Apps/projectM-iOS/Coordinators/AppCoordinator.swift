@@ -236,6 +236,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let show: ShowCoordinator
     /// UIX-002: the quick scene switcher's overlay state (AppCoordinator+SceneSwitcher.swift).
     let sceneSwitcher = SceneSwitcherModel()
+    /// SCN-006: scene preview pictures for the switcher and Scene Folders (AppCoordinator+ScenePreviews.swift).
+    @ObservationIgnored private(set) lazy var scenePreviews: ScenePreviewModel = makeScenePreviews()
     /// SCN-012: the repair report before a show cue's scene or Reopen opens.
     let sceneRepair: SceneRepairCoordinator
     /// ACC-011: capture and recording status events (announcements and captions); owns ACC-004's announcer.
@@ -1017,6 +1019,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.palette = settings.spectrumPalette        // ACC-003-R13
             host.externalValues = midiMappings.liveValues   // MIDI-003: values held while no native visual was shown
             for binding in sceneAutosave?.bindings ?? [] { try? host.bind(binding) }   // SCN-002: restored bindings
+            connectThresholdTriggers(host)   // MOD-006
             #if DEBUG
             bindGlowToLevelIfRequested(host)   // MOD-002: AudioFeatureBindingUITests
             #endif

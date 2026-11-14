@@ -16,6 +16,7 @@
 // * SCN-005: a row of tag chips under the field (when the show has tags; AND; in memory), each row's
 //   tags in its subtitle and value, and a tag button after each row (plus the VoiceOver action "Tags")
 //   that opens the Tags sheet (`SceneTagsView`).
+// * SCN-006: each row starts with its scene's preview picture (placeholder until one exists).
 import ShowControl
 import SwiftUI
 
@@ -246,7 +247,8 @@ struct SceneSwitcherView: View {
         let traits: AccessibilityTraits = isHighlighted ? .isSelected : []
         let fill: Color = isHighlighted ? Color.accentColor.opacity(0.28) : Color.clear
         return Button { coordinator.chooseSwitcherScene(entry.cueID) } label: {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
+            HStack(alignment: .center, spacing: 8) {
+                ScenePreviewView(sceneID: entry.sceneID, model: coordinator.scenePreviews)   // SCN-006
                 VStack(alignment: .leading, spacing: 2) {
                     Text(entry.label)
                         .font(.body)

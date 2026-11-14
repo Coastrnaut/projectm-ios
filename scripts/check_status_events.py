@@ -41,6 +41,9 @@ CHECKED = [
     "Coordinators/MIDIMappingCoordinator.swift",       # MIDI-003-R11: learn announces through the announcer
     "Coordinators/MIDIMappingCoordinator+Notes.swift", # MIDI-006-R9: note learn announces through the announcer
     "Coordinators/MIDINoteActionPerformer.swift",      # MIDI-006-R9: triggers add no announcement of their own
+    "Coordinators/MIDIMappingCoordinator+Scenes.swift",  # MIDI-007-R10: scene learn announces through the announcer
+    "Coordinators/MIDISceneActionPerformer.swift",     # MIDI-007-R10: "not found" on the .midi lane
+    "Views/MIDISceneAssignView.swift",                 # MIDI-007-R10
     "Views/MIDIMappingsView.swift",                    # MIDI-003-R11
     "Views/MIDIMappingOptionsView.swift",              # MIDI-004-R8: curve and Invert announce through the announcer
     "Views/CaptureResultPanels.swift",
