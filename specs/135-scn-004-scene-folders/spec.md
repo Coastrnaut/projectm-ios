@@ -4,7 +4,11 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (SCN-004-T01-T14 verified on the Mac: host package tests and the
+feature's own iOS 27.2 simulator "SCN4"; no device claim). ShowControl 56 tests (0.74 s; 14 new),
+LibraryBackup 45 (13.9 s; 1 new), projectM-iOSTests 616 (42.2 s; SceneFolderAcceptanceTests 6 in
+0.06 s, one new switcher test), SceneFoldersUITests 1 (28.1 s, 28.9 s). Linux: not run here (no
+container on this Mac); CI's Linux job builds and tests ShowControl and LibraryBackup.
 
 **Input**: User description: "Implement SCN-004 (Scene folder organization) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Organize saved scenes in nested
