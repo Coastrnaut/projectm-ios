@@ -29,7 +29,7 @@ final class LatencyOffsetUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Settings"].appears(within: 5))
     }
 
-    private var slider: XCUIElement { app.sliders["latencyOffsetSlider"] }
+    private var slider: XCUIElement { app.slider("latencyOffsetSlider") }
     private var readout: XCUIElement { app.staticTexts["latencyOffsetValue"] }
     private var reset: XCUIElement { app.buttons["latencyOffsetReset"] }
 
@@ -43,9 +43,10 @@ final class LatencyOffsetUITests: XCTestCase {
         XCTAssertTrue(picker.exists, "the source picker is in Settings")
         XCTAssertEqual(readout.label, "0 ms", "0 ms by default")
         XCTAssertEqual(slider.label, "Visual delay")
-        slider.adjust(toNormalizedSliderPosition: 0.6)
+        slider.dragSlider(from: 0, to: 0.6)   // ACC-005: dragged by touch
         XCTAssertTrue(poll(5) { self.readout.label != "0 ms" }, "readout: \(readout.label)")
-        XCTAssertEqual(slider.value as? String, readout.label, "VoiceOver reads the readout")
+        XCTAssertEqual(slider.value as? String, readout.label.replacingOccurrences(of: " ms", with: " milliseconds"),
+                       "VoiceOver reads the readout with the unit spelled out (ACC-005-R2)")
         XCTAssertTrue(app.reveal(reset))
         reset.tap()
         XCTAssertTrue(poll(5) { self.readout.label == "0 ms" }, "after Reset: \(readout.label)")

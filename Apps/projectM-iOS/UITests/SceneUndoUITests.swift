@@ -15,7 +15,7 @@ final class SceneUndoUITests: XCTestCase {
     private var starts: String? { app.staticTexts["sourceStarts"].value as? String }
     private var bars: XCUIElement { app.segmentedControls["barsPicker"] }
     private var glowToggle: XCUIElement { app.switches["glowToggle"] }
-    private var intensity: XCUIElement { app.sliders["glowIntensitySlider"] }
+    private var intensity: XCUIElement { app.slider("glowIntensitySlider") }
     private var undo: XCUIElement { app.navigationBars["Settings"].buttons["sceneUndo"] }
     private var redo: XCUIElement { app.navigationBars["Settings"].buttons["sceneRedo"] }
 
@@ -41,13 +41,13 @@ final class SceneUndoUITests: XCTestCase {
         XCTAssertTrue(glowToggle.appears(within: 2) || app.reveal(glowToggle))
         glowToggle.switches.firstMatch.exists ? glowToggle.switches.firstMatch.tap() : glowToggle.tap()
         XCTAssertTrue(intensity.appears(within: 2) || app.reveal(intensity))
-        intensity.adjust(toNormalizedSliderPosition: 1)
-        XCTAssertTrue(poll(5) { (self.intensity.value as? String) == "100%" })
+        intensity.dragSlider(from: 0.5, to: 1)   // ACC-005: dragged by touch
+        XCTAssertTrue(poll(5) { (self.intensity.value as? String) == "100 percent" })
         XCTAssertTrue(poll(5) { self.undo.label == "Undo Glow Intensity 100%" }, "one step for the drag: \(undo.label)")
 
         // Undo: intensity back, then Glow off, then 64 bars.
         undo.tap()
-        XCTAssertTrue(poll(5) { (self.intensity.value as? String) == "50%" }, "intensity restored")
+        XCTAssertTrue(poll(5) { (self.intensity.value as? String) == "50 percent" }, "intensity restored")
         XCTAssertEqual(redo.label, "Redo Glow Intensity 100%")
         undo.tap()
         XCTAssertTrue(intensity.disappears(within: 5), "glow off again")

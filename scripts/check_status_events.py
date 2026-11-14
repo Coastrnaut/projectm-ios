@@ -37,6 +37,7 @@ CHECKED = [
     "Views/SceneSwitcherView.swift",   # UIX-002-R9: the switcher announces through the announcer
     "Views/LayerInspectorView.swift",  # CMP-015-R10: solo and mute announce through the announcer
     "Coordinators/LayerInspectorCoordinator.swift",
+    "Views/AccessibleParameter.swift",   # ACC-005-R7: slider ends announce through the announcer
 ]
 COORDINATOR = "Coordinators/AppCoordinator.swift"
 ALLOWED_IN_COORDINATOR = ("onScopeChange", "nativeVisualUnavailableMessage", "glowUnavailableMessage")

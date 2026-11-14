@@ -27,6 +27,8 @@ enum AnnouncementKind: String, CaseIterable, Sendable {
     case library
     /// MIDI-001-R11: MIDI devices connected or disconnected.
     case midi
+    /// ACC-005-R7: a VoiceOver swipe on a slider that is already at its minimum or maximum.
+    case parameter
     /// CMP-015-R10: layer solo and mute in the layer inspector.
     case layer
 }
