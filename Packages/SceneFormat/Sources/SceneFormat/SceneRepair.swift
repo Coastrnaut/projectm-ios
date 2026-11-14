@@ -274,6 +274,8 @@ extension SceneRepairReport {
         case .unknownTrigger: (.unknownContent, nil)
         case .invalidLFO: (.invalidMappings, nil)   // MOD-007: kept verbatim, not used
         case .unknownLFO: (.unknownContent, nil)
+        case .invalidLFOSync: (.invalidMappings, nil)   // MOD-009: kept verbatim, the oscillator runs unsynced
+        case .unknownLFOSync: (.unknownContent, nil)
         case .fixedEffectStage, .duplicateEffect: (.valuesAdjusted, nil)   // FX-020: kept, ignored
         case .unknownAssetType, .unusedAsset, .orphanedParameter: (.unknownContent, nil)
         case .unsupportedBlendMode, .unsupportedFitMode, .unsupportedMaskShape, .valueClamped, .droppedField, .parameterClamped, .rejectedParameter, .migratedReference:
@@ -307,6 +309,7 @@ extension SceneRepairReport {
         case .invalidBinding, .duplicateBindingTarget, .invalidExpression, .orphanedBinding, .orphanedConnection, .rejectedConnection,
              .unsupportedCurve, .invalidTrigger, .unknownTrigger, .invalidLFO, .unknownLFO:
             return "It is kept in the scene but has no effect."
+        case .invalidLFOSync, .unknownLFOSync: return "The oscillator runs at its stored rate; the setting is kept in the scene."
         case .unknownLayerKind: return "The layer is kept but not shown."
         case .unknownAssetType, .unusedAsset, .orphanedParameter, .unknownEffectKind: return "It is kept but not used by this version."
         case .fixedEffectStage: return "Flash safety and the tone map still run last; the entry is kept."

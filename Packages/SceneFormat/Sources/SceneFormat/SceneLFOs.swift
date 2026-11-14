@@ -7,6 +7,9 @@
 // optional). Bindings name an oscillator by its position (`audio.lfo.<index>`), so `read` keeps positions: an entry
 // that cannot be used is nil (its bindings read 0), reported with a warning at its path, and stays in the document
 // for re-save, so one oscillator never refuses a scene. Plain Swift, no Foundation.
+// MOD-009 (specs/165-mod-009-tempo-lfo, research MOD-009-D4, contract T5): an optional `"sync": {"beats": n}` makes the
+// oscillator tempo-synced (`rate` stays required: the fallback without a tempo, and what an older app runs). A bad or
+// unknown sync is a warning at its path; the oscillator stays live, unsynced.
 import ParameterGraph
 
 /// One stored oscillator, as written.
@@ -27,6 +30,7 @@ public struct SceneLFOEntry: Sendable, Hashable {
             "amplitude": .double(lfo.amplitude),
             "center": .double(lfo.center),
         ]
+        if let sync = lfo.sync { fields["sync"] = .object(["beats": .double(sync.beatsPerCycle)]) }   // MOD-009
     }
 
     var json: SceneJSON { .object(fields) }
@@ -50,7 +54,14 @@ public struct SceneLFOEntry: Sendable, Hashable {
             }
             let read: (lfo: LFO?, issue: SceneIssue?) = entry.oscillator(at: path, number: i + 1)
             if let issue = read.issue { issues.append(issue) }
-            oscillators.append(read.lfo)
+            guard var lfo = read.lfo else {
+                oscillators.append(nil)
+                continue
+            }
+            let sync: (sync: LFOSync?, issue: SceneIssue?) = entry.sync(at: path, number: i + 1)   // MOD-009
+            if let issue = sync.issue { issues.append(issue) }
+            lfo.sync = sync.sync
+            oscillators.append(lfo)
         }
         return (oscillators, issues)
     }
@@ -86,6 +97,28 @@ public struct SceneLFOEntry: Sendable, Hashable {
             }
             return (nil, SceneIssue(.invalidLFO, path: path, "Oscillator \(number): \(reason); it is kept but not used."))
         }
+    }
+}
+
+extension SceneLFOEntry {
+    /// MOD-009: the entry's sync length (nil without `sync`, or with a warning when it cannot be used).
+    fileprivate func sync(at path: String, number: Int) -> (sync: LFOSync?, issue: SceneIssue?) {
+        guard let value = fields["sync"] else { return (nil, nil) }
+        let syncPath = ScenePath.key(path, "sync")
+        guard let object = value.objectValue else {
+            return (nil, SceneIssue(.invalidLFOSync, path: syncPath,
+                                    "Oscillator \(number): \"sync\" must be an object; it runs at its stored rate."))
+        }
+        let beatsPath = ScenePath.key(syncPath, "beats")
+        guard let beats = object["beats"]?.numberValue?.doubleValue, beats.isFinite, beats > 0 else {
+            return (nil, SceneIssue(.invalidLFOSync, path: beatsPath,
+                                    "Oscillator \(number): \"beats\" must be a positive number; it runs at its stored rate."))
+        }
+        guard let sync = try? LFOSync(beatsPerCycle: beats) else {
+            return (nil, SceneIssue(.unknownLFOSync, path: beatsPath,
+                                    "Oscillator \(number) syncs to \(beats) beats, unknown to this version; it runs at its stored rate."))
+        }
+        return (sync, nil)
     }
 }
 
