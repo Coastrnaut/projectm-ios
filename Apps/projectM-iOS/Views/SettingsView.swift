@@ -170,6 +170,28 @@ struct SettingsView: View {
                         }
                     }
                 }
+                // ANL-003-R6: attack and release of the spectra's bars (Instant = today's look). A section
+                // of its own, so the Visual section and its footer keep their place.
+                if settings.visual == .circularSpectrum || settings.visual == .linearSpectrum {
+                    Section {
+                        Picker("Attack", selection: $settings.spectrumAttackMilliseconds) {
+                            ForEach(AppSettings.spectrumAttackChoices, id: \.self) { Text(AppSettings.smoothingTitle(milliseconds: $0)).tag($0) }
+                        }
+                        .pickerStyle(.segmented)
+                        .accessibilityLabel("Attack")
+                        .accessibilityIdentifier("smoothingAttackPicker")
+                        Picker("Release", selection: $settings.spectrumReleaseMilliseconds) {
+                            ForEach(AppSettings.spectrumReleaseChoices, id: \.self) { Text(AppSettings.smoothingTitle(milliseconds: $0)).tag($0) }
+                        }
+                        .pickerStyle(.segmented)
+                        .accessibilityLabel("Release")
+                        .accessibilityIdentifier("smoothingReleasePicker")
+                    } header: {
+                        Text("Smoothing")
+                    } footer: {
+                        Text("Attack sets how quickly bars rise to a louder sound, Release how slowly they fall. Instant shows each analysis as it comes.")
+                    }
+                }
                 if settings.visual.usesPhoto, let photos {
                     photoSection(photos)
                 }

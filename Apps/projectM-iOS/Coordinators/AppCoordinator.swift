@@ -752,6 +752,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                                                    barCount: circularSpectrumBarCount, glow: settings.glowParameters,
                                                    forceGlowFailure: forceGlowFailure)
             host.reduceFlashing = settings.reduceFlashing
+            host.smoothing = settings.spectrumSmoothing   // ANL-003
             for binding in sceneAutosave?.bindings ?? [] { try? host.bind(binding) }   // SCN-002: restored bindings
             #if DEBUG
             bindGlowToLevelIfRequested(host)   // MOD-002: AudioFeatureBindingUITests
@@ -1055,6 +1056,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         if !settings.visual.usesVideo { releaseVideoVisual() }     // MED-002: leaving Video stops its decoder
         if !settings.visual.usesText { releaseTextVisual() }       // MED-009
         nativeVisual?.barCount = circularSpectrumBarCount
+        nativeVisual?.smoothing = settings.spectrumSmoothing   // ANL-003: from the next frame, no snap
         cameraVisual?.barCount = circularSpectrumBarCount
         photoVisual?.barCount = circularSpectrumBarCount
         videoVisual?.barCount = circularSpectrumBarCount

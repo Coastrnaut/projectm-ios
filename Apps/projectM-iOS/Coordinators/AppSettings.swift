@@ -19,6 +19,9 @@
 //   `settings.oscilloscope.line` (`thin`/`medium`/`thick`; anything else → medium), and window, key
 //   `settings.oscilloscope.window` (10, 20 or 40 ms as an Int; anything else → 20). Glow is shared with
 //   the spectra; Bars does not apply.
+// * Spectral smoothing (ANL-003-R6): the circular and linear spectra's attack and release, keys
+//   `settings.spectrum.attack` (0, 25, 50 or 100) and `settings.spectrum.release` (0, 100, 250 or
+//   500), Int milliseconds; anything else → 0 (Instant, today's look).
 // * Camera (CAM-001-R1, R11): `visual` may be `.camera` for the session only. It is never written,
 //   so the key keeps the visual chosen before it, and a stored `camera` (never written by the app)
 //   reads as projectM: the camera starts only from the user's choice in the running session.
@@ -34,7 +37,8 @@
 //   opens no listener) and `settings.osc.port` (Int, absent or outside 1024-65535 → 9000).
 // All keys are "user settings" in the FR-065 list of what may be stored (FR-123 adds the scope,
 // VIS-001-R11 the two visual keys, FX-001-R11 the four glow keys, VIS-002-R11 the two linear keys,
-// VIS-003-R10 the two oscilloscope keys).
+// VIS-003-R10 the two oscilloscope keys, ANL-003-R6 the two smoothing keys).
+import AnalysisFeatures
 import Foundation
 import Observation
 import PerformanceControl
@@ -57,6 +61,8 @@ final class AppSettings {
     static let linearSpectrumSpacingKey = "settings.linearSpectrum.spacing"
     static let oscilloscopeLineKey = "settings.oscilloscope.line"
     static let oscilloscopeWindowKey = "settings.oscilloscope.window"
+    static let spectrumAttackKey = "settings.spectrum.attack"
+    static let spectrumReleaseKey = "settings.spectrum.release"
     static let oscEnabledKey = "settings.osc.enabled"
     static let oscPortKey = "settings.osc.port"
     /// MED-001: the stored photo's identifier (written by PhotoStore).
@@ -68,13 +74,16 @@ final class AppSettings {
     static let allKeys = [performanceOverlayKey, reduceFlashingKey, presetScopeKey, visualKey, circularSpectrumBarsKey,
                           glowKey, glowIntensityKey, glowRadiusKey, glowThresholdKey,
                           linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey, videoIDKey,
-                          textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey]
+                          textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, spectrumAttackKey, spectrumReleaseKey]
     /// VIS-002-R4: the spacings offered for the linear spectrum.
     static let linearSpectrumSpacingChoices: [(title: String, value: Double)] = [("None", 0), ("Narrow", 0.2), ("Wide", 0.5)]
     static let defaultLinearSpectrumSpacing = 0.2
     /// VIS-003-R10: the oscilloscope's windows in milliseconds.
     static let oscilloscopeWindowChoices = [10, 20, 40]
     static let defaultOscilloscopeWindow = 20
+    /// ANL-003-R6: the offered attack and release times in milliseconds (0 = Instant, the default).
+    static let spectrumAttackChoices = [0, 25, 50, 100]
+    static let spectrumReleaseChoices = [0, 100, 250, 500]
     static let circularSpectrumBarChoices = [16, 32, 64, 128]
     static let defaultCircularSpectrumBars = 64
 
@@ -143,6 +152,34 @@ final class AppSettings {
             }
             defaults.set(oscilloscopeWindowMilliseconds, forKey: Self.oscilloscopeWindowKey)
         }
+    }
+
+    /// ANL-003: the spectra's attack, one of `spectrumAttackChoices` (0 otherwise).
+    var spectrumAttackMilliseconds: Int {
+        didSet {
+            if !Self.spectrumAttackChoices.contains(spectrumAttackMilliseconds) { spectrumAttackMilliseconds = 0 }
+            defaults.set(spectrumAttackMilliseconds, forKey: Self.spectrumAttackKey)
+        }
+    }
+
+    /// ANL-003: the spectra's release, one of `spectrumReleaseChoices` (0 otherwise).
+    var spectrumReleaseMilliseconds: Int {
+        didSet {
+            if !Self.spectrumReleaseChoices.contains(spectrumReleaseMilliseconds) { spectrumReleaseMilliseconds = 0 }
+            defaults.set(spectrumReleaseMilliseconds, forKey: Self.spectrumReleaseKey)
+        }
+    }
+
+    /// What the native spectrum host's smoother uses (ANL-003-R3).
+    var spectrumSmoothing: SmoothingTimes {
+        let attack: Double = Double(spectrumAttackMilliseconds) / 1_000
+        let release: Double = Double(spectrumReleaseMilliseconds) / 1_000
+        return SmoothingTimes(attackSeconds: attack, releaseSeconds: release)
+    }
+
+    /// The display title of a smoothing choice ("Instant" for 0).
+    static func smoothingTitle(milliseconds: Int) -> String {
+        milliseconds == 0 ? "Instant" : "\(milliseconds) ms"
     }
 
     /// FX-001: the native spectra's glow (off by default).
@@ -223,6 +260,10 @@ final class AppSettings {
         oscilloscopeLine = defaults.string(forKey: Self.oscilloscopeLineKey).flatMap(OscilloscopeLine.init(rawValue:)) ?? .medium
         let window = defaults.integer(forKey: Self.oscilloscopeWindowKey)
         oscilloscopeWindowMilliseconds = Self.oscilloscopeWindowChoices.contains(window) ? window : Self.defaultOscilloscopeWindow
+        let attack = defaults.integer(forKey: Self.spectrumAttackKey)
+        spectrumAttackMilliseconds = Self.spectrumAttackChoices.contains(attack) ? attack : 0
+        let release = defaults.integer(forKey: Self.spectrumReleaseKey)
+        spectrumReleaseMilliseconds = Self.spectrumReleaseChoices.contains(release) ? release : 0
         glowEnabled = defaults.bool(forKey: Self.glowKey)
         oscEnabled = defaults.bool(forKey: Self.oscEnabledKey)
         let port = defaults.integer(forKey: Self.oscPortKey)

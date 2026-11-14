@@ -57,6 +57,8 @@ final class SettingsTests: XCTestCase {
         settings.linearSpectrumSpacing = 0.5
         settings.oscilloscopeLine = .thick     // VIS-003-R10
         settings.oscilloscopeWindowMilliseconds = 40
+        settings.spectrumAttackMilliseconds = 25    // ANL-003-R6
+        settings.spectrumReleaseMilliseconds = 250
         settings.oscEnabled = true             // OSC-001-R15
         settings.oscPort = 8000
         let keys = Set(defaults.persistentDomain(forName: suite)?.keys ?? [:].keys)
