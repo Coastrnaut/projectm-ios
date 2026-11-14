@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T10:59:25Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T11:08:19Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 185 |
 | implementing | 2 |
-| unit_passed | 1 |
-| integrated | 137 |
+| integrated | 138 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 97 | 2 | 1 | 51 | 0 |
-| P2 | 77 | 0 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 2 | 0 | 84 | 1 |
+| P1 | 97 | 2 | 52 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 188 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)
+- 187 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)
 
 ## Integrated
 
@@ -113,6 +112,7 @@ The physical-device suite may **not** start:
 | FX-001 | Bloom | `1192e0d6503e` | `feature/fx-001` |
 | FX-002 | Tone mapping | `2e8e134d` | `feature/fx-002` |
 | FX-003 | Color grading | `51dfaa4b` | `feature/fx-003` |
+| FX-004 | Hue shift | `b40a8d8e` | `feature/fx-004` |
 | FX-019 | Strobe safety envelope | `6cfcbaabc8d0` | `feature/fx-019` |
 | MED-001 | Import photo layer | `dd604d0b1d51` | `feature/med-001` |
 | MED-002 | Import video layer | `e9e04eeb62a8` | `feature/med-002` |
@@ -948,7 +948,7 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `fd8d5f55e153` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-003/20261114T052407/swift-test_ShowControl.log`)
 - `post-merge: projectM-iOSTests 575 + ColorGrade/PhotoLayer/SensorySafety UI tests 3`: pass at `51dfaa4b` (log `.autonomous/logs/integration/fx-003/app-tests.log`)
 
-### FX-004 Hue shift (unit_passed)
+### FX-004 Hue shift (integrated)
 - `python3 scripts/check_compliance.py`: pass at `9f10c78caf21` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-004/20261114T055600/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `9f10c78caf21` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-004/20261114T055600/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `9f10c78caf21` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-004/20261114T055600/script-tests.log`)
@@ -961,6 +961,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `9f10c78caf21` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-004/20261114T055600/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `9f10c78caf21` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-004/20261114T055600/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `9f10c78caf21` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-004/20261114T055600/swift-test_ShowControl.log`)
+- `post-merge: projectM-iOSTests 592 + ColorGrade UI; Settings (4) and reveal suites pass after moving scroll drags off the sliders`: pass at `b40a8d8e` (log `.autonomous/logs/integration/fx-004/final.log`)
 
 ### FX-019 Strobe safety envelope (integrated)
 - `python3 scripts/check_compliance.py`: pass at `bc80d4775650` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-019/20261113T095545/compliance.log`)
