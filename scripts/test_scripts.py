@@ -1632,7 +1632,8 @@ class PermissionCatalogCheckTests(unittest.TestCase):
         yml, swift, policy = self.inputs()
         self.assertEqual(cpc.problems(yml, swift, policy), [])
         self.assertEqual(set(cpc.plist_keys(yml)), {"NSMicrophoneUsageDescription", "NSCameraUsageDescription",
-                                                    "NSLocalNetworkUsageDescription", "NSScreenCaptureUsageDescription"})
+                                                    "NSLocalNetworkUsageDescription", "NSScreenCaptureUsageDescription",
+                                                    "NSPhotoLibraryAddUsageDescription"})
 
     def test_capturelab_keys_are_not_the_apps(self):
         yml, _, _ = self.inputs()
@@ -1664,6 +1665,14 @@ class PermissionCatalogCheckTests(unittest.TestCase):
             bad = yml + f'\n        {key}: "x"\n'
             self.assertTrue(any(p.startswith(f"{key}: Photos library keys are not allowed")
                                 for p in cpc.problems(bad, swift, policy)), key)
+
+    def test_photos_add_key_only_in_the_app_target(self):
+        """REC-011 (ADR-0059): the add-only key is allowed in projectM-iOS and nowhere else."""
+        yml, swift, policy = self.inputs()
+        self.assertIn(cpc.PHOTOS_ADD_KEY, cpc.plist_keys(yml))
+        bad = yml.replace("  CaptureLabUITests:", f'        {cpc.PHOTOS_ADD_KEY}: "x"\n  CaptureLabUITests:', 1)
+        self.assertIn(f"{cpc.PHOTOS_ADD_KEY}: allowed only in the projectM-iOS target (REC-011, ADR-0059)",
+                      cpc.problems(bad, swift, policy))
 
     def test_policy_mismatch_fails(self):
         yml, swift, policy = self.inputs()
