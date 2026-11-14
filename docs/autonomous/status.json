@@ -12,7 +12,8 @@
    "unit_passed": 1
   },
   "P1": {
-   "audited": 125,
+   "audited": 123,
+   "implementing": 2,
    "integrated": 26
   },
   "P2": {
@@ -24,7 +25,8 @@
   }
  },
  "by_state": {
-  "audited": 216,
+  "audited": 214,
+  "implementing": 2,
   "integrated": 108,
   "skipped_existing": 1,
   "unit_passed": 1
@@ -310,7 +312,7 @@
    "state": "audited"
   },
   "ACC-006": {
-   "attempts": 0,
+   "attempts": 1,
    "branch": "feature/acc-006",
    "branch_sha": "a356ef676c4502fdaf81a4825b3dec7150ddb1d5",
    "error_category": null,
@@ -901,13 +903,13 @@
   },
   "CAM-007": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/cam-007",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "CAM-008": {
    "attempts": 0,
@@ -1001,13 +1003,13 @@
   },
   "CMP-004": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/cmp-004",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "CMP-005": {
    "attempts": 0,
@@ -4087,5 +4089,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T04:33:50Z"
+ "updated": "2026-11-14T04:51:46Z"
 }
