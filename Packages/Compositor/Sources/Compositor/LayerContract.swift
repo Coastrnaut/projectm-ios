@@ -73,11 +73,16 @@ public struct LayerCompositeSettings: Sendable, Equatable {
     public var opacity: Double
     public var blendMode: LayerBlendMode
     public var transform: LayerTransform
+    /// CMP-006: how the layer's content is fitted to the output; nil is the layer's own default
+    /// (photo and video: fill at the centre). Read only by layers that adopt `LayerFitting`.
+    public var fit: LayerFit?
 
-    public init(opacity: Double = 1, blendMode: LayerBlendMode = .normal, transform: LayerTransform = .identity) {
+    public init(opacity: Double = 1, blendMode: LayerBlendMode = .normal, transform: LayerTransform = .identity,
+                fit: LayerFit? = nil) {
         self.opacity = opacity.isFinite ? min(max(opacity, 0), 1) : 1
         self.blendMode = blendMode
         self.transform = transform
+        self.fit = fit
     }
 
     /// CMP-001 accepts only opacity 1, normal blending and the identity transform (CMP-001-R11).
@@ -107,6 +112,14 @@ public protocol LayerSource: AnyObject {
     /// keep `picture`, `audio.bands` or `audio.events` after returning.
     func render(into picture: MTLTexture, commandBuffer: MTLCommandBuffer, frame: LayerFrameContext,
                 audio: LayerAudioContext) throws(LayerSourceError)
+}
+
+/// CMP-006: a layer whose content has its own pixel size (photo, video) and is fitted to the output.
+/// The compositor sets `fit` from the stack entry when the layer is added and at every `apply`; the
+/// layer computes `LayerFitPlacement` in `render` from the picture's size, so it shows the new fit
+/// and any new output size from the next frame without reloading. nil: the layer's own default.
+public protocol LayerFitting: AnyObject {
+    var fit: LayerFit? { get set }
 }
 
 extension LayerSource {

@@ -9,7 +9,7 @@
 // `render` never loads: it takes the slot only when its lock is free this instant (otherwise it
 // keeps the texture it holds), and throws `.notReady` until there is a texture, so the compositor
 // shows the transparent fallback while loading, with no content or after a failure. The shader
-// maps each output point through `ImagePictureGeometry` (fill by default), samples, and multiplies
+// maps each output point through `ImagePictureGeometry` (CMP-006 fit; fill by default), samples, and multiplies
 // by alpha: the picture is linear premultiplied (CMP-001-R2); outside the image (fit) it is
 // transparent. Not Sendable: the compositor's thread (the main thread in the app) sets `content`
 // and renders; `onStateChange` is called on the main queue.
@@ -35,11 +35,15 @@ import Compositor
 import Metal
 import os
 
-public final class ImageLayerSource: LayerSource {
+public final class ImageLayerSource: LayerSource, LayerFitting {
     public let layerName = "photo"
     public let fallback = LayerFallback.transparent
     public let device: MTLDevice
+    /// The fit drawn while `fit` is nil (fill unless the init chose another).
     public let mode: ImageScaleMode
+    /// CMP-006: the stack entry's fit (set by the compositor; nil: `mode` at the centre). Shown from
+    /// the next frame; the image is not reloaded.
+    public var fit: LayerFit?
     private let decoder: any ImageDecoding
     private let limits: ImageImportLimits
     private let loads = DispatchQueue(label: "MED-001 image load", qos: .userInitiated)
@@ -176,8 +180,9 @@ public final class ImageLayerSource: LayerSource {
                        audio: LayerAudioContext) throws(LayerSourceError) {
         if let newest: MTLTexture? = slot.lock.withLockIfAvailableUnchecked({ $0.texture }) { held = newest }
         guard let image = held, let pipeline, let sampler else { throw .notReady }
-        let geometry = ImagePictureGeometry(pictureWidth: image.width, pictureHeight: image.height,
-                                            outputWidth: picture.width, outputHeight: picture.height, mode: mode)
+        let placement = LayerFitPlacement(contentWidth: image.width, contentHeight: image.height, outputWidth: picture.width,
+                                          outputHeight: picture.height, fit: fit ?? LayerFit(mode: mode))
+        let geometry = ImagePictureGeometry(placement)
         var uniforms = ImageUniforms(geometry: geometry, outputWidth: picture.width, outputHeight: picture.height)
         let pass = MTLRenderPassDescriptor()
         pass.colorAttachments[0].texture = picture
