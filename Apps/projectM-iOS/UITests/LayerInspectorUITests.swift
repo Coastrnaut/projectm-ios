@@ -32,23 +32,10 @@ final class LayerInspectorUITests: XCTestCase {
         app.buttons["settings"].tap()
         XCTAssertTrue(app.navigationBars["Settings"].appears(within: 5))
         let link = app.buttons["layersLink"]
-        XCTAssertTrue(scrollTo(link), "Settings offers Layers")
+        XCTAssertTrue(app.reveal(link), "Settings offers Layers")
         XCTAssertTrue(link.label.contains("3 layers"), "the seeded scene has three layers: \(link.label)")
         link.tap()
         XCTAssertTrue(app.navigationBars["Layers"].appears(within: 5))
-    }
-
-    /// Held drags, not swipes (see SettingsUITests.scrollTo).
-    @discardableResult
-    private func scrollTo(_ element: XCUIElement) -> Bool {
-        let window = app.windows.firstMatch
-        let top = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3))
-        let bottom = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8))
-        for _ in 0..<8 {
-            if element.exists && element.isHittable { break }
-            bottom.press(forDuration: 0.05, thenDragTo: top, withVelocity: .default, thenHoldForDuration: 0.1)
-        }
-        return element.exists
     }
 
     private func value(_ identifier: String) -> String? {

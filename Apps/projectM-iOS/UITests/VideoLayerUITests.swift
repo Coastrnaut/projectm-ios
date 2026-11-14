@@ -45,19 +45,6 @@ final class VideoLayerUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Settings"].disappears(within: 5))
     }
 
-    /// Held drags, not swipes (see SettingsUITests.scrollTo).
-    @discardableResult
-    private func scrollTo(_ element: XCUIElement) -> Bool {
-        let window = app.windows.firstMatch
-        let top = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3))
-        let bottom = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8))
-        for _ in 0..<8 {
-            if element.exists && element.isHittable { break }
-            bottom.press(forDuration: 0.05, thenDragTo: top, withVelocity: .default, thenHoldForDuration: 0.1)
-        }
-        return element.exists
-    }
-
     /// The video plays: its size is announced and the shown picture's index changes.
     private func assertVideoPlays(_ message: String) {
         XCTAssertTrue(videoVisual.appears(within: 10), "\(message): the Video visual is shown")
@@ -75,9 +62,9 @@ final class VideoLayerUITests: XCTestCase {
         XCTAssertFalse(videoVisual.exists, "projectM is the default visual")
         openSettings()
         let row = app.visualRow("Video")
-        XCTAssertTrue(scrollTo(row))
+        XCTAssertTrue(app.reveal(row))
         row.tap()
-        XCTAssertTrue(scrollTo(app.buttons["removeVideo"]), "a stored video offers Remove Video")
+        XCTAssertTrue(app.reveal(app.buttons["removeVideo"]), "a stored video offers Remove Video")
         XCTAssertTrue(app.buttons["chooseVideoFromFiles"].exists)
         closeSettings()
         assertVideoPlays("seeded")
@@ -88,7 +75,7 @@ final class VideoLayerUITests: XCTestCase {
         assertVideoPlays("after relaunch")
 
         openSettings()
-        XCTAssertTrue(scrollTo(app.buttons["removeVideo"]))
+        XCTAssertTrue(app.reveal(app.buttons["removeVideo"]))
         app.buttons["removeVideo"].tap()
         XCTAssertTrue(app.buttons["removeVideo"].disappears(within: 5), "removed")
         closeSettings()

@@ -25,9 +25,9 @@ final class SensorySafetyUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Settings"].appears(within: 5))
 
         let picker = app.segmentedControls["sensorySafetyProfilePicker"]
-        XCTAssertTrue(picker.appears(within: 2) || scrollTo(picker), "the Sensory safety section")
+        XCTAssertTrue(picker.appears(within: 2) || app.reveal(picker, long: true), "the Sensory safety section")
         let probe = app.staticTexts["sensorySafetyProbe"]
-        XCTAssertTrue(probe.exists || scrollTo(probe))
+        XCTAssertTrue(probe.exists || app.reveal(probe, long: true))
         XCTAssertEqual(probe.label, "glow 0.50 flashes 3/s rise none intensity 1.00", "Standard: today's values")
 
         picker.buttons["Strict"].tap()
@@ -35,22 +35,10 @@ final class SensorySafetyUITests: XCTestCase {
 
         picker.buttons["Custom"].tap()
         let intensity = app.slider("sensorySafetyIntensitySlider")   // ACC-005: an "other" element
-        XCTAssertTrue(intensity.appears(within: 2) || scrollTo(intensity), "Custom shows its sliders")
+        XCTAssertTrue(intensity.appears(within: 2) || app.reveal(intensity, long: true), "Custom shows its sliders")
         XCTAssertTrue(app.slider("sensorySafetyRiseSlider").exists)
         XCTAssertTrue(poll(3) { probe.label == "glow 0.25 flashes 1/s rise 0.10 intensity 0.25" },
                       "Custom starts from Strict: \(probe.label)")
     }
 
-    /// Short drags until `element` is on screen (at most 6).
-    @discardableResult
-    private func scrollTo(_ element: XCUIElement) -> Bool {
-        let window = app.windows.firstMatch
-        let from = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.80))
-        let to = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.30))
-        for _ in 0..<6 {
-            if element.exists, element.frame.height > 0, element.frame.maxY <= window.frame.maxY { return true }
-            from.press(forDuration: 0.05, thenDragTo: to, withVelocity: .default, thenHoldForDuration: 0.1)
-        }
-        return element.exists
-    }
 }

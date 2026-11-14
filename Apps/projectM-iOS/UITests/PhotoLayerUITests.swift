@@ -45,19 +45,6 @@ final class PhotoLayerUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Settings"].disappears(within: 5))
     }
 
-    /// Held drags, not swipes (see SettingsUITests.scrollTo).
-    @discardableResult
-    private func scrollTo(_ element: XCUIElement) -> Bool {
-        let window = app.windows.firstMatch
-        let top = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3))
-        let bottom = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8))
-        for _ in 0..<8 {
-            if element.exists && element.isHittable { break }
-            bottom.press(forDuration: 0.05, thenDragTo: top, withVelocity: .default, thenHoldForDuration: 0.1)
-        }
-        return element.exists
-    }
-
     private func assertPhotoShown(_ message: String) {
         XCTAssertTrue(photoVisual.appears(within: 10), "\(message): the Photo visual is shown")
         XCTAssertTrue(poll(10) { self.photoValue == "Photo 64 × 48" }, "\(message): VoiceOver value \(String(describing: photoValue))")
@@ -75,7 +62,7 @@ final class PhotoLayerUITests: XCTestCase {
         let row = app.visualRow("Photo")
         XCTAssertTrue(row.appears(within: 5))
         row.tap()
-        XCTAssertTrue(scrollTo(app.buttons["removePhoto"]), "a stored photo offers Remove Photo")
+        XCTAssertTrue(app.reveal(app.buttons["removePhoto"]), "a stored photo offers Remove Photo")
         XCTAssertTrue(app.buttons["choosePhotoFromFiles"].exists)
         closeSettings()
         assertPhotoShown("seeded")
@@ -86,7 +73,7 @@ final class PhotoLayerUITests: XCTestCase {
         assertPhotoShown("after relaunch")
 
         openSettings()
-        XCTAssertTrue(scrollTo(app.buttons["removePhoto"]))
+        XCTAssertTrue(app.reveal(app.buttons["removePhoto"]))
         app.buttons["removePhoto"].tap()
         XCTAssertTrue(app.buttons["removePhoto"].disappears(within: 5), "removed")
         closeSettings()

@@ -50,7 +50,7 @@ extension XCUIApplication {
 
 extension XCUIApplication {
     /// Scrolls until `element` sits fully on screen (below the navigation bar when scrolling down),
-    /// at most 8 held drags of 70 % of the screen; true when it is visible. Shared by every suite
+    /// at most 8 held drags of 70 % of the screen (12 when `long`); true when it is visible. Shared by every suite
     /// whose rows can fall below the fold as Settings grows (GlowUITests failed this way on
     /// 2026-11-13). Frames, not `isHittable`, which fails the test for an off-screen row.
     /// `long`: up drags of 82 % (0.92 to 0.1) for a row several screens down; each drag costs about
@@ -71,8 +71,11 @@ extension XCUIApplication {
             let limit: CGFloat = down ? bar.frame.maxY : screen.minY
             return frame.height > 0 && frame.minY >= limit && frame.maxY <= screen.maxY
         }
-        for _ in 0..<8 {
-            if visible() { break }
+        // Long: up to 12 drags (about 10 screens; OSC's last rows sat just past 8 on 2026-11-14).
+        for _ in 0..<(long ? 12 : 8) {
+            // A long drag can leave the list gliding: wait until the row holds still (a tap on a list
+            // still moving only stops it; LayerInspectorUITests, 2026-11-14), then check again.
+            if visible(), element.settles(), visible() { break }
             // Down (towards the top of the list) uses a short drag from mid-screen: a long pull from
             // near the top on a list already at its top dismisses the sheet instead of scrolling.
             let midHigh = window.coordinate(withNormalizedOffset: CGVector(dx: revealLane, dy: 0.42))

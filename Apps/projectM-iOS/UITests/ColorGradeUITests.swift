@@ -31,18 +31,6 @@ final class ColorGradeUITests: XCTestCase {
     private var gainReadout: XCUIElement { app.staticTexts["colorGainSliderValue"] }
     private var reset: XCUIElement { app.buttons["colorResetButton"] }
 
-    /// FX-004: with six sliders the shared `reveal` drag starts on the Hue slider's thumb, which takes the gesture
-    /// and the list never scrolls. Dragging from the Hue row's title scrolls the list; then `reveal` checks the frame.
-    private func revealReset() -> Bool {
-        let title: XCUIElement = app.staticTexts["Hue"].firstMatch
-        let top: XCUICoordinate = app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25))
-        if title.exists && !reset.isHittable {
-            let start: XCUICoordinate = title.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-            start.press(forDuration: 0.05, thenDragTo: top, withVelocity: .default, thenHoldForDuration: 0.1)
-        }
-        return app.reveal(reset)
-    }
-
     func testColorSectionAdjustAndReset() {
         launch()
         openSettings()
@@ -54,12 +42,12 @@ final class ColorGradeUITests: XCTestCase {
         XCTAssertEqual(app.staticTexts["colorHueSliderValue"].label, "0\u{00B0}", "hue neutral by default")
         XCTAssertEqual(gain.label, "Gain")
         XCTAssertEqual(gainReadout.label, "1.00\u{00D7}", "neutral by default")
-        XCTAssertTrue(revealReset())
+        XCTAssertTrue(app.reveal(reset))
         XCTAssertFalse(reset.isEnabled, "nothing to reset at neutral")
         XCTAssertTrue(app.reveal(gain, down: true), "back up to Gain after revealing the reset")
         gain.dragSlider(from: 0.33, to: 0.9)   // 1.0 on 0.5…2 sits at one third
         XCTAssertTrue(poll(5) { self.gainReadout.label != "1.00\u{00D7}" }, "readout: \(gainReadout.label)")
-        XCTAssertTrue(revealReset())
+        XCTAssertTrue(app.reveal(reset))
         XCTAssertTrue(poll(5) { self.reset.isEnabled }, "reset enabled once graded")
         reset.tap()
         XCTAssertTrue(poll(5) { self.gainReadout.label == "1.00\u{00D7}" }, "readout after reset: \(gainReadout.label)")
