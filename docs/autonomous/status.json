@@ -12,15 +12,15 @@
   },
   "P1": {
    "audited": 29,
-   "built": 2,
+   "built": 1,
    "implementing": 4,
-   "integrated": 115,
+   "integrated": 116,
    "unit_passed": 1
   },
   "P2": {
    "audited": 67,
-   "built": 1,
-   "implementing": 2,
+   "built": 2,
+   "implementing": 1,
    "integrated": 9
   },
   "P3": {
@@ -30,8 +30,8 @@
  "by_state": {
   "audited": 107,
   "built": 3,
-  "implementing": 6,
-  "integrated": 208,
+  "implementing": 5,
+  "integrated": 209,
   "skipped_existing": 1,
   "unit_passed": 1
  },
@@ -96,7 +96,6 @@
    "OUT-011",
    "OUT-013",
    "OUT-014",
-   "PERF-008",
    "PERF-009",
    "PERF-012",
    "PERF-013",
@@ -161,7 +160,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "117 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-015, CAM-003)"
+   "116 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-015, CAM-003)"
   ]
  },
  "features": {
@@ -768,12 +767,12 @@
   "CAM-003": {
    "attempts": 0,
    "branch": "feature/cam-003",
-   "branch_sha": null,
+   "branch_sha": "04d42e64",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "built"
   },
   "CAM-004": {
    "attempts": 0,
@@ -1868,12 +1867,12 @@
   "OSC-008": {
    "attempts": 0,
    "branch": "feature/osc-008",
-   "branch_sha": "570bded4",
+   "branch_sha": "570bded48a2653877d4fcd8c1e98b8871fb09c1e",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "built"
+   "state": "unit_passed"
   },
   "OSC-009": {
    "attempts": 0,
@@ -2130,10 +2129,10 @@
    "branch": "feature/perf-008",
    "branch_sha": "dbbd7372c467f7751948971552d7fac003caf8a2",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "a47ba62c",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "PERF-009": {
    "attempts": 0,
@@ -4133,6 +4132,11 @@
    "sha": "f089007a"
   },
   {
+   "branch": "feature/perf-008",
+   "id": "PERF-008",
+   "sha": "a47ba62c"
+  },
+  {
    "branch": "feature/perf-010",
    "id": "PERF-010",
    "sha": "7d64b6b027dabb9281dfe9505a19e70893d172d6"
@@ -4493,5 +4497,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T19:59:52Z"
+ "updated": "2026-11-14T20:06:47Z"
 }

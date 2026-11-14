@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T19:59:52Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T20:06:47Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,10 +10,10 @@
 | State | Features |
 |---|---|
 | audited | 107 |
-| implementing | 6 |
+| implementing | 5 |
 | built | 3 |
 | unit_passed | 1 |
-| integrated | 208 |
+| integrated | 209 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -21,14 +21,14 @@
 | Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 0 | 84 | 1 |
-| P1 | 29 | 4 | 2 | 1 | 115 | 0 |
-| P2 | 67 | 2 | 1 | 0 | 9 | 0 |
+| P1 | 29 | 4 | 1 | 1 | 116 | 0 |
+| P2 | 67 | 1 | 2 | 0 | 9 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 117 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-015, CAM-003)
+- 116 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-015, CAM-003)
 
 ## Integrated
 
@@ -175,6 +175,7 @@ The physical-device suite may **not** start:
 | PERF-005 | Preset prewarm scheduler | `0c755b4a` | `feature/perf-005` |
 | PERF-006 | Memory warning recovery | `b4281645619e` | `feature/perf-006` |
 | PERF-007 | Frame drop telemetry | `f089007a` | `feature/perf-007` |
+| PERF-008 | Battery saver profile | `a47ba62c` | `feature/perf-008` |
 | PERF-010 | Crash-safe session recovery | `7d64b6b027da` | `feature/perf-010` |
 | PERF-011 | Background resource release | `6d669fcb8576` | `feature/perf-011` |
 | PERF-014 | Render failure fallback | `76a8cbf21e15` | `feature/perf-014` |
@@ -1640,6 +1641,15 @@ None.
 - `python3 scripts/validate_docs.py`: pass at `30fe777ae19d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-007/20261113T120523/docs.log`)
 - `post-merge: projectM-iOSTests 184 incl. OSCNetworkAccessTests (real listener ready/cancelled), OSCNetworkAccessUITests 14.9 s, OSCReceiverUITests 14.8 s, CameraPrivacyStatusUITests 14.8 s (shared status stack) on iPhone 17 iOS 27.2 sim`: pass at `ade4dfec39a5` (log `.autonomous/logs/integration/osc-007-shd-001/app-tests.log`)
 
+### OSC-008 OSC peer allowlist (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `570bded48a26` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-008/20261114T150018/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `570bded48a26` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-008/20261114T150018/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `570bded48a26` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-008/20261114T150018/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `570bded48a26` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-008/20261114T150018/autonomous-tests.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `570bded48a26` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-008/20261114T150018/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `570bded48a26` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-008/20261114T150018/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/PerformanceControl`: pass at `570bded48a26` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-008/20261114T150018/swift-test_PerformanceControl.log`)
+
 ### OSC-009 OSC rate limiter (integrated)
 - `python3 scripts/check_compliance.py`: pass at `f4291322e4b6` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-009/20261113T122631/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `f4291322e4b6` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-009/20261113T122631/docs.log`)
@@ -1777,7 +1787,7 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `ec9d7e48153f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-007/20261114T141129/swift-test_ShowControl.log`)
 - `post-merge: projectM-iOSTests 896 + UI 1 (frame-drop overlay)`: pass at `f089007a` (log `.autonomous/logs/integration/batch43/app-tests.log`)
 
-### PERF-008 Battery saver profile (unit_passed)
+### PERF-008 Battery saver profile (integrated)
 - `python3 scripts/check_compliance.py`: pass at `dbbd7372c467` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-008/20261114T145104/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `dbbd7372c467` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-008/20261114T145104/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `dbbd7372c467` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-008/20261114T145104/script-tests.log`)
@@ -1792,6 +1802,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `dbbd7372c467` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-008/20261114T145104/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `dbbd7372c467` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-008/20261114T145104/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `dbbd7372c467` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-008/20261114T145104/swift-test_ShowControl.log`)
+- `post-merge: projectM-iOSTests 921 + UI 1 (power profile), after two test fixes`: pass at `5c3582d6` (log `.autonomous/logs/integration/batch50c/app-tests.log`)
 
 ### PERF-010 Crash-safe session recovery (integrated)
 - `python3 scripts/check_compliance.py`: pass at `26108200f9d2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-010/20261113T170914/compliance.log`)
