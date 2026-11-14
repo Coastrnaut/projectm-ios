@@ -339,6 +339,7 @@ enum ScenePathItem {
         switch kind {
         case .photo: "Photo"
         case .video: "Video"
+        case .logo: "Logo"
         case .text: "Text"
         case .generatorGraph: "Generator graph"
         case .unknown: "Asset"

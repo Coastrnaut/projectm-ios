@@ -557,6 +557,10 @@ struct SceneDecoder {
             let id = try string(o, "storeID", path)
             known.insert("storeID")
             kind = type == "photo" ? .photo(storeID: id) : .video(storeID: id)
+        case "logo":   // MED-010
+            let id = try string(o, "storeID", path)
+            known.insert("storeID")
+            kind = .logo(storeID: id)
         case "text":
             guard let spec = o["spec"] else { throw .malformed(path: path, reason: "\"spec\" is required") }
             known.insert("spec")
