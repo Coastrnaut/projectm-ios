@@ -4,6 +4,10 @@
 // OUT-010: every slot has an opaque black cover layer above the visual; the coordinator sets its
 // opacity for the output blackout, with implicit animations off, so a change is part of the current
 // Core Animation transaction and shows at the next composited frame (research OUT-010-D1).
+// OUT-004 (spec specs/172-out-004-aspect-correction, contract C2): an external slot lays the visual
+// out by `ExternalOutputPlacement` (bounds, centre, horizontal scale 1/PAR) from its correction, the
+// device's shape and its screen mode's pixel aspect ratio; the slot's black background shows as the
+// bars and the cover stays above both. The device slot always fills (identity) and reports its size.
 import PresentationLifecycle
 import SwiftUI
 import UIKit
@@ -16,6 +20,18 @@ final class VisualSlotView: UIView {
     /// The slot entered or left a window (the iOS 27 scene accessory joins the coordinator here).
     var onWindowChange: ((VisualSlotView) -> Void)?
     private var reported: ExternalDisplayGeometry?
+    /// OUT-004: the external output correction and the device visualizer's shape (width ÷ height).
+    var correction: ExternalOutputCorrection = .default {
+        didSet { if correction != oldValue { setNeedsLayout() } }
+    }
+    var deviceAspect: Double? {
+        didSet { if deviceAspect != oldValue { setNeedsLayout() } }
+    }
+    /// Device slots: the slot's size changed (the coordinator derives the device shape from it).
+    var onSizeChange: ((CGSize) -> Void)?
+    private var reportedSize: CGSize = .zero
+    /// OUT-004: the placement last applied to the visual.
+    private(set) var placement = ExternalOutputPlacement.filling(width: 0, height: 0)
     /// OUT-010: black, above every subview's layer; opacity 0 while the output is live.
     private let cover = CALayer()
 
@@ -36,6 +52,8 @@ final class VisualSlotView: UIView {
             registerForTraitChanges([UITraitDisplayScale.self]) { (slot: VisualSlotView, _: UITraitCollection) in
                 slot.reportGeometry()
             }
+            NotificationCenter.default.addObserver(self, selector: #selector(screenModeChanged(_:)),
+                                                   name: UIScreen.modeDidChangeNotification, object: nil)
         }
     }
 
@@ -54,9 +72,49 @@ final class VisualSlotView: UIView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        for view in subviews where view.frame != bounds { view.frame = bounds }
+        applyPlacement()
         syncCoverFrame()
-        if role == .external { reportGeometry() }
+        if role == .external { reportGeometry() } else { reportSize() }
+    }
+
+    /// OUT-004: lays the held visual out by the current correction now (also outside a layout pass:
+    /// a change pushed from another view's layout is applied inside the call).
+    func applyPlacement() {
+        placement = currentPlacement()
+        for view in subviews { lay(view) }
+    }
+
+    /// OUT-004-D3: the screen's current mode's pixel aspect ratio (nil off screen).
+    var screenPixelAspect: Double? {
+        (window?.windowScene?.screen.currentMode?.pixelAspectRatio).map { (r: CGFloat) -> Double in Double(r) }
+    }
+
+    @objc private func screenModeChanged(_ notification: Notification) {
+        setNeedsLayout()
+    }
+
+    private func currentPlacement() -> ExternalOutputPlacement {
+        let width = Double(bounds.width), height = Double(bounds.height)
+        guard role == .external else { return .filling(width: width, height: height) }
+        return ExternalOutputPlacement(slotWidth: width, slotHeight: height, correction: correction,
+                                       screenPixelAspect: screenPixelAspect, deviceAspect: deviceAspect)
+    }
+
+    /// Bounds, centre and transform from the placement (never `frame`, which a transform makes undefined).
+    private func lay(_ view: UIView) {
+        let p = placement
+        let transform: CGAffineTransform = p.scaleX == 1 ? .identity : CGAffineTransform(scaleX: CGFloat(p.scaleX), y: 1)
+        let size = CGRect(x: 0, y: 0, width: CGFloat(p.boundsWidth), height: CGFloat(p.boundsHeight))
+        let center = CGPoint(x: CGFloat(p.centerX), y: CGFloat(p.centerY))
+        if view.transform != transform { view.transform = transform }
+        if view.bounds != size { view.bounds = size }
+        if view.center != center { view.center = center }
+    }
+
+    private func reportSize() {
+        guard bounds.size != reportedSize else { return }
+        reportedSize = bounds.size
+        onSizeChange?(bounds.size)
     }
 
     private func reportGeometry() {
@@ -75,10 +133,11 @@ final class VisualSlotView: UIView {
         let moved = visual.superview !== self
         if moved {
             visual.removeFromSuperview()
-            visual.frame = bounds
-            visual.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            visual.autoresizingMask = []   // OUT-004: laid out by the placement, not by autoresizing
             addSubview(visual)
         }
+        placement = currentPlacement()
+        lay(visual)
         syncCoverFrame()
         visual.setNeedsLayout()
         return moved

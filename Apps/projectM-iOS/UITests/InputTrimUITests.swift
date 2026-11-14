@@ -15,7 +15,8 @@ final class InputTrimUITests: XCTestCase {
     private func launch(reset: Bool) {
         XCUIDevice.shared.orientation = .portrait
         let resetArguments: [String] = reset ? ["-uitestResetNotice"] : []
-        let common: [String] = ["-uitestDiagnostics", "-autostart", "inAppPlayback"]
+        let common: [String] = ["-uitestDiagnostics", "-autostart", "inAppPlayback",
+                                "-uitestSettingsSection", "trim"]   // Settings opens at Input trim (owner rule 7)
         app.launchArguments = resetArguments + common + Self.noStore
         app.launch()
         XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))

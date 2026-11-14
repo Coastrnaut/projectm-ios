@@ -16,7 +16,8 @@ final class LatencyOffsetUITests: XCTestCase {
 
     private func launch() {
         XCUIDevice.shared.orientation = .portrait
-        let common: [String] = ["-uitestResetNotice", "-uitestDiagnostics", "-autostart", "inAppPlayback"]
+        let common: [String] = ["-uitestResetNotice", "-uitestDiagnostics", "-autostart", "inAppPlayback",
+                                "-uitestSettingsSection", "latency"]   // Settings opens at Visual delay (owner rule 7)
         app.launchArguments = common + Self.noStore
         app.launch()
         XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))

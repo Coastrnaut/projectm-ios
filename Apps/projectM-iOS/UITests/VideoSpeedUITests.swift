@@ -46,7 +46,10 @@ final class VideoSpeedUITests: XCTestCase {
     private func launchPlayingVideo(_ extra: [String] = []) {
         XCUIDevice.shared.orientation = .portrait
         app.launchArguments = ["-uitestDiagnostics", "-autostart", "inAppPlayback", "-uitestResetNotice",
-                               "-uitestSeedVideo", "counter"] + Self.noStore + extra
+                               "-uitestSeedVideo", "counter",
+                               // Settings opens at the Video section once it is shown (the Speed picker); before
+                               // Video is chosen the ID is absent and Settings opens at its top (owner rule 7).
+                               "-uitestSettingsSection", "video"] + Self.noStore + extra
         app.launch()
         XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
         openSettings()
@@ -62,7 +65,7 @@ final class VideoSpeedUITests: XCTestCase {
     private func pickSpeed(_ label: String) {
         openSettings()
         let picker = app.buttons["videoSpeedPicker"]
-        XCTAssertTrue(app.reveal(picker, long: true), "the Speed picker is offered while a video is stored")
+        XCTAssertTrue(app.reveal(picker), "the Speed picker is offered while a video is stored")
         picker.tap()
         let option = app.buttons[label].firstMatch
         XCTAssertTrue(option.appears(within: 3), "the menu offers \(label)")

@@ -4,6 +4,10 @@
 // controls. Disconnect brings the visualization back, and the audio source is started once
 // throughout (OUT-001-S2). The real hot-plug runs with `simctl io … screenConfig` (quickstart B).
 // Simulator results are never device evidence (OUT-001-T15 is). Owner rule 7: under 30 s.
+// OUT-004-T08: Settings › External Display's Shape and Fit change the fake display's placement, read
+// through the hidden `externalPlacement` probe (pillarbox bars with the portrait device shape and Fit).
+// One Settings visit keeps it near the 30 s budget; Fill and Stretch are covered by
+// ExternalOutputCorrectionTests.
 import XCTest
 
 @MainActor
@@ -60,5 +64,51 @@ final class ExternalDisplayUITests: XCTestCase {
         app.buttons["uitestDisconnectExternal"].tap()
         XCTAssertTrue(note.disappears(within: 5))
         XCTAssertEqual(starts, "1")
+    }
+
+    // MARK: - OUT-004-T08
+
+    private var placement: String? { app.descendants(matching: .any)["externalPlacement"].firstMatch.value as? String }
+
+    private func openSettings() {
+        showControls()
+        app.buttons["settings"].tap()
+    }
+
+    private func choose(_ picker: String, _ option: String) {
+        let row = app.buttons[picker]
+        XCTAssertTrue(app.reveal(row), "\(picker) is reachable")
+        row.tap()
+        let item = app.buttons[option].firstMatch.exists ? app.buttons[option].firstMatch : app.staticTexts[option].firstMatch
+        XCTAssertTrue(item.appears(within: 3), "\(option) is listed")
+        item.tap()
+    }
+
+    private func closeSettings() {
+        app.navigationBars["Settings"].buttons["Done"].tap()
+        XCTAssertTrue(app.navigationBars["Settings"].disappears(within: 5))
+    }
+
+    func testTheOutputCorrectionSettingChangesTheExternalPlacement() {
+        XCUIDevice.shared.orientation = .portrait
+        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-autostart", "inAppPlayback",
+                               "-uitestExternalDisplay", "-uitestSettingsSection", "externalDisplay"] + Self.noStore
+        app.launch()
+        XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
+        XCTAssertTrue(projectM.appears(within: 10))
+        XCTAssertTrue(poll(3) { self.placement == "none" }, "the visual is on the device: \(placement ?? "nil")")
+
+        openSettings()
+        choose("externalShapePicker", "Device")
+        closeSettings()
+        app.buttons["uitestConnectExternal"].tap()
+        XCTAssertTrue(note.appears(within: 5))
+        XCTAssertTrue(poll(3) { (self.placement ?? "").hasPrefix("fit=fit shape=device par=1.00") },
+                      "Fit with the device shape: \(placement ?? "nil")")
+        XCTAssertTrue(placement?.hasSuffix("bars=pillarbox") == true, "a portrait device on 1920 × 1080 is pillarboxed: \(placement ?? "nil")")
+
+        app.buttons["uitestDisconnectExternal"].tap()
+        XCTAssertTrue(note.disappears(within: 5))
+        XCTAssertTrue(poll(3) { self.placement == "none" })
     }
 }

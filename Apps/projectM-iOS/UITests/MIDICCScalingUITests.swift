@@ -27,13 +27,14 @@ final class MIDICCScalingUITests: XCTestCase {
         XCUIDevice.shared.orientation = .portrait
         app.launchArguments = ["-uitestDiagnostics", "-autostart", "inAppPlayback", "-uitestFakeMIDI",
                                "-settings.midi.enabled", "YES",
-                               "-settings.midi.mappings", "(\"cc:0:7=effect.bloom.intensity\")"] + Self.noStore
+                               "-settings.midi.mappings", "(\"cc:0:7=effect.bloom.intensity\")",
+                               "-uitestSettingsSection", "midi"] + Self.noStore   // Settings opens at MIDI (owner rule 7)
         app.launch()
         XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
         openSettings()
 
         let link = app.buttons["midiMappingsLink"]
-        XCTAssertTrue(app.reveal(link, long: true), "the MIDI Mappings row")
+        XCTAssertTrue(app.reveal(link), "the MIDI Mappings row")
         link.tap()
         XCTAssertTrue(app.navigationBars["MIDI Mappings"].appears(within: 5))
 
