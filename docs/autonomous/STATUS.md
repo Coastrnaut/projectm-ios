@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T23:52:31Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T23:53:43Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,18 +9,18 @@
 
 | State | Features |
 |---|---|
-| audited | 70 |
-| implementing | 4 |
-| built | 1 |
+| audited | 69 |
+| implementing | 5 |
+| unit_passed | 1 |
 | integrated | 250 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | built | integrated | skipped_existing |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 10 | 1 | 0 | 140 | 0 |
+| P1 | 9 | 2 | 0 | 140 | 0 |
 | P2 | 49 | 3 | 1 | 26 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
@@ -2467,6 +2467,19 @@ None.
 - `python3 scripts/check_compliance.py`: pass at `8909040fb290` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-012/20261113T152825/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `8909040fb290` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-012/20261113T152825/docs.log`)
 - `post-merge (batch with SCN-001, REC-012, SHOW-014, FILE-001 on a second iOS 27.2 iPhone 17 simulator): projectM-iOSTests 271 incl. SceneArchiveServiceTests; CaptureShareUITests, EmergencyBlackoutUITests 2, OutputBlackoutUITests; SceneFormat 31 and SceneArchive 18 on host and Linux shape`: pass at `c3886d1cb0bb` (log `.autonomous/logs/integration/batch-scn-rec12-show14-file1/app-tests.log`)
+
+### REC-013 Deterministic offline export (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `3e4c05c6814b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-013/20261114T184843/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `3e4c05c6814b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-013/20261114T184843/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `3e4c05c6814b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-013/20261114T184843/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `3e4c05c6814b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-013/20261114T184843/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `3e4c05c6814b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-013/20261114T184843/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `3e4c05c6814b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-013/20261114T184843/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `3e4c05c6814b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-013/20261114T184843/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `3e4c05c6814b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-013/20261114T184843/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `3e4c05c6814b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-013/20261114T184843/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `3e4c05c6814b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-013/20261114T184843/swift-test_ShowControl.log`)
+- `swift test --package-path Packages/VisualGenerators`: pass at `3e4c05c6814b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-013/20261114T184843/swift-test_VisualGenerators.log`)
 
 ### REC-014 Export aspect presets (integrated)
 - `python3 scripts/check_compliance.py`: pass at `ccffa100061f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-014/20261114T163756/compliance.log`)
