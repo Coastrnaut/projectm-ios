@@ -122,3 +122,31 @@ unavailable (absent, never 0), and the footer explains that frame figures need t
 - Frame figures exist only for time the performance overlay was shown (the existing telemetry gating).
 - Simulator results are not performance evidence; S5 is checked on D1 last.
 - No new stored preference: the report lives in memory for the app session only.
+
+## Clarifications
+
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under the owner's standing approval (owner rules 4 and 9); each answer is the conservative,
+local-first option.
+
+- Q: May the report name the preset that was showing (bundled presets are not personal)? → A: No preset identity at
+  all, bundled or not. Only the visual kind (one of `projectM`, `native`, `camera`, `photo`, `video`, `text`,
+  `none`) is recorded. A bundled preset path still reveals listening habits, and a user preset name is user text;
+  one rule for all is simpler to prove (PERF-012-R9).
+- Q: Which time span do frame figures cover? → A: Every frame measured since launch while the performance overlay
+  was shown, accumulated across visual changes and overlay sessions (not reset by PERF-007's per-visual counting
+  sessions). The state timeline covers the whole app session from launch. The report is never persisted: a relaunch
+  starts empty (PERF-012-R11).
+- Q: What is a "frame time" for the percentiles? → A: The interval between consecutive frames handed to the display
+  (display-link timestamps of submitted frames), the figure the user perceives as smoothness, on every visual path
+  (projectM included). Fixed 0.1 ms buckets up to 250 ms; a percentile is the upper edge of its nearest-rank bucket
+  capped by the exact max (never optimistic). Long-frame thresholds: 25 ms, 50 ms and 100 ms. Per-stage CPU/GPU
+  figures stay PERF-001's window medians/p95 (Metal GPU times), included as they are.
+- Q: Is MetricKit used ("MetricKit where appropriate")? → A: No. MetricKit delivers aggregated payloads about once
+  a day, not for the session being reported, so it adds nothing to a user-initiated report; the report uses the
+  app's own counters and an `os_signpost` event per export.
+- Q: Should the file be a new schema or a new version of the CaptureLab diagnostics schema? → A: A new document
+  with its own `schemaVersion` (1) and `kind` `projectM-iOS.performanceReport`, written by an extension of
+  `DiagnosticsExporter` and reusing its `frameTimings` and `frameDrops` section types unchanged. The CaptureLab
+  schema (version 2) is untouched.
