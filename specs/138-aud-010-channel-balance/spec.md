@@ -74,6 +74,11 @@ conservative, local-first option, recommended option first.
   no discard, the position and the analysis stream continue (AUD-006-R10 untouched).
 - Q: Recording (REC-004, in progress elsewhere) and projectM? → A: Both read the analysis path or the
   sink; they receive the unbalanced PCM. The balance is about what the listener hears only.
+- Q: Is a balance change an undo step (SCN-010) or a scene field? → A: Neither. Like AUD-008's trim it is
+  a device listening preference, outside scenes, show cues and the scene history.
+- Q: Is anything logged or announced when the balance changes? → A: Nothing is logged (no diagnostics
+  field) and nothing is announced beyond VoiceOver reading the slider's new value; the visible readout
+  ("Centered", "30% left") is the feedback.
 
 ## User Scenarios & Testing *(mandatory)*
 
