@@ -36,8 +36,9 @@ policy`:
 
 ## C4. App
 
-- Preview identifiers (FILE-003 C4) plus `archiveChoice:<incoming name>:<skip|keepBoth|replace>` and
-  the outcome line `archiveOutcome:<incoming name>`.
+- Preview identifiers (FILE-003 C4) plus `archiveChoice:<incoming name>:<skip|keepBoth|replace>`; the
+  row `archiveConflict:<incoming name>` reads the clash and the outcome. Conflict rows come first, then
+  the "Apply to all" picker (`archivePolicy`) in its own section, then the summary.
 - DEBUG `-uitestPresetArchiveConflictFixture YES`: previews a two-preset archive whose first preset
   is named "Seeded Lantern" (the UI test's seeded preset) with another text.
 - Announcement after install: `PresetArchiveText.installed(_:replaced:)` on the `library` lane.

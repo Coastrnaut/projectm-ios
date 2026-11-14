@@ -41,5 +41,5 @@
 
 ## FILE-004-D8: UI
 
-- **Decision**: Per-row buttons in a separate `PresetArchiveChoiceRow` view (three buttons stacked vertically, checkmark plus `.isSelected`), identifiers `archiveChoice:<incoming name>:<choice>`; the "Apply to all" picker gets the Replace option and clears overrides. No animation.
+- **Decision**: Per-row buttons in a separate `PresetArchiveChoiceRow` view (three buttons stacked vertically, checkmark plus `.isSelected`), identifiers `archiveChoice:<incoming name>:<choice>`; the "Apply to all" picker gets the Replace option and clears overrides. The conflict rows come first, then the picker in its own section, then the summary, so the decisions are reachable at the largest text size with little scrolling (the UI test went from 36 s to 20 s). No animation.
 - **Rationale**: Buttons are reachable and readable at accessibility sizes and easy to drive in XCUITest; a separate view keeps bodies small for CI's Xcode 26.
