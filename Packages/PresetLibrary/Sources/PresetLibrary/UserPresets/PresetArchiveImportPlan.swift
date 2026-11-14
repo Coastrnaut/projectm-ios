@@ -15,15 +15,24 @@
 //   7. name used by a library preset or an earlier planned one (any case) → nameConflict
 //   8. otherwise → new
 // Capacity: entries that would install beyond the 1,000-preset limit are refused (libraryFull).
+//
+// FILE-004 (specs/111-file-004-import-conflict-resolver; FILE-004-R1-R5, contract C1): each conflict
+// has a choice, `overrides[incomingID] ?? policy` (the plan-wide default, "Apply to all"):
+//   skip     → no action; keepBoth → FILE-003 (derived id, copy name);
+//   replace  → the library preset with that id (ID conflict) or name (name conflict) keeps its id and
+//              takes the incoming text and name (a copy name when the name is taken by another);
+//              no library target, or one already replaced → Keep both with `fellBack` (research D6).
 import Foundation
 import LocalPortability
 
-/// What happens to a preset whose identifier or name is taken (FILE-003-R6). Replace is FILE-004's.
+/// What happens to a preset whose identifier or name is taken (FILE-003-R6, FILE-004-R1).
 public enum PresetArchiveConflictPolicy: String, Sendable, Equatable, CaseIterable {
     /// Install it under a new identifier and, when its name is taken, "<name> copy". The default.
     case keepBoth
     /// Leave it out.
     case skip
+    /// FILE-004: the clashing library preset keeps its identifier and takes the incoming text and name.
+    case replace
 }
 
 /// Why one preset of an accepted archive is not installed.
@@ -58,10 +67,13 @@ public enum PresetArchiveEntryKind: Sendable, Equatable {
 public struct PresetArchiveAction: Sendable, Equatable {
     public let id: String
     public let name: String
+    /// FILE-004: the identifier of the library preset this replaces (then equal to `id`), or nil.
+    public let replacesID: String?
 
-    public init(id: String, name: String) {
+    public init(id: String, name: String, replacesID: String? = nil) {
         self.id = id
         self.name = name
+        self.replacesID = replacesID
     }
 }
 
@@ -75,6 +87,12 @@ public struct PresetArchivePlanEntry: Sendable, Equatable {
     public let install: PresetArchiveAction?
     /// Licence lines were found in the text, or it is a copy of an Included preset (pack statement).
     public let hasLicense: Bool
+    /// FILE-004: the effective choice for a conflict; nil otherwise.
+    public let choice: PresetArchiveConflictPolicy?
+    /// FILE-004: the library preset (id and name before the import) that Replace overwrites.
+    public let replaces: PresetArchiveAction?
+    /// FILE-004-R4: Replace was chosen but had no library target, so the preset installs as Keep both.
+    public let fellBack: Bool
 
     public var isConflict: Bool {
         switch kind {
@@ -100,17 +118,32 @@ public struct PresetArchiveCounts: Sendable, Equatable {
 public struct PresetArchiveImportPlan: Sendable, Equatable {
     /// SHA-256 of the archive's bytes.
     public let archiveSHA256: String
+    /// The default choice for every conflict ("Apply to all").
     public let policy: PresetArchiveConflictPolicy
+    /// FILE-004: per-conflict choices by incoming identifier, as given (re-validation compares them).
+    public let overrides: [String: PresetArchiveConflictPolicy]
     /// The reason the whole archive is refused; then `entries` is empty.
     public let refusal: String?
     /// In archive order.
     public let entries: [PresetArchivePlanEntry]
 
-    public init(archiveSHA256: String, policy: PresetArchiveConflictPolicy, refusal: String?, entries: [PresetArchivePlanEntry]) {
+    public init(archiveSHA256: String, policy: PresetArchiveConflictPolicy, overrides: [String: PresetArchiveConflictPolicy] = [:],
+                refusal: String?, entries: [PresetArchivePlanEntry]) {
         self.archiveSHA256 = archiveSHA256
         self.policy = policy
+        self.overrides = overrides
         self.refusal = refusal
         self.entries = entries
+    }
+
+    /// The choice that applies to the entry with this incoming identifier when it is a conflict.
+    public func choice(for incomingID: String) -> PresetArchiveConflictPolicy { overrides[incomingID] ?? policy }
+
+    /// FILE-004: how many library presets the install replaces.
+    public var replaceCount: Int {
+        var count = 0
+        for entry in entries where entry.install?.replacesID != nil { count += 1 }
+        return count
     }
 
     public var counts: PresetArchiveCounts {
@@ -153,15 +186,16 @@ public struct PresetArchiveImportPlan: Sendable, Equatable {
 public enum PresetArchiveImportPlanner {
     /// The dry run (contract C1). `library` is every stored record, any state.
     public static func plan(archive data: Data, library: [UserPreset], context: PresetImportContext,
-                            policy: PresetArchiveConflictPolicy = .keepBoth) -> PresetArchiveImportPlan {
+                            policy: PresetArchiveConflictPolicy = .keepBoth,
+                            overrides: [String: PresetArchiveConflictPolicy] = [:]) -> PresetArchiveImportPlan {
         let archiveHash = ContentHash.sha256Hex([UInt8](data))
         let archive: UserPresetArchive
         do {
             archive = try UserPresetArchiveReader.read(data)
         } catch let error as UserPresetArchiveError {
-            return PresetArchiveImportPlan(archiveSHA256: archiveHash, policy: policy, refusal: error.message, entries: [])
+            return PresetArchiveImportPlan(archiveSHA256: archiveHash, policy: policy, overrides: overrides, refusal: error.message, entries: [])
         } catch {
-            return PresetArchiveImportPlan(archiveSHA256: archiveHash, policy: policy,
+            return PresetArchiveImportPlan(archiveSHA256: archiveHash, policy: policy, overrides: overrides,
                                            refusal: UserPresetArchiveError.archive(.malformedManifest).message, entries: [])
         }
 
@@ -177,6 +211,12 @@ public enum PresetArchiveImportPlanner {
         }
         var namesByLowercase: [String: String] = [:]
         for name in takenNames where namesByLowercase[name.lowercased()] == nil { namesByLowercase[name.lowercased()] = name }
+        // FILE-004: library presets by lowercase name (not quarantined, library order) for Replace targets
+        // and "taken by another"; names planned earlier in this archive; targets already replaced.
+        var libraryByLowercaseName: [String: [UserPreset]] = [:]
+        for preset in library where preset.state != .quarantined { libraryByLowercaseName[preset.name.lowercased(), default: []].append(preset) }
+        var plannedNames: Set<String> = []
+        var replacedIDs: Set<String> = []
         let active = library.filter { (preset: UserPreset) -> Bool in preset.state != .quarantined }.count
         var room = max(0, PresetImportLimits.maxUserPresets - active)
 
@@ -187,9 +227,11 @@ public enum PresetArchiveImportPlanner {
             let incomingName = cleanedName(record.name)
             let validation = MilkdropPresetValidator.validate(bytes, knownTextures: context.knownTextures)
             let hasLicense = !validation.licenseLines.isEmpty || record.duplicateOf != nil
-            func entry(_ kind: PresetArchiveEntryKind, _ install: PresetArchiveAction?) -> PresetArchivePlanEntry {
+            func entry(_ kind: PresetArchiveEntryKind, _ install: PresetArchiveAction?, choice: PresetArchiveConflictPolicy? = nil,
+                       replaces: PresetArchiveAction? = nil, fellBack: Bool = false) -> PresetArchivePlanEntry {
                 PresetArchivePlanEntry(incomingID: record.id, incomingName: incomingName, sha256: record.sha256,
-                                       byteCount: record.byteCount, kind: kind, install: install, hasLicense: hasLicense)
+                                       byteCount: record.byteCount, kind: kind, install: install, hasLicense: hasLicense,
+                                       choice: choice, replaces: replaces, fellBack: fellBack)
             }
 
             // 1-5: refusals and identical texts.
@@ -227,10 +269,26 @@ public enum PresetArchiveImportPlanner {
                 kind = .new
             }
             let isConflict: Bool = kind != .new
-            if isConflict && policy == .skip {
-                entries.append(entry(kind, nil))
+            let choice: PresetArchiveConflictPolicy? = isConflict ? (overrides[record.id] ?? policy) : nil
+            if choice == .skip {
+                entries.append(entry(kind, nil, choice: choice))
                 continue
             }
+            if choice == .replace {
+                if let target = replaceTarget(kind: kind, incomingID: record.id, incomingName: incomingName, byID: byID,
+                                              byName: libraryByLowercaseName, replaced: replacedIDs) {
+                    let takenByOther: Bool = plannedNames.contains(incomingName.lowercased())
+                        || (libraryByLowercaseName[incomingName.lowercased()] ?? []).contains { (other: UserPreset) -> Bool in other.id != target.id }
+                    let finalName: String = takenByOther ? UserPresetName.copyName(of: incomingName, taken: Array(namesByLowercase.values)) : incomingName
+                    replacedIDs.insert(target.id)
+                    namesByLowercase[finalName.lowercased()] = finalName
+                    plannedNames.insert(finalName.lowercased())
+                    let action = PresetArchiveAction(id: target.id, name: finalName, replacesID: target.id)
+                    entries.append(entry(kind, action, choice: choice, replaces: PresetArchiveAction(id: target.id, name: target.name)))
+                    continue
+                }
+            }
+            let fellBack: Bool = choice == .replace
             guard room > 0 else {
                 entries.append(entry(.refused(.libraryFull), nil))
                 continue
@@ -241,10 +299,26 @@ public enum PresetArchiveImportPlanner {
             takenIDs.insert(finalID)
             namesByLowercase[finalName.lowercased()] = finalName
             if existingByName == nil { namesByLowercase[incomingName.lowercased()] = incomingName }
+            plannedNames.insert(finalName.lowercased())
             room -= 1
-            entries.append(entry(kind, PresetArchiveAction(id: finalID, name: finalName)))
+            entries.append(entry(kind, PresetArchiveAction(id: finalID, name: finalName), choice: choice, fellBack: fellBack))
         }
-        return PresetArchiveImportPlan(archiveSHA256: archiveHash, policy: policy, refusal: nil, entries: entries)
+        return PresetArchiveImportPlan(archiveSHA256: archiveHash, policy: policy, overrides: overrides, refusal: nil, entries: entries)
+    }
+
+    /// FILE-004 contract C1: the library preset Replace overwrites, or nil (no library target, or it is
+    /// already replaced by an earlier entry). ID conflict → the preset with that id; name conflict →
+    /// the first library preset (not quarantined) with that name, any case.
+    static func replaceTarget(kind: PresetArchiveEntryKind, incomingID: String, incomingName: String, byID: [String: UserPreset],
+                              byName: [String: [UserPreset]], replaced: Set<String>) -> UserPreset? {
+        let target: UserPreset?
+        switch kind {
+        case .idConflict: target = byID[incomingID]
+        case .nameConflict: target = byName[incomingName.lowercased()]?.first
+        default: target = nil
+        }
+        guard let target, !replaced.contains(target.id) else { return nil }
+        return target
     }
 
     /// The archive's name cleaned like an imported name; "Preset" when nothing is left.
@@ -280,6 +354,8 @@ public enum PresetArchiveText {
     public static let changed = "My Presets changed since this preview. Check the new counts and install again."
     public static let nothingToInstall = "Nothing to install."
     public static let saveFailed = "The presets could not be saved."
+    /// FILE-004 research D6.
+    public static let heldTarget = "A preset it would replace is waiting to be set aside after an interrupted check."
 
     public static func nothingInstalled(_ reason: String) -> String { "Nothing was installed. " + reason }
 
@@ -296,5 +372,12 @@ public enum PresetArchiveText {
     public static func installed(_ count: Int) -> String {
         if count == 1 { return "Installed 1 preset. It is checked before it can play." }
         return "Installed \(count) presets. They are checked before they can play."
+    }
+
+    /// FILE-004-R9: "Installed 3 presets (1 replaced). They are checked before they can play."
+    public static func installed(_ count: Int, replaced: Int) -> String {
+        guard replaced > 0 else { return installed(count) }
+        if count == 1 { return "Installed 1 preset (1 replaced). It is checked before it can play." }
+        return "Installed \(count) presets (\(replaced) replaced). They are checked before they can play."
     }
 }

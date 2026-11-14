@@ -80,6 +80,8 @@ public final class UserPresetStore {
     static let quarantineFolder = "quarantine"
     /// FILE-003-R9: where `addAll` stages texts (inside `directory`, so the path guard covers it).
     static let stagingFolder = "staging"
+    /// FILE-004: inside `staging/`, the old texts a Replace install leaves unnamed once committed.
+    static let replacedListName = "replaced.json"
 
     /// `<Application Support>/UserPresets`. Created on the first save.
     public static func defaultDirectory() -> URL {
@@ -175,13 +177,33 @@ public final class UserPresetStore {
     /// file and folder this call added, so the directory is byte-for-byte as before, and throws.
     /// A text whose content-addressed file already exists is not written again (as `add`).
     public func addAll(_ items: [(preset: UserPreset, contents: Data)]) throws {
+        try commitImport(adding: items, replacing: [])
+    }
+
+    /// FILE-004-R6 (research FILE-004-D3): `addAll` plus replacements. Each `replacing` record has the
+    /// identifier of a stored preset and describes its new text; it takes that record's place in the
+    /// index. Order: stage and verify every new text, write `staging/replaced.json` (the old texts the
+    /// commit leaves unnamed), move the staged texts into `files/`, write the index once (the commit),
+    /// then delete the old texts and `staging/`. A failure before the commit removes everything this
+    /// call added (no old byte was touched) and throws; a failure after it is finished at the next load
+    /// (`removeLeftoverStaging`).
+    public func commitImport(adding items: [(preset: UserPreset, contents: Data)],
+                             replacing replacements: [(preset: UserPreset, contents: Data)]) throws {
         try requireWritable()
-        guard !items.isEmpty else { return }
+        guard !items.isEmpty || !replacements.isEmpty else { return }
+        let replacedIDs: Set<String> = Set(replacements.map { (item: (preset: UserPreset, contents: Data)) -> String in item.preset.id })
+        guard replacedIDs.count == replacements.count else { throw StoreError.saveFailed }
         var ids = Set(presets.map(\.id))
-        var hashes = Set(presets.map(\.sha256))
-        for item in items {
+        var hashes = Set(presets.filter { (preset: UserPreset) -> Bool in !replacedIDs.contains(preset.id) }.map(\.sha256))
+        var oldFiles: [URL] = []
+        for item in replacements {
+            guard let old = preset(id: item.preset.id), old.sha256 != item.preset.sha256 else { throw StoreError.saveFailed }
+            oldFiles.append(fileURL(old))
+        }
+        for item in items + replacements {
+            let isReplacement: Bool = replacedIDs.contains(item.preset.id)
             guard item.preset.isWellFormed, item.preset.state != .quarantined,
-                  ids.insert(item.preset.id).inserted, hashes.insert(item.preset.sha256).inserted,
+                  isReplacement || ids.insert(item.preset.id).inserted, hashes.insert(item.preset.sha256).inserted,
                   item.contents.count == item.preset.byteCount,
                   ContentHash.sha256Hex([UInt8](item.contents)) == item.preset.sha256 else { throw StoreError.saveFailed }
         }
@@ -200,7 +222,7 @@ public final class UserPresetStore {
         do {
             try createDirectory(staging)
             var staged: [(from: URL, to: URL)] = []
-            for item in items {
+            for item in items + replacements {
                 let target = fileURL(item.preset)
                 if files.fileExists(atPath: target.path) { continue }
                 let file = staging.appendingPathComponent(item.preset.fileName)
@@ -210,29 +232,65 @@ public final class UserPresetStore {
                 }
                 staged.append((file, target))
             }
+            if !oldFiles.isEmpty {
+                let list: [String] = oldFiles.map { (url: URL) -> String in url.deletingLastPathComponent().lastPathComponent + "/" + url.lastPathComponent }
+                try writeFile(try JSONEncoder().encode(list), to: staging.appendingPathComponent(Self.replacedListName))
+            }
             try createDirectory(filesURL)
             for step in staged {
                 try moveFile(step.from, to: step.to)
                 moved.append(step.to)
             }
-            try removeFile(at: staging)
+            // Without replacements `staging/` holds nothing more: removed before the commit (FILE-003).
+            if oldFiles.isEmpty { try removeFile(at: staging) }
         } catch {
             rollback()
             throw StoreError.saveFailed
         }
-        let added = items.map(\.preset)
-        guard save(presets + added) else {
+        var draft = presets
+        for item in replacements {
+            if let index = draft.firstIndex(where: { (preset: UserPreset) -> Bool in preset.id == item.preset.id }) { draft[index] = item.preset }
+        }
+        draft += items.map(\.preset)
+        guard save(draft) else {
             rollback()
             throw StoreError.saveFailed
         }
-        presets += added
+        presets = draft
+        // Committed. Clean-up failures are finished at the next load.
+        guard !oldFiles.isEmpty else { return }
+        var cleaned = true
+        for url in oldFiles {
+            if (try? removeFile(at: url)) == nil { cleaned = false; continue }
+            removeIfEmpty(url.deletingLastPathComponent())
+        }
+        if cleaned { try? removeFile(at: staging) }
     }
 
     /// FILE-003: a `staging/` folder left by an install the app did not finish names no preset
-    /// (the record is written last), so it is removed.
+    /// (the record is written last), so it is removed. FILE-004: first, each old text listed in
+    /// `staging/replaced.json` that no record names any more (the install committed) is deleted.
     public func removeLeftoverStaging() {
         let staging = directory.appendingPathComponent(Self.stagingFolder, isDirectory: true)
-        if FileManager.default.fileExists(atPath: staging.path) { try? removeFile(at: staging) }
+        guard FileManager.default.fileExists(atPath: staging.path) else { return }
+        if availability == .available,
+           let data = try? Data(contentsOf: staging.appendingPathComponent(Self.replacedListName)),
+           let list = try? JSONDecoder().decode([String].self, from: data) {
+            let named: Set<String> = Set(presets.map { (preset: UserPreset) -> String in
+                let url = fileURL(preset)
+                return url.deletingLastPathComponent().lastPathComponent + "/" + url.lastPathComponent
+            })
+            for path in list where !named.contains(path) {
+                let parts: [String] = path.split(separator: "/").map(String.init)
+                guard parts.count == 2, parts[0] == Self.filesFolder || parts[0] == Self.quarantineFolder,
+                      Self.isStoredFileName(parts[1]) else { continue }
+                let folder = directory.appendingPathComponent(parts[0], isDirectory: true)
+                let url = folder.appendingPathComponent(parts[1])
+                if FileManager.default.fileExists(atPath: url.path) { try? removeFile(at: url) }
+                removeIfEmpty(folder)
+            }
+        }
+        try? removeFile(at: staging)
     }
 
     /// Changes one record. When the state moves the preset into or out of quarantine, its copy
@@ -312,6 +370,13 @@ public final class UserPresetStore {
         let url = fileURL(preset)
         try? removeFile(at: url)
         removeIfEmpty(url.deletingLastPathComponent())
+    }
+
+    /// "<64 lowercase hex>.milk": the only names the store gives texts.
+    static func isStoredFileName(_ name: String) -> Bool {
+        guard name.hasSuffix(".milk") else { return false }
+        let hash = name.dropLast(5)
+        return hash.count == 64 && hash.allSatisfy { (c: Character) -> Bool in ("0"..."9").contains(c) || ("a"..."f").contains(c) }
     }
 
     // MARK: - Trial records (R17, R18)
