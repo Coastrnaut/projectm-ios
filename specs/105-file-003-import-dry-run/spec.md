@@ -51,6 +51,16 @@ interaction); each answer is the conservative, local-first option.
 - Q: What does Cancel do? → A: Closes the preview, discards the in-memory plan and any temporary staging, and leaves the library byte-for-byte unchanged. Nothing is announced besides the preview's own announcement.
 - Q: What does a scene archive's plan contain? → A: Either the typed refusal (FILE-001/FILE-002/FILE-007/SCN-013 reasons, including a newer scene version and an oversize archive), or: the scene's media to import (photo, video, sizes), which current photo or video it replaces (the conflict), SCN-012's repair entries as they will be after the install, the total size, and the steps (stage, adopt, make current). Scenes carry no licence data, so the plan's licence list is always empty (recorded, not guessed).
 
+### Session 2026-11-14 (speckit-clarify)
+
+Five questions, each answered by Claude with the recommended option (owner rule 4).
+
+- Q: Does an installed preset keep the identifier it has in the archive? → A: Yes, whenever that identifier is free in the library; a new identifier is made only for an ID conflict under Keep both. Keeping identifiers makes a re-import of the same export recognisable and keeps the record stable across devices (FILE-003-R6).
+- Q: How is "identical" decided, and what about a text that sits in Quarantine? → A: By the SHA-256 of the preset's text, as PRE-012 detects duplicates. The same text as a playable, waiting or held preset is **identical** (skipped). The same text as a quarantined file is **refused** with "The same file is in Quarantine." (PRE-012 refuses that file too), so Quarantine is never bypassed (FILE-003-R4).
+- Q: Are names compared only with the library, or also within the archive? → A: With the library and with the names already planned earlier in the same archive (archive order), without regard to case. So two incoming presets with one name give one new preset and one name conflict, and Keep both's copy names never collide (FILE-003-R4, R6).
+- Q: How does "Import Preset…" tell an archive from a preset file? → A: By the picked file's extension: `.zip` (any case) opens the archive preview; everything else keeps PRE-012's path, which still refuses non-`.milk` files. The archive's content is then verified by the reader, so a renamed file is refused safely (FILE-003-R1).
+- Q: What is announced, and on which lane? → A: When the preview opens: "Import preview: N new, N already in My Presets, N conflicts, N refused."; when Install finishes: "Installed N presets. They are checked before they can play." or "Nothing was installed. <reason>". They go through ACC-004's shared announcer on a new `library` lane, so they never swallow or are swallowed by preset, capture or status announcements (FILE-003-R13).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Preview a preset archive before installing it (Priority: P1)
@@ -122,19 +132,19 @@ size, refusal) without touching the stores, and installs only the plan it descri
 
 ### Functional Requirements
 
-- **FILE-003-R1**: "Import Preset…" accepts a preset archive as well as a `.milk` file. Picking an archive opens the import preview; nothing is stored before Install. A `.milk` keeps PRE-012's flow.
+- **FILE-003-R1**: "Import Preset…" accepts a preset archive (`.zip`, any case) as well as a `.milk` file. Picking an archive opens the import preview; nothing is stored before Install. A `.milk` keeps PRE-012's flow.
 - **FILE-003-R2**: The dry run writes nothing the library owns: no file or directory in the user preset folder or the collections folder, and no owned UserDefaults key. The picked file is read once into memory under its security scope, within the archive size limit.
 - **FILE-003-R3**: An archive the reader refuses is shown as a refused preview with the reader's message; Install is not offered.
-- **FILE-003-R4**: Every preset of an accepted archive is classified as exactly one of: new, identical, name conflict, ID conflict, refused (takedown list, same as a built-in preset, fails the safety checks, My Presets full). Identical wins over every conflict; a preset that is both a name and an ID conflict counts as an ID conflict.
+- **FILE-003-R4**: Every preset of an accepted archive is classified as exactly one of: new, identical (same text SHA-256 as a playable, waiting or held preset), name conflict (case-insensitive, against the library and names planned earlier in the archive), ID conflict, refused (same text as a quarantined file, takedown list, same as a built-in preset, fails the safety checks, My Presets full). Refusal and identical win over every conflict; a preset that is both a name and an ID conflict counts as an ID conflict.
 - **FILE-003-R5**: The preview lists the presets to be installed that have no licence lines (copies of Included presets excepted) under "No license information", as a warning.
-- **FILE-003-R6**: Conflict policy: Keep both (default) installs a conflicting preset under a new identifier, renamed "<name> copy" ("<name> copy N") when its name is taken; Skip leaves it out. Replace is not offered (FILE-004).
+- **FILE-003-R6**: An installed preset keeps its archive identifier when it is free. Conflict policy: Keep both (default) installs a conflicting preset under a new identifier, renamed "<name> copy" ("<name> copy N") when its name is taken; Skip leaves it out. Replace is not offered (FILE-004).
 - **FILE-003-R7**: The plan states the counts, the total bytes to install, and the ordered actions (each preset's final identifier and name), and the preview shows them.
 - **FILE-003-R8**: Install first plans again against the current library with the same archive and policy. If the new plan differs, nothing is written and the preview shows the new plan with the changed-library sentence.
 - **FILE-003-R9**: Install is all or nothing: the texts are staged and checked in a temporary folder, then moved into the library, and the index is written once at the end. A failure at any step removes everything it added, leaving the library byte-for-byte as before, and reports "Nothing was installed." with the reason.
 - **FILE-003-R10**: Installed presets are waiting (not checked) and go through PRE-012's trial; the install result is announced.
 - **FILE-003-R11**: Cancel (or closing the sheet) discards the plan and any staging folder; the library stays byte-for-byte unchanged.
 - **FILE-003-R12**: The scene archive service offers a dry run returning a scene import plan (refusal, or media, replaced photo/video, SCN-012 repair entries after the install, total size, steps; an empty licence list) without staging into or touching the stores; its install re-checks that the archive's bytes and the current photo and video are those the plan saw, else refuses with "changed", and then runs FILE-001's all-or-nothing import.
-- **FILE-003-R13**: The preview's announcement goes through the app's shared announcer; the sheet works at the largest accessibility text sizes (Install and Cancel reachable); any animation follows the app's motion policy.
+- **FILE-003-R13**: The preview's and the install's announcements (Clarifications wording) go through the app's shared announcer on its `library` lane; the sheet works at the largest accessibility text sizes (Install and Cancel reachable); any animation follows the app's motion policy.
 - **FILE-003-R14**: No networking, nothing from an archive executed, no new permission.
 
 ### Key Entities
