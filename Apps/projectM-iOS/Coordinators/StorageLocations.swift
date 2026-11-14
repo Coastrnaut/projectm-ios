@@ -32,7 +32,7 @@ struct StorageLocations: Sendable, Equatable {
         return StorageLocations(container: container, roots: [
             .photos: [support(PhotoStore.folderName)],
             .videos: [support(VideoStore.folderName)],
-            .scenes: [support(SceneAutosaveStore.folderName)],
+            .scenes: [support(SceneAutosaveStore.folderName), support(PaletteStore.folderName)],   // UIX-011: palettes go with scenes
             .presets: [support(UserPresetStore.directoryName), support(PresetCollectionStore.directoryName)],
             .importedAudio: [support(audioLibraryFolderName)],
             .recordings: [temp(recordingsFolderName)],

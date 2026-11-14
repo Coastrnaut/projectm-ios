@@ -39,7 +39,8 @@ final class LibraryEraseAppTests: XCTestCase {
         XCTAssertEqual(LibraryErasePolicy.oscEnabledKey, AppSettings.oscEnabledKey)
         XCTAssertEqual(LibraryErasePolicy.midiEnabledKey, AppSettings.midiEnabledKey)
         XCTAssertEqual(LibraryErasePolicy.recordingMicrophoneKey, RecordingAudioSetting.includeMicrophoneKey)
-        XCTAssertEqual(LibraryErasePolicy.folders(.scenes), [StorageLocations.showFolderName, SceneAutosaveStore.folderName])
+        XCTAssertEqual(LibraryErasePolicy.folders(.scenes), [StorageLocations.showFolderName, SceneAutosaveStore.folderName,
+                                                             PaletteStore.folderName])   // UIX-011
         XCTAssertEqual(LibraryErasePolicy.folders(.presets), [UserPresetStore.directoryName])
         XCTAssertEqual(LibraryErasePolicy.folders(.collections), [PresetCollectionStore.directoryName])
         XCTAssertEqual(LibraryErasePolicy.folders(.media), [PhotoStore.folderName, VideoStore.folderName])
