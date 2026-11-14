@@ -1,6 +1,6 @@
 # Test report: FX-020 Effect chain presets
 
-- **Feature**: FX-020 (`specs/142-fx-020-effect-chains`, ADR-0052)
+- **Feature**: FX-020 (`specs/142-fx-020-effect-chains`, ADR-0054)
 - **Date**: 2026-11-14, Mac Studio (Xcode 27.2), private simulator "FX20 iPhone 17" (iOS 27.2)
 - **Simulator results are not device evidence.** The device GPU check is FX-020-T19 `{device}` (open).
 

@@ -9,7 +9,7 @@
 FX-020 makes the order of the two output effects (FX-009 Trails, FX-003/FX-004 Color) a value, stores it
 with the effects' on/off flags and parameters in scene documents as an optional `effects` list, and adds
 named chain presets and an Effect order screen. The flash guard (FX-019, ACC-012) and the tone map (FX-002)
-stay fixed after every reorderable effect (ADR-0052).
+stay fixed after every reorderable effect (ADR-0054).
 
 Compositor (`Packages/Compositor`, module `Compositor`):
 
@@ -105,7 +105,7 @@ specs/142-fx-020-effect-chains/
 ├── spec.md, plan.md, research.md, data-model.md, quickstart.md, tasks.md
 ├── contracts/effect-chain.md
 └── checklists/requirements.md
-docs/adr/0052-effect-chain-order.md
+docs/adr/0054-effect-chain-order.md
 ```
 
 ### Source Code (repository root)

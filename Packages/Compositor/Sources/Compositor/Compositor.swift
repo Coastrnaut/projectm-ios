@@ -92,7 +92,7 @@
 // (MotionFeedbackPass.swift) turns the finished composite into the trails frame, max(composite, decay × previous), which
 // the guard, every output and `encodeScene` receive; a reset (a new scene, size, output format, render-health reset,
 // enabling, an unfinished frame) makes the next frame the composite only. CMP-013 never keeps the composite then.
-// FX-020 (contracts/effect-chain.md in specs/142, ADR-0052): `outputEffectOrder` orders Trails and Color. Only when Color
+// FX-020 (contracts/effect-chain.md in specs/142, ADR-0054): `outputEffectOrder` orders Trails and Color. Only when Color
 // comes first, Trails are active and the grade is not neutral does `OutputGradePass` grade the composite before Trails
 // (the guard and outputs then use the neutral block); otherwise the single-pass output above runs unchanged. The flash
 // guard and the tone map always come after both. `encodeScene` never runs the grade pass (CMP-014's bus grades itself).
@@ -262,7 +262,7 @@ public final class Compositor {
     private var outputGradeBlock = CompositorShaders.GradeBlock.neutral
     private var trailsHistoryGraded = false
 
-    /// FX-020 (ADR-0052): the order of Trails and Color, set between frames. The flash guard and the tone map always
+    /// FX-020 (ADR-0054): the order of Trails and Color, set between frames. The flash guard and the tone map always
     /// run after both. `.standard` (the default) renders exactly as before FX-020; a change resets the trails.
     public var outputEffectOrder: OutputEffectOrder = .standard {
         didSet { if outputEffectOrder != oldValue { trails.resetPending = true } }

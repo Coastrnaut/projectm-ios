@@ -1,5 +1,5 @@
 // OutputEffectOrder.swift — FX-020: the order of the reorderable output effects (specs/142-fx-020-effect-chains,
-// contracts/effect-chain.md E1, research FX-020-D1; ADR-0052). Plain Swift, builds on Linux.
+// contracts/effect-chain.md E1, research FX-020-D1; ADR-0054). Plain Swift, builds on Linux.
 //
 // Two effects act on the finished composite before safety and can be reordered: FX-009 Trails (`fx.trails`) and
 // FX-003/FX-004 Color (`fx.grade`). The FX-019 flash guard and the FX-002 tone map are fixed stages that always run

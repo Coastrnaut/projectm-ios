@@ -7,7 +7,7 @@ Tests are requested by the spec (FX-020-S1…S6). `{device}` marks tasks the Mac
 
 ## Phase 1: Setup
 
-- [X] FX-020-T01 Write ADR `docs/adr/0052-effect-chain-order.md` (reorderable Trails and Color; flash guard and tone map fixed last; glow stays per layer; Color-first only as a separate pass when Trails are active; research FX-020-D1…D3) — Verified 2026-11-14: `docs/adr/0052-effect-chain-order.md` written and indexed in `docs/adr/README.md`; `validate_docs` OK
+- [X] FX-020-T01 Write ADR `docs/adr/0054-effect-chain-order.md` (reorderable Trails and Color; flash guard and tone map fixed last; glow stays per layer; Color-first only as a separate pass when Trails are active; research FX-020-D1…D3) — Verified 2026-11-14: `docs/adr/0054-effect-chain-order.md` written and indexed in `docs/adr/README.md`; `validate_docs` OK
 
 ## Phase 2: Foundational (blocking)
 

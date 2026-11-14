@@ -1,5 +1,5 @@
 // OutputGradePass.swift — FX-020: Color before Trails (specs/142-fx-020-effect-chains, contracts/effect-chain.md E1,
-// research FX-020-D2; ADR-0052).
+// research FX-020-D2; ADR-0054).
 //
 // Used only when the order puts Color first, Trails are active and the grade is not neutral: one full-screen pass
 // `cmp_grade_pass` writes FX-003's grade (`cmp_grade`, the same function the output pass uses, without the tone map)

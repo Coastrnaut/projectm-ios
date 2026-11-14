@@ -1,5 +1,5 @@
 // SceneEffectChain.swift — FX-020 effect chains in the scene document (FX-020-R4 to R7; research FX-020-D4 to D6;
-// specs/142-fx-020-effect-chains/contracts/effect-chain.md E2; ADR-0052).
+// specs/142-fx-020-effect-chains/contracts/effect-chain.md E2; ADR-0054).
 //
 // An optional top-level `effects` array, written only when set (format version 1, so scenes without it encode
 // byte-identically and QA-004's matrix gains no row). Each entry is `{"kind", "enabled", "parameters"}` plus any

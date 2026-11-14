@@ -1,5 +1,5 @@
 // AppCoordinator+EffectChain.swift — FX-020: the effect order reaches the compositor-backed visuals, and chain presets
-// are saved and applied (FX-020-R8 to R10; specs/142-fx-020-effect-chains, contracts/effect-chain.md E4; ADR-0052).
+// are saved and applied (FX-020-R8 to R10; specs/142-fx-020-effect-chains, contracts/effect-chain.md E4; ADR-0054).
 //
 // * The order goes to the Camera, Photo, Video and Text compositors when it changes and when a visual is created (the
 //   native spectra and projectM have neither Trails nor Color). Flash safety and the tone map stay last in every order.

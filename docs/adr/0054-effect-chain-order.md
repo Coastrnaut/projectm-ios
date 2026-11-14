@@ -1,4 +1,4 @@
-# ADR-0052: Trails and Color Are the Reorderable Output Effects; Flash Safety and the Tone Map Stay Last
+# ADR-0054: Trails and Color Are the Reorderable Output Effects; Flash Safety and the Tone Map Stay Last
 
 - **Status**: Accepted 2026-11-14 (decided by Claude under the owner's best-judgement rule, owner rule 4)
 - **Feature**: FX-020 (`specs/142-fx-020-effect-chains`)
@@ -8,7 +8,7 @@
   map, guard measures the graded output: the grade may now also run before Trails), ADR-0051 (FX-009 Trails before
   the grade and the guard: now the default order, not the only one), ADR-0028 (SCN-001 scene document: optional
   `effects` section, no version bump), ADR-0010 (FX-001 effect contract: glow stays inside its layer)
-- **Number**: 0052, the next free number after 0051; 0015, 0016, 0025, 0026, 0031, 0045 and 0046 stay unused.
+- **Number**: 0054 (0052 and 0053 were taken by parallel features at commit time); 0015, 0016, 0025, 0026, 0031, 0045 and 0046 stay unused.
 
 ## Context
 

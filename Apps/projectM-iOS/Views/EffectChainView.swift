@@ -1,5 +1,5 @@
 // EffectChainView.swift — FX-020-R9: Settings → Effect order (specs/142-fx-020-effect-chains, contracts/effect-chain.md E4,
-// research FX-020-D10; ADR-0052).
+// research FX-020-D10; ADR-0054).
 //
 // `EffectChainSection` is one Settings row ("Effect order", value "Trails → Color") that opens `EffectChainView`: the two
 // reorderable effects with on/off switches, reordered with Edit and drag or with VoiceOver's "Move up"/"Move down"
