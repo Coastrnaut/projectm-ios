@@ -43,7 +43,7 @@ Format: `- [ ] VIS-009-Txx [P?] [Story] description`. `{device}` = needs a physi
 
 ## Phase 6: Polish
 
-- [ ] VIS-009-T15 Full VisualGenerators suite on the host and in the Linux shape, RenderGoldens, catalog consumers (SceneFormat, app parameter tests), LibraryBackupAppTests; repo checks, privacy manifest and network symbols, type-check budget, PosterBoard count; delete the derived data and the simulator (R14, S8).
+- [X] VIS-009-T15 Full VisualGenerators suite on the host and in the Linux shape, RenderGoldens, catalog consumers (SceneFormat, app parameter tests), LibraryBackupAppTests; repo checks, privacy manifest and network symbols, type-check budget, PosterBoard count; delete the derived data and the simulator (R14, S8). — Verified 2026-11-14: VisualGenerators 245 tests on the host (40.2 s) and 208 in the Linux shape (`-DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE`, 31.0 s); RenderGoldens 80 (1 skipped, 10.0 s); SceneFormat 168; LibraryBackup 77; app LibraryBackupAppTests, ParameterCatalogAppTests, MIDIMappingCoordinatorTests and the other catalog consumers pass (67 app tests); check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK, test_scripts 162 OK; check_privacy_manifest and check_network_symbols OK on the Debug simulator app; type-check budget: no warning in a changed expression or function (only load-inflated 206-220 ms readings in untouched code, load average above 60); PosterBoard 26 before and after; derived data and the VIS9 simulator deleted.
 
 ## Dependencies
 
