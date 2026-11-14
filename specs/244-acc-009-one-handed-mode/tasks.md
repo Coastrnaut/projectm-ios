@@ -14,7 +14,7 @@ evidence only.
 ## Phase 2: Foundational
 
 - [ ] ACC-009-T02 Implement `OneHandedHand`, `CriticalAction` (identifiers, groups), `CriticalActionContext` with `standard(_:)` and `displayed(_:)` (C2) and `OneHandedLayout` (C1: zone, rows, shrink, `fits`, `reservedInsets`, `baseTarget(scaled:)`) in Packages/ShowControl/Sources/ShowControl/OneHandedLayout.swift
-- [ ] ACC-009-T03 [P] Package tests: phone-size table (SE, 13 mini, 17e, 17, 17 Pro Max × portrait/landscape × base 44/50/56 × 4 states × 2 hands) asserting set equality with `standard`, side ≥ 44 (pad ≥ 60 with the pad), inside safe area, inside zone, no overlap, inside the reserved band, `fits`; pad stability with controls hidden/shown; order (Stop farthest); iPad-free; in Packages/ShowControl/Tests/ShowControlTests/OneHandedLayoutTests.swift
+- [ ] ACC-009-T03 [P] Package tests: phone-size table (SE, 13 mini, 17e, 17, 17 Pro Max × portrait/landscape × base 44/50/56 × 4 states × 2 hands) asserting set equality with `standard`, side ≥ 44 (pad ≥ 60 with the pad), inside safe area, inside zone, no overlap, inside the reserved band, `fits`; pad stability with controls hidden/shown; order (Stop farthest); a forced-shrink case (a short area where 56 pt must shrink, never below 44 pt, no action dropped, `fits` false only when even 44 pt cannot fit); in Packages/ShowControl/Tests/ShowControlTests/OneHandedLayoutTests.swift
 
 ## Phase 3: User Story 1 — every critical action under the thumb (P1, MVP)
 
@@ -38,7 +38,7 @@ evidence only.
 
 ## Phase 6: Polish
 
-- [ ] ACC-009-T15 Register the key (R9): `ALLOWED_KEYS` in scripts/run_device_tests.py, FILE-005 `includedKeys` in Packages/LibraryBackup/Sources/LibraryBackup/LibrarySettings.swift, `appKeys` in Apps/projectM-iOS/Tests/LibraryBackupAppTests.swift; run `LibraryBackupAppTests`
+- [ ] ACC-009-T15 Register the key (R9): `ALLOWED_KEYS` in scripts/run_device_tests.py, FILE-005 `includedKeys` in Packages/LibraryBackup/Sources/LibraryBackup/LibrarySettings.swift, `appKeys` in Apps/projectM-iOS/Tests/LibraryBackupAppTests.swift; check that no scene, cue, MIDI or OSC code reads the key (grep); run `LibraryBackupAppTests`
 - [ ] ACC-009-T16 Type-check budget build, the six repo checks, `qa009_manifest_check`, `check_privacy_manifest` and `check_network_symbols` on the Debug app
 - [ ] ACC-009-T17 Spec status, delete the simulators and derived data, PosterBoard counts
 
@@ -50,3 +50,10 @@ T16–T17 last. Parallel: T03 with T04; T08 with T10.
 ## Implementation strategy
 
 MVP = US1 (the acceptance clause). US2 adds the pad arrangement; US3 adds the HUD and QA-009 checks.
+
+## Analyze notes (speckit-analyze, 2026-11-14)
+
+- C1 (fixed): R9's "never in scenes, cues, MIDI or OSC" had no check; T15 now greps for the key outside the setting.
+- C2 (fixed): R4's shrink rule had no test; T03 now has a forced-shrink case.
+- I1 (accepted, LOW): the footer wording lives in the code (C3), the spec states its purpose only.
+- Coverage: R1 T05/T07/T09, R2 T02/T03/T06/T09, R3 T02/T03/T09, R4 T02/T03, R5 T02/T05/T07/T12, R6 T04/T08, R7 T10/T11, R8 T05/T13, R9 T04/T15, R10 T13; S1-S5 map to T03, T11, T09, T12, T13. No constitution conflict.
