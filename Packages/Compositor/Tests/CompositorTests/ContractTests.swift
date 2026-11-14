@@ -30,7 +30,11 @@ final class ContractTests: XCTestCase {
         XCTAssertTrue(LayerCompositeSettings(transform: anchored).isSupportedByCMP001, "an identity with another anchor")
         XCTAssertEqual(LayerCompositeSettings(opacity: 3).opacity, 1, "opacity is clamped to 0…1")
         XCTAssertEqual(LayerCompositeSettings(opacity: .nan).opacity, 1, "non-finite opacity reads 1")
-        // CMP-003: the compositor draws any opacity; CMP-005: any transform; blend modes wait for CMP-004.
+        // CMP-003: the compositor draws any opacity; CMP-005: any transform; CMP-004: every blend mode.
+        for mode in LayerBlendMode.allCases {
+            XCTAssertTrue(LayerCompositeSettings(blendMode: mode).isSupportedByCompositor, "\(mode) is drawn")
+            XCTAssertEqual(LayerCompositeSettings(blendMode: mode).isSupportedByCMP001, mode == .normal, "CMP-001 drew only normal")
+        }
         XCTAssertTrue(LayerCompositeSettings(opacity: 0).isSupportedByCompositor)
         XCTAssertTrue(LayerCompositeSettings(opacity: 0.5).isSupportedByCompositor)
         XCTAssertTrue(LayerCompositeSettings(transform: moved).isSupportedByCompositor)

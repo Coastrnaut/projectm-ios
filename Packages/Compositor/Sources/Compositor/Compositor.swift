@@ -59,7 +59,8 @@ public enum CompositorError: Error, Equatable, Sendable {
     case pipelineUnavailable(String)
     /// The same layer object appears twice (at this index).
     case duplicateLayer(index: Int)
-    /// The layer at this index asks for a blend mode the compositor does not support yet (CMP-004).
+    /// The layer at this index asks for settings the compositor cannot draw. Not thrown since CMP-004
+    /// (every mode is drawn); kept for source compatibility.
     case unsupportedCompositeSettings(index: Int)
     /// The factory could not create the layer of the stack entry at this index (CMP-002-R9).
     case layerCreationFailed(index: Int, LayerSourceError)

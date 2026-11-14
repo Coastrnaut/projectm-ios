@@ -90,9 +90,7 @@ extension SceneDocument {
                 throw .contentMismatch(instance: entry.id.rawValue, stackKind: kind, contentKind: content.kind)
             }
             let settings = entry.settings
-            let blend = switch settings.blendMode {
-            case .normal: SceneComposite.normalBlendMode
-            }
+            let blend = settings.blendMode.rawValue
             layers.append(SceneLayer(instance: entry.id.rawValue, content: content, values: entry.descriptor.parameters,
                                      composite: SceneComposite(opacity: settings.opacity, blendMode: blend, transform: settings.transform)))
         }
