@@ -40,6 +40,16 @@ Answered by Claude under the owner's standing approval (owner rules 4 and 9).
 - Q: Does importing apply? → A: Never. Import validates the file, adds it as a new profile (a repeated name gets " (2)", " (3)" …), keeps lines it cannot read verbatim, and reports what it found and any problems; the user applies it.
 - Q: How does Apply interact with Undo? → A: It replaces the stored list in one step, verbatim and in order; one Undo restores the previous list exactly. It is announced on the `.midi` lane.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: How does the user see which profile is in use? → A: A row whose lines equal the current mapping list byte for byte shows "In use" (and VoiceOver reads it); nothing about the last applied profile is stored.
+- Q: What is the exported file called? → A: The profile name with `/`, `\`, `:` and control characters replaced by "-", trimmed to 60 characters, plus `.pmmidi` ("MIDI Profile.pmmidi" when nothing is left).
+- Q: Which files does Import accept? → A: Any file the picker offers (`.pmmidi`, `.json` or other data); the content decides, never the extension.
+- Q: Does deleting a profile ask first? → A: Yes: a confirmation names the profile ("Delete “X”? This cannot be undone."), because the profile store has no Undo; Rename uses a text field alert and keeps the old name when the new one is empty.
+- Q: What happens when an import duplicates an existing profile's lines? → A: It is still added as its own profile (with a free name); the report says "Same mappings as “X”." so the user can delete one.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Save, export, import and apply a profile without losing anything (Priority: P1) — MVP
@@ -105,6 +115,7 @@ lines equal the original byte for byte and in order.
 - **MIDI-012-R8**: A profile MAY be linked to a listed input with a system unique number; a listed linked input whose profile differs from the current list MUST be suggested, never applied automatically.
 - **MIDI-012-R9**: The profiles file MUST be excluded from the FILE-005 library backup and erased by FILE-011's Settings category; no new UserDefaults key.
 - **MIDI-012-R10**: The Profiles section MUST sit in the MIDI Mappings screen with Save Current, Apply, Rename, Delete, Export, Import and Link, each with an accessibility label; no animation.
+- **MIDI-012-R12**: A profile whose lines equal the current list MUST show "In use"; Delete MUST be confirmed; the export file name MUST be the sanitized profile name plus `.pmmidi`; Import MUST accept any data file and decide by content; an import with the same lines as an existing profile is added and reported as such.
 - **MIDI-012-R11**: The profile model, codec and validation MUST be pure Swift and pass on Linux.
 
 ### Key Entities
