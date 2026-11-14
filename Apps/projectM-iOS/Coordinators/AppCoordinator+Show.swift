@@ -38,6 +38,7 @@ extension AppCoordinator {
         show.applyScene = { [weak self] (document: SceneDocument, warnings: [SceneIssue]) -> [String] in
             guard let self else { return [] }
             let notes = self.applyShowScene(document, warnings: warnings, refresh: true)
+            self.cueTransitions.sceneApplied()   // XFADE-R1: the frozen frame blends out on the visual shown now
             self.sceneSwitchReached(.applied)   // UIX-002-R8: the switcher's latency ends at the applied state
             self.scenePreviews.sceneApplied(document.id)   // SCN-006: a picture after the settle, when it has none
             return notes
@@ -73,14 +74,24 @@ extension AppCoordinator {
         }
     }
 
-    /// SCN-007: a cue's transition goes to the recorder (the live renderer does not run the CMP-014 bus yet)
-    /// with the safety settings of the moment.
+    /// SCN-007: a cue's transition goes to the stage with the safety settings of the moment; XFADE: the stage freezes
+    /// and blends the shown compositor visual (Camera, Photo, Video, Text), and a native visual or projectM is a cut.
     private func connectCueTransitions() {
         show.transitionDriver = cueTransitions
+        cueTransitions.shownHost = { [weak self] () -> (any CompositorVisualHost)? in self?.shownCompositorHost }
         show.transitionSafety = { [weak self] () -> (reduceMotion: Bool, reduceFlashing: Bool) in
             guard let self else { return (reduceMotion: false, reduceFlashing: false) }
             return (reduceMotion: self.settings.systemReduceMotion, reduceFlashing: self.settings.reduceFlashing)
         }
+    }
+
+    /// XFADE: the compositor-backed visual on screen now (nil for a native visual, projectM or another screen).
+    var shownCompositorHost: (any CompositorVisualHost)? {
+        if showsCameraVisual { return cameraVisual }
+        if showsPhotoVisual { return photoVisual }
+        if showsVideoVisual { return videoVisual }
+        if showsTextVisual { return textVisual }
+        return nil
     }
 
     /// Sets a validated scene's look; returns the notes for the step's notice.

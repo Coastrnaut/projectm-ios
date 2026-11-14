@@ -1,0 +1,7 @@
+# Contract: ANL-009 High Transient
+
+- **C1 Configuration**: `TransientDetectorConfiguration.highTransient` has the data-model values; `init(... maximumEventsPerSecond:)` throws `.invalidMaximumEventRate` outside 0…64. `.kick` and `.midTransient` have `maximumEventsPerSecond == 0` and are otherwise unchanged.
+- **C2 Detector**: with N > 0, for every reported event e, the events with sample index in (e.sampleIndex − rateWindowSamples, e.sampleIndex] number at most N. A candidate the cap suppresses increments `rateLimitedEvents`, disarms, and changes neither the envelope nor `lastConfidence`. With N = 0 decisions are exactly ANL-008's. The cap only removes events: the capped events are a subset of the uncapped ones and capped + suppressed = uncapped. `reset()` empties the window. Per frame: no allocation, lock, log, clock.
+- **C3 Pipeline**: per spectrum frame, the high detector runs on the same magnitudes after the mid transient; frame fields as in the data model; its event is published after the mid transient's (ID order). Session start resets it.
+- **C4 Modulation**: `AudioFeatureSource(id: "audio.highTransient") == .highTransient`; value = `frame.highTransient` (nil / non-finite → 0); SHD-009 compiles `audio.highTransient` to opcode 18; `inspectorName == "High transient"`.
+- **Naming**: no public symbol, ID, doc comment or user-visible string calls the event a hi-hat or cymbal.

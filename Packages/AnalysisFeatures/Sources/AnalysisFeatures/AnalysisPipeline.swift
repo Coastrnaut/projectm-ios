@@ -5,11 +5,12 @@
 // analysis tap (stereo, 44.1 kHz) in chunks of 2,048 frames and runs, per spectrum frame: the
 // ANL-001 stream (`.silence` lead-in, ANL-004-R7), ANL-002 band reduction with decibel
 // normalization, the ANL-004 onset detector, the ANL-005 beat tracker, the ANL-007 kick detector,
-// the ANL-008 mid transient detector (1–4 kHz, same magnitudes: no second FFT), the ANL-010
-// spectral centroid and the ANL-014 loudness envelope. It publishes, in ID order: the feature frame
-// (with the kick envelope, the mid transient envelope and confidence, the centroid and the
-// loudness), then the frame's onset (if any), then its beat (if any), then its kick (if any), then
-// its mid transient (if any).
+// the ANL-008 mid transient detector (1–4 kHz, same magnitudes: no second FFT), the ANL-009 high
+// transient detector (6–16 kHz, rate-capped, same magnitudes), the ANL-010 spectral centroid and the
+// ANL-014 loudness envelope. It publishes, in ID order: the feature frame (with the kick envelope,
+// the mid and high transient envelopes and confidences, the centroid and the loudness), then the
+// frame's onset (if any), then its beat (if any), then its kick (if any), then its mid transient (if
+// any), then its high transient (if any).
 //
 // Clock (ANL-016-R5, R6): an item's session sample is the end of its window (`index + size`, the
 // first sample not yet analysed); its timeline sample adds the session's base (the samples consumed
@@ -66,6 +67,7 @@ public final class AnalysisPipeline: @unchecked Sendable {
     private let tracker: AdaptiveBeatTracker
     private let kick: BandTransientDetector
     private let midTransient: BandTransientDetector
+    private let highTransient: BandTransientDetector
     private var centroid: SpectralCentroidEstimator
     private var loudness: LoudnessEnvelope
     private let scratch: UnsafeMutablePointer<Float>
@@ -103,6 +105,7 @@ public final class AnalysisPipeline: @unchecked Sendable {
         tracker = AdaptiveBeatTracker(configuration: configuration.beat, backend: backend)
         kick = BandTransientDetector(configuration: configuration.kick, backend: backend)
         midTransient = BandTransientDetector(configuration: configuration.midTransient, backend: backend)
+        highTransient = BandTransientDetector(configuration: configuration.highTransient, backend: backend)
         centroid = SpectralCentroidEstimator(configuration: configuration.centroid)
         loudness = LoudnessEnvelope(configuration: configuration.loudness, size: configuration.spectrum.size)
         scratch = .allocate(capacity: AnalysisPipeline.readChunkFrames * NormalizedPCMRing.channelCount)
@@ -263,6 +266,7 @@ public final class AnalysisPipeline: @unchecked Sendable {
         tracker.reset()
         kick.reset()
         midTransient.reset()
+        highTransient.reset()
         centroid.reset()
         loudness.reset()
         subscribersLock.withLock { _ in
@@ -326,6 +330,7 @@ public final class AnalysisPipeline: @unchecked Sendable {
         let beat = tracker.process(frame, onset: onset)
         let transient = kick.process(frame, magnitudes: magnitudes)
         let mid = midTransient.process(frame, magnitudes: magnitudes)
+        let high = highTransient.process(frame, magnitudes: magnitudes)
         let brightness = centroid.process(frame, magnitudes: magnitudes)
         let level = loudness.process(frame, magnitudes: magnitudes)
         let estimate = tracker.estimate
@@ -335,7 +340,8 @@ public final class AnalysisPipeline: @unchecked Sendable {
                                  bpm: estimate?.bpm, beatConfidence: estimate?.confidence ?? 0,
                                  kickEnvelope: kick.envelope, centroidHz: brightness.hz, centroid: brightness.normalized,
                                  loudness: level.envelope, loudnessDecibels: level.decibels,
-                                 midTransientEnvelope: midTransient.envelope, midTransientConfidence: midTransient.lastConfidence)
+                                 midTransientEnvelope: midTransient.envelope, midTransientConfidence: midTransient.lastConfidence,
+                                 highTransientEnvelope: highTransient.envelope, highTransientConfidence: highTransient.lastConfidence)
         let bands = UnsafeBufferPointer(start: bandScratch, count: count)
         subscribersLock.withLock { _ in
             for subscription in subscribers { subscription.publish(item, bands: bands) }
@@ -350,6 +356,7 @@ public final class AnalysisPipeline: @unchecked Sendable {
         }
         if let transient { publishTransient(transient, time: time) }
         if let mid { publishTransient(mid, time: time) }
+        if let high { publishTransient(high, time: time) }
     }
 
     private func publishTransient(_ event: TransientEvent, time: AnalysisTimestamp) {

@@ -2,6 +2,9 @@
 // (`-uitestShowSeed`, five cues), Settings → Show → cue 2's Transition sheet sets Crossfade, a duration and
 // Ease Out; after a relaunch without the seed or `-uitestResetNotice` (the show is read from disk) cue 2 reads the same transition (type,
 // duration and easing in its VoiceOver value). Simulator results are never device evidence. Owner rule 7: under 30 s.
+// XFADE-T06 (specs/167-cue-transitions-on-screen, XFADE-S6): with `-uitestShowTransitionSeed` (two Text cues, cue 2 a
+// 2 s crossfade), the Right Arrow key steps to cue 2 and the DEBUG probe shows the transition blending on the Text
+// visual's compositor, then ending with its textures released.
 import XCTest
 
 @MainActor
@@ -80,5 +83,30 @@ final class CueTransitionUITests: XCTestCase {
         XCTAssertTrue(reopened.appears(within: 5))
         // The row's value carries the type, the duration and the easing (the sheet reads the same model).
         XCTAssertEqual(reopened.value as? String, expected, "the transition is restored")
+    }
+
+    private var probe: String { (app.staticTexts["cueTransitionProbe"].value as? String) ?? "missing" }
+
+    /// The blended frame count in the probe ("… frames=N …"), or -1.
+    private var probeFrames: Int {
+        let field = probe.split(separator: " ").first { (part: Substring) -> Bool in part.hasPrefix("frames=") }
+        return field.flatMap { (part: Substring) -> Int? in Int(part.dropFirst("frames=".count)) } ?? -1
+    }
+
+    func testACueCrossfadeShowsOnScreen() {
+        XCUIDevice.shared.orientation = .portrait
+        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-uitestShowTransitionSeed", "-autostart", "inAppPlayback"]
+            + Self.noStore
+        app.launch()
+        XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
+        XCTAssertTrue(app.staticTexts["cueTransitionProbe"].appears(within: 5))
+        XCTAssertTrue(poll(3) { self.probe == "outcome=none frames=0 progress=1.00 holds=no" }, "no transition yet: \(probe)")
+        XCTAssertTrue(app.descendants(matching: .any)["textVisual"].appears(within: 5), "cue 1 shows the Text visual")
+
+        app.typeKey(XCUIKeyboardKey.rightArrow.rawValue, modifierFlags: [])   // Next: cue 2 with its 2 s crossfade
+        XCTAssertTrue(poll(3) { self.probe.hasPrefix("outcome=blended") && self.probe.hasSuffix("holds=yes") },
+                      "the crossfade runs on screen: \(probe)")
+        XCTAssertTrue(poll(6) { self.probe.hasSuffix("progress=1.00 holds=no") }, "it ends and releases its textures: \(probe)")
+        XCTAssertGreaterThan(probeFrames, 10, "blended frames were shown: \(probe)")
     }
 }

@@ -30,6 +30,8 @@ public enum ExpressionOpcode: UInt8, Sendable, Hashable, CaseIterable {
     case loudness = 16
     /// `audio.midTransient` (ANL-008).
     case midTransient = 17
+    /// `audio.highTransient` (ANL-009).
+    case highTransient = 18
     case min = 20
     case max = 21
     case clamp = 22
@@ -47,7 +49,8 @@ public enum ExpressionOpcode: UInt8, Sendable, Hashable, CaseIterable {
     /// The change in stack depth.
     var stackEffect: Int {
         switch self {
-        case .constant, .time, .band, .bandMean, .onset, .beatConfidence, .kick, .centroid, .loudness, .midTransient, .load: 1
+        case .constant, .time, .band, .bandMean, .onset, .beatConfidence, .kick, .centroid, .loudness, .midTransient, .highTransient,
+             .load: 1
         case .store: -1
         case .add, .subtract, .multiply, .divide, .min, .max, .step, .pow: -1
         case .negate, .abs, .sin, .cos, .floor, .fract, .sqrt: 0
@@ -217,6 +220,9 @@ public struct CompiledExpression: Sendable, Hashable {
                     top += 1
                 case .midTransient:
                     memory[top] = AudioFeatureSource.midTransient.value(in: frame)
+                    top += 1
+                case .highTransient:
+                    memory[top] = AudioFeatureSource.highTransient.value(in: frame)
                     top += 1
                 case .load:
                     memory[top] = memory[Int(instruction.index)]

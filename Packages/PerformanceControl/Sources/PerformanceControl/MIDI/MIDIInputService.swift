@@ -15,6 +15,13 @@ public protocol MIDIInputProvider: AnyObject, Sendable {
     func connect(sources: Set<MIDIEndpointID>)
     /// Disconnects every source; no message reaches the ring after it returns.
     func close()
+    /// MIDI-011-R5: increases each time the provider saw a connected source go away (unplugged, replugged with a new
+    /// reference, reported removed or offline); the app releases held keys when it changes. 0 without a registry.
+    var sourceLossCount: Int { get }
+}
+
+extension MIDIInputProvider {
+    public var sourceLossCount: Int { 0 }
 }
 
 public enum MIDIInputState: Sendable, Hashable {
@@ -37,6 +44,9 @@ public final class MIDIInputService: Sendable {
     }
 
     deinit { provider.close() }
+
+    /// MIDI-011-R5: the provider's loss count (read on the drain thread; see `MIDIInputProvider.sourceLossCount`).
+    public var sourceLossCount: Int { provider.sourceLossCount }
 
     public var state: MIDIInputState { lockedState.withLock { (s: inout MIDIInputState) -> MIDIInputState in s } }
 
