@@ -44,6 +44,15 @@ public struct FolderBackupReport: Sendable, Equatable {
     /// No usable previous manifest: everything was copied.
     public var fullBackup: Bool
     public var manifest: BackupFolderManifest
+
+    public init(copied: Int, unchanged: Int, removed: Int, bytesCopied: Int64, fullBackup: Bool, manifest: BackupFolderManifest) {
+        self.copied = copied
+        self.unchanged = unchanged
+        self.removed = removed
+        self.bytesCopied = bytesCopied
+        self.fullBackup = fullBackup
+        self.manifest = manifest
+    }
 }
 
 public struct FolderBackupWriter: Sendable {

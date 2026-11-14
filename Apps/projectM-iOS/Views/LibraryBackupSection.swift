@@ -12,6 +12,7 @@ struct LibraryBackupSection: View {
     var body: some View {
         Section {
             actions
+            FolderBackupRows(model: model.folder)   // FILE-006
             if model.isRestorePending { pendingRows }
             if let message = model.message {
                 Text(message).font(.footnote).accessibilityIdentifier("libraryBackupMessage")
@@ -74,6 +75,7 @@ struct LibraryBackupPresentation: ViewModifier {
             } onCancellation: {
                 model.moverCancelled()
             }
+            .background { FolderBackupPicker(model: model.folder) }   // FILE-006: its own view (one importer per view)
             .sheet(item: Binding(get: { model.preview.map(PreviewItem.init) },
                                  set: { (item: PreviewItem?) in if item == nil { model.cancelPreview() } })) { (item: PreviewItem) in
                 LibraryRestorePreviewView(model: model, preview: item.preview)
@@ -144,5 +146,50 @@ struct LibraryRestorePreviewView: View {
                 .disabled(!preview.plan.canRestore)
                 .accessibilityIdentifier("libraryRestoreConfirm")
         }
+    }
+}
+
+/// FILE-006 (FILE-006-R1, R9): Back Up to Folder…, Restore Media from Folder…, the pending media restore
+/// and the last folder result. Standard rows, wrapping text, nothing animates.
+struct FolderBackupRows: View {
+    @Bindable var model: FolderBackupCoordinator
+
+    var body: some View {
+        Group {
+            Button("Back Up to Folder…") { model.backUpTapped() }
+                .disabled(model.isWorking)
+                .accessibilityIdentifier("folderBackupButton")
+            Button("Restore Media from Folder…") { model.restoreTapped() }
+                .disabled(model.isWorking || model.isRestorePending)
+                .accessibilityIdentifier("folderRestoreButton")
+            if model.isWorking {
+                ProgressView().accessibilityLabel("Working")
+            }
+            if model.isRestorePending { pendingRows }
+            if let message = model.message {
+                Text(message).font(.footnote).accessibilityIdentifier("folderBackupMessage")
+            }
+        }
+    }
+
+    private var pendingRows: some View {
+        Group {
+            Text(FolderBackupCoordinator.pendingText).accessibilityIdentifier("folderRestorePending")
+            Button("Cancel Media Restore", role: .destructive) { model.cancelRestore() }
+                .accessibilityIdentifier("folderRestoreCancel")
+        }
+    }
+}
+
+/// The system folder picker for both folder actions (a view of its own: one `fileImporter` per view).
+struct FolderBackupPicker: View {
+    @Bindable var model: FolderBackupCoordinator
+
+    var body: some View {
+        Color.clear
+            .fileImporter(isPresented: $model.showPicker, allowedContentTypes: [.folder], allowsMultipleSelection: false) {
+                (result: Result<[URL], any Error>) in
+                if case let .success(urls) = result, let url = urls.first { model.picked(url, for: model.pickerPurpose) }
+            }
     }
 }
