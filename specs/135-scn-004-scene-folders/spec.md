@@ -139,7 +139,7 @@ without folder fields decodes with no folders and re-encodes byte for byte.
 - **SCN-004-R10**: Settings → Show → Scene Folders lists the folders and scenes of one level (folders first, then scenes, each sorted by name), with drill-down into a folder, "New Folder", and per row Rename / Move to… / Delete (folders) and Move to… (scenes) through swipe actions, context menus and VoiceOver actions, plus Go to Cue for a scene (its first cue). "Move to…" offers Top Level and the folder tree, with refused destinations dimmed.
 - **SCN-004-R11**: The scene switcher stays flat in show order; each row shows its scene's folder path (e.g. "Set A / Encore") and VoiceOver reads ", folder Set A / Encore"; search also matches the folder path.
 - **SCN-004-R12**: Duplicate Scene puts the copy in its source's folder.
-- **SCN-004-R13**: Every folder row and scene row has a VoiceOver label (its name), a value ("Folder, 3 scenes" or "Scene, 2 cues" plus ", scene missing"), and named actions for its operations (FR-070); refusals, completed moves and folder creation, rename and deletion are announced through the app's announcer (library lane).
+- **SCN-004-R13**: Every folder row and scene row has a VoiceOver label (its name), a value ("Folder, 3 scenes, 1 folder" or "Scene, 2 cues" plus ", scene missing"), and named actions for its operations (FR-070); refusals, completed moves and folder creation, rename and deletion are announced through the app's announcer (library lane).
 - **SCN-004-R15**: Folder edits have no undo history and are not part of SCN-010's scene history.
 - **SCN-004-R14**: No networking, no new stored settings keys; all data stays in the app's local show folder.
 

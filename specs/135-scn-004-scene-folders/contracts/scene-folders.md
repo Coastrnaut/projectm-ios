@@ -33,7 +33,7 @@ characters). No scene, cue or scene file is removed.
 |---|---|---|
 | Link from the Show editor | `showSceneFoldersLink` | "Scene Folders" |
 | New Folder button | `sceneFoldersNewFolder` | "New Folder" |
-| Folder row (n = 1-based row) | `sceneFolderRow.<name>` | label: name; value "Folder, N scenes, M folders"; actions Open (default), Rename, Move to, Delete |
+| Folder row (n = 1-based row) | `sceneFolderRow.<name>` | label: name; value "Folder, N scenes, M folders" (singular for 1); actions Open (default), Rename, Move to, Delete |
 | Scene row | `sceneFolderScene.<scene name or ID>` | label: name; value "Scene, N cues" (+ ", scene missing"); actions Move to, Go to Cue |
 | Move sheet destination | `sceneFolderDestination.top`, `sceneFolderDestination.<folder ID>` | label: folder path or "Top Level"; dimmed = not enabled |
 | New/rename alert field | — | "Folder name" |
