@@ -36,7 +36,8 @@ final class LibraryBackupAppTests: XCTestCase {
                ParameterShelf.pinsKey,   // UIX-004-R10
                RecordingCountdownSetting.key,   // REC-007-R8
                RecordingTimedStopSetting.key,   // REC-008-R9
-               OSCRoutesCoordinator.disabledRoutesKey, OSCRoutesCoordinator.aliasesKey]   // OSC-003-R9
+               OSCRoutesCoordinator.disabledRoutesKey, OSCRoutesCoordinator.aliasesKey,   // OSC-003-R9
+               PowerProfileSetting.key]   // PERF-008
             + RecentPresetsStore.allKeys)   // PRE-006-R7
         let included = Set(LibrarySettingsPolicy.includedKeys)
         let excluded = Set(LibrarySettingsPolicy.excludedKeys)
