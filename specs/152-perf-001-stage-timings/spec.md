@@ -45,6 +45,16 @@ conservative, local-first option.
 - Q: What summary is shown? → A: The median and 95th percentile of each stage over the most recent frames (a fixed window of 120 frames, 2 s at 60 fps), in milliseconds.
 - Q: Where can the numbers be taken away? → A: In the diagnostics export format as an optional `frameTimings` section (metadata only), written by the app's automation device run; CaptureLab, which has no frame loop, leaves it out.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: How are the median and the 95th percentile computed? → A: Over the stage's samples in the window, sorted: the median is the middle value (the mean of the two middle values for an even count); p95 is the nearest-rank value (index ⌈0.95·n⌉ − 1). Exact and deterministic, so tests can assert equality.
+- Q: Does the window restart when the shown visual changes or the overlay is turned off? → A: Yes to both: attaching the timer to another visual clears it, and turning the overlay off detaches it from every visual and drops the window. No new settings key; nothing persists across launches.
+- Q: How is the frame's GPU time shown when per-stage GPU time is unavailable? → A: As its own line, `gpu`, after the stage lines (median/p95 of the whole frame's command buffer), or "gpu unavailable" where the platform gives none (projectM on ANGLE, the simulator). Per-stage GPU columns appear only for stages that measured them.
+- Q: Can the timing data leave the device? → A: Only by a person's action: the automation run's JSON in the app's Documents, copied off by the Mac script. It is metadata only (labels, counts and milliseconds), never audio or identifiers, and nothing is sent anywhere (FR-068).
+- Q: How many rejected samples are tolerated before something is reported? → A: None is hidden: the report carries the count of rejected samples (overlay shows "rejected N" only when N > 0); no threshold or alert, since a rejected sample means a clock fault worth seeing, not a failure.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - See where a frame's time goes (Priority: P1)
@@ -93,14 +103,14 @@ same value; a snapshot without them encodes exactly as before.
 ### Functional Requirements
 
 - **PERF-001-R1**: The timer MUST record CPU time per stage for the six stages `audio`, `render`, `composite`, `output`, `encode`, `present`, with these exact labels, from an injected monotonic clock.
-- **PERF-001-R2**: The timer MUST keep a fixed-size window of the most recent frames (120) and report, per stage, the sample count, median and 95th percentile (nearest rank) in milliseconds.
+- **PERF-001-R2**: The timer MUST keep a fixed-size window of the most recent frames (120) and report, per stage, the sample count, median (mean of the two middle values for an even count) and 95th percentile (nearest rank, index ⌈0.95·n⌉ − 1) in milliseconds. Attaching the timer to another visual, or turning the overlay off, clears the window.
 - **PERF-001-R3**: A stage the pipeline has but that recorded no sample in the window, and any GPU value not measured, MUST be reported as unavailable; the report never contains 0 or NaN in place of a missing value.
 - **PERF-001-R4**: Samples that are negative, NaN or infinite MUST be rejected (not stored) and counted.
 - **PERF-001-R5**: The `encode` stage MUST appear in a report only when at least one frame in the window measured it (a recording was running).
 - **PERF-001-R6**: GPU time MUST come only from the platform's own command-buffer GPU start and end times, read after the work completed, without blocking the frame thread; where unavailable it is marked unavailable.
 - **PERF-001-R7**: Recording a frame MUST NOT allocate memory or take a lock; the timer MUST never be called from an audio callback (T063 rule).
 - **PERF-001-R8**: The visuals MUST measure stages only while the performance overlay is shown; with it off the frame path does no timing work.
-- **PERF-001-R9**: The performance overlay MUST show a stages header and one line per reported stage (label, median and p95 in ms, GPU where available) while it is on.
+- **PERF-001-R9**: The performance overlay MUST show a stages header, one line per reported stage (label, median and p95 in ms, GPU where available), a `gpu` line for the whole frame (or "gpu unavailable"), and "rejected N" when samples were rejected, while it is on.
 - **PERF-001-R10**: The diagnostics export format MUST gain an optional `frameTimings` section carrying the report (labels, sample counts, CPU and GPU median/p95 in ms, unavailable values absent); exports without it are unchanged and stay schema-valid.
 - **PERF-001-R11**: Every visual of the app MUST report its stages: projectM (audio, render, output, present), the native spectrum and oscilloscope (audio, render, encode, present), and the compositor visuals: camera, photo, video and text (audio, composite, output, encode, present).
 - **PERF-001-R12**: The automation runner MUST have a device mode that runs a visual with the timer on and writes the frame timings report (diagnostics format) to Documents.
