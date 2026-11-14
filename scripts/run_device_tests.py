@@ -106,6 +106,8 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.recording.qualityProfile",   # REC-005-R7 (record quality profile; Standard by default)
                 "settings.splitEditor.width",   # UIX-007-R7 (iPad split editor width; Standard by default)
                 "settings.recording.frameRate",   # REC-006-R8 (record frame rate; Profile default by default)
+                "settings.recording.aspect",   # REC-014-R7 (record aspect; Match screen by default)
+                "settings.recording.customWidth", "settings.recording.customHeight",   # REC-014-R7 (custom size)
                 "settings.recording.countdown",   # REC-007-R8 (recording countdown; Off by default)
                 "settings.performance.powerProfile",   # PERF-008-R6 (power profile; Standard by default)
                 "settings.externalDisplay.fit", "settings.externalDisplay.shape",   # OUT-004-R8 (external output correction)

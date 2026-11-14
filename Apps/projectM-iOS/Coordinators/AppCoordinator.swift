@@ -1524,6 +1524,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                                                  frameRateChoice: recordingQuality.frameRate)   // REC-006
         context.countdown = recordingCountdown.length   // REC-007
         context.timedStop = recordingTimedStop.length   // REC-008
+        context.aspect = recordingQuality.aspect   // REC-014
         return context
     }
 

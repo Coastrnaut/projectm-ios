@@ -39,6 +39,7 @@ final class LibraryBackupAppTests: XCTestCase {
                SplitEditorSetting.key,   // UIX-007-R7 (excluded: this device's screen)
                OSCRoutesCoordinator.disabledRoutesKey, OSCRoutesCoordinator.aliasesKey,   // OSC-003-R9
                PowerProfileSetting.key]   // PERF-008
+            + RecordingQualitySetting.aspectKeys   // REC-014-R7 (excluded: this device's screen and memory)
             + RecentPresetsStore.allKeys   // PRE-006-R7
             + OSCPeersCoordinator.allKeys)   // OSC-008-R10
         let included = Set(LibrarySettingsPolicy.includedKeys)
@@ -46,13 +47,14 @@ final class LibraryBackupAppTests: XCTestCase {
         XCTAssertEqual(included.subtracting(appKeys), [], "every included key is a key the app stores")
         XCTAssertEqual(appKeys.subtracting(included).subtracting(excluded), [], "every app key is included or deliberately left out")
         XCTAssertEqual(appKeys.intersection(excluded),
-                       [AppSettings.oscEnabledKey, AppSettings.midiEnabledKey, RecordingAudioSetting.includeMicrophoneKey,
+                       Set<String>([AppSettings.oscEnabledKey, AppSettings.midiEnabledKey, RecordingAudioSetting.includeMicrophoneKey,
                         VideoStore.idKey, VideoStore.loopKey, VideoStore.speedKey,   // MED-004, REC-004-R3
                         RecentPresetsStore.historyKey,   // PRE-006-R7: history never travels
                         SceneLock.key,   // SCN-015: the lock is session state of this device
                         OSCPeersCoordinator.enabledKey, OSCPeersCoordinator.approvedKey,   // OSC-008-R10: this device's network
                         ParameterQuantizer.key,   // MOD-017: a performance timing choice of this device
                         SplitEditorSetting.key])   // UIX-007-R7
+                       .union(RecordingQualitySetting.aspectKeys))   // REC-014-R7
         XCTAssertEqual(LibraryFolders.Folder.show.rawValue, StorageLocations.showFolderName)
         XCTAssertEqual(LibraryFolders.Folder.currentScene.rawValue, SceneAutosaveStore.folderName)
         XCTAssertEqual(LibraryFolders.Folder.presets.rawValue, UserPresetStore.directoryName)

@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (REC-014-T01-T14 verified on the Mac: package sweep and encode fixture on the host, app and UI tests on the REC14 iOS 27.2 simulator; device task T15 `{device}` open)
 
 **Input**: User description: "Implement REC-014 (Export aspect presets) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Offer portrait, square, landscape and custom safe dimensions."
