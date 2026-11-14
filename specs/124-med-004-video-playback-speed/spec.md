@@ -63,6 +63,28 @@ human interaction); each answer is the conservative, local-first option.
   video and its loop, erased with "Photos and videos", forgotten by Remove Video and by a new
   video; scenes and show cues record it as an optional field of the video asset (MED-004-R6, R7).
 
+### Session 2026-11-14 (speckit-clarify)
+
+Five questions, each answered by Claude with the recommended option (owner rules 4 and 9).
+
+- Q: What does the Speed control look like? → A: One "Speed" menu picker in Settings → Video,
+  directly above the loop sliders, listing "0.25×" … "2×", each read by VoiceOver in words
+  (MED-004-R8). Rejected: a slider (continuous values are not in the safe set, and seven stops
+  make a poor slider), a segmented control (seven segments do not fit an iPhone at large text).
+- Q: When does a speed choice reach the player? → A: At once: a pick is one discrete action, so
+  it is saved, applied from the next frame and recorded as one undo step (SCN-010), with no
+  settle delay (unlike the loop sliders' 0.4 s, MED-003-R10) (MED-004-R4, R8).
+- Q: How is speed written in a scene? → A: As the optional integer field `speedPercent` on the
+  video asset (25, 50, 75, 125, 150 or 200), written only when the speed is not 1×; older apps
+  keep it verbatim (unknown asset fields are carried), so no version change and no warning; any
+  other value (missing, not an integer, not one of the seven) reads as 1× (MED-004-R7).
+- Q: When is the Speed control offered? → A: Whenever a video is stored, even before the copy
+  opened (speed does not depend on the duration, unlike the loop sliders); with no video it is
+  hidden (MED-004-R8).
+- Q: How far ahead is the next loop pass prepared at speeds above 1×? → A: The pre-roll lead in
+  video time is 0.5 s × the speed when the speed is above 1× (1 s of video at 2×, still 0.5 s of
+  wall time), and stays 0.5 s of video at and below 1× (more wall time, never less) (MED-004-R5).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Slow the video down or speed it up (Priority: P1)
@@ -157,17 +179,18 @@ held past its slot at the joint (gap 0 frames).
   restart the decoder; the new speed applies from the next frame.
 - **MED-004-R5**: The loop region (MED-003) MUST stay in the video's own time: its joint MUST stay
   seamless at every speed, and the next pass MUST be prepared at least 0.5 s of wall time before
-  out at speeds above 1× (the pre-roll lead in video time grows with the speed).
+  out: the pre-roll lead in video time is 0.5 s × the speed above 1× and 0.5 s at or below 1×.
 - **MED-004-R6**: The speed MUST be saved with the stored video, keyed by its identifier, and
   restored after relaunch; a different video, Remove Video and the UI tests' reset MUST return to
   1×; the key MUST be excluded from backups (FILE-005) like the video and its loop, and FILE-011's
   "Photos and videos" erase MUST remove it.
 - **MED-004-R7**: Video scenes (autosave, undo history) and show cues MUST record a speed other
-  than 1× as an optional integer field of the video asset, without a format version change; a
-  malformed value MUST read as 1×; restoring a scene whose video is the stored one MUST apply its
+  than 1× as the optional integer field `speedPercent` of the video asset, without a format
+  version change; a malformed value or one outside the seven MUST read as 1×; restoring a scene whose video is the stored one MUST apply its
   speed (absent: 1×); older scenes MUST load and re-save unchanged.
-- **MED-004-R8**: Settings → Video MUST offer a Speed control with the seven values while a video
-  is stored; VoiceOver MUST read each value in words ("half speed", "normal speed", "1.5 times",
+- **MED-004-R8**: Settings → Video MUST offer a Speed menu picker with the seven values, above the
+  loop sliders, whenever a video is stored (also before its duration is known); a pick MUST be
+  saved and applied at once and be one undo step; VoiceOver MUST read each value in words ("half speed", "normal speed", "1.5 times",
   "double speed"); the footer MUST say that speed changes only the video, never the music; it
   MUST work at accessibility text sizes and use no animation outside the app's motion policy.
 - **MED-004-R9**: Above 1× the shown picture MUST always be the one for the current video time:
