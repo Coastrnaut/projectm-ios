@@ -13,9 +13,13 @@ system views); a `PreferenceKey` probe counting truncated texts (rejected: same 
 
 ## ACC-006-D2 — Controls taller than the screen
 
-**Decision**: `ViewThatFits(in: .vertical) { content; ScrollView { content } }` at accessibility sizes,
-with `.layoutPriority(1)` on the controls so the VStack in `VisualizerView` offers them the height
-above first; a simultaneous `DragGesture` calls `showControls()` to restart the auto-hide.
+**Decision**: at accessibility sizes, one scroll view as tall as the measured content, at most the
+height left (`.layoutPriority(1)` so the VStack in `VisualizerView` offers it the height above first),
+opening at the bottom; a scroll-phase observer calls `showControls()` to restart the auto-hide.
+Implementation notes (2026-11-13): `ViewThatFits` with two copies was replaced by the measured scroll
+view; a simultaneous `DragGesture` was dropped (buttons reported "not hittable" to UI tests); the
+standard-size tree is kept exactly as before (moving the backing out of the `controls` element made
+ACC-004's contrast audit report an element-less failure).
 **Rationale**: the plain stack stays when it fits (no change for most users); when it does not fit
 every control remains reachable by scrolling inside the same dark backing. Measured at AX5 on the
 iPhone 17 simulator: transport + status + tempo + route + names + grid ≈ the full screen.

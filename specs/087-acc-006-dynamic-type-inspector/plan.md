@@ -11,10 +11,12 @@ Two parts:
 1. **Fixes** (R1-R3, R5), each only at accessibility sizes (`@Environment(\.dynamicTypeSize)
    .isAccessibilitySize`), so standard sizes keep today's layouts:
    - `Views/ControlsOverlay.swift`: the compact layout's status and tempo row stacks vertically; the
-     preset, visual and scope names wrap to three lines; the whole controls body is a
-     `ViewThatFits(in: .vertical) { content; ScrollView { content } }` with `.layoutPriority(1)`, so it
-     takes the height above it first and scrolls only when it does not fit; a simultaneous drag gesture
-     restarts the auto-hide (`showControls()`).
+     preset, visual and scope names wrap to three lines, Duplicate moves below the name; the controls
+     body is a scroll view as tall as the measured content (`onGeometryChange`), at most the height left
+     (`.layoutPriority(1)`), opening at the bottom (`defaultScrollAnchor(.bottom)`); a scroll-phase
+     observer restarts the auto-hide. Standard sizes keep the original view tree exactly (implementation
+     note: moving the backing changed ACC-004's contrast audit; a drag gesture and `AnyLayout` were tried
+     and dropped).
    - `Views/TempoControls.swift`: the readout's one line and 0.7 minimum scale apply only at standard
      sizes.
    - `Views/PermissionNoticeView.swift`: `AnyLayout` HStack → VStack; the text never truncates.

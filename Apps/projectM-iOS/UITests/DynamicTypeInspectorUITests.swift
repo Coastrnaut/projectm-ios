@@ -445,7 +445,7 @@ final class DynamicTypeInspectorUITests: XCTestCase {
         requireReachable(app.buttons["node:myPresets"], "My Presets row")
         app.buttons["node:myPresets"].tap()
         let row = app.buttons["preset:\(name) copy"]
-        XCTAssertTrue(row.appears(within: 5), "the copy is listed")
+        XCTAssertTrue(row.appears(within: 3) || scrollTo(row), "the copy is listed")
         row.swipeLeft()
         let edit = app.buttons["editUserPresetSwipe"]
         XCTAssertTrue(edit.appears(within: 3), "Edit is offered")

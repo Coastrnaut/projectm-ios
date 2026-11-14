@@ -4,7 +4,15 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 on the Mac (own iOS 27.2 iPhone 17 simulators; no device claim).
+ACC-006-T01-T10 verified; T11 verified except S3 (per-test time); T12 `{device}` open.
+DynamicTypeInspectorUITests 30/30 in the final run (and 29/30 in the run before the last controls
+change), zero unfiltered audit issues; survey at AX1, AX2, AX4 and the largest standard size passes
+for the controls, camera notice and preset editor. Not met: S3 — each test took 14-100 s (median
+~45 s) on a Mac at load average 57-600 from other agents' builds; the same tests took 12-28 s when
+the load was low earlier the same day. ACC-004's suite 7/7; regression suites pass (one known
+tapControl race in UserPresetEditingUITests passed on rerun). Open item: unattributed element-less
+audit findings on the native visuals' Settings rows, filtered with a bound (contract C2).
 
 **Input**: User description: "Implement ACC-006 (Dynamic Type inspector) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md (line 454). Observable behavior, verbatim: "Support large text
