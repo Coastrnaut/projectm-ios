@@ -221,6 +221,7 @@ struct SettingsView: View {
                 audioSections
                 tailSections
             }
+            .uitestSettingsSection()   // DEBUG: `-uitestSettingsSection <id>` (UI tests, owner rule 7)
             .navigationTitle("Settings")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
@@ -381,10 +382,10 @@ struct SettingsView: View {
             textSection(texts)
         }
         if settings.visual.isNative { SpectrumColorsSection(settings: settings) }   // ACC-003-R13
-        if let colorGrade { ColorGradeSection(setting: colorGrade) }   // FX-003-R9
+        if let colorGrade { ColorGradeSection(setting: colorGrade).id("color") }   // FX-003-R9 (IDs: UITestSettingsSection)
         if let motionFeedback { TrailsSection(setting: motionFeedback, clamp: settings.safetyClamp) }   // FX-009-R9
         SensorySafetySection(settings: settings, announcer: announcer)   // ACC-012-R10
-        ReduceFlashingSection(settings: settings, available: reduceFlashingAvailable)   // FR-072 (own view: ACC-012 body budget)
+        ReduceFlashingSection(settings: settings, available: reduceFlashingAvailable).id("reduceFlashing")   // FR-072 (own view: ACC-012 body budget)
     }
 
     @ViewBuilder private var performanceSection: some View {
@@ -401,8 +402,8 @@ struct SettingsView: View {
         if let channelSelection { ChannelSelectionSection(selection: channelSelection) }   // AUD-009-R7
         if let noiseGate { NoiseGateSection(noiseGate: noiseGate) }   // AUD-011-R7
         if let latencyOffset { LatencyOffsetSection(setting: latencyOffset) }   // AUD-013-R10
-        oscSection
-        if let midi { MIDISettingsSection(midi: midi) }   // MIDI-001-R8
+        oscSection.id("osc")
+        if let midi { MIDISettingsSection(midi: midi).id("midi") }   // MIDI-001-R8
         if let recordingAudio { RecordingAudioSection(setting: recordingAudio, status: recordingAudioStatus) }   // REC-004-R13
     }
 
@@ -416,6 +417,7 @@ struct SettingsView: View {
                 }
                 .accessibilityIdentifier("showEditorLink")
             }
+            .id("show")
         }
         if let openGuide {   // UIX-001-R8
             Section {
@@ -433,6 +435,7 @@ struct SettingsView: View {
             LabeledContent("Version",
                            value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")
         }
+        .id("storage")
         #if DEBUG
         // PERF-010-T15 ({device}): a real crash for the recovery check on D1. Debug builds only.
         Section {

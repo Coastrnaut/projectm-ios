@@ -39,7 +39,8 @@ final class SceneDuplicateUITests: XCTestCase {
 
     func testDuplicateAndRenameACueSceneThenStepThroughBoth() {
         XCUIDevice.shared.orientation = .portrait
-        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-uitestShowSeed", "-autostart", "inAppPlayback"]
+        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-uitestShowSeed", "-autostart", "inAppPlayback",
+                               "-uitestSettingsSection", "show"]   // Settings opens at the Show row (owner rule 7)
             + Self.noStore
         app.launch()
         XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))

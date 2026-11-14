@@ -14,7 +14,8 @@ final class ColorGradeUITests: XCTestCase {
 
     private func launch() {
         XCUIDevice.shared.orientation = .portrait
-        let common: [String] = ["-uitestResetNotice", "-uitestDiagnostics", "-autostart", "inAppPlayback"]
+        let common: [String] = ["-uitestResetNotice", "-uitestDiagnostics", "-autostart", "inAppPlayback",
+                                 "-uitestSettingsSection", "color"]   // Settings opens at Color (owner rule 7)
         app.launchArguments = common + Self.noStore
         app.launch()
         XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))

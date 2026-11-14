@@ -405,15 +405,25 @@ final class DynamicTypeInspectorUITests: XCTestCase {
         try audit("controls")
     }
 
-    /// Settings and the OSC port field.
+    /// Settings and the OSC port field. The first Settings opens at OSC (`-uitestSettingsSection osc`, once:
+    /// owner rule 7, 2026-11-14), so the port field is checked first; Settings is then closed and opened again
+    /// at its top for the same audit as before (the fling to the end of Settings at AX5 cost about 20 s).
     private func settings(_ size: String) throws {
-        launch(size)
+        launch(size, Self.openAt("osc") + ["-uitestSettingsSectionOnce"])
         openSettings()
-        try audit("settings")
         let port = app.textFields["oscPortField"].firstMatch
         XCTAssertTrue(scrollTo(port, fromEnd: true), "the OSC port field")
         requireAcceptsInput(port, "1", "the OSC port field")
+        app.navigationBars["Settings"].buttons["Done"].tap()
+        XCTAssertTrue(app.navigationBars["Settings"].disappears(within: 5))
+        openSettings()
+        try audit("settings")
     }
+
+    /// DEBUG `-uitestSettingsSection <id>`: Settings opens scrolled to that section (owner rule 7, 2026-11-14:
+    /// the OSC and Show rows were 3-5 flings and several held drags away at AX5). The reach checks stay; no
+    /// Settings audit runs at a jumped-to position (see localNetworkNotice).
+    private static func openAt(_ section: String) -> [String] { ["-uitestSettingsSection", section] }
 
     /// Storage, one of the last rows of Settings (split from Settings: owner rule 7).
     private func storage(_ size: String) throws {
@@ -498,7 +508,7 @@ final class DynamicTypeInspectorUITests: XCTestCase {
     /// The show editor (scene cards): the Show row reached, the editor audited and its second cue
     /// reached. (Next cue in the controls is checked by the repair sheet test, which taps it.)
     private func showEditor(_ size: String) throws {
-        launch(size, ["-uitestShowSeed"])
+        launch(size, ["-uitestShowSeed"] + Self.openAt("show"))
         try openShowEditor()
         try audit("showEditor")
         let cue = app.descendants(matching: .any)["showCue2"].firstMatch
@@ -516,7 +526,7 @@ final class DynamicTypeInspectorUITests: XCTestCase {
     /// The show editor's Rename Scene alert (split from the show editor, 2026-11-14: owner rule 7):
     /// audited, its field accepts input, Rename can be hit.
     private func renameSceneAlert(_ size: String) throws {
-        launch(size, ["-uitestShowSeed"])
+        launch(size, ["-uitestShowSeed"] + Self.openAt("show"))
         try openShowEditor()
         let cue = app.descendants(matching: .any)["showCue2"].firstMatch
         XCTAssertTrue(scrollTo(cue), "cue 2")
@@ -591,6 +601,9 @@ final class DynamicTypeInspectorUITests: XCTestCase {
 
     /// The FILE-013 Local Network notice in Settings' OSC section.
     private func localNetworkNotice(_ size: String) throws {
+        // No `-uitestSettingsSection` here: opened at any section (OSC, MIDI or Storage), the audit reported the
+        // notice's text as partly unsupported at AX3 and AX5 (2026-11-14), which the walk from the end of the list
+        // does not; so this test keeps the walk (about 49 s at AX5, over the 30 s budget).
         launch(size, ["-settings.osc.enabled", "NO", "-settings.osc.port", "47127", "-uitestOSCFailure", "localNetworkDenied"])
         openSettings()
         let toggle = app.switches["oscReceiverToggle"]
