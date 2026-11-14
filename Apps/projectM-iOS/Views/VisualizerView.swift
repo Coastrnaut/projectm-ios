@@ -415,6 +415,7 @@ struct VisualizerView: View {
                          recordingQuality: coordinator.recordingQuality,   // REC-005
                          recordingCountdown: coordinator.recordingCountdown,   // REC-007
                          externalOutput: coordinator.externalOutput,   // OUT-004
+                         recordingTimedStop: coordinator.recordingTimedStop,   // REC-008
                          explainers: coordinator.explainers,   // UIX-015
                          cameraStatus: { () -> PermissionState? in coordinator.cameraPermissionStatus },
                          recentPresets: coordinator.presets.recent,   // PRE-006
@@ -710,13 +711,13 @@ struct VisualizerView: View {
         if coordinator.videoRecording.state.hasRecording {
             let finishing = coordinator.videoRecording.state == .finishing
             // ACC-003-R3: the record symbol, or an hourglass while finishing (was a red or grey dot).
-            StatusCueLabel(cue: StatusCueCatalog.recording(finishing: finishing, elapsed: coordinator.videoRecording.elapsedText),
+            StatusCueLabel(cue: StatusCueCatalog.recording(finishing: finishing, elapsed: coordinator.videoRecording.indicatorText),   // REC-008-R8
                            font: .footnote.monospacedDigit().bold())
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
             .statusBadgeBackground(Capsule())   // ACC-003-R9
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(finishing ? "Finishing the recording" : "Recording, \(coordinator.videoRecording.elapsedText)")
+            .accessibilityLabel(finishing ? "Finishing the recording" : "Recording, \(coordinator.videoRecording.indicatorAccessibilityText)")
             .accessibilityIdentifier("recordingIndicator")
             RecordingAudioLine(recording: coordinator.videoRecording)   // REC-004-R9
         }

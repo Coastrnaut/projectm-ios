@@ -112,6 +112,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
     private var midTransient: Float = 0
     /// ANL-009: the newest frame's high transient value, fed to the bindings (MOD-002's High transient source).
     private var highTransient: Float = 0
+    /// ANL-011: the newest frame's normalized rolloff, fed to the bindings (MOD-002's Rolloff source).
+    private var rolloff: Float = 0
     private var lastLinkTimestamp: CFTimeInterval?
     private var displayLink: CADisplayLink?
     private var paused = true
@@ -415,14 +417,11 @@ final class NativeSpectrumHost: PresentationBoundResource {
     /// Applies `glow` with any bound intensity to the bloom and the luminance model. Unbound, this is
     /// exactly the FX-001 path.
     func resolveEffectiveGlow() {
-        var resolved = glow.applying(externalValues)   // MIDI-003: a mapped control sets the live manual value
-        if let modulator, glowIntensityIsBound {
-            let manual: Double = Double(resolved.intensity)
-            let modulated: Double = modulator.value(for: VisualParameterIDs.bloomIntensity, manual: manual)
-            resolved.intensity = Float(safetyClamp.modulated(manual: manual, modulated: modulated))   // ACC-012: depth
-        }
-        resolved = resolved.limited(by: safetyClamp)   // ACC-012-R4: the cap, after modulation, before render
-        let factor: Float = effectLadder.intensityFactor   // PERF-003-R8: only ever lowers the clamped glow
+        // MOD-011 order: base (MIDI-003's live value replaces the manual one) → every binding in list order,
+        // clamped after each → ACC-012 depth scaling → ACC-012-R4 cap (`GlowModulationOrder`, ADR-0057).
+        let base: BloomParameters = glow.applying(externalValues)
+        var resolved: BloomParameters = GlowModulationOrder.resolve(base: base, modulator: modulator, clamp: safetyClamp)
+        let factor: Float = effectLadder.intensityFactor   // PERF-003-R8: after the clamp; only ever lowers the glow
         if factor < 1 { resolved.intensity *= factor }
         effectiveGlow = resolved
         bloom?.parameters = resolved
@@ -439,6 +438,14 @@ final class NativeSpectrumHost: PresentationBoundResource {
     func bind(_ binding: AudioFeatureBinding) throws(AudioFeatureBindingError) {
         guard let modulator else { throw .unknownTarget(binding.target) }
         try modulator.bind(binding)
+        resolveEffectiveGlow()
+    }
+
+    /// MOD-011: adds `binding` as its parameter's next layer (applied after the ones already bound); the
+    /// first binding when the parameter is unbound. At most 4 per parameter.
+    func addLayer(_ binding: AudioFeatureBinding) throws(AudioFeatureBindingError) {
+        guard let modulator else { throw .unknownTarget(binding.target) }
+        try modulator.addLayer(binding)
         resolveEffectiveGlow()
     }
 
@@ -479,7 +486,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
     /// applies the result. Does nothing without bindings or triggers. Called by `frame(_:)`; tests call it directly.
     func applyModulation(bands: UnsafeBufferPointer<Float>, kick: Float? = nil, centroid: Float? = nil,
                          loudness: Float? = nil, midTransient: Float? = nil, highTransient: Float? = nil,
-                         timeNanoseconds: UInt64) {
+                         rolloff: Float? = nil, timeNanoseconds: UInt64) {
         let bound: Bool = modulator?.hasBindings ?? false
         guard bound || triggerBank.hasTriggers else { return }
         var lfos = UnsafeBufferPointer<Double>(start: nil, count: 0)
@@ -490,7 +497,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             lfos = UnsafeBufferPointer(lfoValues)
         }
         let frame = AudioFeatureFrame(bands: bands, kick: kick, centroid: centroid, loudness: loudness, midTransient: midTransient,
-                                      highTransient: highTransient, lfos: lfos)
+                                      highTransient: highTransient, rolloff: rolloff, lfos: lfos)
         if triggerBank.hasTriggers {   // MOD-006: one step per trigger, no allocation
             triggerBank.advance(frame: frame, timeNanoseconds: timeNanoseconds) { (action: ThresholdTriggerAction) -> Void in
                 onTrigger?(action)
@@ -599,6 +606,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             loudness = 0       // ANL-014: and its loudness envelope
             midTransient = 0   // ANL-008: and its mid transient
             highTransient = 0  // ANL-009: and its high transient
+            rolloff = 0        // ANL-011: and its rolloff
             startEffectQuality()   // PERF-003: the floor at once, no fade
             if let waveform { analyzer.start(reader: waveform) }   // VIS-003: the tap through the pass-through wrapper
             let link = CADisplayLink(target: NativeSpectrumLinkProxy(self), selector: #selector(NativeSpectrumLinkProxy.fire(_:)))
@@ -697,6 +705,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             loudness = info.loudness
             midTransient = info.midTransient
             highTransient = info.highTransient
+            rolloff = info.rolloff
         }
         // ANL-003: the real interval since the previous frame (the first frame after a start snaps).
         let interval: Double = lastLinkTimestamp.map { (previous: CFTimeInterval) -> Double in link.timestamp - previous } ?? 0
@@ -709,7 +718,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
                                                        frameDuration: link.targetTimestamp - link.timestamp)
         let bandInput = UnsafeBufferPointer(start: bands, count: bandCount)
         applyModulation(bands: bandInput, kick: kickEnvelope, centroid: centroid, loudness: loudness, midTransient: midTransient,
-                        highTransient: highTransient, timeNanoseconds: context.timeNanoseconds)   // MOD-002; no-op without bindings
+                        highTransient: highTransient, rolloff: rolloff, timeNanoseconds: context.timeNanoseconds)   // MOD-002; no-op without bindings
         stepEffectQuality(time: link.timestamp)   // PERF-003: arithmetic; the glow changes only when the level or fade moves
         // VIS-003: the oscilloscope draws the newest sample history (kept when nothing new arrived).
         let input: UnsafeBufferPointer<Float>

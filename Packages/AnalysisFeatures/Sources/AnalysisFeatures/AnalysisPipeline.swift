@@ -6,9 +6,10 @@
 // ANL-001 stream (`.silence` lead-in, ANL-004-R7), ANL-002 band reduction with decibel
 // normalization, the ANL-004 onset detector, the ANL-005 beat tracker, the ANL-007 kick detector,
 // the ANL-008 mid transient detector (1–4 kHz, same magnitudes: no second FFT), the ANL-009 high
-// transient detector (6–16 kHz, rate-capped, same magnitudes), the ANL-010 spectral centroid and the
-// ANL-014 loudness envelope. It publishes, in ID order: the feature frame (with the kick envelope,
-// the mid and high transient envelopes and confidences, the centroid and the loudness), then the
+// transient detector (6–16 kHz, rate-capped, same magnitudes), the ANL-010 spectral centroid, the
+// ANL-014 loudness envelope and the ANL-011 spectral rolloff (same magnitudes). It publishes, in ID
+// order: the feature frame (with the kick envelope, the mid and high transient envelopes and
+// confidences, the centroid, the loudness and the rolloff), then the
 // frame's onset (if any), then its beat (if any), then its kick (if any), then its mid transient (if
 // any), then its high transient (if any).
 //
@@ -70,6 +71,7 @@ public final class AnalysisPipeline: @unchecked Sendable {
     private let highTransient: BandTransientDetector
     private var centroid: SpectralCentroidEstimator
     private var loudness: LoudnessEnvelope
+    private var rolloff: SpectralRolloffEstimator
     private let scratch: UnsafeMutablePointer<Float>
     private let bandScratch: UnsafeMutablePointer<Float>
     private var bandCount: BandCount
@@ -108,6 +110,7 @@ public final class AnalysisPipeline: @unchecked Sendable {
         highTransient = BandTransientDetector(configuration: configuration.highTransient, backend: backend)
         centroid = SpectralCentroidEstimator(configuration: configuration.centroid)
         loudness = LoudnessEnvelope(configuration: configuration.loudness, size: configuration.spectrum.size)
+        rolloff = SpectralRolloffEstimator(configuration: configuration.rolloff, backend: backend)
         scratch = .allocate(capacity: AnalysisPipeline.readChunkFrames * NormalizedPCMRing.channelCount)
         scratch.initialize(repeating: 0, count: AnalysisPipeline.readChunkFrames * NormalizedPCMRing.channelCount)
         bandScratch = .allocate(capacity: AnalysisSubscription.maximumBands)
@@ -269,6 +272,7 @@ public final class AnalysisPipeline: @unchecked Sendable {
         highTransient.reset()
         centroid.reset()
         loudness.reset()
+        rolloff.reset()
         subscribersLock.withLock { _ in
             for subscription in subscribers { subscription.clearFrame() }
         }
@@ -333,6 +337,7 @@ public final class AnalysisPipeline: @unchecked Sendable {
         let high = highTransient.process(frame, magnitudes: magnitudes)
         let brightness = centroid.process(frame, magnitudes: magnitudes)
         let level = loudness.process(frame, magnitudes: magnitudes)
+        let percentile = rolloff.process(frame, magnitudes: magnitudes)   // ANL-011: same magnitudes, no extra FFT
         let estimate = tracker.estimate
         let sample = frame.index + Int64(frame.size.rawValue)
         let time = timestamp(sample)
@@ -341,7 +346,8 @@ public final class AnalysisPipeline: @unchecked Sendable {
                                  kickEnvelope: kick.envelope, centroidHz: brightness.hz, centroid: brightness.normalized,
                                  loudness: level.envelope, loudnessDecibels: level.decibels,
                                  midTransientEnvelope: midTransient.envelope, midTransientConfidence: midTransient.lastConfidence,
-                                 highTransientEnvelope: highTransient.envelope, highTransientConfidence: highTransient.lastConfidence)
+                                 highTransientEnvelope: highTransient.envelope, highTransientConfidence: highTransient.lastConfidence,
+                                 rolloffHz: percentile.hz, rolloff: percentile.normalized)
         let bands = UnsafeBufferPointer(start: bandScratch, count: count)
         subscribersLock.withLock { _ in
             for subscription in subscribers { subscription.publish(item, bands: bands) }

@@ -88,6 +88,8 @@ struct SettingsView: View {
     var recordingCountdown: RecordingCountdownSetting?
     /// OUT-004: the external display's output correction (nil hides the section, e.g. in previews).
     var externalOutput: ExternalOutputSetting? = nil
+    /// REC-008: the recording length (nil hides the section, e.g. in previews).
+    var recordingTimedStop: RecordingTimedStopSetting?
     /// UIX-015: the explainer before the camera and local network prompts (nil: none, e.g. in previews).
     var explainers: PermissionExplainerCoordinator?
     /// UIX-015-R1: the camera's permission status when Camera is picked.
@@ -458,6 +460,7 @@ struct SettingsView: View {
         if let recordingQuality { RecordingQualitySection(setting: recordingQuality).id("quality") }   // REC-005-R9
         if let recordingQuality { RecordingFrameRateSection(setting: recordingQuality) }   // REC-006-R9
         if let recordingCountdown { RecordingCountdownSection(setting: recordingCountdown) }   // REC-007-R9
+        if let recordingTimedStop { RecordingTimedStopSection(setting: recordingTimedStop) }   // REC-008-R9
         if let recordingAudio { RecordingAudioSection(setting: recordingAudio, status: recordingAudioStatus).id("recording") }   // REC-004-R13
     }
 

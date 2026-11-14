@@ -26,6 +26,18 @@ def plan(runs: list[dict]) -> list[dict]:
     return queued[1:]   # keep the newest queued run
 
 
+def started(run_id: int) -> bool:
+    """True if any job of the run has started (in progress or completed)."""
+    proc = subprocess.run(["gh", "run", "view", str(run_id), "--json", "jobs"],
+                          capture_output=True, text=True)
+    if proc.returncode != 0:
+        return True   # unknown: never cancel
+    jobs = json.loads(proc.stdout).get("jobs", [])
+    linux = ("docs-and-compliance", "host-tests-linux")   # minutes on Linux: cheap to repeat
+    return any(j.get("status") in ("in_progress", "completed") for j in jobs
+               if j.get("conclusion") not in ("skipped", "cancelled") and j.get("name") not in linux)
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--dry-run", action="store_true")
@@ -36,6 +48,12 @@ def main(argv: list[str] | None = None) -> int:
                          capture_output=True, text=True, check=True).stdout
     runs = json.loads(out)
     for run in plan(runs):
+        # A run GitHub calls "queued" may already have started jobs (some jobs still wait for a
+        # runner); cancelling it threw away work (2026-11-14, run 43620550181). Cancel only runs
+        # none of whose jobs has started.
+        if started(run["databaseId"]):
+            print(f"keep run {run['databaseId']} ({run['headSha'][:7]}): jobs already started")
+            continue
         line = f"cancel queued run {run['databaseId']} ({run['headSha'][:7]})"
         if args.dry_run:
             print("would " + line)
