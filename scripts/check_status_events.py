@@ -26,6 +26,7 @@ CHECKED = [
     "Coordinators/SceneRepairCoordinator.swift",
     "Views/VisualizerView.swift",
     "Views/SourceStatusIndicator.swift",
+    "Coordinators/StereoPhaseWarning.swift",   # ANL-013-R8: X3a, X3b through the router
     "Views/BackgroundNoticeView.swift",
     "Views/OSCListenerBadge.swift",
     "Views/SessionRecoveryOfferCard.swift",

@@ -259,6 +259,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let missingMedia = MissingMediaCoordinator()
     /// ACC-011: capture and recording status events (announcements and captions); owns ACC-004's announcer.
     let statusEvents = StatusEventRouter()
+    /// ANL-013: the native visual's stereo phase-inversion warning (source indicator, overlay, X3a/X3b).
+    let stereoPhase = StereoPhaseWarningPresenter()
     /// FILE-005: Settings › Storage › Backup (announces on the `library` lane, set in init).
     @ObservationIgnored let libraryBackup = LibraryBackupCoordinator()
     /// ACC-004: user-caused state changes are announced through one rate-limited path.
@@ -864,7 +866,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// The indicator's text (FR-042) with AUD-012's switching label.
     var sourceStatusText: String {
         SourceStatusIndicator.text(mode: manager.activeMode, state: manager.state, signal: testSignalName,
-                                   switching: manager.switchingTo != nil)
+                                   switching: manager.switchingTo != nil, phaseWarning: stereoPhase.isRaised)   // ANL-013
     }
 
     /// Stop (FR-007): stops the source and returns to the chooser.
@@ -1118,6 +1120,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             for binding in sceneAutosave?.bindings ?? [] { try? host.addLayer(binding) }   // SCN-002: restored bindings, MOD-011 layers in order
             connectThresholdTriggers(host)   // MOD-006
             connectLFOs(host)   // MOD-007
+            connectStereoPhase(host)   // ANL-013
             #if DEBUG
             bindGlowToLevelIfRequested(host)   // MOD-002: AudioFeatureBindingUITests
             #endif
