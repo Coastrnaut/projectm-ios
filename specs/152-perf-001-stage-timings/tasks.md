@@ -17,7 +17,7 @@ Format: `- [ ] PERF-001-Tnn [P?] [US?] description (file)`.
 - [ ] PERF-001-T02 `FrameStage` (labels `audio`, `render`, `composite`, `output`, `encode`, `present`; `encode` conditional) in `Packages/Compositor/Sources/FrameTiming/FrameStage.swift`.
 - [ ] PERF-001-T03 `FrameStageTimer` per contract C1 (ring of 120 frames, preallocated, injected `() -> UInt64` ns clock, rejection of "NaN, ±∞, negative, end before begin", no allocation on begin/end/record/endFrame) and `FrameStageReport`/`StageStatistic` per C2-C3 in `Packages/Compositor/Sources/FrameTiming/FrameStageTimer.swift` and `FrameStageReport.swift`.
 - [ ] PERF-001-T04 [P] `MetalGPUFrameTimes` per C5 (4 slots, polls `.completed`, rejects start ≤ 0) under `#if canImport(Metal) && !COMPOSITOR_NO_METAL` in `Packages/Compositor/Sources/FrameTiming/MetalGPUFrameTimes.swift`.
-- [ ] PERF-001-T05 Tests in `Packages/Compositor/Tests/FrameTimingTests/FrameStageTimerTests.swift`: acceptance (synthetic frame 2/3/4/5/6 ms → exact labels, exact finite values, GPU unavailable); ring wraparound; median/p95; NaN/negative/backwards clock rejected; encode only while recording; window clears on configure; overlay lines; on-demand bench (`PERF001_BENCH=1`) of the cost per frame.
+- [ ] PERF-001-T05 Tests in `Packages/Compositor/Tests/FrameTimingTests/FrameStageTimerTests.swift`: acceptance (synthetic frame 2/3/4/5/6 ms → exact labels, exact finite values, GPU unavailable); ring wraparound; median/p95; NaN/negative/backwards clock rejected; encode only while recording; a stage begun but not ended records nothing; window clears on configure; overlay lines; on-demand bench (`PERF001_BENCH=1`) of the cost per frame.
 
 ## Phase 3: User Story 1 — see where a frame's time goes (P1)
 
@@ -28,7 +28,7 @@ Format: `- [ ] PERF-001-Tnn [P?] [US?] description (file)`.
 - [ ] PERF-001-T08 [US1] projectM stages (audio, render, output, present) in `ANGLERenderer.renderFrame` behind `stageTimer` (`Packages/ANGLERendering/Sources/ANGLERendering/ANGLERenderer.swift`).
 - [ ] PERF-001-T09 [US1] Native and compositor host stages (`Apps/projectM-iOS/Visuals/NativeSpectrumHost.swift`, `CameraVisualHost.swift`, `PhotoVisualHost.swift`, `VideoVisualHost.swift`, `TextVisualHost.swift`): `stageTimer` property, brackets, frame GPU poller, encode only while recording; shared helper in `Apps/projectM-iOS/Visuals/FrameStageTiming.swift`.
 - [ ] PERF-001-T10 [US1] Attach/detach on overlay and visual change in `Apps/projectM-iOS/Coordinators/AppCoordinator+FrameStages.swift`; overlay stage lines in `Apps/projectM-iOS/Views/PerformanceOverlay.swift` and `VisualizerView.swift`.
-- [ ] PERF-001-T11 [US1] App unit tests (`Apps/projectM-iOS/Tests/FrameStageAppTests.swift`): pipelines per visual, overlay lines, export conversion.
+- [ ] PERF-001-T11 [US1] App unit tests (`Apps/projectM-iOS/Tests/FrameStageAppTests.swift`): pipelines per visual, overlay lines, export conversion, and overlay off → no visual holds a timer (PERF-001-R8, S5 "nothing with the overlay off").
 - [ ] PERF-001-T12 [US1] UI test under 30 s (`Apps/projectM-iOS/UITests/FrameStageOverlayUITests.swift`): overlay on, native visual, the overlay shows "stages ms" and the labels audio, render, present.
 
 ## Phase 4: User Story 2 — take the numbers away (P2)
