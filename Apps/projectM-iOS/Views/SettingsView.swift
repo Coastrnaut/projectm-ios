@@ -391,6 +391,7 @@ struct SettingsView: View {
     @ViewBuilder private var mediaSections: some View {
         if let layerInspector { layersSection(layerInspector) }   // CMP-015
         if let shelf = layerInspector?.parameterShelf { ParameterShelfSection(shelf: shelf) }   // UIX-004-R6
+        if let coordinator = layerInspector, !coordinator.macros.isEmpty { macrosSection(coordinator) }   // MOD-010-R10
         if settings.visual.usesCamera {   // CAM-002-R1: which camera, and its mirror
             cameraSection
         }
@@ -508,6 +509,12 @@ struct SettingsView: View {
     // MARK: Photo (MED-001-R2, R7, R11, R15)
 
     /// CMP-015-R1: the layer inspector.
+    private func macrosSection(_ coordinator: AppCoordinator) -> some View {
+        MacrosSection(macros: coordinator.macros, settings: settings,
+                      endCoalescing: { [history] () -> Void in history?.endCoalescing() })
+            .id("macros")   // MOD-010 (UITestSettingsSection)
+    }
+
     private func layersSection(_ coordinator: AppCoordinator) -> some View {
         let count: Int = coordinator.layerInspectorRows.count
         return Section {
