@@ -13,6 +13,10 @@
 // * Accessibility: entry labels and values, the Selected trait on the highlight, wrapping at
 //   accessibility sizes; the appearance fades through MotionPolicy (instant with Reduce Motion).
 //   Announcements go through the coordinator's announcer, never a direct post (ACC-011-R11).
+// * SCN-005: a row of tag chips under the field (when the show has tags; AND; in memory), each row's
+//   tags in its subtitle and value, and a tag button after each row (plus the VoiceOver action "Tags")
+//   that opens the Tags sheet (`SceneTagsView`).
+import ShowControl
 import SwiftUI
 
 struct SceneSwitcherLayer: View {
@@ -47,6 +51,8 @@ struct SceneSwitcherView: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     /// The list's content height, so the card is no taller than its entries.
     @State private var listHeight: CGFloat = 0
+    /// SCN-005: the scene whose Tags sheet is open.
+    @State private var tagging: SceneTagsTarget?
 
     private var model: SceneSwitcherModel { coordinator.sceneSwitcher }
 
@@ -66,6 +72,11 @@ struct SceneSwitcherView: View {
                     .padding(.top, 12)
             }
         }
+        .sheet(item: $tagging) { (target: SceneTagsTarget) in
+            SceneTagsView(show: coordinator.show, sceneID: target.sceneID,
+                          changed: { () -> Void in coordinator.switcherTagsEdited() },
+                          done: { () -> Void in tagging = nil })
+        }
         .onAppear {
             fieldFocused = true
             // An overlay inserted in this transaction may not accept focus yet (research UIX-002-D5).
@@ -77,6 +88,7 @@ struct SceneSwitcherView: View {
         VStack(alignment: .leading, spacing: 10) {
             header
             field
+            tagChips
             Text(countText)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
@@ -140,6 +152,62 @@ struct SceneSwitcherView: View {
             .accessibilityIdentifier("sceneSwitcherField")
     }
 
+    // MARK: - SCN-005 tag chips
+
+    @ViewBuilder private var tagChips: some View {
+        let vocabulary: [String] = coordinator.show.tagVocabulary
+        if !vocabulary.isEmpty {
+            ScrollView(.horizontal) {
+                HStack(spacing: 6) {
+                    ForEach(vocabulary, id: \.self) { (tag: String) in chip(tag) }
+                }
+                .padding(.vertical, 2)
+            }
+            .scrollIndicators(.hidden)
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("Filter by tag")
+            .accessibilityIdentifier("sceneSwitcherTags")
+        }
+    }
+
+    private func chip(_ tag: String) -> some View {
+        let selected: Bool = model.isSelected(tag: tag)
+        let count: Int = coordinator.show.sceneCount(withTag: tag)
+        let value: String = count == 1 ? "1 scene" : "\(count) scenes"
+        let traits: AccessibilityTraits = selected ? .isSelected : []
+        let fill: Color = selected ? Color.accentColor.opacity(0.35) : Color.secondary.opacity(0.15)
+        return Button { coordinator.toggleSwitcherTag(tag) } label: {
+            HStack(spacing: 4) {
+                Image(systemName: selected ? "checkmark" : "tag").font(.caption2).accessibilityHidden(true)
+                Text(tag).font(.footnote)
+            }
+            .padding(.vertical, 5)
+            .padding(.horizontal, 10)
+            .background(fill, in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(tag)
+        .accessibilityValue(value)
+        .accessibilityAddTraits(traits)
+        .accessibilityIdentifier("sceneSwitcherTag.\(tag)")
+    }
+
+    private func openTags(_ entry: SceneSwitcherEntry) {
+        guard let cue = coordinator.show.list.cues.first(where: { (c: ShowCue) -> Bool in c.id == entry.cueID }) else { return }
+        tagging = SceneTagsTarget(sceneID: cue.sceneID)
+    }
+
+    private func tagButton(_ entry: SceneSwitcherEntry) -> some View {
+        Button { openTags(entry) } label: {
+            Image(systemName: entry.tags.isEmpty ? "tag" : "tag.fill")
+                .frame(minWidth: 32, minHeight: 32)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Tags for \(entry.label)")
+        .accessibilityIdentifier("sceneSwitcherTagsButton.\(entry.number)")
+    }
+
     private var countText: String {
         let entries: [SceneSwitcherEntry] = coordinator.sceneSwitcherEntries
         let count: Int = model.results(entries).count
@@ -153,8 +221,11 @@ struct SceneSwitcherView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 2) {
                     ForEach(results) { (entry: SceneSwitcherEntry) in
-                        row(entry, isHighlighted: entry.cueID == highlighted)
-                            .id(entry.cueID)
+                        HStack(spacing: 4) {
+                            row(entry, isHighlighted: entry.cueID == highlighted)
+                            tagButton(entry)   // SCN-005
+                        }
+                        .id(entry.cueID)
                     }
                 }
                 .onGeometryChange(for: CGFloat.self) { (geometry: GeometryProxy) -> CGFloat in geometry.size.height }
@@ -200,6 +271,7 @@ struct SceneSwitcherView: View {
         .accessibilityLabel(entry.label)
         .accessibilityValue(entry.accessibilityValue)
         .accessibilityAddTraits(traits)
+        .accessibilityAction(named: "Tags") { openTags(entry) }   // SCN-005
         .accessibilityIdentifier("sceneSwitcherEntry.\(entry.number)")
     }
 
@@ -209,6 +281,7 @@ struct SceneSwitcherView: View {
         if let name = entry.sceneName { parts.append(name) }
         if entry.isMissing { parts.append("Scene missing") }
         if let path = entry.folderPath { parts.append(path) }   // SCN-004
+        if !entry.tags.isEmpty { parts.append(entry.tags.joined(separator: ", ")) }   // SCN-005
         return parts.joined(separator: " · ")
     }
 }

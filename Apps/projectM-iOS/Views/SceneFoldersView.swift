@@ -5,6 +5,8 @@
 // indented tree; refused destinations are disabled. Deleting a non-empty folder asks first and moves
 // its contents to the parent (no scene is removed). Folder edits never change the output; Go to Cue
 // shows the scene's first cue (SHOW-001). Announcements go through ShowCoordinator's library lane.
+// SCN-005: scene rows show their tags and offer "Tags…" (swipe, context menu, VoiceOver action),
+// which opens the Tags sheet.
 import ShowControl
 import SwiftUI
 
@@ -36,6 +38,7 @@ struct SceneFoldersView: View {
     @State private var nameText = ""
     @State private var moving: Moving?
     @State private var deleting: SceneFolder?
+    @State private var tagging: SceneTagsTarget?   // SCN-005
 
     private var tree: SceneFolderTree { show.list.folders }
     private var title: String { folderID.flatMap { (id: UUID) -> String? in tree.folder(id)?.name } ?? "Scene Folders" }
@@ -63,6 +66,9 @@ struct SceneFoldersView: View {
         }
         .sheet(item: $moving) { (item: Moving) in
             SceneFolderPicker(show: show, moving: item) { moving = nil }
+        }
+        .sheet(item: $tagging) { (target: SceneTagsTarget) in
+            SceneTagsView(show: show, sceneID: target.sceneID) { tagging = nil }
         }
         .accessibilityIdentifier("sceneFolders")
     }
@@ -166,16 +172,21 @@ struct SceneFoldersView: View {
         let cues: Int = show.cueCount(ofScene: sceneID)
         var value: String = cues == 1 ? "Scene, 1 cue" : "Scene, \(cues) cues"
         if missing { value += ", scene missing" }
+        let tags: [String] = show.tags(ofScene: sceneID)
+        if !tags.isEmpty { value += ", tags " + tags.joined(separator: ", ") }   // SCN-005
         return value
     }
 
-    private func sceneContent(_ name: String, missing: Bool) -> some View {
+    private func sceneContent(_ name: String, missing: Bool, tags: [String]) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             Image(systemName: "rectangle.stack").accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(name)
                 if missing {
                     Label("Scene missing", systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.orange)
+                }
+                if !tags.isEmpty {   // SCN-005
+                    Label(tags.joined(separator: ", "), systemImage: "tag").font(.caption).foregroundStyle(.secondary)
                 }
             }
             Spacer(minLength: 0)
@@ -186,7 +197,7 @@ struct SceneFoldersView: View {
     private func sceneRow(_ sceneID: String) -> some View {
         let name: String = sceneName(sceneID)
         let missing: Bool = show.unreadableScenes.contains(sceneID)
-        return sceneContent(name, missing: missing)
+        return sceneContent(name, missing: missing, tags: show.tags(ofScene: sceneID))
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(name)
             .accessibilityValue(sceneValue(sceneID, missing: missing))
@@ -194,6 +205,7 @@ struct SceneFoldersView: View {
             .contextMenu {
                 Button("Move to…") { moving = .scene(sceneID) }
                 Button("Go to Cue") { show.goToScene(sceneID) }
+                Button("Tags…") { tagging = SceneTagsTarget(sceneID: sceneID) }   // SCN-005
             }
             .swipeActions(edge: .leading) {
                 Button("Move") { moving = .scene(sceneID) }
@@ -204,8 +216,14 @@ struct SceneFoldersView: View {
                     .tint(.accentColor)
                     .accessibilityLabel("Go to Cue")
             }
+            .swipeActions(edge: .trailing) {   // SCN-005
+                Button("Tags") { tagging = SceneTagsTarget(sceneID: sceneID) }
+                    .tint(.teal)
+                    .accessibilityIdentifier("sceneFolderTags")
+            }
             .accessibilityAction(named: "Move to") { moving = .scene(sceneID) }
             .accessibilityAction(named: "Go to Cue") { show.goToScene(sceneID) }
+            .accessibilityAction(named: "Tags") { tagging = SceneTagsTarget(sceneID: sceneID) }
     }
 
     // MARK: - Actions

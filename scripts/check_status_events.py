@@ -51,6 +51,7 @@ CHECKED = [
     "Coordinators/LogoCoordinator.swift",   # MED-010-R12: logo changes announce through the announcer
     "Views/LogoSection.swift",
     "Views/SceneFoldersView.swift",  # SCN-004-R13: folder edits announce on the library lane
+    "Views/SceneTagsView.swift",  # SCN-005-R13: tag edits announce on the library lane
 ]
 COORDINATOR = "Coordinators/AppCoordinator.swift"
 ALLOWED_IN_COORDINATOR = ("onScopeChange", "nativeVisualUnavailableMessage", "glowUnavailableMessage")

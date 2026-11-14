@@ -68,6 +68,43 @@ final class SceneSwitcherTests: XCTestCase {
         XCTAssertEqual(labels(SceneSwitcherFilter.results(rows, query: "encore")), ["Build"])
     }
 
+    // MARK: - Tags (SCN-005-R10, R11)
+
+    func testEntriesCarryTagsAndSearchAndChipsMatchThem() throws {
+        var show = Self.list(["Opening", "Build", "Ambience"])
+        try show.addTag("Ambient", toScene: Self.sceneID(2))
+        try show.addTag("Intro", toScene: Self.sceneID(1))
+        try show.addTag("Intro", toScene: Self.sceneID(2))
+        var names: [String: String] = [:]
+        for n in 1...3 { names[Self.sceneID(n)] = ["Opening", "Build", "Ambience"][n - 1] }
+        let rows = SceneSwitcherEntry.entries(list: show, sceneNames: names, unreadable: [])
+        XCTAssertEqual(rows.map(\.tags), [["Intro"], ["Ambient", "Intro"], []])
+        XCTAssertEqual(rows[1].accessibilityValue, "Cue 2, tags Ambient, Intro")
+        XCTAssertEqual(labels(SceneSwitcherFilter.results(rows, query: "amb")), ["Ambience", "Build"],
+                       "a label prefix match first, then the tag match")
+        XCTAssertEqual(labels(SceneSwitcherFilter.results(rows, query: "", tags: ["INTRO"])), ["Opening", "Build"])
+        XCTAssertEqual(labels(SceneSwitcherFilter.results(rows, query: "", tags: ["intro", "ambient"])), ["Build"], "AND")
+        XCTAssertEqual(labels(SceneSwitcherFilter.results(rows, query: "open", tags: ["intro"])), ["Opening"], "text on top of chips")
+        XCTAssertEqual(labels(SceneSwitcherFilter.results(rows, query: "", tags: ["gone"])), [])
+    }
+
+    @MainActor
+    func testChipSelectionTogglesAndDropsVanishedTags() {
+        let model = SceneSwitcherModel(now: { () -> Double in 0 })
+        model.toggleTag("Intro", vocabulary: ["Intro", "Loud"])
+        model.toggleTag("loud", vocabulary: ["Intro", "Loud"])
+        XCTAssertTrue(model.isSelected(tag: "INTRO"))
+        XCTAssertEqual(model.selectedTags, ["intro", "loud"])
+        model.toggleTag("Intro", vocabulary: ["Intro", "Loud"])
+        XCTAssertFalse(model.isSelected(tag: "Intro"))
+        model.pruneTags(vocabulary: ["Intro"])
+        XCTAssertEqual(model.selectedTags, [], "a tag no scene carries is dropped")
+        model.toggleTag("Intro", vocabulary: ["Intro"])
+        model.open(entries: [])
+        model.close(chose: true)
+        XCTAssertEqual(model.selectedTags, ["intro"], "chips stay after a choice")
+    }
+
     // MARK: - Filter (UIX-002-R3, S4)
 
     func testCaseInsensitiveContains() {

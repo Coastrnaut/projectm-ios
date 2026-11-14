@@ -5,6 +5,8 @@
 //   number, label, the scene's name when it differs, and whether it is active or its scene missing.
 //   SCN-004: the list stays flat in show order; each entry carries its scene's folder path, shown,
 //   read by VoiceOver and matched by search (after prefix and word-start matches).
+//   SCN-005: each entry also carries its scene's tags (shown, read, matched like the folder path);
+//   selected tag chips (in memory, AND, folded) narrow the entries before the query ranks them.
 // * `SceneSwitcherFilter`: the trimmed query folded with case, diacritic and width insensitivity
 //   (fixed `nil` locale, the same on every device language); an entry matches when its label or
 //   scene name contains it. Prefix and word-start matches come first; show order within each group.
@@ -29,6 +31,8 @@ struct SceneSwitcherEntry: Equatable, Sendable, Identifiable {
     let isMissing: Bool
     /// SCN-004: the scene's folder path ("Set A / Encore"); nil at the top level.
     var folderPath: String? = nil
+    /// SCN-005: the scene's tags (sorted).
+    var tags: [String] = []
 
     var id: UUID { cueID }
 
@@ -43,7 +47,8 @@ struct SceneSwitcherEntry: Equatable, Sendable, Identifiable {
             if name == cue.label { name = nil }
             let path: String? = list.folders.pathText(of: list.folderID(ofScene: cue.sceneID))
             rows.append(SceneSwitcherEntry(cueID: cue.id, number: index + 1, label: cue.label, sceneName: name,
-                                           isActive: cue.id == activeID, isMissing: missing, folderPath: path))
+                                           isActive: cue.id == activeID, isMissing: missing, folderPath: path,
+                                           tags: list.tags(ofScene: cue.sceneID)))
         }
         return rows
     }
@@ -55,6 +60,7 @@ struct SceneSwitcherEntry: Equatable, Sendable, Identifiable {
         if isActive { parts.append("current") }
         if isMissing { parts.append("scene missing") }
         if let folderPath { parts.append("folder \(folderPath)") }
+        if !tags.isEmpty { parts.append("tags " + tags.joined(separator: ", ")) }   // SCN-005
         return parts.joined(separator: ", ")
     }
 }
@@ -72,22 +78,34 @@ enum SceneSwitcherFilter {
     }
 
     /// The matching entries, best first; every entry in show order for an empty query.
-    static func results(_ entries: [SceneSwitcherEntry], query: String) -> [SceneSwitcherEntry] {
+    static func results(_ entries: [SceneSwitcherEntry], query: String, tags selected: Set<String> = []) -> [SceneSwitcherEntry] {
+        let tagged: [SceneSwitcherEntry] = filter(entries, tags: selected)
         let needle: String = normalizedQuery(query)
-        guard !needle.isEmpty else { return entries }
+        guard !needle.isEmpty else { return tagged }
         var first: [SceneSwitcherEntry] = []
         var rest: [SceneSwitcherEntry] = []
-        for entry in entries {
+        for entry in tagged {
             let label: String = fold(entry.label)
             let name: String? = entry.sceneName.map(fold)
             let labelMatch: Bool = label.contains(needle)
             let nameMatch: Bool = name?.contains(needle) ?? false
             let folderMatch: Bool = entry.folderPath.map { (p: String) -> Bool in fold(p).contains(needle) } ?? false
-            guard labelMatch || nameMatch || folderMatch else { continue }
+            let tagMatch: Bool = entry.tags.contains { (t: String) -> Bool in fold(t).contains(needle) }   // SCN-005
+            guard labelMatch || nameMatch || folderMatch || tagMatch else { continue }
             let early: Bool = startsWord(label, needle) || (name.map { (n: String) -> Bool in startsWord(n, needle) } ?? false)
             if early { first.append(entry) } else { rest.append(entry) }
         }
         return first + rest
+    }
+
+    /// SCN-005: the entries whose scene carries every selected tag (folded; AND). Show order kept.
+    static func filter(_ entries: [SceneSwitcherEntry], tags selected: Set<String>) -> [SceneSwitcherEntry] {
+        guard !selected.isEmpty else { return entries }
+        let wanted: Set<String> = Set(selected.map(fold))
+        return entries.filter { (entry: SceneSwitcherEntry) -> Bool in
+            let own: Set<String> = Set(entry.tags.map(fold))
+            return wanted.isSubset(of: own)
+        }
     }
 
     private static let separators: Set<Character> = [" ", "-", "_", ".", "/"]
@@ -179,6 +197,8 @@ final class SceneSwitcherModel {
     private(set) var focusReturnRevision = 0
     /// The last choice's latency (UIX-002-R8).
     var probe = SceneSwitchLatencyProbe()
+    /// SCN-005: the selected tag chips (folded), kept while the app runs; never stored.
+    private(set) var selectedTags: Set<String> = []
 
     @ObservationIgnored let now: @MainActor () -> Double
 
@@ -187,7 +207,23 @@ final class SceneSwitcherModel {
     }
 
     func results(_ entries: [SceneSwitcherEntry]) -> [SceneSwitcherEntry] {
-        SceneSwitcherFilter.results(entries, query: query)
+        SceneSwitcherFilter.results(entries, query: query, tags: selectedTags)
+    }
+
+    /// SCN-005: whether a chip is selected.
+    func isSelected(tag: String) -> Bool { selectedTags.contains(SceneSwitcherFilter.fold(tag)) }
+
+    /// SCN-005: selects or clears a chip; selections whose tag left `vocabulary` are dropped.
+    func toggleTag(_ tag: String, vocabulary: [String]) {
+        let key: String = SceneSwitcherFilter.fold(tag)
+        if selectedTags.contains(key) { selectedTags.remove(key) } else { selectedTags.insert(key) }
+        pruneTags(vocabulary: vocabulary)
+    }
+
+    /// SCN-005: drops selections no scene carries any more (SCN-005 Edge Cases).
+    func pruneTags(vocabulary: [String]) {
+        let live: Set<String> = Set(vocabulary.map(SceneSwitcherFilter.fold))
+        selectedTags = selectedTags.intersection(live)
     }
 
     /// Opens with the abandoned query (and its highlight when it still matches), else the active
