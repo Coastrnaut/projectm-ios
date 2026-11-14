@@ -65,6 +65,20 @@ final class AudioFeatureSourceTests: XCTestCase {
         XCTAssertEqual(AudioFeatureSource.loudness.value(in: .silent), 0)
     }
 
+    /// ANL-008-T07: the mid transient source (ANL-008-R8).
+    func testMidTransientSourceRoundTripsAndReadsTheValue() {
+        XCTAssertEqual(AudioFeatureSource.midTransient.id, "audio.midTransient")
+        XCTAssertEqual(AudioFeatureSource(id: "audio.midTransient"), .midTransient)
+        XCTAssertNil(AudioFeatureSource(id: "audio.snare"), "no instrument-named source exists")
+        let bands: [Float] = [0.2]
+        bands.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> Void in
+            XCTAssertEqual(AudioFeatureSource.midTransient.value(in: AudioFeatureFrame(bands: buffer, midTransient: 0.625)), 0.625)
+            XCTAssertEqual(AudioFeatureSource.midTransient.value(in: AudioFeatureFrame(bands: buffer, midTransient: .infinity)), 0)
+            XCTAssertEqual(AudioFeatureSource.midTransient.value(in: AudioFeatureFrame(bands: buffer, kick: 1)), 0, "no feed reads 0")
+        }
+        XCTAssertEqual(AudioFeatureSource.midTransient.value(in: .silent), 0)
+    }
+
     func testKickSourceRoundTripsAndReadsTheEnvelope() {
         XCTAssertEqual(AudioFeatureSource.kick.id, "audio.kick")
         XCTAssertEqual(AudioFeatureSource(id: "audio.kick"), .kick)
