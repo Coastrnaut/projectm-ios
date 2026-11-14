@@ -2,6 +2,8 @@
 // Shape, Pixel aspect; VoiceOver and Dynamic Type come with them) bound to `ExternalOutputSetting`; every
 // change applies to a connected external display at once (or when a recording ends, OUT-004-R7). Always
 // shown: a display can be connected later.
+// OUT-012-R1, R6: "Rehearse output…" opens `ExternalRehearsalView` full screen, bound to the
+// coordinator's `isRehearsing` (a settling real display closes it); unavailable while one is connected.
 import PresentationLifecycle
 import SwiftUI
 
@@ -13,11 +15,36 @@ struct ExternalDisplaySection: View {
             fitPicker
             shapePicker
             pixelAspectPicker
+            rehearseRow
         } header: {
             Text(ExternalOutputSetting.sectionTitle)
         } footer: {
             Text(ExternalOutputSetting.footer)
         }
+    }
+
+    @ViewBuilder private var rehearseRow: some View {
+        if let external = setting.external {
+            let connected: Bool = external.hasExternalDisplay
+            VStack(alignment: .leading, spacing: 2) {
+                Button(ExternalOutputSetting.rehearseTitle) { external.beginRehearsal() }
+                    .disabled(connected)
+                    .accessibilityIdentifier("externalRehearseButton")
+                if connected {
+                    Text(ExternalOutputSetting.rehearseUnavailable)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .fullScreenCover(isPresented: rehearsalBinding(external)) {
+                ExternalRehearsalView(setting: setting, deviceAspect: external.deviceAspect) { external.endRehearsal() }
+            }
+        }
+    }
+
+    private func rehearsalBinding(_ external: ExternalDisplayCoordinator) -> Binding<Bool> {
+        Binding<Bool>(get: { () -> Bool in external.isRehearsing },
+                      set: { (open: Bool) -> Void in if !open { external.endRehearsal() } })
     }
 
     private var fitPicker: some View {

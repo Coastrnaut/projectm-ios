@@ -70,7 +70,7 @@ that circles stay round and the centre stays centred.
 
 **Acceptance Scenarios**:
 
-1. **Given** the grid on, **When** Fit or Fill is chosen, **Then** the grid circles stay round in the preview; with Stretch on a different shape they become ellipses, as on the real output.
+1. **Given** the grid on, **When** Fit or Fill is chosen, **Then** the grid circles stay round in the preview; with Stretch on a display with non-square pixels they become ellipses, as on the real output.
 
 ### User Story 3 - Leave rehearsal; a real display takes over (Priority: P2)
 
