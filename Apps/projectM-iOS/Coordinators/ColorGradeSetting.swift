@@ -6,6 +6,8 @@
 // range → the nearest bound (`ColorGrade.clamped`). `resetToNeutral()` removes the five keys. Every change calls
 // `onChange`, through which `AppCoordinator` hands `grade` to the compositor-backed visuals (Camera, Photo, Video,
 // Text); the native spectra and projectM are not graded (spec Clarifications). Readouts are built in typed steps.
+// FX-004 (specs/126-fx-004-hue-shift): a sixth Double, `settings.colorGrade.hue` (degrees), read, clamped, stored and
+// reset like the others; ACC-012 does not cap it (it keeps luminance; research FX-004-D7).
 // ACC-012: the sensory safety profile's intensity limit caps the brightening part of gain (`effectiveGrade`;
 // research FX-003-D10); Standard leaves the grade unchanged. The flash guard measures the graded output either way.
 import Compositor
@@ -21,7 +23,8 @@ final class ColorGradeSetting {
     static let gammaKey = "settings.colorGrade.gamma"
     static let gainKey = "settings.colorGrade.gain"
     static let saturationKey = "settings.colorGrade.saturation"
-    static let allKeys: [String] = [temperatureKey, liftKey, gammaKey, gainKey, saturationKey]
+    static let hueKey = "settings.colorGrade.hue"   // FX-004-R8
+    static let allKeys: [String] = [temperatureKey, liftKey, gammaKey, gainKey, saturationKey, hueKey]
 
     @ObservationIgnored private let defaults: UserDefaults
     /// Called after every change with the new (valid) grade.
@@ -47,22 +50,28 @@ final class ColorGradeSetting {
         didSet { store(\.saturation, ColorGrade.saturationRange, 1, Self.saturationKey) }
     }
 
+    /// FX-004: degrees, −180…180.
+    var hue: Double {
+        didSet { store(\.hue, ColorGrade.hueRange, 0, Self.hueKey) }
+    }
+
     init(defaults: UserDefaults) {
         self.defaults = defaults
         let stored = ColorGrade(temperature: Self.read(defaults, Self.temperatureKey, 0), lift: Self.read(defaults, Self.liftKey, 0),
                                 gamma: Self.read(defaults, Self.gammaKey, 1), gain: Self.read(defaults, Self.gainKey, 1),
-                                saturation: Self.read(defaults, Self.saturationKey, 1))
+                                saturation: Self.read(defaults, Self.saturationKey, 1), hue: Self.read(defaults, Self.hueKey, 0))
         let valid: ColorGrade = stored.clamped
         temperature = valid.temperature
         lift = valid.lift
         gamma = valid.gamma
         gain = valid.gain
         saturation = valid.saturation
+        hue = valid.hue
     }
 
     /// The grade the compositor applies.
     var grade: ColorGrade {
-        ColorGrade(temperature: temperature, lift: lift, gamma: gamma, gain: gain, saturation: saturation)
+        ColorGrade(temperature: temperature, lift: lift, gamma: gamma, gain: gain, saturation: saturation, hue: hue)
     }
 
     var isNeutral: Bool { grade.isNeutral }
@@ -83,7 +92,7 @@ final class ColorGradeSetting {
         return out
     }
 
-    /// Every control back to neutral; the five keys are removed (absent = neutral).
+    /// Every control back to neutral; the six keys are removed (absent = neutral).
     func resetToNeutral() {
         let neutral: ColorGrade = .neutral
         temperature = neutral.temperature
@@ -91,6 +100,7 @@ final class ColorGradeSetting {
         gamma = neutral.gamma
         gain = neutral.gain
         saturation = neutral.saturation
+        hue = neutral.hue
         for key in Self.allKeys { defaults.removeObject(forKey: key) }
         onChange?(grade)
     }
@@ -151,5 +161,14 @@ final class ColorGradeSetting {
     static func saturationText(_ value: Double) -> String {
         let percent: Int = Int((value * 100).rounded())
         return String(percent) + "%"
+    }
+
+    /// FX-004: "+30°", "0°", "−120°" (whole degrees, U+2212).
+    static func hueText(_ value: Double) -> String {
+        let whole: Int = Int(value.rounded())
+        let magnitude: String = String(abs(whole)) + "\u{00B0}"
+        if whole == 0 { return magnitude }
+        let sign: String = whole > 0 ? "+" : "\u{2212}"
+        return sign + magnitude
     }
 }

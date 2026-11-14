@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (FX-004-T01-T14 verified on the Mac and an own iOS 27.2 simulator; T15 `{device}` open)
 
 **Input**: User description: "Implement FX-004 (Hue shift) from docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable
 behavior, verbatim: "Rotate hue without changing grayscale content." Acceptance, verbatim: "Gray ramp stays

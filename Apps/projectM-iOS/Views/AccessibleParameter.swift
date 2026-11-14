@@ -32,6 +32,8 @@ enum SpokenUnit: Sendable, Equatable {
     case number(decimals: Int)
     case degrees
     case multiplier
+    /// FX-004: "plus 30 degrees", "0 degrees", "minus 1 degree".
+    case signedDegrees
 }
 
 enum SpokenValueFormatter {
@@ -45,6 +47,7 @@ enum SpokenValueFormatter {
         case .number(let decimals): return value.formatted(.number.precision(.fractionLength(decimals)))
         case .degrees: return degrees(value)
         case .multiplier: return value.formatted(.number.precision(.fractionLength(2))) + " times"
+        case .signedDegrees: return signedDegrees(value)
         }
     }
 
@@ -54,6 +57,13 @@ enum SpokenValueFormatter {
         let sign: String = whole < 0 ? "minus " : ""
         let noun: String = abs(whole) == 1 ? "degree" : "degrees"
         return sign + String(abs(whole)) + " " + noun
+    }
+
+    /// "plus 30 degrees", "0 degrees", "minus 1 degree" (whole degrees; FX-004 hue).
+    static func signedDegrees(_ value: Double) -> String {
+        let whole: Int = Int(value.rounded())
+        let noun: String = abs(whole) == 1 ? "degree" : "degrees"
+        return signWord(whole) + String(abs(whole)) + " " + noun
     }
 
     /// 0.5 → "50 percent"; 0.025 with one decimal → "2.5 percent".
