@@ -213,10 +213,19 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// PERF-001: the stage timer while the performance overlay is shown (AppCoordinator+FrameStages.swift).
     @ObservationIgnored let frameStages = FrameStageAttachment()
     @ObservationIgnored let frameDrops = FrameDropAttachment()   // PERF-007
+    /// PERF-012: the session's state timeline and memory peak, and the Export performance report action.
+    @ObservationIgnored let performanceRecorder = PerformanceStateRecorder()
+    @ObservationIgnored private(set) lazy var performanceReport = PerformanceReportExport { [unowned self] (date: Date) throws -> Data in
+        try self.performanceReportData(exportedAt: date)
+    }
     /// The Camera visual (CAM-001), created when Camera is chosen and released when another visual is.
     private(set) var cameraVisual: CameraVisualHost?
     /// The camera feed's state while the Camera visual exists (`idle` otherwise; CAM-001-R5 to R8).
     private(set) var cameraState: CameraFeedState = .idle
+    /// CAM-003: the device's back lenses (the stand-in's in DEBUG UI tests); listing starts no camera.
+    @ObservationIgnored let cameraLensInventory: any CameraLensInventory = CameraVisualHost.makeLensInventory()
+    /// CAM-003-R6: a lens the user chose waits for the switch's end (CameraLensRow.swift).
+    @ObservationIgnored var cameraLensChoicePending = false
     /// CAM-013: why the camera is interrupted or failed (nil otherwise), and whether a Retry waits.
     private(set) var cameraStopReason: CameraStopReason?
     private(set) var cameraRetryPending = false
@@ -247,8 +256,12 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let texts: TextOverlayCoordinator
     /// SHOW-001: the manual cue list.
     let show: ShowCoordinator
+    /// SHOW-002: the timed cue advance (created in `connectShow`; AppCoordinator+Show.swift).
+    @ObservationIgnored private(set) lazy var showAutoAdvance: ShowAutoAdvanceCoordinator = makeShowAutoAdvance()
     /// UIX-005-R1: the performance layout (large cue, tempo and blackout targets); session only, off at launch.
     var performanceLayout = AppCoordinator.startsInPerformanceLayout
+    /// UIX-007-R7: the iPad split editor's remembered width (SplitEditorSetting.swift).
+    @ObservationIgnored private(set) lazy var splitEditor = SplitEditorSetting(defaults: defaults)
     /// SCN-007, XFADE: the cues' resolved transitions, blended out on the shown compositor visual.
     @ObservationIgnored let cueTransitions = CueTransitionStage()
     /// UIX-002: the quick scene switcher's overlay state (AppCoordinator+SceneSwitcher.swift).
@@ -323,6 +336,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// REC-012: Share… for an offered frame or recording; created with the app so its sweep of
     /// leftover share copies runs at launch (REC-012-R6).
     @ObservationIgnored let captureShare = CaptureShareCoordinator()
+    /// REC-011: Save to Photos (add-only access, asked only on the user's tap; ADR-0059).
+    @ObservationIgnored let photosSave = PhotosSaveCoordinator.forCurrentLaunch()
     /// REC-003: Record (the shown visual's frames into a video file, handed to the file mover).
     @ObservationIgnored private(set) lazy var videoRecording: VideoRecordingCoordinator = makeVideoRecording()
     /// REC-004: "Include microphone audio" for recordings (Settings → Recording; off by default).
@@ -648,6 +663,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         connectSceneHistory()   // SCN-010: starts from the restored (or fresh) scene
         connectSceneSnapshots()   // SCN-008
         connectSceneLock()   // SCN-015
+        connectParameterQuantizer()   // MOD-017
         midiMappings.applyValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.midi, values) }   // MIDI-003-R8
         osc.applyLiveValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.osc, values) }   // OSC-003-R5
         #if DEBUG
@@ -1161,7 +1177,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             #endif
             let host = try CameraVisualHost.make(device: device, reader: trimmedAnalysisTap, barCount: circularSpectrumBarCount,
                                                  position: settings.cameraPosition, mirrored: settings.cameraMirrored,   // CAM-002
-                                                 crop: settings.cameraCrop)   // CAM-007
+                                                 crop: settings.cameraCrop,   // CAM-007
+                                                 lens: cameraLensInventory.resolve(settings.cameraLens), lenses: cameraLensInventory)   // CAM-003
             host.reduceFlashing = settings.effectiveReduceFlashing   // ACC-012-R7
             host.compositor.flashLimits = settings.safetyClamp.flashLimitsOverride   // ACC-012-R5
             host.colorGrade = colorGrade.effectiveGrade(clamp: settings.safetyClamp)   // FX-003, ACC-012 gain cap
@@ -1377,6 +1394,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         let wasShown: Bool = CameraIndicator(state: cameraState).isShown
         cameraState = state
         cameraStopReason = cameraVisual?.stopReason   // CAM-013-R3
+        reconcileCameraLensChoice()   // CAM-003-R6
         let reason: CameraStopReason? = cameraStopReason
         // CAM-001-R14, CAM-002-R10, CAM-013-R12 (ACC-011 X17): the notice with its reason, through the router.
         if state.notice(position: settings.cameraPosition, reason: reason) != nil {
@@ -1399,6 +1417,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         host.cameraPosition = settings.cameraPosition
         host.mirrored = settings.cameraMirrored
         host.crop = settings.cameraCrop   // CAM-007-R5: from the next frame, the camera untouched
+        host.cameraLens = cameraLensInventory.resolve(settings.cameraLens)   // CAM-003-R5, R6
     }
 
     /// Runs whichever visual is shown and keeps the others paused.
@@ -1477,6 +1496,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     private func makeRecordingLibrary() -> RecordingLibraryModel {
         let library = RecordingLibraryModel()
         library.announce = { [weak self] (text: String) in self?.announcer.announce(text, kind: .library) }
+        library.photos = photosSave   // REC-011: Save to Photos on a row
         return library
     }
 

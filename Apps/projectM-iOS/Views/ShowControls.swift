@@ -8,6 +8,8 @@
 //   controls are shown: Right Arrow and Page Down → Next cue, Left Arrow and Page Up → Previous cue,
 //   no modifiers. B stays SHOW-014's. A presented sheet takes the keyboard (as for B).
 // * `ShowNotice`: the step's notice (missing scene, layers left out) for about 4 s.
+// * SHOW-002-R9: while a timed advance counts down, the status shows "Next in 0:42" (", held" while held) under the
+//   cue, and VoiceOver reads it in the row's value ("Cue 2 of 5, Intro, next cue in 42 seconds").
 // * UIX-002: the row's "Scenes" button opens the quick scene switcher; ⌘K toggles it from the keyboard.
 //   While it is open the arrow and Page keys belong to its search field, so they are not registered
 //   here. After a close without a choice VoiceOver focus returns to the Scenes button.
@@ -28,14 +30,7 @@ struct ShowCueRow: View {
             .disabled(!show.list.canGoPrevious)
             .accessibilityLabel("Previous cue")
             .accessibilityIdentifier("showPreviousCue")
-            Text(show.statusText)
-                .font(.subheadline.monospacedDigit())
-                .lineLimit(1)
-                .truncationMode(.tail)
-                .frame(maxWidth: .infinity)
-                .accessibilityLabel("Show")
-                .accessibilityValue(show.accessibilityValue)
-                .accessibilityIdentifier("showCueStatus")
+            status
             Button { coordinator.showNextCue() } label: {
                 Image(systemName: "chevron.forward.circle.fill").font(.title2)
             }
@@ -53,6 +48,32 @@ struct ShowCueRow: View {
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("showCueRow")
         .onChange(of: coordinator.sceneSwitcher.focusReturnRevision) { scenesFocused = true }
+    }
+
+    /// The position and label, with SHOW-002's countdown under it while one runs. The status text stays the
+    /// VoiceOver element (its value carries the countdown); the countdown line itself is hidden from VoiceOver.
+    private var status: some View {
+        let show: ShowCoordinator = coordinator.show
+        let advance: ShowAutoAdvanceCoordinator = coordinator.showAutoAdvance
+        var value: String = show.accessibilityValue
+        if let spoken = advance.spokenCountdown { value += ", \(spoken)" }
+        return VStack(spacing: 0) {
+            Text(show.statusText)
+                .font(.subheadline.monospacedDigit())
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .accessibilityLabel("Show")
+                .accessibilityValue(value)
+                .accessibilityIdentifier("showCueStatus")
+            if let countdown = advance.countdownText {
+                Text(countdown)
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .accessibilityHidden(true)
+            }
+        }
+        .frame(maxWidth: .infinity)
     }
 }
 

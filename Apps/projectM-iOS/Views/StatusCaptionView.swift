@@ -78,7 +78,7 @@ struct RecordingAudioEventChanges: ViewModifier {
     }
 }
 
-/// X6-X8: frame capture and sharing (split from `StatusEventChanges` for the type-check budget, REC-004).
+/// X6-X8a: frame capture, sharing and Save to Photos (split from `StatusEventChanges` for the type-check budget, REC-004).
 struct CaptureEventChanges: ViewModifier {
     let coordinator: AppCoordinator
 
@@ -92,6 +92,9 @@ struct CaptureEventChanges: ViewModifier {
             }
             .onChange(of: coordinator.captureShare.notice) { (_: String?, notice: String?) in   // X8
                 if let notice { post(StatusEventCatalog.shareNotice(notice)) }
+            }
+            .onChange(of: coordinator.photosSave.notice) { (_: String?, notice: String?) in   // X8a (REC-011-R9)
+                if let notice { post(StatusEventCatalog.photosNotice(notice)) }
             }
     }
 

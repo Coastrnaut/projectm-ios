@@ -180,6 +180,26 @@ final class AudioFeatureBindingAppTests: XCTestCase {
         XCTAssertEqual(host.glow.intensity, 0.5, "the manual intensity is unchanged")
     }
 
+    /// ANL-015-T10: a Section change binding on the glow follows the section-change envelope the frame
+    /// loop passes in (ANL-015-R9, R10); the inspector names the source "Section change".
+    func testSectionChangeBindsAndDrivesTheGlow() throws {
+        let host = try makeHost()
+        try host.bind(AudioFeatureBinding(source: .sectionChange, target: VisualParameterIDs.bloomIntensity, outputStart: 0, outputEnd: 1))
+        XCTAssertEqual(host.bindings.map(\.source), [.sectionChange])
+        XCTAssertEqual(AudioFeatureSource.sectionChange.inspectorName, "Section change")
+        let bands: [Float] = [0.1, 0.1, 0.1]
+        var time: UInt64 = 1_000_000
+        for value: Float in [1, 0.25, 0] {
+            bands.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> Void in
+                host.applyModulation(bands: buffer, kick: 1, centroid: 0.5, loudness: 0.5, midTransient: 1, highTransient: 1,
+                                     rolloff: 1, flatness: 1, correlation: 1, sectionChange: value, timeNanoseconds: time)
+            }
+            time += 16_666_667
+            XCTAssertEqual(host.effectiveGlow.intensity, value, "envelope \(value)")
+        }
+        XCTAssertEqual(host.glow.intensity, 0.5, "the manual intensity is unchanged")
+    }
+
     /// ANL-013-T12: a Correlation binding on the glow follows (r + 1)/2 of the correlation the frame loop
     /// passes in (ANL-013-R6, R7); the inspector names the source "Correlation".
     func testCorrelationBindsAndDrivesTheGlow() throws {

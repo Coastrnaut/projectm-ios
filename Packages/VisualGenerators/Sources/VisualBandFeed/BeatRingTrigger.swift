@@ -34,7 +34,7 @@ public struct BeatRingTrigger: Sendable, Equatable {
         case .sessionStarted, .sessionEnded:
             lastConfidentBeatNanoseconds = nil
             return false
-        case .onset:
+        case .onset, .sectionChange:   // ANL-015: a section change is not a ring
             return false
         }
     }

@@ -65,6 +65,24 @@ final class AudioFeatureSourceTests: XCTestCase {
         XCTAssertEqual(AudioFeatureSource.loudness.value(in: .silent), 0)
     }
 
+    /// ANL-015-T08: the section-change source round-trips and reads the envelope clamped to 0…1 (ANL-015-R9).
+    func testSectionChangeSourceRoundTripsAndReadsTheEnvelope() {
+        XCTAssertEqual(AudioFeatureSource.sectionChange.id, "audio.sectionChange")
+        XCTAssertEqual(AudioFeatureSource(id: "audio.sectionChange"), .sectionChange)
+        XCTAssertNil(AudioFeatureSource(id: "audio.sectionchange"))
+        let bands: [Float] = [0.2]
+        bands.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> Void in
+            func value(_ e: Float?) -> Double { AudioFeatureSource.sectionChange.value(in: AudioFeatureFrame(bands: buffer, sectionChange: e)) }
+            XCTAssertEqual(value(1), 1)
+            XCTAssertEqual(value(0.25), 0.25)
+            XCTAssertEqual(value(2), 1, "clamped")
+            XCTAssertEqual(value(-1), 0, "clamped")
+            XCTAssertEqual(value(.nan), 0)
+            XCTAssertEqual(value(nil), 0, "no feed reads 0")
+        }
+        XCTAssertEqual(AudioFeatureSource.sectionChange.value(in: .silent), 0)
+    }
+
     /// ANL-013-T09: the correlation source maps r to (r + 1)/2 (ANL-013-R6).
     func testCorrelationSourceRoundTripsAndMapsTheValue() {
         XCTAssertEqual(AudioFeatureSource.correlation.id, "audio.correlation")

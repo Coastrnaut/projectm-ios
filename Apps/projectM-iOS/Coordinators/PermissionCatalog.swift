@@ -4,8 +4,9 @@
 // * One entry per permission: its Info.plist key, the usage text (identical to project.yml; checked by
 //   scripts/check_permission_catalog.py and by PermissionCatalogTests against the built Info.plist),
 //   the name the privacy policy lists, the features that use it and when iOS asks.
-// * The Photos library needs no permission: the Photos picker runs outside the app and returns only
-//   the picked item, so the app declares no Photos library key (the script fails if one appears).
+// * Choosing from the Photos library needs no permission: the Photos picker runs outside the app and
+//   returns only the picked item. REC-011 (ADR-0059) adds one add-only entry for Save to Photos; the
+//   full-library key stays forbidden (the script fails if it appears).
 // * Each framework's status maps to one `PermissionState`; denied and restricted give the
 //   user-facing `PermissionNotice`. Texts fixed elsewhere by contract are referenced, not copied
 //   (feature 001's UIStrings, CAM-001's CameraFeedState); the Local Network text lives here.
@@ -23,6 +24,8 @@ import UIKit
 /// A privacy permission the app can trigger.
 enum AppPermission: String, CaseIterable, Sendable {
     case microphone, camera, localNetwork, screenCapture
+    /// REC-011: add-only Photos access for Save to Photos (ADR-0059).
+    case photosAdd
 }
 
 /// One state per permission, whatever the framework calls it.
@@ -98,10 +101,23 @@ enum PermissionCatalog {
                         askedWhen: "Each time you start System/App Capture, through iOS's own picker.",
                         settingsCanChange: false,
                         hasDistinctRestrictedState: true),
+        PermissionEntry(permission: .photosAdd,
+                        name: "Photos (add only)",
+                        infoPlistKey: "NSPhotoLibraryAddUsageDescription",
+                        usageDescription: "Save to Photos adds the frame or recording you choose to your photo library. projectM can only add items; it never sees or reads your library.",
+                        features: ["Save to Photos on a saved frame, a finished recording or a kept recording (REC-011)"],
+                        askedWhen: "The first time you tap Save to Photos, and only then.",
+                        settingsCanChange: true,
+                        hasDistinctRestrictedState: true),
     ]
 
-    /// The Photos library: no permission (MED-001, MED-002, REC-012).
+    /// The Photos library: choosing needs no permission (MED-001, MED-002, REC-012); saving is add-only (REC-011).
     static let photosLibrary = "Choosing a photo or video needs no permission: the Photos picker runs outside the app and gives it only the item you pick."
+
+    /// REC-011-R7 (contract C3): Save to Photos denied or restricted; the original is never touched.
+    static let photosAddDenied = "Photos access is off. To save to Photos, allow adding photos for projectM in Settings."
+    static let photosAddRestricted = "Saving to Photos is restricted on this device."
+    static let photosOriginalKept = "The file is still in the app."
 
     static func entry(_ permission: AppPermission) -> PermissionEntry {
         entries.first { (entry: PermissionEntry) -> Bool in entry.permission == permission }!
@@ -127,7 +143,7 @@ enum PermissionCatalog {
         switch permission {
         case .camera: "If you don't allow it, the Camera visual shows the spectrum only."
         case .localNetwork: "If you don't allow it, OSC control stays unavailable and everything else works."
-        case .microphone, .screenCapture: nil
+        case .microphone, .screenCapture, .photosAdd: nil   // REC-011-R14: no explainer before Photos' prompt
         }
     }
 
@@ -138,6 +154,7 @@ enum PermissionCatalog {
         case .localNetwork: "network"
         case .microphone: "mic"
         case .screenCapture: "rectangle.on.rectangle"
+        case .photosAdd: "photo.badge.plus"
         }
     }
 
@@ -154,10 +171,13 @@ enum PermissionCatalog {
             text = localNetworkDenied
         case .screenCapture:
             text = UIStrings.message(.screenRecordingNotAllowed)
+        case .photosAdd:
+            text = state == .restricted ? photosAddRestricted : photosAddDenied
         }
         let fallback: String? = switch permission {
         case .camera: cameraFallback
         case .localNetwork: localNetworkFallback
+        case .photosAdd: photosOriginalKept   // REC-011-R6, R7
         case .microphone, .screenCapture: nil   // contract-fixed banners; Choose source is the fallback
         }
         return PermissionNotice(permission: permission, state: state, text: text,

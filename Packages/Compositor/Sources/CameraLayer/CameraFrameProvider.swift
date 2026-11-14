@@ -60,6 +60,16 @@ public protocol CameraFrameProvider: AnyObject {
     /// thread). Set before `onStateChange` reports that state; nil while running, after `stop()` and
     /// after a camera switch.
     var stopReason: CameraStopReason? { get }
+    /// CAM-003 (contracts/lens-selection.md C1): the back lens in use, or to be used (main thread).
+    var lens: CameraLens { get }
+    /// CAM-003: the back lenses this device has, in display order (reading it starts nothing).
+    var availableLenses: [CameraLens] { get }
+    /// CAM-003-R6, R7: chooses the back lens (main thread). A lens not listed means the wide lens; the
+    /// same lens is a no-op. With the back camera starting or running, the lens is switched on the
+    /// running session; when its input cannot be opened the previous lens keeps running and `lens`
+    /// returns to it. Otherwise recorded (front, idle, denied, restricted, asking) or started again
+    /// (unavailable, interrupted, failed). Never crashes.
+    func selectLens(_ lens: CameraLens)
 }
 
 extension CameraFrameProvider {
@@ -68,6 +78,10 @@ extension CameraFrameProvider {
     public func select(_ position: CameraPosition) {}
     /// CAM-013: a provider that reports no reasons.
     public var stopReason: CameraStopReason? { nil }
+    /// CAM-003: a provider without lenses uses the wide lens.
+    public var lens: CameraLens { .wide }
+    public var availableLenses: [CameraLens] { [.wide] }
+    public func selectLens(_ lens: CameraLens) {}
 }
 
 /// The newest-picture slot shared by a provider's camera thread and the render thread.

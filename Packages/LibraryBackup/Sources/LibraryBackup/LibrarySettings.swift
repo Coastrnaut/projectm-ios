@@ -101,7 +101,7 @@ public enum LibrarySettingsPolicy {
         "settings.particleOrbit.radius",   // VIS-009-R10
         "settings.spectrum.attack", "settings.spectrum.release",
         "settings.camera.position", "settings.camera.mirrorFront", "settings.camera.mirrorBack",
-        "settings.camera.cropMode", "settings.camera.cropAnchor", "settings.camera.zoom",
+        "settings.camera.cropMode", "settings.camera.cropAnchor", "settings.camera.zoom", "settings.camera.lens",
         "settings.osc.port",
         "settings.osc.disabledRoutes", "settings.osc.aliases",   // OSC-003-R9: route addresses and parameter IDs only
         "settings.midi.mappings",   // MIDI-003-R9: channel, controller and parameter ID per line; erased with Settings
@@ -123,11 +123,13 @@ public enum LibrarySettingsPolicy {
         "settings.osc.enabled", "settings.midi.enabled",
         "settings.scene.locked",   // SCN-015: a performance lock is session state of this device
         "settings.osc.peerAllowlist.enabled", "settings.osc.approvedPeers",   // OSC-008-R10: this device's network only
+        "settings.modulation.quantize",   // MOD-017: a performance timing choice of this device
         "settings.recording.includeMicrophone",   // REC-004-R3: a consent never travels to another device
         "settings.recording.qualityProfile",   // REC-005-R7: depends on this device's encoder and screen
         "settings.recording.frameRate",   // REC-006-R8: depends on this device's display and encoder
         "settings.externalDisplay.fit", "settings.externalDisplay.shape",   // OUT-004-R8: the user's display hardware
         "settings.externalDisplay.pixelAspect",
+        "settings.splitEditor.width",   // UIX-007-R7: the iPad split editor width depends on this device's screen
         "settings.video.id", "settings.video.loop", "settings.video.speed",
         recentPresetsKey,   // PRE-006-R7: recently played history stays on this device
         "notice.photosensitivityAcknowledged", "permission.explained.camera", "permission.explained.localNetwork",

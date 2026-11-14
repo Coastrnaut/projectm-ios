@@ -60,7 +60,30 @@ enum SceneEncoder {
         var o: [String: SceneJSON] = ["opacity": .double(c.opacity), "blend": .string(c.blendMode), "transform": transform(c.transform)]
         if let f = c.fit { o["fit"] = fit(f) }   // CMP-006: only when set, so older scenes stay byte-identical
         if let m = c.mask { o["mask"] = mask(m) }   // CMP-007: likewise
+        if let g = c.gradientMask { o["gradientMask"] = gradientMask(g) }   // CMP-008: likewise
         return .object(o)
+    }
+
+    /// CMP-008's saved form: every field of a known kind; an unknown kind's object verbatim.
+    static func gradientMask(_ g: SceneGradientMask) -> SceneJSON {
+        switch g {
+        case let .unknown(_, object):
+            return .object(object)
+        case let .known(gradient):
+            let stops: [SceneJSON] = gradient.stops.map { (s: LayerGradientStop) -> SceneJSON in
+                .object(["position": .double(s.position), "alpha": .double(s.alpha)])
+            }
+            var o: [String: SceneJSON] = ["kind": .string(gradient.kind.kindName), "stops": .array(stops)]
+            switch gradient.kind {
+            case let .linear(start, end):
+                o["start"] = point(start)
+                o["end"] = point(end)
+            case let .radial(center, radius):
+                o["center"] = point(center)
+                o["radius"] = .double(radius)
+            }
+            return .object(o)
+        }
     }
 
     /// CMP-007's saved form: every field of a known shape; an unknown shape's object verbatim.
