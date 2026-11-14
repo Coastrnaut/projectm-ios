@@ -30,8 +30,8 @@ A task is ticked `[X]` only when verified, with " — Verified <date>: <how>".
 
 ## Phase 5: Polish
 
-- [ ] SCN-013-T09 Run SceneFormat tests on the host and the Linux shape, ShowControl tests, the app unit tests on an own simulator; check suite durations (S5); PosterBoard count after
-- [ ] SCN-013-T10 Amend docs/adr/0028-scene-document-format.md (migration chain, backups, audit log, the procedure for a new version); spec status; `check_compliance.py`, `validate_docs.py`, `check_motion_policy.py`
+- [X] SCN-013-T09 Run SceneFormat tests on the host and the Linux shape, ShowControl tests, the app unit tests on an own simulator; check suite durations (S5); PosterBoard count after — Verified 2026-11-13: SceneFormat 80/80 host (2.7 s) and Linux shape (3.8 s), ShowControl 30/30, SceneArchive 25/25, ImportFuzz 15/15, RenderGoldens GoldenSceneFixtureTests 2/2, projectM-iOSTests 375/375 (12.4 s) on own simulator SCN13 iPhone 17 (deleted afterwards); every suite under 1 minute; PosterBoard reports 32 before and after
+- [X] SCN-013-T10 Amend docs/adr/0028-scene-document-format.md (migration chain, backups, audit log, the procedure for a new version); spec status; `check_compliance.py`, `validate_docs.py`, `check_motion_policy.py` — Verified 2026-11-13: ADR-0028 SCN-013 amendment written; spec status updated; check_compliance OK, validate_docs OK (740 files), check_motion_policy OK
 
 ## Dependencies
 

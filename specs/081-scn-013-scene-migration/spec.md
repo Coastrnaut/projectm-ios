@@ -4,7 +4,13 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (SCN-013-T01-T10 verified on the Mac: host, Linux shape, own iOS
+27.2 simulator; no device claim). SceneFormat 80 tests (host 2.7 s, Linux shape 3.8 s;
+SceneMigrationTests 9, SceneLegacyFixtureTests 4 over 11 fixtures), ShowControl 30 (ShowStoreMigrationBackupTests 5),
+SceneArchive 25, ImportFuzz 15, RenderGoldens GoldenSceneFixtureTests 2, projectM-iOSTests 375 (12.4 s;
+SceneAutosaveMigrationTests 7). No UI test (no user-visible path changed). PosterBoard reports 32 before
+and after. No real older version exists, so no real migration step ran: the chain, backups and log are
+proven with synthetic test-only steps.
 
 **Input**: User description: "Implement SCN-013 (Scene migration) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Migrate older scene schema

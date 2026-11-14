@@ -191,3 +191,40 @@ repairs (research SCN-012-D1 to D7, contracts/scene-repair-report.md). No defaul
   the report first (Open with repairs, Open as is only without errors, Cancel or Close). Repairs apply
   to the live output only; the stored file is never written. The archive import result carries the
   report for the SCN-014 screen; the launch restore stays silent (SCN-002 already falls back).
+
+## Amendment 2026-11-13 (SCN-013, scene migration)
+
+SCN-013 (specs/081-scn-013-scene-migration) adds the mechanism that brings an older format version to
+the current one, keeps the original file and records what changed (research SCN-013-D1 to D8,
+contracts/scene-migration.md). No default is overridden.
+
+- **History.** Version 1 is the only scene format version ever written: `currentVersion` has been 1
+  since the package was created (`7b620b7`), the encoder's output shape has not changed since (only
+  Swift type names), and every writer uses the one canonical encoder. No earlier shape is invented.
+- **Chain.** `SceneMigrator` (SceneMigration.swift, plain Swift without Foundation, Linux) runs
+  `SceneMigrationStep`s (version N to N+1) on the raw document object before typed decoding. A step
+  keeps every field it does not name, records each renamed, added, removed or transformed value, and
+  never writes `version`; the migrator writes it after each step and returns the audit log (step,
+  versions, change, JSON path). `SceneMigrator.standard`, the app's chain, is empty. Every
+  `SceneDocument.decode` runs it, so autosave restore, show scenes, archives, the repair report and the
+  golden render scenes all read through it; the result carries `migration`. Refusals: a newer version
+  and an invalid version are unchanged; a version below the target with no step, or a failing step,
+  is `migrationFailed` (SCN-012: "Cannot open", unsupported version).
+- **Files.** Opening never writes. Before the first save that replaces (or, for the autosave `.bak`,
+  removes) a stored file whose content was migrated, its original bytes are written once to
+  `<file name>.v<N>.backup` beside it (exclusive create; an existing backup is never overwritten). If
+  that fails, the save is refused (autosave step `keepOriginal`; ShowStore `writeFailed`) and the
+  original stays. Show scene backups are removed with their scene; autosave backups stay. Archives
+  are read-only sources and get no backup. Diagnostics events carry versions, counts and fixed file
+  names only.
+- **Report.** A migrated document's SCN-012 report has one note "Updated from an older format" (group
+  `formatUpdated`); a note never makes the report appear.
+- **Fixtures.** `Packages/SceneFormat/Tests/SceneFormatTests/Fixtures/legacy/manifest.json` lists every
+  golden legacy fixture (version, source, expected current-schema document, coverage); today 11
+  version-1 shapes (the 7 QA-002 scenes, all layer kinds, an unknown audio feature, the empty scene,
+  a hand-written scene). Each must decode to its expected bytes with no input value lost. QA-004 runs
+  this manifest.
+- **Procedure for the next format version.** Raise `currentVersion`; append one step to
+  `SceneMigrator.standard` that records every change; list it here; keep every existing fixture,
+  regenerate its expected document through the new step and review the diff; add the new version's
+  real shapes as fixtures.
