@@ -14,8 +14,7 @@
    "audited": 31,
    "built": 5,
    "implementing": 2,
-   "integrated": 112,
-   "unit_passed": 1
+   "integrated": 113
   },
   "P2": {
    "audited": 68,
@@ -30,9 +29,8 @@
   "audited": 110,
   "built": 5,
   "implementing": 4,
-  "integrated": 205,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "integrated": 206,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -137,7 +135,6 @@
    "SHOW-012",
    "SHOW-013",
    "SHOW-015",
-   "UIX-005",
    "UIX-006",
    "UIX-007",
    "UIX-008",
@@ -163,7 +160,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "120 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-015, CAM-003)"
+   "119 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-015, CAM-003)"
   ]
  },
  "features": {
@@ -3122,10 +3119,10 @@
    "branch": "feature/uix-005",
    "branch_sha": "70fdae05d74309ed9fa57e4d2d7d31dc2f797dfd",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "19ea9810",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "UIX-006": {
    "attempts": 0,
@@ -4415,6 +4412,11 @@
    "sha": "327bf363"
   },
   {
+   "branch": "feature/uix-005",
+   "id": "UIX-005",
+   "sha": "19ea9810"
+  },
+  {
    "branch": "feature/uix-015",
    "id": "UIX-015",
    "sha": "ae498579"
@@ -4480,5 +4482,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T19:42:55Z"
+ "updated": "2026-11-14T19:45:11Z"
 }

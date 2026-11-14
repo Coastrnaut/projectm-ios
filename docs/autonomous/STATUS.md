@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T19:42:55Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T19:45:11Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -12,23 +12,22 @@
 | audited | 110 |
 | implementing | 4 |
 | built | 5 |
-| unit_passed | 1 |
-| integrated | 205 |
+| integrated | 206 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 0 | 84 | 1 |
-| P1 | 31 | 2 | 5 | 1 | 112 | 0 |
-| P2 | 68 | 2 | 0 | 0 | 9 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | built | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 84 | 1 |
+| P1 | 31 | 2 | 5 | 113 | 0 |
+| P2 | 68 | 2 | 0 | 9 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 120 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-015, CAM-003)
+- 119 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-015, CAM-003)
 
 ## Integrated
 
@@ -231,6 +230,7 @@ The physical-device suite may **not** start:
 | UIX-002 | Quick scene switcher | `20b9cc8a` | `feature/uix-002` |
 | UIX-003 | Context parameter inspector | `7b7a78050ada` | `feature/uix-003` |
 | UIX-004 | Favorite parameter shelf | `327bf363` | `feature/uix-004` |
+| UIX-005 | Performance control layout | `19ea9810` | `feature/uix-005` |
 | UIX-015 | Onboarding permission explainer | `ae498579` | `feature/uix-015` |
 | VIS-001 | Circular spectrum | `48285d49c422` | `feature/vis-001` |
 | VIS-002 | Linear spectrum | `c2b2f75c11bb` | `feature/vis-002` |
@@ -2313,12 +2313,13 @@ None.
 - `swift test --package-path Packages/ImportFuzz`: pass at `55450ba74bdc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-004/20261114T094239/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/LibraryBackup`: pass at `55450ba74bdc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-004/20261114T094239/swift-test_LibraryBackup.log`)
 
-### UIX-005 Performance control layout (unit_passed)
+### UIX-005 Performance control layout (integrated)
 - `python3 scripts/check_compliance.py`: pass at `70fdae05d743` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-005/20261114T144124/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `70fdae05d743` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-005/20261114T144124/docs.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `70fdae05d743` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-005/20261114T144124/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/LibraryBackup`: pass at `70fdae05d743` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-005/20261114T144124/swift-test_LibraryBackup.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `70fdae05d743` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-005/20261114T144124/swift-test_ShowControl.log`)
+- `post-merge: projectM-iOSTests 911 + UI 4 (performance layout)`: pass at `19ea9810` (log `.autonomous/logs/integration/batch47/app-tests.log`)
 
 ### UIX-015 Onboarding permission explainer (integrated)
 - `python3 scripts/check_compliance.py`: pass at `4f7b3b7b8790` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-015/20261114T021007/compliance.log`)
