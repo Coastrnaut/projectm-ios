@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (CAM-002-T01-T20 verified on the Mac with the stand-in camera; device tasks T21-T23 `{device}` open)
 
 **Input**: User description: "Implement CAM-002 (Front camera layer) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Display live front camera feed
