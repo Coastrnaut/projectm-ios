@@ -143,8 +143,8 @@ did. The app's launch phases show as named intervals in Instruments.
 - **PERF-009-R5**: The warm path for the library skips the expensive preparation (index decode, sort, search keys)
   and yields a library equal to a freshly prepared one; the user's presets are added afterwards exactly as today.
 - **PERF-009-R6**: Pipelines for the app's native shaders are created with the stored archive attached when it is
-  valid; pipelines created without a stored entry are added to the archive, which is written back when the app goes
-  to the background. A pipeline whose shader source changed is never served from an archive (R2, R3).
+  valid; pipelines created without a stored entry are added to the archive, which is written back when the app leaves
+  the foreground (off the main thread). A pipeline whose shader source changed is never served from an archive (R2, R3).
 - **PERF-009-R7**: Cache failures never block or fail a launch: every failure falls back to today's path.
 - **PERF-009-R8**: Clear Caches empties the warm cache (it lies in the FILE-010 Caches category).
 - **PERF-009-R9**: The app marks the launch phases (library load with its cache outcome, pipeline archive open with
