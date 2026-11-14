@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (device task AUD-009-T13 open)
 
 **Input**: User description: "Implement AUD-009 (Channel selection) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md line 96. Observable behavior, verbatim: "Offer stereo mix, left,
@@ -105,12 +105,12 @@ What they hear and what projectM receives do not change. The choice is remembere
 
 **Why this priority**: It is the row's observable behavior.
 
-**Independent Test**: In the simulator, choose "Left", relaunch, check "Left" is still selected.
+**Independent Test**: In the simulator, check Mix is selected and read as "Stereo mix", choose "Left", check the readout and selection. Persistence across a relaunch is a unit test (a new store on the same stored defaults): the UI version with a relaunch took 26-30 s, too close to the 30 s budget.
 
 **Acceptance Scenarios**:
 
 1. **Given** Settings open, **When** the user looks at Audio Analysis, **Then** a channel control offers Mix, Left, Right, Mid and Side, with Mix selected by default, and VoiceOver reads each option's full name.
-2. **Given** "Left" selected, **When** the app is relaunched, **Then** "Left" is still selected.
+2. **Given** "Left" selected, **When** the app is relaunched (unit test: a new store on the same defaults), **Then** "Left" is still selected.
 3. **Given** a running visual, **When** the user changes the mode, **Then** the analysis uses the new mode from its next read, without restarting the source or the visual.
 
 ---
@@ -184,7 +184,7 @@ without the feature.
 - **AUD-009-S3**: Right-only, anti-phase and mono fixtures give the values of User Story 2.
 - **AUD-009-S4**: In Mix, 100 % of output samples are bit-identical to the input.
 - **AUD-009-S5**: projectM's ring output is bit-identical with and without Side + 24 dB trim on the tap.
-- **AUD-009-S6**: Choosing a mode and relaunching keeps it, in one UI test of at most 30 s.
+- **AUD-009-S6**: Choosing a mode shows in Settings in one UI test of at most 30 s, and a stored mode is restored by a new store (unit test).
 - **AUD-009-S7**: Every existing AudioCore, VisualGenerators and app test still passes.
 
 ## Assumptions
