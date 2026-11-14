@@ -1,0 +1,43 @@
+# Tasks: PERF-008 Battery saver profile
+
+**Input**: Design documents from `specs/201-perf-008-battery-saver/`
+**Tests**: requested by the brief (budgets, governor composition, acceptance with a real `CaptureManager`, persistence, one UI test). Budgets per owner rule 7.
+
+## Phase 1: Setup
+
+- [ ] PERF-008-T01 Confirm the baseline: `swift test --package-path Packages/Rendering --filter QualityGovernorTests` passes before changes; `Build` symlink present; simulator "PERF8 iPhone 17" (iOS 27.2) created
+
+## Phase 2: Foundational (budgets in the governor)
+
+- [ ] PERF-008-T02 `PowerProfile` (`standard`, `followLowPowerMode`, `batterySaver`; unknown → `standard`), `PowerBudget` (standard = 60, 1.0, true; batterySaver = 30, 0.75, false), `PowerProfileState` (lock, `didChangeNotification` posted on main) in Packages/Rendering/Sources/Rendering/PowerProfile.swift
+- [ ] PERF-008-T03 `QualityGovernor.settings(thermal:lowPower:adaptiveEffects:budget:)` (fps = max(30, min(thermal fps, budget fps)); scale = min(thermal scale, budget scale)), `changeNotifications`, `current()` reads the state, in Packages/Rendering/Sources/Rendering/QualityGovernor.swift
+- [ ] PERF-008-T04 [P] Tests in Packages/Rendering/Tests/RenderingTests/PowerProfileTests.swift: budgets per profile and Low Power; composition over every thermal level × Low Power × adaptiveEffects for standard (equals today's table) and batterySaver (never above 30 / 0.75, never below 30); state change posts once and not for the same value
+
+## Phase 3: User Story 1 - Choose battery saver (P1)
+
+- [ ] PERF-008-T05 [US1] Frame loops observe `QualityGovernor.changeNotifications`: Packages/ANGLERendering/Sources/ANGLERendering/ANGLERenderer.swift, Packages/Rendering/Sources/Rendering/GLESRenderer.swift, Apps/projectM-iOS/Visuals/{NativeSpectrumHost,PhotoVisualHost,TextVisualHost,VideoVisualHost,CameraVisualHost}.swift; the native host's `governedQuality` passes the budget (Apps/projectM-iOS/Visuals/NativeSpectrumHost+EffectQuality.swift)
+- [ ] PERF-008-T06 [US1] Background warm-up budget: `MediaPrewarmCoordinator.update(thermal:lowPower:budget:)` keeps only the next cue when the budget disallows warm-up and observes the profile notification; `RendererPresetLoader.prewarm` skips the SC-104 warm-up (Apps/projectM-iOS/Coordinators/MediaPrewarmCoordinator.swift, AppCoordinator.swift)
+- [ ] PERF-008-T07 [US1] `PowerProfileSetting` (key `settings.performance.powerProfile`, `-uitestResetNotice` removes it, didSet stores, sets `PowerProfileState.current`, emits `DiagnosticsLog.powerProfile`) in Apps/projectM-iOS/Coordinators/PowerProfileSetting.swift; signpost in Packages/Diagnostics/Sources/Diagnostics/Logging.swift; created in `AppCoordinator.init`
+- [ ] PERF-008-T08 [US1] Settings rows `PowerProfileSection` (identifiers `powerProfile.<raw>`, section id `powerProfile`) in Apps/projectM-iOS/Views/PowerProfileSection.swift, added after `performanceSection`'s toggle in SettingsView.swift, passed from VisualizerView.swift
+- [ ] PERF-008-T09 [US1] Recording render limit `Reason.batterySaver` ("Battery saver limits the visual to 30 fps.") in Packages/Compositor/Sources/FrameRecording/RecordingFrameRate.swift; `RecordingQualitySetting.renderLimit(thermal:lowPower:budget:)`
+- [ ] PERF-008-T10 [US1] Overlay line `power <title lowercased> <fps> fps <scale>x` when the budget is not standard, in Apps/projectM-iOS/Coordinators/AppCoordinator+FrameStages.swift
+- [ ] PERF-008-T11 [US1] Keys: `settings.performance.powerProfile` in `ALLOWED_KEYS` (scripts/run_device_tests.py) and `LibrarySettingsPolicy.includedKeys` (Packages/LibraryBackup/Sources/LibraryBackup/LibrarySettings.swift)
+- [ ] PERF-008-T12 [US1] Acceptance in Apps/projectM-iOS/Tests/PowerProfileAppTests.swift: a real `CaptureManager` with a fake source running; switching Standard → Battery saver → Standard changes the governor's budgets (60/1.0 → 30/0.75 → 60/1.0 at nominal), the prewarm scheduler's next-cue limit and the native host's quality, while the manager's mode, state, pause, switching, configuration and the source's start/stop counts are identical; the recording limit reason; persistence and unknown value
+- [ ] PERF-008-T13 [US1] UI test Apps/projectM-iOS/UITests/PowerProfileUITests.swift: pick Battery saver, it is selected; relaunch keeps it (under 30 s)
+
+## Phase 4: User Story 2 - Follow Low Power Mode (P2)
+
+- [ ] PERF-008-T14 [US2] Follow Low Power Mode budgets: covered in PowerProfileTests (Low Power off = standard, on = batterySaver) and the app test with injected Low Power
+
+## Phase 5: Polish
+
+- [ ] PERF-008-T15 Repo checks (compliance, docs, motion, permission catalog, status events, script tests), privacy manifest and network symbols on the Debug app; type-check budget flags; PosterBoard counts
+- [ ] PERF-008-T16 {device} D1: 5 min Standard vs 5 min Battery saver (same preset, In-App Playback), Instruments Energy Log + Metal System Trace with the "Power profile" signpost; record frame time and energy per minute in docs/test-reports/performance.md (PERF-008-S3)
+
+## Dependencies
+
+T02 → T03 → T04/T05/T06/T09; T07 → T08, T10, T12; T12, T13 after T05-T11. T16 last.
+
+## Implementation strategy
+
+MVP = Phase 2 + US1 (T02-T13). US2 adds no code beyond the budget mapping.
