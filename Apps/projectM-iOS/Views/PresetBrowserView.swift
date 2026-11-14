@@ -10,6 +10,7 @@
 // user preset row offers "Edit" (context menu, VoiceOver action; PRE-015-R1, R9).
 // Roadmap PRE-003: tag chips under the picker and above search results (AND, in memory); selected
 // chips replace the home with the tagged presets; search matches tags; every row offers "Tags…".
+// Roadmap PRE-006: the home leads to Recently Played (RecentPresetsView).
 import PresetLibrary
 import SwiftUI
 
@@ -61,6 +62,11 @@ struct PresetBrowserView: View {
                 switch route {
                 case .list: UserPresetsView(presets: presets, userPresets: userPresets, onChoose: onChoose) { dismiss() }
                 case .quarantine: PresetQuarantineView(userPresets: userPresets) { dismiss() }
+                }
+            }
+            .navigationDestination(for: RecentRoute.self) { (_: RecentRoute) in
+                if let recent = presets.recent {   // PRE-006
+                    RecentPresetsView(presets: presets, recent: recent, onChoose: onChoose) { dismiss() }
                 }
             }
             .collectionsAlert(presets)
@@ -119,6 +125,7 @@ struct PresetBrowserView: View {
                 .accessibilityLabel(UserPresetsCoordinator.myPresetsRowLabel(count: userPresets.playable.count))
             }
             .accessibilityIdentifier("node:myPresets")
+            if let recent = presets.recent { RecentPresetsHomeRow(presets: presets, recent: recent) }   // PRE-006
         } else {
             ProgressView("Loading presets…")
         }

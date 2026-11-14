@@ -367,6 +367,7 @@ struct VisualizerView: View {
                          recordingAudioStatus: { () -> String in coordinator.videoRecording.audioStatusText },
                          explainers: coordinator.explainers,   // UIX-015
                          cameraStatus: { () -> PermissionState? in coordinator.cameraPermissionStatus },
+                         recentPresets: coordinator.presets.recent,   // PRE-006
                          announcer: coordinator.announcer)   // ACC-005-R7
                 .sceneRepairSheet(coordinator.sceneRepair, active: true)   // SCN-012: a show editor step's report
         }

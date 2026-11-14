@@ -36,6 +36,8 @@
 // * Preset tags (roadmap PRE-003, specs/149-pre-003-preset-tags): labels kept by PresetTagStore
 //   (`PresetCollections/tags.json`); chips (AND, in memory) and the tagged scope; see
 //   PresetCoordinator+Tags.swift.
+// * Recently played (roadmap PRE-006, specs/159-pre-006-recent-history): every successful load is
+//   reported to `recent`, which records presets that stay on screen for 3 s (RecentPresetsCoordinator).
 import Foundation
 import Observation
 import PresetLibrary
@@ -128,6 +130,8 @@ final class PresetCoordinator {
     /// PRE-003-R12: set by AppCoordinator; tag edits (library lane) and chip counts (search lane).
     @ObservationIgnored var announceLibrary: (String) -> Void = { (_: String) in }
     @ObservationIgnored var announceSearch: (String) -> Void = { (_: String) in }
+    /// PRE-006: the recently played history (set by AppCoordinator; nil in tests that do not need it).
+    @ObservationIgnored var recent: RecentPresetsCoordinator?
 
     @ObservationIgnored private let store: FavoritesStore
     @ObservationIgnored private let collectionStore: PresetCollectionStore
@@ -379,6 +383,7 @@ final class PresetCoordinator {
             current = preset
             failureMessage = nil
             store.lastPresetID = preset.id
+            recent?.shown(preset.id)   // PRE-006-R2: recorded once it stays 3 s
             planUpcoming()
             if isUserPreset { userGuard?.didShow(preset) }
         } catch {

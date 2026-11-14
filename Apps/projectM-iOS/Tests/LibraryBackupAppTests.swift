@@ -32,14 +32,16 @@ final class LibraryBackupAppTests: XCTestCase {
             + [InputTrimSetting.decibelsKey, ChannelSelectionSetting.modeKey, NoiseGateSetting.enabledKey, NoiseGateSetting.thresholdKey,
                FavoritesStore.favoritesKey, FavoritesStore.lastPresetKey, PhotoStore.idKey, TextOverlayStore.key,
                MIDIMappingCoordinator.mappingsKey, RecordingAudioSetting.includeMicrophoneKey,   // MIDI-003-R9, REC-004-R3
-               PlaybackBalanceSetting.positionKey])   // AUD-010-R9
+               PlaybackBalanceSetting.positionKey]   // AUD-010-R9
+            + RecentPresetsStore.allKeys)   // PRE-006-R7
         let included = Set(LibrarySettingsPolicy.includedKeys)
         let excluded = Set(LibrarySettingsPolicy.excludedKeys)
         XCTAssertEqual(included.subtracting(appKeys), [], "every included key is a key the app stores")
         XCTAssertEqual(appKeys.subtracting(included).subtracting(excluded), [], "every app key is included or deliberately left out")
         XCTAssertEqual(appKeys.intersection(excluded),
                        [AppSettings.oscEnabledKey, AppSettings.midiEnabledKey, RecordingAudioSetting.includeMicrophoneKey,
-                        VideoStore.idKey, VideoStore.loopKey, VideoStore.speedKey])   // MED-004, REC-004-R3
+                        VideoStore.idKey, VideoStore.loopKey, VideoStore.speedKey,   // MED-004, REC-004-R3
+                        RecentPresetsStore.historyKey])   // PRE-006-R7: history never travels
         XCTAssertEqual(LibraryFolders.Folder.show.rawValue, StorageLocations.showFolderName)
         XCTAssertEqual(LibraryFolders.Folder.currentScene.rawValue, SceneAutosaveStore.folderName)
         XCTAssertEqual(LibraryFolders.Folder.presets.rawValue, UserPresetStore.directoryName)

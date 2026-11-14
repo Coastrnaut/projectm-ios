@@ -30,7 +30,7 @@ Independent test: presets shown ≥ 3 s are listed newest first, shorter ones ar
 
 Independent test: seed favorites, last preset, tags and history; clear; only history changes.
 
-- [ ] PRE-006-T09 [US2] Clear History with a destructive confirmation (`recentClear`, `recentClearConfirm`) in `RecentPresetsView.swift`, and the Settings section `RecentHistorySection` (switch `recentToggle`, Clear History) in `Apps/projectM-iOS/Views/RecentHistorySection.swift`; one property and one line in `SettingsView.tailSections`; pass the coordinator from `VisualizerView`.
+- [ ] PRE-006-T09 [US2] Clear History with a destructive confirmation (`recentClear`; the alert button found by its label) in `RecentPresetsView.swift`, and the Settings section `RecentHistorySection` (switch `recentToggle`, Clear History) in `Apps/projectM-iOS/Views/RecentHistorySection.swift`; one property and one line in `SettingsView.tailSections`; pass the coordinator from `VisualizerView`.
 - [ ] PRE-006-T10 [US2] Acceptance test: seeded `favorites`, `lastPresetID`, a `tags.json` file (real `PresetTagStore`) and history; `clear()`; history empty, the two keys byte-identical (property-list data), the tags file's bytes unchanged, announcement spoken (`RecentPresetsAcceptanceTests.swift`).
 
 ## Phase 5: User Story 3 — turn history off (P2)

@@ -22,7 +22,7 @@ Never touches `favorites`, `lastPresetID`, `settings.presetScope`, collections o
 | `recentList` | The Recent list. |
 | `recentEmpty` | Empty-state text (`No recently played presets yet.` / `Recently played history is off.`). |
 | `recentClear` | Clear History button (list and Settings). |
-| `recentClearConfirm` | The destructive confirm button "Clear History" in the alert. |
+| (alert) | The destructive alert button "Clear History" (found by its label: SwiftUI gives an alert action's identifier to every action). |
 | `recentToggle` | Settings switch "Remember Recently Played". |
 
 ## C3 — Backup and erase
