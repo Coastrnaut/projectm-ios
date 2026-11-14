@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T19:20:40Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T19:31:45Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,19 +10,20 @@
 | State | Features |
 |---|---|
 | audited | 113 |
-| implementing | 6 |
-| built | 4 |
+| implementing | 4 |
+| built | 5 |
+| unit_passed | 1 |
 | integrated | 202 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | built | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 32 | 6 | 3 | 110 | 0 |
-| P2 | 70 | 0 | 1 | 8 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 0 | 84 | 1 |
+| P1 | 32 | 4 | 5 | 0 | 110 | 0 |
+| P2 | 70 | 0 | 0 | 1 | 8 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -483,6 +484,24 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `9c8799d3ae43` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-012/20261114T124109/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `9c8799d3ae43` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-012/20261114T124109/swift-test_VisualGenerators.log`)
 - `post-merge: projectM-iOSTests 872 + UI 9 (beat rings, preset overrides, preset library, glow)`: pass at `7a754c5d` (log `.autonomous/logs/integration/batch37/app-tests.log`)
+
+### ANL-013 Stereo correlation (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `fed3afdec5fa` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-013/20261114T141734/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `fed3afdec5fa` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-013/20261114T141734/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `fed3afdec5fa` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-013/20261114T141734/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `fed3afdec5fa` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-013/20261114T141734/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `fed3afdec5fa` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-013/20261114T141734/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/AnalysisFeatures`: pass at `fed3afdec5fa` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-013/20261114T141734/swift-test_AnalysisFeatures.log`)
+- `swift test --package-path Packages/Compositor`: pass at `fed3afdec5fa` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-013/20261114T141734/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `fed3afdec5fa` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-013/20261114T141734/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `fed3afdec5fa` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-013/20261114T141734/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/ParameterGraph`: pass at `fed3afdec5fa` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-013/20261114T141734/swift-test_ParameterGraph.log`)
+- `swift test --package-path Packages/PerformanceControl`: pass at `fed3afdec5fa` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-013/20261114T141734/swift-test_PerformanceControl.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `fed3afdec5fa` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-013/20261114T141734/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `fed3afdec5fa` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-013/20261114T141734/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `fed3afdec5fa` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-013/20261114T141734/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `fed3afdec5fa` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-013/20261114T141734/swift-test_ShowControl.log`)
+- `swift test --package-path Packages/VisualGenerators`: pass at `fed3afdec5fa` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-013/20261114T141734/swift-test_VisualGenerators.log`)
 
 ### ANL-014 Loudness envelope (integrated)
 - `python3 scripts/check_compliance.py`: pass at `71c12fb822f4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-014/20261113T224539/compliance.log`)
