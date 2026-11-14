@@ -59,7 +59,42 @@ newest frame.
 
 ### Session 2026-11-13
 
-(Filled by `/speckit-clarify`.)
+Answered by Claude under the owner's standing approval (owner rule 4: routine decisions delegated,
+no human interaction); each answer is the conservative, local-first option, recommended option
+first.
+
+- Q: Can the offset be negative, so the visuals run ahead of the analysed audio? → A: No. The range
+  is 0…250 ms for every source. The analysis can only see audio once it has arrived, and the
+  pipeline already adds its window (46 ms) and hop (11.6 ms); for Microphone and System/App
+  Capture an earlier visual is impossible. For In-App Playback it would need analysing the file
+  ahead of playback, a second decode path that this M-sized row does not include (recorded as a
+  possible follow-up). The section's footer says the visuals can only be delayed; stored or typed
+  values below 0 clamp to 0 (AUD-013-R1, R4).
+- Q: How is the offset "measured" — a self-measurement with the microphone, a tap-to-align screen,
+  or the system's reported latency? → A: The system's reported output latency plus I/O buffer
+  duration, offered as "Estimate from Output" on the user's request, plus the manual slider; the
+  live visuals are the check. Default 0 for every source (no automatic change when the route
+  changes). Rejected: a click played through In-App Playback and heard by the microphone (needs
+  the microphone permission for a non-microphone source and a play-and-record session that
+  changes routes and conflicts with the active source's session); a tap-along mode (new UI and
+  timing statistics for a P1/M row; deferred). The real measurement with hardware stays a
+  `{device}` task. No new permission; FILE-013's permission catalog is unchanged (AUD-013-R9).
+- Q: Is the offset stored per source only, or per source and output route (speaker, wired,
+  Bluetooth)? → A: Per source only: three keys. The route is what changes the latency most, but
+  per-route storage multiplies the settings by route kinds and needs route-change handling that
+  AUD-007 does not provide for this; the estimate button reads the current route when pressed
+  (AUD-013-R11). Recorded as a follow-up.
+- Q: Is projectM's PCM feed delayed too, or only the analysis that drives the native visuals? →
+  A: Both, by the same value. projectM is the main visual, and a delay that left it early would
+  not fix the Bluetooth case. Its feed is raw PCM, so the same delay reader wraps the renderer's
+  reader; at 0 ms it forwards unchanged, so today's freshness rule and bit-identity hold. Rejected:
+  analysis only (does not meet the user need) (AUD-013-R2, R6, R7).
+- Q: What happens to the delay lines on a source switch or restart? → A: The analysis delay line
+  is emptied when the session generation changes, so no old-source audio is analysed as the new
+  source (the pipeline discards straddling chunks the same way), and the new source's value
+  applies at once; projectM's delay line keeps its content, because AUD-012 guarantees projectM a
+  continuous fade-out → silence → fade-in, and moves to the new value at the bounded rate
+  (a quarter of the arriving frames per read) (AUD-013-R5, R7, R8).
 
 ## User Scenarios & Testing *(mandatory)*
 
