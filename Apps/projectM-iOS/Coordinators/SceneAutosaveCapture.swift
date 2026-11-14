@@ -89,6 +89,8 @@ struct SceneAutosaveCarry: Sendable {
     var preserved = SceneModulationPreserved()
     /// FX-020: the opened scene's effect list (nil: none).
     var effects: [SceneEffectEntry]?
+    /// MOD-006: the opened scene's threshold triggers as stored (nil: none); written back unchanged.
+    var triggers: [SceneTriggerEntry]?
 
     static let defaultName = "Current Scene"
 
@@ -114,6 +116,7 @@ struct SceneAutosaveCarry: Sendable {
         modulation = live.modulation
         preserved = live.preserved
         effects = document.effects   // FX-020
+        triggers = document.triggers   // MOD-006
     }
 }
 
@@ -229,7 +232,8 @@ enum SceneAutosaveCapture {
         let document = SceneDocument(id: carry.id, name: carry.name, layers: layers, parameters: parameters,
                                      bindings: sceneBindings,
                                      modulation: SceneModulation(generators: carry.modulation.generators, connections: connections),
-                                     assets: assets, effects: effects(inputs.effects, carry: carry.effects), extra: carry.extra)
+                                     assets: assets, effects: effects(inputs.effects, carry: carry.effects),
+                                     triggers: carry.triggers, extra: carry.extra)   // MOD-006: triggers as stored
         return (document, events)
     }
 

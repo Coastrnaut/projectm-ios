@@ -188,9 +188,11 @@ final class UserPresetsCoordinatorTests: XCTestCase {
         await rig.userPresets.importPicked(.success(try pick(text(), named: "Gone.milk")))
         let gone = try indexed("Gone", in: rig)
         await rig.presets.choose(gone, from: .user)
+        XCTAssertTrue(rig.presets.addTag("Calm", to: gone))   // PRE-003-R7
         let record = try XCTUnwrap(rig.userPresets.playable.first)
         await rig.userPresets.remove(record)
         XCTAssertEqual(rig.userPresets.playable, [])
+        XCTAssertEqual(rig.presets.tags(of: gone), [], "PRE-003-R7: removing a user preset prunes its tags")
         XCTAssertEqual(rig.presets.current, gone, "the playing preset keeps playing (spec Edge Cases)")
         XCTAssertEqual(rig.presets.scope, .included, "an empty My Presets is not kept as the scope")
         XCTAssertNil(rig.presets.library?.preset(id: gone.id))

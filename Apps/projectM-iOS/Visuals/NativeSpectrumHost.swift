@@ -199,6 +199,10 @@ final class NativeSpectrumHost: PresentationBoundResource {
     /// MOD-002: audio feature bindings over the visual catalog (nil only if the catalog failed to
     /// validate, which `VisualParameterCatalogTests` rules out in CI).
     private let modulator: AudioFeatureModulator? = (try? VisualParameterCatalog.makeRegistry()).map(AudioFeatureModulator.init(registry:))
+    /// MOD-006: the current scene's threshold triggers, stepped with the same frame as the bindings.
+    private let triggerBank = ThresholdTriggerBank()
+    /// MOD-006: performs a fired trigger's action (the app connects MIDI-006's performer).
+    var onTrigger: (@MainActor (ThresholdTriggerAction) -> Void)?
     /// MOD-002: the luminance model the generator sees while the glow intensity is bound.
     private let glowLuminance = ModulatedGlowLuminance()
     /// REC-001: the handler waiting for the next readable frame.
@@ -396,12 +400,27 @@ final class NativeSpectrumHost: PresentationBoundResource {
         return removed
     }
 
-    /// Advances the bindings with one frame's bands at the frame's display time and applies the
-    /// result. Does nothing without bindings. Called by `frame(_:)`; tests call it directly.
+    /// MOD-006: replaces the threshold triggers (validated; each starts armed). Effective from the next frame.
+    func setTriggers(_ bindings: [ThresholdTriggerBinding]) throws(ThresholdTriggerError) {
+        try triggerBank.set(bindings)
+    }
+
+    /// MOD-006: the live threshold triggers in order.
+    var triggers: [ThresholdTriggerBinding] { triggerBank.bindings }
+
+    /// Advances the bindings and the threshold triggers with one frame's features at the frame's display time and
+    /// applies the result. Does nothing without bindings or triggers. Called by `frame(_:)`; tests call it directly.
     func applyModulation(bands: UnsafeBufferPointer<Float>, kick: Float? = nil, centroid: Float? = nil,
                          loudness: Float? = nil, midTransient: Float? = nil, timeNanoseconds: UInt64) {
-        guard let modulator, modulator.hasBindings else { return }
+        let bound: Bool = modulator?.hasBindings ?? false
+        guard bound || triggerBank.hasTriggers else { return }
         let frame = AudioFeatureFrame(bands: bands, kick: kick, centroid: centroid, loudness: loudness, midTransient: midTransient)
+        if triggerBank.hasTriggers {   // MOD-006: one step per trigger, no allocation
+            triggerBank.advance(frame: frame, timeNanoseconds: timeNanoseconds) { (action: ThresholdTriggerAction) -> Void in
+                onTrigger?(action)
+            }
+        }
+        guard bound, let modulator else { return }
         modulator.advance(frame: frame, timeNanoseconds: timeNanoseconds)
         resolveEffectiveGlow()
     }

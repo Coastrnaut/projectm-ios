@@ -181,7 +181,7 @@ final class MIDINoteTriggerCoordinatorTests: XCTestCase {
     }
 
     func testLearnMovesANoteAndUndoRestoresBothLists() throws {
-        let h: Harness = try makeHarness(lines: ["note:0:60=cue.next", "note:0:1=cue.go:XYZ"])
+        let h: Harness = try makeHarness(lines: ["note:0:60=cue.next", "note:0:1=cue.fire:XYZ"])
         defer { cleanUp(h) }
         h.mappings.startLearning(MIDIMappingCoordinator.appliedIDs.sorted { (a, b) -> Bool in a.rawValue < b.rawValue }[0])
         h.mappings.startLearningNote(.previousCue)
@@ -189,11 +189,11 @@ final class MIDINoteTriggerCoordinatorTests: XCTestCase {
         send(h, [0x90, 0x3C, 0x64])
         XCTAssertEqual(h.mappings.statusText, "Previous cue mapped to note C4 on channel 1 (moved from Next cue).")
         XCTAssertEqual(h.defaults.stringArray(forKey: MIDIMappingCoordinator.mappingsKey),
-                       ["note:0:60=cue.previous", "note:0:1=cue.go:XYZ"], "an unknown action is kept")
+                       ["note:0:60=cue.previous", "note:0:1=cue.fire:XYZ"], "an unknown action is kept")
         XCTAssertTrue(h.mappings.canUndo)
         h.mappings.undo()
         XCTAssertEqual(h.defaults.stringArray(forKey: MIDIMappingCoordinator.mappingsKey),
-                       ["note:0:60=cue.next", "note:0:1=cue.go:XYZ"])
+                       ["note:0:60=cue.next", "note:0:1=cue.fire:XYZ"])
     }
 
     func testNoteLearnTimesOutAndCancels() throws {

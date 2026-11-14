@@ -18,6 +18,26 @@ struct SegmentedUnlessAccessibilitySize: ViewModifier {
     }
 }
 
+/// An icon and a title side by side, the title wrapping in its own column (ACC-006-R1). A `Label` in a
+/// list row (a NavigationLink's or a Button's label) wraps its title under the icon at AX3 and AX5, and the
+/// audit reports that as clipped text and partly unsupported Dynamic Type (Show › Scene Folders,
+/// 2026-11-14). The icon is decorative; the row reads its title.
+struct IconTitleRow: View {
+    let title: String
+    let systemImage: String
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Image(systemName: systemImage).accessibilityHidden(true)
+            // The title takes the row's whole width: without the spacer a NavigationLink's row offered it
+            // about half the width at AX3, so "Scene Folders" wrapped beside free space and the audit
+            // reported its Dynamic Type as partly unsupported.
+            Text(title).fixedSize(horizontal: false, vertical: true).layoutPriority(1)
+            Spacer(minLength: 0)
+        }
+    }
+}
+
 extension View {
     /// Segmented at standard text sizes, a menu at accessibility sizes (ACC-006-R1).
     func segmentedUnlessAccessibilitySize() -> some View {
