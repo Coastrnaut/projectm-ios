@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T04:28:12Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T04:29:08Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,18 +10,19 @@
 | State | Features |
 |---|---|
 | audited | 216 |
-| implementing | 2 |
+| implementing | 1 |
+| unit_passed | 1 |
 | integrated | 107 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 5 | 1 | 80 | 1 |
-| P1 | 125 | 1 | 25 | 0 |
-| P2 | 77 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 5 | 1 | 0 | 80 | 1 |
+| P1 | 125 | 0 | 1 | 25 | 0 |
+| P2 | 77 | 0 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -472,6 +473,12 @@ None.
 - `swift test --package-path Packages/CaptureKit`: pass at `8d270f3cbeed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-014/20261112T185431/swift-test_CaptureKit.log`)
 - `swift test --package-path Packages/CaptureUI`: pass at `8d270f3cbeed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-014/20261112T185431/swift-test_CaptureUI.log`)
 - `integration checkout, full preset library: xcodebuild projectM-iOS test on iPhone 17 iOS 27.2: projectM-iOSTests 102 pass; UI 25 pass (Interruption, Transport, ImportedAudio, Status, Visualizer)`: pass at `b96d30cfbd82` (log `.autonomous/logs/integration/aud-014/app-tests.log`)
+
+### AUD-015 Background playback policy (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `f708b257ad68` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-015/20261113T232820/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `f708b257ad68` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-015/20261113T232820/docs.log`)
+- `swift test --package-path Packages/CaptureKit`: pass at `f708b257ad68` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-015/20261113T232820/swift-test_CaptureKit.log`)
+- `swift test --package-path Packages/CaptureUI`: pass at `f708b257ad68` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-015/20261113T232820/swift-test_CaptureUI.log`)
 
 ### AUD-016 Reference tone suite (integrated)
 - `python3 scripts/check_compliance.py`: pass at `a7e38976d177` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-016/20261112T202048/compliance.log`)
