@@ -11,8 +11,8 @@ Tests are requested by the brief (acceptance, law, availability, persistence, UI
 
 ## Phase 2: Foundational
 
-- [ ] AUD-010-T02 [P] Add `MonitorBalance` (`range` −1…1, `detent` 0.03, `validated`: "NaN → 0; clamp; round to 0.01; |b| ≤ detent → 0", `gains`: "left = min(1, 1 − b), right = min(1, 1 + b)") in Packages/AudioCore/Sources/AudioCore/MonitorBalance.swift
-- [ ] AUD-010-T03 [P] Law and validation tests at −1, −0.5, 0, 0.5, 1 plus NaN, out of range, detent and rounding in Packages/AudioCore/Tests/AudioCoreTests/MonitorBalanceTests.swift (host and `-DAUDIOCORE_NO_AVFAUDIO`)
+- [X] AUD-010-T02 [P] Add `MonitorBalance` (`range` −1…1, `detent` 0.03, `validated`: "NaN → 0; clamp; round to 0.01; |b| ≤ detent → 0", `gains`: "left = min(1, 1 − b), right = min(1, 1 + b)") in Packages/AudioCore/Sources/AudioCore/MonitorBalance.swift — Verified 2026-11-14: MonitorBalanceTests (4 tests) pass
+- [X] AUD-010-T03 [P] Law and validation tests at −1, −0.5, 0, 0.5, 1 plus NaN, out of range, detent and rounding in Packages/AudioCore/Tests/AudioCoreTests/MonitorBalanceTests.swift (host and `-DAUDIOCORE_NO_AVFAUDIO`) — Verified 2026-11-14: swift test --filter MonitorBalanceTests, host and -DAUDIOCORE_NO_AVFAUDIO, 4/4 each
 
 ## Phase 3: User Story 1 - Balance what I hear without changing the visuals (P2)
 
