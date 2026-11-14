@@ -41,6 +41,15 @@ human interaction); each answer is the conservative, local-first option.
 - Q: Is Save to Photos offered? → A: No. The app declares no Photos permission (a constitution-checked catalog rule); Share… offers Save to Files and other apps, as REC-012 does.
 - Q: How is an incomplete or unreadable file shown? → A: As "Incomplete" with Delete as its only action. Only kept (finished) files enter the library, so this covers a damaged or truncated file.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Are a row's facts read with the full QA-008 read-back or a quick read of the file's header? → A: A quick header read (duration, video track size, nominal frame rate, codec): QA-008's validator decodes the audio and reads every sample, which is too slow for a list. A file whose header cannot be read, or that has no video track or no duration, is "Incomplete" (REC-010-R4).
+- Q: Where are thumbnails cached and what clears them? → A: In memory for the screen's life and as small JPEG files in `Library/Caches/RecordingThumbnails`, keyed by the file name and byte size (a rename or a changed file makes a new entry). Delete and rename remove the old entry; FILE-010 Clear Caches may remove them all; they are made again on the next visit.
+- Q: When does the list rescan the folder? → A: When the screen appears and after each Keep, delete or rename in it; a delete removes the row from the model in the same update before the rescan, so the count never shows the deleted file.
+- Q: How does VoiceOver read and act on a row? → A: One element per row: "<name>, <duration>, <size>, <date>, <resolution>, <frame rate>, <codec>" (or "<name>, Incomplete, <size>"), with Play, Share, Rename and Delete as accessibility actions (Delete only for an incomplete file). Results ("Recording deleted.", "Recording renamed.", "Recording kept in Recordings.") are announced on the library lane.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Keep and browse recordings (Priority: P1)
@@ -105,7 +114,7 @@ The user plays a saved take in the app, shares it, or gives it a clearer name.
 
 - **REC-010-R1**: The "Recording ready" panel MUST offer Keep, which moves the offered file into the library folder (a new unique name on collision), ends the offer and reports "Recording kept in Recordings." A failed move MUST leave the recording offered with a failure notice.
 - **REC-010-R2**: Settings › Storage MUST offer a Recordings screen listing the library folder's non-hidden regular files, newest first (file modification date, then name), scanned from the folder with no separate index.
-- **REC-010-R3**: Each readable row MUST show a thumbnail (the frame at 1 s, or at half the duration when shorter), the duration, the file size, the date, the resolution, the frame rate and the codec. Thumbnails MUST be made off the main thread and cached (memory and the Caches folder).
+- **REC-010-R3**: Each readable row MUST show a thumbnail (the frame at 1 s, or at half the duration when shorter), the duration, the file size, the date, the resolution, the frame rate and the codec. Facts MUST come from a quick header read; thumbnails MUST be made off the main thread and cached in memory and in `Caches/RecordingThumbnails` keyed by name and size.
 - **REC-010-R4**: A file that cannot be read as a video MUST be listed as "Incomplete" with its size and Delete only.
 - **REC-010-R5**: Delete MUST ask for confirmation naming the recording; on confirm it MUST remove the file, remove the row in the same update, update the count and total, and remove the thumbnail cache entry; Cancel MUST change nothing.
 - **REC-010-R6**: Play MUST open an in-app player for the local file; Share… MUST present the system share sheet with the file, excluding Save to Photos and Assign to Contact; Rename MUST validate the name (REC-010 Clarifications) and keep the extension.
