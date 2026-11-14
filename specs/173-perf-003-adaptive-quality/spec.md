@@ -4,7 +4,9 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft (analyzed 2026-11-14)
+**Status**: Implemented 2026-11-14 (PERF-003-T01-T14 verified on the Mac Studio: host package tests, the Linux
+shape of the ladder, and the feature's own iOS 27.2 simulator "PERF3"; no device claim). Open: T15 `{device}` (D1 under
+real thermal load). Simulator results are not performance evidence.
 
 **Input**: User description: "Implement PERF-003 (Adaptive effect quality) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Reduce costly effect iterations before dropping output frames." Acceptance,

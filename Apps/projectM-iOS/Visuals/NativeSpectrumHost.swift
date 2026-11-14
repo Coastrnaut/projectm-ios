@@ -58,6 +58,11 @@
 //   MOD-002 modulation keeps the raw bands. Instant (the default) is a bit-exact copy. Starting the
 //   loop and changing the bar count reset it, so nothing ramps from a stale picture. Preallocated;
 //   nothing allocates per frame.
+// * Adaptive effect quality (PERF-003; NativeSpectrumHost+EffectQuality.swift): one `EffectQualityLadder` started with
+//   the loop and stepped each frame with the display-link time, the thermal state, Low Power and PERF-002's budget
+//   signal. Its level goes to the bloom (Reduced: fewer taps, coarser glow; Minimal: no glow pass) and its fade weight
+//   multiplies the glow intensity after the ACC-012 clamp, so the FX-019 limiter models the glow actually drawn. With
+//   the glow switched on the governor defers the serious-state frame-rate cap to the ladder (PERF-003-R7).
 import AnalysisFeatures
 import AudioCore
 import FlashSafety
@@ -121,6 +126,18 @@ final class NativeSpectrumHost: PresentationBoundResource {
     static let frameStages: [FrameStage] = [.audio, .render, .encode, .present]
     private let gpuTimes = MetalGPUFrameTimes()
     private var quality = QualityGovernor.current()
+    /// FR-049 / PERF-003-R7: the frame-rate cap and render scale this loop uses.
+    var qualitySettings: QualitySettings { quality }
+    /// PERF-003: the effect quality ladder and its inputs (NativeSpectrumHost+EffectQuality.swift).
+    let effectLadder = EffectQualityLadder()
+    /// PERF-002's verdict while the performance overlay runs (any flag → over); `.unavailable` otherwise.
+    var effectBudget: EffectBudgetSignal = .unavailable
+    /// Tests and DEBUG `-uitestThermalState` replace the device's thermal state; tests replace Low Power.
+    var thermalOverride: EffectThermalState? = NativeSpectrumHost.launchThermalOverride
+    var lowPowerOverride: Bool?
+    /// The inputs as last read (`refreshQuality()`).
+    var effectThermal: EffectThermalState = .nominal
+    var effectLowPower = false
     private var observers: [NSObjectProtocol] = []
 
     /// Frame rate and frame time for the FR-048 overlay.
@@ -147,7 +164,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
     }
 
     /// FX-001: the bloom and the chain that runs it; nil when the glow is unavailable.
-    private let bloom: BloomEffect?
+    let bloom: BloomEffect?
     private var chain: EffectChain?
     /// The glow could not be built on this device (FX-001-R13); the visual renders without it.
     private(set) var glowUnavailable: Bool
@@ -367,6 +384,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         view.accessibilityLabel = "\(style.title) visualization"
         view.accessibilityIdentifier = style.accessibilityIdentifier
         view.accessibilityValue = Self.accessibilityValue(style: style, glowEnabled: glow.enabled, glowUnavailable: glowUnavailable)
+        refreshQuality()   // PERF-003-R7: switching the glow changes whether the governor defers the serious cap
     }
 
     // MARK: - Audio feature bindings (MOD-002)
@@ -375,7 +393,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
 
     /// Applies `glow` with any bound intensity to the bloom and the luminance model. Unbound, this is
     /// exactly the FX-001 path.
-    private func resolveEffectiveGlow() {
+    func resolveEffectiveGlow() {
         var resolved = glow.applying(externalValues)   // MIDI-003: a mapped control sets the live manual value
         if let modulator, glowIntensityIsBound {
             let manual: Double = Double(resolved.intensity)
@@ -383,6 +401,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
             resolved.intensity = Float(safetyClamp.modulated(manual: manual, modulated: modulated))   // ACC-012: depth
         }
         resolved = resolved.limited(by: safetyClamp)   // ACC-012-R4: the cap, after modulation, before render
+        let factor: Float = effectLadder.intensityFactor   // PERF-003-R8: only ever lowers the clamped glow
+        if factor < 1 { resolved.intensity *= factor }
         effectiveGlow = resolved
         bloom?.parameters = resolved
         if glowIntensityIsBound {
@@ -557,6 +577,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             loudness = 0       // ANL-014: and its loudness envelope
             midTransient = 0   // ANL-008: and its mid transient
             highTransient = 0  // ANL-009: and its high transient
+            startEffectQuality()   // PERF-003: the floor at once, no fade
             if let waveform { analyzer.start(reader: waveform) }   // VIS-003: the tap through the pass-through wrapper
             let link = CADisplayLink(target: NativeSpectrumLinkProxy(self), selector: #selector(NativeSpectrumLinkProxy.fire(_:)))
             link.preferredFrameRateRange = quality.frameRateRange
@@ -667,6 +688,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         let bandInput = UnsafeBufferPointer(start: bands, count: bandCount)
         applyModulation(bands: bandInput, kick: kickEnvelope, centroid: centroid, loudness: loudness, midTransient: midTransient,
                         highTransient: highTransient, timeNanoseconds: context.timeNanoseconds)   // MOD-002; no-op without bindings
+        stepEffectQuality(time: link.timestamp)   // PERF-003: arithmetic; the glow changes only when the level or fade moves
         // VIS-003: the oscilloscope draws the newest sample history (kept when nothing new arrived).
         let input: UnsafeBufferPointer<Float>
         if case .oscilloscope = style {
@@ -725,19 +747,23 @@ final class NativeSpectrumHost: PresentationBoundResource {
         }
     }
 
+    /// FR-049, PERF-003-R7: re-reads the thermal state and Low Power Mode (or their overrides) and applies the
+    /// governor's settings when they changed.
+    func refreshQuality() {
+        readEffectInputs()
+        let quality: QualitySettings = governedQuality
+        guard quality != self.quality else { return }
+        self.quality = quality
+        displayLink?.preferredFrameRateRange = quality.frameRateRange
+        layoutDrawable()
+    }
+
     /// FR-049: frame-rate cap and render scale follow the thermal state and Low Power Mode.
     private func observeFrameRatePressure() {
         let center = NotificationCenter.default
         for name in [ProcessInfo.thermalStateDidChangeNotification, Notification.Name.NSProcessInfoPowerStateDidChange] {
             observers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
-                MainActor.assumeIsolated {
-                    guard let self else { return }
-                    let quality = QualityGovernor.current()
-                    guard quality != self.quality else { return }
-                    self.quality = quality
-                    self.displayLink?.preferredFrameRateRange = quality.frameRateRange
-                    self.layoutDrawable()
-                }
+                MainActor.assumeIsolated { self?.refreshQuality() }
             })
         }
     }
