@@ -30,7 +30,7 @@ Independent test: seeded three-layer scene; each selection shows that layer's va
 
 Independent test: edit opacity and transform of layer 2, Undo, values and pixels equal the prior ones.
 
-- [ ] CMP-015-T11 [US2] Controls (sliders with drag-end coalescing, pickers, toggles, Reset Layer) in `Apps/projectM-iOS/Views/LayerDetailView.swift` and `LayerInspectorControls.swift`
+- [ ] CMP-015-T11 [US2] Controls (sliders with drag-end coalescing, pickers, toggles, Reset Layer) with accessibility labels, spoken values, adjustable actions with fixed steps and `ViewThatFits` rows for accessibility sizes (CMP-015-R10) in `Apps/projectM-iOS/Views/LayerDetailView.swift` and `LayerInspectorControls.swift`
 - [ ] CMP-015-T12 [P] [US2] Unit tests: edit → history step; one drag = one step; Undo restores exact values; capture/restore round trip; nil composites keep carried composites; unknown blend/fit/mask survive in `Apps/projectM-iOS/Tests/LayerInspectorTests.swift`
 - [ ] CMP-015-T13 [P] [US2] Render test: Photo host offscreen, layer 2 opacity and transform edit, Undo → pixel-equal frame; the photo picture is reused after a placement edit (CMP-013) in `Apps/projectM-iOS/Tests/LayerInspectorRenderTests.swift`
 
@@ -47,7 +47,7 @@ Independent test: edit opacity and transform of layer 2, Undo, values and pixels
 ## Phase 7: Polish
 
 - [ ] CMP-015-T18 UI test (selection of three layers, opacity drag = one step, Undo restores) in `Apps/projectM-iOS/UITests/LayerInspectorUITests.swift`
-- [ ] CMP-015-T19 Type-check timings with the long-body warnings; regression runs (`projectM-iOSTests`, `SceneUndoUITests`, `PhotoLayerUITests`); scripts; PosterBoard count; report in `docs/test-reports/layer-inspector.md`; ADR if needed
+- [ ] CMP-015-T19 Type-check timings with the long-body warnings; regression runs (`projectM-iOSTests`, `SceneUndoUITests`, `PhotoLayerUITests`); scripts; PosterBoard count; report in `docs/test-reports/layer-inspector.md` (GPU performance: CMP-013 reuse on the simulator as the proxy; device frame timing pending device); ADR if needed
 
 ## Dependencies
 

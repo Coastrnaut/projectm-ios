@@ -155,8 +155,8 @@ compositor hides the other layers.
 
 ### Edge Cases
 
-- No current compositor scene (projectM, Oscilloscope): the inspector says the visual has no editable
-  layers and lists none, or lists the one native-spectrum layer read-only.
+- No compositor scene: projectM and Oscilloscope have no layer, so the inspector lists none and says
+  so; Circular and Linear Spectrum list their one layer read-only (drawn without the compositor).
 - Camera shown: the scene records the visual chosen before Camera; the inspector shows that scene and
   its edits apply when that visual is shown (Camera itself is session only).
 - A saved blend mode, fit or mask this version does not draw: shown as "Other (name)", read-only until
