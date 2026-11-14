@@ -25,6 +25,36 @@ FILE-010 (Clear Caches), PERF-012 (performance report), QA-010 (performance thre
 | Caches folder | FILE-009 counts all of `Library/Caches` as the Caches category; FILE-010 Clear Caches empties it (allowlisted, links never followed). Thumbnails (PRE-001), motion and colour stores already live there. |
 | Measurement | AutomationRunner `sc015` (process start → chooser) and `sc101` (chooser → library ready) append samples to Documents; QA-010 judges `coldLaunchMs` from `sc015`. No mode distinguishes a launch with and without cached data. App signposts go through `DiagnosticsLog.signposter` (Points of Interest). |
 
+## Clarifications
+
+### Session 2026-11-14
+
+Answered by the feature agent under owner rule 4 (best judgement, conservative and local-first), recommended
+option each time.
+
+- Q: What exactly may the warm cache hold? → A: Only data derived from the app bundle: the prepared bundled preset
+  library (presets, packs, archive order, search keys) and a Metal binary archive of the app's own native shader
+  pipelines (native spectra and the compositor). Not the user's imported presets, favorites, collections, tags,
+  thumbnails (PRE-001 already has its own cache), settings or anything about the device owner. ANGLE/projectM preset
+  programs are out of scope (R12): caching them needs ANGLE or engine changes (Constitution VIII), and SC-104's
+  in-memory warm-up already covers switches.
+- Q: How is the content part of the key computed? → A: SHA-256 of the exact input bytes: `PresetIndex.json` +
+  `PresetPacks.json` for the library; the concatenated shader source texts of the archived modules for pipelines;
+  plus a per-entry format version. Hardware-backed CryptoKit on Apple platforms, the portable SHA-256 on Linux.
+  Build number or file dates alone were rejected: a development build can change the index without a new build
+  number, and dates are not content.
+- Q: What does "GPU family" mean in the key, and is it used for the library entry? → A: The Metal device name plus
+  the highest supported Apple GPU family (for example "Apple A16 GPU/apple8"); only pipeline entries carry it, the
+  library entry uses "none". A device restore or migration onto other hardware therefore never reuses an archive.
+- Q: When is the pipeline archive written? → A: When the app moves to the background, only if new pipelines were
+  added, written to a temporary file and committed with its key and checksum last; never on the render path. A
+  device or simulator that cannot make archives reports "unsupported" and compiles as today.
+- Q: How are cold and warm launches measured? → A: A new measurement-build launch mode `perf009`: an environment
+  option clears the warm cache before anything reads it (cold); a launch without it is warm. Each launch appends one
+  labelled sample to `Documents/perf009.json` and exits. `run_device_tests.py warmstart` alternates cold and warm
+  launches (10 each by default) and prints medians. Tests use an injected clock and step counters; app launch
+  phases are OSSignposter intervals. QA-010's thresholds are not changed (no new budget without device numbers).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A later launch reuses safe work from an earlier one (Priority: P1)
