@@ -44,6 +44,8 @@ final class TextVisualHost: PresentationBoundResource, CompositorVisualHost {
     private var inBackground = false
     private var sceneDisconnected = false
     private var meter = FrameRateMeter()
+    /// PERF-007: the output's frame drop counter while the performance overlay is shown (nil: no counting work).
+    var frameDrops: FrameDropCounter?
     /// PERF-001: the stage timer while the performance overlay is shown (nil: no timing work), and the
     /// frames' command buffers until their GPU times are known.
     var stageTimer: FrameStageTimer? {
@@ -269,6 +271,7 @@ final class TextVisualHost: PresentationBoundResource, CompositorVisualHost {
         }
         timer?.end(.encode)
         timer?.begin(.present)
+        frameDrops?.track(drawable, link: link)   // PERF-007: before present, so the handler is in place
         commands.present(drawable)
         commands.commit()
         timer?.end(.present)

@@ -209,6 +209,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     private(set) var nativeVisual: NativeSpectrumHost?
     /// PERF-001: the stage timer while the performance overlay is shown (AppCoordinator+FrameStages.swift).
     @ObservationIgnored let frameStages = FrameStageAttachment()
+    @ObservationIgnored let frameDrops = FrameDropAttachment()   // PERF-007
     /// The Camera visual (CAM-001), created when Camera is chosen and released when another visual is.
     private(set) var cameraVisual: CameraVisualHost?
     /// The camera feed's state while the Camera visual exists (`idle` otherwise; CAM-001-R5 to R8).
