@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T10:32:20Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T10:35:11Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 187 |
 | implementing | 2 |
-| unit_passed | 1 |
-| integrated | 135 |
+| integrated | 136 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 99 | 2 | 1 | 49 | 0 |
-| P2 | 77 | 0 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 2 | 0 | 84 | 1 |
+| P1 | 99 | 2 | 50 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 190 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)
+- 189 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)
 
 ## Integrated
 
@@ -117,6 +116,7 @@ The physical-device suite may **not** start:
 | MED-001 | Import photo layer | `dd604d0b1d51` | `feature/med-001` |
 | MED-002 | Import video layer | `e9e04eeb62a8` | `feature/med-002` |
 | MED-003 | Video loop region | `5e7bcff1` | `feature/med-003` |
+| MED-004 | Video playback speed | `c61dedd2` | `feature/med-004` |
 | MED-009 | Text overlay | `beca43d66718` | `feature/med-009` |
 | MED-014 | Safe media decoder | `31e16534f057` | `feature/med-014` |
 | MIDI-001 | MIDI endpoint discovery | `5e7bcff1` | `feature/midi-001` |
@@ -985,7 +985,7 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `ef4ad61613e9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-003/20261114T014458/swift-test_ShowControl.log`)
 - `post-merge (FILE-003 + MIDI-001 + MED-003): projectM-iOSTests 487 + PresetArchiveImport/MIDIDiscovery/VideoLoop/VideoLayer/OSCReceiver UI tests 5; network-symbol scan OK`: pass at `5e7bcff1` (log `.autonomous/logs/integration/file-003-midi-001-med-003/app-tests.log`)
 
-### MED-004 Video playback speed (unit_passed)
+### MED-004 Video playback speed (integrated)
 - `python3 scripts/check_compliance.py`: pass at `281df3269c3f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-004/20261114T052941/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `281df3269c3f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-004/20261114T052941/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `281df3269c3f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-004/20261114T052941/script-tests.log`)
@@ -998,6 +998,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `281df3269c3f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-004/20261114T052941/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `281df3269c3f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-004/20261114T052941/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `281df3269c3f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-004/20261114T052941/swift-test_ShowControl.log`)
+- `post-merge: projectM-iOSTests 581 + VideoSpeed/VideoLoop/VideoLayer UI tests 4`: pass at `c61dedd2` (log `.autonomous/logs/integration/med-004/app-tests.log`)
 
 ### MED-009 Text overlay (integrated)
 - `python3 scripts/check_compliance.py`: pass at `5adba5200543` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-009/20261113T142110/compliance.log`)

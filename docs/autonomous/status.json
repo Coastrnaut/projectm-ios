@@ -13,8 +13,7 @@
   "P1": {
    "audited": 99,
    "implementing": 2,
-   "integrated": 49,
-   "unit_passed": 1
+   "integrated": 50
   },
   "P2": {
    "audited": 77,
@@ -27,9 +26,8 @@
  "by_state": {
   "audited": 187,
   "implementing": 2,
-  "integrated": 135,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "integrated": 136,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -75,7 +73,6 @@
    "FX-017",
    "FX-018",
    "FX-020",
-   "MED-004",
    "MED-005",
    "MED-006",
    "MED-007",
@@ -230,7 +227,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "190 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)"
+   "189 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)"
   ]
  },
  "features": {
@@ -1459,10 +1456,10 @@
    "branch": "feature/med-004",
    "branch_sha": "281df3269c3f71647b21e6a0fd182d3ca4b15093",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "c61dedd2",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "MED-005": {
    "attempts": 0,
@@ -3917,6 +3914,11 @@
    "sha": "5e7bcff1"
   },
   {
+   "branch": "feature/med-004",
+   "id": "MED-004",
+   "sha": "c61dedd2"
+  },
+  {
    "branch": "feature/med-009",
    "id": "MED-009",
    "sha": "beca43d66718242bb6ba638c09213dfdeeceb612"
@@ -4197,5 +4199,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T10:32:20Z"
+ "updated": "2026-11-14T10:35:11Z"
 }
