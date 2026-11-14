@@ -5,13 +5,13 @@
 
 ## Phase 1: Setup
 
-- [ ] PERF-008-T01 Confirm the baseline: `swift test --package-path Packages/Rendering --filter QualityGovernorTests` passes before changes; `Build` symlink present; simulator "PERF8 iPhone 17" (iOS 27.2) created
+- [X] PERF-008-T01 Confirm the baseline: QualityGovernorTests pass before changes; `Build` symlink present; simulator "PERF8 iPhone 17" (iOS 27.2) created — Verified 2026-11-14: xcodebuild test Rendering-Package on "PERF8 iPhone 17", QualityGovernorTests 8/8 before changes (the package does not build for the macOS host: ProjectM.xcframework has no macOS slice, as in CI); Build symlink present; simulator created
 
 ## Phase 2: Foundational (budgets in the governor)
 
-- [ ] PERF-008-T02 `PowerProfile` (`standard`, `followLowPowerMode`, `batterySaver`; unknown → `standard`), `PowerBudget` (standard = 60, 1.0, true; batterySaver = 30, 0.75, false), `PowerProfileState` (lock, `didChangeNotification` posted on main) in Packages/Rendering/Sources/Rendering/PowerProfile.swift
-- [ ] PERF-008-T03 `QualityGovernor.settings(thermal:lowPower:adaptiveEffects:budget:)` (fps = max(30, min(thermal fps, budget fps)); scale = min(thermal scale, budget scale)), `changeNotifications`, `current()` reads the state, in Packages/Rendering/Sources/Rendering/QualityGovernor.swift
-- [ ] PERF-008-T04 [P] Tests in Packages/Rendering/Tests/RenderingTests/PowerProfileTests.swift: budgets per profile and Low Power; composition over every thermal level × Low Power × adaptiveEffects for standard (equals today's table) and batterySaver (never above 30 / 0.75, never below 30); state change posts once and not for the same value
+- [X] PERF-008-T02 `PowerProfile` (`standard`, `followLowPowerMode`, `batterySaver`; unknown → `standard`), `PowerBudget` (standard = 60, 1.0, true; batterySaver = 30, 0.75, false), `PowerProfileState` (lock, `didChangeNotification` posted on main) in Packages/Rendering/Sources/Rendering/PowerProfile.swift — Verified 2026-11-14: Rendering-Package on "PERF8 iPhone 17": PowerProfileTests 5/5 and QualityGovernorTests 8/8 (13 tests, 0.02 s)
+- [X] PERF-008-T03 `QualityGovernor.settings(thermal:lowPower:adaptiveEffects:budget:)` (fps = max(30, min(thermal fps, budget fps)); scale = min(thermal scale, budget scale)), `changeNotifications`, `current()` reads the state, in Packages/Rendering/Sources/Rendering/QualityGovernor.swift — Verified 2026-11-14: Rendering-Package on "PERF8 iPhone 17": PowerProfileTests 5/5 and QualityGovernorTests 8/8 (13 tests, 0.02 s)
+- [X] PERF-008-T04 [P] Tests in Packages/Rendering/Tests/RenderingTests/PowerProfileTests.swift: budgets per profile and Low Power; composition over every thermal level × Low Power × adaptiveEffects for standard (equals today's table) and batterySaver (never above 30 / 0.75, never below 30); state change posts once and not for the same value — Verified 2026-11-14: Rendering-Package on "PERF8 iPhone 17": PowerProfileTests 5/5 and QualityGovernorTests 8/8 (13 tests, 0.02 s)
 
 ## Phase 3: User Story 1 - Choose battery saver (P1)
 
