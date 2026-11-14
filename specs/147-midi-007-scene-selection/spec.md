@@ -44,6 +44,16 @@ Answered by Claude under the owner's standing approval (owner rules 4 and 9).
 - Q: Repeated program change? → A: A trigger for the scene that is already current (the active cue's scene) does nothing (no re-apply, no announcement). The same holds for a scene note and for the position mode (the active cue).
 - Q: Is bank select (CC 0/32) in scope? → A: No. Programs are matched on channel and number only; bank select is ignored (it remains a normal CC for MIDI-003 learn, which only offers the glow parameters). A later row can add banks without changing the stored form (a `;bank=` segment).
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: How is a scene mapping shown and spoken? → A: Programs as the MIDI Monitor shows them, 0–127: "Program 5 · Ch 1", spoken "program 5 on channel 1"; notes as MIDI-006 ("Note C4 · Ch 1", "note C4 on channel 1"). The learn result reads "<scene name> mapped to program 5 on channel 1."
+- Q: What happens to a scene mapping when its scene leaves the show? → A: It is kept (the row reads "Scene not found" in place of the name, and a trigger announces "Scene not found."), so re-adding the scene or restoring a backup brings it back; the user deletes it by hand. Nothing is removed automatically.
+- Q: Which edits get an Undo entry? → A: Learning and deleting a scene mapping share MIDI-003's one-step Undo (Undo restores the CC, note and scene lists together). The "Program number selects cue" picker saves at once with no Undo entry, as MIDI-004's curve picker.
+- Q: Where is "Assign MIDI…" offered? → A: On each cue in Settings → Show (context menu, a leading "MIDI" swipe action and a VoiceOver action "Assign MIDI"). The Scene Folders view is not changed (its rows already offer Go to Cue; one entry point keeps the learn sheet in one place).
+- Q: Do scene triggers keep working while a learn session runs? → A: Yes: every message except the one a learn session consumes is routed as usual, so learning never blocks a show; the learning message itself selects nothing and fires no MIDI-006 trigger.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A program change recalls a scene (Priority: P1) — MVP
@@ -103,6 +113,7 @@ In Settings → Show, "Assign MIDI…" on a cue learns the next program change o
 - Unreadable `pc:` or `note:…=cue.go:` lines: kept verbatim, not shown, not routed.
 - MIDI-003/004 `cc:` lines and MIDI-006 `note:` trigger lines: read and written exactly as before.
 - At most 128 scene mappings (the full MIDI address space for programs on one channel; see Assumptions).
+- A scene removed from the show: its mapping is kept and its row reads "Scene not found".
 - MIDI listening off: "Assign MIDI…" shows the MIDI-003 off text and cannot learn.
 
 ## Requirements *(mandatory)*
@@ -117,7 +128,7 @@ In Settings → Show, "Assign MIDI…" on a cue learns the next program change o
 - **MIDI-007-R6**: An optional "Program number selects cue" mode, off by default, MUST map program n to cue n + 1 on any channel or one chosen channel; explicit program mappings win; a program past the last cue announces "Cue n not found." and does nothing. Stored as one `pc:<ch|*>:*=cue.position` line.
 - **MIDI-007-R7**: Reading and writing MUST keep MIDI-003/004 `cc:` lines and MIDI-006 trigger `note:` lines unchanged, and keep unreadable `pc:` and `note:…=cue.go:` lines verbatim.
 - **MIDI-007-R8**: "Assign MIDI…" on a cue in Settings → Show MUST learn the next program change or note on (velocity > 0) for its scene, sharing MIDI-003's single learn session, Cancel, 30 s timeout and status line; the learning message itself selects nothing. A key or program moves from any other scene or MIDI-006 trigger; a scene keeps one key.
-- **MIDI-007-R9**: MIDI Mappings MUST show a "Scene triggers" section: one row per scene mapping (scene name, "Program 5 · Ch 1" or "Note C4 · Ch 1", Delete), and the "Program number selects cue" picker (Off, Any channel, Channel 1–16). Deleting and learning share MIDI-003's one-step Undo.
+- **MIDI-007-R9**: MIDI Mappings MUST show a "Scene triggers" section: one row per scene mapping (scene name or "Scene not found", "Program 5 · Ch 1" or "Note C4 · Ch 1", Delete), and the "Program number selects cue" picker (Off, Any channel, Channel 1–16). Deleting and learning share MIDI-003's one-step Undo; the picker saves at once with no Undo entry.
 - **MIDI-007-R10**: Learn start, result, timeout and "not found" messages MUST be announced on the `.midi` lane; a selected cue announces through SHOW-001's `.cue` lane only.
 - **MIDI-007-R11**: The model MUST build and pass its tests on Linux; no new stored key, permission, usage string or network API.
 - **MIDI-007-R12**: A DEBUG UI test MUST assign a program to a scene and trigger it with the stand-in MIDI input in under 30 s.
