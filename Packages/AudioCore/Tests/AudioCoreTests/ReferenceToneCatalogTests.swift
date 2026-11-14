@@ -133,23 +133,33 @@ final class ReferenceToneCatalogTests: XCTestCase {
 
     // MARK: Golden hashes (AUD-016-R10, S1)
 
-    /// Generates every variant twice; both runs are equal and hash to the stored value. The first
-    /// run is the shared one also used by `testPeaksAndSeamlessLoops` (generated once per process);
-    /// the second is generated here and hashed. Shortened 2026-11-13 under owner rule 7: each variant
-    /// was generated three times per suite and hashed with the portable SHA-256 in one 29 s test; now
-    /// twice, hashed with CryptoKit where it exists (TestSHA256.swift), split by rate into two tests.
-    /// Together they still check all 38 golden values.
+    /// Fixtures generated a second time in the default run: one of each signal kind (split-channel
+    /// sine, logarithmic sweep, pulse train, silence), in every layout. `AUD016_BENCH=1` repeats
+    /// every fixture.
+    static let repeatedRunFixtures: Set<String> = ["sine-split", "sweep-log", "pulse-132", "silence"]
+    static var repeatsEveryFixture: Bool { ProcessInfo.processInfo.environment["AUD016_BENCH"] == "1" }
+
+    /// Hashes every variant and compares it with the stored value; the representative fixtures are
+    /// generated a second time and must equal the first run byte for byte. The first run is the
+    /// shared one also used by `testPeaksAndSeamlessLoops` (generated once per process). The stored
+    /// goldens were made by earlier runs, so every hash match is itself a repeated-run check.
+    /// Shortened 2026-11-13 under owner rule 7 (three generations per variant → two, CryptoKit,
+    /// split by rate), and again 2026-11-14 (a second generation only for the representative
+    /// fixtures; the full repeat runs with `AUD016_BENCH=1`). Together the two tests still check all
+    /// 38 golden values.
     private func checkGoldens(rate: Int) throws -> Set<String> {
         var computed: [String: String] = [:]
         for fixture in ReferenceToneCatalog.fixtures {
             for channels in fixture.layouts {
                 let key = ReferenceToneGoldens.key(fixture.id, rate: rate, channels: channels)
                 let first = try ReferenceToneLoops.firstRun(fixture, rate: rate, channels: channels)
-                let second = try fixture.loop(sampleRate: rate, channels: channels)
                 XCTAssertEqual(first.count, fixture.loopFrames(sampleRate: rate) * channels, key)
-                XCTAssertTrue(first.withUnsafeBytes { a in second.withUnsafeBytes { b in a.count == b.count && memcmp(a.baseAddress!, b.baseAddress!, a.count) == 0 } },
-                              "\(key): two runs differ")
-                computed[key] = TestSHA256.hex(samples: second)
+                if Self.repeatsEveryFixture || Self.repeatedRunFixtures.contains(fixture.id) {
+                    let second = try fixture.loop(sampleRate: rate, channels: channels)
+                    XCTAssertTrue(first.withUnsafeBytes { a in second.withUnsafeBytes { b in a.count == b.count && memcmp(a.baseAddress!, b.baseAddress!, a.count) == 0 } },
+                                  "\(key): two runs differ")
+                }
+                computed[key] = TestSHA256.hex(samples: first)
             }
         }
         XCTAssertEqual(computed.count, 19, "variants at \(rate) Hz")

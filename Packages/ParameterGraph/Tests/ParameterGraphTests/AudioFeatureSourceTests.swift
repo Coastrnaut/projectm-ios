@@ -65,6 +65,20 @@ final class AudioFeatureSourceTests: XCTestCase {
         XCTAssertEqual(AudioFeatureSource.loudness.value(in: .silent), 0)
     }
 
+    /// ANL-011-T09: the rolloff source (ANL-011-R8).
+    func testRolloffSourceRoundTripsAndReadsTheValue() {
+        XCTAssertEqual(AudioFeatureSource.rolloff.id, "audio.rolloff")
+        XCTAssertEqual(AudioFeatureSource(id: "audio.rolloff"), .rolloff)
+        XCTAssertNil(AudioFeatureSource(id: "audio.rollOff"))
+        let bands: [Float] = [0.2]
+        bands.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> Void in
+            XCTAssertEqual(AudioFeatureSource.rolloff.value(in: AudioFeatureFrame(bands: buffer, rolloff: 0.625)), 0.625)
+            XCTAssertEqual(AudioFeatureSource.rolloff.value(in: AudioFeatureFrame(bands: buffer, rolloff: .nan)), 0)
+            XCTAssertEqual(AudioFeatureSource.rolloff.value(in: AudioFeatureFrame(bands: buffer, centroid: 1)), 0, "no feed reads 0")
+        }
+        XCTAssertEqual(AudioFeatureSource.rolloff.value(in: .silent), 0)
+    }
+
     /// ANL-009-T07: the high transient source (ANL-009-R8).
     func testHighTransientSourceRoundTripsAndReadsTheValue() {
         XCTAssertEqual(AudioFeatureSource.highTransient.id, "audio.highTransient")

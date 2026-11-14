@@ -12,13 +12,13 @@
   },
   "P1": {
    "audited": 45,
-   "implementing": 9,
-   "integrated": 97
+   "implementing": 7,
+   "integrated": 97,
+   "unit_passed": 2
   },
   "P2": {
    "audited": 72,
-   "implementing": 1,
-   "integrated": 6
+   "integrated": 7
   },
   "P3": {
    "audited": 9
@@ -26,9 +26,10 @@
  },
  "by_state": {
   "audited": 128,
-  "implementing": 10,
-  "integrated": 187,
-  "skipped_existing": 1
+  "implementing": 7,
+  "integrated": 188,
+  "skipped_existing": 1,
+  "unit_passed": 2
  },
  "device_gate": {
   "blocked": [],
@@ -39,7 +40,6 @@
    "ACC-007",
    "ACC-009",
    "ACC-010",
-   "ANL-011",
    "ANL-012",
    "ANL-013",
    "ANL-015",
@@ -177,7 +177,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "138 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-011, ANL-012)"
+   "137 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-012, ANL-013)"
   ]
  },
  "features": {
@@ -404,12 +404,12 @@
   "ANL-011": {
    "attempts": 0,
    "branch": "feature/anl-011",
-   "branch_sha": null,
+   "branch_sha": "c54116b3210706342f1b774bd22e5308cc11b61a",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "d27dc6f7daf123f726fec627e609945d762c7644",
    "priority": "P2",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "integrated"
   },
   "ANL-012": {
    "attempts": 0,
@@ -1744,12 +1744,12 @@
   "MOD-011": {
    "attempts": 0,
    "branch": "feature/mod-011",
-   "branch_sha": null,
+   "branch_sha": "4eb79ee7feed3ada14be31835612b14fe185f34e",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "MOD-012": {
    "attempts": 0,
@@ -2774,12 +2774,12 @@
   "SCN-011": {
    "attempts": 0,
    "branch": "feature/scn-011",
-   "branch_sha": null,
+   "branch_sha": "5966d4ca68720ae6b50e39b2c58e21763ef1d37b",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "SCN-012": {
    "attempts": 0,
@@ -3537,6 +3537,11 @@
    "branch": "feature/anl-010",
    "id": "ANL-010",
    "sha": "bf6d440f"
+  },
+  {
+   "branch": "feature/anl-011",
+   "id": "ANL-011",
+   "sha": "d27dc6f7daf123f726fec627e609945d762c7644"
   },
   {
    "branch": "feature/anl-014",
@@ -4404,5 +4409,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T16:59:21Z"
+ "updated": "2026-11-14T17:13:57Z"
 }
