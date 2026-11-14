@@ -59,7 +59,29 @@ and B3 can speak twice for one change.
 
 ### Session 2026-11-14
 
-(Filled by /speckit-clarify.)
+Answered under owner delegation (rule 4, recommended option each time).
+
+- Q: Are automatic source changes between active, silent and no audio still announced, or only
+  user-caused ones? → A: Still announced (FR-070 already requires it), now through the announcer's
+  `source` kind, so a burst within 1 s speaks the first and the latest state and an identical repeat
+  within 2 s is dropped. ACC-011-R4 lists this under "required by an earlier requirement".
+- Q: How long does a status caption stay, where does it sit and how does it go? → A: 4 s, in the
+  visualizer's top status stack under the source indicator; a newer caption replaces it; it appears and
+  goes with no animation (nothing to route through MotionPolicy), wraps at accessibility sizes, and is a
+  static text with identifier `statusCaption`.
+- Q: When is the OSC listener announced? → A: "OSC listening on port N" when the badge appears (nil → a
+  port) while the app is active — a network listener opening is privacy-relevant even at launch; "OSC
+  off" only for the user's Stop on the badge (with a caption), never for a transient close.
+- Q: What happens to system changes while the app is in the background or locked? → A: They are not
+  spoken or captioned (the router checks the app is active); on return AUD-015's background notice
+  summarizes them, and the indicator shows the current state. The background notice itself is announced
+  (kind `background`).
+- Q: How is completeness enforced so a new state cannot ship silent? → A: One catalog type maps every
+  status enum to a row with exhaustive `switch`es (no `default:`), so a new case fails to compile until
+  it has a row; a unit test enumerates each enum's cases (`CaseIterable`, plus an exhaustive list for the
+  two enums with associated values) and asserts non-empty visible text and announcement; a script check
+  (`scripts/check_status_events.py`, run by `test_scripts.py`) fails on any direct
+  `UIAccessibility.post`/`AccessibilityNotification` in the capture and recording files (ACC-011-S2).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -109,8 +131,8 @@ recording stop/refusal, camera-state and blackout-phase enums and requires a row
 
 - Identical text within 2 s (ACC-004 rule) is dropped, e.g. the state and hold changes of one interruption.
 - VoiceOver off: the system drops announcements; captions still show.
-- The background: changes while the app is away are summarized by AUD-015's notice on return, not spoken
-  one by one.
+- The background: changes while the app is away are neither spoken nor captioned; AUD-015's notice
+  summarizes them on return.
 - Reduce Motion: captions appear and go without animation or through MotionPolicy.
 - Accessibility text sizes: captions wrap (ACC-006).
 - The iOS camera permission prompt is system UI: VoiceOver reads it itself; it gets no app announcement.
@@ -139,8 +161,12 @@ recording stop/refusal, camera-state and blackout-phase enums and requires a row
 - **ACC-011-R6**: Save Frame notices, "Frame ready", "Recording ready", share notices, "Camera on" /
   "Front camera on" and "OSC listening on port N" MUST be announced (gaps B6-B8, B12, B14).
 - **ACC-011-R7**: End states with no persistent text (camera off, OSC off, output restored, last scene
-  reopened) MUST show a transient status caption with the row's visible text for 4 s, without animation
-  beyond MotionPolicy, wrapping at accessibility sizes, exposed to accessibility as static text.
+  reopened) MUST show a transient status caption with the row's visible text for 4 s in the top status
+  stack, replaced by a newer caption, with no animation, wrapping at accessibility sizes, exposed to
+  accessibility as static text.
+- **ACC-011-R10**: While the app is not active, system-caused rows MUST NOT be spoken or captioned.
+- **ACC-011-R11**: A script check MUST fail on any direct announcement post in the capture and recording
+  files listed in contract C2.
 - **ACC-011-R8**: Contract-pinned UI text (UIStrings and its contracts) MUST NOT change.
 - **ACC-011-R9**: DEBUG builds MUST expose the announcer's last text (ACC-004 `announcementProbe`) and the
   caption (`statusCaption`) to UI tests.
