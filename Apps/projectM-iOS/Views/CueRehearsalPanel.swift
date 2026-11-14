@@ -45,10 +45,10 @@ struct CueRehearsalPanel: View {
                     .font(.footnote.weight(.semibold))
                     .lineLimit(1)
                     .truncationMode(.tail)
-                    .accessibilityIdentifier("cueRehearsalTitle")
             }
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Rehearsal, " + rehearsal.titleText.replacingOccurrences(of: " · ", with: ", "))
+            .accessibilityIdentifier("cueRehearsalTitle")
             Spacer(minLength: 4)
             Button { rehearsal.nextTarget() } label: { Image(systemName: "chevron.forward") }
                 .accessibilityLabel("Rehearse next cue in list")

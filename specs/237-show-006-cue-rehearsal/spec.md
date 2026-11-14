@@ -4,7 +4,9 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (SHOW-006-T01-T16 verified on the Mac, simulator "SHOW6 iPhone 17", iOS 27.2;
+T17 `{device}` open; no device claim). ShowControl 123 tests (1.6 s; 3 new); app `CueRehearsalTests` 5 and
+`CueRehearsalAcceptanceTests` 2 (1.8 s, the roadmap acceptance); `CueRehearsalUITests` 1 (7.5 s).
 
 **Input**: Roadmap row SHOW-006 (P1, size L, depends on SHOW-001, integrated). Observable behavior, verbatim: "Preview
 upcoming cue without sending it to live output." Acceptance, verbatim: "Preview changes do not alter currently

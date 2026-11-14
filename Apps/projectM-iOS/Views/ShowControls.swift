@@ -27,17 +27,29 @@ struct ShowCueRow: View {
     @AccessibilityFocusState private var scenesFocused: Bool
 
     var body: some View {
+        let revision: Int = coordinator.sceneSwitcher.focusReturnRevision
+        return row
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("showCueRow")
+            .onChange(of: revision) { () -> Void in scenesFocused = true }
+    }
+
+    private var row: some View {
         HStack(spacing: 12) {
             previousButton
             status
             nextButton
-            holdButton   // SHOW-005
-            rehearseButton   // SHOW-006
+            trailingButtons
+        }
+    }
+
+    /// Hold (SHOW-005), Rehearse (SHOW-006) and Scenes (UIX-002), in the row's own spacing.
+    private var trailingButtons: some View {
+        HStack(spacing: 12) {
+            holdButton
+            rehearseButton
             scenesButton
         }
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("showCueRow")
-        .onChange(of: coordinator.sceneSwitcher.focusReturnRevision) { scenesFocused = true }
     }
 
     private var previousButton: some View {
