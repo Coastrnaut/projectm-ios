@@ -37,4 +37,5 @@ Section "Luma Key" after "Gradient": `layerControl.lumaKey` toggle; when on, ACC
 `layerControl.lumaLow`, `layerControl.lumaHigh` (0…1, step 0.05), `layerControl.lumaSoftness`
 (0…0.5, step 0.02) and the `layerControl.lumaInverted` toggle. Setting Low above High moves High to
 Low (and the reverse). Read-only layers show the values as read-outs. Undo: one step per drag or
-toggle, keys `layer.<kind>.<parameter>`.
+toggle; Softness coalesces under `layer.<kind>.lumaSoftness`, Low and High share "Luma Range" and
+`layer.<kind>.lumaRange` (a drag that pushes the other end changes both); toggles have no key.

@@ -4,7 +4,8 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (CMP-009-T01-T18 verified on the Mac host, the Linux shape and the iOS 27.2
+simulator; T19 needs D1; report `docs/test-reports/luma-key.md`)
 
 **Input**: User description: "Implement CMP-009 (Luma key) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Convert selected luminance range to transparency." Acceptance,
@@ -65,7 +66,8 @@ interaction); each answer is the recommended, conservative option.
   0.05) and **Softness** (0…0.5, step 0.02) ACC-005 sliders (`layerControl.lumaLow|lumaHigh|lumaSoftness`)
   and an **Invert Key** toggle (`layerControl.lumaInverted`). Turning it on gives a black key: low 0,
   high 0.1, softness 0.05, not inverted. Dragging Low above High moves High with it (and the reverse).
-  Each drag or toggle is one undo step with key `layer.<kind>.<parameter>`, as the CMP-015 sliders.
+  Each drag or toggle is one undo step; Softness coalesces under `layer.<kind>.lumaSoftness`, Low and High
+  share "Luma Range" and `layer.<kind>.lumaRange` (a pushing drag changes both; decided at implementation).
   "GPU performance" is an opt-in Mac bench (never asserted, "not device evidence") plus a `{device}`
   task for D1.
 
