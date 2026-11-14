@@ -50,6 +50,19 @@ conservative, local-first option.
 - Q: Keyboard shortcuts? → A: All existing shortcuts keep working unchanged (arrows and Page keys for cues, ⌘K, B). No new shortcut (⌘P means Print by convention).
 - Q: External display? → A: The pad is drawn on the device only; the external display shows the visual slot alone as before (OUT-001-R1).
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: What decides "portrait" and "landscape" for the pad: the device orientation or the space? → A: The space the visualizer has (wider than tall → side columns), so iPad split views and Stage Manager windows get the right arrangement too; the device orientation is not read.
+- Q: Which size class gets the 72 pt targets? → A: Only when both horizontal and vertical size classes are regular (iPad full screen or a large split). An iPhone in landscape (compact height) and iPad Slide Over (compact width) get 60 pt.
+- Q: How much space is reserved for the side columns, and do the controls narrow? → A: Each column is the target plus 8 pt on each side; the status stack (badges, notices, the controls) is inset by that width on both sides, so nothing sits under a column. The visual itself is not resized (it stays full screen behind).
+- Q: How is the bottom bar's space reserved in portrait? → A: The bar's measured height plus 8 pt is inset from the bottom of the status stack, so the controls and the source indicator sit above it.
+- Q: Does the pad take part in VoiceOver order? → A: Yes, as one container "Performance controls" after the status stack and before the debug probes; its targets read in visual order (Previous, Next, Tap, Blackout in the bar; leading column then trailing column).
+- Q: Does the "Performance layout" button keep the controls up? → A: Yes, like every control it restarts the 5 s auto-hide.
+- Q: Is the pad shown while the scene switcher (UIX-002) is open? → A: Yes, behind it; the switcher is above every layer, as before.
+- Q: Test hook? → A: A DEBUG-only launch argument `-uitestPerformanceLayout` starts with the layout on, so the landscape, AX5 and audit tests skip the toggle; the portrait test turns it on through the controls. Release ignores it.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Step cues, black out and tap tempo with large targets (Priority: P1)
