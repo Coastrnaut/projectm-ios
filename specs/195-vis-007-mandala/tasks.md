@@ -24,12 +24,12 @@ Format: `- [ ] VIS-007-Txx [P?] [Story] description`. `{device}` = needs a physi
 
 - [ ] VIS-007-T03 [P] [US2] Write `Packages/VisualGenerators/Tests/VisualGeneratorsTests/MandalaLayoutTests.swift`: the same bands and time at N = 4 and N = 8 → sectors 4 → 8, vertex count doubles exactly, every sector equals sector 0 rotated by 2πk/N within 1e-9, a repeat is bit-identical (S1); Mirror: second half = first half reflected across the sector centre line within 1e-9, vertices doubled (S2); silence → base shape (S3); band groups (out-of-range, NaN, fewer than 3 bands); unsupported symmetry → 6; petals inside their sector; zero and tiny sizes; storage addresses stable; a symmetry change applies from the next layout (R2 to R7, R14).
 - [ ] VIS-007-T04 [US2] Implement `MandalaLayout.swift` (contract C1). Evidence: T03 passes on the host and in the Linux shape.
-- [ ] VIS-007-T05 [US3] Rotation tests in `MandalaLayoutTests.swift`: the angle over 10 s of injected time never exceeds 0.05 turns per second (a configured 0.2 is capped); Reduce Motion gives exactly half the speed; toggling it keeps the angle continuous; time going backwards gives a finite angle (S5, R5, R6).
-- [ ] VIS-007-T06 [US2] Implement `MandalaGenerator.swift` (contract C2) and write `MandalaRenderTests.swift` (Metal): silence still draws the base shape; lit pixels have N-fold symmetry (pixel counts of the rotated image match); size change. 
+- [ ] VIS-007-T06 [US2] Implement `MandalaGenerator.swift` (contract C2) and write `MandalaRenderTests.swift` (Metal): silence still draws the base shape; lit pixels have N-fold symmetry (pixel counts of the rotated image match); size change; `restartLoop()` keeps the rotation anchor (edge case: pause and resume continue from the clock).
 - [ ] VIS-007-T07 [US2] Write `Packages/RenderGoldens/Tests/RenderGoldensTests/MandalaGoldenTests.swift` (catalog `mandala-six`; integrity; determinism) and record the goldens in `Packages/RenderGoldens/GeneratorGoldens/Mandala/{macos,ios-simulator}/`; README entry (VIS-007-R12, S6).
 
 ## Phase 4: User Story 3 — safe motion and light (P1)
 
+- [ ] VIS-007-T05 [P] [US3] Rotation tests in `MandalaLayoutTests.swift`: the angle over 10 s of injected time never exceeds 0.05 turns per second (a configured 0.2 is capped); Reduce Motion gives exactly half the speed; toggling it keeps the angle continuous; time going backwards gives a finite angle (S5, R5, R6).
 - [ ] VIS-007-T08 [P] [US3] Write `MandalaFlashTests.swift`: bands alternating silence and full scale on every frame at 60 Hz through `FlashSafetyLimiter` stay within the transition budget in all 17 areas with Reduce flashing on and off, with and without the strongest glow model, measured with `FlashAnalysis` (as `BeatRingFlashTests`) (VIS-007-R8, S4).
 
 ## Phase 5: User Story 1 — choose and see it in the app (P1)
@@ -45,7 +45,7 @@ Format: `- [ ] VIS-007-Txx [P?] [Story] description`. `{device}` = needs a physi
 
 ## Dependencies
 
-T01 → T02 → T03 → T04 → T05 → T06 → (T07, T08) → T09 → T10, T11 → T12.
+T01 → T02 → T03 → T04 → T06 → (T05, T07, T08) → T09 → T10, T11 → T12.
 US2 is the MVP (the roadmap acceptance); US1 needs US2's generator.
 
 ## Parallel opportunities
