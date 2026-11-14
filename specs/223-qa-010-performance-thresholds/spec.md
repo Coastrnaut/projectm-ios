@@ -121,3 +121,57 @@ and writes the verdict next to the pulled reports.
   Clarifications.
 - Simulator and host results are never evidence (Constitution); their class exists to rehearse the check.
 - No app change is needed: the inputs come from existing exports and automation modes.
+
+## Clarifications
+
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under the owner's standing approval (owner rules 4 and 9); each answer is the conservative,
+local-first option.
+
+- Q: Where do the thresholds live and how are they versioned? → A: `docs/performance/thresholds.json`, with
+  `schemaVersion` (the file format, 1; the checker refuses any other) and `thresholdsVersion` (an integer raised by
+  one whenever any limit, class or metric changes; 1 now), plus `updated` (date). The contract is
+  `docs/performance/thresholds.schema.json`. A caller may pin `--thresholds-version N`; a mismatch is an error.
+- Q: Which metrics, and what does each mean? → A: Seven, each with a fixed direction:
+  `fps1sP5` (at least): 5th percentile, nearest rank, of 1-second frame-rate windows (AutomationRunner `perf001`
+  `fpsTimerOff`), the SC-005 form "95% of 1 s windows ≥ target". `frameIntervalP50Ms`, `frameIntervalP95Ms` (at
+  most): PERF-012 `frames.p50Ms`/`p95Ms`. `droppedFramePercent` (at most): PERF-007 device output, 100 × skipped
+  ÷ (submitted + skipped), the share of refresh slots that showed no new frame (`skipped` and `submitted` are
+  available on every path, projectM included). `peakMemoryMB` (at most): PERF-012
+  `resources.memory.peakFootprintBytes` ÷ 1,000,000 (decimal MB, the stricter reading of SC-008). `audioAgeP95Ms`
+  (at most): no report carries it today, so it reads "not measured" until a report adds it (declared now so the
+  budget exists). `coldLaunchMs` (at most): the largest `sc015` sample × 1000 (SC-015 counts every launch).
+- Q: What are the limits per class? → A: From the existing criteria; where a class had none, the decided value:
+
+  | Metric | D1 `iPhone15,4` | D2 `iPad17,3` | D3 `iPad15,7` | Basis |
+  |---|---|---|---|---|
+  | `fps1sP5` ≥ | 55 | 55 | 30 | SC-005 (D1); D2 decided same as D1 (60 fps on every preset at Gate 3); D3 = FR-049/SC-013 floor |
+  | `frameIntervalP50Ms` ≤ | 18.2 | 18.2 | 33.4 | 1000 ÷ 55 and 1000 ÷ 30 rounded up to the 0.1 ms PERF-012 resolution |
+  | `frameIntervalP95Ms` ≤ | 25 | 25 | 50 | PERF-012 long-frame thresholds (1.5 refreshes at 60 Hz; 1.5 at 30) |
+  | `droppedFramePercent` ≤ | 5 | 5 | 10 | SC-005's 95%; D3 decided at twice D1's share (oldest tier) |
+  | `peakMemoryMB` ≤ | 300 | 300 | 300 | SC-008 (D1); D2, D3 decided at the same budget (they are "measured and published") |
+  | `audioAgeP95Ms` ≤ | 50 | 50 | 50 | R-06 normalized residency budget |
+  | `coldLaunchMs` ≤ | 2000 | 2000 | 4000 | SC-015; D2 decided same as D1 |
+
+- Q: What about the simulator and the Mac host? → A: A `simulator` class with D1's targets and `evidence: false`.
+  It matches the host model identifiers `arm64` and `x86_64`; a simulator reports the simulated model (for example
+  `iPhone18,3`), so the device runner passes `--simulator` for simulator runs, which forces this class. Every
+  verdict of this class says "not evidence" (Constitution: simulator results are never evidence).
+- Q: How are several inputs combined? → A: All inputs of one check must name the same model (a sample list without
+  a model takes the caller's `--device`). A metric given by two inputs is judged on its worse value. An unknown
+  model is an error ("unknown device class"); the checker never falls back to another class.
+- Q: Which language? → A: Python (`scripts/check_performance_thresholds.py`, standard library only): the device
+  runner is Python and the inputs are files pulled to the Mac; nothing ships in the app, so no app or package
+  change. `scripts/test_scripts.py` covers it with fixture reports in `scripts/fixtures/qa010/`.
+- Q: What does "fixture benchmark" mean here? → A: The fixture reports are the benchmark inputs: a committed set
+  covering pass, each kind of fail (frame rate, frame percentile, drops, memory, launch), missing metric, unknown
+  device class, wrong thresholds version; the checker's verdicts on them are asserted byte for byte deterministic.
+- Q: Exit status and output? → A: 0 pass, 1 fail or incomplete, 2 error. The JSON verdict (`kind`
+  `projectM-iOS.performanceVerdict`, `verdictSchemaVersion` 1, sorted keys, no timestamps, input file names only,
+  never paths) goes to `--out`; stdout prints it with `--json`, otherwise one readable line per metric.
+- Q: How is it wired into the device runner? → A: A `thresholds` subcommand of `scripts/run_device_tests.py`:
+  `--device D1|D2|D3` or `--simulator <udid>`; `--run` first runs the `perf001` mode and `--repeat` `sc015`
+  launches on the target and pulls them; `--report FILE` adds an exported PERF-012 report. It judges the newest
+  `automation-perf001-*.json`, `sc015.json` and `performance-*.json` in the target's export folder plus the named
+  files, and writes `performance-verdict.json` there. On demand only; not part of `summarize` or any test run.
