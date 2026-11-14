@@ -11,14 +11,13 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 16,
-   "built": 1,
-   "implementing": 2,
-   "integrated": 132
+   "audited": 15,
+   "implementing": 3,
+   "integrated": 133
   },
   "P2": {
-   "audited": 58,
-   "implementing": 3,
+   "audited": 57,
+   "implementing": 4,
    "integrated": 18
   },
   "P3": {
@@ -26,10 +25,9 @@
   }
  },
  "by_state": {
-  "audited": 85,
-  "built": 1,
-  "implementing": 5,
-  "integrated": 234,
+  "audited": 83,
+  "implementing": 7,
+  "integrated": 235,
   "skipped_existing": 1
  },
  "device_gate": {
@@ -101,7 +99,6 @@
    "SHD-007",
    "SHD-008",
    "SHD-012",
-   "SHOW-004",
    "SHOW-005",
    "SHOW-006",
    "SHOW-007",
@@ -132,7 +129,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "91 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, CAM-005, CAM-006)"
+   "90 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, CAM-005, CAM-006)"
   ]
  },
  "features": {
@@ -938,13 +935,13 @@
   },
   "CMP-010": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/cmp-010",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "CMP-011": {
    "attempts": 0,
@@ -2808,13 +2805,13 @@
   },
   "SHD-004": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/shd-004",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "SHD-005": {
    "attempts": 0,
@@ -2929,12 +2926,12 @@
   "SHOW-004": {
    "attempts": 0,
    "branch": "feature/show-004",
-   "branch_sha": "243d150c",
+   "branch_sha": "84b7b1fc9aa8072cb7fe8984a15fcb26bfb7a3b7",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "96ee68c7",
    "priority": "P1",
    "spec_dir": null,
-   "state": "built"
+   "state": "integrated"
   },
   "SHOW-005": {
    "attempts": 0,
@@ -4474,6 +4471,11 @@
    "sha": "f8aefa27"
   },
   {
+   "branch": "feature/show-004",
+   "id": "SHOW-004",
+   "sha": "96ee68c7"
+  },
+  {
    "branch": "feature/show-011",
    "id": "SHOW-011",
    "sha": "11329d52e6dc05d820e8ee931de4167b14b3d1ab"
@@ -4594,5 +4596,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T22:16:01Z"
+ "updated": "2026-11-14T22:21:18Z"
 }
