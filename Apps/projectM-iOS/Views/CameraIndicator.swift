@@ -4,6 +4,8 @@
 // * `CameraIndicator` is derived only from the camera feed state that the provider reports (research
 //   CAM-012-D1): shown while the feed is starting or running, never from the visual choice, so it
 //   disappears whenever the camera stops for any reason and returns only when it runs again.
+// * ACC-003-R4: the badge's symbol differs for starting and live (and with Differentiate Without
+//   Colour, "Starting" / "Live" follows the label); an opaque background with Increase Contrast.
 // * `CameraIndicatorBadge` sits at the top of the visualizer, independent of the controls (it is never
 //   auto-hidden). Its button calls the coordinator's `stopCamera()`.
 import CameraLayer
@@ -19,12 +21,15 @@ struct CameraIndicator: Equatable {
     static let hidden = CameraIndicator(state: .idle)
 
     let isShown: Bool
+    /// Pictures are arriving (ACC-003-R4: the live symbol).
+    let isRunning: Bool
     let accessibilityValue: String
     /// "Camera on", or "Front camera on" for the front camera (CAM-002-R8).
     let label: String
 
     init(state: CameraFeedState, position: CameraPosition = .back) {
         isShown = state == .starting || state == .running
+        isRunning = state == .running
         accessibilityValue = state == .running ? "Live" : "Starting"
         label = position == .front ? Self.frontLabel : Self.label
     }
@@ -34,20 +39,18 @@ struct CameraIndicator: Equatable {
 struct CameraIndicatorBadge: View {
     let indicator: CameraIndicator
     let onStop: () -> Void
+    @Environment(\.statusAppearance) private var appearance
 
     var body: some View {
+        // ACC-003-R4: starting and live differ in shape; with Differentiate Without Colour also in words.
+        let cue: StatusCue = StatusCueCatalog.camera(running: indicator.isRunning, label: indicator.label,
+                                                     differentiateWithoutColor: appearance.differentiateWithoutColor)
         HStack(spacing: 8) {
-            HStack(spacing: 6) {
-                Image(systemName: "video.fill")
-                    .foregroundStyle(.green)
-                    .accessibilityHidden(true)
-                Text(indicator.label)
-                    .font(.footnote.weight(.semibold))
-            }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(indicator.label)
-            .accessibilityValue(indicator.accessibilityValue)
-            .accessibilityIdentifier("cameraIndicatorStatus")
+            StatusCueLabel(cue: cue)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(indicator.label)
+                .accessibilityValue(indicator.accessibilityValue)
+                .accessibilityIdentifier("cameraIndicatorStatus")
             Button(action: onStop) {
                 Label(CameraIndicator.stopTitle, systemImage: "stop.fill")
                     .font(.footnote.bold())
@@ -61,7 +64,7 @@ struct CameraIndicatorBadge: View {
         .padding(.leading, 12)
         .padding(.trailing, 6)
         .padding(.vertical, 6)
-        .background(.regularMaterial, in: Capsule())
+        .statusBadgeBackground(Capsule())   // ACC-003-R9
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("cameraIndicator")
     }

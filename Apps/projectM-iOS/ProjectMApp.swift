@@ -4,6 +4,7 @@
 // and the play queue (AUD-003),
 // and offers generated test signals under Diagnostics (AUD-016).
 // UIX-001: the guided first scene covers the current screen (no animation) while it is presented.
+// ACC-003: the status appearance (Increase Contrast, Differentiate Without Colour) is set at the root.
 import CaptureKit
 import CaptureUI
 import SwiftUI
@@ -42,6 +43,9 @@ struct RootView: View {
         .onChange(of: coordinator.osc.badgePort) { _, port in
             if let port { coordinator.statusEvents.post(StatusEventCatalog.osc(port: port)) }
         }
+        // ACC-003: Increase Contrast and Differentiate Without Colour for the status views, on every screen.
+        .modifier(StatusAppearanceReader())
+        .onAppear { applyDebugContrastOverride() }
         // ACC-001-R3 (moved from VisualizerView): every screen, so a change on the chooser is not missed.
         .onReceive(NotificationCenter.default.publisher(for: UIAccessibility.reduceMotionStatusDidChangeNotification)) { _ in
             coordinator.syncSystemReduceMotion()
@@ -127,6 +131,13 @@ struct RootView: View {
     private func automationChooserAppeared() {
         #if DEBUG || PROJECTM_AUTOMATION
         AutomationRunner.chooserAppeared(coordinator)   // SC-015 cold-launch timing
+        #endif
+    }
+
+    /// ACC-003-R12: DEBUG `-uitestIncreaseContrast YES|NO` (a trait override on the window scenes).
+    private func applyDebugContrastOverride() {
+        #if DEBUG
+        StatusAppearance.applyDebugContrastOverride()
         #endif
     }
 
