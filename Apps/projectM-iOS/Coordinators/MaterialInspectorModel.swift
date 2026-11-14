@@ -6,12 +6,27 @@
 //   defaults). Nothing here names a particular material or parameter.
 // * `display(_:)` / `spoken(_:)`: UIX-003's text of the control's value (one formatter for both inspectors).
 // * `identifier(_:)`: `materialControl.<parameter ID>`.
+// * `variantChoice(for:stored:capabilities:)` (SHD-004-R8): the material's variants for the "Variant" picker
+//   (nil for a material with one variant), the stored choice and a note when it can't be drawn on this GPU.
 // Every intermediate is a named, typed value (CI's type-check budget).
 import Foundation
+import Metal
 import ParameterGraph
 import ProceduralMaterials
 import SceneFormat
 import ShaderParameterMetadata
+
+/// SHD-004: what the "Variant" picker shows.
+struct MaterialVariantChoice: Equatable, Sendable {
+    /// In metadata order, default first.
+    let options: [ShaderVariantSpec]
+    /// The stored variant, or the default when none (or an unknown one) is stored.
+    let selectedID: String
+    /// Why the stored variant isn't drawn here (nil when it is).
+    let note: String?
+
+    static let title = "Variant"
+}
 
 enum MaterialInspectorModel {
     static let sectionTitle = "Material settings"
@@ -20,6 +35,23 @@ enum MaterialInspectorModel {
     static func controls(for content: SceneLayerContent, parameters: [ParameterID: ParameterValue]) -> [ShaderParameterControl] {
         guard case let .material(id) = content, let definition = ProceduralMaterialCatalog.material(withID: id) else { return [] }
         return definition.controls(values: parameters)
+    }
+
+    /// SHD-004: the GPU families of this device, read once (none without a Metal device).
+    static let deviceCapabilities: MaterialGPUCapabilities = {
+        guard let device: MTLDevice = MTLCreateSystemDefaultDevice() else { return MaterialGPUCapabilities.none }
+        return MaterialGPUCapabilities(device: device)
+    }()
+
+    /// SHD-004-R8: the "Variant" picker of a material layer, or nil (other contents, unknown IDs, one variant).
+    static func variantChoice(for content: SceneLayerContent, stored: String?,
+                              capabilities: MaterialGPUCapabilities = deviceCapabilities) -> MaterialVariantChoice? {
+        guard case let .material(id) = content, let definition = ProceduralMaterialCatalog.material(withID: id),
+              definition.variants.count > 1 else { return nil }
+        let resolution: MaterialVariantResolution = definition.resolveVariant(stored, capabilities: capabilities)
+        let listed: Bool = stored.map { (s: String) -> Bool in definition.variant(s) != nil } ?? false
+        let selected: String = listed ? (stored ?? definition.defaultVariantID) : definition.defaultVariantID
+        return MaterialVariantChoice(options: definition.variants, selectedID: selected, note: resolution.notice?.message)
     }
 
     static func identifier(_ control: ShaderParameterControl) -> String { "materialControl." + control.id.rawValue }

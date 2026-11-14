@@ -104,6 +104,8 @@ struct LayerInspectorRow: Equatable, Sendable, Identifiable {
     let ownValues: [LayerOwnValue]
     /// SHD-003-R8: a material layer's controls, built from its validated metadata (empty for other kinds).
     var materialControls: [ShaderParameterControl] = []
+    /// SHD-004-R8: a material layer's variant picker (nil unless the material has several variants).
+    var materialVariant: MaterialVariantChoice? = nil
 
     var id: UInt64 { instance }
 
@@ -159,7 +161,8 @@ enum LayerInspectorScene {
                                  composite: layer.composite, isEditable: editable, readOnlyReason: reason,
                                  groupName: groupName(of: layer.instance, in: document),
                                  ownValues: ownValues(kind: kind, parameters: document.parameters),
-                                 materialControls: MaterialInspectorModel.controls(for: layer.content, parameters: document.parameters))
+                                 materialControls: MaterialInspectorModel.controls(for: layer.content, parameters: document.parameters),
+                                 materialVariant: MaterialInspectorModel.variantChoice(for: layer.content, stored: layer.materialVariant))
     }
 
     static func title(of content: SceneLayerContent) -> String {

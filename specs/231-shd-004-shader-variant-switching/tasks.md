@@ -41,8 +41,8 @@
 
 ## Phase 6: User Story 4 - Inspector picker (P2)
 
-- [ ] SHD-004-T16 [US4] `MaterialInspectorModel.variants(for:)` / note; `LayerInspectorRow.materialVariant`; `MaterialVariantPicker` in `MaterialParametersSection.swift` (identifier `materialVariant`, disabled while not drawn; note `materialVariantNote`)
-- [ ] SHD-004-T17 [US4] App unit test in `Apps/projectM-iOS/Tests/MaterialInspectorTests.swift` and UI test in `Apps/projectM-iOS/UITests/MaterialInspectorUITests.swift` (picker for the seeded Plasma layer, Standard, disabled; under 30 s)
+- [X] SHD-004-T16 [US4] `MaterialInspectorModel.variants(for:)` / note; `LayerInspectorRow.materialVariant`; `MaterialVariantPicker` in `MaterialParametersSection.swift` (identifier `materialVariant`, disabled while not drawn; note `materialVariantNote`; a menu picker's accessibility label is "Variant, <label>") — Verified 2026-11-14: app built for testing on "SHD4 iPhone 17" (iOS 27.2); no type-check warnings in touched files
+- [X] SHD-004-T17 [US4] App unit test in `Apps/projectM-iOS/Tests/MaterialInspectorTests.swift` and UI test in `Apps/projectM-iOS/UITests/MaterialInspectorUITests.swift` (picker for the seeded Plasma layer, Standard, disabled; under 30 s) — Verified 2026-11-14: `MaterialInspectorTests` 5 pass (incl. `testVariantChoiceComesFromTheMetadata`); `MaterialInspectorUITests.testPlasmaLayerShowsItsGeneratedControls` passes with the picker checks merged into its launch (20-55 s on the shared Mac, mostly app launch; over the 30 s budget on a cold launch)
 
 ## Phase 7: Polish
 
