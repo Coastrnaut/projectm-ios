@@ -58,6 +58,8 @@ CHECKED = [
     "Coordinators/LayerInspectorCoordinator.swift",
     "Views/AccessibleParameter.swift",   # ACC-005-R7: slider ends announce through the announcer
     "Coordinators/LibraryEraseCoordinator.swift",   # FILE-011-R3: the erase announces on the library lane
+    "Coordinators/BulkPresetImportCoordinator.swift",   # PRE-013-R10: bulk import announces on the library lane
+    "Views/BulkPresetImportViews.swift",                 # PRE-013-R10
     "Views/LibraryEraseSection.swift",
     "Coordinators/FolderBackupCoordinator.swift",   # FILE-006-R9: folder backup results on the library lane
     "Views/SensorySafetySection.swift",  # ACC-012-R10: profile changes announce through the announcer
