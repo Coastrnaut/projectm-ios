@@ -4,7 +4,8 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (PERF-009-T01-T15, T17, T18 verified by package, app and script tests; see
+tasks.md). Open: T16 `{device}` (D1 cold and warm launches). No device result is claimed.
 
 **Input**: User description: "Implement PERF-009 (Startup warm cache) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Cache only safe metadata and shaders for faster next launch." Acceptance,
