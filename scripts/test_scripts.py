@@ -1680,5 +1680,80 @@ class PermissionCatalogCheckTests(unittest.TestCase):
         self.assertTrue(json.loads(out.getvalue())["ok"])
 
 
+class RunRenderSoakTests(unittest.TestCase):
+    """QA-006-T11: scripts/run_render_soak.py (arguments, commands, environment, report summary)."""
+
+    @staticmethod
+    def module():
+        import run_render_soak  # local import: keeps the shared import block untouched
+        return run_render_soak
+
+    def test_host_command_and_environment(self):
+        rrs = self.module()
+        args = rrs.parse(["--seconds", "600"])
+        plan = rrs.commands(args)
+        self.assertEqual(len(plan), 1)
+        self.assertEqual(plan[0][0], ["swift", "test", "--filter", "RenderSoakTests/testOnDemandLongSoak"])
+        self.assertTrue(str(plan[0][1]).endswith("Packages/RenderGoldens"))
+        env = rrs.environment(600, Path("/tmp/r"), simulator=False)
+        self.assertEqual(env, {"QA006_SOAK_SECONDS": "600", "QA006_REPORT_DIR": "/tmp/r"})
+
+    def test_simulator_commands_forward_the_environment(self):
+        rrs = self.module()
+        args = rrs.parse(["--seconds", "120", "--simulator", "ABC", "--angle"])
+        plan = rrs.commands(args)
+        self.assertEqual([c[0][3] for c in plan], ["RenderGoldens", "ANGLERendering"])
+        self.assertIn("-only-testing:ANGLERenderingTests/ProjectMPresetSoakTests", plan[1][0])
+        self.assertIn("id=ABC", plan[0][0])
+        self.assertIn("240", plan[0][0], "the per-test allowance grows with the soak")
+        env = rrs.environment(120, Path("/tmp/r"), simulator=True)
+        self.assertEqual(set(env), {"TEST_RUNNER_QA006_SOAK_SECONDS", "TEST_RUNNER_QA006_REPORT_DIR"})
+
+    def test_bad_arguments_exit_2(self):
+        rrs = self.module()
+        with mock.patch("sys.stderr", new_callable=io.StringIO):
+            self.assertEqual(rrs.main(["--seconds", "0"]), 2)
+            self.assertEqual(rrs.main(["--seconds", "10", "--angle"]), 2)
+
+    def test_dry_run_prints_and_runs_nothing(self):
+        rrs = self.module()
+        with tempfile.TemporaryDirectory() as tmp, mock.patch("subprocess.run") as run, \
+                mock.patch("sys.stdout", new_callable=io.StringIO) as out:
+            self.assertEqual(rrs.main(["--seconds", "30", "--report-dir", tmp, "--dry-run"]), 0)
+        run.assert_not_called()
+        self.assertIn("QA006_SOAK_SECONDS=30", out.getvalue())
+
+    def test_summary_passes_only_when_every_report_passed(self):
+        rrs = self.module()
+        def report(name, outcome, rules=()):
+            return {"name": name, "platform": "macOS", "simulatedSeconds": 30, "cycles": 10,
+                    "verdict": {"outcome": outcome, "failedRules": list(rules), "slopeBytesPerCycle": 0,
+                                "slopeLimitBytesPerCycle": 65536, "errorCount": 0}}
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            ok, lines = rrs.summarize(folder)
+            self.assertFalse(ok, "no report is a failure")
+            (folder / "a.json").write_text(json.dumps(report("a", "pass")))
+            ok, lines = rrs.summarize(folder)
+            self.assertTrue(ok)
+            self.assertIn("a [macOS]: pass", lines[0])
+            (folder / "b.json").write_text(json.dumps(report("b", "fail", ["memorySlope"])))
+            ok, lines = rrs.summarize(folder)
+            self.assertFalse(ok)
+            self.assertIn("fail [memorySlope]", lines[1])
+            (folder / "c.json").write_text("{not json")
+            self.assertIn("unreadable", rrs.summarize(folder)[1][2])
+
+    def test_main_runs_the_tests_and_reads_the_reports(self):
+        rrs = self.module()
+        with tempfile.TemporaryDirectory() as tmp:
+            def fake_run(command, cwd, env):
+                Path(env["QA006_REPORT_DIR"], "r.json").write_text(json.dumps(
+                    {"name": "r", "verdict": {"outcome": "pass", "failedRules": []}}))
+                return mock.Mock(returncode=0)
+            with mock.patch("subprocess.run", side_effect=fake_run), mock.patch("sys.stdout", new_callable=io.StringIO):
+                self.assertEqual(rrs.main(["--seconds", "40", "--report-dir", tmp]), 0)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
