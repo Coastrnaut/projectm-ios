@@ -22,7 +22,7 @@ GPU performance). Budgets (owner rule 7): a unit test about 1–2 s and at most 
 **Independent test**: red → blue crossfade; progress 0 and ≥ 1 byte-identical to each scene alone, midpoint within 0.002 of the reference blend, pool checked-out count equal before and after.
 
 - [ ] CMP-014-T05 [US1] Implement `SceneTransitionBus` in `Packages/Compositor/Sources/Compositor/SceneTransitionBus.swift`: show, transition (snap-then-start on interruption), cancel, finish now, pause/resume, `encodeFrame`, `encodeOutput`, the mix shader, one flash guard, the pooled blend target returned at the end, on cancel, interruption, size change and deinit.
-- [ ] CMP-014-T06 [US1] Acceptance tests in `Packages/Compositor/Tests/CompositorTests/SceneTransitionBusTests.swift`: exact start, midpoint, exact end and after, pool counts; repeated with cancel and with a mid-transition interruption; dip to black midpoint is black; `encodeOutput` gives the shown frame.
+- [ ] CMP-014-T06 [US1] Acceptance tests in `Packages/Compositor/Tests/CompositorTests/SceneTransitionBusTests.swift`: exact start, midpoint, exact end and after, pool counts; repeated with cancel and with a mid-transition interruption; dip to black midpoint is black; `encodeOutput` gives the shown frame (R9); an output size change mid-transition leaks nothing.
 
 ## Phase 4: User Story 2 — One clock drives every transition (P1)
 
@@ -43,7 +43,7 @@ GPU performance). Budgets (owner rule 7): a unit test about 1–2 s and at most 
 
 - [ ] CMP-014-T13 [P] ADR `docs/adr/0041-scene-transition-bus.md` (clock, bus, guard placement, interruption, persistence deferral) and the `docs/adr/README.md` index row.
 - [ ] CMP-014-T14 [P] Report `docs/test-reports/transition-bus.md`; the package header in `Packages/Compositor/Package.swift` and `Compositor.swift` mention CMP-014.
-- [ ] CMP-014-T15 Regressions: Compositor (full and Linux shape), RenderGoldens (goldens unchanged), SceneFormat, ShowControl, ImportFuzz, SceneArchive, app unit tests on a private iOS 27.2 simulator, and the six scripts.
+- [ ] CMP-014-T15 Regressions: Compositor (full and Linux shape), RenderGoldens (goldens unchanged), SceneFormat, ShowControl, ImportFuzz, SceneArchive, app unit tests on a private iOS 27.2 simulator, and the six scripts; confirm no file format changed (R13: `git diff` shows no change under `Packages/ShowControl` or `Packages/SceneFormat`).
 
 ## Dependencies
 
@@ -56,3 +56,9 @@ T03 with T04; T11 with T05–T10; T13 with T14.
 ## Implementation strategy
 
 MVP = Phases 1–3 (the acceptance). Then US2, US3, US4, polish.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Coverage: R1–R13 and S1–S8 each map to at least one task (R13 through T15's format check). No
+constitution conflict, no placeholder. Fixes applied: the failed-frame edge case now matches the
+presentation-time clock (spec); T06 covers R9 and a size change mid-transition; T15 checks R13.

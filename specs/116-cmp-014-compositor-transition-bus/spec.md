@@ -143,7 +143,9 @@ not asserted).
 - Cancel during a transition: the outgoing scene is live again at once; "finish now" snaps to the
   incoming scene.
 - An output size change during a transition: the blend target is replaced from the pool; nothing leaks.
-- A frame that fails to encode during a transition: the transition does not advance past what was shown.
+- A frame that fails to encode during a transition: nothing is shown for it; the clock follows the
+  presentation timeline, so the next shown frame is at the progress its time gives (no catch-up jump
+  beyond one clamped frame).
 - Blackout during a transition: the slot's black cover stays above the output; the transition keeps
   its own clock.
 
