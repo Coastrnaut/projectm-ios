@@ -11,10 +11,10 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 69,
+   "audited": 68,
    "implementing": 2,
    "integrated": 77,
-   "unit_passed": 3
+   "unit_passed": 4
   },
   "P2": {
    "audited": 74,
@@ -25,11 +25,11 @@
   }
  },
  "by_state": {
-  "audited": 154,
+  "audited": 153,
   "implementing": 2,
   "integrated": 166,
   "skipped_existing": 1,
-  "unit_passed": 3
+  "unit_passed": 4
  },
  "device_gate": {
   "blocked": [],
@@ -1608,7 +1608,7 @@
    "branch": "feature/midi-008",
    "branch_sha": "21f8785505c88b439d4fd8cd38d2f623f6390224",
    "error_category": null,
-   "integrated_sha": "265ddd14",
+   "integrated_sha": "265ddd1401f9b6b4732556c66a10d6a9be758182",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
@@ -1728,7 +1728,7 @@
    "branch": null,
    "branch_sha": "5caacf82d050e5609532ba4aac873430e4d48765",
    "error_category": null,
-   "integrated_sha": "265ddd14",
+   "integrated_sha": "0c57cf7ce7202d122fa8599aa7b288e9e4e0f4b1",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
@@ -2106,12 +2106,12 @@
   "PERF-002": {
    "attempts": 0,
    "branch": null,
-   "branch_sha": null,
+   "branch_sha": "fbf29467f5cfcf8f1c179d9710ea0df4e49bf0c0",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "unit_passed"
   },
   "PERF-003": {
    "attempts": 0,
@@ -3978,7 +3978,7 @@
   {
    "branch": "feature/midi-008",
    "id": "MIDI-008",
-   "sha": "265ddd14"
+   "sha": "265ddd1401f9b6b4732556c66a10d6a9be758182"
   },
   {
    "branch": "feature/mod-001",
@@ -4013,7 +4013,7 @@
   {
    "branch": null,
    "id": "MOD-007",
-   "sha": "265ddd14"
+   "sha": "0c57cf7ce7202d122fa8599aa7b288e9e4e0f4b1"
   },
   {
    "branch": "feature/mod-013",
@@ -4321,5 +4321,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T15:08:41Z"
+ "updated": "2026-11-14T15:10:18Z"
 }
