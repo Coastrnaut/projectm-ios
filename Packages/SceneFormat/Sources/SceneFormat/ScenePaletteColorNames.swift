@@ -1,4 +1,4 @@
-// PaletteColorNames.swift — UIX-011-R9 (research UIX-011-D5, D6): words and contrast for palette swatches.
+// ScenePaletteColorNames.swift — UIX-011-R9 (research UIX-011-D5, D6): words and contrast for palette swatches.
 //
 // * `PaletteColor.name`: a plain colour word for VoiceOver ("dark blue", "teal", "light grey") from HSL: low
 //   saturation reads black, grey or white by lightness; otherwise the hue's sector, with "dark" or "light". The

@@ -52,7 +52,7 @@ specs/225-uix-011-color-palette-picker/
 
 ```text
 Packages/SceneFormat/Sources/SceneFormat/ScenePalettes.swift                 # new: model, library, codec, links, resolver
-Packages/SceneFormat/Sources/SceneFormat/PaletteColorNames.swift             # new: colour names, contrast
+Packages/SceneFormat/Sources/SceneFormat/ScenePaletteColorNames.swift             # new: colour names, contrast
 Packages/SceneFormat/Tests/SceneFormatTests/ScenePalettesTests.swift         # new
 Packages/VisualGenerators/Sources/VisualGenerators/VisualPalette.swift       # custom case
 Packages/VisualGenerators/Tests/VisualGeneratorsTests/CustomPaletteTests.swift # new
