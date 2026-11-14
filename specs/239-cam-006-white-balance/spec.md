@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (CAM-006-T01-T08, T10-T13 verified on the Mac with the stand-in camera; device task T09 `{device}` open)
 
 **Input**: User description: "Implement CAM-006 (Camera white balance) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Expose supported automatic and
