@@ -63,7 +63,7 @@ Filtered (each entry in `AccessibilityScreensUITests.filters` with its reason):
 | settings | contrast | "Visual" headers (≤ 2), element-less findings (≤ 3), the Visual footer | system header and footer styles (secondary grey); bounded counts |
 | showEditor | contrast | Add Current Scene; footer; "Cues" header | system accent list button (systemBlue ≈ 4:1) and system header/footer styles; an app-wide accent is left to ACC-003/ACC-008 |
 | controls | contrast | Visual unavailable | PERF-014 placeholder caught mid-fade; 0.55 grey on black ≈ 6:1 at full opacity |
-| controls, showRow | contrast | "—" (tempo readout) | one-point em dash the pixel sampler cannot measure; VoiceOver reads "Tempo, No tempo" |
+| controls, showRow | contrast | "—" (tempo readout) | one-point em dash the pixel sampler cannot measure; VoiceOver reads "Tempo, Searching for tempo" (ANL-006; was "No tempo") |
 
 Test design notes (from the triage):
 

@@ -357,6 +357,12 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         }
         #endif
         tempo = TempoCoordinator(clock: tempoClock)
+        #if DEBUG
+        // TempoConfidenceUITests: `-uitestTempoEstimate <bpm>:<confidence>[:<polls>:<confidence2>]` (ANL-006 D7).
+        if let script = defaults.string(forKey: "uitestTempoEstimate").flatMap(TempoCoordinator.estimateScript) {
+            tempo.estimateScript = script
+        }
+        #endif
         // Feature 002: the library (12,941 presets) loads off the main thread (SC-101).
         presets = PresetCoordinator(store: FavoritesStore(defaults: defaults), settings: settings, loader: presetLoader,
                                     collections: PresetCollectionStore(directory: PresetCollectionStore.defaultDirectory()))

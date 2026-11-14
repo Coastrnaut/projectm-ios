@@ -1,10 +1,11 @@
 // TapTempoUITests.swift — SHOW-011-T16 on the iOS Simulator: four taps establish a manual tempo
 // and Reset tempo returns to the estimated state (the roadmap row's acceptance; SHOW-011-R12, R13).
 // `-uitestTapInterval 500` (Debug) spaces the taps exactly 500 ms apart on a synthetic clock, since
-// UI taps are not precisely timed. After the reset the readout shows the detected tempo or "No
-// tempo", depending on what the analysis of the reference track has reached; either way it is no
-// longer manual. Simulator results are never device evidence (Constitution X). Waits poll every
-// 0.1 s (UITestWaits.swift, owner rule 7).
+// UI taps are not precisely timed. After the reset the readout shows the analysis's state (ANL-006:
+// "Searching for tempo", "About … BPM, uncertain" or "… BPM, stable"), depending on what the
+// analysis of the reference track has reached; either way it is no longer manual. Simulator
+// results are never device evidence (Constitution X). Waits poll every 0.1 s (UITestWaits.swift,
+// owner rule 7).
 import XCTest
 
 @MainActor
@@ -49,6 +50,10 @@ final class TapTempoUITests: XCTestCase {
         XCTAssertEqual(resetButton.label, "Reset tempo")
         resetButton.tap()
         XCTAssertTrue(resetButton.disappears(within: 5))
-        XCTAssertTrue(readoutValue == "No tempo" || readoutValue.hasSuffix("BPM, detected"), readoutValue)
+        // ANL-006: the readout shows the analysis's state (searching, uncertain or stable).
+        let after: String = readoutValue
+        let analysisState: Bool = after == "Searching for tempo" || after.hasSuffix("BPM, uncertain")
+            || after.hasSuffix("BPM, stable")
+        XCTAssertTrue(analysisState, after)
     }
 }

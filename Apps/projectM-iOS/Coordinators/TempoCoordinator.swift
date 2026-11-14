@@ -12,6 +12,13 @@
 // * The subscription is polled every 250 ms on the main actor (D5); never on the pipeline's worker.
 // * DEBUG: `-uitestTapInterval <ms>` makes every tap advance a synthetic clock by that interval, so
 //   the UI test's taps are exact (D6).
+// * ANL-006 (specs/088-anl-006-tempo-confidence-indicator, contracts/tempo-confidence.md): a
+//   `TempoConfidenceIndicator` gets every polled estimate with `stateClock` (the monotonic clock;
+//   separate from the tap clock, which the DEBUG tap fake steps on every reading). `readout`
+//   (manual, stable, uncertain or searching) drives the readout's texts, the Tap control's value
+//   and the Reset announcement; `snapshot` (what consumers read) is unchanged. A new analysis
+//   (another reader, or none) restarts the indicator from searching. DEBUG:
+//   `-uitestTempoEstimate <bpm>:<confidence>[:<polls>:<confidence2>]` replaces each poll's estimate.
 // Nothing here reaches projectM (Constitution VIII, ADR-0008 decision 5).
 import AudioCore
 import Observation
@@ -29,10 +36,19 @@ final class TempoCoordinator: PresentationBoundResource {
     private(set) var snapshot: TempoSnapshot = .none
     /// Accepted taps in the current sequence.
     private(set) var tapsInSequence = 0
+    /// What the readout shows (ANL-006).
+    private(set) var readout: TempoReadout = .searching
 
     @ObservationIgnored private var source = TempoSource()
     @ObservationIgnored private let clock: () -> UInt64
     @ObservationIgnored private let announce: (String) -> Void
+    @ObservationIgnored private let stateClock: () -> UInt64
+    @ObservationIgnored private var indicator = TempoConfidenceIndicator()
+    #if DEBUG
+    /// Replaces each poll's estimate (`-uitestTempoEstimate`); the argument is the poll number (1, 2…).
+    @ObservationIgnored var estimateScript: ((Int) -> TempoEstimate?)?
+    @ObservationIgnored private var scriptPolls = 0
+    #endif
 
     private enum Request {
         case off
@@ -47,10 +63,15 @@ final class TempoCoordinator: PresentationBoundResource {
     @ObservationIgnored private var pollTask: Task<Void, Never>?
 
     init(clock: @escaping () -> UInt64 = { MonotonicClock.nowNanoseconds() },
+         stateClock: @escaping () -> UInt64 = { MonotonicClock.nowNanoseconds() },
          announce: @escaping (String) -> Void = { UIAccessibility.post(notification: .announcement, argument: $0) }) {
         self.clock = clock
+        self.stateClock = stateClock
         self.announce = announce
     }
+
+    /// The analysis state (ANL-006); diagnostics and tests.
+    var confidenceState: TempoConfidenceState { indicator.state }
 
     isolated deinit {
         pollTask?.cancel()
@@ -82,58 +103,93 @@ final class TempoCoordinator: PresentationBoundResource {
     func reset() {
         source.resetManual()
         publish()
-        announce(Self.resetAnnouncement(snapshot))
+        announce(Self.resetAnnouncement(readout))
     }
 
     /// The analysis's estimate (nil: none). Called by the poll; tests call it directly.
     func updateEstimate(_ estimate: TempoEstimate?) {
         source.updateEstimate(estimate)
+        indicator.update(estimate, at: stateClock())
         publish()
     }
 
     private func publish() {
         let next = source.snapshot
         if next != snapshot { snapshot = next }
+        let nextReadout = TempoReadout(snapshot: next, indicator: indicator)
+        if nextReadout != readout { readout = nextReadout }
         if source.tapsInSequence != tapsInSequence { tapsInSequence = source.tapsInSequence }
     }
 
-    // MARK: - Texts (contracts/tempo-source.md "App")
+    // MARK: - Texts (contracts/tempo-confidence.md "App"; SHOW-011 contracts/tempo-source.md)
 
     static func wholeBPM(_ bpm: Double) -> Int { Int(bpm.rounded()) }
 
-    /// "120 BPM" or "—".
-    static func readoutText(_ snapshot: TempoSnapshot) -> String {
-        snapshot.bpm.map { "\(wholeBPM($0)) BPM" } ?? "—"
-    }
-
-    /// "Manual", "Detected" or "".
-    static func originText(_ snapshot: TempoSnapshot) -> String {
-        switch snapshot.origin {
-        case .manual: "Manual"
-        case .estimated: "Detected"
-        case .none: ""
+    /// "120 BPM", "≈120 BPM" or "—" (searching: no number).
+    static func readoutText(_ readout: TempoReadout) -> String {
+        switch readout {
+        case .manual(let bpm), .stable(let bpm):
+            let whole: Int = wholeBPM(bpm)
+            return "\(whole) BPM"
+        case .uncertain(let bpm):
+            let whole: Int = wholeBPM(bpm)
+            return "≈\(whole) BPM"
+        case .searching:
+            return "—"
         }
     }
 
-    /// "120 BPM, manual", "126 BPM, detected" or "No tempo".
-    static func accessibilityValue(_ snapshot: TempoSnapshot) -> String {
-        guard let bpm = snapshot.bpm else { return "No tempo" }
-        return "\(wholeBPM(bpm)) BPM, \(originText(snapshot).lowercased())"
+    /// "Manual", "Stable", "Uncertain" or "Searching".
+    static func stateText(_ readout: TempoReadout) -> String {
+        switch readout {
+        case .manual: "Manual"
+        case .stable: "Stable"
+        case .uncertain: "Uncertain"
+        case .searching: "Searching"
+        }
+    }
+
+    /// "120 BPM, manual", "120 BPM, stable", "About 120 BPM, uncertain" or "Searching for tempo".
+    static func accessibilityValue(_ readout: TempoReadout) -> String {
+        switch readout {
+        case .manual(let bpm):
+            let whole: Int = wholeBPM(bpm)
+            return "\(whole) BPM, manual"
+        case .stable(let bpm):
+            let whole: Int = wholeBPM(bpm)
+            return "\(whole) BPM, stable"
+        case .uncertain(let bpm):
+            let whole: Int = wholeBPM(bpm)
+            return "About \(whole) BPM, uncertain"
+        case .searching:
+            return "Searching for tempo"
+        }
     }
 
     /// The Tap control's value: progress while a sequence builds toward its first tempo.
-    static func tapValue(snapshot: TempoSnapshot, taps: Int, of needed: Int) -> String {
+    static func tapValue(readout: TempoReadout, taps: Int, of needed: Int) -> String {
         if taps > 0, taps < needed { return "Tap \(taps) of \(needed)" }
-        return accessibilityValue(snapshot)
+        return accessibilityValue(readout)
     }
 
-    var tapValue: String { Self.tapValue(snapshot: snapshot, taps: tapsInSequence, of: rules.tapsToEstablish) }
+    var tapValue: String { Self.tapValue(readout: readout, taps: tapsInSequence, of: rules.tapsToEstablish) }
 
     static func setAnnouncement(bpm: Double) -> String { "Tempo set to \(wholeBPM(bpm)) BPM" }
 
-    static func resetAnnouncement(_ snapshot: TempoSnapshot) -> String {
-        guard let bpm = snapshot.bpm, snapshot.origin == .estimated else { return "Manual tempo cleared. No tempo" }
-        return "Manual tempo cleared. Detected tempo \(wholeBPM(bpm)) BPM"
+    static func resetAnnouncement(_ readout: TempoReadout) -> String {
+        let prefix: String = "Manual tempo cleared. "
+        let detail: String
+        switch readout {
+        case .stable(let bpm):
+            let whole: Int = wholeBPM(bpm)
+            detail = "Detected tempo \(whole) BPM"
+        case .uncertain(let bpm):
+            let whole: Int = wholeBPM(bpm)
+            detail = "Tempo uncertain, about \(whole) BPM"
+        case .searching, .manual:
+            detail = "Searching for tempo"
+        }
+        return prefix + detail
     }
 
     // MARK: - Estimate (research SHOW-011-D3, D5)
@@ -189,6 +245,7 @@ final class TempoCoordinator: PresentationBoundResource {
             next = reader
         }
         if let old = activeReader, old !== next { old.clear() }
+        if activeReader !== next { indicator.reset() }   // ANL-006: a new analysis starts searching
         activeReader = next
         if next == nil {
             pollTask?.cancel()
@@ -206,12 +263,35 @@ final class TempoCoordinator: PresentationBoundResource {
 
     private func pollOnce() {
         guard let activeReader else { return }
-        updateEstimate(activeReader.poll())
+        let estimate: TempoEstimate? = activeReader.poll()
+        #if DEBUG
+        if let estimateScript {
+            scriptPolls += 1
+            updateEstimate(estimateScript(scriptPolls))
+            return
+        }
+        #endif
+        updateEstimate(estimate)
     }
 
-    // MARK: - DEBUG clock (research SHOW-011-D6)
+    // MARK: - DEBUG clock (research SHOW-011-D6) and estimate script (research ANL-006-D7)
 
     #if DEBUG
+    /// Parses `<bpm>:<confidence>[:<polls>:<confidence2>]`: the first confidence for `polls` polls,
+    /// then the second (one phase when the last two are missing); nil when malformed.
+    static func estimateScript(_ text: String) -> ((Int) -> TempoEstimate?)? {
+        let parts: [Double] = text.split(separator: ":").compactMap { (part: Substring) -> Double? in Double(part) }
+        guard parts.count == 2 || parts.count == 4 else { return nil }
+        let bpm: Double = parts[0]
+        let first: Double = parts[1]
+        let polls: Int = parts.count == 4 ? Int(parts[2]) : Int.max
+        let second: Double = parts.count == 4 ? parts[3] : first
+        return { (poll: Int) -> TempoEstimate? in
+            let confidence: Double = poll <= polls ? first : second
+            return TempoEstimate(bpm: bpm, confidence: confidence, beatNanoseconds: nil)
+        }
+    }
+
     /// A clock that advances by `stepMilliseconds` on every reading.
     static func syntheticClock(stepMilliseconds: Double) -> () -> UInt64 {
         var now: UInt64 = 1_000_000_000

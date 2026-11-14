@@ -1,9 +1,11 @@
 // TempoControls.swift — the tap tempo group in the visualizer controls (SHOW-011-R12, R13, R17;
 // contracts/tempo-source.md "App").
 //
-// The readout ("120 BPM" over "Manual"/"Detected", or "—"), the Tap button and, only while a
-// manual tempo is set, Reset tempo. VoiceOver reads the readout as one element ("Tempo, 120 BPM,
-// manual"); the Tap button's value is the progress ("Tap 2 of 4") or the tempo. Text styles scale
+// The readout, the Tap button and, only while a manual tempo is set, Reset tempo. ANL-006: the
+// readout shows the BPM over a state word ("120 BPM"/"Stable", "≈120 BPM"/"Uncertain",
+// "—"/"Searching", "120 BPM"/"Manual"), with no dimming (ACC-004's contrast audit) and no
+// animation. VoiceOver reads it as one element ("Tempo, About 120 BPM, uncertain"); the Tap
+// button's value is the progress ("Tap 2 of 4") or the same words. Text styles scale
 // with Dynamic Type; `compact` shows the buttons as icons (the one-row layout, FR-087).
 import PerformanceControl
 import SwiftUI
@@ -15,22 +17,23 @@ struct TempoControls: View {
     var body: some View {
         let tempo = coordinator.tempo
         let snapshot = tempo.snapshot
-        let origin = TempoCoordinator.originText(snapshot)
+        let readout: TempoReadout = tempo.readout
+        let number: String = TempoCoordinator.readoutText(readout)
+        let word: String = TempoCoordinator.stateText(readout)
+        let spoken: String = TempoCoordinator.accessibilityValue(readout)
         HStack(spacing: 8) {
             VStack(alignment: .trailing, spacing: 0) {
-                Text(TempoCoordinator.readoutText(snapshot))
+                Text(number)
                     .font(.subheadline.monospacedDigit())
-                if !origin.isEmpty {
-                    Text(origin)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                Text(word)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
             .lineLimit(1)
             .minimumScaleFactor(0.7)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Tempo")
-            .accessibilityValue(TempoCoordinator.accessibilityValue(snapshot))
+            .accessibilityValue(spoken)
             .accessibilityAddTraits(.isStaticText)   // ACC-004: a readout, not a control (hit-region audit)
             .accessibilityIdentifier("tempoReadout")
 
