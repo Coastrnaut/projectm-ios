@@ -39,6 +39,7 @@ extension AppCoordinator {
             guard let self else { return [] }
             let notes = self.applyShowScene(document, warnings: warnings, refresh: true)
             self.sceneSwitchReached(.applied)   // UIX-002-R8: the switcher's latency ends at the applied state
+            self.scenePreviews.sceneApplied(document.id)   // SCN-006: a picture after the settle, when it has none
             return notes
         }
         show.availability = { [weak self] () -> StoredMediaAvailability in
@@ -57,6 +58,13 @@ extension AppCoordinator {
         }
         // MIDI-006: note triggers step the show and use OUT-010's blackout (kept out of init's type-check budget).
         midiMappings.connectNoteActions(MIDINoteActionPerformer(show: show, external: externalDisplay))
+        connectScenePreviews()   // SCN-006
+        // MIDI-007: program changes and notes select scenes through Go to Cue; "not found" on the `.midi` lane.
+        midiMappings.connectSceneActions(MIDISceneActionPerformer(show: show, announce: midiMappings.announce))
+        midiMappings.sceneDisplayName = { [weak show] (id: String) -> String? in
+            guard let show, show.firstCue(ofScene: id) != nil else { return nil }
+            return show.displayName(ofScene: id)
+        }
     }
 
     /// Sets a validated scene's look; returns the notes for the step's notice.
@@ -78,6 +86,7 @@ extension AppCoordinator {
         var notes: [String] = []
         if !apply.omittedKinds.isEmpty { notes.append("\(Self.showOmittedLayersNote) (\(apply.omittedKinds.joined(separator: ", "))).") }
         if apply.missingMedia { notes.append(Self.showMissingMediaNote) }
+        noteAppliedSceneMedia(document, missingMedia: apply.missingMedia)   // MED-013-R2: the placeholder tile
         return notes
     }
 
@@ -105,7 +114,9 @@ extension AppCoordinator {
     func addCurrentSceneToShow() -> Bool {
         let look = showLook
         let document = ShowSceneSnapshot.document(look, id: UUID().uuidString, name: look.visual.title)
-        return show.addScene(document, label: look.visual.title)
+        guard show.addScene(document, label: look.visual.title) else { return false }
+        scenePreviews.sceneSaved(document.id)   // SCN-006: the output already shows the new scene
+        return true
     }
 
     // MARK: Controls and keys

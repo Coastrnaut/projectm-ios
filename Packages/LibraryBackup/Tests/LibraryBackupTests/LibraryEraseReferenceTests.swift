@@ -92,6 +92,10 @@ final class LibraryEraseReferenceTests: XCTestCase {
         XCTAssertEqual(lib.photos.payloadNames().count, 2, "the shared payload stays for the current photo; the lone one is deleted")
         XCTAssertEqual(lib.videos.payloadNames(), [], "the video's last reference went, and its payload with it")
         XCTAssertEqual(defaults.values, settings, "erasing scenes removes no setting")
+        // MED-013-R9: the erased scenes' identifiers leave no relink hint (released payload names).
+        XCTAssertTrue(lib.photos.releasedIDs().isEmpty)
+        XCTAssertTrue(lib.videos.releasedIDs().isEmpty)
+        XCTAssertNil(lib.photos.knownPayloadName(of: alone))
     }
 
     func testErasingMediaLeavesScenesNamingMediaThatIsNoLongerStored() throws {
@@ -107,6 +111,9 @@ final class LibraryEraseReferenceTests: XCTestCase {
         for id in [current, sharing, alone, unrelated] { XCTAssertNil(lib.photos.resolve(id), "\(id) no longer resolves") }
         XCTAssertNil(lib.videos.resolve(clip))
         XCTAssertNil(defaults.values[LibrarySettingsPolicy.photoKey], "the current photo choice is cleared")
+        // MED-013-R9: the registry (and its released payload names) went with the folder.
+        XCTAssertFalse(FileManager.default.fileExists(atPath: lib.photos.directory.appendingPathComponent(ContentAddressedMediaFolder.registryName).path))
+        XCTAssertNil(lib.photos.knownPayloadName(of: alone), "only relinking by replacement is left")
     }
 
     func testErasingScenesAndMediaTogetherReleasesNothingSeparately() throws {

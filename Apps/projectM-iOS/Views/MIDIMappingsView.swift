@@ -4,6 +4,8 @@
 // "Curve" row shows the curve summary and opens `MIDIMappingOptionsView`. Small views so each body stays under CI's
 // type-check budget. No animation; announcements come from the coordinator through the shared announcer.
 // MIDI-006-R8: a "Note triggers" section, one row per trigger target with its note, Learn and Delete.
+// MIDI-007-R9: a "Scene triggers" section, one row per scene mapping with Delete, and the "Program number selects
+// cue" picker. Scenes are assigned from Settings › Show (Assign MIDI…).
 import ParameterGraph
 import PerformanceControl
 import SwiftUI
@@ -16,6 +18,7 @@ struct MIDIMappingsView: View {
             MIDIMappingsStatusSection(mappings: mappings)
             MIDIMappingsRowsSection(mappings: mappings)
             MIDINoteTriggersSection(mappings: mappings)   // MIDI-006-R8
+            MIDISceneTriggersSection(mappings: mappings)   // MIDI-007-R9
         }
         .navigationTitle("MIDI Mappings")
         .toolbar { MIDIMappingsToolbar(mappings: mappings) }
@@ -163,5 +166,78 @@ private struct MIDINoteRowView: View {
                     .accessibilityIdentifier("midiNoteDelete." + row.id)
             }
         }
+    }
+}
+
+/// MIDI-007-R9: the scene mappings and the position mode.
+private struct MIDISceneTriggersSection: View {
+    var mappings: MIDIMappingCoordinator
+
+    var body: some View {
+        Section {
+            ForEach(mappings.sceneRows) { (row: MIDISceneRow) in
+                MIDISceneRowView(row: row, delete: { () -> Void in mappings.deleteSceneMapping(row.sceneID) })
+            }
+            MIDIProgramCueModePicker(mappings: mappings)
+        } header: {
+            Text("Scene triggers")
+        } footer: {
+            Text(MIDIMappingCoordinator.sceneFooterText)
+        }
+    }
+}
+
+private struct MIDISceneRowView: View {
+    let row: MIDISceneRow
+    let delete: () -> Void
+
+    var body: some View {
+        HStack {
+            LabeledContent(row.name, value: row.control)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(row.accessibilityLabel)
+                .accessibilityIdentifier("midiScene." + row.id)
+            Button("Delete", role: .destructive, action: delete)
+                .buttonStyle(.borderless)
+                .accessibilityLabel("Delete scene mapping for " + row.name)
+                .accessibilityIdentifier("midiSceneDelete." + row.id)
+        }
+    }
+}
+
+/// Off, Any channel, Channel 1–16 (tags -2, -1, 0–15).
+private struct MIDIProgramCueModePicker: View {
+    var mappings: MIDIMappingCoordinator
+
+    private static let channels: [Int] = Array(0...15)
+
+    private var selection: Binding<Int> {
+        Binding<Int>(get: { () -> Int in Self.tag(mappings.sceneBindings.programCueMode) },
+                     set: { (tag: Int) -> Void in mappings.setProgramCueMode(Self.mode(tag)) })
+    }
+
+    static func tag(_ mode: MIDIProgramCueMode) -> Int {
+        switch mode {
+        case .off: -2
+        case .anyChannel: -1
+        case let .channel(channel): Int(channel)
+        }
+    }
+
+    static func mode(_ tag: Int) -> MIDIProgramCueMode {
+        if tag == -1 { return .anyChannel }
+        guard tag >= 0, tag <= 15 else { return .off }
+        return .channel(UInt8(tag))
+    }
+
+    var body: some View {
+        Picker("Program number selects cue", selection: selection) {
+            Text("Off").tag(-2)
+            Text("Any channel").tag(-1)
+            ForEach(Self.channels, id: \.self) { (channel: Int) in
+                Text("Channel " + String(channel + 1)).tag(channel)
+            }
+        }
+        .accessibilityIdentifier("midiProgramCueMode")
     }
 }

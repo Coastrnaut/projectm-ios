@@ -43,6 +43,11 @@
 //   4,096 mono samples. While the oscilloscope is shown, each frame copies the newest history into a
 //   preallocated scratch and passes it to the generator instead of the bands; modulation still advances
 //   with the bands. The oscilloscope's line and window change only its configuration.
+// * Lissajous (VIS-004; research VIS-004-D1): the same tap also keeps the newest 2,048 stereo frames; while
+//   the Lissajous is shown each frame copies them (interleaved) into the same scratch and passes them to the
+//   generator. Its plot and persistence change only its configuration; the persistence half-life is the
+//   ACC-012-capped one (`LissajousConfiguration.persistenceHalfLife(enabled:clamp:)`), re-applied whenever
+//   the style or `safetyClamp` changes.
 // * REC-001 (research REC-001-D1): `captureFrame` turns the layer's `framebufferOnly` off until the
 //   next readable drawable is drawn, blits that drawable (the frame as shown: glow and Reduce
 //   flashing included) into a shared buffer and delivers 8-bit sRGB BGRA on the main actor; then
@@ -57,6 +62,7 @@ import AnalysisFeatures
 import AudioCore
 import FlashSafety
 import FrameCapture
+import FrameTiming
 import Metal
 import ParameterGraph
 import PerformanceControlAnalysis
@@ -102,6 +108,16 @@ final class NativeSpectrumHost: PresentationBoundResource {
     private var paused = true
     private(set) var isSuspended = false
     private var meter = FrameRateMeter()
+    /// PERF-001: the stage timer while the performance overlay is shown (nil: no timing work), and the
+    /// frames' command buffers until their GPU times are known.
+    var stageTimer: FrameStageTimer? {
+        didSet {
+            stageTimer?.configure(pipeline: Self.frameStages)
+            gpuTimes.reset()
+        }
+    }
+    static let frameStages: [FrameStage] = [.audio, .render, .encode, .present]
+    private let gpuTimes = MetalGPUFrameTimes()
     private var quality = QualityGovernor.current()
     private var observers: [NSObjectProtocol] = []
 
@@ -115,7 +131,11 @@ final class NativeSpectrumHost: PresentationBoundResource {
     /// modulation, before the bloom and the generator's luminance model) and to the frame context's flash
     /// envelope. `.standard` changes nothing (ADR-0049).
     var safetyClamp: SafetyClamp = .standard {
-        didSet { if safetyClamp != oldValue { resolveEffectiveGlow() } }
+        didSet {
+            guard safetyClamp != oldValue else { return }
+            resolveEffectiveGlow()
+            applyLissajousPersistence()   // VIS-004-R9
+        }
     }
 
     /// MIDI-003-R7, R8: live values of MIDI-mapped glow parameters (`BloomParameters.midiControlledIDs`). They
@@ -146,6 +166,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         (generator as? CircularSpectrumGenerator)?.configuration.palette
             ?? (generator as? LinearSpectrumGenerator)?.configuration.palette
             ?? (generator as? OscilloscopeGenerator)?.configuration.palette
+            ?? (generator as? LissajousGenerator)?.configuration.palette
     }
 
     private func applyPalette() {
@@ -161,8 +182,25 @@ final class NativeSpectrumHost: PresentationBoundResource {
             var configuration = scope.configuration
             configuration.palette = palette
             scope.configuration = configuration
+        } else if let lissajous = generator as? LissajousGenerator {
+            var configuration = lissajous.configuration
+            configuration.palette = palette
+            lissajous.configuration = configuration
         }
     }
+
+    /// VIS-004-R9: the Lissajous's persistence half-life under the safety clamp (0 = off).
+    private func applyLissajousPersistence() {
+        guard case let .lissajous(_, persistence) = style, let lissajous = generator as? LissajousGenerator else { return }
+        let halfLife: Double = LissajousConfiguration.persistenceHalfLife(enabled: persistence, clamp: safetyClamp)
+        guard lissajous.configuration.persistenceHalfLife != halfLife else { return }
+        var configuration = lissajous.configuration
+        configuration.persistenceHalfLife = halfLife
+        lissajous.configuration = configuration
+    }
+
+    /// VIS-004: the Lissajous's effective persistence half-life (tests; nil for another visual).
+    var lissajousPersistenceHalfLife: Double? { (generator as? LissajousGenerator)?.configuration.persistenceHalfLife }
 
     /// The bloom runs (available and the effective glow not pass-through).
     var glowActive: Bool { chain != nil && !effectiveGlow.isPassThrough }
@@ -251,6 +289,12 @@ final class NativeSpectrumHost: PresentationBoundResource {
                                                       configuration: oscilloscopeConfiguration(line: line, windowMilliseconds: window))
             generator.barCount = barCount
             return generator
+        case let .lissajous(mode, _):
+            // The persistence half-life is applied by `applyLissajousPersistence()` (it needs the clamp).
+            let generator = try LissajousGenerator(device: device, pixelFormat: .bgra8Unorm_srgb,
+                                                   configuration: LissajousConfiguration(mode: mode))
+            generator.barCount = barCount
+            return generator
         }
     }
 
@@ -279,6 +323,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         view.onLayout = { [weak self] in self?.layoutDrawable() }
         observeFrameRatePressure()
         applyGlow()
+        applyLissajousPersistence()   // VIS-004-R9
     }
 
     /// Switches the drawn spectrum (VIS-002-D5). Another kind builds its generator (throws
@@ -298,12 +343,18 @@ final class NativeSpectrumHost: PresentationBoundResource {
             configuration.lineThickness = wanted.lineThickness
             configuration.windowMilliseconds = wanted.windowMilliseconds
             scope.configuration = configuration
+        } else if case let .lissajous(mode, _) = newStyle, let lissajous = generator as? LissajousGenerator {
+            var configuration = lissajous.configuration
+            configuration.mode = mode   // a mode change clears the ghosts (VIS-004-R8)
+            lissajous.configuration = configuration
         } else {
             let replacement = try Self.makeGenerator(device: device, style: newStyle, barCount: generator.barCount)
             generator = replacement
             applyPalette()   // ACC-003-R13: a new generator starts with the default palette
+            samples.update(repeating: 0, count: WaveformFrameBuffer.capacity)   // VIS-004: mono and stereo histories differ
         }
         style = newStyle
+        applyLissajousPersistence()   // VIS-004-R9
         applyGlow()
     }
 
@@ -430,6 +481,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         case .circular: return glow
         case let .linear(orientation, _): return "\(orientation.title), \(glow)"
         case let .oscilloscope(_, window): return "\(window) ms, \(glow)"
+        case let .lissajous(mode, persistence): return "\(mode.title), Persistence \(persistence ? "on" : "off"), \(glow)"   // VIS-004-R14
         }
     }
 
@@ -582,6 +634,11 @@ final class NativeSpectrumHost: PresentationBoundResource {
     fileprivate func frame(_ link: CADisplayLink) {
         let layer = view.metalLayer
         guard view.window != nil, layer.drawableSize.width >= 1, layer.drawableSize.height >= 1 else { return }
+        let timer: FrameStageTimer? = stageTimer   // PERF-001
+        timer?.beginFrame()
+        defer { timer?.endFrame() }
+        if let timer { gpuTimes.drain(into: timer) }
+        timer?.begin(.audio)
         if let info = analyzer.output.readLatest(into: bands, capacity: SpectrumBarCount.maximum) {
             bandCount = info.count
             bandSession = info.session
@@ -594,7 +651,9 @@ final class NativeSpectrumHost: PresentationBoundResource {
         let interval: Double = lastLinkTimestamp.map { (previous: CFTimeInterval) -> Double in link.timestamp - previous } ?? 0
         lastLinkTimestamp = link.timestamp
         let smoothedBands = smoother.update(target: bands, count: bandCount, frameInterval: interval, generation: bandSession)
+        timer?.end(.audio)   // the drawable wait is not audio work; the modulation below is (accumulated)
         guard let drawable = layer.nextDrawable(), let commands = queue.makeCommandBuffer() else { return }
+        timer?.begin(.audio)
         let context: VisualFrameContext = frameContext(timeNanoseconds: UInt64(max(link.targetTimestamp, 0) * 1e9),
                                                        frameDuration: link.targetTimestamp - link.timestamp)
         let bandInput = UnsafeBufferPointer(start: bands, count: bandCount)
@@ -605,9 +664,14 @@ final class NativeSpectrumHost: PresentationBoundResource {
         if case .oscilloscope = style {
             _ = waveform?.output.readLatest(into: samples, capacity: WaveformFrameBuffer.capacity)
             input = UnsafeBufferPointer(start: samples, count: WaveformFrameBuffer.capacity)
+        } else if case .lissajous = style {   // VIS-004: the newest stereo history (interleaved)
+            _ = waveform?.stereoOutput.readLatest(into: samples, capacity: WaveformFrameBuffer.capacity)
+            input = UnsafeBufferPointer(start: samples, count: WaveformFrameBuffer.capacity)
         } else {
             input = smoothedBands   // ANL-003: the spectra draw the smoothed bands
         }
+        timer?.end(.audio)
+        timer?.begin(.render)
         let target = drawable.texture
         var drawn = false
         if let chain, glowActive {
@@ -623,15 +687,21 @@ final class NativeSpectrumHost: PresentationBoundResource {
         if !drawn && !glowActive {
             drawn = generator.encode(into: target, commandBuffer: commands, bands: input, context: context)
         }
+        timer?.end(.render)
         guard drawn else { return }
         encodeCaptureIfPending(target, commands: commands)   // REC-001; nothing without a request
+        if videoRecording != nil { timer?.begin(.encode) }
         // REC-003: the drawn drawable (glow included) copied into the recording's pixel buffer.
         videoRecording?.record(commandBuffer: commands, presentationNanoseconds: context.timeNanoseconds,
                                drawable: target) { (texture: MTLTexture) -> Bool in
             Self.encodeRecordingCopy(from: target, into: texture, commands: commands)
         }
+        timer?.end(.encode)
+        timer?.begin(.present)
         commands.present(drawable)
         commands.commit()
+        timer?.end(.present)
+        if timer != nil { gpuTimes.track(commands) }
         presentedFrameCount += 1
         if meter.record(presentedAt: link.timestamp) { metrics = meter.metrics }
     }
@@ -720,12 +790,15 @@ enum NativeSpectrumStyle: Equatable, Sendable {
     case linear(LinearSpectrumOrientation, spacing: Double)
     /// VIS-003: the waveform oscilloscope.
     case oscilloscope(line: OscilloscopeLine, windowMilliseconds: Int)
+    /// VIS-004: the Lissajous scope.
+    case lissajous(mode: LissajousMode, persistence: Bool)
 
     var title: String {
         switch self {
         case .circular: VisualChoice.circularSpectrum.title
         case .linear: VisualChoice.linearSpectrum.title
         case .oscilloscope: VisualChoice.oscilloscope.title
+        case .lissajous: VisualChoice.lissajous.title
         }
     }
 
@@ -734,6 +807,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .circular: "circularSpectrum"
         case .linear: "linearSpectrum"
         case .oscilloscope: "oscilloscope"
+        case .lissajous: "lissajous"
         }
     }
 }

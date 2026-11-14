@@ -23,7 +23,8 @@ struct LibraryRestorePreview: Equatable {
     /// One line per kind of record ("Scenes: 3 new, 1 already here, 1 clash").
     var lines: [(title: String, text: String)] {
         let sections: [(LibraryRestoreSection, String)] = [(.scenes, "Scenes"), (.currentScene, "Current scene"), (.presets, "Presets"),
-                                                           (.collections, "Collections"), (.settings, "Settings"), (.photos, "Photos")]
+                                                           (.collections, "Collections"), (.tags, "Preset tags"), (.settings, "Settings"),
+                                                           (.photos, "Photos")]
         var result: [(title: String, text: String)] = []
         for (section, title) in sections {
             let new: Int = plan.count(section, .new)

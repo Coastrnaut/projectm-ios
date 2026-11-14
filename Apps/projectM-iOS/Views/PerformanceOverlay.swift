@@ -4,7 +4,8 @@
 // renderer or the circular spectrum). PERF-014-R14: a "render:" line with the shown visual's render
 // health while anything was recorded (state, last reason, counts). AUD-012-R9: a "sanitized:" line
 // with the number of samples the renderer boundary replaced, only when it is not zero (a count, never
-// audio content).
+// audio content). PERF-001-R9: per-stage frame timings (median/p95 ms per stage, the frame's GPU time) while
+// the overlay is shown; asking for them each second also keeps the stage timer on the shown visual.
 import CaptureKit
 import CaptureUI
 import Rendering
@@ -15,6 +16,8 @@ struct PerformanceOverlay: View {
     let manager: CaptureManager
     /// PERF-014: nil while the shown visual's record is pristine.
     var renderHealth: () -> String? = { nil }
+    /// PERF-001: the stage timer's lines (`FrameStageReport.lines`); empty when nothing is measured.
+    var stageLines: () -> [String] = { [] }
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { _ in
@@ -33,6 +36,7 @@ struct PerformanceOverlay: View {
                     Text("render: \(render)")
                         .accessibilityIdentifier("overlayRender")
                 }
+                stageSection(stageLines())
             }
             .font(.system(.caption, design: .monospaced))
             .foregroundStyle(.white)
@@ -42,6 +46,14 @@ struct PerformanceOverlay: View {
             .accessibilityIdentifier("performanceOverlay")
         }
         .allowsHitTesting(false)
+    }
+
+    /// PERF-001: one text line per stage line.
+    @ViewBuilder private func stageSection(_ lines: [String]) -> some View {
+        if !lines.isEmpty {
+            Text(lines.joined(separator: "\n"))
+                .accessibilityIdentifier("overlayStages")
+        }
     }
 
     /// AUD-012-R9: "sanitized: 12 samples", or nil when nothing was replaced.

@@ -33,6 +33,7 @@
 // SHOW-001: when the show has cues, its row (Previous cue, "Cue 2 of 5 · Intro", Next cue) sits above
 // the buttons in both layouts (ShowCueRow).
 // AUD-012: "Switch Source" (after Stop) opens the list of the other available sources.
+// UIX-004: the favorite parameter shelf (pinned controls) sits above the buttons while it has pins.
 import CameraLayer
 import CaptureKit
 import CaptureUI
@@ -111,6 +112,8 @@ struct ControlsOverlay: View {
                 ShowCueRow(coordinator: coordinator)
                 Divider()
             }
+            ParameterShelfStrip(shelf: coordinator.parameterShelf, settings: coordinator.settings,   // UIX-004-R3
+                                endCoalescing: { coordinator.sceneHistory.endCoalescing() }, touched: { coordinator.showControls() })
             // Accessibility text sizes use the one-row icon layout too: seven labeled buttons in a
             // row cannot fit (FR-070).
             if sizeClass == .compact || typeSize.isAccessibilitySize {
