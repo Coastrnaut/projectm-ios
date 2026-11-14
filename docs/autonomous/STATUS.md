@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T22:38:12Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T22:40:05Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,20 +9,21 @@
 
 | State | Features |
 |---|---|
-| audited | 82 |
-| implementing | 5 |
-| built | 2 |
+| audited | 81 |
+| implementing | 6 |
+| built | 1 |
+| unit_passed | 1 |
 | integrated | 236 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | built | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 14 | 2 | 1 | 134 | 0 |
-| P2 | 57 | 3 | 1 | 18 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 0 | 84 | 1 |
+| P1 | 13 | 3 | 0 | 1 | 134 | 0 |
+| P2 | 57 | 3 | 1 | 0 | 18 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -2382,6 +2383,18 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `74c0bc1fd8b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-015/20261113T155416/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `74c0bc1fd8b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-015/20261113T155416/swift-test_SceneFormat.log`)
 - `post-merge: projectM-iOSTests 275; RecordingDiskGuardUITests 2, VideoRecording 2, CaptureShare UI tests; check_privacy_manifest OK on the merged Debug app (DiskSpace E174.1 declared, scanner reads the debug dylib)`: pass at `d1a76394fab1` (log `.autonomous/logs/integration/rec-015/app-tests.log`)
+
+### REC-016 Recording interruption recovery (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `a119be84c3b9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-016/20261114T173156/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `a119be84c3b9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-016/20261114T173156/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `a119be84c3b9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-016/20261114T173156/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `a119be84c3b9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-016/20261114T173156/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `a119be84c3b9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-016/20261114T173156/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `a119be84c3b9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-016/20261114T173156/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `a119be84c3b9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-016/20261114T173156/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `a119be84c3b9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-016/20261114T173156/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `a119be84c3b9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-016/20261114T173156/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `a119be84c3b9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-016/20261114T173156/swift-test_ShowControl.log`)
 
 ### SCN-001 Versioned scene format (integrated)
 - `python3 scripts/check_compliance.py`: pass at `65ce45cdc91d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-001/20261113T152510/compliance.log`)
