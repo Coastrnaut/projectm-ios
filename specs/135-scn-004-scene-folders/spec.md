@@ -48,6 +48,16 @@ human interaction); each answer is the conservative, local-first option.
 - Q: Does the scene switcher (UIX-002) show folders? → A: It stays flat in show order (show order is what a performer steps through), and each row gains its scene's folder path as a secondary line and in its VoiceOver value; a search also matches the folder path. Rejected: drill-down in the switcher (it is a quick, keyboard-first overlay).
 - Q: Where does a duplicated scene (SCN-003) go? → A: Into the same folder as its source, so a variation sits next to the scene it came from.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Can a scene be shown (applied) from the folder view? → A: Yes, through one action, "Go to Cue", which goes to the first cue (in show order) that shows the scene, exactly as SHOW-001's Go to Cue; tapping a scene row does nothing else, so browsing never changes the output by accident. Rejected: tap to apply (an accidental tap on stage changes the look); no way to apply (the folder view would be a dead end).
+- Q: How does the user pick a destination for "Move to…"? → A: A sheet lists "Top Level" and the whole folder tree, indented by depth, with each folder's path read by VoiceOver; destinations that would be refused (the current folder, for a folder itself and its descendants, or one that would exceed 5 levels) are shown dimmed and cannot be chosen. Rejected: drag and drop between levels (hard with VoiceOver and Full Keyboard Access, and impossible across drill-down screens).
+- Q: Are folder edits undoable? → A: No undo history: a move is reversed by moving back, and folder deletion never deletes a scene. Folder edits are not scene content, so they stay out of SCN-010's scene history (a scene undo must never reorganize the library).
+- Q: What does VoiceOver announce? → A: A completed move ("Moved Finale to Set A / Encore."), a created, renamed or deleted folder, and every refusal with its reason, through the shared announcer's library lane. Rejected: silent edits (a VoiceOver user cannot see the row disappear from the current level).
+- Q: Can a folder hold a scene that is not stored any more? → A: No. Assignments exist only for scenes the show's cues refer to; when the last cue of a scene is removed, its assignment is dropped at the next save together with the scene file (as SHOW-001 removes the file). A scene that is referred to but unreadable keeps its folder and is listed as "Scene missing".
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - I sort my scenes into folders (Priority: P1) — MVP
@@ -126,10 +136,11 @@ without folder fields decodes with no folders and re-encodes byte for byte.
 - **SCN-004-R7**: The folder data is stored in the show's index as optional fields; format version stays 1; a file without them reads as all scenes at the top level, and a show without folders encodes to the same bytes as before this row. Encoding is deterministic (same show → same bytes).
 - **SCN-004-R8**: Damaged folder data never refuses the show: invalid folders (bad ID or name, unknown parent, cycle, too deep, duplicate sibling name, over the limit) and assignments to unknown folders or to scenes no cue shows are dropped with a warning.
 - **SCN-004-R9**: The library backup and exact restore (FILE-005) carry the folders; merge restore and scene import keep the existing folders and put imported scenes at the top level; single-scene archives (FILE-001) carry no folder.
-- **SCN-004-R10**: Settings → Show → Scene Folders lists the folders and scenes of one level (folders first, then scenes, each sorted by name), with drill-down into a folder, "New Folder", and per row Rename / Move to… / Delete (folders) and Move to… (scenes) through swipe actions, context menus and VoiceOver actions.
+- **SCN-004-R10**: Settings → Show → Scene Folders lists the folders and scenes of one level (folders first, then scenes, each sorted by name), with drill-down into a folder, "New Folder", and per row Rename / Move to… / Delete (folders) and Move to… (scenes) through swipe actions, context menus and VoiceOver actions, plus Go to Cue for a scene (its first cue). "Move to…" offers Top Level and the folder tree, with refused destinations dimmed.
 - **SCN-004-R11**: The scene switcher stays flat in show order; each row shows its scene's folder path (e.g. "Set A / Encore") and VoiceOver reads ", folder Set A / Encore"; search also matches the folder path.
 - **SCN-004-R12**: Duplicate Scene puts the copy in its source's folder.
-- **SCN-004-R13**: Every folder row and scene row has a VoiceOver label (its name), a value ("Folder, 3 scenes" or "Scene, 2 cues" plus ", scene missing"), and named actions for its operations (FR-070); refusals and completed moves are announced through the app's announcer.
+- **SCN-004-R13**: Every folder row and scene row has a VoiceOver label (its name), a value ("Folder, 3 scenes" or "Scene, 2 cues" plus ", scene missing"), and named actions for its operations (FR-070); refusals, completed moves and folder creation, rename and deletion are announced through the app's announcer (library lane).
+- **SCN-004-R15**: Folder edits have no undo history and are not part of SCN-010's scene history.
 - **SCN-004-R14**: No networking, no new stored settings keys; all data stays in the app's local show folder.
 
 ### Key Entities
