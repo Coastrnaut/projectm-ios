@@ -129,7 +129,7 @@ entry whose file is gone) open without error and lead to re-rendering exactly th
 - **PRE-001-R10**: Generation MUST stop while the app cannot present frames and MUST be throttled: one thumbnail at a time, utility priority, a 150 ms pause after each.
 - **PRE-001-R14**: Thumbnails MUST be stored as PNG files; they appear only in the preset browser's rows.
 - **PRE-001-R11**: A preset that fails to render MUST keep its placeholder and MUST NOT be retried in the same session; failures are not persisted.
-- **PRE-001-R12**: Thumbnails are decorative: VoiceOver MUST read the row exactly as before (no new spoken element).
+- **PRE-001-R12**: Thumbnails are decorative: the row's spoken label MUST stay exactly as before (the picture adds no spoken text and no extra VoiceOver stop); tests may still find the picture by its accessibility identifier.
 - **PRE-001-R13**: The cache logic MUST build and be tested on Linux; the renderer MUST sit behind an interface so Linux and tests use a fake.
 
 ### Key Entities

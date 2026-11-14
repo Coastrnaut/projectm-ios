@@ -47,5 +47,5 @@ shuts it down with the renderer.
 
 ## C5 The row (app)
 
-- `PresetRow` shows `PresetThumbnailView` first; image identifier `thumbnail:<name>`, placeholder `thumbnailPlaceholder:<name>`; both hidden from VoiceOver.
+- `PresetRow` shows `PresetThumbnailView` first; image identifier `thumbnail:<name>`, placeholder `thumbnailPlaceholder:<name>`; neither adds spoken text or a VoiceOver stop (the row's label is unchanged).
 - Requests only for playable presets; locked presets show the lock placeholder.

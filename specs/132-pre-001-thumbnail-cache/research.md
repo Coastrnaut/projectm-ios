@@ -41,7 +41,7 @@ Decisions recorded 2026-11-14 under owner rules 4 and 9.
 
 ## PRE-001-D8: The row
 
-- **Decision**: `PresetThumbnailView` at the leading edge of the shared `PresetRow` (all browser lists), 64 × 36 points, rounded, with a placeholder (a neutral tile with a `sparkles` symbol; a `lock` symbol for locked presets). `.task(id:)` requests the image when the row appears; SwiftUI cancels it when the row disappears. The image is decorative: it is hidden from VoiceOver, so the row's spoken label is unchanged (R12). For the UI test the image carries the identifier `thumbnail:<preset name>` and the placeholder `thumbnailPlaceholder:<preset name>`.
+- **Decision**: `PresetThumbnailView` at the leading edge of the shared `PresetRow` (all browser lists), 64 × 36 points, rounded, with a placeholder (a neutral tile with a `sparkles` symbol; a `lock` symbol for locked presets). `.task(id:)` requests the image when the row appears; SwiftUI cancels it when the row disappears. The image is decorative: it adds no spoken text and no VoiceOver stop, so the row's spoken label is unchanged (R12); it keeps an identifier for tests. For the UI test the image carries the identifier `thumbnail:<preset name>` and the placeholder `thumbnailPlaceholder:<preset name>`.
 - **Decoded images**: an `NSCache` of `UIImage` keyed by stable ID (evicted by the system under memory pressure).
 - **Owned presets**: the model asks for a thumbnail only when the preset is playable (`PresetCoordinator.isPlayable`); user presets load from the user library's playable copy (`userPresetData`), so waiting or quarantined presets are never drawn.
 
