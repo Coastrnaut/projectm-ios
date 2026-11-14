@@ -1,0 +1,60 @@
+# Tasks: ANL-014 Loudness Envelope
+
+**Input**: Design documents in `specs/094-anl-014-loudness-envelope/` (spec.md, plan.md,
+research.md, data-model.md, contracts/loudness-envelope.md, quickstart.md).
+
+**Tests**: test-first. Each test task comes before the code it covers; the red run (compile failure)
+is recorded before the production change. Budgets (owner rule 7): a unit test about 1-2 s (≤ 10 s),
+each package suite under 1 minute; the AnalysisFeatures Linux-shape suite already takes ≈ 62-67 s,
+so this row adds at most a few hundred milliseconds there. Representative cases only.
+
+**Format**: `- [ ] ID [P?] [Story?] Description with file path`. `[P]` = can run in parallel.
+`{sim}` = needs the row's own iOS 27.2 simulator "ANL14 iPhone 17" (created for this row, deleted
+afterwards). Inside descriptions "T03" is short for `ANL-014-T03`. A task is ticked only when its
+evidence was produced, with " — Verified <date>: <how>" appended. Logs go to `.build/scratch/`.
+
+## Phase 1: Setup
+
+- [ ] ANL-014-T01 Record the baseline: `swift test --package-path Packages/AnalysisFeatures` in the Linux shape (`-Xswiftc -DANALYSIS_NO_ACCELERATE --scratch-path Packages/AnalysisFeatures/.build/linux`); `check_compliance.py`, `validate_docs.py`, `check_motion_policy.py`, `check_permission_catalog.py`, `test_scripts.py`. Evidence: counts and durations recorded here.
+
+## Phase 2: Foundational (blocks every story)
+
+- [ ] ANL-014-T02 Write `Packages/AnalysisFeatures/Tests/AnalysisFeaturesTests/LoudnessEnvelopeTests.swift` with helpers (one window of synthetic PCM through `SpectrumAnalyzer`; a stream of PCM through `SpectrumStream` frame by frame) and tests for `KWeighting` (contract C1: at 48 kHz the designed shelf and high-pass coefficients equal BS.1770's published values within 1e-6; 10·log10 `powerGain` at 997 Hz = 0.69 ± 0.02 dB at 44.1 and 48 kHz; `table` has `size.binCount` entries with entry 0 = 0) and `LoudnessConfiguration` (`.standard` = 44,100 Hz, −60, 0, attack 0.1 s, release 0.4 s; rate "finite, > 0" and above 3,364 Hz, floor "finite, < ceiling", ceiling "finite" each throw; `normalized(decibels:)` −60 → 0, −30 → 0.5, 0 → 1, +6 → 1, −90 → 0, NaN → 0). Record the red run.
+- [ ] ANL-014-T03 Implement `Packages/AnalysisFeatures/Sources/AnalysisFeatures/KWeighting.swift` and `LoudnessEnvelope.swift` (contracts C1, C2; typed arithmetic steps for every biquad formula; sums in Double; non-finite magnitudes count 0; `process` allocates, locks, logs and reads no clock, ANL-014-R10, R11, checked by reading the diff). Evidence: T02 passes on the host and in the Linux shape.
+
+## Phase 3: User Story 1 - a parameter follows loudness (P1) 🎯 MVP
+
+**Independent test**: `LoudnessEnvelopeTests` acceptance cases.
+
+- [ ] ANL-014-T04 [US1] Add to `LoudnessEnvelopeTests.swift`: (a) calibration: one window of a full-scale 997 Hz sine reads −3.01 ± 0.2 dB (`decibels`); (b) step: a 1 kHz tone at −40 dBFS for 0.5 s, −10 dBFS for 0.75 s, −40 dBFS for 0.75 s, streamed through `SpectrumStream` (2,048 points, hop 512) into one envelope; measure on the sample clock (frame end = index + size) the 90 % rise and fall times from each step to the first frame at or past 90 % of the settled change; assert each equals the documented value (spec Implementation results) within one hop (512 samples) and print both; the envelope stays in 0…1; (c) weighting: equal-amplitude (−20 dBFS) 100 Hz and 2 kHz read 2 kHz higher, and 20 Hz lower than 1 kHz; (d) monotonic: a 1 kHz tone at −50, −40, −30, −20, −10 dBFS gives strictly increasing settled envelopes (print the table). Evidence: passes on both shapes; tables in spec.md.
+
+## Phase 4: User Story 2 - the value never breaks (P1)
+
+- [ ] ANL-014-T05 [US2] Add to `LoudnessEnvelopeTests.swift`: seeded full-scale white noise (±1), a ±1 square wave clipped at ±1 (1 kHz), magnitudes containing NaN and ±Inf, and digital silence from the start each keep `decibels` finite (≥ −120) and `envelope` in 0…1 over many frames; silence after the −10 dBFS tone decays to exactly 0 within 1.0 s and stays 0; `reset()` returns `.silent` and the next frame snaps; a frame at another rate, another size, or with a wrong magnitude count leaves the reading unchanged. Evidence: passes on both shapes.
+
+## Phase 5: User Story 3 - Loudness modulation source (P2)
+
+- [ ] ANL-014-T06 [US3] Write a pipeline test in `LoudnessEnvelopeTests.swift` (stereo: 0.05 s of digital silence, then a 1 kHz tone at −40 dBFS then at −10 dBFS, about 0.25 s each, through a `NormalizedPCMRing` tap and `AnalysisPipeline.step()`): the silent lead frames read `loudness` 0 and `loudnessDecibels` −120; the last frame of the loud part reads a higher `loudness` and `loudnessDecibels` than the last frame of the quiet part; every frame's `loudness` is in 0…1; a configuration whose loudness rate differs throws `.sampleRateMismatch`. Record the red run.
+- [ ] ANL-014-T07 [US3] Implement `AnalysisFrame.loudness` (default 0) and `loudnessDecibels` (default −120) in `AnalysisBusTypes.swift`, `loudness: LoudnessConfiguration = .standard` with the rate check in `AnalysisPipelineConfiguration.swift`, and in `AnalysisPipeline.swift` own the envelope (built for the spectrum's size), reset it per session, run it per frame. Evidence: T06 passes; AnalysisFeatures whole suite on the host and in the Linux shape (delta recorded).
+- [ ] ANL-014-T08 [P] [US3] Add tests in `Packages/ParameterGraph/Tests/`: `AudioFeatureSourceTests` (`audio.loudness` round-trips, reads `frame.loudness`, nil/non-finite → 0), `AudioFeatureModulatorTests` (a Loudness binding follows the value), `ExpressionEvaluationTests` (`audio.loudness` compiles to opcode 16 and reads the frame); `ExpressionPathologicalTests`' closed opcode list gains 16. Record the red run.
+- [ ] ANL-014-T09 [US3] Implement `AudioFeatureSource.loudness` and `AudioFeatureFrame.loudness` in `Packages/ParameterGraph/Sources/ParameterGraph/AudioFeatureSource.swift`, `ExpressionOpcode.loudness = 16` in `CompiledExpression.swift` and `ExpressionCompiler.swift`. Evidence: ParameterGraph and SceneFormat suites pass on the host.
+- [ ] ANL-014-T10 [US3] Add `loudness` to `LiveBandFrameInfo` in `Packages/VisualGenerators/Sources/VisualBandFeed/LiveBandAnalyzer.swift`; in `Apps/projectM-iOS/Visuals/NativeSpectrumHost.swift` keep the last envelope read (0 after a pause restart) and pass it through `applyModulation(bands:kick:centroid:loudness:timeNanoseconds:)`; add `testLoudnessBindsAndDrivesTheGlow` to `Apps/projectM-iOS/Tests/AudioFeatureBindingAppTests.swift`. Evidence: VisualGenerators suite on the host; projectM-iOSTests pass `{sim}`.
+
+## Phase 6: Polish
+
+- [ ] ANL-014-T11 Build and test the remaining dependants (PerformanceControl, Compositor, RenderGoldens, ShowControl); record the step, weighting and level tables and the test cost in `spec.md`; run the five scripts (check_compliance covers ANL-014-R12); count PosterBoard reports; delete the row's simulator; mark the spec Implemented.
+
+## Dependencies
+
+T01 → T02 → T03 → (T04, T05) → T06 → T07 → T08 → T09 → T10 → T11. T08 can be written in parallel
+with T04-T07 (different package).
+
+## Parallel example
+
+After T03: T04-T05 (AnalysisFeatures tests) and T08 (ParameterGraph tests) touch different
+packages and can be written together.
+
+## Implementation strategy
+
+MVP = T01-T04 (the roadmap acceptance in the package); then bounds and silence (T05), the bus (T06,
+T07), the modulation source (T08-T10); polish last.
