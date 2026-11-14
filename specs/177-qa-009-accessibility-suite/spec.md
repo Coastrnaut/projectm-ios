@@ -44,6 +44,16 @@ conservative option that delivers the roadmap row without duplicating ACC-004 an
 - Q: Runtime split? → A: The default run is default size plus AX5 for every screen (one test per screen and layout, each under 30 s). `QA009_FULL=1` (passed as `TEST_RUNNER_QA009_FULL=1`) adds AX3. Post-merge and CI-style checks run the default subset only.
 - Q: What if a check finds a defect? → A: The view is fixed (label, identifier, layout); filters are never used to hide the app's own controls.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: How large is "one scroll"? → A: One held drag (no momentum) of at most 70 % of the screen's visible area, in the control's direction, made in the right-hand margin like the shared `reveal` helper; a control not yet in the tree gets the full 70 % drag.
+- Q: Do the overlapping ACC-004 and ACC-006 tests get removed? → A: No. They also test announcements, alerts, notices, field input and visual-specific rows that are not in the manifest; removing them would lose coverage. The new suite is the single list of primary screens and required controls; overlap is limited to the shared audit, recorded in the plan.
+- Q: How are screens that need state (shelf pins, show cues, an inspected parameter) set up? → A: With existing launch arguments only (argument-domain settings such as `-settings.parameterShelf.pins`, `-uitestShowSeed`, `-uitestInspectParameter`); no new stored keys. New DEBUG-only Settings section anchors (`.id`) may be added for rows deep in Settings.
+- Q: Does a screen opened inside Settings (recording quality, frame rate) count as its own screen? → A: Yes: each is a manifest entry opened at its own Settings section, because a user reaches it as a distinct group of controls.
+- Q: Are VoiceOver custom actions (Move up/down, Pin) checked? → A: No; this suite checks reachability, labels and the audit. Custom actions stay covered by their features' tests (ACC-005, FX-020, UIX-004).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A VoiceOver user can find and name every control they need (Priority: P1) — MVP
@@ -111,6 +121,7 @@ only the default subset in a few minutes; the full matrix runs on demand.
 - **QA-009-R8**: A fast, simulator-free check MUST fail when a manifest identifier no longer appears in the app's source.
 - **QA-009-R9**: Defects found MUST be fixed in the views (labels, identifiers, layout), not filtered.
 - **QA-009-R10**: No app behavior change beyond accessibility fixes and DEBUG-only test aids; no new stored keys; no networking.
+- **QA-009-R11**: One scroll MUST be one held drag of at most 70 % of the visible area; screens needing state MUST be set up with existing launch arguments (no new stored keys).
 
 ### Key Entities
 
