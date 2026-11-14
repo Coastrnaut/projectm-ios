@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T17:24:06Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T17:24:27Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 126 |
 | implementing | 8 |
-| unit_passed | 1 |
-| integrated | 190 |
+| integrated | 191 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 44 | 7 | 1 | 99 | 0 |
-| P2 | 71 | 1 | 0 | 7 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 2 | 0 | 84 | 1 |
+| P1 | 44 | 7 | 100 | 0 |
+| P2 | 71 | 1 | 7 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 135 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-012, ANL-013)
+- 134 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-012, ANL-013)
 
 ## Integrated
 
@@ -149,6 +148,7 @@ The physical-device suite may **not** start:
 | MOD-007 | LFO sine and triangle | `0c57cf7ce720` | `None` |
 | MOD-009 | Tempo-synced LFO | `5d85f165` | `None` |
 | MOD-010 | Parameter macro | `5703e0c5` | `feature/mod-010` |
+| MOD-011 | Modulation mix modes | `b962a87c723c` | `feature/mod-011` |
 | MOD-013 | Modulation serialization | `d08b5103b0ef` | `feature/mod-013` |
 | MOD-014 | Modulation feedback prevention | `3b3a60649025` | `feature/mod-014` |
 | OSC-001 | OSC receiver | `13d9883531b9` | `feature/osc-001` |
@@ -1464,7 +1464,7 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `a5d42a32bfed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-010/20261114T110432/swift-test_VisualGenerators.log`)
 - `post-merge: projectM-iOSTests 797 pass; ParameterMacroUITests pass on rerun (flaky once); SceneUndoUITests intensity-drag failure predates MOD-010 (seen on feature/scn-008), under investigation in fix/scene-undo-drag`: pass at `5703e0c5` (log `.autonomous/logs/integration/batch23/rerun.log`)
 
-### MOD-011 Modulation mix modes (unit_passed)
+### MOD-011 Modulation mix modes (integrated)
 - `python3 scripts/check_compliance.py`: pass at `4eb79ee7feed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-011/20261114T115242/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `4eb79ee7feed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-011/20261114T115242/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `4eb79ee7feed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-011/20261114T115242/sim-test_ANGLERendering.log`)
