@@ -39,6 +39,9 @@ interaction); each answer is the conservative, local-first option.
 - Q: What do QA-002's goldens use? → A: A new preset `ImageDiffTolerance.golden`: QA-002's colour rule unchanged (2/255, ⌊0.1 %⌋ pixels) plus radius-1 forgiveness and a largest cluster of at most 8 pixels. It never fails a capture CI passes today (CI's only difference is 1/255, inside the colour tolerance), forgives one-pixel shifts and now fails a compact blob QA-002 would have let through. Exact match stays where determinism is guaranteed: equal pixel hashes are still reported "identical", and the run-to-run determinism checks keep comparing pixel hashes (preset `.exact` for comparator users).
 - Q: How is the failure reported? → A: The report gives the largest channel difference, pixels over the colour tolerance, pixels forgiven as shifts, unmatched pixels and the allowed count, the largest cluster and its limit, the bounding box of unmatched pixels (or of all exceeding pixels when none is unmatched), SSIM, and which rules failed. The diff image adds orange for forgiven pixels and a cyan outline around the bounding box; QA-002's artifact folder and attachments carry it.
 - Q: Size mismatch? → A: Always a failure with both sizes in the report; never a crash; the diff image keeps QA-002's magenta outside the overlap.
+- Q: Which tolerance does a comparison use when the caller names none? → A: `golden` for new `ImageDiff` callers (the documented default); `GoldenComparison.compare` keeps an explicit tolerance parameter whose default becomes `golden` too, so both QA-002 callers move in one place.
+- Q: When neighbourhood forgiveness looks for a "matching" pixel, which threshold counts as a match? → A: The same per-channel colour tolerance as the colour rule (largest channel difference ≤ tolerance); one number, no second knob.
+- Q: How much may the comparator cost? → A: Linear in pixels times (2r + 1)² for exceeding pixels only; one 256 × 192 comparison of the acceptance fixtures must finish well inside the 1-2 s unit-test budget on the host (Debug), so no extra performance gate is added.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -123,8 +126,8 @@ preset and still pass on the host, the simulator and CI.
   number of non-forgiven exceeding pixels, given as a fraction of the pixels (rounded down) and/or an
   absolute count (the smaller applies).
 - **QA-003-R3**: Neighbourhood forgiveness: with radius r > 0, an exceeding pixel MUST be forgiven when
-  the expected pixel matches (within the colour tolerance) some actual pixel within r and the actual
-  pixel matches some expected pixel within r; r = 0 disables it.
+  the expected pixel matches (largest channel difference within the same colour tolerance) some actual
+  pixel within r and the actual pixel matches some expected pixel within r; r = 0 disables it.
 - **QA-003-R4**: Cluster limit: the unmatched pixels MUST be grouped into 8-connected clusters, and the
   comparison MUST fail when the largest exceeds a configured limit (no limit when unset).
 - **QA-003-R5**: Structure: mean SSIM of luma over 8 × 8 windows (stride 4) MUST be reported when both
@@ -137,7 +140,8 @@ preset and still pass on the host, the simulator and CI.
   pixels, unmatched pixels scaled by size, the bounding box outline, and the outside of the overlap for
   differently sized images.
 - **QA-003-R9**: Presets MUST exist and be documented: `exact` (no difference), `qa002` (QA-002's rule
-  unchanged), `golden` (QA-002's colour rule plus radius 1 and cluster ≤ 8).
+  unchanged), `golden` (QA-002's colour rule plus radius 1 and cluster ≤ 8); `golden` is the default
+  when a caller names no tolerance.
 - **QA-003-R10**: QA-002's scene goldens and VIS-003's oscilloscope golden MUST compare with `golden`;
   equal pixel hashes MUST still report "identical", and the run-to-run determinism checks MUST stay
   exact.
