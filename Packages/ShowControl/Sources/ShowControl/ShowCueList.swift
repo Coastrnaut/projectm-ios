@@ -154,6 +154,10 @@ public struct ShowCueList: Sendable, Hashable {
     /// Whether Next would move (SHOW-001-R13: otherwise the button is unavailable; SHOW-005: skipped cues do not count).
     public var canGoNext: Bool { nextIndex() != nil }
 
+    /// SHOW-006: the cue Next would reach (skipped cues passed over); nil at the end, for an empty show or when every
+    /// cue after the active one is skipped.
+    public var nextCue: ShowCue? { nextIndex().map { (i: Int) -> ShowCue in cues[i] } }
+
     /// Whether Previous would move (SHOW-005: skipped cues do not count).
     public var canGoPrevious: Bool { previousIndex() != nil }
 

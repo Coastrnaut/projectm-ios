@@ -63,6 +63,12 @@ struct ShowSceneApply: Equatable, Sendable {
     var logo: SceneLogo? = nil
 }
 
+/// SHOW-006: a cue's stored scene read for rehearsal (never applied).
+struct ShowRehearsalScene: Equatable, Sendable {
+    var document: SceneDocument
+    var apply: ShowSceneApply
+}
+
 enum ShowSceneSnapshot {
     /// MOD-001 IDs of the values the app holds in AppSettings.
     static let appParameterIDs: [ParameterID] = [
