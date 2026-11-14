@@ -30,6 +30,63 @@ The row's gap status is "Gap candidate". The audit confirms a full gap: layers c
 | Repair report (SCN-012), migration matrix (SCN-013, QA-004) | Every issue code maps to a group and an optional repair action; the QA-004 meta-test scans the decode-error and migration-error enums. | Degenerate group structures need issues and a repair. |
 | UI | No screen edits a layer stack's composite settings (CMP-006 and CMP-007 confirmed; re-checked for this row). | None required. |
 
+## Clarifications
+
+### Session 2026-11-14
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the recommended, conservative option.
+
+- Q: May groups contain other groups, and how is membership kept consistent with the stack order?
+  → A: **No nesting in this version** (depth 1: a group contains layers only). A group's layers are
+  **one unbroken run** of the stack and its child order is the stack order; membership is stored per
+  stack entry, and add, duplicate, move and remove follow one rule that keeps every run unbroken
+  (CMP-011-R4). Rationale: a stack holds at most 8 layers, so nesting buys little while it would
+  need a stack of offscreen pictures, nested opacity rules and recursive repair. A nested child from
+  a newer version is a degenerate structure (CMP-011-R12). Rejected: nesting to depth 4 (cost and
+  test surface out of proportion to 8 layers); non-contiguous groups (an isolated group would
+  reorder its layers relative to the layers between them).
+- Q: What does group opacity mean: multiply each layer's opacity, or fade the group as one picture?
+  → A: **The group is an isolated group** (W3C Compositing "isolation"): its layers are combined
+  among themselves on transparent, and the result is drawn over what lies below at the group's
+  opacity. **Flattening is an optimisation only**, used exactly when it gives the same result:
+  group opacity exactly 1 and every visible child in normal mode (premultiplied "over" is
+  associative), so such groups cost no pass. Otherwise the group is drawn into a pooled offscreen
+  picture first (one extra pass, plus its blend-mode passes inside). Consequences: overlapping
+  children never show through each other when faded; a non-normal child blends with the group's
+  layers below it, not with layers under the group, at every opacity, so fading never makes the
+  picture jump. Rejected: per-child multiplication (cheap but overlaps show through, and it is not
+  what "group opacity" means in any editor); "pass-through" at opacity 1 and isolated below 1 (a
+  screen or multiply child would jump when a fade starts). Recorded in ADR-0039.
+- Q: Does the group itself get a blend mode or a mask, and what does a switched-off group do?
+  → A: **Neither, for now**: each child keeps its own opacity, blend mode, mask and fit (CMP-011-R10);
+  a group blend mode or mask can be added later on the same offscreen path. A **switched-off group**
+  hides all its children; the children **keep rendering** (as a layer at opacity 0 does, CMP-003),
+  so their clocks and last-good frames stay current and switching the group on shows a current
+  frame immediately. Group opacity 0 likewise draws nothing of the group. Group opacity is animated
+  with the same transitions as layer opacity; transform and on/off changes show from the next frame.
+- Q: How are groups saved in the scene document? → A: As an optional **top-level `groups` array**,
+  written only when the scene has groups (format version stays 1; scenes without groups encode
+  byte-identically; QA-004 gains no row): each item
+  `{"id": <1…2^53−1>, "name": "<text>", "enabled": <bool>, "opacity": <0…1>, "transform": <CMP-005
+  form>, "children": [<layer instance IDs>]}`, every field written in full, groups in stack order of
+  their first child, children in stack order. Missing optional fields read defaults (name "",
+  enabled true, opacity 1, identity transform); opacity and transform are clamped with
+  `valueClamped`; unknown group fields are kept verbatim. Rationale: an older app keeps an unknown
+  top-level field verbatim on decode → encode, whereas unknown `composite` keys are dropped, and a
+  per-layer `parent` field would scatter the group's own fields (name, opacity, transform) over its
+  children. Rejected: a `parent` field on layers; a version bump.
+- Q: What happens with degenerate group structures, and is there a UI? → A: **Warnings, never
+  refusals**: validation reports a new warning `invalidGroup` (a repeated or out-of-range group ID,
+  a child that is not a layer instance of the scene, a layer repeated or claimed by an earlier
+  group, an empty group, children that are not one unbroken run). The first valid claim wins, in
+  document order. A damaged group is **drawn ungrouped** and kept verbatim for re-save; SCN-012
+  lists it under "Damaged file" as a problem with the new repair **"Fix layer groups"**
+  (`repairGroups`), which drops the bad child references and then removes groups still invalid.
+  More than 8 groups, or more than 8 children in one group, are a `tooMany` refusal (the existing
+  case; the QA-004 meta-test is unchanged). **No UI**: no screen edits a layer stack's composite
+  settings (re-checked 2026-11-14; the layer inspector, CMP-015, will add one).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Move a group and all its layers move together (Priority: P1) 🎯 MVP
