@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T10:08:06Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T10:13:39Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 189 |
 | implementing | 2 |
-| unit_passed | 1 |
-| integrated | 133 |
+| integrated | 134 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 101 | 2 | 1 | 47 | 0 |
-| P2 | 77 | 0 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 2 | 0 | 84 | 1 |
+| P1 | 101 | 2 | 48 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 192 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ACC-012, ANL-008)
+- 191 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)
 
 ## Integrated
 
@@ -41,6 +40,7 @@ The physical-device suite may **not** start:
 | ACC-006 | Dynamic Type inspector | `bb1439c7` | `feature/acc-006` |
 | ACC-008 | High contrast overlay | `89d78f88` | `feature/acc-008` |
 | ACC-011 | Captioned status events | `92196c47` | `feature/acc-011` |
+| ACC-012 | Sensory safety profile | `0b822ef5` | `feature/acc-012` |
 | ANL-001 | Windowed FFT | `df16f2b90397` | `feature/anl-001` |
 | ANL-002 | Log-frequency bands | `493269c77462` | `feature/anl-002` |
 | ANL-003 | Spectral smoothing | `214fa36` | `feature/anl-003` |
@@ -239,7 +239,7 @@ None.
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `2b76f6f1015b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-011/20261114T003341/autonomous-tests.log`)
 - `post-merge: projectM-iOSTests 442 + StatusEvents/Status/AccessibilityScreens/SessionRecovery UI tests 20; check_status_events OK`: pass at `92196c47` (log `.autonomous/logs/integration/acc-011/app-tests.log`)
 
-### ACC-012 Sensory safety profile (unit_passed)
+### ACC-012 Sensory safety profile (integrated)
 - `python3 scripts/check_compliance.py`: pass at `0d4d6e55b7c8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-012/20261114T050420/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `0d4d6e55b7c8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-012/20261114T050420/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `0d4d6e55b7c8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-012/20261114T050420/script-tests.log`)
@@ -256,6 +256,7 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `0d4d6e55b7c8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-012/20261114T050420/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `0d4d6e55b7c8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-012/20261114T050420/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `0d4d6e55b7c8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-012/20261114T050420/swift-test_VisualGenerators.log`)
+- `post-merge (with FX-002 conflict resolution and the SettingsView split): projectM-iOSTests 568 + SensorySafety/Settings/Glow/LayerInspector UI tests 9`: pass at `0b822ef5` (log `.autonomous/logs/integration/acc-012/app-tests.log`)
 
 ### ANL-001 Windowed FFT (integrated)
 - `python3 scripts/check_compliance.py`: pass at `0d0eb4b9f656` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-001/20261113T061117/compliance.log`)
