@@ -17,7 +17,7 @@
 **Goal**: GPU and CPU agree and are exact at stops. **Independent test**: `MaterialGradientRampTests`.
 
 - [ ] SHD-005-T04 [US2] `ProceduralMaterials` depends on VisualGenerators (`Packages/Compositor/Package.swift`); `GradientRampUniforms` (272 bytes) and the ramp evaluation inside `mat_gradient` (count 0 = old picture) in `ProceduralMaterialShaders.swift`; `ProceduralMaterialLayer.setGradient(_:)` binding buffer 1 every frame
-- [ ] SHD-005-T05 [US2] GPU tests in `Packages/Compositor/Tests/ProceduralMaterialsTests/MaterialGradientRampTests.swift`: 500 × 500 picture, phase 0, 4 stops on pixel centres with alphas < 1; for each mode every stop's pixel equals the stored sRGB colour and alpha within 1/255; between stops GPU vs `GradientRamp.color(at:)` within 2/255; golden signature of one ramp; existing Gradient Field golden unchanged without a ramp
+- [ ] SHD-005-T05 [US2] GPU tests in `Packages/Compositor/Tests/ProceduralMaterialsTests/MaterialGradientRampTests.swift`: 512 × 512 picture, phase 0, 4 stops on pixel centres with alphas < 1; for each mode every stop's pixel equals the stored sRGB colour and alpha within 1/255; between stops GPU vs `GradientRamp.color(at:)` within 2/255; golden signature of one ramp; existing Gradient Field golden unchanged without a ramp
 
 ## Phase 4: User Story 1 - Shape a gradient (P1)
 

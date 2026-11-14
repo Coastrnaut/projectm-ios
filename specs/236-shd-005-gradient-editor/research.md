@@ -21,7 +21,7 @@
 
 ## SHD-005-D5 — Material geometry with a ramp
 - **Decision**: t = clamp(0.5 + dot(p, dir), 0, 1) (linear) or clamp(2·|p|·(1 + 0.15·cos a), 0, 1) (radial); output premultiplied rgb × alpha × brightness, alpha.
-- **Rationale**: the user owns the transitions, so no smoothstep; with phase 0 and a square picture pixel i samples t = (i + 0.5)/W exactly, which lets the test sample exactly at stops (W = 500 → stops at odd thousandths).
+- **Rationale**: the user owns the transitions, so no smoothstep; with phase 0 and a square power-of-two picture pixel i samples t = (i + 0.5)/W exactly in float, which lets the test sample exactly at stops (W = 512 → stops at (2k + 1)/1024; a non-power-of-two width rounds t and Step could pick the previous stop).
 
 ## SHD-005-D6 — Native visuals and alpha
 - **Decision**: colour × alpha, opaque (fades toward the black background).
