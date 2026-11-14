@@ -902,7 +902,7 @@
    "branch": "feature/cam-007",
    "branch_sha": "bbfa49c59ca08238e101fbcf6530653bc98fc602",
    "error_category": null,
-   "integrated_sha": "0ee7468c62f657efb0bff7f3a6118551f7cdbe95",
+   "integrated_sha": "094dece4",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
@@ -3747,7 +3747,7 @@
   {
    "branch": "feature/cam-007",
    "id": "CAM-007",
-   "sha": "0ee7468c62f657efb0bff7f3a6118551f7cdbe95"
+   "sha": "094dece4"
   },
   {
    "branch": "feature/cam-012",
@@ -4100,5 +4100,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T05:22:55Z"
+ "updated": "2026-11-14T05:28:08Z"
 }

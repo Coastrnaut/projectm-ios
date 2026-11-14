@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T05:22:55Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T05:28:08Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -77,7 +77,7 @@ The physical-device suite may **not** start:
 | AUTO-014 | Unattended safety budget | `419cc2a999ed` | `autonomous/integration` |
 | CAM-001 | Rear camera layer | `05ef3cb4e24b` | `feature/cam-001` |
 | CAM-002 | Front camera layer | `ad0aebe2` | `feature/cam-002` |
-| CAM-007 | Camera crop and rotation | `0ee7468c62f6` | `feature/cam-007` |
+| CAM-007 | Camera crop and rotation | `094dece4` | `feature/cam-007` |
 | CAM-012 | Camera privacy status | `a188b049fc60` | `feature/cam-012` |
 | CMP-001 | Unified layer protocol | `ba60b9d3485a` | `feature/cmp-001` |
 | CMP-002 | Ordered layer stack | `4c8340e68244` | `feature/cmp-002` |
@@ -579,6 +579,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `bbfa49c59ca0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-007/20261114T001920/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `bbfa49c59ca0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-007/20261114T001920/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `bbfa49c59ca0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-007/20261114T001920/swift-test_ShowControl.log`)
+- `post-merge: projectM-iOSTests 434 + Camera/FrontCamera UI tests pass; CameraCropUITests lost a tap once under load, hardened, passes 3 times`: pass at `094dece4` (log `.autonomous/logs/integration/cam-007/app-tests-final.log`)
 
 ### CAM-012 Camera privacy status (integrated)
 - `python3 scripts/check_compliance.py`: pass at `3e408a740a3b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-012/20261113T120140/compliance.log`)
