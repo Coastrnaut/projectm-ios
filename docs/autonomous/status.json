@@ -12,9 +12,8 @@
   },
   "P1": {
    "audited": 68,
-   "implementing": 1,
    "integrated": 79,
-   "unit_passed": 3
+   "unit_passed": 4
   },
   "P2": {
    "audited": 74,
@@ -26,10 +25,9 @@
  },
  "by_state": {
   "audited": 153,
-  "implementing": 1,
   "integrated": 168,
   "skipped_existing": 1,
-  "unit_passed": 3
+  "unit_passed": 4
  },
  "device_gate": {
   "blocked": [],
@@ -2284,12 +2282,12 @@
   "PRE-006": {
    "attempts": 0,
    "branch": "feature/pre-006",
-   "branch_sha": null,
+   "branch_sha": "a1029e8c7b895d9c0858705c1f26d79708b84db5",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "PRE-007": {
    "attempts": 1,
@@ -4329,5 +4327,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T15:16:00Z"
+ "updated": "2026-11-14T15:18:17Z"
 }
