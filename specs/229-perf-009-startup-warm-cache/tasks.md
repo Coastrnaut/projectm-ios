@@ -23,7 +23,7 @@ Tests are required by the spec (PERF-009-S1-S3, R11): clock-free, counted, short
   `Packages/LocalPortability/Sources/LocalPortability/WarmStart/WarmStartLoader.swift`
 - [ ] PERF-009-T05 Tests: each of the six key fields → stale + files deleted + rebuilt; truncated payload, flipped
   byte, bad key file, oversized payload → damaged; link folder → unavailable; loader builds 0 times warm, 1 time cold,
-  decode failure → rebuilt; timeline milliseconds from a fake clock in
+  decode failure → rebuilt; a store that cannot be written still returns the built value (R7); timeline milliseconds from a fake clock in
   `Packages/LocalPortability/Tests/LocalPortabilityTests/WarmCacheStoreTests.swift`
 
 ## Phase 3: User Story 1 + 2 (P1) — warm library, never stale
@@ -78,10 +78,16 @@ Tests are required by the spec (PERF-009-S1-S3, R11): clock-free, counted, short
 
 - [ ] PERF-009-T17 PERF-009 section in `docs/test-reports/performance.md` (method, simulator rehearsal as not
   evidence, open D1 row)
-- [ ] PERF-009-T18 Repo checks, Linux shape builds (`-DVISUAL_NO_METAL`, `LOCALPORTABILITY_NO_CRYPTOKIT`), type-check
+- [ ] PERF-009-T18 Signpost intervals present in the app source (S4, grep "WarmStart library" / "WarmStart pipeline archive"), repo checks, Linux shape builds (`-DVISUAL_NO_METAL`, `LOCALPORTABILITY_NO_CRYPTOKIT`), type-check
   budget, privacy manifest and network symbols on the Debug app; spec status
 
 ## Dependencies
 
 T01 → T02-T05 → (T06-T08) and (T09-T11) in parallel → T12-T13 → T14-T15 → T16; T17-T18 last.
 MVP: Phases 1-3 (warm library with full invalidation).
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Coverage: R1-R12 and S1-S5 each map to at least one task (R1/R12 by design in T06-T10 scope; S5 T16 `{device}`).
+Fixed: R6 said "background" while Clarifications said "leaves the foreground" (aligned); R7 had no explicit test
+(added to T05); S4 had no verification task (added to T18). No constitution conflicts; no critical issues.
