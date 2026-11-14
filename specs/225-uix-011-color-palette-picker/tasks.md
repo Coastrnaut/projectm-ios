@@ -1,0 +1,28 @@
+# Tasks: UIX-011 Color Palette Picker
+
+**Input**: spec.md, plan.md, research.md, data-model.md, contracts/palettes.md
+
+## Phase 1: Foundation (model and rendering)
+
+- [ ] UIX-011-T01 [P] Palette model, library operations and limits, file codec, colour names, contrast, scene link accessors and resolver in `Packages/SceneFormat/Sources/SceneFormat/ScenePalettes.swift` and `PaletteColorNames.swift` (UIX-011-R1, R2, R4, R5, R9; contract P1–P3)
+- [ ] UIX-011-T02 [P] SceneFormat tests `ScenePalettesTests.swift`: codec round trip and canonical bytes, lenient read, newer version, limits, built-ins read-only, links in a decoded document, resolver fallback, names and contrast
+- [ ] UIX-011-T03 [P] `VisualPalette.custom` (gradient and swatches) with `LinearColor` Hashable; `CustomPaletteTests.swift` (contract P4)
+
+## Phase 2: User Story 1 — palettes on the visual (P1)
+
+- [ ] UIX-011-T04 [US1] `PaletteStore` (file in Application Support/Palettes, atomic save, load issue, read-only on newer file) and `PaletteCoordinator` (edits, scene link, missing notice, effective `VisualPalette` with ACC-003 override) (R2, R3, R5, R6, R8, R10)
+- [ ] UIX-011-T05 [US1] Scene wiring: `SceneInputs.palette`, capture writes the document and spectrum-layer links, `SceneRestoredValues.paletteID`, restore at launch, reopen and history; the native host draws the effective palette and redraws on library edits (R4, R6, R7)
+- [ ] UIX-011-T06 [US1] Acceptance `Apps/projectM-iOS/Tests/PaletteAppTests.swift`: edit a linked palette through the real store → two linked layers' resolved colours change at once and the coordinator's effective palette changes; a new store reading the file plus the re-decoded scene resolve the same colours; deleted palette falls back with the notice (S1, S2)
+
+## Phase 3: User Stories 2 and 3 — manage and edit accessibly (P2)
+
+- [ ] UIX-011-T07 [US2][US3] Settings › Palettes: list (built-ins and user palettes, scene choice), New, Duplicate, Rename, Delete (confirmed), editor with style picker, gradient preview, swatch rows (ColorPicker, named-colour menu, VoiceOver label "Colour i of n, name, hex", low-contrast mark), add/remove colour; one row in SettingsView (R3, R9, R10)
+- [ ] UIX-011-T08 [US3] UI test `PalettePickerUITests.swift`: new palette, change swatch 1 through the named-colour menu, its VoiceOver value changes; under 30 s (`-uitestResetPalettes`)
+
+## Phase 4: Library integration
+
+- [ ] UIX-011-T09 FILE-005/011/009: `LibraryFolders.Folder.palettes`, contents read, archive record, records digest, restore plan section and install, erase folder with "Scenes and show", erase inventory count, `StorageLocations` Scenes root; `PaletteBackupTests.swift`; `LibraryBackupAppTests` folder-name check (R11, S4)
+
+## Phase 5: Polish
+
+- [ ] UIX-011-T10 Repo checks (compliance, docs, motion, permission catalog, status events, script tests), privacy manifest and network symbols on the Debug app, type-check budget, touched package suites; spec status
