@@ -53,7 +53,27 @@ enum SceneEncoder {
     static func composite(_ c: SceneComposite) -> SceneJSON {
         var o: [String: SceneJSON] = ["opacity": .double(c.opacity), "blend": .string(c.blendMode), "transform": transform(c.transform)]
         if let f = c.fit { o["fit"] = fit(f) }   // CMP-006: only when set, so older scenes stay byte-identical
+        if let m = c.mask { o["mask"] = mask(m) }   // CMP-007: likewise
         return .object(o)
+    }
+
+    /// CMP-007's saved form: every field of a known shape; an unknown shape's object verbatim.
+    static func mask(_ m: SceneMask) -> SceneJSON {
+        switch m {
+        case let .unknown(_, object):
+            return .object(object)
+        case let .known(mask):
+            let t: LayerMaskTransform = mask.transform
+            let placement: SceneJSON = .object(["center": point(t.center), "scale": point(t.scale), "rotation": .double(t.rotation)])
+            var o: [String: SceneJSON] = ["shape": .string(mask.shape.kindName), "feather": .double(mask.feather),
+                                          "inverted": .bool(mask.inverted), "transform": placement]
+            switch mask.shape {
+            case .ellipse: break
+            case let .rectangle(radius): o["cornerRadius"] = .double(radius)
+            case let .polygon(points): o["points"] = .array(points.map(point))
+            }
+            return .object(o)
+        }
     }
 
     /// CMP-006's saved form.
