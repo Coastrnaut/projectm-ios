@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (CAM-013-T01-T16 verified on the Mac with the stand-in camera; device tasks T17-T18 `{device}` open)
 
 **Input**: User description: "Implement CAM-013 (Camera failure recovery) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Handle interruption, route
