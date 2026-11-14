@@ -104,6 +104,10 @@ final class LibraryEraseAcceptanceTests: XCTestCase {
         XCTAssertEqual(backupKeys.subtracting(erasable).subtracting(LibraryErasePolicy.neverErasedKeys), [],
                        "every key FILE-005 knows is erased by a category or deliberately kept")
         XCTAssertEqual(Set(LibraryErasePolicy.allFolders).count, LibraryErasePolicy.allFolders.count)
+        // MED-004-R6: the video's speed goes with the video: never backed up, erased with "Photos and videos".
+        XCTAssertTrue(LibrarySettingsPolicy.excludedKeys.contains(LibraryErasePolicy.videoSpeedKey))
+        XCTAssertFalse(LibrarySettingsPolicy.isIncluded(LibraryErasePolicy.videoSpeedKey))
+        XCTAssertTrue(LibraryErasePolicy.settingKeys(.media).contains(LibraryErasePolicy.videoSpeedKey))
         XCTAssertFalse(LibraryErasePolicy.allFolders.contains(LibraryFolders.restoreFolderName))
         XCTAssertEqual(LibraryErasePolicy.list([.media, .scenes]), "Scenes and show and Photos and videos")
         XCTAssertEqual(LibraryEraseText.erased([.media, .scenes]), "Erased: scenes and show, photos and videos.")

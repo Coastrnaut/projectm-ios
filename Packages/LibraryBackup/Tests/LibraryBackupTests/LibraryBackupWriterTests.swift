@@ -68,7 +68,7 @@ final class LibraryBackupWriterTests: XCTestCase {
             XCTAssertNil(bytes.range(of: Data("AUDIO-PAYLOAD".utf8)), path)
         }
         let joined = all.values.reduce(Data()) { (sum: Data, next: Data) -> Data in sum + next }
-        let forbidden: [String] = ["settings.osc.enabled", "settings.midi.enabled", "settings.video.id", "notice.photosensitivity",
+        let forbidden: [String] = ["settings.osc.enabled", "settings.midi.enabled", "settings.video.id", "settings.video.speed", "notice.photosensitivity",
                                    "cream-of-the-crop", BackupFixtures.presetID(4), BackupFixtures.presetID(5),
                                    "entitlement", "unlocked", "transaction"]
         for word in forbidden { XCTAssertNil(joined.range(of: Data(word.utf8)), "the backup mentions \(word)") }

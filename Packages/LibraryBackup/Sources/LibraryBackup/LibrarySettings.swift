@@ -62,8 +62,8 @@ public enum LibrarySettingValue: Sendable, Hashable, Codable {
 }
 
 /// Which UserDefaults keys a backup carries (spec Baseline). Device switches (OSC on, MIDI on),
-/// notices, permission explanations, session recovery, the guide, the video and its loop region are
-/// never read.
+/// notices, permission explanations, session recovery, the guide, the video, its loop region and its
+/// playback speed (MED-004) are never read.
 public enum LibrarySettingsPolicy {
     public static let favoritesKey = "favorites"
     public static let lastPresetKey = "lastPresetID"
@@ -89,7 +89,7 @@ public enum LibrarySettingsPolicy {
 
     /// Read by the app but deliberately left out (documented; a test checks none is included).
     public static let excludedKeys: [String] = [
-        "settings.osc.enabled", "settings.midi.enabled", "settings.video.id", "settings.video.loop",
+        "settings.osc.enabled", "settings.midi.enabled", "settings.video.id", "settings.video.loop", "settings.video.speed",
         "notice.photosensitivityAcknowledged", "permission.explained.camera", "permission.explained.localNetwork",
         "session.recovery.open", "session.recovery.heldVisual", "session.recovery.sessionsSinceReopen", "guide.firstScene",
     ]

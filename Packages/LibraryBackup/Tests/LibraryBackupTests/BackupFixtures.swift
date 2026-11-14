@@ -79,6 +79,7 @@ enum BackupFixtures {
         "settings.osc.enabled": .bool(true),
         "settings.midi.enabled": .bool(true),
         "settings.video.id": .string("0000B000-0000-4000-8000-000000000001"),
+        "settings.video.speed": .data(Data("{\"percent\":50}".utf8)),   // MED-004: never in a backup
         "notice.photosensitivityAcknowledged": .bool(true),
     ]
 
