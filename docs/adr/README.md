@@ -41,5 +41,6 @@
 | [0042](0042-scene-transition-bus.md) | One transition clock and a two-scene transition bus with one flash guard | Accepted 2026-11-14 (CMP-014; owner rule 4) |
 | [0043](0043-content-addressed-media-store.md) | A content-addressed store for imported photos and videos, and its migration | Accepted 2026-11-14 (FILE-008; owner rule 4) |
 | [0044](0044-layer-composite-edits-as-scene-inputs.md) | Layer composite edits are scene inputs, applied by kind to the shown compositor | Accepted 2026-11-14 (CMP-015; owner rule 4) |
+| [0049](0049-sensory-safety-clamp.md) | One sensory safety clamp, applied after modulation and before render; the stricter limit wins | Accepted 2026-11-14 (ACC-012; owner rule 4) |
 
 Required by Constitution X: capture API, minimum OS, renderer, dependency strategy.
