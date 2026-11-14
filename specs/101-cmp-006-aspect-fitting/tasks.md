@@ -25,14 +25,14 @@ included. Budgets (owner rule 7): unit test about 1-2 s and at most 10 s, packag
 - [ ] CMP-006-T05 [US1] Photo: `ImageScaleMode` becomes `typealias ImageScaleMode = LayerFitMode`; `ImagePictureGeometry` delegates to `LayerFitPlacement` (new `anchor` parameter, default centre; fill and fit numbers unchanged); `ImageLayerSource` adopts `LayerFitting` and uses `fit ?? LayerFit(mode: mode)` in `render` in Packages/Compositor/Sources/ImageLayer/ImagePictureGeometry.swift and ImageLayerSource.swift
 - [ ] CMP-006-T06 [US1] Video: plain-Swift `VideoPictureGeometry` (placement on the upright size + `CameraRotation` mapping) in Packages/Compositor/Sources/VideoLayer/VideoPictureGeometry.swift; `VideoLayerSource` adopts `LayerFitting`, stops calling `CameraPictureGeometry`, and its shader returns transparent outside 0…1 in Packages/Compositor/Sources/VideoLayer/VideoLayerSource.swift
 - [ ] CMP-006-T07 [P] [US1] CPU tests: `VideoPictureGeometry` fill equals the old `CameraPictureGeometry` fill for every rotation (today's output unchanged), fit and pixelAccurate on a rotated portrait track in Packages/Compositor/Tests/CompositorTests/LayerFitGeometryTests.swift; existing ImageGeometryTests still pass
-- [ ] CMP-006-T08 [US1] GPU tests: a portrait marker photo (coloured corner and centre markers on a grey field) drawn through `ImageLayerSource` into a portrait output per mode; read pixels at the positions `LayerFitPlacement` predicts (markers present, bars transparent in fit and pixelAccurate, 1:1 texels in pixelAccurate) (CMP-006-S3) in Packages/Compositor/Tests/CompositorTests/LayerFitCompositeTests.swift
+- [ ] CMP-006-T08 [US1] GPU tests: a portrait marker photo (coloured corner and centre markers on a grey field) drawn through `ImageLayerSource` into a portrait output per mode; read pixels at the positions `LayerFitPlacement` predicts (markers present, bars transparent in fit and pixelAccurate, 1:1 texels in pixelAccurate); one video case: the rotated `VideoFixtures` clip (upright 48 × 64) in fit mode in a landscape output shows the clip's colour in the centre and transparent bars (CMP-006-S3, R7) in Packages/Compositor/Tests/CompositorTests/LayerFitCompositeTests.swift
 
 ## Phase 4: User Story 2 - The chosen crop survives landscape output (P1)
 
 **Goal**: same behaviour and anchor in landscape output. **Independent test**: anchor table plus GPU portrait → landscape.
 
 - [ ] CMP-006-T09 [P] [US2] CPU tests: for fill, fit, pixelAccurate and anchors centre, (0.5, 0), (0, 0), (1, 0.5), the anchor lands on the same output fraction in a portrait and a landscape output (1e-9; pixelAccurate within one output pixel) and the mode rule holds in both (CMP-006-S2) in Packages/Compositor/Tests/CompositorTests/LayerFitGeometryTests.swift
-- [ ] CMP-006-T10 [US2] GPU tests: the same compositor and photo layer rendered into a portrait output and then a landscape output, per mode, markers found where predicted at both sizes; one case with a non-normal blend mode (`screen` over a backdrop layer) and one with a CMP-005 transform; a fit change at `apply` shown next frame without reloading the photo (CMP-006-S3, R7, R8) in Packages/Compositor/Tests/CompositorTests/LayerFitCompositeTests.swift
+- [ ] CMP-006-T10 [US2] GPU tests: the same compositor and photo layer rendered into a portrait output and then a landscape output, per mode, markers found where predicted at both sizes; one case with a non-normal blend mode (`screen` over a backdrop layer) and one with a CMP-005 transform; a fit change at `apply` shown next frame without reloading the photo; a fit set on a layer that does not adopt `LayerFitting` changes nothing (CMP-006-S3, R7, R8, R11) in Packages/Compositor/Tests/CompositorTests/LayerFitCompositeTests.swift
 - [ ] CMP-006-T11 [US2] GPU performance: time the photo layer per mode on the Mac (GPU start/end times over a few frames, printed, no assertion), recorded in docs/test-reports/aspect-fitting.md as not device evidence (CMP-006-S5) in Packages/Compositor/Tests/CompositorTests/LayerFitCompositeTests.swift
 
 ## Phase 5: User Story 3 - Scenes keep the mode (P2)
@@ -47,7 +47,7 @@ included. Budgets (owner rule 7): unit test about 1-2 s and at most 10 s, packag
 
 - [ ] CMP-006-T15 Linux shape: `swift test --package-path Packages/Compositor -Xswiftc -DCOMPOSITOR_NO_METAL -Xswiftc -DVISUAL_NO_METAL -Xswiftc -DANALYSIS_NO_ACCELERATE --filter LayerFitGeometryTests`
 - [ ] CMP-006-T16 Regression: Compositor, SceneFormat, RenderGoldens (no golden re-recorded), ImportFuzz, ShowControl, SceneArchive package tests; app unit tests on a dedicated "CMP6 iPhone 17" iOS 27.2 simulator (`-only-testing:projectM-iOSTests`), simulator deleted afterwards
-- [ ] CMP-006-T17 Docs: SCN-001 contract and ADR-0028 list `composite.fit`; MED-001 image-layer contract notes the four modes; docs/test-reports/aspect-fitting.md with the geometry and GPU tables; spec status Implemented
+- [ ] CMP-006-T17 Docs: check the spec's camera adoption section is current (CMP-006-R12); SCN-001 contract and ADR-0028 list `composite.fit`; MED-001 image-layer contract notes the four modes; docs/test-reports/aspect-fitting.md with the geometry and GPU tables; spec status Implemented
 - [ ] CMP-006-T18 Checks: `python3 scripts/check_compliance.py`, `validate_docs.py`, `check_motion_policy.py`, `check_permission_catalog.py`, `test_scripts.py`
 
 ## Dependencies
@@ -65,3 +65,10 @@ included. Budgets (owner rule 7): unit test about 1-2 s and at most 10 s, packag
 
 MVP = Phase 2 + US1 (modes drawn for photo and video). Then US2 (the acceptance criterion's
 orientation proof), then US3 (persistence), then polish. Commit after each phase.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Applied: S2's pixelAccurate tolerance aligned with the contract (half an output pixel); the plan's
+optional video GPU case made a definite T08 case; R11 (fit ignored by other layers) given a test in
+T10; R12 (camera adoption note) checked in T17. Coverage after the fixes: R1-R12 and S1-S5 each map
+to at least one task; no constitution conflict; no unresolved placeholder.

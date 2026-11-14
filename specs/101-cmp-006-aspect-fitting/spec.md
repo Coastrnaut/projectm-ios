@@ -208,7 +208,7 @@ unknown mode.
   stretch maps corners to corners, pixelAccurate is 1:1, and pixel aspect is 1 except in stretch.
 - **CMP-006-S2**: For every mode except stretch and anchors at the centre, a corner and an edge
   midpoint, the anchor lands on the same output fraction in a portrait and a landscape output
-  (within 1e-9, or within one output pixel for pixelAccurate's rounding).
+  (within 1e-9, or within half an output pixel for pixelAccurate's whole-pixel rounding).
 - **CMP-006-S3**: GPU read-back of a portrait marker picture composited into a portrait and then a
   landscape output finds every marker where the geometry predicts, for each mode, including one
   case with a non-normal blend mode and one with a CMP-005 transform.

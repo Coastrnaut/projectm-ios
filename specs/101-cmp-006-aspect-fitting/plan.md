@@ -58,8 +58,8 @@ Language compiled at run time from the modules' Swift constants (ADR-0009 decisi
 **Testing**: `Packages/Compositor`: `LayerFitGeometryTests` (CPU, Linux: mode table, anchor across
 orientations, transform composition, edge cases), `LayerFitCompositeTests` (GPU read-back of a
 portrait marker photo in portrait then landscape output per mode, with a blend mode and a
-transform; video geometry on the GPU through a synthetic texture is covered by the plain-Swift
-`VideoPictureGeometry` tests plus one GPU case if a video fixture is cheap), existing
+transform; one GPU video case: the rotated (upright portrait 48 × 64) `VideoFixtures` clip in fit
+mode in a landscape output, bars transparent), `VideoPictureGeometry` CPU tests, existing
 `ImageGeometryTests`. `Packages/SceneFormat`: round trip, unknown mode, clamping, byte identity.
 Regression: SceneFormat, RenderGoldens, ImportFuzz, ShowControl, SceneArchive, app unit tests.
 
