@@ -40,6 +40,16 @@ interaction); each answer is the conservative, local-first option.
 - Q: What happens to copies of assets that were removed from the device? → A: They are pruned after the new manifest is written, but only files the backup itself created: names of the form `<sha256>.<ext>` inside the backup's own `media/` folder that the new manifest does not name. Nothing else in the picked folder is ever touched.
 - Q: How does a restore of the media work? → A: "Restore Media from Folder…" reads the folder's manifest, verifies every copy against its recorded hash (all files, not a sample), copies the verified files into the app, and installs them at the next launch before any store loads, like FILE-005's restore. A photo or video is installed only when its identifier is not stored on the device; imported audio only when the device has no imported audio. The library records themselves are restored from the archive with the existing "Restore from Backup…".
 
+### Session 2026-11-14 (speckit-clarify)
+
+Five questions, each answered by Claude with the recommended option (owner rules 4 and 9).
+
+- Q: What limits apply to the folder manifest read from a user-chosen folder (untrusted)? → A: At most 4 MiB and 8,192 asset entries, bounded JSON (FILE-007 limits), every location must be `media/<64 lowercase hex>.<ext>` with a known extension and every name a safe single path component; anything else reads as "no usable manifest" and gives a full backup (backup) or a refusal (restore) (FILE-006-R5, R8).
+- Q: When a new content-addressed asset is copied, is its name trusted as its hash? → A: No: a copy is always hashed while it is written (the only read of that file), and the manifest records the hash of the bytes copied; the copy is named by that hash. Only unchanged assets skip reading (FILE-006-R3, R4).
+- Q: What happens in a restore when a photo or video identifier already exists on the device? → A: The device's file stays (it is never overwritten) and the asset counts as "already here"; only identifiers that do not resolve are installed (FILE-006-R8).
+- Q: In what order are a backup's files written, and what if one step fails? → A: Media copies first, then the archive, then the manifest (atomic replace), then pruning. Any failure stops the backup with "The backup to the folder did not finish. The previous backup there is unchanged."; leftover temporary copies are removed at the next backup (FILE-006-R6).
+- Q: How is progress shown? → A: The existing Working indicator while the backup runs off the main thread; no cancel button (a backup ends when it ends or the app closes, which R6 makes safe); the result line is plain text announced on the `library` lane (FILE-006-R9).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A second backup copies nothing that did not change (Priority: P1)
@@ -92,6 +102,8 @@ removed." and announces it on the `library` lane.
 - The folder is read-only or full: the backup fails with a message; the previous manifest stays.
 - A restore while a FILE-005 restore or a FILE-011 erase is pending: refused with a note.
 - A restore request from a newer app: ignored and removed.
+- A manifest entry pointing outside `media/` (a crafted folder): the manifest is unusable; backup does a full pass, restore refuses.
+- A photo or video identifier already on the device during a restore: the device's file stays ("already here").
 
 ## Requirements *(mandatory)*
 
