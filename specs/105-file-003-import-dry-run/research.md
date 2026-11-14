@@ -29,6 +29,11 @@
 - **Decision**: Each text is validated again with `MilkdropPresetValidator` against the app's textures; its warnings and licence lines replace the archive's. The archive's name is cleaned like an imported name. Presets enter `pending`.
 - **Rationale**: Same safety as a picked file (PRE-012-R20); the archive could be hand-edited.
 
+## FILE-003-D5a: Copies of Included presets
+
+- **Decision**: An archive preset that records `duplicateOf` (a PRE-015 copy of an Included preset, the only kind ADR-0008 lets through an archive) skips the "same as a built-in preset" refusal; the takedown list still applies.
+- **Rationale**: An unedited copy has the built-in text by design; refusing it would make an export of such a copy impossible to restore on another device.
+
 ## FILE-003-D6: Scene archive dry run
 
 - **Decision**: `planImport(at:)` copies the picked file into a temporary staging folder (removed on return), reads it with `SceneArchiveReader`, and builds the plan; the media are not staged into stores. SCN-012 entries are computed on the document with each asset key's store ID replaced by a placeholder that the availability reports present (what the install produces). `importArchive(at:plan:)` re-reads, compares the archive SHA-256 and the current photo and video IDs with the plan's, then runs the existing import.

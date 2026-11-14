@@ -16,8 +16,15 @@
 // * Checksums (FILE-002): the reader verifies every entry's CRC-32, listed size and SHA-256 before
 //   anything is staged; the optional `observer` sees `.verified` and then each store step, so tests
 //   prove that a tampered archive runs no stage, adopt or make-current step (ADR-0029 amendment).
+// * Dry run (FILE-003, specs/105-file-003-import-dry-run; FILE-003-R12, contract C5):
+//   `planImport(at:)` reads and verifies the archive like an import but stages nothing into any
+//   store and writes no default: it returns what the import would do (media, replaced photo/video,
+//   SCN-012 repair entries after the import, size, steps) or the typed refusal. Its temporary copy
+//   of the picked file is removed. `importArchive(at:plan:)` imports only when the archive's bytes
+//   and the current photo and video are those the plan saw (`.planChanged` otherwise).
 // No networking; nothing from an archive is executed. Runs off the main actor.
 import Foundation
+import LocalPortability
 import ImageLayer
 import ParameterGraph
 import ProceduralMaterials
@@ -52,6 +59,47 @@ enum SceneArchiveImportStep: Sendable, Equatable {
     case madeCurrent(SceneArchiveAssetType)
 }
 
+/// FILE-003-R12: what importing a scene archive would do, computed without touching the stores.
+struct SceneArchiveImportPlan: Sendable, Equatable {
+    struct Media: Sendable, Equatable {
+        let key: String
+        let type: SceneArchiveAssetType
+        let fileExtension: String
+        let byteCount: Int
+        var path: String { SceneArchiveFormat.assetPath(key: key, fileExtension: fileExtension) }
+    }
+
+    /// SHA-256 of the archive's bytes ("" when it could not be read).
+    let archiveSHA256: String
+    /// The stores' current photo and video when the plan was made.
+    let currentPhotoID: String?
+    let currentVideoID: String?
+    /// Why the archive would be refused; then everything below is empty.
+    let refusal: SceneArchiveServiceError?
+    let sceneName: String
+    let media: [Media]
+    /// The conflict: the stores keep one photo and one video, so these would be replaced.
+    let replacesPhoto: Bool
+    let replacesVideo: Bool
+    /// SCN-012's entries for the scene as it would be after the import.
+    let repairEntries: [SceneRepairReport.Entry]
+    /// Scenes and their media carry no licence data (spec Clarifications): always empty.
+    let licenses: [String]
+    /// The import's steps, in order (FILE-002's step names).
+    let steps: [SceneArchiveImportStep]
+
+    var totalBytes: Int {
+        var total = 0
+        for item in media { total += item.byteCount }
+        return total
+    }
+
+    static func refused(_ error: SceneArchiveServiceError, sha256: String, photo: String?, video: String?) -> SceneArchiveImportPlan {
+        SceneArchiveImportPlan(archiveSHA256: sha256, currentPhotoID: photo, currentVideoID: video, refusal: error, sceneName: "",
+                               media: [], replacesPhoto: false, replacesVideo: false, repairEntries: [], licenses: [], steps: [])
+    }
+}
+
 struct SceneArchiveExport: Sendable, Equatable {
     let url: URL
     var fileName: String { url.lastPathComponent }
@@ -67,6 +115,8 @@ enum SceneArchiveServiceError: Error, Sendable, Equatable {
     case saveFailed
     /// After remapping, references still do not resolve (should not happen; kept as a guard).
     case unresolved([SceneIssue])
+    /// FILE-003-R12: the archive or the stores changed since the dry run; nothing was imported.
+    case planChanged
 
     var message: String {
         switch self {
@@ -75,6 +125,7 @@ enum SceneArchiveServiceError: Error, Sendable, Equatable {
         case let .media(path, message): "\(path) in the archive was not imported: \(message)"
         case .saveFailed: "The scene's media could not be saved."
         case let .unresolved(issues): "The scene's media could not be linked: " + issues.map(\.message).joined(separator: " ")
+        case .planChanged: "The scene archive or your photo and video changed since the preview. Nothing was imported."
         }
     }
 }
@@ -176,16 +227,79 @@ struct SceneArchiveService: Sendable {
     // MARK: - Import
 
     func importArchive(at source: URL) async throws(SceneArchiveServiceError) -> SceneArchiveImportResult {
-        let staging = temporaryRoot.appendingPathComponent(Self.stagingFolderName, isDirectory: true)
-            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try await importArchive(at: source, plan: nil)
+    }
+
+    // MARK: - Dry run (FILE-003)
+
+    /// The dry run (contract C5): nothing is staged into a store and no default is written.
+    func planImport(at source: URL) async -> SceneArchiveImportPlan {
+        let photoID = photos.current()?.id.uuidString
+        let videoID = videos.current()?.id.uuidString
+        let staging = newStagingFolder()
         defer { try? FileManager.default.removeItem(at: staging) }
-        do {
-            try FileManager.default.createDirectory(at: staging, withIntermediateDirectories: true)
+        let data: Data
+        do throws(SceneArchiveServiceError) {
+            data = try readPicked(source, staging: staging)
         } catch {
-            throw .saveFailed
+            return .refused(error, sha256: "", photo: photoID, video: videoID)
         }
-        let copy = try copyPicked(source, into: staging)
-        guard let data = try? Data(contentsOf: copy, options: .mappedIfSafe) else { throw .unreadable }
+        let sha256 = PortableSHA256.hex(data)
+        let contents: SceneArchiveContents
+        do {
+            contents = try SceneArchiveReader.read(data, registry: registry, limits: limits)
+        } catch {
+            return .refused(.archive(error), sha256: sha256, photo: photoID, video: videoID)
+        }
+        // The scene as the import would leave it: each asset's store ID replaced by a placeholder
+        // that the availability reports present (the import adopts every asset it carries).
+        var placeholders: [String: String] = [:]
+        var photoIDs: Set<String> = Set([photoID].compactMap { $0 })
+        var videoIDs: Set<String> = Set([videoID].compactMap { $0 })
+        var steps: [SceneArchiveImportStep] = [.verified]
+        for item in contents.media {
+            let placeholder = UUID(uuidString: String(format: "00000000-0000-4000-8000-%012d", placeholders.count + 1))?.uuidString ?? item.key
+            placeholders[item.key] = placeholder
+            switch item.type {
+            case .photo: photoIDs = [placeholder]
+            case .video: videoIDs = [placeholder]
+            }
+            steps.append(.staged(item.path))
+        }
+        let types: [SceneArchiveAssetType] = [.photo, .video].filter { (type: SceneArchiveAssetType) -> Bool in
+            contents.media.contains { (item: SceneArchiveMedia) -> Bool in item.type == type }
+        }
+        steps += types.map { (type: SceneArchiveAssetType) -> SceneArchiveImportStep in .adopted(type) }
+        steps += types.map { (type: SceneArchiveAssetType) -> SceneArchiveImportStep in .madeCurrent(type) }
+        let document = contents.document.remappingStoreIDs(placeholders)
+        let decodeOnly = contents.warnings.filter { (issue: SceneIssue) -> Bool in
+            issue.code == .valueClamped || issue.code == .droppedField
+        }
+        let report = SceneRepairReport(document: document, decodeWarnings: decodeOnly, registry: registry,
+                                       assets: StoredMediaAvailability(photos: photoIDs, videos: videoIDs))
+        let media = contents.media.map { (item: SceneArchiveMedia) -> SceneArchiveImportPlan.Media in
+            SceneArchiveImportPlan.Media(key: item.key, type: item.type, fileExtension: item.fileExtension, byteCount: item.data.count)
+        }
+        return SceneArchiveImportPlan(archiveSHA256: sha256, currentPhotoID: photoID, currentVideoID: videoID, refusal: nil,
+                                      sceneName: contents.document.name, media: media,
+                                      replacesPhoto: types.contains(.photo) && photoID != nil,
+                                      replacesVideo: types.contains(.video) && videoID != nil,
+                                      repairEntries: report.entries, licenses: [], steps: steps)
+    }
+
+    /// FILE-003-R12: imports only what `plan` described. A refused plan is refused again; changed
+    /// archive bytes or a changed current photo or video throw `.planChanged` before any staging.
+    func importArchive(at source: URL, plan: SceneArchiveImportPlan?) async throws(SceneArchiveServiceError) -> SceneArchiveImportResult {
+        if let plan {
+            if let refusal = plan.refusal { throw refusal }
+            guard photos.current()?.id.uuidString == plan.currentPhotoID, videos.current()?.id.uuidString == plan.currentVideoID else {
+                throw .planChanged
+            }
+        }
+        let staging = newStagingFolder()
+        defer { try? FileManager.default.removeItem(at: staging) }
+        let data = try readPicked(source, staging: staging)
+        if let plan, PortableSHA256.hex(data) != plan.archiveSHA256 { throw .planChanged }
         let contents: SceneArchiveContents
         do {
             contents = try SceneArchiveReader.read(data, registry: registry, limits: limits)
@@ -273,6 +387,23 @@ struct SceneArchiveService: Sendable {
         return SceneArchiveImportResult(document: document, photo: adoptedPhoto, video: adoptedVideo,
                                         replacedPhoto: replacedPhoto, replacedVideo: replacedVideo, warnings: contents.warnings,
                                         repairReport: report)
+    }
+
+    private func newStagingFolder() -> URL {
+        temporaryRoot.appendingPathComponent(Self.stagingFolderName, isDirectory: true)
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    }
+
+    /// Creates `staging`, copies the picked file into it once, and reads the copy.
+    private func readPicked(_ source: URL, staging: URL) throws(SceneArchiveServiceError) -> Data {
+        do {
+            try FileManager.default.createDirectory(at: staging, withIntermediateDirectories: true)
+        } catch {
+            throw .saveFailed
+        }
+        let copy = try copyPicked(source, into: staging)
+        guard let data = try? Data(contentsOf: copy, options: .mappedIfSafe) else { throw .unreadable }
+        return data
     }
 
     /// Which stored photo and video exist now (for validating an imported scene).

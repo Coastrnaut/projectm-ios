@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (FILE-003-T01-T17 verified on the Mac Studio: package tests on the host, app and UI tests on the iOS 27.2 simulator; the Linux job is left to CI)
 
 **speckit-analyze (2026-11-14)**: 0 critical, 0 high; fixes applied: the UI test runs at the largest accessibility size (R13, S6); "owned UserDefaults keys" for presets is defined as none today and tested by name (R2, C2); the motion-policy check is part of T08/T17; the roadmap-status task was dropped (integrator's job).
 

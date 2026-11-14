@@ -6,7 +6,7 @@
 
 - Pure: no file, default or clock access.
 - A reader refusal gives `refusal = UserPresetArchiveError.message`, no entries.
-- Classification order per preset (archive order): (1) same text as a quarantined file → refused `inQuarantine`; (2) same text as another library preset → `identical`; (3) blocked hash → refused `blocked`; (4) built-in hash → refused `builtIn`; (5) validator rejection → refused `failsChecks`; (6) id taken by a different preset → `idConflict`; (7) name taken (library or earlier planned, case-insensitive) → `nameConflict`; (8) `new`. Capacity: once active presets + planned installs reach 1,000, further installable entries are refused `libraryFull`.
+- Classification order per preset (archive order): (1) same text as a quarantined file → refused `inQuarantine`; (2) same text as another library preset → `identical`; (3) blocked hash → refused `blocked`; (4) built-in hash (copies of Included presets excepted, research FILE-003-D5a) → refused `builtIn`; (5) validator rejection → refused `failsChecks`; (6) id taken by a different preset → `idConflict`; (7) name taken (library or earlier planned, case-insensitive) → `nameConflict`; (8) `new`. Capacity: once active presets + planned installs reach 1,000, further installable entries are refused `libraryFull`.
 - Install action: `new` keeps the incoming id and name; a conflict under `keepBoth` gets the D3 identifier when its id is taken (else the incoming id) and `UserPresetName.copyName` when its name is taken; under `skip` no action.
 
 ## C2. Library (actor)

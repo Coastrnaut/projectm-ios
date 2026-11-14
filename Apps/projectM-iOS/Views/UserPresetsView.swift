@@ -14,6 +14,8 @@
 //   closed during its check is reported once (R13). Information shows a copy's origin (US4).
 // * PRE-014 (specs/012-pre-014-bulk-preset-export): "Export…" opens the Export Presets sheet;
 //   closing it deletes any archive still waiting to be shared.
+// * FILE-003 (specs/105-file-003-import-dry-run): a preset archive (`.zip`) picked in "Import
+//   Preset…" opens the import preview (PresetArchiveImportView); nothing is stored before Install.
 import PresetLibrary
 import SwiftUI
 import UniformTypeIdentifiers
@@ -37,11 +39,12 @@ struct UserPresetsView: View {
     @State private var removing: UserPreset?
 
     /// `.milk` has no system type; plain data keeps such files selectable. The extension is
-    /// checked again when the file is imported.
-    private static let pickerTypes: [UTType] = [UTType(filenameExtension: "milk"), .data].compactMap { $0 }
+    /// checked again when the file is imported. FILE-003: preset archives are `.zip`.
+    private static let pickerTypes: [UTType] = [UTType(filenameExtension: "milk"), .zip, .data].compactMap { $0 }
 
     var body: some View {
         List {
+            digestProbe
             if let unavailable = userPresets.unavailableMessage {
                 Text(unavailable)
                     .accessibilityIdentifier("userPresetsUnavailable")
@@ -173,6 +176,9 @@ struct UserPresetsView: View {
         .sheet(isPresented: $exporting, onDismiss: { userPresets.finishSharing() }) {
             UserPresetExportView(userPresets: userPresets)
         }
+        .sheet(item: archiveReviewBinding) { (review: PresetArchiveReview) in
+            PresetArchiveImportView(userPresets: userPresets, review: review)
+        }
         .sheet(item: $showingInfo) { preset in UserPresetInfoView(preset: preset) }
         .alert("Remove “\(removing?.name ?? "")”?",
                isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }),
@@ -183,6 +189,27 @@ struct UserPresetsView: View {
         } message: { _ in
             Text("The app's copy of this preset is deleted. The file you imported it from is not touched.")
         }
+    }
+
+    /// FILE-003: the archive preview; dismissing the sheet is Cancel.
+    private var archiveReviewBinding: Binding<PresetArchiveReview?> {
+        Binding<PresetArchiveReview?>(
+            get: { () -> PresetArchiveReview? in userPresets.archiveReview },
+            set: { (value: PresetArchiveReview?) in if value == nil, userPresets.archiveReview != nil { userPresets.cancelArchive() } })
+    }
+
+    /// DEBUG probe for PresetArchiveImportUITests: the library's snapshot digest.
+    @ViewBuilder
+    private var digestProbe: some View {
+        #if DEBUG
+        if userPresets.tracksLibraryDigest {
+            Text(userPresets.libraryDigest)
+                .font(.caption2)
+                .dynamicTypeSize(.xSmall)   // a DEBUG probe: kept small at every text size
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("libraryDigest")
+        }
+        #endif
     }
 
     /// Playable records with their library entries (the entry is what plays and gets starred).

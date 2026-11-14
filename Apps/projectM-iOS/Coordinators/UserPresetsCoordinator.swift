@@ -21,6 +21,12 @@
 // selected exportable presets into a private temporary folder, words and announces the summary,
 // and hands the file to the share sheet; the folder is deleted when the share sheet closes and
 // at the next launch. Copies of full-library presets never leave (ADR-0008); nothing is logged.
+//
+// Roadmap FILE-003 (specs/105-file-003-import-dry-run): a `.zip` picked in "Import Preset…" is a
+// preset archive. It is read once into memory and planned (`UserPresetLibrary.planArchiveImport`)
+// without writing anything; the preview sheet shows the plan. Install re-plans and installs exactly
+// that plan, all or nothing; Cancel discards it, leaving the library byte-for-byte unchanged.
+// Announcements go through the shared announcer's `library` lane (`announceLibrary`).
 import Foundation
 import Observation
 import PresetLibrary
@@ -50,6 +56,16 @@ struct RendererPresetTrial: PresetTrialRunning {
         case .unavailable(let reason): .unavailable(reason)
         }
     }
+}
+
+/// FILE-003: the archive preview on screen.
+struct PresetArchiveReview: Identifiable, Equatable {
+    let id = UUID()
+    var plan: PresetArchiveImportPlan
+    /// The changed-library sentence or why the last Install wrote nothing.
+    var notice: String?
+    /// DEBUG probe: the library's snapshot digest when the preview opened (empty in Release).
+    var digestAtPreview: String
 }
 
 @MainActor
@@ -107,12 +123,28 @@ final class UserPresetsCoordinator: UserPresetGuarding {
     @ObservationIgnored private let now: @MainActor () -> Date
     @ObservationIgnored private let appVersion: String
 
+    /// FILE-003: the archive preview, or nil.
+    private(set) var archiveReview: PresetArchiveReview?
+    /// True while an archive install runs.
+    private(set) var isInstallingArchive = false
+    /// The previewed archive's bytes (memory only; dropped on Cancel and after Install).
+    @ObservationIgnored private var archiveData: Data?
+    /// FILE-003-R13: the shared announcer's `library` lane (set by AppCoordinator); `announce` otherwise.
+    @ObservationIgnored var announceLibrary: (@MainActor (String) -> Void)?
+    /// The folders the library owns (FILE-003 snapshots): the user presets and the collections.
+    @ObservationIgnored let libraryRoots: [URL]
+    /// DEBUG probe `libraryDigest`: the snapshot digest of `libraryRoots`, kept current while enabled.
+    private(set) var libraryDigest = ""
+    @ObservationIgnored var tracksLibraryDigest = false
+
     init(library: UserPresetLibrary, provingPeriod: Duration = PresetImportLimits.provingPeriod,
          announce: @escaping @MainActor (String) -> Void = { UIAccessibility.post(notification: .announcement, argument: $0) },
          exportDirectory: URL = UserPresetsCoordinator.defaultExportDirectory,
          now: @escaping @MainActor () -> Date = { Date() },
-         appVersion: String = UserPresetsCoordinator.bundleVersion(.main)) {
+         appVersion: String = UserPresetsCoordinator.bundleVersion(.main),
+         libraryRoots: [URL] = UserPresetsCoordinator.defaultLibraryRoots) {
         self.library = library
+        self.libraryRoots = libraryRoots
         self.provingPeriod = provingPeriod
         self.announce = announce
         self.exportDirectory = exportDirectory
@@ -188,6 +220,10 @@ final class UserPresetsCoordinator: UserPresetGuarding {
         case .success(let picked): url = picked
         case .failure(let error):
             if (error as? CocoaError)?.code != .userCancelled { resultMessage = Self.pickerFailedText }
+            return
+        }
+        if url.pathExtension.lowercased() == "zip" {   // FILE-003-R1: a preset archive
+            await previewArchive(at: url)
             return
         }
         guard !isImporting, !isExporting else { return }
@@ -366,6 +402,192 @@ final class UserPresetsCoordinator: UserPresetGuarding {
     }
     #endif
 
+    // MARK: - Archive import (FILE-003-R1-R13)
+
+    nonisolated static let defaultLibraryRoots: [URL] = [UserPresetStore.defaultDirectory(), PresetCollectionStore.defaultDirectory()]
+
+    /// The largest archive file read: every preset at the size limit plus the manifest and ZIP records.
+    nonisolated static let maxArchiveFileBytes: Int = {
+        let texts: Int = PresetImportLimits.maxUserPresets * PresetImportLimits.maxFileBytes
+        let overhead: Int = PresetImportLimits.maxIndexBytes + (1 << 20)
+        return texts + overhead
+    }()
+
+    /// Reads the picked archive once (FILE-003-R2) and opens the preview. Nothing is written.
+    func previewArchive(at url: URL) async {
+        guard !isImporting, !isExporting, !isInstallingArchive, archiveReview == nil else { return }
+        isImporting = true
+        if !loaded { await load() }
+        let digest = currentDigest()
+        let plan: PresetArchiveImportPlan
+        switch Self.readArchive(url) {
+        case .success(let data):
+            archiveData = data
+            plan = await library.planArchiveImport(data)
+        case .failure(let refusal):
+            archiveData = nil
+            plan = PresetArchiveImportPlan(archiveSHA256: "", policy: .keepBoth, refusal: refusal.message, entries: [])
+        }
+        isImporting = false
+        archiveReview = PresetArchiveReview(plan: plan, notice: nil, digestAtPreview: digest)
+        speak(PresetArchiveText.previewAnnouncement(plan))
+    }
+
+    /// Plans again with another conflict policy (FILE-003-R6).
+    func setArchivePolicy(_ policy: PresetArchiveConflictPolicy) async {
+        guard var review = archiveReview, let data = archiveData, review.plan.policy != policy, !isInstallingArchive else { return }
+        review.plan = await library.planArchiveImport(data, policy: policy)
+        review.notice = nil
+        archiveReview = review
+    }
+
+    /// Installs exactly the previewed plan (FILE-003-R8-R10). A changed library shows the new plan;
+    /// a failure keeps the preview with the reason; success closes it and runs the trials.
+    func installArchive() async {
+        guard var review = archiveReview, let data = archiveData, review.plan.canInstall, !isInstallingArchive else { return }
+        isInstallingArchive = true
+        let outcome = await library.installArchive(data, plan: review.plan)
+        isInstallingArchive = false
+        switch outcome {
+        case .installed(let presets):
+            archiveReview = nil
+            archiveData = nil
+            speak(PresetArchiveText.installed(presets.count))
+            await refresh()
+            await library.runPendingTrials()
+            await refresh()
+        case .changed(let plan):
+            review.plan = plan
+            review.notice = PresetArchiveText.changed
+            archiveReview = review
+            speak(PresetArchiveText.changed)
+        case .refused(let message):
+            review.notice = message
+            archiveReview = review
+            speak(message)
+        }
+    }
+
+    /// Cancel or a dismissed sheet (FILE-003-R11): the plan and the bytes are dropped; nothing else.
+    func cancelArchive() {
+        archiveReview = nil
+        archiveData = nil
+        updateDigest()
+    }
+
+    private func speak(_ text: String) {
+        if let announceLibrary { announceLibrary(text) } else { announce(text) }
+    }
+
+    /// The picked file, read under its security scope and size-checked before reading.
+    nonisolated static func readArchive(_ url: URL) -> Result<Data, PresetArchiveReadRefusal> {
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+        guard let attributes = try? FileManager.default.attributesOfItem(atPath: url.path) else { return .failure(.unreadable) }
+        guard attributes[.type] as? FileAttributeType == .typeRegular else { return .failure(.unreadable) }
+        let size: Int = (attributes[.size] as? NSNumber)?.intValue ?? 0
+        guard size <= maxArchiveFileBytes else { return .failure(.tooLarge) }
+        guard let data = try? Data(contentsOf: url) else { return .failure(.unreadable) }
+        return .success(data)
+    }
+
+    private func currentDigest() -> String {
+        #if DEBUG
+        guard tracksLibraryDigest else { return "" }
+        return LibraryTreeSnapshot.take(libraryRoots).digest
+        #else
+        return ""
+        #endif
+    }
+
+    private func updateDigest() {
+        #if DEBUG
+        if tracksLibraryDigest { libraryDigest = currentDigest() }
+        #endif
+    }
+
+    #if DEBUG
+    /// PresetArchiveImportUITests: `-uitestPresetArchiveFixture` writes a two-preset archive (one
+    /// without licence lines) to a temporary file and opens its preview, as if picked. DEBUG only.
+    func previewFixtureArchive() async {
+        tracksLibraryDigest = true
+        updateDigest()
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("FILE-003 fixture.zip")
+        guard let data = Self.fixtureArchive() else { return }
+        try? data.write(to: url, options: .atomic)
+        await previewArchive(at: url)
+        try? FileManager.default.removeItem(at: url)
+    }
+
+    nonisolated static func fixtureArchive() -> Data? {
+        func text(_ tag: String, license: Bool) -> String {
+            var lines: [String] = ["MILKDROP_PRESET_VERSION=201", "PSVERSION=2", "PSVERSION_WARP=2", "PSVERSION_COMP=2", "[preset00]"]
+            if license { lines.append("// License: CC-BY 4.0, Example Author") }
+            lines += ["fRating=3.000000", "fDecay=0.950000", "zoom=1.020000", "rot=0.020000", "nWaveMode=3",
+                      "per_frame_1=wave_g = 0.5 + 0.5*sin(time*0.7);", "per_frame_2=wave_b = 0.\(tag.count)*bass;",
+                      "per_pixel_1=zoom = zoom + 0.01*sin(rad*4 + time);"]
+            return lines.joined(separator: "\n") + "\n"
+        }
+        let items: [(id: String, name: String, text: String)] = [
+            ("user/file003-fixture-harbor", "Fixture Harbor", text("harbor", license: true)),
+            ("user/file003-fixture-drift", "Fixture Drift", text("drift", license: false)),
+        ]
+        var records: [UserPreset] = []
+        var texts: [String: Data] = [:]
+        for item in items {
+            let bytes = [UInt8](item.text.utf8)
+            records.append(UserPreset(id: item.id, name: item.name, author: "", originalFileName: item.name + ".milk",
+                                      sha256: ContentHash.sha256Hex(bytes), blobHash: ContentHash.gitBlobSHA1Hex(bytes), byteCount: bytes.count,
+                                      importedAt: Date(timeIntervalSince1970: 1_800_000_000), state: .playable, provenOnScreen: false,
+                                      quarantine: nil, warnings: [],
+                                      license: PresetLicenseMetadata(authorFromFileName: false, linesFound: [])))
+            texts[item.id] = Data(item.text.utf8)
+        }
+        var output = Data()
+        do {
+            try UserPresetArchiveWriter.write(records, appVersion: "fixture", exportedAt: Date(timeIntervalSince1970: 1_800_000_000),
+                                              contents: { (preset: UserPreset) -> Data? in texts[preset.id] },
+                                              sink: { (chunk: Data) in output.append(chunk) })
+        } catch {
+            return nil
+        }
+        return output
+    }
+    #endif
+
+    // MARK: - Words (FILE-003)
+
+    nonisolated static func archiveEntryText(_ entry: PresetArchivePlanEntry) -> String {
+        switch entry.kind {
+        case .new: return entry.incomingName
+        case .identical(let existing): return "\(entry.incomingName): the same preset is in My Presets as “\(existing)”."
+        case .nameConflict(let existing): return "\(entry.incomingName): same name as “\(existing)”."
+        case .idConflict(let existing): return "\(entry.incomingName): same identifier as “\(existing)”."
+        case .refused(let refusal): return "\(entry.incomingName): \(refusal.message)"
+        }
+    }
+
+    /// What Keep both does to this entry, or nil.
+    nonisolated static func archiveInstallText(_ entry: PresetArchivePlanEntry) -> String? {
+        guard let install = entry.install, install.name != entry.incomingName || install.id != entry.incomingID else { return nil }
+        if install.name != entry.incomingName { return "Installed as “\(install.name)”." }
+        return "Installed with a new identifier."
+    }
+
+    nonisolated static func policyTitle(_ policy: PresetArchiveConflictPolicy) -> String {
+        switch policy {
+        case .keepBoth: return "Keep both"
+        case .skip: return "Skip"
+        }
+    }
+
+    nonisolated static func policyDetail(_ policy: PresetArchiveConflictPolicy) -> String {
+        switch policy {
+        case .keepBoth: return "Install it as a copy. Your preset is not changed."
+        case .skip: return "Leave it out."
+        }
+    }
+
     // MARK: - UserPresetGuarding (R18, R19)
 
     func willShow(_ preset: IndexedPreset) async {
@@ -437,6 +659,7 @@ final class UserPresetsCoordinator: UserPresetGuarding {
         // ACC-002-R4: imported presets carry the same flash risk flag as the bundled library.
         let flashRisk = await library.flashRisk()
         presets?.setUserPresets(snapshot.playable.map { (preset: UserPreset) -> IndexedPreset in preset.indexed(flash: flashRisk[preset.id]) })
+        updateDigest()
     }
 
     @ObservationIgnored private var noticeShown = false
@@ -527,5 +750,19 @@ final class UserPresetsCoordinator: UserPresetGuarding {
 
     nonisolated static func byteCountText(_ count: Int) -> String {
         "\(PresetImportLimits.grouped(count)) \(count == 1 ? "byte" : "bytes")"
+    }
+}
+
+/// Why a picked archive was not read (FILE-003-R2).
+enum PresetArchiveReadRefusal: Error, Equatable, Sendable {
+    case unreadable
+    case tooLarge
+
+    var message: String {
+        switch self {
+        case .unreadable: return "The archive could not be read."
+        case .tooLarge:
+            return "The archive is larger than \(PresetImportLimits.grouped(UserPresetsCoordinator.maxArchiveFileBytes)) bytes, the most the app reads."
+        }
     }
 }
