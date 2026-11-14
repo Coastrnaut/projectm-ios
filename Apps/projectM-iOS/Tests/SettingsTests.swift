@@ -1,5 +1,6 @@
 // Task T103: settings defaults and persistence (FR-048, FR-072, FR-065) and the bundled license
 // manifest (FR-067).
+import PerformanceControl
 import XCTest
 @testable import projectM_iOS
 
@@ -80,6 +81,7 @@ final class SettingsTests: XCTestCase {
         settings.colorBlindSafePalette = true  // ACC-003-R13
         settings.sensorySafety.preset = .custom   // ACC-012-R8: the profile and its three custom keys
         settings.sceneLock.lock()              // SCN-015-R1
+        settings.parameterQuantizer.mode = .bar   // MOD-017
         let keys = Set(defaults.persistentDomain(forName: suite)?.keys ?? [:].keys)
         // MED-001, MED-002, MED-003, MED-004, MED-009: `settings.photo.id`, `settings.video.id`,
         // `settings.video.loop`, `settings.video.speed` and `settings.text.overlay` are in allKeys (the UI-test
