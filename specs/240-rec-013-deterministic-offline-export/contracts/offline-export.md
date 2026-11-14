@@ -6,7 +6,7 @@
 
 - Renders `frameCount(audio)` frames per D1; never reads a real clock; never touches the live host or settings.
 - Returns the MP4 URL, the sidecar URL and the manifest. Frame count of the MP4 = manifest `frameCount` = checksum count.
-- `isCancelled()` is read before each frame; when true the recorder is cancelled (no MP4 remains) and `OfflineExportError.cancelled` is thrown. The coordinator deletes the folder.
+- `isCancelled()` is read before each frame; when true the writer is cancelled (no MP4 remains) and `OfflineExportError.cancelled` is thrown. The coordinator deletes the folder.
 - Errors: `.noDevice`, `.audioTooShort`, `.render(String)`, `.writer(String)`, `.cancelled`.
 
 ## C2 Determinism

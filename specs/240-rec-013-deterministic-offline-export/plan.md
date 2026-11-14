@@ -10,8 +10,8 @@ rate, the seed and the audio source. A detached task loads the audio (the seeded
 with AVFoundation and converted to 44.1 kHz stereo Float32, at most 10 minutes) and runs `OfflineSceneRenderer`.
 
 The renderer owns everything it uses: a Metal command queue, a generator from `NativeSpectrumHost.makeGenerator`, the
-FX-001 glow chain, an `OfflineAnalysisDriver` and a `MetalFrameRecorder` in offline mode (`realTime: false`, with an
-AAC track). For frame n (research REC-013-D1):
+FX-001 glow chain, an `OfflineAnalysisDriver` and an `OfflineVideoFileWriter` (FrameRecording; REC-003's writer with
+an AAC track, retried appends; D5). For frame n (research REC-013-D1):
 
 1. `OfflineFrameClock` gives the time n × 1e9 / fps ns and the sample position round(n × 44,100 / fps).
 2. The driver lets its `OfflinePCMSource` expose the audio up to that sample and calls ANL-016's `AnalysisPipeline.step()`
@@ -20,10 +20,9 @@ AAC track). For frame n (research REC-013-D1):
 3. The renderer smooths the bands (ANL-003 `BandSmoother`, interval 1 / fps), hands events to the beat rings or
    particle visuals as the live host does, and encodes the generator (through the glow chain when the glow is on) into a
    private `bgra8Unorm_srgb` texture.
-4. The same command buffer blits the texture into a shared read-back buffer and into the recorder's pixel buffer
-   (`recordFrame` at the frame's time); after `waitUntilCompleted` the BGRA bytes are hashed (SHA-256, CryptoKit) and
-   the frame's audio slice is handed to the recorder; `waitForPendingFrames` keeps the writer in step, so nothing is
-   ever dropped and nothing waits for the real clock.
+4. The same command buffer blits the texture into a shared read-back buffer; after `waitUntilCompleted` the BGRA bytes
+   are hashed (SHA-256, CryptoKit), copied into the writer's pixel buffer at slot n, and the frame's audio slice
+   follows; a busy encoder is retried, so nothing is ever dropped and nothing waits for the real clock.
 
 After the last frame the recorder finishes the MP4 and the sidecar (`OfflineExportManifest`, JSON with sorted keys) is
 written next to it. Cancel is a flag checked before each frame; cancel, a failure or leaving the foreground cancels the
@@ -39,7 +38,7 @@ Photos.
 ## Technical Context
 
 **Language/Version**: Swift 6 (Xcode 27.2 host; CI also Xcode 26)
-**Primary Dependencies**: Metal, AVFoundation (audio file read), CryptoKit (SHA-256), SwiftUI, Observation; VisualGenerators (`VisualBandFeed`, `VisualEffects`, `VisualParameters`), AnalysisFeatures (`AnalysisPipeline`, `BandSmoother`), AudioCore (`NormalizedPCMReader`), Compositor `FrameRecording` (`MetalFrameRecorder`, `RecordedVideoInspector`), FlashSafety; app REC-002 job capture, REC-011 photos, REC-012 sharing, ACC-004 announcer
+**Primary Dependencies**: Metal, AVFoundation (audio file read), CryptoKit (SHA-256), SwiftUI, Observation; VisualGenerators (`VisualBandFeed`, `VisualEffects`, `VisualParameters`), AnalysisFeatures (`AnalysisPipeline`, `BandSmoother`), AudioCore (`NormalizedPCMReader`), Compositor `FrameRecording` (`VideoFileWriter` via the new `OfflineVideoFileWriter`, `RecordedVideoInspector`), FlashSafety; app REC-002 job capture, REC-011 photos, REC-012 sharing, ACC-004 announcer
 **Storage**: temporary files only (`<tmp>/OfflineExport`), removed on Done and at launch; no UserDefaults key
 **Testing**: package unit tests (VisualGeneratorsTests); app unit tests with real Metal rendering at 160 × 90 on simulator "REC13 iPhone 17" (iOS 27.2); one UI test under 30 s
 **Target Platform**: iOS 26+
@@ -67,6 +66,8 @@ Packages/VisualGenerators/Sources/VisualBandFeed/OfflineAnalysisDriver.swift    
 Packages/VisualGenerators/Sources/VisualBandFeed/OfflineFixtureAudio.swift      # new: seeded 44.1 kHz stereo fixture
 Packages/VisualGenerators/Sources/VisualBandFeed/OfflineExportManifest.swift    # new: sidecar model + JSON
 Packages/VisualGenerators/Tests/VisualGeneratorsTests/OfflineExportCoreTests.swift   # new
+Packages/Compositor/Sources/FrameRecording/OfflineVideoFileWriter.swift          # new: BGRA frames + audio, retried appends
+Packages/Compositor/Tests/FrameRecordingTests/OfflineVideoFileWriterTests.swift   # new
 Apps/projectM-iOS/Coordinators/OfflineExportJob.swift                           # new: job capture, sizes, rates, refusals
 Apps/projectM-iOS/Coordinators/OfflineExportCoordinator.swift                   # new: state machine, folder, cancel, offers
 Apps/projectM-iOS/Coordinators/AppCoordinator+OfflineExport.swift               # new: wiring

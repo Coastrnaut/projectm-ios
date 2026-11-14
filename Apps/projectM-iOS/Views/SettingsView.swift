@@ -357,6 +357,7 @@ struct SettingsView: View {
                 }
             }
             if let layerInspector { SceneSnapshotRows(snapshots: layerInspector.sceneSnapshots) }   // SCN-008-R9: under what it holds
+            if let layerInspector { OfflineExportRow(export: layerInspector.offlineExport) }   // REC-013-R1
         } header: {
             Text("Visual")
         } footer: {

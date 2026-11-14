@@ -25,7 +25,7 @@ ACC-004 (announcer lanes), ACC-012 (sensory safety).
 | ANL-016 `AnalysisPipeline` (`attach`, `step`, injected clock) | The analysis bus: spectra, bands and events from a normalized PCM reader; `step()` reads synchronously | Fed from the export's audio at exact sample positions, stepped once per frame, with a fixed clock |
 | VIS-003/004 `WaveformTap` | Mono and stereo histories for the oscilloscope, Lissajous and radial waveform | Wraps the export's audio reader exactly as on screen |
 | VIS-006/008/009 triggers (`BeatRingTrigger`, `ParticleFountainTrigger`) | Turn bus events into rings, bursts and pulses | Drained per frame, as the live host does |
-| REC-003/004/014/016 `MetalFrameRecorder` | GPU-fed MP4 writer with an AAC track; an offline mode (`realTime: false`) waits for the encoder instead of dropping; exact frame grid; fragments | Writes the export: frame n at n/fps, the audio track from the same samples |
+| REC-003/004/014/016 `MetalFrameRecorder`, `VideoFileWriter` | GPU-fed MP4 writer with an AAC track; exact frame grid; fragments | `VideoFileWriter` writes the export (through a new offline wrapper, research D5): frame n at n/fps, the audio track from the same samples |
 | REC-011 `PhotosSaveCoordinator`, REC-012 sharing | Add-only Save to Photos of a recording; Save… and Share… of files | Offered for the finished export |
 | QA-002 `GoldenSceneRenderer`, `GoldenSHA256` | Fixed-time, seeded renders for golden tests (test package) | Its determinism rules; checksums use the system's SHA-256 in the app |
 | PRE-005 `setFrameTime` | Pins projectM's clock for preset thumbnails | Not enough for determinism: projectM's presets also draw from the engine's own random numbers, which the app cannot seed without an engine patch (Constitution VIII), so projectM scenes are not exported (D3) |
@@ -54,7 +54,7 @@ local-first option.
 - Q: Does the live visual keep running while an export renders? → A: Yes. The export uses its own renderer, analysis and command queue at a lower priority than the screen; the screen may slow down meanwhile, but it never shows export frames and the export never reads the live audio.
 - Q: Which seed values are allowed? → A: Whole numbers from 0 to 4,294,967,295 (default 1), typed in a number field; anything else is refused with "Enter a whole number from 0 to 4294967295."
 - Q: What does the sidecar record to identify the GPU class and the inputs? → A: The GPU name reported by the system, the OS version, the app version, the visual and its options, the glow, Reduce flashing, the safety profile, the size, the rate, the seed, the audio source (fixture or the file's name) with the SHA-256 of the exact 44.1 kHz samples used, the frame count and the frame checksums (lowercase hex). Two sidecars are compared by their checksum lists; the GPU name says whether the comparison applies.
-- Q: Is the export's file name fixed? → A: `projectM-offline-<visual>-<seed>.mp4` and `projectM-offline-<visual>-<seed>.checksums.json`, with the visual's short name (for example `circular`); the folder is new per export, so names never collide.
+- Q: Is the export's file name fixed? → A: `projectM-offline-<visual>-<seed>.mp4` and `projectM-offline-<visual>-<seed>.checksums.json`, with the visual's name (for example `circularSpectrum`); the folder is new per export, so names never collide.
 
 ## User Scenarios & Testing *(mandatory)*
 
