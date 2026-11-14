@@ -19,7 +19,11 @@
 //   and the Reset announcement; `snapshot` (what consumers read) is unchanged. A new analysis
 //   (another reader, or none) restarts the indicator from searching. DEBUG:
 //   `-uitestTempoEstimate <bpm>:<confidence>[:<polls>:<confidence2>]` replaces each poll's estimate.
+// * ACC-007 (specs/238-acc-007-haptic-beat-feedback, research D2): while `analysisEventObserver` is set (haptic
+//   beat pulses on) every drained event is handed to it and the poll runs every 40 ms; nil (the default) keeps
+//   today's 250 ms poll and hands nothing on.
 // Nothing here reaches projectM (Constitution VIII, ADR-0008 decision 5).
+import AnalysisFeatures
 import AudioCore
 import Observation
 import PerformanceControl
@@ -31,6 +35,8 @@ import UIKit
 @Observable
 final class TempoCoordinator: PresentationBoundResource {
     static let pollInterval: Duration = .milliseconds(250)
+    /// ACC-007-R7: the poll while an event observer is set.
+    static let observedPollInterval: Duration = .milliseconds(40)
 
     /// What consumers and the readout show.
     private(set) var snapshot: TempoSnapshot = .none
@@ -61,6 +67,11 @@ final class TempoCoordinator: PresentationBoundResource {
     @ObservationIgnored private var analyzer: TempoAnalyzer?
     @ObservationIgnored private var activeReader: TempoSubscriptionReader?
     @ObservationIgnored private var pollTask: Task<Void, Never>?
+    /// ACC-007: sees every drained analysis event on the main actor (nil: none, 250 ms poll).
+    @ObservationIgnored var analysisEventObserver: ((AnalysisEvent) -> Void)?
+
+    /// The current poll period (ACC-007-R7).
+    var currentPollInterval: Duration { analysisEventObserver == nil ? Self.pollInterval : Self.observedPollInterval }
 
     init(clock: @escaping () -> UInt64 = { MonotonicClock.nowNanoseconds() },
          stateClock: @escaping () -> UInt64 = { MonotonicClock.nowNanoseconds() },
@@ -257,7 +268,8 @@ final class TempoCoordinator: PresentationBoundResource {
             pollTask = Task { @MainActor [weak self] in
                 while !Task.isCancelled {
                     self?.pollOnce()
-                    try? await Task.sleep(for: TempoCoordinator.pollInterval)
+                    let interval: Duration = self?.currentPollInterval ?? TempoCoordinator.pollInterval
+                    try? await Task.sleep(for: interval)
                 }
             }
         }
@@ -265,7 +277,7 @@ final class TempoCoordinator: PresentationBoundResource {
 
     private func pollOnce() {
         guard let activeReader else { return }
-        let estimate: TempoEstimate? = activeReader.poll()
+        let estimate: TempoEstimate? = activeReader.poll(onEvent: analysisEventObserver)
         #if DEBUG
         if let estimateScript {
             scriptPolls += 1

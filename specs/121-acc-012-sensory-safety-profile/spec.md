@@ -180,7 +180,7 @@ on another device, and finds the same limits.
 - **ACC-012-R8**: The profile and custom values MUST be stored locally only, cleared by the UI-test reset
   and included in the FILE-005 library backup.
 - **ACC-012-R9**: The app has no haptic output; the profile MUST say so in its help text and the spec
-  records that future haptics read the profile.
+  records that future haptics read the profile. (Amended 2026-11-14 by ACC-007-R10: ACC-007 adds optional haptic beat pulses; they read the effective intensity limit and stop under Strict, and the help text says so.)
 - **ACC-012-R10**: Settings MUST show a "Sensory safety" section with the presets, custom sliders editable
   with VoiceOver (ACC-005), short help, and an announcement of each profile change (ACC-004's announcer);
   its animations go through `MotionPolicy` (ACC-001). Custom sliders appear only while Custom is chosen;
