@@ -37,14 +37,12 @@ struct SourceStatusIndicator: View {
     }
 
     var body: some View {
-        // ACC-003: the symbol is decorative (hidden); the text stays the identified static text.
-        HStack(spacing: 6) {
-            StatusCueSymbol(cue: Self.cue(state: coordinator.manager.state, switching: coordinator.manager.switchingTo != nil))
-            Text(text)
-                .accessibilityIdentifier("sourceIndicator")
-                .accessibilityLabel(text)
-        }
-        .font(.footnote.weight(.semibold))
+        // ACC-003: the symbol is inline in the identified static text; VoiceOver reads the words only.
+        let cue: StatusCue = Self.cue(state: coordinator.manager.state, switching: coordinator.manager.switchingTo != nil)
+        StatusCueLabel.text(cue, words: text)
+            .accessibilityIdentifier("sourceIndicator")
+            .accessibilityLabel(text)
+            .font(.footnote.weight(.semibold))
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
         .statusBadgeBackground(Capsule(), material: .ultraThinMaterial)   // ACC-003-R9

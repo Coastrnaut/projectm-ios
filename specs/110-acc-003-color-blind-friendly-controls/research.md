@@ -56,13 +56,14 @@ luminance (white `FFFFFF` and grouped `F2F2F7` in light, black `000000` and grou
 
 ## ACC-003-D4 — Grayscale snapshot method
 
-- Decision: in `projectM-iOSTests` (hosted on the simulator), render each state's cue view with
-  `ImageRenderer` at scale 2 in a fixed frame on a solid background (white for light, black for dark),
-  draw the `CGImage` into an 8-bit `CGColorSpaceCreateDeviceGray()` context (Core Graphics converts
-  colour to luminance), then compare two states: the share of pixels whose gray values differ by at
-  least 51 (20% of 255). Distinguishable means ≥ 1%. A negative control renders one symbol in two
-  colours of equal relative luminance (computed, e.g. a red and a green matched to Y = 0.2) and must
-  measure < 1%.
+- Decision: in `projectM-iOSTests` (hosted on the simulator), render each state's cue view
+  (`StatusCueLabel`, the view the badges draw) with `ImageRenderer` at scale 2 in a 300 × 36 pt frame on a
+  solid background (white for light, black for dark), draw it into an 8-bit sRGB RGBA context, and
+  reduce every pixel to its relative luminance Y (sRGB decoded, Rec. 709 weights) re-encoded to an 8-bit
+  gray. Compare two states by the share of pixels whose gray values differ by at least 51 (20% of 255).
+  Distinguishable means ≥ 1%. A negative control renders one symbol in pure red and in a green of equal
+  relative luminance (sRGB 0, 148, 0; Y ≈ 0.213) and must measure < 1%. (The first idea, Core Graphics'
+  DeviceGray conversion, was replaced by explicit luminance so the weights are documented.)
 - Rationale: grayscale removes hue, the thing colour-blind users and iOS's grayscale filter lose; the
   pixel share catches both shape and word differences; the control proves the measure is not fooled by
   hue. No reference images are stored (no golden-file churn).
@@ -89,3 +90,12 @@ luminance (white `FFFFFF` and grouped `F2F2F7` in light, black `000000` and grou
 - Decision: a view modifier `statusBadgeBackground(_:)`: standard → the badge's existing material;
   increased → opaque `systemBackground` with a 1 pt `Color.primary` border, same shape.
 - Rationale: materials let the moving visualization show through, which lowers contrast unpredictably.
+
+## ACC-003-D8 — Symbol inline in the status text (found during implementation)
+
+- Decision: the symbol is drawn inline in the status's Text (`Text("\(Text(Image(systemName:))) words")`)
+  with an explicit accessibility label of the words, not as a separate hidden `Image` beside the Text.
+- Rationale: with a separate hidden image, ACC-004's accessibility audit reported an element-less
+  "Contrast failed for SwiftUI.AccessibilityNode" on the controls and the show row in two runs out of
+  two (2026-11-14); with the inline symbol both audits pass. The identified static texts
+  (`sourceIndicator`, `blackoutBadgeText`) keep their identifiers and labels.

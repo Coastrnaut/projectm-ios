@@ -12,8 +12,8 @@
 | osc | listening | `dot.radiowaves.left.and.right` | "OSC listening on port N" |
 | tempo | stable / uncertain / searching | none (ANL-006 words) | "Stable" / "Uncertain" / "Searching" |
 
-- Symbols are `accessibilityHidden`; every existing accessibility label, value and identifier is
-  unchanged. The status banner's state words use the primary text colour.
+- Symbols are drawn inline in the status text, whose accessibility label is the words only (research
+  D8); every existing accessibility label, value and identifier is unchanged. The status banner's state words use the primary text colour.
 
 ## C2. Palette
 

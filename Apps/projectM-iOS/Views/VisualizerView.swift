@@ -673,13 +673,11 @@ struct OutputBlackoutBadge: View {
     private var label: some View {
         // ACC-003-R3: eye.slash while blacked out, eye while restoring (the words are unchanged).
         let cue: StatusCue = StatusCueCatalog.blackout(blackedOut: external.isBlackoutRequested && external.blackoutPhase == .blackedOut)
-        return HStack(spacing: 6) {
-            StatusCueSymbol(cue: cue)
-            Text(cue.text)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityIdentifier("blackoutBadgeText")   // the identified static text, as before
-        }
-        .font(.footnote.bold())
+        return StatusCueLabel.text(cue)
+            .font(.footnote.bold())
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityLabel(cue.text)
+            .accessibilityIdentifier("blackoutBadgeText")   // the identified static text, as before
     }
 
     @ViewBuilder private var restore: some View {

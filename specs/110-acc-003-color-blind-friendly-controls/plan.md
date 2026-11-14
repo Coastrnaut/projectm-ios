@@ -6,7 +6,7 @@
 
 Give every critical status a non-colour cue and the interface a high-contrast palette. A pure catalog
 (`StatusCueCatalog`) maps each status state to a symbol, its words and a colour role; one small view
-(`StatusCueSymbol`) draws the symbol, and the existing indicators and badges use it. The app gets an
+(`StatusCueLabel`) draws the symbol inline with the words (research D8), and the existing indicators and badges use it. The app gets an
 asset-catalog accent (darker than systemBlue in light mode, Apple's high-contrast blues with Increase
 Contrast) and an `InterfacePalette` of status colours checked by unit tests for 4.5:1 / 7:1. With
 Increase Contrast, the visualizer's badges get an opaque, bordered background; Differentiate Without

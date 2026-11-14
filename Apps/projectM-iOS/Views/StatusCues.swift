@@ -7,7 +7,7 @@
 //   `AccentColor`) in light, dark, and both with Increase Contrast (research ACC-003-D2).
 // * `StatusAppearance`: Increase Contrast and Differentiate Without Colour as one environment value, set
 //   at the root; DEBUG launch arguments force them for UI tests (contract C3).
-// * `StatusCueSymbol` / `StatusCueLabel`: the decorative symbol (hidden from VoiceOver) and symbol plus words.
+// * `StatusCueLabel`: the symbol inline before the words, one Text that VoiceOver reads as the words only.
 // * `statusBadgeBackground`: a badge's material, or with Increase Contrast an opaque, bordered background.
 // No animation (ACC-001) and no announcement (ACC-011) here.
 import AudioCore
@@ -300,30 +300,25 @@ struct StatusAppearanceReader: ViewModifier {
 
 // MARK: - Views
 
-/// The cue's decorative symbol in its role's colour (nothing when the cue has none).
-struct StatusCueSymbol: View {
-    let cue: StatusCue
-
-    var body: some View {
-        if let symbol = cue.symbol {
-            Image(systemName: symbol)
-                .foregroundStyle(InterfacePalette.color(cue.role))
-                .accessibilityHidden(true)
-        }
-    }
-}
-
-/// Symbol and words, as the badges draw them.
+/// Symbol and words, as the badges draw them: one Text with the symbol inline, so the pair is a single
+/// accessibility node read as the words only (a separate hidden Image was audited as an element-less
+/// "Contrast failed" node by ACC-004's audit, 2026-11-14).
 struct StatusCueLabel: View {
     let cue: StatusCue
     var font: Font = .footnote.weight(.semibold)
 
+    /// The symbol (in its role's colour) followed by `words` (the cue's own words by default).
+    static func text(_ cue: StatusCue, words: String? = nil) -> Text {
+        let shown: String = words ?? cue.text
+        guard let symbol = cue.symbol else { return Text(shown) }
+        let icon: Text = Text(Image(systemName: symbol)).foregroundStyle(InterfacePalette.color(cue.role))
+        return Text("\(icon) \(shown)")
+    }
+
     var body: some View {
-        HStack(spacing: 6) {
-            StatusCueSymbol(cue: cue)
-            Text(cue.text)
-        }
-        .font(font)
+        Self.text(cue)
+            .font(font)
+            .accessibilityLabel(cue.text)
     }
 }
 
