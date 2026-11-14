@@ -9,12 +9,12 @@ Format: `- [ ] QA-006-Tnn [P?] [Story] Description`. `{device}` = needs a physic
 
 ## Phase 1: Setup
 
-- [ ] QA-006-T01 Create the QA6 iOS 27.2 simulator, check `Build/` xcframeworks and the projectM submodule in the worktree, count `~/Library/Logs/DiagnosticReports/PosterBoard-*.ips`
+- [X] QA-006-T01 Create the QA6 iOS 27.2 simulator, check `Build/` xcframeworks and the projectM submodule in the worktree, count `~/Library/Logs/DiagnosticReports/PosterBoard-*.ips` — Verified 2026-11-14: QA6 iPhone 17 (iOS 27.2, F25F71E4) created; `Build` symlink, ProjectM and ANGLE xcframeworks and 38 test presets present; PosterBoard reports before: 25
 
 ## Phase 2: Foundational (verdict logic, blocks every story)
 
-- [ ] QA-006-T02 Implement `RenderSoakTolerance` (warm-up 2, minimum measured 3, slope ε = max(64 KiB, 0.5 %), bound max(2 MiB, 10 %), live scenes at dwell end 1), `RenderSoakCycleSample`, `RenderSoakDwellSample`, `RenderSoakError`, `RenderSoakRule`, `RenderSoakVerdict`, `RenderSoakRecorder` (least-squares slope, rules of contract S7) and Codable `RenderSoakReport` in `Packages/Compositor/Sources/Compositor/RenderSoak.swift` (plain Swift, no Metal)
-- [ ] QA-006-T03 [P] Verdict unit tests (flat, noisy, ramp → `memorySlope`, step → `memoryBound`, too few cycles → inconclusive, errors, baseline drift, live objects, release not empty, slope helper) in `Packages/Compositor/Tests/CompositorTests/RenderSoakVerdictTests.swift`; run on the host and the Linux shape (`-Xswiftc -DCOMPOSITOR_NO_METAL`)
+- [X] QA-006-T02 Implement `RenderSoakTolerance` (warm-up 2, minimum measured 3, slope ε = max(64 KiB, 0.5 %), bound max(2 MiB, 10 %), live scenes at dwell end 1), `RenderSoakCycleSample`, `RenderSoakDwellSample`, `RenderSoakError`, `RenderSoakRule`, `RenderSoakVerdict`, `RenderSoakRecorder` (least-squares slope, rules of contract S7) and Codable `RenderSoakReport` in `Packages/Compositor/Sources/Compositor/RenderSoak.swift` (plain Swift, no Metal) — Verified 2026-11-14: built by the T03 tests on the host and the Linux shape
+- [X] QA-006-T03 [P] Verdict unit tests (flat, noisy, ramp → `memorySlope`, step → `memoryBound`, too few cycles → inconclusive, errors, baseline drift, live objects, release not empty, slope helper) in `Packages/Compositor/Tests/CompositorTests/RenderSoakVerdictTests.swift`; run on the host and the Linux shape (`-Xswiftc -DCOMPOSITOR_NO_METAL`) — Verified 2026-11-14: `swift test --filter RenderSoakVerdictTests` 9/9 on the host and 9/9 with `-Xswiftc -DCOMPOSITOR_NO_METAL` (each test < 0.01 s)
 
 ## Phase 3: User Story 1 — short soak proves no leak and no render error (P1) MVP
 
