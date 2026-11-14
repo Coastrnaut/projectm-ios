@@ -8,9 +8,8 @@
   "P0": {
    "audited": 6,
    "implementing": 1,
-   "integrated": 78,
-   "skipped_existing": 1,
-   "unit_passed": 1
+   "integrated": 79,
+   "skipped_existing": 1
   },
   "P1": {
    "audited": 137,
@@ -27,9 +26,8 @@
  "by_state": {
   "audited": 229,
   "implementing": 1,
-  "integrated": 94,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "integrated": 95,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -190,7 +188,6 @@
    "PRE-017",
    "PRE-018",
    "QA-003",
-   "QA-004",
    "QA-006",
    "QA-008",
    "QA-009",
@@ -271,7 +268,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "231 features are not implemented yet (first: ACC-003, ACC-004, ACC-005, ACC-006, ACC-007)"
+   "230 features are not implemented yet (first: ACC-003, ACC-004, ACC-005, ACC-006, ACC-007)"
   ]
  },
  "features": {
@@ -2520,10 +2517,10 @@
    "branch": "feature/qa-004",
    "branch_sha": "e3388cc102ba5e96ab6f812b65354361d8a2c62e",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "2d758a4",
    "priority": "P0",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "QA-005": {
    "attempts": 0,
@@ -3360,7 +3357,7 @@
    "branch": "feature/vis-003",
    "branch_sha": "46e784d122d543e67cccc6feeadd2d4c5c229326",
    "error_category": null,
-   "integrated_sha": "4d6ff248f09ae4f994ce2a9f41d4a139a54a5da2",
+   "integrated_sha": "2d758a4",
    "priority": "P0",
    "spec_dir": null,
    "state": "integrated"
@@ -3888,6 +3885,11 @@
    "sha": "dffa2be908f507e21886d1561549282279cd67da"
   },
   {
+   "branch": "feature/qa-004",
+   "id": "QA-004",
+   "sha": "2d758a4"
+  },
+  {
    "branch": "feature/qa-005",
    "id": "QA-005",
    "sha": "d7faef231370e244e64dba2d096cd1ec1a77c97c"
@@ -4005,7 +4007,7 @@
   {
    "branch": "feature/vis-003",
    "id": "VIS-003",
-   "sha": "4d6ff248f09ae4f994ce2a9f41d4a139a54a5da2"
+   "sha": "2d758a4"
   }
  ],
  "integration_branch": "autonomous/integration",
@@ -4033,5 +4035,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T00:25:07Z"
+ "updated": "2026-11-14T00:28:27Z"
 }

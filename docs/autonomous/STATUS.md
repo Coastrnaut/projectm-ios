@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T00:25:07Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T00:28:27Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 229 |
 | implementing | 1 |
-| unit_passed | 1 |
-| integrated | 94 |
+| integrated | 95 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 6 | 1 | 1 | 78 | 1 |
-| P1 | 137 | 0 | 0 | 14 | 0 |
-| P2 | 77 | 0 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 6 | 1 | 79 | 1 |
+| P1 | 137 | 0 | 14 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 231 features are not implemented yet (first: ACC-003, ACC-004, ACC-005, ACC-006, ACC-007)
+- 230 features are not implemented yet (first: ACC-003, ACC-004, ACC-005, ACC-006, ACC-007)
 
 ## Integrated
 
@@ -103,6 +102,7 @@ The physical-device suite may **not** start:
 | PRE-014 | Bulk preset export | `a20ba4bafb5e` | `feature/pre-014` |
 | PRE-015 | User preset duplication | `c6cce9988587` | `feature/pre-015` |
 | QA-002 | Golden render scenes | `dffa2be908f5` | `feature/qa-002` |
+| QA-004 | Scene migration matrix | `2d758a4` | `feature/qa-004` |
 | QA-005 | Import fuzz suite | `d7faef231370` | `feature/qa-005` |
 | QA-007 | Audio source contract suite | `32172fdd5795` | `feature/qa-007` |
 | REC-001 | Still frame capture | `5666cc2332ff` | `feature/rec-001` |
@@ -126,7 +126,7 @@ The physical-device suite may **not** start:
 | UIX-001 | Guided first scene | `f8f54e2ac938` | `feature/uix-001` |
 | VIS-001 | Circular spectrum | `48285d49c422` | `feature/vis-001` |
 | VIS-002 | Linear spectrum | `c2b2f75c11bb` | `feature/vis-002` |
-| VIS-003 | Waveform oscilloscope | `4d6ff248f09a` | `feature/vis-003` |
+| VIS-003 | Waveform oscilloscope | `2d758a4` | `feature/vis-003` |
 
 ## Proved already implemented
 
@@ -671,7 +671,7 @@ None.
 - `swift test --package-path Packages/RenderGoldens`: pass at `494ac9eeb8d4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-002/20261113T162728/swift-test_RenderGoldens.log`)
 - `post-merge: RenderGoldens on iOS 27.2 sim (35, 7 scenes x 2 sizes against the simulator goldens), host in the gate, Linux shape (GPU compiled out)`: pass at `dffa2be908f5` (log `.autonomous/logs/integration/qa-002/goldens-sim.log`)
 
-### QA-004 Scene migration matrix (unit_passed)
+### QA-004 Scene migration matrix (integrated)
 - `python3 scripts/check_compliance.py`: pass at `e3388cc102ba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-004/20261113T192437/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `e3388cc102ba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-004/20261113T192437/docs.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `e3388cc102ba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-004/20261113T192437/swift-test_ImportFuzz.log`)
@@ -679,6 +679,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `e3388cc102ba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-004/20261113T192437/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `e3388cc102ba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-004/20261113T192437/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `e3388cc102ba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-004/20261113T192437/swift-test_ShowControl.log`)
+- `post-merge (VIS-003 + QA-004): projectM-iOSTests 379 + Oscilloscope/NativeVisual/Glow UI tests 7`: pass at `2d758a4` (log `.autonomous/logs/integration/vis-003-qa-004/app-tests.log`)
 
 ### QA-005 Import fuzz suite (integrated)
 - `python3 scripts/check_compliance.py`: pass at `e4bdc6cdaf96` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-005/20261113T174006/compliance.log`)
@@ -885,3 +886,4 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `46e784d122d5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-003/20261113T192029/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `46e784d122d5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-003/20261113T192029/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `46e784d122d5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-003/20261113T192029/swift-test_VisualGenerators.log`)
+- `post-merge (VIS-003 + QA-004): projectM-iOSTests 379 + Oscilloscope/NativeVisual/Glow UI tests 7`: pass at `2d758a4` (log `.autonomous/logs/integration/vis-003-qa-004/app-tests.log`)
