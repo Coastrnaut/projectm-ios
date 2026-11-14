@@ -34,6 +34,19 @@ This is a gap row. The audit confirms the gap.
 | Choosing a visual | Settings → Visual lists one row per visual choice; native visuals show their options and Glow. | A new choice and its options. |
 | Golden images | VIS-003 to VIS-006 keep generator-level goldens per platform class. | One golden at 6-fold symmetry. |
 
+## Clarifications
+
+### Session 2026-11-14
+
+Answered by Claude under the owner's standing approval (owner rule 4); each answer is the
+conservative, local-first option.
+
+- Q: Which shape is repeated, and how do the bands drive it? → A: One petal per sector, a strip of 12 flat quads from the centre outward; the low group sets its length, the mid group its width, the high group a curl of its centre line, the overall energy its brightness. Three groups (not every band) keep the shape readable at any bar count and make the result independent of the band count's parity. Rejected: one petal per band (the shape would change with the Bars setting, which does not apply to this visual); free-form polygons (not convex quads, so outside the shared flash region model) (VIS-007-R2, R3).
+- Q: Which symmetries, and what does Mirror mean? → A: N ∈ {3, 4, 5, 6, 8, 12}, default 6 (the classic hexagonal mandala). Mirror off: cyclic symmetry, one petal centred in each sector, which may curl to one side. Mirror on: dihedral symmetry, the petal is drawn in the first half of each sector and reflected across the sector's centre line, so each sector holds two petals; Mirror off by default so the default picture has the fewest regions. Petals always stay inside their sector (or half-sector), so copies never overlap and the flash model's area count is exact. Rejected: any integer N (more settings states, tiny sectors at high N); overlapping petals (double-counted light) (VIS-007-R3, R4).
+- Q: Rotation speed, cap and Reduce Motion? → A: A fixed slow turn, 0.025 turns per second (one turn in 40 s), clockwise; any configured speed is capped at 0.05 turns per second; Reduce Motion (ACC-001's system setting) halves it. A speed change re-anchors the angle at that frame, so the figure never jumps. No user speed setting (the brief asks for a small set). Rejected: stopping the rotation under Reduce Motion (the brief asks for halving; the speed is already slow); a pure function of time without re-anchoring (a visible jump when Reduce Motion toggles) (VIS-007-R5, R6).
+- Q: Colour and brightness? → A: Palette colour by step along the petal (12 steps of the active palette, centre outward), identical in every sector so colour preserves the symmetry; alpha 0.5 + 0.3·overall energy, at most 0.8 (ACC-012's brightness cap, as VIS-006's rings), so silence still shows the base shape. Rejected: colour per sector (breaks the visual symmetry); full-white peaks (VIS-007-R7).
+- Q: Which settings? → A: Three: Symmetry (segmented 3/4/5/6/8/12, stored as Int, anything else → 6), Mirror (toggle, Bool, default off) and Petal style (segmented Petal/Round/Spike, stored as a string, anything else → Petal). Rejected: band-group sliders and a speed slider (more keys, more motion risk) (VIS-007-R9).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Choose a mandala and its symmetry (Priority: P1)
