@@ -48,6 +48,16 @@ conservative, local-first option.
 - Q: How does the split close? → A: Done in Settings' navigation bar closes it, as it closes the sheet today; closing ends the SCN-010 undo coalescing and commits the autosave exactly as before.
 - Q: What happens to the controls and badges while the split is open? → A: They stay in the output pane, laid out to its width (not scaled), so badges, notices and the controls never sit under the editor. The tap target covers only the output pane.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Does the output follow the divider live during a drag, or only when the drag ends? → A: Live: the output pane and the scaled output follow the finger on every drag change (the visual is only rescaled, not re-laid out, so this costs no rendering work); the snap on release animates over 0.2 s, instantly with Reduce Motion (ACC-001).
+- Q: What fills the output pane outside the output rect? → A: Black (the visualizer's existing black background), never a blurred or stretched copy; the bars are not hit-testable beyond the pane's tap target.
+- Q: Is there a minimum output scale? → A: No separate minimum: the 320 pt minimum output pane bounds it (at 320 pt in a 1366 × 1024 window the output is 320 × 240 pt).
+- Q: Does the split change where the performance overlay (FR-048) and the debug probes sit? → A: They stay in the output pane with the rest of the status layers; nothing is added to the editor pane except Settings.
+- Q: How do UI tests read the output's on-screen frame? → A: A DEBUG `-uitestDiagnostics` probe `splitOutputFrame` gives the device slot's frame in window coordinates ("x,y,w,h") and the window size, measured from the view hierarchy (not the computed layout), so a test checks what is actually shown.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Edit properties beside the live output on iPad (Priority: P1)
@@ -109,6 +119,7 @@ decrement step through the snap points within the bounds.
 - A recording or a frame capture runs while the split opens or resizes: the recorded or captured frame's size is unchanged (the visual is not re-laid out).
 - Blackout (OUT-010) while the split is open: the output pane shows black and the badge, as full screen.
 - Performance layout (UIX-005) on while the split opens: the pad lays out in the output pane.
+- The pane area outside the output rect is black.
 
 ## Requirements *(mandatory)*
 
@@ -118,12 +129,12 @@ decrement step through the snap points within the bounds.
 - **UIX-007-R2**: The editor width MUST stay within 320–560 pt and leave an output pane of at least 320 pt; if the window cannot fit both, the sheet MUST be used.
 - **UIX-007-R3**: The output MUST be shown uniformly scaled to fit its pane and centred, so its aspect ratio equals the full window's aspect ratio (within 1e-6 in the geometry, within on-screen rounding in the app) for every editor width, and its frame MUST lie inside the output pane.
 - **UIX-007-R4**: Resizing the editor MUST NOT change the visual's rendered size or shape (drawable, recordings, frame captures, OUT-004's device shape).
-- **UIX-007-R5**: The divider MUST be draggable; on release it MUST snap to the nearest of 320, 400, 480 pt within 24 pt.
+- **UIX-007-R5**: The divider MUST be draggable, the output following live; on release it MUST snap to the nearest of 320, 400, 480 pt within 24 pt.
 - **UIX-007-R6**: The divider MUST be a single accessible, adjustable element ("Editor width", value in points and snap name) whose increment and decrement move to the next and previous snap point within the bounds.
 - **UIX-007-R7**: The last editor width MUST be remembered on this device under `settings.splitEditor.width`, never backed up, erased with Settings, removed by the UI-test reset; missing or invalid → 400 pt.
 - **UIX-007-R8**: Done MUST close the split with the same effects as closing the sheet (SCN-010 coalescing boundary, autosave commit).
 - **UIX-007-R9**: While the split is open, the status stack, controls, badges and the tap target MUST lie in the output pane.
-- **UIX-007-R10**: DEBUG builds MUST expose a probe of the output's on-screen frame and the window's aspect for UI tests (no Release cost).
+- **UIX-007-R10**: DEBUG builds MUST expose a probe (`splitOutputFrame`) of the output's on-screen frame, measured from the view hierarchy, and the window size for UI tests (no Release cost).
 
 ### Key Entities
 
