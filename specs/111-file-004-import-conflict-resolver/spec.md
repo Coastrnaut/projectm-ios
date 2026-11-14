@@ -6,6 +6,8 @@
 
 **Status**: Draft
 
+**speckit-analyze (2026-11-14)**: 0 critical, 0 high; every requirement and success criterion maps to a task (R1 T02/T12, R2 T11, R3-R5 T04/T05/T13, R6 T03/T10/T13, R7 T14, R8 T07/T09, R9 T06/T08, R10 T12/T13, R11 T15; S1 T11, S2 T10/T13, S3 T05/T13, S4 T05/T13, S5 T14, S6 T09). Fixes applied: "Rename" and "Keep both" are one choice (the preview says "Keep both"; the scene API says `keepBoth`); the newer-version show is covered by the unreadable-show refusal in T13.
+
 **Input**: User description: "Implement FILE-004 (Import conflict resolver) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Choose skip, rename or replace
 for duplicate local scene IDs." Acceptance, verbatim: "Each choice yields deterministic IDs and no
