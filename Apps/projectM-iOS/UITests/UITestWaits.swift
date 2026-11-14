@@ -61,3 +61,26 @@ extension XCUIApplication {
         return visible()
     }
 }
+
+extension XCUIApplication {
+    /// Taps a control of the visualizer's overlay with the controls freshly shown. They hide 5 s after
+    /// the last use and a tap on the picture toggles them, so a control seen just before it hides
+    /// fails the tap ("No matches"; seen 2026-11-13 once launches with `-autostart` got fast). A
+    /// visible overlay is hidden and shown again first, which gives the tap the full 5 s.
+    func tapFreshControl(_ id: String, file: StaticString = #filePath, line: UInt = #line) {
+        let button = buttons[id]
+        let area = otherElements["visualizerTapArea"].firstMatch
+        for _ in 0..<3 {
+            if button.exists {
+                area.tap()
+                _ = button.disappears(within: 2)
+            }
+            area.tap()
+            if button.appears(within: 2) {
+                button.tap()
+                return
+            }
+        }
+        XCTFail("control \(id) could not be shown", file: file, line: line)
+    }
+}

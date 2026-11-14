@@ -5,7 +5,14 @@
 // without the pack submodules. Simulator results are never device evidence (Constitution X).
 // Shortened 2026-11-13 under owner rule 7: the two long flows are split into five tests, one rule
 // group each, with two presets where three added nothing; `-autostart inAppPlayback` replaces the notice and chooser taps, and waits poll every
-// 0.1 s (UITestWaits.swift) instead of about once a second. Every rule of the old flows is still checked.
+// 0.1 s (UITestWaits.swift) instead of about once a second; held drags (`app.reveal`) replace
+// flinging swipes. Later the same day: the Edit-mode drag left testManualPresetOrderPersistsAcrossRelaunch
+// for testEditModeDragHandlesReorderPresets, and removing and deleting became two tests. Then the
+// Debug seed `-uitestSeedCollections` (UITestCollectionFixture) replaced the add-sheet steps in the
+// tests that check order, relaunch, playback, removal and deletion, and the name checks and adding once
+// became two tests; adding through the sheet (creating a collection there, R4; once per preset; the
+// order added) is checked by testTheAddSheetAddsEachPresetOnceInTheOrderAdded. Every rule of the old
+// flows is still checked.
 import XCTest
 
 @MainActor
@@ -24,17 +31,25 @@ final class PresetCollectionsUITests: XCTestCase {
         app.launchArguments = (reset ? ["-uitestResetNotice"] : [])
             + ["-uitestDiagnostics", "-uitestUnlocked", "NO", "-autostart", "inAppPlayback"] + extraArguments
         app.launch()
-        XCTAssertTrue(scopeLine.appears(within: 15))
+        XCTAssertTrue(scopeLine.appears(within: 30))   // a ceiling: a launch took over 15 s on a loaded Mac
     }
 
     private var scopeLine: XCUIElement { app.staticTexts["scopeLine"] }
     private var current: XCUIElement { app.staticTexts["currentPreset"] }
 
+    /// When the test last used a control (the overlay hides 5 s later).
+    private var controlsUsedAt: Date?
+
+    /// Taps a control: directly when one was used under 3 s ago, otherwise with the controls shown
+    /// afresh, so the auto-hide cannot race the tap (seen 2026-11-13 right after an `-autostart` launch).
     private func tapControl(_ id: String) {
         let button = app.buttons[id]
-        if !button.appears(within: 0.5) { app.otherElements["visualizerTapArea"].firstMatch.tap() }
-        XCTAssertTrue(button.appears(within: 3), id)
-        button.tap()
+        if let used = controlsUsedAt, Date().timeIntervalSince(used) < 3, button.exists {
+            button.tap()
+        } else {
+            app.tapFreshControl(id)
+        }
+        controlsUsedAt = Date()
     }
 
     private func openBrowser() {
@@ -44,10 +59,9 @@ final class PresetCollectionsUITests: XCTestCase {
 
     private func open(_ id: String) {
         let element = app.buttons[id]
-        _ = element.appears(within: 2)
-        var swipes = 0
-        while swipes < 6 && !(element.exists && element.isHittable) { app.swipeUp(); swipes += 1 }
-        XCTAssertTrue(element.appears(within: 5), id)
+        // Held drags only when needed: a flinging swipe waits seconds for the list to settle.
+        if !(element.appears(within: 2) && element.isHittable) { app.reveal(element) }
+        XCTAssertTrue(element.appears(within: 3), id)
         element.tap()
     }
 
@@ -121,7 +135,11 @@ final class PresetCollectionsUITests: XCTestCase {
 
     // MARK: - R9: names; the add sheet offers a collection only once per preset
 
-    func testCreateRefusesADuplicateNameAndAddsEachPresetOnce() {
+    // Owner rule 7 (2026-11-13): the former testCreateRefusesADuplicateNameAndAddsEachPresetOnce
+    // (27-31 s) is split: the name checks stay here; adding once, and the order added (from the
+    // former makeFridaySetWithTwoPresets), moved to testTheAddSheetAddsEachPresetOnceInTheOrderAdded.
+
+    func testCreateRefusesADuplicateName() {
         start(reset: true)
         openBrowser()
         XCTAssertEqual(app.buttons["node:collections"].label, "Collections, 0 collections")
@@ -137,13 +155,19 @@ final class PresetCollectionsUITests: XCTestCase {
         XCTAssertFalse(app.buttons["saveCollectionName"].isEnabled)
         app.buttons["Cancel"].tap()
         XCTAssertEqual(collectionRows, ["Friday set"])
+    }
 
-        goBack()
-        let names = openIncludedAndTake(1)
-        add(names[0], to: "Friday set")
+    /// The add sheet creates a collection (R4), adds a preset once (an existing collection is not
+    /// offered again) and keeps the order added.
+    func testTheAddSheetAddsEachPresetOnceInTheOrderAdded() {
+        start(reset: true)
+        openBrowser()
+        let names = openIncludedAndTake(2)
+        add(names[0], to: "Friday set", creating: true)   // a new collection made from the add sheet (R4)
+        add(names[1], to: "Friday set")
 
         // Adding a preset that is already there is not offered again.
-        menu(app.buttons["preset:\(names[0])"], "Add to Collection…")
+        menu(app.buttons["preset:\(names[1])"], "Add to Collection…")
         let already = app.buttons["addTo:Friday set"]
         XCTAssertTrue(already.appears(within: 5))
         XCTAssertFalse(already.isEnabled)
@@ -152,25 +176,36 @@ final class PresetCollectionsUITests: XCTestCase {
 
         goBack()
         open("node:collections")
-        waitForLabel(app.buttons["collection:Friday set"], "Friday set, 1 preset")
+        waitForLabel(app.buttons["collection:Friday set"], "Friday set, 2 presets")
+        open("collection:Friday set")
+        XCTAssertTrue(app.buttons["preset:\(names[0])"].appears(within: 5))
+        XCTAssertEqual(presetRows, names, "in the order added")
     }
 
     // MARK: - S1: manual order persists across a relaunch
 
-    /// Presets: added through the add sheet (the first creates the collection there, R4), Move Up,
-    /// relaunch, then the Edit-mode drag handles.
-    func testManualPresetOrderPersistsAcrossRelaunch() {
-        start(reset: true)
+    /// Starts with “Friday set” already holding the Included presets at `positions` (Debug
+    /// `-uitestSeedCollections`, UITestCollectionFixture), opens it and returns its rows. For tests
+    /// where adding through the add sheet is not what they check; testTheAddSheetAddsEachPresetOnceInTheOrderAdded
+    /// adds through it.
+    private func openSeededFridaySet(_ positions: [Int]) -> [String] {
+        start(reset: true, extraArguments: ["-uitestSeedCollections",
+                                            "Friday set:" + positions.map(String.init).joined(separator: ",")])
+        waitForLabel(scopeLine, "Included · 28")   // a seeded collection is not the scope
         openBrowser()
-        let names = openIncludedAndTake(2)
-        add(names[0], to: "Friday set", creating: true)   // a new collection made from the add sheet (R4)
-        add(names[1], to: "Friday set")
-        goBack()
         open("node:collections")
-        XCTAssertEqual(app.buttons["collection:Friday set"].label, "Friday set, 2 presets")
+        waitForLabel(app.buttons["collection:Friday set"], "Friday set, \(positions.count) presets")
         open("collection:Friday set")
-        XCTAssertTrue(app.buttons["preset:\(names[0])"].appears(within: 5))
-        XCTAssertEqual(presetRows, names, "in the order added")
+        let rows = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'preset:'"))
+        XCTAssertTrue(poll(5) { rows.count == positions.count }, "\(presetRows)")
+        let names = presetRows
+        XCTAssertEqual(Set(names).count, positions.count)
+        return names
+    }
+
+    /// Presets: Move Up, relaunch, same order.
+    func testManualPresetOrderPersistsAcrossRelaunch() {
+        let names = openSeededFridaySet([0, 1])
         menu(app.buttons["preset:\(names[1])"], "Move Up")
         let reordered = [names[1], names[0]]
         XCTAssertTrue(poll(5) { self.presetRows == reordered }, "\(presetRows)")
@@ -183,8 +218,13 @@ final class PresetCollectionsUITests: XCTestCase {
         open("collection:Friday set")
         XCTAssertTrue(app.buttons["preset:\(names[0])"].appears(within: 5))
         XCTAssertEqual(presetRows, reordered)
+    }
 
-        // Edit mode offers the standard drag handles; dragging the last row to the top reorders.
+    /// Edit mode offers the standard drag handles; dragging the last row to the top reorders.
+    /// (Split from testManualPresetOrderPersistsAcrossRelaunch under owner rule 7; there it ran on
+    /// the relaunched, Move-Up order, here on the order added.)
+    func testEditModeDragHandlesReorderPresets() {
+        let names = openSeededFridaySet([0, 1])
         app.buttons["Edit"].tap()
         let handles = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Reorder'"))
         XCTAssertTrue(handles.firstMatch.appears(within: 5), "reorder handles in Edit mode")
@@ -192,15 +232,16 @@ final class PresetCollectionsUITests: XCTestCase {
         handles.element(boundBy: 1).press(forDuration: 0.8, thenDragTo: handles.element(boundBy: 0),
                                           withVelocity: .slow, thenHoldForDuration: 0.5)
         app.toolbars.buttons["Done"].tap()   // the Edit button's other title: leaves Edit mode
-        XCTAssertTrue(poll(5) { self.presetRows == [reordered[1], reordered[0]] }, "\(presetRows)")
+        XCTAssertTrue(poll(5) { self.presetRows == [names[1], names[0]] }, "\(presetRows)")
     }
 
-    /// Collections: listed in the order created; Move Up; relaunch, same order.
+    /// Collections: listed in the order created; Move Up; relaunch, same order. “Friday set” is
+    /// seeded (Debug); “Second” is created here, after it.
     func testManualCollectionOrderPersistsAcrossRelaunch() {
-        start(reset: true)
+        start(reset: true, extraArguments: ["-uitestSeedCollections", "Friday set:"])
         openBrowser()
         open("node:collections")
-        createCollection("Friday set")
+        XCTAssertTrue(app.buttons["collection:Friday set"].appears(within: 5))
         createCollection("Second")
         XCTAssertEqual(collectionRows, ["Friday set", "Second"], "in the order created")
         goBack()
@@ -221,20 +262,11 @@ final class PresetCollectionsUITests: XCTestCase {
     // MARK: - S4: a collection as the playback scope
 
     func testPlayingACollectionKeepsNextPreviousAndRandomInside() {
-        start(reset: true)
-        waitForLabel(scopeLine, "Included · 28")
-        openBrowser()
-        let names = openIncludedAndTake(3)
-        add(names[2], to: "Friday set", creating: true)
-        add(names[0], to: "Friday set")
-        add(names[1], to: "Friday set")
-        let order = [names[2], names[0], names[1]]   // the user's order, not the alphabet
-
-        goBack()
-        open("node:collections")
-        open("collection:Friday set")
-        XCTAssertTrue(app.buttons["preset:\(order[0])"].appears(within: 5))
-        XCTAssertEqual(presetRows, order)
+        // Seeded (Debug) with the third, first and second Included presets: the user's order, not the
+        // alphabet. Adding through the add sheet keeps the order added: testTheAddSheetAddsEachPresetOnceInTheOrderAdded.
+        let order = openSeededFridaySet([2, 0, 1])
+        XCTAssertNotEqual(order, order.sorted { $0.localizedStandardCompare($1) == .orderedAscending },
+                          "the collection's own order, not the alphabet")
         app.buttons["preset:\(order[1])"].tap()   // choosing closes the browser
         waitForLabel(scopeLine, "Friday set · 3")
         waitForLabel(current, order[1])
@@ -252,13 +284,29 @@ final class PresetCollectionsUITests: XCTestCase {
     }
 
     // MARK: - R5, S2: removing and deleting preserve presets and favorites
+    // Owner rule 7 (2026-11-13): the former single test (42 s) is split in two: removing a preset
+    // (R5) and deleting the collection (S2), each with the checks it had.
 
-    func testRemovingAndDeletingKeepThePresetsAndFavorites() {
-        start(reset: true)
+    /// R5: removing a preset takes it out of the collection only; it is still in Included.
+    func testRemovingAPresetKeepsItInTheLibrary() {
+        let names = openSeededFridaySet([0, 1])
+        menu(app.buttons["preset:\(names[1])"], "Remove from Collection")
+        XCTAssertTrue(poll(5) { self.presetRows == [names[0]] }, "\(presetRows)")
+        goBack()
+        waitForLabel(app.buttons["collection:Friday set"], "Friday set, 1 preset")
+        goBack()
+        open("node:included")
+        XCTAssertTrue(app.buttons["preset:\(names[1])"].appears(within: 5), "\(names[1]) is still in the library")
+    }
+
+    /// S2: deleting a collection that is playing removes only the list; its preset and favorite
+    /// stay, and the scope falls back to Included.
+    func testDeletingACollectionKeepsItsPresetsAndFavorites() {
+        // “Friday set” holds the first Included preset (Debug seed); adding through the sheet is
+        // testTheAddSheetAddsEachPresetOnceInTheOrderAdded.
+        start(reset: true, extraArguments: ["-uitestSeedCollections", "Friday set:0"])
         openBrowser()
-        let names = openIncludedAndTake(2)
-        add(names[0], to: "Friday set", creating: true)
-        add(names[1], to: "Friday set")
+        let names = openIncludedAndTake(1)
         app.buttons["star:\(names[0])"].tap()
         XCTAssertEqual(app.buttons["star:\(names[0])"].label, "Remove from favorites")
 
@@ -267,10 +315,6 @@ final class PresetCollectionsUITests: XCTestCase {
         open("collection:Friday set")
         XCTAssertTrue(app.buttons["preset:\(names[0])"].appears(within: 5))
         XCTAssertEqual(presetRows, names)
-
-        // Remove one preset: gone from the collection only (R5; still in Included, checked below).
-        menu(app.buttons["preset:\(names[1])"], "Remove from Collection")
-        XCTAssertTrue(poll(5) { self.presetRows == [names[0]] }, "\(presetRows)")
         app.buttons["preset:\(names[0])"].tap()   // play the collection, so deleting it moves the scope
         waitForLabel(scopeLine, "Friday set · 1")
 
@@ -285,7 +329,7 @@ final class PresetCollectionsUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["collectionsEmpty"].appears(within: 5))
         goBack()
         open("node:included")
-        for name in names { XCTAssertTrue(app.buttons["preset:\(name)"].appears(within: 5), "\(name) is still in the library") }
+        XCTAssertTrue(app.buttons["preset:\(names[0])"].appears(within: 5), "\(names[0]) is still in the library")
         XCTAssertEqual(app.buttons["star:\(names[0])"].label, "Remove from favorites", "still a favorite")
         app.buttons["Done"].firstMatch.tap()
         waitForLabel(scopeLine, "Included · 28")   // the scope fell back; nothing else changed

@@ -4,7 +4,8 @@
 // (`-uitestUnlocked YES`, no StoreKit): the Fractal › Nested Spiral scope, Next wrapping, Random
 // staying inside, and the scope line. Simulator results are never device evidence (Constitution X).
 // Shortened 2026-11-13 under owner rule 7: `-autostart inAppPlayback` replaces the notice and chooser
-// taps, and waits poll every 0.1 s (UITestWaits.swift) instead of about once a second.
+// taps, and waits poll every 0.1 s (UITestWaits.swift) instead of about once a second; held drags
+// (`app.reveal`) replace flinging swipes.
 import XCTest
 
 @MainActor
@@ -27,12 +28,19 @@ final class PresetLibraryUITests: XCTestCase {
     private var scopeLine: XCUIElement { app.staticTexts["scopeLine"] }
     private var current: XCUIElement { app.staticTexts["currentPreset"] }
 
-    /// Shows the controls if they auto-hid, then taps one.
+    /// When the test last used a control (the overlay hides 5 s later).
+    private var controlsUsedAt: Date?
+
+    /// Taps a control: directly when one was used under 3 s ago, otherwise with the controls shown
+    /// afresh, so the auto-hide cannot race the tap (seen 2026-11-13 right after an `-autostart` launch).
     private func tapControl(_ id: String) {
         let button = app.buttons[id]
-        if !button.appears(within: 0.5) { app.otherElements["visualizerTapArea"].firstMatch.tap() }
-        XCTAssertTrue(button.appears(within: 3), id)
-        button.tap()
+        if let used = controlsUsedAt, Date().timeIntervalSince(used) < 3, button.exists {
+            button.tap()
+        } else {
+            app.tapFreshControl(id)
+        }
+        controlsUsedAt = Date()
     }
 
     private func openBrowser() {
@@ -40,11 +48,11 @@ final class PresetLibraryUITests: XCTestCase {
         XCTAssertTrue(app.buttons["node:included"].appears(within: 10), "library home")
     }
 
-    /// Scrolls the list until a row is on screen (lists build rows lazily).
+    /// Scrolls the list until a row is on screen (lists build rows lazily), with held drags: a
+    /// flinging swipe makes XCUITest wait seconds for the list to settle.
     private func scrollTo(_ element: XCUIElement) {
         _ = element.appears(within: 2)
-        var swipes = 0
-        while swipes < 10 && !(element.exists && element.isHittable) { app.swipeUp(); swipes += 1 }
+        if !app.reveal(element) { app.reveal(element) }
         XCTAssertTrue(element.appears(within: 3), element.debugDescription)
     }
 

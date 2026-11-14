@@ -673,6 +673,9 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                 await userPresets.load()
                 await userPresets.prepare(library: library, bundle: .main)
                 presets.attach(library)
+                #if DEBUG
+                UITestCollectionFixture.seedIfRequested(presets)   // PresetCollectionsUITests
+                #endif
                 presets.onScopeChange { UIAccessibility.post(notification: .announcement, argument: $0) }   // FR-124
                 presets.announceFavorite = { [weak self] (text: String) in self?.announcer.announce(text, kind: .favorite) }   // ACC-004
                 await presets.setUnlocked(entitlements.isUnlocked)

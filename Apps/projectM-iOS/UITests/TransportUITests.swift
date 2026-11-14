@@ -4,6 +4,9 @@
 // drives the transport in the visualizer's controls: play, pause, stop playback, the scrubber,
 // next and previous track. It also checks that the transport is offered for In-App Playback only.
 // Simulator only (the app reads the test's files from the host); never device evidence.
+// Shortened 2026-11-13 under owner rule 7: waits poll every 0.1 s (UITestWaits.swift) instead of
+// about once a second; testPlayPauseSeekNextPreviousAndStopOnImportedTracks is split in two ((d) and
+// (e) moved to testNextPreviousAndStopPlaybackOnImportedTracks). Every assertion is unchanged.
 import XCTest
 
 @MainActor
@@ -55,25 +58,46 @@ final class TransportUITests: XCTestCase {
         app.launchArguments = ["-uitestResetNotice", "-uitestResetAudioLibrary"] + arguments + Self.noStore
         app.launch()
         let acknowledge = app.buttons["acknowledgeNotice"]
-        XCTAssertTrue(acknowledge.waitForExistence(timeout: 10))
+        XCTAssertTrue(acknowledge.appears(within: 10))
         acknowledge.tap()
-        XCTAssertTrue(app.buttons["importAudio"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["importAudio"].appears(within: 10))
     }
 
     /// The controls hide after 5 s without interaction; a tap on the picture brings them back.
     private func showControls(file: StaticString = #filePath, line: UInt = #line) {
         if playPause.exists { return }
         app.otherElements["visualizerTapArea"].firstMatch.tap()
-        if !playPause.waitForExistence(timeout: 3) {
+        if !playPause.appears(within: 1.5) {
             app.otherElements["visualizerTapArea"].firstMatch.tap()      // the first tap hid them
         }
-        XCTAssertTrue(playPause.waitForExistence(timeout: 5), "the transport is shown with the controls", file: file, line: line)
+        XCTAssertTrue(playPause.appears(within: 5), "the transport is shown with the controls", file: file, line: line)
     }
+
+    /// Shows the controls with their full 5 s before they hide again (hides them first when they show).
+    private func showFreshControls(file: StaticString = #filePath, line: UInt = #line) {
+        let area = app.otherElements["visualizerTapArea"].firstMatch
+        if playPause.exists {
+            area.tap()
+            _ = playPause.disappears(within: 2)
+        }
+        area.tap()
+        if !playPause.appears(within: 1.5) { area.tap() }
+        XCTAssertTrue(playPause.appears(within: 5), "the transport is shown with the controls", file: file, line: line)
+        controlsShownAt = Date()
+    }
+
+    /// When the test last showed the controls afresh or used one (they hide 5 s later).
+    private var controlsShownAt: Date?
 
     /// The elapsed time shown, in seconds ("1:05" → 65).
     private func elapsed(file: StaticString = #filePath, line: UInt = #line) -> Int {
-        showControls(file: file, line: line)
-        let parts = app.staticTexts["transportElapsed"].label.split(separator: ":").compactMap { Int($0) }
+        // The controls hide 5 s after the last interaction, possibly between showing them and the
+        // read (seen 2026-11-13): read only an element that exists now, showing them afresh if needed.
+        let label = app.staticTexts["transportElapsed"]
+        if (controlsShownAt.map { Date().timeIntervalSince($0) > 3 } ?? true) || !label.exists {
+            showFreshControls(file: file, line: line)
+        }
+        let parts = label.label.split(separator: ":").compactMap { Int($0) }
         XCTAssertEqual(parts.count, 2, "elapsed time \"\(app.staticTexts["transportElapsed"].label)\"", file: file, line: line)
         return parts.count == 2 ? parts[0] * 60 + parts[1] : -1
     }
@@ -107,40 +131,47 @@ final class TransportUITests: XCTestCase {
     }
 
     private func expectState(_ state: String, timeout: TimeInterval = 15, file: StaticString = #filePath, line: UInt = #line) {
-        let predicate = NSPredicate(format: "label == %@", "In-App Playback · \(state)")
-        let result = XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: predicate, object: indicator)], timeout: timeout)
-        XCTAssertEqual(result, .completed, "state \"\(state)\"; indicator shows \"\(indicator.label)\"", file: file, line: line)
+        let ok = poll(timeout) { self.indicator.exists && self.indicator.label == "In-App Playback · \(state)" }
+        XCTAssertTrue(ok, "state \"\(state)\"; indicator shows \"\(indicator.label)\"", file: file, line: line)
     }
 
     private func expectTitle(_ text: String, file: StaticString = #filePath, line: UInt = #line) {
         showControls(file: file, line: line)
-        let predicate = NSPredicate(format: "label == %@", text)
-        let result = XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: predicate, object: title)], timeout: 10)
-        XCTAssertEqual(result, .completed, "title \"\(text)\"; the transport shows \"\(title.label)\"", file: file, line: line)
+        let ok = poll(10) { self.title.exists && self.title.label == text }
+        XCTAssertTrue(ok, "title \"\(text)\"; the transport shows \"\(title.label)\"", file: file, line: line)
     }
 
     private func tap(_ id: String, file: StaticString = #filePath, line: UInt = #line) {
-        showControls(file: file, line: line)
-        app.buttons[id].tap()
+        app.tapFreshControl(id, file: file, line: line)   // the controls could hide between a check and the tap
+        controlsShownAt = Date()
     }
 
     // MARK: - Imported tracks
 
-    func testPlayPauseSeekNextPreviousAndStopOnImportedTracks() throws {
-        #if !targetEnvironment(simulator)
-        throw XCTSkip("the app reads the test's files from the host; simulator only")
-        #else
+    /// Imports the two tones, checks the list (newest first) and plays the first row, ToneB.
+    private func importTwoTonesAndPlayTheFirst() throws {
         let stereo = try writeTone(named: "ToneA.wav", seconds: 20, sampleRate: 44_100, channels: 2, frequency: 440)
         let mono = try writeTone(named: "ToneB.wav", seconds: 20, sampleRate: 48_000, channels: 1, frequency: 660)
         launch(["-uitestImportAudio", "\(stereo.path)|\(mono.path)"])
         // Newest first: ToneB is listed above ToneA.
         let rows = app.buttons.matching(identifier: "importedTrack")
         let second = rows.element(boundBy: 1)
-        XCTAssertTrue(second.waitForExistence(timeout: 20), "both tracks are listed")
+        XCTAssertTrue(second.appears(within: 20), "both tracks are listed")
         XCTAssertEqual(rows.element(boundBy: 0).label, "ToneB, 20 seconds")
         XCTAssertEqual(second.label, "ToneA, 20 seconds")
         rows.element(boundBy: 0).tap()
-        XCTAssertTrue(indicator.waitForExistence(timeout: 10))
+        XCTAssertTrue(indicator.appears(within: 10))
+    }
+
+    // Owner rule 7 (2026-11-13): the former single test (34 s, about 15 s of it real-time playback)
+    // is split in two at (d). Both import the two tones and play ToneB; (a)-(c) stay here, (d) Next
+    // and Previous and (e) Stop playback moved to testNextPreviousAndStopPlaybackOnImportedTracks.
+
+    func testPlayPauseSeekNextPreviousAndStopOnImportedTracks() throws {
+        #if !targetEnvironment(simulator)
+        throw XCTSkip("the app reads the test's files from the host; simulator only")
+        #else
+        try importTwoTonesAndPlayTheFirst()
 
         // (a) The transport is part of the controls and playback advances.
         showControls()
@@ -191,6 +222,16 @@ final class TransportUITests: XCTestCase {
         XCTAssertLessThanOrEqual(afterTouch, 8)
         waitForElapsed(atLeast: afterTouch + 1)
         expectState("Active audio")
+        #endif
+    }
+
+    func testNextPreviousAndStopPlaybackOnImportedTracks() throws {
+        #if !targetEnvironment(simulator)
+        throw XCTSkip("the app reads the test's files from the host; simulator only")
+        #else
+        try importTwoTonesAndPlayTheFirst()
+        expectTitle("ToneB")
+        expectState("Active audio")
 
         // (d) Next track (another sample rate and channel count), then Previous within 3 s.
         tap("transportNext")
@@ -201,7 +242,9 @@ final class TransportUITests: XCTestCase {
         expectState("Active audio")
         tap("transportNext")
         expectTitle("ToneB")                                    // after the last track comes the first
-        tap("transportPrevious")
+        showControls()                                          // just used: no fresh show, to stay within 3 s
+        app.buttons["transportPrevious"].tap()
+        controlsShownAt = Date()
         expectTitle("ToneA")                                    // within 3 s: the track before, wrapping
 
         // (e) Stop playback: 0:00, Paused, still in the visualizer; Play starts from the beginning.
@@ -221,7 +264,7 @@ final class TransportUITests: XCTestCase {
 
         // The existing Stop still returns to the chooser.
         tap("stop")
-        XCTAssertTrue(app.buttons["importAudio"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["importAudio"].appears(within: 10))
         #endif
     }
 
@@ -230,7 +273,7 @@ final class TransportUITests: XCTestCase {
     func testReferenceTrackHasTheTransportAndHidesWithTheControls() {
         launch([])
         app.buttons["In-App Playback"].tap()
-        XCTAssertTrue(indicator.waitForExistence(timeout: 10))
+        XCTAssertTrue(indicator.appears(within: 10))
         expectTitle("Reference track")
         expectState("Active audio")
         waitForElapsed(atLeast: 2)
@@ -244,11 +287,11 @@ final class TransportUITests: XCTestCase {
         // (h) The transport hides with the controls and returns with them.
         showControls()
         app.otherElements["visualizerTapArea"].firstMatch.tap()
-        XCTAssertTrue(playPause.waitForNonExistence(timeout: 5), "hidden with the controls")
+        XCTAssertTrue(playPause.disappears(within: 5), "hidden with the controls")
         XCTAssertFalse(scrubber.exists)
         XCTAssertTrue(indicator.exists, "the source indicator stays")
         app.otherElements["visualizerTapArea"].firstMatch.tap()
-        XCTAssertTrue(playPause.waitForExistence(timeout: 5))
+        XCTAssertTrue(playPause.appears(within: 5))
     }
 
     // MARK: - Other sources have no transport (AUD-006-R1)
@@ -261,10 +304,10 @@ final class TransportUITests: XCTestCase {
             app.launchArguments = ["-uitestResetNotice", "-uitestFake", mode] + Self.noStore
             app.launch()
             app.buttons["acknowledgeNotice"].tap()
-            XCTAssertTrue(app.buttons[row].waitForExistence(timeout: 10))
+            XCTAssertTrue(app.buttons[row].appears(within: 10))
             app.buttons[row].tap()
-            XCTAssertTrue(indicator.waitForExistence(timeout: 10))
-            XCTAssertTrue(app.buttons["stop"].waitForExistence(timeout: 5), "the controls are visible")
+            XCTAssertTrue(indicator.appears(within: 10))
+            XCTAssertTrue(app.buttons["stop"].appears(within: 5), "the controls are visible")
             for id in ["transportPrevious", "transportPlayPause", "transportStop", "transportNext"] {
                 XCTAssertFalse(app.buttons[id].exists, "\(mode): \(id)")
             }
