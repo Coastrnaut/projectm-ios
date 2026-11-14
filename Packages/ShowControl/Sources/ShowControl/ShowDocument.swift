@@ -8,6 +8,8 @@
 // only when the cue has one, so older shows keep their bytes; read leniently (contract X1-X3).
 // SHOW-002: each cue entry may carry an optional `advanceAfter` (whole seconds 1…3600), written only when the cue
 // has a dwell; an invalid value is dropped with a warning (contract show-cue-dwell.md D1-D2). No version bump.
+// SHOW-004: each cue entry may carry an optional `transitionOverride` object (the SCN-007 shape), written only when the cue
+// has one; read leniently (contract show-cue-transition-override.md O1-O3). No version bump.
 import Foundation
 import ParameterGraph
 
@@ -52,6 +54,10 @@ public enum ShowDecodeWarning: Sendable, Hashable {
     case unknownTransitionType(cue: String, type: String)
     /// SHOW-002: cue dwells that broke a rule (not a whole number of seconds 1…3600) were left out.
     case droppedDwells(Int)
+    /// SHOW-004: cue transition overrides that broke an SCN-007 rule were left out (the cue uses its scene default).
+    case droppedTransitionOverrides(Int)
+    /// SHOW-004: a cue's override type is not one this version knows; it is kept and applied as a cut.
+    case unknownTransitionOverrideType(cue: String, type: String)
 }
 
 public struct ShowDecodeResult: Sendable {
@@ -71,7 +77,8 @@ extension ShowCueList {
                               cues: cues.map { (cue: ShowCue) -> ShowFileV1.Cue in
                                   ShowFileV1.Cue(id: cue.id.uuidString, scene: cue.sceneID, label: cue.label,
                                                  transition: cue.transition.map(StoredTransition.init(_:)),
-                                                 advanceAfter: cue.dwell.map { (d: ShowCueDwell) -> StoredDwell in StoredDwell(seconds: d.seconds) })
+                                                 advanceAfter: cue.dwell.map { (d: ShowCueDwell) -> StoredDwell in StoredDwell(seconds: d.seconds) },
+                                                 transitionOverride: cue.transitionOverride.map(StoredTransition.init(_:)))
                               },
                               position: activeCue?.id.uuidString)
         // SCN-004 (contract F4): written only when non-empty, so a show without folders keeps its bytes.
@@ -111,6 +118,7 @@ extension ShowCueList {
         var warnings: [ShowDecodeWarning] = []
         var droppedTransitions = 0
         var droppedDwells = 0
+        var droppedOverrides = 0
         for cue in file.cues {
             guard let cueID = canonicalUUID(cue.id) else { throw .invalidID(cue.id) }
             var transition: ShowCueTransition? = nil
@@ -126,10 +134,20 @@ extension ShowCueList {
                 dwell = stored.seconds.flatMap { (s: Int) -> ShowCueDwell? in try? ShowCueDwell(seconds: s) }
                 if dwell == nil { droppedDwells += 1 }
             }
-            cues.append(ShowCue(id: cueID, sceneID: cue.scene, label: cue.label, transition: transition, dwell: dwell))
+            var transitionOverride: ShowCueTransition? = nil
+            if let stored = cue.transitionOverride {   // SHOW-004 (contract O2)
+                transitionOverride = stored.transition
+                if transitionOverride == nil { droppedOverrides += 1 }
+                if let type = transitionOverride?.type, !type.isKnown {
+                    warnings.append(.unknownTransitionOverrideType(cue: cue.id, type: type.text))
+                }
+            }
+            cues.append(ShowCue(id: cueID, sceneID: cue.scene, label: cue.label, transition: transition, dwell: dwell,
+                                transitionOverride: transitionOverride))
         }
         if droppedTransitions > 0 { warnings.append(.droppedTransitions(droppedTransitions)) }
         if droppedDwells > 0 { warnings.append(.droppedDwells(droppedDwells)) }
+        if droppedOverrides > 0 { warnings.append(.droppedTransitionOverrides(droppedOverrides)) }
         var position = ShowPosition.standby
         if let text = file.position {
             if let cueID = canonicalUUID(text), cues.contains(where: { (c: ShowCue) -> Bool in c.id == cueID }) {
@@ -185,15 +203,19 @@ private struct ShowFileV1: Codable {
         var transition: StoredTransition? = nil
         /// SHOW-002, optional: absent (or null) = no dwell.
         var advanceAfter: StoredDwell? = nil
+        /// SHOW-004, optional: absent (or null) = no override.
+        var transitionOverride: StoredTransition? = nil
 
-        enum CodingKeys: String, CodingKey { case id, scene, label, transition, advanceAfter }
+        enum CodingKeys: String, CodingKey { case id, scene, label, transition, advanceAfter, transitionOverride }
 
-        init(id: String, scene: String, label: String, transition: StoredTransition?, advanceAfter: StoredDwell?) {
+        init(id: String, scene: String, label: String, transition: StoredTransition?, advanceAfter: StoredDwell?,
+             transitionOverride: StoredTransition?) {
             self.id = id
             self.scene = scene
             self.label = label
             self.transition = transition
             self.advanceAfter = advanceAfter
+            self.transitionOverride = transitionOverride
         }
 
         init(from decoder: any Decoder) throws {
@@ -203,6 +225,7 @@ private struct ShowFileV1: Codable {
             label = try container.decode(String.self, forKey: .label)
             transition = try container.decodeIfPresent(StoredTransition.self, forKey: .transition)
             advanceAfter = try container.decodeIfPresent(StoredDwell.self, forKey: .advanceAfter)
+            transitionOverride = try container.decodeIfPresent(StoredTransition.self, forKey: .transitionOverride)
         }
 
         func encode(to encoder: any Encoder) throws {
@@ -212,6 +235,7 @@ private struct ShowFileV1: Codable {
             try container.encode(label, forKey: .label)
             try container.encodeIfPresent(transition, forKey: .transition)
             try container.encodeIfPresent(advanceAfter, forKey: .advanceAfter)
+            try container.encodeIfPresent(transitionOverride, forKey: .transitionOverride)
         }
     }
 
