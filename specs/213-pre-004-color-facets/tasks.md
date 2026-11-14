@@ -29,7 +29,7 @@ verification ("unit + simulator + fixture migrations").
 **Independent test**: a thumbnail made through the real model records colours once; the coordinator lists it.
 
 - [ ] PRE-004-T08 [US2] Colours on the model's decode task, mirror, store recording, launch load and prune, PRE-002 invalidation in Apps/projectM-iOS/Coordinators/PresetThumbnailModel.swift, Apps/projectM-iOS/Coordinators/AppCoordinator+Thumbnails.swift and Apps/projectM-iOS/Coordinators/PresetCoordinator.swift
-- [ ] PRE-004-T09 [US2] App acceptance (S3) in Apps/projectM-iOS/Tests/PresetColorFacetAppTests.swift: a fixture thumbnail records colours once; `filteredListing` for its colour lists it, combined with a tag narrows; invalidation drops its colours
+- [ ] PRE-004-T09 [US2] App acceptance (S3) in Apps/projectM-iOS/Tests/PresetColorFacetAppTests.swift: a fixture thumbnail records colours once; `filteredListing` for its colour lists it, combined with a tag narrows; invalidation drops its colours; a chip toggle announces the count on the search lane (R9)
 - [ ] PRE-004-T10 [US2] UI test (S4) in Apps/projectM-iOS/UITests/PresetColorFacetUITests.swift: with `-uitestThumbnailFixture`, chips appear after a folder's thumbnails, a chip lists only matching presets, Clear restores the home (under 30 s)
 
 ## Phase 5: User Story 3 - A damaged or old index rebuilds itself (P2)
@@ -38,4 +38,13 @@ verification ("unit + simulator + fixture migrations").
 
 ## Phase 6: Polish
 
-- [ ] PRE-004-T12 Type-check budget on touched app files; repo checks (compliance, docs, motion, permission catalog, status events, script tests), privacy manifest and network symbols on the Debug app; spec status; delete the simulator and derived data; PosterBoard count after
+- [ ] PRE-004-T12 Record S5 from the package palette test's duration (no wall-clock assertion); type-check budget on touched app files; repo checks (compliance, docs, motion, permission catalog, status events, script tests), privacy manifest and network symbols on the Debug app; spec status; delete the simulator and derived data; PosterBoard count after
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+- Coverage: R1-R3 → T02, T05, T08; R4-R6 → T03, T11; R7, R9 → T07, T09, T10; R8, R11 → T06, T09; R10 → T03, T08,
+  T09 (Clear Caches needs no code: the folder is inside `Library/Caches`, which FILE-010 empties); R12 → T04 and the
+  Linux-shaped package build. S1 → T05; S2 → T11; S3 → T09; S4 → T10; S5 → T12.
+- Fixes applied: S5 was unowned (now T12, recorded from a test duration, never asserted on the clock); R9's
+  announcement had no test (now in T09).
+- No constitution conflicts; no ADR needed.

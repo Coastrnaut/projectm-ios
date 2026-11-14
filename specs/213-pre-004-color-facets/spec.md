@@ -138,7 +138,7 @@ rewritten; the current one keeps its entries.
 - **PRE-004-S2**: Index migration fixtures: version 0, an unknown version (99), corrupt bytes and an older palette version open as rebuilt (empty, rewritten in the current schema); the current version keeps its entries (package test).
 - **PRE-004-S3**: Through the real thumbnail model with a fixture renderer, a produced thumbnail records its colours once and the coordinator's colour filter lists it (app unit test on the simulator).
 - **PRE-004-S4**: In the app on a simulator, colour chips appear after thumbnails are made, choosing one lists only matching presets, and Clear restores the home (UI test under 30 s).
-- **PRE-004-S5**: Indexing one thumbnail takes under 5 ms on the host in Debug (sampling 576 pixels), so it adds nothing visible to a thumbnail's ~1 s render.
+- **PRE-004-S5**: Indexing one thumbnail takes under 5 ms on the host in Debug (sampling 576 pixels), so it adds nothing visible to a thumbnail's ~1 s render (recorded from the package test's duration, not asserted on the clock).
 
 ## Assumptions
 
