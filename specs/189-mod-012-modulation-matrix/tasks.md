@@ -19,22 +19,22 @@ Tests are requested by the spec (acceptance, reorder, round trip, undo, UI). Bud
 
 ## Phase 2: App (User Stories 1-5)
 
-- [ ] MOD-012-T04 `ModulationMatrixCoordinator`, `AppCoordinator+ModulationMatrix` (live list, in-place host
-  edits, carried list, refresh points), `NativeSpectrumHost` edits, `SceneAutosaveCoordinator.replaceCarriedBindings`
-- [ ] MOD-012-T05 [US5] `SceneInputs.bindings` (capture prefers it), history labels, undo/redo restore
-- [ ] MOD-012-T06 [US2, US3, US4] Views: `ModulationMatrixView` (groups, switches, Edit mode drag, VoiceOver
+- [X] MOD-012-T04 `ModulationMatrixCoordinator`, `AppCoordinator+ModulationMatrix` (live list, in-place host
+  edits, carried list, refresh points), `NativeSpectrumHost` edits, `SceneAutosaveCoordinator.replaceCarriedBindings` — Verified 2026-11-14: build-for-testing on "MOD12 iPhone 17" (iOS 27.2) succeeded; ModulationMatrixAppTests and the UI test drive it; 56 binding/autosave/history/repair/recovery app tests pass unchanged
+- [X] MOD-012-T05 [US5] `SceneInputs.bindings` (capture prefers it), history labels, undo/redo restore — Verified 2026-11-14: `testEachEditIsOneUndoStepAndUndoRestoresTheList` (labels "Turn Off LFO 1 → Glow Intensity", "Reorder Glow Intensity"; two undos restore the list; redo; refused edit records nothing); SceneHistoryCoordinatorTests 4 and SceneUndoUITests pass unchanged
+- [X] MOD-012-T06 [US2, US3, US4] Views: `ModulationMatrixView` (groups, switches, Edit mode drag, VoiceOver
   Move Up/Down, read-only triggers and macros, empty state), `ModulationRouteDetailView` (curve preview, envelope,
-  10 Hz live values, Inspect), Settings row; inspector marks "(off)"
-- [ ] MOD-012-T07 App tests `Apps/projectM-iOS/Tests/ModulationMatrixAppTests.swift`: host acceptance (glow
+  10 Hz live values, Inspect), Settings row; inspector marks "(off)" — Verified 2026-11-14: ModulationMatrixUITests drives the matrix (rows, switch); `testCaptureWritesTheFlagAndTheInspectorMarksTheLayerOff`; ParameterInspectorTests 10 pass; type-check budget: no new function over 300 ms, the slowest new expression 170 ms. VoiceOver Move Up/Down and Edit-mode drag call the tested `move`; not exercised by a UI test
+- [X] MOD-012-T07 App tests `Apps/projectM-iOS/Tests/ModulationMatrixAppTests.swift`: host acceptance (glow
   intensity follows A only, radius binding untouched), coordinator edits are one undo step each and undo restores,
-  capture writes `enabled: false`
-- [ ] MOD-012-T08 [US1] DEBUG seed and probe, `ModulationMatrixUITests` (< 30 s): toggle one row, the probe
-  changes for that destination only
+  capture writes `enabled: false` — Verified 2026-11-14: ModulationMatrixAppTests 3 pass in 1.4 s (host: 0.225 → 0.9 with B off, radius bit-identical, A's signal unchanged, re-enable 0.225, move 0.9)
+- [X] MOD-012-T08 [US1] DEBUG seed and probe, `ModulationMatrixUITests` (< 30 s): toggle one row, the probe
+  changes for that destination only — Verified 2026-11-14: ModulationMatrixUITests passes in 10-25 s (probe "effect.bloom.intensity=0.3000 effect.bloom.radius=0.0400" → "…intensity=0.6000 …radius=0.0400", the switch does not navigate)
 
 ## Phase 3: Polish
 
-- [ ] MOD-012-T09 Spec status, repository checks, type-check budget, privacy manifest and network symbols on the
-  Debug app, Linux shape of the changed packages
+- [X] MOD-012-T09 Spec status, repository checks, type-check budget, privacy manifest and network symbols on the
+  Debug app, Linux shape of the changed packages — Verified 2026-11-14: check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 159 OK (1 skipped); check_privacy_manifest and check_network_symbols OK on the Debug app; new package code is Foundation-free (ModulationRouteList) or uses only existing imports, no stdio — the Linux CI run itself pending
 
 ## Analysis (speckit-analyze, 2026-11-14)
 

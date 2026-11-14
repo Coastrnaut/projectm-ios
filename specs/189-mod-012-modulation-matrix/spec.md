@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (MOD-012-T01-T09 verified on the Mac: ParameterGraph and SceneFormat package tests on the host, app unit tests and one UI test on a private iOS 27.2 simulator; no ADR, no device task; create and delete out of scope, MOD-012-D6)
 
 **Input**: User description: "Implement MOD-012 (Modulation matrix UI) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "List, enable, reorder and inspect every mapping." Acceptance, verbatim:

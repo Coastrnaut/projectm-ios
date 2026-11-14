@@ -452,6 +452,30 @@ final class NativeSpectrumHost: PresentationBoundResource {
     /// The live bindings in order (SCN-002 captures them into the current scene).
     var bindings: [AudioFeatureBinding] { modulator?.bindings ?? [] }
 
+    /// MOD-012-R3: turns one layer on or off in place (its signal keeps running); effective at once.
+    func setLayerEnabled(_ enabled: Bool, for target: ParameterID, layer: Int) throws(AudioFeatureBindingError) {
+        guard let modulator else { throw .unknownTarget(target) }
+        try modulator.setEnabled(enabled, for: target, layer: layer)
+        resolveEffectiveGlow()
+    }
+
+    /// MOD-012-R6: moves one layer within its parameter (the fold order); signals move with their layers.
+    func moveLayer(of target: ParameterID, from: Int, to: Int) throws(AudioFeatureBindingError) {
+        guard let modulator else { throw .unknownTarget(target) }
+        try modulator.moveLayer(of: target, from: from, to: to)
+        resolveEffectiveGlow()
+    }
+
+    /// MOD-012 (undo): replaces every binding (all or nothing; signals restart at 0).
+    func replaceBindings(_ list: [AudioFeatureBinding]) throws(AudioFeatureBindingError) {
+        guard let modulator else { throw .unknownTarget(list.first?.target ?? VisualParameterIDs.bloomIntensity) }
+        try modulator.replaceBindings(list)
+        resolveEffectiveGlow()
+    }
+
+    /// MOD-012-R7: the current 0…1 signal of `target`'s `layer`-th binding (the route detail's live value).
+    func layerSignal(for target: ParameterID, layer: Int) -> Double? { modulator?.signal(for: target, layer: layer) }
+
     /// UIX-003-R7: the modulator's value for `id` given `manual`; nil when `id` is unbound. Read-only.
     func modulatorValue(for id: ParameterID, manual: Double) -> Double? {
         guard let modulator, modulator.isBound(id) else { return nil }
