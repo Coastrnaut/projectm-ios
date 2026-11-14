@@ -8,6 +8,7 @@
 // FILE-005: the Backup section (LibraryBackupSection: back up the library, restore from a backup).
 // FILE-011: the Erase section and sheet (LibraryEraseSection).
 // MED-013: a Missing Media row (MissingMediaView: list, relink by checksum, folder search, replacement).
+// REC-010: the Saved recordings row opens Recordings (RecordingLibraryView: play, share, rename, delete).
 import LocalPortability
 import SwiftUI
 
@@ -18,16 +19,20 @@ struct StorageUsageView: View {
 
     /// MED-013: Missing Media (nil hides the row, e.g. in previews).
     private let missingMedia: MissingMediaCoordinator?
+    /// REC-010: Recordings (nil hides the row, e.g. in previews).
+    private let recordingLibrary: RecordingLibraryModel?
 
     init(model: StorageUsageModel? = nil, filesInUse: @escaping @MainActor () -> Set<String> = { () -> Set<String> in [] },
-         libraryBackup: LibraryBackupCoordinator? = nil, missingMedia: MissingMediaCoordinator? = nil) {
+         libraryBackup: LibraryBackupCoordinator? = nil, missingMedia: MissingMediaCoordinator? = nil,
+         recordingLibrary: RecordingLibraryModel? = nil) {
         _model = State(initialValue: model ?? StorageUsageModel(locations: StorageLocations.forCurrentLaunch(), filesInUse: filesInUse))
         self.libraryBackup = libraryBackup
         self.missingMedia = missingMedia
+        self.recordingLibrary = recordingLibrary
     }
 
     static let incompleteNote = "Some files could not be counted; sizes may be higher."
-    static let keptNote = "Photos, videos, scenes, the show, presets, imported audio and settings are kept."
+    static let keptNote = "Photos, videos, scenes, the show, presets, imported audio, saved recordings and settings are kept."
     static let cleanupFailedNote = "Some files could not be removed."
 
     /// FILE-008-R11: shown only when shared copies save space.
@@ -65,12 +70,36 @@ struct StorageUsageView: View {
         return HStack {
             Text(title).fontWeight(bold ? .semibold : .regular)
             Spacer()
-            Text(text).monospacedDigit().foregroundStyle(.secondary)
+            // QA-009 (2026-11-14): primary colour; the sizes are the screen's content, and in the secondary grey
+            // they "nearly passed" the contrast audit.
+            Text(text).monospacedDigit()
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(title)
         .accessibilityValue(text)
         .accessibilityIdentifier(id)
+    }
+
+    /// One category row; REC-010: "Saved recordings" opens Settings › Storage › Recordings.
+    @ViewBuilder
+    private func categoryRow(_ category: StorageCategory, bytes: Int64?) -> some View {
+        let id = "storage.\(category.rawValue)"
+        if category == .savedRecordings, let recordingLibrary {
+            let text = value(bytes)
+            NavigationLink { RecordingLibraryView(model: recordingLibrary) } label: {
+                HStack {
+                    Text(category.title)
+                    Spacer()
+                    Text(text).monospacedDigit().foregroundStyle(.secondary)
+                }
+            }
+            .accessibilityLabel(category.title)
+            .accessibilityValue(text)
+            .accessibilityHint("Opens your saved recordings")
+            .accessibilityIdentifier(id)
+        } else {
+            row(category.title, bytes: bytes, id: id)
+        }
     }
 
     var body: some View {
@@ -88,7 +117,7 @@ struct StorageUsageView: View {
             }
             Section {
                 ForEach(StorageCategory.allCases, id: \.self) { (category: StorageCategory) in
-                    row(category.title, bytes: report?.usage(category).spaceUsed, id: "storage.\(category.rawValue)")
+                    categoryRow(category, bytes: report?.usage(category).spaceUsed)
                 }
                 row("Total", bytes: report?.total.spaceUsed, id: "storage.total", bold: true)
             } footer: {

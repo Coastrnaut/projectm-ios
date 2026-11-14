@@ -420,6 +420,7 @@ struct VisualizerView: View {
                          libraryBackup: coordinator.libraryBackup,   // FILE-005
                          cacheFilesInUse: { () -> Set<String> in coordinator.cacheFilesInUse() },
                          missingMedia: coordinator.missingMedia,   // MED-013
+                         recordingLibrary: coordinator.recordingLibrary,   // REC-010
                          openGuide: { coordinator.openGuidedFirstScene() },
                          history: coordinator.sceneHistory,      // UIX-001, SCN-010
                          layerInspector: coordinator,            // CMP-015
@@ -441,6 +442,7 @@ struct VisualizerView: View {
                          explainers: coordinator.explainers,   // UIX-015
                          cameraStatus: { () -> PermissionState? in coordinator.cameraPermissionStatus },
                          recentPresets: coordinator.presets.recent,   // PRE-006
+                         powerProfile: coordinator.powerProfile,   // PERF-008
                          announcer: coordinator.announcer)   // ACC-005-R7
                 .environment(\.parameterShelf, coordinator.parameterShelf)   // UIX-004-R1: Pin to Shelf in Inspect
                 .sceneRepairSheet(coordinator.sceneRepair, active: true)   // SCN-012: a show editor step's report
@@ -533,6 +535,7 @@ struct VisualizerView: View {
         .onChange(of: coordinator.settings.mandalaSymmetry) { coordinator.visualSettingsChanged() }   // VIS-007
         .onChange(of: coordinator.settings.mandalaMirror) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.mandalaPetal) { coordinator.visualSettingsChanged() }
+        .onChange(of: coordinator.settings.particleGravity) { coordinator.visualSettingsChanged() }   // VIS-008
         .onChange(of: coordinator.settings.spectrumSmoothing) { coordinator.visualSettingsChanged() }   // ANL-003
     }
 

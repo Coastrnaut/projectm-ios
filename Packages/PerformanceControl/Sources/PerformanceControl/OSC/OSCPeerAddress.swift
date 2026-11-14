@@ -3,7 +3,8 @@
 //
 // Pure, so the rule is tested on every host. The transport builds an address from the peer's raw
 // bytes and drops any peer that is not local before reading from it. Addresses are never stored,
-// logged or shown.
+// logged or shown, except hosts the user approves for OSC-008 (stored on the device) and the last few blocked
+// hosts shown in memory while the OSC-008 allowlist is on (ADR-0058).
 
 public enum OSCPeerAddress: Sendable, Hashable, CustomStringConvertible {
     case ipv4(UInt8, UInt8, UInt8, UInt8)

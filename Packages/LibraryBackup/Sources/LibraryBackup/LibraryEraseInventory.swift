@@ -72,6 +72,10 @@ public struct LibraryEraseInventory: Sendable, Equatable {
                 .appendingPathComponent("assets", isDirectory: true)
             let names: [String] = (try? FileManager.default.contentsOfDirectory(atPath: assets.path)) ?? []
             return names.filter { (name: String) -> Bool in !name.hasPrefix(".") }.count
+        case .recordings:   // REC-010-R8: the kept recordings (non-hidden files)
+            let folder = root.appendingPathComponent(LibraryErasePolicy.recordingLibraryFolderName, isDirectory: true)
+            let names: [String] = (try? FileManager.default.contentsOfDirectory(atPath: folder.path)) ?? []
+            return names.filter { (name: String) -> Bool in !name.hasPrefix(".") }.count
         case .settings:
             let keys: Int = LibraryErasePolicy.settingKeys(.settings).filter { (key: String) -> Bool in settings[key] != nil }.count
             let profiles: URL = root.appendingPathComponent(LibraryErasePolicy.midiProfilesFolderName, isDirectory: true)

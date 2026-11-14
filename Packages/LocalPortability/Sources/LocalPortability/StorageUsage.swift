@@ -8,9 +8,10 @@
 // so the logic is tested on the Mac host and on Linux with an injected tree (FILE-009-R9).
 import Foundation
 
-/// The Storage screen's categories, in display order (FILE-009-R1).
+/// The Storage screen's categories, in display order (FILE-009-R1). REC-010-R7: `recordings` is the temporary
+/// `<tmp>/Recordings` ("Unsaved recordings", cleanable); `savedRecordings` is the recording library (not cleanable).
 public enum StorageCategory: String, CaseIterable, Sendable, Hashable {
-    case photos, videos, scenes, presets, importedAudio, recordings, sharesAndExports, caches, otherAppData
+    case photos, videos, scenes, presets, importedAudio, recordings, savedRecordings, sharesAndExports, caches, otherAppData
 
     public var title: String {
         switch self {
@@ -19,7 +20,8 @@ public enum StorageCategory: String, CaseIterable, Sendable, Hashable {
         case .scenes: "Scenes"
         case .presets: "Presets"
         case .importedAudio: "Imported audio"
-        case .recordings: "Recordings"
+        case .recordings: "Unsaved recordings"
+        case .savedRecordings: "Saved recordings"
         case .sharesAndExports: "Shares and exports"
         case .caches: "Caches"
         case .otherAppData: "Other app data"

@@ -54,7 +54,7 @@ final class MacroCoordinator {
     /// The app's coordinator: the visual catalog and the Settings write path.
     static func makeDefault(settings: AppSettings) -> MacroCoordinator {
         let coordinator = MacroCoordinator(registry: ParameterInspectorCatalog.registry) { (id: ParameterID) -> ParameterInspectorTarget? in
-            ParameterInspectorTargets.target(for: id, settings: settings)
+            ParameterInspectorTargets.quantizedTarget(for: id, settings: settings)   // MOD-017: discrete targets quantized
         }
         coordinator.sceneLock = settings.sceneLock   // SCN-015
         return coordinator

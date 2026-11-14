@@ -213,7 +213,7 @@ final class StorageUsageTests: XCTestCase {
 
     func testCategoryTitlesAndOrder() {
         XCTAssertEqual(StorageCategory.allCases.map { (c: StorageCategory) -> String in c.title },
-                       ["Photos", "Videos", "Scenes", "Presets", "Imported audio", "Recordings", "Shares and exports",
+                       ["Photos", "Videos", "Scenes", "Presets", "Imported audio", "Unsaved recordings", "Saved recordings", "Shares and exports",
                         "Caches", "Other app data"])
     }
 

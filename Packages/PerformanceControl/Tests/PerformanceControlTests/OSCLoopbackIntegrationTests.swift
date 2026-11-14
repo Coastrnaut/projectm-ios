@@ -1,6 +1,7 @@
 // OSC-001-T14: the acceptance criterion over a real UDP listener on loopback (OSC-001-S1, S2, R14).
 // "Valid OSC float packet updates test value and disable closes listener."
 // OSC-002-T11: a bundle holding the test message over the same listener (OSC-002-S4).
+// OSC-008-T08: the peer allowlist over the same listener: the real transport hands on the sender's host.
 //
 // macOS host and simulator only (the listener needs the Network framework; Linux compiles this out).
 // Deterministic: expectations with generous ceilings, no wall-clock assertions. The sender is the
@@ -115,6 +116,32 @@ final class OSCLoopbackIntegrationTests: XCTestCase {
         XCTAssertEqual(receiver.testValue, expected, "counters: \(receiver.counters)")
         XCTAssertEqual(receiver.counters.bundles, 1)
         XCTAssertEqual(receiver.counters.applied, 1)
+        observation.cancel()
+        stopAndWaitOff(receiver)
+    }
+    func testAllowlistBlocksAnUnapprovedLoopbackSenderUntilItIsApproved() throws {
+        let receiver = OSCReceiver.system()
+        receiver.peerAllowlist.setEnabled(true)
+        let port = try listen(receiver, port: 0)
+
+        let blocked = expectation(description: "blocked datagram counted")
+        blocked.assertForOverFulfill = false
+        receiver.onActivity { [weak receiver] in if (receiver?.counters.droppedUnapproved ?? 0) > 0 { blocked.fulfill() } }
+        send(packet(0.42), to: port)
+        wait(for: [blocked], timeout: 5)
+        XCTAssertEqual(receiver.testValue, 0, "an unapproved host changes nothing")
+        XCTAssertEqual(receiver.counters.received, 0)
+        let host = try XCTUnwrap(receiver.peerAllowlist.recentlyBlocked.first, "the sender is listed as recently blocked")
+        XCTAssertTrue(host.isLocal, "loopback: \(host)")
+
+        XCTAssertEqual(receiver.peerAllowlist.approve(host), .approved)
+        let expected = Double(Float(0.42))
+        let changed = expectation(description: "test value 0.42 after approval")
+        changed.assertForOverFulfill = false
+        let observation = receiver.observeTestValue { value in if value == expected { changed.fulfill() } }
+        send(packet(0.42), to: port)
+        wait(for: [changed], timeout: 5)
+        XCTAssertEqual(receiver.testValue, expected, "counters: \(receiver.counters)")
         observation.cancel()
         stopAndWaitOff(receiver)
     }

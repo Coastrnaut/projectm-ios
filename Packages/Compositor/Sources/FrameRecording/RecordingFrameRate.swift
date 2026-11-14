@@ -47,6 +47,8 @@ public struct RecordingRenderLimit: Sendable, Equatable {
     public enum Reason: Sendable, Equatable {
         case lowPowerMode
         case thermal
+        /// PERF-008-R8: the user's Battery saver power profile.
+        case batterySaver
     }
 
     public let reason: Reason
@@ -72,6 +74,7 @@ public enum RecordingFrameRateUnavailableReason: Sendable, Equatable {
             switch limit.reason {
             case .lowPowerMode: "Low Power Mode limits the visual to \(limit.maximumFramesPerSecond) fps."
             case .thermal: "The device is too warm; the visual is limited to \(limit.maximumFramesPerSecond) fps."
+            case .batterySaver: "Battery saver limits the visual to \(limit.maximumFramesPerSecond) fps."
             }
         case .encoderLimit(let maximum, let width, let height):
             "This device encodes at most \(maximum) fps at \(width)×\(height)."
