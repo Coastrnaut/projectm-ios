@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T14:50:48Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T14:50:53Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,8 +11,8 @@
 |---|---|
 | audited | 156 |
 | implementing | 4 |
-| unit_passed | 3 |
-| integrated | 162 |
+| unit_passed | 2 |
+| integrated | 163 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -20,14 +20,14 @@
 | Priority | audited | implementing | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 71 | 4 | 3 | 73 | 0 |
+| P1 | 71 | 4 | 2 | 74 | 0 |
 | P2 | 74 | 0 | 0 | 5 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 163 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)
+- 162 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)
 
 ## Integrated
 
@@ -127,6 +127,7 @@ The physical-device suite may **not** start:
 | MED-006 | Image slideshow | `d6ec9dc5e426` | `feature/med-006` |
 | MED-009 | Text overlay | `beca43d66718` | `feature/med-009` |
 | MED-010 | Logo overlay | `6ac0c21c` | `feature/med-010` |
+| MED-013 | Media asset relinking | `52fabb13f575` | `feature/med-013` |
 | MED-014 | Safe media decoder | `31e16534f057` | `feature/med-014` |
 | MIDI-001 | MIDI endpoint discovery | `5e7bcff1` | `feature/midi-001` |
 | MIDI-002 | MIDI input monitor | `c7cd1169` | `feature/midi-002` |
@@ -1180,7 +1181,7 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `5e70427cd3e6` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-010/20261114T071247/swift-test_ShowControl.log`)
 - `post-merge: projectM-iOSTests 658 + UI 13 (trails, MIDI, logo, photo, slideshow, backup, settings suites)`: pass at `6ac0c21c` (log `.autonomous/logs/integration/batch4/app-tests.log`)
 
-### MED-013 Media asset relinking (unit_passed)
+### MED-013 Media asset relinking (integrated)
 - `python3 scripts/check_compliance.py`: pass at `3e9e52be2928` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-013/20261114T094349/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `3e9e52be2928` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-013/20261114T094349/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `3e9e52be2928` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-013/20261114T094349/script-tests.log`)

@@ -13,8 +13,8 @@
   "P1": {
    "audited": 71,
    "implementing": 4,
-   "integrated": 73,
-   "unit_passed": 3
+   "integrated": 74,
+   "unit_passed": 2
   },
   "P2": {
    "audited": 74,
@@ -27,9 +27,9 @@
  "by_state": {
   "audited": 156,
   "implementing": 4,
-  "integrated": 162,
+  "integrated": 163,
   "skipped_existing": 1,
-  "unit_passed": 3
+  "unit_passed": 2
  },
  "device_gate": {
   "blocked": [],
@@ -74,7 +74,6 @@
    "MED-008",
    "MED-011",
    "MED-012",
-   "MED-013",
    "MIDI-005",
    "MIDI-008",
    "MIDI-009",
@@ -203,7 +202,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "163 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)"
+   "162 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)"
   ]
  },
  "features": {
@@ -1522,10 +1521,10 @@
    "branch": "feature/med-013",
    "branch_sha": "3e9e52be2928530db8e0ce106a16244ab8ef66d8",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "52fabb13f5753a280301a619269a627a5997b5b1",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "MED-014": {
    "attempts": 0,
@@ -3940,6 +3939,11 @@
    "sha": "6ac0c21c"
   },
   {
+   "branch": "feature/med-013",
+   "id": "MED-013",
+   "sha": "52fabb13f5753a280301a619269a627a5997b5b1"
+  },
+  {
    "branch": "feature/med-014",
    "id": "MED-014",
    "sha": "31e16534f057b12cf870f7a854464076a0c39955"
@@ -4305,5 +4309,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T14:50:48Z"
+ "updated": "2026-11-14T14:50:53Z"
 }
