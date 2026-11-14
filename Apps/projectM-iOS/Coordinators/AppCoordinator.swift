@@ -193,6 +193,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let noiseGate: NoiseGateSetting
     /// AUD-013: the per-source visual delay (Settings → Visual Delay; analysis and projectM's feed).
     let latencyOffset: LatencyOffsetSetting
+    /// FX-003: the colour grade (Settings → Color) of the compositor-backed visuals.
+    let colorGrade: ColorGradeSetting
     /// The native spectra (VIS-001 circular, VIS-002 linear), created the first time one is needed.
     private(set) var nativeVisual: NativeSpectrumHost?
     /// The Camera visual (CAM-001), created when Camera is chosen and released when another visual is.
@@ -332,6 +334,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         channelSelection = ChannelSelectionSetting(defaults: defaults)
         noiseGate = NoiseGateSetting(defaults: defaults)
         latencyOffset = LatencyOffsetSetting(defaults: defaults)
+        colorGrade = ColorGradeSetting(defaults: defaults)   // FX-003
         self.externalDisplay.reduceFlashing = settings.reduceFlashing   // OUT-010-R6
         // PERF-010 (contract C1): decide before the OSC receiver exists, so an abnormal exit never
         // reopens the listener; a pending offer holds the scene instead of restoring it.
@@ -458,6 +461,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         }
         videos.onLoopRegionChange = { [weak self] (region: VideoLoopRegion?) in self?.videoVisual?.loopRegion = region }   // MED-003
         texts.onSpecChange = { [weak self] (spec: TextOverlaySpec) in self?.textVisual?.spec = spec }   // MED-009
+        colorGrade.onChange = { [weak self] (_: ColorGrade) in self?.applyColorGrade() }   // FX-003
         routes.context = { [weak self] in self?.routeContext }   // AUD-007
         // AUD-012-R12: the noise gate's microphone flag changes when a session (or a switch) begins.
         manager.onSessionMode = { [weak self] (mode: AudioSourceMode) in
@@ -830,6 +834,15 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         textVisual?.reduceFlashing = settings.reduceFlashing     // MED-009
     }
 
+    /// FX-003-R1: the compositor-backed visuals show the colour grade (the native spectra and projectM are not graded).
+    func applyColorGrade() {
+        let grade: ColorGrade = colorGrade.grade
+        cameraVisual?.colorGrade = grade
+        photoVisual?.colorGrade = grade
+        videoVisual?.colorGrade = grade
+        textVisual?.colorGrade = grade
+    }
+
     // MARK: - Visual choice (VIS-001)
 
     /// The native visual replaces projectM only when chosen, created and on the visualizer.
@@ -930,6 +943,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                                                  position: settings.cameraPosition, mirrored: settings.cameraMirrored,   // CAM-002
                                                  crop: settings.cameraCrop)   // CAM-007
             host.reduceFlashing = settings.reduceFlashing
+            host.colorGrade = colorGrade.grade   // FX-003
             host.onRenderHealthChange = observeRenderHealth(of: "camera")   // PERF-014
             #if DEBUG
             host.compositor.faultInjection = armedRenderFaults
@@ -962,6 +976,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             #endif
             let host = try PhotoVisualHost.make(device: device, reader: trimmedAnalysisTap, barCount: circularSpectrumBarCount)
             host.reduceFlashing = settings.reduceFlashing
+            host.colorGrade = colorGrade.grade   // FX-003
             host.onRenderHealthChange = observeRenderHealth(of: "photo")   // PERF-014
             #if DEBUG
             host.compositor.faultInjection = armedRenderFaults
@@ -1009,6 +1024,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             #endif
             let host = try VideoVisualHost.make(device: device, reader: trimmedAnalysisTap, barCount: circularSpectrumBarCount)
             host.reduceFlashing = settings.reduceFlashing
+            host.colorGrade = colorGrade.grade   // FX-003
             host.onRenderHealthChange = observeRenderHealth(of: "video")   // PERF-014
             #if DEBUG
             host.compositor.faultInjection = armedRenderFaults
@@ -1055,6 +1071,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             #endif
             let host = try TextVisualHost.make(device: device, reader: trimmedAnalysisTap, barCount: circularSpectrumBarCount)
             host.reduceFlashing = settings.reduceFlashing
+            host.colorGrade = colorGrade.grade   // FX-003
             host.onRenderHealthChange = observeRenderHealth(of: "text")   // PERF-014
             #if DEBUG
             host.compositor.faultInjection = armedRenderFaults
