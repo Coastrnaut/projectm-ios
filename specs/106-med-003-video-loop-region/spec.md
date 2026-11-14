@@ -57,6 +57,30 @@ human interaction); each answer is the conservative, local-first option.
   app's settings; a new video starts with the whole file; Remove Video forgets it (MED-003-R7).
   Video scenes and show cues record it as an optional field of the video asset (MED-003-R8).
 
+### Session 2026-11-14 (speckit-clarify)
+
+Five questions, each answered by Claude with the recommended option (owner rules 4 and 9).
+
+- Q: What does the in/out control look like? → A: Two sliders, In and Out, from 0 to the video's
+  duration in 0.1 s steps, each with its time shown ("1.5 s"), plus a Reset Loop button, in
+  Settings → Video (MED-003-R9). Rejected: "Set In/Out at the current picture", because Settings
+  covers the visualizer, so the user cannot see the picture they would be marking.
+- Q: When does a slider change reach the player? → A: Once the value has settled: when the drag
+  ends, or 0.4 s after the last change (VoiceOver adjustments), so a drag restarts the decoder once,
+  not per step (MED-003-R10). The value is saved at once.
+- Q: How is the region written in a scene? → A: As an optional `loop` object on the video asset,
+  `{"inMilliseconds": <integer>, "outMilliseconds": <integer>}`, written only when the region is
+  not the whole file. Older apps keep it verbatim (unknown asset fields are carried), so no version
+  change and no warning. A malformed value (missing keys, non-integers, negative, out ≤ in) reads
+  as "whole file" (MED-003-R8).
+- Q: How far ahead is the next pass prepared? → A: The reader prepares the pass at in when the
+  picture being read is within 0.5 s of out, with at most one extra prepared reader at a time, so
+  memory grows by one reader only near the joint; the bounded 3-picture queue carries the joint
+  meanwhile (MED-003-R4).
+- Q: Is a recovered end-of-file or reader error shown to the user? → A: No. Playback simply
+  continues; the counts are diagnostics only (DEBUG probe and tests). Only a real failure
+  (MED-003-R6) shows MED-002's notice (MED-003-R5).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Loop only the part of the clip I want (Priority: P1)
@@ -148,21 +172,26 @@ continues at in, the recovery is counted, and the session is still running.
   out is reached so that, when the decoder keeps up, the joint shows no held picture.
 - **MED-003-R5**: The end of the file, an early end of the reader, or a reader error after the
   pass had produced at least one picture MUST start the next pass at in without stopping
-  playback, and MUST be counted (loops, early ends, recovered errors).
+  playback, and MUST be counted (loops, early ends, recovered errors) for diagnostics only; no
+  notice is shown for a recovered event.
 - **MED-003-R6**: A failed open (including MED-014's container check) or three passes in a row
   with no picture MUST end playback as `.failed` (the MED-002 fallback and notice).
 - **MED-003-R7**: The region MUST be saved with the stored video, keyed by its identifier, and
   restored after relaunch; a different video MUST start with the whole file; Remove Video MUST
   forget the region; UI tests' reset flag MUST clear it.
 - **MED-003-R8**: Video scenes (autosave, undo history) and show cues MUST record a non-whole
-  region as an optional field of the video asset, without a format version change; restoring a
+  region as an optional `loop` object of the video asset (`inMilliseconds`, `outMilliseconds`,
+  integers), without a format version change; a malformed value MUST read as the whole file;
+  restoring a
   scene whose video is the stored one MUST apply its region (none: the whole file); older scenes
   MUST load and re-save unchanged.
-- **MED-003-R9**: Settings → Video MUST offer In and Out controls and Reset Loop while a video is
-  stored and its duration is known; their VoiceOver values MUST read times as "1.5 seconds"; they
-  MUST work at accessibility text sizes and use no animation outside the app's motion policy.
-- **MED-003-R10**: A region edit MUST continue at the current picture when it lies inside the new
-  region, otherwise at in, and MUST be applied once per settled edit.
+- **MED-003-R9**: Settings → Video MUST offer In and Out sliders (0 to the duration, 0.1 s steps)
+  and Reset Loop while a video is stored and its duration is known; their VoiceOver values MUST
+  read times as "1.5 seconds"; they MUST work at accessibility text sizes and use no animation
+  outside the app's motion policy.
+- **MED-003-R10**: A region edit MUST be saved at once and applied to the player once it settles
+  (drag end, or 0.4 s after the last change); playback MUST continue at the current picture when
+  it lies inside the new region, otherwise at in.
 - **MED-003-R11**: The region rules (clamping, timeline mapping, recovery) MUST be testable
   without a graphics device on every platform the packages' tests run on (the fake reader).
 - **MED-003-R12**: DEBUG diagnostics MUST expose the shown picture's index in the file and the
