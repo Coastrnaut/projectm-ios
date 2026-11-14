@@ -33,6 +33,8 @@ struct SceneSwitcherEntry: Equatable, Sendable, Identifiable {
     var folderPath: String? = nil
     /// SCN-005: the scene's tags (sorted).
     var tags: [String] = []
+    /// SCN-006: the cue's scene (its preview picture).
+    var sceneID: String = ""
 
     var id: UUID { cueID }
 
@@ -48,7 +50,7 @@ struct SceneSwitcherEntry: Equatable, Sendable, Identifiable {
             let path: String? = list.folders.pathText(of: list.folderID(ofScene: cue.sceneID))
             rows.append(SceneSwitcherEntry(cueID: cue.id, number: index + 1, label: cue.label, sceneName: name,
                                            isActive: cue.id == activeID, isMissing: missing, folderPath: path,
-                                           tags: list.tags(ofScene: cue.sceneID)))
+                                           tags: list.tags(ofScene: cue.sceneID), sceneID: cue.sceneID))
         }
         return rows
     }

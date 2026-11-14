@@ -39,6 +39,7 @@ extension AppCoordinator {
             guard let self else { return [] }
             let notes = self.applyShowScene(document, warnings: warnings, refresh: true)
             self.sceneSwitchReached(.applied)   // UIX-002-R8: the switcher's latency ends at the applied state
+            self.scenePreviews.sceneApplied(document.id)   // SCN-006: a picture after the settle, when it has none
             return notes
         }
         show.availability = { [weak self] () -> StoredMediaAvailability in
@@ -57,6 +58,7 @@ extension AppCoordinator {
         }
         // MIDI-006: note triggers step the show and use OUT-010's blackout (kept out of init's type-check budget).
         midiMappings.connectNoteActions(MIDINoteActionPerformer(show: show, external: externalDisplay))
+        connectScenePreviews()   // SCN-006
     }
 
     /// Sets a validated scene's look; returns the notes for the step's notice.
@@ -105,7 +107,9 @@ extension AppCoordinator {
     func addCurrentSceneToShow() -> Bool {
         let look = showLook
         let document = ShowSceneSnapshot.document(look, id: UUID().uuidString, name: look.visual.title)
-        return show.addScene(document, label: look.visual.title)
+        guard show.addScene(document, label: look.visual.title) else { return false }
+        scenePreviews.sceneSaved(document.id)   // SCN-006: the output already shows the new scene
+        return true
     }
 
     // MARK: Controls and keys

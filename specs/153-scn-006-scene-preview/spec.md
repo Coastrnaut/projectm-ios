@@ -4,7 +4,10 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (SCN-006-T01-T11 verified on the Mac: host package tests and the
+feature's own iOS 27.2 simulator "SCN6"; no device claim). PresetLibrary 264 tests (27.8 s; 5 new),
+projectM-iOSTests 701 (91 s; ScenePreviewAcceptanceTests 6), ScenePreviewUITests 1 (17.7 s, 11.0 s).
+Linux: not run here; CI's Linux job builds and tests PresetLibrary.
 
 **Input**: User description: "Implement SCN-006 (Scene preview image) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Capture representative image for
