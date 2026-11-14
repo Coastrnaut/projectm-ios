@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Planned 2026-11-13
 
 **Input**: User description: "Implement AUD-013 (Source latency calibration) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md line 100. Observable behavior, verbatim: "Measure or set
@@ -101,7 +101,7 @@ first.
 ### User Story 1 - Visuals in time with Bluetooth headphones (Priority: P1)
 
 A user plays a track through In-App Playback on Bluetooth headphones. The visuals react before the
-beat is heard. In Settings → Visual Delay the user sets In-App Playback to 180 ms (or taps
+beat is heard. In Settings → Visual Delay the user picks In-App Playback and sets 180 ms (or taps
 "Estimate from Output"); from then on the visuals, the oscilloscope, bindings, the kick and the
 centroid all react 180 ms later, in time with the headphones. The value is kept for the next
 launch, and the Microphone and System/App Capture values are not affected.
@@ -137,7 +137,7 @@ read.
 
 ### User Story 3 - Estimate and reset (Priority: P2)
 
-The user taps "Estimate from Output" for the active source: the value becomes the route's reported
+The user taps "Estimate from Output" for the picked source: the value becomes the route's reported
 output latency for In-App Playback and System/App Capture, and 0 for Microphone (its sound reaches
 the microphone through the room, and the visuals cannot be advanced). "Reset" sets 0.
 
@@ -181,10 +181,10 @@ is not shown as the new source.
 - **AUD-013-R6**: With target and applied delay 0 and nothing buffered, the delay reader MUST forward the wrapped reader's read unchanged (bit-identical, no copy).
 - **AUD-013-R7**: The analysis delay line MUST be emptied when the wrapped reader's session generation changes (restart or switch, ANL-016-R9); the new target applies at once. projectM's delay line MUST NOT be emptied (AUD-012's continuity) and MUST skip the oldest frames beyond delay + 2,205 frames (the freshness rule).
 - **AUD-013-R8**: The active source's value applies when a session starts and when a switch begins (the same hook as AUD-012-R12), and at once when the user changes the active source's value.
-- **AUD-013-R9**: "Estimate from Output" MUST set the active source's value (or, with no source, the source the user picked in the section) to round((output latency + I/O buffer duration) × 1,000) ms clamped to the range for In-App Playback and System/App Capture, and to 0 for Microphone. Non-finite or negative inputs count as 0. No new permission is used.
-- **AUD-013-R10**: Settings MUST offer a "Visual Delay" section: one slider per source (0…250 ms, 5 ms steps) with a readout ("180 ms"), an "Estimate from Output" button, a "Reset" button, and a footer explaining it delays visuals only.
+- **AUD-013-R9**: "Estimate from Output" MUST set the picked source's value (the section's picker starts on the active source) to round((output latency + I/O buffer duration) × 1,000) ms clamped to the range for In-App Playback and System/App Capture, and to 0 for Microphone. Non-finite or negative inputs count as 0. No new permission is used.
+- **AUD-013-R10**: Settings MUST offer a "Visual Delay" section: a source picker (Microphone, In-App Playback, System Audio; it starts on the active source, or In-App Playback with none), one "Visual delay" slider for the picked source (0…250 ms, 5 ms steps) with a readout ("180 ms"), an "Estimate from Output" button and a "Reset" button for the picked source, and a footer saying it delays the visuals only, never earlier than the sound.
 - **AUD-013-R11**: Persisted under `settings.latencyOffset.microphone`, `settings.latencyOffset.inAppPlayback` and `settings.latencyOffset.systemAppCapture` (Double, ms); device-level user settings, not part of scenes, show cues or archives. This amends FR-065 by exactly these three keys; the device privacy check's allowed list gains them; `-uitestResetNotice` clears them.
-- **AUD-013-R12**: Accessibility (FR-070): slider labels "Microphone delay", "In-App Playback delay", "System Audio delay" with the readout as the value; identifiers `latencyOffsetSlider.<mode>`, `latencyOffsetValue.<mode>`, `latencyOffsetEstimate`, `latencyOffsetReset`.
+- **AUD-013-R12**: Accessibility (FR-070): picker label "Delay for source"; slider label "Visual delay" with the readout as the value; identifiers `latencyOffsetSource`, `latencyOffsetSlider`, `latencyOffsetValue`, `latencyOffsetEstimate`, `latencyOffsetReset`.
 - **AUD-013-R13**: Real-time safety (Constitution VII): the delay line is allocated when the reader is created; a read never allocates, locks or logs (relaxed atomic loads only).
 
 ### Key Entities
