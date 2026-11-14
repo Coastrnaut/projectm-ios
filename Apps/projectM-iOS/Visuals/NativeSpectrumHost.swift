@@ -55,6 +55,7 @@
 //   nothing allocates per frame.
 import AnalysisFeatures
 import AudioCore
+import FlashSafety
 import FrameCapture
 import Metal
 import ParameterGraph
@@ -105,8 +106,15 @@ final class NativeSpectrumHost: PresentationBoundResource {
     /// Frame rate and frame time for the FR-048 overlay.
     private(set) var metrics = RenderMetrics.zero
     private(set) var presentedFrameCount = 0
-    /// FR-072: the app's Reduce flashing setting.
+    /// FR-072: the app's Reduce flashing setting (ACC-012: the effective one, `SafetyClamp.reducesFlashing`).
     var reduceFlashing = false
+
+    /// ACC-012-R4: the sensory safety clamp. Applied where each frame's glow is resolved (after MOD-002
+    /// modulation, before the bloom and the generator's luminance model) and to the frame context's flash
+    /// envelope. `.standard` changes nothing (ADR-0049).
+    var safetyClamp: SafetyClamp = .standard {
+        didSet { if safetyClamp != oldValue { resolveEffectiveGlow() } }
+    }
 
     /// FX-001: the bloom and the chain that runs it; nil when the glow is unavailable.
     private let bloom: BloomEffect?
@@ -300,8 +308,11 @@ final class NativeSpectrumHost: PresentationBoundResource {
     private func resolveEffectiveGlow() {
         var resolved = glow
         if let modulator, glowIntensityIsBound {
-            resolved.intensity = Float(modulator.value(for: VisualParameterIDs.bloomIntensity, manual: Double(glow.intensity)))
+            let manual: Double = Double(glow.intensity)
+            let modulated: Double = modulator.value(for: VisualParameterIDs.bloomIntensity, manual: manual)
+            resolved.intensity = Float(safetyClamp.modulated(manual: manual, modulated: modulated))   // ACC-012: depth
         }
+        resolved = resolved.limited(by: safetyClamp)   // ACC-012-R4: the cap, after modulation, before render
         effectiveGlow = resolved
         bloom?.parameters = resolved
         if glowIntensityIsBound {
@@ -507,6 +518,13 @@ final class NativeSpectrumHost: PresentationBoundResource {
 
     // MARK: - Frames
 
+    /// One frame's context: the effective Reduce flashing and the profile's envelope (ACC-012-R5). The
+    /// generators' limiter applies `flashConfiguration`; tests read the same value.
+    func frameContext(timeNanoseconds: UInt64, frameDuration: Double) -> VisualFrameContext {
+        VisualFrameContext(timeNanoseconds: timeNanoseconds, frameDuration: frameDuration, reduceFlashing: reduceFlashing,
+                           flashLimits: safetyClamp.flashLimitsOverride)
+    }
+
     fileprivate func frame(_ link: CADisplayLink) {
         let layer = view.metalLayer
         guard view.window != nil, layer.drawableSize.width >= 1, layer.drawableSize.height >= 1 else { return }
@@ -522,8 +540,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
         lastLinkTimestamp = link.timestamp
         let smoothedBands = smoother.update(target: bands, count: bandCount, frameInterval: interval, generation: bandSession)
         guard let drawable = layer.nextDrawable(), let commands = queue.makeCommandBuffer() else { return }
-        let context = VisualFrameContext(timeNanoseconds: UInt64(max(link.targetTimestamp, 0) * 1e9),
-                                         frameDuration: link.targetTimestamp - link.timestamp, reduceFlashing: reduceFlashing)
+        let context: VisualFrameContext = frameContext(timeNanoseconds: UInt64(max(link.targetTimestamp, 0) * 1e9),
+                                                       frameDuration: link.targetTimestamp - link.timestamp)
         let bandInput = UnsafeBufferPointer(start: bands, count: bandCount)
         applyModulation(bands: bandInput, kick: kickEnvelope, centroid: centroid, loudness: loudness,
                         timeNanoseconds: context.timeNanoseconds)   // MOD-002; no-op without bindings

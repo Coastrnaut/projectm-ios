@@ -87,6 +87,7 @@
 // `composite(into:)` runs the same phase and then its own guard and output pass, unchanged.
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import FrameCapture
+import FlashSafety
 import Metal
 
 public enum CompositorError: Error, Equatable, Sendable {
@@ -477,6 +478,10 @@ public final class Compositor {
     /// FX-002-R7: composite pixels with a NaN or infinite channel that the screen output pass tone-mapped to 0
     /// so far (cumulative; recording and capture passes do not count). Exact once the last frame completed.
     public var nonFiniteOutputPixels: UInt32 { nonFiniteCounter.count }
+    /// ACC-012-R5: the sensory safety profile's envelope for the final flash guard when it differs from the
+    /// Reduce flashing one (`SafetyClamp.flashLimitsOverride`); nil = `forReduceFlashing(reduceFlashing)`.
+    /// From the next frame; the guard's history is kept (FX-019-R11).
+    public var flashLimits: FlashEnvelopeConfiguration?
 
     /// Encodes one frame into `output` (a render target of a `supportedOutputFormats` format) and
     /// `commandBuffer`, which the caller commits. Returns false, encoding nothing, for an empty
@@ -489,7 +494,7 @@ public final class Compositor {
                            contentScale: contentScale, reduceFlashing: reduceFlashing,
                            audio: audio) { (composite: MTLTexture, frame: LayerFrameContext) -> Bool in
             guard flashGuard.encode(composite: composite, commandBuffer: commandBuffer, frameDuration: frame.frameDuration,
-                                    reduceFlashing: reduceFlashing) else { return false }
+                                    reduceFlashing: reduceFlashing, flashLimits: flashLimits) else { return false }
             let out = MTLRenderPassDescriptor()
             out.colorAttachments[0].texture = output
             out.colorAttachments[0].loadAction = .dontCare

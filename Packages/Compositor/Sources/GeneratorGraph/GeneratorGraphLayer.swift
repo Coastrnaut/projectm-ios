@@ -66,6 +66,19 @@ public final class GeneratorGraphLayer: LayerSource {
 
     public var layerName: String { "graph:\(compiled.name)" }
 
+    /// ACC-012-R3: the sensory safety profile's intensity limit (`SafetyClamp.limits.intensityLimit`, 0…1).
+    /// At 1 (the default) the stored speed is used as is; below it the rendered speed's magnitude is at
+    /// most limit × `compiled.speedCap`. The stored speed is never changed.
+    public var intensityLimit: Double = 1
+
+    /// The speed the next frame advances the phase with (after the profile's cap).
+    public var effectiveSpeed: Double {
+        guard intensityLimit < 1 else { return speed }
+        let limit: Double = intensityLimit.isFinite ? max(intensityLimit, 0) : 1
+        let bound: Double = compiled.speedCap * limit
+        return min(max(speed, -bound), bound)
+    }
+
     /// Sets the speed, clamped to the graph's cap; returns the stored value.
     @discardableResult
     public func setSpeed(_ value: Double) -> Double {
@@ -99,7 +112,7 @@ public final class GeneratorGraphLayer: LayerSource {
                        audio: LayerAudioContext) throws(LayerSourceError) {
         guard let pipeline, let planBuffer else { throw .notReady }
         motion.advance(frameDuration: frame.frameDuration, bandLevel: GraphMotion.bandLevel(audio.bands),
-                       speed: speed, musicRate: compiled.musicRate)
+                       speed: effectiveSpeed, musicRate: compiled.musicRate)   // ACC-012: capped before render
         compiled.writeTimeTerms(phase: motion.phase, into: &terms)
         var uniforms = GraphFrameUniforms(size: SIMD2(Float(max(picture.width, 1)), Float(max(picture.height, 1))),
                                           music: Float(motion.musicLevel), count: UInt32(compiled.instructions.count))

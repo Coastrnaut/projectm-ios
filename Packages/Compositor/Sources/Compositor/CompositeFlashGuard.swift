@@ -172,9 +172,11 @@ final class CompositeFlashGuard {
     func reset() { needsReset = true }
 
     /// Encodes the measurement and envelope for `composite`; the output pass reads `gainBuffer`.
-    func encode(composite: MTLTexture, commandBuffer: MTLCommandBuffer, frameDuration: Double, reduceFlashing: Bool) -> Bool {
+    func encode(composite: MTLTexture, commandBuffer: MTLCommandBuffer, frameDuration: Double, reduceFlashing: Bool,
+                flashLimits: FlashEnvelopeConfiguration? = nil) -> Bool {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else { return false }
-        let c = FlashEnvelopeConfiguration.forReduceFlashing(reduceFlashing)
+        // ACC-012-R5: the sensory safety profile's envelope when set; else today's Reduce flashing choice.
+        let c = flashLimits ?? FlashEnvelopeConfiguration.forReduceFlashing(reduceFlashing)
         var parameters = Parameters(frameTime: Float(c.clampedFrameTime(frameDuration)), window: Float(c.window),
                                     luminanceThreshold: Float(c.luminanceThreshold), rednessThreshold: Float(c.rednessThreshold),
                                     gateMargin: Float(c.gateMargin), riseRatePerSecond: Float(c.riseRatePerSecond ?? -1),

@@ -111,7 +111,14 @@ public final class FlashSafetyLimiter {
     /// both signals (FX-019-R4). The closure is non-escaping: no allocation.
     public func gain<Source: FlashAreaLevelSource, Transfer: FrameLuminanceTransfer>(for layout: Source, transfer: Transfer,
                                                        frameTime: Double, enabled: Bool) -> Float {
-        envelope.gain(frameTime: frameTime, configuration: .forReduceFlashing(enabled)) { g, out in
+        gain(for: layout, transfer: transfer, frameTime: frameTime, configuration: .forReduceFlashing(enabled))
+    }
+
+    /// ACC-012: the same with an explicit envelope (the sensory safety profile's limits;
+    /// `VisualFrameContext.flashConfiguration`). With `.forReduceFlashing(enabled)` it is the overload above.
+    public func gain<Source: FlashAreaLevelSource, Transfer: FrameLuminanceTransfer>(for layout: Source, transfer: Transfer,
+                                                       frameTime: Double, configuration: FlashEnvelopeConfiguration) -> Float {
+        envelope.gain(frameTime: frameTime, configuration: configuration) { g, out in
             layout.meanLevels(gain: g, transfer: transfer, into: out)
         }
     }

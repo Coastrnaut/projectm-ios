@@ -46,8 +46,11 @@
 // VIS-001-R11 the two visual keys, FX-001-R11 the four glow keys, VIS-002-R11 the two linear keys,
 // VIS-003-R10 the two oscilloscope keys, ANL-003-R6 the two smoothing keys, ACC-003-R13 the palette key
 // `settings.visual.colorBlindSafePalette`).
+// * Sensory safety (ACC-012-R8): the profile and its custom limits, four `settings.sensorySafety.*` keys owned by
+//   `SensorySafetySetting`; `safetyClamp` combines them with Reduce flashing (stricter wins, ADR-0049).
 import AnalysisFeatures
 import CameraLayer
+import FlashSafety
 import Foundation
 import Observation
 import PerformanceControl
@@ -96,7 +99,7 @@ final class AppSettings {
                           textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, spectrumAttackKey, spectrumReleaseKey,
                           cameraPositionKey, cameraMirrorFrontKey, cameraMirrorBackKey,
                           cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey, midiEnabledKey,
-                          colorBlindSafePaletteKey]
+                          colorBlindSafePaletteKey] + SensorySafetySetting.allKeys   // ACC-012-R8
     /// VIS-002-R4: the spacings offered for the linear spectrum.
     static let linearSpectrumSpacingChoices: [(title: String, value: Double)] = [("None", 0), ("Narrow", 0.2), ("Wide", 0.5)]
     static let defaultLinearSpectrumSpacing = 0.2
@@ -326,9 +329,13 @@ final class AppSettings {
     /// The system Reduce Motion setting (kept current by the app).
     var systemReduceMotion: Bool
 
+    /// ACC-012: the stored sensory safety profile.
+    let sensorySafety: SensorySafetySetting
+
     init(defaults: UserDefaults, systemReduceMotion: Bool) {
         self.defaults = defaults
         self.systemReduceMotion = systemReduceMotion
+        sensorySafety = SensorySafetySetting(defaults: defaults)
         showsPerformanceOverlay = defaults.bool(forKey: Self.performanceOverlayKey)
         reduceFlashingChoice = defaults.object(forKey: Self.reduceFlashingKey) as? Bool
         let storedVisual = defaults.string(forKey: Self.visualKey).flatMap(VisualChoice.init(rawValue:)) ?? .projectM
@@ -377,6 +384,16 @@ final class AppSettings {
     }
 
     var reduceFlashingFollowsSystem: Bool { reduceFlashingChoice == nil }
+
+    /// ACC-012-R4, R7: the one clamp every frame resolver applies: the profile raised by the effective
+    /// Reduce flashing setting (stricter wins per limit).
+    var safetyClamp: SafetyClamp {
+        SafetyClamp(profile: sensorySafety.profile, reduceFlashingSetting: reduceFlashing)
+    }
+
+    /// ACC-012-R7: what everything Reduce flashing governs follows (bar slew, ACC-002's policy, the restore
+    /// fade): the setting, or a profile whose flash limit is stricter than Standard's. Never written back.
+    var effectiveReduceFlashing: Bool { safetyClamp.reducesFlashing }
 
     /// Back to following Reduce Motion.
     func followSystemForReduceFlashing() {
