@@ -30,6 +30,8 @@ public struct LiveBandFrameInfo: Sendable, Equatable {
     public var kickEnvelope: Float = 0
     /// ANL-010's normalized spectral centroid (0…1) of the frame, for MOD-002's Centroid source.
     public var centroid: Float = 0
+    /// ANL-014's loudness envelope (0…1) of the frame, for MOD-002's Loudness source.
+    public var loudness: Float = 0
 }
 
 /// The frame loop's view of the analyzer's bus subscription.
@@ -44,7 +46,7 @@ public final class LiveBandOutput: Sendable {
         guard let frame = subscription.latestFrame(into: destination, capacity: capacity) else { return nil }
         return LiveBandFrameInfo(count: min(frame.bandCount, max(capacity, 0)), timestampNanoseconds: frame.time.hostNanoseconds,
                                  sequence: frame.id, session: frame.time.session, kickEnvelope: frame.kickEnvelope,
-                                 centroid: frame.centroid)
+                                 centroid: frame.centroid, loudness: frame.loudness)
     }
 }
 

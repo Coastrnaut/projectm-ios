@@ -84,6 +84,24 @@ final class AudioFeatureBindingAppTests: XCTestCase {
         XCTAssertEqual(host.glow.intensity, 0.5, "the manual intensity is unchanged")
     }
 
+    /// ANL-014-T10: a Loudness binding on the glow follows the loudness envelope the frame loop
+    /// passes in (ANL-014-R8, R9).
+    func testLoudnessBindsAndDrivesTheGlow() throws {
+        let host = try makeHost()
+        try host.bind(AudioFeatureBinding(source: .loudness, target: VisualParameterIDs.bloomIntensity, outputStart: 0, outputEnd: 1))
+        XCTAssertEqual(host.bindings.map(\.source), [.loudness])
+        let bands: [Float] = [0.1, 0.1, 0.1]
+        var time: UInt64 = 1_000_000
+        for loudness: Float in [0.375, 0.875] {
+            bands.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> Void in
+                host.applyModulation(bands: buffer, kick: 1, centroid: 0.5, loudness: loudness, timeNanoseconds: time)
+            }
+            time += 16_666_667
+            XCTAssertEqual(host.effectiveGlow.intensity, loudness)
+        }
+        XCTAssertEqual(host.glow.intensity, 0.5, "the manual intensity is unchanged")
+    }
+
     func testManualOnlyGlowSwitchCannotBeBoundAndAnOffGlowStaysOff() throws {
         let host = try makeHost(glowEnabled: false)
         XCTAssertThrowsError(try host.bind(AudioFeatureBinding(source: .band(0), target: VisualParameterIDs.bloomEnabled,

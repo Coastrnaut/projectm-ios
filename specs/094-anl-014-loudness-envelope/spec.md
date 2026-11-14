@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: In progress (implementation)
+**Status**: Implemented 2026-11-14
 
 **Input**: User description: "Implement ANL-014 (Loudness envelope) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Expose normalized short-term
@@ -175,6 +175,20 @@ Single 2,048-point windows (fresh envelope, so the envelope is the frame's norma
 
 Equal amplitude (−20 dBFS), K-weighted: 20 Hz −34.61 dB < 100 Hz −24.87 dB < 1 kHz −23.00 dB <
 2 kHz −20.63 dB (2 kHz reads 4.2 dB above 100 Hz, as the standard's curve predicts).
+
+### Bus, modulation and cost
+
+Through `AnalysisPipeline`: 47 frames, the 4 silent lead frames read 0 and −120 dB, the quiet part
+ends at 0.282 (−43.0 dB) and the loud part at 0.781 (−13.0 dB). `audio.loudness` round-trips, binds,
+compiles to opcode 16 and drives the native visual's glow in the app (projectM-iOSTests 413, 0
+failures, on a dedicated iOS 27.2 simulator; simulator results are not device evidence).
+
+Test cost (owner rule 7): LoudnessEnvelopeTests (9 tests) take 0.23 s on the host and 0.35-0.49 s
+in the Linux shape. The whole AnalysisFeatures suite went from 133 to 142 tests; in the Linux shape
+51.9 s → 61.0 s, but the added time sits in unrelated suites (pipeline, beat and band acceptance)
+and the Mac was at load average 111-153 from parallel lanes, so the uncontended delta is not
+measured; the new tests themselves cost under 0.5 s. No UI was added; the level meter and its
+consumers are unchanged.
 
 ## Assumptions
 
