@@ -109,15 +109,62 @@ public enum RecordingStorage {
     }
 }
 
-/// Test seam (REC-015-R12): after `afterFrames` appended frames the writer fails with `error`; the
-/// recording then ends like a real writer failure (the file is deleted, the error classified).
+/// Test seam (REC-015-R12, REC-016-R2): makes the recorder's writer fail. Tests and DEBUG launch arguments only.
 public struct RecordingWriterFault: Sendable {
+    /// REC-016-R2: where the failure happens.
+    public enum Kind: String, Sendable, Equatable, CaseIterable {
+        /// After `afterFrames` appended frames every append fails with `error`; the real writer stays healthy.
+        case appendFails
+        /// After `afterFrames` appended frames the real writer itself is driven to its failed state.
+        case writerFails
+        /// Appends succeed; at finish the real writer is driven to its failed state first.
+        case finishFails
+        /// The recorder fails to start after its writer was created.
+        case startFails
+    }
+
+    public let kind: Kind
     public let afterFrames: Int
     public let error: NSError
 
-    public init(afterFrames: Int, error: NSError) {
+    public init(afterFrames: Int, error: NSError, kind: Kind = .appendFails) {
+        self.kind = kind
         self.afterFrames = max(afterFrames, 0)
         self.error = error
+    }
+
+    /// A generic (not out-of-space) writer error.
+    public static let injectedError = NSError(domain: "AVFoundationErrorDomain", code: -11800,
+                                              userInfo: ["NSLocalizedDescription": "The operation could not be completed"])
+
+    /// REC-016: every append after `afterFrames` frames fails; the healthy writer can still finish.
+    public static func appendFailure(afterFrames: Int) -> RecordingWriterFault {
+        RecordingWriterFault(afterFrames: afterFrames, error: injectedError, kind: .appendFails)
+    }
+
+    /// REC-016: the real writer fails after `afterFrames` frames.
+    public static func writerFailure(afterFrames: Int) -> RecordingWriterFault {
+        RecordingWriterFault(afterFrames: afterFrames, error: injectedError, kind: .writerFails)
+    }
+
+    /// REC-016: the real writer fails when the recording is finished.
+    public static let finishFailure = RecordingWriterFault(afterFrames: 0, error: injectedError, kind: .finishFails)
+
+    /// REC-016: the recorder fails to start after its writer exists.
+    public static let startFailure = RecordingWriterFault(afterFrames: 0, error: injectedError, kind: .startFails)
+
+    /// DEBUG `-uitestWriterFault`: `append:<n>`, `writer:<n>`, `finish`, `start`, `diskFull:<n>`; nil otherwise.
+    public init?(argument: String) {
+        let parts = argument.split(separator: ":", maxSplits: 1).map(String.init)
+        let count = parts.count > 1 ? Int(parts[1]) : nil
+        switch (parts.first, count) {
+        case ("append", let n?): self = .appendFailure(afterFrames: n)
+        case ("writer", let n?): self = .writerFailure(afterFrames: n)
+        case ("diskFull", let n?): self = .diskFull(afterFrames: n)
+        case ("finish", nil): self = .finishFailure
+        case ("start", nil): self = .startFailure
+        default: return nil
+        }
     }
 
     /// AVFoundation's "disk full" wrapping the POSIX "no space left on device", as the writer reports it.

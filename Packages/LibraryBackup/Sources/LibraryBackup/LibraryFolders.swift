@@ -1,6 +1,6 @@
 // LibraryFolders.swift — FILE-005: the library's folders under one root (Application Support in the
 // app; a temporary folder in tests). The names are the stores' own (an app test checks they agree:
-// ShowStore, SceneAutosaveStore, UserPresetStore, PresetCollectionStore, PhotoStore).
+// ShowStore, SceneAutosaveStore, UserPresetStore, PresetCollectionStore, PhotoStore, PaletteStore).
 import Foundation
 
 public struct LibraryFolders: Sendable, Equatable {
@@ -16,6 +16,8 @@ public struct LibraryFolders: Sendable, Equatable {
         case collections = "PresetCollections"
         /// `Photos/`: <UUID>.png|jpg (MED-001).
         case photos = "Photos"
+        /// `Palettes/`: palettes.json (UIX-011 `PaletteFile`).
+        case palettes = "Palettes"
     }
 
     /// The restore's own work folder (request, staging, previous folders, journal, last result).
@@ -28,6 +30,8 @@ public struct LibraryFolders: Sendable, Equatable {
     public static let tagsFileName = "tags.json"
     /// PRE-016: preset parameter overrides, beside the collections (`PresetOverrideStore.fileName`).
     public static let overridesFileName = "overrides.json"
+    /// UIX-011: the palette library (`PaletteFile.fileName`).
+    public static let palettesFileName = "palettes.json"
 
     public let root: URL
 
@@ -45,6 +49,7 @@ public struct LibraryFolders: Sendable, Equatable {
     public var collectionsFile: URL { url(.collections).appendingPathComponent(Self.collectionsFileName, isDirectory: false) }
     public var tagsFile: URL { url(.collections).appendingPathComponent(Self.tagsFileName, isDirectory: false) }
     public var overridesFile: URL { url(.collections).appendingPathComponent(Self.overridesFileName, isDirectory: false) }
+    public var palettesFile: URL { url(.palettes).appendingPathComponent(Self.palettesFileName, isDirectory: false) }
 
     /// Every folder the backup reads or the restore may replace (FILE-003 snapshots use these).
     public var libraryRoots: [URL] { Folder.allCases.map { (folder: Folder) -> URL in url(folder) } }

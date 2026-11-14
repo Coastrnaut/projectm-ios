@@ -50,6 +50,13 @@
 //   buffer — the compositor's `encodeOutput` (the shown composite after the FX-019 flash guard and FX-003 grade) or
 //   the native spectra's drawable blit — which SwiftUI layers are never drawn into, also when the visual's view is
 //   on an external display (the same host feeds the recording). There is no option to include the overlay.
+// * REC-016 (specs/226-rec-016-recording-interruption-recovery, contract C3, ADR-0061): a writer failure that kept the
+//   part recorded before it (the recorder salvages it, `RecordedVideo.interruption`) is offered like any recording with
+//   "Recording stopped because of a write error. The part recorded before it was kept." (X13); without a usable part
+//   the failure notice is shown as before. Record is refused at the Critical thermal state; while recording, the 0.25 s
+//   check warns once at Serious and stops with `.thermal` at Critical (the file is finished and offered). The
+//   background stop (above) finishes and offers the file. DEBUG `-uitestWriterFault append:<n>|writer:<n>|finish|start`
+//   injects writer failures (and shows the probe).
 // * DEBUG: `-uitestRecordingDirectory <name>` moves the file into `<tmp>/<name>/` instead of showing
 //   the mover, and `probe` reports what AVFoundation reads back ("video hvc1 1178x2556 frames=58
 //   duration=1.93 audio=0").
@@ -266,6 +273,9 @@ final class VideoRecordingCoordinator {
     @ObservationIgnored private let writerFault: RecordingWriterFault?
     @ObservationIgnored private var storagePolicy: RecordingStoragePolicy?
     @ObservationIgnored private var storageTicker: Task<Void, Never>?
+    /// REC-016-R8: the device's thermal state (injected in tests) and this recording's guard.
+    @ObservationIgnored private let thermalLevel: @MainActor () -> RecordingThermalLevel
+    @ObservationIgnored private var thermalGuard = RecordingThermalGuard()
 
     /// `checkInterval` nil: no periodic check (tests call `checkContext()`).
     /// `storageCheckInterval` nil: no storage loop (tests call `checkStorage()`). `writerFault`: tests only.
@@ -276,6 +286,7 @@ final class VideoRecordingCoordinator {
          storageCheckInterval: Duration? = .seconds(RecordingStoragePolicy.checkIntervalSeconds),
          writerFault: RecordingWriterFault? = nil,
          countdownClock: (any RecordingCountdownClock)? = nil,
+         thermalLevel: (@MainActor () -> RecordingThermalLevel)? = nil,
          library: RecordingLibraryStore = RecordingLibraryStore.standard(),
          context: @escaping @MainActor () -> Context) {
         self.directory = directory
@@ -285,7 +296,8 @@ final class VideoRecordingCoordinator {
         let debugStorage = Self.debugStorageFromArguments()
         self.storageProbe = storageProbe ?? debugStorage?.probe ?? VolumeStorageProbe()
         self.storageCheckInterval = storageProbe == nil ? (debugStorage?.interval ?? storageCheckInterval) : storageCheckInterval
-        self.writerFault = writerFault
+        self.writerFault = writerFault ?? Self.debugWriterFaultFromArguments()
+        self.thermalLevel = thermalLevel ?? Self.deviceThermalLevel
         self.countdownClock = countdownClock ?? SystemRecordingCountdownClock()
         self.context = context
         Self.removeLeftovers(in: directory)   // REC-003-R13: a crash may have left a temporary file
@@ -482,6 +494,10 @@ final class VideoRecordingCoordinator {
             probe = "refused: resultOffered"
             return true
         }
+        if thermalLevel() >= RecordingThermalGuard.refusalLevel {   // REC-016-R8
+            refuse(.thermal)
+            return true
+        }
         return false
     }
 
@@ -557,6 +573,7 @@ final class VideoRecordingCoordinator {
         lastStopReason = nil
         probe = "recording"
         warningThrottle = RecordingWarningThrottle()   // REC-009-R4: per recording
+        thermalGuard = RecordingThermalGuard()   // REC-016-R8: one warning per recording
         refreshStatus()
         startTicker()
         startStorageTicker()
@@ -720,10 +737,44 @@ final class VideoRecordingCoordinator {
             stop(.presentationLost)
         } else if recorder?.hasFailed == true {
             stop(.writerFailed)
+        } else if thermalStopped() {
+            return
         } else if shouldEndAudio(c) {
             endAudio()
         }
     }
+
+    /// REC-016-R8: warns once at Serious (the recording goes on); stops with `.thermal` at Critical.
+    private func thermalStopped() -> Bool {
+        switch thermalGuard.update(thermalLevel()) {
+        case .stop:
+            stop(.thermal)
+            return true
+        case .warn:
+            notice = RecordingThermalGuard.warningNotice
+            return false
+        case .none:
+            return false
+        }
+    }
+
+    /// REC-016: `ProcessInfo.thermalState`, or DEBUG `-uitestThermalState` (PERF-003's argument).
+    static func deviceThermalLevel() -> RecordingThermalLevel {
+        recordingThermalLevel(MediaPrewarmCoordinator.injectedThermal ?? ProcessInfo.processInfo.thermalState)
+    }
+
+    nonisolated static func recordingThermalLevel(_ state: ProcessInfo.ThermalState) -> RecordingThermalLevel {
+        switch state {
+        case .nominal: .nominal
+        case .fair: .fair
+        case .serious: .serious
+        case .critical: .critical
+        @unknown default: .critical
+        }
+    }
+
+    /// REC-016: tests read whether a recorder is held (resources are released once it is not).
+    var holdsRecorder: Bool { recorder != nil }
 
     /// REC-004-R5: the source changed, a new session disarmed the tap, or the microphone consent was withdrawn.
     private func shouldEndAudio(_ c: Context) -> Bool {
@@ -776,6 +827,10 @@ final class VideoRecordingCoordinator {
         case .success(let video):
             lastRecording = video   // REC-006-R4
             notice = reason == .timedStop ? (recordingLength?.stoppedNotice ?? reason.notice) : reason.notice
+            if video.interruption != nil {   // REC-016-R5: the writer failed (an append or the finish); a part was kept
+                lastStopReason = .writerFailed
+                notice = RecordingStopReason.writerFailed.notice
+            }
             if let debugDirectory {
                 moveForTests(video, into: debugDirectory)
             } else {
@@ -864,7 +919,8 @@ final class VideoRecordingCoordinator {
     /// DEBUG: true when `-uitestStorage` is given (the view then shows the probe). False in Release.
     static var debugStorageRequested: Bool {
         #if DEBUG
-        return ProcessInfo.processInfo.arguments.contains("-uitestStorage")
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("-uitestStorage") || arguments.contains("-uitestWriterFault")   // REC-016
         #else
         return false
         #endif
@@ -882,6 +938,17 @@ final class VideoRecordingCoordinator {
         if value == "low" { return (ScriptedStorageProbe(ampleReadings: 0, ample: ample, low: low), .seconds(1)) }
         if value.hasPrefix("dropAfter:"), let n = Int(value.dropFirst("dropAfter:".count)) {
             return (ScriptedStorageProbe(ampleReadings: n, ample: ample, low: low), .seconds(1))
+        }
+        #endif
+        return nil
+    }
+
+    /// DEBUG `-uitestWriterFault <form>` (REC-016-R2); nil in Release and without the option.
+    static func debugWriterFaultFromArguments() -> RecordingWriterFault? {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        if let i = arguments.firstIndex(of: "-uitestWriterFault"), i + 1 < arguments.count {
+            return RecordingWriterFault(argument: arguments[i + 1])
         }
         #endif
         return nil

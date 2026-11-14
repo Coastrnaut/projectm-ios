@@ -18,6 +18,8 @@ public enum RecordingStopReason: String, Sendable, Equatable, CaseIterable {
     /// REC-008 (specs/180-rec-008-timed-stop): the length the user set was reached (the app shows the length in
     /// its own notice, "Recording stopped after 10 seconds."); `durationReached` stays the 10-minute limit.
     case timedStop
+    /// REC-016-R8: the device reached the Critical thermal state; the file is finished and offered.
+    case thermal
 
     /// The notice shown after the stop (nil for the user's own stop).
     public var notice: String? {
@@ -30,9 +32,12 @@ public enum RecordingStopReason: String, Sendable, Equatable, CaseIterable {
         case .visualChanged: "Recording stopped when the visual changed."
         case .sizeChanged: "Recording stopped when the picture size changed."
         case .presentationLost: "Recording stopped when the visual stopped drawing."
-        case .writerFailed: RecordingFailure.writerFailed("").notice
+        // REC-016-R5 (ADR-0061): used when the part before the failure was kept; without a kept part the
+        // failure's own notice ("The recording couldn't be finished.") is shown.
+        case .writerFailed: "Recording stopped because of a write error. The part recorded before it was kept."
         case .lowStorage: "Recording stopped because storage is almost full."
         case .timedStop: "Recording stopped at the set length."
+        case .thermal: "Recording stopped because the device is too hot."
         }
     }
 }
@@ -46,6 +51,8 @@ public enum RecordingRefusal: String, Sendable, Equatable, CaseIterable {
     case busy
     /// REC-015-R3: not enough free storage for the reserve plus one minute (checked after the others).
     case lowStorage
+    /// REC-016-R8: the device is at the Critical thermal state (checked after the others).
+    case thermal
 
     public var notice: String {
         switch self {
@@ -55,6 +62,7 @@ public enum RecordingRefusal: String, Sendable, Equatable, CaseIterable {
         case .paused: "Resume to record."
         case .busy: "Finishing the last recording."
         case .lowStorage: "There isn't enough free storage to record. Free up space and try again."
+        case .thermal: "The device is too hot to record. Try again when it cools down."
         }
     }
 }
@@ -149,6 +157,9 @@ public struct RecordedVideo: Sendable, Equatable {
     public var frameRate: Int = 30
     /// REC-006-R4: output slots between the first and last frame that got no picture (`statistics.droppedSlots`).
     public var droppedFrames: Int { statistics.droppedSlots }
+    /// REC-016-R3 (ADR-0061): set when the writer failed and the part recorded before it was kept; `frameCount` and
+    /// `durationSeconds` are then what the kept file reads back as.
+    public var interruption: RecordingFailure? = nil
 
     public init(url: URL, codec: RecordingCodec, width: Int, height: Int, frameCount: Int, durationSeconds: Double,
                 statistics: RecordingStatistics, frameRate: Int = 30) {
