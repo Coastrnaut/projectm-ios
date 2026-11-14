@@ -127,6 +127,13 @@ public struct ShowAdvanceTimeline: Sendable, Hashable {
         return Int(parts.seconds) + (parts.attoseconds > 0 ? 1 : 0)
     }
 
+    /// SHOW-005: re-arms the advance from `cueID` with `remaining` left (held when the timeline is held, else due at
+    /// `now + remaining`). Used when a Hold withdraws a timed step that was waiting for the beat.
+    public mutating func rearm(cueID: UUID, remaining: Duration, at now: Duration) {
+        let left: Duration = max(.zero, remaining)
+        phase = isHeld ? .held(cueID: cueID, remaining: left) : .running(cueID: cueID, deadline: now + left)
+    }
+
     /// Drops the pending advance (the hold state is kept).
     public mutating func cancel() { phase = .idle }
 }

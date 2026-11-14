@@ -84,4 +84,51 @@ extension AVCaptureDevice: CameraExposureConfiguring {
         unlockForConfiguration()
     }
 }
+/// CAM-005 (contract C2; research CAM-005-D3): the device's focus point and mode through the documented
+/// `lockForConfiguration` / `unlockForConfiguration` pair; the point is set before the mode, as
+/// AVFoundation applies a point when the mode is set. Called on the provider's session queue.
+extension AVCaptureDevice: CameraFocusConfiguring {
+    static func avFocusMode(_ mode: CameraFocusMode) -> AVCaptureDevice.FocusMode? {
+        switch mode {
+        case .autoFocus: .autoFocus
+        case .continuousAuto: .continuousAutoFocus
+        case .locked: .locked
+        case .other: nil
+        }
+    }
+
+    public var supportsFocusPoint: Bool { isFocusPointOfInterestSupported }
+
+    public func supportsFocus(_ mode: CameraFocusMode) -> Bool {
+        Self.avFocusMode(mode).map { (avMode: AVCaptureDevice.FocusMode) -> Bool in isFocusModeSupported(avMode) } ?? false
+    }
+
+    public var currentFocusMode: CameraFocusMode {
+        switch focusMode {
+        case .autoFocus: .autoFocus
+        case .continuousAutoFocus: .continuousAuto
+        case .locked: .locked
+        default: .other
+        }
+    }
+
+    public var currentFocusPoint: CameraFocusPoint {
+        let point: CGPoint = focusPointOfInterest
+        return CameraFocusPoint(x: Double(point.x), y: Double(point.y))
+    }
+
+    public func beginFocusConfiguration() -> Bool {
+        (try? lockForConfiguration()) != nil
+    }
+
+    public func applyFocus(point: CameraFocusPoint, mode: CameraFocusMode) {
+        if isFocusPointOfInterestSupported { focusPointOfInterest = CGPoint(x: point.x, y: point.y) }
+        guard let avMode = Self.avFocusMode(mode), isFocusModeSupported(avMode) else { return }
+        focusMode = avMode
+    }
+
+    public func endFocusConfiguration() {
+        unlockForConfiguration()
+    }
+}
 #endif

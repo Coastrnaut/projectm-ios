@@ -10,6 +10,9 @@
 // * While the timeline is not idle a main-actor task ticks every 250 ms (or sooner at the deadline); an idle show
 //   runs nothing. Tests call `tick()` themselves (`runsLoop` false).
 // * `countdown` (whole seconds left, rounded up, and whether held) is what the cue row and the performance pad show.
+// * SHOW-005: the performer's Hold (`isOperatorHeld`, session only, never stored) is one more hold source; turning it on
+//   withdraws a timed step waiting for the beat (SHOW-003) and re-arms the countdown held at 0, so Hold off requests it
+//   again at once. Manual steps never read it. `listChanged` also cancels a countdown left without a next cue (Skip).
 import Foundation
 import Observation
 import ShowControl
@@ -26,6 +29,8 @@ final class ShowAutoAdvanceCoordinator {
 
     /// The countdown to the next timed advance (nil when nothing counts down).
     private(set) var countdown: Countdown?
+    /// SHOW-005: the performer's Hold (off at launch; never stored).
+    private(set) var isOperatorHeld = false
 
     @ObservationIgnored private(set) var timeline = ShowAdvanceTimeline()
     @ObservationIgnored let clock: any ShowMonotonicClock
@@ -65,23 +70,41 @@ final class ShowAutoAdvanceCoordinator {
     func cueStarted() {
         guard let show else { return }
         let now: Duration = clock.now()
-        timeline.setHeld(isHeld(), at: now)
+        timeline.setHeld(heldNow(), at: now)
         ShowTimedAdvance.started(list: show.list, timeline: &timeline, at: now)
         refresh()
     }
 
-    /// The list changed: a countdown whose cue is no longer the active one is cancelled.
+    /// The list changed: a countdown whose cue is no longer the active one, or (SHOW-005) that has no cue left to advance
+    /// to, is cancelled.
     func listChanged() {
-        guard let show, let cueID = timeline.cueID, cueID != show.list.activeCue?.id else { return }
+        guard let show, let cueID = timeline.cueID else { return }
+        guard cueID != show.list.activeCue?.id || !show.list.canGoNext else { return }
         timeline.cancel()
         refresh()
     }
+
+    /// SHOW-005-R1, R3: turns the performer's Hold on or off (applied at once; the remaining time is kept).
+    func setOperatorHold(_ held: Bool) {
+        guard held != isOperatorHeld else { return }
+        isOperatorHeld = held
+        let now: Duration = clock.now()
+        if held, let show, let cueID = show.list.activeCue?.id, timeline.isIdle,
+           show.cueQuantizer?.withdrawTimed() == true {
+            timeline.rearm(cueID: cueID, remaining: .zero, at: now)   // the withdrawn advance waits for Hold off
+        }
+        timeline.setHeld(heldNow(), at: now)
+        refresh()
+    }
+
+    /// Every hold source: the performer's Hold, then pause, blackout, repair report and background (SHOW-002-R7).
+    private func heldNow() -> Bool { isOperatorHeld || isHeld() }
 
     /// Re-reads the hold, and advances once when the active cue's deadline has been reached.
     func tick() {
         guard let show else { return }
         let now: Duration = clock.now()
-        timeline.setHeld(isHeld(), at: now)
+        timeline.setHeld(heldNow(), at: now)
         if let cueID = timeline.due(at: now), show.list.activeCue?.id == cueID {
             show.timedNext()   // SHOW-003: waits for the beat or bar when quantizing; a move calls `cueStarted` (the next cue's countdown starts at its own now)
         }

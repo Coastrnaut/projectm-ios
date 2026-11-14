@@ -132,6 +132,8 @@ public struct SceneIssue: Sendable, Hashable, CustomStringConvertible {
         case invalidSnapshot
         /// SCN-008: a snapshot value whose parameter ID this version does not know; kept, skipped on recall.
         case unknownSnapshotParameter
+        /// SHD-004: a material layer's `materialVariant` the material does not list; kept, the default drawn.
+        case unknownMaterialVariant
 
         /// MOD-013 (ADR-0028 amendment): every per-edge modulation problem is a warning, so one edge
         /// never refuses the scene; `invalidModulation` (generator declarations) stays an error.
@@ -143,7 +145,7 @@ public struct SceneIssue: Sendable, Hashable, CustomStringConvertible {
                  .invalidBinding, .duplicateBindingTarget, .invalidExpression, .migratedReference, .retiredReference,
                  .orphanedBinding, .orphanedConnection, .rejectedConnection, .unsupportedCurve, .invalidTrigger, .unknownTrigger, .invalidLFO, .unknownLFO,
                  .invalidLFOSync, .unknownLFOSync, .invalidMacro, .unknownMacroTarget,
-                 .invalidSnapshot, .unknownSnapshotParameter:
+                 .invalidSnapshot, .unknownSnapshotParameter, .unknownMaterialVariant:
                 .warning
             default:
                 .error

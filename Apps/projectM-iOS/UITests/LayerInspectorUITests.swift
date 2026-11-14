@@ -1,7 +1,8 @@
 // LayerInspectorUITests.swift — CMP-015-T18 on the iOS Simulator: the roadmap acceptance "Selecting
 // different layers shows correct parameters and undo restores prior value" (CMP-015-S1 to S3); CMP-008-T16 adds
 // the gradient editor (CMP-008-S6: add, adjust and undo a stop); CMP-009-T17 the luma key (CMP-009-S6: turn it on, drag
-// High, undo).
+// High, undo); CMP-010-T17 the colour key (CMP-010-S6: turn it on, find the Key Color picker, drag Color Tolerance,
+// undo).
 // `-uitestLayerInspectorSeed` with `-uitestSeedPhoto solid` makes the three-layer Photo scene of
 // contract L5 before the scene history starts. Inspector sliders are ACC-005 accessible elements
 // (UITestSliders.swift). Simulator results are never device evidence (Constitution X). Waits are
@@ -153,5 +154,31 @@ final class LayerInspectorUITests: XCTestCase {
         undo.tap()
         XCTAssertTrue(poll(5) { (high.value as? String) == "0.10" }, "restored")
         XCTAssertTrue(poll(5) { undo.label.hasPrefix("Undo Photo Luma Key On") }, "the toggle is the step before: \(undo.label)")
+    }
+
+    /// CMP-010-S6: turn the colour key on (a green key), find the Key Color picker by its accessible name, drag Color
+    /// Tolerance up (one undo step), and undo it.
+    func testColorKeyToggleDragAndUndo() {
+        launch()
+        openLayers()
+        open(1, title: "Photo")
+        let toggle = app.switches["layerControl.colorKey"].firstMatch
+        XCTAssertTrue(app.reveal(toggle, long: true), "the Color Key toggle")
+        toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()   // the switch itself, not its title
+        XCTAssertTrue(poll(5) { (toggle.value as? String) == "1" }, "the key is on")
+        let picker = app.descendants(matching: .any)["layerControl.colorKeyColor"].firstMatch
+        XCTAssertTrue(app.reveal(picker), "the Key Color picker")
+        XCTAssertTrue(picker.label.contains("Key Color"), "accessible name: \(picker.label)")
+        let tolerance = app.slider("layerControl.colorTolerance")
+        XCTAssertTrue(app.reveal(tolerance), "Color Tolerance")
+        XCTAssertEqual(tolerance.value as? String, "0.20", "the green key's default")
+        let undo = app.navigationBars["Photo"].buttons["sceneUndo"]
+        XCTAssertTrue(poll(5) { undo.label.hasPrefix("Undo Photo Color Key On") }, undo.label)
+        tolerance.dragSlider(from: 0.2, to: 0.6)
+        XCTAssertTrue(poll(5) { (Double(tolerance.value as? String ?? "") ?? 0) > 0.35 }, "raised: \(String(describing: tolerance.value))")
+        XCTAssertTrue(poll(5) { undo.label.hasPrefix("Undo Photo Color Tolerance") }, undo.label)
+        undo.tap()
+        XCTAssertTrue(poll(5) { (tolerance.value as? String) == "0.20" }, "restored")
+        XCTAssertTrue(poll(5) { undo.label.hasPrefix("Undo Photo Color Key On") }, "the toggle is the step before: \(undo.label)")
     }
 }

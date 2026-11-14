@@ -80,6 +80,8 @@ let package = Package(
         .package(path: "../VisualGenerators"),
         // SHD-001: material parameters are MOD-001 descriptors (pure Swift; ADR-0012).
         .package(path: "../ParameterGraph"),
+        // PERF-009: the warm-start store the compositor's pipeline archive test uses (Foundation only).
+        .package(path: "../LocalPortability"),
     ],
     targets: [
         // REC-001: still frame capture: formats, color conversion, ImageIO encoding (pure Swift + ImageIO).
@@ -89,7 +91,9 @@ let package = Package(
         // PERF-001: per-stage frame timings (pure Swift ring and report; the Metal GPU poller is Apple-only).
         .target(name: "FrameTiming"),
         // SCN-007: a scene transition may be shaped by a MOD-004 `MappingCurve` (pure Swift).
-        .target(name: "Compositor", dependencies: ["AnalysisFeatures", "FlashSafety", "FrameCapture", "ParameterGraph"]),
+        // PERF-009: render pipelines go through VisualGenerators' NativePipelineArchive (the warm-start shader cache).
+        .target(name: "Compositor", dependencies: ["AnalysisFeatures", "FlashSafety", "FrameCapture", "ParameterGraph",
+                                                   .product(name: "VisualGenerators", package: "VisualGenerators")]),
         .target(name: "SpectrumLayers", dependencies: ["Compositor", .product(name: "VisualGenerators", package: "VisualGenerators")]),
         .target(name: "CameraLayer", dependencies: ["Compositor"]),
         // SHD-003: declarative shader parameter metadata (strict JSON reader, validator, slot check, MOD-001
@@ -106,7 +110,8 @@ let package = Package(
         .target(name: "TextLayer", dependencies: ["Compositor"]),
         .testTarget(name: "CompositorTests",
                     dependencies: ["Compositor", "SpectrumLayers", "CameraLayer", "ImageLayer", "VideoLayer", "MediaSniffing", "AnalysisFeatures", "FlashSafety", "FrameCapture", "FrameRecording", "FrameTiming", "ParameterGraph",
-                                   .product(name: "VisualGenerators", package: "VisualGenerators")]),
+                                   .product(name: "VisualGenerators", package: "VisualGenerators"),
+                                   .product(name: "LocalPortability", package: "LocalPortability")]),
         .testTarget(name: "ProceduralMaterialsTests",
                     dependencies: ["ProceduralMaterials", "ShaderParameterMetadata", "Compositor", "ParameterGraph", "FlashSafety", "AnalysisFeatures"]),
         .testTarget(name: "ShaderParameterMetadataTests", dependencies: ["ShaderParameterMetadata", "ParameterGraph"]),

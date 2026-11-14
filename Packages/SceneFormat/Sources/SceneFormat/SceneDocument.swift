@@ -99,14 +99,18 @@ public struct SceneLayer: Sendable, Hashable {
     public var composite: SceneComposite
     /// Unknown layer fields (and every other field of an unknown kind), kept verbatim.
     public var extra: [String: SceneJSON]
+    /// SHD-004: a material layer's selected variant (nil = the material's default; the field is not written).
+    /// Kept as stored even when this version or device cannot draw it.
+    public var materialVariant: String?
 
     public init(instance: UInt64, content: SceneLayerContent, values: [String: Double] = [:],
-                composite: SceneComposite = SceneComposite(), extra: [String: SceneJSON] = [:]) {
+                composite: SceneComposite = SceneComposite(), extra: [String: SceneJSON] = [:], materialVariant: String? = nil) {
         self.instance = instance
         self.content = content
         self.values = values
         self.composite = composite
         self.extra = extra
+        self.materialVariant = materialVariant
     }
 
     public var kind: String { content.kind }
@@ -251,7 +255,7 @@ public enum SceneGradientMask: Sendable, Hashable {
     public func hash(into hasher: inout Hasher) { hasher.combine(SceneEncoder.gradientMask(self)) }
 }
 
-/// Opacity, blend mode, transform, fit, mask, gradient mask and luma key (CMP-003 to CMP-009).
+/// Opacity, blend mode, transform, fit, mask, gradient mask, luma key and colour key (CMP-003 to CMP-010).
 public struct SceneComposite: Sendable, Hashable {
     /// 0…1.
     public var opacity: Double
@@ -267,12 +271,14 @@ public struct SceneComposite: Sendable, Hashable {
     public var gradientMask: SceneGradientMask?
     /// CMP-009: nil when the layer has no luma key (the field is not written).
     public var lumaKey: LayerLumaKey?
+    /// CMP-010: nil when the layer has no colour key (the field is not written).
+    public var colorKey: LayerColorKey?
 
     public static let normalBlendMode = "normal"
 
     public init(opacity: Double = 1, blendMode: String = SceneComposite.normalBlendMode, transform: LayerTransform = .identity,
                 fit: SceneFit? = nil, mask: SceneMask? = nil, gradientMask: SceneGradientMask? = nil,
-                lumaKey: LayerLumaKey? = nil) {
+                lumaKey: LayerLumaKey? = nil, colorKey: LayerColorKey? = nil) {
         self.opacity = opacity
         self.blendMode = blendMode
         self.transform = transform
@@ -280,6 +286,7 @@ public struct SceneComposite: Sendable, Hashable {
         self.mask = mask
         self.gradientMask = gradientMask
         self.lumaKey = lumaKey
+        self.colorKey = colorKey
     }
 
     public static func == (lhs: SceneComposite, rhs: SceneComposite) -> Bool {

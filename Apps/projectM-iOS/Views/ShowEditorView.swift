@@ -15,6 +15,9 @@
 // SHOW-004-R5: Transition Into This Cue… per cue (context menu, a leading "Into" swipe action, VoiceOver action) opens
 // `CueTransitionView` on the cue's override; a cue with one shows "Into this cue: Cut" and VoiceOver reads ", into this cue Cut".
 // SCN-011-R7: Add from Template… opens `SceneTemplateGalleryView` (bundled starter scenes added as copies).
+// SHOW-005-R8: Skip Cue / Don't Skip Cue per cue (context menu, a trailing "Skip"/"Unskip" swipe action next to Delete,
+// VoiceOver action);
+// a skipped cue's row is dimmed with "Skipped" under its label and VoiceOver reads ", skipped". Hidden while locked.
 import SceneFormat
 import ShowControl
 import ShowStorage
@@ -227,6 +230,9 @@ struct ShowEditorView: View {
                 if let dwell = cue.dwell {   // SHOW-002
                     Text("Advance after \(dwell.clockText)").font(.caption).foregroundStyle(.secondary)
                 }
+                if cue.skipped {   // SHOW-005
+                    Text("Skipped").font(.caption).foregroundStyle(.secondary)
+                }
                 if missing {
                     Label("Scene missing", systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.orange)
                 }
@@ -234,6 +240,7 @@ struct ShowEditorView: View {
             Spacer()
             if active { Image(systemName: "play.fill").foregroundStyle(.tint).accessibilityHidden(true) }
         }
+        .opacity(cue.skipped ? 0.5 : 1)   // SHOW-005: dimmed
         .contentShape(Rectangle())
     }
 
@@ -253,6 +260,7 @@ struct ShowEditorView: View {
             value += ", into this cue \(spoken)"
         }
         if let dwell = cue.dwell { value += ", advances after \(dwell.spokenText)" }   // SHOW-002
+        if cue.skipped { value += ", skipped" }   // SHOW-005
         let selectedTraits: AccessibilityTraits = active ? .isSelected : []
         return content
             .accessibilityElement(children: .ignore)
@@ -280,6 +288,7 @@ struct ShowEditorView: View {
                         .accessibilityIdentifier("showAssignMIDI")
                 }
             }
+            .swipeActions(edge: .trailing) { trailingSwipeActions(cue) }   // SHOW-005
     }
 
     @ViewBuilder private func editMenuItems(_ cue: ShowCue, missing: Bool, full: Bool) -> some View {
@@ -290,6 +299,7 @@ struct ShowEditorView: View {
         Button("Transition…") { editingTransition = cue }   // SCN-007
         Button("Transition Into This Cue…") { editingOverride = cue }   // SHOW-004
         Button("Advance After…") { editingDwell = cue }   // SHOW-002
+        Button(cue.skipped ? "Don't Skip Cue" : "Skip Cue") { show.setSkipped(cue.id, !cue.skipped) }   // SHOW-005
         Button("Delete", role: .destructive) { show.remove(cue.id) }
     }
 
@@ -319,6 +329,19 @@ struct ShowEditorView: View {
             .accessibilityIdentifier("showCueDwell")
     }
 
+    /// SHOW-005-R8 (research SHOW-005-D8): Delete and Skip on the trailing edge. The leading row is already wider than an
+    /// iPhone screen, so a seventh leading action would be cut off. Custom trailing actions replace `onDelete`'s swipe,
+    /// so Delete is declared here (destructive, full swipe) and stays available in Edit mode through `onDelete`.
+    @ViewBuilder private func trailingSwipeActions(_ cue: ShowCue) -> some View {
+        if !locked {   // SCN-015-R6
+            Button("Delete", role: .destructive) { show.remove(cue.id) }
+            Button(cue.skipped ? "Unskip" : "Skip") { show.setSkipped(cue.id, !cue.skipped) }
+                .tint(.gray)
+                .accessibilityLabel(cue.skipped ? "Don't Skip Cue" : "Skip Cue")
+                .accessibilityIdentifier("showCueSkip")
+        }
+    }
+
     private func rowActions(_ content: AnyView, cue: ShowCue, number: Int) -> some View {
         content
             .accessibilityAction(named: "Go to Cue") { show.go(to: cue.id) }
@@ -333,6 +356,7 @@ struct ShowEditorView: View {
         Button("Transition") { editingTransition = cue }   // SCN-007
         Button("Transition Into This Cue") { editingOverride = cue }   // SHOW-004
         Button("Advance After") { editingDwell = cue }   // SHOW-002
+        Button(cue.skipped ? "Don't Skip Cue" : "Skip Cue") { show.setSkipped(cue.id, !cue.skipped) }   // SHOW-005
         // ACC-004-R3: reordering without Edit mode's drag handles.
         Button("Move Up") { move(number - 1, by: -1) }
         Button("Move Down") { move(number - 1, by: 1) }

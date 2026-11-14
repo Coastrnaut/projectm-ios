@@ -40,6 +40,16 @@ public enum ShaderMetadataError: Error, Sendable, Equatable, CustomStringConvert
     case slotTypeMismatch(document: String, parameterID: String, slot: Int, kind: String, read: String)
     /// The variant's fragment function is not in the shader source.
     case missingFunction(document: String, function: String)
+    /// SHD-004: `variants` has fewer than 2 or more than 4 entries.
+    case variantCount(document: String, count: Int)
+    case duplicateVariantID(document: String, variantID: String)
+    /// SHD-004: the first variant is not the document's own `variant`.
+    case defaultVariantMismatch(document: String, variantID: String, expected: String)
+    /// SHD-004: a variant ID that does not start with the document's `variant` (keeps entry points unique).
+    case variantPrefix(document: String, path: String, variantID: String, prefix: String)
+    case unknownGPUFamily(document: String, path: String, family: String)
+    /// SHD-004: the default variant must run everywhere.
+    case defaultVariantRequirement(document: String, variantID: String)
 
     public var description: String {
         switch self {
@@ -72,6 +82,13 @@ public enum ShaderMetadataError: Error, Sendable, Equatable, CustomStringConvert
         case let .slotTypeMismatch(d, id, s, kind, read):
             return "\(d): parameter \"\(id)\" (kind \(kind)) is on slot \(s), which the shader reads as \(read) (key \"slot\")"
         case let .missingFunction(d, f): return "\(d): the shader has no function \(f)"
+        case let .variantCount(d, n): return "\(d): key \"variants\" has \(n) variants (2 to 4 allowed)"
+        case let .duplicateVariantID(d, id): return "\(d): variant \"\(id)\" is declared twice (key \"variants\")"
+        case let .defaultVariantMismatch(d, id, e):
+            return "\(d): variants[0] key \"id\" is \"\(id)\" but the default variant must be \"\(e)\" (key \"variant\")"
+        case let .variantPrefix(d, p, id, prefix): return "\(d): \(p) key \"id\" value \"\(id)\" must start with \"\(prefix)\""
+        case let .unknownGPUFamily(d, p, f): return "\(d): \(p) key \"requires\" value \"\(f)\" is not apple7, apple8 or apple9"
+        case let .defaultVariantRequirement(d, id): return "\(d): default variant \"\(id)\" may not have key \"requires\""
         }
     }
 }

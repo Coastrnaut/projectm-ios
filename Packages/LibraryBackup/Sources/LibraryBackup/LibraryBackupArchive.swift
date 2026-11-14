@@ -48,6 +48,9 @@ public enum LibraryBackupWriter {
             if let overrides = contents.presetOverrides, !overrides.isEmpty {   // PRE-016
                 try add(LibraryBackupFormat.overridesPath, try PresetOverridesFile.encode(overrides))
             }
+            if let smart = contents.smartCollections, !smart.isEmpty {   // PRE-008
+                try add(LibraryBackupFormat.smartCollectionsPath, try PresetSmartCollectionsFile(smartCollections: smart).encode())
+            }
             if let palettes = contents.palettes, !palettes.user.isEmpty {   // UIX-011
                 try add(LibraryBackupFormat.palettesPath, Data(PaletteFile.encode(palettes)))
             }
@@ -124,6 +127,12 @@ public enum LibraryBackupReader {
             guard let decoded = try? PresetOverridesFile.decode(overrides) else { throw .unreadableRecord(LibraryBackupFormat.overridesPath) }
             contents.presetOverrides = decoded.map
         }
+        if let smart = files[LibraryBackupFormat.smartCollectionsPath] {   // PRE-008
+            guard let decoded = try? PresetSmartCollectionsFile.decode(smart) else {
+                throw .unreadableRecord(LibraryBackupFormat.smartCollectionsPath)
+            }
+            contents.smartCollections = decoded.file.smartCollections
+        }
         if let palettes = files[LibraryBackupFormat.palettesPath] {   // UIX-011
             guard let decoded = try? PaletteFile.decode([UInt8](palettes)) else { throw .unreadableRecord(LibraryBackupFormat.palettesPath) }
             contents.palettes = decoded.library
@@ -137,6 +146,7 @@ public enum LibraryBackupReader {
         if path == LibraryBackupFormat.showPath || path == LibraryBackupFormat.currentScenePath || path == LibraryBackupFormat.presetIndexPath
             || path == LibraryBackupFormat.collectionsPath || path == LibraryBackupFormat.settingsPath
             || path == LibraryBackupFormat.tagsPath || path == LibraryBackupFormat.overridesPath
+            || path == LibraryBackupFormat.smartCollectionsPath
             || path == LibraryBackupFormat.palettesPath { return true }
         if let id = stripped(path, prefix: LibraryBackupFormat.scenesPrefix, suffix: LibraryBackupFormat.sceneSuffix) {
             return ShowCueList.isSceneID(id)

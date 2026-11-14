@@ -64,6 +64,8 @@ struct PresetBrowserView: View {
                 case .list: PresetCollectionsView(presets: presets) { dismiss() }
                 case .collection(let id):
                     PresetCollectionView(presets: presets, collectionID: id, onChoose: onChoose) { dismiss() }
+                case .smart(let id):   // PRE-008
+                    SmartCollectionView(presets: presets, collectionID: id, onChoose: onChoose) { dismiss() }
                 }
             }
             .navigationDestination(for: UserPresetRoute.self) { route in
@@ -117,6 +119,9 @@ struct PresetBrowserView: View {
         return "\(query)|\(presets.tagsVersion)|\(tags)|\(presets.colorsVersion)|\(colors)|\(presets.motionVersion)|\(energies)"
     }
 
+    /// PRE-008: manual and smart collections together.
+    private var collectionTotal: Int { presets.collections.count + presets.smartCollections.count }
+
     @ViewBuilder private var home: some View {
         if let library = presets.library {
             ForEach(library.home) { node in
@@ -130,10 +135,10 @@ struct PresetBrowserView: View {
                 HStack {
                     Text("Collections")
                     Spacer()
-                    Text(presets.collections.count.formatted())   // ACC-004: full contrast (audit)
+                    Text(collectionTotal.formatted())   // ACC-004: full contrast (audit)
                 }
                 .accessibilityElement(children: .combine)
-                .accessibilityLabel(PresetCoordinator.collectionsRowLabel(count: presets.collections.count))
+                .accessibilityLabel(PresetCoordinator.collectionsRowLabel(count: collectionTotal))
             }
             .accessibilityIdentifier("node:collections")
             // PRE-012: the presets the user imported.

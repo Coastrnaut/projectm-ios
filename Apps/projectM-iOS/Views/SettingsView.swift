@@ -100,6 +100,8 @@ struct SettingsView: View {
     var cameraLens: CameraLensChoice? = nil
     /// CAM-004: the Lock exposure row (nil in previews and tests that don't need it).
     var cameraExposure: CameraExposureChoice? = nil
+    /// CAM-005: whether the chosen camera can focus on a point (nil: no focus note, e.g. in previews).
+    var cameraCanFocus: (@MainActor () -> Bool)? = nil
     /// PRE-006: Recently Played (nil hides its section, e.g. in previews).
     var recentPresets: RecentPresetsCoordinator?
     /// PERF-008: the power profile (nil hides the rows, e.g. in previews).
@@ -186,6 +188,7 @@ struct SettingsView: View {
             .accessibilityIdentifier("cameraPositionPicker")
             if let cameraLens { CameraLensRow(choice: cameraLens) }   // CAM-003-R2
             if let cameraExposure { CameraExposureRow(choice: cameraExposure) }   // CAM-004-R1
+            if let cameraCanFocus { CameraFocusNote(canFocus: cameraCanFocus()) }   // CAM-005-R5
             Toggle("Mirror", isOn: $settings.cameraMirrored)
                 .accessibilityIdentifier("cameraMirrorToggle")
             cameraCropRows

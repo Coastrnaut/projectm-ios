@@ -132,6 +132,8 @@ public struct LibraryRestorePlan: Sendable, Equatable {
     public var presetTags: PresetTagMap? = nil
     /// PRE-016: the preset overrides after the restore; nil when they do not change.
     public var presetOverrides: PresetOverrideMap? = nil
+    /// PRE-008: the smart collections after the restore; nil when they do not change.
+    public var smartCollections: [PresetSmartCollection]? = nil
     /// UIX-011: the user palettes after the restore; nil when they do not change.
     public var palettes: PaletteLibrary? = nil
     /// The current scene to write; nil when it does not change.
@@ -159,7 +161,7 @@ public struct LibraryRestorePlan: Sendable, Equatable {
         if showMode == .exact || (showMode == .merge && (scenePlan?.actions.isEmpty == false)) { folders.append(.show) }
         if currentScene != nil { folders.append(.currentScene) }
         if !presetsToAdd.isEmpty || !presetsToReplace.isEmpty { folders.append(.presets) }
-        if collections != nil || presetTags != nil || presetOverrides != nil { folders.append(.collections) }
+        if collections != nil || presetTags != nil || presetOverrides != nil || smartCollections != nil { folders.append(.collections) }
         if !photosToWrite.isEmpty { folders.append(.photos) }
         if palettes != nil { folders.append(.palettes) }   // UIX-011
         return folders
@@ -176,6 +178,7 @@ public enum LibraryRestorePlanner {
         builder.planCollections(backup: backup, library: library)
         builder.planTags(backup: backup, library: library)
         builder.planOverrides(backup: backup, library: library)
+        builder.planSmartCollections(backup: backup, library: library)   // PRE-008
         builder.planSettings(backup: backup, library: library)
         builder.planPhotos(backup: backup, library: library)
         builder.planPalettes(backup: backup, library: library)   // UIX-011
@@ -186,6 +189,7 @@ public enum LibraryRestorePlanner {
                                       currentScene: builder.currentScene, photosToWrite: builder.photos, settingsToApply: builder.settings)
         plan.presetTags = builder.presetTags
         plan.presetOverrides = builder.presetOverrides
+        plan.smartCollections = builder.smartCollections
         plan.palettes = builder.palettes
         return plan
     }
@@ -278,6 +282,7 @@ private struct Builder {
     var collections: [PresetCollection]?
     var presetTags: PresetTagMap?
     var presetOverrides: PresetOverrideMap?
+    var smartCollections: [PresetSmartCollection]?
     var palettes: PaletteLibrary?
     var currentScene: Data?
     var photos: [String: Data] = [:]
@@ -682,6 +687,42 @@ private struct Builder {
             map = merged
         }
         if changed { presetOverrides = map }
+    }
+
+    // MARK: Smart collections (PRE-008)
+
+    /// Research PRE-008-D5: per smart collection ID, a new one is added (at most 100 in all), an identical one
+    /// is kept, and a clash follows the choice: Replace takes the backup's, Keep both and Skip keep the device's.
+    mutating func planSmartCollections(backup: LibraryContents, library: LibraryContents) {
+        guard let incoming = backup.smartCollections, !incoming.isEmpty else { return }
+        var list: [PresetSmartCollection] = library.smartCollections ?? []
+        var changed = false
+        for theirs in incoming {
+            let key = "smart/" + theirs.id
+            guard let index = list.firstIndex(where: { (c: PresetSmartCollection) -> Bool in c.id == theirs.id }) else {
+                guard list.count < PresetSmartLimits.maxCollections else {
+                    add(key, .collections, .new, .keep, fellBack: true)
+                    continue
+                }
+                list.append(theirs)
+                add(key, .collections, .new, .add)
+                changed = true
+                continue
+            }
+            if list[index] == theirs {
+                add(key, .collections, .identical, .keep)
+                continue
+            }
+            let picked: LibraryRestoreChoice = choice(for: key)
+            if picked == .replace {
+                list[index] = theirs
+                add(key, .collections, .clash, .replace, choice: picked)
+                changed = true
+            } else {
+                add(key, .collections, .clash, .keep, choice: picked)
+            }
+        }
+        if changed { smartCollections = list }
     }
 
     // MARK: Settings

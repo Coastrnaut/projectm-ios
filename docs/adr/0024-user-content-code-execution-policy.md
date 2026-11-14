@@ -57,7 +57,7 @@ be enforced on code that does not exist yet, and say honestly where untrusted te
    | Script engines and expression evaluation: JavaScriptCore, `NSExpression`, `NSPredicate(format:)` with a non-literal format | `script engine or expression evaluation (SHD-011)` |
    | Process spawning: `Process`, `NSTask`, `posix_spawn`, `system`, `exec*`, `fork`, `popen` | `process spawning (SHD-011)` |
    | Executable memory (JIT): `PROT_EXEC`, `MAP_JIT`, `mprotect`, `pthread_jit_write_protect_np` | `executable memory (SHD-011)` |
-   | Metal from user input: `makeLibrary(source:)` outside eight reviewed files that compile module constants; `makeLibrary(URL:/data:/filepath:)`, `makeDefaultLibrary(bundle:)`, dynamic libraries and binary archives anywhere | `Metal library from outside the reviewed sources (SHD-011)` |
+   | Metal from user input: `makeLibrary(source:)` outside eight reviewed files that compile module constants; `makeLibrary(URL:/data:/filepath:)`, `makeDefaultLibrary(bundle:)`, dynamic libraries anywhere, and binary archives outside one reviewed file (amended by ADR-0062, PERF-009) | `Metal library from outside the reviewed sources (SHD-011)` |
    | Networking | existing FR-068 rule |
 
    The eight files are listed in the script (`METAL_SOURCE_ALLOWED`) and in research SHD-011-D4;
