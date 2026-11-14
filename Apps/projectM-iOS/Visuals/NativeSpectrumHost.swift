@@ -57,6 +57,7 @@ import AnalysisFeatures
 import AudioCore
 import FlashSafety
 import FrameCapture
+import FrameTiming
 import Metal
 import ParameterGraph
 import PerformanceControlAnalysis
@@ -102,6 +103,16 @@ final class NativeSpectrumHost: PresentationBoundResource {
     private var paused = true
     private(set) var isSuspended = false
     private var meter = FrameRateMeter()
+    /// PERF-001: the stage timer while the performance overlay is shown (nil: no timing work), and the
+    /// frames' command buffers until their GPU times are known.
+    var stageTimer: FrameStageTimer? {
+        didSet {
+            stageTimer?.configure(pipeline: Self.frameStages)
+            gpuTimes.reset()
+        }
+    }
+    static let frameStages: [FrameStage] = [.audio, .render, .encode, .present]
+    private let gpuTimes = MetalGPUFrameTimes()
     private var quality = QualityGovernor.current()
     private var observers: [NSObjectProtocol] = []
 
@@ -563,6 +574,11 @@ final class NativeSpectrumHost: PresentationBoundResource {
     fileprivate func frame(_ link: CADisplayLink) {
         let layer = view.metalLayer
         guard view.window != nil, layer.drawableSize.width >= 1, layer.drawableSize.height >= 1 else { return }
+        let timer: FrameStageTimer? = stageTimer   // PERF-001
+        timer?.beginFrame()
+        defer { timer?.endFrame() }
+        if let timer { gpuTimes.drain(into: timer) }
+        timer?.begin(.audio)
         if let info = analyzer.output.readLatest(into: bands, capacity: SpectrumBarCount.maximum) {
             bandCount = info.count
             bandSession = info.session
@@ -575,7 +591,9 @@ final class NativeSpectrumHost: PresentationBoundResource {
         let interval: Double = lastLinkTimestamp.map { (previous: CFTimeInterval) -> Double in link.timestamp - previous } ?? 0
         lastLinkTimestamp = link.timestamp
         let smoothedBands = smoother.update(target: bands, count: bandCount, frameInterval: interval, generation: bandSession)
+        timer?.end(.audio)   // the drawable wait is not audio work; the modulation below is (accumulated)
         guard let drawable = layer.nextDrawable(), let commands = queue.makeCommandBuffer() else { return }
+        timer?.begin(.audio)
         let context: VisualFrameContext = frameContext(timeNanoseconds: UInt64(max(link.targetTimestamp, 0) * 1e9),
                                                        frameDuration: link.targetTimestamp - link.timestamp)
         let bandInput = UnsafeBufferPointer(start: bands, count: bandCount)
@@ -589,6 +607,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
         } else {
             input = smoothedBands   // ANL-003: the spectra draw the smoothed bands
         }
+        timer?.end(.audio)
+        timer?.begin(.render)
         let target = drawable.texture
         var drawn = false
         if let chain, glowActive {
@@ -604,15 +624,21 @@ final class NativeSpectrumHost: PresentationBoundResource {
         if !drawn && !glowActive {
             drawn = generator.encode(into: target, commandBuffer: commands, bands: input, context: context)
         }
+        timer?.end(.render)
         guard drawn else { return }
         encodeCaptureIfPending(target, commands: commands)   // REC-001; nothing without a request
+        if videoRecording != nil { timer?.begin(.encode) }
         // REC-003: the drawn drawable (glow included) copied into the recording's pixel buffer.
         videoRecording?.record(commandBuffer: commands, presentationNanoseconds: context.timeNanoseconds,
                                drawable: target) { (texture: MTLTexture) -> Bool in
             Self.encodeRecordingCopy(from: target, into: texture, commands: commands)
         }
+        timer?.end(.encode)
+        timer?.begin(.present)
         commands.present(drawable)
         commands.commit()
+        timer?.end(.present)
+        if timer != nil { gpuTimes.track(commands) }
         presentedFrameCount += 1
         if meter.record(presentedAt: link.timestamp) { metrics = meter.metrics }
     }
