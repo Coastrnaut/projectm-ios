@@ -11,8 +11,8 @@
 |---|---|
 | audited | 174 |
 | implementing | 5 |
-| unit_passed | 4 |
-| integrated | 142 |
+| unit_passed | 3 |
+| integrated | 143 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -20,14 +20,14 @@
 | Priority | audited | implementing | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 89 | 3 | 3 | 56 | 0 |
+| P1 | 89 | 3 | 2 | 57 | 0 |
 | P2 | 74 | 2 | 1 | 2 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 183 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)
+- 182 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)
 
 ## Integrated
 
@@ -158,6 +158,7 @@ The physical-device suite may **not** start:
 | SCN-001 | Versioned scene format | `c3886d1cb0bb` | `feature/scn-001` |
 | SCN-002 | Scene autosave | `1aa354c0b623` | `feature/scn-002` |
 | SCN-003 | Scene duplicate and rename | `4936d8fcd1d3` | `feature/scn-003` |
+| SCN-004 | Scene folder organization | `db2b17b18589` | `feature/scn-004` |
 | SCN-010 | Scene undo/redo | `01b155c6c3d0` | `feature/scn-010` |
 | SCN-012 | Scene validation | `2a86515` | `feature/scn-012` |
 | SCN-013 | Scene migration | `7f597d2` | `feature/scn-013` |
@@ -1394,7 +1395,7 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `0186ee96ba05` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-003/20261113T174126/swift-test_ShowControl.log`)
 - `post-merge: projectM-iOSTests incl. ShowSceneEditCoordinatorTests; SceneDuplicateUITests, ShowCueUITests 2 on iOS 27.2 sim; SceneFormat 48 and ShowControl 25 in the gate`: pass at `4936d8fcd1d3` (log `.autonomous/logs/integration/scn-003/app-tests.log`)
 
-### SCN-004 Scene folder organization (unit_passed)
+### SCN-004 Scene folder organization (integrated)
 - `python3 scripts/check_compliance.py`: pass at `5bdd7e541ced` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-004/20261114T070358/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `5bdd7e541ced` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-004/20261114T070358/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `5bdd7e541ced` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-004/20261114T070358/script-tests.log`)
