@@ -20,8 +20,8 @@
 - Key = bytes before the first space or `=`, ASCII lower-cased; delimiter at position 0 → no key.
 - For each override, the first line whose key matches is replaced, from line start to line end, by
   `<canonical name>=<value>`; the line terminator is kept.
-- Missing keys: one line each, in allow-list order, inserted after the first line if that line
-  (trimmed) starts with `[` (the `[preset00]` header), else at byte 0. The inserted lines end with
+- Missing keys: one line each, in allow-list order, inserted after the first line that starts with `[`
+  (the `[preset00]` header; a UTF-8 BOM allowed before it), else at byte 0. The inserted lines end with
   `\r\n` when the file contains `\r\n`, else `\n`.
 - Value text: rounded to 4 decimals, `String(format: "%.4f")` (POSIX), trailing zeros and a bare `.`
   trimmed (`1.0500` → `1.05`, `1.0000` → `1`).

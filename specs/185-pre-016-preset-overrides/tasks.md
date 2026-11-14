@@ -6,15 +6,15 @@ Budgets (owner rule 7): unit ≤ 10 s, package suite < 1 min, UI test < 30 s.
 
 ## Phase 1: Setup
 
-- [ ] PRE-016-T01 Create simulator "PRE16 iPhone 17" (iOS 27.2), `xcodegen generate`, count PosterBoard reports (baseline)
+- [X] PRE-016-T01 Create simulator "PRE16 iPhone 17" (iOS 27.2), `xcodegen generate`, count PosterBoard reports (baseline) — Verified 2026-11-14: `xcrun simctl create` gave 9E4D0EB4-B279-49DB-9A0D-A55F72F14167; PosterBoard baseline 25
 
 ## Phase 2: Foundational (PresetLibrary package)
 
-- [ ] PRE-016-T02 [P] `PresetOverrideParameter` allow-list (keys, labels, ranges "zoom 0.8-1.2, rot -0.2-0.2, warp 0-2, fDecay 0.9-1.0, wave_r/g/b 0-1, fGammaAdj 1-3", steps, engine defaults), case-insensitive lookup, `clamped` (clamp then round to 4 decimals; non-finite → nil) in `Packages/PresetLibrary/Sources/PresetLibrary/Overrides/PresetOverrideParameter.swift`
-- [ ] PRE-016-T03 [P] `PresetOverrideMap` + `PresetOverrideError` (unknown parameter, invalid value, invalid preset ID, too many presets 20,000, newer format, save failed) in `Packages/PresetLibrary/Sources/PresetLibrary/Overrides/PresetOverrideMap.swift`
-- [ ] PRE-016-T04 `PresetTextOverlay` (`originalValues`, `apply`, `valueText`; research D2-D3) in `Packages/PresetLibrary/Sources/PresetLibrary/Overrides/PresetTextOverlay.swift`
-- [ ] PRE-016-T05 `PresetOverridesFile` (version 1, FILE-007 schema, 1 MiB, lenient) and `PresetOverrideStore` (transactions, newer/unreadable) in `Packages/PresetLibrary/Sources/PresetLibrary/Overrides/`
-- [ ] PRE-016-T06 Unit tests: allow-list rejection, clamping, rounding, overlay (rewrite first occurrence, case, insert after header, CRLF, Latin-1 bytes kept, no overrides → identical; R17: `PresetFlashRisk.rules` of a flagged fixture unchanged by an overlay), original values, document round trip / newer / unreadable / repaired, store relaunch in `Packages/PresetLibrary/Tests/PresetLibraryTests/PresetOverride*Tests.swift`
+- [X] PRE-016-T02 [P] `PresetOverrideParameter` allow-list (keys, labels, ranges "zoom 0.8-1.2, rot -0.2-0.2, warp 0-2, fDecay 0.9-1.0, wave_r/g/b 0-1, fGammaAdj 1-3", steps, engine defaults), case-insensitive lookup, `clamped` (clamp then round to 4 decimals; non-finite → nil) in `Packages/PresetLibrary/Sources/PresetLibrary/Overrides/PresetOverrideParameter.swift` — Verified 2026-11-14: `swift test --package-path Packages/PresetLibrary --filter 'PresetOverride|PresetTextOverlay'`, 14 tests pass in 0.02 s
+- [X] PRE-016-T03 [P] `PresetOverrideMap` + `PresetOverrideError` (unknown parameter, invalid value, invalid preset ID, too many presets 20,000, newer format, save failed) in `Packages/PresetLibrary/Sources/PresetLibrary/Overrides/PresetOverrideMap.swift` — Verified 2026-11-14: `swift test --package-path Packages/PresetLibrary --filter 'PresetOverride|PresetTextOverlay'`, 14 tests pass in 0.02 s
+- [X] PRE-016-T04 `PresetTextOverlay` (`originalValues`, `apply`, `valueText`; research D2-D3) in `Packages/PresetLibrary/Sources/PresetLibrary/Overrides/PresetTextOverlay.swift` — Verified 2026-11-14: `swift test --package-path Packages/PresetLibrary --filter 'PresetOverride|PresetTextOverlay'`, 14 tests pass in 0.02 s
+- [X] PRE-016-T05 `PresetOverridesFile` (version 1, FILE-007 schema, 1 MiB, lenient) and `PresetOverrideStore` (transactions, newer/unreadable) in `Packages/PresetLibrary/Sources/PresetLibrary/Overrides/` — Verified 2026-11-14: `swift test --package-path Packages/PresetLibrary --filter 'PresetOverride|PresetTextOverlay'`, 14 tests pass in 0.02 s
+- [X] PRE-016-T06 Unit tests: allow-list rejection, clamping, rounding, overlay (rewrite first occurrence, case, insert after header, CRLF, Latin-1 bytes kept, no overrides → identical; R17: `PresetFlashRisk.rules` of a flagged fixture unchanged by an overlay), original values, document round trip / newer / unreadable / repaired, store relaunch in `Packages/PresetLibrary/Tests/PresetLibraryTests/PresetOverride*Tests.swift` — Verified 2026-11-14: `swift test --package-path Packages/PresetLibrary --filter 'PresetOverride|PresetTextOverlay'`, 14 tests pass in 0.02 s
 
 ## Phase 3: User Story 1 — Adjust a preset's look (P1) 🎯 MVP
 
