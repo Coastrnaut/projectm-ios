@@ -55,6 +55,8 @@ struct SettingsView: View {
     var cacheFilesInUse: @MainActor () -> Set<String> = { () -> Set<String> in [] }
     /// MED-013: Settings › Storage › Missing Media (nil hides the row).
     var missingMedia: MissingMediaCoordinator? = nil
+    /// REC-010: Settings › Storage › Recordings (nil hides the row).
+    var recordingLibrary: RecordingLibraryModel? = nil
     /// UIX-001: opens the guided first scene (nil hides the row, e.g. in previews).
     var openGuide: (() -> Void)?
     /// SCN-010: Undo and Redo in the navigation bar (nil hides them, e.g. in previews).
@@ -96,6 +98,8 @@ struct SettingsView: View {
     var cameraStatus: @MainActor () -> PermissionState? = { () -> PermissionState? in nil }
     /// PRE-006: Recently Played (nil hides its section, e.g. in previews).
     var recentPresets: RecentPresetsCoordinator?
+    /// PERF-008: the power profile (nil hides the rows, e.g. in previews).
+    var powerProfile: PowerProfileSetting? = nil
     /// ACC-005-R7: announces a VoiceOver swipe at a slider's end (nil: none, e.g. in previews).
     var announcer: AccessibilityAnnouncer?
     @Environment(\.dismiss) private var dismiss
@@ -307,6 +311,7 @@ struct SettingsView: View {
                 if settings.visual == .radialWaveform { radialWaveformOptions }   // VIS-005-R9
                 if settings.visual == .beatRings { beatRingsOptions }   // VIS-006-R9
                 if settings.visual == .mandala { mandalaOptions }   // VIS-007-R9
+                if settings.visual == .particleFountain { particleFountainOptions }   // VIS-008-R10
                 if settings.visual == .linearSpectrum {
                     Picker("Orientation", selection: $settings.linearSpectrumOrientation) {
                         ForEach(LinearSpectrumOrientation.allCases, id: \.self) { Text($0.title).tag($0) }
@@ -344,7 +349,7 @@ struct SettingsView: View {
                     .accessibilityIdentifier("nativeVisualUnavailableFooter")
             } else {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Oscilloscope draws the sound's waveform, held still when the sound repeats. Lissajous plots the left channel against the right: mono sound is a straight line, wide stereo fills the space; Mid/Side turns it so mono is vertical. Radial Waveform wraps the waveform around a ring: louder sound pushes it out and pulls it in, silence is a still circle. Beat Rings sends a ring out from the centre on each beat that grows and fades; with Reduce flashing on, at most three rings start per second. Mandala repeats a petal around the centre 3 to 12 times, optionally mirrored, shaped by the low, mid and high sound and turning slowly (half as fast with Reduce Motion). Camera shows your rear or front camera behind a circular spectrum, only while it is on screen; the picture is never sent. Photo shows a picture you choose behind a circular spectrum. Video plays a video you choose, without its sound, behind a circular spectrum. Text shows your own words over a circular spectrum.")
+                    Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Oscilloscope draws the sound's waveform, held still when the sound repeats. Lissajous plots the left channel against the right: mono sound is a straight line, wide stereo fills the space; Mid/Side turns it so mono is vertical. Radial Waveform wraps the waveform around a ring: louder sound pushes it out and pulls it in, silence is a still circle. Beat Rings sends a ring out from the centre on each beat that grows and fades; with Reduce flashing on, at most three rings start per second. Mandala repeats a petal around the centre 3 to 12 times, optionally mirrored, shaped by the low, mid and high sound and turning slowly (half as fast with Reduce Motion). Particle Fountain throws a burst of particles up from the bottom on each onset, a sudden new sound: stronger onsets throw more; they arc under gravity, slow down and fade; with Reduce Motion there are fewer and they move more slowly. Camera shows your rear or front camera behind a circular spectrum, only while it is on screen; the picture is never sent. Photo shows a picture you choose behind a circular spectrum. Video plays a video you choose, without its sound, behind a circular spectrum. Text shows your own words over a circular spectrum.")
                     if settings.visual.isNative {
                         if glowUnavailable {
                             Text(AppCoordinator.glowUnavailableMessage)
@@ -369,6 +374,16 @@ struct SettingsView: View {
         .accessibilityIdentifier("lissajousModePicker")
         Toggle("Persistence", isOn: $settings.lissajousPersistence)
             .accessibilityIdentifier("lissajousPersistenceToggle")
+    }
+
+    /// VIS-008-R10: the particle fountain's gravity.
+    private var particleFountainOptions: some View {
+        Picker("Gravity", selection: $settings.particleGravity) {
+            ForEach(ParticleGravity.allCases, id: \.self) { (gravity: ParticleGravity) in Text(gravity.title).tag(gravity) }
+        }
+        .segmentedUnlessAccessibilitySize()   // ACC-006-R1
+        .accessibilityLabel("Gravity")
+        .accessibilityIdentifier("particleGravityPicker")
     }
 
     /// VIS-007-R9: the mandala's symmetry, mirror and petal style.
@@ -492,6 +507,7 @@ struct SettingsView: View {
             Text("Shows the frame rate and the audio state over the visualization.")
         }
         .id("performance")
+        if let powerProfile { PowerProfileSection(setting: powerProfile).id("powerProfile") }   // PERF-008-R1
     }
 
     @ViewBuilder private var audioSections: some View {
@@ -503,7 +519,7 @@ struct SettingsView: View {
         oscSection.id("osc")
         if let midi { MIDISettingsSection(midi: midi).id("midi") }   // MIDI-001-R8
         if let recordingQuality { RecordingQualitySection(setting: recordingQuality).id("quality") }   // REC-005-R9
-        if let recordingQuality { RecordingFrameRateSection(setting: recordingQuality) }   // REC-006-R9
+        if let recordingQuality { RecordingFrameRateSection(setting: recordingQuality).id("recordingFrameRate") }   // REC-006-R9; QA-009 anchor
         if let recordingCountdown { RecordingCountdownSection(setting: recordingCountdown) }   // REC-007-R9
         if let recordingTimedStop { RecordingTimedStopSection(setting: recordingTimedStop) }   // REC-008-R9
         if let recordingAudio { RecordingAudioSection(setting: recordingAudio, status: recordingAudioStatus).id("recording") }   // REC-004-R13
@@ -533,8 +549,9 @@ struct SettingsView: View {
         if let recentPresets { RecentHistorySection(recent: recentPresets).id("recentPresets") }   // PRE-006-R3, R4
         if let externalOutput { ExternalDisplaySection(setting: externalOutput).id("externalDisplay") }   // OUT-004-R9
         Section {
-            NavigationLink("Storage") {   // FILE-009, FILE-010, FILE-005, MED-013
-                StorageUsageView(filesInUse: cacheFilesInUse, libraryBackup: libraryBackup, missingMedia: missingMedia)
+            NavigationLink("Storage") {   // FILE-009, FILE-010, FILE-005, MED-013, REC-010
+                StorageUsageView(filesInUse: cacheFilesInUse, libraryBackup: libraryBackup, missingMedia: missingMedia,
+                                 recordingLibrary: recordingLibrary)   // REC-010
             }
                 .accessibilityIdentifier("storageLink")
             NavigationLink("Licenses") { LicensesView() }
@@ -802,6 +819,10 @@ struct SettingsView: View {
             if let routes = osc.routes {   // OSC-003-R10
                 NavigationLink("OSC Routes") { OSCRoutesView(routes: routes, unknownCount: osc.unknownAddressCount) }
                     .accessibilityIdentifier("oscRoutesLink")
+            }
+            if let peers = osc.peers {   // OSC-008-R9
+                NavigationLink { OSCPeersView(peers: peers) } label: { LabeledContent("Approved Devices", value: peers.summaryText) }
+                    .accessibilityIdentifier("oscPeersLink")
             }
         } header: {
             Text("OSC")

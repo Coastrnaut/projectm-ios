@@ -205,7 +205,7 @@ public final class GLESRenderer: NSObject, VisualizerRenderer {
 
     private func observeFrameRatePressure() {
         let center = NotificationCenter.default
-        for name in [ProcessInfo.thermalStateDidChangeNotification, Notification.Name.NSProcessInfoPowerStateDidChange] {
+        for name in QualityGovernor.changeNotifications {   // PERF-008: the power profile too
             observers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
                 MainActor.assumeIsolated {
                     guard let self else { return }

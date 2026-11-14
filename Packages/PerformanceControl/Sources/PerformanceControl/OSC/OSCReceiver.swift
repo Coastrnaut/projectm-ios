@@ -14,6 +14,8 @@
 // * OSC-009: datagrams pass the dispatcher's rate limits (per source, global, per target); every
 //   launch and stop starts the limiter afresh (held values discarded). `onActivity` lets the app
 //   coalesce its main-thread refreshes (`OSCRefreshGate`) instead of hopping once per message.
+// * OSC-008 (specs/200-osc-008-peer-allowlist): while `peerAllowlist` is on, a datagram from a host that is not
+//   approved is dropped and counted (`droppedUnapproved`) before it reaches the dispatcher.
 import ParameterGraph
 import Synchronization
 
@@ -43,6 +45,8 @@ public final class OSCReceiver: Sendable {
     }
 
     public let dispatcher: OSCDispatcher
+    /// OSC-008: the optional allowlist of approved hosts (off by default), checked per datagram.
+    public let peerAllowlist = OSCPeerAllowlist()
     private let makeTransport: @Sendable () -> (any OSCDatagramTransport)?
     private let lockedState = Mutex(State())
 
@@ -157,8 +161,14 @@ public final class OSCReceiver: Sendable {
     private func handle(_ event: OSCTransportEvent, generation: UInt64) {
         // Datagrams are the hot path: check the generation, then dispatch outside the lock.
         switch event {
-        case .datagram(let bytes, let source):
-            if isCurrent(generation) { dispatcher.handle(bytes, source: source) }
+        case .datagram(let bytes, let source, let peer):
+            guard isCurrent(generation) else { return }
+            // OSC-008-R6: an unapproved host is dropped before the limiter, the decoder and dispatch.
+            guard peerAllowlist.admits(peer) else {
+                dispatcher.noteDroppedUnapproved()
+                return
+            }
+            dispatcher.handle(bytes, source: source)
             return
         case .oversized(let count):
             if isCurrent(generation) { dispatcher.noteOversized(count) }

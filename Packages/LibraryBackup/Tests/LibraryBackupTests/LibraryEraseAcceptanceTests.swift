@@ -19,7 +19,7 @@ final class LibraryEraseAcceptanceTests: XCTestCase {
         case .media: return key.hasPrefix("photo/") || key == "setting/" + LibrarySettingsPolicy.photoKey
             || key == "setting/" + LibrarySettingsPolicy.slideshowKey   // MED-006
             || key == "setting/" + LibrarySettingsPolicy.logoKey || key == "setting/" + LibrarySettingsPolicy.logoPlacementKey   // MED-010
-        case .importedAudio: return false
+        case .importedAudio, .recordings: return false   // REC-010: recordings are not library records
         case .settings: return key.hasPrefix("setting/") && LibraryErasePolicy.settingKeys(.settings).contains(String(key.dropFirst(8)))
         }
     }
@@ -137,6 +137,7 @@ final class LibraryEraseAcceptanceTests: XCTestCase {
         XCTAssertEqual(inventory.item(.collections).count, 7, "two collections, two favorites and three history entries (PRE-006)")
         XCTAssertEqual(inventory.item(.media).count, 2, "one photo and one video")
         XCTAssertEqual(inventory.item(.importedAudio).count, 1)
+        XCTAssertEqual(inventory.item(.recordings).count, 1, "one kept recording (REC-010)")
         XCTAssertGreaterThan(inventory.item(.settings).count, 5)
         XCTAssertNil(inventory.item(.settings).bytes)
         for category in LibraryEraseCategory.allCases where category != .settings {

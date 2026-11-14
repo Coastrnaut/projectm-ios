@@ -1,0 +1,28 @@
+{
+  "entries" : [
+    {
+      "file" : "particle-fountain-128x96-f0.png",
+      "fileSHA256" : "0920cac34b1716d0585add20fc9add398e9ac4749ad6c17fef5f54cc55b3f651",
+      "frame" : 0,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "7fb61a222d17c5699a6e14c4926a7d40f965f751e2b4c0b153e326491bf24544",
+      "scene" : "particle-fountain",
+      "width" : 128
+    },
+    {
+      "file" : "particle-fountain-256x192-f0.png",
+      "fileSHA256" : "41d3e08527d94b11697a778e78c54ee52fd90255e4352a016561ab12268486e9",
+      "frame" : 0,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "1749be3817ce579ecbb367b0d4a563b99f248f164a1f2095a5df5056094ec154",
+      "scene" : "particle-fountain",
+      "width" : 256
+    }
+  ],
+  "formatVersion" : 1,
+  "platform" : "macos",
+  "recordedGPU" : "Apple M5 Max",
+  "recordedOS" : "27.2"
+}

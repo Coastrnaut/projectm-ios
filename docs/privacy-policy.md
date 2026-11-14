@@ -307,11 +307,20 @@ network) send control messages to the app. It is off until you turn it on.
   Stop button; Stop turns "OSC receiver" off and closes the port at once.
 - It accepts messages only from addresses on your local network (and from the device itself), never
   over cellular data, and it never connects to anything: it only receives.
-- In this version a received message can change only a test value shown in Settings, so you can
-  check that your controller reaches the app.
+- A received message can change only the visual parameters listed under Settings › OSC › OSC Routes
+  (today the glow's intensity, radius, threshold and knee) and a test value shown in Settings, so you
+  can check that your controller reaches the app. These changes are kept in memory only and end when
+  you turn OSC off.
 - Nothing it receives is recorded, stored or sent anywhere. The app keeps only counts of received
-  messages in memory while it runs, never their contents or who sent them.
-- The app stores two settings for it: whether it is on, and the port.
+  messages in memory while it runs, never their contents. Who sent them is kept only as described
+  under "Approved Devices" below.
+- The app stores these settings for it: whether it is on, the port, the routes you turned off and
+  your route aliases (addresses and parameter names only), and the "Approved Devices" settings below.
+- "Approved Devices" (off unless you turn it on) lets you accept messages only from devices you approve.
+  While it is on, the app shows the addresses of the last few devices on your local network whose
+  messages it blocked, in memory only, so you can tap Allow; it forgets them when you turn OSC off. The
+  local network addresses you approve are stored on your device only: they are never sent anywhere, are
+  not included in a library backup, and are removed when you erase Settings.
 - If the app closed unexpectedly (a crash, or it was ended while open on screen), it turns "OSC
   receiver" off when it starts again and does not listen until you turn it on yourself. The camera is
   never turned back on by itself either.
@@ -325,7 +334,8 @@ collections):
 - the last preset you selected;
 - your settings: the performance overlay, Reduce flashing, which preset list Next and Random
   step through (a search is remembered as "All presets", never the search text), whether the
-  OSC receiver is on and its port, and which camera the Camera visual uses with each camera's
+  OSC receiver is on and its port, whether "Approved Devices" is on and the local network
+  addresses you approved for it, and which camera the Camera visual uses with each camera's
   Mirror setting (CAM-002);
 - whether you acknowledged the photosensitivity notice;
 - whether the guided first scene is still to be offered, or was finished or skipped (one value; it
