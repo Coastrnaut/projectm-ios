@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented (OSC-008-T13 {device} open)
 
 **Input**: User description: "Implement roadmap row OSC-008 (OSC peer allowlist) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Optionally restrict packets to
