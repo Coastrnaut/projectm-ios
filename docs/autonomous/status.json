@@ -16,8 +16,9 @@
    "integrated": 135
   },
   "P2": {
-   "audited": 57,
+   "audited": 56,
    "built": 3,
+   "implementing": 1,
    "integrated": 18,
    "unit_passed": 1
   },
@@ -26,9 +27,9 @@
   }
  },
  "by_state": {
-  "audited": 81,
+  "audited": 80,
   "built": 3,
-  "implementing": 3,
+  "implementing": 4,
   "integrated": 237,
   "skipped_existing": 1,
   "unit_passed": 1
@@ -2476,13 +2477,13 @@
   },
   "REC-002": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/rec-002",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "REC-003": {
    "attempts": 0,
@@ -4607,5 +4608,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T22:43:35Z"
+ "updated": "2026-11-14T22:44:03Z"
 }
