@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T17:45:48Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T18:36:52Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,8 +11,8 @@
 |---|---|
 | audited | 121 |
 | implementing | 7 |
-| unit_passed | 3 |
-| integrated | 194 |
+| unit_passed | 2 |
+| integrated | 195 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -20,14 +20,14 @@
 | Priority | audited | implementing | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 39 | 7 | 2 | 103 | 0 |
+| P1 | 39 | 7 | 1 | 104 | 0 |
 | P2 | 71 | 0 | 1 | 7 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 131 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-012, ANL-013)
+- 130 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-012, ANL-013)
 
 ## Integrated
 
@@ -227,6 +227,7 @@ The physical-device suite may **not** start:
 | VIS-003 | Waveform oscilloscope | `2d758a4` | `feature/vis-003` |
 | VIS-004 | Lissajous scope | `38172fff` | `feature/vis-004` |
 | VIS-005 | Radial waveform | `9bbd8af5` | `feature/vis-005` |
+| VIS-006 | Beat pulse rings | `427617b950ee` | `feature/vis-006` |
 
 ## Proved already implemented
 
@@ -2284,7 +2285,7 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `8f2ddb1d7482` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-005/20261114T114011/swift-test_VisualGenerators.log`)
 - `post-merge: projectM-iOSTests 818 + UI 2 (radial waveform, Lissajous)`: pass at `9bbd8af5` (log `.autonomous/logs/integration/batch28/app-tests.log`)
 
-### VIS-006 Beat pulse rings (unit_passed)
+### VIS-006 Beat pulse rings (integrated)
 - `python3 scripts/check_compliance.py`: pass at `1dd9d242b902` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-006/20261114T123352/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `1dd9d242b902` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-006/20261114T123352/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `1dd9d242b902` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-006/20261114T123352/script-tests.log`)
