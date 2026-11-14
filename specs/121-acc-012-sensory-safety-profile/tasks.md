@@ -8,13 +8,13 @@ Format: `- [ ] ACC-012-Tnn [P?] [Story?] Description with file path`.
 
 ## Phase 1: Setup
 
-- [ ] ACC-012-T01 Create own simulator "ACC12 iPhone 17" (iOS 27.2), run `xcodegen generate`, init preset submodules if missing, count `~/Library/Logs/DiagnosticReports/PosterBoard-*.ips` (worktree root)
+- [X] ACC-012-T01 Create own simulator "ACC12 iPhone 17" (iOS 27.2), run `xcodegen generate`, init preset submodules if missing, count `~/Library/Logs/DiagnosticReports/PosterBoard-*.ips` (worktree root) — Verified 2026-11-14: simulator AEA9CA61 (ACC12 iPhone 17, iOS 27.2) created, xcodegen generate OK, 5 preset submodules initialized, 25 PosterBoard reports before
 
 ## Phase 2: Foundational (blocks every story)
 
-- [ ] ACC-012-T02 Add `SensorySafetyPreset`, `SensorySafetyLimits` ("flashesPerSecond 1…3", "riseLimitPerSecond nil or 0.05…1.0", "intensityLimit 0…1"; Standard 3/nil/1.0, Reduced 2/0.25/0.5, Strict 1/0.10/0.25), `stricter(than:)`, `flashConfiguration`, and `SensorySafetyProfile` in Packages/FlashSafety/Sources/FlashSafety/SensorySafetyProfile.swift
-- [ ] ACC-012-T03 Add `SafetyClamp` (C1: precedence, `reducesFlashing`, `flashLimitsOverride`, `intensity`, `modulated`, `speed`, `standard`) in Packages/FlashSafety/Sources/FlashSafety/SafetyClamp.swift
-- [ ] ACC-012-T04 [P] Value-level clamp table (each preset × glow intensity, binding, speed, flash configuration), precedence, identity and out-of-range tests (custom never looser than Standard: flashes ≤ 3, rise nil only as Standard's) in Packages/FlashSafety/Tests/FlashSafetyTests/SensorySafetyTests.swift
+- [X] ACC-012-T02 Add `SensorySafetyPreset`, `SensorySafetyLimits` ("flashesPerSecond 1…3", "riseLimitPerSecond nil or 0.05…1.0", "intensityLimit 0…1"; Standard 3/nil/1.0, Reduced 2/0.25/0.5, Strict 1/0.10/0.25), `stricter(than:)`, `flashConfiguration`, and `SensorySafetyProfile` in Packages/FlashSafety/Sources/FlashSafety/SensorySafetyProfile.swift — Verified 2026-11-14: swift test --package-path Packages/FlashSafety (27 tests, 0 failures, 0.55 s)
+- [X] ACC-012-T03 Add `SafetyClamp` (C1: precedence, `reducesFlashing`, `flashLimitsOverride`, `intensity`, `modulated`, `speed`, `standard`) in Packages/FlashSafety/Sources/FlashSafety/SafetyClamp.swift — Verified 2026-11-14: same run; SensorySafetyTests covers every SafetyClamp function
+- [X] ACC-012-T04 [P] Value-level clamp table (each preset × glow intensity, binding, speed, flash configuration), precedence, identity and out-of-range tests (custom never looser than Standard: flashes ≤ 3, rise nil only as Standard's) in Packages/FlashSafety/Tests/FlashSafetyTests/SensorySafetyTests.swift — Verified 2026-11-14: SensorySafetyTests 7 tests pass (host; Linux in CI's FlashSafety loop)
 
 ## Phase 3: User Story 1 - Choose a stricter profile and trust it holds (P1)
 
