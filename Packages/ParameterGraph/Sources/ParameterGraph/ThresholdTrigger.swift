@@ -154,7 +154,7 @@ public final class ThresholdTriggerBank {
         var next: ContiguousArray<Slot> = []
         next.reserveCapacity(Self.maximumTriggers)
         for binding in bindings {
-            if case let .band(index) = binding.source, !(0...AudioFeatureSource.maximumBandIndex).contains(index) {
+            if let index = binding.source.bandIndex, !(0...AudioFeatureSource.maximumBandIndex).contains(index) {   // MOD-015: envelopes too
                 throw .bandIndexOutOfRange(index)
             }
             next.append(Slot(binding: binding, trigger: try ThresholdTrigger(settings: binding.settings)))

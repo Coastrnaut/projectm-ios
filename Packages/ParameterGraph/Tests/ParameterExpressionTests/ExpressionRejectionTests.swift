@@ -74,6 +74,12 @@ final class ExpressionRejectionTests: XCTestCase {
         XCTAssertNil(Self.error(for: "audio.kick * 2"))
     }
 
+    /// MOD-015-T07 (research MOD-015-D5): band envelopes are binding sources, not formula names.
+    func testBandEnvelopeSourcesAreNotFormulaNames() {
+        XCTAssertEqual(Self.error(for: "audio.bandEnvelope.slow.0 * 2")?.reason, .unknownIdentifier("audio.bandEnvelope.slow.0"))
+        XCTAssertNil(Self.error(for: "audio.band.0 * 2"))
+    }
+
     func testErrorCarriesPositionAndReason() {
         let error = Self.error(for: "1 +\n  audio.bass")
         XCTAssertEqual(error?.position, SourcePosition(line: 2, column: 3))
