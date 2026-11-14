@@ -12,9 +12,6 @@ import XCTest
 final class CompositorPipelineArchiveTests: XCTestCase {
     func testCompositorPipelinesAreServedFromTheArchiveOnTheNextLaunch() throws {
         let gpu = try GPURig()
-        guard (try? gpu.device.makeBinaryArchive(descriptor: MTLBinaryArchiveDescriptor())) != nil else {
-            throw XCTSkip("binary archives unsupported here")
-        }
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent("perf009-cmp-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: folder) }
         defer { NativePipelineArchive.shared = nil }
@@ -23,6 +20,7 @@ final class CompositorPipelineArchiveTests: XCTestCase {
         let sources: [String] = CompositorShaderSources.archived
 
         let cold = NativePipelineArchive.open(device: gpu.device, store: store, identity: identity, sources: sources)
+        if cold.outcome == .unsupported { throw XCTSkip("binary archives unsupported here") }
         NativePipelineArchive.shared = cold
         _ = try Compositor(device: gpu.device)
         XCTAssertEqual(cold.outcome, .miss)

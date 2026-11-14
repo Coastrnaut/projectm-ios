@@ -54,6 +54,11 @@ option each time.
   labelled sample to `Documents/perf009.json` and exits. `run_device_tests.py warmstart` alternates cold and warm
   launches (10 each by default) and prints medians. Tests use an injected clock and step counters; app launch
   phases are OSSignposter intervals. QA-010's thresholds are not changed (no new budget without device numbers).
+- Q: ADR-0024 (SHD-011) forbids Metal binary archives everywhere; how does the shader cache fit? → A: ADR-0062
+  amends it with one reviewed exception: only `NativePipelineArchive.swift` may open an archive, only one the app
+  serialized from its reviewed module-constant shaders, only on an exact key and checksum match. Tests build their
+  pipelines through the real `FlatShapePass` and `Compositor`, so no test file compiles Metal source or opens an
+  archive. (Decided during implement, 2026-11-14.)
 
 ## User Scenarios & Testing *(mandatory)*
 

@@ -10,7 +10,7 @@ literals**. Each violation line ends with the rule name in parentheses.
 | `script engine or expression evaluation (SHD-011)` | `import JavaScriptCore` (any import kind), `<JavaScriptCore/`, `JSContext`, `JSVirtualMachine`, `JSValue`, `JSEvaluateScript`, `NSExpression`, `NSPredicate(format:` whose first argument is not a string literal |
 | `process spawning (SHD-011)` | `posix_spawn`, `posix_spawnp`, `NSTask`, `Process(`, a free `system(` call (not `.system(` and not `func system(`), `execv`/`execl`/`execve`/`execvp`, `fork(`, `vfork`, `popen(` |
 | `executable memory (SHD-011)` | `PROT_EXEC`, `MAP_JIT`, `mprotect`, `pthread_jit_write_protect_np` |
-| `Metal library from outside the reviewed sources (SHD-011)` | `makeLibrary(source:` or `newLibraryWithSource` outside the allowlist; `makeLibrary(URL:`, `makeLibrary(data:`, `makeLibrary(filepath:`, `makeDefaultLibrary(bundle:`, `makeDynamicLibrary`, `MTLDynamicLibrary`, `newLibraryWithURL`, `newLibraryWithData`, `newLibraryWithFile`, `makeBinaryArchive` anywhere |
+| `Metal library from outside the reviewed sources (SHD-011)` | `makeLibrary(source:` or `newLibraryWithSource` outside the allowlist; `makeLibrary(URL:`, `makeLibrary(data:`, `makeLibrary(filepath:`, `makeDefaultLibrary(bundle:`, `makeDynamicLibrary`, `MTLDynamicLibrary`, `newLibraryWithURL`, `newLibraryWithData`, `newLibraryWithFile` anywhere; `makeBinaryArchive` outside `BINARY_ARCHIVE_ALLOWED` (one file, ADR-0062) |
 
 Allowlist (`METAL_SOURCE_ALLOWED`, paths relative to the repository root): the eight files in
 research SHD-011-D4. Adding a file is a reviewed change to the script and to ADR-0024.
