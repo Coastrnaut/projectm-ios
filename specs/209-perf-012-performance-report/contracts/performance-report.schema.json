@@ -1,0 +1,580 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Coastrnaut/projectm-ios/specs/209-perf-012-performance-report/contracts/performance-report.schema.json",
+  "title": "projectM-iOS performance report",
+  "description": "PERF-012: a user-initiated, local performance report. Schema version 1. Metadata and counters only: no media, file names, paths, preset, scene, text overlay or recording names, OSC peer addresses, audio, identifiers or user-entered text (PERF-012-R9). An unavailable value is an absent key, never 0.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "exportedAt",
+    "device",
+    "app",
+    "session",
+    "frames",
+    "states",
+    "resources"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "kind": {
+      "const": "projectM-iOS.performanceReport"
+    },
+    "exportedAt": {
+      "type": "string",
+      "maxLength": 40,
+      "description": "ISO 8601 UTC"
+    },
+    "device": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model",
+        "osBuild"
+      ],
+      "properties": {
+        "model": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "osVersion": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "osBuild": {
+          "type": "string",
+          "maxLength": 40
+        }
+      }
+    },
+    "app": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "build"
+      ],
+      "properties": {
+        "version": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "build": {
+          "type": "string",
+          "maxLength": 40
+        }
+      }
+    },
+    "session": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "durationSeconds",
+        "visual",
+        "overlayShown"
+      ],
+      "properties": {
+        "durationSeconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "visual": {
+          "enum": [
+            "projectM",
+            "native",
+            "camera",
+            "photo",
+            "video",
+            "text",
+            "none",
+            "unknown"
+          ]
+        },
+        "overlayShown": {
+          "type": "boolean"
+        }
+      }
+    },
+    "frames": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Intervals between frames handed to the display while the performance overlay was shown, since launch. Percentiles: upper edge of the nearest-rank 0.1 ms bucket, capped by the exact maximum.",
+      "required": [
+        "sampleCount",
+        "measuredSeconds",
+        "resolutionMs",
+        "longFrames"
+      ],
+      "properties": {
+        "sampleCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "measuredSeconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "resolutionMs": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "p50Ms": {
+          "type": "number",
+          "minimum": 0
+        },
+        "p90Ms": {
+          "type": "number",
+          "minimum": 0
+        },
+        "p95Ms": {
+          "type": "number",
+          "minimum": 0
+        },
+        "p99Ms": {
+          "type": "number",
+          "minimum": 0
+        },
+        "maxMs": {
+          "type": "number",
+          "minimum": 0
+        },
+        "longFrames": {
+          "type": "array",
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "thresholdMs",
+              "count"
+            ],
+            "properties": {
+              "thresholdMs": {
+                "enum": [
+                  25,
+                  50,
+                  100
+                ]
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    "frameDrops": {
+      "description": "PERF-007: frames presented, late and skipped per output, counted on the device only (optional; metadata only). A missing count means unavailable on that path.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "outputs"
+      ],
+      "properties": {
+        "outputs": {
+          "type": "array",
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "output",
+              "stale"
+            ],
+            "properties": {
+              "output": {
+                "enum": [
+                  "device",
+                  "external",
+                  "recording"
+                ]
+              },
+              "submitted": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "skipped": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "presented": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "late": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "discarded": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "stale": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    "frameTimings": {
+      "description": "PERF-001: per-stage frame timings over the most recent frames (optional; metadata only). A missing CPU or GPU key means unavailable.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "windowFrames",
+        "rejectedSamples",
+        "stages"
+      ],
+      "properties": {
+        "windowFrames": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rejectedSamples": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "frameGPUMedianMs": {
+          "type": "number",
+          "minimum": 0
+        },
+        "frameGPUP95Ms": {
+          "type": "number",
+          "minimum": 0
+        },
+        "budget": {
+          "description": "PERF-002: the frame budget verdict for the same window (optional). A missing estimate means unavailable.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "framesPerSecond",
+            "deadlineMs",
+            "thresholdShare",
+            "clearShare",
+            "thresholdMs",
+            "flaggedPasses"
+          ],
+          "properties": {
+            "framesPerSecond": {
+              "type": "number",
+              "minimum": 0
+            },
+            "deadlineMs": {
+              "type": "number",
+              "minimum": 0
+            },
+            "thresholdShare": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "clearShare": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "thresholdMs": {
+              "type": "number",
+              "minimum": 0
+            },
+            "cpuEstimateMs": {
+              "type": "number",
+              "minimum": 0
+            },
+            "gpuEstimateMs": {
+              "type": "number",
+              "minimum": 0
+            },
+            "flaggedPasses": {
+              "type": "array",
+              "maxItems": 13,
+              "items": {
+                "enum": [
+                  "audio cpu",
+                  "audio gpu",
+                  "render cpu",
+                  "render gpu",
+                  "composite cpu",
+                  "composite gpu",
+                  "output cpu",
+                  "output gpu",
+                  "encode cpu",
+                  "encode gpu",
+                  "present cpu",
+                  "present gpu",
+                  "gpu frame"
+                ]
+              }
+            }
+          }
+        },
+        "effectQuality": {
+          "description": "PERF-003: the native visual's adaptive effect quality level and, below full, its reason (optional).",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "level"
+          ],
+          "properties": {
+            "level": {
+              "enum": [
+                "full",
+                "reduced",
+                "minimal"
+              ]
+            },
+            "reason": {
+              "enum": [
+                "thermal",
+                "low power",
+                "budget"
+              ]
+            }
+          }
+        },
+        "stages": {
+          "type": "array",
+          "maxItems": 6,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "samples"
+            ],
+            "properties": {
+              "name": {
+                "enum": [
+                  "audio",
+                  "render",
+                  "composite",
+                  "output",
+                  "encode",
+                  "present"
+                ]
+              },
+              "samples": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "cpuMedianMs": {
+                "type": "number",
+                "minimum": 0
+              },
+              "cpuP95Ms": {
+                "type": "number",
+                "minimum": 0
+              },
+              "gpuMedianMs": {
+                "type": "number",
+                "minimum": 0
+              },
+              "gpuP95Ms": {
+                "type": "number",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    "states": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "current",
+        "timeline",
+        "truncated"
+      ],
+      "properties": {
+        "current": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "atSeconds",
+            "thermal",
+            "lowPower",
+            "profile",
+            "maxFramesPerSecond",
+            "renderScale"
+          ],
+          "properties": {
+            "atSeconds": {
+              "type": "number",
+              "minimum": 0
+            },
+            "thermal": {
+              "enum": [
+                "nominal",
+                "fair",
+                "serious",
+                "critical",
+                "unknown"
+              ]
+            },
+            "lowPower": {
+              "type": "boolean"
+            },
+            "profile": {
+              "enum": [
+                "standard",
+                "followLowPowerMode",
+                "batterySaver",
+                "unknown"
+              ]
+            },
+            "maxFramesPerSecond": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "renderScale": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        "timeline": {
+          "type": "array",
+          "maxItems": 200,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "atSeconds",
+              "thermal",
+              "lowPower",
+              "profile",
+              "maxFramesPerSecond",
+              "renderScale"
+            ],
+            "properties": {
+              "atSeconds": {
+                "type": "number",
+                "minimum": 0
+              },
+              "thermal": {
+                "enum": [
+                  "nominal",
+                  "fair",
+                  "serious",
+                  "critical",
+                  "unknown"
+                ]
+              },
+              "lowPower": {
+                "type": "boolean"
+              },
+              "profile": {
+                "enum": [
+                  "standard",
+                  "followLowPowerMode",
+                  "batterySaver",
+                  "unknown"
+                ]
+              },
+              "maxFramesPerSecond": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "renderScale": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          }
+        },
+        "truncated": {
+          "type": "boolean"
+        }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "memory"
+      ],
+      "properties": {
+        "texturePool": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "pools",
+            "liveTextures",
+            "liveBytes",
+            "retiredTextures",
+            "retiredBytes",
+            "hits",
+            "misses",
+            "evictions",
+            "purges"
+          ],
+          "properties": {
+            "pools": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "liveTextures": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "liveBytes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "retiredTextures": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "retiredBytes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "hits": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "misses": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "evictions": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "purges": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "memory": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "footprintBytes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "peakFootprintBytes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "availableBytes": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    }
+  }
+}
