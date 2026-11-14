@@ -51,6 +51,16 @@ interaction); each answer is the conservative, local-first option.
 - Q: How do existing stored copies move to the new layout? → A: Once, at launch, after the FILE-005 restore recovery and before any import: each old `<UUID>.ext` file is moved into the content-addressed layout under the same identifier. Every step is atomic and repeatable, so an interruption at any point is finished at the next launch; old identifiers keep resolving before, during and after.
 - Q: Does the backup change? → A: No. A backup still lists `photos/<UUID>.ext` with that reference's bytes; two references to one payload appear as two entries with equal bytes. A restore writes plain files that the next launch's migration deduplicates.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Five questions, each answered by Claude with the recommended option (owner rule 4).
+
+- Q: Where does the hashing and the launch migration run? → A: Off the main thread: imports already run on a detached task (PhotoCoordinator, VideoCoordinator) and hash there; the launch pass runs on a utility task after the FILE-005 restore recovery and never delays the first frame. Until it finishes, old `<UUID>.ext` files resolve directly (FILE-008-R7).
+- Q: How many references to one payload may a store keep? → A: At most 32. When a new reference would exceed that, the oldest references other than the current one are released (a cue naming a released identifier shows the existing "no longer stored" notice). This bounds the registry; the payload is unaffected while any reference remains (FILE-008-R4).
+- Q: Does a show cue or scene that names an older reference of the current video restore its loop region? → A: Yes: a reference that shares the current video's payload counts as the current video for MED-003-R8 loop restore, because the pictures are identical (FILE-008-R5).
+- Q: Does the launch pass verify each payload's hash? → A: No: it checks names, the registry and byte sizes only (reading every video at every launch costs too much). A damaged payload fails to load as a damaged file does today (MED-001-R11, MED-002-R14); the next import of good bytes replaces it because its size or hash differs (FILE-008-R8).
+- Q: What does the storage screen show about shared copies? → A: The Photos and Videos rows keep the space actually used (payloads once); when shared copies save space, one note under the list says "Shared copies of identical photos and videos save <size>." Nothing is shown when nothing is saved (FILE-008-R11).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Re-importing the same media keeps one copy (Priority: P1)
@@ -113,14 +123,14 @@ and says how much the shared copies save.
 - **FILE-008-R1**: Photo and video stores keep each distinct content once, as a payload named by its SHA-256 and extension, plus a registry mapping each store identifier (reference) to its payload.
 - **FILE-008-R2**: An import computes the hash by streaming the stored copy (never the whole file in memory); when an equal payload (hash and byte size) exists, the import adds a reference and writes no second payload.
 - **FILE-008-R3**: Store identifiers keep their format (canonical UUID) and meaning: settings, scenes, cues, autosave, history and archives are unchanged; resolving accepts only a canonical UUID and payload names inside the store folder (MED-001-R14, MED-002-R18 kept).
-- **FILE-008-R4**: Making a content current keeps references to the same payload and releases all others; releasing the last reference of a payload deletes it immediately; Remove deletes every reference and payload.
-- **FILE-008-R5**: Every identifier that resolves (not only the current one) counts as present when scenes and cues are checked for missing media.
+- **FILE-008-R4**: Making a content current keeps references to the same payload (at most 32; the oldest non-current ones are released beyond that) and releases all others; releasing the last reference of a payload deletes it immediately; Remove deletes every reference and payload.
+- **FILE-008-R5**: Every identifier that resolves (not only the current one) counts as present when scenes and cues are checked for missing media, and a reference sharing the current video's payload restores its loop region (MED-003-R8).
 - **FILE-008-R6**: The video copy's movie-header creation and modification times are zero, so equal sources give equal copies.
 - **FILE-008-R7**: A launch-time migration moves old `<UUID>.ext` copies into the layout; each step is atomic and repeatable; an interrupted migration completes at the next launch; old identifiers resolve at every point.
-- **FILE-008-R8**: The same launch pass removes temporary files and payloads without a reference; mutations of one folder are serialized.
+- **FILE-008-R8**: The same launch pass (off the main thread) removes temporary files and payloads without a reference, checking names, the registry and sizes but not re-hashing payloads; mutations of one folder are serialized.
 - **FILE-008-R9**: FILE-005 backups list every reference as `photos/<UUID>.ext` with its bytes, so a backup and its restore are exact; restored plain files are deduplicated by the next migration.
 - **FILE-008-R10**: Scene-archive import (FILE-001) of media already stored adds a reference, not a payload, and does not report the photo or video as replaced.
-- **FILE-008-R11**: The storage screen keeps counting physical files and shows the space shared copies save when there is any.
+- **FILE-008-R11**: The storage screen keeps counting physical files and, when shared copies save space, shows one note: "Shared copies of identical photos and videos save <size>."
 - **FILE-008-R12**: Local only: no networking, public APIs only, no new privacy-manifest reason.
 
 ### Key Entities
