@@ -12,8 +12,8 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 126,
-   "implementing": 1,
+   "audited": 125,
+   "implementing": 2,
    "integrated": 24
   },
   "P2": {
@@ -25,8 +25,8 @@
   }
  },
  "by_state": {
-  "audited": 217,
-  "implementing": 2,
+  "audited": 216,
+  "implementing": 3,
   "integrated": 106,
   "skipped_existing": 1
  },
@@ -684,13 +684,13 @@
   },
   "AUD-015": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/aud-015",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "AUD-016": {
    "attempts": 0,
@@ -4080,5 +4080,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T04:04:38Z"
+ "updated": "2026-11-14T04:05:00Z"
 }
