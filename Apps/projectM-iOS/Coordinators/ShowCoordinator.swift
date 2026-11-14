@@ -24,6 +24,10 @@
 // * SCN-006: every scene file this coordinator writes or drops (Add, Duplicate, Rename, removing a
 //   scene's last cue) is reported through `sceneFilesChanged`, so scene previews never outlive the
 //   file they show.
+// * SCN-007: each cue may carry a transition (type, duration, MOD-004 easing) saved in `show.json`. A cue
+//   apply resolves it (`CueTransitionResolver`: Reduce Motion, Reduce flashing) and hands the spec to
+//   `transitionDriver` just before `applyScene`; `setTransition` saves at once and applies nothing; a
+//   duplicate's cue gets its source cue's transition.
 // Main actor; file I/O is small (≤ 1 MiB per file, typically a few KB) and only on user action.
 import Foundation
 import Observation
@@ -71,6 +75,12 @@ final class ShowCoordinator {
     @ObservationIgnored var announceLibrary: (String) -> Void = { (_: String) in }
     /// SCN-006: scene IDs whose files were written or removed (AppCoordinator routes them to the previews).
     @ObservationIgnored var sceneFilesChanged: (Set<String>) -> Void = { (_: Set<String>) in }
+    /// SCN-007: receives each applied cue's resolved transition (set by AppCoordinator; a spy in tests).
+    @ObservationIgnored var transitionDriver: (any CueTransitionDriving)?
+    /// SCN-007: Reduce Motion and Reduce flashing at the moment a cue applies (set by AppCoordinator).
+    @ObservationIgnored var transitionSafety: () -> (reduceMotion: Bool, reduceFlashing: Bool) = { () -> (reduceMotion: Bool, reduceFlashing: Bool) in
+        (reduceMotion: false, reduceFlashing: false)
+    }
     /// SCN-006: the scene previews Scene Folders shows (set by AppCoordinator; nil in tests of the show alone).
     @ObservationIgnored weak var previews: ScenePreviewModel?
 
@@ -160,15 +170,18 @@ final class ShowCoordinator {
         let report = SceneRepairReport(document: decoded.document, decodeWarnings: decoded.warnings, registry: registry,
                                        assets: availability())
         guard report.needsReview, let requestRepair else {
-            return apply(decoded.document, decodeWarnings: decoded.warnings, sceneID: cue.sceneID, number: number)
+            return apply(decoded.document, decodeWarnings: decoded.warnings, sceneID: cue.sceneID, number: number,
+                         transition: cue.transition)
         }
         if !report.canOpenAsIs { unreadableScenes.insert(cue.sceneID) }
         clearNotice()
         let sceneID = cue.sceneID
         let warnings = decoded.warnings
+        let transition = cue.transition
         requestRepair(SceneRepairRequest(title: title, report: report, document: decoded.document,
                                          open: { [weak self] (document: SceneDocument) in
-                                             self?.apply(document, decodeWarnings: warnings, sceneID: sceneID, number: number)
+                                             self?.apply(document, decodeWarnings: warnings, sceneID: sceneID, number: number,
+                                                         transition: transition)
                                          }))
     }
 
@@ -176,7 +189,8 @@ final class ShowCoordinator {
 
     /// Validates and applies a document for the cue (as stored, or repaired by SCN-012); errors leave
     /// the output unchanged with the notice.
-    private func apply(_ document: SceneDocument, decodeWarnings: [SceneIssue], sceneID: String, number: Int) {
+    private func apply(_ document: SceneDocument, decodeWarnings: [SceneIssue], sceneID: String, number: Int,
+                       transition: ShowCueTransition?) {
         guard let registry else { return post(Self.failure(number)) }
         let loaded: SceneLoadResult
         do {
@@ -186,6 +200,10 @@ final class ShowCoordinator {
             return post(Self.failure(number))
         }
         unreadableScenes.remove(sceneID)
+        let safety = transitionSafety()   // SCN-007-R5: the transition first, then the scene
+        transitionDriver?.driveTransition(CueTransitionResolver.resolved(transition, reduceMotion: safety.reduceMotion,
+                                                                         reduceFlashing: safety.reduceFlashing),
+                                          toScene: sceneID)
         let notes = applyScene?(document, decodeWarnings + loaded.warnings) ?? []
         appliedSceneID = sceneID
         if let first = notes.first {
@@ -266,7 +284,8 @@ final class ShowCoordinator {
         }
         let inserted: ShowCue
         do throws(ShowEditError) {
-            inserted = try list.insert(sceneID: copy.id, label: ShowCueList.copyLabel(cue.label), after: cue.id)
+            inserted = try list.insert(sceneID: copy.id, label: ShowCueList.copyLabel(cue.label), after: cue.id,
+                                       transition: cue.transition)   // SCN-007-R8
         } catch {
             editorMessage = error.description   // the copy's file is removed by the next save (unreferenced)
             return nil
@@ -330,6 +349,14 @@ final class ShowCoordinator {
     @discardableResult
     func rename(_ cueID: UUID, to label: String) -> Bool {
         guard (try? list.rename(cueID, to: label)) != nil else { return false }
+        save()
+        return true
+    }
+
+    /// SCN-007: sets or (nil) removes a cue's transition and saves; never applies anything.
+    @discardableResult
+    func setTransition(_ cueID: UUID, to transition: ShowCueTransition?) -> Bool {
+        guard (try? list.setTransition(cueID, to: transition)) != nil else { return false }
         save()
         return true
     }

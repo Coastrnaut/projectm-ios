@@ -1,0 +1,9 @@
+# Research: SCN-007
+
+- **SCN-007-D1 Easing type.** Reuse MOD-004 `MappingCurve` (validated, monotonic, exact ends, text form `textForm`/`init?(textForm:)` that round-trips Doubles via `String(Double)`). Rejected: CMP-014's `SceneTransitionEasing` (two values, no custom curves) and a new curve type.
+- **SCN-007-D2 Bus integration.** Add `curve: MappingCurve?` to `SceneTransitionSpec` and `SceneTransitionClock`; `easedProgress` uses the curve when set. The spec encodes `curve` (text form) only when set, so CMP-014 encodings are unchanged. Rejected: changing `SceneTransitionEasing` into an enum with payloads (breaks its raw-value Codable form and `CaseIterable`).
+- **SCN-007-D3 Storage.** Optional `transition` object per cue entry in `show.json`: `{"duration": <number>, "easing": "<text form>", "type": "<string>"}` (sorted keys). JSONEncoder writes Doubles in shortest round-trip form, so durations come back bit-identical. Absent = no key (byte-identical legacy files).
+- **SCN-007-D4 Lenient read.** Like SCN-005: the cue entry decodes `transition` leniently; a transition that is not an object, has a non-finite or out-of-range duration, an unreadable or invalid easing, or a type that is empty or over 64 characters is dropped and counted (`droppedTransitions`). An unknown type is kept and reported (`unknownTransitionType`).
+- **SCN-007-D5 Live renderer.** No app code creates a `SceneTransitionBus` today; cue applies set settings directly. The coordinator drives a `CueTransitionDriving` protocol; the app's driver records the last spec (DEBUG probe). Wiring the bus into the visualizer is out of scope (follow-up).
+- **SCN-007-D6 Safety.** Reduce Motion → cut (CMP-014-R10). Else Reduce flashing → minimum 0.5 s (a cut becomes a linear crossfade). FX-019's guard runs on every bus frame regardless (unchanged).
+- **SCN-007-D7 Duplicate Scene.** The inserted cue copies the source cue's transition.

@@ -7,6 +7,9 @@
 // scene name differs from its label shows "Scene: <name>" and VoiceOver reads ", scene <name>".
 // MIDI-007-R8: Assign MIDI… per cue (context menu, a leading "MIDI" swipe action, VoiceOver action) opens
 // `MIDISceneAssignView` for the cue's scene when the app passes the MIDI mappings.
+// SCN-007-R9: Transition… per cue (context menu, a leading "Transition" swipe action, VoiceOver action) opens
+// `CueTransitionView`; a cue with a transition shows "Transition: Crossfade 1.5 s, Ease Out" under its label
+// and VoiceOver reads ", transition Crossfade 1.5 seconds, Ease Out".
 import SceneFormat
 import ShowControl
 import SwiftUI
@@ -21,6 +24,7 @@ struct ShowEditorView: View {
     @State private var renamingScene: ShowCue?
     @State private var sceneNameText = ""
     @State private var assigningMIDI: ShowCue?
+    @State private var editingTransition: ShowCue?
 
     var body: some View {
         List {
@@ -83,6 +87,9 @@ struct ShowEditorView: View {
         .sheet(isPresented: Binding(get: { assigningMIDI != nil }, set: { if !$0 { assigningMIDI = nil } })) {
             assignSheet
         }
+        .sheet(isPresented: Binding(get: { editingTransition != nil }, set: { if !$0 { editingTransition = nil } })) {
+            transitionSheet
+        }
         .accessibilityIdentifier("showEditor")
     }
 
@@ -91,6 +98,13 @@ struct ShowEditorView: View {
         if let cue = assigningMIDI, let midiMappings {
             MIDISceneAssignView(mappings: midiMappings, sceneID: cue.sceneID, sceneName: show.sceneName(of: cue) ?? cue.label,
                                 dismiss: { () -> Void in assigningMIDI = nil })
+        }
+    }
+
+    /// SCN-007: the Transition sheet for the chosen cue.
+    @ViewBuilder private var transitionSheet: some View {
+        if let cue = editingTransition {
+            CueTransitionView(show: show, cueID: cue.id, dismiss: { () -> Void in editingTransition = nil })
         }
     }
 
@@ -129,6 +143,9 @@ struct ShowEditorView: View {
                 if let sceneName {
                     Text("Scene: \(sceneName)").font(.caption)
                 }
+                if let transition = CueTransitionResolver.summary(cue.transition) {   // SCN-007
+                    Text("Transition: \(transition)").font(.caption).foregroundStyle(.secondary)
+                }
                 if missing {
                     Label("Scene missing", systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.orange)
                 }
@@ -146,6 +163,10 @@ struct ShowEditorView: View {
         if active { value += ", active" }
         if missing { value += ", scene missing" }
         if let sceneName { value += ", scene \(sceneName)" }
+        if let transition = CueTransitionResolver.summary(cue.transition) {   // SCN-007
+            let spoken: String = transition.replacingOccurrences(of: " s,", with: " seconds,")
+            value += ", transition \(spoken)"
+        }
         let selectedTraits: AccessibilityTraits = active ? .isSelected : []
         return content
             .accessibilityElement(children: .ignore)
@@ -165,6 +186,7 @@ struct ShowEditorView: View {
                     .disabled(missing || full)
                 Button("Rename Scene…") { startSceneRename(cue) }.disabled(missing)
                 if midiMappings != nil { Button("Assign MIDI…") { assigningMIDI = cue } }   // MIDI-007-R8
+                Button("Transition…") { editingTransition = cue }   // SCN-007
                 Button("Delete", role: .destructive) { show.remove(cue.id) }
             }
             .swipeActions(edge: .leading) {
@@ -181,6 +203,9 @@ struct ShowEditorView: View {
                         .accessibilityLabel("Rename Scene")
                         .accessibilityIdentifier("showRenameScene")
                 }
+                Button("Transition") { editingTransition = cue }   // SCN-007
+                    .tint(.orange)
+                    .accessibilityIdentifier("showCueTransition")
                 if midiMappings != nil {   // MIDI-007-R8
                     Button("MIDI") { assigningMIDI = cue }
                         .tint(.teal)
@@ -197,6 +222,7 @@ struct ShowEditorView: View {
             .accessibilityAction(named: "Duplicate Scene") { show.duplicateScene(of: cue.id) }
             .accessibilityAction(named: "Rename Scene") { startSceneRename(cue) }
             .accessibilityAction(named: "Assign MIDI") { if midiMappings != nil { assigningMIDI = cue } }   // MIDI-007-R8
+            .accessibilityAction(named: "Transition") { editingTransition = cue }   // SCN-007
             // ACC-004-R3: reordering without Edit mode's drag handles.
             .accessibilityAction(named: "Move Up") { move(number - 1, by: -1) }
             .accessibilityAction(named: "Move Down") { move(number - 1, by: 1) }

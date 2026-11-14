@@ -154,7 +154,7 @@ restore it on this or another device: your show and its scenes, the current scen
 imported or copied from Included presets (with their texts), your collections, favorites and last
 preset, your settings, and your stored photos. It contains no audio, no videos, no imported audio
 files, no copies of presets from the full library purchase, no record of your purchase, no device
-details and no listening history, and it does not turn on OSC or MIDI on another device.
+details, no listening history and no recently played list, and it does not turn on OSC or MIDI on another device.
 
 - The app writes a backup only when you tap Back Up Library…, into its temporary folder, and moves
   it to the place you choose in Files; if you cancel, the copy is deleted. The backup leaves your
@@ -176,7 +176,7 @@ details and no listening history, and it does not turn on OSC or MIDI on another
 ## Erasing your data
 
 Erase Data… (Settings → Storage) removes the data you choose from this device: scenes and the show,
-My Presets, collections and favorites, imported photos and videos, imported audio, or settings (back
+My Presets, collections, tags, favorites and the recently played list, imported photos and videos, imported audio, or settings (back
 to their defaults). You see what each choice holds and confirm by name; the erase happens the next
 time the app opens, and you can cancel it until then. It never removes the app's bundled presets,
 your full library purchase (that stays with your App Store account), caches, your Reduce flashing
@@ -332,6 +332,11 @@ collections):
   keeps none of the choices you made in it);
 - the preset collections you create: their names, which presets are in them, and the order you
   put them in. No dates and no record of what you played are kept with them.
+- only if you turn on "Remember Recently Played" (Settings; it is off unless you turn it on), the
+  last 50 presets that stayed on screen for at least 3 seconds, as preset identifiers in order, newest first, and whether that
+  setting is on. No dates, times, audio or app names are kept with them. "Clear History" deletes the
+  list (your favorites, collections and tags stay); turning the setting off deletes it too. The list is
+  never put in a library backup.
 
 And, only if you import audio, the files you imported and their list (see "Audio files you
 import").
@@ -371,8 +376,8 @@ small values with your settings: whether the app is open right now, how many lau
 chose "Reopen last scene" (kept for at most two launches), and, while that offer is unanswered,
 which visual to reopen. No times, crash details or content are kept, and nothing is sent anywhere.
 
-No captured or microphone audio, listening history or record of which apps you listened to is
-stored. Deleting the app
+No captured or microphone audio, record of what audio you listened to, or record of which apps you
+listened to is stored (the recently played list above holds only visual presets). Deleting the app
 deletes all of this.
 
 ## The full preset library purchase
@@ -434,4 +439,5 @@ issue in that repository.
 | FILE-011-R11 (`specs/120-file-011-local-data-erase/spec.md`): Erase Data… removes only the categories the user confirms, on this device, at the next launch; never the bundled presets, the purchase, caches or safety settings | Erasing your data |
 | SCN-002-R11 (`specs/067-scn-002-scene-autosave/spec.md`): the autosaved current scene (the shown visual's settings, text and stored photo/video identifiers) and one earlier copy, on the device only | What is stored on your device |
 | PERF-010-R13 (`specs/070-perf-010-crash-safe-session-recovery/spec.md`): the session recovery values (session open, launches since a reopen, the visual to reopen); after an unexpected close the OSC receiver is turned off and nothing listens until the user turns it on | OSC control on your local network; What is stored on your device |
+| PRE-006-R9 (`specs/159-pre-006-recent-history/spec.md`, ADR-0055, amends FR-065/FR-123): the recently played preset IDs (at most 50, no times), kept only when the user turns on the "Remember Recently Played" switch (off by default); off or Clear History deletes the list; never in a backup | What is stored on your device |
 | PRE-012-R30 (`specs/008-pre-012-preset-import-validation/spec.md`, amends FR-065): preset files the user imports, quarantined ones included, and their record; extended by PRE-015-R23 (`specs/010-pre-015-user-preset-duplication/spec.md`): copies of built-in presets, their origin, and edited preset text | What is stored on your device |

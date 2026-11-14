@@ -46,7 +46,8 @@ final class LibraryEraseAppTests: XCTestCase {
         let appKeys: Set<String> = Set(AppSettings.allKeys + LatencyOffsetSetting.allKeys + ColorGradeSetting.allKeys + MotionFeedbackSetting.allKeys + EffectChainSetting.allKeys
             + [InputTrimSetting.decibelsKey, ChannelSelectionSetting.modeKey, NoiseGateSetting.enabledKey, NoiseGateSetting.thresholdKey,
                FavoritesStore.favoritesKey, FavoritesStore.lastPresetKey, PhotoStore.idKey, VideoStore.idKey, VideoStore.loopKey, TextOverlayStore.key,
-               RecordingAudioSetting.includeMicrophoneKey])   // REC-004-R3
+               RecordingAudioSetting.includeMicrophoneKey]   // REC-004-R3
+            + RecentPresetsStore.allKeys)   // PRE-006-R7
         let classified: Set<String> = Set(LibraryErasePolicy.erasableKeys + LibraryErasePolicy.neverErasedKeys)
         XCTAssertEqual(appKeys.subtracting(classified), [], "every app setting is erased by a category or deliberately kept")
     }
@@ -138,7 +139,7 @@ final class LibraryEraseAppTests: XCTestCase {
         screen.announce = { (text: String) in spoken.append(text) }
         screen.erase.refresh()
         XCTAssertNil(screen.erase.pending)
-        XCTAssertEqual(screen.erase.message, "Erased: scenes and show, collections, tags and favorites, settings.")
+        XCTAssertEqual(screen.erase.message, "Erased: scenes and show, collections, tags, favorites and history, settings.")
         XCTAssertEqual(spoken.last, screen.erase.message)
         let again = LibraryBackupCoordinator(folders: LibraryFolders(root: root), defaults: defaults, temporaryRoot: temporaryFolder("t3"))
         again.erase.refresh()
