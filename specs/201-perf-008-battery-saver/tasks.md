@@ -22,7 +22,7 @@
 - [ ] PERF-008-T09 [US1] Recording render limit `Reason.batterySaver` ("Battery saver limits the visual to 30 fps.") in Packages/Compositor/Sources/FrameRecording/RecordingFrameRate.swift; `RecordingQualitySetting.renderLimit(thermal:lowPower:budget:)`
 - [ ] PERF-008-T10 [US1] Overlay line `power <title lowercased> <fps> fps <scale>x` when the budget is not standard, in Apps/projectM-iOS/Coordinators/AppCoordinator+FrameStages.swift
 - [ ] PERF-008-T11 [US1] Keys: `settings.performance.powerProfile` in `ALLOWED_KEYS` (scripts/run_device_tests.py) and `LibrarySettingsPolicy.includedKeys` (Packages/LibraryBackup/Sources/LibraryBackup/LibrarySettings.swift)
-- [ ] PERF-008-T12 [US1] Acceptance in Apps/projectM-iOS/Tests/PowerProfileAppTests.swift: a real `CaptureManager` with a fake source running; switching Standard → Battery saver → Standard changes the governor's budgets (60/1.0 → 30/0.75 → 60/1.0 at nominal), the prewarm scheduler's next-cue limit and the native host's quality, while the manager's mode, state, pause, switching, configuration and the source's start/stop counts are identical; the recording limit reason; persistence and unknown value
+- [ ] PERF-008-T12 [US1] Acceptance in Apps/projectM-iOS/Tests/PowerProfileAppTests.swift: a real `CaptureManager` with a fake source running; switching Standard → Battery saver → Standard changes the governor's budgets (60/1.0 → 30/0.75 → 60/1.0 at nominal), the prewarm scheduler's next-cue limit and the native host's quality, while the manager's mode, state, pause, switching, configuration and the source's start/stop counts are identical; the recording limit reason; persistence and unknown value; the frame loop is not restarted (the native host's display link object is the same before and after, PERF-008-R4)
 - [ ] PERF-008-T13 [US1] UI test Apps/projectM-iOS/UITests/PowerProfileUITests.swift: pick Battery saver, it is selected; relaunch keeps it (under 30 s)
 
 ## Phase 4: User Story 2 - Follow Low Power Mode (P2)
@@ -31,7 +31,7 @@
 
 ## Phase 5: Polish
 
-- [ ] PERF-008-T15 Repo checks (compliance, docs, motion, permission catalog, status events, script tests), privacy manifest and network symbols on the Debug app; type-check budget flags; PosterBoard counts
+- [ ] PERF-008-T15 Repo checks (compliance, docs, motion, permission catalog, status events, script tests), privacy manifest and network symbols on the Debug app; confirm no scene, show or preset format gained a profile field (PERF-008-R10, `grep -r powerProfile Packages/SceneFormat Packages/ShowControl` empty); type-check budget flags; PosterBoard counts
 - [ ] PERF-008-T16 {device} D1: 5 min Standard vs 5 min Battery saver (same preset, In-App Playback), Instruments Energy Log + Metal System Trace with the "Power profile" signpost; record frame time and energy per minute in docs/test-reports/performance.md (PERF-008-S3)
 
 ## Dependencies
@@ -41,3 +41,9 @@ T02 → T03 → T04/T05/T06/T09; T07 → T08, T10, T12; T12, T13 after T05-T11. 
 ## Implementation strategy
 
 MVP = Phase 2 + US1 (T02-T13). US2 adds no code beyond the budget mapping.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+No CRITICAL or HIGH findings; coverage 10/10 requirements, S1-S2 by T04/T12, S3 by T16 `{device}`. Applied: R10
+had no task (added the check to T15); R4 "without restarting" had no assertion (added to T12). Remaining LOW: the
+background edge case relies on the notification path (no separate test).
