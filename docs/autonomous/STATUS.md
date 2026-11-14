@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T15:32:16Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T15:32:47Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,8 +11,8 @@
 |---|---|
 | audited | 149 |
 | implementing | 2 |
-| unit_passed | 5 |
-| integrated | 169 |
+| unit_passed | 4 |
+| integrated | 170 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -21,13 +21,13 @@
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
 | P1 | 65 | 2 | 4 | 80 | 0 |
-| P2 | 73 | 0 | 1 | 5 | 0 |
+| P2 | 73 | 0 | 0 | 6 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 156 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)
+- 155 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-011, ANL-012)
 
 ## Integrated
 
@@ -50,6 +50,7 @@ The physical-device suite may **not** start:
 | ANL-006 | Tempo confidence indicator | `b0abb4e` | `feature/anl-006` |
 | ANL-007 | Kick energy detector | `cc15362` | `feature/anl-007` |
 | ANL-008 | Snare-like transient detector | `ae0249ac` | `feature/anl-008` |
+| ANL-009 | High-frequency transient detector | `a69be2403c0f` | `None` |
 | ANL-010 | Spectral centroid | `bf6d440f` | `feature/anl-010` |
 | ANL-014 | Loudness envelope | `c3900199` | `feature/anl-014` |
 | ANL-016 | Analysis event bus | `97e498d64a14` | `feature/anl-016` |
@@ -385,7 +386,7 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `981d361c0c22` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-008/20261114T064150/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `981d361c0c22` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-008/20261114T064150/swift-test_VisualGenerators.log`)
 
-### ANL-009 High-frequency transient detector (unit_passed)
+### ANL-009 High-frequency transient detector (integrated)
 - `python3 scripts/check_compliance.py`: pass at `1de4c76557be` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-009/20261114T102124/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `1de4c76557be` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-009/20261114T102124/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `1de4c76557be` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-009/20261114T102124/sim-test_ANGLERendering.log`)
