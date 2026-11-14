@@ -69,6 +69,7 @@ struct VisualizerView: View {
             externalDisplayLayer
             pausedLayer
             tapArea
+            CameraFocusLayer(coordinator: coordinator)   // CAM-005-R5, R6: ring and explanation
             statusLayers
             keyCommandLayers
             SceneSwitcherLayer(coordinator: coordinator)   // UIX-002: the quick scene switcher
@@ -128,6 +129,7 @@ struct VisualizerView: View {
         Color.clear
             .contentShape(Rectangle())
             .ignoresSafeArea()
+            .modifier(CameraFocusGesture(coordinator: coordinator))   // CAM-005-R1, R7: double-tap, before the single tap
             .onTapGesture { () -> Void in coordinator.toggleControls() }
             .accessibilityIdentifier("visualizerTapArea")
             .accessibilityLabel("Visualization")
@@ -479,6 +481,7 @@ struct VisualizerView: View {
                      cameraStatus: { () -> PermissionState? in coordinator.cameraPermissionStatus },
                      cameraLens: coordinator.cameraLensChoice,   // CAM-003
                      cameraExposure: coordinator.cameraExposureChoice,   // CAM-004
+                     cameraCanFocus: { () -> Bool in coordinator.cameraFocus.canFocus },   // CAM-005
                      recentPresets: coordinator.presets.recent,   // PRE-006
                      powerProfile: coordinator.powerProfile,   // PERF-008
                      performanceReport: coordinator.performanceReport,   // PERF-012

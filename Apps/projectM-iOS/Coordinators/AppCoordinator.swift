@@ -229,6 +229,9 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     @ObservationIgnored let cameraLensInventory: any CameraLensInventory = CameraVisualHost.makeLensInventory()
     /// CAM-004: the camera's exposure, read back (session state; CameraExposureRow.swift).
     private(set) var cameraExposure: CameraExposureState = .notRunning(canLock: false)
+    /// CAM-005: the camera's focus, read back, and the ring/explanation shown after a focus tap (CameraFocusRing.swift).
+    private(set) var cameraFocus: CameraFocusState = .notRunning(canFocus: false)
+    @ObservationIgnored let cameraFocusFeedback = CameraFocusFeedback()
     /// CAM-003-R6: a lens the user chose waits for the switch's end (CameraLensRow.swift).
     @ObservationIgnored var cameraLensChoicePending = false
     /// CAM-013: why the camera is interrupted or failed (nil otherwise), and whether a Retry waits.
@@ -1197,6 +1200,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.onFeedStateChange = { [weak self] state in self?.cameraStateChanged(state) }
             host.onExposureChange = { [weak self] (state: CameraExposureState) -> Void in self?.cameraExposure = state }   // CAM-004
             cameraExposure = host.cameraExposure
+            host.onFocusChange = { [weak self] (state: CameraFocusState) -> Void in self?.cameraFocus = state }   // CAM-005
+            cameraFocus = host.cameraFocus
             host.onRecoveryChange = { [weak self, weak host] () -> Void in   // CAM-013
                 self?.cameraRetryPending = host?.retryPending ?? false
             }
@@ -1367,6 +1372,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         cameraVisual = nil   // the presentation registry holds it weakly
         cameraState = .idle
         cameraExposure = .notRunning(canLock: false)   // CAM-004-R7: the host's stop released the camera
+        cameraFocus = .notRunning(canFocus: false)   // CAM-005-R8: the host's stop reset the focus
         cameraStopReason = nil   // CAM-013
         cameraRetryPending = false
         cameraNoticeDismissed = false   // UIX-015-R7
