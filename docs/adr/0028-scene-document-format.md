@@ -228,3 +228,43 @@ contracts/scene-migration.md). No default is overridden.
   `SceneMigrator.standard` that records every change; list it here; keep every existing fixture,
   regenerate its expected document through the new step and review the diff; add the new version's
   real shapes as fixtures.
+
+## Amendment 2026-11-13 (QA-004, scene migration matrix)
+
+QA-004 (specs/084-qa-004-scene-migration-matrix) runs every supported and just-unsupported format
+version through every place a scene is stored and documents every refusal. No default is overridden;
+the only production change is a defaulted `migrator` parameter on `SceneArchiveReader.read` (a test
+seam like ShowStore's and the autosave store's).
+
+- **Matrix.** `Packages/SceneFormat/Tests/SceneFormatTests/Fixtures/legacy/matrix.json` (beside
+  SCN-013's `manifest.json`; schema in contracts/migration-matrix.md): 17 rows × 6 containers
+  (`SceneDocument.decode`, `SceneRepairReport.open`, `ShowStore.scene`/`load`, `SceneArchiveReader.read`,
+  `SceneAutosaveStore.load`, `GoldenSceneRenderer.document(from:)`). Version 1 (every historical
+  fixture) is current; 0, −1, 2, Int64.max, beyond 64 bits, `1.5`, `1.0`, `1e0`, `"1"`, `null`, missing
+  and a wrong format are refused; test-only chains (labelled, never registered) prove a migration with
+  its audit log, a failing step and a gap. Every cell compares its outcome exactly (refusal case and
+  message, migration log, canonical bytes); the golden harness's test-chain cells are not applicable
+  (no chain seam), with the reason in the matrix.
+- **Error table.** [contracts/scene-decode-errors.md](../../specs/084-qa-004-scene-migration-matrix/contracts/scene-decode-errors.md)
+  lists every `SceneDecodeError` (report code `refusal.<case>`, when, user-facing message, SCN-012
+  group, "if opened" text, covering rows or tests), the `SceneMigrationError` mapping and how each
+  container surfaces a refusal. `matrix.json` `errors` is its data copy.
+- **Enforcement.** `SceneMigrationMatrixMetaTests` scans the two error enums' source and keeps
+  exhaustive switches over them, and fails when a case, a supported version, oldest−1, current+1, a
+  production step, a historical fixture version or a container lacks its row, table entry, contract
+  row or runner, or when a report text drifts from the table. Each runner carries a byte-identical
+  copy of `SceneMigrationMatrixSupport.swift` (checked) and asserts it ran exactly its matrix cells.
+- **Checklist: adding a scene format version N+1** (extends SCN-013's procedure above):
+  1. Raise `SceneDocument.currentVersion` to N+1 and append the step `vN-to-vN+1` to
+     `SceneMigrator.standard`, recording every change; list the step in this ADR.
+  2. Keep every `manifest.json` fixture; regenerate each `expected/` document through the new step and
+     review the diff; add the new version's real shapes under `v<N+1>/` with manifest rows.
+  3. In `matrix.json`: set `currentVersion` (and `oldestSupportedVersion` if it changes); change the
+     version-N row over every fixture to `migrated` with its exact log, add a version-N+1 row over every
+     fixture (`current`), move the "current + 1" row to N+2 and update its message, and update the
+     standard chain's `steps` and `target`.
+  4. If the change adds or changes a refusal (`SceneDecodeError` case, message or report text), update
+     contracts/scene-decode-errors.md and `matrix.json` `errors`, and give the case a sample in
+     `SceneMigrationMatrixMetaTests`.
+  5. Run the six runners (SceneFormat, ShowControl, SceneArchive, RenderGoldens packages and
+     projectM-iOSTests `SceneAutosaveMigrationMatrixTests`); the meta-test names anything missed.
