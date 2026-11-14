@@ -109,7 +109,7 @@ enum LayerParameterSpecs {
     static func unit(_ parameter: LayerInspectorParameter) -> SpokenUnit {
         switch parameter {
         case .opacity: .percent(decimals: 0)
-        case .rotation: .degrees
+        case .rotation, .gradientAngle: .degrees
         case .scale: .multiplier
         default: .number(decimals: 2)
         }
