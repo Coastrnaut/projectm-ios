@@ -39,7 +39,7 @@ public struct TempoEstimateTracker: Sendable {
             beatNanoseconds = host >= lag ? host - lag : 0
         case .sessionStarted, .sessionEnded:
             clear()
-        case .onset, .transient:
+        case .onset, .transient, .sectionChange:   // ANL-015: section changes do not affect the tempo
             break
         }
     }

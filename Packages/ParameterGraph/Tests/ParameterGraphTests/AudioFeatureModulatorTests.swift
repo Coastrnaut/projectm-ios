@@ -88,6 +88,23 @@ final class AudioFeatureModulatorTests: XCTestCase {
         }
     }
 
+    // ANL-015-T08: a Section change binding follows the envelope (ANL-015-R9).
+    func testSectionChangeBindingFollowsTheEnvelope() throws {
+        let registry = try Self.registry()
+        let store = ParameterStore(registry: registry)
+        let modulator = AudioFeatureModulator(registry: registry)
+        try modulator.bind(AudioFeatureBinding(source: .sectionChange, target: Self.opacity, outputStart: 0, outputEnd: 1))
+        var time: UInt64 = 1_000
+        let bands: [Float] = [0]
+        for (envelope, expected): (Float, Double) in [(0, 0), (1, 1), (0.5, 0.5), (0, 0)] {
+            bands.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> Void in
+                modulator.advance(frame: AudioFeatureFrame(bands: buffer, sectionChange: envelope), timeNanoseconds: time)
+            }
+            time += Self.frame
+            XCTAssertEqual(modulator.value(for: Self.opacity, in: store), .continuous(expected))
+        }
+    }
+
     // ANL-013-T09: a Correlation binding follows (r + 1)/2 (ANL-013-R6).
     func testCorrelationBindingFollowsTheMappedValue() throws {
         let registry = try Self.registry()
