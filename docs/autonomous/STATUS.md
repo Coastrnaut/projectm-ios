@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T16:50:18Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T16:52:19Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,9 +10,9 @@
 | State | Features |
 |---|---|
 | audited | 132 |
-| implementing | 8 |
+| implementing | 7 |
 | unit_passed | 1 |
-| integrated | 184 |
+| integrated | 185 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -20,14 +20,14 @@
 | Priority | audited | implementing | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 49 | 7 | 1 | 94 | 0 |
+| P1 | 49 | 6 | 1 | 95 | 0 |
 | P2 | 72 | 1 | 0 | 6 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 141 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-011, ANL-012)
+- 140 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-011, ANL-012)
 
 ## Integrated
 
@@ -155,6 +155,7 @@ The physical-device suite may **not** start:
 | OSC-009 | OSC rate limiter | `1ee3a05d25fb` | `feature/osc-009` |
 | OUT-001 | External display scene | `dfd5757fccd4` | `feature/out-001` |
 | OUT-002 | Display connect handling | `526c47e9` | `None` |
+| OUT-004 | Aspect correction | `5e533a80` | `feature/out-004` |
 | OUT-010 | Output blackout isolation | `1def5a80ab64` | `feature/out-010` |
 | PERF-001 | Per-stage frame timings | `2c4317ae` | `feature/perf-001` |
 | PERF-002 | GPU budget meter | `0c570bb94ccc` | `None` |
@@ -1496,7 +1497,7 @@ None.
 - `swift test --package-path Packages/PresentationLifecycle`: pass at `b233fd39e01c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-002/20261114T101841/swift-test_PresentationLifecycle.log`)
 - `xcodebuild -scheme Rendering-Package -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `b233fd39e01c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-002/20261114T101841/sim-test_Rendering.log`)
 
-### OUT-004 Aspect correction (unit_passed)
+### OUT-004 Aspect correction (integrated)
 - `python3 scripts/check_compliance.py`: pass at `24d0995cbd79` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-004/20261114T114533/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `24d0995cbd79` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-004/20261114T114533/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `24d0995cbd79` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-004/20261114T114533/script-tests.log`)
@@ -1506,6 +1507,7 @@ None.
 - `swift test --package-path Packages/LibraryBackup`: pass at `24d0995cbd79` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-004/20261114T114533/swift-test_LibraryBackup.log`)
 - `swift test --package-path Packages/PresentationLifecycle`: pass at `24d0995cbd79` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-004/20261114T114533/swift-test_PresentationLifecycle.log`)
 - `xcodebuild -scheme Rendering-Package -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `24d0995cbd79` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-004/20261114T114533/sim-test_Rendering.log`)
+- `post-merge: projectM-iOSTests 826 + UI 4 (external display, hot-plug, countdown)`: pass at `5e533a80` (log `.autonomous/logs/integration/batch29/app-tests.log`)
 
 ### OUT-010 Output blackout isolation (integrated)
 - `python3 scripts/check_compliance.py`: pass at `e7b40368ae98` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-010/20261113T140140/compliance.log`)
@@ -1674,6 +1676,18 @@ None.
 - `swift test --package-path Packages/PresetLibrary`: pass at `6d4ada96b86c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-012/20261112T182006/swift-test_PresetLibrary.log`)
 - `xcodebuild -scheme Rendering-Package -destination id=4E32B01D-7911-4A64-A944-877DDD445BC0 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `6d4ada96b86c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-012/20261112T182006/sim-test_Rendering.log`)
 - `integration checkout, full packs: PRE012_CORPUS swift test PresetLibrary 133 pass (14576 pack files, 0 over a limit, 2 incompleteShader); xcodebuild projectM-iOS test on iPhone 17 iOS 27.2: unit and UI suites pass (UserPresets 2, PresetCollections 3, PresetLibrary, Purchase, Visualizer); PresetBlocklist.json in the app bundle`: pass at `9e78b94c8ee1` (log `.autonomous/logs/integration/pre-012/app-tests.log`)
+
+### PRE-013 Bulk preset import (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `ecfa981803b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-013/20261114T114830/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `ecfa981803b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-013/20261114T114830/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `ecfa981803b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-013/20261114T114830/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `ecfa981803b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-013/20261114T114830/autonomous-tests.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `ecfa981803b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-013/20261114T114830/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `ecfa981803b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-013/20261114T114830/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/LocalPortability`: pass at `ecfa981803b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-013/20261114T114830/swift-test_LocalPortability.log`)
+- `swift test --package-path Packages/PresetLibrary`: pass at `ecfa981803b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-013/20261114T114830/swift-test_PresetLibrary.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `ecfa981803b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-013/20261114T114830/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `ecfa981803b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-013/20261114T114830/swift-test_ShowControl.log`)
 
 ### PRE-014 Bulk preset export (integrated)
 - `python3 scripts/check_compliance.py`: pass at `10193f697212` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-014/20261112T205210/compliance.log`)
