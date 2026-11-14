@@ -18,9 +18,10 @@ struct LibraryBackupSection: View {
                 Text(message).font(.footnote).accessibilityIdentifier("libraryBackupMessage")
             }
             #if DEBUG
-            if !model.recordsProbe.isEmpty {
-                Text(model.recordsProbe).font(.caption2).foregroundStyle(.secondary).accessibilityIdentifier("libraryRecordsProbe")
-            }
+            // Always present, so the probe arriving later does not push the rows below it down (2026-11-14:
+            // LibraryEraseUITests opens Storage at its end; tests poll the label for "port").
+            Text(model.recordsProbe.isEmpty ? "…" : model.recordsProbe).font(.caption2).foregroundStyle(.secondary)
+                .accessibilityIdentifier("libraryRecordsProbe")
             #endif
         } header: {
             Text("Backup")

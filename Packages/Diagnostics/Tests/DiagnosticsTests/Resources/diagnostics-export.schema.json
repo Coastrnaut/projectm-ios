@@ -10,6 +10,55 @@
     "schemaVersion": { "const": 2 },
     "exportedAt": { "type": "string", "format": "date-time" },
     "testerNote": { "type": "string", "maxLength": 500 },
+    "frameTimings": {
+      "description": "PERF-001: per-stage frame timings over the most recent frames (optional; metadata only). A missing CPU or GPU key means unavailable.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["windowFrames", "rejectedSamples", "stages"],
+      "properties": {
+        "windowFrames": { "type": "integer", "minimum": 0 },
+        "rejectedSamples": { "type": "integer", "minimum": 0 },
+        "frameGPUMedianMs": { "type": "number", "minimum": 0 },
+        "frameGPUP95Ms": { "type": "number", "minimum": 0 },
+        "budget": {
+          "description": "PERF-002: the frame budget verdict for the same window (optional). A missing estimate means unavailable.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["framesPerSecond", "deadlineMs", "thresholdShare", "clearShare", "thresholdMs", "flaggedPasses"],
+          "properties": {
+            "framesPerSecond": { "type": "number", "minimum": 0 },
+            "deadlineMs": { "type": "number", "minimum": 0 },
+            "thresholdShare": { "type": "number", "minimum": 0, "maximum": 1 },
+            "clearShare": { "type": "number", "minimum": 0, "maximum": 1 },
+            "thresholdMs": { "type": "number", "minimum": 0 },
+            "cpuEstimateMs": { "type": "number", "minimum": 0 },
+            "gpuEstimateMs": { "type": "number", "minimum": 0 },
+            "flaggedPasses": {
+              "type": "array",
+              "maxItems": 13,
+              "items": { "enum": ["audio cpu", "audio gpu", "render cpu", "render gpu", "composite cpu", "composite gpu", "output cpu", "output gpu", "encode cpu", "encode gpu", "present cpu", "present gpu", "gpu frame"] }
+            }
+          }
+        },
+        "stages": {
+          "type": "array",
+          "maxItems": 6,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "samples"],
+            "properties": {
+              "name": { "enum": ["audio", "render", "composite", "output", "encode", "present"] },
+              "samples": { "type": "integer", "minimum": 0 },
+              "cpuMedianMs": { "type": "number", "minimum": 0 },
+              "cpuP95Ms": { "type": "number", "minimum": 0 },
+              "gpuMedianMs": { "type": "number", "minimum": 0 },
+              "gpuP95Ms": { "type": "number", "minimum": 0 }
+            }
+          }
+        }
+      }
+    },
     "device": {
       "type": "object",
       "additionalProperties": false,

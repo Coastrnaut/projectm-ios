@@ -1,0 +1,48 @@
+{
+  "entries" : [
+    {
+      "file" : "lissajous-inphase-128x96-f1.png",
+      "fileSHA256" : "3a03ceb95326017e45ab21f40d0beb95be070aeddd886778620f45b1a9c48942",
+      "frame" : 1,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "b3a7b9848a354548881e79e2e4311f8254412fdd293f8338af2cfbe64ff61a88",
+      "scene" : "lissajous-inphase",
+      "width" : 128
+    },
+    {
+      "file" : "lissajous-inphase-256x192-f1.png",
+      "fileSHA256" : "0b5eaeccd4061dfbdeedc7bc0b5d952b90aa59fc948aebbf8131e5f484e096f4",
+      "frame" : 1,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "89bd55e7ab3ea33042c0c8d4be6296bcb98cd30a043dcca2e09d06ccc563a9a5",
+      "scene" : "lissajous-inphase",
+      "width" : 256
+    },
+    {
+      "file" : "lissajous-quadrature-128x96-f1.png",
+      "fileSHA256" : "0c7b42036807581685ec2c7460a0eec5ec026e0e9cd44860485effcb0aff5ef0",
+      "frame" : 1,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "0360c8683d744f3717aa192048d1dcccdd76621de828de9a71800e2755b07a50",
+      "scene" : "lissajous-quadrature",
+      "width" : 128
+    },
+    {
+      "file" : "lissajous-quadrature-256x192-f1.png",
+      "fileSHA256" : "20a26b318069eff135210af1558b52c87fe0fcbf4a33bc2da3e51658f62eabb5",
+      "frame" : 1,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "4086013728af7ea1348aed67b0e93ad23b68f54df588ce616408642128d5c9bf",
+      "scene" : "lissajous-quadrature",
+      "width" : 256
+    }
+  ],
+  "formatVersion" : 1,
+  "platform" : "ios-simulator",
+  "recordedGPU" : "Apple iOS simulator GPU",
+  "recordedOS" : "27.2"
+}

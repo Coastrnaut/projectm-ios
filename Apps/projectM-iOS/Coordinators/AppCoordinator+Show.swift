@@ -58,7 +58,12 @@ extension AppCoordinator {
             self?.storedMediaAvailability ?? StoredMediaAvailability(photos: [], videos: [])
         }
         // MIDI-006: note triggers step the show and use OUT-010's blackout (kept out of init's type-check budget).
-        midiMappings.connectNoteActions(MIDINoteActionPerformer(show: show, external: externalDisplay))
+        // MIDI-008: Play/Pause, Play and Pause drive the visualizer's Pause.
+        let performer = MIDINoteActionPerformer(
+            show: show, external: externalDisplay,
+            isPaused: { [weak self] () -> Bool in self?.userPaused ?? false },
+            setPaused: { [weak self] (paused: Bool) -> Void in self?.setPausedQuietly(paused) })
+        midiMappings.connectNoteActions(performer)
         connectScenePreviews()   // SCN-006
         // MIDI-007: program changes and notes select scenes through Go to Cue; "not found" on the `.midi` lane.
         midiMappings.connectSceneActions(MIDISceneActionPerformer(show: show, announce: midiMappings.announce))
@@ -97,6 +102,7 @@ extension AppCoordinator {
         var notes: [String] = []
         if !apply.omittedKinds.isEmpty { notes.append("\(Self.showOmittedLayersNote) (\(apply.omittedKinds.joined(separator: ", "))).") }
         if apply.missingMedia { notes.append(Self.showMissingMediaNote) }
+        noteAppliedSceneMedia(document, missingMedia: apply.missingMedia)   // MED-013-R2: the placeholder tile
         return notes
     }
 

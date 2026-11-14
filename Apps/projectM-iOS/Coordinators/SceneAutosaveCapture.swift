@@ -91,6 +91,8 @@ struct SceneAutosaveCarry: Sendable {
     var effects: [SceneEffectEntry]?
     /// MOD-006: the opened scene's threshold triggers as stored (nil: none); written back unchanged.
     var triggers: [SceneTriggerEntry]?
+    /// MOD-007: the opened scene's oscillators as stored (nil: none); written back unchanged.
+    var lfos: [SceneLFOEntry]?
 
     static let defaultName = "Current Scene"
 
@@ -117,6 +119,7 @@ struct SceneAutosaveCarry: Sendable {
         preserved = live.preserved
         effects = document.effects   // FX-020
         triggers = document.triggers   // MOD-006
+        lfos = document.lfos   // MOD-007
     }
 }
 
@@ -149,8 +152,8 @@ enum SceneAutosaveCapture {
         var contents: [SceneLayerContent] = []
         let spectrumOver: [SceneLayerContent] = [.circularSpectrum]
         switch inputs.visual {
-        case .projectM, .camera, .oscilloscope:
-            break   // camera never reaches here (mapped by the caller); projectM and the oscilloscope (VIS-003-R12) are no compositor layer
+        case .projectM, .camera, .oscilloscope, .lissajous:
+            break   // camera never reaches here (mapped by the caller); projectM, the oscilloscope (VIS-003-R12) and the Lissajous (VIS-004-R12) are no compositor layer
         case .circularSpectrum:
             contents = spectrumOver
         case .linearSpectrum:
@@ -233,7 +236,7 @@ enum SceneAutosaveCapture {
                                      bindings: sceneBindings,
                                      modulation: SceneModulation(generators: carry.modulation.generators, connections: connections),
                                      assets: assets, effects: effects(inputs.effects, carry: carry.effects),
-                                     triggers: carry.triggers, extra: carry.extra)   // MOD-006: triggers as stored
+                                     triggers: carry.triggers, lfos: carry.lfos, extra: carry.extra)   // MOD-006, MOD-007: as stored
         return (document, events)
     }
 

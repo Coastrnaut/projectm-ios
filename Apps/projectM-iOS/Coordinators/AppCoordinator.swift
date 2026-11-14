@@ -84,6 +84,7 @@ import TextLayer
 import AudioCore
 import CaptureKit
 import Compositor
+import FrameRecording   // REC-005: the capability source type
 import CaptureUI
 import Diagnostics
 import FlashSafety
@@ -204,6 +205,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let effectChain: EffectChainSetting
     /// The native spectra (VIS-001 circular, VIS-002 linear), created the first time one is needed.
     private(set) var nativeVisual: NativeSpectrumHost?
+    /// PERF-001: the stage timer while the performance overlay is shown (AppCoordinator+FrameStages.swift).
+    @ObservationIgnored let frameStages = FrameStageAttachment()
     /// The Camera visual (CAM-001), created when Camera is chosen and released when another visual is.
     private(set) var cameraVisual: CameraVisualHost?
     /// The camera feed's state while the Camera visual exists (`idle` otherwise; CAM-001-R5 to R8).
@@ -242,6 +245,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     @ObservationIgnored private(set) lazy var scenePreviews: ScenePreviewModel = makeScenePreviews()
     /// SCN-012: the repair report before a show cue's scene or Reopen opens.
     let sceneRepair: SceneRepairCoordinator
+    /// MED-013: missing imported media (Settings › Storage › Missing Media) and the visualizer's placeholder.
+    let missingMedia = MissingMediaCoordinator()
     /// ACC-011: capture and recording status events (announcements and captions); owns ACC-004's announcer.
     let statusEvents = StatusEventRouter()
     /// FILE-005: Settings › Storage › Backup (announces on the `library` lane, set in init).
@@ -309,6 +314,16 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     }
     /// REC-004: "Include microphone audio" for recordings (Settings → Recording; off by default).
     let recordingAudio: RecordingAudioSetting
+    /// REC-005: the record quality profile (Settings → Recording quality; Standard by default). The rows
+    /// describe the shown visual's drawable, else the screen (REC-005-R12). Its `-uitestResetNotice` reset is in
+    /// its initializer (keeps this initializer within the type-check budget).
+    @ObservationIgnored private(set) lazy var recordingQuality = RecordingQualitySetting(
+        defaults: defaults, capabilities: { () -> any RecordingEncoderCapabilities in RecordingQualitySetting.deviceCapabilities() },
+        rowSize: { [weak self] () -> CGSize in
+            self?.activeVideoRecordingSource?.recordingDrawableSize ?? RecordingQualitySetting.screenPixelSize()
+        })
+    /// UIX-004: the favorite parameter shelf (pinned controls in the visualizer's controls).
+    let parameterShelf: ParameterShelf
     /// REC-004: reads the microphone permission (never asks for it).
     @ObservationIgnored private lazy var microphonePermissionProbe = AVMicrophoneBackend()
 
@@ -341,6 +356,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             defaults.removeObject(forKey: NoiseGateSetting.enabledKey)   // AUD-011: off
             defaults.removeObject(forKey: NoiseGateSetting.thresholdKey)   // AUD-011: −50 dBFS
             defaults.removeObject(forKey: RecordingAudioSetting.includeMicrophoneKey)   // REC-004: off
+            defaults.removeObject(forKey: ParameterShelf.pinsKey)   // UIX-004: no pins
             LatencyOffsetSetting.allKeys.forEach(defaults.removeObject(forKey:))   // AUD-013: 0 ms
             ColorGradeSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-003: neutral
             MotionFeedbackSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-009: Trails off
@@ -364,6 +380,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         channelSelection = ChannelSelectionSetting(defaults: defaults)
         noiseGate = NoiseGateSetting(defaults: defaults)
         recordingAudio = RecordingAudioSetting(defaults: defaults)
+        parameterShelf = ParameterShelf(defaults: defaults)   // UIX-004
         playbackBalance = PlaybackBalanceSetting(defaults: defaults)   // AUD-010
         latencyOffset = LatencyOffsetSetting(defaults: defaults)
         colorGrade = ColorGradeSetting(defaults: defaults)   // FX-003
@@ -485,7 +502,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         #endif
         // Feature 002: the library (12,941 presets) loads off the main thread (SC-101).
         presets = PresetCoordinator(store: FavoritesStore(defaults: defaults), settings: settings, loader: presetLoader,
-                                    collections: PresetCollectionStore(directory: PresetCollectionStore.defaultDirectory()))
+                                    collections: PresetCollectionStore(directory: PresetCollectionStore.defaultDirectory()),
+                                    tags: PresetTagStore(directory: PresetTagStore.defaultDirectory()))   // PRE-003
         userPresets = UserPresetsCoordinator.makeDefault()
         userPresets.connect(presets: presets, loader: presetLoader)   // PRE-012
         #if DEBUG || PROJECTM_AUTOMATION
@@ -546,6 +564,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         if recovery.decision.isCrashLoop { sceneAutosave?.commitFreshScene() }
         recovery.startObservingLifecycle()
         connectShow()   // SHOW-001
+        connectMissingMedia(defaults: defaults)   // MED-013 (and its DEBUG seed)
         connectLayerInspector()   // CMP-015
         #if DEBUG
         UITestLayerInspectorFixture.seedIfRequested(self)   // CMP-015: LayerInspectorUITests (before the history starts)
@@ -880,10 +899,13 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                 presets.attach(library)
                 #if DEBUG
                 UITestCollectionFixture.seedIfRequested(presets)   // PresetCollectionsUITests
+                UITestPresetTagFixture.seedIfRequested(presets)    // PresetTagsUITests (PRE-003)
                 #endif
                 presets.onScopeChange { UIAccessibility.post(notification: .announcement, argument: $0) }   // FR-124
                 presets.announceFavorite = { [weak self] (text: String) in self?.announcer.announce(text, kind: .favorite) }   // ACC-004
                 userPresets.announceLibrary = { [weak self] (text: String) in self?.announcer.announce(text, kind: .library) }   // FILE-003-R13
+                presets.announceLibrary = { [weak self] (text: String) in self?.announcer.announce(text, kind: .library) }   // PRE-003-R12
+                presets.announceSearch = { [weak self] (text: String) in self?.announcer.announce(text, kind: .search) }
                 await presets.setUnlocked(entitlements.isUnlocked)
                 libraryReady = true
                 Task { [weak self] in await self?.entitlements.loadProduct() }
@@ -979,11 +1001,12 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         SpectrumBarCount(rawValue: settings.circularSpectrumBars) ?? .b64
     }
 
-    /// The native visual the settings ask for (VIS-002-R11, VIS-003-R10; circular for any other choice).
+    /// The native visual the settings ask for (VIS-002-R11, VIS-003-R10, VIS-004-R11; circular for any other choice).
     private var nativeSpectrumStyle: NativeSpectrumStyle {
         switch settings.visual {
         case .linearSpectrum: .linear(settings.linearSpectrumOrientation, spacing: settings.linearSpectrumSpacing)
         case .oscilloscope: .oscilloscope(line: settings.oscilloscopeLine, windowMilliseconds: settings.oscilloscopeWindowMilliseconds)
+        case .lissajous: .lissajous(mode: settings.lissajousMode, persistence: settings.lissajousPersistence)   // VIS-004
         default: .circular
         }
     }
@@ -1018,6 +1041,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.externalValues = midiMappings.liveValues   // MIDI-003: values held while no native visual was shown
             for binding in sceneAutosave?.bindings ?? [] { try? host.bind(binding) }   // SCN-002: restored bindings
             connectThresholdTriggers(host)   // MOD-006
+            connectLFOs(host)   // MOD-007
             #if DEBUG
             bindGlowToLevelIfRequested(host)   // MOD-002: AudioFeatureBindingUITests
             #endif
@@ -1359,7 +1383,9 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                                                  microphoneGranted: microphonePermissionProbe.permission == .granted,
                                                  includeMicrophone: recordingAudio.includeMicrophone,
                                                  audioTap: manager.recordingTap,
-                                                 setAudioTapArmed: { (armed: Bool) -> Void in manager.setRecordingTapArmed(armed) })
+                                                 setAudioTapArmed: { (armed: Bool) -> Void in manager.setRecordingTapArmed(armed) },
+                                                 qualityProfile: recordingQuality.profile,   // REC-005
+                                                 qualityCapabilities: RecordingQualitySetting.deviceCapabilities())
     }
 
     var activeVideoRecordingSource: (any VideoRecordingSource)? {
@@ -1613,6 +1639,16 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         updateIdleTimer()
         showControls()
         announcer.announce(AccessibilityAnnouncer.pausedText(userPaused), kind: .playback)   // ACC-004-R5
+    }
+
+    /// MIDI-008 (research MIDI-008-D5): Pause or resume as the controls' Pause/Resume does, without revealing the
+    /// controls, and only while the visualizer is shown and the app is active; no change, no announcement.
+    func setPausedQuietly(_ paused: Bool) {
+        guard screen == .visualizer, appIsActive, userPaused != paused else { return }
+        userPaused = paused
+        paused ? pauseActiveVisual() : resumeActiveVisual()
+        updateIdleTimer()
+        announcer.announce(AccessibilityAnnouncer.pausedText(paused), kind: .playback)
     }
 
     func next() { showControls(); Task { await announcingPresetChange { await presets.next() } } }

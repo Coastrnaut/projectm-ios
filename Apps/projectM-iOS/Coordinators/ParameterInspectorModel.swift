@@ -212,6 +212,13 @@ enum ParameterInspectorTargets {
         IDs.circularSpectrumBarCount, IDs.linearSpectrumOrientation, IDs.linearSpectrumSpacing,
     ]
 
+    /// The same IDs as a set, readable off the main actor (UIX-004's pin availability).
+    nonisolated static let inspectableIDSet: Set<ParameterID> = [
+        VisualParameterIDs.bloomEnabled, VisualParameterIDs.bloomIntensity, VisualParameterIDs.bloomRadius,
+        VisualParameterIDs.bloomThreshold, VisualParameterIDs.circularSpectrumBarCount,
+        VisualParameterIDs.linearSpectrumOrientation, VisualParameterIDs.linearSpectrumSpacing,
+    ]
+
     /// The setting `id` is written through (the same properties the Settings controls and
     /// `AppCoordinator.set(_:settings:texts:)` write); nil for a parameter without an app control.
     static func target(for id: ParameterID, settings: AppSettings) -> ParameterInspectorTarget? {
@@ -347,6 +354,7 @@ extension AudioFeatureSource {
         case .centroid: return "Brightness"
         case .loudness: return "Loudness"
         case .midTransient: return "Mid transient"   // ANL-008: not a snare classifier
+        case let .lfo(index): return "LFO \(index + 1)"   // MOD-007
         }
     }
 }

@@ -41,10 +41,10 @@ public struct RecordingStorageEstimate: Sendable, Equatable {
         self.bytesPerSecond = max(bytesPerSecond, 1)
     }
 
-    /// The highest bit rate among `settings.codecPreference` at the output size, plus 25%, in bytes.
+    /// The highest bit rate among `settings.codecPreference` at the output size (REC-005: the profile's rate), plus 25%, in bytes.
     public init(geometry: RecordingGeometry, settings: RecordingSettings) {
         let rates: [Int] = settings.codecPreference.map { (codec: RecordingCodec) -> Int in
-            codec.averageBitRate(width: geometry.outputWidth, height: geometry.outputHeight, frameRate: settings.maxFrameRate)
+            settings.averageBitRate(codec: codec, width: geometry.outputWidth, height: geometry.outputHeight)   // REC-005
         }
         let bitRate: Int64 = Int64(rates.max() ?? 1_000_000)
         let withHeadroom: Int64 = bitRate * Int64(125)

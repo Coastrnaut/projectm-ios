@@ -43,10 +43,41 @@ public enum DiagnosticsExporter {
                             t.bufferCadenceMeanMs, t.bufferCadenceMaxMs, t.lateBuffers, t.droppedFrames))
         lines.append(String(format: "Levels: peak max %.1f dBFS, RMS mean %.1f dBFS",
                             s.session.levels.peakDBFSMax, s.session.levels.rmsDBFSMean))
+        if let timings = s.frameTimings { lines.append(contentsOf: frameTimingLines(timings)) }
         if let note = s.testerNote { lines.append("Tester note: \(note)") }
         lines.append("")
         lines.append("A source counts as working only if 'Non-silent audio verified' is yes (FR-031).")
         return lines.joined(separator: "\n") + "\n"
+    }
+
+    /// PERF-001: "Frame stages over N frames (median/p95 ms):" and one line per stage; "n/a" when unavailable.
+    static func frameTimingLines(_ t: DiagnosticsSnapshot.FrameTimings) -> [String] {
+        func pair(_ median: Double?, _ p95: Double?) -> String {
+            guard let median, let p95 else { return "n/a" }
+            return String(format: "%.2f/%.2f", median, p95)
+        }
+        var lines: [String] = ["Frame stages over \(t.windowFrames) frames (median/p95 ms):"]
+        for stage in t.stages {
+            var line: String = "  \(stage.name): CPU \(pair(stage.cpuMedianMs, stage.cpuP95Ms))"
+            if stage.gpuMedianMs != nil { line += ", GPU \(pair(stage.gpuMedianMs, stage.gpuP95Ms))" }
+            lines.append(line)
+        }
+        lines.append("  frame GPU: \(pair(t.frameGPUMedianMs, t.frameGPUP95Ms))")
+        if t.rejectedSamples > 0 { lines.append("  rejected samples: \(t.rejectedSamples)") }
+        if let budget = t.budget { lines.append(contentsOf: budgetLines(budget)) }
+        return lines
+    }
+
+    /// PERF-002: "Frame budget: 16.67 ms at 60 fps, limit 13.33 ms (80%)", the estimates and the flagged passes.
+    static func budgetLines(_ b: DiagnosticsSnapshot.FrameTimings.Budget) -> [String] {
+        func value(_ ms: Double?) -> String { ms.map { (v: Double) -> String in String(format: "%.2f ms", v) } ?? "n/a" }
+        let percent: Int = Int((b.thresholdShare * 100).rounded())
+        let fps: Int = Int(b.framesPerSecond.rounded())
+        var lines: [String] = [String(format: "Frame budget: %.2f ms at %d fps, limit %.2f ms (%d%%)", b.deadlineMs, fps, b.thresholdMs, percent)]
+        lines.append("  estimate: CPU \(value(b.cpuEstimateMs)), GPU \(value(b.gpuEstimateMs))")
+        let flagged: String = b.flaggedPasses.isEmpty ? "none" : b.flaggedPasses.joined(separator: ", ")
+        lines.append("  over budget: " + flagged)
+        return lines
     }
 
     /// Writes both files and returns [json, txt] URLs.

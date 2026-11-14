@@ -67,7 +67,7 @@ import PackageDescription
 let package = Package(
     name: "Compositor",
     platforms: [.iOS("26.0"), .macOS(.v15)],
-    products: [.library(name: "Compositor", targets: ["Compositor", "SpectrumLayers", "CameraLayer", "ProceduralMaterials", "GeneratorGraph", "GeneratorGraphImport", "ImageLayer", "VideoLayer", "TextLayer", "FrameCapture", "MediaSniffing", "FrameRecording", "ColorGradeParameters"])],
+    products: [.library(name: "Compositor", targets: ["Compositor", "SpectrumLayers", "CameraLayer", "ProceduralMaterials", "GeneratorGraph", "GeneratorGraphImport", "ImageLayer", "VideoLayer", "TextLayer", "FrameCapture", "MediaSniffing", "FrameRecording", "ColorGradeParameters", "FrameTiming"])],
     dependencies: [
         .package(path: "../AnalysisFeatures"),
         .package(path: "../FlashSafety"),
@@ -80,6 +80,8 @@ let package = Package(
         .target(name: "FrameCapture"),
         // REC-003: video recording (pure Swift rules + AVFoundation writer + Metal recorder).
         .target(name: "FrameRecording"),
+        // PERF-001: per-stage frame timings (pure Swift ring and report; the Metal GPU poller is Apple-only).
+        .target(name: "FrameTiming"),
         // SCN-007: a scene transition may be shaped by a MOD-004 `MappingCurve` (pure Swift).
         .target(name: "Compositor", dependencies: ["AnalysisFeatures", "FlashSafety", "FrameCapture", "ParameterGraph"]),
         .target(name: "SpectrumLayers", dependencies: ["Compositor", .product(name: "VisualGenerators", package: "VisualGenerators")]),
@@ -94,7 +96,7 @@ let package = Package(
         .target(name: "GeneratorGraphImport", dependencies: ["GeneratorGraph"]),
         .target(name: "TextLayer", dependencies: ["Compositor"]),
         .testTarget(name: "CompositorTests",
-                    dependencies: ["Compositor", "SpectrumLayers", "CameraLayer", "ImageLayer", "VideoLayer", "MediaSniffing", "AnalysisFeatures", "FlashSafety", "FrameCapture", "FrameRecording", "ParameterGraph",
+                    dependencies: ["Compositor", "SpectrumLayers", "CameraLayer", "ImageLayer", "VideoLayer", "MediaSniffing", "AnalysisFeatures", "FlashSafety", "FrameCapture", "FrameRecording", "FrameTiming", "ParameterGraph",
                                    .product(name: "VisualGenerators", package: "VisualGenerators")]),
         .testTarget(name: "ProceduralMaterialsTests",
                     dependencies: ["ProceduralMaterials", "Compositor", "ParameterGraph", "FlashSafety", "AnalysisFeatures"]),
@@ -105,6 +107,7 @@ let package = Package(
                                    .product(name: "VisualGenerators", package: "VisualGenerators")]),
         .testTarget(name: "FrameCaptureTests", dependencies: ["FrameCapture"]),
         .testTarget(name: "FrameRecordingTests", dependencies: ["FrameRecording"]),
+        .testTarget(name: "FrameTimingTests", dependencies: ["FrameTiming"]),
         .testTarget(name: "GeneratorGraphImportTests", dependencies: ["GeneratorGraphImport", "GeneratorGraph"]),
         .testTarget(name: "MediaSniffingTests", dependencies: ["MediaSniffing"]),
         .testTarget(name: "TextLayerTests", dependencies: ["TextLayer", "Compositor", "FlashSafety", "AnalysisFeatures"]),

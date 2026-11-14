@@ -114,6 +114,10 @@ public struct SceneIssue: Sendable, Hashable, CustomStringConvertible {
         case invalidTrigger
         /// MOD-006: a threshold trigger whose audio feature or action this version does not know; kept.
         case unknownTrigger
+        /// MOD-007: an oscillator with a missing or wrong field, out-of-range settings, or beyond the limit; kept.
+        case invalidLFO
+        /// MOD-007: an oscillator whose shape this version does not know; kept.
+        case unknownLFO
 
         /// MOD-013 (ADR-0028 amendment): every per-edge modulation problem is a warning, so one edge
         /// never refuses the scene; `invalidModulation` (generator declarations) stays an error.
@@ -123,7 +127,7 @@ public struct SceneIssue: Sendable, Hashable, CustomStringConvertible {
                  .duplicateEffect, .valueClamped, .droppedField, .unknownAssetType, .unusedAsset,
                  .missingAsset, .orphanedParameter, .rejectedParameter, .parameterClamped,
                  .invalidBinding, .duplicateBindingTarget, .invalidExpression, .migratedReference, .retiredReference,
-                 .orphanedBinding, .orphanedConnection, .rejectedConnection, .unsupportedCurve, .invalidTrigger, .unknownTrigger:
+                 .orphanedBinding, .orphanedConnection, .rejectedConnection, .unsupportedCurve, .invalidTrigger, .unknownTrigger, .invalidLFO, .unknownLFO:
                 .warning
             default:
                 .error
