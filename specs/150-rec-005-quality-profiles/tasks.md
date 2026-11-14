@@ -45,3 +45,10 @@ No setup: the module, the coordinator and the Settings section exist (REC-003, R
 ## Dependencies
 
 T01 → T02 → T03 → (T04, T05, T12) ; T03 → T06 → T07 → T08 → T09, T10, T11 ; all → T13.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Coverage: R1 T02/T08, R2 T02, R3 T01, R4 T03/T04, R5 T08/T11, R6 T07/T10, R7 T06/T09, R8 T07/T12,
+R9 T08/T11, R10 T05, R11 T10, R12 T09; S1 T05, S2 T03, S3 T01, S4 T11, S5 T14. Fixes applied: R11
+(profile fixed per recording) and R12 (rows' size source) had no test, now in T10 and T09; spec R9
+"next to" and contract C3 "directly before" agree (before REC-004's section). No constitution conflicts.
