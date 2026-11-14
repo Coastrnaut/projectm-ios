@@ -13,8 +13,7 @@
   "P1": {
    "audited": 107,
    "implementing": 2,
-   "integrated": 41,
-   "unit_passed": 1
+   "integrated": 42
   },
   "P2": {
    "audited": 77,
@@ -27,9 +26,8 @@
  "by_state": {
   "audited": 195,
   "implementing": 2,
-  "integrated": 127,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "integrated": 128,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -37,7 +35,6 @@
   "implementation_complete": false,
   "infeasible": [],
   "pending": [
-   "ACC-005",
    "ACC-007",
    "ACC-008",
    "ACC-009",
@@ -238,7 +235,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "198 features are not implemented yet (first: ACC-005, ACC-007, ACC-008, ACC-009, ACC-010)"
+   "197 features are not implemented yet (first: ACC-007, ACC-008, ACC-009, ACC-010, ACC-012)"
   ]
  },
  "features": {
@@ -287,10 +284,10 @@
    "branch": "feature/acc-005",
    "branch_sha": "a7d2054b17ee1cafe2db6acec0a592ebf950e35c",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "fc10ea1f",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "ACC-006": {
    "attempts": 1,
@@ -3525,6 +3522,11 @@
    "sha": "ff69b64"
   },
   {
+   "branch": "feature/acc-005",
+   "id": "ACC-005",
+   "sha": "fc10ea1f"
+  },
+  {
    "branch": "feature/acc-006",
    "id": "ACC-006",
    "sha": "bb1439c7"
@@ -4165,5 +4167,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T08:54:43Z"
+ "updated": "2026-11-14T08:59:37Z"
 }

@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T08:54:43Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T08:59:37Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 195 |
 | implementing | 2 |
-| unit_passed | 1 |
-| integrated | 127 |
+| integrated | 128 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 107 | 2 | 1 | 41 | 0 |
-| P2 | 77 | 0 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 2 | 0 | 84 | 1 |
+| P1 | 107 | 2 | 42 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 198 features are not implemented yet (first: ACC-005, ACC-007, ACC-008, ACC-009, ACC-010)
+- 197 features are not implemented yet (first: ACC-007, ACC-008, ACC-009, ACC-010, ACC-012)
 
 ## Integrated
 
@@ -37,6 +36,7 @@ The physical-device suite may **not** start:
 | ACC-002 | Reduced flash preset policy | `61c926cb8b59` | `feature/acc-002` |
 | ACC-003 | Color-blind friendly controls | `473ebfec` | `feature/acc-003` |
 | ACC-004 | VoiceOver scene browser | `ff69b64` | `feature/acc-004` |
+| ACC-005 | VoiceOver parameter editing | `fc10ea1f` | `feature/acc-005` |
 | ACC-006 | Dynamic Type inspector | `bb1439c7` | `feature/acc-006` |
 | ACC-011 | Captioned status events | `92196c47` | `feature/acc-011` |
 | ANL-001 | Windowed FFT | `df16f2b90397` | `feature/anl-001` |
@@ -208,11 +208,12 @@ None.
 - `python3 scripts/validate_docs.py`: pass at `237e51651b67` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-004/20261113T194946/docs.log`)
 - `post-merge: projectM-iOSTests 387 + AccessibilityScreens/ShowCue/ReduceMotion/Oscilloscope UI tests 11`: pass at `ff69b64` (log `.autonomous/logs/integration/acc-004/app-tests.log`)
 
-### ACC-005 VoiceOver parameter editing (unit_passed)
+### ACC-005 VoiceOver parameter editing (integrated)
 - `python3 scripts/check_compliance.py`: pass at `a7d2054b17ee` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-005/20261114T035431/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `a7d2054b17ee` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-005/20261114T035431/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `a7d2054b17ee` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-005/20261114T035431/script-tests.log`)
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `a7d2054b17ee` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-005/20261114T035431/autonomous-tests.log`)
+- `post-merge: projectM-iOSTests 525 + Glow/InputTrim/TextOverlay/LibraryBackup UI tests pass; VoiceOverParameterUITests killed at launch in 2 of 3 runs (sent back for a fix)`: pass at `fc10ea1f` (log `.autonomous/logs/integration/acc-005/app-tests.log`)
 
 ### ACC-006 Dynamic Type inspector (integrated)
 - `python3 scripts/check_compliance.py`: pass at `a356ef676c45` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-006/20261113T233346/compliance.log`)
