@@ -4,7 +4,9 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (SHOW-004-T01-T11 verified on the Mac, simulator "SHOW4 iPhone 17", iOS 27.2; no
+device claim). ShowControl package 114 tests (1.2 s; 4 new in `ShowTransitionOverrideTests`); app
+`CueTransitionOverrideAcceptanceTests` 2 (0.03 s, the roadmap acceptance); `CueTransitionOverrideUITests` 1 (26.9 s).
 
 **Input**: Roadmap row SHOW-004 (P1, size S, depends on SCN-007 and SHOW-001, both integrated). Observable
 behavior, verbatim: "Override default scene transition for a specific cue edge." Acceptance, verbatim: "Cue
