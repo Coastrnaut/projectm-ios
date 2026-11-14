@@ -4,7 +4,13 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (PRE-013-T01-T18 verified on the Mac: package tests on the macOS host and
+the feature's own iOS 27.2 simulator "PRE13"; no device claim). Acceptance (S1, S2):
+BulkImportAcceptanceTests reports added 70, duplicates 15, invalid 8, too large 4, unsupported 3, failed 0
+for the 100-file fixture from a folder, a stored zip and a deflated zip. LocalPortability 127 tests,
+PresetLibrary 297 (3 skipped, pre-existing), ImportFuzz BulkArchiveFuzzTests 1, app
+BulkPresetImportCoordinatorTests 4, BulkPresetImportUITests 1. Not run on Linux here (deflate is guarded and
+its test skips there).
 
 **Input**: Roadmap row PRE-013 (P1, size L, depends on PRE-012). Observable behavior, verbatim: "Import
 a folder or archive with progress and duplicate detection." Acceptance, verbatim: "Fixture of 100 files
