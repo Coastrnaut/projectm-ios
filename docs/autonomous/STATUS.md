@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T14:42:39Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T14:43:38Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,9 +10,9 @@
 | State | Features |
 |---|---|
 | audited | 156 |
-| implementing | 6 |
-| unit_passed | 1 |
-| integrated | 162 |
+| implementing | 5 |
+| unit_passed | 3 |
+| integrated | 161 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -20,14 +20,14 @@
 | Priority | audited | implementing | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 71 | 6 | 1 | 73 | 0 |
+| P1 | 71 | 5 | 3 | 72 | 0 |
 | P2 | 74 | 0 | 0 | 5 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 163 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)
+- 164 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)
 
 ## Integrated
 
@@ -194,7 +194,6 @@ The physical-device suite may **not** start:
 | VIS-001 | Circular spectrum | `48285d49c422` | `feature/vis-001` |
 | VIS-002 | Linear spectrum | `c2b2f75c11bb` | `feature/vis-002` |
 | VIS-003 | Waveform oscilloscope | `2d758a4` | `feature/vis-003` |
-| VIS-004 | Lissajous scope | `38172fff5483` | `feature/vis-004` |
 
 ## Proved already implemented
 
@@ -1779,6 +1778,14 @@ None.
 - `python3 scripts/validate_docs.py`: pass at `598dfc2a58d6` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-003/20261114T065809/docs.log`)
 - `post-merge: projectM-iOSTests 636 + UI 12 (inspector, thumbnails, folders, switcher, settings)`: pass at `7b7a78050ada` (log `.autonomous/logs/integration/uix003-pre001-scn004/app-tests.log`)
 
+### UIX-004 Favorite parameter shelf (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `55450ba74bdc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-004/20261114T094239/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `55450ba74bdc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-004/20261114T094239/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `55450ba74bdc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-004/20261114T094239/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `55450ba74bdc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-004/20261114T094239/autonomous-tests.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `55450ba74bdc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-004/20261114T094239/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `55450ba74bdc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-004/20261114T094239/swift-test_LibraryBackup.log`)
+
 ### UIX-015 Onboarding permission explainer (integrated)
 - `python3 scripts/check_compliance.py`: pass at `4f7b3b7b8790` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-015/20261114T021007/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `4f7b3b7b8790` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-015/20261114T021007/docs.log`)
@@ -1824,7 +1831,7 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `46e784d122d5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-003/20261113T192029/swift-test_VisualGenerators.log`)
 - `post-merge (VIS-003 + QA-004): projectM-iOSTests 379 + Oscilloscope/NativeVisual/Glow UI tests 7`: pass at `2d758a4` (log `.autonomous/logs/integration/vis-003-qa-004/app-tests.log`)
 
-### VIS-004 Lissajous scope (integrated)
+### VIS-004 Lissajous scope (unit_passed)
 - `python3 scripts/check_compliance.py`: pass at `a06638f89245` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-004/20261114T093752/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `a06638f89245` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-004/20261114T093752/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `a06638f89245` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-004/20261114T093752/script-tests.log`)
