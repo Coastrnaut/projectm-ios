@@ -12,12 +12,14 @@
   },
   "P1": {
    "audited": 35,
-   "implementing": 9,
-   "integrated": 107
+   "built": 1,
+   "implementing": 7,
+   "integrated": 107,
+   "unit_passed": 1
   },
   "P2": {
    "audited": 70,
-   "implementing": 1,
+   "built": 1,
    "integrated": 8
   },
   "P3": {
@@ -26,9 +28,11 @@
  },
  "by_state": {
   "audited": 116,
-  "implementing": 10,
+  "built": 2,
+  "implementing": 7,
   "integrated": 199,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -412,12 +416,12 @@
   "ANL-013": {
    "attempts": 0,
    "branch": "feature/anl-013",
-   "branch_sha": null,
+   "branch_sha": "486b154c",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "built"
   },
   "ANL-014": {
    "attempts": 0,
@@ -1742,12 +1746,12 @@
   "MOD-012": {
    "attempts": 0,
    "branch": "feature/mod-012",
-   "branch_sha": null,
+   "branch_sha": "542bdbd0f9941ed6945b602056b1e9eb4ebb7508",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "MOD-013": {
    "attempts": 0,
@@ -3292,12 +3296,12 @@
   "VIS-007": {
    "attempts": 0,
    "branch": "feature/vis-007",
-   "branch_sha": null,
+   "branch_sha": "0116459b",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "built"
   },
   "VIS-008": {
    "attempts": 0,
@@ -4452,5 +4456,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T19:02:25Z"
+ "updated": "2026-11-14T19:08:32Z"
 }
