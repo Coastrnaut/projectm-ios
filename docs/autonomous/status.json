@@ -13,8 +13,8 @@
   "P1": {
    "audited": 71,
    "implementing": 6,
-   "integrated": 72,
-   "unit_passed": 2
+   "integrated": 73,
+   "unit_passed": 1
   },
   "P2": {
    "audited": 74,
@@ -27,9 +27,9 @@
  "by_state": {
   "audited": 156,
   "implementing": 6,
-  "integrated": 161,
+  "integrated": 162,
   "skipped_existing": 1,
-  "unit_passed": 2
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -184,7 +184,6 @@
    "UIX-012",
    "UIX-013",
    "UIX-014",
-   "VIS-004",
    "VIS-005",
    "VIS-006",
    "VIS-007",
@@ -204,7 +203,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "164 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)"
+   "163 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)"
   ]
  },
  "features": {
@@ -3303,10 +3302,10 @@
    "branch": "feature/vis-004",
    "branch_sha": "a06638f8924519453efabc2eda5035082820f128",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "38172fff54836e5d364a6cf8d7990113a4f5045f",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "VIS-005": {
    "attempts": 0,
@@ -4274,6 +4273,11 @@
    "branch": "feature/vis-003",
    "id": "VIS-003",
    "sha": "2d758a4"
+  },
+  {
+   "branch": "feature/vis-004",
+   "id": "VIS-004",
+   "sha": "38172fff54836e5d364a6cf8d7990113a4f5045f"
   }
  ],
  "integration_branch": "autonomous/integration",
@@ -4301,5 +4305,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T14:42:29Z"
+ "updated": "2026-11-14T14:42:39Z"
 }
