@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14
 
 **Input**: User description: "Implement roadmap feature ANL-008, 'Snare-like transient detector'.
 Observable behavior, verbatim: 'Estimate mid-band percussive transients with uncertainty.'
@@ -133,6 +133,30 @@ unit test in which a Mid transient binding on the native visual drives its targe
 - **ANL-008-S5**: Through the pipeline, mid bursts yield one `.midTransient` event each with confidence, and frames whose mid transient value jumps on each event and decays; every existing kick test still passes unchanged.
 - **ANL-008-S6**: `audio.midTransient` round-trips, binds, compiles to opcode 17 and drives a bound parameter in the app.
 - **ANL-008-S7**: The new package tests take under 2 s in the Linux shape; existing suites pass.
+
+## Implementation results (2026-11-14)
+
+Fixture table (`MidTransientDetectorTests`, 2,048-point spectra, hop 512, 44.1 kHz, `.midTransient`
+defaults; identical on the host and in the Linux shape):
+
+| Input | Bursts | Events | Hits (±1 hop) | Extras | Confidences |
+|---|---|---|---|---|---|
+| Mid-band noise bursts (≈ 1–3 kHz), −12 dBFS | 4 | 4 | 4 | 0 | 1.00, 1.00, 1.00, 0.97 |
+| Same, −6 dBFS (same positions) | 4 | 4 | 4 | 0 | 1.00, 1.00, 1.00, 0.97 |
+| Same, −30 dBFS (same positions) | 4 | 4 | 4 | 0 | 0.74, 0.84, 0.79, 0.83 |
+| 60 Hz kick bursts, −6 dBFS | 4 | 0 | — | 0 | — |
+| 2 kHz steady tone, −12 dBFS | 1 onset | 1 (at the onset) | 1 | 0 | 0.37 (below 0.5) |
+| Silence / ±1 LSB dither | 0 | 0 / 0 | — | 0 | — |
+| Two bursts 46 ms / 128 ms apart | 2 / 2 | 1 / 2 | — | 0 | — |
+| Through `AnalysisPipeline`, −12 dBFS | 3 | 3 `.transient(band: .midTransient)` | 3 (exact starts) | 0 | ≥ 0.5 |
+
+Event positions are level-independent; the confidence is not entirely: at −30 dBFS it is lower
+(0.74–0.84) than at −12 dBFS, still above the 0.5 acceptance threshold. Kick events are unchanged
+(every ANL-007 test passes; the kick's confidence is its margin alone).
+
+Test cost (owner rule 7): MidTransientDetectorTests (6 tests) take 0.27 s on the host and 0.75 s in
+the Linux shape; the AnalysisFeatures host suite has 150 tests (42.1 s). App: the new binding test
+takes 0.02 s on the simulator. No UI, status or diagnostics overlay entry was added (Clarifications).
 
 ## Assumptions
 
