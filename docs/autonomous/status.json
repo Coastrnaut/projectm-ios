@@ -11,8 +11,8 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 102,
-   "implementing": 2,
+   "audited": 101,
+   "implementing": 3,
    "integrated": 47
   },
   "P2": {
@@ -24,8 +24,8 @@
   }
  },
  "by_state": {
-  "audited": 190,
-  "implementing": 2,
+  "audited": 189,
+  "implementing": 3,
   "integrated": 133,
   "skipped_existing": 1
  },
@@ -1456,13 +1456,13 @@
   },
   "MED-004": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/med-004",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "MED-005": {
    "attempts": 0,
@@ -4187,5 +4187,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T09:59:38Z"
+ "updated": "2026-11-14T10:00:11Z"
 }
