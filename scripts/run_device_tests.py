@@ -87,6 +87,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.spectrum.attack", "settings.spectrum.release",   # ANL-003-R6
                 "settings.osc.enabled", "settings.osc.port",   # OSC-001 (off by default)
                 "settings.osc.disabledRoutes", "settings.osc.aliases",   # OSC-003 (route addresses and parameter IDs)
+                "settings.osc.peerAllowlist.enabled", "settings.osc.approvedPeers",   # OSC-008 (user-approved local hosts)
                 "settings.midi.enabled",   # MIDI-001 (off by default; no device names stored)
                 "settings.midi.mappings",  # MIDI-003 (channel, controller and parameter ID per line; no device)
                 "settings.parameterShelf.pins",  # UIX-004-R10 (ordered pinned parameter IDs)
