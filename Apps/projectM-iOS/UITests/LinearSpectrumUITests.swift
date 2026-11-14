@@ -38,7 +38,7 @@ final class LinearSpectrumUITests: XCTestCase {
     func testChoosingLinearSpectrumAndHorizontalPersists() {
         launch(reset: true)
         openSettings()
-        XCTAssertTrue(app.visualRow("Linear Spectrum").appears(within: 5))
+        XCTAssertTrue(app.reveal(app.visualRow("Linear Spectrum")), "the visual row (below the fold as visuals grow)")
         app.visualRow("Linear Spectrum").tap()
         let orientation = app.segmentedControls["orientationPicker"]
         XCTAssertTrue(orientation.appears(within: 5), "Orientation offered for the linear spectrum")
