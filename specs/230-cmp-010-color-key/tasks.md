@@ -34,9 +34,9 @@ UI test under 30 s.
 
 **Goal**: `composite.colorKey` round-trips. **Independent test**: decode → encode and load → capture byte comparisons.
 
-- [ ] CMP-010-T11 [US3] `SceneComposite.colorKey`, decode per contract C3 (clamp with `valueClamped`, drop unknown keys with `droppedField`, `greenKey` defaults for missing fields), encode only when set with every field, live state and capture in Packages/SceneFormat/Sources/SceneFormat/{SceneDocument,SceneDecoding,SceneEncoding,SceneLiveState}.swift
-- [ ] CMP-010-T12 [P] [US3] Round-trip tests: byte-identical decode → encode with a key; load → capture keeps it; key with luma key and mask; clamping and unknown-key warnings; a scene without a key encodes as before in Packages/SceneFormat/Tests/SceneFormatTests/SceneColorKeyTests.swift
-- [ ] CMP-010-T13 [US3] ADR-0028 note for `composite.colorKey` in docs/adr/0028-scene-document-format.md
+- [X] CMP-010-T11 [US3] `SceneComposite.colorKey`, decode per contract C3 (clamp with `valueClamped`, drop unknown keys with `droppedField`, `greenKey` defaults for missing fields), encode only when set with every field, live state and capture in Packages/SceneFormat/Sources/SceneFormat/{SceneDocument,SceneDecoding,SceneEncoding,SceneLiveState}.swift — Verified 2026-11-14: SceneColorKeyTests 3 tests; SceneFormat 181 tests, 0 failures (QA-004 meta-test included)
+- [X] CMP-010-T12 [P] [US3] Round-trip tests: byte-identical decode → encode with a key; load → capture keeps it; key with luma key and mask; clamping and unknown-key warnings; a scene without a key encodes as before in Packages/SceneFormat/Tests/SceneFormatTests/SceneColorKeyTests.swift — Verified 2026-11-14: SceneColorKeyTests: byte-identical round trips (alone and with luma key and circle), load → capture, clamping, unknown keys, defaults, malformed refused, no field without a key
+- [X] CMP-010-T13 [US3] ADR-0028 note for `composite.colorKey` in docs/adr/0028-scene-document-format.md — Verified 2026-11-14: ADR-0028 bullet added; validate_docs OK
 
 ## Phase 5: User Story 2 - Edit the key in the inspector (P1)
 
