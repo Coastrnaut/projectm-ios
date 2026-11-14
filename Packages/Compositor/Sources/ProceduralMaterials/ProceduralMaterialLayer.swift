@@ -13,6 +13,7 @@
 import Compositor
 import Metal
 import ParameterGraph
+import ShaderParameterMetadata
 
 public final class ProceduralMaterialLayer: LayerSource {
     public let definition: MaterialDefinition
@@ -58,6 +59,14 @@ public final class ProceduralMaterialLayer: LayerSource {
 
     public func prepare(picture: LayerPictureDescriptor, device: MTLDevice) throws(LayerSourceError) {
         if pipeline != nil { return }
+        // SHD-003-R4: the material's metadata must match the slots its fragment function reads.
+        if let metadata = definition.metadata {
+            do {
+                try metadata.check(source: ProceduralMaterialShaders.source, function: definition.fragmentFunction)
+            } catch {
+                throw .resourceUnavailable("material metadata \(definition.id): \(error)")
+            }
+        }
         let library: MTLLibrary
         if let compiled = self.library {
             library = compiled

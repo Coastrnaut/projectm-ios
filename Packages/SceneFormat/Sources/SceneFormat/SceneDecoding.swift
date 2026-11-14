@@ -242,7 +242,7 @@ struct SceneDecoder {
 
     private mutating func composite(_ value: SceneJSON, _ path: String) throws(SceneDecodeError) -> SceneComposite {
         let o = try object(value, path)
-        dropUnknown(o, known: ["opacity", "blend", "transform", "fit", "mask", "gradientMask"], path: path)
+        dropUnknown(o, known: ["opacity", "blend", "transform", "fit", "mask", "gradientMask", "lumaKey"], path: path)
         var opacity = 1.0
         if let v = o["opacity"] {
             let raw = try double(v, ScenePath.key(path, "opacity"))
@@ -264,7 +264,44 @@ struct SceneDecoder {
         let gradient: SceneGradientMask? = try o["gradientMask"].flatMap { (g: SceneJSON) throws(SceneDecodeError) -> SceneGradientMask? in
             try self.gradientMask(g, ScenePath.key(path, "gradientMask"))
         }
-        return SceneComposite(opacity: opacity, blendMode: blend, transform: transform, fit: fit, mask: mask, gradientMask: gradient)
+        let key: LayerLumaKey? = try o["lumaKey"].map { (k: SceneJSON) throws(SceneDecodeError) -> LayerLumaKey in
+            try self.lumaKey(k, ScenePath.key(path, "lumaKey"))
+        }
+        return SceneComposite(opacity: opacity, blendMode: blend, transform: transform, fit: fit, mask: mask, gradientMask: gradient,
+                              lumaKey: key)
+    }
+
+    /// CMP-009's saved form (contracts/luma-key.md L1 in specs/220): `low`, `high` (0…1), `softness` (0…0.5) and
+    /// `invert`; missing fields read `LayerLumaKey.blackKey`'s; numbers clamped (one `valueClamped` each); a reversed range
+    /// swapped (`valueClamped` at the key); unknown keys dropped (`droppedField`).
+    private mutating func lumaKey(_ value: SceneJSON, _ path: String) throws(SceneDecodeError) -> LayerLumaKey {
+        let o = try object(value, path)
+        dropUnknown(o, known: ["low", "high", "softness", "invert"], path: path)
+        let defaults: LayerLumaKey = .blackKey
+        let low: Double = try lumaNumber(o, "low", defaults.low, LayerLumaKey.rangeLimits, path)
+        let high: Double = try lumaNumber(o, "high", defaults.high, LayerLumaKey.rangeLimits, path)
+        let softness: Double = try lumaNumber(o, "softness", defaults.softness, LayerLumaKey.softnessLimits, path)
+        var inverted: Bool = defaults.inverted
+        if let v = o["invert"] {
+            guard let b = v.boolValue else {
+                throw .malformed(path: ScenePath.key(path, "invert"), reason: "expected a boolean, found \(v.typeName)")
+            }
+            inverted = b
+        }
+        if low > high {
+            warnings.append(SceneIssue(.valueClamped, path: path, "\(path): low \(low) is above high \(high); they were swapped."))
+        }
+        return LayerLumaKey(low: low, high: high, softness: softness, inverted: inverted)
+    }
+
+    private mutating func lumaNumber(_ o: [String: SceneJSON], _ key: String, _ fallback: Double, _ range: ClosedRange<Double>,
+                                     _ path: String) throws(SceneDecodeError) -> Double {
+        guard let v = o[key] else { return fallback }
+        let fieldPath: String = ScenePath.key(path, key)
+        let raw: Double = try double(v, fieldPath)
+        let stored: Double = min(max(raw, range.lowerBound), range.upperBound)
+        if stored != raw { clamped(fieldPath, raw, "\(range.lowerBound)…\(range.upperBound)", stored) }
+        return stored
     }
 
     /// CMP-008's saved form (contracts/gradient-masks.md G3 in specs/207): `kind` required; an unknown kind's object

@@ -26,8 +26,12 @@ final class SceneHistoryCoordinator {
     private(set) var history: SceneHistory<SceneInputs>?
 
     /// SCN-015-R3: false while the scene is locked.
-    var canUndo: Bool { !isLocked && (history?.canUndo ?? false) }
-    var canRedo: Bool { !isLocked && (history?.canRedo ?? false) }
+    var canUndo: Bool { !isLocked && !isSuspended && (history?.canUndo ?? false) }
+    var canRedo: Bool { !isLocked && !isSuspended && (history?.canRedo ?? false) }
+    /// SCN-009 (research SCN-009-D1): while true nothing is recorded and undo/redo do nothing (A/B Compare previews).
+    private(set) var isSuspended = false
+    /// SCN-009-R11 (research SCN-009-D7): a restart while suspended (cue, Reopen, media replaced) ends Compare first.
+    @ObservationIgnored var onRestartWhileSuspended: (() -> Void)?
     /// SCN-015: the scene lock (set by AppCoordinator; nil in tests of the history alone).
     @ObservationIgnored var sceneLock: SceneLock?
     private var isLocked: Bool { sceneLock?.isLocked ?? false }
@@ -65,6 +69,7 @@ final class SceneHistoryCoordinator {
     /// A non-edit changed the scene (cue, Reopen, photo or video replaced): start again from it.
     func restart() {
         guard history != nil else { return }   // not started yet: `start` reads the scene
+        if isSuspended { onRestartWhileSuspended?() }   // SCN-009-R11: Compare ends (and resumes) first
         begin()
     }
 
@@ -91,7 +96,7 @@ final class SceneHistoryCoordinator {
 
     /// Records the current inputs (the observation callback, or a catch-up before a boundary).
     func capture() {
-        guard var history else { return }
+        guard !isSuspended, var history else { return }
         let now = inputs()
         let previous = history.current.value
         if now.photoID != previous.photoID || now.videoID != previous.videoID {
@@ -107,7 +112,7 @@ final class SceneHistoryCoordinator {
     /// and closes coalescing; the observation callback that follows finds equal bytes and records nothing.
     /// Call `endCoalescing()` before the writes so earlier edits stay their own steps.
     func recordStep(label: String) {
-        guard var history else { return }
+        guard !isSuspended, var history else { return }
         let now = inputs()
         let previous = history.current.value
         if now.photoID != previous.photoID || now.videoID != previous.videoID {
@@ -119,6 +124,17 @@ final class SceneHistoryCoordinator {
         self.history = history
     }
 
+    /// SCN-009: A/B Compare started (after `endCoalescing()`); nothing is recorded until `resume()`.
+    func suspend() {
+        isSuspended = true
+    }
+
+    /// SCN-009: Compare ended. The next capture compares the live inputs with the pre-Compare state, so an unchanged
+    /// scene (Cancel) records nothing.
+    func resume() {
+        isSuspended = false
+    }
+
     /// A boundary: a slider drag ended or Settings closed.
     func endCoalescing() {
         capture()
@@ -126,6 +142,7 @@ final class SceneHistoryCoordinator {
     }
 
     func undo() {
+        if isSuspended { return }   // SCN-009-R4
         if sceneLock?.refusesEdit() == true { return }   // SCN-015-R3
         capture()
         guard let state = history?.undo() else { return }
@@ -133,6 +150,7 @@ final class SceneHistoryCoordinator {
     }
 
     func redo() {
+        if isSuspended { return }   // SCN-009-R4
         if sceneLock?.refusesEdit() == true { return }   // SCN-015-R3
         capture()
         guard let state = history?.redo() else { return }
@@ -203,6 +221,7 @@ enum LayerHistoryEdit {
             let label: String = "\(title) Gradient Stop \(n) \(edit.field.title) \(LayerGradientEdit.stopText(edit.value))"
             return (label, "layer.\(kind).gradientStop\(n).\(edit.field.rawValue)")
         }
+        if let range = LayerLumaKeyEdit.rangeEdit(parameters, title: title, kind: kind, after: after) { return range }   // CMP-009
         guard parameters.count == 1, let parameter = parameters.first else {
             return (after == SceneComposite() ? "Reset \(title)" : "\(title) Layer", nil)
         }
@@ -223,8 +242,9 @@ enum LayerHistoryEdit {
 
     static func changedParameters(from old: SceneComposite, to new: SceneComposite) -> [LayerInspectorParameter] {
         var result: [LayerInspectorParameter] = []
-        for parameter in LayerInspectorParameter.sliders
-        where LayerCompositeEdit.value(parameter, of: old) != LayerCompositeEdit.value(parameter, of: new) {
+        let luma: Set<LayerInspectorParameter> = Set(LayerLumaKeyEdit.parameters)
+        for parameter in LayerInspectorParameter.sliders where !luma.contains(parameter)
+        && LayerCompositeEdit.value(parameter, of: old) != LayerCompositeEdit.value(parameter, of: new) {
             result.append(parameter)
         }
         if old.blendMode != new.blendMode { result.append(.blendMode) }
@@ -237,6 +257,7 @@ enum LayerHistoryEdit {
         if wasInverted != isInverted { result.append(.maskInverted) }
         if old.gradientMask?.kind != new.gradientMask?.kind { result.append(.gradientKind) }   // CMP-008
         else if LayerGradientEdit.stops(old) != LayerGradientEdit.stops(new) { result.append(.gradientStops) }
+        result.append(contentsOf: LayerLumaKeyEdit.changed(from: old, to: new))   // CMP-009
         if result.isEmpty && old.gradientMask != new.gradientMask { result.append(.gradientKind) }   // e.g. an unknown gradient replaced
         if result.isEmpty && old != new { result.append(.maskShape) }   // e.g. an unknown mask replaced
         return result

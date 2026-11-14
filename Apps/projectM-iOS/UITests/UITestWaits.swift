@@ -65,14 +65,23 @@ extension XCUIApplication {
         let revealLane: CGFloat = 0.96
         let top = window.coordinate(withNormalizedOffset: CGVector(dx: revealLane, dy: long ? 0.1 : 0.18))
         let bottom = window.coordinate(withNormalizedOffset: CGVector(dx: revealLane, dy: long ? 0.92 : 0.88))
+        // Below the navigation bar once this call has dragged: an up drag can glide a row past the fold
+        // and under the translucent bar, where its frame is on screen but a tap lands on the bar
+        // (CameraRecoveryUITests' Camera row, 2026-11-14). Before any drag the screen's top is the limit,
+        // so an element in the bar itself is still taken at once.
+        var dragged = false
+        func barLimit() -> CGFloat { bar.exists ? bar.frame.maxY : window.frame.minY }
         func visible() -> Bool {
             guard element.exists else { return false }
             let frame = element.frame, screen = window.frame
-            let limit: CGFloat = down ? bar.frame.maxY : screen.minY
+            let limit: CGFloat = down || dragged ? barLimit() : screen.minY
             return frame.height > 0 && frame.minY >= limit && frame.maxY <= screen.maxY
         }
+        /// The row went past the bar (or above the screen) on an up drag: come back with short down drags.
+        func overshot() -> Bool {
+            !down && dragged && element.exists && element.frame.height > 0 && element.frame.minY < barLimit()
+        }
         // Long: up to 12 drags (about 10 screens; OSC's last rows sat just past 8 on 2026-11-14).
-        var dragged = false
         for _ in 0..<(long ? 12 : 8) {
             // A long drag can leave the list gliding: wait until the row holds still (a tap on a list
             // still moving only stops it; LayerInspectorUITests, 2026-11-14), then check again. Before
@@ -86,7 +95,7 @@ extension XCUIApplication {
             // near the top on a list already at its top dismisses the sheet instead of scrolling.
             let midHigh = window.coordinate(withNormalizedOffset: CGVector(dx: revealLane, dy: 0.42))
             let midLow = window.coordinate(withNormalizedOffset: CGVector(dx: revealLane, dy: 0.72))
-            let (from, to) = down ? (midHigh, midLow) : (bottom, top)
+            let (from, to) = down || overshot() ? (midHigh, midLow) : (bottom, top)
             from.press(forDuration: 0.05, thenDragTo: to, withVelocity: .default, thenHoldForDuration: 0.1)
         }
         return visible()

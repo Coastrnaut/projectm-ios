@@ -61,6 +61,11 @@ final class SceneSnapshotCoordinator {
     @ObservationIgnored var announce: (String) -> Void = { (_: String) -> Void in }
     /// SCN-015-R3: save, rename, delete and recall are refused while the scene is locked (nil: never locked).
     @ObservationIgnored var sceneLock: SceneLock?
+    /// SCN-009-R4: true while A/B Compare previews; save, rename, delete and recall are refused.
+    @ObservationIgnored var isComparing: () -> Bool = { () -> Bool in false }
+    /// SCN-009: the Compare model the Snapshots rows open (nil in previews and tests of snapshots alone).
+    @ObservationIgnored weak var compare: SceneCompareCoordinator?
+    static let compareRefusal = "Finish Compare first."
 
     init(registry: ParameterRegistry? = ParameterInspectorCatalog.registry,
          parameterIDs: [ParameterID] = ParameterInspectorTargets.inspectableIDs) {
@@ -109,7 +114,7 @@ final class SceneSnapshotCoordinator {
     /// SCN-008-R8: nil when renamed, else the refusal (the name is unchanged).
     @discardableResult
     func rename(at index: Int, to name: String) -> String? {
-        if refusedByLock() { return SceneLock.refusalMessage }
+        if refusedByLock() { return status ?? SceneLock.refusalMessage }
         do {
             let updated: [SceneSnapshotEntry] = try SceneSnapshotEditing.renaming(at: index, to: name, in: entries)
             apply(updated)
@@ -134,6 +139,10 @@ final class SceneSnapshotCoordinator {
 
     /// SCN-015: the lock announces the refusal itself; the row's status shows it.
     private func refusedByLock() -> Bool {
+        if isComparing() {   // SCN-009-R4
+            report(Self.compareRefusal)
+            return true
+        }
         guard sceneLock?.refusesEdit() == true else { return false }
         status = SceneLock.refusalMessage
         return true
@@ -148,7 +157,7 @@ final class SceneSnapshotCoordinator {
 
     @discardableResult
     func recall(at index: Int) -> SceneSnapshotRecallResult {
-        if refusedByLock() { return SceneSnapshotRecallResult(message: SceneLock.refusalMessage) }
+        if refusedByLock() { return SceneSnapshotRecallResult(message: status ?? SceneLock.refusalMessage) }
         let read: [SceneSnapshot?] = SceneSnapshotEntry.read(entries).snapshots
         guard index < read.count, let snapshot = read[index], let registry else {
             let message = "That snapshot can't be used."
