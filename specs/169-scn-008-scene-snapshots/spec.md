@@ -42,7 +42,7 @@ conservative, local-first option.
 - Q: What does SCN-012 report? → A: Two new warning codes: `invalidSnapshot` (an entry that is not usable: missing or wrong name, values not an object, a malformed value, too many values, or beyond the limit) and `unknownSnapshotParameter` (a value whose parameter ID the registry does not know; that value is skipped on recall, the rest of the snapshot works). Both keep the entry verbatim; neither refuses the scene.
 - Q: What does Save Snapshot capture? → A: The current manual values of the seven parameters (what Settings shows, not the modulated values), under the next free default name "Snapshot N" (smallest unused N ≥ 1). Names are 1…64 characters after trimming spaces and are unique in a scene (compared case-insensitively).
 - Q: How does Recall apply values? → A: Through the Settings write path (`ParameterInspectorTargets`), in parameter-ID order, writing only values that differ from the current ones, after validating each against the registry (MOD-001 clamping; a rejected value is skipped). It is one undo step labelled "Recall <name>". It never reloads or touches media, the visual, the preset, the effect chain, text or layers.
-- Q: Missing parameters? → A: A value whose ID the registry does not know, or that the app has no control for, is skipped and reported: the status line and the announcement say "Recalled S1; 1 value skipped", and the row lists the skipped IDs.
+- Q: Missing parameters? → A: A value whose ID the registry does not know, or that the app has no control for, is skipped and reported: the status line and the announcement say "Recalled S1; 1 value skipped", and the status line names the skipped IDs.
 - Q: Is recall eased over the scene's transition curve? → A: No: recall applies at once, exactly as a Settings edit. Easing would need the transition bus in the live renderer (SCN-007's follow-up); recorded as out of scope.
 - Q: Where is the UI? → A: A "Snapshots" section in Settings, right below the visual options (the glow and spectrum controls a snapshot holds), for the current scene. Actions: Save Snapshot; per row Recall, Rename, Delete (swipe, context menu and VoiceOver actions). Delete asks for confirmation. Announcements go on the library lane (`AccessibilityAnnouncer`, kind `.library`).
 - Q: Triggers? → A: MIDI/OSC recall is a later row; this row reserves the action ID `scene.snapshot.recall` only.
@@ -57,6 +57,10 @@ Answered by Claude under owner rules 4 and 9 (recommended option first).
 - Q: Do snapshots survive backup? → A: Yes: they are part of the scene document, which FILE-005 backs up as bytes; no backup change is needed.
 - Q: New settings keys? → A: None.
 - Q: How is "no media reload" proven? → A: A DEBUG media-load spy counts photo content sets and preloads, video content and loop-region sets, logo sets and photo/video host creations; the acceptance tests assert the counts do not change across recall and that the scene's media inputs (photo, video, logo, slideshow, visual) are identical.
+
+### Session 2026-11-14 (speckit-analyze)
+
+- Consistency pass over spec, plan, contract and tasks: every requirement R1-R11 maps to a task (R1 → T01, T08; R2 → T02; R3 → T01, T05; R4 → T03; R5 → T08; R6 → T04, T07, T08, T09; R7 → T04, T08; R8 → T08, T11; R9 → T11; R10 → T06, T10; R11 → T01). Two fixes applied: the limit counts stored entries (usable or not), so a file already holding 16 or more entries refuses Save (contract N6 and R3 agree); the skipped IDs are named on the status line (not a separate row element). R10's backup half needs no task: FILE-005 copies the scene file's bytes, which carry the list.
 
 ## User Scenarios & Testing *(mandatory)*
 
