@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (PRE-005-T01-T16 verified on the Mac: PresetLibrary package tests on the host, the ANGLE runner test, app unit and UI tests on a private iOS 27.2 simulator; T17 threshold tuning is a `{device}` task; no ADR; the Linux build of PresetLibrary is not run on this host, it runs in CI)
 
 **Input**: User description: "Implement PRE-005 (Preset energy facets) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Classify low, medium and high motion using deterministic frame samples."
