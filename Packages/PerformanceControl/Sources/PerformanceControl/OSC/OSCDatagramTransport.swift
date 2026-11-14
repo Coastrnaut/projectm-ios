@@ -24,8 +24,9 @@ public enum OSCTransportEvent: Sendable {
     case failed(OSCListenerFailure)
     /// One datagram of at most `OSCLimits.maximumDatagramBytes` from a local peer. `source` numbers
     /// the peer connection (OSC-009-R3: never an address); transports that cannot tell use
-    /// `.unattributed`.
-    case datagram([UInt8], source: OSCSourceID = .unattributed)
+    /// `.unattributed`. OSC-008: `peer` is the sender's host, already read for the local check, handed on in
+    /// memory for the optional allowlist (nil when the transport cannot tell: refused while the allowlist is on).
+    case datagram([UInt8], source: OSCSourceID = .unattributed, peer: OSCPeerAddress? = nil)
     /// A datagram over the limit, dropped without copying.
     case oversized(Int)
     /// A peer outside the local network, dropped before any read.

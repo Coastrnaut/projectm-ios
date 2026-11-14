@@ -13,6 +13,8 @@
 //   OSC-001-D2).
 // * At most 8 peers (`OSCPeerTable`); the least recently admitted one is cancelled for a ninth.
 // * Each peer connection is numbered (`OSCSourceID`) for the OSC-009 rate limiter.
+// * OSC-008: each datagram carries the peer's host (already read for the local check) for the optional
+//   allowlist; nothing new is opened, resolved or stored.
 // * All state is confined to one private serial queue; events are reported on it.
 // * `stop()` cancels the listener and every peer, then reports `.cancelled` once the listener is
 //   cancelled, so the port is free for the next listener.
@@ -138,7 +140,7 @@ public final class NetworkDatagramTransport: OSCDatagramTransport, @unchecked Se
         }
         connection.start(queue: queue)
         lastSource += 1
-        receive(on: connection, id: id, source: OSCSourceID(rawValue: lastSource))
+        receive(on: connection, id: id, source: OSCSourceID(rawValue: lastSource), peer: address)
     }
 
     private func forget(_ id: ObjectIdentifier) {
@@ -146,18 +148,19 @@ public final class NetworkDatagramTransport: OSCDatagramTransport, @unchecked Se
         peers.remove(id)
     }
 
-    private func receive(on connection: NWConnection, id: ObjectIdentifier, source: OSCSourceID) {
+    /// OSC-008: `peer` is the address already read for the local check, passed on in memory for the allowlist.
+    private func receive(on connection: NWConnection, id: ObjectIdentifier, source: OSCSourceID, peer: OSCPeerAddress) {
         connection.receiveMessage { data, _, _, error in
             guard !self.stopRequested, self.connections[id] != nil else { return }
             if let data {
                 if data.count > OSCLimits.maximumDatagramBytes {
                     self.events?(.oversized(data.count))
                 } else {
-                    self.events?(.datagram([UInt8](data), source: source))
+                    self.events?(.datagram([UInt8](data), source: source, peer: peer))
                 }
             }
             if error == nil {
-                self.receive(on: connection, id: id, source: source)
+                self.receive(on: connection, id: id, source: source, peer: peer)
             } else {
                 self.forget(id)
             }

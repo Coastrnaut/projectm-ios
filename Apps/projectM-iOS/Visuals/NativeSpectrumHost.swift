@@ -352,6 +352,9 @@ final class NativeSpectrumHost: PresentationBoundResource {
     /// MOD-007: the current scene's oscillators and the per-frame values the bindings read (`audio.lfo.<index>`).
     private let lfoBank = LFOBank()
     private let lfoValues = UnsafeMutableBufferPointer<Double>.allocate(capacity: LFOBank.maximumOscillators)
+    /// MOD-015: every band's fast, medium and slow envelope (`audio.bandEnvelope.<profile>.<band>`), advanced with the
+    /// bindings on the frame clock; preallocated, so a frame allocates nothing.
+    private let bandEnvelopeBank = BandEnvelopeBank()
     /// MOD-009: the BPM tempo-synced oscillators follow (nil: their stored rate); read once per frame while one exists.
     var lfoTempoBPM: (@MainActor () -> Double?)?
     /// MOD-002: the luminance model the generator sees while the glow intensity is bound.
@@ -665,9 +668,11 @@ final class NativeSpectrumHost: PresentationBoundResource {
             lfoBank.values(atNanoseconds: timeNanoseconds, tempoBPM: tempo, maximumRateHz: cap, into: lfoValues)
             lfos = UnsafeBufferPointer(lfoValues)
         }
+        bandEnvelopeBank.advance(bands: bands, timeNanoseconds: timeNanoseconds)   // MOD-015: held while nothing is bound
         let frame = AudioFeatureFrame(bands: bands, kick: kick, centroid: centroid, loudness: loudness, midTransient: midTransient,
                                       highTransient: highTransient, rolloff: rolloff, flatness: flatness,
-                                      correlation: correlation, lfos: lfos)
+                                      correlation: correlation, lfos: lfos,
+                                      bandEnvelopes: bandEnvelopeBank.values)
         if triggerBank.hasTriggers {   // MOD-006: one step per trigger, no allocation
             triggerBank.advance(frame: frame, timeNanoseconds: timeNanoseconds) { (action: ThresholdTriggerAction) -> Void in
                 onTrigger?(action)
@@ -977,7 +982,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
     /// FR-049: frame-rate cap and render scale follow the thermal state and Low Power Mode.
     private func observeFrameRatePressure() {
         let center = NotificationCenter.default
-        for name in [ProcessInfo.thermalStateDidChangeNotification, Notification.Name.NSProcessInfoPowerStateDidChange] {
+        for name in QualityGovernor.changeNotifications {   // PERF-008: the power profile too
             observers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
                 MainActor.assumeIsolated { self?.refreshQuality() }
             })

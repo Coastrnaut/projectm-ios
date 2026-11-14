@@ -47,6 +47,20 @@
   miss a non-pooled device leak, negative control (b)); a slope over the later half within 10 cycles (not enough
   margin: whether the growth stops before cycle 5 is unknown).
 
+## QA-006-D2b: Memory source on a paravirtual GPU (CI fix, 2026-11-14)
+
+- **Finding**: the D2a warm-up was not enough. CI run 43631161188 (`macos-26`, Apple Paravirtual device) failed
+  again: `currentAllocatedSize` rose in ~1 MB steps every 4-5 cycles for all 20 cycles (6.6 → 10.8 MB), while
+  pool live bytes (786,432), pool misses (8) and the process footprint (38.6 MB at cycles 9 and 19) stayed
+  flat. The growth is the virtual GPU driver's allocation pattern, not the soak's objects.
+- **Decision**: on a device whose name contains "Paravirtual", the soak judges the pool estimate plus the
+  injected device leak bytes (`memorySource` "poolEstimate (paravirtual GPU)"). Apple GPUs (the Mac Studio host,
+  the simulator, devices) keep `deviceAllocatedSize`, so the merge gates on the build Mac still judge real
+  device memory. Both negative controls still fail on CI.
+- **Trade-off**: on CI only, a real non-pooled device leak would not fail this soak; the gates on the build Mac
+  and the device suite cover it. Judging the footprint was rejected: it moves by ±1 MB between cycles, ten
+  times the one-texture leak the soak must catch.
+
 ## QA-006-D3: Scene switching path
 
 - **Decision**: CMP-014 `SceneTransitionBus` with one shared `TexturePool`; each switch builds the

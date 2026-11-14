@@ -12,12 +12,14 @@
 // * Presentation-bound (PERF-011): suspension pauses, cancels the in-flight item before its GPU step, waits for
 //   a running GPU step and releases the cache; resume replans after the settle delay. PERF-006: a cache-tier
 //   responder releases every non-live entry. Thermal serious or critical pauses; Low Power keeps the next cue.
+//   PERF-008-R2: a power budget without background warm-up (Battery saver) also keeps only the next cue.
 // * Preset picks pass through `forwardPresets` to the unchanged SC-104 warm-up (2.5 s delay).
 // Video and logo are not loaded here (spec Clarifications); the loader refuses those kinds.
 import Foundation
 import ImageLayer
 import Metal
 import PresentationLifecycle
+import Rendering
 import SceneFormat
 import ShowControl
 
@@ -89,23 +91,24 @@ final class MediaPrewarmCoordinator: PresentationBoundResource, MemoryPressureRe
 
     // MARK: Thermal and Low Power (PERF-003 signals; research PERF-005-D9)
 
-    func update(thermal: ProcessInfo.ThermalState, lowPower: Bool) {
+    func update(thermal: ProcessInfo.ThermalState, lowPower: Bool, budget: PowerBudget = .standard) {
         thermalState = thermal
         if thermal == .serious || thermal == .critical {
             scheduler.pause(.thermal)
         } else {
             scheduler.resume(.thermal)
         }
-        scheduler.lowPower = lowPower
+        scheduler.lowPower = lowPower || !budget.allowsBackgroundWarmUp   // PERF-008-R2
     }
 
     private func observeSystem() {
         let refresh: @MainActor (MediaPrewarmCoordinator) -> Void = { (c: MediaPrewarmCoordinator) in
+            let lowPower: Bool = ProcessInfo.processInfo.isLowPowerModeEnabled
             c.update(thermal: Self.injectedThermal ?? ProcessInfo.processInfo.thermalState,
-                     lowPower: ProcessInfo.processInfo.isLowPowerModeEnabled)
+                     lowPower: lowPower, budget: PowerProfileState.budget(lowPower: lowPower))
         }
         refresh(self)
-        for name in [ProcessInfo.thermalStateDidChangeNotification, Notification.Name.NSProcessInfoPowerStateDidChange] {
+        for name in QualityGovernor.changeNotifications {   // thermal, Low Power and the power profile (PERF-008)
             observers.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] (_: Notification) in
                 MainActor.assumeIsolated {
                     guard let self else { return }
