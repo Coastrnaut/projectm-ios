@@ -21,6 +21,9 @@
 //   announce on the library lane (`announceLibrary`). A duplicate goes into its source's folder.
 // * SCN-005: scene tags live in the show index too; tag edits save the show only, never apply anything,
 //   and announce on the library lane. A duplicate gets its source's tags.
+// * SCN-006: every scene file this coordinator writes or drops (Add, Duplicate, Rename, removing a
+//   scene's last cue) is reported through `sceneFilesChanged`, so scene previews never outlive the
+//   file they show.
 // Main actor; file I/O is small (≤ 1 MiB per file, typically a few KB) and only on user action.
 import Foundation
 import Observation
@@ -66,6 +69,10 @@ final class ShowCoordinator {
     }
     /// SCN-004-R13: folder results and refusals (AppCoordinator routes them to the library lane).
     @ObservationIgnored var announceLibrary: (String) -> Void = { (_: String) in }
+    /// SCN-006: scene IDs whose files were written or removed (AppCoordinator routes them to the previews).
+    @ObservationIgnored var sceneFilesChanged: (Set<String>) -> Void = { (_: Set<String>) in }
+    /// SCN-006: the scene previews Scene Folders shows (set by AppCoordinator; nil in tests of the show alone).
+    @ObservationIgnored weak var previews: ScenePreviewModel?
 
     init(store: ShowStore?, registry: ParameterRegistry?) {
         self.store = store
@@ -225,6 +232,7 @@ final class ShowCoordinator {
         unreadableScenes.remove(document.id)
         sceneNames[document.id] = document.name
         save()
+        sceneFilesChanged([document.id])   // SCN-006
         return true
     }
 
@@ -269,6 +277,7 @@ final class ShowCoordinator {
         }
         try? list.copyTags(fromScene: cue.sceneID, toScene: copy.id)   // SCN-005-R9
         save()
+        sceneFilesChanged([copy.id])   // SCN-006
         return inserted
     }
 
@@ -281,6 +290,7 @@ final class ShowCoordinator {
         do throws(ShowSceneEditError) {
             let renamed = try store.renameScene(cue.sceneID, to: name)
             sceneNames[renamed.id] = renamed.name
+            sceneFilesChanged([renamed.id])   // SCN-006: a new file, so its old preview goes
             return true
         } catch {
             if case .unreadable = error { unreadableScenes.insert(cue.sceneID) }
@@ -298,8 +308,17 @@ final class ShowCoordinator {
     }
 
     func remove(_ cueID: UUID) {
+        let before = Set(list.sceneIDs)
         guard (try? list.remove(cueID)) != nil else { return }
         save()
+        let gone: Set<String> = before.subtracting(list.sceneIDs)
+        if !gone.isEmpty { sceneFilesChanged(gone) }   // SCN-006: the scene's file was removed
+    }
+
+    /// SCN-006: the scene's stored file (whether or not it exists).
+    func sceneFileURL(_ sceneID: String) -> URL? {
+        guard ShowCueList.isSceneID(sceneID) else { return nil }
+        return store?.sceneFile(sceneID)
     }
 
     func move(fromOffsets offsets: IndexSet, toOffset destination: Int) {
@@ -487,6 +506,8 @@ final class ShowCoordinator {
     #if DEBUG
     /// UI tests: replaces the stored show (`UITestShowFixture`).
     func replaceForUITests(_ list: ShowCueList) {
+        let touched: Set<String> = Set(self.list.sceneIDs).union(list.sceneIDs)
+        defer { sceneFilesChanged(touched) }   // SCN-006
         self.list = list
         unreadableScenes = Set(list.sceneIDs.filter { (id: String) -> Bool in !(store?.sceneIsReadable(id) ?? false) })
         refreshSceneNames()

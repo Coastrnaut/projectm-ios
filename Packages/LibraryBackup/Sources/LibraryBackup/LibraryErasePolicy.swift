@@ -13,7 +13,7 @@ public enum LibraryEraseCategory: String, Sendable, Hashable, CaseIterable, Coda
         switch self {
         case .scenes: "Scenes and show"
         case .presets: "My Presets"
-        case .collections: "Collections and favorites"
+        case .collections: "Collections, tags and favorites"
         case .media: "Photos and videos"
         case .importedAudio: "Imported audio"
         case .settings: "Settings"

@@ -122,17 +122,19 @@ public final class PresetLibrary: Sendable {
     /// Scope members: alphabetical, playable only (FR-115, FR-118). A collection's members are in
     /// the user's order (PRE-007-R11); `collections` maps a collection id to its preset ids.
     public func members(of scope: PresetScope, unlocked: Bool, favorites: Set<String>, excluded: Set<String>,
-                        collections: [String: [String]] = [:]) -> [IndexedPreset] {
+                        collections: [String: [String]] = [:], tags: PresetTagIndex = .empty) -> [IndexedPreset] {
         let candidates: [IndexedPreset]
         switch scope {
         case .included: candidates = presets.filter(\.isIncluded)
         case .pack(let id): candidates = presets.filter { $0.source == id }
         case .folder(let id, let path): candidates = presets.filter { $0.source == id && $0.folder.starts(with: path) }
         case .favorites: candidates = favoritesListing(favorites)
-        case .search(let query): candidates = search(query, limit: Self.searchLimit).groups.flatMap(\.presets)
+        case .search(let query):   // PRE-003-R9: tag matches are results too
+            candidates = search(query, limit: Self.searchLimit, tagMatches: tags.presetIDs(tagContaining: query)).groups.flatMap(\.presets)
         case .all: candidates = Self.alphabetical(Array(presets.prefix(builtInCount)))   // the bundled library only (PRE-012-R22)
         case .collection(let id): candidates = collectionListing(collections[id] ?? [])
         case .user: candidates = userPresets
+        case .tagged(let selected): candidates = taggedListing(selected, index: tags)
         }
         return candidates.filter { !isLocked($0, unlocked: unlocked) && !excluded.contains($0.id) }
     }
@@ -148,6 +150,13 @@ public final class PresetLibrary: Sendable {
         presetIDs.compactMap { preset(id: $0) }
     }
 
+    /// PRE-003-R8: every listed preset carrying all `tags` (AND, folded), alphabetical across packs,
+    /// locked ones included (the view marks them). Empty `tags` lists nothing.
+    public func taggedListing(_ tags: [String], index: PresetTagIndex) -> [IndexedPreset] {
+        let ids: Set<String> = index.matching(all: tags)
+        return Self.alphabetical(ids.compactMap { (id: String) -> IndexedPreset? in preset(id: id) })
+    }
+
     /// A display title for a scope (FR-120). `collectionNames` maps a collection id to its name.
     public func title(of scope: PresetScope, collectionNames: [String: String] = [:]) -> String {
         switch scope {
@@ -159,6 +168,7 @@ public final class PresetLibrary: Sendable {
         case .all: "All presets"
         case .collection(let id): collectionNames[id] ?? "Collection"
         case .user: UserPresetText.scopeTitle
+        case .tagged(let tags): "Tagged: " + tags.joined(separator: ", ")
         }
     }
 
@@ -177,13 +187,19 @@ public final class PresetLibrary: Sendable {
 
     /// Name and author, case- and diacritic-insensitive substring; groups in pack order, each
     /// alphabetical; at most `limit` presets in total, `truncated` when more matched.
-    public func search(_ query: String, limit: Int) -> (groups: [(source: String, presets: [IndexedPreset])], truncated: Bool) {
+    /// PRE-003-R9: a preset in `tagMatches` (its tags contain the text) matches too; when `within` is
+    /// given, only presets in it are considered (the selected tag chips).
+    public func search(_ query: String, limit: Int, tagMatches: Set<String> = [], within: Set<String>? = nil)
+        -> (groups: [(source: String, presets: [IndexedPreset])], truncated: Bool) {
         let needle = Self.fold(query).trimmingCharacters(in: .whitespaces)
         guard !needle.isEmpty else { return ([], false) }
         var groups: [(source: String, presets: [IndexedPreset])] = []
         var taken = 0
         var truncated = false
-        for (index, key) in searchKeys.enumerated() where key.contains(needle) {
+        for (index, key) in searchKeys.enumerated() {
+            let id: String = presets[index].id
+            guard key.contains(needle) || tagMatches.contains(id) else { continue }
+            if let within, !within.contains(id) { continue }
             if taken == limit { truncated = true; break }
             let preset = presets[index]
             if groups.last?.source == preset.source {

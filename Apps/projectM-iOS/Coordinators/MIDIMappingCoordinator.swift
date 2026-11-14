@@ -19,6 +19,10 @@
 // * MIDI-006 (specs/143-midi-006-note-triggers, contract N4): note mappings (`note:` lines after the `cc:` lines, same
 //   key) drive trigger actions through `performNotes`; note learn, rows and stuck-note release live in
 //   `MIDIMappingCoordinator+Notes.swift`. One learn session (CC or note) at a time; Undo covers both lists.
+// * MIDI-007 (specs/147-midi-007-scene-selection, contract S4): scene mappings (`pc:` and `note:…=cue.go:` lines and the
+//   position mode, after the note lines) select show scenes through `performScenes`; scene learn, rows and routing
+//   live in `MIDIMappingCoordinator+Scenes.swift`. Still one learn session at a time; Undo covers the three lists.
+//   Selecting a scene never saves: only learn, delete, Undo and the mode picker write the mappings (MIDI-007-R3).
 import Foundation
 import Observation
 import ParameterGraph
@@ -68,6 +72,10 @@ final class MIDIMappingCoordinator {
     private(set) var learningNoteTarget: MIDINoteTarget?
     /// MIDI-006: note mappings (stored after the CC lines).
     var noteBindings = MIDINoteBindingList()
+    /// MIDI-007: the scene being learned (a scene ID).
+    private(set) var learningSceneID: String?
+    /// MIDI-007: scene mappings and the position mode (stored after the note lines).
+    var sceneBindings = MIDISceneBindingList()
     private(set) var liveValues: [ParameterID: Double] = [:]
     private(set) var canUndo = false
     var lastMessage: String?
@@ -78,6 +86,11 @@ final class MIDIMappingCoordinator {
     @ObservationIgnored var performNotes: @MainActor ([MIDINoteCommand]) -> Void = { (_: [MIDINoteCommand]) -> Void in }
     @ObservationIgnored var noteSession = MIDILearnSession<MIDINoteTarget>()
     @ObservationIgnored var noteRouter = MIDINoteRouter()
+    /// MIDI-007: performs scene commands (the app sets a `MIDISceneActionPerformer`).
+    @ObservationIgnored var performScenes: @MainActor (MIDISceneCommand) -> Void = { (_: MIDISceneCommand) -> Void in }
+    /// MIDI-007: a scene's name, nil when no cue shows it (the app reads the show).
+    @ObservationIgnored var sceneDisplayName: @MainActor (String) -> String? = { (_: String) -> String? in nil }
+    @ObservationIgnored var sceneSession = MIDILearnSession<String>()
     /// MIDI-006-R6: the listed inputs at the last state change (a shrink releases held notes).
     @ObservationIgnored var lastSources: Set<MIDIEndpointID> = []
 
@@ -91,7 +104,7 @@ final class MIDIMappingCoordinator {
     @ObservationIgnored let scheduler: Scheduler
     @ObservationIgnored private var session = MIDILearnSession<ParameterID>()
     @ObservationIgnored var cancelTimeout: (@MainActor () -> Void)?
-    @ObservationIgnored private var undoList: (cc: MIDIBindingList, notes: MIDINoteBindingList)?
+    @ObservationIgnored private var undoList: (cc: MIDIBindingList, notes: MIDINoteBindingList, scenes: MIDISceneBindingList)?
     @ObservationIgnored private var isClientRegistered = false
 
     init(registry: ParameterRegistry, applied: Set<ParameterID>, input: MIDIInputCoordinator,
@@ -111,6 +124,7 @@ final class MIDIMappingCoordinator {
         let lines: [String] = defaults.stringArray(forKey: Self.mappingsKey) ?? []
         bindings = MIDIBindingList(storageLines: lines, allowedTargets: allowed)
         noteBindings = MIDINoteBindingList(storageLines: lines)   // MIDI-006-R7
+        sceneBindings = MIDISceneBindingList(storageLines: lines)   // MIDI-007-R7
         lastSources = input.listedSources
         input.addStateObserver { [weak self] () -> Void in self?.inputStateChanged() }
         updateClient()
@@ -140,7 +154,7 @@ final class MIDIMappingCoordinator {
     // MARK: Texts and rows
 
     var canLearn: Bool { discovery.state.isListening }
-    var isLearning: Bool { learningTarget != nil || learningNoteTarget != nil }
+    var isLearning: Bool { learningTarget != nil || learningNoteTarget != nil || learningSceneID != nil }
 
     var rows: [MIDIMappingRow] {
         learnable.map { (descriptor: ParameterDescriptor) -> MIDIMappingRow in
@@ -155,6 +169,7 @@ final class MIDIMappingCoordinator {
     var statusText: String {
         if let learningTarget { return "Move a control on your MIDI device to map " + name(of: learningTarget) + "…" }
         if let learningNoteTarget { return Self.noteLearnPrompt(learningNoteTarget) + "…" }
+        if let learningSceneID { return sceneLearnPrompt(learningSceneID) + "…" }
         if !canLearn { return lastMessage == Self.stoppedText ? Self.stoppedText : Self.offText }
         return lastMessage ?? Self.idleText
     }
@@ -198,6 +213,7 @@ final class MIDIMappingCoordinator {
     func close() {
         if session.isLearning { _ = session.cancel() }
         if noteSession.isLearning { _ = noteSession.cancel() }
+        if sceneSession.isLearning { _ = sceneSession.cancel() }
         endLearning()
         undoList = nil
         canUndo = false
@@ -209,7 +225,13 @@ final class MIDIMappingCoordinator {
     /// Sets the note target being learned (the Notes extension; stored properties live here).
     func setLearningNoteTarget(_ target: MIDINoteTarget?) {
         learningNoteTarget = target
-        if target != nil { learningTarget = nil }
+        if target != nil { learningTarget = nil; learningSceneID = nil }
+    }
+
+    /// Sets the scene being learned (the Scenes extension).
+    func setLearningSceneID(_ sceneID: String?) {
+        learningSceneID = sceneID
+        if sceneID != nil { learningTarget = nil; learningNoteTarget = nil }
     }
 
     /// Cancels a CC learn session without a message (MIDI-006: a note learn replaces it).
@@ -220,7 +242,9 @@ final class MIDIMappingCoordinator {
     func startLearning(_ target: ParameterID) {
         guard canLearn, learnable.contains(where: { (descriptor: ParameterDescriptor) -> Bool in descriptor.id == target }) else { return }
         if noteSession.isLearning { _ = noteSession.cancel() }   // MIDI-006: one learn session at a time
+        if sceneSession.isLearning { _ = sceneSession.cancel() }   // MIDI-007
         learningNoteTarget = nil
+        learningSceneID = nil
         session.start(target: target, now: clock())
         learningTarget = target
         lastMessage = nil
@@ -232,7 +256,8 @@ final class MIDIMappingCoordinator {
 
     func cancelLearning() {
         let cancelledNote: Bool = noteSession.cancel() != nil
-        guard session.cancel() != nil || cancelledNote else { return }
+        let cancelledScene: Bool = sceneSession.cancel() != nil
+        guard session.cancel() != nil || cancelledNote || cancelledScene else { return }
         lastMessage = Self.cancelledText
         endLearning()
         updateClient()
@@ -241,7 +266,8 @@ final class MIDIMappingCoordinator {
     func timeoutFired() {
         let now: UInt64 = clock()
         let noteExpired: Bool = noteSession.expire(now: now) != nil
-        guard session.expire(now: now) != nil || noteExpired else { return }
+        let sceneExpired: Bool = sceneSession.expire(now: now) != nil
+        guard session.expire(now: now) != nil || noteExpired || sceneExpired else { return }
         finishTimedOut()
     }
 
@@ -255,15 +281,17 @@ final class MIDIMappingCoordinator {
     func endLearning() {
         learningTarget = nil
         learningNoteTarget = nil
+        learningSceneID = nil
         cancelTimeout?()
         cancelTimeout = nil
     }
 
     private func inputStateChanged() {
         releaseNotesIfInputChanged()   // MIDI-006-R6
-        guard session.isLearning || noteSession.isLearning, !input.isReceiving else { return }
+        guard session.isLearning || noteSession.isLearning || sceneSession.isLearning, !input.isReceiving else { return }
         _ = session.cancel()
         _ = noteSession.cancel()
+        _ = sceneSession.cancel()
         lastMessage = Self.stoppedText
         endLearning()
         updateClient()
@@ -316,6 +344,7 @@ final class MIDIMappingCoordinator {
         releaseNotes(changedFrom: noteBindings, to: previous.notes)
         bindings = previous.cc
         noteBindings = previous.notes
+        sceneBindings = previous.scenes
         listChanged()
     }
 
@@ -324,7 +353,11 @@ final class MIDIMappingCoordinator {
     }
 
     func rememberUndo(cc: MIDIBindingList, notes: MIDINoteBindingList) {
-        undoList = (cc, notes)
+        rememberUndo(cc: cc, notes: notes, scenes: sceneBindings)
+    }
+
+    func rememberUndo(cc: MIDIBindingList, notes: MIDINoteBindingList, scenes: MIDISceneBindingList) {
+        undoList = (cc, notes, scenes)
         canUndo = true
     }
 
@@ -339,9 +372,10 @@ final class MIDIMappingCoordinator {
         updateClient()
     }
 
-    /// MIDI-003/004 `cc:` lines unchanged, then MIDI-006 `note:` lines (kept unreadable ones included).
-    private func save() {
-        let lines: [String] = bindings.storageLines + noteBindings.storageLines
+    /// MIDI-003/004 `cc:` lines unchanged, then MIDI-006 `note:` lines, then MIDI-007 scene lines (kept unreadable ones
+    /// included).
+    func save() {
+        let lines: [String] = bindings.storageLines + noteBindings.storageLines + sceneBindings.storageLines
         if lines.isEmpty {
             defaults.removeObject(forKey: Self.mappingsKey)
         } else {
@@ -352,9 +386,12 @@ final class MIDIMappingCoordinator {
     // MARK: Receiving
 
     /// The input client's handler (one display tick's batch).
-    func receive(_ batch: [MIDIEvent]) {
+    func receive(_ incoming: [MIDIEvent]) {
+        guard !incoming.isEmpty else { return }
+        let batch: [MIDIEvent] = receiveSceneLearn(incoming)   // MIDI-007: a scene learn consumes its message
         guard !batch.isEmpty else { return }
-        receiveNotes(batch)   // MIDI-006: note learn and triggers
+        let noteLearned: Int? = receiveNotes(batch)   // MIDI-006: note learn and triggers
+        routeScenes(batch, skipping: noteLearned)   // MIDI-007: the note learning press selects nothing
         var updates: [ParameterID: Double] = [:]
         var rest: ArraySlice<MIDIEvent> = batch[...]
         if session.isLearning, let outcome = session.handle(batch, now: clock()) {
@@ -406,7 +443,8 @@ final class MIDIMappingCoordinator {
     // MARK: Input client (MIDI-003-R12)
 
     private var needsInput: Bool {
-        session.isLearning || noteSession.isLearning || !bindings.isEmpty || !noteBindings.isEmpty
+        session.isLearning || noteSession.isLearning || sceneSession.isLearning || !bindings.isEmpty || !noteBindings.isEmpty
+            || !sceneBindings.isEmpty
     }
 
     func updateClient() {

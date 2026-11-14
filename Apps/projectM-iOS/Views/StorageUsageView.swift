@@ -120,8 +120,9 @@ struct StorageUsageView: View {
                 }
             }
             #endif
-            if let libraryBackup { LibraryEraseSection(model: libraryBackup.erase) }   // FILE-011: last (destructive)
+            if let libraryBackup { LibraryEraseSection(model: libraryBackup.erase).id("libraryErase") }   // FILE-011: last (destructive)
         }
+        .uitestSettingsSection(repeated: true)   // DEBUG `-uitestSettingsSection libraryErase`: opens at the end (Erase) (owner rule 7)
         .navigationTitle("Storage")
         .libraryBackupPresentation(libraryBackup)   // FILE-005
         .libraryErasePresentation(libraryBackup)   // FILE-011

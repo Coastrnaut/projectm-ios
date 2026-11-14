@@ -148,9 +148,10 @@ public struct MIDINoteBindingList: Sendable, Hashable {
     public init() {}
 
     /// Reads the `note:` lines of a stored list (others are ignored); repeats of a note or target already read and
-    /// bindings beyond the capacity are dropped.
+    /// bindings beyond the capacity are dropped. MIDI-007: `note:…=cue.go:` lines belong to `MIDISceneBindingList`
+    /// and are skipped here (research MIDI-007-D2), so no line is kept twice.
     public init(storageLines: [String]) {
-        for line in storageLines where MIDINoteBinding.isNoteLine(line) {
+        for line in storageLines where MIDINoteBinding.isNoteLine(line) && !MIDISceneBinding.isSceneLine(line) {
             guard let binding = MIDINoteBinding(storageLine: line) else {
                 keptLines.append(line)
                 continue

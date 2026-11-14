@@ -13,6 +13,10 @@
 //   * favorites under Keep both: the union.
 // Scenes: an empty show (no cues, no stored scenes) takes the backup's show and scenes exactly;
 // otherwise FILE-004's scene planner decides (a new or copied scene gets a cue).
+// Preset tags (PRE-003, key "tags/<preset id>", section `tags`): per preset, Keep both = the union
+// (the device's tags, then the backup's, folded, at most 16; capped = `fellBack`), Replace = the
+// backup's tags, Skip = the device's. Tags of a user preset that the presets section adds as a copy
+// under a derived identifier follow that identifier.
 // Presets: a backup text already stored under another identifier is identical (each text is stored
 // once, PRE-012); a Keep both or Replace that would store a text twice keeps the device's record.
 import Foundation
@@ -36,6 +40,8 @@ public enum LibraryRestoreChoice: String, Codable, Sendable, Hashable, CaseItera
 
 public enum LibraryRestoreSection: String, Sendable, Hashable, CaseIterable {
     case scenes, currentScene, presets, collections, settings, photos
+    /// PRE-003: preset tags, one entry per tagged preset.
+    case tags
 }
 
 public enum LibraryRecordKind: String, Sendable, Hashable {
@@ -112,6 +118,8 @@ public struct LibraryRestorePlan: Sendable, Equatable {
     public let presetsToReplace: [LibraryPreset]
     /// The collections after the restore; nil when they do not change.
     public let collections: [PresetCollection]?
+    /// PRE-003: the preset tags after the restore; nil when they do not change.
+    public var presetTags: PresetTagMap? = nil
     /// The current scene to write; nil when it does not change.
     public let currentScene: Data?
     public let photosToWrite: [String: Data]
@@ -137,7 +145,7 @@ public struct LibraryRestorePlan: Sendable, Equatable {
         if showMode == .exact || (showMode == .merge && (scenePlan?.actions.isEmpty == false)) { folders.append(.show) }
         if currentScene != nil { folders.append(.currentScene) }
         if !presetsToAdd.isEmpty || !presetsToReplace.isEmpty { folders.append(.presets) }
-        if collections != nil { folders.append(.collections) }
+        if collections != nil || presetTags != nil { folders.append(.collections) }
         if !photosToWrite.isEmpty { folders.append(.photos) }
         return folders
     }
@@ -151,13 +159,16 @@ public enum LibraryRestorePlanner {
         builder.planCurrentScene(backup: backup, library: library)
         builder.planPresets(backup: backup, library: library)
         builder.planCollections(backup: backup, library: library)
+        builder.planTags(backup: backup, library: library)
         builder.planSettings(backup: backup, library: library)
         builder.planPhotos(backup: backup, library: library)
-        return LibraryRestorePlan(choice: choice, overrides: overrides, libraryDigest: libraryDigest(library),
-                                  backupDigest: LibraryRecords(backup).digest, refusal: builder.refusal, entries: builder.entries,
-                                  showMode: builder.showMode, scenePlan: builder.scenePlan, presetsToAdd: builder.presetsToAdd,
-                                  presetsToReplace: builder.presetsToReplace, collections: builder.collections,
-                                  currentScene: builder.currentScene, photosToWrite: builder.photos, settingsToApply: builder.settings)
+        var plan = LibraryRestorePlan(choice: choice, overrides: overrides, libraryDigest: libraryDigest(library),
+                                      backupDigest: LibraryRecords(backup).digest, refusal: builder.refusal, entries: builder.entries,
+                                      showMode: builder.showMode, scenePlan: builder.scenePlan, presetsToAdd: builder.presetsToAdd,
+                                      presetsToReplace: builder.presetsToReplace, collections: builder.collections,
+                                      currentScene: builder.currentScene, photosToWrite: builder.photos, settingsToApply: builder.settings)
+        plan.presetTags = builder.presetTags
+        return plan
     }
 
     /// A plan that installs nothing (the library could not be read, or an interrupted restore).
@@ -235,6 +246,7 @@ private struct Builder {
     var presetsToAdd: [LibraryPreset] = []
     var presetsToReplace: [LibraryPreset] = []
     var collections: [PresetCollection]?
+    var presetTags: PresetTagMap?
     var currentScene: Data?
     var photos: [String: Data] = [:]
     var settings: [String: LibrarySettingValue] = [:]
@@ -490,6 +502,73 @@ private struct Builder {
         }
         if list.count > PresetCollectionLimits.maxCollections { refuse(.tooManyCollections(limit: PresetCollectionLimits.maxCollections)) }
         if changed { collections = list }
+    }
+
+    // MARK: Preset tags (PRE-003)
+
+    /// The identifier a backup preset ends up under: a Keep-both copy's derived one, else its own.
+    private func restoredPresetID(_ id: String) -> String {
+        for entry in entries where entry.key == "preset/" + id {
+            if case let .addCopy(newID, _) = entry.action { return newID }
+        }
+        return id
+    }
+
+    mutating func planTags(backup: LibraryContents, library: LibraryContents) {
+        guard let incoming = backup.presetTags, !incoming.isEmpty else { return }
+        var map: PresetTagMap = library.presetTags ?? PresetTagMap()
+        var changed = false
+        for backupID in incoming.tags.keys.sorted() {
+            let theirs: [String] = incoming.tags(of: backupID)
+            let id: String = restoredPresetID(backupID)
+            let key = "tags/" + backupID
+            let mine: [String] = map.tags(of: id)
+            if mine.isEmpty {
+                let (merged, dropped) = Self.adding(theirs, to: map, id: id)
+                add(key, .tags, .new, .add, fellBack: dropped)
+                changed = changed || merged != map
+                map = merged
+                continue
+            }
+            if Set(mine.map(PresetTagMap.fold)) == Set(theirs.map(PresetTagMap.fold)) {
+                add(key, .tags, .identical, .keep)
+                continue
+            }
+            let picked = choice(for: key)
+            switch picked {
+            case .skip:
+                add(key, .tags, .clash, .keep, choice: picked)
+            case .replace:
+                var cleared = map
+                cleared.prune(id)
+                let (merged, dropped) = Self.adding(theirs, to: cleared, id: id)
+                add(key, .tags, .clash, .replace, choice: picked, fellBack: dropped)
+                changed = true
+                map = merged
+            case .keepBoth:
+                let (merged, dropped) = Self.adding(theirs, to: map, id: id)
+                add(key, .tags, .clash, merged == map ? .keep : .union, choice: picked, fellBack: dropped)
+                changed = changed || merged != map
+                map = merged
+            }
+        }
+        if changed { presetTags = map }
+    }
+
+    /// `map` with `tags` added to `id` under every PRE-003 rule; true when any had to be left out.
+    private static func adding(_ tags: [String], to map: PresetTagMap, id: String) -> (PresetTagMap, Bool) {
+        var result = map
+        var dropped = false
+        for tag in tags {
+            do {
+                try result.add(tag, to: id)
+            } catch .alreadyTagged {
+                continue
+            } catch {
+                dropped = true
+            }
+        }
+        return (result, dropped)
     }
 
     // MARK: Settings
