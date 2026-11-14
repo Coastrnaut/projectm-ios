@@ -61,6 +61,8 @@ public struct SceneRepairReport: Sendable, Hashable {
         case invalidMappings
         case unknownContent
         case valuesAdjusted
+        /// SCN-013: the scene was migrated from an older format version (a note only).
+        case formatUpdated
 
         public var title: String {
             switch self {
@@ -70,6 +72,7 @@ public struct SceneRepairReport: Sendable, Hashable {
             case .invalidMappings: "Invalid mappings"
             case .unknownContent: "Unknown content kept"
             case .valuesAdjusted: "Values adjusted"
+            case .formatUpdated: "Updated format"
             }
         }
 
@@ -174,6 +177,9 @@ extension SceneRepairReport {
         case .newerVersion:
             group = .unsupportedVersion
             ifOpened = "Made by a newer version of the app: update the app to open it."
+        case .migrationFailed:
+            group = .unsupportedVersion
+            ifOpened = "The scene's older format cannot be updated by this version of the app, so it cannot open."
         case .invalidVersion:
             group = .unsupportedVersion
             ifOpened = "The scene's format version cannot be read, so it cannot open."
@@ -197,6 +203,7 @@ extension SceneRepairReport {
         case .invalidVersion: "invalidVersion"
         case .tooMany: "tooMany"
         case .malformed: "malformed"
+        case .migrationFailed: "migrationFailed"
         }
     }
 
@@ -208,18 +215,31 @@ extension SceneRepairReport {
     }
 
     /// Bytes to a report (and the document when it decoded). Never throws, never traps (SCN-012-R7).
+    /// `migrator` is the app's chain; tests pass synthetic chains (SCN-013).
     public static func open(bytes: [UInt8], registry: ParameterRegistry,
-                            assets availability: (any SceneAssetAvailability)? = nil) -> SceneRepairOpening {
+                            assets availability: (any SceneAssetAvailability)? = nil,
+                            migrator: SceneMigrator = .standard) -> SceneRepairOpening {
         let decoded: SceneDecodeResult
         do {
-            decoded = try SceneDocument.decode(bytes)
+            decoded = try SceneDocument.decode(bytes, migrator: migrator)
         } catch {
             return SceneRepairOpening(report: SceneRepairReport(refusal: error), document: nil, decodeWarnings: [])
         }
-        let report = SceneRepairReport(document: decoded.document, decodeWarnings: decoded.warnings, registry: registry,
+        var report = SceneRepairReport(document: decoded.document, decodeWarnings: decoded.warnings, registry: registry,
                                        assets: availability)
+        if decoded.migration.migrated { report = report.adding(migrationNote(decoded.migration)) }
         return SceneRepairOpening(report: report, document: decoded.document, decodeWarnings: decoded.warnings)
     }
+
+    /// SCN-013-R11: a migrated document gets one note; a note never makes the report need review.
+    static func migrationNote(_ record: SceneMigrationRecord) -> Entry {
+        Entry(group: .formatUpdated, severity: .note, item: "Scene file",
+              problem: "Updated from an older format (version \(record.sourceVersion) to \(record.targetVersion)).",
+              ifOpened: "It opens in the current format; the original file is kept when the scene is next saved.",
+              actions: [], code: "migration.updated", path: "$")
+    }
+
+    func adding(_ entry: Entry) -> SceneRepairReport { SceneRepairReport(entries: entries + [entry]) }
 
     // MARK: Classification
 

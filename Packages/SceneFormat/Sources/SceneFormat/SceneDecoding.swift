@@ -13,19 +13,40 @@ import ParameterGraph
 public struct SceneDecodeResult: Sendable {
     public let document: SceneDocument
     public let warnings: [SceneIssue]
+    /// SCN-013: the migration that ran before typed decoding (`migrated` is false for a current file).
+    public let migration: SceneMigrationRecord
+
+    init(document: SceneDocument, warnings: [SceneIssue],
+         migration: SceneMigrationRecord = .unchanged(version: SceneDocument.currentVersion)) {
+        self.document = document
+        self.warnings = warnings
+        self.migration = migration
+    }
 }
 
 extension SceneDocument {
-    /// Reads canonical or hand-written scene bytes (contract C4).
+    /// Reads canonical or hand-written scene bytes (contract C4), migrating an older format version with
+    /// the app's chain first (SCN-013 contract M1).
     public static func decode(_ bytes: [UInt8]) throws(SceneDecodeError) -> SceneDecodeResult {
+        try decode(bytes, migrator: .standard)
+    }
+
+    /// `decode` with another migration chain (tests use synthetic chains; SCN-013-R6).
+    public static func decode(_ bytes: [UInt8], migrator: SceneMigrator) throws(SceneDecodeError) -> SceneDecodeResult {
         guard !bytes.isEmpty else { throw .empty }
         guard bytes.count <= SceneLimits.maximumBytes else {
             throw .tooLarge(bytes: bytes.count, limit: SceneLimits.maximumBytes)
         }
-        let root = try SceneJSONParser.parse(bytes, maximumDepth: SceneLimits.maximumDepth)
+        let parsed = try SceneJSONParser.parse(bytes, maximumDepth: SceneLimits.maximumDepth)
+        let migrated: SceneMigrationResult
+        do {
+            migrated = try migrator.migrate(parsed)
+        } catch {
+            throw error.decodeError
+        }
         var decoder = SceneDecoder()
-        let document = try decoder.document(root)
-        return SceneDecodeResult(document: document, warnings: decoder.warnings)
+        let document = try decoder.document(migrated.root)
+        return SceneDecodeResult(document: document, warnings: decoder.warnings, migration: migrated.record)
     }
 }
 
