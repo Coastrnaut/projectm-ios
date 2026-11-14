@@ -131,7 +131,7 @@ edit is refused.
 - **SHOW-002-R6**: Any manual step MUST cancel the pending advance and start the new cue's countdown from the step.
 - **SHOW-002-R7**: Pause, blackout (any phase other than live), an open scene repair report (SCN-012) and the app leaving the foreground MUST hold the countdown, keeping the remaining time; it MUST continue from that remaining time when no hold remains.
 - **SHOW-002-R8**: The last cue, Standby and cues without a dwell MUST NOT count down.
-- **SHOW-002-R9**: The cue row in the controls and the performance pad's cue readout MUST show the remaining time ("Next in m:ss", "held" while held), and VoiceOver MUST read it as part of the show status ("next cue in 42 seconds", "countdown held").
+- **SHOW-002-R9**: The cue row in the controls and the performance pad's cue readout MUST show the remaining time ("Next in m:ss", "Next in m:ss, held" while held), and VoiceOver MUST read it as part of the show status ("next cue in 42 seconds", "countdown held, 42 seconds left").
 - **SHOW-002-R10**: The show editor MUST offer "Advance After…" per cue (context menu, swipe action, VoiceOver action) and show the dwell under the label; editing it MUST save at once, never apply a scene, and restart the active cue's countdown when it is the active cue.
 - **SHOW-002-R11**: A dwell edit MUST be refused while the scene is locked (SCN-015); timed advances MUST continue while locked.
 - **SHOW-002-R12**: The timeline MUST be a pure, deterministic engine with an injected monotonic clock, testable without the app, and MUST build on Linux.
@@ -159,4 +159,5 @@ edit is refused.
 
 - Accuracy within a quarter of a second is enough for a visual show (the app checks the deadline four times a second while a countdown runs); tests use the injected clock, never wall-clock waits.
 - A beat-synced advance is SHOW-003, not this feature. Cue sync over OSC is OSC-012.
+- MOD-017 (quantized changes) applies its queued changes on each cue step and is not merged yet; a timed advance is a plain `next()` step, so it stays compatible without extra code.
 - Simulator results prove behavior only, not timing on a device.

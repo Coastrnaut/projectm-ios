@@ -21,17 +21,17 @@ Format: `- [ ] SHOW-002-Txx [P?] [USn?] description with file path`.
 **Independent test**: `swift test --filter ShowAdvanceTimelineTests`.
 
 - [ ] SHOW-002-T06 [US1] `ShowMonotonicClock`, `ShowContinuousClock`, `ShowManualClock`, `ShowAdvanceTimeline` (idle/running/held; `cueStarted`, `setHeld`, `due`, `remaining`, `cancel`) and `ShowTimedAdvance.tick`/`step` in Packages/ShowControl/Sources/ShowControl/ShowAdvanceTimeline.swift
-- [ ] SHOW-002-T07 [US1] Acceptance and engine tests: five cues with dwells 10/20/30/40/50 s stepped in 1 s and 0.25 s ticks fire exactly at 10, 30, 60, 100 s (none early, none twice, show ends on cue 5); a 500 s jump fires once; Off and last cue never fire; a manual Next at 4 s moves the deadline to 24 s and 10 s never fires; Previous and Go to restart in full; hold keeps the remaining time; step while held starts held — in Packages/ShowControl/Tests/ShowControlTests/ShowAdvanceTimelineTests.swift
+- [ ] SHOW-002-T07 [US1] Acceptance and engine tests: five cues with dwells 10/20/30/40/50 s stepped in 1 s and 0.25 s ticks fire exactly at 10, 30, 60, 100 s (none early, none twice, show ends on cue 5); a 500 s jump fires once; Off and last cue never fire; a manual Next at 4 s moves the deadline to 24 s and 10 s never fires; Previous and Go to restart in full; hold keeps the remaining time; step while held starts held; a due advance on a cue that became the last does nothing and the timeline goes idle — in Packages/ShowControl/Tests/ShowControlTests/ShowAdvanceTimelineTests.swift
 
 ## Phase 4: User Story 3 — the app driver, holds and countdown (P1)
 
 **Goal**: the app advances by itself, holds on pause/blackout/repair/background, and shows the countdown.
 **Independent test**: `ShowAutoAdvanceCoordinatorTests` with a manual clock.
 
-- [ ] SHOW-002-T08 [US3] `ShowCoordinator.cueStarted` hook from `perform`, cancel on removal of the active cue, `setDwell` (refused while locked; saves; restarts the active cue), Duplicate Scene keeps the dwell in Apps/projectM-iOS/Coordinators/ShowCoordinator.swift
+- [ ] SHOW-002-T08 [US3] `ShowCoordinator.cueStarted` hook from `perform`, cancel on removal of the active cue and on a replaced show, `setDwell` (refused while locked; saves; restarts the active cue), Duplicate Scene keeps the dwell in Apps/projectM-iOS/Coordinators/ShowCoordinator.swift
 - [ ] SHOW-002-T09 [US3] `ShowAutoAdvanceCoordinator` (timeline, injected clock, `isHeld` closure, `tick()`, 4 Hz task only while not idle, `countdown`, `countdownText`, `spokenCountdown`) in Apps/projectM-iOS/Coordinators/ShowAutoAdvanceCoordinator.swift; owned and wired (holds: `userPaused`, blackout phase not live, `sceneRepair.pending`, `!appIsActive`; `sceneBecame`, pause and blackout re-evaluate) in Apps/projectM-iOS/Coordinators/AppCoordinator.swift and AppCoordinator+Show.swift
 - [ ] SHOW-002-T10 [US3] Countdown in the cue row (`showCueCountdown`, VoiceOver value) in Apps/projectM-iOS/Views/ShowControls.swift and in the performance pad's cue readout in Apps/projectM-iOS/Views/PerformancePad.swift
-- [ ] SHOW-002-T11 [US3] App tests: manual clock, three cues with dwells; one advance per due cue through `show.next()` (scene applied), pause and blackout hold the remaining time, a dwell edit refused while locked, Duplicate keeps the dwell, countdown text — in Apps/projectM-iOS/Tests/ShowAutoAdvanceCoordinatorTests.swift
+- [ ] SHOW-002-T11 [US3] App tests: manual clock, three cues with dwells; one advance per due cue through `show.next()` (scene applied), pause and blackout hold the remaining time, a dwell edit on the active cue restarts its countdown, a dwell edit refused while locked, Duplicate keeps the dwell, countdown text — in Apps/projectM-iOS/Tests/ShowAutoAdvanceCoordinatorTests.swift
 
 ## Phase 5: User Story 4 — set a cue's dwell (P1)
 
