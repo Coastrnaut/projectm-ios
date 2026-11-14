@@ -29,13 +29,13 @@ No setup: existing packages and app target.
 
 **Independent test**: scene round trip keeps macros; issues reported; one undo step.
 
-- [ ] MOD-010-T03 [US2] `Packages/SceneFormat/Sources/SceneFormat/SceneMacros.swift` (entry, `read(_:registry:)`,
+- [X] MOD-010-T03 [US2] `Packages/SceneFormat/Sources/SceneFormat/SceneMacros.swift` (entry, `read(_:registry:)`,
   `settingValue`, limits 8 / 64) and edits to `SceneDocument`, `SceneDecoding`, `SceneEncoding`, `SceneIssue`
   (`invalidMacro`, `unknownMacroTarget`), `SceneRepair`, `SceneValidation`, `SceneLiveState`; add the file to
-  `SceneSourceSafetyTests`
-- [ ] MOD-010-T04 [US2] `Packages/SceneFormat/Tests/SceneFormatTests/SceneMacroTests.swift`: the acceptance
+  `SceneSourceSafetyTests` — Verified 2026-11-14: SceneFormat suite 158 tests, 0 failures, 2.5 s (source safety included)
+- [X] MOD-010-T04 [US2] `Packages/SceneFormat/Tests/SceneFormatTests/SceneMacroTests.swift`: the acceptance
   macro on the real visual catalog round-trips verbatim and gives identical values at 0, 0.25, 0.5, 1; a scene
-  without macros encodes unchanged; issues at their paths with the entry kept
+  without macros encodes unchanged; issues at their paths with the entry kept — Verified 2026-11-14: SceneMacroTests 5 tests pass on the host (real visual catalog)
 - [ ] MOD-010-T05 [US2] App: `Apps/projectM-iOS/Coordinators/MacroCoordinator.swift` (entries, live macros,
   `setValue(_:at:)` through `ParameterInspectorTargets`, skip report, `restore`); `SceneInputs.macros`,
   carry, restored values in `SceneAutosaveCapture.swift`; history label/key in `SceneHistoryCoordinator.swift`;

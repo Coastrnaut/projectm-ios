@@ -30,6 +30,7 @@ enum SceneEncoder {
         if let effects = d.effects { o["effects"] = .array(effects.map(\.json)) }   // FX-020: likewise
         if let triggers = d.triggers { o["triggers"] = .array(triggers.map(\.json)) }   // MOD-006: likewise
         if let lfos = d.lfos { o["lfos"] = .array(lfos.map(\.json)) }   // MOD-007: likewise
+        if let macros = d.macros { o["macros"] = .array(macros.map(\.json)) }   // MOD-010: likewise
         return .object(o)
     }
 
