@@ -12,10 +12,9 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 123,
-   "implementing": 1,
-   "integrated": 26,
-   "unit_passed": 1
+   "audited": 122,
+   "implementing": 2,
+   "integrated": 27
   },
   "P2": {
    "audited": 77,
@@ -26,11 +25,10 @@
   }
  },
  "by_state": {
-  "audited": 213,
-  "implementing": 2,
-  "integrated": 109,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "audited": 212,
+  "implementing": 3,
+  "integrated": 110,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -63,7 +61,6 @@
    "CAM-010",
    "CAM-011",
    "CAM-013",
-   "CMP-004",
    "CMP-006",
    "CMP-007",
    "CMP-008",
@@ -257,7 +254,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "216 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)"
+   "215 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)"
   ]
  },
  "features": {
@@ -1006,10 +1003,10 @@
    "branch": "feature/cmp-004",
    "branch_sha": "e97da06ada5c3417114e765bc71cf83eeb73c881",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "50a0241df03343ec660887b6b91613e7851b104f",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "CMP-005": {
    "attempts": 0,
@@ -1023,13 +1020,13 @@
   },
   "CMP-006": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/cmp-006",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "CMP-007": {
    "attempts": 0,
@@ -3769,6 +3766,11 @@
    "sha": "65caf9e9e6ec9a0474218068a468a1768f6bc74f"
   },
   {
+   "branch": "feature/cmp-004",
+   "id": "CMP-004",
+   "sha": "50a0241df03343ec660887b6b91613e7851b104f"
+  },
+  {
    "branch": "feature/cmp-005",
    "id": "CMP-005",
    "sha": "dd604d0b1d5171b68a3e305291354c2de11b8f65"
@@ -4094,5 +4096,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T05:15:27Z"
+ "updated": "2026-11-14T05:15:38Z"
 }

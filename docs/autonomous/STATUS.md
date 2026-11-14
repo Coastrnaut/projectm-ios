@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T05:15:27Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T05:15:38Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,25 +9,24 @@
 
 | State | Features |
 |---|---|
-| audited | 213 |
-| implementing | 2 |
-| unit_passed | 1 |
-| integrated | 109 |
+| audited | 212 |
+| implementing | 3 |
+| integrated | 110 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 4 | 1 | 0 | 81 | 1 |
-| P1 | 123 | 1 | 1 | 26 | 0 |
-| P2 | 77 | 0 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 4 | 1 | 81 | 1 |
+| P1 | 122 | 2 | 27 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 216 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)
+- 215 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)
 
 ## Integrated
 
@@ -82,6 +81,7 @@ The physical-device suite may **not** start:
 | CMP-001 | Unified layer protocol | `ba60b9d3485a` | `feature/cmp-001` |
 | CMP-002 | Ordered layer stack | `4c8340e68244` | `feature/cmp-002` |
 | CMP-003 | Opacity per layer | `65caf9e9e6ec` | `feature/cmp-003` |
+| CMP-004 | Blend mode library | `50a0241df033` | `feature/cmp-004` |
 | CMP-005 | Transform controls | `dd604d0b1d51` | `feature/cmp-005` |
 | FILE-001 | Portable scene archive | `c3886d1cb0bb` | `feature/file-001` |
 | FILE-002 | Archive manifest checksums | `77fcfa3f1e56` | `feature/file-002` |
@@ -594,7 +594,7 @@ None.
 - `swift test --package-path Packages/Compositor`: pass at `e105dc91fb50` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-003/20261113T124019/swift-test_Compositor.log`)
 - `post-merge: Compositor xcodebuild test on iPhone 17 sim (Compositor 95 incl. opacity GPU tests, GeneratorGraph 46 with 1 bench skipped, ProceduralMaterials 31); projectM-iOSTests 186; CameraUITests 2`: pass at `65caf9e9e6ec` (log `.autonomous/logs/integration/cmp-003/compositor-sim.log`)
 
-### CMP-004 Blend mode library (unit_passed)
+### CMP-004 Blend mode library (integrated)
 - `python3 scripts/check_compliance.py`: pass at `e97da06ada5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-004/20261114T001332/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `e97da06ada5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-004/20261114T001332/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `e97da06ada5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-004/20261114T001332/sim-test_ANGLERendering.log`)
