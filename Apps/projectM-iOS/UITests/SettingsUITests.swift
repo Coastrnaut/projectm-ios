@@ -136,8 +136,12 @@ final class SettingsUITests: XCTestCase {
     @discardableResult
     private func scrollTo(_ element: XCUIElement, down: Bool = false) -> Bool {
         let window = app.windows.firstMatch
-        let top = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.18))   // 70 % of the screen per drag: fewer drags as Settings grows
-        let bottom = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.88))
+        // Drags run in the right-hand margin (x 0.96), outside the rows' content: from mid-screen they
+        // landed on a slider's thumb once the always-shown Color section (FX-003) put sliders there,
+        // and moved the slider instead of the list (2026-11-14). The left edge is the back gesture.
+        let lane: CGFloat = 0.96
+        let top = window.coordinate(withNormalizedOffset: CGVector(dx: lane, dy: 0.18))   // 70 % of the screen per drag: fewer drags as Settings grows
+        let bottom = window.coordinate(withNormalizedOffset: CGVector(dx: lane, dy: 0.88))
         // Scrolling down (back to the top) also waits until the row clears the navigation bar: a row
         // under the bar counts as hittable, but a tap there lands on the bar.
         let bar = app.navigationBars.firstMatch
@@ -152,8 +156,8 @@ final class SettingsUITests: XCTestCase {
             if visible() { break }
             // Down (towards the top of the list) uses a short drag from mid-screen: a long pull from
             // near the top on a list already at its top dismisses the sheet instead of scrolling.
-            let midHigh = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.42))
-            let midLow = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.72))
+            let midHigh = window.coordinate(withNormalizedOffset: CGVector(dx: lane, dy: 0.42))
+            let midLow = window.coordinate(withNormalizedOffset: CGVector(dx: lane, dy: 0.72))
             let (from, to) = down ? (midHigh, midLow) : (bottom, top)
             from.press(forDuration: 0.05, thenDragTo: to, withVelocity: .default, thenHoldForDuration: 0.1)
         }

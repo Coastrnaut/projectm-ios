@@ -59,8 +59,12 @@ extension XCUIApplication {
     func reveal(_ element: XCUIElement, down: Bool = false, long: Bool = false) -> Bool {
         let window = windows.firstMatch
         let bar = navigationBars.firstMatch
-        let top = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: long ? 0.1 : 0.18))
-        let bottom = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: long ? 0.92 : 0.88))
+        // Right-hand margin (2026-11-14): a drag from mid-screen landed on a slider's thumb once Settings
+        // showed the Color sliders (FX-003) and moved the slider instead of the list; the left edge is
+        // the navigation back gesture.
+        let revealLane: CGFloat = 0.96
+        let top = window.coordinate(withNormalizedOffset: CGVector(dx: revealLane, dy: long ? 0.1 : 0.18))
+        let bottom = window.coordinate(withNormalizedOffset: CGVector(dx: revealLane, dy: long ? 0.92 : 0.88))
         func visible() -> Bool {
             guard element.exists else { return false }
             let frame = element.frame, screen = window.frame
@@ -71,8 +75,8 @@ extension XCUIApplication {
             if visible() { break }
             // Down (towards the top of the list) uses a short drag from mid-screen: a long pull from
             // near the top on a list already at its top dismisses the sheet instead of scrolling.
-            let midHigh = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.42))
-            let midLow = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.72))
+            let midHigh = window.coordinate(withNormalizedOffset: CGVector(dx: revealLane, dy: 0.42))
+            let midLow = window.coordinate(withNormalizedOffset: CGVector(dx: revealLane, dy: 0.72))
             let (from, to) = down ? (midHigh, midLow) : (bottom, top)
             from.press(forDuration: 0.05, thenDragTo: to, withVelocity: .default, thenHoldForDuration: 0.1)
         }
