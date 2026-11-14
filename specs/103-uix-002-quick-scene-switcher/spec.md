@@ -42,6 +42,16 @@ interaction); each answer is the conservative, local-first option.
 - Q: Where is the switcher opened from? → A: A "Scenes" button in the show row of the controls (shown only when the show has at least one cue), and ⌘K on a hardware keyboard, with or without the controls shown (UIX-002-R1).
 - Q: What does "compact overlay" mean? → A: A card over the visualization (not a full-screen sheet), at most 480 points wide, with a search field, a result count and a scrolling list; the visualization keeps running behind a light dim; a tap outside the card closes it (UIX-002-R1).
 
+### Session 2026-11-14 (speckit-clarify)
+
+Five questions, each answered by Claude with the recommended option (owner rule 4).
+
+- Q: Where does the latency measurement end: at the applied settings, or at the first frame drawn with the new scene? → A: **At the applied state** (UIX-002-R8): the cue's scene has been validated and set on the live settings and the visual refresh has been requested, or the repair report has been requested. That end point is deterministic and observable on the simulator; the first drawn frame depends on the GPU, the visual kind and the display refresh, and simulator frame times are never evidence. The overlay's own closing animation is not part of the measurement. A device first-frame measurement is left to a later device pass. Rejected: the first frame (not reliably observable in UI tests without new render instrumentation).
+- Q: Which announcement lane carries the result count? → A: **A new `search` kind** of the shared announcer (UIX-002-R9), so a burst of keystrokes is coalesced to one count per second and can never swallow a cue notice or a blackout announcement. The scene announcement after a choice uses the existing `cue` kind, like a cue step. Rejected: the `cue` lane for both (a pending count could replace a cue failure notice).
+- Q: Is the switcher shown on an external display or in recordings? → A: **No.** It is device UI like the controls and sheets (OUT-001): the external display, saved frames and recordings show only the visual (UIX-002-R1).
+- Q: Does the switcher close by itself after a while, like the controls? → A: **No.** It stays until the user chooses, presses Escape, taps Close or taps outside (UIX-002-R1); the controls' auto-hide continues underneath and does not affect it. A performer reading a long list must not lose it mid-search.
+- Q: How large can the list be, and must it stay fast? → A: Up to the show's limit of 256 cues; filtering all 256 entries must take well under one frame, so the list updates on every keystroke without debouncing (UIX-002-S6). Rows are built lazily.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Find and recall a scene by typing (Priority: P1)
@@ -125,15 +135,15 @@ scrolls; with Reduce Motion the card appears without animation.
 
 ### Functional Requirements
 
-- **UIX-002-R1**: The switcher is a compact card over the visualization, opened by a "Scenes" button in the controls' show row and by ⌘K (when the show has cues and Settings is closed); it closes with Escape, a Close button, a tap outside the card, or a choice.
+- **UIX-002-R1**: The switcher is a compact card over the visualization on the device only (never on an external display, in saved frames or recordings), opened by a "Scenes" button in the controls' show row and by ⌘K (when the show has cues and Settings is closed); it closes only with Escape, a Close button, a tap outside the card, or a choice (no auto-hide).
 - **UIX-002-R2**: It lists the current show's cues in show order: label, "Cue N", the scene name when it differs from the label, "Current" for the active cue, "Scene missing" for an unreadable scene.
 - **UIX-002-R3**: Filtering: an entry matches when its label or scene name contains the trimmed query, ignoring case, accents and width. An empty query lists every cue. Order: entries where the query starts the label, the scene name or a word of either come first; within each group show order is kept.
 - **UIX-002-R4**: The search field is focused when the switcher opens and keeps focus while typing and while the list updates; Up and Down Arrow move the highlight; Return chooses the highlighted entry.
 - **UIX-002-R5**: Highlight rules: on open, the active cue if it is listed, else the first result; after a query change, the same entry if it still matches, else the first result; none when nothing matches.
 - **UIX-002-R6**: Reopening after closing without a choice restores the last query and highlight; after a choice the switcher reopens with an empty query. The query is kept in memory only (never stored; cleared at relaunch).
 - **UIX-002-R7**: Choosing an entry closes the switcher and goes to that cue through the same path as a cue step: same validation, SCN-012 repair report, notices, undo restart and saved position; the audio source is never touched.
-- **UIX-002-R8**: Latency is defined as the time from the choice (tap or Return) to the moment the cue's scene is applied to the live settings, or the repair report is requested, measured on a monotonic clock inside the app. Budget: ≤ 250 ms on the iOS Simulator. Each choice records one measurement (outcome, cue, milliseconds) readable by tests in debug builds.
-- **UIX-002-R9**: After a choice the scene's name is announced ("Scene: Drop"); while typing, the result count is announced through the shared rate-limited announcer; entries carry labels, values and the Selected trait for the highlight.
+- **UIX-002-R8**: Latency is defined as the time from the choice (tap or Return) to the moment the cue's scene is applied to the live settings (visual refresh requested), or the repair report is requested, excluding the overlay's closing animation, measured on a monotonic clock inside the app. Budget: ≤ 250 ms on the iOS Simulator. Each choice records one measurement (outcome, cue, milliseconds) readable by tests in debug builds.
+- **UIX-002-R9**: After a choice the scene's name is announced ("Scene: Drop", announcer kind `cue`); while typing, the result count is announced through the shared rate-limited announcer under its own kind `search`; entries carry labels, values and the Selected trait for the highlight.
 - **UIX-002-R10**: The card works at every Dynamic Type size (entries wrap; the list scrolls; the card never exceeds the screen); its appearance animation goes through the app's Reduce Motion policy.
 - **UIX-002-R11**: Closing without a choice shows the controls again so focus returns to the Scenes button; while the switcher is open the cue keys and scene undo keys are inactive.
 - **UIX-002-R12**: Nothing is written to disk by searching; no network use.
@@ -153,6 +163,7 @@ scrolls; with Reduce Motion the card appears without animation.
 - **UIX-002-S3**: Across every keystroke of a typed query, the field keeps focus and its text equals what was typed (0 resets).
 - **UIX-002-S4**: Filtering is correct for case, accents, empty query and ordering in 100 % of the unit cases.
 - **UIX-002-S5**: A problem scene chosen from the switcher shows the repair report and applies nothing until the user opens it.
+- **UIX-002-S6**: Filtering a 256-cue show takes under 5 ms per keystroke on the Mac host (unit test, monotonic clock, generous ceiling).
 
 ## Assumptions
 
