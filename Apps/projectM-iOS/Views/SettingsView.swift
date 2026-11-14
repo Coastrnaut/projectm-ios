@@ -15,12 +15,15 @@
 // FILE-009: a Storage row (StorageUsageView: the space the app's data takes, read-only).
 // SHOW-001: a Show row opens the cue list editor (ShowEditorView).
 // UIX-001: a "Guided first scene" row closes Settings and opens the tutorial (UIX-001-R8).
+// UIX-003: "Inspect" (context menu, VoiceOver action) on the seven registry rows opens the parameter inspector.
+import ParameterGraph
 import PhotosUI
 import CameraLayer
 import SwiftUI
 import TextLayer
 import VisualEffects
 import VisualGenerators
+import VisualParameters
 
 struct SettingsView: View {
     @Bindable var settings: AppSettings
@@ -68,6 +71,8 @@ struct SettingsView: View {
     var latencyOffset: LatencyOffsetSetting?
     /// FX-003: the colour grade (nil hides its section, e.g. in previews).
     var colorGrade: ColorGradeSetting?
+    /// FX-009: Trails (nil hides its section, e.g. in previews).
+    var motionFeedback: MotionFeedbackSetting?
     /// MIDI-001: MIDI endpoint discovery (nil hides its section, e.g. in previews).
     var midi: MIDIDiscoveryCoordinator?
     /// UIX-015: the explainer before the camera and local network prompts (nil: none, e.g. in previews).
@@ -84,6 +89,8 @@ struct SettingsView: View {
     /// The port being typed; applied on submit or when the field loses focus (OSC-001-R2).
     @State private var portText = ""
     @FocusState private var portFieldFocused: Bool
+    /// UIX-003: the parameter shown in the inspector sheet.
+    @State private var inspectedParameter: InspectedParameter?
 
     /// "50%", or "2.0%" with one decimal.
     static func percent(_ value: Double, decimals: Int = 0) -> String {
@@ -92,7 +99,8 @@ struct SettingsView: View {
 
     /// A labeled percentage slider; VoiceOver reads the label and "50 percent", and swipes move it by
     /// one step of `spec` (FR-070; ACC-005). Each swipe is one undo step, as a drag is (SCN-010-R4).
-    private func glowSlider(_ spec: AccessibleParameterSpec, target: ParameterTarget, text: String) -> some View {
+    private func glowSlider(_ spec: AccessibleParameterSpec, target: ParameterTarget, text: String,
+                            inspect: ParameterID? = nil) -> some View {
         let title: String = spec.label
         let value = Binding<Double>(get: { () -> Double in target.get() },
                                     set: { (newValue: Double) -> Void in target.set(newValue) })
@@ -114,8 +122,13 @@ struct SettingsView: View {
                 if !editing { history?.endCoalescing() }   // SCN-010-R4: a drag is one step
             }
                 .accessibleParameter(spec, target: target, didStep: { [history] () -> Void in history?.endCoalescing() })
+                .parameterInspectorEntry(inspect, menu: false, open: inspectParameter)   // UIX-003-R1
         }
+        .parameterInspectorEntry(inspect, action: false, open: inspectParameter)
     }
+
+    /// UIX-003: opens the parameter inspector over Settings.
+    private func inspectParameter(_ id: ParameterID) { inspectedParameter = InspectedParameter(id: id) }
 
     /// ACC-005: the glow's real settings (AppSettings: saved, applied to the glow at once).
     static func glowTarget(_ settings: AppSettings, _ path: ReferenceWritableKeyPath<AppSettings, Double>) -> ParameterTarget {
@@ -216,6 +229,14 @@ struct SettingsView: View {
         .accessibilityIdentifier("settings")
         .environment(\.parameterAnnouncer, announcer)   // ACC-005-R7
         .permissionExplainerSheet(explainers)   // UIX-015: over Settings, right before iOS's prompt
+        .parameterInspectorSheet($inspectedParameter, settings: settings, history: history, announcer: announcer,
+                                 reading: inspectorReading)   // UIX-003
+    }
+
+    /// UIX-003-R7: the live modulation reading (nil in previews).
+    private var inspectorReading: (@MainActor (ParameterID) -> ParameterModulationReading?)? {
+        guard let coordinator = layerInspector else { return nil }
+        return { [weak coordinator] (id: ParameterID) -> ParameterModulationReading? in coordinator?.parameterModulationReading(for: id) }
     }
 
     @ViewBuilder private var visualChoiceSection: some View {
@@ -249,6 +270,7 @@ struct SettingsView: View {
                     .segmentedUnlessAccessibilitySize()   // ACC-006-R1
                     .accessibilityLabel("Bars")
                     .accessibilityIdentifier("barsPicker")
+                    .parameterInspectorEntry(VisualParameterIDs.circularSpectrumBarCount, open: inspectParameter)   // UIX-003
                 }
                 if settings.visual == .oscilloscope {   // VIS-003-R10
                     Picker("Line", selection: $settings.oscilloscopeLine) {
@@ -271,22 +293,25 @@ struct SettingsView: View {
                     .segmentedUnlessAccessibilitySize()   // ACC-006-R1
                     .accessibilityLabel("Orientation")
                     .accessibilityIdentifier("orientationPicker")
+                    .parameterInspectorEntry(VisualParameterIDs.linearSpectrumOrientation, open: inspectParameter)   // UIX-003
                     Picker("Spacing", selection: $settings.linearSpectrumSpacing) {
                         ForEach(AppSettings.linearSpectrumSpacingChoices, id: \.value) { Text($0.title).tag($0.value) }
                     }
                     .segmentedUnlessAccessibilitySize()   // ACC-006-R1
                     .accessibilityLabel("Spacing")
                     .accessibilityIdentifier("spacingPicker")
+                    .parameterInspectorEntry(VisualParameterIDs.linearSpectrumSpacing, open: inspectParameter)   // UIX-003
                 }
                 Toggle("Glow", isOn: $settings.glowEnabled)
                     .accessibilityIdentifier("glowToggle")
+                    .parameterInspectorEntry(VisualParameterIDs.bloomEnabled, open: inspectParameter)   // UIX-003
                 if settings.glowEnabled {
                     glowSlider(AccessibleParameterCatalog.glowIntensity, target: Self.glowTarget(settings, \.glowIntensity),
-                               text: Self.percent(settings.glowIntensity))
+                               text: Self.percent(settings.glowIntensity), inspect: VisualParameterIDs.bloomIntensity)
                     glowSlider(AccessibleParameterCatalog.glowRadius, target: Self.glowTarget(settings, \.glowRadius),
-                               text: Self.percent(settings.glowRadius, decimals: 1))
+                               text: Self.percent(settings.glowRadius, decimals: 1), inspect: VisualParameterIDs.bloomRadius)
                     glowSlider(AccessibleParameterCatalog.glowThreshold, target: Self.glowTarget(settings, \.glowThreshold),
-                               text: Self.percent(settings.glowThreshold))
+                               text: Self.percent(settings.glowThreshold), inspect: VisualParameterIDs.bloomThreshold)
                 }
             }
         } header: {
@@ -355,6 +380,7 @@ struct SettingsView: View {
         }
         if settings.visual.isNative { SpectrumColorsSection(settings: settings) }   // ACC-003-R13
         if let colorGrade { ColorGradeSection(setting: colorGrade) }   // FX-003-R9
+        if let motionFeedback { TrailsSection(setting: motionFeedback, clamp: settings.safetyClamp) }   // FX-009-R9
         SensorySafetySection(settings: settings, announcer: announcer)   // ACC-012-R10
         ReduceFlashingSection(settings: settings, available: reduceFlashingAvailable)   // FR-072 (own view: ACC-012 body budget)
     }

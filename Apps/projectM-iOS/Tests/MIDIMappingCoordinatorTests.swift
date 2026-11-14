@@ -346,4 +346,95 @@ final class MIDIMappingCoordinatorTests: XCTestCase {
         h.mappings.deleteMapping(Self.intensity)
         XCTAssertEqual(host.effectiveGlow.intensity, cap > 0.5 ? 0.5 : cap, accuracy: 1e-6, "back to the manual value, capped")
     }
+
+    // MARK: MIDI-004 — CC scaling with curve and inversion (specs/140-midi-004-cc-scaling, contract C4)
+
+    private static func range(_ id: ParameterID) throws -> (minimum: Double, maximum: Double) {
+        let descriptor = try XCTUnwrap(MIDIMappingCoordinator.visualRegistry().descriptor(for: id))
+        guard case let .continuous(minimum, maximum, _, _, _) = descriptor.kind else { throw XCTSkip("not continuous") }
+        return (minimum, maximum)
+    }
+
+    /// MIDI-004-T06 (S4): a fake MIDI source drives an inverted mapping; CC 0 gives the maximum, 127 the minimum.
+    func testAnInvertedMappingFromAFakeSourceSwapsTheEnds() throws {
+        let h: Harness = try makeHarness()
+        defer { cleanUp(h) }
+        let (minimum, maximum) = try Self.range(Self.radius)
+        h.mappings.startLearning(Self.radius)
+        send(h, [0xB0, 0x07, 0x40])                    // the learning message
+        send(h, [0xB0, 0x07, 0x00])
+        XCTAssertEqual(h.mappings.liveValues[Self.radius], minimum, "not inverted: CC 0 is the minimum")
+        h.mappings.setInverted(true, for: Self.radius)
+        XCTAssertEqual(h.mappings.liveValues[Self.radius], minimum, "no jump until the control moves")
+        send(h, [0xB0, 0x07, 0x00])
+        XCTAssertEqual(h.mappings.liveValues[Self.radius], maximum, "inverted: CC 0 is the maximum")
+        XCTAssertEqual(h.applied.values.last?[Self.radius], maximum)
+        send(h, [0xB0, 0x07, 0x7F])
+        XCTAssertEqual(h.mappings.liveValues[Self.radius], minimum, "inverted: CC 127 is the minimum")
+    }
+
+    /// MIDI-004-T10: choosing a curve and Invert saves the line, announces on the MIDI lane, adds no Undo step,
+    /// and later values follow the curve.
+    func testCurveAndInvertSaveAnnounceAndShapeValues() throws {
+        let h: Harness = try makeHarness()
+        defer { cleanUp(h) }
+        let (minimum, maximum) = try Self.range(Self.intensity)
+        h.mappings.startLearning(Self.intensity)
+        send(h, [0xB0, 0x07, 0x40])
+        h.mappings.open()                              // fresh screen: no Undo step
+        h.announcements.texts = []
+
+        h.mappings.selectPreset(.easeIn, for: Self.intensity)
+        XCTAssertEqual(h.defaults.stringArray(forKey: MIDIMappingCoordinator.mappingsKey),
+                       ["cc:0:7=effect.bloom.intensity;curve=easeIn:2.0"])
+        h.mappings.setInverted(true, for: Self.intensity)
+        XCTAssertEqual(h.defaults.stringArray(forKey: MIDIMappingCoordinator.mappingsKey),
+                       ["cc:0:7=effect.bloom.intensity;curve=easeIn:2.0;invert=1"])
+        h.mappings.selectPreset(.easeIn, for: Self.intensity)   // unchanged: nothing announced
+        XCTAssertEqual(h.announcements.texts, ["Glow intensity curve: Ease in.", "Glow intensity inverted."])
+        XCTAssertFalse(h.mappings.canUndo, "curve and Invert are not Undo steps")
+        let row = try XCTUnwrap(h.mappings.rows.first { (row: MIDIMappingRow) -> Bool in row.parameter == Self.intensity })
+        XCTAssertEqual(row.curveSummary, "Ease in, inverted")
+        XCTAssertFalse(row.curveUnreadable)
+        XCTAssertNil(h.mappings.rows.first { (row: MIDIMappingRow) -> Bool in row.parameter == Self.radius }?.curveSummary)
+
+        send(h, [0xB0, 0x07, 0x40])                    // 64
+        let position: Double = 1 - 64.0 / 127
+        let expected: Double = minimum + position * position * (maximum - minimum)
+        XCTAssertEqual(try XCTUnwrap(h.mappings.liveValues[Self.intensity]), expected, accuracy: 1e-9)
+
+        h.mappings.setInverted(false, for: Self.intensity)
+        XCTAssertEqual(h.announcements.texts.last, "Glow intensity not inverted.")
+        h.mappings.selectPreset(.linear, for: Self.intensity)
+        XCTAssertEqual(controls(h), ["cc:0:7=effect.bloom.intensity"], "back to the MIDI-003 line")
+        h.mappings.setInverted(true, for: Self.radius)          // unmapped: nothing
+        XCTAssertEqual(h.announcements.texts.count, 4)
+    }
+
+    /// MIDI-004-T13: options, an unreadable curve and an unknown segment load at launch, show in the row, and are
+    /// saved back unchanged after an unrelated edit.
+    func testStoredOptionsAndUnknownSegmentsSurviveALaunchAndAnEdit() throws {
+        let suite: String = "MIDIMappingCoordinatorTests-" + UUID().uuidString
+        let seeded: UserDefaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let line: String = "cc:0:7=effect.bloom.intensity;curve=wobble:3;invert=1;min=0.2"
+        seeded.set([line], forKey: MIDIMappingCoordinator.mappingsKey)
+        let h: Harness = try makeHarness(suite: suite)
+        defer { cleanUp(h) }
+        let row = try XCTUnwrap(h.mappings.rows.first { (row: MIDIMappingRow) -> Bool in row.parameter == Self.intensity })
+        XCTAssertEqual(row.curveSummary, "Linear (curve not readable), inverted")
+        XCTAssertTrue(row.curveUnreadable)
+        XCTAssertEqual(h.mappings.options(for: Self.intensity)?.extraSegments, ["min=0.2"])
+
+        h.mappings.startLearning(Self.radius)
+        send(h, [0xB0, 0x08, 0x10])
+        XCTAssertEqual(h.defaults.stringArray(forKey: MIDIMappingCoordinator.mappingsKey),
+                       [line, "cc:0:8=effect.bloom.radius"], "the unreadable curve and the unknown segment are kept")
+        send(h, [0xB0, 0x07, 0x00])
+        let (_, maximum) = try Self.range(Self.intensity)
+        XCTAssertEqual(h.mappings.liveValues[Self.intensity], maximum, "linear, inverted")
+
+        h.mappings.selectPreset(.logarithmic, for: Self.intensity)
+        XCTAssertEqual(controls(h).first, "cc:0:7=effect.bloom.intensity;curve=log:9.0;invert=1;min=0.2")
+        XCTAssertEqual(h.mappings.rows.first?.curveUnreadable, false)
+    }
 }

@@ -164,10 +164,10 @@ struct SceneArchiveService: Sendable {
         self.observer = observer
     }
 
-    /// The visual catalog, the material catalog and the colour grade (FX-003), as scenes are validated (SCN-001).
+    /// The visual catalog, the material catalog, the colour grade (FX-003) and Trails (FX-009), as scenes are validated (SCN-001).
     static func appRegistry() throws -> ParameterRegistry {
         try ParameterRegistry(descriptors: VisualParameterCatalog.descriptors + ProceduralMaterialCatalog.descriptors
-                              + ColorGradeCatalog.descriptors)
+                              + ColorGradeCatalog.descriptors + MotionFeedbackCatalog.descriptors)   // FX-009
     }
 
     /// "projectM-iOS Scene 2026-11-13.pmscene": the local date, no scene, device or user name.

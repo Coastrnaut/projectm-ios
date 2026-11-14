@@ -102,7 +102,7 @@ enum VideoFixtures {
                 waited += 1
             }
             let c = options.solid ?? color(i)
-            guard let pool = adaptor.pixelBufferPool, let buffer = makeBuffer(pool: pool, color: c) else { throw CocoaError(.fileWriteUnknown) }
+            guard let buffer = makeBuffer(color: c) else { throw CocoaError(.fileWriteUnknown) }
             guard adaptor.append(buffer, withPresentationTime: CMTime(value: CMTimeValue(i), timescale: options.fps)) else {
                 throw writer.error ?? CocoaError(.fileWriteUnknown)
             }
@@ -132,9 +132,14 @@ enum VideoFixtures {
                 item(.quickTimeMetadataModel, device)]
     }
 
-    private static func makeBuffer(pool: CVPixelBufferPool, color: (r: UInt8, g: UInt8, b: UInt8)) -> CVPixelBuffer? {
+    /// Each frame gets its own buffer, not one from `adaptor.pixelBufferPool`: creating a buffer from the
+    /// writer's pool crashed the test process with a null dictionary inside CoreVideo
+    /// (`CVPixelBufferPool::createPixelBuffer`, SIGSEGV, 2026-11-14), intermittently, on the Mac host.
+    private static func makeBuffer(color: (r: UInt8, g: UInt8, b: UInt8)) -> CVPixelBuffer? {
         var buffer: CVPixelBuffer?
-        guard CVPixelBufferPoolCreatePixelBuffer(kCFAllocatorDefault, pool, &buffer) == kCVReturnSuccess, let buffer else { return nil }
+        let attributes: [String: Any] = [kCVPixelBufferIOSurfacePropertiesKey as String: [String: Any]()]
+        guard CVPixelBufferCreate(kCFAllocatorDefault, width, height, kCVPixelFormatType_32BGRA,
+                                  attributes as CFDictionary, &buffer) == kCVReturnSuccess, let buffer else { return nil }
         CVPixelBufferLockBaseAddress(buffer, [])
         defer { CVPixelBufferUnlockBaseAddress(buffer, []) }
         guard let base = CVPixelBufferGetBaseAddress(buffer) else { return nil }

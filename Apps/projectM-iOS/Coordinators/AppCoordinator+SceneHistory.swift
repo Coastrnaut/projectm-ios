@@ -40,6 +40,7 @@ extension AppCoordinator {
         slideshow.restore(inputs.slideshow)   // MED-006-R12: order, on/off and timing (pictures are not undone)
         let recorded = SceneAutosaveCapture.recordedVisual(settings.visual, beforeCamera: settings.visualBeforeCamera)
         if recorded != inputs.visual { settings.visual = inputs.visual }
+        resetTrailsHistory()   // FX-009-R5: an undone or redone scene state starts without trails
         visualSettingsChanged()
         glowSettingsChanged()
     }

@@ -18,6 +18,8 @@
 // command buffer) at the end, on cancel, on interruption, on a size change and in `deinit`. A released scene
 // returns its own pictures in its `deinit`. Nothing is cached: every blended frame is mixed again (CMP-013's
 // reuse stays inside each scene). Not Sendable: one thread drives the bus and its scenes.
+// FX-009 (ADR-0051): each scene's `encodeScene` returns its trails frame while its Trails are active; a cut to another
+// scene and a transition start reset the trails of the scenes involved, so no trail crosses a scene change.
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import FlashSafety
 import Metal
@@ -96,8 +98,10 @@ public final class SceneTransitionBus {
     public var holdsBlendTarget: Bool { blendTarget != nil }
 
     /// A cut: `scene` is shown from the next frame; any transition ends and its outgoing scene is released.
+    /// FX-009-R5: a cut is a scene change, so the shown scene's trails start clean.
     public func show(_ scene: Compositor) {
         endTransition()
+        if liveScene !== scene { scene.resetFeedback() }
         liveScene = scene
     }
 
@@ -114,6 +118,8 @@ public final class SceneTransitionBus {
         guard let from = liveScene, from !== scene else { return }
         outgoingScene = from
         liveScene = scene
+        from.resetFeedback()   // FX-009-R5: a transition start clears both scenes' trails
+        scene.resetFeedback()
         clock = SceneTransitionClock(spec: resolved)
         activeSpec = resolved
     }
