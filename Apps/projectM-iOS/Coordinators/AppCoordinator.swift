@@ -577,6 +577,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         UITestShowFixture.seedIfRequested(self)   // SHOW-001: ShowCueUITests
         #endif
         connectStatusEvents()   // ACC-011
+        connectExternalDisplay()   // OUT-002
         libraryBackup.announce = { [weak self] (text: String) in self?.announcer.announce(text, kind: .library) }   // FILE-005-R12
         loadLibrary()
         loadAudioLibrary()

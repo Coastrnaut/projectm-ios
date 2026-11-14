@@ -33,6 +33,8 @@ enum AnnouncementKind: String, CaseIterable, Sendable {
     case layer
     /// ACC-012-R10: the sensory safety profile was changed in Settings.
     case safety
+    /// OUT-002-R6: an external display connected or disconnected (its own lane, never the blackout's).
+    case display
 }
 
 struct AnnouncementGate: Sendable, Equatable {
