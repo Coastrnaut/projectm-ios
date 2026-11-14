@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T10:27:08Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T10:29:41Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -111,7 +111,7 @@ The physical-device suite may **not** start:
 | FILE-013 | Privacy permission audit | `b5e4bd0` | `feature/file-013` |
 | FX-001 | Bloom | `1192e0d6503e` | `feature/fx-001` |
 | FX-002 | Tone mapping | `2e8e134d` | `feature/fx-002` |
-| FX-003 | Color grading | `784a1c765550` | `feature/fx-003` |
+| FX-003 | Color grading | `51dfaa4b` | `feature/fx-003` |
 | FX-019 | Strobe safety envelope | `6cfcbaabc8d0` | `feature/fx-019` |
 | MED-001 | Import photo layer | `dd604d0b1d51` | `feature/med-001` |
 | MED-002 | Import video layer | `e9e04eeb62a8` | `feature/med-002` |
@@ -943,6 +943,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `fd8d5f55e153` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-003/20261114T052407/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `fd8d5f55e153` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-003/20261114T052407/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `fd8d5f55e153` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-003/20261114T052407/swift-test_ShowControl.log`)
+- `post-merge: projectM-iOSTests 575 + ColorGrade/PhotoLayer/SensorySafety UI tests 3`: pass at `51dfaa4b` (log `.autonomous/logs/integration/fx-003/app-tests.log`)
 
 ### FX-019 Strobe safety envelope (integrated)
 - `python3 scripts/check_compliance.py`: pass at `bc80d4775650` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-019/20261113T095545/compliance.log`)

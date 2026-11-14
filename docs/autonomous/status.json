@@ -1247,7 +1247,7 @@
    "branch": "feature/fx-003",
    "branch_sha": "fd8d5f55e1530cddefa2a6f3c04847c62e1ccbc7",
    "error_category": null,
-   "integrated_sha": "784a1c765550b742eb4babdac6358b0a54224000",
+   "integrated_sha": "51dfaa4b",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
@@ -3892,7 +3892,7 @@
   {
    "branch": "feature/fx-003",
    "id": "FX-003",
-   "sha": "784a1c765550b742eb4babdac6358b0a54224000"
+   "sha": "51dfaa4b"
   },
   {
    "branch": "feature/fx-019",
@@ -4195,5 +4195,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T10:27:08Z"
+ "updated": "2026-11-14T10:29:41Z"
 }
