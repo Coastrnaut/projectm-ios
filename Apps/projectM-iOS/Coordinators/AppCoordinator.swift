@@ -650,6 +650,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         connectSceneHistory()   // SCN-010: starts from the restored (or fresh) scene
         connectSceneSnapshots()   // SCN-008
         connectSceneLock()   // SCN-015
+        connectParameterQuantizer()   // MOD-017
         midiMappings.applyValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.midi, values) }   // MIDI-003-R8
         osc.applyLiveValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.osc, values) }   // OSC-003-R5
         #if DEBUG
@@ -1101,6 +1102,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         case .radialWaveform: .radialWaveform(ring: settings.radialWaveformRing, amplitude: settings.radialWaveformAmplitude)   // VIS-005
         case .beatRings: .beatRings(life: settings.beatRingsLife)   // VIS-006
         case .mandala: .mandala(symmetry: settings.mandalaSymmetry, mirror: settings.mandalaMirror, petal: settings.mandalaPetal)   // VIS-007
+        case .particleFountain: .particleFountain(gravity: settings.particleGravity)   // VIS-008
         default: .circular
         }
     }
@@ -1132,7 +1134,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.safetyClamp = settings.safetyClamp   // ACC-012-R4
             host.smoothing = settings.spectrumSmoothing   // ANL-003
             host.palette = settings.spectrumPalette        // ACC-003-R13
-            host.reduceMotion = settings.systemReduceMotion   // VIS-007-R5: the mandala's turn (ACC-001)
+            host.reduceMotion = settings.systemReduceMotion   // VIS-007-R5, VIS-008-R9: the mandala's turn, the fountain's bursts (ACC-001)
             host.externalValues = externalLiveValues.merged   // MIDI-003, OSC-003: values held while no native visual was shown
             for binding in sceneAutosave?.bindings ?? [] { try? host.addLayer(binding) }   // SCN-002: restored bindings, MOD-011 layers in order
             connectThresholdTriggers(host)   // MOD-006

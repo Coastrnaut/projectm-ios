@@ -57,6 +57,10 @@
 //   discards events that queued while stopped. The ring life changes only its configuration.
 // * Mandala (VIS-007): draws the smoothed bands as N rotated petals; symmetry, mirror and petal style change only
 //   its configuration. `reduceMotion` (the system setting, from the coordinator) halves its turn (VIS-007-R5).
+// * Particle fountain (VIS-008): the same bus subscription as beat rings while it is shown; each drained ANL-004 onset
+//   (`ParticleFountainTrigger`) is enqueued stamped with the frame's time, and the generator steps its seeded
+//   simulation to the frame. Gravity changes only its configuration (later bursts); `reduceMotion` halves its bursts
+//   and slows them (VIS-008-R9). A loop start discards queued events and restarts the simulation.
 // * REC-001 (research REC-001-D1): `captureFrame` turns the layer's `framebufferOnly` off until the
 //   next readable drawable is drawn, blits that drawable (the frame as shown: glow and Reduce
 //   flashing included) into a shared buffer and delivers 8-bit sRGB BGRA on the main actor; then
@@ -125,6 +129,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
     private var flatness: Float = 0
     /// ANL-013: the newest frame's stereo correlation (−1…1), fed to the bindings (MOD-002's Correlation source).
     private(set) var correlation: Float = 0
+    /// ANL-015: the newest frame's section-change envelope (0…1), fed to the bindings (MOD-002's Section change source).
+    private var sectionChange: Float = 0
     /// ANL-013: the newest frame's phase-inversion warning; changes go to `onPhaseWarningChange`.
     private(set) var phaseInverted = false
     /// ANL-013: called on the main actor when the warning is raised or cleared (cleared on start and stop).
@@ -210,6 +216,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             ?? (generator as? RadialWaveformGenerator)?.configuration.palette
             ?? (generator as? BeatRingGenerator)?.configuration.palette
             ?? (generator as? MandalaGenerator)?.configuration.palette
+            ?? (generator as? ParticleFountainGenerator)?.configuration.palette
     }
 
     private func applyPalette() {
@@ -241,8 +248,15 @@ final class NativeSpectrumHost: PresentationBoundResource {
             var configuration = mandala.configuration
             configuration.palette = palette
             mandala.configuration = configuration
+        } else if let fountain = generator as? ParticleFountainGenerator {
+            var configuration = fountain.configuration
+            configuration.palette = palette
+            fountain.configuration = configuration
         }
     }
+
+    /// VIS-008: the particle fountain's generator (tests; nil for another visual).
+    var particleFountainGenerator: ParticleFountainGenerator? { generator as? ParticleFountainGenerator }
 
     /// VIS-007: the mandala's generator (tests; nil for another visual).
     var mandalaGenerator: MandalaGenerator? { generator as? MandalaGenerator }
@@ -254,6 +268,11 @@ final class NativeSpectrumHost: PresentationBoundResource {
     }
 
     private func applyReduceMotion() {
+        if let fountain = generator as? ParticleFountainGenerator, fountain.configuration.reduceMotion != reduceMotion {
+            var configuration = fountain.configuration   // VIS-008-R9: later bursts
+            configuration.reduceMotion = reduceMotion
+            fountain.configuration = configuration
+        }
         guard let mandala = generator as? MandalaGenerator, mandala.configuration.reduceMotion != reduceMotion else { return }
         var configuration = mandala.configuration
         configuration.reduceMotion = reduceMotion   // the layout re-anchors, so the angle stays continuous
@@ -269,9 +288,9 @@ final class NativeSpectrumHost: PresentationBoundResource {
     private(set) var beatEvents: AnalysisSubscription?
     private var beatTrigger = BeatRingTrigger()
 
-    /// VIS-006: subscribes while beat rings are shown, unsubscribes otherwise.
+    /// VIS-006, VIS-008: subscribes while beat rings or the particle fountain are shown, unsubscribes otherwise.
     private func updateBeatSubscription() {
-        if case .beatRings = style {
+        if style.drainsAnalysisEvents {
             guard beatEvents == nil else { return }
             beatEvents = try? analyzer.subscribe()
             beatTrigger = BeatRingTrigger()
@@ -282,8 +301,17 @@ final class NativeSpectrumHost: PresentationBoundResource {
     }
 
     /// VIS-006: emits a ring for each accepted event since the last frame, stamped with the frame's time.
+    /// VIS-008: enqueues each onset into the particle fountain, stamped likewise.
     func drainBeatEvents(context: VisualFrameContext) {
-        guard let subscription = beatEvents, let rings = generator as? BeatRingGenerator else { return }
+        guard let subscription = beatEvents else { return }
+        if let fountain = generator as? ParticleFountainGenerator {
+            while let event = subscription.nextEvent() {
+                guard let onset = ParticleFountainTrigger.onset(event) else { continue }
+                fountain.enqueueOnset(atNanoseconds: context.timeNanoseconds, strength: onset.strength, threshold: onset.threshold)
+            }
+            return
+        }
+        guard let rings = generator as? BeatRingGenerator else { return }
         while let event = subscription.nextEvent() {
             if beatTrigger.shouldEmit(event) {
                 rings.emitRing(atNanoseconds: context.timeNanoseconds, flashConfiguration: context.flashConfiguration)
@@ -427,6 +455,11 @@ final class NativeSpectrumHost: PresentationBoundResource {
                                                                                      petalStyle: petal))
             generator.barCount = barCount
             return generator
+        case let .particleFountain(gravity):   // VIS-008
+            let generator = try ParticleFountainGenerator(device: device, pixelFormat: .bgra8Unorm_srgb,
+                                                          configuration: ParticleFountainConfiguration(gravity: gravity.value))
+            generator.barCount = barCount
+            return generator
         }
     }
 
@@ -494,6 +527,10 @@ final class NativeSpectrumHost: PresentationBoundResource {
             configuration.mirror = mirror
             configuration.petalStyle = petal
             mandala.configuration = configuration
+        } else if case let .particleFountain(gravity) = newStyle, let fountain = generator as? ParticleFountainGenerator {
+            var configuration = fountain.configuration   // VIS-008: later bursts, no rebuild
+            configuration.gravity = gravity.value
+            fountain.configuration = configuration
         } else {
             let replacement = try Self.makeGenerator(device: device, style: newStyle, barCount: generator.barCount)
             generator = replacement
@@ -623,7 +660,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
     func applyModulation(bands: UnsafeBufferPointer<Float>, kick: Float? = nil, centroid: Float? = nil,
                          loudness: Float? = nil, midTransient: Float? = nil, highTransient: Float? = nil,
                          rolloff: Float? = nil, flatness: Float? = nil, correlation: Float? = nil,
-                         timeNanoseconds: UInt64) {
+                         sectionChange: Float? = nil, timeNanoseconds: UInt64) {
         let bound: Bool = modulator?.hasBindings ?? false
         guard bound || triggerBank.hasTriggers else { return }
         var lfos = UnsafeBufferPointer<Double>(start: nil, count: 0)
@@ -636,7 +673,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         bandEnvelopeBank.advance(bands: bands, timeNanoseconds: timeNanoseconds)   // MOD-015: held while nothing is bound
         let frame = AudioFeatureFrame(bands: bands, kick: kick, centroid: centroid, loudness: loudness, midTransient: midTransient,
                                       highTransient: highTransient, rolloff: rolloff, flatness: flatness,
-                                      correlation: correlation, lfos: lfos,
+                                      correlation: correlation, sectionChange: sectionChange, lfos: lfos,
                                       bandEnvelopes: bandEnvelopeBank.values)
         if triggerBank.hasTriggers {   // MOD-006: one step per trigger, no allocation
             triggerBank.advance(frame: frame, timeNanoseconds: timeNanoseconds) { (action: ThresholdTriggerAction) -> Void in
@@ -680,6 +717,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         case let .beatRings(life): return "\(life.title) ring life, \(glow)"   // VIS-006-R11
         case let .mandala(symmetry, mirror, petal):   // VIS-007-R11
             return "\(symmetry)-fold, Mirror \(mirror ? "on" : "off"), \(petal.title), \(glow)"
+        case let .particleFountain(gravity): return "\(gravity.title) gravity, \(glow)"   // VIS-008-R12
         }
     }
 
@@ -753,6 +791,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             rolloff = 0        // ANL-011: and its rolloff
             flatness = 0       // ANL-012: and its flatness
             correlation = 0    // ANL-013: and its stereo correlation
+            sectionChange = 0  // ANL-015: and its section-change envelope
             setPhaseInverted(false)   // ANL-013: and its warning
             startEffectQuality()   // PERF-003: the floor at once, no fade
             if let waveform { analyzer.start(reader: waveform) }   // VIS-003: the tap through the pass-through wrapper
@@ -856,6 +895,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             rolloff = info.rolloff
             flatness = info.flatness
             correlation = info.correlation
+            sectionChange = info.sectionChange
             setPhaseInverted(info.phaseInverted)
         }
         // ANL-003: the real interval since the previous frame (the first frame after a start snaps).
@@ -870,7 +910,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         let bandInput = UnsafeBufferPointer(start: bands, count: bandCount)
         applyModulation(bands: bandInput, kick: kickEnvelope, centroid: centroid, loudness: loudness, midTransient: midTransient,
                         highTransient: highTransient, rolloff: rolloff, flatness: flatness, correlation: correlation,
-                        timeNanoseconds: context.timeNanoseconds)   // MOD-002; no-op without bindings
+                        sectionChange: sectionChange, timeNanoseconds: context.timeNanoseconds)   // MOD-002; no-op without bindings
         stepEffectQuality(time: link.timestamp)   // PERF-003: arithmetic; the glow changes only when the level or fade moves
         drainBeatEvents(context: context)   // VIS-006: nothing unless beat rings are shown
         // VIS-003: the oscilloscope draws the newest sample history (kept when nothing new arrived).
@@ -1017,6 +1057,16 @@ enum NativeSpectrumStyle: Equatable, Sendable {
     case beatRings(life: BeatRingLife)
     /// VIS-007: the mandala.
     case mandala(symmetry: Int, mirror: Bool, petal: MandalaPetalStyle)
+    /// VIS-008: the particle fountain.
+    case particleFountain(gravity: ParticleGravity)
+
+    /// VIS-006, VIS-008: the host drains its analysis bus subscription into the generator.
+    var drainsAnalysisEvents: Bool {
+        switch self {
+        case .beatRings, .particleFountain: true
+        default: false
+        }
+    }
 
     /// The oscilloscope and the radial waveform draw the mono sample history instead of the bands.
     var drawsMonoHistory: Bool {
@@ -1035,6 +1085,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .radialWaveform: VisualChoice.radialWaveform.title
         case .beatRings: VisualChoice.beatRings.title
         case .mandala: VisualChoice.mandala.title
+        case .particleFountain: VisualChoice.particleFountain.title
         }
     }
 
@@ -1047,6 +1098,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .radialWaveform: "radialWaveform"
         case .beatRings: "beatRings"
         case .mandala: "mandala"
+        case .particleFountain: "particleFountain"
         }
     }
 }

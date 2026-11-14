@@ -33,6 +33,7 @@ import generate_reference_audio as gra  # noqa: E402
 import run_device_tests as rdt  # noqa: E402
 import setup_mac  # noqa: E402
 import validate_docs  # noqa: E402
+import qa009_manifest_check as qa009  # noqa: E402
 import verify_environment  # noqa: E402
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
@@ -272,6 +273,49 @@ class LicensesManifestTests(unittest.TestCase):
         import collect_licenses
         with mock.patch("builtins.print"):
             self.assertEqual(collect_licenses.check(), 0)
+
+
+class QA009ManifestTests(unittest.TestCase):
+    """QA-009-R8: the primary-screen manifest's identifiers exist in the app's source (contract M4)."""
+
+    MANIFEST = (
+        "        PrimaryScreen(name: \"x\", feature: \"X\", auditKey: \"x\", route: .settings, controls: [\n"
+        "            RequiredControl(\"plainRow\", .button),\n"
+        "            RequiredControl(\"quality.max\", .button),\n"
+        "            RequiredControl(\"license:app\", .button),\n"
+        "            RequiredControl(\"cue3\", .any),\n"
+        "        ]),\n"
+    )
+    VIEW = (
+        'Text("A").accessibilityIdentifier("plainRow")\n'
+        'Text("B").accessibilityIdentifier("quality." + raw)\n'
+        'Text("C").accessibilityIdentifier("license:\\(id)")\n'
+        'Text("D").accessibilityIdentifier("cue\\(n)")\n'
+    )
+
+    def make_repo(self, view: str) -> Path:
+        root = Path(tempfile.mkdtemp())
+        (root / "Apps/projectM-iOS/UITests").mkdir(parents=True)
+        (root / "Apps/projectM-iOS/Views").mkdir(parents=True)
+        (root / qa009.MANIFEST).write_text(self.MANIFEST, encoding="utf-8")
+        (root / "Apps/projectM-iOS/Views/V.swift").write_text(view, encoding="utf-8")
+        # An identifier only in a test target does not count.
+        (root / "Apps/projectM-iOS/UITests/T.swift").write_text('app.buttons["renamedRow"]', encoding="utf-8")
+        return root
+
+    def test_repository_manifest_identifiers_all_exist(self) -> None:
+        self.assertEqual(qa009.missing(qa009.ROOT), [])
+        self.assertGreaterEqual(len(qa009.manifest_identifiers((qa009.ROOT / qa009.MANIFEST).read_text(encoding="utf-8"))), 40)
+
+    def test_literal_and_dynamic_identifiers_are_found(self) -> None:
+        self.assertEqual(qa009.missing(self.make_repo(self.VIEW)), [])
+
+    def test_a_renamed_identifier_fails_by_name(self) -> None:
+        root = self.make_repo(self.VIEW.replace('"plainRow"', '"renamedRow"').replace('"quality." + raw', '"profile." + raw'))
+        self.assertEqual(qa009.missing(root), ["plainRow", "quality.max"])
+        with mock.patch("sys.stdout", new=io.StringIO()) as out:
+            self.assertEqual(qa009.main(["qa009", str(root)]), 1)
+        self.assertIn("plainRow", out.getvalue())
 
 
 class ComplianceTests(unittest.TestCase):

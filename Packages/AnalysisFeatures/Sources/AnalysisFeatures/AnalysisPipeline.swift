@@ -9,11 +9,12 @@
 // transient detector (6–16 kHz, rate-capped, same magnitudes), the ANL-010 spectral centroid, the
 // ANL-014 loudness envelope, the ANL-011 spectral rolloff and the ANL-012 spectral flatness (same
 // magnitudes); before the mono mix-down, the ANL-013 stereo correlation meter reads every accepted
-// chunk's two channels. It publishes, in ID order: the feature frame (with the kick envelope, the mid and high
+// chunk's two channels; the ANL-015 section change detector reads each frame's loudness level. It
+// publishes, in ID order: the feature frame (with the kick envelope, the mid and high
 // transient envelopes and confidences, the centroid, the loudness, the rolloff, the flatness, the
-// stereo correlation and its phase-inversion flag), then the
+// stereo correlation and its phase-inversion flag, the section-change envelope and slow level), then the
 // frame's onset (if any), then its beat (if any), then its kick (if any), then its mid transient (if
-// any), then its high transient (if any).
+// any), then its high transient (if any), then its section change (if any).
 //
 // Clock (ANL-016-R5, R6): an item's session sample is the end of its window (`index + size`, the
 // first sample not yet analysed); its timeline sample adds the session's base (the samples consumed
@@ -76,6 +77,7 @@ public final class AnalysisPipeline: @unchecked Sendable {
     private var rolloff: SpectralRolloffEstimator
     private var flatness: SpectralFlatnessEstimator
     private var correlation: StereoCorrelationMeter
+    private var sectionChange: SectionChangeDetector
     private let scratch: UnsafeMutablePointer<Float>
     private let bandScratch: UnsafeMutablePointer<Float>
     private var bandCount: BandCount
@@ -117,6 +119,7 @@ public final class AnalysisPipeline: @unchecked Sendable {
         rolloff = SpectralRolloffEstimator(configuration: configuration.rolloff, backend: backend)
         flatness = SpectralFlatnessEstimator(configuration: configuration.flatness, backend: backend)
         correlation = StereoCorrelationMeter(configuration: configuration.correlation)
+        sectionChange = SectionChangeDetector(configuration: configuration.sectionChange)
         scratch = .allocate(capacity: AnalysisPipeline.readChunkFrames * NormalizedPCMRing.channelCount)
         scratch.initialize(repeating: 0, count: AnalysisPipeline.readChunkFrames * NormalizedPCMRing.channelCount)
         bandScratch = .allocate(capacity: AnalysisSubscription.maximumBands)
@@ -281,6 +284,7 @@ public final class AnalysisPipeline: @unchecked Sendable {
         rolloff.reset()
         flatness.reset()
         correlation.reset()
+        sectionChange.reset()
         subscribersLock.withLock { _ in
             for subscription in subscribers { subscription.clearFrame() }
         }
@@ -352,6 +356,8 @@ public final class AnalysisPipeline: @unchecked Sendable {
         let stereo: StereoCorrelationReading = correlation.reading   // ANL-013: the latest block (fed per chunk)
         let estimate = tracker.estimate
         let sample = frame.index + Int64(frame.size.rawValue)
+        // ANL-015: the frame's loudness level on the frame's sample clock (no extra measure).
+        let section: SectionChange? = sectionChange.process(levelDecibels: level.decibels, frameEnd: sample)
         let time = timestamp(sample)
         let item = AnalysisFrame(id: takeID(), time: time, bandCount: count, onsetFlux: detector.lastFlux,
                                  bpm: estimate?.bpm, beatConfidence: estimate?.confidence ?? 0,
@@ -360,7 +366,9 @@ public final class AnalysisPipeline: @unchecked Sendable {
                                  midTransientEnvelope: midTransient.envelope, midTransientConfidence: midTransient.lastConfidence,
                                  highTransientEnvelope: highTransient.envelope, highTransientConfidence: highTransient.lastConfidence,
                                  rolloffHz: percentile.hz, rolloff: percentile.normalized, flatness: wiener.flatness,
-                                 correlation: stereo.correlation, phaseInverted: stereo.phaseInverted)
+                                 correlation: stereo.correlation, phaseInverted: stereo.phaseInverted,
+                                 sectionChangeEnvelope: sectionChange.envelope,
+                                 sectionLevelDecibels: sectionChange.levelDecibels)
         let bands = UnsafeBufferPointer(start: bandScratch, count: count)
         subscribersLock.withLock { _ in
             for subscription in subscribers { subscription.publish(item, bands: bands) }
@@ -376,6 +384,11 @@ public final class AnalysisPipeline: @unchecked Sendable {
         if let transient { publishTransient(transient, time: time) }
         if let mid { publishTransient(mid, time: time) }
         if let high { publishTransient(high, time: time) }
+        if let section {
+            publish(AnalysisEvent(id: takeID(), time: time, eventSample: section.startSample,
+                                  kind: .sectionChange(direction: section.direction, levelDecibels: section.levelDecibels,
+                                                       referenceDecibels: section.referenceDecibels)))
+        }
     }
 
     private func publishTransient(_ event: TransientEvent, time: AnalysisTimestamp) {

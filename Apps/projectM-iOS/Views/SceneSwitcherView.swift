@@ -23,26 +23,38 @@ import SwiftUI
 struct SceneSwitcherLayer: View {
     let coordinator: AppCoordinator
 
+    // Split into typed parts (QA-009, 2026-11-14): as one expression the ZStack took 193-215 ms to type-check
+    // (-warn-long-expression-type-checking; CI's Xcode 26 limit is 200 ms).
     var body: some View {
-        let shown: Bool = coordinator.sceneSwitcher.isOpen && !coordinator.showSettings
-        ZStack {
-            if shown {
-                SceneSwitcherView(coordinator: coordinator)
-                    .transition(.opacity)
-            }
-            #if DEBUG
-            if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {   // UIX-002-R8, contract C4
-                let value: String = coordinator.sceneSwitcher.probeText
-                Text(value)
-                    .font(.caption2)
-                    .opacity(0.01)
-                    .allowsHitTesting(false)
-                    .accessibilityIdentifier("sceneSwitcherProbe")
-                    .accessibilityValue(value)
-            }
-            #endif
+        let open: Bool = coordinator.sceneSwitcher.isOpen
+        let settingsShown: Bool = coordinator.showSettings
+        let shown: Bool = open && !settingsShown
+        let layer = ZStack {
+            card(shown)
+            probe
         }
-        .reduceMotionAware(MotionPolicy.controlsFade, value: shown, policy: coordinator.motion)
+        return layer.reduceMotionAware(MotionPolicy.controlsFade, value: shown, policy: coordinator.motion)
+    }
+
+    @ViewBuilder private func card(_ shown: Bool) -> some View {
+        if shown {
+            SceneSwitcherView(coordinator: coordinator)
+                .transition(.opacity)
+        }
+    }
+
+    @ViewBuilder private var probe: some View {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {   // UIX-002-R8, contract C4
+            let value: String = coordinator.sceneSwitcher.probeText
+            Text(value)
+                .font(.caption2)
+                .opacity(0.01)
+                .allowsHitTesting(false)
+                .accessibilityIdentifier("sceneSwitcherProbe")
+                .accessibilityValue(value)
+        }
+        #endif
     }
 }
 
@@ -61,11 +73,17 @@ struct SceneSwitcherView: View {
         GeometryReader { (proxy: GeometryProxy) in
             let maxList: CGFloat = max(120, proxy.size.height * 0.55)
             ZStack(alignment: .top) {
+                // QA-009 (2026-11-14): `.accessibilityHidden(true)` did not keep the tappable backdrop out of the
+                // accessibility tree: it stayed an unlabelled element across the screen ("Element has no description"
+                // in the audit). It is now described as what it does, a button that closes the switcher.
                 Color.black.opacity(0.35)
                     .ignoresSafeArea()
                     .contentShape(Rectangle())
                     .onTapGesture { coordinator.closeSceneSwitcher() }
-                    .accessibilityHidden(true)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("Close scenes")
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityAction { coordinator.closeSceneSwitcher() }
                     .accessibilityIdentifier("sceneSwitcherBackdrop")
                 card(maxList: maxList)
                     .frame(maxWidth: 480)
@@ -140,11 +158,15 @@ struct SceneSwitcherView: View {
     /// one line: Return chooses (queryBinding). Standard sizes keep the one-line field.
     @ViewBuilder private var fieldBase: some View {
         if typeSize.isAccessibilitySize {
-            TextField("Search scenes", text: queryBinding, axis: .vertical).lineLimit(1...3)
+            TextField(text: queryBinding, prompt: prompt, axis: .vertical) { Text("Search scenes") }.lineLimit(1...3)
         } else {
-            TextField("Search scenes", text: queryBinding)
+            TextField(text: queryBinding, prompt: prompt) { Text("Search scenes") }
         }
     }
+
+    /// QA-009 (2026-11-14): the placeholder in the secondary style. The system placeholder grey on the card's dark
+    /// surface failed the contrast audit (about 2:1); the secondary label colour reads about 6:1 there.
+    private var prompt: Text { Text("Search scenes").foregroundStyle(.secondary) }
 
     private var field: some View {
         fieldBase
@@ -267,19 +289,25 @@ struct SceneSwitcherView: View {
         let fill: Color = isHighlighted ? Color.accentColor.opacity(0.28) : Color.clear
         return Button { coordinator.chooseSwitcherScene(entry.cueID) } label: {
             HStack(alignment: .center, spacing: 8) {
+                // QA-009 (2026-11-14): the thumbnail and the play mark are decorative (the row's value says
+                // "current"); exposed, they read "Stack Of Rectangles" and "Play" inside the row, and the current
+                // row could not be hit-tested as one control.
                 ScenePreviewView(sceneID: entry.sceneID, model: coordinator.scenePreviews)   // SCN-006
+                    .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(entry.label)
                         .font(.body)
                         .lineLimit(nameLines)
+                    // QA-009 (2026-11-14): on the highlighted row's accent fill the secondary grey failed the
+                    // contrast audit ("Cue 1"); the highlighted row's subtitle uses the primary colour.
                     Text(subtitle)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(isHighlighted ? .primary : .secondary)
                         .lineLimit(nameLines)
                 }
                 Spacer(minLength: 4)
                 if entry.isActive {
-                    Image(systemName: "play.fill").font(.caption)
+                    Image(systemName: "play.fill").font(.caption).accessibilityHidden(true)
                 }
             }
             .padding(.vertical, 8)
