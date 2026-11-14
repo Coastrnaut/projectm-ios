@@ -13,8 +13,9 @@
   },
   "P1": {
    "audited": 122,
-   "implementing": 2,
-   "integrated": 27
+   "implementing": 1,
+   "integrated": 27,
+   "unit_passed": 1
   },
   "P2": {
    "audited": 77,
@@ -26,9 +27,10 @@
  },
  "by_state": {
   "audited": 212,
-  "implementing": 3,
+  "implementing": 2,
   "integrated": 110,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -901,12 +903,12 @@
   "CAM-007": {
    "attempts": 0,
    "branch": "feature/cam-007",
-   "branch_sha": null,
+   "branch_sha": "bbfa49c59ca08238e101fbcf6530653bc98fc602",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "CAM-008": {
    "attempts": 0,
@@ -4096,5 +4098,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T05:19:20Z"
+ "updated": "2026-11-14T05:22:43Z"
 }
