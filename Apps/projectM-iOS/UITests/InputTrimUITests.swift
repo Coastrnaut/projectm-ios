@@ -28,7 +28,7 @@ final class InputTrimUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Settings"].appears(within: 5))
     }
 
-    private var slider: XCUIElement { app.sliders["inputTrimSlider"] }
+    private var slider: XCUIElement { app.slider("inputTrimSlider") }
     private var readout: XCUIElement { app.staticTexts["inputTrimValue"] }
 
     func testTrimPersistsAcrossRelaunchAndResets() {
@@ -38,9 +38,9 @@ final class InputTrimUITests: XCTestCase {
         XCTAssertEqual(readout.label, "0 dB", "0 dB by default")
         // XCUITest's slider drag lands only within a few steps of a mid position (measured: 0.5 gave
         // +8 dB, corrections oscillated), so the test drags to the end stop: exactly +24 dB.
-        slider.adjust(toNormalizedSliderPosition: 1)
+        slider.dragSlider(from: 12.0 / 36.0, to: 1)   // 0 dB on −12…+24; ACC-005: dragged by touch
         XCTAssertTrue(poll(5) { self.readout.label == "+24 dB" }, "readout: \(readout.label)")
-        XCTAssertEqual(slider.value as? String, "+24 dB", "VoiceOver reads the signed value (AUD-008-R9)")
+        XCTAssertEqual(slider.value as? String, "plus 24 decibels", "VoiceOver reads the signed value (AUD-008-R9, ACC-005-R2)")
         app.terminate()
 
         launch(reset: false)
@@ -51,6 +51,6 @@ final class InputTrimUITests: XCTestCase {
         XCTAssertEqual(reset.label, "Reset to 0 dB")
         reset.tap()
         XCTAssertTrue(poll(5) { self.readout.label == "0 dB" }, "reset: \(readout.label)")
-        XCTAssertEqual(slider.value as? String, "0 dB")
+        XCTAssertEqual(slider.value as? String, "0 decibels")
     }
 }

@@ -353,7 +353,8 @@ struct VisualizerView: View {
                          latencyOffset: coordinator.latencyOffset,   // AUD-013
                          midi: coordinator.midi,   // MIDI-001
                          explainers: coordinator.explainers,   // UIX-015
-                         cameraStatus: { () -> PermissionState? in coordinator.cameraPermissionStatus })
+                         cameraStatus: { () -> PermissionState? in coordinator.cameraPermissionStatus },
+                         announcer: coordinator.announcer)   // ACC-005-R7
                 .sceneRepairSheet(coordinator.sceneRepair, active: true)   // SCN-012: a show editor step's report
         }
         // SCN-012: the repair report before a cue's scene or Reopen opens (over Settings while it is shown).

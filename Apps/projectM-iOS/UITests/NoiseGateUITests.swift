@@ -30,7 +30,7 @@ final class NoiseGateUITests: XCTestCase {
     }
 
     private var toggle: XCUIElement { app.switches["noiseGateToggle"] }
-    private var slider: XCUIElement { app.sliders["noiseGateThresholdSlider"] }
+    private var slider: XCUIElement { app.slider("noiseGateThresholdSlider") }
     private var readout: XCUIElement { app.staticTexts["noiseGateThresholdValue"] }
 
     func testNoiseGateControlsInSettings() {
@@ -45,7 +45,7 @@ final class NoiseGateUITests: XCTestCase {
         toggle.switches.firstMatch.exists ? toggle.switches.firstMatch.tap() : toggle.tap()   // the switch inside the row
         XCTAssertTrue(poll(5) { (self.toggle.value as? String) == "1" }, "toggle: \(String(describing: toggle.value))")
         XCTAssertTrue(poll(5) { self.slider.isEnabled }, "enabled once on")
-        slider.adjust(toNormalizedSliderPosition: 0.9)
+        slider.dragSlider(from: 0.5, to: 0.9)   // −50 dBFS on −80…−20; ACC-005: dragged by touch
         XCTAssertTrue(poll(5) { self.readout.label != "\u{2212}50 dBFS" }, "readout: \(readout.label)")
     }
 }

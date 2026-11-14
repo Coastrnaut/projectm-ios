@@ -6,6 +6,7 @@
 // "Delay for source", and "Visual delay" with the readout as the value (FR-070). Strings come from
 // `LatencyOffsetSetting.text(for:)` and plain constants (typed steps, no inline string arithmetic in
 // modifiers).
+// ACC-005: VoiceOver reads "180 milliseconds" and swipes move the picked source's stored delay by 5 ms.
 import AudioCore
 import SwiftUI
 
@@ -28,18 +29,25 @@ struct LatencyOffsetSection: View {
         }
     }
 
+    /// ACC-005: the real per-source setting (saved; applied when `mode` is the active source).
+    static func target(_ setting: LatencyOffsetSetting, mode: AudioSourceMode) -> ParameterTarget {
+        ParameterTarget(get: { () -> Double in setting.milliseconds(for: mode) },
+                        set: { (value: Double) -> Void in setting.setMilliseconds(value, for: mode) })
+    }
+
     var body: some View {
         let mode: AudioSourceMode = picked ?? setting.activeMode ?? .inAppPlayback
         let value: Double = setting.milliseconds(for: mode)
         let valueText: String = LatencyOffsetSetting.text(for: value)
         let range: ClosedRange<Double> = LatencyOffsetSetting.range
-        let step: Double = LatencyOffsetSetting.step
+        let spec: AccessibleParameterSpec = AccessibleParameterCatalog.latencyOffset
+        let target: ParameterTarget = Self.target(setting, mode: mode)
         let modeBinding = Binding<AudioSourceMode>(
             get: { () -> AudioSourceMode in mode },
             set: { (newValue: AudioSourceMode) -> Void in picked = newValue })
         let valueBinding = Binding<Double>(
-            get: { () -> Double in setting.milliseconds(for: mode) },
-            set: { (newValue: Double) -> Void in setting.setMilliseconds(newValue, for: mode) })
+            get: { () -> Double in target.get() },
+            set: { (newValue: Double) -> Void in target.set(newValue) })
         Section {
             Picker(Self.pickerTitle, selection: modeBinding) {
                 ForEach(AudioSourceMode.allCases, id: \.self) { (option: AudioSourceMode) in
@@ -57,10 +65,8 @@ struct LatencyOffsetSection: View {
                         .accessibilityIdentifier("latencyOffsetValue")
                 }
                 .accessibilityElement(children: .contain)
-                Slider(value: valueBinding, in: range, step: step)
-                    .accessibilityLabel(Self.sliderTitle)
-                    .accessibilityValue(valueText)
-                    .accessibilityIdentifier("latencyOffsetSlider")
+                Slider(value: valueBinding, in: range, step: spec.step)
+                    .accessibleParameter(spec, target: target)
             }
             Button(Self.estimateTitle) { setting.estimate(for: mode) }
                 .accessibilityIdentifier("latencyOffsetEstimate")

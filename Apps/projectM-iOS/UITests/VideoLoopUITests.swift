@@ -80,12 +80,13 @@ final class VideoLoopUITests: XCTestCase {
         XCTAssertEqual(probe("videoLoopRegion"), "whole")
 
         openSettings()
-        let loopIn = app.sliders["videoLoopIn"], loopOut = app.sliders["videoLoopOut"]
+        let loopIn = app.slider("videoLoopIn"), loopOut = app.slider("videoLoopOut")
         XCTAssertTrue(scrollTo(loopOut), "the loop sliders are offered once the video plays")
-        loopIn.adjust(toNormalizedSliderPosition: 0.25)    // ≈ 0.5 s
-        loopOut.adjust(toNormalizedSliderPosition: 0.55)   // ≈ 1.1 s
+        loopIn.dragSlider(from: 0, to: 0.25)    // ≈ 0.5 s (ACC-005: dragged by touch)
+        loopOut.dragSlider(from: 1, to: 0.55)   // ≈ 1.1 s
         XCTAssertTrue((loopIn.value as? String ?? "").hasSuffix("seconds"), "VoiceOver value: \(String(describing: loopIn.value))")
-        XCTAssertTrue(app.buttons["videoLoopReset"].exists, "Reset Loop is offered")
+        XCTAssertTrue(app.buttons["videoLoopReset"].appears(within: 2),
+                      "Reset Loop is offered (in \(loopIn.value ?? "nil") \(loopIn.frame), out \(loopOut.value ?? "nil") \(loopOut.frame))")
         closeSettings()
 
         XCTAssertTrue(poll(5) { self.probe("videoLoopRegion") != "whole" }, "the region reached the player")
