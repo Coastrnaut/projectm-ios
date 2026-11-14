@@ -13,8 +13,7 @@
   },
   "P1": {
    "audited": 129,
-   "integrated": 21,
-   "unit_passed": 1
+   "integrated": 22
   },
   "P2": {
    "audited": 77,
@@ -27,9 +26,8 @@
  "by_state": {
   "audited": 220,
   "implementing": 1,
-  "integrated": 103,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "integrated": 104,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -54,7 +52,6 @@
    "ANL-014",
    "ANL-015",
    "AUD-010",
-   "AUD-012",
    "AUD-013",
    "AUD-015",
    "CAM-002",
@@ -262,7 +259,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "222 features are not implemented yet (first: ACC-003, ACC-005, ACC-006, ACC-007, ACC-008)"
+   "221 features are not implemented yet (first: ACC-003, ACC-005, ACC-006, ACC-007, ACC-008)"
   ]
  },
  "features": {
@@ -481,7 +478,7 @@
    "branch": "feature/anl-010",
    "branch_sha": "4db22e27a1e2e77b7008e7cfd4af8f120f743b20",
    "error_category": null,
-   "integrated_sha": "447e6355754dba0044ab8fa5f5618bf934b3220b",
+   "integrated_sha": "bf6d440f",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
@@ -661,10 +658,10 @@
    "branch": "feature/aud-012",
    "branch_sha": "64ff3b55e8c26b779d469cb2b5d1cecbc5e6e37a",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "bf6d440f",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "AUD-013": {
    "attempts": 0,
@@ -3581,7 +3578,7 @@
   {
    "branch": "feature/anl-010",
    "id": "ANL-010",
-   "sha": "447e6355754dba0044ab8fa5f5618bf934b3220b"
+   "sha": "bf6d440f"
   },
   {
    "branch": "feature/anl-016",
@@ -3637,6 +3634,11 @@
    "branch": "feature/aud-011",
    "id": "AUD-011",
    "sha": "3214051"
+  },
+  {
+   "branch": "feature/aud-012",
+   "id": "AUD-012",
+   "sha": "bf6d440f"
   },
   {
    "branch": "feature/aud-014",
@@ -4069,5 +4071,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T03:20:17Z"
+ "updated": "2026-11-14T03:24:43Z"
 }
