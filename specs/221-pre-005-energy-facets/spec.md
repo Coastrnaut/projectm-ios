@@ -39,6 +39,16 @@ interaction); each answer is the conservative, local-first option.
 - Q: Where is the motion kept? → A: In two places that share the thumbnail's lifetime: the score is written into the thumbnail picture itself (a small text field of the PNG), and the browser's index `Library/Caches/PresetMotion/motion.json` (versioned, rebuildable, excluded from backup, emptied by Clear Caches) holds preset ID → thumbnail ID and score so the chips can count without decoding pictures. A damaged index is relearned from the pictures as rows are shown.
 - Q: How do the energy chips combine with other filters? → A: The three classes exclude each other, so selected energy chips combine with OR among themselves (Calm or Moderate) and with AND against tags, colours, Favorites and search. Selections are in memory only.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Must every cached thumbnail be redrawn so it gets a score (a renderer version bump)? → A: No. Pinning the clock makes the drawing match what PRE-001-D2 already describes (45 frames at 60 fps); thumbnails cached by earlier builds exist only in unreleased development builds, so bumping the version (and redrawing every cached picture, and rewriting PRE-001's version fixtures) costs more than it gives. Such a picture simply has no score; it gets one when it is drawn again.
+- Q: What does the list show when only energy chips are selected? → A: PRE-004's filtered list (alphabetical across packs, locked presets marked by their rows) now driven by tags AND colours AND energy, with "No presets match these filters" when empty.
+- Q: What do the chip counts count? → A: Listed presets whose current score falls in the class, independent of the other selections (like PRE-003 and PRE-004). Only classes with a count above zero get a chip, in the order Calm, Moderate, Energetic; a caption says how many presets have a class.
+- Q: Does a preset row show or say its class? → A: No, as with colours: the chips carry the names; 12,847 longer row labels would gain little.
+- Q: When is the index written? → A: As PRE-004: one second after the first unsaved score (coalescing delay injected for tests), atomically; nothing extra at backgrounding, since an unwritten score is learned again from the cached picture.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Find calm or energetic presets (Priority: P1) — MVP
