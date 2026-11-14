@@ -89,21 +89,50 @@ private struct MIDIMappingRowView: View {
     let delete: () -> Void
 
     var body: some View {
-        HStack {
-            LabeledContent(row.name, value: row.control ?? "Not mapped")
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(row.accessibilityLabel)
-                .accessibilityIdentifier("midiMapping." + row.id)
-            Button(row.isLearning ? "Learning" : "Learn", action: learn)
+        MIDIMappingRowLayout { mapping } buttons: { buttons }
+    }
+
+    private var mapping: some View {
+        LabeledContent(row.name, value: row.control ?? "Not mapped")
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(row.accessibilityLabel)
+            .accessibilityIdentifier("midiMapping." + row.id)
+    }
+
+    @ViewBuilder private var buttons: some View {
+        Button(row.isLearning ? "Learning" : "Learn", action: learn)
+            .buttonStyle(.borderless)
+            .disabled(!canLearn || row.isLearning)
+            .accessibilityLabel("Learn " + row.name)
+            .accessibilityIdentifier("midiLearn." + row.id)
+        if row.control != nil {
+            Button("Delete", role: .destructive, action: delete)
                 .buttonStyle(.borderless)
-                .disabled(!canLearn || row.isLearning)
-                .accessibilityLabel("Learn " + row.name)
-                .accessibilityIdentifier("midiLearn." + row.id)
-            if row.control != nil {
-                Button("Delete", role: .destructive, action: delete)
-                    .buttonStyle(.borderless)
-                    .accessibilityLabel("Delete mapping for " + row.name)
-                    .accessibilityIdentifier("midiDelete." + row.id)
+                .accessibilityLabel("Delete mapping for " + row.name)
+                .accessibilityIdentifier("midiDelete." + row.id)
+        }
+    }
+}
+
+/// A mapping row's layout (QA-009, 2026-11-14): the name and mapping, then the row's buttons. Side by side at
+/// standard sizes with a gap (before, "Not mapped" ran into "Learn"); at accessibility sizes the buttons sit below,
+/// so the name and mapping keep the row's width (at AX5 they had wrapped into a column about half as wide and
+/// the row was about a screen tall).
+private struct MIDIMappingRowLayout<Mapping: View, Buttons: View>: View {
+    @ViewBuilder let mapping: () -> Mapping
+    @ViewBuilder let buttons: () -> Buttons
+    @Environment(\.dynamicTypeSize) private var typeSize
+
+    var body: some View {
+        if typeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 8) {
+                mapping()
+                HStack(spacing: 16) { buttons() }
+            }
+        } else {
+            HStack(spacing: 12) {
+                mapping()
+                buttons()
             }
         }
     }
@@ -153,22 +182,27 @@ private struct MIDINoteRowView: View {
     let delete: () -> Void
 
     var body: some View {
-        HStack {
+        MIDIMappingRowLayout {
             LabeledContent(row.name, value: row.control ?? "Not mapped")
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(row.accessibilityLabel)
                 .accessibilityIdentifier("midiNote." + row.id)
-            Button(row.isLearning ? "Learning" : "Learn", action: learn)
+        } buttons: {
+            buttons
+        }
+    }
+
+    @ViewBuilder private var buttons: some View {
+        Button(row.isLearning ? "Learning" : "Learn", action: learn)
+            .buttonStyle(.borderless)
+            .disabled(!canLearn || row.isLearning)
+            .accessibilityLabel("Learn " + row.name)
+            .accessibilityIdentifier("midiNoteLearn." + row.id)
+        if row.control != nil {
+            Button("Delete", role: .destructive, action: delete)
                 .buttonStyle(.borderless)
-                .disabled(!canLearn || row.isLearning)
-                .accessibilityLabel("Learn " + row.name)
-                .accessibilityIdentifier("midiNoteLearn." + row.id)
-            if row.control != nil {
-                Button("Delete", role: .destructive, action: delete)
-                    .buttonStyle(.borderless)
-                    .accessibilityLabel("Delete note mapping for " + row.name)
-                    .accessibilityIdentifier("midiNoteDelete." + row.id)
-            }
+                .accessibilityLabel("Delete note mapping for " + row.name)
+                .accessibilityIdentifier("midiNoteDelete." + row.id)
         }
     }
 }
@@ -196,11 +230,12 @@ private struct MIDISceneRowView: View {
     let delete: () -> Void
 
     var body: some View {
-        HStack {
+        MIDIMappingRowLayout {
             LabeledContent(row.name, value: row.control)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(row.accessibilityLabel)
                 .accessibilityIdentifier("midiScene." + row.id)
+        } buttons: {
             Button("Delete", role: .destructive, action: delete)
                 .buttonStyle(.borderless)
                 .accessibilityLabel("Delete scene mapping for " + row.name)

@@ -518,7 +518,7 @@ struct SettingsView: View {
         oscSection.id("osc")
         if let midi { MIDISettingsSection(midi: midi).id("midi") }   // MIDI-001-R8
         if let recordingQuality { RecordingQualitySection(setting: recordingQuality).id("quality") }   // REC-005-R9
-        if let recordingQuality { RecordingFrameRateSection(setting: recordingQuality) }   // REC-006-R9
+        if let recordingQuality { RecordingFrameRateSection(setting: recordingQuality).id("recordingFrameRate") }   // REC-006-R9; QA-009 anchor
         if let recordingCountdown { RecordingCountdownSection(setting: recordingCountdown) }   // REC-007-R9
         if let recordingTimedStop { RecordingTimedStopSection(setting: recordingTimedStop) }   // REC-008-R9
         if let recordingAudio { RecordingAudioSection(setting: recordingAudio, status: recordingAudioStatus).id("recording") }   // REC-004-R13
