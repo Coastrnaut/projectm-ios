@@ -51,7 +51,7 @@ enum UITestVideoFixture {
         for frame in 0..<60 {
             var waited = 0
             while !input.isReadyForMoreMediaData {
-                guard waited < 5000 else { throw CocoaError(.fileWriteUnknown) }
+                guard waited < 20_000 else { throw CocoaError(.fileWriteUnknown) }
                 usleep(1000)
                 waited += 1
             }

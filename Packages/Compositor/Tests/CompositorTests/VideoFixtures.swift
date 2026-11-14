@@ -85,6 +85,9 @@ enum VideoFixtures {
             if audioWritten == audioTotal { audio.markAsFinished() }   // or the video waits for more sound
             return true
         }
+        // A ceiling in 1 ms steps, not a cost: the iOS 27 simulator on CI stalled the encoder for more
+        // than 5 s once (run 43551499825, "video 3 stalled") although it usually takes milliseconds.
+        let stallLimit: Int = 20_000
         func stalled(_ what: String) -> NSError {
             NSError(domain: "VideoFixtures", code: 1, userInfo: [NSLocalizedDescriptionKey:
                 "\(what) stalled: audio \(audioWritten)/\(audioTotal), audio ready \(audio?.isReadyForMoreMediaData ?? false), writer \(writer.status.rawValue)"])
@@ -94,7 +97,7 @@ enum VideoFixtures {
             while !video.isReadyForMoreMediaData {
                 if try feedAudio() { continue }
                 if writer.status == .failed { throw writer.error ?? stalled("writer") }
-                guard waited < 5000 else { throw stalled("video \(i)") }
+                guard waited < stallLimit else { throw stalled("video \(i)") }
                 usleep(1000)
                 waited += 1
             }
@@ -109,7 +112,7 @@ enum VideoFixtures {
         while audioWritten < audioTotal {
             if try feedAudio() { continue }
             if writer.status == .failed { throw writer.error ?? stalled("writer") }
-            guard waited < 5000 else { throw stalled("audio") }
+            guard waited < stallLimit else { throw stalled("audio") }
             usleep(1000)
             waited += 1
         }
