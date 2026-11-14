@@ -89,7 +89,7 @@ interval; drive the real band pipeline with a synthetic tone switched on and off
 2. **Given** release τr ∈ {100, 500} ms and a step 1 → 0, **When** frames advance the same way, **Then** the first frame with value ≤ 0.1 is at τr ≤ t < τr + one frame interval.
 3. **Given** two bands stepping in opposite directions, **When** smoothed, **Then** one follows the attack time and the other the release time, independently.
 4. **Given** attack and release 0, **When** any input is smoothed, **Then** the output equals the input every frame.
-5. **Given** a synthetic 1 kHz tone switched on for 1 s then off, through the real band pipeline at 60 fps, **When** smoothed with attack 100 ms and release 500 ms, **Then** the tone's band reaches 90 % of its steady value no earlier than 100 ms and within 100 ms plus the analysis window fill and one frame; it falls to 10 % no earlier than 500 ms and within 500 ms plus the window and one frame.
+5. **Given** a synthetic 1 kHz tone switched on for 1 s then off, through the real band pipeline at 60 fps, **When** smoothed with attack 100 ms and release 500 ms, **Then** the tone's smoothed band crosses 90 % of its steady value no earlier than 100 ms after the raw (unsmoothed) band leaves zero and no later than 100 ms plus one frame after the raw band reaches its steady value; after the tone stops it crosses 10 % of its value before the stop no earlier than 500 ms after the raw band starts to fall and no later than 500 ms plus one frame after the raw band reaches zero (the raw band itself ramps over the analysis window, so the bounds are taken from its own crossings).
 
 ### Edge Cases
 
