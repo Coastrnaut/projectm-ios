@@ -9,8 +9,8 @@
 // Shortened 2026-11-14 under owner rule 7: T08 picks Camera before turning OSC on (the recorded visual
 // is the one chosen before Camera either way, SceneAutosaveCapture.recordedVisual), so it no longer
 // scrolls back up from the OSC section (six drags); the OSC section is revealed with longer drags
-// (`reveal(long:)`); scroll loops stop once their row is visible instead of re-checking it on every
-// remaining iteration. Every assertion is kept.
+// (`reveal(long:)`) at the smallest text size (shorter rows); scroll loops stop once their row is visible
+// instead of re-checking it on every remaining iteration. Every assertion is kept.
 import XCTest
 
 @MainActor
@@ -26,7 +26,10 @@ final class SessionRecoveryUITests: XCTestCase {
         XCUIDevice.shared.orientation = .portrait
         app.launchArguments = (reset ? ["-uitestResetNotice"] : [])
             + ["-uitestDiagnostics", "-autostart", "inAppPlayback", "-uitestCamera", "granted",
-               "-uitestSessionRecovery", "-settings.osc.port", Self.port] + Self.noStore
+               "-uitestSessionRecovery", "-settings.osc.port", Self.port,
+               // The smallest text size: shorter Settings rows, so the OSC section is fewer drags down
+               // (owner rule 7, 2026-11-14); recovery does not depend on the text size.
+               "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryXS"] + Self.noStore
         app.launch()
         XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
     }
