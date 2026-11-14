@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (MED-006-T01-T21 verified on the Mac host, the Linux shape and the iOS 27.2 simulator; device task T22 `{device}` open; report `docs/test-reports/image-slideshow.md`)
 
 **Input**: User description: "Implement MED-006 (Image slideshow) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Cycle selected local images by
