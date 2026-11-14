@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (ACC-003-T01-T16 verified on the Mac and an own iOS 27.2 simulator; T17 `{device}` open)
 
 **Input**: User description: "Implement ACC-003 (Color-blind friendly controls) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Offer high-contrast palettes and
