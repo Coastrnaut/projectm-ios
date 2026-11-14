@@ -6,22 +6,22 @@ Format: `- [ ] SHOW-002-Txx [P?] [USn?] description with file path`.
 
 ## Phase 1: Setup
 
-- [ ] SHOW-002-T01 Create simulator "SHOW2 iPhone 17" (iOS 27.2), count PosterBoard reports, run `xcodegen generate` in the worktree
+- [X] SHOW-002-T01 Create simulator "SHOW2 iPhone 17" (iOS 27.2), count PosterBoard reports, run `xcodegen generate` in the worktree — Verified 2026-11-14: simulator 5FFD8616 created, 26 PosterBoard reports before, project generated, preset submodules fetched
 
 ## Phase 2: Foundational (the model and the file)
 
-- [ ] SHOW-002-T02 [P] `ShowCueDwell` ("seconds" Int, "1…3600", init throws `ShowDwellError.outOfRange`; `duration`, `presets` 1, 2, 3, 5, 10, 15, 20, 30, 45, 60, 90, 120, 180, 300, 600, 900, 1200, 1800, 2700, 3600 s; `clockText` m:ss; `spokenText`) in Packages/ShowControl/Sources/ShowControl/ShowCueDwell.swift
-- [ ] SHOW-002-T03 `ShowCue.dwell` (nil = Off), `ShowCueList.setDwell(_:to:)` (unknown cue throws), `insert(… dwell:)` in Packages/ShowControl/Sources/ShowControl/ShowCueList.swift
-- [ ] SHOW-002-T04 `show.json` cue field `advanceAfter` (written only when set; lenient read; `ShowDecodeWarning.droppedDwells(n)`; no version bump; contract D1-D2) in Packages/ShowControl/Sources/ShowControl/ShowDocument.swift
-- [ ] SHOW-002-T05 [P] Document tests (round trip byte-identical, show without dwells unchanged, each invalid value dropped with one warning, QA-004 matrix still passes) in Packages/ShowControl/Tests/ShowControlTests/ShowDwellDocumentTests.swift
+- [X] SHOW-002-T02 [P] `ShowCueDwell` ("seconds" Int, "1…3600", init throws `ShowDwellError.outOfRange`; `duration`, `presets` 1, 2, 3, 5, 10, 15, 20, 30, 45, 60, 90, 120, 180, 300, 600, 900, 1200, 1800, 2700, 3600 s; `clockText` m:ss; `spokenText`) in Packages/ShowControl/Sources/ShowControl/ShowCueDwell.swift — Verified 2026-11-14: `swift test --package-path Packages/ShowControl` 105 tests pass in 2.0 s (ShowAdvanceTimelineTests 11, ShowDwellDocumentTests 5, QA-004 ShowStoreMigrationMatrixTests unchanged)
+- [X] SHOW-002-T03 `ShowCue.dwell` (nil = Off), `ShowCueList.setDwell(_:to:)` (unknown cue throws), `insert(… dwell:)` in Packages/ShowControl/Sources/ShowControl/ShowCueList.swift — Verified 2026-11-14: `swift test --package-path Packages/ShowControl` 105 tests pass in 2.0 s (ShowAdvanceTimelineTests 11, ShowDwellDocumentTests 5, QA-004 ShowStoreMigrationMatrixTests unchanged)
+- [X] SHOW-002-T04 `show.json` cue field `advanceAfter` (written only when set; lenient read; `ShowDecodeWarning.droppedDwells(n)`; no version bump; contract D1-D2) in Packages/ShowControl/Sources/ShowControl/ShowDocument.swift — Verified 2026-11-14: `swift test --package-path Packages/ShowControl` 105 tests pass in 2.0 s (ShowAdvanceTimelineTests 11, ShowDwellDocumentTests 5, QA-004 ShowStoreMigrationMatrixTests unchanged)
+- [X] SHOW-002-T05 [P] Document tests (round trip byte-identical, show without dwells unchanged, each invalid value dropped with one warning, QA-004 matrix still passes) in Packages/ShowControl/Tests/ShowControlTests/ShowDwellDocumentTests.swift — Verified 2026-11-14: `swift test --package-path Packages/ShowControl` 105 tests pass in 2.0 s (ShowAdvanceTimelineTests 11, ShowDwellDocumentTests 5, QA-004 ShowStoreMigrationMatrixTests unchanged)
 
 ## Phase 3: User Story 1 + 2 — the timeline engine and its acceptance (P1) 🎯 MVP
 
 **Goal**: one advance per cue at its deadline with an injected clock; manual steps reset the deadline.
 **Independent test**: `swift test --filter ShowAdvanceTimelineTests`.
 
-- [ ] SHOW-002-T06 [US1] `ShowMonotonicClock`, `ShowContinuousClock`, `ShowManualClock`, `ShowAdvanceTimeline` (idle/running/held; `cueStarted`, `setHeld`, `due`, `remaining`, `cancel`) and `ShowTimedAdvance.tick`/`step` in Packages/ShowControl/Sources/ShowControl/ShowAdvanceTimeline.swift
-- [ ] SHOW-002-T07 [US1] Acceptance and engine tests: five cues with dwells 10/20/30/40/50 s stepped in 1 s and 0.25 s ticks fire exactly at 10, 30, 60, 100 s (none early, none twice, show ends on cue 5); a 500 s jump fires once; Off and last cue never fire; a manual Next at 4 s moves the deadline to 24 s and 10 s never fires; Previous and Go to restart in full; hold keeps the remaining time; step while held starts held; a due advance on a cue that became the last does nothing and the timeline goes idle — in Packages/ShowControl/Tests/ShowControlTests/ShowAdvanceTimelineTests.swift
+- [X] SHOW-002-T06 [US1] `ShowMonotonicClock`, `ShowContinuousClock`, `ShowManualClock`, `ShowAdvanceTimeline` (idle/running/held; `cueStarted`, `setHeld`, `due`, `remaining`, `cancel`) and `ShowTimedAdvance.tick`/`step` in Packages/ShowControl/Sources/ShowControl/ShowAdvanceTimeline.swift — Verified 2026-11-14: `swift test --package-path Packages/ShowControl` 105 tests pass in 2.0 s (ShowAdvanceTimelineTests 11, ShowDwellDocumentTests 5, QA-004 ShowStoreMigrationMatrixTests unchanged)
+- [X] SHOW-002-T07 [US1] Acceptance and engine tests: five cues with dwells 10/20/30/40/50 s stepped in 1 s and 0.25 s ticks fire exactly at 10, 30, 60, 100 s (none early, none twice, show ends on cue 5); a 500 s jump fires once; Off and last cue never fire; a manual Next at 4 s moves the deadline to 24 s and 10 s never fires; Previous and Go to restart in full; hold keeps the remaining time; step while held starts held; a due advance on a cue that became the last does nothing and the timeline goes idle — in Packages/ShowControl/Tests/ShowControlTests/ShowAdvanceTimelineTests.swift — Verified 2026-11-14: `swift test --package-path Packages/ShowControl` 105 tests pass in 2.0 s (ShowAdvanceTimelineTests 11, ShowDwellDocumentTests 5, QA-004 ShowStoreMigrationMatrixTests unchanged)
 
 ## Phase 4: User Story 3 — the app driver, holds and countdown (P1)
 
