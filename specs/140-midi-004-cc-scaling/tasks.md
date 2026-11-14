@@ -29,7 +29,7 @@ Tests are required by the spec (MIDI-004-S1 to S6). Budgets (owner rule 7): unit
 - [ ] MIDI-004-T08 [US2] Coordinator options API in `Apps/projectM-iOS/Coordinators/MIDIMappingCoordinator.swift`: `options(for:)`, `selectPreset(_:for:)`, `setInverted(_:for:)` (save, `.midi` announcement, no Undo entry); row `curveSummary`, `curveUnreadable` (contract C4.1, C4.2)
 - [ ] MIDI-004-T09 [US2] Views: the "Curve" row (`midiCurve.<id>`) in `Apps/projectM-iOS/Views/MIDIMappingsView.swift` and the new `Apps/projectM-iOS/Views/MIDIMappingOptionsView.swift` (picker, Invert toggle, static preview with a spoken description, unreadable notice; contract C4.3); add the view to `scripts/check_status_events.py`
 - [ ] MIDI-004-T10 [US2] App tests in `MIDIMappingCoordinatorTests.swift`: selecting a preset and toggling Invert save the line, announce, create no Undo entry; a curve value through the fake source follows the curve
-- [ ] MIDI-004-T11 [US2] UI test `Apps/projectM-iOS/UITests/MIDICCScalingUITests.swift`: seeded `cc:0:7=effect.bloom.intensity`, open Curve, toggle Invert, the summary reads "Linear, inverted" (S5, under 30 s)
+- [ ] MIDI-004-T11 [US2] UI test `Apps/projectM-iOS/UITests/MIDICCScalingUITests.swift`: seeded `cc:0:7=effect.bloom.intensity`, open Curve, toggle Invert, the summary reads "Linear, inverted" and the preview's spoken description says the value falls (S5, MIDI-004-R8; under 30 s)
 
 ## Phase 5: User Story 3 - Old and future mappings keep working (P2)
 
@@ -41,6 +41,10 @@ Tests are required by the spec (MIDI-004-S1 to S6). Budgets (owner rule 7): unit
 - [ ] MIDI-004-T14 Type-check budget build (`-warn-long-function-bodies=300 -warn-long-expression-type-checking=150`), no warnings in touched files; repository checks (compliance, docs, motion policy, permission catalog, status events, script tests), privacy manifest and network symbol checks on the built Debug app; PosterBoard count after
 - [ ] MIDI-004-T15 Test report `docs/test-reports/midi-004-cc-scaling.md`; spec status updated; simulator, derived data and `Build` symlink removed
 - [ ] MIDI-004-T16 {device} With a physical controller on D1, map a fader to Glow intensity, set Inverted, confirm fully down gives the brightest glow and fully up the dimmest; record the result
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+All 10 requirements and 6 success criteria map to at least one task; no constitution conflict. One fix applied: MIDI-004-R8's spoken preview description had no test, so T11 now asserts it.
 
 ## Dependencies
 
