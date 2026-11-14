@@ -82,7 +82,7 @@ sine ring and silence on the GPU and compare them with golden images.
 **Acceptance Scenarios**:
 
 1. **Given** a sine whose period does not divide the window, **When** laid out, **Then** the largest distance between neighbouring points, the closing segment included, is at most 1.5 × the median neighbour distance.
-2. **Given** the same sine without the seam treatment, **When** measured the same way, **Then** the ratio is far above 1.5 (the treatment is what closes the ring).
+2. **Given** the same sine without the seam treatment, **When** measured the same way, **Then** the ratio is above 1.5 in every case and above 5 in the worst (the treatment is what closes the ring).
 3. **Given** a constant +0.5 input, **When** laid out, **Then** every point's radius is greater than the base radius; **given** −0.5, every radius is smaller; **given** silence, every radius equals the base radius.
 4. **Given** a fixture held steady, **When** laid out on successive frames, **Then** the points are identical frame to frame.
 5. **Given** a sine ring and silence rendered offscreen, **When** compared with the committed goldens, **Then** they pass QA-002's rule.
@@ -139,7 +139,7 @@ times and count transitions per area; lay out at portrait, landscape and tiny si
 
 ### Measurable Outcomes
 
-- **VIS-005-S1**: For sines whose period does not divide the window, at several phases, the largest neighbour distance (closing segment included) ≤ 1.5 × the median; without the seam treatment it exceeds 5 × the median.
+- **VIS-005-S1**: For sines whose period does not divide the window, at several phases, the largest neighbour distance (closing segment included) ≤ 1.5 × the median; without the seam treatment every case exceeds 1.5 × and the worst exceeds 5 × the median.
 - **VIS-005-S2**: DC +0.5 → every radius > R₀; DC −0.5 → every radius < R₀; silence → every radius = R₀ (spread 0 within 1e-12).
 - **VIS-005-S3**: A steady fixture gives bit-identical points on 10 successive frames.
 - **VIS-005-S4**: The 60 Hz loud/silent alternation stays within the transition budget with Reduce flashing on and off.
