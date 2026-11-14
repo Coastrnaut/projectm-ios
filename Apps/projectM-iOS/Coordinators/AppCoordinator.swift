@@ -372,6 +372,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             layers.restore(values.layerComposites)   // CMP-015-R5
             if let text = values.text { texts.spec = text }
             videos.restoreLoop(storeID: values.videoStoreID, loop: values.videoLoop)   // MED-003-R8
+            videos.restoreSpeed(storeID: values.videoStoreID, speedPercent: values.videoSpeedPercent)   // MED-004-R7
         }
         self.sceneAutosave = sceneAutosave
         show = ShowCoordinator.makeDefault()   // SHOW-001
@@ -454,9 +455,11 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             guard let self, let host = videoVisual else { return }
             host.content = .none   // MED-003: the new video's region applies from its first picture
             host.loopRegion = videos.loopRegion
+            host.playbackSpeed = videos.speed   // MED-004
             host.content = Self.videoContent(stored)
         }
         videos.onLoopRegionChange = { [weak self] (region: VideoLoopRegion?) in self?.videoVisual?.loopRegion = region }   // MED-003
+        videos.onSpeedChange = { [weak self] (speed: VideoPlaybackSpeed) in self?.videoVisual?.playbackSpeed = speed }   // MED-004
         texts.onSpecChange = { [weak self] (spec: TextOverlaySpec) in self?.textVisual?.spec = spec }   // MED-009
         routes.context = { [weak self] in self?.routeContext }   // AUD-007
         // AUD-012-R12: the noise gate's microphone flag changes when a session (or a switch) begins.
@@ -1015,6 +1018,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             #endif
             host.onVideoStateChange = { [weak self] (state: VideoLayerState) in self?.videoStateChanged(state) }
             host.loopRegion = videos.loopRegion   // MED-003: before the first start
+            host.playbackSpeed = videos.speed     // MED-004
             host.content = Self.videoContent(videos.video)
             presentation.register(host)   // PERF-011: starts suspended while the app cannot present
             videoVisual = host
@@ -1330,6 +1334,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             layers.restore(values.layerComposites)   // CMP-015-R5
             if let text = values.text { texts.spec = text }
             videos.restoreLoop(storeID: values.videoStoreID, loop: values.videoLoop)   // MED-003-R8
+            videos.restoreSpeed(storeID: values.videoStoreID, speedPercent: values.videoSpeedPercent)   // MED-004-R7
         }
         if let visual { settings.visual = visual }
         sceneHistory.restart()   // SCN-010-R9: Reopen is not an edit
@@ -1354,6 +1359,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                     glowIntensity: settings.glowIntensity, glowRadius: settings.glowRadius, glowThreshold: settings.glowThreshold,
                     text: texts.spec, photoID: photos.photo?.id, videoID: videos.video?.id,
                     videoLoop: SceneVideoLoopBridge.scene(videos.loopRegion),   // MED-003
+                    videoSpeedPercent: videos.sceneSpeedPercent,   // MED-004
                     layerComposites: layers.composites)   // CMP-015
     }
 

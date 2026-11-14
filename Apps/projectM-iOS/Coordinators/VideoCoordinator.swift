@@ -13,6 +13,9 @@
 //   whole file), kept clamped to `durationNanoseconds` once the layer reports it. Slider edits save
 //   at once and reach the player through `onLoopRegionChange` once they settle (`loopSettle` after
 //   the last change, or `commitLoop()` at the end of a drag), so a drag restarts the decoder once.
+// * MED-004 (speed, R6, R8): `speed` is the stored video's saved speed (1× by default). A pick saves
+//   and reaches the player at once through `onSpeedChange` (no settle: one discrete action). Speed
+//   only ever goes to the video layer; nothing here touches the audio source.
 import CoreTransferable
 import Foundation
 import Observation
@@ -57,6 +60,11 @@ final class VideoCoordinator {
     /// MED-003: the region last handed to the player (tests).
     @ObservationIgnored private(set) var appliedLoopRegion: VideoLoopRegion?
 
+    /// MED-004: the stored video's playback speed (1× without a video).
+    private(set) var speed: VideoPlaybackSpeed = .normal
+    /// MED-004: tells the app coordinator the speed to play, at once.
+    @ObservationIgnored var onSpeedChange: ((VideoPlaybackSpeed) -> Void)?
+
     /// `store` is nil when the folder cannot be named; imports then fail with `.saveFailed`.
     init(store: VideoStore?,
          announce: @escaping @MainActor (String) -> Void = { UIAccessibility.post(notification: .announcement, argument: $0) }) {
@@ -65,6 +73,7 @@ final class VideoCoordinator {
         video = store?.current()
         loopRegion = video.flatMap { (stored: StoredVideo) -> VideoLoopRegion? in store?.loopRegion(for: stored.id) }
         appliedLoopRegion = loopRegion
+        speed = video.map { (stored: StoredVideo) -> VideoPlaybackSpeed in store?.speed(for: stored.id) ?? .normal } ?? .normal
     }
 
     /// FILE-008-R5: every stored identifier that resolves (scene and cue checks count them as present).
@@ -164,6 +173,7 @@ final class VideoCoordinator {
         loopApplyTask = nil
         loopRegion = stored.flatMap { (s: StoredVideo) -> VideoLoopRegion? in store?.loopRegion(for: s.id) }
         appliedLoopRegion = loopRegion
+        speed = stored.map { (s: StoredVideo) -> VideoPlaybackSpeed in store?.speed(for: s.id) ?? .normal } ?? .normal   // MED-004
         onVideoChange?(stored)
     }
 
@@ -262,6 +272,29 @@ final class VideoCoordinator {
         loopRegion = saved
         store?.setLoopRegion(saved, for: video.id)
     }
+
+    // MARK: - Playback speed (MED-004)
+
+    /// The Speed picker chose `speed`: saved and applied at once (nothing without a video).
+    func setSpeed(_ newSpeed: VideoPlaybackSpeed) {
+        guard let video, newSpeed != speed else { return }
+        speed = newSpeed
+        store?.setSpeed(newSpeed, for: video.id)
+        onSpeedChange?(newSpeed)
+    }
+
+    /// MED-004-R7: a restored scene's, undo state's or cue's speed; applied only when `storeID` is the
+    /// stored video or shares its payload (FILE-008) (nil storeID: nothing changes; nil or an unknown
+    /// percent: 1×).
+    func restoreSpeed(storeID: String?, speedPercent: Int?) {
+        guard let storeID, let video, let id = UUID(uuidString: storeID), id.uuidString == storeID,
+              store?.isSameVideo(id, as: video.id) ?? (id == video.id) else { return }
+        let restored: VideoPlaybackSpeed = speedPercent.flatMap { (p: Int) -> VideoPlaybackSpeed? in VideoPlaybackSpeed(percent: p) } ?? .normal
+        setSpeed(restored)
+    }
+
+    /// The scene field for the current speed (nil at 1×).
+    var sceneSpeedPercent: Int? { speed.isNormal ? nil : speed.percent }
 
     // MARK: - Notice
 

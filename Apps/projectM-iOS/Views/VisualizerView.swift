@@ -749,7 +749,7 @@ extension OutputBlackout.Phase {
 }
 
 /// MED-003-R12 (diagnostics only): the shown picture's index in the file, the applied loop region and
-/// the loop counters, for VideoLoopUITests.
+/// the loop counters, for VideoLoopUITests; MED-004-R11: the speed and its measured ratio (VideoSpeedUITests).
 private struct VideoLoopProbe: View {
     let video: VideoVisualHost
 
@@ -765,10 +765,12 @@ private struct VideoLoopProbe: View {
             String(r.inMilliseconds) + "-" + String(r.outMilliseconds)
         } ?? "whole"
         let stats: String = video.loopStatistics()
+        let speed: String = video.speedProbe()   // MED-004-R11
         return VStack {
             Text(index).accessibilityIdentifier("videoMediaFrameIndex").accessibilityValue(index)
             Text(region).accessibilityIdentifier("videoLoopRegion").accessibilityValue(region)
             Text(stats).accessibilityIdentifier("videoLoopStats").accessibilityValue(stats)
+            Text(speed).accessibilityIdentifier("videoSpeed").accessibilityValue(speed)
         }
         .font(.caption2)
         .opacity(0.01)

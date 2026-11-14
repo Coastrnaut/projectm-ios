@@ -36,7 +36,7 @@ final class LibraryBackupAppTests: XCTestCase {
         XCTAssertEqual(included.subtracting(appKeys), [], "every included key is a key the app stores")
         XCTAssertEqual(appKeys.subtracting(included).subtracting(excluded), [], "every app key is included or deliberately left out")
         XCTAssertEqual(appKeys.intersection(excluded),
-                       [AppSettings.oscEnabledKey, AppSettings.midiEnabledKey, VideoStore.idKey, VideoStore.loopKey])
+                       [AppSettings.oscEnabledKey, AppSettings.midiEnabledKey, VideoStore.idKey, VideoStore.loopKey, VideoStore.speedKey])   // MED-004
         XCTAssertEqual(LibraryFolders.Folder.show.rawValue, StorageLocations.showFolderName)
         XCTAssertEqual(LibraryFolders.Folder.currentScene.rawValue, SceneAutosaveStore.folderName)
         XCTAssertEqual(LibraryFolders.Folder.presets.rawValue, UserPresetStore.directoryName)

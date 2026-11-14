@@ -85,6 +85,23 @@ final class VideoVisualHost: PresentationBoundResource {
         set { video.loopRegion = newValue }
     }
 
+    /// MED-004: the playback speed (applied from the next frame, no decoder restart).
+    var playbackSpeed: VideoPlaybackSpeed {
+        get { video.playbackSpeed }
+        set { video.playbackSpeed = newValue }
+    }
+
+    /// MED-004 diagnostics: "<percent> ratio=<x.xxx>" (video time over presentation time since the last
+    /// speed change; "ratio=none" before any counted step).
+    func speedProbe() -> String {
+        let percent: String = String(video.playbackSpeed.percent)
+        let measured = video.speedMeasurement
+        guard measured.presentation > 0 else { return percent + " ratio=none" }
+        let ratio: Double = Double(measured.playback) / Double(measured.presentation)
+        let text: String = ratio.formatted(.number.precision(.fractionLength(3)).locale(Locale(identifier: "en_US_POSIX")))
+        return percent + " ratio=" + text
+    }
+
     /// MED-003 diagnostics: "wraps=<n> gap=<frames> early=<n> recovered=<n>" (gap on a `frameRate` timeline).
     func loopStatistics(frameRate: Double = 30) -> String {
         let s = video.statistics

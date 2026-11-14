@@ -33,7 +33,10 @@ extension AppCoordinator {
         if settings.glowThreshold != inputs.glowThreshold { settings.glowThreshold = inputs.glowThreshold }
         if texts.spec != inputs.text { texts.spec = inputs.text }
         if let composites = inputs.layerComposites { layers.restore(composites) }   // CMP-015-R6
-        if let id = inputs.videoID { videos.restoreLoop(storeID: id.uuidString, loop: inputs.videoLoop) }   // MED-003-R8
+        if let id = inputs.videoID {
+            videos.restoreLoop(storeID: id.uuidString, loop: inputs.videoLoop)   // MED-003-R8
+            videos.restoreSpeed(storeID: id.uuidString, speedPercent: inputs.videoSpeedPercent)   // MED-004-R7
+        }
         let recorded = SceneAutosaveCapture.recordedVisual(settings.visual, beforeCamera: settings.visualBeforeCamera)
         if recorded != inputs.visual { settings.visual = inputs.visual }
         visualSettingsChanged()

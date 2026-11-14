@@ -35,6 +35,8 @@ struct SceneInputs: Equatable, Sendable {
     var videoID: UUID?
     /// MED-003-R8: the stored video's loop region (nil: the whole file).
     var videoLoop: SceneVideoLoop? = nil
+    /// MED-004-R7: the stored video's speed in percent (nil: 1×).
+    var videoSpeedPercent: Int? = nil
     /// CMP-015-R5 (research CMP-015-D2): the saved composite of each drawn layer kind (`photo`, `video`,
     /// `text`, `spectrum.circular`), edited in the layer inspector. nil keeps a matched layer's carried
     /// composite (callers that do not track composites); non-nil is authoritative, a missing kind
@@ -51,6 +53,8 @@ struct SceneRestoredValues: Sendable, Equatable {
     /// MED-003-R8: the first video layer's stored-video ID and loop (nil: none).
     var videoStoreID: String? = nil
     var videoLoop: SceneVideoLoop? = nil
+    /// MED-004-R7: the video asset's speed in percent (nil: 1×).
+    var videoSpeedPercent: Int? = nil
     /// CMP-015: the document's drawn-layer composites (first layer of each kind; defaults left out).
     var layerComposites: [String: SceneComposite] = [:]
 }
@@ -137,7 +141,7 @@ enum SceneAutosaveCapture {
             contents += spectrumOver
         case .video:
             if let id = inputs.videoID {
-                assets[videoKey] = SceneVideoLoopBridge.asset(storeID: id, loop: inputs.videoLoop)   // MED-003
+                assets[videoKey] = SceneVideoLoopBridge.asset(storeID: id, loop: inputs.videoLoop, speedPercent: inputs.videoSpeedPercent)   // MED-003, MED-004
                 contents = [.video(asset: videoKey)]
             }
             contents += spectrumOver
@@ -243,7 +247,7 @@ enum SceneAutosaveCapture {
         }
         let video = SceneVideoLoopBridge.video(in: document)   // MED-003-R8
         return SceneRestoredValues(parameters: parameters, text: text, bindings: live.bindings,
-                                   videoStoreID: video?.storeID, videoLoop: video?.loop,
+                                   videoStoreID: video?.storeID, videoLoop: video?.loop, videoSpeedPercent: video?.speedPercent,
                                    layerComposites: layerComposites(in: document))
     }
 
