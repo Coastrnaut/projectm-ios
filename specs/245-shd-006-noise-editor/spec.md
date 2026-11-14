@@ -21,6 +21,59 @@ Identifiers in this feature carry the roadmap ID so they never collide with othe
 | Parameter registry (MOD-001) | Material parameters are descriptors; floats modulatable, ints manual. | — |
 | Goldens | Per-material signature (mean, peak, 4 pixels) within 0.02 on the host GPU. | No exact (bit-level) reference for a seed. |
 
+## Clarifications
+
+### Session 2026-11-14
+
+Answered by Claude under the owner's standing approval (owner rule 4); each answer is the conservative,
+local-first option.
+
+- Q: Where do the noise parameters live? → A: On the existing Noise Flow material, as SHD-003 metadata
+  parameters (no new material, no second parameter mechanism). Five are added after the existing six: `seed`
+  (int 0…65535, default 0), `lacunarity` (float 1.5…3.5, step 0.01, default 2.03, the old literal), `gain`
+  (float 0.2…0.8, step 0.01, default 0.5), `warpAmount` (float 0…4 cells, step 0.05, default 0.8, the old
+  literal) and `warpFrequency` (float 0.25…4 × the base scale, step 0.05, default 1). The existing `octaves`
+  range widens from 1…5 to 1…8 (same ID, kind and default; old values stay valid). Seed and octaves are integers
+  (manual, steppers); the floats are modulatable (MOD-001 rule).
+- Q: Noise Flow then needs 11 parameters but SHD-003 allows 8. What gives? → A: The cap rises from 8 to 16 for
+  every material (validator, `MaterialDefinition`, the shader's uniform block: 16 `float4` slots, 272 bytes).
+  Recorded as an ADR because it overrides SHD-001/SHD-003's documented limit. Alternatives rejected: a separate
+  noise material with exactly 8 parameters (would drop scale, tint and brightness), packing several values into
+  one slot (breaks "parameter i is slot i" everywhere), a second uniform block outside the metadata (the brief
+  wants everything through metadata).
+- Q: How is the seed made deterministic? → A: The lattice hash becomes integer arithmetic: the cell coordinates
+  (wrapped to 4096 per axis) are combined with a key = seed | octave << 16 | field << 19 multiplied by an odd
+  constant, then mixed with a fixed 32-bit integer finalizer. No `random()`, no time, no device state. Distinct
+  keys give distinct masks, so distinct seeds give different textures. A CPU reference in Swift implements the
+  same function (Linux-testable) and the GPU result is compared with it.
+- Q: Does the Noise Flow picture change? → A: Yes, once: the old float hash (`fract(p·const)`) loses precision at
+  the coordinates 8 octaves reach, so both variants switch to the integer hash; the warp becomes two-dimensional
+  (two decorrelated warp fields). The Noise Flow golden signature is re-recorded; other materials' goldens are
+  unchanged. Scenes keep their values (IDs unchanged); the app does not draw material layers yet, so nothing a
+  user has seen changes.
+- Q: What is "the same GPU class" and how is the reference stored? → A: The Metal device name (`MTLDevice.name`,
+  e.g. the Mac's Apple GPU, the iOS simulator's GPU). The test keeps a table of exact FNV-1a 64-bit digests of the
+  raw half-float readback per device name for three representative settings; on a device name without an entry
+  it reports the digest and skips the exact comparison (honest: no reference for that class), while the tolerant
+  golden signature (mean, peak, four pixels, ±0.02) applies everywhere.
+- Q: Where does the editor live so it is usable today? → A: Settings › Noise editor, a dedicated screen (next to
+  the palette link) with a live preview at the top and one generic control per Noise Flow parameter below,
+  built from the metadata exactly like the material inspector (ACC-005 sliders, steppers, colour well), plus a
+  "Randomize seed" button. The material inspector of a scene's layer stays read-only (layers are not drawn). The
+  preview is drawn by the material layer's own GPU code at phase 0 (a still: no motion, so no flashing concern)
+  at 256 × 256 points of pixels and redrawn on every change.
+- Q: Where are the editor's settings stored? → A: One UserDefaults key, `settings.noiseEditor.values`, holding a
+  small JSON object of parameter name → MOD-001 value; it is included in settings backups and the Settings
+  erase (a user's creative setting, like palettes). Reading is lenient: unknown names are ignored, values are
+  clamped by the material's rules, refused values fall back to defaults, damaged data reads as all defaults.
+- Q: How does "Randomize seed" pick without a system RNG? → A: A counter (starting at 1 each launch) is
+  hashed with the same 32-bit finalizer and reduced to 0…65535; if the result equals the current seed, the
+  counter advances again. The sequence is therefore the same on every run (tests can predict it).
+- Q: What about the Low cost variant? → A: It reads seed, lacunarity and gain too (one pass, at most 3 octaves,
+  no warp); its metadata is the same document, so the slot check covers it.
+- Q: Undo? → A: Editor changes are settings edits saved at once, not scene edits, so they are not in scene undo
+  (like palette edits).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Shape a procedural noise texture and see it at once (Priority: P1)
