@@ -81,7 +81,7 @@ storage addresses; render it on the GPU; record a baseline metric without assert
 
 1. **Given** the maximum particle count at 60 frames per second, **When** simulated and laid out, **Then** each frame does at most the documented number of particle steps and vertices, and nothing is allocated.
 2. **Given** a seeded orbit at a fixed time, **When** rendered offscreen, **Then** it matches the committed golden image (macOS host and iOS Simulator).
-3. **Given** a physical device, **When** the orbit runs with music, **Then** the performance overlay shows the frame rate within budget (`{device}`).
+3. **Given** a physical device, **When** the orbit runs with music, **Then** the PERF-001/007 performance overlay shows the display's frame rate held, with no more dropped frames than the Mandala under the same music (`{device}`, VIS-009-T10).
 
 ---
 
@@ -107,7 +107,8 @@ change it, close Settings and check the visual's value.
 - Output size 0: nothing drawn; the simulation still advances.
 - Pause and resume: the loop restart reseeds the particles, resets the radius to the base and clears the pulse and pending beats.
 - A long frame gap or time going backwards: as VIS-008 (at most 1 s advanced; nothing on backwards time).
-- Radius or Reduce Motion changed while running: applies from the next frame without rebuilding the visual; the radius eases to the new value.
+- Radius or Reduce Motion changed while running: applies from the next frame without rebuilding the visual; the radius eases to the new value; phases are kept (no jump).
+- More beats between two frames than the queue holds (16): the excess is dropped and counted.
 
 ## Requirements *(mandatory)*
 
