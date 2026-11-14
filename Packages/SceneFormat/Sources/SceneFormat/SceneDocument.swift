@@ -48,12 +48,14 @@ public struct SceneDocument: Sendable, Hashable {
     public var modulation: SceneModulation
     /// Scene-local asset keys.
     public var assets: [String: SceneAsset]
+    /// CMP-011: layer groups (SceneGroup.swift); written only when not empty.
+    public var groups: [SceneGroup]
     /// Unknown top-level fields, kept verbatim (SCN-001-R10).
     public var extra: [String: SceneJSON]
 
     public init(id: String, name: String, layers: [SceneLayer] = [], parameters: [ParameterID: ParameterValue] = [:],
                 bindings: [SceneBinding] = [], modulation: SceneModulation = SceneModulation(),
-                assets: [String: SceneAsset] = [:], extra: [String: SceneJSON] = [:]) {
+                assets: [String: SceneAsset] = [:], groups: [SceneGroup] = [], extra: [String: SceneJSON] = [:]) {
         self.id = id
         self.name = name
         self.layers = layers
@@ -61,6 +63,7 @@ public struct SceneDocument: Sendable, Hashable {
         self.bindings = bindings
         self.modulation = modulation
         self.assets = assets
+        self.groups = groups
         self.extra = extra
     }
 

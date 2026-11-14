@@ -69,6 +69,9 @@ public struct SceneIssue: Sendable, Hashable, CustomStringConvertible {
         case unsupportedFitMode
         /// CMP-007: a mask shape kind this version does not draw; kept verbatim, the layer drawn unmasked.
         case unsupportedMaskShape
+        /// CMP-011: a damaged layer group (bad ID, bad child reference, no layers, not one run); kept,
+        /// its layers drawn ungrouped.
+        case invalidGroup
         case valueClamped
         case droppedField
         case unknownMaterial
@@ -104,7 +107,7 @@ public struct SceneIssue: Sendable, Hashable, CustomStringConvertible {
         /// never refuses the scene; `invalidModulation` (generator declarations) stays an error.
         public var severity: Severity {
             switch self {
-            case .unknownLayerKind, .unsupportedBlendMode, .unsupportedFitMode, .unsupportedMaskShape, .valueClamped, .droppedField, .unknownAssetType, .unusedAsset,
+            case .unknownLayerKind, .unsupportedBlendMode, .unsupportedFitMode, .unsupportedMaskShape, .invalidGroup, .valueClamped, .droppedField, .unknownAssetType, .unusedAsset,
                  .missingAsset, .orphanedParameter, .rejectedParameter, .parameterClamped,
                  .invalidBinding, .duplicateBindingTarget, .invalidExpression, .migratedReference, .retiredReference,
                  .orphanedBinding, .orphanedConnection, .rejectedConnection:

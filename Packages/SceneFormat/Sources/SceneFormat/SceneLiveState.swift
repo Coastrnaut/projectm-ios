@@ -21,6 +21,10 @@
 // CMP-007: a known `composite.mask` maps to `LayerCompositeSettings.mask`; an unknown shape maps to nil
 // (drawn unmasked) and the saved mask is kept in `preservedMasks`, which capture writes back while that
 // layer still has no live mask (CMP-007-R10).
+//
+// CMP-011: valid `groups` become the stack's groups (membership on each entry); invalid ones, and valid
+// ones none of whose layers is live (unknown kinds), stay in `preservedGroups`, which capture writes
+// back verbatim after the live groups (live groups in stack order, children in stack order).
 import Compositor
 import ParameterGraph
 
@@ -46,13 +50,15 @@ public struct SceneLiveState: Sendable, Equatable {
     public var preservedFits: [LayerInstanceID: SceneFit]
     /// CMP-007: saved masks with an unknown shape kind, by instance, kept verbatim for re-save.
     public var preservedMasks: [LayerInstanceID: SceneMask]
+    /// CMP-011: saved groups that are not live (damaged, or without live layers), kept verbatim.
+    public var preservedGroups: [SceneGroup]
 
     public init(stack: LayerStack, contents: [LayerInstanceID: SceneLayerContent] = [:],
                 parameters: ParameterSnapshot = ParameterSnapshot(values: [:]), bindings: [AudioFeatureBinding] = [],
                 expressions: [ParameterID: String] = [:], modulation: ModulationGraph = ModulationGraph(),
                 preserved: SceneModulationPreserved = SceneModulationPreserved(), assets: [String: SceneAsset] = [:],
                 preservedBlendModes: [LayerInstanceID: String] = [:], preservedFits: [LayerInstanceID: SceneFit] = [:],
-                preservedMasks: [LayerInstanceID: SceneMask] = [:]) {
+                preservedMasks: [LayerInstanceID: SceneMask] = [:], preservedGroups: [SceneGroup] = []) {
         self.stack = stack
         self.contents = contents
         self.parameters = parameters
@@ -64,6 +70,7 @@ public struct SceneLiveState: Sendable, Equatable {
         self.preservedBlendModes = preservedBlendModes
         self.preservedFits = preservedFits
         self.preservedMasks = preservedMasks
+        self.preservedGroups = preservedGroups
     }
 
     /// Replaces `modulator`'s bindings with the live ones, in order (contract M5). They were
@@ -127,8 +134,11 @@ extension SceneDocument {
         } + live.preserved.bindings
         let connections = live.modulation.edges.map { (e: ModulationEdge) -> SceneConnection in SceneConnection(e) }
             + live.preserved.connections
+        let groups = live.stack.groups.map { (g: LayerGroup) -> SceneGroup in SceneGroup(g, members: live.stack.members(of: g.id)) }
+            + live.preservedGroups   // CMP-011
         self.init(id: id, name: name, layers: layers, parameters: live.parameters.values, bindings: bindings,
-                  modulation: SceneModulation(generators: live.modulation.generators, connections: connections), assets: live.assets)
+                  modulation: SceneModulation(generators: live.modulation.generators, connections: connections), assets: live.assets,
+                  groups: groups)
     }
 
     /// The live state of a document without errors (contract C6). Errors refuse it whole
@@ -158,9 +168,28 @@ extension SceneDocument {
             entries.append(LayerStackEntry(id: id, descriptor: LayerDescriptor(kind: kind, parameters: layer.values), settings: settings))
             contents[id] = layer.content
         }
+        // CMP-011: valid groups with at least one live layer; the rest are preserved verbatim.
+        var liveGroups: [LayerGroup] = []
+        var preservedGroups: [SceneGroup] = []
+        let valid = Set(analyzeGroups().valid)
+        for (g, group) in groups.enumerated() {
+            var members: Set<LayerInstanceID> = []
+            for child in group.children {
+                if case let .layer(instance) = child, contents[LayerInstanceID(rawValue: instance)] != nil {
+                    members.insert(LayerInstanceID(rawValue: instance))
+                }
+            }
+            guard valid.contains(g), !members.isEmpty else {
+                preservedGroups.append(group)
+                continue
+            }
+            let id = LayerGroupID(rawValue: group.id)
+            for k in entries.indices where members.contains(entries[k].id) { entries[k].group = id }
+            liveGroups.append(LayerGroup(id: id, settings: group.settings))
+        }
         let stack: LayerStack
         do {
-            stack = try LayerStack(restoring: entries)
+            stack = try LayerStack(restoring: entries, groups: liveGroups)
         } catch {
             // Unreachable after validation (duplicate IDs and kind limits are errors there).
             throw .invalid([SceneIssue(.duplicateInstance, path: "$.layers", "The layers cannot be restored: \(error).")])
@@ -168,7 +197,7 @@ extension SceneDocument {
         let state = SceneLiveState(stack: stack, contents: contents, parameters: ParameterSnapshot(values: parameters),
                                    bindings: restore.bindings, expressions: restore.expressions, modulation: restore.graph,
                                    preserved: restore.preserved, assets: assets, preservedBlendModes: unknownBlends,
-                                   preservedFits: unknownFits, preservedMasks: unknownMasks)
+                                   preservedFits: unknownFits, preservedMasks: unknownMasks, preservedGroups: preservedGroups)
         return SceneLoadResult(state: state, warnings: issues, modulationReport: restore.report)
     }
 }

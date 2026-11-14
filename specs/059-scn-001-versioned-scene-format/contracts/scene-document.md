@@ -64,6 +64,16 @@ numbers out of range are clamped with `valueClamped`; a polygon with < 3 or > 32
 drops the mask with `droppedField` (specs/104-cmp-007-shape-masks/contracts/shape-masks.md). `values`: the layer's own
 numbers (`LayerDescriptor.parameters`), names 1…64 UTF-8 bytes without control characters.
 
+### Groups (CMP-011, optional top-level `groups`)
+
+Written only when the scene has groups, every field written, groups in stack order of their first
+child: `{"id": <1…2^53−1>, "name": <string>, "enabled": <bool>, "opacity": <0…1>, "transform":
+<CMP-005 form>, "children": [<layer instance IDs, stack order>]}`. `id` required; the rest read
+defaults ("", true, 1, identity, []); opacity and transform clamped with `valueClamped`; unknown group
+fields and non-number children kept verbatim. At most 8 groups and 8 children per group (`tooMany`).
+Damaged groups give `invalidGroup` and are drawn ungrouped
+(specs/109-cmp-011-layer-groups/contracts/layer-groups.md).
+
 ### Parameter value (MOD-001 tagged form)
 
 `{"kind":"continuous","value":0.25}`, `{"kind":"integer","value":64}`,
@@ -151,6 +161,7 @@ order (layers, assets, parameters, bindings, modulation). Errors block `liveStat
 | `unsupportedBlendMode` | warning | `Layer <i> uses the blend mode "<mode>", which this version draws as normal.` |
 | `unsupportedFitMode` | warning | `Layer <i> uses the fit mode "<mode>", which this version draws as the layer's default.` (CMP-006) |
 | `unsupportedMaskShape` | warning | `Layer <i> uses the mask shape "<shape>", which this version draws unmasked.` (CMP-007) |
+| `invalidGroup` | warning | `Group <g> …` (bad or repeated ID, a child that is not a layer of the scene, repeated or listed by an earlier group, no layers, not one unbroken run); its layers are drawn ungrouped (CMP-011) |
 | `valueClamped` | warning | `<path>: <value> is outside <range>; read as <clamped>.` |
 | `droppedField` | warning | `<path> has the unknown field "<key>"; it was dropped.` |
 | `unknownMaterial` | error | `Layer <i> uses the unknown material "<id>".` |

@@ -26,6 +26,7 @@ enum SceneEncoder {
         } else {
             o["modulation"] = modulation(d.modulation)
         }
+        if !d.groups.isEmpty { o["groups"] = .array(d.groups.map(group)) }   // CMP-011: only when set (older scenes byte-identical)
         return .object(o)
     }
 

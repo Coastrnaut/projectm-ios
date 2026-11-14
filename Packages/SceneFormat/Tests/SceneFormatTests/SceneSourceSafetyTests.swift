@@ -10,8 +10,8 @@ final class SceneSourceSafetyTests: XCTestCase {
             .deletingLastPathComponent().deletingLastPathComponent()
             .appendingPathComponent("Sources/SceneFormat")
         let names = try FileManager.default.contentsOfDirectory(atPath: directory.path).filter { $0.hasSuffix(".swift") }.sorted()
-        XCTAssertEqual(names, ["SceneDecoding.swift", "SceneDocument.swift", "SceneEditing.swift", "SceneEncoding.swift", "SceneHistory.swift",
-                               "SceneIssue.swift",
+        XCTAssertEqual(names, ["SceneDecoding.swift", "SceneDocument.swift", "SceneEditing.swift", "SceneEncoding.swift", "SceneGroup.swift",   // CMP-011
+                               "SceneHistory.swift", "SceneIssue.swift",
                                "SceneJSON.swift", "SceneJSONParser.swift", "SceneJSONWriter.swift", "SceneLiveState.swift", "SceneMigration.swift",
                                "SceneModulationRestore.swift", "SceneRepair.swift", "SceneValidation.swift", "SceneVideoLoop.swift"])   // MED-003
         return try names.map { (name: String) -> (name: String, text: String) in

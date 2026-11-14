@@ -41,6 +41,7 @@ mappings", "Unknown content kept", "Values adjusted".
 | `dropInvalidValues` | Drop invalid values | invalidValueName, malformedParameterID |
 | `dropInvalidModulation` | Remove invalid modulation generators | invalidModulation |
 | `dropMissingMedia` | Open without the missing media | missingAsset |
+| `repairGroups` | Fix layer groups | invalidGroup (CMP-011: drops bad child references, then groups still invalid; a warning shown as a problem under "Damaged file") |
 | `dropInvalidMappings` | Drop invalid mappings | invalidBinding, duplicateBindingTarget, invalidExpression, orphanedBinding, orphanedConnection, rejectedConnection, retiredReference |
 | `keepUnknownContent` | Keep unknown content | unknownLayerKind (changes nothing) |
 

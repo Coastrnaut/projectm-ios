@@ -75,6 +75,13 @@ rules). The format must add none of its own definitions of validity.
   warned (`unsupportedMaskShape`); unusable polygons drop the mask with `droppedField`; format
   version unchanged (no QA-004 matrix row). An older version drops `mask` with `droppedField` and
   shows the layer unmasked.
+- CMP-011 (layer groups, 2026-11-14, specs/109-cmp-011-layer-groups, ADR-0039) adds the optional
+  top-level `groups` (`id`, `name`, `enabled`, `opacity`, `transform`, `children` as layer instance
+  IDs; unknown group fields kept), written only when a scene has groups, so existing scenes encode
+  byte-identically; format version unchanged (no QA-004 matrix row). Damaged groups are the warning
+  `invalidGroup` (drawn ungrouped, kept, SCN-012 repair `repairGroups`); more than 8 groups or 8
+  children is `tooMany`. An older version keeps `groups` as an unknown top-level field on decode →
+  encode and draws the layers ungrouped.
 - Procedural material values are registry parameters shared by layers of the same material until a
   later row adds per-instance values.
 
