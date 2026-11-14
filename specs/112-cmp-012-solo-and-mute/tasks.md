@@ -36,7 +36,7 @@ included. Budgets (owner rule 7): unit test about 1-2 s and at most 10 s, packag
 
 ## Phase 6: Polish & Cross-Cutting
 
-- [ ] CMP-012-T10 Regression: Compositor and SceneFormat full suites (host and Linux shape), RenderGoldens, ImportFuzz, ShowControl, SceneArchive, app unit tests on a dedicated iOS 27.2 simulator (created and deleted); repository checks (compliance, docs, motion policy, permission catalog, status events, script tests); report docs/test-reports/solo-and-mute.md; spec status Implemented
+- [X] CMP-012-T10 Regression: Compositor and SceneFormat full suites (host and Linux shape), RenderGoldens, ImportFuzz, ShowControl, SceneArchive, app unit tests on a dedicated iOS 27.2 simulator (created and deleted); repository checks (compliance, docs, motion policy, permission catalog, status events, script tests); report docs/test-reports/solo-and-mute.md; spec status Implemented — Verified 2026-11-14: Compositor 335 (5 skipped) host / 184 Linux shape, SceneFormat 112 host / 111 Linux shape, RenderGoldens 39, ImportFuzz 15, ShowControl 31, SceneArchive 27, app unit tests 498 on a dedicated iOS 27.2 simulator (deleted after; 0 new PosterBoard reports), all 0 failures; compliance, docs, motion policy, permission catalog, status events OK; script tests 153 OK
 
 ## Dependencies
 

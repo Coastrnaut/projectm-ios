@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (CMP-012-T01-T10 verified on the Mac host, the Linux shape and the iOS 27.2 simulator; no device run; report `docs/test-reports/solo-and-mute.md`)
 
 **Input**: User description: "Implement CMP-012 (Solo and mute) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Allow non-destructive solo and mute of layers." Acceptance, verbatim:
