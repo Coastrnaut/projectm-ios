@@ -18,6 +18,17 @@ concurrency:
   group: ci-${{ github.event_name == 'push' && github.sha || github.ref }}
   cancel-in-progress: ${{ github.event_name != 'push' }}
 
+env:
+  # The Swift packages every package job covers, in three groups that the macOS-host and
+  # iOS-simulator test jobs run as matrix entries (2026-11-14: the single job that tested all of
+  # them serially hit its 90-minute limit in run 43606196231). Balanced by the per-package step
+  # times of run 43605358225 (host plus iOS 26 simulator: about 21-23 minutes per group, against
+  # 70 in the old single job; iOS 27 simulator: about 16-18). A new package goes in exactly one
+  # group; the Linux job and the device-SDK compile use all three.
+  PKGS_AUDIO: AudioCore CaptureKit CaptureUI AnalysisFeatures PerformanceControl
+  PKGS_LIBRARY: Diagnostics LocalPortability PresetLibrary PresentationLifecycle FlashSafety ShowControl LibraryBackup ImportFuzz
+  PKGS_VISUAL: VisualGenerators ParameterGraph Compositor SceneFormat SceneArchive RenderGoldens
+
 jobs:
   docs-and-compliance:
     # Pure Python checks; run on any OS.
@@ -40,6 +51,15 @@ jobs:
         run: python scripts/check_permission_catalog.py
       - name: Licenses screen manifest (FR-067)
         run: python scripts/collect_licenses.py --check
+      - name: Package groups name each package once, and each exists
+        run: |
+          ALL="$PKGS_AUDIO $PKGS_LIBRARY $PKGS_VISUAL"
+          DUP=$(printf '%s\n' $ALL | sort | uniq -d)
+          [ -z "$DUP" ] || { echo "::error::Packages in more than one group: $DUP"; exit 1; }
+          for pkg in $ALL; do
+            [ -f "Packages/$pkg/Package.swift" ] || { echo "::error::Package group names a missing package: $pkg"; exit 1; }
+          done
+          echo "$(printf '%s\n' $ALL | wc -l | tr -d ' ') packages in 3 groups"
 
   host-tests-linux:
     # Platform-independent package logic. Apple-only code (ScreenCaptureKit, AVFAudio, UIKit,
@@ -55,7 +75,7 @@ jobs:
         run: swift --version
       - name: Package tests (Linux host)
         run: |
-          for pkg in AudioCore CaptureKit Diagnostics CaptureUI LocalPortability PresetLibrary PresentationLifecycle AnalysisFeatures FlashSafety VisualGenerators PerformanceControl ParameterGraph Compositor SceneFormat SceneArchive RenderGoldens ShowControl LibraryBackup ImportFuzz; do
+          for pkg in $PKGS_AUDIO $PKGS_LIBRARY $PKGS_VISUAL; do
             echo "::group::swift test $pkg"
             swift test --package-path "Packages/$pkg"
             echo "::endgroup::"
@@ -67,11 +87,12 @@ jobs:
     # the macos-26 label (image macos-26-arm64: Xcode up to 26.6, iOS 26.5 SDK), pinned by the owner
     # review 2026-11-08 (ADR-0002 ruling 2) so it keeps the iOS 26 SDK when GitHub moves
     # macos-latest to Xcode 27, and it selects an Xcode 26. The iOS 27 path is compiled and
-    # simulator-tested by the build-ios27 job below; System/App Capture is tested only on devices.
-    # 90 minutes: the autonomous roadmap run grew the package suites (CaptureKit ~80 -> 350+ tests
-    # with offline audio rendering); run 43349673457 hit the old 45-minute limit in its simulator tests.
+    # simulator-tested by the build-ios27 jobs below; System/App Capture is tested only on devices.
+    # Split 2026-11-14 (run 43606196231 hit the 90-minute limit with everything in one job): this
+    # job builds (packages for the iOS device SDK, CaptureLab, projectM-iOS; about 15 minutes);
+    # the package tests on the macOS host and the iOS 26 simulator run in apple-package-tests.
     runs-on: macos-26
-    timeout-minutes: 90
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
         # The ProjectM submodule is not needed until Plan Phase C (engine build); skip it to
@@ -129,20 +150,16 @@ jobs:
           else
             echo "::warning::ScreenCaptureKit.framework is ABSENT from iOS SDK $(xcrun --sdk iphoneos --show-sdk-version); SCKStreamDriver.swift is compiled out. The capture path needs the iOS 27 SDK (Xcode 27); it is compiled on the build Mac (ADR-0002)."
           fi
-      - name: Package tests (macOS host)
-        run: |
-          for pkg in AudioCore CaptureKit Diagnostics CaptureUI LocalPortability PresetLibrary PresentationLifecycle AnalysisFeatures FlashSafety VisualGenerators PerformanceControl ParameterGraph Compositor SceneFormat SceneArchive RenderGoldens ShowControl LibraryBackup ImportFuzz; do
-            echo "::group::swift test $pkg"
-            swift test --package-path "Packages/$pkg"
-            echo "::endgroup::"
-          done
       - name: Compile packages for iOS (device SDK, includes Apple-only code)
         run: |
-          for pkg in AudioCore CaptureKit Diagnostics CaptureUI LocalPortability PresetLibrary PresentationLifecycle AnalysisFeatures FlashSafety VisualGenerators PerformanceControl ParameterGraph Compositor SceneFormat SceneArchive RenderGoldens ShowControl LibraryBackup ImportFuzz; do
+          # No index store: nothing reads it in CI, and it costs about 15% of each build.
+          for pkg in $PKGS_AUDIO $PKGS_LIBRARY $PKGS_VISUAL; do
             echo "::group::xcodebuild $pkg (generic iOS)"
+            START=$SECONDS
             (cd "Packages/$pkg" && xcodebuild -quiet -scheme "$pkg" -destination 'generic/platform=iOS' \
               -derivedDataPath "$RUNNER_TEMP/dd-$pkg" -skipPackagePluginValidation \
-              CODE_SIGNING_ALLOWED=NO build)
+              CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO build)
+            echo "$pkg: $((SECONDS - START)) s"
             echo "::endgroup::"
           done
       - name: Download the engine and ANGLE xcframeworks (projectM-iOS needs them)
@@ -168,6 +185,57 @@ jobs:
             CODE_SIGNING_ALLOWED=NO build
       - name: No networking code in the built app (FILE-012-R5; a few seconds of nm and otool)
         run: python3 scripts/check_network_symbols.py "$RUNNER_TEMP/dd-app/Build/Products/Debug-iphoneos/projectM-iOS.app"
+      - name: Build leaves the tree clean (gitignore check, T002)
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git status --porcelain
+            echo "::error::The build left untracked or modified files; extend .gitignore."
+            exit 1
+          fi
+
+  apple-package-tests:
+    # The package tests of build-and-test-apple, split out 2026-11-14 into one job per package
+    # group (PKGS_* above): each runs its packages on the macOS host (swift test) and on the
+    # newest iOS 26 simulator the selected Xcode 26 can run (xcodebuild test). Same Xcode, same
+    # tests and same needs as before the split. Estimated 21-23 minutes per group (run
+    # 43605358225: host 23.5 and simulator 47 minutes for all packages together).
+    needs: [docs-and-compliance, angle-xcframeworks]
+    runs-on: macos-26
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [audio, library, visual]
+    name: apple-package-tests (${{ matrix.group }})
+    steps:
+      - uses: actions/checkout@v5
+      - name: Select newest Xcode 26 (iOS 26 SDK path)
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          [ -n "$XCODE" ] || XCODE=/Applications/Xcode.app
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          xcodebuild -version
+          swift --version
+      - name: Packages of this group
+        id: pkgs
+        run: |
+          case "${{ matrix.group }}" in
+            audio) PKGS="$PKGS_AUDIO" ;;
+            library) PKGS="$PKGS_LIBRARY" ;;
+            visual) PKGS="$PKGS_VISUAL" ;;
+            *) echo "::error::unknown package group ${{ matrix.group }}"; exit 1 ;;
+          esac
+          echo "list=$PKGS" >> "$GITHUB_OUTPUT"
+          echo "Group ${{ matrix.group }}: $PKGS"
+      - name: Package tests (macOS host)
+        run: |
+          for pkg in ${{ steps.pkgs.outputs.list }}; do
+            echo "::group::swift test $pkg"
+            START=$SECONDS
+            swift test --package-path "Packages/$pkg"
+            echo "$pkg: $((SECONDS - START)) s"
+            echo "::endgroup::"
+          done
       - name: Find an iOS simulator
         id: sim
         run: |
@@ -199,18 +267,20 @@ jobs:
         if: steps.sim.outputs.udid != ''
         run: |
           set -o pipefail
-          for pkg in AudioCore CaptureKit Diagnostics CaptureUI LocalPortability PresetLibrary PresentationLifecycle AnalysisFeatures FlashSafety VisualGenerators PerformanceControl ParameterGraph Compositor SceneFormat SceneArchive RenderGoldens ShowControl LibraryBackup ImportFuzz; do
+          for pkg in ${{ steps.pkgs.outputs.list }}; do
             echo "::group::xcodebuild test $pkg (iOS Simulator)"
+            START=$SECONDS
             (cd "Packages/$pkg" && xcodebuild -scheme "$pkg" -destination "id=${{ steps.sim.outputs.udid }}" \
-              -derivedDataPath "$RUNNER_TEMP/dds-$pkg" CODE_SIGNING_ALLOWED=NO test 2>&1 \
+              -derivedDataPath "$RUNNER_TEMP/dds-$pkg" CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO test 2>&1 \
               | grep -E "error:|warning:|Executed [0-9]+ tests|TEST (SUCCEEDED|FAILED)|failed \(")
+            echo "$pkg: $((SECONDS - START)) s"
             echo "::endgroup::"
           done
-      - name: Build leaves the tree clean (gitignore check, T002)
+      - name: Tests leave the tree clean (gitignore check, T002)
         run: |
           if [ -n "$(git status --porcelain)" ]; then
             git status --porcelain
-            echo "::error::The build left untracked or modified files; extend .gitignore."
+            echo "::error::The tests left untracked or modified files; extend .gitignore."
             exit 1
           fi
 
@@ -399,11 +469,18 @@ jobs:
     # is not the one pinned in ADR-0002 (owner review ruling 3). Owner review ruling 4: it also
     # runs the package tests on an iOS 27 simulator. No signing; System/App Capture itself cannot
     # run on any simulator and is tested only on devices.
+    # Split 2026-11-14 into one job per package group (PKGS_* above): the package tests on the
+    # iOS 27 simulator took 50 minutes in one job (run 43605358225; the limit was 90). Each group
+    # takes about 16-18 minutes; the `library` group, the shortest, also compiles the capture
+    # driver and CaptureLab for devices (about 1 minute).
     needs: [docs-and-compliance, angle-xcframeworks]
     runs-on: xcode-27
-    # 90 minutes, like build-and-test-apple: run 43419354416 spent 38 minutes in the package tests
-    # on the iOS 27 simulator and hit the old 40-minute limit after the suites grew.
-    timeout-minutes: 90
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [audio, library, visual]
+    name: build-ios27 (${{ matrix.group }})
     steps:
       - uses: actions/checkout@v5
       - name: Select the newest Xcode 27 that can build for iOS devices
@@ -445,6 +522,7 @@ jobs:
           FW="$(xcrun --sdk iphoneos --show-sdk-path)/System/Library/Frameworks/ScreenCaptureKit.framework"
           [ -d "$FW" ] || { echo "::error::ScreenCaptureKit.framework is missing from the iOS SDK"; exit 1; }
       - name: Install XcodeGen (pinned in ADR-0002)
+        if: matrix.group == 'library'
         env:
           XCODEGEN_VERSION: 2.46.0
           XCODEGEN_SHA256: 4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806
@@ -455,11 +533,13 @@ jobs:
           unzip -q "$RUNNER_TEMP/xcodegen.zip" -d "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/xcodegen/bin" >> "$GITHUB_PATH"
       - name: Build CaptureKit for iOS devices (compiles SCKStreamDriver)
+        if: matrix.group == 'library'
         run: |
           cd Packages/CaptureKit
           xcodebuild -quiet -scheme CaptureKit -destination 'generic/platform=iOS' \
             -derivedDataPath "$RUNNER_TEMP/dd27" CODE_SIGNING_ALLOWED=NO build
       - name: Confirm the capture driver was compiled
+        if: matrix.group == 'library'
         run: |
           # The object file exists even when `#if ... canImport(ScreenCaptureKit)` compiles the whole
           # file out, so check its symbols: the driver class and a ScreenCaptureKit reference.
@@ -468,15 +548,18 @@ jobs:
             || { echo "::error::SCKStreamDriver.swift was compiled out or not built"; exit 1; }
           echo "SCKStreamDriver.swift compiled against iOS SDK $(xcrun --sdk iphoneos --show-sdk-version)"
       - name: Download the engine and ANGLE xcframeworks (projectM-iOS needs them)
+        if: matrix.group == 'library'
         uses: actions/download-artifact@v4
         with:
           name: ProjectM.xcframework
           path: Build
-      - uses: actions/download-artifact@v4
+      - if: matrix.group == 'library'
+        uses: actions/download-artifact@v4
         with:
           name: ANGLEFrameworks
           path: Build/ANGLEFrameworks
       - name: Build CaptureLab for iOS devices
+        if: matrix.group == 'library'
         run: |
           xcodegen generate
           xcodebuild -quiet -project ProjectM-iOS.xcodeproj -scheme CaptureLab \
@@ -517,10 +600,18 @@ jobs:
       - name: Package tests on the iOS 27 Simulator
         run: |
           set -o pipefail
-          for pkg in AudioCore CaptureKit Diagnostics CaptureUI LocalPortability PresetLibrary PresentationLifecycle AnalysisFeatures FlashSafety VisualGenerators PerformanceControl ParameterGraph Compositor SceneFormat SceneArchive RenderGoldens ShowControl LibraryBackup ImportFuzz; do
+          case "${{ matrix.group }}" in
+            audio) PKGS="$PKGS_AUDIO" ;;
+            library) PKGS="$PKGS_LIBRARY" ;;
+            visual) PKGS="$PKGS_VISUAL" ;;
+            *) echo "::error::unknown package group ${{ matrix.group }}"; exit 1 ;;
+          esac
+          for pkg in $PKGS; do
             echo "::group::xcodebuild test $pkg (iOS 27 Simulator)"
+            START=$SECONDS
             (cd "Packages/$pkg" && xcodebuild -scheme "$pkg" -destination "id=${{ steps.sim27.outputs.udid }}" \
-              -derivedDataPath "$RUNNER_TEMP/dds27-$pkg" CODE_SIGNING_ALLOWED=NO test 2>&1 \
+              -derivedDataPath "$RUNNER_TEMP/dds27-$pkg" CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO test 2>&1 \
               | grep -E "error:|warning:|Executed [0-9]+ tests|TEST (SUCCEEDED|FAILED)|failed \(")
+            echo "$pkg: $((SECONDS - START)) s"
             echo "::endgroup::"
           done
