@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T05:47:04Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T05:51:02Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -594,6 +594,12 @@ None.
 - `python3 scripts/check_compliance.py`: pass at `3e408a740a3b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-012/20261113T120140/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `3e408a740a3b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-012/20261113T120140/docs.log`)
 - `post-merge: projectM-iOSTests 179 incl. CameraPrivacyStatusTests, CameraPrivacyStatusUITests 14.8 s, CameraUITests 2 (11.0 s, 11.4 s) on iPhone 17 iOS 27.2 sim`: pass at `a188b049fc60` (log `.autonomous/logs/integration/cam-012/app-tests.log`)
+
+### CAM-013 Camera failure recovery (implementing)
+- `python3 scripts/check_compliance.py`: pass at `a9f306f4d74d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-013/20261114T004901/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `a9f306f4d74d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-013/20261114T004901/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `a9f306f4d74d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-013/20261114T004901/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: exit 1 at `a9f306f4d74d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-013/20261114T004901/swift-test_Compositor.log`)
 
 ### CMP-001 Unified layer protocol (integrated)
 - `python3 scripts/check_compliance.py`: pass at `19d1bd7e65a2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-001/20261113T110629/compliance.log`)

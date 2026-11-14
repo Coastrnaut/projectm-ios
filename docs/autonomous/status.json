@@ -956,7 +956,7 @@
    "state": "integrated"
   },
   "CAM-013": {
-   "attempts": 0,
+   "attempts": 1,
    "branch": "feature/cam-013",
    "branch_sha": null,
    "error_category": null,
@@ -4108,5 +4108,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T05:47:04Z"
+ "updated": "2026-11-14T05:51:02Z"
 }
