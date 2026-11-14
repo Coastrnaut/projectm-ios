@@ -6,6 +6,7 @@
 // what is kept, then the cleared size and a failure note; the user-data rows never change.
 // FILE-008: a note with the space shared photo and video copies save.
 // FILE-005: the Backup section (LibraryBackupSection: back up the library, restore from a backup).
+// FILE-011: the Erase section and sheet (LibraryEraseSection).
 import LocalPortability
 import SwiftUI
 
@@ -99,7 +100,10 @@ struct StorageUsageView: View {
                     Text(Self.sharedSavingsNote(model.sharedSavings)).accessibilityIdentifier("storageSharedSavings")   // FILE-008
                 }
             }
-            if let libraryBackup { LibraryBackupSection(model: libraryBackup) }   // FILE-005
+            if let libraryBackup {
+                LibraryBackupSection(model: libraryBackup)   // FILE-005
+                LibraryEraseSection(model: libraryBackup.erase)   // FILE-011
+            }
             #if DEBUG
             if UITestStorageFixture.isEnabled {
                 Section {
@@ -111,6 +115,7 @@ struct StorageUsageView: View {
         }
         .navigationTitle("Storage")
         .libraryBackupPresentation(libraryBackup)   // FILE-005
+        .libraryErasePresentation(libraryBackup)   // FILE-011
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("Refresh") { model.refresh() }

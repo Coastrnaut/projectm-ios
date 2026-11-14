@@ -71,11 +71,17 @@ final class LibraryBackupCoordinator {
     /// The running step (tests await it).
     @ObservationIgnored private(set) var work: Task<Void, Never>?
 
+    /// FILE-011: Erase Data… (shares the folders, the defaults and the announcer).
+    @ObservationIgnored let erase: LibraryEraseCoordinator
+
     init(folders: LibraryFolders = LibraryBackupCoordinator.standardFolders(), defaults: UserDefaults = .standard,
          temporaryRoot: URL = FileManager.default.temporaryDirectory.appendingPathComponent("LibraryBackup", isDirectory: true)) {
         self.folders = folders
         self.defaults = defaults
         self.temporaryRoot = temporaryRoot
+        erase = LibraryEraseCoordinator(root: folders.root, defaults: defaults)
+        erase.announce = { [weak self] (text: String) in self?.announce?(text) }
+        erase.isRestorePending = { [weak self] () -> Bool in self?.isRestorePending ?? false }
     }
 
     nonisolated static func standardFolders() -> LibraryFolders {
@@ -85,7 +91,9 @@ final class LibraryBackupCoordinator {
     }
 
     /// AppCoordinator.init, before any store reads the library (research FILE-005-D3).
+    /// FILE-011-R3: a pending erase runs first (research FILE-011-D1), then a pending restore.
     nonisolated static func finishPendingRestore(defaults: UserDefaults, folders: LibraryFolders = standardFolders()) {
+        LibraryEraseCoordinator.finishPendingErase(defaults: defaults, root: folders.root)
         LibraryRestoreLaunch.run(folders: folders, settings: LibrarySettingsBridge.read(defaults)) { (values: [String: LibrarySettingValue]) in
             LibrarySettingsBridge.apply(values, to: defaults)
         }
@@ -331,7 +339,7 @@ final class LibraryBackupCoordinator {
 
     /// Records the request for the next launch.
     func requestRestore() {
-        guard let data = previewData, let plan = preview?.plan else { return }
+        guard let data = previewData, let plan = preview?.plan, erase.pending == nil else { return }   // FILE-011: not while an erase waits
         do {
             try LibraryRestoreRequestStore(folders: folders).save(backup: data, choice: plan.choice)
             isRestorePending = true
