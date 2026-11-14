@@ -48,6 +48,16 @@ local-first option.
 - Q: Which inputs move the level? → A: The thermal state, Low Power Mode and PERF-002's budget verdict (any flagged pass) while it is available.
 - Q: How does adaptation relate to the frame-rate cap? → A: Effects step down first. While a glow is on (the ladder has something to reduce), the serious thermal state lowers the glow instead of capping the frame rate; the 30 fps cap and the 0.75 render scale engage at critical, as today. Low Power keeps its 30 fps cap (the user's own choice). With no glow on, the governor behaves exactly as today. FR-049 says the visualization MAY lower its frame rate, so this is within FR-049 and needs no ADR.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: When the budget verdict becomes unavailable (overlay turned off) while budget steps are applied, does the level jump back up at once? → A: No. The over-budget timer is cleared, but the level returns only through the normal hysteresis (one step per 10 s of good conditions), so turning the overlay off never makes the glow jump.
+- Q: What state does the ladder start in when a visual's frame loop starts or the shown visual changes? → A: Each native host owns one ladder. Starting the loop sets the applied level straight to the thermal and Low Power floor with full glow weight and no fade (the picture starts fresh, as the Reduce-flashing limiter does), and clears the timers.
+- Q: Does the overlay show the line at Full too? → A: Yes. While the overlay is on and a native visual is shown it always shows `effect quality full`; at Reduced or Minimal it adds the reason in parentheses, e.g. `effect quality reduced (thermal)`. Other visuals (projectM, camera, photo, video, text) show no line, since they have no adaptable effect.
+- Q: Does a recording (REC-003) or a frame capture (REC-001) hold the level? → A: No. They copy the frame as shown, so they record the adapted glow; holding Full during a recording would defeat the thermal protection.
+- Q: Which reason is shown when several inputs apply? → A: The strongest: `thermal` when the thermal floor alone gives the current level, else `low power` when Low Power does, else `budget`.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Keep the frame rate under thermal stress by simplifying the glow (Priority: P1)
@@ -87,7 +97,7 @@ envelope configuration as at Full.
 
 ### User Story 3 - See and export the level (Priority: P2)
 
-A tester with the performance overlay on sees "effect quality: reduced (thermal serious)", and the
+A tester with the performance overlay on sees "effect quality reduced (thermal)", and the
 diagnostics export carries the level.
 
 **Acceptance Scenarios**:
@@ -98,7 +108,8 @@ diagnostics export carries the level.
 ### Edge Cases
 
 - No glow on: the ladder still tracks a level for the overlay, but nothing is reduced and the governor is exactly today's.
-- Budget unavailable (overlay off): the ladder uses only thermal state and Low Power; the budget-driven steps are forgotten.
+- Budget unavailable (overlay off): the ladder uses only thermal state and Low Power; the over-budget timer is cleared and budget-driven steps are undone only through the normal 10 s hysteresis.
+- The loop starts (or the visual changes): the level is set to the floor at once, with no fade and cleared timers.
 - Inputs flap faster than the hold times: a step down needs 3 s of sustained over-budget (thermal steps are immediate); a step up needs 10 s of good conditions, so flapping cannot oscillate faster than one step per 10 s upward.
 - A level change while a fade is running: the fade reverses from its current weight; the glow never jumps.
 - The thermal state worsens directly from nominal to critical: the level goes straight to Minimal (with one fade).
@@ -117,7 +128,7 @@ diagnostics export carries the level.
 - **PERF-003-R7**: While a glow is on, the governor MUST NOT cap the frame rate at the serious state (the ladder handles it); at critical, and under Low Power, it caps as today. With no glow on it MUST behave exactly as FR-049 today.
 - **PERF-003-R8**: The flash safety envelope (FX-019), Reduce flashing (FR-072) and the ACC-012 clamp MUST be applied identically at every level; the ladder may only lower the glow's intensity weight, after the ACC-012 clamp, and the luminance model the limiter sees MUST follow the glow actually rendered.
 - **PERF-003-R9**: Each level change MUST fade the glow out over 0.4 s, switch the level at zero glow, and fade back in over 0.4 s; a change during a fade reverses from the current weight.
-- **PERF-003-R10**: The performance overlay MUST show a line `effect quality <level>` with the reason (`thermal`, `low power`, `budget`) when not Full; the diagnostics frame timings MUST gain an optional effect quality (level and reason); exports without it are unchanged.
+- **PERF-003-R10**: While a native visual is shown, the performance overlay MUST show a line `effect quality <level>`, with the reason in parentheses (`thermal`, `low power` or `budget`, the strongest that applies) when not Full; the diagnostics frame timings MUST gain an optional effect quality (level and reason); exports without it are unchanged.
 - **PERF-003-R11**: In DEBUG builds a launch argument `-uitestThermalState <nominal|fair|serious|critical>` MUST override the thermal input so the ladder can be tested in the simulator.
 - **PERF-003-R12**: The frame path MUST gain no allocation: stepping the ladder is arithmetic on preallocated state, and plan changes happen only on a level change.
 
