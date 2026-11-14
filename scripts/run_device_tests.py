@@ -70,6 +70,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID", "settings.performanceOverlay", "set
                 "settings.spectrum.attack", "settings.spectrum.release",   # ANL-003-R6
                 "settings.osc.enabled", "settings.osc.port",   # OSC-001 (off by default)
                 "settings.inputTrim.decibels",   # AUD-008-R6 (analysis-only input trim)
+                "settings.analysisChannel.mode",   # AUD-009-R6 (analysis-only channel selection)
                 "settings.photo.id", "settings.video.id", "settings.text.overlay",   # MED-001, MED-008, MED-009
                 "guide.firstScene",   # UIX-001
                 "session.recovery.open", "session.recovery.sessionsSinceReopen",

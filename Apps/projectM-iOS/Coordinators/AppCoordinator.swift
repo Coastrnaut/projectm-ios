@@ -175,6 +175,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let settings: AppSettings
     /// AUD-008: the analysis-only input trim (Settings → Audio Analysis).
     let inputTrim: InputTrimSetting
+    /// AUD-009: the analysis-only channel selection (Settings → Analysis Channel).
+    let channelSelection: ChannelSelectionSetting
     /// The native spectra (VIS-001 circular, VIS-002 linear), created the first time one is needed.
     private(set) var nativeVisual: NativeSpectrumHost?
     /// The Camera visual (CAM-001), created when Camera is chosen and released when another visual is.
@@ -225,7 +227,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// has one consumer at a time); every native host and the tempo's own analysis use it, so bands,
     /// the oscilloscope, MOD-002 bindings and tempo detection follow the trim. projectM reads
     /// `manager.normalizedOutput`, which the trim never touches.
-    var trimmedAnalysisTap: (any NormalizedPCMReader)? { inputTrim.trimmed(manager.analysisTap) }
+    /// AUD-009-R5 (contract C4): the channel selection sits inside the trim (tap → selection → trim).
+    var trimmedAnalysisTap: (any NormalizedPCMReader)? { inputTrim.trimmed(channelSelection.selected(manager.analysisTap)) }
 
     /// Tap tempo and the tempo estimate (SHOW-011).
     let tempo: TempoCoordinator
@@ -271,6 +274,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             defaults.removeObject(forKey: FavoritesStore.lastPresetKey)
             AppSettings.allKeys.forEach(defaults.removeObject(forKey:))
             defaults.removeObject(forKey: InputTrimSetting.decibelsKey)   // AUD-008: 0 dB
+            defaults.removeObject(forKey: ChannelSelectionSetting.modeKey)   // AUD-009: Mix
             try? FileManager.default.removeItem(at: PresetCollectionStore.defaultDirectory())   // PRE-007: UI tests start without collections
             try? FileManager.default.removeItem(at: UserPresetStore.defaultDirectory())         // PRE-012: and without imported presets
             if let photos = try? PhotoStore.defaultDirectory() { try? FileManager.default.removeItem(at: photos) }   // MED-001: no photo
@@ -282,6 +286,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         }
         settings = AppSettings(defaults: defaults, systemReduceMotion: Self.currentSystemReduceMotion())
         inputTrim = InputTrimSetting(defaults: defaults)
+        channelSelection = ChannelSelectionSetting(defaults: defaults)
         self.externalDisplay.reduceFlashing = settings.reduceFlashing   // OUT-010-R6
         // PERF-010 (contract C1): decide before the OSC receiver exists, so an abnormal exit never
         // reopens the listener; a pending offer holds the scene instead of restoring it.
