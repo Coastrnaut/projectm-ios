@@ -44,13 +44,19 @@ UI test under 30 s.
 
 - [ ] CMP-010-T14 [US2] Rules: `LayerColorKeyEdit` (on gives `greenKey` or keeps the current key, off removes; colour setting clamps and rounds to 1/1000; tolerance and feather clamp; `#RRGGBB` text) in Apps/projectM-iOS/Coordinators/LayerColorKeyEdit.swift; parameters `colorKey`, `colorKeyColor`, `colorTolerance`, `colorFeather` with help, ranges, steps, values, texts and settings in Apps/projectM-iOS/Coordinators/LayerInspectorModel.swift; mapping passes the key; `setColorKeyColor` in Apps/projectM-iOS/Coordinators/LayerInspectorCoordinator.swift; history `changedParameters` names the colour-key parameter, the colour change keyed `layer.<kind>.colorKeyColor` in Apps/projectM-iOS/Coordinators/SceneHistoryCoordinator.swift
 - [ ] CMP-010-T15 [US2] View: `LayerColorKeySection` (toggle, `ColorPicker` "Key Color" without opacity, ACC-005 sliders through `LayerParameterSlider`; read-only read-outs) in Apps/projectM-iOS/Views/LayerColorKeySection.swift and one line in Apps/projectM-iOS/Views/LayerDetailView.swift
-- [ ] CMP-010-T16 [P] [US2] Unit tests of the edit rules, history labels and keys in Apps/projectM-iOS/Tests/LayerColorKeyEditTests.swift
+- [ ] CMP-010-T16 [P] [US2] Unit tests of the edit rules (on/off, a colour with alpha 0.3 is stored opaque, an extended-sRGB component above 1 or below 0 is clamped, rounding to 1/1000), history labels and keys in Apps/projectM-iOS/Tests/LayerColorKeyEditTests.swift
 - [ ] CMP-010-T17 [US2] UI test (CMP-010-S6, under 30 s): turn the key on, find the "Key Color" picker, drag Tolerance, undo in Apps/projectM-iOS/UITests/LayerInspectorUITests.swift
 
 ## Phase 6: Polish
 
 - [ ] CMP-010-T18 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), privacy manifest and network symbols on the built app, type-check budget, test report docs/test-reports/color-key.md, spec status
 - [ ] CMP-010-T19 {device} GPU time of a full-screen colour-keyed layer on D1 (CMP-010-S5)
+
+## Analysis fixes (speckit-analyze 2026-11-14)
+
+- C1 (MEDIUM): US2 scenario 2 (opacity of the picked colour ignored) and research D4 (wide-gamut picks clamped) had no test; T16 now covers both.
+- I1 (LOW): CMP-010-R6 "every blend mode" is covered by one non-normal mode (screen) through the shared `cmp_blend` path, as in CMP-009; accepted.
+- Coverage: R1-R11 and S1-S6 each map to at least one task (R1-R5 T02-T07, R6-R7 T05-T07, R8-R9 T11-T12, R10 T14-T17, R11 T06-T07; S5 T08/T19); no constitution conflicts; 0 critical issues.
 
 ## Dependencies
 
