@@ -216,6 +216,13 @@ def gate_feature(roadmap: Roadmap, store: StateStore, feature_id: str | None,
             raise GitError(["status"], 1, f"{checkout} has uncommitted or unmerged files; "
                            "gates run only on a clean checkout")
         changed = wt.changed_files(feature_id)
+        frozen = DEFAULT_ROADMAP.relative_to(ROOT).as_posix()
+        if frozen in changed:
+            # The run froze the roadmap (its SHA-256 is in the state); status lives in the state and
+            # docs/autonomous/STATUS.md. A branch that edits it would stop the scheduler (2026-11-14).
+            print(f"FAIL frozen-roadmap: {feature_id} changes {frozen}; revert that file on its branch")
+            store.record_attempt(feature_id, "policy", f"branch edits the frozen {frozen}")
+            return False
         plan = gates_mod.plan_gates(checkout, changed, in_worktree=True,
                                     simulator_udid=simulator or gates_mod.default_simulator())
     else:
