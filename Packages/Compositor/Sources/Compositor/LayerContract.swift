@@ -84,10 +84,13 @@ public struct LayerCompositeSettings: Sendable, Equatable {
     /// CMP-009: a luminance range of the layer's own colour made transparent (keep factor × the masks' coverage);
     /// nil draws without one.
     public var lumaKey: LayerLumaKey?
+    /// CMP-010: colours near a key colour made transparent (keep factor × the masks' coverage × the luma key's keep);
+    /// nil draws without one.
+    public var colorKey: LayerColorKey?
 
     public init(opacity: Double = 1, blendMode: LayerBlendMode = .normal, transform: LayerTransform = .identity,
                 fit: LayerFit? = nil, mask: LayerMask? = nil, gradientMask: LayerGradientMask? = nil,
-                lumaKey: LayerLumaKey? = nil) {
+                lumaKey: LayerLumaKey? = nil, colorKey: LayerColorKey? = nil) {
         self.opacity = opacity.isFinite ? min(max(opacity, 0), 1) : 1
         self.blendMode = blendMode
         self.transform = transform
@@ -95,6 +98,7 @@ public struct LayerCompositeSettings: Sendable, Equatable {
         self.mask = mask
         self.gradientMask = gradientMask
         self.lumaKey = lumaKey
+        self.colorKey = colorKey
     }
 
     /// CMP-001 accepts only opacity 1, normal blending and the identity transform (CMP-001-R11).

@@ -4,7 +4,8 @@
 // Reduce-flashing luminance are computed in linear light, and a `bgra8Unorm_srgb` target encodes on
 // write. Palettes are defined in sRGB (as designers specify them) and decoded once per
 // configuration. A bar's color depends only on its index and the palette, never on the band value,
-// so loudness changes geometry, not color. Full palette editing is UIX-011.
+// so loudness changes geometry, not color. UIX-011 adds `custom`: a user palette's stops (linear light) and
+// its style (blended gradient or equal bands).
 #if canImport(Darwin)
 import Darwin
 #elseif canImport(Glibc)
@@ -31,7 +32,7 @@ public enum SRGB {
 }
 
 /// A linear-light RGBA color. Used premultiplied where the contract says so (backgrounds, vertices).
-public struct LinearColor: Sendable, Equatable {
+public struct LinearColor: Sendable, Hashable {
     public var red: Float
     public var green: Float
     public var blue: Float
@@ -64,8 +65,28 @@ public struct LinearColor: Sendable, Equatable {
     }
 }
 
-/// The minimal palette set of VIS-001 (data-model.md).
-public enum VisualPalette: String, CaseIterable, Sendable {
+/// UIX-011: a user palette as drawn: 1…8 linear-light stops, blended (gradient) or in equal bands (swatches).
+public struct PaletteRamp: Sendable, Hashable {
+    public var stops: [LinearColor]
+    public var blended: Bool
+
+    public init(stops: [LinearColor], blended: Bool) {
+        self.stops = stops.isEmpty ? [LinearColor(red: 1, green: 1, blue: 1)] : stops
+        self.blended = blended
+    }
+
+    /// Position t in 0…1: a gradient interpolates the evenly spaced stops; swatches take stop min(⌊t·n⌋, n − 1).
+    public func color(at t: Float) -> LinearColor {
+        let clamped: Float = t.isNaN ? 0 : min(max(t, 0), 1)
+        guard stops.count > 1 else { return stops[0] }
+        if blended { return VisualPalette.ramp(stops, at: clamped) }
+        let index: Int = min(Int(clamped * Float(stops.count)), stops.count - 1)
+        return stops[index]
+    }
+}
+
+/// The minimal palette set of VIS-001 (data-model.md), plus UIX-011's user palettes.
+public enum VisualPalette: CaseIterable, Sendable, Hashable {
     /// Hue 0° (red) at bar 0 to 270° (violet) at the last bar, full saturation and value. Default.
     case spectrum
     /// `#2EC4FF` to `#E8F7FF`, interpolated in linear light.
@@ -76,6 +97,11 @@ public enum VisualPalette: String, CaseIterable, Sendable {
     /// start so the first bar has at least 3:1 on black; relative luminance rises strictly with the bar.
     /// Interpolated in linear light between five sRGB stops.
     case colorBlindSafe
+    /// UIX-011: a user palette.
+    case custom(PaletteRamp)
+
+    /// The built-in palettes (UIX-011 user palettes are not enumerated).
+    public static let allCases: [VisualPalette] = [.spectrum, .ice, .mono, .colorBlindSafe]
 
     /// The sRGB stops of `colorBlindSafe` (research ACC-003-D6).
     static let colorBlindSafeStops: [LinearColor] = [
@@ -99,6 +125,8 @@ public enum VisualPalette: String, CaseIterable, Sendable {
             return LinearColor(red: 1, green: 1, blue: 1, alpha: 1)
         case .colorBlindSafe:
             return VisualPalette.ramp(VisualPalette.colorBlindSafeStops, at: t)
+        case let .custom(ramp):
+            return ramp.color(at: t)
         }
     }
 

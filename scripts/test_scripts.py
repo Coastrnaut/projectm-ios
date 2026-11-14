@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import contextlib
 import io
 import json
 import math
@@ -530,6 +531,16 @@ class ComplianceCodeExecutionTests(unittest.TestCase):
             self.assertEqual(check_compliance.check_code_execution(path, source), [], rel)
         outside = check_compliance.ROOT / "Packages" / "Compositor" / "Sources" / "GeneratorGraphImport" / "X.swift"
         self.assertEqual(len(check_compliance.check_code_execution(outside, source)), 1)
+
+    def test_binary_archives_only_in_the_reviewed_file(self):
+        # PERF-009 / ADR-0062: one file may open Metal binary archives; everywhere else it stays forbidden.
+        code = 'let a = try device.makeBinaryArchive(descriptor: d)\n'
+        for rel in sorted(check_compliance.BINARY_ARCHIVE_ALLOWED):
+            path = check_compliance.ROOT / rel
+            self.assertTrue(path.is_file(), rel)
+            self.assertEqual(check_compliance.check_code_execution(path, code), [], rel)
+        outside = check_compliance.ROOT / "Packages" / "Compositor" / "Sources" / "Compositor" / "X.swift"
+        self.assertEqual(len(check_compliance.check_code_execution(outside, code)), 1)
 
     def test_string_literals_are_removed_before_matching(self):
         stripped = check_compliance.strip_strings('a("x\\"y") + """\nJSContext()\n""" + #"Process()"# + b\n')
@@ -1164,6 +1175,31 @@ class DeviceTestRunnerTests(unittest.TestCase):
             {"identifier": "C", "hardwareProperties": {"productType": "iPhone18,3", "reality": "physical"}},
         ]}}
         self.assertEqual(rdt.devices_from_listing(listing), {"D1": "A", "D3": "B"})
+
+    def test_warmstart_summary_medians_per_label(self):
+        # PERF-009-R10: cold and warm samples are summarized apart; a simulator run is never evidence.
+        samples = [
+            {"cache": "cold", "libraryOutcome": "miss", "chooserMs": 90, "libraryReadyMs": 200, "libraryLoadMs": 110},
+            {"cache": "cold", "libraryOutcome": "miss", "chooserMs": 80, "libraryReadyMs": 180, "libraryLoadMs": 100},
+            {"cache": "warm", "libraryOutcome": "hit", "chooserMs": 85, "libraryReadyMs": 120, "libraryLoadMs": 30},
+            {"cache": "warm", "libraryOutcome": "hit", "chooserMs": 85, "libraryReadyMs": 120, "libraryLoadMs": -1},
+        ]
+        summary = rdt.warmstart_summary(samples, simulator=True)
+        self.assertFalse(summary["evidence"])
+        self.assertEqual(summary["cold"], {"launches": 2, "libraryOutcomes": ["miss"], "chooserMs": 85.0,
+                                           "libraryReadyMs": 190.0, "libraryLoadMs": 105.0})
+        self.assertEqual(summary["warm"]["libraryLoadMs"], 30.0)   # a missing (-1) value is left out
+        self.assertEqual(summary["warm"]["libraryOutcomes"], ["hit"])
+        self.assertTrue(rdt.warmstart_summary([], simulator=False)["evidence"])
+
+    def test_warmstart_dry_run_alternates_cold_and_warm(self):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            rdt.main(["--dry-run", "warmstart", "--simulator", "FAKE", "--no-install", "--repeat", "2"])
+        launches = [line for line in out.getvalue().splitlines() if "simctl launch" in line]
+        self.assertEqual(len(launches), 5)   # the notice launch, then cold, warm, cold, warm
+        self.assertEqual(["PROJECTM_WARMCACHE=cold" in line for line in launches], [False, True, False, True, False])
+        self.assertEqual(rdt.privacy_problems(["Documents/perf009.json", "Library/Caches/WarmStart/preset-library.bin"], []), [])
 
     def test_privacy_allows_fr065_keys_reports_others(self):
         keys = ["favorites", "settings.presetScope", "SKTransactionUpdatesLastChecked", "unlocked"]
