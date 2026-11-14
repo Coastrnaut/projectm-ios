@@ -7,9 +7,12 @@
 // * `PaletteEditorView`: name, Use for This Scene, style, gradient preview, one row per swatch (system colour picker, a
 //   named-colour menu, VoiceOver "Colour i of n, name, hex", a low-contrast mark), add/remove colours, duplicate, delete
 //   (confirmed). Every view body is split into small properties (CI's type-check budget).
+// * SHD-005: the editor adds Gradient Stops (PaletteGradientStops.swift) for gradient-style palettes, and the strip draws
+//   positions, alpha and Step as the native visuals do.
 import SceneFormat
 import SwiftUI
 import UIKit
+import VisualGenerators
 
 extension PaletteColor {
     var swiftUIColor: Color {
@@ -38,7 +41,9 @@ struct PaletteStrip: View {
     }
 
     @ViewBuilder private var content: some View {
-        if palette.style == .gradient {
+        if palette.style == .gradient, palette.hasStopDetail {
+            LinearGradient(stops: Self.sampledStops(palette), startPoint: .leading, endPoint: .trailing)
+        } else if palette.style == .gradient {
             LinearGradient(colors: palette.colors.map(\.swiftUIColor), startPoint: .leading, endPoint: .trailing)
         } else {
             HStack(spacing: 0) {
@@ -46,6 +51,21 @@ struct PaletteStrip: View {
                     entry.element.swiftUIColor
                 }
             }
+        }
+    }
+}
+
+extension PaletteStrip {
+    /// SHD-005: the drawn colours (colour × alpha on black, the native visuals' rule) sampled at 64 points, so
+    /// positions, alpha and Step's hard edges show as drawn.
+    static func sampledStops(_ palette: ColorPalette) -> [Gradient.Stop] {
+        let visual: VisualPalette = PaletteCoordinator.visualPalette(for: palette)
+        let count: Int = 64
+        return (0..<count).map { (k: Int) -> Gradient.Stop in
+            let c: LinearColor = visual.color(bar: k, of: count)
+            let color = Color(.sRGB, red: Double(SRGB.encode(c.red)), green: Double(SRGB.encode(c.green)),
+                              blue: Double(SRGB.encode(c.blue)), opacity: 1)
+            return Gradient.Stop(color: color, location: Double(k) / Double(count - 1))
         }
     }
 }
@@ -186,6 +206,7 @@ struct PaletteEditorView: View {
         Form {
             headerSection(palette)
             colorsSection(palette)
+            gradientStopsSection(palette)
             actionsSection(palette)
         }
         .disabled(palettes.store.isReadOnly)
@@ -230,6 +251,13 @@ struct PaletteEditorView: View {
             Text("Colours")
         } footer: {
             Text("Swipe a colour to remove it. Colours marked low contrast are hard to see on the black background. The sensory safety limits apply to every palette.")
+        }
+    }
+
+    /// SHD-005: positions, alphas and interpolation for a gradient-style palette.
+    @ViewBuilder private func gradientStopsSection(_ palette: ColorPalette) -> some View {
+        if palette.style == .gradient {
+            PaletteGradientStopsSection(palettes: palettes, id: id, palette: palette)
         }
     }
 

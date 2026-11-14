@@ -81,6 +81,24 @@ public enum PaletteStyle: String, Sendable, Hashable, CaseIterable {
     public var title: String { self == .gradient ? "Gradient" : "Swatches" }
 }
 
+/// SHD-005: how a gradient-style palette blends between its colours.
+public enum PaletteInterpolation: String, Sendable, Hashable, CaseIterable {
+    /// Linear light (UIX-011; not written to the file).
+    case smooth
+    /// The sRGB-encoded values blend.
+    case srgb
+    /// Each colour holds until the next stop.
+    case step
+
+    public var title: String {
+        switch self {
+        case .smooth: "Smooth"
+        case .srgb: "sRGB"
+        case .step: "Step"
+        }
+    }
+}
+
 public struct ColorPalette: Sendable, Hashable, Identifiable {
     public static let minimumColors = 2
     public static let maximumColors = 8
@@ -91,13 +109,58 @@ public struct ColorPalette: Sendable, Hashable, Identifiable {
     public var style: PaletteStyle
     public var colors: [PaletteColor]
     public var isBuiltIn: Bool
+    /// SHD-005: each colour's position in thousandths (0…1000, non-decreasing); nil = evenly spaced.
+    public var positions: [Int]?
+    /// SHD-005: each colour's alpha 0…255; nil = all opaque.
+    public var alphas: [Int]?
+    /// SHD-005: how colours blend in the gradient style (Smooth = the UIX-011 behaviour).
+    public var interpolation: PaletteInterpolation
 
-    public init(id: String, name: String, style: PaletteStyle = .gradient, colors: [PaletteColor], isBuiltIn: Bool = false) {
+    public init(id: String, name: String, style: PaletteStyle = .gradient, colors: [PaletteColor], isBuiltIn: Bool = false,
+                positions: [Int]? = nil, alphas: [Int]? = nil, interpolation: PaletteInterpolation = .smooth) {
         self.id = id
         self.name = name
         self.style = style
         self.colors = colors
         self.isBuiltIn = isBuiltIn
+        self.positions = positions
+        self.alphas = alphas
+        self.interpolation = interpolation
+    }
+
+    // MARK: SHD-005 stop detail
+
+    public static let maximumPosition = 1000
+    public static let maximumAlpha = 255
+
+    /// Evenly spaced positions in thousandths for `count` colours: round(1000·i/(n − 1)).
+    public static func evenPositions(_ count: Int) -> [Int] {
+        guard count > 1 else { return Array(repeating: 0, count: max(count, 0)) }
+        return (0..<count).map { (i: Int) -> Int in (maximumPosition * i * 2 + (count - 1)) / (2 * (count - 1)) }
+    }
+
+    /// Each colour's position in thousandths (stored or evenly spaced).
+    public var stopPositions: [Int] { positions ?? Self.evenPositions(colors.count) }
+    /// Each colour's alpha 0…255 (stored or 255).
+    public var stopAlphas: [Int] { alphas ?? Array(repeating: Self.maximumAlpha, count: colors.count) }
+    /// The palette has positions, alphas or a mode other than Smooth (it then draws with them).
+    public var hasStopDetail: Bool { positions != nil || alphas != nil || interpolation != .smooth }
+
+    /// Stop detail is well formed: one value per colour, positions 0…1000 non-decreasing, alphas 0…255.
+    var hasValidStopDetail: Bool {
+        if let positions {
+            guard positions.count == colors.count else { return false }
+            var previous: Int = 0
+            for p in positions {
+                guard p >= previous, p <= Self.maximumPosition else { return false }
+                previous = p
+            }
+        }
+        if let alphas {
+            guard alphas.count == colors.count,
+                  alphas.allSatisfy({ (a: Int) -> Bool in (0...Self.maximumAlpha).contains(a) }) else { return false }
+        }
+        return true
     }
 
     /// A user palette's name: trimmed; nil when empty or longer than 40 characters.
@@ -136,7 +199,7 @@ public struct ColorPalette: Sendable, Hashable, Identifiable {
     /// A user palette entry is valid: canonical UUID, valid name, 2…8 colours.
     var isValidUserPalette: Bool {
         !isBuiltIn && SceneDocument.isCanonicalUUID(id) && Self.validName(name) == name
-            && (Self.minimumColors...Self.maximumColors).contains(colors.count)
+            && (Self.minimumColors...Self.maximumColors).contains(colors.count) && hasValidStopDetail
     }
 }
 
@@ -196,6 +259,11 @@ public struct PaletteLibrary: Sendable, Hashable {
         guard let source = palette(sourceID) else { throw .notFound }
         try create(id: newID, name: Self.copyName(source.name, taken: Set(all.map(\.name))), style: source.style,
                    colors: source.colors)
+        if let i = user.firstIndex(where: { (p: ColorPalette) -> Bool in p.id == newID }) {   // SHD-005: keep stop detail
+            user[i].positions = source.positions
+            user[i].alphas = source.alphas
+            user[i].interpolation = source.interpolation
+        }
     }
 
     /// "<name> copy", "<name> copy 2", … not taken, at most 40 characters.
@@ -231,6 +299,9 @@ public struct PaletteLibrary: Sendable, Hashable {
         let colors: [PaletteColor] = user[i].colors
         guard colors.count < ColorPalette.maximumColors, let last = colors.last else { throw .colorLimit }
         user[i].colors.append(color ?? last)
+        // SHD-005: the new stop sits at the end with the last stop's alpha.
+        if user[i].positions != nil { user[i].positions?.append(ColorPalette.maximumPosition) }
+        if let lastAlpha = user[i].alphas?.last { user[i].alphas?.append(lastAlpha) }
     }
 
     /// Removes colour `index` down to 2.
@@ -238,6 +309,34 @@ public struct PaletteLibrary: Sendable, Hashable {
         let i: Int = try userIndex(id)
         guard user[i].colors.count > ColorPalette.minimumColors, user[i].colors.indices.contains(index) else { throw .colorLimit }
         user[i].colors.remove(at: index)
+        user[i].positions?.remove(at: index)
+        user[i].alphas?.remove(at: index)
+    }
+
+    // MARK: SHD-005 stop editing
+
+    /// Moves stop `index` to `thousandths`, clamped between its neighbours (0 and 1000 at the ends).
+    public mutating func setStopPosition(_ id: String, at index: Int, to thousandths: Int) throws(PaletteEditError) {
+        let i: Int = try userIndex(id)
+        var positions: [Int] = user[i].stopPositions
+        guard positions.indices.contains(index) else { throw .colorLimit }
+        let lower: Int = index > 0 ? positions[index - 1] : 0
+        let upper: Int = index < positions.count - 1 ? positions[index + 1] : ColorPalette.maximumPosition
+        positions[index] = min(max(thousandths, lower), upper)
+        user[i].positions = positions
+    }
+
+    /// Sets stop `index`'s alpha, clamped to 0…255.
+    public mutating func setStopAlpha(_ id: String, at index: Int, to alpha: Int) throws(PaletteEditError) {
+        let i: Int = try userIndex(id)
+        var alphas: [Int] = user[i].stopAlphas
+        guard alphas.indices.contains(index) else { throw .colorLimit }
+        alphas[index] = min(max(alpha, 0), ColorPalette.maximumAlpha)
+        user[i].alphas = alphas
+    }
+
+    public mutating func setInterpolation(_ id: String, _ mode: PaletteInterpolation) throws(PaletteEditError) {
+        try edit(id) { (p: inout ColorPalette) in p.interpolation = mode }
     }
 
     public mutating func delete(_ id: String) throws(PaletteEditError) {
@@ -319,7 +418,28 @@ public enum PaletteFile {
 
     static func entry(_ p: ColorPalette) -> SceneJSON {
         let colors: [SceneJSON] = p.colors.map { (c: PaletteColor) -> SceneJSON in .string(c.hex) }
-        return .object(["id": .string(p.id), "name": .string(p.name), "style": .string(p.style.rawValue), "colors": .array(colors)])
+        var members: [String: SceneJSON] = ["id": .string(p.id), "name": .string(p.name), "style": .string(p.style.rawValue),
+                                            "colors": .array(colors)]
+        // SHD-005: stop detail only when not the default (palettes without it keep their UIX-011 bytes).
+        if let positions = p.positions { members["positions"] = integers(positions) }
+        if let alphas = p.alphas { members["alphas"] = integers(alphas) }
+        if p.interpolation != .smooth { members["interpolation"] = .string(p.interpolation.rawValue) }
+        return .object(members)
+    }
+
+    private static func integers(_ values: [Int]) -> SceneJSON {
+        .array(values.map { (v: Int) -> SceneJSON in .integer(Int64(v)) })
+    }
+
+    /// The integers of a present field; nil when it is not an array of integers (the entry is damaged).
+    private static func decodeIntegers(_ value: SceneJSON) -> [Int]? {
+        guard let list = value.arrayValue else { return nil }
+        var out: [Int] = []
+        for item in list {
+            guard let n = item.numberValue?.int64Value, n >= Int64(Int32.min), n <= Int64(Int32.max) else { return nil }
+            out.append(Int(n))
+        }
+        return out
     }
 
     /// The library and how many entries were dropped as damaged (or duplicates, or beyond 64).
@@ -348,7 +468,20 @@ public enum PaletteFile {
               let list = o["colors"]?.arrayValue else { return nil }
         let colors: [PaletteColor] = list.compactMap { (c: SceneJSON) -> PaletteColor? in c.stringValue.flatMap(PaletteColor.init(hex:)) }
         guard colors.count == list.count else { return nil }
-        let palette = ColorPalette(id: id, name: name, style: style, colors: colors)
+        var palette = ColorPalette(id: id, name: name, style: style, colors: colors)
+        // SHD-005: optional stop detail; present but malformed → the entry is damaged.
+        if let value = o["positions"] {
+            guard let positions = decodeIntegers(value) else { return nil }
+            palette.positions = positions
+        }
+        if let value = o["alphas"] {
+            guard let alphas = decodeIntegers(value) else { return nil }
+            palette.alphas = alphas
+        }
+        if let modeValue = o["interpolation"] {
+            guard let text = modeValue.stringValue, let mode = PaletteInterpolation(rawValue: text), mode != .smooth else { return nil }
+            palette.interpolation = mode
+        }
         return palette.isValidUserPalette ? palette : nil
     }
 }
