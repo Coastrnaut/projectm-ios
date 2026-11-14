@@ -22,10 +22,10 @@ Linux shape). Budgets (owner rule 7): unit test ≤ 10 s, package suite < 1 min.
 - [X] MOD-011-T04 [US2] Bit-identity grid (≥ 500 cases: modes × manual × signals × curves × ranges, continuous
   and integer) against the MOD-002 formula, and determinism (two fresh modulators, same frames → same bits),
   in the same file — Verified 2026-11-14: `testSingleBindingIsBitIdenticalToMOD002` (540 continuous bit patterns + 60 integer cases), `testDeterminism` (120 frames, 3 layers with an envelope) pass
-- [ ] MOD-011-T05 [US1] `GlowModulationOrder.resolve(base:modulator:clamp:)` in
+- [X] MOD-011-T05 [US1] `GlowModulationOrder.resolve(base:modulator:clamp:)` in
   `Packages/VisualGenerators/Sources/VisualParameters/GlowModulationOrder.swift` (+ FlashSafety dependency) and
   `Packages/VisualGenerators/Tests/VisualGeneratorsTests/GlowModulationOrderTests.swift`: two layers on the glow
-  intensity at Standard (exact) and Strict (ACC-012 scaling then cap applied last)
+  intensity at Standard (exact) and Strict (ACC-012 scaling then cap applied last) — Verified 2026-11-14: GlowModulationOrderTests 3 pass; `swift test --package-path Packages/VisualGenerators` 160 tests, 0 failures, 40 s
 
 ## Phase 3: User Story 3 — scenes and app (P2)
 
