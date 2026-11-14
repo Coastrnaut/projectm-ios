@@ -512,6 +512,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         userPresets = UserPresetsCoordinator.makeDefault()
         userPresets.connect(presets: presets, loader: presetLoader)   // PRE-012
         presets.overrides = Self.makeOverrides(presets: presets, loader: presetLoader)   // PRE-016
+        userPresets.integrity = LibraryIntegrityCoordinator(presets: presets, userPresets: userPresets)   // PRE-018
         #if DEBUG || PROJECTM_AUTOMATION
         entitlements = AutomationRunner.entitlementsOverride() ?? FakeEntitlements.fromLaunchArguments() ?? LibraryStore()
         #else
@@ -969,10 +970,14 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                 presetLoader.library = library
                 // PRE-012: the imported presets are read first (a preset that ended the last launch
                 // is quarantined there), so the library never lists one that must not play.
+                #if DEBUG
+                UITestBrokenLibraryFixture.seedFilesIfRequested()   // LibraryCheckUITests (PRE-018)
+                #endif
                 await userPresets.load()
                 await userPresets.prepare(library: library, bundle: .main)
                 presets.attach(library)
                 #if DEBUG
+                UITestBrokenLibraryFixture.seedReferencesIfRequested(presets)
                 UITestCollectionFixture.seedIfRequested(presets)   // PresetCollectionsUITests
                 UITestPresetTagFixture.seedIfRequested(presets)    // PresetTagsUITests (PRE-003)
                 #endif
@@ -980,6 +985,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                 presets.announceFavorite = { [weak self] (text: String) in self?.announcer.announce(text, kind: .favorite) }   // ACC-004
                 userPresets.announceLibrary = { [weak self] (text: String) in self?.announcer.announce(text, kind: .library) }   // FILE-003-R13
                 presets.announceLibrary = { [weak self] (text: String) in self?.announcer.announce(text, kind: .library) }   // PRE-003-R12
+                userPresets.integrity?.announce = { [weak self] (text: String) in self?.announcer.announce(text, kind: .library) }   // PRE-018-R12
                 presets.recent?.announce = { [weak self] (text: String) in self?.announcer.announce(text, kind: .library) }   // PRE-006-R6
                 presets.announceSearch = { [weak self] (text: String) in self?.announcer.announce(text, kind: .search) }
                 await presets.setUnlocked(entitlements.isUnlocked)

@@ -59,6 +59,8 @@ CHECKED = [
     "Views/StatusCaptionView.swift",
     "Views/SceneSwitcherView.swift",   # UIX-002-R9: the switcher announces through the announcer
     "Views/LayerInspectorView.swift",  # CMP-015-R10: solo and mute announce through the announcer
+    "Coordinators/LibraryIntegrityCoordinator.swift",  # PRE-018-R12: check results announce on the library lane
+    "Views/LibraryCheckView.swift",                    # PRE-018-R12
     "Coordinators/LayerInspectorCoordinator.swift",
     "Views/AccessibleParameter.swift",   # ACC-005-R7: slider ends announce through the announcer
     "Coordinators/LibraryEraseCoordinator.swift",   # FILE-011-R3: the erase announces on the library lane

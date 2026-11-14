@@ -104,7 +104,7 @@ final class PresetCoordinator {
     /// The locked preset the user tapped, played after a purchase (FR-107).
     private(set) var pendingLockedPreset: IndexedPreset?
     /// Bumped on every favorite change so views refresh.
-    private(set) var favoritesVersion = 0
+    var favoritesVersion = 0
     /// Presets that failed to load this session (FR-118); PRE-010's previews add to it too.
     var excludedThisSession: Set<String> = []
     /// The next Random pick, chosen in advance so the renderer can warm it up (SC-104). Chosen
@@ -144,8 +144,8 @@ final class PresetCoordinator {
     /// returns under an older value changes nothing.
     @ObservationIgnored var auditionGeneration = 0
 
-    @ObservationIgnored private let store: FavoritesStore
-    @ObservationIgnored private let collectionStore: PresetCollectionStore
+    @ObservationIgnored let store: FavoritesStore   // PRE-018: read and pruned by PresetCoordinator+Integrity
+    @ObservationIgnored let collectionStore: PresetCollectionStore
     @ObservationIgnored private let settings: AppSettings
     @ObservationIgnored let loader: any PresetLoading
     @ObservationIgnored private var scopeAnnouncer: ((String) -> Void)?
@@ -630,7 +630,7 @@ final class PresetCoordinator {
     /// Runs one store change. On a refusal or a failed save nothing changed: the reason goes to
     /// `collectionsMessage` (R8). Views refresh either way, so an optimistic list move snaps back.
     @discardableResult
-    private func changeCollections(_ change: () throws -> Void) -> Bool {
+    func changeCollections(_ change: () throws -> Void) -> Bool {
         defer { collectionsVersion += 1 }
         do {
             try change()
