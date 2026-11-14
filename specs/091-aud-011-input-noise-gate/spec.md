@@ -113,7 +113,7 @@ a stepped tone).
 
 1. **Given** the gate on at −50 dBFS, **When** digital silence followed by noise at −70 dBFS RMS is analysed, **Then** every output sample is zero.
 2. **Given** the same gate, **When** a 1 kHz tone steps from −80 to −30 dBFS, **Then** the gain is within 1 dB of unity no later than the configured attack plus one buffer (measured in sample frames from the step).
-3. **Given** the gate open, **When** the tone stops, **Then** the gain stays at unity for the hold time and reaches zero after the hold plus the release (± one buffer).
+3. **Given** the gate open, **When** the tone stops, **Then** the gain stays at unity for the hold time after the level falls below the close threshold and reaches zero after the hold plus the release (± one buffer).
 4. **Given** a tone whose level sits between the close and open thresholds, **When** analysed, **Then** a closed gate stays closed and an open gate stays open (no chatter).
 
 ---
@@ -183,7 +183,7 @@ the feature.
 
 - **AUD-011-S1**: A silence fixture (digital silence, then −70 dBFS RMS noise, 2 s) gives 100 % zero output with the gate on at −50 dBFS.
 - **AUD-011-S2**: A tone stepping from −80 to −30 dBFS reaches a gain within 1 dB of unity no later than attack + one buffer (5 ms + 512 frames) after the step, on the sample clock.
-- **AUD-011-S3**: After the tone stops, the gain is unity through the hold and zero by hold + release + one buffer.
+- **AUD-011-S3**: After the tone stops, the gain is unity until the detector has fallen below the close threshold plus the hold, and zero by detector fall + hold + release + one buffer (detector fall from −30 to −56 dBFS = ⌈441 · ln(10^(26/20))⌉ = 1,320 frames, 30 ms).
 - **AUD-011-S4**: A tone hovering between the thresholds causes zero open/close transitions over 2 s.
 - **AUD-011-S5**: Off, or a non-microphone source: 100 % of samples bit-identical.
 - **AUD-011-S6**: projectM's ring output is bit-identical with selection, trim and gate on the tap.
