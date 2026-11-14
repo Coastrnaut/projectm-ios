@@ -589,13 +589,20 @@ struct VisualizerView: View {
 /// "Restoring output" while the restore waits or fades in.
 struct OutputBlackoutBadge: View {
     let external: ExternalDisplayCoordinator
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         let requested = external.isBlackoutRequested
-        HStack(spacing: 10) {
+        // ACC-006-R1: label over Restore at accessibility sizes; side by side both were cut to "Out…"
+        // and "Rest…" at AX5 (audit 2026-11-13). A rounded rectangle, as a capsule clips two rows.
+        let layout: AnyLayout = typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8)) : AnyLayout(HStackLayout(spacing: 10))
+        let shape: AnyShape = typeSize.isAccessibilitySize ? AnyShape(RoundedRectangle(cornerRadius: 12)) : AnyShape(Capsule())
+        layout {
             Label(requested && external.blackoutPhase == .blackedOut ? "Output blacked out" : "Restoring output",
                   systemImage: "eye.slash")
                 .font(.footnote.bold())
+                .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("blackoutBadgeText")
             if external.blackoutPhase.offersRestore {
                 Button("Restore") { external.setBlackout(false) }
@@ -609,7 +616,7 @@ struct OutputBlackoutBadge: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
-        .background(.regularMaterial, in: Capsule())
+        .background(.regularMaterial, in: shape)
         .accessibilityElement(children: .contain)
         .accessibilityValue(external.blackoutPhase.accessibilityValue)
         .accessibilityIdentifier("blackoutBadge")

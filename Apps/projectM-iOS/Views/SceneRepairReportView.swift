@@ -9,6 +9,7 @@ import SwiftUI
 struct SceneRepairReportView: View {
     let request: SceneRepairRequest
     let repair: SceneRepairCoordinator
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         NavigationStack {
@@ -33,11 +34,20 @@ struct SceneRepairReportView: View {
                             .accessibilityIdentifier("sceneRepairGroup.\(group.rawValue)")
                     }
                 }
+                // ACC-006-R2: at accessibility sizes the three full-width buttons pinned below the list
+                // left the entries too little room (audit 2026-11-13, AX5); they scroll with the report as
+                // its last section instead.
+                if typeSize.isAccessibilitySize {
+                    Section { buttons }
+                        .listRowInsets(EdgeInsets())
+                }
             }
             .accessibilityIdentifier("sceneRepairReport")
             .navigationTitle(request.title)
             .navigationBarTitleDisplayMode(.inline)
-            .safeAreaInset(edge: .bottom) { buttons }
+            .safeAreaInset(edge: .bottom) {
+                if !typeSize.isAccessibilitySize { buttons.background(.bar) }
+            }
         }
     }
 
@@ -77,7 +87,6 @@ struct SceneRepairReportView: View {
                 .accessibilityIdentifier("sceneRepairCancel")
         }
         .padding()
-        .background(.bar)
     }
 }
 

@@ -75,3 +75,15 @@ Test design notes (from the triage):
   cost three 1 s retries each (one screen took 83 s).
 - Audit tests launch without `-uitestDiagnostics`, whose near-transparent probes would be audited as app
   content; `-uitestKeepControls` (DEBUG) keeps the controls up as VoiceOver does.
+
+### ACC-006 re-check of the Dynamic Type filters (2026-11-13)
+
+ACC-006 (specs/087-acc-006-dynamic-type-inspector) removed the browser bottom-row and Settings Glow
+Dynamic Type filters and re-ran this suite on its own iOS 27.2 simulator: both came back ("Collections",
+"My Presets", their counts "0", and "Glow", each "partially unsupported" at the audit's larger sizes),
+so both filters are restored unchanged. They are an artefact of auditing a screen that starts at the
+default size: ACC-006's inspector, which starts each screen at AX3 or AX5, reports nothing for these
+rows. The system Done filter stays too (navigation-bar items never scale; iOS offers the Large
+Content Viewer). ACC-006's layout fixes (contract C2 of spec 087) changed no element this suite
+declares: `controls` is still an "other" element, the show editor's "Add Current Scene" keeps its
+label.

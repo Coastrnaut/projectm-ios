@@ -23,6 +23,7 @@ struct UserPresetEditorView: View {
     @State private var saving = false
     @State private var error: String?
     @State private var confirmingDiscard = false
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     private var dirty: Bool {
         guard let opened else { return false }
@@ -82,6 +83,20 @@ struct UserPresetEditorView: View {
         }
     }
 
+    /// ACC-006-R1: at accessibility sizes the name wraps over up to four lines instead of showing a
+    /// clipped slice of a long name (audit 2026-11-13, AX5). A name is one line, so a typed Return
+    /// becomes a space. Standard sizes keep the one-line field.
+    @ViewBuilder private var nameField: some View {
+        if typeSize.isAccessibilitySize {
+            TextField("Name", text: Binding(get: { name }, set: { (value: String) in
+                name = value.replacingOccurrences(of: "\n", with: " ")
+            }), axis: .vertical)
+            .lineLimit(1...4)
+        } else {
+            TextField("Name", text: $name)
+        }
+    }
+
     private func editor(_ opened: PresetEditorText) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             if let error {
@@ -106,7 +121,7 @@ struct UserPresetEditorView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("presetEditorEncodingNote")
             }
-            TextField("Name", text: $name)
+            nameField
                 .textFieldStyle(.roundedBorder)
                 .autocorrectionDisabled()
                 .accessibilityLabel("Name")
