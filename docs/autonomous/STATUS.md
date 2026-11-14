@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T07:10:29Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T07:15:31Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -148,7 +148,7 @@ The physical-device suite may **not** start:
 | SHOW-014 | Emergency blackout | `c3886d1cb0bb` | `feature/show-014` |
 | UIX-001 | Guided first scene | `f8f54e2ac938` | `feature/uix-001` |
 | UIX-002 | Quick scene switcher | `20b9cc8a` | `feature/uix-002` |
-| UIX-015 | Onboarding permission explainer | `b4f2abf96cab` | `feature/uix-015` |
+| UIX-015 | Onboarding permission explainer | `ae498579` | `feature/uix-015` |
 | VIS-001 | Circular spectrum | `48285d49c422` | `feature/vis-001` |
 | VIS-002 | Linear spectrum | `c2b2f75c11bb` | `feature/vis-002` |
 | VIS-003 | Waveform oscilloscope | `2d758a4` | `feature/vis-003` |
@@ -1202,6 +1202,7 @@ None.
 - `python3 scripts/validate_docs.py`: pass at `4f7b3b7b8790` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-015/20261114T021007/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `4f7b3b7b8790` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-015/20261114T021007/script-tests.log`)
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `4f7b3b7b8790` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-015/20261114T021007/autonomous-tests.log`)
+- `post-merge: projectM-iOSTests 498 + PermissionExplainer/Camera/OSCReceiver UI tests 8`: pass at `ae498579` (log `.autonomous/logs/integration/uix-015/app-tests.log`)
 
 ### VIS-001 Circular spectrum (integrated)
 - `python3 scripts/check_compliance.py`: pass at `7fa6d4e0f3c1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-001/20261113T080701/compliance.log`)

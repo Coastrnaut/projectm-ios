@@ -3302,7 +3302,7 @@
    "branch": "feature/uix-015",
    "branch_sha": "4f7b3b7b87908d34c7e154dfe7cc5d319e8bd974",
    "error_category": null,
-   "integrated_sha": "b4f2abf96cab3d37761941137fcde0dede2b86d3",
+   "integrated_sha": "ae498579",
    "priority": "P0",
    "spec_dir": null,
    "state": "integrated"
@@ -4092,7 +4092,7 @@
   {
    "branch": "feature/uix-015",
    "id": "UIX-015",
-   "sha": "b4f2abf96cab3d37761941137fcde0dede2b86d3"
+   "sha": "ae498579"
   },
   {
    "branch": "feature/vis-001",
@@ -4135,5 +4135,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T07:10:29Z"
+ "updated": "2026-11-14T07:15:31Z"
 }
