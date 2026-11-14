@@ -44,6 +44,16 @@ interaction); each answer is the conservative, local-first option.
 - Q: How often does the effective value update? → A: At most 10 times a second, only while the inspector is open and something drives the parameter; never per frame. With Reduce Motion on, the value is text only (no moving meter).
 - Q: Parameters with no app control? → A: They are shown read-only (no edit control, no Reset) if ever opened; none of the entry points opens them in this version.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Does Reset ask for confirmation? → A: No. Reset is one tap and one undo step in Settings' scene history (SCN-010), like any other edit; a confirmation dialog would slow a live performer for a reversible change.
+- Q: How are numbers shown? → A: Normalized and fraction-of-output values as percentages with as many decimals as the step needs (step 0.01 → "50%", step 0.001 → "1.5%"); seconds as "0.25 s"; per-second as "1.20/s"; counts as whole numbers; degrees as "30°"; enums by their case names; booleans as On/Off. VoiceOver reads the same values with spoken units ("50 percent").
+- Q: Which value is "effective" when the sensory safety clamp also limits the glow? → A: The value the visual actually renders (MIDI live value, then modulation, then the clamp), so the inspector never claims a brighter glow than is shown; when the clamp changed it, the row says "limited by Sensory safety".
+- Q: Does the inspector stay open if its Settings row disappears (for example Glow turned off hides the sliders)? → A: Yes. It inspects the parameter, not the row; it reads and writes the setting directly and closes only with Done.
+- Q: Does a drag of the inspector's slider create one undo step per value? → A: No: a drag is one step, exactly as on the Settings slider (the history's coalescing ends when the drag ends); each VoiceOver swipe is one step.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Reset a parameter to its default (Priority: P1)
