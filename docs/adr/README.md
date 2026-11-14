@@ -37,5 +37,6 @@
 | [0038](0038-midi-local-endpoint-scope.md) | MIDI is local only: USB, virtual and system-connected endpoints, no network MIDI | Accepted 2026-11-14 (MIDI-001; owner rule 4) |
 | [0039](0039-layer-group-isolation.md) | Layer groups are isolated groups, flattened only when exact | Accepted 2026-11-14 (CMP-011; owner rule 4) |
 | [0040](0040-layer-render-caching.md) | Layer render caching is opt-in, keyed by input generations, bit-identical | Accepted 2026-11-14 (CMP-013; owner rule 4) |
+| [0041](0041-local-library-backup.md) | The local library backup format, its exclusions and a restore at next launch | Accepted 2026-11-14 (FILE-005; owner rule 4) |
 
 Required by Constitution X: capture API, minimum OS, renderer, dependency strategy.

@@ -50,6 +50,7 @@ struct RootView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIAccessibility.reduceMotionStatusDidChangeNotification)) { _ in
             coordinator.syncSystemReduceMotion()
         }
+        .uitestStorageSheet(coordinator)   // FILE-005-T16: DEBUG `-uitestStorageSheet` only
     }
 
     @ViewBuilder

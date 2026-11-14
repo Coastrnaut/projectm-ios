@@ -141,6 +141,24 @@ nothing about your device, account, purchase or listening, and no audio.
 - Nothing is uploaded, downloaded or sent anywhere by the app while exporting or opening a scene
   archive.
 
+## Library backups
+
+Back Up Library… (Settings → Storage) saves your library in one file (a `.pmbackup` file) so you can
+restore it on this or another device: your show and its scenes, the current scene, the presets you
+imported or copied from Included presets (with their texts), your collections, favorites and last
+preset, your settings, and your stored photos. It contains no audio, no videos, no imported audio
+files, no copies of presets from the full library purchase, no record of your purchase, no device
+details and no listening history, and it does not turn on OSC or MIDI on another device.
+
+- The app writes a backup only when you tap Back Up Library…, into its temporary folder, and moves
+  it to the place you choose in Files; if you cancel, the copy is deleted. The backup leaves your
+  device only where you save it or share it yourself. Anyone with the file can see what is in it.
+- When you restore from a backup, the app reads only the file you pick, checks it (size, structure,
+  checksums, and every record inside) and shows what it would change; nothing changes until you
+  confirm, and the restore is applied the next time the app opens. Restored presets are checked
+  again before they can play. If any check fails, nothing is changed.
+- Nothing is uploaded, downloaded or sent anywhere by the app while backing up or restoring.
+
 ## Shows
 
 A show (Settings → Show) is your list of cues: each cue's label, and a copy of the visual settings
@@ -388,6 +406,7 @@ issue in that repository.
 | MED-001-R17 (`specs/044-med-001-import-photo-layer/spec.md`, amends FR-065): the photo the user chooses, stored on the device without metadata, removable | Summary; Permissions and why; A photo you choose; What is stored on your device |
 | MED-002-R21 (`specs/048-med-002-import-video-layer/spec.md`, amends FR-065): the video the user chooses, stored on the device without soundtrack or metadata, removable | Summary; Permissions and why; A video you choose; What is stored on your device |
 | FILE-001-R16 (`specs/062-file-001-portable-scene-archive/spec.md`): scene archives hold the user's scene and its stored photo and video, are written only on the user's export and leave the device only by the user's action; opening one replaces the stored photo and video only after every check passed | A photo you choose; A video you choose; Scene archives |
+| FILE-005-R13 (`specs/114-file-005-local-library-backup/spec.md`): a library backup holds the show, scenes, the user's presets, collections, favorites, settings and stored photos (no audio, videos, imported audio, full-library copies or purchase record), is written only when the user asks and leaves the device only where the user saves it; a restore changes nothing until confirmed and checked | Library backups |
 | SCN-002-R11 (`specs/067-scn-002-scene-autosave/spec.md`): the autosaved current scene (the shown visual's settings, text and stored photo/video identifiers) and one earlier copy, on the device only | What is stored on your device |
 | PERF-010-R13 (`specs/070-perf-010-crash-safe-session-recovery/spec.md`): the session recovery values (session open, launches since a reopen, the visual to reopen); after an unexpected close the OSC receiver is turned off and nothing listens until the user turns it on | OSC control on your local network; What is stored on your device |
 | PRE-012-R30 (`specs/008-pre-012-preset-import-validation/spec.md`, amends FR-065): preset files the user imports, quarantined ones included, and their record; extended by PRE-015-R23 (`specs/010-pre-015-user-preset-duplication/spec.md`): copies of built-in presets, their origin, and edited preset text | What is stored on your device |

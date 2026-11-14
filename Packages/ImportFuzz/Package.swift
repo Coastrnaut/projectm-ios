@@ -10,7 +10,7 @@
 //   only: Milkdrop preset text (PRE-012 validator and user preset import), OSC packets (OSC-001/002
 //   decoder, dispatcher), scene JSON (SCN-001 decode and validation, MOD-013 restore), scene archives
 //   (FILE-001 reader incl. ZIP), generator graph import (SHD-011), the expression language
-//   (SHD-009/010) and BoundedJSON (FILE-007). The seed corpus is checked in under
+//   (SHD-009/010), BoundedJSON (FILE-007) and library backups (FILE-005, seeds made in the test). The seed corpus is checked in under
 //   `Tests/ImportFuzzTests/Fixtures/Corpus/`.
 // Test-only: no app target or parser package depends on this package. Default budgets keep each
 // suite at about 2 s on the Mac host; `FUZZ_ITERATIONS` (≤ 100,000) and `FUZZ_SEED` run more on demand.
@@ -31,6 +31,7 @@ let package = Package(
         .package(path: "../LocalPortability"),
         .package(path: "../Compositor"),
         .package(path: "../VisualGenerators"),
+        .package(path: "../LibraryBackup"),   // FILE-005: the library backup reader
     ],
     targets: [
         .target(name: "FuzzKit"),
@@ -43,7 +44,8 @@ let package = Package(
                                    .product(name: "SceneArchive", package: "SceneArchive"),
                                    .product(name: "LocalPortability", package: "LocalPortability"),
                                    .product(name: "Compositor", package: "Compositor"),
-                                   .product(name: "VisualGenerators", package: "VisualGenerators")],
+                                   .product(name: "VisualGenerators", package: "VisualGenerators"),
+                                   .product(name: "LibraryBackup", package: "LibraryBackup")],
                     resources: [.copy("Fixtures")]),
     ]
 )

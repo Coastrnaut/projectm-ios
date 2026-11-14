@@ -4,14 +4,19 @@
 // Free space on the device is deliberately not shown (privacy manifest; spec Clarifications).
 // FILE-010: Clear Caches… (contracts/cache-cleanup.md C4): a confirmation stating the space to be freed and
 // what is kept, then the cleared size and a failure note; the user-data rows never change.
+// FILE-005: the Backup section (LibraryBackupSection: back up the library, restore from a backup).
 import LocalPortability
 import SwiftUI
 
 struct StorageUsageView: View {
     @State private var model: StorageUsageModel
+    /// FILE-005: back up and restore (nil hides the section, e.g. in previews).
+    private let libraryBackup: LibraryBackupCoordinator?
 
-    init(model: StorageUsageModel? = nil, filesInUse: @escaping @MainActor () -> Set<String> = { () -> Set<String> in [] }) {
+    init(model: StorageUsageModel? = nil, filesInUse: @escaping @MainActor () -> Set<String> = { () -> Set<String> in [] },
+         libraryBackup: LibraryBackupCoordinator? = nil) {
         _model = State(initialValue: model ?? StorageUsageModel(locations: StorageLocations.forCurrentLaunch(), filesInUse: filesInUse))
+        self.libraryBackup = libraryBackup
     }
 
     static let incompleteNote = "Some files could not be counted; sizes may be higher."
@@ -83,6 +88,7 @@ struct StorageUsageView: View {
                 }
             }
             cleanupSection
+            if let libraryBackup { LibraryBackupSection(model: libraryBackup) }   // FILE-005
             #if DEBUG
             if UITestStorageFixture.isEnabled {
                 Section {
@@ -93,6 +99,7 @@ struct StorageUsageView: View {
             #endif
         }
         .navigationTitle("Storage")
+        .libraryBackupPresentation(libraryBackup)   // FILE-005
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("Refresh") { model.refresh() }
