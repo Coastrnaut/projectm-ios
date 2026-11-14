@@ -1,0 +1,198 @@
+{
+  "schemaVersion": 1,
+  "thresholdsVersion": 1,
+  "updated": "2026-11-14",
+  "description": "QA-010 performance budgets per device class. Raise thresholdsVersion by one whenever a limit, class or metric changes. Simulator and host results are never evidence.",
+  "metrics": {
+    "fps1sP5": {
+      "unit": "fps",
+      "direction": "min",
+      "description": "5th percentile (nearest rank) of 1-second frame-rate windows (AutomationRunner perf001 fpsTimerOff); SC-005 form"
+    },
+    "frameIntervalP50Ms": {
+      "unit": "ms",
+      "direction": "max",
+      "description": "PERF-012 frames.p50Ms: median interval between frames handed to the display"
+    },
+    "frameIntervalP95Ms": {
+      "unit": "ms",
+      "direction": "max",
+      "description": "PERF-012 frames.p95Ms"
+    },
+    "droppedFramePercent": {
+      "unit": "%",
+      "direction": "max",
+      "description": "PERF-007 device output: 100 x skipped / (submitted + skipped) refresh slots"
+    },
+    "peakMemoryMB": {
+      "unit": "MB",
+      "direction": "max",
+      "description": "PERF-012 resources.memory.peakFootprintBytes / 1,000,000"
+    },
+    "audioAgeP95Ms": {
+      "unit": "ms",
+      "direction": "max",
+      "description": "p95 age of audio when the renderer reads it; top-level audioAgeP95Ms of an AutomationRunner report (no mode writes it yet)"
+    },
+    "coldLaunchMs": {
+      "unit": "ms",
+      "direction": "max",
+      "description": "largest sc015 cold-launch sample (process start to the source chooser) x 1000"
+    }
+  },
+  "classes": [
+    {
+      "id": "D1",
+      "name": "iPhone 15 (reference)",
+      "models": [
+        "iPhone15,4"
+      ],
+      "evidence": true,
+      "targets": {
+        "fps1sP5": {
+          "limit": 55,
+          "basis": "SC-005 (95% of 1 s windows >= 55 fps, reference device)"
+        },
+        "frameIntervalP50Ms": {
+          "limit": 18.2,
+          "basis": "1000 / 55 fps rounded up to the 0.1 ms PERF-012 resolution"
+        },
+        "frameIntervalP95Ms": {
+          "limit": 25,
+          "basis": "PERF-012 long-frame threshold 25 ms (1.5 refreshes at 60 Hz)"
+        },
+        "droppedFramePercent": {
+          "limit": 5,
+          "basis": "SC-005 95% share"
+        },
+        "peakMemoryMB": {
+          "limit": 300,
+          "basis": "SC-008 peak < 300 MB (reference device)"
+        },
+        "audioAgeP95Ms": {
+          "limit": 50,
+          "basis": "R-06 normalized residency budget (<= 50 ms)"
+        },
+        "coldLaunchMs": {
+          "limit": 2000,
+          "basis": "SC-015 (< 2 s D1)"
+        }
+      }
+    },
+    {
+      "id": "D2",
+      "name": "iPad Pro 13-inch (M5)",
+      "models": [
+        "iPad17,3"
+      ],
+      "evidence": true,
+      "targets": {
+        "fps1sP5": {
+          "limit": 55,
+          "basis": "decided QA-010 2026-11-14: as D1 (60 fps on every preset at Gate 3)"
+        },
+        "frameIntervalP50Ms": {
+          "limit": 18.2,
+          "basis": "1000 / 55 fps rounded up to the 0.1 ms PERF-012 resolution"
+        },
+        "frameIntervalP95Ms": {
+          "limit": 25,
+          "basis": "PERF-012 long-frame threshold 25 ms (1.5 refreshes at 60 Hz)"
+        },
+        "droppedFramePercent": {
+          "limit": 5,
+          "basis": "SC-005 95% share"
+        },
+        "peakMemoryMB": {
+          "limit": 300,
+          "basis": "decided QA-010 2026-11-14: SC-008 budget (D2, D3 measured and published)"
+        },
+        "audioAgeP95Ms": {
+          "limit": 50,
+          "basis": "R-06 normalized residency budget (<= 50 ms)"
+        },
+        "coldLaunchMs": {
+          "limit": 2000,
+          "basis": "decided QA-010 2026-11-14: as D1"
+        }
+      }
+    },
+    {
+      "id": "D3",
+      "name": "iPad (A16), iPadOS 26.5",
+      "models": [
+        "iPad15,7"
+      ],
+      "evidence": true,
+      "targets": {
+        "fps1sP5": {
+          "limit": 30,
+          "basis": "FR-049 floor, SC-013 (>= 30 fps)"
+        },
+        "frameIntervalP50Ms": {
+          "limit": 33.4,
+          "basis": "1000 / 30 fps rounded up to the 0.1 ms PERF-012 resolution"
+        },
+        "frameIntervalP95Ms": {
+          "limit": 50,
+          "basis": "PERF-012 long-frame threshold 50 ms (1.5 refreshes at 30 fps)"
+        },
+        "droppedFramePercent": {
+          "limit": 10,
+          "basis": "decided QA-010 2026-11-14: twice D1's share (oldest tier)"
+        },
+        "peakMemoryMB": {
+          "limit": 300,
+          "basis": "decided QA-010 2026-11-14: SC-008 budget (D2, D3 measured and published)"
+        },
+        "audioAgeP95Ms": {
+          "limit": 50,
+          "basis": "R-06 normalized residency budget (<= 50 ms)"
+        },
+        "coldLaunchMs": {
+          "limit": 4000,
+          "basis": "SC-015 (< 4 s D3)"
+        }
+      }
+    },
+    {
+      "id": "simulator",
+      "name": "Simulator or Mac host (not evidence)",
+      "models": [
+        "arm64",
+        "x86_64"
+      ],
+      "evidence": false,
+      "targets": {
+        "fps1sP5": {
+          "limit": 55,
+          "basis": "rehearsal only, D1's limits; not evidence"
+        },
+        "frameIntervalP50Ms": {
+          "limit": 18.2,
+          "basis": "rehearsal only, D1's limits; not evidence"
+        },
+        "frameIntervalP95Ms": {
+          "limit": 25,
+          "basis": "rehearsal only, D1's limits; not evidence"
+        },
+        "droppedFramePercent": {
+          "limit": 5,
+          "basis": "rehearsal only, D1's limits; not evidence"
+        },
+        "peakMemoryMB": {
+          "limit": 300,
+          "basis": "rehearsal only, D1's limits; not evidence"
+        },
+        "audioAgeP95Ms": {
+          "limit": 50,
+          "basis": "rehearsal only, D1's limits; not evidence"
+        },
+        "coldLaunchMs": {
+          "limit": 2000,
+          "basis": "rehearsal only, D1's limits; not evidence"
+        }
+      }
+    }
+  ]
+}

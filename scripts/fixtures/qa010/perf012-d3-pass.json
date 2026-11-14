@@ -1,0 +1,80 @@
+{
+  "app": {
+    "build": "2",
+    "version": "1.1"
+  },
+  "device": {
+    "model": "iPad15,7",
+    "osBuild": "23F77",
+    "osVersion": "26.5"
+  },
+  "exportedAt": "2026-11-14T12:00:00Z",
+  "frameDrops": {
+    "outputs": [
+      {
+        "output": "device",
+        "skipped": 60,
+        "stale": 0,
+        "submitted": 3540
+      }
+    ]
+  },
+  "frames": {
+    "longFrames": [
+      {
+        "count": 40,
+        "thresholdMs": 25
+      },
+      {
+        "count": 0,
+        "thresholdMs": 50
+      },
+      {
+        "count": 0,
+        "thresholdMs": 100
+      }
+    ],
+    "maxMs": 48.2,
+    "measuredSeconds": 60.0,
+    "p50Ms": 30.0,
+    "p90Ms": 17.4,
+    "p95Ms": 45.0,
+    "p99Ms": 33.4,
+    "resolutionMs": 0.1,
+    "sampleCount": 3600
+  },
+  "kind": "projectM-iOS.performanceReport",
+  "resources": {
+    "memory": {
+      "footprintBytes": 160000000,
+      "peakFootprintBytes": 182000000
+    }
+  },
+  "schemaVersion": 1,
+  "session": {
+    "durationSeconds": 75.0,
+    "overlayShown": true,
+    "visual": "projectM"
+  },
+  "states": {
+    "current": {
+      "atSeconds": 60.0,
+      "lowPower": false,
+      "maxFramesPerSecond": 60,
+      "profile": "standard",
+      "renderScale": 1.0,
+      "thermal": "nominal"
+    },
+    "timeline": [
+      {
+        "atSeconds": 0.0,
+        "lowPower": false,
+        "maxFramesPerSecond": 60,
+        "profile": "standard",
+        "renderScale": 1.0,
+        "thermal": "nominal"
+      }
+    ],
+    "truncated": false
+  }
+}

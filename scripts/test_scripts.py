@@ -31,6 +31,7 @@ import observe_app_network as oan  # noqa: E402
 import generate_gles_loader as ggl  # noqa: E402
 import generate_reference_audio as gra  # noqa: E402
 import run_device_tests as rdt  # noqa: E402
+import check_performance_thresholds as cpt  # noqa: E402
 import setup_mac  # noqa: E402
 import validate_docs  # noqa: E402
 import qa009_manifest_check as qa009  # noqa: E402
@@ -1817,6 +1818,121 @@ class RunRenderSoakTests(unittest.TestCase):
                 return mock.Mock(returncode=0)
             with mock.patch("subprocess.run", side_effect=fake_run), mock.patch("sys.stdout", new_callable=io.StringIO):
                 self.assertEqual(rrs.main(["--seconds", "40", "--report-dir", tmp]), 0)
+
+
+class PerformanceThresholdsTests(unittest.TestCase):
+    """QA-010: the fixture benchmark (specs/223-qa-010-performance-thresholds, QA-010-S1)."""
+
+    F = FIXTURES / "qa010"
+    PASS = ["perf012-d1-pass.json", "perf001-d1-pass.json", "sc015-pass.json"]
+
+    def check(self, *names, **kwargs):
+        return cpt.check([self.F / n for n in names], **kwargs)
+
+    def verdicts(self, verdict):
+        return {row["metric"]: row["verdict"] for row in verdict["metrics"]}
+
+    def test_committed_thresholds_load_and_cover_every_class_and_metric(self):
+        doc = cpt.load_thresholds(cpt.THRESHOLDS)
+        self.assertEqual([c["id"] for c in doc["classes"]], ["D1", "D2", "D3", "simulator"])
+        self.assertEqual({c["id"]: c["models"] for c in doc["classes"][:3]},
+                         {label: [model] for label, model in rdt.DEVICES.items()})
+        self.assertEqual([c["evidence"] for c in doc["classes"]], [True, True, True, False])
+        for entry in doc["classes"]:   # QA-010-S2: every limit names its basis
+            self.assertTrue(all(t["basis"].strip() for t in entry["targets"].values()), entry["id"])
+        schema = json.loads((cpt.ROOT / "docs/performance/thresholds.schema.json").read_text())
+        self.assertEqual(schema["properties"]["schemaVersion"]["const"], cpt.SCHEMA_VERSION)
+        self.assertEqual(set(schema["required"]) - set(doc), set())
+        metrics = schema["properties"]["metrics"]["properties"]
+        self.assertEqual({m: v["properties"]["direction"]["const"] for m, v in metrics.items()}, cpt.CATALOGUE)
+
+    def test_pass_fixture_passes_every_metric_with_the_version(self):
+        verdict = self.check(*self.PASS)
+        self.assertEqual(verdict["overall"], "pass")
+        self.assertEqual(set(self.verdicts(verdict).values()), {"pass"})
+        self.assertEqual((verdict["deviceClass"], verdict["evidence"], verdict["thresholdsVersion"]), ("D1", True, 1))
+        self.assertEqual(cpt.exit_code(verdict), 0)
+
+    def test_each_kind_of_fail_fails_only_its_metric(self):
+        cases = {
+            "fps1sP5": ["perf012-d1-pass.json", "perf001-d1-fps-fail.json", "sc015-pass.json"],
+            "frameIntervalP95Ms": ["perf012-d1-p95-fail.json", "perf001-d1-pass.json", "sc015-pass.json"],
+            "droppedFramePercent": ["perf012-d1-drops-fail.json", "perf001-d1-pass.json", "sc015-pass.json"],
+            "peakMemoryMB": ["perf012-d1-memory-fail.json", "perf001-d1-pass.json", "sc015-pass.json"],
+            "coldLaunchMs": ["perf012-d1-pass.json", "perf001-d1-pass.json", "sc015-launch-fail.json"],
+        }
+        for metric, names in cases.items():
+            verdict = self.check(*names)
+            failed = [m for m, v in self.verdicts(verdict).items() if v == "fail"]
+            self.assertEqual((verdict["overall"], failed), ("fail", [metric]), metric)
+            self.assertEqual(cpt.exit_code(verdict), 1)
+        row = next(r for r in self.check(*cases["droppedFramePercent"])["metrics"] if r["metric"] == "droppedFramePercent")
+        self.assertEqual((row["value"], row["limit"], row["source"]), (10.0, 5, "perf012-d1-drops-fail.json"))
+
+    def test_missing_metrics_read_not_measured_never_pass(self):
+        verdict = self.check("perf012-d1-missing.json", "perf001-d1-no-audio-age.json")
+        v = self.verdicts(verdict)
+        self.assertEqual([m for m in v if v[m] == "not measured"],
+                         ["frameIntervalP50Ms", "frameIntervalP95Ms", "audioAgeP95Ms", "coldLaunchMs"])
+        self.assertEqual(verdict["overall"], "incomplete")
+        self.assertEqual(cpt.exit_code(verdict), 1)
+        invalid = self.verdicts(self.check("perf012-d1-invalid.json", *self.PASS[1:]))
+        self.assertEqual(invalid["peakMemoryMB"], "not measured")
+
+    def test_unknown_class_wrong_version_and_mixed_models_are_errors(self):
+        cases = [
+            (self.check("perf012-unknown-model.json"), "unknown device class: model iPhone18,3"),
+            (self.check(*self.PASS, thresholds_path=self.F / "thresholds-wrong-schema.json"),
+             "unsupported thresholds schemaVersion 2"),
+            (self.check(*self.PASS, pinned=2), "thresholds version mismatch: file has 1, caller pinned 2"),
+            (self.check("perf012-d3-pass.json", "perf001-d1-pass.json"), "mixed device models"),
+            (self.check("sc015-pass.json"), "no device model"),
+        ]
+        for verdict, reason in cases:
+            self.assertEqual(verdict["overall"], "error", reason)
+            self.assertTrue(verdict["error"].startswith(reason), verdict["error"])
+            self.assertNotIn("metrics", verdict)
+            self.assertEqual(cpt.exit_code(verdict), 2)
+
+    def test_class_limits_differ_and_simulator_is_not_evidence(self):
+        d3 = self.check("perf012-d3-pass.json")
+        self.assertEqual((d3["deviceClass"], self.verdicts(d3)["frameIntervalP95Ms"]), ("D3", "pass"))
+        as_d1 = self.check("perf012-d3-pass.json", simulator=True)   # same figures under D1's limits
+        self.assertEqual((as_d1["deviceClass"], as_d1["evidence"]), ("simulator", False))
+        self.assertEqual(self.verdicts(as_d1)["frameIntervalP95Ms"], "fail")
+        self.assertIn("not evidence", cpt.render_text(as_d1))
+
+    def test_value_at_the_limit_passes_and_output_is_deterministic(self):
+        doc = cpt.load_thresholds(cpt.THRESHOLDS)
+        at = cpt.evaluate(doc, "iPhone15,4", {"peakMemoryMB": {"value": 300.0, "source": "x"}})
+        self.assertEqual(self.verdicts(at)["peakMemoryMB"], "pass")
+        first = cpt.render_json(self.check(*self.PASS))
+        self.assertEqual(first, cpt.render_json(self.check(*reversed(self.PASS))))
+        self.assertNotIn(str(self.F), first)   # base names only
+
+    def test_cli_writes_the_verdict_and_returns_the_exit_code(self):
+        with tempfile.TemporaryDirectory() as tmp, mock.patch("sys.stdout", new_callable=io.StringIO) as out:
+            target = Path(tmp) / "v.json"
+            code = cpt.main([str(self.F / n) for n in self.PASS] + ["--out", str(target)])
+            self.assertEqual(code, 0)
+            self.assertEqual(json.loads(target.read_text())["overall"], "pass")
+            self.assertIn("overall: pass", out.getvalue())
+            self.assertEqual(cpt.main([str(self.F / "sc015-pass.json"), "--device", "D3", "--json"]), 1)
+
+    def test_runner_step_picks_the_newest_reports_and_writes_the_verdict(self):
+        import shutil
+        with tempfile.TemporaryDirectory() as tmp, mock.patch("sys.stdout", new_callable=io.StringIO):
+            d = Path(tmp)
+            shutil.copy(self.F / "perf001-d1-fps-fail.json", d / "automation-perf001-2026-11-14T100000Z.json")
+            shutil.copy(self.F / "perf001-d1-pass.json", d / "automation-perf001-2026-11-14T110000Z.json")
+            shutil.copy(self.F / "sc015-pass.json", d / "sc015.json")
+            verdict = rdt.judge_thresholds(d, label="D1", simulator=False, extra=[self.F / "perf012-d1-pass.json"])
+            self.assertEqual(verdict["overall"], "pass")
+            self.assertEqual(json.loads((d / "performance-verdict.json").read_text()), verdict)
+            again = rdt.judge_thresholds(d, label="D1", simulator=False, write=False)   # the verdict is not an input
+            self.assertEqual(again["inputs"], ["automation-perf001-2026-11-14T110000Z.json", "sc015.json"])
+            sim = rdt.judge_thresholds(d, label="sim", simulator=True, write=False)
+            self.assertFalse(sim["evidence"])
 
 
 if __name__ == "__main__":
