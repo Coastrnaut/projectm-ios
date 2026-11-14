@@ -12,7 +12,7 @@ Tests are written with the code they prove (short tests, owner rule 7).
 
 - [ ] CAM-008-T03 `PersonSegmenting.swift`: protocol (C1), `VisionPersonSegmenter` (D1, D2), `FixturePersonSegmenter`
 - [ ] CAM-008-T04 `PersonMasker.swift` (C2): schedule, utility serial queue (injectable runner), newest-mask slot (try-lock), availability, reset
-- [ ] CAM-008-T05 Masker tests: at most one in flight, stride 2/3, failing → `failed` sticky, unsupported, paused plan, reset drops the mask
+- [ ] CAM-008-T05 Masker tests: at most one in flight, stride 2/3, failing → `failed` sticky, unsupported, paused plan, reset drops the mask (R7); the masker source uses no file, URL or logging API (S4, checked by a source scan in the test)
 - [ ] CAM-008-T06 `CameraLayerSource` (C3): mask mode, r8 upload ring, uniforms (`maskMode`, `maskSpace`), shader coverage term (D3)
 - [ ] CAM-008-T07 [US1] GPU acceptance `PersonMaskLayerTests`: fixture mask → alpha 0 outside, unmasked pixels inside within 1/255 for rotation/mirror/Fill-Fit-anchor-zoom cases, texture and upright spaces, Background inverse (S1)
 - [ ] CAM-008-T08 [US2] GPU acceptance: unsupported, failing and paused segmenters and no-mask-yet render equal to Off within 1/255 (S2)
@@ -23,7 +23,7 @@ Tests are written with the code they prove (short tests, owner rule 7).
 
 - [ ] CAM-008-T11 `AppSettings.cameraPersonMask` + key in `allKeys`, FILE-005 included keys, `run_device_tests.py` ALLOWED_KEYS
 - [ ] CAM-008-T12 `CameraVisualHost`: masker creation (Vision or `-uitestPersonSegmenter`), policy updates with the quality notifications, mode forwarding; coordinator availability mirror and settings forwarding
-- [ ] CAM-008-T13 `CameraPersonMaskRow` (C5) + SettingsView/VisualizerView one-line wiring
+- [ ] CAM-008-T13 `CameraPersonMaskRow` (C5; label "Person mask", values, note as hint: R8) + SettingsView/VisualizerView one-line wiring
 - [ ] CAM-008-T14 App unit tests `CameraPersonMaskTests` (setting round-trip, notes per availability, host draws masked/unmasked) and `LibraryBackupAppTests`
 - [ ] CAM-008-T15 UI test `CameraPersonMaskUITests`: fixture → picker enabled; unsupported → disabled with note
 
@@ -35,3 +35,10 @@ Tests are written with the code they prove (short tests, owner rule 7).
 ## Dependencies
 
 T01 → T02, T03 → T04 → T05; T04 + T06 → T07, T08; T09 after T04; T11 → T12 → T13 → T14, T15; T17 last.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Coverage: R1 T06/T13; R2 T06/T07; R3 T07; R4 T04/T05; R5 T08/T13/T15; R6 T01/T02/T12; R7 T04/T05/T17;
+R8 T13/T15; R9 T11/T14. S1 T07; S2 T08/T15; S3 T05; S4 T05/T17; S5 T16. Fixes applied: R8 named in T13,
+S4's "no file written" given a test (T05). No conflicts with CAM-001…CAM-007 contracts (Off is the
+CAM-007 arithmetic unchanged).
