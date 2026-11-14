@@ -1134,7 +1134,7 @@
    "state": "integrated"
   },
   "FILE-003": {
-   "attempts": 0,
+   "attempts": 1,
    "branch": "feature/file-003",
    "branch_sha": "2dbb99af1390153e69b93ef1832ef3bf15e35788",
    "error_category": null,
@@ -4121,5 +4121,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T06:42:45Z"
+ "updated": "2026-11-14T06:42:46Z"
 }
