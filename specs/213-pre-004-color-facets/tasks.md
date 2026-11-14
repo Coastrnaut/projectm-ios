@@ -8,19 +8,19 @@ verification ("unit + simulator + fixture migrations").
 
 ## Phase 1: Setup
 
-- [ ] PRE-004-T01 Create the private simulator "PRE4 iPhone 17" (iOS 27.2) and count PosterBoard reports before any run
+- [X] PRE-004-T01 Create the private simulator "PRE4 iPhone 17" (iOS 27.2) and count PosterBoard reports before any run — Verified 2026-11-14: simulator F5FB30F2 created on iOS 27.2; PosterBoard reports 26 before
 
 ## Phase 2: Foundational
 
-- [ ] PRE-004-T02 `PresetColorFamily` and `PresetColorPalette` (research D2-D3, contract C1) in Packages/PresetLibrary/Sources/PresetLibrary/Colors/PresetColorFamily.swift and PresetColorPalette.swift
-- [ ] PRE-004-T03 `PresetColorIndex` with open-time repair (D4, C2) and `PresetColorStore` (coalesced save, invalidate, retainOnly; D5-D6, C3) in Packages/PresetLibrary/Sources/PresetLibrary/Colors/PresetColorIndex.swift and PresetColorStore.swift
-- [ ] PRE-004-T04 `PresetColorFilter` (C4) in Packages/PresetLibrary/Sources/PresetLibrary/Colors/PresetColorFilter.swift; `PresetLibrary.alphabeticalListing(_:)` in Packages/PresetLibrary/Sources/PresetLibrary/PresetLibrary.swift; Apple-only `PresetColorPNG` (D8) in Packages/PresetLibrary/Sources/PresetLibrary/Colors/PresetColorPNG.swift
+- [X] PRE-004-T02 `PresetColorFamily` and `PresetColorPalette` (research D2-D3, contract C1) in Packages/PresetLibrary/Sources/PresetLibrary/Colors/PresetColorFamily.swift and PresetColorPalette.swift — Verified 2026-11-14: `PresetColorFacetTests.testClassificationRulesAndInvalidInput`; `swift test --package-path Packages/PresetLibrary` (324 tests, 0 failures, 29.0 s)
+- [X] PRE-004-T03 `PresetColorIndex` with open-time repair (D4, C2) and `PresetColorStore` (coalesced save, invalidate, retainOnly; D5-D6, C3) in Packages/PresetLibrary/Sources/PresetLibrary/Colors/PresetColorIndex.swift and PresetColorStore.swift — Verified 2026-11-14: `testStoreCoalescesSavesInvalidatesAndPrunes`, `testOldUnknownAndCorruptIndexesAreRebuiltAndCurrentIsKept`; `swift test --package-path Packages/PresetLibrary` (324 tests, 0 failures, 29.0 s)
+- [X] PRE-004-T04 `PresetColorFilter` (C4) in Packages/PresetLibrary/Sources/PresetLibrary/Colors/PresetColorFilter.swift; `PresetLibrary.alphabeticalListing(_:)` in Packages/PresetLibrary/Sources/PresetLibrary/PresetLibrary.swift; Apple-only `PresetColorPNG` (D8) in Packages/PresetLibrary/Sources/PresetLibrary/Colors/PresetColorPNG.swift — Verified 2026-11-14: `testSeededFixturesMapToTheirFamiliesAndTheFilterMatchesExactly`, `testPNGDecodeKeepsTheFamilies`; `swift test --package-path Packages/PresetLibrary` (324 tests, 0 failures, 29.0 s)
 
 ## Phase 3: User Story 1 - Find presets by colour (P1) MVP
 
 **Independent test**: seeded synthetic thumbnails map to families; the filter returns exactly the matching fixtures.
 
-- [ ] PRE-004-T05 [US1] Package acceptance (S1): solid red, two-tone yellow/blue, grey gradient, noisy green fixtures → expected families; for every family the filter returns exactly the fixture presets including it; AND of two families; counts; PNG round trip on Apple platforms, in Packages/PresetLibrary/Tests/PresetLibraryTests/PresetColorFacetTests.swift
+- [X] PRE-004-T05 [US1] Package acceptance (S1): solid red, two-tone yellow/blue, grey gradient, noisy green fixtures → expected families; for every family the filter returns exactly the fixture presets including it; AND of two families; counts; PNG round trip on Apple platforms, in Packages/PresetLibrary/Tests/PresetLibraryTests/PresetColorFacetTests.swift — Verified 2026-11-14: `swift test --filter PresetColorFacetTests` (5 tests, 0.08 s), acceptance `testSeededFixturesMapToTheirFamiliesAndTheFilterMatchesExactly`
 - [ ] PRE-004-T06 [US1] `PresetCoordinator+Colors` (selection, counts over listed presets, `filteredListing`, search narrowing, announcements on the search lane, scope per R11) in Apps/projectM-iOS/Coordinators/PresetCoordinator+Colors.swift and state in Apps/projectM-iOS/Coordinators/PresetCoordinator.swift
 - [ ] PRE-004-T07 [US1] `PresetColorChipRow` (swatch, name, count, Selected trait, Clear, coverage text) in Apps/projectM-iOS/Views/PresetColorChips.swift; browser wiring in Apps/projectM-iOS/Views/PresetBrowserView.swift and Apps/projectM-iOS/Views/PresetTagChips.swift
 
@@ -34,7 +34,7 @@ verification ("unit + simulator + fixture migrations").
 
 ## Phase 5: User Story 3 - A damaged or old index rebuilds itself (P2)
 
-- [ ] PRE-004-T11 [US3] Migration fixtures colors-v0.json, colors-v99.json, colors-corrupt.json, colors-palette-v0.json, colors-v1.json in Packages/PresetLibrary/Tests/PresetLibraryTests/ThumbnailFixtures/ and tests (S2) in Packages/PresetLibrary/Tests/PresetLibraryTests/PresetColorFacetTests.swift (rebuilt and rewritten; current kept, unknown colours dropped; store coalesces saves and prunes)
+- [X] PRE-004-T11 [US3] Migration fixtures colors-v0.json, colors-v99.json, colors-corrupt.json, colors-palette-v0.json, colors-v1.json in Packages/PresetLibrary/Tests/PresetLibraryTests/ThumbnailFixtures/ and tests (S2) in Packages/PresetLibrary/Tests/PresetLibraryTests/PresetColorFacetTests.swift (rebuilt and rewritten; current kept, unknown colours dropped; store coalesces saves and prunes) — Verified 2026-11-14: `testOldUnknownAndCorruptIndexesAreRebuiltAndCurrentIsKept` (v0, v99, corrupt, palette 0 rebuilt and rewritten; v1 kept, "teal" dropped)
 
 ## Phase 6: Polish
 
