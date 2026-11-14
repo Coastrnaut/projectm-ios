@@ -49,6 +49,16 @@ human interaction); each answer is the conservative, local-first option.
 - Q: Where are bindings stored? → A: Globally on the device (one mapping list for the app), not per scene: a controller rig stays the same while scenes change, and recalling a scene must not rebind the controller. They are included in the library backup and erased with the Settings category.
 - Q: Is creating a binding undoable? → A: Yes, but in the MIDI Mappings screen, not in the scene history: an "Undo" action reverses the last mapping change (a learn or a delete) while the screen is open. Bindings are not scene state, so putting them in SCN-010's history would let a scene undo silently change the controller setup.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Where can learn mode be started? → A: Only from the MIDI Mappings screen (a Learn button per parameter row). Rejected for this row: a context menu on the glow sliders or CMP-015's layer inspector, because the glow sliders live in Settings beside the mappings anyway and a second entry point needs its own VoiceOver and motion review; a later row can add one that calls the same learn action.
+- Q: When a mapped control first moves after launch or after mapping, does the parameter jump to the control's position or wait until the control "picks up" the current value? → A: It jumps (the control's value is applied at once). Pickup ("soft takeover") depends on the range and curve MIDI-004 adds, so it belongs there; live values start empty at every launch, so the parameter shows its manual value until the control moves.
+- Q: Is a control that is already mapped eligible while learning another parameter? → A: Yes. It is the "move" case (MIDI-003-R5): learning takes it and the old binding is removed. Messages that arrive before the learning message in the same update still apply to their existing bindings; the learning message does not apply a value.
+- Q: How far back does Undo go? → A: One step: the last mapping change (a learn, move, replace or delete) can be undone while the MIDI Mappings screen stays open; leaving the screen clears it. Undoing restores the exact previous list and saves it.
+- Q: Does the mappings screen or the visualizer show live MIDI values? → A: No. Rows show the parameter and its control only (no value updating up to 30 times per second, which VoiceOver and Dynamic Type would struggle with), and the visualizer gets no MIDI badge: learning happens only on the mappings screen, which is itself the indicator. The effect of a mapped control is the glow itself.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - I map a knob to the glow by turning it (Priority: P1) — MVP
@@ -135,6 +145,7 @@ the profile's cap, not the range top.
 - The same controller number on two channels: two different controls.
 - Two devices on the same channel and controller: one control (no source is kept).
 - Learn started twice, or for another parameter while learning: the newest request replaces the old one.
+- A control already mapped is moved while learning another parameter: messages before it in the same update apply to the old binding; the learning message moves the control and applies no value.
 
 ## Requirements *(mandatory)*
 
@@ -146,10 +157,10 @@ the profile's cap, not the range top.
 - **MIDI-003-R4**: A binding MUST be identified by message kind, channel and controller number, and MUST NOT contain or be stored with any device or endpoint identifier, name or source.
 - **MIDI-003-R5**: Rebinding MUST replace: a control drives at most one parameter and a parameter is driven by at most one control; moving a control removes its old binding and the status names the parameter it left.
 - **MIDI-003-R6**: Learn mode MUST end without a binding on Cancel, after 30 seconds without an eligible message, when listening stops, or when the app leaves the foreground; a timeout is announced. Learn requires listening; while listening is off Learn is unavailable and the screen says why.
-- **MIDI-003-R7**: Each later message on a bound control MUST set the parameter's live value linearly over its full range (value 0 → minimum, 127 → maximum); within one update the newest value per parameter wins. The message that created a binding does not set a value.
+- **MIDI-003-R7**: Each later message on a bound control MUST set the parameter's live value linearly over its full range (value 0 → minimum, 127 → maximum); within one update the newest value per parameter wins. The message that created a binding does not set a value. A first value jumps the parameter to the control's position (no pickup; MIDI-004). Live values start empty at launch.
 - **MIDI-003-R8**: Live values MUST pass through audio modulation (MOD-002) and the sensory safety clamp (ACC-012) before rendering, and MUST NOT change the stored manual setting, the scene, or the undo history. Deleting a binding returns its parameter to the manual value at once.
 - **MIDI-003-R9**: Bindings MUST be stored on the device as one global list (not per scene), restored at launch, included in the library backup and removed by the Settings erase category. The stored form holds only kind, channel, controller number and parameter ID per binding. At most 64 bindings are kept.
-- **MIDI-003-R10**: A "MIDI Mappings" screen, reached from the MIDI section of Settings, MUST list every learnable parameter with its control ("CC 7 · Ch 1" or "Not mapped"), a Learn action, a delete action for mapped rows, an Undo action for the last mapping change while the screen is open, and a status line ("Move a control on your MIDI device…" while learning, with Cancel).
+- **MIDI-003-R10**: A "MIDI Mappings" screen, reached from the MIDI section of Settings and the only place learn mode starts, MUST list every learnable parameter with its control ("CC 7 · Ch 1" or "Not mapped"), a Learn action, a delete action for mapped rows, an Undo action for the last mapping change (one step, cleared when the screen closes), and a status line ("Move a control on your MIDI device…" while learning, with Cancel).
 - **MIDI-003-R11**: Starting learn mode, creating a binding and a timeout MUST be announced through the shared announcer (status events router), never posted directly; live values are never announced.
 - **MIDI-003-R12**: The input MUST receive for mappings only while learn mode is active or at least one binding exists (and, as MIDI-002 requires, listening is on and the app is in the foreground).
 - **MIDI-003-R13**: The learn and binding model MUST build and pass its tests on Linux.
