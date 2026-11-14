@@ -44,6 +44,7 @@ no human interaction); each answer is the recommended, conservative option.
 - Q: How is "relative to its own baseline" measured, and with which threshold? → A: Band level L = 10·log10 of the band's power (a full-scale sine in band reads 0 dB), clamped at the absolute floor of −70 dB. Detection value (band log-energy flux) D = L − the minimum L of the preceding frames spanning one FFT window (4 frames at 2,048/512), so a rise is measured from the level just before the hit, outside the analysis window's overlap. Threshold = max(6 dB, median(D) + 4·MAD(D)) over the preceding 1.0 s of D (86 frames at hop 512; MAD = median absolute deviation). Fire when D exceeds it while armed, L is above the floor, and the band holds at least −20 dB (1 %) of the frame's total power. Why: decibel differences are unchanged by gain, so the rise is level-independent above the floor; the kick's own decay makes D slightly negative most of the time, so in kick-driven material the median and MAD stay small and the 6 dB minimum governs, while in noisy low-frequency material (single frames fluctuate by several dB) median + 4·MAD lifts the threshold; 6 dB (power ×4) is far above a sustained tone's ripple yet below a kick's 20+ dB rise; −70 dB matches ANL-004's floor and sits 40+ dB above 16-bit dither in this band; the −20 dB dominance rejects energy leaking into 40–150 Hz from an abrupt high or mid transient (estimated −35 dB or less for the test bursts) and stationary white noise (about −23 dB), while a kick under a pad of equal or 6 dB higher level keeps a share near −10 dB. Rejected: the median and MAD of the level itself (design review before coding, 2026-11-13: a decaying kick spans about 40 dB of level within each beat, so the level's MAD is about 10 dB and 4·MAD would suppress every kick), a ratio to a slow exponential envelope (a loud kick drags it up and masks the next one), mean + k·σ (spikes inflate it) (ANL-007-R2 to R5).
 - Q: How long are the refractory period and the envelope? → A: Refractory 100 ms (allows up to 10 kicks per second, 150 BPM sixteenths; suppresses the second peak of a two-stage kick attack and frames of the same hit), plus re-arming only after the rise falls back to or below the threshold (a held bass note never retriggers). Envelope: set to 1 on each event (not scaled by loudness, so it is level-independent) and multiplied by exp(−hop / (0.1 s · rate)) per frame: a 100 ms time constant, down to 13 % after 200 ms, which reads as a punchy pulse on visuals at 60 fps (ANL-007-R6, R8).
 - Q: How do kick events appear on the analysis bus? → A: As one new generic event kind `transient(band:, strength:, threshold:, level:)` with `band = .kick`, and a `kickEnvelope` value in every feature frame. ANL-008 and ANL-009 add a band case and their own configuration, not new event kinds or new detector types; the event's sample position is ANL-004's rule. Rejected: a kick-only event case (each later detector would add another case and another exhaustive-switch edit across packages) (ANL-007-R7, R9, R10).
+- Implementation finding (T03-T04, 2026-11-13, before any commit of code): three changes from the answer above, each measured with debug runs (white noise at −6 and −40 dBFS, seeds 1, 2, 3, 0x5EED, 3 s each; 5 kHz, 1 kHz, 300 Hz, 200 Hz bursts; kicks at hop offsets 100, 300, 511 and 45, 80, 120 Hz). (1) The flux reference is the *highest* level of the preceding window-length frames, not the lowest: against the lowest, background noise's downward dips gave D up to 8 dB and a false kick in the pad fixture. (2) Dominance is the band's share of the frame's power *increase* over that reference frame, at −15 dB, not the share of total power at −20 dB: at a kick's first frame under a −6 dBFS pad its absolute share was −27 dB (missed), while its share of the increase was 0 to −6 dB; the 1 kHz burst's increase share is −23.4 dB (8.4 dB margin) and the 5 kHz burst's −37.9 dB; a falling total counts as not concentrated. (3) Minimum rise 9 dB, not 6: one seed of white noise reached D = 6.5 dB; at 9 dB every noise run stays ≥ 3.4 dB under the threshold, while kicks clear it by 7 to 36 dB on their first frame. Also fixed: the first frame after creation or reset now compares with silence (one floor level seeded), as ANL-004 does. Fixtures were shortened (4 pulses 255 ms apart) to keep the Linux-shape cost under 1 s.
 - Q: Is there a modulation source or any UI? → A: A MOD-002 source "Kick" with the stable ID `audio.kick`, reading the frame's kick envelope; SHD-009 expressions get it through the unused permanent opcode value 9. The native visual feeds the envelope to its bindings (the onset and beat-confidence sources stay unfed in the app, as today, out of scope). No UI: bindings are created by scenes and the Debug path, and the app has no source picker today. Rejected: a Debug readout or a kick indicator view (no user need in this row) (ANL-007-R11, R12, R15).
 
 ## User Scenarios & Testing *(mandatory)*
@@ -123,6 +124,8 @@ its target.
 - A kick under sustained bass of similar level: may or may not fire (the rise is small); not promised.
 - A kick much quieter than the rest of the mix (more than the dominance limit below the full-band level): not reported (documented limitation).
 - Very fast kicks (double-kick drums faster than the refractory period): only every other hit is reported.
+- Abrupt low-mid bursts (200–300 Hz with a hard onset, such as a tom or a low snare body): their onset leakage dominates the rise in 40–150 Hz, so they fire (measured: increase share −6 and −12 dB). Not promised either way; ANL-008 covers that range.
+- Unaligned hits: a hit that starts late in a hop may be reported one hop later at a low level than at a high level (the first frame holds too little of it); events stay within one hop of the hit.
 
 ## Requirements *(mandatory)*
 
@@ -130,9 +133,9 @@ its target.
 
 - **ANL-007-R1**: A band-limited transient detector MUST compute, per spectrum frame, the energy in one configurable frequency range (the kick: 40–150 Hz), using ANL-002's fractional bin-weight rule for the range's edges, for every ANL-001 FFT size.
 - **ANL-007-R2**: The detector MUST decide on the band's level relative to its own recent history (an adaptive baseline of the preceding frames), never on absolute level alone, so the same material at different levels (above the floor) gives the same events.
-- **ANL-007-R3**: The detection value MUST be the band level minus the minimum level of the preceding frames spanning one FFT window, and the threshold max(6 dB, median + 4 × median absolute deviation of the detection values of the preceding 1.0 s), so stationary noise does not fire.
+- **ANL-007-R3**: The detection value MUST be the band level minus the highest level of the preceding frames spanning one FFT window, and the threshold max(9 dB, median + 4 × median absolute deviation of the detection values of the preceding 1.0 s), so stationary noise does not fire.
 - **ANL-007-R4**: The detector MUST NOT report while the band's level is at or below the absolute floor (−70 dB re a full-scale sine), so silence and dither never fire.
-- **ANL-007-R5**: The detector MUST report only when the band holds at least −20 dB (1 %) of the frame's total power (dominance), so energy leaking into the band from a loud transient elsewhere in the spectrum, or broadband white noise, does not fire.
+- **ANL-007-R5**: The detector MUST report only when the band holds at least −15 dB (3 %) of the frame's power increase over the reference frame (dominance; a falling total counts as not concentrated), so energy leaking into the band from a loud transient elsewhere in the spectrum does not fire, while a kick under a loud sustained layer does.
 - **ANL-007-R6**: After an event, the detector MUST report nothing for the refractory period (100 ms for the kick), and MUST re-arm only after the rise falls back to or below the threshold, so a sustained level never retriggers.
 - **ANL-007-R7**: Each event MUST carry a sequence number, its sample position on the stream's clock (the first sample of the frame's newest hop, as ANL-004), the rise over the baseline, the threshold it crossed and the band level.
 - **ANL-007-R8**: The detector MUST also provide an envelope (0…1): 1 on an event, decaying exponentially with a 100 ms time constant per frame, never non-finite.
@@ -162,6 +165,21 @@ its target.
 - **ANL-007-S5**: Through the real analysis pipeline, the low pulse train yields one kick event per pulse in ID order and frames whose envelope is 1 at each kick and decays; the high pulse train yields none.
 - **ANL-007-S6**: `audio.kick` round-trips, binds, compiles in an expression and drives a bound parameter in the app.
 - **ANL-007-S7**: The new package tests add at most a few hundred milliseconds to the AnalysisFeatures suite in the Linux shape, and every existing test passes.
+
+## Implementation results (2026-11-13)
+
+Fixture table (`KickDetectorTests`, 2,048-point spectra, hop 512, 44.1 kHz, `.kick` defaults; the
+same on the host and in the Linux shape):
+
+| Input | Pulses | Kick events | Hits (±1 hop) | Misses | Extras |
+|---|---|---|---|---|---|
+| 55 Hz bursts, −6 dBFS | 4 | 4 | 4 | 0 | 0 |
+| 55 Hz bursts, −30 dBFS (same positions as −6) | 4 | 4 | 4 | 0 | 0 |
+| 5 kHz and 1 kHz bursts, −6 dBFS | 4 | 0 | — | — | 0 |
+| 55 Hz −12 dBFS under 2 + 3.3 kHz pad (−6 dBFS each) + white noise −30 dBFS | 4 | 4 | 4 | 0 | 0 |
+| 60 Hz sustained, −12 dBFS, 1.2 s | 1 onset | 1 (at the onset) | 1 | 0 | 0 |
+| Digital silence / ±1 LSB dither / white noise −6 dBFS | 0 | 0 / 0 / 0 | — | — | 0 |
+| Two pulses 60 ms apart / 150 ms apart | 2 / 2 | 1 / 2 | — | — | 0 |
 
 ## Assumptions
 

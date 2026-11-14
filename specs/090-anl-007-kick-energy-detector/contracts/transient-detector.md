@@ -8,8 +8,8 @@ public struct TransientDetectorConfiguration: Sendable, Hashable {
     public static let kick: TransientDetectorConfiguration      // 44.1 kHz, 40–150 Hz, defaults below
     public init(band: TransientBand = .kick, sampleRate: Double = 44_100,
                 lowerFrequency: Double = 40, upperFrequency: Double = 150,
-                floorDecibels: Float = -70, dominanceDecibels: Float = -20,
-                baselineSeconds: Double = 1.0, minimumRiseDecibels: Float = 6,
+                floorDecibels: Float = -70, dominanceDecibels: Float = -15,
+                baselineSeconds: Double = 1.0, minimumRiseDecibels: Float = 9,
                 deviationMultiplier: Float = 4, refractorySeconds: Double = 0.1,
                 envelopeSeconds: Double = 0.1) throws(TransientDetectorConfigurationError)
     public func baselineFrames(hop: Int) -> Int            // round(s·R/hop), 1…128
@@ -43,13 +43,14 @@ public final class BandTransientDetector {
 Per accepted frame (rate matches, `magnitudes.count == size.binCount`, 1 ≤ hop ≤ size):
 
 1. P_band = Σ w_k·m_k² / 1.5 over the range's bins (ANL-002 weight rule); P_total = Σ_{k=1…N/2} m_k² / 1.5.
-   Non-finite sums read 0. L = max(floor, 10·log10(max(P_band, 1e−12))); share = 10·log10(P_band / P_total)
-   (−∞ → −200 when P_total = 0).
+   Non-finite sums read 0. L = max(floor, 10·log10(max(P_band, 1e−12))).
 2. If the frame is the first after `reset()`/an ignored frame, not contiguous (index ≠ previous
    index + previous hop) or has another size: clear the level history (keep the D window), push L
    into the level history, decay the envelope, no event.
-3. Else reference = min of the last r = clamp(size/hop, 1, 8) levels (fewer if fewer exist),
-   D = L − reference; median and MAD of the D window (0 and 0 if empty), threshold =
+3. Else reference = the highest of the last r = clamp(size/hop, 1, 8) levels (fewer if fewer exist;
+   the history is seeded with one floor level at creation and `reset()`), D = L − reference;
+   share = 10·log10(ΔP_band / ΔP_total) against the reference frame (0 dB when ΔP_total < ΔP_band,
+   −200 when either did not rise); median and MAD of the D window (0 and 0 if empty), threshold =
    max(minimumRise, median + k·MAD); push D into its window (oldest dropped beyond
    `baselineFrames(hop:)`) and L into the level history.
 4. envelope ← envelope · decay.

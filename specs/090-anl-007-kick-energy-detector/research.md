@@ -16,35 +16,41 @@
 
 ## ANL-007-D2: Level-independent decision
 
-- **Decision**: L = 10·log10(max(P, 10^−12)) clamped to ≥ floor (−70 dB). Reference = the minimum L
-  of the preceding r = size/hop frames (clamped 1…8; 4 at 2,048/512). Detection value D = L −
-  reference. Threshold = max(6 dB, median(D) + 4·MAD(D)) over the preceding W = round(1.0 s · R /
-  hop) values of D (86 at hop 512, clamped 1…128), kept in a ring plus a sorted copy (insert and
-  remove by shifting: O(W)); MAD computed per frame into a scratch array with insertion sort. An
-  empty window gives median 0, MAD 0 (threshold 6 dB).
-- **Rationale**: a constant gain adds the same dB to L and its reference, so D is unchanged
-  whenever both are above the floor; kicks rising from silence clear the threshold on the same
-  frame at −30 and −6 dBFS when starts are hop-aligned (the first frame of a 55 Hz burst at
-  −30 dBFS reads about −45 dB, 25 dB above the floor). The reference spans one window so it lies
-  outside the 75 % overlap of the frames that already contain the hit. A kick train's D is about
-  −1.3 dB per frame (its decay) except for a few spike frames per beat, so median and MAD stay
-  small; noise gives D a wide distribution and lifts the threshold.
-- **Rejected after a design review (before coding)**: median and MAD of the level itself. A
-  decaying kick spans ~40 dB of level within each beat, so the level MAD is ~10 dB and a 4·MAD
-  threshold (~40 dB) would suppress every kick. Also rejected: mean + k·σ (spikes inflate it); a
-  slow exponential envelope ratio (masks the next kick after a loud one); ANL-004's linear flux of
-  decibel-normalized bands (depends on the −70 dB normalization floor, so not level-independent).
+- **Decision**: L = 10·log10(max(P, 10^−12)) clamped to ≥ floor (−70 dB). Reference = the highest L
+  of the preceding r = size/hop frames (clamped 1…8; 4 at 2,048/512); the history is seeded with one
+  floor level at creation and reset. Detection value D = L − reference. Threshold = max(9 dB,
+  median(D) + 4·MAD(D)) over the preceding W = round(1.0 s · R / hop) values of D (86 at hop 512,
+  clamped 1…128), kept in a ring plus a sorted copy (insert and remove by shifting: O(W)); MAD is
+  computed per frame into a scratch array with insertion sort. An empty window gives median 0,
+  MAD 0.
+- **Rationale**: a constant gain adds the same dB to L and its reference, so D is unchanged whenever
+  both are above the floor; kicks rising from silence clear the threshold on the same frame at −30
+  and −6 dBFS when starts are hop-aligned. The reference spans one window, so it lies outside the
+  75 % overlap of the frames that already contain the hit; taking its highest level makes D the
+  rise above the recent peak, which background noise reaches only rarely (debug runs: ≤ 5.6 dB
+  over 12 s of white noise at two levels), while a kick's first frame rises 16–45 dB. A kick
+  train's D is about −1.3 dB per frame (its decay) except at the hits, so median and MAD stay small
+  and the 9 dB minimum governs.
+- **Rejected**: median and MAD of the level itself (design review before coding: a decaying kick
+  spans ~40 dB of level within each beat, so 4·MAD ≈ 40 dB would suppress every kick); the lowest
+  level of the window as reference (implementation: noise dips gave D up to 8 dB and a false kick);
+  a 6 dB minimum (implementation: white noise reached 6.5 dB once); mean + k·σ; a slow exponential
+  envelope ratio; ANL-004's linear flux of decibel-normalized bands (depends on its normalization
+  floor, so not level-independent).
 
 ## ANL-007-D3: Floor and dominance
 
-- **Decision**: floor −70 dB (band level re a full-scale sine); dominance: 10·log10(P_band /
-  P_total) ≥ −20 dB.
+- **Decision**: floor −70 dB (band level re a full-scale sine); dominance: the band's share of the
+  frame's power increase over the reference frame, 10·log10(ΔP_band / ΔP_total) ≥ −15 dB (0 dB when
+  the total rose less than the band; no event when the band or the total did not rise).
 - **Rationale**: 16-bit TPDF dither (≈ −96 dBFS RMS, white) puts about −119 dB into 40–150 Hz;
   digital silence reads the clamp. An abrupt 5 kHz or 1 kHz burst leaks energy into the low bins
-  through its step onset (≈ 1/Δf skirt); white noise's share of 40–150 Hz is 110/22,050 ≈ −23 dB.
-  Both fall below −20 dB, so neither can fire however loud. A kick under an equally loud pad has a
-  share around −3 to −10 dB.
-- **Limitation**: a kick more than ~20 dB below the rest of the mix is not reported (spec edge case).
+  through its step onset, but that is a small part of its power increase: measured −37.9 and
+  −23.4 dB. A kick's increase is concentrated in band (−0.5 to −2.6 dB in every fixture), also under
+  a louder sustained pad, whose absolute share at the kick's first frame was −27 dB (why the share of
+  total power was rejected).
+- **Limitations**: abrupt 200–300 Hz bursts fire (increase share −6 and −12 dB); a kick whose rise is
+  smaller than the rest of the spectrum's simultaneous rise is not reported.
 
 ## ANL-007-D4: Arming, refractory, envelope
 
@@ -75,6 +81,6 @@
 
 - **Decision**: the detector type is band-agnostic; the configuration carries the range, floor,
   dominance, baseline window, minimum rise, MAD multiplier, refractory period and envelope time
-  constant. Likely values (not implemented): ANL-008 ≈ 150–2,500 Hz with dominance off or low and a
-  shorter refractory; ANL-009 ≈ 5–16 kHz, refractory ≈ 30 ms, bounded event counts via the
+  constant. Likely values (not implemented): ANL-008 ≈ 150–2,500 Hz with a lower dominance (a snare is
+  broadband) and a shorter refractory; ANL-009 ≈ 5–16 kHz, refractory ≈ 30 ms, bounded event counts via the
   refractory period. Uncertainty for ANL-008 can come from `strength − threshold` on the event.
