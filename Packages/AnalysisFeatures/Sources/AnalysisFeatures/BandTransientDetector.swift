@@ -17,7 +17,14 @@
 // flatness is the geometric over the arithmetic mean of the band's bin powers (noise-like attacks
 // ≈ 1, a tone ≈ 0); confidence = √(margin · (1 − w + w · breadth)) with the configuration's breadth
 // weight w (0 for the kick, so its confidence is the margin alone). It never changes which frames
-// fire. The mid transient (ANL-008) is not a snare classifier: nothing here names an instrument.
+// fire. The mid transient (ANL-008) is not a snare classifier and the high transient (ANL-009) is
+// not a hi-hat classifier: nothing here names an instrument.
+//
+// Event-rate cap (ANL-009-R4, research ANL-009-D2): with `maximumEventsPerSecond` N > 0, a frame
+// that passes every other test fires only if fewer than N events lie in the preceding 1 s
+// (sample − rate, sample]; otherwise it is counted in `rateLimitedEvents` and treated like a
+// refractory frame (disarmed, no event, no envelope). So no 1 s span ever holds more than N events,
+// however dense the input. The event times live in a preallocated ring of N slots.
 //
 // Decibel differences do not change with gain, so the same material at another level (above the
 // floor) gives the same events. The event's sample index is the first sample of the frame's newest
@@ -65,6 +72,8 @@ public final class BandTransientDetector {
     public private(set) var eventCount: UInt64 = 0
     /// The last event's confidence (0…1), held until the next event; 0 after `reset()`.
     public private(set) var lastConfidence: Float = 0
+    /// Frames that would have fired but were suppressed by the event-rate cap (ANL-009-R4).
+    public private(set) var rateLimitedEvents = 0
 
     static let silentShare: Float = -200
     /// Power below this reads as silence (−120 dB).
@@ -112,6 +121,12 @@ public final class BandTransientDetector {
     private var lastEventSample: Int64 = 0
     private var decayHop = 0
     private var decay: Float = 1
+
+    // Event-rate cap: the sample indices of the last `maximumEventsPerSecond` events (oldest at `rateNext`).
+    private let rateTimes: UnsafeMutablePointer<Int64>
+    private let rateCapacity: Int
+    private var rateCount = 0
+    private var rateNext = 0
 
     /// The stream lead-in this detector's timing rule assumes (ANL-004-R7).
     public static func recommendedLeadIn() -> SpectrumLeadIn { .silence }
@@ -170,6 +185,9 @@ public final class BandTransientDetector {
         sorted.initialize(repeating: 0, count: capacity)
         deviations = .allocate(capacity: capacity)
         deviations.initialize(repeating: 0, count: capacity)
+        rateCapacity = max(configuration.maximumEventsPerSecond, 1)
+        rateTimes = .allocate(capacity: rateCapacity)
+        rateTimes.initialize(repeating: 0, count: rateCapacity)
         seedSilence()
     }
 
@@ -182,6 +200,7 @@ public final class BandTransientDetector {
         ring.deinitialize(count: windowCapacity); ring.deallocate()
         sorted.deinitialize(count: windowCapacity); sorted.deallocate()
         deviations.deinitialize(count: windowCapacity); deviations.deallocate()
+        rateTimes.deinitialize(count: rateCapacity); rateTimes.deallocate()
     }
 
     /// Restores the initial state (empty histories, armed, no previous event, envelope 0); keeps the
@@ -200,6 +219,8 @@ public final class BandTransientDetector {
         lastRise = 0
         lastThreshold = 0
         lastShare = BandTransientDetector.silentShare
+        rateCount = 0
+        rateNext = 0
     }
 
     /// Processes one spectrum frame (ANL-001 linear magnitudes, `size.binCount` values) and returns
@@ -266,6 +287,10 @@ public final class BandTransientDetector {
         let audible = level > configuration.floorDecibels && lastShare >= configuration.dominanceDecibels
         let rested = !hasEvent || sample - lastEventSample >= configuration.refractorySamples
         guard wasArmed, audible, rested else { return nil }
+        guard withinRate(sample) else {
+            rateLimitedEvents += 1
+            return nil
+        }
         hasEvent = true
         lastEventSample = sample
         eventCount += 1
@@ -275,6 +300,22 @@ public final class BandTransientDetector {
         return TransientEvent(band: configuration.band, sequence: eventCount, sampleIndex: sample, frameIndex: frame.index,
                               strength: rise, threshold: threshold, level: level, sampleRate: configuration.sampleRate,
                               timestampNanoseconds: frame.timestampNanoseconds, confidence: confidence)
+    }
+
+    /// The event-rate cap (ANL-009-R4): true when `sample` may fire, recording it; false when the
+    /// last N events all lie within the preceding 1 s.
+    private func withinRate(_ sample: Int64) -> Bool {
+        let limit = configuration.maximumEventsPerSecond
+        guard limit > 0 else { return true }
+        if rateCount == limit {
+            // rateNext is the oldest of the last N events.
+            guard sample - rateTimes[rateNext] >= configuration.rateWindowSamples else { return false }
+        } else {
+            rateCount += 1
+        }
+        rateTimes[rateNext] = sample
+        rateNext = rateNext + 1 == limit ? 0 : rateNext + 1
+        return true
     }
 
     /// Convenience over an array (no allocation: it borrows the array's storage).
