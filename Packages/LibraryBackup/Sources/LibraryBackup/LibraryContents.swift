@@ -76,6 +76,8 @@ public struct LibraryContents: Sendable, Equatable {
     /// PRE-008: the smart collections; nil when there is no file (or it could not be read: the store sets
     /// such a file aside at launch).
     public var smartCollections: [PresetSmartCollection]?
+    /// PRE-011: preset ID → private note; nil when there is no notes file (or it could not be read).
+    public var presetNotes: PresetNoteMap?
     /// UIX-011: the user palettes; nil when there is no palette file (or it could not be read).
     public var palettes: PaletteLibrary?
     public var settings: [String: LibrarySettingValue]
@@ -89,8 +91,9 @@ public struct LibraryContents: Sendable, Equatable {
                 collections: [PresetCollection]? = nil, settings: [String: LibrarySettingValue] = [:], photos: [String: Data] = [:],
                 excluded: LibraryExclusions = LibraryExclusions(), otherPresets: [UserPreset] = [], presetTags: PresetTagMap? = nil,
                 presetOverrides: PresetOverrideMap? = nil, palettes: PaletteLibrary? = nil,
-                smartCollections: [PresetSmartCollection]? = nil) {
+                smartCollections: [PresetSmartCollection]? = nil, presetNotes: PresetNoteMap? = nil) {
         self.smartCollections = smartCollections
+        self.presetNotes = presetNotes
         self.presetTags = presetTags
         self.palettes = palettes   // UIX-011
         self.presetOverrides = presetOverrides
@@ -185,6 +188,7 @@ public enum LibraryContentsReader {
         try readTags(folders, into: &contents)
         try readOverrides(folders, into: &contents)   // PRE-016
         try readSmartCollections(folders, into: &contents)   // PRE-008
+        try readNotes(folders, into: &contents)   // PRE-011
         try readPalettes(folders, into: &contents)   // UIX-011
         contents.photos = try readPhotos(folders.url(.photos))
         return contents
@@ -276,6 +280,18 @@ public enum LibraryContentsReader {
             throw .collectionsNewerVersion
         } catch {
             contents.presetOverrides = nil
+        }
+    }
+
+    /// PRE-011: lenient like the store; a newer format refuses like collections; an unreadable file is left out.
+    private static func readNotes(_ folders: LibraryFolders, into contents: inout LibraryContents) throws(LibraryReadError) {
+        guard let data = try? Data(contentsOf: folders.notesFile) else { return }
+        do {
+            contents.presetNotes = try PresetNotesFile.decode(data).map
+        } catch .newerVersion {
+            throw .collectionsNewerVersion
+        } catch {
+            contents.presetNotes = nil
         }
     }
 

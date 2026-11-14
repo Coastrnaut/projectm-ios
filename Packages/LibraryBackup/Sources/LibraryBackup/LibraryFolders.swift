@@ -12,7 +12,7 @@ public struct LibraryFolders: Sendable, Equatable {
         case currentScene = "Scenes"
         /// `UserPresets/`: index.json, files/ (PRE-012).
         case presets = "UserPresets"
-        /// `PresetCollections/`: collections.json (PRE-007), tags.json (PRE-003), overrides.json (PRE-016) and smart-collections.json (PRE-008).
+        /// `PresetCollections/`: collections.json (PRE-007), tags.json (PRE-003), overrides.json (PRE-016), smart-collections.json (PRE-008) and notes.json (PRE-011).
         case collections = "PresetCollections"
         /// `Photos/`: <UUID>.png|jpg (MED-001).
         case photos = "Photos"
@@ -32,6 +32,8 @@ public struct LibraryFolders: Sendable, Equatable {
     public static let overridesFileName = "overrides.json"
     /// PRE-008: smart collections, beside the collections (`PresetSmartCollectionStore.fileName`).
     public static let smartCollectionsFileName = "smart-collections.json"
+    /// PRE-011: private preset notes, beside the collections (`PresetNoteStore.fileName`).
+    public static let notesFileName = "notes.json"
     /// UIX-011: the palette library (`PaletteFile.fileName`).
     public static let palettesFileName = "palettes.json"
 
@@ -51,6 +53,7 @@ public struct LibraryFolders: Sendable, Equatable {
     public var collectionsFile: URL { url(.collections).appendingPathComponent(Self.collectionsFileName, isDirectory: false) }
     public var tagsFile: URL { url(.collections).appendingPathComponent(Self.tagsFileName, isDirectory: false) }
     public var overridesFile: URL { url(.collections).appendingPathComponent(Self.overridesFileName, isDirectory: false) }
+    public var notesFile: URL { url(.collections).appendingPathComponent(Self.notesFileName, isDirectory: false) }
     public var smartCollectionsFile: URL { url(.collections).appendingPathComponent(Self.smartCollectionsFileName, isDirectory: false) }
     public var palettesFile: URL { url(.palettes).appendingPathComponent(Self.palettesFileName, isDirectory: false) }
 

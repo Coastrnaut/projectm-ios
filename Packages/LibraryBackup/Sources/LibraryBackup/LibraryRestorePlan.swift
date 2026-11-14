@@ -52,6 +52,8 @@ public enum LibraryRestoreSection: String, Sendable, Hashable, CaseIterable {
     case overrides
     /// UIX-011: user colour palettes, one entry per palette.
     case palettes
+    /// PRE-011: private preset notes, one entry per preset with a note.
+    case notes
 }
 
 public enum LibraryRecordKind: String, Sendable, Hashable {
@@ -134,6 +136,8 @@ public struct LibraryRestorePlan: Sendable, Equatable {
     public var presetOverrides: PresetOverrideMap? = nil
     /// PRE-008: the smart collections after the restore; nil when they do not change.
     public var smartCollections: [PresetSmartCollection]? = nil
+    /// PRE-011: the preset notes after the restore; nil when they do not change.
+    public var presetNotes: PresetNoteMap? = nil
     /// UIX-011: the user palettes after the restore; nil when they do not change.
     public var palettes: PaletteLibrary? = nil
     /// The current scene to write; nil when it does not change.
@@ -161,7 +165,7 @@ public struct LibraryRestorePlan: Sendable, Equatable {
         if showMode == .exact || (showMode == .merge && (scenePlan?.actions.isEmpty == false)) { folders.append(.show) }
         if currentScene != nil { folders.append(.currentScene) }
         if !presetsToAdd.isEmpty || !presetsToReplace.isEmpty { folders.append(.presets) }
-        if collections != nil || presetTags != nil || presetOverrides != nil || smartCollections != nil { folders.append(.collections) }
+        if collections != nil || presetTags != nil || presetOverrides != nil || smartCollections != nil || presetNotes != nil { folders.append(.collections) }
         if !photosToWrite.isEmpty { folders.append(.photos) }
         if palettes != nil { folders.append(.palettes) }   // UIX-011
         return folders
@@ -179,6 +183,7 @@ public enum LibraryRestorePlanner {
         builder.planTags(backup: backup, library: library)
         builder.planOverrides(backup: backup, library: library)
         builder.planSmartCollections(backup: backup, library: library)   // PRE-008
+        builder.planNotes(backup: backup, library: library)   // PRE-011
         builder.planSettings(backup: backup, library: library)
         builder.planPhotos(backup: backup, library: library)
         builder.planPalettes(backup: backup, library: library)   // UIX-011
@@ -190,6 +195,7 @@ public enum LibraryRestorePlanner {
         plan.presetTags = builder.presetTags
         plan.presetOverrides = builder.presetOverrides
         plan.smartCollections = builder.smartCollections
+        plan.presetNotes = builder.presetNotes
         plan.palettes = builder.palettes
         return plan
     }
@@ -283,6 +289,7 @@ private struct Builder {
     var presetTags: PresetTagMap?
     var presetOverrides: PresetOverrideMap?
     var smartCollections: [PresetSmartCollection]?
+    var presetNotes: PresetNoteMap?
     var palettes: PaletteLibrary?
     var currentScene: Data?
     var photos: [String: Data] = [:]
@@ -693,6 +700,42 @@ private struct Builder {
 
     /// Research PRE-008-D5: per smart collection ID, a new one is added (at most 100 in all), an identical one
     /// is kept, and a clash follows the choice: Replace takes the backup's, Keep both and Skip keep the device's.
+    // MARK: Notes (PRE-011)
+
+    /// Research PRE-011-D5: per preset (restored IDs followed), a new note is added (within the 20,000 limit), an
+    /// identical one is kept, and a clash follows the choice: Replace takes the backup's, Keep both and Skip keep
+    /// the device's (one note per preset, so both cannot be kept).
+    mutating func planNotes(backup: LibraryContents, library: LibraryContents) {
+        guard let incoming = backup.presetNotes, !incoming.isEmpty else { return }
+        var map: PresetNoteMap = library.presetNotes ?? PresetNoteMap()
+        var changed = false
+        for backupID in incoming.notes.keys.sorted() {
+            guard let theirs = incoming.note(for: backupID) else { continue }
+            let id: String = restoredPresetID(backupID)
+            let key = "notes/" + backupID
+            let mine: String? = map.note(for: id)
+            if mine == theirs {
+                add(key, .notes, .identical, .keep)
+                continue
+            }
+            let picked: LibraryRestoreChoice = choice(for: key)
+            if mine != nil, picked != .replace {
+                add(key, .notes, .clash, .keep, choice: picked)
+                continue
+            }
+            var merged: PresetNoteMap = map
+            let dropped: Bool = (try? merged.set(theirs, for: id)) == nil
+            if mine == nil {
+                add(key, .notes, .new, dropped ? .keep : .add, fellBack: dropped)
+            } else {
+                add(key, .notes, .clash, dropped ? .keep : .replace, choice: picked, fellBack: dropped)
+            }
+            changed = changed || merged != map
+            map = merged
+        }
+        if changed { presetNotes = map }
+    }
+
     mutating func planSmartCollections(backup: LibraryContents, library: LibraryContents) {
         guard let incoming = backup.smartCollections, !incoming.isEmpty else { return }
         var list: [PresetSmartCollection] = library.smartCollections ?? []
