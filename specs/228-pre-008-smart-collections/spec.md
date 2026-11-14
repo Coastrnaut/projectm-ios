@@ -112,7 +112,7 @@ unavailable, unreadable file set aside, unknown condition kind preserved; backup
 
 ### Functional Requirements
 
-- **PRE-008-R1**: A smart collection MUST have a permanent ID (prefix `smart-`), a name (PRE-007 name rules), a match mode (`all` or `any`) and an ordered list of conditions, each a kind and a list of string values.
+- **PRE-008-R1**: A smart collection MUST have a permanent ID (prefix `smart-`), a name (PRE-007 name rules), a match mode (`all` or `any`; an unknown stored mode reads as `all`, the narrower one) and an ordered list of conditions, each a kind and a list of string values.
 - **PRE-008-R2**: Condition kinds MUST be: `tag` (the preset carries any listed tag, folded), `notTag` (it carries none of them), `pack` (its source is any listed pack ID, `included` and `user` included), `motion` (its PRE-005 class is any listed class), `color` (its PRE-004 families include any listed family), `favorite` (it is a favorite; no values).
 - **PRE-008-R3**: Membership MUST be computed, never stored: the matching listed presets in the library's alphabetical order, each preset ID at most once and at most one preset per non-empty content hash (the first in that order), recomputed whenever rules, tags, favorites, colours, motion classes or the library change.
 - **PRE-008-R4**: A collection with no applicable condition MUST list nothing. Unknown condition kinds MUST be skipped when matching, kept unchanged on every save, and reported in the collection's screen.

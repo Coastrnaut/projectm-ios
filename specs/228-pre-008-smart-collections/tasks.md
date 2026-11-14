@@ -29,7 +29,7 @@ Tests are requested by the roadmap acceptance ("Rule changes update membership w
 ## Phase 5: User Story 1 - Save a filter as a smart collection (P1) MVP
 
 - [ ] PRE-008-T10 [US1] Coordinator (R7-R9; C4): store wiring, smart memberships merged into the collection scope, titles, fallback, draft count, in Apps/projectM-iOS/Coordinators/PresetCoordinator+Smart.swift, PresetCoordinator.swift and AppCoordinator.swift
-- [ ] PRE-008-T11 [US1] Views (R7, R8): Smart Collections section with marker, detail list with Edit Rules, rule editor with live count, in Apps/projectM-iOS/Views/SmartCollectionViews.swift and PresetCollectionsView.swift
+- [ ] PRE-008-T11 [US1] Views (R7, R8): Smart Collections section with marker, home Collections row counting manual and smart, detail list with Edit Rules and the unknown-rule note, rule editor with live count, in Apps/projectM-iOS/Views/SmartCollectionViews.swift and PresetCollectionsView.swift
 - [ ] PRE-008-T12 [US1] App unit test (S4): the scope walks a smart collection, a tag added later joins it, a rule edit updates it, deletion falls back, in Apps/projectM-iOS/Tests/PresetSmartCollectionAppTests.swift
 - [ ] PRE-008-T13 [US1] UI test (S5, under 30 s): create a smart collection (Included), see its count, edit rules (add Favorites, All), see the count change, in Apps/projectM-iOS/UITests/PresetSmartCollectionUITests.swift
 
@@ -37,6 +37,12 @@ Tests are requested by the roadmap acceptance ("Rule changes update membership w
 
 - [ ] PRE-008-T14 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), `LibraryBackupAppTests`, type-check budget, privacy manifest and network symbols on the Debug app
 - [ ] PRE-008-T15 Spec status, PosterBoard count after the runs, delete the simulator and derived data
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+- Coverage: R1-R6 → T02-T07; R7-R9 → T10-T13; R10 → T08-T09; R11 → T02-T05 (Linux shape checked by the package building with Foundation only).
+- Fixed: R1 now says how an unknown match mode reads (data model had it, spec did not); T11 now names the home row count (clarify) and the unknown-rule note (R4).
+- No constitution conflicts; no new UserDefaults keys, so the AGENT_RULES key lists are unchanged.
 
 ## Dependencies
 
