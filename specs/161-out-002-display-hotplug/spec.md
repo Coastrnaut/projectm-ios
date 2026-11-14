@@ -44,6 +44,10 @@ interaction); each answer is the conservative, local-first option, recommended o
 - Q: How are connection changes announced? → A: Through ACC-011's status-event router as system rows on a new `display` announcer lane (so a connection never delays or replaces a blackout announcement on the `output` lane): X27 "External display connected" (with "It shows the visualization when the recording ends." while a recording holds the visual) and X28 "External display disconnected", each with a transient caption. Only settled connects and disconnects of settled displays are announced; system rows are dropped while the app is not active (ACC-011-R10) (OUT-002-R6).
 - Q: How are hot-plug events injected in tests? → A: A protocol (`ExternalDisplayEventSink`) is the one seam: the scene delegate, the iOS 27 accessory, the DEBUG fake display and the unit tests' fake connector all drive the coordinator through it; the coordinator's settle timer and clock are injected (OUT-002-R7).
 
+- Q (clarify pass): What does the device show while a connection settles or is held by a recording? → A: The visualization, unchanged; the external display is black. The device's "Showing on external display" note appears only when the visual has actually moved (it follows where the visual is, not which displays are connected). Rejected: showing the note at connect (it would claim a move that has not happened) (OUT-002-R3, R4).
+- Q (clarify pass): Can the settle time or the recording hold be changed by the user? → A: No: a fixed 0.3 s and an automatic hold, no new setting and no stored data (OUT-002-R9). Rejected: a "move output during recording" option (a choice nobody needs before REC-016's resume-in-file exists).
+- Q (clarify pass): How is hot-plug observed when diagnosing? → A: The coordinator logs connect, settle, cancel and hold decisions under the existing `ExternalDisplay` log category (no user data), and keeps counters (moves, cancelled connections, slots, pending connections) read by tests and a DEBUG UI-test probe (OUT-002-R8).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Plug and unplug without losing the show (Priority: P1)
