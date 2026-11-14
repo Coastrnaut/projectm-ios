@@ -33,10 +33,14 @@
 // * SHOW-002: each cue may carry a dwell (`advanceAfter`); every step that moves calls `cueStarted` (the timed advance
 //   restarts its countdown there) and every save calls `listChanged` (a removed active cue cancels it). `setDwell` is
 //   an edit (refused while locked), saves at once and restarts the active cue's countdown; a duplicate keeps the dwell.
+// * SHOW-003: with `cueQuantizer` in Beat or Bar mode, `next`, `previous` and `go(to:)` (every caller: controls, keys,
+//   pad, MIDI, scene switcher, editor) hand a step that would move to the quantizer and return `.queued`; at the beat
+//   or bar it runs `stepNow`, the unchanged step path. `timedNext` is SHOW-002's advance (never cancels a waiting step).
 // Main actor; file I/O is small (≤ 1 MiB per file, typically a few KB) and only on user action.
 import Foundation
 import Observation
 import ParameterGraph
+import PerformanceControl
 import SceneFormat
 import ShowControl
 import ShowStorage
@@ -157,13 +161,50 @@ final class ShowCoordinator {
     // MARK: - Stepping (contract S3, S4)
 
     @discardableResult
-    func next() -> ShowStep { perform { (list: inout ShowCueList) -> ShowStep in list.next() } }
+    func next() -> ShowStep { request(.next) }
 
     @discardableResult
-    func previous() -> ShowStep { perform { (list: inout ShowCueList) -> ShowStep in list.previous() } }
+    func previous() -> ShowStep { request(.previous) }
 
     @discardableResult
-    func go(to cueID: UUID) -> ShowStep { perform { (list: inout ShowCueList) -> ShowStep in list.go(to: cueID) } }
+    func go(to cueID: UUID) -> ShowStep { request(.go(cueID)) }
+
+    /// SHOW-002's timed advance: a Next that waits for the beat or bar like a manual one but never cancels or replaces
+    /// a waiting step (SHOW-003-R6).
+    @discardableResult
+    func timedNext() -> ShowStep { request(.next, timed: true) }
+
+    /// SHOW-003: the beat or bar gate (nil = every step is immediate, as in SHOW-001).
+    @ObservationIgnored var cueQuantizer: ShowCueQuantizer? {
+        didSet {
+            cueQuantizer?.perform = { [weak self] (request: CueStepRequest) -> Void in self?.stepNow(request) }
+        }
+    }
+
+    private func request(_ request: CueStepRequest, timed: Bool = false) -> ShowStep {
+        guard let quantizer = cueQuantizer, quantizer.step.isQuantizing else { return stepNow(request) }
+        var probe: ShowCueList = list
+        let preview: ShowStep = Self.operate(request, on: &probe)
+        guard preview.moved else { return preview }   // nothing to wait for: the same outcome as today
+        switch quantizer.intercept(request, timed: timed) {
+        case .stepNow: return stepNow(request)
+        case .held: return list.queuedStep()
+        }
+    }
+
+    /// Runs a step at once through the step path (SHOW-003: also the quantizer's boundary).
+    @discardableResult
+    func stepNow(_ request: CueStepRequest) -> ShowStep {
+        perform { (list: inout ShowCueList) -> ShowStep in Self.operate(request, on: &list) }
+    }
+
+    private static func operate(_ request: CueStepRequest, on list: inout ShowCueList) -> ShowStep {
+        switch request {
+        case .next: return list.next()
+        case .previous: return list.previous()
+        case let .go(cueID): return list.go(to: cueID)
+        }
+    }
 
     private func perform(_ operation: (inout ShowCueList) -> ShowStep) -> ShowStep {
         let step = operation(&list)

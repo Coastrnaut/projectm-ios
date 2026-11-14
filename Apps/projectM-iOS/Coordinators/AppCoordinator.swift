@@ -224,6 +224,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     private(set) var cameraState: CameraFeedState = .idle
     /// CAM-003: the device's back lenses (the stand-in's in DEBUG UI tests); listing starts no camera.
     @ObservationIgnored let cameraLensInventory: any CameraLensInventory = CameraVisualHost.makeLensInventory()
+    /// CAM-004: the camera's exposure, read back (session state; CameraExposureRow.swift).
+    private(set) var cameraExposure: CameraExposureState = .notRunning(canLock: false)
     /// CAM-003-R6: a lens the user chose waits for the switch's end (CameraLensRow.swift).
     @ObservationIgnored var cameraLensChoicePending = false
     /// CAM-013: why the camera is interrupted or failed (nil otherwise), and whether a Retry waits.
@@ -1189,6 +1191,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.compositor.faultInjection = armedRenderFaults
             #endif
             host.onFeedStateChange = { [weak self] state in self?.cameraStateChanged(state) }
+            host.onExposureChange = { [weak self] (state: CameraExposureState) -> Void in self?.cameraExposure = state }   // CAM-004
+            cameraExposure = host.cameraExposure
             host.onRecoveryChange = { [weak self, weak host] () -> Void in   // CAM-013
                 self?.cameraRetryPending = host?.retryPending ?? false
             }
@@ -1358,6 +1362,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         host.pause()
         cameraVisual = nil   // the presentation registry holds it weakly
         cameraState = .idle
+        cameraExposure = .notRunning(canLock: false)   // CAM-004-R7: the host's stop released the camera
         cameraStopReason = nil   // CAM-013
         cameraRetryPending = false
         cameraNoticeDismissed = false   // UIX-015-R7
@@ -1524,6 +1529,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                                                  frameRateChoice: recordingQuality.frameRate)   // REC-006
         context.countdown = recordingCountdown.length   // REC-007
         context.timedStop = recordingTimedStop.length   // REC-008
+        context.aspect = recordingQuality.aspect   // REC-014
         return context
     }
 

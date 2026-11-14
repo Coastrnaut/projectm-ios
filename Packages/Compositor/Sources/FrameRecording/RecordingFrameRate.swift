@@ -118,7 +118,12 @@ public struct RecordingRecordResolution: Sendable, Equatable {
         let rateNotice: String? = rateFallback.map { (f: (rate: Int, reason: RecordingFrameRateUnavailableReason)) -> String in
             RecordingFrameRateCatalog.fallbackNotice(rate: f.rate, reason: f.reason)
         }
-        let parts: [String] = [profile.fallbackNotice, rateNotice].compactMap { (s: String?) -> String? in s }
+        // REC-014-R6 (contract C4): a reduced custom size is said last.
+        let sizeNotice: String? = plan.flatMap { (p: RecordingProfilePlan) -> String? in
+            p.geometry.reducedCustomSize == nil ? nil
+                : RecordingAspectCatalog.reducedNotice(width: p.geometry.outputWidth, height: p.geometry.outputHeight)
+        }
+        let parts: [String] = [profile.fallbackNotice, rateNotice, sizeNotice].compactMap { (s: String?) -> String? in s }
         return parts.isEmpty ? nil : parts.joined(separator: " ")
     }
 }
@@ -145,13 +150,14 @@ public enum RecordingFrameRateCatalog {
     /// (REC-005 decides its availability); an explicit rate is checked against the display, the render cap and
     /// the encoder limit at the profile's planned codec and size.
     public static func availability(of choice: RecordingFrameRateChoice, profile: RecordingQualityProfile,
-                                    drawableWidth: Int, drawableHeight: Int,
+                                    drawableWidth: Int, drawableHeight: Int, aspect: RecordingAspect = .matchScreen,
                                     capabilities: any RecordingEncoderCapabilities) -> RecordingFrameRateAvailability {
         guard let rate = choice.rate else { return .available }
         let base = availability(rate: rate, capabilities: capabilities)
         guard base.isAvailable else { return base }
         let plan: RecordingProfilePlan? = RecordingQualityCatalog.availability(of: profile, frameRate: rate, drawableWidth: drawableWidth,
-                                                                                drawableHeight: drawableHeight, capabilities: capabilities).plan
+                                                                                drawableHeight: drawableHeight, aspect: aspect,
+                                                                                capabilities: capabilities).plan
         guard let plan else { return .available }
         return availability(rate: rate, codec: plan.codec, width: plan.geometry.outputWidth, height: plan.geometry.outputHeight,
                             capabilities: capabilities)
@@ -165,7 +171,7 @@ public enum RecordingFrameRateCatalog {
     /// Contract C4: the explicit rate's fallback (display, render cap), REC-005's profile resolution at that
     /// rate, then the render cap (Profile default) and the encoder limit of the plan's codec and size.
     public static func resolve(profile: RecordingQualityProfile, choice: RecordingFrameRateChoice,
-                               drawableWidth: Int, drawableHeight: Int,
+                               drawableWidth: Int, drawableHeight: Int, aspect: RecordingAspect = .matchScreen,
                                capabilities: any RecordingEncoderCapabilities) -> RecordingRecordResolution {
         var fallback: (rate: Int, reason: RecordingFrameRateUnavailableReason)?
         var explicit: Int? = choice.rate
@@ -176,7 +182,7 @@ public enum RecordingFrameRateCatalog {
             fallback = (lower, reason)
         }
         let resolution = RecordingQualityCatalog.resolve(profile, frameRate: explicit, drawableWidth: drawableWidth,
-                                                         drawableHeight: drawableHeight, capabilities: capabilities)
+                                                         drawableHeight: drawableHeight, aspect: aspect, capabilities: capabilities)
         guard case .record(let plan, let from, let profileReason) = resolution else {
             return RecordingRecordResolution(profile: resolution, rateFallback: nil)
         }

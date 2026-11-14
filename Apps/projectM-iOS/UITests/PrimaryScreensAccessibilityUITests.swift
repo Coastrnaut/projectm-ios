@@ -329,7 +329,10 @@ final class PrimaryScreensAccessibilityUITests: XCTestCase {
             // Storage, Dynamic Type included, passes, so the row scales (as ACC-004's bottom rows).
             Filter(screen: "storage", type: .dynamicType, element: "Saved recordings",
                    reason: "a system NavigationLink row's text at the default-size audit; the Storage AX5 audit passes"),
-            Filter(screen: "storage", type: .dynamicType, element: "Zero KB",
+            // Matched by identifier: the size text varies with what earlier tests left ("Zero KB", "8 KB").
+            Filter(screen: "storage", type: .dynamicType, element: "storage.savedRecordings.size",
+                   reason: "a system NavigationLink row's text at the default-size audit; the Storage AX5 audit passes"),
+            Filter(screen: "storage", type: .dynamicType, element: "storage.savedRecordings.title",
                    reason: "a system NavigationLink row's text at the default-size audit; the Storage AX5 audit passes"),
             Filter(screen: "storage", type: .contrast, element: "", elementless: true, limit: 4,
                    reason: "Storage's section headers and footers reported without an element; " + footer + "; bounded"),

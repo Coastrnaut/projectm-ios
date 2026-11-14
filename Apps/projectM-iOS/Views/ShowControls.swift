@@ -10,6 +10,7 @@
 // * `ShowNotice`: the step's notice (missing scene, layers left out) for about 4 s.
 // * SHOW-002-R9: while a timed advance counts down, the status shows "Next in 0:42" (", held" while held) under the
 //   cue, and VoiceOver reads it in the row's value ("Cue 2 of 5, Intro, next cue in 42 seconds").
+// * SHOW-003-R7: while a cue step waits for the beat or bar, "Cue queued for the next beat" shows under the cue.
 // * UIX-002: the row's "Scenes" button opens the quick scene switcher; ⌘K toggles it from the keyboard.
 //   While it is open the arrow and Page keys belong to its search field, so they are not registered
 //   here. After a close without a choice VoiceOver focus returns to the Scenes button.
@@ -65,6 +66,7 @@ struct ShowCueRow: View {
                 .accessibilityLabel("Show")
                 .accessibilityValue(value)
                 .accessibilityIdentifier("showCueStatus")
+            if let quantizer = show.cueQuantizer { QueuedCueLabel(quantizer: quantizer) }   // SHOW-003-R7
             if let countdown = advance.countdownText {
                 Text(countdown)
                     .font(.caption.monospacedDigit())

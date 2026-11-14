@@ -26,6 +26,9 @@
 // * CAM-003: `cameraLens` is forwarded to the provider (`selectLens`): a switch on the running session,
 //   the previous lens kept when the new one cannot be opened. The provider and the Settings row share
 //   one lens inventory (`makeLensInventory`; the stand-in's for `-uitestCameraLenses`).
+// * CAM-004: `cameraExposure` mirrors the provider's exposure state (read back from the camera) and
+//   `setCameraExposureLocked` forwards the switch; `-uitestCameraExposureLock <list|none>` (DEBUG) chooses
+//   which stand-in cameras can lock. Exposure never touches the frame loop or the audio source.
 // * CAM-007: `crop` is forwarded to the camera layer the same way; the layer recomputes the fit every
 //   frame from the drawable's size and the picture's rotation, so a device rotation keeps it.
 // * CAM-013 (ADR-0017 decisions 11-14): an interruption or a runtime error already clears the picture
@@ -151,6 +154,15 @@ final class CameraVisualHost: PresentationBoundResource, CompositorVisualHost {
         }
     }
 
+    /// CAM-004: the current camera's exposure, read back; `onExposureChange` reports every change.
+    var cameraExposure: CameraExposureState { camera.provider.exposure }
+    var onExposureChange: ((CameraExposureState) -> Void)?
+
+    /// CAM-004-R4: locks or releases the running camera's exposure (nothing when unsupported or stopped).
+    func setCameraExposureLocked(_ locked: Bool) {
+        camera.provider.setExposureLocked(locked)
+    }
+
     /// CAM-002-R3, R5: flip the camera picture left to right, from the next frame.
     var mirrored: Bool {
         get { camera.mirrored }
@@ -205,8 +217,12 @@ final class CameraVisualHost: PresentationBoundResource, CompositorVisualHost {
             let failing: Set<CameraLens> = Set(arguments.firstIndex(of: "-uitestCameraLensFails").map { (i: Int) -> [CameraLens] in
                 i + 1 < arguments.count ? FixedCameraLensInventory(list: arguments[i + 1]).backLenses : []
             } ?? [])   // CAM-003: lenses whose input cannot be opened
+            let lockable: Set<FakeCameraKey>? = arguments.firstIndex(of: "-uitestCameraExposureLock").map { (i: Int) -> Set<FakeCameraKey> in
+                i + 1 < arguments.count ? FakeCameraKey.list(arguments[i + 1]) : []
+            }   // CAM-004: the cameras that can lock exposure (nil: all)
             return StubCameraFrameProvider(device: device, scenario: scenario, pattern: pattern, width: 64, height: 48,
-                                           availablePositions: positions, lensInventory: lenses, failingLenses: failing)
+                                           availablePositions: positions, lensInventory: lenses, failingLenses: failing,
+                                           exposureLockCameras: lockable)
         }
         #endif
         #if os(iOS)
@@ -263,6 +279,9 @@ final class CameraVisualHost: PresentationBoundResource, CompositorVisualHost {
         view.onLayout = { [weak self] in self?.layoutDrawable() }
         camera.provider.onStateChange = { [weak self] state in
             MainActor.assumeIsolated { self?.feedStateChanged(state) }
+        }
+        camera.provider.onExposureChange = { [weak self] (state: CameraExposureState) -> Void in   // CAM-004
+            MainActor.assumeIsolated { self?.onExposureChange?(state) }
         }
         observeSystem()
         updateAccessibility()
