@@ -247,7 +247,7 @@ extension SceneRepairReport {
     // MARK: Classification
 
     static let mappingCodes: Set<SceneIssue.Code> = [.invalidBinding, .duplicateBindingTarget, .invalidExpression, .orphanedBinding,
-                                                     .orphanedConnection, .rejectedConnection, .retiredReference]
+                                                     .orphanedConnection, .rejectedConnection, .retiredReference, .unsupportedCurve]
     /// Warnings the user should see before opening (Clarifications Q1).
     static let userRelevantWarnings: Set<SceneIssue.Code> = mappingCodes.union([.missingAsset, .unknownLayerKind, .invalidGroup])
 
@@ -265,7 +265,7 @@ extension SceneRepairReport {
         case .missingAsset: (.missingMedia, .dropMissingMedia)
         case .invalidGroup: (.damagedFile, .repairGroups)   // CMP-011: a warning; the scene opens
         case .invalidBinding, .duplicateBindingTarget, .invalidExpression, .orphanedBinding, .orphanedConnection, .rejectedConnection,
-             .retiredReference:
+             .retiredReference, .unsupportedCurve:
             (.invalidMappings, .dropInvalidMappings)
         case .invalidModulation: (.invalidMappings, .dropInvalidModulation)
         case .unknownLayerKind: (.unknownContent, .keepUnknownContent)
@@ -298,7 +298,8 @@ extension SceneRepairReport {
         case .missingAsset: return "Its layer draws nothing until the media is stored again."
         case .invalidGroup: return "The group's layers are drawn ungrouped; the group is kept in the scene."
         case .retiredReference: return "It is dropped and not saved again."
-        case .invalidBinding, .duplicateBindingTarget, .invalidExpression, .orphanedBinding, .orphanedConnection, .rejectedConnection:
+        case .invalidBinding, .duplicateBindingTarget, .invalidExpression, .orphanedBinding, .orphanedConnection, .rejectedConnection,
+             .unsupportedCurve:
             return "It is kept in the scene but has no effect."
         case .unknownLayerKind: return "The layer is kept but not shown."
         case .unknownAssetType, .unusedAsset, .orphanedParameter: return "It is kept but not used by this version."
