@@ -3,14 +3,16 @@
 //
 // Setting `content` starts one load on a background serial queue: a bounded read of the stored
 // file, the decoder (`ImageDecoding`, the MED-014 seam), a mipmapped `.rgba8Unorm_srgb` texture
-// (so the sampler returns linear light) filled with the straight-alpha pixels, and a blit that
-// builds the mip chain (no shimmer when a 4096 px copy is shown on a phone). The result goes into a
+// (so the sampler returns linear light) filled with premultiplied texels (`PremultipliedSRGB`: the sRGB
+// encoding of linear colour × alpha, so filtering and mips never pull the colour of transparent texels
+// into soft edges), and a blit that builds the mip chain (no shimmer when a 4096 px copy is shown on a
+// phone). The result goes into a
 // slot guarded by an unfair lock, tagged with the content's generation so a stale load is dropped.
 // `render` never loads: it takes the slot only when its lock is free this instant (otherwise it
 // keeps the texture it holds), and throws `.notReady` until there is a texture, so the compositor
 // shows the transparent fallback while loading, with no content or after a failure. The shader
-// maps each output point through `ImagePictureGeometry` (CMP-006 fit; fill by default), samples, and multiplies
-// by alpha: the picture is linear premultiplied (CMP-001-R2); outside the image (fit) it is
+// maps each output point through `ImagePictureGeometry` (CMP-006 fit; fill by default) and samples: the
+// sample is already linear premultiplied (CMP-001-R2); outside the image (fit) it is
 // transparent. Not Sendable: the compositor's thread (the main thread in the app) sets `content`
 // and renders; `onStateChange` is called on the main queue.
 // CMP-013 (ADR-0040): the picture depends only on the held image, the fit and the picture size, so the
@@ -180,7 +182,8 @@ public final class ImageLayerSource: LayerSource, LayerFitting, LayerRenderCachi
         d.storageMode = .shared
         guard let texture = device.makeTexture(descriptor: d) else { return nil }
         texture.label = "MED-001 photo"
-        image.pixels.withUnsafeBytes { (bytes: UnsafeRawBufferPointer) in
+        let texels: [UInt8] = PremultipliedSRGB.pixels(image)
+        texels.withUnsafeBytes { (bytes: UnsafeRawBufferPointer) in
             texture.replace(region: MTLRegionMake2D(0, 0, image.width, image.height), mipmapLevel: 0,
                             withBytes: bytes.baseAddress!, bytesPerRow: image.width * 4)
         }
@@ -289,8 +292,8 @@ public final class ImageLayerSource: LayerSource, LayerFitting, LayerRenderCachi
     };
 
     // Output point (0...1, top-left) -> image coordinate (ImagePictureGeometry.textureCoordinate).
-    // The texture is sRGB, so the sample is linear light with straight alpha; multiplying by alpha
-    // makes it premultiplied. Outside the image (fit mode) nothing is drawn.
+    // The texture is sRGB and holds premultiplied texels (PremultipliedSRGB), so the sample is linear
+    // premultiplied light; colour is clamped to [0, alpha]. Outside the image (fit mode) nothing is drawn.
     fragment float4 img_picture(ImgOut in [[stage_in]], texture2d<float> image [[texture(0)]],
                                 sampler s [[sampler(0)]], constant ImgUniforms &u [[buffer(0)]]) {
         float2 p = in.position.xy / u.outputSize;
@@ -298,7 +301,7 @@ public final class ImageLayerSource: LayerSource, LayerFitting, LayerRenderCachi
         if (any(t < 0.0) || any(t > 1.0)) { return float4(0.0); }
         float4 c = image.sample(s, t);
         float a = clamp(c.a, 0.0, 1.0);
-        return float4(max(c.rgb, float3(0.0)) * a, a);
+        return float4(clamp(c.rgb, float3(0.0), float3(a)), a);
     }
     """
 }
