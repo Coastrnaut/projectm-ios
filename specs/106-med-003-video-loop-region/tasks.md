@@ -25,7 +25,7 @@ stage and stay open until a person runs them on D1.
 - [ ] MED-003-T07 [US1] Real-file test in `Packages/Compositor/Tests/CompositorTests/VideoLayerTests.swift`: fixture with a region, pixels by index across at least three boundaries all inside, `wraps` ≥ 3 and the gap 0 frames when the decoder keeps up (MED-003-S1)
 - [ ] MED-003-T08 [US1] `VideoStore` loop key `settings.video.loop` (`{id, inMilliseconds, outMilliseconds}`; ID must match; removed by `remove()` and by `makeCurrent` of another ID) in `Apps/projectM-iOS/Coordinators/VideoStore.swift`; listed in `AppSettings.allKeys` (`Apps/projectM-iOS/Coordinators/AppSettings.swift`) and `ALLOWED_KEYS` in `scripts/run_device_tests.py`
 - [ ] MED-003-T09 [US1] `VideoCoordinator`: `loopRegion`, `durationNanoseconds`, `setLoop(inSeconds:)`, `setLoop(outSeconds:)`, `resetLoop()`, `commitLoop()`, `onLoopRegionChange` after 0.4 s or on commit; `AppCoordinator` and `VideoVisualHost` wiring (region at host creation and on change, duration on play) in `Apps/projectM-iOS/Coordinators/VideoCoordinator.swift`, `AppCoordinator.swift`, `Apps/projectM-iOS/Visuals/VideoVisualHost.swift`
-- [ ] MED-003-T10 [US1] `VideoLoopControls` (In and Out sliders 0…duration step 0.1 s, times, Reset Loop; labels "Loop in"/"Loop out", values "1.5 seconds"; small bodies, no animation) in `Apps/projectM-iOS/Views/VideoLoopControls.swift`, mounted in `SettingsView.videoSection`
+- [ ] MED-003-T10 [US1] `VideoLoopControls` (In and Out sliders 0…duration step 0.1 s, times, Reset Loop; labels "Loop in"/"Loop out", values "1.5 seconds"; small bodies, no animation; label and value stack vertically so the layout works at accessibility text sizes, MED-003-R9) in `Apps/projectM-iOS/Views/VideoLoopControls.swift`, mounted in `SettingsView.videoSection`
 - [ ] MED-003-T11 [US1] DEBUG probes `videoMediaFrameIndex`, `videoLoopRegion`, `videoLoopStats` in `Apps/projectM-iOS/Views/VisualizerView.swift`
 - [ ] MED-003-T12 [US1] App tests `Apps/projectM-iOS/Tests/VideoLoopTests.swift`: store per ID, foreign ID ignored, remove and new video clear; coordinator clamping (minimum, past the end), save at once, settle then apply (MED-003-R7, R9, R10)
 - [ ] MED-003-T13 [US1] UI test `Apps/projectM-iOS/UITests/VideoLoopUITests.swift` (`-uitestSeedVideo counter`): set In and Out in Settings → Video, then sample `videoMediaFrameIndex` for a few seconds: every index inside `videoLoopRegion`; record `videoLoopStats` (MED-003-S6; under 30 s)
@@ -49,7 +49,7 @@ stage and stay open until a person runs them on D1.
 
 ## Phase 7: Polish & cross-cutting
 
-- [ ] MED-003-T18 Checks: `check_compliance.py`, `validate_docs.py`, `check_motion_policy.py`, `check_permission_catalog.py`, `check_status_events.py`, `test_scripts.py`, `check_privacy_manifest.py <Debug .app>`; full `projectM-iOSTests` plus `VideoLayerUITests` and `VideoLoopUITests`; PosterBoard count after; delete the simulator
+- [ ] MED-003-T18 Checks: the Linux shape of `VideoLoopTests` and `VideoPipelineTests` (`-DCOMPOSITOR_NO_METAL -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE`, MED-003-R11); `check_compliance.py`, `validate_docs.py`, `check_motion_policy.py`, `check_permission_catalog.py`, `check_status_events.py`, `test_scripts.py`, `check_privacy_manifest.py <Debug .app>`; full `projectM-iOSTests` plus `VideoLayerUITests` and `VideoLoopUITests`; PosterBoard count after; delete the simulator
 - [ ] MED-003-T19 Report `docs/test-reports/video-loop-region.md` (audit, measured gap, counts, commands) and spec status
 - [ ] MED-003-T20 {device} D1: pick a clip with the system picker, set a region, five joints with no visible stall, background/relaunch inside, Reset (MED-003-S7)
 
@@ -66,3 +66,11 @@ T02 and T16 (different packages); T08 and T05 (app vs package); T14 and T15 (sam
 
 MVP = Phases 1-3 (region plays, persists, UI). Then US2/US3 tests (the code is in T03/T06), then
 scenes, then checks and the report.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Coverage: R1-R12 and S1-S7 each map to at least one task (R1-R4 T02-T07; R5-R6 T03, T15; R7 T08,
+T12; R8 T16-T17; R9-R10 T09-T10, T12, T14; R11 T04, T18; R12 T11, T13; S7 T20). No constitution
+conflict, no duplicate requirement, no placeholder. Fixes applied: T10 now names the
+accessibility-size layout (R9, was implicit, MEDIUM); T18 now runs the Linux shape (R11, was only
+in T04, LOW).
