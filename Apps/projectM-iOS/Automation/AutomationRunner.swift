@@ -34,6 +34,13 @@
 //           settings, a scope), then records the app's own UserDefaults keys and exits; the Mac
 //           script then lists the app container (T241).
 //
+// PERF-009 (specs/229-perf-009-startup-warm-cache, research PERF-009-D9; driven by run_device_tests.py warmstart):
+//   perf009 one launch's cold/warm sample appended to Documents/perf009.json, then exits; run it repeatedly.
+//           PROJECTM_WARMCACHE=cold empties the startup warm cache before anything reads it (a cold launch);
+//           without it the launch is warm. Sample: cache, libraryOutcome, archiveOutcome, chooserMs and
+//           libraryReadyMs (from process start) and libraryLoadMs. Like sc015, the first launch after install only
+//           acknowledges the notice.
+//
 // PERF-001 (specs/152-perf-001-stage-timings, PERF-001-R12, T15-T16):
 //   perf001 In-App Playback on the visual chosen in Settings: 5 s of frame rate with no stage timer, then a
 //           timer attached to the shown visual (no overlay, so only the timer's cost differs) for 5 s, then the
@@ -56,7 +63,7 @@ enum AutomationRunner {
     private static var mode: String? { ProcessInfo.processInfo.environment["PROJECTM_AUTORUN"] }
     private static var launchRecorded = false
     /// Modes that measure one launch each and exit (run repeatedly).
-    private static let launchModes: Set<String> = ["sc015", "sc101"]
+    private static let launchModes: Set<String> = ["sc015", "sc101", "perf009"]
     private static var chooserShownAt: Date?
     private static var libraryReadyAt: Date?
 
@@ -69,6 +76,11 @@ enum AutomationRunner {
 
     /// Called when the preset library is ready (index loaded, entitlement known).
     static func libraryReady(_ coordinator: AppCoordinator) {
+        if mode == "perf009", libraryReadyAt == nil {
+            libraryReadyAt = Date()
+            recordPerf009IfComplete(coordinator)
+            return
+        }
         guard mode == "sc101", libraryReadyAt == nil else { return }
         libraryReadyAt = Date()
         recordSC101IfComplete()
@@ -95,6 +107,11 @@ enum AutomationRunner {
 
     /// Called when the source chooser appears (SC-015).
     static func chooserAppeared(_ coordinator: AppCoordinator) {
+        if mode == "perf009", chooserShownAt == nil {
+            chooserShownAt = Date()
+            recordPerf009IfComplete(coordinator)
+            return
+        }
         if mode == "sc101", chooserShownAt == nil {
             chooserShownAt = Date()
             recordSC101IfComplete()
@@ -115,6 +132,34 @@ enum AutomationRunner {
         guard let mode, launchModes.contains(mode), !launchRecorded else { return }
         launchRecorded = true
         coordinator.acknowledgeNotice()
+        exitSoon()
+    }
+
+    // MARK: - PERF-009: cold and warm launches
+
+    /// Called before the library load: a cold perf009 launch empties the warm cache first.
+    static func prepareWarmStart(_ cache: WarmStartCache) {
+        guard mode == "perf009", ProcessInfo.processInfo.environment["PROJECTM_WARMCACHE"] == "cold" else { return }
+        cache.clear()
+    }
+
+    private static func recordPerf009IfComplete(_ coordinator: AppCoordinator) {
+        guard let shown = chooserShownAt, let ready = libraryReadyAt, !launchRecorded else { return }
+        launchRecorded = true
+        let start = processStart()
+        let cache = coordinator.warmStart
+        let sample: [String: Any] = [
+            "cache": ProcessInfo.processInfo.environment["PROJECTM_WARMCACHE"] == "cold" ? "cold" : "warm",
+            "libraryOutcome": cache.libraryOutcome?.label ?? "none",
+            "archiveOutcome": cache.archiveOutcome?.label ?? "pending",
+            "chooserMs": shown.timeIntervalSince(start) * 1000,
+            "libraryReadyMs": ready.timeIntervalSince(start) * 1000,
+            "libraryLoadMs": cache.libraryLoadMs ?? -1,
+        ]
+        let url = URL.documentsDirectory.appendingPathComponent("perf009.json")
+        var samples = ((try? JSONSerialization.jsonObject(with: Data(contentsOf: url))) as? [[String: Any]]) ?? []
+        samples.append(sample)
+        if let data = try? JSONSerialization.data(withJSONObject: samples, options: [.sortedKeys]) { try? data.write(to: url) }
         exitSoon()
     }
 

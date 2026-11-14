@@ -146,6 +146,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// Presets the user imported, their quarantine and their trial (PRE-012).
     let userPresets: UserPresetsCoordinator
     @ObservationIgnored private let presetLoader = RendererPresetLoader()
+    /// PERF-009: the startup warm cache (prepared library snapshot, native pipeline archive).
+    @ObservationIgnored let warmStart: WarmStartCache = WarmStartCache.standard()
     private(set) var controlsVisible = true {
         didSet {
             #if DEBUG
@@ -536,7 +538,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         // Feature 002: the library (12,941 presets) loads off the main thread (SC-101).
         presets = PresetCoordinator(store: FavoritesStore(defaults: defaults), settings: settings, loader: presetLoader,
                                     collections: PresetCollectionStore(directory: PresetCollectionStore.defaultDirectory()),
-                                    tags: PresetTagStore(directory: PresetTagStore.defaultDirectory()))   // PRE-003
+                                    tags: PresetTagStore(directory: PresetTagStore.defaultDirectory()),   // PRE-003
+                                    smart: PresetSmartCollectionStore(directory: PresetSmartCollectionStore.defaultDirectory()))   // PRE-008
         presets.recent = RecentPresetsCoordinator(store: RecentPresetsStore(defaults: defaults))   // PRE-006
         userPresets = UserPresetsCoordinator.makeDefault()
         userPresets.connect(presets: presets, loader: presetLoader)   // PRE-012
@@ -1001,7 +1004,11 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                 }
                 // The index is parsed off the main thread while StoreKit's local records are read
                 // (SC-101); the price loads afterwards, since browsing does not need it.
-                async let loaded = PresetLibrary.load(from: .main)
+                #if DEBUG || PROJECTM_AUTOMATION
+                AutomationRunner.prepareWarmStart(warmStart)   // PERF-009 perf009: a cold launch clears the cache first
+                #endif
+                warmStart.openPipelineArchive()   // PERF-009: off the main actor
+                async let loaded = warmStart.loadLibrary()   // PERF-009: through the warm cache
                 await entitlements.start()
                 let library = try await loaded
                 presetLoader.library = library
@@ -1890,6 +1897,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         if active { syncSystemReduceMotion() }   // ACC-001-R3: a change made while in the background
         osc.sceneBecame(active: active)   // OSC-001-R3: no listener outside the foreground
         midi.sceneBecame(active: active)   // MIDI-001-R7: no discovery outside the foreground
+        warmStart.sceneBecame(active: active)   // PERF-009-R6: write the pipeline archive back
         updateIdleTimer()
     }
 

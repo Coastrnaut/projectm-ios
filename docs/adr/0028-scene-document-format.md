@@ -87,6 +87,12 @@ rules). The format must add none of its own definitions of validity.
   0.05, false); out-of-range numbers are clamped and a reversed range swapped with `valueClamped`; unknown keys
   are dropped with `droppedField`; format version unchanged (no QA-004 matrix row). An older version drops
   `lumaKey` with `droppedField` and draws the layer unkeyed.
+- CMP-010 (colour key, 2026-11-14, specs/230-cmp-010-color-key) adds the optional `composite.colorKey`
+  (`red`, `green`, `blue`: the displayed sRGB key colour 0…1; `tolerance` 0…1; `feather` 0…0.5) beside `lumaKey`,
+  written only when set with every field, so existing scenes encode byte-identically; missing fields read the green
+  key's defaults (0, 1, 0, 0.2, 0.1); out-of-range numbers are clamped with `valueClamped`; unknown keys are dropped
+  with `droppedField`; format version unchanged (no QA-004 matrix row). An older version drops `colorKey` with
+  `droppedField` and draws the layer unkeyed.
 - CMP-011 (layer groups, 2026-11-14, specs/109-cmp-011-layer-groups, ADR-0039) adds the optional
   top-level `groups` (`id`, `name`, `enabled`, `opacity`, `transform`, `children` as layer instance
   IDs; unknown group fields kept), written only when a scene has groups, so existing scenes encode

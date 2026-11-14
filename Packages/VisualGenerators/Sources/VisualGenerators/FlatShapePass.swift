@@ -53,7 +53,7 @@ final class FlatShapePass {
         attachment.destinationRGBBlendFactor = .oneMinusSourceAlpha
         attachment.destinationAlphaBlendFactor = .oneMinusSourceAlpha
         do {
-            pipeline = try device.makeRenderPipelineState(descriptor: descriptor)
+            pipeline = try NativePipelineArchive.makeRenderPipelineState(device: device, descriptor: descriptor)   // PERF-009
         } catch {
             throw .pipelineUnavailable("pipeline: \(error.localizedDescription)")
         }

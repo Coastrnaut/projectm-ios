@@ -242,7 +242,7 @@ struct SceneDecoder {
 
     private mutating func composite(_ value: SceneJSON, _ path: String) throws(SceneDecodeError) -> SceneComposite {
         let o = try object(value, path)
-        dropUnknown(o, known: ["opacity", "blend", "transform", "fit", "mask", "gradientMask", "lumaKey"], path: path)
+        dropUnknown(o, known: ["opacity", "blend", "transform", "fit", "mask", "gradientMask", "lumaKey", "colorKey"], path: path)
         var opacity = 1.0
         if let v = o["opacity"] {
             let raw = try double(v, ScenePath.key(path, "opacity"))
@@ -267,8 +267,27 @@ struct SceneDecoder {
         let key: LayerLumaKey? = try o["lumaKey"].map { (k: SceneJSON) throws(SceneDecodeError) -> LayerLumaKey in
             try self.lumaKey(k, ScenePath.key(path, "lumaKey"))
         }
+        let colorKey: LayerColorKey? = try o["colorKey"].map { (k: SceneJSON) throws(SceneDecodeError) -> LayerColorKey in
+            try self.colorKey(k, ScenePath.key(path, "colorKey"))
+        }
         return SceneComposite(opacity: opacity, blendMode: blend, transform: transform, fit: fit, mask: mask, gradientMask: gradient,
-                              lumaKey: key)
+                              lumaKey: key, colorKey: colorKey)
+    }
+
+    /// CMP-010's saved form (contracts/color-key.md C3 in specs/230): `red`, `green`, `blue` (the displayed key colour,
+    /// 0…1), `tolerance` (0…1) and `feather` (0…0.5); missing fields read `LayerColorKey.greenKey`'s; numbers clamped (one
+    /// `valueClamped` each); unknown keys dropped (`droppedField`).
+    private mutating func colorKey(_ value: SceneJSON, _ path: String) throws(SceneDecodeError) -> LayerColorKey {
+        let o = try object(value, path)
+        dropUnknown(o, known: ["red", "green", "blue", "tolerance", "feather"], path: path)
+        let defaults: LayerColorKey = .greenKey
+        let components: ClosedRange<Double> = LayerColorKey.componentLimits
+        let red: Double = try lumaNumber(o, "red", defaults.red, components, path)
+        let green: Double = try lumaNumber(o, "green", defaults.green, components, path)
+        let blue: Double = try lumaNumber(o, "blue", defaults.blue, components, path)
+        let tolerance: Double = try lumaNumber(o, "tolerance", defaults.tolerance, LayerColorKey.toleranceLimits, path)
+        let feather: Double = try lumaNumber(o, "feather", defaults.feather, LayerColorKey.featherLimits, path)
+        return LayerColorKey(red: red, green: green, blue: blue, tolerance: tolerance, feather: feather)
     }
 
     /// CMP-009's saved form (contracts/luma-key.md L1 in specs/220): `low`, `high` (0…1), `softness` (0…0.5) and

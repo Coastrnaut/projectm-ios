@@ -18,7 +18,8 @@ Enforces, for source under Apps/ and Packages/ (Vendor/ is upstream and excluded
     non-literal format); process spawning; executable memory; and Metal libraries created from
     source outside METAL_SOURCE_ALLOWED (nine reviewed files that compile module constants; the ninth,
     VideoLayerSource.swift, added by MED-002 / ADR-0022) or from
-    URLs, data, files, dynamic libraries or binary archives anywhere.
+    URLs, data, files or dynamic libraries anywhere, and binary archives outside BINARY_ARCHIVE_ALLOWED
+    (one file: PERF-009's warm-start pipeline archive of the app's own shaders, ADR-0062).
   * Research R-16: no entitlements or background modes in project.yml, in any YAML key form
     (plain, quoted, or flow style; ADR-0001 owner ruling 13). YAML comments are ignored.
   * ADR-0001 Decision 6, the one entitlement exception: project.yml may set
@@ -98,8 +99,14 @@ CODE_EXECUTION_RULES: list[tuple[str, re.Pattern[str]]] = [
     ("Metal library from outside the reviewed sources (SHD-011)",
      re.compile(r"\bmakeLibrary\s*\(\s*(?:URL|data|filepath)\s*:|\bmakeDefaultLibrary\s*\(\s*bundle\s*:|"
                 r"\bmakeDynamicLibrary\b|\bMTLDynamicLibrary\b|\bnewDynamicLibrary\w*|"
-                r"\bnewLibraryWith(?:URL|Data|File)\b|\bmakeBinaryArchive\b")),
+                r"\bnewLibraryWith(?:URL|Data|File)\b")),
 ]
+# PERF-009 / ADR-0062: Metal binary archives only in the one reviewed file that opens archives the app itself
+# serialized from its own module-constant shaders, keyed and checksummed in its Caches folder.
+BINARY_ARCHIVE = re.compile(r"\bmakeBinaryArchive\b|\bnewBinaryArchiveWithDescriptor\b")
+BINARY_ARCHIVE_ALLOWED = frozenset({
+    "Packages/VisualGenerators/Sources/VisualGenerators/NativePipelineArchive.swift",
+})
 METAL_SOURCE = re.compile(r"\bmakeLibrary\s*\(\s*source\s*:|\bnewLibraryWithSource\b")
 # The only files that may compile Metal source; each compiles a constant of its own module (audited
 # 2026-11-13, research SHD-011-D4). Adding one is a reviewed change here and in ADR-0024.
@@ -166,6 +173,9 @@ def check_code_execution(path: Path, code: str) -> list[str]:
     if METAL_SOURCE.search(code) and repo_relative(path) not in METAL_SOURCE_ALLOWED:
         found.append(f"{path}: Metal library from outside the reviewed sources (SHD-011): "
                      "makeLibrary(source:) outside METAL_SOURCE_ALLOWED")
+    if BINARY_ARCHIVE.search(code) and repo_relative(path) not in BINARY_ARCHIVE_ALLOWED:
+        found.append(f"{path}: Metal library from outside the reviewed sources (SHD-011): "
+                     "binary archive outside BINARY_ARCHIVE_ALLOWED (ADR-0062)")
     return found
 
 
