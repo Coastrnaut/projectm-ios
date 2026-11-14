@@ -29,6 +29,19 @@ periods), MIDI-006 (note trigger actions), SHOW-001 (cues), OUT-010 (blackout), 
 | Scenes | Bindings, modulation, groups and effects are stored; there is no trigger field. |
 | UI | No binding editor (MOD-004 and MOD-005 had none either). |
 
+## Clarifications
+
+### Session 2026-11-14
+
+Answered by Claude under the owner's standing approval (owner rules 4 and 9: best judgement, no human
+interaction); each answer is the conservative, local-first option, recommended option first.
+
+- Q: Where are triggers stored: in scenes or in app settings? → A: In scenes, as an optional top-level `triggers` list written only when the scene has triggers (format version 1 unchanged, so QA-004's matrix gains no row). A trigger is then opt-in per scene and never on by default; no UserDefaults key is added. Rejected: a global setting (every kick would step the show in every scene, and a new key would need the backup and erase lists). Triggers follow MOD-002's binding path in the app: they become live when the native visual is created from the current scene (MOD-006-R9, R11).
+- Q: Which actions can a threshold trigger drive? → A: The MIDI-006 trigger-mode actions only: `cue.next`, `cue.previous`, `blackout` (toggle), stored by the same identifiers and performed by the same performer. "Black out while held" is not offered: a continuous level held above a threshold would black out for as long as the music is loud, which is a safety and usability risk with no acceptance need (MOD-006-R8).
+- Q: What happens to a crossing that arrives inside the minimum interval? → A: It is consumed: it disarms the trigger without firing and is never delivered late; the input must fall below `low` and rise above `high` again after the interval. Fewer events is the conservative failure mode for cue stepping (MOD-006-R2).
+- Q: How is a non-finite input treated? → A: As no information: it neither fires nor re-arms, and it restarts a pending hold. Rejected: reading it as 0 (MOD-002's binding rule), which would re-arm the trigger and let alternating NaN and loud frames fire on every interval (MOD-006-R5). The MOD-002 source reading already turns missing features into 0, so in the app this applies to direct callers of the pure step.
+- Q: Is a trigger editor or any other UI added? → A: No. There is no binding editor (MOD-004 and MOD-005 decided the same); the model, scene persistence, scene issue reporting and the app's per-frame evaluation are complete, and the row's app verification is an app unit test on the simulator. A newly created trigger starts armed (the first loud frame fires once); limits are 8 triggers per scene, levels in 0…1, interval and hold in 0…60 s, defaults interval 100 ms and hold 0 (MOD-006-R7, R10).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A noisy input near the threshold fires once, not a storm (Priority: P1)
