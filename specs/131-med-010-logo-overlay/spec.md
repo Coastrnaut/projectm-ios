@@ -68,6 +68,29 @@ human interaction); each answer is the conservative, local-first option.
 - Q: In which format is the logo stored? → A: Always PNG, whether or not it has transparency, so
   it is lossless and alpha is never dropped by a JPEG re-encode (MED-010-R3).
 
+### Session 2026-11-14 (speckit-clarify)
+
+Five questions, each answered by Claude with the recommended option (owner rules 4 and 9).
+
+- Q: When a saved scene is opened (relaunch, Reopen, a show cue), does its logo replace the current
+  one? → A: Yes when the scene has a logo asset whose picture is on the device: its identifier and
+  placement become current. A scene without a logo asset, or whose logo picture is missing, leaves
+  the current logo unchanged (the missing one is in the repair report). Undo and redo do not change
+  the logo (it is a stored picture, like the MED-001 photo, which is not undoable) (MED-010-R10).
+- Q: Which picked formats are accepted as a logo? → A: Every still format the MED-014 decoder reads
+  (PNG, HEIC/HEIF with alpha, TIFF, WebP, GIF/APNG first frame, JPEG); the copy is always PNG. A
+  format without alpha simply gives an opaque logo (MED-010-R3).
+- Q: Do the flash guard, Reduce flashing and the emergency blackout apply to the logo? → A: Yes: the
+  logo is a layer of the compositor visual, so the composite flash guard measures it with
+  everything else and the output blackout (UIX) covers it; the logo itself is static, so it never
+  adds flashes (MED-010-R5).
+- Q: Do frame captures, recordings and the external display show the logo? → A: Yes, whatever the
+  compositor visual outputs: REC-001 captures, REC-003 recordings and OUT-001's external display
+  all show the logo when the shown visual is a compositor visual (MED-010-R5).
+- Q: Does the layer inspector's solo and mute affect the logo? → A: Soloing another layer hides the
+  logo while the solo lasts (CMP-012 semantics: only soloed layers show); the logo cannot itself
+  be soloed or muted, because it is not an inspector layer (MED-010-R7).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Put my logo on the visuals (Priority: P1)
@@ -172,7 +195,8 @@ archive twice: one payload. Backup includes the logo keys; erase removes them.
   sampling never mixes the colour of transparent texels into the edges; the result MUST equal
   premultiplied "over" of the logo onto the layers below within 2/255 per channel.
 - **MED-010-R5**: The logo MUST be the top layer of the Photo, Video, Camera and Text visuals'
-  compositors (so it appears in REC-001 captures and REC-003 recordings); it MUST NOT be drawn by
+  compositors (so it appears in REC-001 captures, REC-003 recordings and OUT-001's external display,
+  and passes the composite flash guard and the output blackout like every layer); it MUST NOT be drawn by
   projectM or the native spectra, and Settings MUST say which visuals show it.
 - **MED-010-R6**: Placement MUST be a corner preset (top left, top right, bottom left, bottom right,
   centre) or a custom anchor (x, y in 0…1); the logo's longer side MUST be the size fraction
@@ -180,7 +204,8 @@ archive twice: one payload. Backup includes the logo keys; erase removes them.
   default 0.04, of the shorter side) MUST separate it from the edges it is anchored to; the anchor
   point of the logo MUST land on the same fraction of the area inside the margins.
 - **MED-010-R7**: Opacity (0…1, default 1) MUST multiply the logo's premultiplied colour; at 0 the
-  layer draws nothing. The layer inspector (CMP-015) MUST NOT list the logo.
+  layer draws nothing. The layer inspector (CMP-015) MUST NOT list the logo; soloing another layer
+  hides the logo while the solo lasts.
 - **MED-010-R8**: The logo layer MUST declare itself still (CMP-013): it is drawn again only when
   its image, placement, opacity or the picture size changes.
 - **MED-010-R9**: The logo identifier and placement MUST be saved in the app's settings and restored
@@ -189,8 +214,10 @@ archive twice: one payload. Backup includes the logo keys; erase removes them.
   privacy check's allowed keys.
 - **MED-010-R10**: Scenes MUST record the current logo as an optional asset of the new type `logo`
   (its store ID and placement), without a format version change; the logo asset MUST NOT be reported
-  as unused; a logo asset whose picture is missing MUST appear in SCN-012's repair report; a scene
-  without a logo asset MUST leave the current logo unchanged when restored.
+  as unused; a logo asset whose picture is missing MUST appear in SCN-012's repair report. Opening a
+  scene (launch restore, Reopen, show cue) with a logo asset whose picture resolves MUST make that
+  logo and placement current; a scene without a logo asset, or with a missing picture, MUST leave
+  the current logo unchanged; undo and redo MUST NOT change the logo.
 - **MED-010-R11**: Scene archives (FILE-001/002) MUST carry the scene's logo as one more file
   (`assets/<key>.png`, PNG only); import MUST stage it through the logo import path, adopt it into
   the Photos folder (deduplicated by FILE-008) and make it the current logo with the scene's
