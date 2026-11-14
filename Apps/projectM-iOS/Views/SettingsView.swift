@@ -96,6 +96,8 @@ struct SettingsView: View {
     var cameraStatus: @MainActor () -> PermissionState? = { () -> PermissionState? in nil }
     /// PRE-006: Recently Played (nil hides its section, e.g. in previews).
     var recentPresets: RecentPresetsCoordinator?
+    /// PERF-008: the power profile (nil hides the rows, e.g. in previews).
+    var powerProfile: PowerProfileSetting? = nil
     /// ACC-005-R7: announces a VoiceOver swipe at a slider's end (nil: none, e.g. in previews).
     var announcer: AccessibilityAnnouncer?
     @Environment(\.dismiss) private var dismiss
@@ -491,6 +493,7 @@ struct SettingsView: View {
             Text("Shows the frame rate and the audio state over the visualization.")
         }
         .id("performance")
+        if let powerProfile { PowerProfileSection(setting: powerProfile).id("powerProfile") }   // PERF-008-R1
     }
 
     @ViewBuilder private var audioSections: some View {

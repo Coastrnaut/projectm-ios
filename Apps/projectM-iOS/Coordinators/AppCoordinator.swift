@@ -338,6 +338,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         })
     /// REC-007: the recording countdown (Settings → Recording countdown; Off by default).
     @ObservationIgnored private(set) lazy var recordingCountdown = RecordingCountdownSetting(defaults: defaults)
+    /// PERF-008: the power profile (made in `init`, so the first frame loop already runs under it).
+    @ObservationIgnored private(set) lazy var powerProfile = PowerProfileSetting(defaults: defaults)
     /// OUT-004: the external display's output correction (Settings › External Display).
     @ObservationIgnored private(set) lazy var externalOutput = ExternalOutputSetting(defaults: defaults, external: externalDisplay)
     /// REC-008: the recording length (Settings → Stop recording after; Off by default).
@@ -535,6 +537,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         lifecycleForwarding = Task { @MainActor in
             for await event in lifecycle.events { await lifecycleCoordinator.handle(event) }
         }
+        _ = powerProfile   // PERF-008-R6: the stored profile is active before any visual starts
         connectAfterInit(defaults: defaults)
     }
 
@@ -1958,6 +1961,8 @@ final class RendererPresetLoader: PresetLoading, MemoryPressureResponder {
     /// SC-104: hands upcoming presets (with their archive data) to the renderer's warm-up.
     func prewarm(_ presets: [IndexedPreset]) {
         guard let renderer, let resources = Bundle.main.resourceURL else { return }
+        // PERF-008-R2: Battery saver (or Follow Low Power Mode under Low Power) skips the background warm-up.
+        guard Self.allowsWarmUp(lowPower: ProcessInfo.processInfo.isLowPowerModeEnabled) else { return }
         // Imported presets are not warmed: the warm-up engine is outside their guarded path (PRE-012).
         let playable: [Preset] = presets.filter { $0.source != PresetLibrary.userSource }.compactMap { preset in
             var item = Preset(id: preset.id, name: preset.name, fileURL: resources.appendingPathComponent(preset.path),
@@ -1973,6 +1978,11 @@ final class RendererPresetLoader: PresetLoading, MemoryPressureResponder {
         } else {
             renderer.prewarm(playable)
         }
+    }
+
+    /// PERF-008-R2: the active power budget allows the SC-104 background warm-up.
+    static func allowsWarmUp(lowPower: Bool) -> Bool {
+        PowerProfileState.budget(lowPower: lowPower).allowsBackgroundWarmUp
     }
 
     // MARK: - Memory pressure (PERF-006-R11)
