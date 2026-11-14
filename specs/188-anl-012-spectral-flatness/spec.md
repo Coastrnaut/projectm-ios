@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14
 
 **Input**: Roadmap row ANL-012 (docs/FEATURE_ROADMAP_AUTONOMOUS.md), verbatim: "Distinguish tonal and
 noise-like frames with bounded values." Acceptance, verbatim: "Sine input reports lower flatness than
@@ -128,6 +128,36 @@ clearly higher, so a visual can tell a sustained note from a hiss or a cymbal wa
 - **ANL-012-S5**: Through the real pipeline, noise frames read higher flatness than tone frames.
 - **ANL-012-S6**: `audio.flatness` round-trips, binds, compiles to opcode 33 and drives the glow in the app; the inspector reads "Flatness".
 - **ANL-012-S7**: The new package tests add well under a second; every existing test passes.
+
+## Implementation results (2026-11-14)
+
+Acceptance (`SpectralFlatnessTests`, 2,048 points at 44.1 kHz; identical on the host with vDSP and in
+the Linux shape):
+
+| Input | Flatness |
+|---|---|
+| Single-bin sine spectrum (bin 93) | 1.0 × 10⁻¹² |
+| PCM sine, bin-centred (bin 93) / 1 kHz, through ANL-001 (Hann) | 1.1 × 10⁻¹² / 6.4 × 10⁻¹² |
+| Seeded white noise, 8 frames (seeds 0x5EED…) | min 0.544, mean 0.5619 (e^−γ = 0.5615) |
+| Flat spectrum (equal power in every analysed bin), both backends | 1 within 10⁻⁹ |
+| One-bin range | 1 |
+| Silence, ±1 LSB dither, silence after a tone | 0, no signal |
+
+The sine sits ~0.54 below the lowest noise frame (margin required: 0.3). Windowed sines read near
+10⁻¹² because their leakage bins fall below ε (−120 dB re the mean), which is the intended floor.
+NaN/±∞ magnitudes keep the value finite and in 0…1 (a poisoned tone stays < 0.05, poisoned noise
+> 0.4). Backends agree within 10⁻⁶, repeats are bit-equal, ×10 magnitude reads the same flatness.
+Through `AnalysisPipeline`: silent lead frames read 0, 440 Hz frames ≤ 5.8 × 10⁻¹², noise frames
+≥ 0.54 (38 frames).
+
+Test cost (owner rule 7): SpectralFlatnessTests (6 tests) take 0.10 s on the host and 0.14 s in the
+Linux shape. AnalysisFeatures in the Linux shape: 167 → 173 tests, all pass (83.7 s, dominated by
+existing tests). ParameterGraph: 182 tests, 3 new, all pass (12 s). App: `AudioFeatureBindingAppTests`
+9/9 on "ANL12 iPhone 17" (iOS 27.2) in 1.4 s. No type-check warning (`-warn-long-function-bodies=300`,
+`-warn-long-expression-type-checking=150`). PosterBoard reports: 25 before, 25 after.
+
+Audit (ANL-012-R11): flatness only reaches `AudioFeatureFrame` and MOD-002 bindings; no projectM
+call, setting, UserDefaults key, network API or UI was added. ANL-008's band breadth is unchanged.
 
 ## Assumptions
 
