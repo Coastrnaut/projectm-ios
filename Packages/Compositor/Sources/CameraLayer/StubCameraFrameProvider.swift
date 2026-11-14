@@ -30,8 +30,13 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
     public let pattern: Pattern
     public let width: Int
     public let height: Int
+    /// CAM-007: a change while running delivers the next picture with the new turn at once, as a real
+    /// camera's next frame would after the device turns.
     public var rotation: CameraRotation {
-        didSet { latest.setRotation(rotation) }
+        didSet {
+            latest.setRotation(rotation)
+            if state == .running, let texture { latest.store(texture, position: position) }
+        }
     }
     /// CAM-002: the cameras this stand-in device has (`scenario` `.unavailable` means none at all).
     public let availablePositions: Set<CameraPosition>

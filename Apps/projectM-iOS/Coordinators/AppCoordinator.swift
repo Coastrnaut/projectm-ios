@@ -872,7 +872,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             if ProcessInfo.processInfo.arguments.contains("-uitestNativeVisualFailure") { device = nil }
             #endif
             let host = try CameraVisualHost.make(device: device, reader: trimmedAnalysisTap, barCount: circularSpectrumBarCount,
-                                                 position: settings.cameraPosition, mirrored: settings.cameraMirrored)   // CAM-002
+                                                 position: settings.cameraPosition, mirrored: settings.cameraMirrored,   // CAM-002
+                                                 crop: settings.cameraCrop)   // CAM-007
             host.reduceFlashing = settings.reduceFlashing
             host.onRenderHealthChange = observeRenderHealth(of: "camera")   // PERF-014
             #if DEBUG
@@ -1050,6 +1051,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         guard let host = cameraVisual else { return }
         host.cameraPosition = settings.cameraPosition
         host.mirrored = settings.cameraMirrored
+        host.crop = settings.cameraCrop   // CAM-007-R5: from the next frame, the camera untouched
     }
 
     /// Runs whichever visual is shown and keeps the others paused.

@@ -64,6 +64,9 @@ final class SettingsTests: XCTestCase {
         settings.cameraPosition = .front       // CAM-002-R6
         settings.cameraMirrorFront = false
         settings.cameraMirrorBack = true
+        settings.cameraCropMode = .fit         // CAM-007-R6
+        settings.cameraCropAnchor = .top
+        settings.cameraZoom = 2
         let keys = Set(defaults.persistentDomain(forName: suite)?.keys ?? [:].keys)
         // MED-001, MED-002, MED-009: `settings.photo.id`, `settings.video.id` and `settings.text.overlay` are
         // in allKeys (the UI-test reset) but written by PhotoStore, VideoStore and TextOverlayStore only.

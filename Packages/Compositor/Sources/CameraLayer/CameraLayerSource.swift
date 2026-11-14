@@ -13,6 +13,10 @@
 // CAM-002: `mirrored` flips the upright camera picture (CameraPictureGeometry, research CAM-002-D1)
 // from the next frame; it never touches the camera. A picture is drawn only when its position equals
 // the provider's current position (research CAM-002-D3), so a camera switch never shows the old camera.
+// CAM-007: `crop` (Fill or Fit, anchor, zoom) enters the same per-frame geometry, from the next frame,
+// without touching the camera; the geometry is rebuilt every frame from the picture's size and
+// rotation and the layer picture's size, so a device rotation keeps the chosen crop. Output points
+// outside the picture (Fit's bars) are transparent (CAM-007-R4).
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import Compositor
 import Metal
@@ -29,6 +33,8 @@ public final class CameraLayerSource: LayerSource {
     public private(set) var framesShown = 0
     /// CAM-002-R3, R5: flip the camera picture left to right (main thread; applies from the next frame).
     public var mirrored = false
+    /// CAM-007-R1, R5: the user's crop (main thread; applies from the next frame; never touches the camera).
+    public var crop: CameraCrop = .fill
 
     public init(provider: any CameraFrameProvider) {
         self.provider = provider
@@ -84,7 +90,8 @@ public final class CameraLayerSource: LayerSource {
         if let stale = held, stale.position != provider.position { held = nil }   // CAM-002-R7: never the previous camera
         guard let camera = held, let pipeline, let sampler else { throw .notReady }
         let geometry = CameraPictureGeometry(pictureWidth: camera.width, pictureHeight: camera.height, rotation: camera.rotation,
-                                             outputWidth: picture.width, outputHeight: picture.height, mirrored: mirrored)
+                                             outputWidth: picture.width, outputHeight: picture.height, mirrored: mirrored,
+                                             crop: crop)
         var uniforms = CameraUniforms(geometry: geometry, outputWidth: picture.width, outputHeight: picture.height)
         let pass = MTLRenderPassDescriptor()
         pass.colorAttachments[0].texture = picture
@@ -130,6 +137,8 @@ public final class CameraLayerSource: LayerSource {
                                 sampler s [[sampler(0)]], constant CamUniforms &u [[buffer(0)]]) {
         float2 p = in.position.xy / u.outputSize;
         float2 ab = u.offset + p * u.visible;
+        // CAM-007-R4: Fit's bars are transparent (CameraPictureGeometry.contains, same tolerance).
+        if (any(ab < float2(-1e-4)) || any(ab > float2(1.0 + 1e-4))) { return float4(0.0); }
         if (u.mirror == 1u) { ab.x = 1.0 - ab.x; }
         float2 t = ab;
         if (u.rotation == 1u) { t = float2(ab.y, 1.0 - ab.x); }

@@ -108,10 +108,53 @@ struct SettingsView: View {
             .accessibilityIdentifier("cameraPositionPicker")
             Toggle("Mirror", isOn: $settings.cameraMirrored)
                 .accessibilityIdentifier("cameraMirrorToggle")
+            cameraCropRows
         } header: {
             Text("Camera")
         } footer: {
-            Text("Mirror flips the camera picture left to right, like a mirror; saved frames and recordings show it the same way. Each camera keeps its own setting: on for Front, off for Back unless you change it.")
+            Text("Mirror flips the camera picture left to right, like a mirror; saved frames and recordings show it the same way. Each camera keeps its own setting: on for Front, off for Back unless you change it. Fill covers the screen and crops the rest; Fit shows the whole picture with bars. Anchor keeps that part of the picture in place, and Zoom enlarges it; both cameras use the same framing, also after you turn the device.")
+        }
+    }
+
+    /// CAM-007-R7: Crop (Fill/Fit), Anchor (Center/Top/Bottom) and Zoom (1× to 3×; spoken "1.5 times").
+    @ViewBuilder private var cameraCropRows: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Crop").accessibilityHidden(true)   // shown; the picker carries the label
+            Picker("Crop", selection: $settings.cameraCropMode) {
+                ForEach(CameraCropMode.allCases, id: \.self) { (mode: CameraCropMode) in
+                    Text(mode.title).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityLabel("Crop")
+            .accessibilityValue(settings.cameraCropMode.title)
+            .accessibilityIdentifier("cameraCropModePicker")
+        }
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Anchor").accessibilityHidden(true)   // shown; the picker carries the label
+            Picker("Anchor", selection: $settings.cameraCropAnchor) {
+                ForEach(CameraCropAnchor.allCases, id: \.self) { (anchor: CameraCropAnchor) in
+                    Text(anchor.title).tag(anchor)
+                }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityLabel("Anchor")
+            .accessibilityValue(settings.cameraCropAnchor.title)
+            .accessibilityIdentifier("cameraCropAnchorPicker")
+        }
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Zoom").accessibilityHidden(true)   // shown; the picker carries the label
+            Picker("Zoom", selection: $settings.cameraZoom) {
+                ForEach(CameraCrop.zoomChoices, id: \.self) { (zoom: Float) in
+                    let title: String = CameraCrop.zoomTitle(zoom)
+                    let spoken: String = CameraCrop.zoomSpokenValue(zoom)
+                    Text(title).accessibilityLabel(spoken).tag(Double(zoom))
+                }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityLabel("Zoom")
+            .accessibilityValue(CameraCrop.zoomSpokenValue(Float(settings.cameraZoom)))
+            .accessibilityIdentifier("cameraZoomPicker")
         }
     }
 
