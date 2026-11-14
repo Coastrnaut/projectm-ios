@@ -259,6 +259,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let tempo: TempoCoordinator
     /// The OSC receiver (OSC-001): off by default, listens only while enabled and active.
     let osc: OSCReceiverCoordinator
+    /// MIDI endpoint discovery (MIDI-001): off by default, runs only while enabled and active.
+    let midi: MIDIDiscoveryCoordinator
     /// REC-001: Save Frame (the shown visual's next frame, to the Files exporter).
     @ObservationIgnored private(set) lazy var frameCapture = FrameCaptureCoordinator { [weak self] () -> FrameCaptureCoordinator.Context in
         guard let self else { return FrameCaptureCoordinator.Context(source: nil, outputLive: false, paused: false) }
@@ -329,6 +331,14 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         osc = OSCReceiverCoordinator(settings: settings, receiver: UITestOSCFailure.receiverIfRequested() ?? .system())
         #else
         osc = OSCReceiverCoordinator(settings: settings)
+        #endif
+        let midiAnnouncer: AccessibilityAnnouncer = statusEvents.announcer   // MIDI-001-R11: the shared path
+        let announceMIDI: @MainActor (String) -> Void = { (text: String) -> Void in midiAnnouncer.announce(text, kind: .midi) }
+        #if DEBUG
+        midi = MIDIDiscoveryCoordinator(settings: settings, discovery: UITestFakeMIDI.discoveryIfRequested() ?? .system(),
+                                        announce: announceMIDI)
+        #else
+        midi = MIDIDiscoveryCoordinator(settings: settings, announce: announceMIDI)
         #endif
         photos = PhotoCoordinator.makeDefault(defaults: defaults)
         videos = VideoCoordinator.makeDefault(defaults: defaults)
@@ -1454,6 +1464,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         appIsActive = active
         if active { syncSystemReduceMotion() }   // ACC-001-R3: a change made while in the background
         osc.sceneBecame(active: active)   // OSC-001-R3: no listener outside the foreground
+        midi.sceneBecame(active: active)   // MIDI-001-R7: no discovery outside the foreground
         updateIdleTimer()
     }
 

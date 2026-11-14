@@ -25,6 +25,8 @@ enum AnnouncementKind: String, CaseIterable, Sendable {
     case search
     /// FILE-003-R13: the preset archive import preview and install results.
     case library
+    /// MIDI-001-R11: MIDI devices connected or disconnected.
+    case midi
 }
 
 struct AnnouncementGate: Sendable, Equatable {

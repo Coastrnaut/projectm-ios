@@ -54,6 +54,8 @@ struct SettingsView: View {
     var noiseGate: NoiseGateSetting?
     /// AUD-013: the per-source visual delay (nil hides its section, e.g. in previews).
     var latencyOffset: LatencyOffsetSetting?
+    /// MIDI-001: MIDI endpoint discovery (nil hides its section, e.g. in previews).
+    var midi: MIDIDiscoveryCoordinator?
     @Environment(\.dismiss) private var dismiss
     @State private var pickedPhoto: PhotosPickerItem?
     @State private var showPhotoFileImporter = false
@@ -314,6 +316,7 @@ struct SettingsView: View {
                 if let noiseGate { NoiseGateSection(noiseGate: noiseGate) }   // AUD-011-R7
                 if let latencyOffset { LatencyOffsetSection(setting: latencyOffset) }   // AUD-013-R10
                 oscSection
+                if let midi { MIDISettingsSection(midi: midi) }   // MIDI-001-R8
                 if let show {   // SHOW-001-R14
                     Section {
                         NavigationLink {

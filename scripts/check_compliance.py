@@ -62,6 +62,13 @@ RULES: list[tuple[str, re.Pattern[str]]] = [
     ("networking API (FR-068)",
      re.compile(r"\bURLSession\b|\bCFNetwork\b|\bimport\s+WebKit\b|\bWKWebView\b|"
                 r"\bCFSocket\b|<sys/socket\.h>")),
+    # MIDI-001-R2, R14 (ADR-0038): CoreMIDI is local only. The network MIDI session (RTP-MIDI) is a
+    # network listener outside FR-068's one OSC folder; Bluetooth pairing needs a usage string and a
+    # FILE-013 catalog entry that no row has added yet.
+    ("network MIDI (FR-068, ADR-0038)",
+     re.compile(r"\bMIDINetwork(Session|Host|Connection)\b")),
+    ("Bluetooth MIDI pairing (ADR-0038; needs a FILE-013 permission row)",
+     re.compile(r"\bCABTMIDI(Central|LocalPeripheral)ViewController\b")),
 ]
 # FR-068 as amended 2026-11-12 (owner ruling, ADR-0008): the Network framework is allowed in
 # exactly one folder, the local-network OSC transport, which is off by default. Everywhere
