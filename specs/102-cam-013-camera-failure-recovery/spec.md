@@ -52,6 +52,14 @@ interaction); each answer is the conservative, local-first option.
 - Q: What about the background (AUD-015)? → A: Unchanged: the camera never runs in the background. The visual stops it on entering the background and starts it on return; a waiting retry is cancelled by the stop, and the notice of an earlier interruption is gone after the return because the camera starts fresh (CAM-013-R11). AUD-015 keeps only the audio source running.
 - Q: What about heat? → A: The visual keeps lowering its own frame rate and scale on thermal pressure (FR-049); the camera's configuration is not changed by this feature. When the system stops the camera for pressure, the interruption path applies (CAM-013-R4). Rejected for this row: lowering the camera's frame rate on pressure (a configuration change that needs device measurement).
 
+### Session 2026-11-14 (speckit-clarify)
+
+- Q: Which words name each reason? → A: Fixed texts (CAM-013-R3): another app using the camera "Another app is using the camera. It comes back when the camera is free, or tap Retry."; iPad multitasking "The camera pauses while apps share the screen. It comes back in full screen, or tap Retry."; system pressure "The camera paused because the device is too warm or busy. It comes back when the device recovers, or tap Retry."; background "The camera paused while the app was in the background."; any other interruption "The camera is paused by the system. It comes back when the camera is free, or tap Retry."; a media services reset "The camera stopped after a system reset. Tap Retry to start it again."; any other runtime error "The camera stopped because of an error. Tap Retry to start it again." Texts are short, name no technical cause, and promise a return only where the system gives one.
+- Q: Is the reason announced to VoiceOver? → A: Yes: the notice text, once per change, through the app's shared announcement path (ACC-004's rate-limited announcer, which ACC-011 extends to status events), never a direct post (CAM-013-R12).
+- Q: Does a camera switch (CAM-002) while interrupted or failed count as a retry? → A: It starts the camera again with the new camera as today, without the backoff (it is a different camera and a deliberate user action), and clears the reason.
+- Q: What does VoiceOver read for the Retry button? → A: Label "Retry camera"; while waiting, "Retrying camera" and dimmed (CAM-013-R3).
+- Q: Does the reason notice disappear by itself after a few seconds? → A: No. It stays while the camera is interrupted or stopped by an error and goes only when the camera runs again, is stopped, or the visual is left (CAM-013-R2); a timed-out notice would leave a cleared picture with no explanation.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Another app takes the camera, and I get it back (Priority: P1)
@@ -129,7 +137,8 @@ notice on the next Retry.
 - Background during an interruption or a waiting retry: the stop clears both; the return starts
   fresh.
 - Retry while access is not determined: iOS's prompt may appear, as on a first start.
-- A camera switch during an interruption: starts the new camera at once (no backoff).
+- A camera switch during an interruption or after an error: starts the new camera at once (no
+  backoff) and clears the reason.
 - An unknown, future interruption reason: the generic interruption text, with Retry and the
   automatic return.
 - Reduce flashing and Reduce Motion: the notice appears without animation of its own; the picture
@@ -144,7 +153,8 @@ notice on the next Retry.
   the event MAY be drawn again until the camera runs again.
 - **CAM-013-R2**: While the camera is interrupted or stopped by a runtime error, the Camera visual
   MUST show the non-blocking camera notice with a Retry button; it MUST NOT block the visual, the
-  controls or the audio source.
+  controls or the audio source, and it MUST stay until the camera runs again, is stopped or the
+  visual is left (no timeout).
 - **CAM-013-R3**: The notice MUST name the reason with the fixed texts of Clarifications
   (another app, multitasking, system pressure, background, other interruption, media services
   reset, other error). The Retry button's VoiceOver label MUST be "Retry camera" ("Retrying
