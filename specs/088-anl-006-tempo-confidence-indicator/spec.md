@@ -43,6 +43,8 @@ first.
 - Q: How does a tapped tempo interact with the states? → A: A manual tempo is its own readout state, "Manual", held until Reset exactly as SHOW-011 does today; the indicator keeps tracking the analysis underneath, so Reset shows the analysis's current state immediately (no new dwell). Taps never feed the indicator. Rejected: "manual counts as stable for a while" (would claim a confidence the analysis never measured, and SHOW-011 already keeps manual until Reset) (ANL-006-R7).
 - Q: When the tempo changes, is that "searching" or "uncertain"? → A: Leaving stable because the BPM moved beyond the tolerance of the locked BPM (for the exit dwell) is a tempo change: `searching` (no number shown) while the tracker reacquires, for at most the reacquire time; if an estimate is still not stable after that, `uncertain`. Leaving stable because confidence stayed below the exit threshold (BPM unchanged) is `uncertain`. Losing the estimate entirely is `searching` at once. While not stable, a BPM that wanders beyond the tolerance of the run's start BPM restarts the enter dwell (that is the "drifting" case, shown as uncertain) (ANL-006-R2 to R4).
 - Q: Do tempo consumers (`TempoSnapshot`, MOD and show rows) change with the indicator? → A: No. The snapshot keeps SHOW-011's rule (estimated from confidence 0.5); the indicator is a separate read-only value next to it that only the readout, the Tap control's value and the Reset announcement use. Changing consumer semantics is out of scope for an S-sized indicator row and would silently alter SHOW-011's tested contract (ANL-006-R10).
+- Implementation finding (T04, 2026-11-13): stationary white and pink noise through the real pipeline give ANL-005 no estimate at all (confidence 0, always searching), so they cannot exercise the thresholds. Random noise bursts were added: they give estimates (largest confidence 0.29-0.37), are shown as uncertain at most, and never stable. Inputs were trimmed (white 3 → 2 seeds, 12 → 10 s) and the noise test split in two so each test stays under the 10 s budget in the Linux shape (owner rule 7).
+- Implementation finding (T04, 2026-11-13): during the exit dwell after a tempo change the estimate already reports the new BPM; the indicator keeps showing the last BPM within the tolerance until it leaves stable, so a new tempo is never displayed as stable before it earns it (ANL-006-R4).
 - Q: How is "uncertain" shown, and are state changes announced? → A: With "≈" before the number and the word "Uncertain"; no dimming (ACC-004's contrast audit runs over the controls) and no animation. State changes are not announced to VoiceOver (an analysis that changes state every few seconds would interrupt the user); the readout's accessibility value carries the state in words whenever it is read. The "—" of the searching state keeps ACC-004's existing em-dash audit filter valid (ANL-006-R8, R9, R11).
 
 ## User Scenarios & Testing *(mandatory)*
@@ -81,7 +83,7 @@ synthetic clock.
 
 **Acceptance Scenarios**:
 
-1. **Given** white noise (3 seeds) and pink noise (2 seeds), 12 s each at a loud level, and 12 s of silence, **When** fed through the pipeline and the indicator at the app's 250 ms poll, **Then** the state is never `stable`, the largest confidence seen is below the enter threshold, and the tempo source never reports an estimated tempo.
+1. **Given** white noise (2 seeds) and pink noise (2 seeds), 10 s each at a loud level (peak 0.5), 10 s of silence, and random white-noise bursts (30 ms at random times, about 3 per second; 3 seeds, 12 s each), **When** fed through the pipeline and the indicator at the app's 250 ms poll, **Then** the state is never `stable`, the largest confidence seen is below the enter threshold, and the tempo source never reports an estimated tempo.
 2. **Given** synthetic 120 BPM and 90 BPM pulse trains, **When** fed the same way, **Then** the state becomes `stable` at the right BPM (±1) within 10 s of the start and stays stable to the end.
 3. **Given** 120 BPM pulses that change to 90 BPM, **When** fed the same way, **Then** the state goes `stable` (120) → `searching` or `uncertain` → `stable` (90) within 12 s of the change.
 
@@ -140,7 +142,7 @@ between states.
 
 ### Measurable Outcomes
 
-- **ANL-006-S1**: White noise (3 seeds), pink noise (2 seeds) and silence, 12 s each, never reach `stable`, never report confidence at or above the enter threshold, and never yield an estimated tempo snapshot (the roadmap acceptance).
+- **ANL-006-S1**: White noise (2 seeds), pink noise (2 seeds) and silence (10 s each), and random noise bursts (3 seeds, 12 s each) never reach `stable`, never report confidence at or above the enter threshold, and never yield an estimated tempo snapshot (the roadmap acceptance).
 - **ANL-006-S2**: 120 BPM and 90 BPM pulse trains reach `stable` at ±1 BPM within 10 s and stay stable.
 - **ANL-006-S3**: A 120 → 90 BPM change leaves `stable` and returns to `stable` at 90 BPM within 12 s of the change.
 - **ANL-006-S4**: A borderline confidence sequence (60 s, 4 Hz) changes state at most twice; short dips do not leave stable.
