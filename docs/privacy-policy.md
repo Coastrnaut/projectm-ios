@@ -332,8 +332,8 @@ collections):
   keeps none of the choices you made in it);
 - the preset collections you create: their names, which presets are in them, and the order you
   put them in. No dates and no record of what you played are kept with them.
-- unless you turn off "Remember Recently Played" (Settings), the last 50 presets that stayed on
-  screen for at least 3 seconds, as preset identifiers in order, newest first, and whether that
+- only if you turn on "Remember Recently Played" (Settings; it is off unless you turn it on), the
+  last 50 presets that stayed on screen for at least 3 seconds, as preset identifiers in order, newest first, and whether that
   setting is on. No dates, times, audio or app names are kept with them. "Clear History" deletes the
   list (your favorites, collections and tags stay); turning the setting off deletes it too. The list is
   never put in a library backup.
@@ -439,5 +439,5 @@ issue in that repository.
 | FILE-011-R11 (`specs/120-file-011-local-data-erase/spec.md`): Erase Data… removes only the categories the user confirms, on this device, at the next launch; never the bundled presets, the purchase, caches or safety settings | Erasing your data |
 | SCN-002-R11 (`specs/067-scn-002-scene-autosave/spec.md`): the autosaved current scene (the shown visual's settings, text and stored photo/video identifiers) and one earlier copy, on the device only | What is stored on your device |
 | PERF-010-R13 (`specs/070-perf-010-crash-safe-session-recovery/spec.md`): the session recovery values (session open, launches since a reopen, the visual to reopen); after an unexpected close the OSC receiver is turned off and nothing listens until the user turns it on | OSC control on your local network; What is stored on your device |
-| PRE-006-R9 (`specs/159-pre-006-recent-history/spec.md`, ADR-0055, amends FR-065/FR-123): the recently played preset IDs (at most 50, no times) and the "Remember Recently Played" switch; off or Clear History deletes the list; never in a backup | What is stored on your device |
+| PRE-006-R9 (`specs/159-pre-006-recent-history/spec.md`, ADR-0055, amends FR-065/FR-123): the recently played preset IDs (at most 50, no times), kept only when the user turns on the "Remember Recently Played" switch (off by default); off or Clear History deletes the list; never in a backup | What is stored on your device |
 | PRE-012-R30 (`specs/008-pre-012-preset-import-validation/spec.md`, amends FR-065): preset files the user imports, quarantined ones included, and their record; extended by PRE-015-R23 (`specs/010-pre-015-user-preset-duplication/spec.md`): copies of built-in presets, their origin, and edited preset text | What is stored on your device |

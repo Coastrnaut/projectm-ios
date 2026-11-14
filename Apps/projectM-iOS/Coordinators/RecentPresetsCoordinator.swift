@@ -18,7 +18,7 @@ final class RecentPresetsCoordinator {
     static let turnedOffText = "Recently played history is off and was cleared."
     static let turnedOnText = "Recently played history is on."
     static let emptyText = "No recently played presets yet."
-    static let offText = "Recently played history is off."
+    static let offText = "Recently played history is off. Turn on Remember Recently Played in Settings to keep a list."
     nonisolated static let title = "Recently Played"
     static let clearTitle = "Clear History"
     static let confirmationTitle = "Clear recently played history?"

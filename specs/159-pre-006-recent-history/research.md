@@ -34,12 +34,15 @@ Decisions taken by Claude under owner rules 4 and 9 (conservative, local-first).
   preset if the app is killed); 10 s (rejected: too slow to feel responsive; 3 s matches the roadmap's
   example).
 
-## PRE-006-D4 — Opt-out
+## PRE-006-D4 — Opt-in switch
 
-- **Decision**: `settings.recentPresets.enabled`, absent = on. Off removes `recentPresets` and cancels
+- **Decision**: `settings.recentPresets.enabled`, absent = off (opt-in). Off removes `recentPresets` and cancels
   the candidate; on starts empty. At launch, an off switch removes any history (covers a FILE-005
   restore that brought the switch back off).
-- **Rationale**: the roadmap says opt-out (default on); clearing on opt-out is what a user who turns it
+- **Rationale**: integrator decision 2026-11-14 (owner rule 4): the shipped 1.0/1.1 spec (FR-065, FR-123)
+  and the published privacy policy promised no listening history, so recording by default would
+  silently change that promise for existing users; opt-in is the conservative choice. Clearing when
+  turned off is what a user who turns it
   off expects.
 
 ## PRE-006-D5 — Backup, erase, privacy

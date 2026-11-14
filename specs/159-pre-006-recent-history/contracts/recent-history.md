@@ -5,7 +5,7 @@
 | Member | Behavior |
 |---|---|
 | `ids: [String]` | The stored history, most recent first (observable). |
-| `isEnabled: Bool` | The switch (observable). |
+| `isEnabled: Bool` | The switch (observable); off by default. |
 | `shown(_ id:)` | Called by `PresetCoordinator.select` after a successful load. While enabled: the dwell candidate becomes `id` and a check is scheduled `threshold` later. Disabled: nothing. |
 | `checkDwell()` | Records the candidate when due (saves `recentPresets` at once). |
 | `setEnabled(_:)` | Saves the switch; off removes the history, cancels the candidate and announces "Recently played history is off and was cleared."; on announces "Recently played history is on." |
@@ -20,7 +20,7 @@ Never touches `favorites`, `lastPresetID`, `settings.presetScope`, collections o
 |---|---|
 | `node:recent` | Browser home row "Recently Played" (label "Recently Played, N presets"). |
 | `recentList` | The Recent list. |
-| `recentEmpty` | Empty-state text (`No recently played presets yet.` / `Recently played history is off.`). |
+| `recentEmpty` | Empty-state text (`No recently played presets yet.` / `Recently played history is off. Turn on Remember Recently Played in Settings to keep a list.`). |
 | `recentClear` | Clear History button (list and Settings). |
 | (alert) | The destructive alert button "Clear History" (found by its label: SwiftUI gives an alert action's identifier to every action). |
 | `recentToggle` | Settings switch "Remember Recently Played". |

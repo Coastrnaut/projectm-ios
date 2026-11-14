@@ -2,7 +2,8 @@
 // played history on the iOS Simulator. Two presets each stay on screen for more than 3 s (the launch
 // preset, then Next); both are listed in the browser's Recently Played, newest first. One is starred
 // there; Clear History (confirmed) empties the list, and Favorites still lists the starred preset.
-// Launched with the fixed fake entitlement (`-uitestUnlocked NO`) and the reset (no history, switch on).
+// Launched with the fixed fake entitlement (`-uitestUnlocked NO`), the reset (no history) and the opt-in
+// switch turned on through the launch arguments.
 // Under 30 s (owner rule 7). Simulator results are never device evidence (Constitution X).
 import XCTest
 
@@ -22,7 +23,9 @@ final class RecentPresetsUITests: XCTestCase {
 
     func testPlayedPresetsAreListedAndClearKeepsFavorites() {
         XCUIDevice.shared.orientation = .portrait
-        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-uitestUnlocked", "NO", "-autostart", "inAppPlayback"]
+        // History is opt-in: the argument domain turns "Remember Recently Played" on for this launch only.
+        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-uitestUnlocked", "NO", "-autostart", "inAppPlayback",
+                               "-settings.recentPresets.enabled", "YES"]
         app.launch()
         XCTAssertTrue(app.staticTexts["scopeLine"].appears(within: 30))
         Thread.sleep(forTimeInterval: 3.5)   // the launch preset stays more than 3 s (PRE-006-R2)

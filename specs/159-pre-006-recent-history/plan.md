@@ -6,7 +6,7 @@
 
 ## Summary
 
-A local list of recently shown preset IDs, beside the existing favorites, with an opt-out switch and a
+A local list of recently shown preset IDs, beside the existing favorites, with an opt-in switch (off by default) and a
 Clear History control that touches nothing else.
 
 Pure model (`Packages/PresetLibrary/Sources/PresetLibrary/RecentPresetHistory.swift`, new; Foundation
@@ -50,7 +50,7 @@ Research: [research.md](research.md); entities: [data-model.md](data-model.md); 
 **Primary Dependencies**: PresetLibrary, LibraryBackup. None new.
 
 **Storage**: UserDefaults `recentPresets` ([String], ≤ 50) and `settings.recentPresets.enabled` (Bool,
-absent = on).
+absent = off, opt-in).
 
 **Testing**: XCTest. PresetLibrary (history and dwell rules), LibraryBackup (policy and erase), app unit
 tests (`RecentPresetsAcceptanceTests`: clear acceptance, opt-out, dwell through `PresetCoordinator`,
@@ -73,7 +73,7 @@ edits in shared files (`AppCoordinator`, `SettingsView`, `VisualizerView`).
 | VI. Modular boundaries | Pass: rules in PresetLibrary (Linux-tested); policy in LibraryBackup; the app wires and draws. |
 | IX. Pinned dependencies | Pass: none added. |
 | X. Evidence-based quality | Pass: automated tests; simulator results are not device evidence; no device claim. |
-| Privacy constraints | Pass with an ADR: no audio; preset IDs only, no times; local; opt-out that clears; never backed up; FR-065/FR-123 amended explicitly and the privacy policy updated. |
+| Privacy constraints | Pass with an ADR: no audio; preset IDs only, no times; local; opt-in, and off clears; never backed up; FR-065/FR-123 amended explicitly and the privacy policy updated. |
 
 Post-design re-check: unchanged.
 

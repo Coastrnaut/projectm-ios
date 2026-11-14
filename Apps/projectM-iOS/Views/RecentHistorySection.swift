@@ -1,5 +1,5 @@
 // RecentHistorySection.swift — Settings › Recently Played (roadmap PRE-006,
-// specs/159-pre-006-recent-history; R3, R4, R6): "Remember Recently Played" (on by default; off stops
+// specs/159-pre-006-recent-history; R3, R4, R6): "Remember Recently Played" (off by default; on keeps the list, off stops
 // recording and clears the history) and Clear History (asks first; the history only).
 import SwiftUI
 
@@ -18,7 +18,7 @@ struct RecentHistorySection: View {
         } header: {
             Text(RecentPresetsCoordinator.title)
         } footer: {
-            Text("Keeps the last 50 presets that stayed on screen for 3 seconds, on this device only, never in backups. Turning this off clears the list.")
+            Text("Off by default. When on, keeps the last 50 presets that stayed on screen for 3 seconds, on this device only, never in backups. Turning it off clears the list.")
         }
         .recentClearConfirmation(recent, isPresented: $confirming)
     }

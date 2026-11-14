@@ -3,7 +3,8 @@
 // and `lastPresetID`.
 //
 // * `recentPresets`: preset IDs only, most recent first, at most 50 (read leniently). No times.
-// * `settings.recentPresets.enabled`: "Remember Recently Played"; absent means on. Turning it off removes
+// * `settings.recentPresets.enabled`: "Remember Recently Played"; absent means off (opt-in, integrator decision
+//   2026-11-14). Turning it off removes
 //   the list. An off switch found at launch (for example restored from a backup) removes any list too.
 // * Nothing else is read or written: favorites, the last preset, the scope, tags and collections are
 //   never touched here (R4).
@@ -25,7 +26,7 @@ final class RecentPresetsStore {
     }
 
     var isEnabled: Bool {
-        get { defaults.object(forKey: Self.enabledKey) as? Bool ?? true }
+        get { defaults.bool(forKey: Self.enabledKey) }   // absent: false; also reads "YES" from launch arguments
         set {
             defaults.set(newValue, forKey: Self.enabledKey)
             if !newValue { defaults.removeObject(forKey: Self.historyKey) }

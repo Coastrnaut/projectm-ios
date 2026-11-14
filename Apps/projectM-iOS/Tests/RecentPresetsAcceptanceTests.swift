@@ -23,6 +23,7 @@ final class RecentPresetsAcceptanceTests: XCTestCase {
     override func setUp() async throws {
         suite = "RecentPresetsAcceptanceTests-\(UUID().uuidString)"
         defaults = UserDefaults(suiteName: suite)
+        defaults.set(true, forKey: RecentPresetsStore.enabledKey)   // the user turned history on (it is opt-in)
         directory = FileManager.default.temporaryDirectory.appendingPathComponent(suite, isDirectory: true)
         clock = 1_000
         scheduled = []
@@ -197,5 +198,19 @@ final class RecentPresetsAcceptanceTests: XCTestCase {
         defaults.set(["frontend-uwp/Alpha.milk"], forKey: RecentPresetsStore.historyKey)
         let read = LibrarySettingsBridge.read(defaults, keys: LibrarySettingsPolicy.includedKeys)
         XCTAssertNil(read[RecentPresetsStore.historyKey], "a backup's settings never carry the history")
+    }
+
+    /// Opt-in (integrator decision 2026-11-14): with the switch never touched, a 3 s dwell records nothing.
+    func testByDefaultHistoryIsOffAndNothingIsRecorded() async throws {
+        defaults.removeObject(forKey: RecentPresetsStore.enabledKey)
+        let coordinator = try makeCoordinator()
+        let recent = try XCTUnwrap(coordinator.recent)
+        XCTAssertFalse(recent.isEnabled, "off by default")
+        try await show("Alpha", for: 3, coordinator)
+        try await show("Beta", for: 10, coordinator)
+        XCTAssertEqual(recent.ids, [])
+        XCTAssertNil(defaults.object(forKey: RecentPresetsStore.historyKey), "nothing stored")
+        XCTAssertNil(defaults.object(forKey: RecentPresetsStore.enabledKey), "the switch is not written either")
+        XCTAssertEqual(scheduled.count, 0, "no dwell timer while off")
     }
 }

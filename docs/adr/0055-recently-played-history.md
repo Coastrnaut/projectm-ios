@@ -1,4 +1,4 @@
-# ADR-0055: A Local, Opt-Out Recently Played List of Preset IDs
+# ADR-0055: A Local, Opt-In Recently Played List of Preset IDs
 
 - **Status**: Accepted 2026-11-14 (decided by Claude under the owner's best-judgement rule, owner
   rule 4)
@@ -20,9 +20,12 @@ built without amending them.
 1. **What is stored**: `recentPresets`, at most 50 preset IDs, most recent first, de-duplicated. No
    times, durations, counts, audio, audio source or app names. A preset counts once it stayed on
    screen for 3 s after a successful load.
-2. **Opt-out**: `settings.recentPresets.enabled` ("Remember Recently Played", Settings), on by default
-   as the roadmap's "opt-out" says. Turning it off stops recording and clears the list at once; an off
-   switch found at launch clears any list.
+2. **Opt-in**: `settings.recentPresets.enabled` ("Remember Recently Played", Settings), **off by
+   default** (integrator decision 2026-11-14 under owner rule 4): the shipped 1.0/1.1 spec and the
+   published privacy policy promised that no listening history is stored, so recording by default would
+   silently change that promise for existing users. Nothing is recorded until the user turns it on.
+   Turning it off stops recording and clears the list at once; an off switch found at launch clears any
+   list.
 3. **Clear History**: confirmed in a destructive alert; removes `recentPresets` only. Favorites, the last
    preset, the scope, tags and collections are untouched (tested byte for byte).
 4. **Never leaves the device**: the list is a FILE-005 excluded key (never in a backup, never restored);
@@ -39,7 +42,8 @@ built without amending them.
 
 ## Alternatives considered
 
-- **Opt-in (off by default)**: more conservative, but contradicts the roadmap's "opt-out" and leaves the
-  feature unused; the data is minimal, local and one switch away from gone.
+- **Opt-out (on by default)**: the roadmap row's wording, and the first draft of this ADR; rejected
+  because it would start recording for existing users who were told nothing is recorded. The row's
+  "opt-out and clear control" is still met: the user can turn it off (which clears) and clear at any time.
 - **A file beside `tags.json`**: would ride along in FILE-005's collections folder copy; rejected.
 - **Timestamps for grouping by day**: more personal data with no acceptance need; rejected.

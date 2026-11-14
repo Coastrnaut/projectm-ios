@@ -332,7 +332,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             defaults.removeObject(forKey: Self.noticeKey)
             defaults.removeObject(forKey: FavoritesStore.favoritesKey)
             defaults.removeObject(forKey: FavoritesStore.lastPresetKey)
-            RecentPresetsStore.allKeys.forEach(defaults.removeObject(forKey:))   // PRE-006: no history, switch on
+            RecentPresetsStore.allKeys.forEach(defaults.removeObject(forKey:))   // PRE-006: no history, switch off (the default)
             AppSettings.allKeys.forEach(defaults.removeObject(forKey:))
             defaults.removeObject(forKey: InputTrimSetting.decibelsKey)   // AUD-008: 0 dB
             defaults.removeObject(forKey: ChannelSelectionSetting.modeKey)   // AUD-009: Mix

@@ -30,4 +30,4 @@ waiting for the other; waiting → (cancel: off or clear) → idle.
 | Key | Type | Default | FILE-005 | FILE-011 |
 |---|---|---|---|---|
 | `recentPresets` | `[String]` | absent = empty | excluded | "Collections, tags, favorites and history" |
-| `settings.recentPresets.enabled` | `Bool` | absent = on | included | Settings |
+| `settings.recentPresets.enabled` | `Bool` | absent = off (opt-in) | included | Settings |

@@ -6,8 +6,8 @@
 
 **Status**: Implemented 2026-11-14 (PRE-006-T01-T16 verified on the Mac: host package tests and the
 feature's own iOS 27.2 simulator "PRE6"; no device claim). PresetLibrary 286 tests (6 new), LibraryBackup
-73 (1 new), app unit tests 47 in the touched suites (RecentPresetsAcceptanceTests 6), RecentPresetsUITests 1
-(24 s warm). Linux: not run here; CI's Linux job builds and tests PresetLibrary and LibraryBackup.
+73 (1 new), app unit tests 48 in the touched suites (RecentPresetsAcceptanceTests 7, after the switch became opt-in), RecentPresetsUITests 1
+(21 s). Linux: not run here; CI's Linux job builds and tests PresetLibrary and LibraryBackup.
 
 **Input**: Roadmap row PRE-006 (P1, size S, extension of the existing favorites). Observable behavior,
 verbatim: "Track recent preset IDs locally with opt-out and clear control." Acceptance, verbatim:
@@ -45,7 +45,7 @@ conservative, local-first option that still delivers the roadmap row.
 - Q: What is stored per entry? → A: The preset ID only. Order is the only time information; no dates, durations, play counts, audio source or app names.
 - Q: How long is the list? → A: At most 50 distinct IDs, most recent first. Showing a preset already in the list moves it to the front (de-duplicated); the 51st distinct ID drops the oldest.
 - Q: What counts as played? → A: A preset that stayed on screen for at least 3 seconds after it loaded successfully, whatever chose it (the user, Next, Previous, Random, the launch preset, a play queue, OSC or MIDI). Flicking through Random faster than that records nothing. A preset that failed to load is never recorded. The dwell is measured on an injected monotonic clock.
-- Q: Opt-out? → A: A Settings switch "Remember Recently Played", on by default (the roadmap row says opt-out), stored under `settings.recentPresets.enabled`. Turning it off stops recording at once and clears the existing history; turning it on again starts from an empty list.
+- Q: Opt-out? → A: A Settings switch "Remember Recently Played", stored under `settings.recentPresets.enabled`, **off by default** (opt-in; integrator decision 2026-11-14 under owner rule 4, replacing the first answer "on by default": the shipped 1.0/1.1 spec and the published privacy policy promised no listening history, so recording by default would silently change that promise for existing users). Nothing is recorded until the user turns it on. Turning it off stops recording at once and clears the existing history; turning it on again starts from an empty list.
 - Q: Clear control? → A: "Clear History" (in Settings and at the bottom of the Recent list) asks for confirmation in a destructive alert, then removes the history only. Favorites, `lastPresetID`, the scope, tags and collections are untouched.
 - Q: Where is the history shown? → A: A "Recently Played" row on the browser's library home (with its count) opens the Recent list: most recent first, locked presets marked (FR-114's way), presets no longer in the library left out. Choosing a preset there plays it without changing the scope (the list reorders itself as presets are played, so it is not a stable scope to walk).
 - Q: Is history backed up or erased? → A: Not backed up: it is personal usage data, so `recentPresets` joins FILE-005's excluded keys (a restore never brings history from another device). The opt-out switch is a normal setting: backed up and erased with Settings. FILE-011 erases the history with favorites; the category is renamed "Collections, tags, favorites and history" so the user can see that.
@@ -56,14 +56,14 @@ Answered by Claude under owner rules 4 and 9 (recommended option first).
 
 - Q: Does time with the app in the background count toward the 3 s dwell? → A: The dwell runs on the monotonic clock from the successful load; the preset is recorded when 3 s have passed and it is still the current preset. A background stay does not prevent recording (the preset was the one chosen to be on screen); a device sleep does not advance the clock. This keeps one rule and no lifecycle coupling.
 - Q: What can the user do with a row in the Recent list? → A: The same as any browser row: play it, star it, Add to Collection, Tags…, Duplicate (the shared preset row). Favoriting from Recent changes favorites, never the history.
-- Q: Is "Recently Played" on the home while history is off? → A: Yes, with count 0; it opens the list, which says "Recently played history is off." and offers no Clear button (there is nothing to clear). The switch lives in Settings only.
+- Q: Is "Recently Played" on the home while history is off? → A: Yes, with count 0; it opens the list, which says "Recently played history is off. Turn on Remember Recently Played in Settings to keep a list." and offers no Clear button (there is nothing to clear). The switch lives in Settings only.
 - Q: Is the preset on screen listed before its 3 s have passed? → A: No; only recorded presets are listed, so the list and the stored key always agree.
 
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - I find the presets I just watched (Priority: P1) — MVP
 
-A VJ flicks through Random, stays on two presets they like, and later opens the browser's "Recently
+A VJ who turned on "Remember Recently Played" flicks through Random, stays on two presets they like, and later opens the browser's "Recently
 Played" list: both are at the top, newest first, and tapping one plays it again.
 
 **Why this priority**: It is the row's behavior.
@@ -120,9 +120,9 @@ history is gone.
 
 - **PRE-006-R1**: The app MUST keep a local, ordered, de-duplicated list of at most 50 preset IDs, most recent first, under the UserDefaults key `recentPresets`. Nothing but the IDs is stored.
 - **PRE-006-R2**: A preset MUST be recorded when it stays on screen for at least 3 s after a successful load; replacing it earlier with another loaded preset records nothing for it (a failed load of another preset leaves it on screen and its dwell continues); a failed load itself records nothing. Recording moves an existing ID to the front.
-- **PRE-006-R3**: A Settings switch "Remember Recently Played" (default on, `settings.recentPresets.enabled`) MUST control recording; turning it off MUST clear the history and cancel any pending recording.
+- **PRE-006-R3**: A Settings switch "Remember Recently Played" (default off, opt-in, `settings.recentPresets.enabled`) MUST control recording; turning it off MUST clear the history and cancel any pending recording.
 - **PRE-006-R4**: "Clear History" (disabled in Settings while the history is empty) MUST ask for confirmation, then remove only the history; favorites, `lastPresetID`, the scope, tags and collections MUST be unchanged.
-- **PRE-006-R5**: The browser home MUST offer "Recently Played" with its count, opening a list newest first (locked presets marked, presets not in the library left out), with an empty state ("No recently played presets yet." or, when off, "Recently played history is off.") and "Clear History" (shown while the history is not empty). Rows are the browser's standard preset rows. Choosing a preset there plays it without changing the scope.
+- **PRE-006-R5**: The browser home MUST offer "Recently Played" with its count, opening a list newest first (locked presets marked, presets not in the library left out), with an empty state ("No recently played presets yet." or, when off, "Recently played history is off. Turn on Remember Recently Played in Settings to keep a list.") and "Clear History" (shown while the history is not empty). Rows are the browser's standard preset rows. Choosing a preset there plays it without changing the scope.
 - **PRE-006-R6**: Every new control MUST have an accessible label (the row: "Recently Played, 2 presets"); a clear and the switch's change are announced on the shared announcer's library lane.
 - **PRE-006-R7**: The history MUST NOT be backed up (FILE-005 excluded key); the switch is backed up and erased with Settings; FILE-011's "Collections, tags, favorites and history" erases the history, and the category's count includes it.
 - **PRE-006-R8**: Stored values MUST be read leniently (non-strings, empty and duplicate IDs dropped; trimmed to 50).
@@ -140,7 +140,7 @@ history is gone.
 
 - **PRE-006-S1**: After Clear History, the history is empty while favorites and `lastPresetID` are byte-identical and the tags file's bytes are unchanged (acceptance test).
 - **PRE-006-S2**: 100% of presets shown for 3 s or more are recorded and 0% of those shown for less (injected-clock tests).
-- **PRE-006-S3**: With the switch off, 0 presets are recorded and the history is empty.
+- **PRE-006-S3**: With the switch off (the default), 0 presets are recorded and the history is empty.
 - **PRE-006-S4**: A UI test plays two presets, sees them in Recently Played, clears, and sees Recent empty while Favorites still lists its item, in under 30 s.
 
 ## Assumptions

@@ -35,14 +35,14 @@ Independent test: seed favorites, last preset, tags and history; clear; only his
 
 ## Phase 5: User Story 3 — turn history off (P2)
 
-- [X] PRE-006-T11 [US3] Tests: off clears and stops recording (a pending candidate is not recorded later), on starts empty, an off switch at launch removes stored history (`RecentPresetsAcceptanceTests.swift`). — Verified 2026-11-14: RecentPresetsAcceptanceTests testTurningOffClearsAndStopsRecordingAndOnStartsEmpty, testAnOffSwitchFoundAtLaunchRemovesStoredHistory
+- [X] PRE-006-T11 [US3] Tests: off clears and stops recording (a pending candidate is not recorded later), on starts empty, an off switch at launch removes stored history (`RecentPresetsAcceptanceTests.swift`). — Verified 2026-11-14: RecentPresetsAcceptanceTests testTurningOffClearsAndStopsRecordingAndOnStartsEmpty, testAnOffSwitchFoundAtLaunchRemovesStoredHistory; opt-in default (integrator decision): testByDefaultHistoryIsOffAndNothingIsRecorded, rerun 7/7
 
 ## Phase 6: Polish and cross-cutting
 
 - [X] PRE-006-T12 App key lists: `LibraryBackupAppTests` and `LibraryEraseAppTests` app-key sets include both keys; a test that the history is never in a backup's settings and is erased with the collections category (`Apps/projectM-iOS/Tests/`). — Verified 2026-11-14: LibraryBackupAppTests, LibraryEraseAppTests (erase message with the new title), RecentPresetsAcceptanceTests testTheKeysAgreeWithTheBackupAndErasePolicy
 - [X] PRE-006-T13 [P] `ALLOWED_KEYS` gains both keys (`scripts/run_device_tests.py`); `check_status_events.py` registers the new files. — Verified 2026-11-14: `python3 scripts/test_scripts.py` 153 OK (stored-keys scan), `check_status_events.py` OK
 - [X] PRE-006-T14 [P] ADR (next free number) amending FR-065/FR-123; privacy policy "What is stored on your device" and the FR-063 coverage row (`docs/adr/`, `docs/privacy-policy.md`). — Verified 2026-11-14: `validate_docs.py` OK; ADR-0055, privacy policy section and FR-063 row
-- [X] PRE-006-T15 UI test: two presets shown 3 s each appear in Recently Played; star one; Clear; Recent empty; Favorites lists the starred preset; under 30 s (`Apps/projectM-iOS/UITests/RecentPresetsUITests.swift`). — Verified 2026-11-14: RecentPresetsUITests 1/1 on PRE6, 24.3 s (27.2 s on the first run)
+- [X] PRE-006-T15 UI test: two presets shown 3 s each appear in Recently Played; star one; Clear; Recent empty; Favorites lists the starred preset; under 30 s (`Apps/projectM-iOS/UITests/RecentPresetsUITests.swift`). — Verified 2026-11-14: RecentPresetsUITests 1/1 on PRE6, 24.3 s (27.2 s on the first run); rerun with the opt-in switch on through launch arguments: 21.4 s
 - [X] PRE-006-T16 Verification: package tests (PresetLibrary, LibraryBackup), app unit tests touched, the UI test, type-check budget, repo checks, privacy manifest and network symbols on the Debug app; spec status; delete derived data and the simulator; PosterBoard counts. — Verified 2026-11-14: package suites, 47 app unit tests, RecentPresetsUITests + PresetLibraryUITests (6/6), repo checks, check_privacy_manifest and check_network_symbols OK on the Debug app
 
 ## Dependencies
