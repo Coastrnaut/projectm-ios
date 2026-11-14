@@ -26,12 +26,12 @@ public final class PresetLibrary: Sendable {
     public let home: [PresetNode]
     /// Ids of the pack presets in PresetIndex.json order: the order of PresetArchive.bin's table.
     public let archiveOrder: [String]
-    private let byId: [String: Int]
-    private let searchKeys: [String]
+    let byId: [String: Int]
+    let searchKeys: [String]   // PERF-009: written into the warm-start snapshot
     private let lockedSources: Set<String>
     /// The first `builtInCount` entries of `presets` are the bundled library; the rest are the
     /// user's imported presets (PRE-012), alphabetical.
-    private let builtInCount: Int
+    let builtInCount: Int
 
     public init(index: Data, packs packsData: Data) throws {
         let decoder = JSONDecoder()
@@ -64,7 +64,7 @@ public final class PresetLibrary: Sendable {
         builtInCount = sorted.count
     }
 
-    private init(presets: [IndexedPreset], packs: [PresetPackInfo], home: [PresetNode], archiveOrder: [String],
+    init(presets: [IndexedPreset], packs: [PresetPackInfo], home: [PresetNode], archiveOrder: [String],
                  byId: [String: Int], searchKeys: [String], lockedSources: Set<String>, builtInCount: Int) {
         self.presets = presets
         self.packs = packs
@@ -233,7 +233,7 @@ public final class PresetLibrary: Sendable {
 
     // MARK: - Tree (FR-111, FR-112)
 
-    private static func buildHome(_ presets: [IndexedPreset], packs: [PresetPackInfo]) -> [PresetNode] {
+    static func buildHome(_ presets: [IndexedPreset], packs: [PresetPackInfo]) -> [PresetNode] {
         var nodes: [PresetNode] = []
         let included = presets.filter(\.isIncluded)
         nodes.append(PresetNode(id: includedSource, title: "Included", scope: .included, children: [],
