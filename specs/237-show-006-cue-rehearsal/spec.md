@@ -43,6 +43,16 @@ local-first option.
 - Q: Is anything stored? → A: No new settings key: rehearsal is session only (off at launch), like OUT-012's rehearsal and SHOW-005's Hold.
 - Q: What are the bounds? → A: The preview renders at most 320 × 180 pixels, only when its input changes, at most one render at a time and at most 10 renders per second; nothing renders while rehearsal is off or the app is in the background.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Five questions, each answered with the recommended option (owner rules 4 and 9).
+
+- Q: Does the panel hide with the controls? → A: No. While rehearsal is on the panel stays (like UIX-013's HUD and SCN-009's compare bar), at the top of the device's status stack, at most 240 pt wide with a 16:9 picture; its own close button ends rehearsal. The Rehearse toggle itself is in the cue row (hidden with the controls). Rejected: hiding it with the controls (the performer would lose the preview exactly while watching the show).
+- Q: After Save to Cue on the active cue, is it re-applied? → A: No. Nothing reaches the live output until the cue runs again (the acceptance: preview changes do not alter the presented frame). The panel says "Saved. Shows when the cue runs."
+- Q: What happens to the scene's stored SCN-006 picture after Save to Cue? → A: The file change is reported like Rename Scene does (`sceneFilesChanged`), so the old picture is dropped and a new one is taken when the cue next applies.
+- Q: Can a projectM, Photo, Video or Text cue's values be edited in rehearsal? → A: Yes (the glow and spectrum values are part of every scene), but the picture stays the stored one with the note "Edits show when the cue runs"; Save to Cue works the same.
+- Q: Is the rehearsal panel in the iPad split editor, on the external display or in the performance pad? → A: Only in the device's visualizer status stack (in the split editor's output pane on iPad, as the HUD). Never on the external display; the performance pad does not get a rehearsal control in this feature.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - See the next cue before it goes live (Priority: P1) — MVP
@@ -85,6 +95,7 @@ the new glow.
 - The target cue is removed or the show replaced while rehearsing: the target falls back to the next cue.
 - Blackout (OUT-010): the live output stays black; the device panel still previews.
 - A draft exists and the show steps: a picked target keeps its draft; a "next cue" target that moves to a new cue drops its draft (it belongs to the cue it was made for).
+- A projectM, Photo, Video or Text cue: values can be edited and saved; the picture stays the stored one with "Edits show when the cue runs".
 - Reduce flashing and the safety clamp apply to the preview exactly as to the screen.
 - The app goes to the background: rendering stops and resumes on return.
 
@@ -97,7 +108,8 @@ the new glow.
 - **SHOW-006-R3**: The panel MUST show the target's position and label and a picture: an offscreen render for Circular and Linear spectrum cues, otherwise the scene's stored picture or "No picture yet"; "End of show" when there is no target; an unreadable scene's message when it cannot be read.
 - **SHOW-006-R4**: The preview MUST NOT write to or draw into the live output: the main visual, external display, recording and Save Frame frames MUST be identical with rehearsal on or off and while drafts change.
 - **SHOW-006-R5**: Draft edits (the seven app-held values) MUST stay in a sandbox: they MUST NOT change live settings, the active scene, the autosave or scene history.
-- **SHOW-006-R6**: Save to Cue MUST write the draft into the target cue's stored scene only (refused while locked; the scene preview cache is told the file changed) and MUST NOT apply anything to the live output; Revert and closing MUST drop the draft.
+- **SHOW-006-R6**: Save to Cue MUST write the draft into the target cue's stored scene only (refused while locked; the scene preview cache is told the file changed) and MUST NOT apply anything to the live output, even for the active cue; Revert and closing MUST drop the draft.
+- **SHOW-006-R10**: While rehearsal is on, the panel MUST stay visible with or without the controls and MUST offer its own close control.
 - **SHOW-006-R7**: The preview MUST be bounded: at most 320 × 180 pixels, rendered only on change, one render at a time, at most 10 renders per second, never while off or in the background; with Reduce flashing and the safety clamp as on screen.
 - **SHOW-006-R8**: Turning rehearsal on and off, and Save to Cue results, MUST be announced on the cue lane; the panel's picture MUST have a VoiceOver label naming the cue.
 - **SHOW-006-R9**: No network access, no new stored settings key, no wall-clock assertions in tests.
