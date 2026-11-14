@@ -18,7 +18,7 @@
 - [ ] SHD-004-T03 [P] [US1] Validator tests, one per invalid class (count, duplicate, default mismatch, prefix, unknown family, default requirement, unknown key) in `Packages/Compositor/Tests/ShaderParameterMetadataTests/ShaderVariantMetadataTests.swift`
 - [ ] SHD-004-T04 [US1] Variant lists for Plasma (`plasmaDetailed` "Detailed", requires `apple9`) and Noise Flow (`noiseFlowLite` "Low cost") in `MaterialParameterMetadata.swift`; `MaterialDefinition.variants`, `defaultVariant`, `variant(_:)`, `fragmentFunction(for:)` in `MaterialDefinition.swift`
 - [ ] SHD-004-T05 [US1] Fragment functions `mat_plasmaDetailed` and `mat_noiseFlowLite` in `ProceduralMaterialShaders.swift` (SHD-001 safety rules, `mat_finish`)
-- [ ] SHD-004-T06 [US1] Catalog tests: expected variants per material; every variant passes the slot check against `ProceduralMaterialShaders.source` (CPU, Linux-safe: source text copied via a test hook only where Metal is absent is not needed — the check runs where Metal exists) in `Packages/Compositor/Tests/ProceduralMaterialsTests/MaterialVariantCatalogTests.swift`
+- [ ] SHD-004-T06 [US1] Catalog tests: expected variants per material; every variant's `mat_<id>` passes SHD-003's slot check against `ProceduralMaterialShaders.source` (runs where Metal is available, as `MaterialMetadataTests` does) in `Packages/Compositor/Tests/ProceduralMaterialsTests/MaterialVariantCatalogTests.swift`
 
 ## Phase 4: User Story 2 - Switching keeps the scene (P1)
 
@@ -26,7 +26,7 @@
 
 - [ ] SHD-004-T07 [US2] `MaterialGPUCapabilities`, `MaterialVariantNotice`, `MaterialVariantResolution.resolve` (plain Swift) in `Packages/Compositor/Sources/ProceduralMaterials/MaterialVariants.swift`; `MaterialGPUCapabilities(device:)` via `supportsFamily` in `ProceduralMaterialShaders.swift`
 - [ ] SHD-004-T08 [US2] `ProceduralMaterialLayer`: `init(_:variant:capabilities:)`, `selectedVariant`, `select(variant:)`, pipeline cache built in `prepare`, `resolution`, render draws the resolved pipeline
-- [ ] SHD-004-T09 [P] [US2] Resolution unit tests (CPU) in `ProceduralMaterialsTests/MaterialVariantResolutionTests.swift`
+- [ ] SHD-004-T09 [P] [US2] Resolution unit tests (CPU: default, supported, unsupported, unknown, pipeline unavailable — the spec's pipeline-failure edge case) in `ProceduralMaterialsTests/MaterialVariantResolutionTests.swift`
 - [ ] SHD-004-T10 [US2] GPU tests: golden signature per non-default variant (differs from Standard), switching keeps every parameter value and the motion phase, switching back draws Standard again, no rebuild in `ProceduralMaterialsTests/MaterialVariantSwitchTests.swift`; flash-safety and extremes extended to the new variants
 - [ ] SHD-004-T11 [US2] SceneFormat: `SceneLayer.materialVariant` (layer key `materialVariant`, written only when non-nil), decode (material only; non-text → `droppedField`), `SceneLiveState.materialVariants`, capture
 - [ ] SHD-004-T12 [US2] Scene tests: byte-equal apart from `materialVariant`; default restores original bytes; decode → live state → capture round trip in `Packages/SceneFormat/Tests/SceneFormatTests/SceneMaterialVariantTests.swift`
@@ -47,7 +47,7 @@
 ## Phase 7: Polish
 
 - [ ] SHD-004-T18 Linux shape build of Compositor and SceneFormat with the CI `-D*_NO_*` flags; type-check budget build of the app
-- [ ] SHD-004-T19 Repo checks (`check_compliance`, `validate_docs`, `check_motion_policy`, `check_permission_catalog`, `check_status_events`, `test_scripts`), privacy manifest and network symbols on the Debug app; PosterBoard counts; delete simulator and derived data
+- [ ] SHD-004-T19 `MaterialSourceSafetyTests` still pass (SHD-004-R9: one library, from the module constant); repo checks (`check_compliance`, `validate_docs`, `check_motion_policy`, `check_permission_catalog`, `check_status_events`, `test_scripts`), privacy manifest and network symbols on the Debug app; PosterBoard counts; delete simulator and derived data
 - [ ] SHD-004-T20 {device} On D3 (iPad A16, family 8) a Plasma layer with Detailed reports the unsupported notice and draws Standard; on D2 (M5) Detailed draws (Debug build; GPU test bundle on device)
 
 ## Dependencies
