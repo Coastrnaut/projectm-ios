@@ -16,6 +16,13 @@
 // dispatcher's lock so a flush and a new datagram never reorder one target's values; store observers
 // therefore MUST NOT call back into the dispatcher. Work per datagram is bounded: O(1) limiter
 // checks, one bounded decode, at most `OSCLimits` bundle elements applied.
+//
+// OSC-003 (specs/191-osc-003-parameter-routes, contract R2): the route table can be replaced while the
+// receiver runs (`setRoutes`, route enables and aliases); an address not in it is ignored and counted in
+// `unknownAddresses`. A `.normalized` route maps its 0…1 number over the parameter's range before the
+// limiter, so a held value is already the parameter value. Every applied value of a routed parameter is
+// kept in `liveValues` (memory only) for the app's live-value path; replacing the routes drops the live
+// values of parameters no route reaches any more.
 import ParameterGraph
 import Synchronization
 
@@ -55,6 +62,8 @@ public struct OSCReceiverCounters: Sendable, Equatable {
     public var rateLimited = 0
     /// OSC-009: messages held for their target's next slot instead of applied at once.
     public var coalesced = 0
+    /// OSC-003: messages to an address that is not on the route allowlist (also counted in `ignored`).
+    public var unknownAddresses = 0
     /// `OSCDecodeError.reason` → count.
     public var rejectedByReason: [String: Int] = [:]
 
@@ -68,11 +77,17 @@ public final class OSCDispatcher: Sendable {
         var counters = OSCReceiverCounters()
         var limiter: OSCRateLimiter
         var flushScheduled = false
+        var routes: [String: OSCRoute] {
+            didSet { reached = Set(routes.values.map { (route: OSCRoute) -> ParameterID in route.parameter }) }
+        }
+        /// The parameters some route reaches (kept with `routes`).
+        var reached: Set<ParameterID> = []
+        /// OSC-003: the newest applied value per routed parameter (memory only).
+        var liveValues: [ParameterID: Double] = [:]
     }
 
     public let store: ParameterStore
     public let limits: OSCRateLimitConfiguration
-    private let routes: [String: ParameterID]
     private let clock: OSCMonotonicClock
     private let scheduler: OSCFlushScheduler
     private let state: Mutex<State>
@@ -83,16 +98,45 @@ public final class OSCDispatcher: Sendable {
                 clock: OSCMonotonicClock = .continuous(),
                 scheduler: OSCFlushScheduler = .sleepingTask) {
         self.store = store
-        var table: [String: ParameterID] = [:]
-        for route in routes { table[route.address] = route.parameter }
-        self.routes = table
         self.limits = limits
         self.clock = clock
         self.scheduler = scheduler
-        state = Mutex(State(limiter: OSCRateLimiter(configuration: limits)))
+        var initial = State(limiter: OSCRateLimiter(configuration: limits), routes: [:])
+        initial.routes = Self.table(routes)
+        state = Mutex(initial)
+    }
+
+    private static func table(_ routes: [OSCRoute]) -> [String: OSCRoute] {
+        var table: [String: OSCRoute] = [:]
+        for route in routes where table[route.address] == nil { table[route.address] = route }
+        return table
     }
 
     public var counters: OSCReceiverCounters { state.withLock { $0.counters } }
+
+    /// OSC-003: the addresses messages may use, in no order (tests and Settings).
+    public var routedAddresses: Set<String> { state.withLock { Set($0.routes.keys) } }
+
+    /// OSC-003-R6: replaces the allowlist. Live values of parameters no route reaches any more are dropped;
+    /// a value held by the limiter for such a parameter is still applied to the store (it was admitted), but
+    /// never re-enters `liveValues`.
+    public func setRoutes(_ routes: [OSCRoute]) {
+        state.withLock { s in
+            s.routes = Self.table(routes)
+            let reached: Set<ParameterID> = s.reached
+            s.liveValues = s.liveValues.filter { (entry: (key: ParameterID, value: Double)) -> Bool in reached.contains(entry.key) }
+        }
+        notifyActivity()
+    }
+
+    /// OSC-003-R5: the newest value OSC applied to each routed parameter since launch or the last clear.
+    public var liveValues: [ParameterID: Double] { state.withLock { $0.liveValues } }
+
+    /// OSC-003-R5: forgets every live value (OSC turned off by the user).
+    public func clearLiveValues() {
+        state.withLock { $0.liveValues.removeAll() }
+        notifyActivity()
+    }
 
     /// Values held for their target's next slot (tests).
     public var heldCount: Int { state.withLock { $0.limiter.heldCount } }
@@ -135,7 +179,10 @@ public final class OSCDispatcher: Sendable {
         switch outcome {
         case .applied: c.applied += 1
         case .coalesced: c.coalesced += 1
-        case .unknownAddress, .wrongArguments, .notExternallyControllable, .refusedByStore: c.ignored += 1
+        case .unknownAddress:
+            c.ignored += 1
+            c.unknownAddresses += 1
+        case .wrongArguments, .notExternallyControllable, .refusedByStore: c.ignored += 1
         case .rejected, .bundle, .rateLimited: break      // never produced per message
         }
     }
@@ -161,8 +208,8 @@ public final class OSCDispatcher: Sendable {
         let flushDelay = state.withLock { s -> UInt64? in
             s.flushScheduled = false
             let now = clock.now()
-            for (id, value) in s.limiter.takeDue(now: now) where (try? store.setDouble(value, for: id)) != nil {
-                s.counters.applied += 1
+            for (id, value) in s.limiter.takeDue(now: now) {
+                Self.store(value, for: id, store: store, &s)
             }
             return Self.claimFlush(&s, now: now)
         }
@@ -207,22 +254,37 @@ public final class OSCDispatcher: Sendable {
     }
 
     private func apply(_ message: OSCMessage, now: UInt64, _ s: inout State) -> OSCDispatchOutcome {
-        guard let id = routes[message.address] else { return .unknownAddress }
+        guard let route = s.routes[message.address] else { return .unknownAddress }   // OSC-003-R2: allowlist only
+        let id: ParameterID = route.parameter
         guard let descriptor = store.registry.descriptor(for: id), descriptor.modulation.allowsExternalControl else {
             return .notExternallyControllable
         }
-        guard message.arguments.count == 1, let value = message.arguments[0].numericValue else { return .wrongArguments }
-        guard value.isFinite else { return .refusedByStore }      // never held: the store would refuse it
+        guard message.arguments.count == 1, let number = message.arguments[0].numericValue else { return .wrongArguments }
+        guard number.isFinite else { return .refusedByStore }      // never held: the store would refuse it
+        let value: Double
+        switch route.scale {
+        case .raw:
+            value = number
+        case .normalized:
+            guard let mapped = OSCParameterRoutes.value(normalized: number, for: descriptor) else { return .wrongArguments }
+            value = mapped
+        }
         let (decision, evicted) = s.limiter.submit(value, to: id, now: now)
-        if let (evictedID, evictedValue) = evicted, (try? store.setDouble(evictedValue, for: evictedID)) != nil {
-            s.counters.applied += 1
-        }
+        if let (evictedID, evictedValue) = evicted { Self.store(evictedValue, for: evictedID, store: store, &s) }
         guard decision == .applyNow else { return .coalesced(id) }
-        do {
-            let stored = try store.setDouble(value, for: id)
-            return .applied(id, stored)
-        } catch {
-            return .refusedByStore
-        }
+        guard let stored = Self.store(value, for: id, store: store, counted: false, &s) else { return .refusedByStore }
+        return .applied(id, stored)
+    }
+
+    /// Writes one admitted value and records it as the parameter's live value while a route still reaches it
+    /// (OSC-003-R5). `counted` adds it to `applied` (flushes and evictions; a direct apply is counted from
+    /// its outcome).
+    @discardableResult
+    private static func store(_ value: Double, for id: ParameterID, store: ParameterStore, counted: Bool = true,
+                              _ s: inout State) -> Double? {
+        guard let stored = try? store.setDouble(value, for: id) else { return nil }
+        if counted { s.counters.applied += 1 }
+        if s.reached.contains(id) { s.liveValues[id] = stored }
+        return stored
     }
 }

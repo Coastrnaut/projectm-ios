@@ -40,6 +40,10 @@ public struct LiveBandFrameInfo: Sendable, Equatable {
     public var rolloff: Float = 0
     /// ANL-012's spectral flatness (0…1), for MOD-002's Flatness source.
     public var flatness: Float = 0
+    /// ANL-013's stereo correlation (−1…1), for MOD-002's Correlation source.
+    public var correlation: Float = 0
+    /// ANL-013's phase-inversion warning, reported to the app's source status.
+    public var phaseInverted: Bool = false
 }
 
 /// The frame loop's view of the analyzer's bus subscription.
@@ -56,7 +60,8 @@ public final class LiveBandOutput: Sendable {
                                  sequence: frame.id, session: frame.time.session, kickEnvelope: frame.kickEnvelope,
                                  centroid: frame.centroid, loudness: frame.loudness, midTransient: frame.midTransient,
                                  highTransient: frame.highTransient, rolloff: frame.rolloff,
-                                 flatness: frame.flatness)
+                                 flatness: frame.flatness, correlation: frame.correlation,
+                                 phaseInverted: frame.phaseInverted)
     }
 }
 

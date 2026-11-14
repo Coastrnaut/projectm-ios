@@ -152,6 +152,7 @@ enum SceneHistoryEdit {
         if old.glowRadius != new.glowRadius { changes.append(("Glow Radius \(percent(new.glowRadius, decimals: 1))", "glow.radius")) }
         if old.glowThreshold != new.glowThreshold { changes.append(("Glow Threshold \(percent(new.glowThreshold))", "glow.threshold")) }
         if old.text != new.text { changes.append(text(from: old.text, to: new.text)) }
+        if let routes = ModulationHistoryEdit.describe(from: old.bindings, to: new.bindings) { changes.append(routes) }   // MOD-012
         if old.layerComposites != new.layerComposites {   // CMP-015-R6
             changes.append(LayerHistoryEdit.describe(from: old.layerComposites ?? [:], to: new.layerComposites ?? [:]))
         }

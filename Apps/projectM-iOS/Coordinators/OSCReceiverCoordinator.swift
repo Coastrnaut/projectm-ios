@@ -12,6 +12,9 @@
 //   refresh, and it reads the latest state. A flood therefore costs the main thread (and the
 //   render loop it drives) at most about 30 short refreshes a second.
 // * A failure is shown and never retried by itself (OSC-001-R3).
+// * OSC-003 (specs/191-osc-003-parameter-routes, contract R3): `routes` is the OSC Routes list; values applied
+//   through a route are read on the same gated refresh and handed to `applyLiveValues`, the live-value path
+//   MIDI-003 uses (then MOD-002 and the ACC-012 clamp). Live values are memory only; turning OSC off forgets them.
 // The test value feeds nothing that renders (OSC-001-R7). The networking itself lives in
 // PerformanceControl's OSCTransport/ folder (FR-068 amendment, ADR-0008).
 import Foundation
@@ -30,6 +33,15 @@ final class OSCReceiverCoordinator {
     private(set) var rateLimitedCount = 0
     /// Shown under the port field after a refused entry; cleared by the next valid one.
     private(set) var portError: String?
+    /// OSC-003-R5: the newest value OSC applied to each routed visual parameter (memory only).
+    private(set) var liveValues: [ParameterID: Double] = [:]
+    /// OSC-003-R10: the OSC Routes list (nil in tests that do not need it).
+    var routes: OSCRoutesCoordinator?
+    /// OSC-003: messages to addresses that are not on the route list, since launch.
+    private(set) var unknownAddressCount = 0
+
+    /// OSC-003-R5: called with the live values after each change (the app merges them with MIDI's).
+    @ObservationIgnored var applyLiveValues: @MainActor ([ParameterID: Double]) -> Void = { (_: [ParameterID: Double]) -> Void in }
 
     @ObservationIgnored private let settings: AppSettings
     @ObservationIgnored private let receiver: OSCReceiver
@@ -67,7 +79,14 @@ final class OSCReceiverCoordinator {
 
     func setEnabled(_ enabled: Bool) {
         settings.oscEnabled = enabled
+        if !enabled { receiver.dispatcher.clearLiveValues() }   // OSC-003-R5: off returns the manual values
         apply()
+    }
+
+    /// OSC-003: replaces the receiver's route allowlist.
+    func setRoutes(_ routes: [OSCRoute]) {
+        receiver.dispatcher.setRoutes(routes)
+        refresh()
     }
 
     /// Applies a typed port; returns false (and sets `portError`) when it is refused.
@@ -106,6 +125,13 @@ final class OSCReceiverCoordinator {
         testValue = receiver.testValue
         let counters = receiver.counters
         rateLimitedCount = counters.rateLimited + counters.coalesced
+        unknownAddressCount = counters.unknownAddresses
+        var live: [ParameterID: Double] = receiver.dispatcher.liveValues
+        live[OSCReceiverCatalog.testValueID] = nil   // OSC-001-R7: the test value feeds nothing that renders
+        if live != liveValues {
+            liveValues = live
+            applyLiveValues(live)
+        }
         if PermissionCatalog.state(localNetwork: state) != nil { onLocalNetworkDecided?() }
     }
 

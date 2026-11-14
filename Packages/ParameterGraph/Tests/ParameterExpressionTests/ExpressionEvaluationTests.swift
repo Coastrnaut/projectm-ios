@@ -101,6 +101,22 @@ final class ExpressionEvaluationTests: XCTestCase {
         XCTAssertEqual(compiled.evaluate(.silent), 0)
     }
 
+    /// ANL-013-T09: `audio.correlation` compiles to opcode 34 and reads (r + 1)/2.
+    func testCorrelationSourceInAFormula() throws {
+        let compiled = try CompiledExpression(source: "audio.correlation * 2 - 1")
+        XCTAssertEqual(compiled.audioSources, [.correlation])
+        XCTAssertTrue(compiled.instructions.contains { (instruction: ExpressionInstruction) -> Bool in
+            instruction.opcode == .correlation && instruction.opcode.rawValue == 34
+        })
+        let bands: [Float] = [0.5]
+        let value = bands.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> Double in
+            let frame = AudioFeatureFrame(bands: buffer, correlation: -0.75)
+            return compiled.evaluate(ExpressionInputs(frame: frame, timeSeconds: 0))
+        }
+        XCTAssertEqual(value, -0.75, "the formula recovers r")
+        XCTAssertEqual(compiled.evaluate(.silent), -1, "no feed reads 0")
+    }
+
     /// ANL-012-T08: `audio.flatness` compiles to opcode 33 and reads the frame's flatness.
     func testFlatnessSourceInAFormula() throws {
         let compiled = try CompiledExpression(source: "sqrt(audio.flatness) + audio.rolloff")

@@ -8,7 +8,8 @@
 // the overlay is shown; asking for them each second also keeps the stage timer on the shown visual.
 // PERF-002-R8: the budget lines follow the stage lines; "over budget:" lines are drawn in a highlight colour (the
 // text itself says it, so colour is never the only cue) and stay inside the combined accessibility label, so
-// VoiceOver reads them with the overlay. No announcement (research PERF-002-D5).
+// VoiceOver reads them with the overlay. No announcement (research PERF-002-D5). PERF-007-R10: the "frames <output>"
+// lines (presented, late, skipped per output) in their own text, `overlayFrameDrops`, inside the same combined label.
 import CaptureKit
 import CaptureUI
 import FrameTiming
@@ -22,6 +23,8 @@ struct PerformanceOverlay: View {
     var renderHealth: () -> String? = { nil }
     /// PERF-001: the stage timer's lines (`FrameStageReport.lines`); empty when nothing is measured.
     var stageLines: () -> [String] = { [] }
+    /// ANL-013: "stereo: r 0.98" (and "phase-inverted" while warned); nil without a native visual.
+    var stereoLine: () -> String? = { nil }
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { _ in
@@ -40,6 +43,10 @@ struct PerformanceOverlay: View {
                     Text("render: \(render)")
                         .accessibilityIdentifier("overlayRender")
                 }
+                if let stereo = stereoLine() {
+                    Text(stereo)
+                        .accessibilityIdentifier("overlayStereo")
+                }
                 stageSection(stageLines())
             }
             .font(.system(.caption, design: .monospaced))
@@ -54,7 +61,8 @@ struct PerformanceOverlay: View {
 
     /// PERF-001: one text line per stage line; PERF-002: the budget's flag lines highlighted below them.
     @ViewBuilder private func stageSection(_ lines: [String]) -> some View {
-        let split: (plain: [String], flags: [String]) = Self.splitBudgetFlags(lines)
+        let drops: (plain: [String], frames: [String]) = Self.splitFrameDrops(lines)
+        let split: (plain: [String], flags: [String]) = Self.splitBudgetFlags(drops.plain)
         if !split.plain.isEmpty {
             Text(split.plain.joined(separator: "\n"))
                 .accessibilityIdentifier("overlayStages")
@@ -65,6 +73,17 @@ struct PerformanceOverlay: View {
                 .fontWeight(.bold)
                 .accessibilityIdentifier("overlayBudgetFlags")
         }
+        if !drops.frames.isEmpty {
+            Text(drops.frames.joined(separator: "\n"))
+                .accessibilityIdentifier("overlayFrameDrops")
+        }
+    }
+
+    /// PERF-007: separates the "frames …" lines (their own text) from the rest, keeping each group's order.
+    static func splitFrameDrops(_ lines: [String]) -> (plain: [String], frames: [String]) {
+        let frames: [String] = lines.filter { (line: String) -> Bool in line.hasPrefix(FrameDropCounts.linePrefix) }
+        let plain: [String] = lines.filter { (line: String) -> Bool in !line.hasPrefix(FrameDropCounts.linePrefix) }
+        return (plain, frames)
     }
 
     /// PERF-002: separates the "over budget:" lines (highlighted) from the rest, keeping each group's order.

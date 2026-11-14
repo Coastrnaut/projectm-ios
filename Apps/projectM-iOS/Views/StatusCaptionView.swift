@@ -100,7 +100,8 @@ struct CaptureEventChanges: ViewModifier {
     }
 }
 
-/// X11-X14a: the recording's notices and the offered result (split for the type-check budget, REC-004).
+/// X11-X14a: the recording's notices and the offered result (split for the type-check budget, REC-004); REC-009's
+/// X9f, X9g ride here (the parent chain is at the budget).
 struct RecordingResultChanges: ViewModifier {
     let coordinator: AppCoordinator
 
@@ -108,6 +109,7 @@ struct RecordingResultChanges: ViewModifier {
         content
             .onChange(of: coordinator.videoRecording.notice, noticeChanged)   // X12-X14a
             .onChange(of: coordinator.videoRecording.offered != nil, offeredChanged)   // X11
+            .modifier(RecordingStatusEventChanges(coordinator: coordinator))   // REC-009 X9f, X9g
     }
 
     private func noticeChanged(_: String?, _ notice: String?) {

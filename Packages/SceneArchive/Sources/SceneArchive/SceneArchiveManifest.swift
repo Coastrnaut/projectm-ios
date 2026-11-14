@@ -25,13 +25,16 @@ public struct SceneArchiveManifest: Codable, Sendable, Equatable {
     public var files: [PortableFileRecord]
     public var scene: String
     public var assets: [SceneArchiveAssetRecord]
+    /// SCN-014: slideshow pictures; absent (not written) when the scene has none.
+    public var slides: [SceneArchiveSlideRecord]?
 
-    public init(files: [PortableFileRecord], assets: [SceneArchiveAssetRecord]) {
+    public init(files: [PortableFileRecord], assets: [SceneArchiveAssetRecord], slides: [SceneArchiveSlideRecord]? = nil) {
         format = SceneArchiveFormat.formatName
         formatVersion = SceneArchiveFormat.currentVersion
         self.files = files
         scene = SceneArchiveFormat.scenePath
         self.assets = assets
+        self.slides = slides
     }
 
     /// Sorted keys, no white space, `/` unescaped.
