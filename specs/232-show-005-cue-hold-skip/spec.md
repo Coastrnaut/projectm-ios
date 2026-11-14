@@ -42,6 +42,16 @@ local-first option.
 - Q: What if every cue is skipped? → A: Next and Previous do not move; a notice "All cues are skipped." shows and is announced on the cue lane; the Next and Previous buttons are disabled (SHOW-001-R13) and the status reads "All cues skipped".
 - Q: How is it shown? → A: Hold: a "Hold" toggle button in the visualizer's cue row (VoiceOver "Hold timed advances", value on/off), the countdown line reads "Next in 0:42, held", and the performance pad's cue readout shows "Hold" (VoiceOver ", hold on") with a VoiceOver action to toggle it. Skip: a skipped cue's row is dimmed with "Skipped" under its label (VoiceOver ", skipped"); actions "Skip Cue" / "Don't Skip Cue" in the context menu, a leading swipe "Skip"/"Unskip" and a VoiceOver action.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Five questions, each answered with the recommended option (owner rules 4 and 9).
+
+- Q: Is turning Hold on or off announced? → A: Yes, on the cue lane (ACC-004): "Hold on, timed advances paused" and "Hold off". The toggle's own VoiceOver value also changes (on/off). Rejected: silent (a performer using VoiceOver with controls hidden would not know the state changed).
+- Q: Does a cue reached explicitly (Go to Cue) while skipped still count down its own dwell? → A: Yes: the cue is active and its dwell applies; its timed advance goes to the next cue that is not skipped (or none). Skip only decides where Next and Previous land.
+- Q: Does the next-cue media warm-up (PERF-005) follow Skip? → A: Not in this feature. It may warm a skipped cue's media; that costs a little memory, never correctness. Recorded as out of scope.
+- Q: Does Hold change the show file or a backup? → A: No. Hold is never written; FILE-005 backups carry the `skip` flags automatically because they re-encode `show.json` through the show's own decode and encode.
+- Q: What does a skip value other than `true` in a file do? → A: `false` and absent mean not skipped (a writer never writes `false`); any other JSON type (number, string, object) is dropped with a counted warning `droppedSkipFlags(n)` and the show loads.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Hold the timed show (Priority: P1) — MVP
@@ -85,6 +95,8 @@ cue; skip every cue; round-trip the flag through the show file; refuse the edit 
 ### Edge Cases
 
 - Hold on with no countdown running: nothing to freeze; a cue started later starts held.
+- A skipped cue reached by Go to Cue counts down its own dwell and advances to the next cue that is not skipped.
+- A `skip` value that is not a boolean in a file is dropped with a counted warning; the show loads.
 - Hold together with pause, blackout, a repair report or the background: the countdown runs only when none of them holds.
 - A Skip edit makes the active cue's last remaining next cue skipped: its countdown is cancelled (nothing to advance to); unskipping does not start a countdown until the next step.
 - Skipping the active cue does not move the show.
@@ -104,6 +116,7 @@ cue; skip every cue; round-trip the flag through the show file; refuse the edit 
 - **SHOW-005-R7**: Skip edits MUST save at once, never apply a scene or move the position, be refused while the scene is locked, and cancel a countdown that no longer has a cue to advance to.
 - **SHOW-005-R8**: The cue row MUST offer the Hold toggle and the performance pad MUST show the Hold state, both with VoiceOver; the editor MUST show skipped cues dimmed with "Skipped" and offer Skip/Unskip as context menu, swipe and VoiceOver actions (hidden while locked).
 - **SHOW-005-R9**: Duplicate Scene MUST copy the Skip flag.
+- **SHOW-005-R10a**: Turning Hold on or off MUST be announced on the cue lane.
 - **SHOW-005-R10**: No network access, no new stored settings key, no wall-clock time.
 
 ### Key Entities
@@ -124,4 +137,5 @@ cue; skip every cue; round-trip the flag through the show file; refuse the edit 
 ## Assumptions
 
 - Simulator results prove behavior only; no device task is needed for this feature.
+- The PERF-005 next-cue media warm-up does not follow Skip in this feature.
 - MIDI, OSC and keyboard shortcuts for Hold are out of scope (they can map to it later); the Hold toggle is in the controls and, for VoiceOver, on the pad readout.
