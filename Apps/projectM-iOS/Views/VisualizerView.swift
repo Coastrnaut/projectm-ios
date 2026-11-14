@@ -358,6 +358,8 @@ struct VisualizerView: View {
         }
         .onChange(of: coordinator.settings.reduceFlashing) { coordinator.applyReduceFlashing() }
         .onChange(of: coordinator.settings.visual) { coordinator.visualSettingsChanged() }                 // VIS-001
+        .onChange(of: coordinator.settings.cameraPosition) { coordinator.cameraSettingsChanged() }         // CAM-002
+        .onChange(of: coordinator.settings.cameraMirrored) { coordinator.cameraSettingsChanged() }
         .onChange(of: coordinator.settings.circularSpectrumBars) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.linearSpectrumOrientation) { coordinator.visualSettingsChanged() }   // VIS-002
         .onChange(of: coordinator.settings.linearSpectrumSpacing) { coordinator.visualSettingsChanged() }
@@ -503,7 +505,7 @@ struct VisualizerView: View {
         // CAM-001-R5, R6, R8: never blocks; stays while the camera cannot show pictures.
         // FILE-013-R3: denied and restricted come from the permission catalog; the other states
         // (no camera, paused) keep CAM-001's notice without Open Settings. One notice view for both.
-        if coordinator.showsCameraVisual, let notice = PermissionCatalog.cameraNotice(for: coordinator.cameraState) {
+        if coordinator.showsCameraVisual, let notice = PermissionCatalog.cameraNotice(for: coordinator.cameraState, position: coordinator.settings.cameraPosition) {
             PermissionNoticeView(notice: notice, symbol: "video.slash", identifierPrefix: "camera")
         }
         // MED-001-R11: never blocks; clears itself after a few seconds.

@@ -10,6 +10,9 @@
 // used last frame is drawn again (the render never waits). The shader is a Swift constant compiled
 // at run time (ADR-0009 decision 3). Not Sendable: the compositor's thread drives it and reads the
 // provider's main-thread `state` (the app's compositor runs on the main thread).
+// CAM-002: `mirrored` flips the upright camera picture (CameraPictureGeometry, research CAM-002-D1)
+// from the next frame; it never touches the camera. A picture is drawn only when its position equals
+// the provider's current position (research CAM-002-D3), so a camera switch never shows the old camera.
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import Compositor
 import Metal
@@ -24,6 +27,8 @@ public final class CameraLayerSource: LayerSource {
     private var held: CameraFrame?
     /// Frames whose own camera picture was drawn (diagnostics, tests).
     public private(set) var framesShown = 0
+    /// CAM-002-R3, R5: flip the camera picture left to right (main thread; applies from the next frame).
+    public var mirrored = false
 
     public init(provider: any CameraFrameProvider) {
         self.provider = provider
@@ -76,9 +81,10 @@ public final class CameraLayerSource: LayerSource {
             throw .notReady
         }
         if let newest = provider.latestFrame() { held = newest }
+        if let stale = held, stale.position != provider.position { held = nil }   // CAM-002-R7: never the previous camera
         guard let camera = held, let pipeline, let sampler else { throw .notReady }
         let geometry = CameraPictureGeometry(pictureWidth: camera.width, pictureHeight: camera.height, rotation: camera.rotation,
-                                             outputWidth: picture.width, outputHeight: picture.height)
+                                             outputWidth: picture.width, outputHeight: picture.height, mirrored: mirrored)
         var uniforms = CameraUniforms(geometry: geometry, outputWidth: picture.width, outputHeight: picture.height)
         let pass = MTLRenderPassDescriptor()
         pass.colorAttachments[0].texture = picture
@@ -114,7 +120,7 @@ public final class CameraLayerSource: LayerSource {
         float2 offset;
         float2 outputSize;
         uint rotation;   // quarter turns clockwise to upright
-        uint pad;
+        uint mirror;     // CAM-002: 1 flips the upright picture left to right
     };
 
     // Output point (0...1, top-left) -> visible part of the upright picture -> camera texture
@@ -124,6 +130,7 @@ public final class CameraLayerSource: LayerSource {
                                 sampler s [[sampler(0)]], constant CamUniforms &u [[buffer(0)]]) {
         float2 p = in.position.xy / u.outputSize;
         float2 ab = u.offset + p * u.visible;
+        if (u.mirror == 1u) { ab.x = 1.0 - ab.x; }
         float2 t = ab;
         if (u.rotation == 1u) { t = float2(ab.y, 1.0 - ab.x); }
         else if (u.rotation == 2u) { t = float2(1.0 - ab.x, 1.0 - ab.y); }
@@ -134,19 +141,20 @@ public final class CameraLayerSource: LayerSource {
     """
 }
 
-/// Matches `CamUniforms` in the shader (32 bytes).
+/// Matches `CamUniforms` in the shader (32 bytes; CAM-002's `mirror` took the padding word).
 struct CameraUniforms {
     var visible: SIMD2<Float>
     var offset: SIMD2<Float>
     var outputSize: SIMD2<Float>
     var rotation: UInt32
-    var pad: UInt32 = 0
+    var mirror: UInt32
 
     init(geometry: CameraPictureGeometry, outputWidth: Int, outputHeight: Int) {
         visible = SIMD2(geometry.visibleWidth, geometry.visibleHeight)
         offset = SIMD2(geometry.offsetX, geometry.offsetY)
         outputSize = SIMD2(Float(max(outputWidth, 1)), Float(max(outputHeight, 1)))
         rotation = UInt32(geometry.rotation.rawValue / 90)
+        mirror = geometry.mirrored ? 1 : 0
     }
 }
 #endif

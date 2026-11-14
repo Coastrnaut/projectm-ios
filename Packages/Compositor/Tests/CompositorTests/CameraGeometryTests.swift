@@ -84,6 +84,89 @@ final class CameraGeometryTests: XCTestCase {
     }
 }
 
+// MARK: - CAM-002-T04: the mirror (CAM-002-R3, S1)
+
+/// A texture coordinate (0…1, top-left) expected at an output point.
+private struct Expected {
+    let x: Float
+    let y: Float
+}
+
+final class CameraMirrorTests: XCTestCase {
+    private func assertClose(_ a: Float, _ b: Float, _ message: String, file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertEqual(a, b, accuracy: 1e-5, message, file: file, line: line)
+    }
+
+    /// Output points checked: top-left, top-right, bottom-left, bottom-right, center.
+    private let points: [(name: String, x: Float, y: Float)] = [("TL", 0, 0), ("TR", 1, 0), ("BL", 0, 1), ("BR", 1, 1), ("C", 0.5, 0.5)]
+
+    /// The camera texture corner shown at each output point without mirroring (CAM-001's mapping), per turn.
+    private func unmirrored(_ rotation: CameraRotation) -> [Expected] {
+        switch rotation {
+        case .none: return [Expected(x: 0, y: 0), Expected(x: 1, y: 0), Expected(x: 0, y: 1), Expected(x: 1, y: 1), Expected(x: 0.5, y: 0.5)]
+        case .clockwise90: return [Expected(x: 0, y: 1), Expected(x: 0, y: 0), Expected(x: 1, y: 1), Expected(x: 1, y: 0), Expected(x: 0.5, y: 0.5)]
+        case .clockwise180: return [Expected(x: 1, y: 1), Expected(x: 0, y: 1), Expected(x: 1, y: 0), Expected(x: 0, y: 0), Expected(x: 0.5, y: 0.5)]
+        case .clockwise270: return [Expected(x: 1, y: 0), Expected(x: 1, y: 1), Expected(x: 0, y: 0), Expected(x: 0, y: 1), Expected(x: 0.5, y: 0.5)]
+        }
+    }
+
+    /// Mirrored, each output point shows what its left-right partner showed unmirrored (TL↔TR, BL↔BR).
+    private func mirroredExpectation(_ rotation: CameraRotation) -> [Expected] {
+        let plain: [Expected] = unmirrored(rotation)
+        return [plain[1], plain[0], plain[3], plain[2], plain[4]]
+    }
+
+    /// Front and rear, mirror on and off, each turn: the expected texture coordinate at the corners and center.
+    func testMirrorMatrixForBothPositionsMirrorSettingsAndTurns() {
+        for position in CameraPosition.allCases {
+            for mirror in [true, false] {
+                for rotation in CameraRotation.allCases {
+                    let geometry = CameraPictureGeometry(pictureWidth: 16, pictureHeight: 16, rotation: rotation,
+                                                         outputWidth: 16, outputHeight: 16, mirrored: mirror)
+                    let expected: [Expected] = mirror ? mirroredExpectation(rotation) : unmirrored(rotation)
+                    for (index, point) in points.enumerated() {
+                        let t = geometry.textureCoordinate(x: point.x, y: point.y)
+                        let label = "\(position) mirror \(mirror) \(rotation) \(point.name)"
+                        assertClose(t.x, expected[index].x, label + " x")
+                        assertClose(t.y, expected[index].y, label + " y")
+                    }
+                }
+            }
+        }
+    }
+
+    func testDefaultsMirrorTheFrontCameraOnly() {
+        XCTAssertTrue(CameraPosition.front.defaultMirrored)
+        XCTAssertFalse(CameraPosition.back.defaultMirrored)
+        XCTAssertEqual(CameraPosition.allCases.map(\.title), ["Back", "Front"])
+        XCTAssertEqual(CameraPosition(rawValue: "front"), .front)
+        XCTAssertNil(CameraPosition(rawValue: "Front"))
+    }
+
+    /// The flip keeps the crop centered: a wide picture shows the same middle third, reversed.
+    func testMirrorKeepsTheCenteredCrop() {
+        let plain = CameraPictureGeometry(pictureWidth: 30, pictureHeight: 10, rotation: .none, outputWidth: 64, outputHeight: 64)
+        let flipped = CameraPictureGeometry(pictureWidth: 30, pictureHeight: 10, rotation: .none, outputWidth: 64, outputHeight: 64,
+                                            mirrored: true)
+        XCTAssertEqual(plain.visibleWidth, flipped.visibleWidth)
+        XCTAssertEqual(plain.offsetX, flipped.offsetX)
+        assertClose(flipped.textureCoordinate(x: 0, y: 0).x, 2.0 / 3, "output left edge shows the crop's right edge")
+        assertClose(flipped.textureCoordinate(x: 1, y: 0).x, 1.0 / 3, "output right edge shows the crop's left edge")
+        assertClose(flipped.textureCoordinate(x: 0.25, y: 0.5).x, plain.textureCoordinate(x: 0.75, y: 0.5).x, "a reflection about the center")
+        let degenerate = CameraPictureGeometry(pictureWidth: 0, pictureHeight: 0, rotation: .clockwise90, outputWidth: 4, outputHeight: 4,
+                                               mirrored: true)
+        XCTAssertTrue(degenerate.mirrored, "kept for degenerate sizes")
+    }
+
+    func testFrontNoticesNameTheFrontCamera() {
+        XCTAssertEqual(CameraFeedState.unavailable.notice(position: .front), "No front camera is available. Showing the spectrum only.")
+        XCTAssertEqual(CameraFeedState.unavailable.notice(position: .back), CameraFeedState.unavailable.notice)
+        XCTAssertEqual(CameraFeedState.unavailable.accessibilityValue(position: .front), "No front camera")
+        XCTAssertEqual(CameraFeedState.denied.notice(position: .front), CameraFeedState.denied.notice, "permission notices are shared")
+        XCTAssertEqual(CameraFeedState.running.accessibilityValue(position: .front), "Live")
+    }
+}
+
 private extension CameraPictureGeometry {
     func with(_ rotation: CameraRotation) -> CameraPictureGeometry {
         var g = self

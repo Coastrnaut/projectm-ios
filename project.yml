@@ -240,7 +240,8 @@ targets:
         NSScreenCaptureUsageDescription: "Only the audio of the content you choose to share is used, and only on this device. It is not recorded or sent anywhere."
         # CAM-001-R4 (spec 033, ADR-0017): asked only when the user chooses the Camera visual. FILE-013
         # moved it here from the CaptureLab target, where CAM-001 had put it (the app lacked it).
-        NSCameraUsageDescription: "The Camera visual shows the live view from your rear camera behind the visualization. The picture stays on your device and is never recorded or sent."
+        # CAM-002-R9: reworded for the front camera and the user's own saves (spec 096, Clarifications).
+        NSCameraUsageDescription: "The Camera visual shows the live view from the front or rear camera you choose, behind the visualization. The picture stays on your device: it is never sent, and it is saved only when you save a frame or record the visualization yourself."
         # OSC-001-R17 (FR-068 amendment, ADR-0008): shown when the user turns on OSC receiver. No
         # NSBonjourServices: OSC-001 advertises and browses nothing (OSC-011 adds discovery).
         NSLocalNetworkUsageDescription: "When you turn on OSC receiver in Settings, projectM listens on your local network for OSC control messages. It never connects to the internet."

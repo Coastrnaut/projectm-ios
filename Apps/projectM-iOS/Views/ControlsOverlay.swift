@@ -33,6 +33,7 @@
 // SHOW-001: when the show has cues, its row (Previous cue, "Cue 2 of 5 · Intro", Next cue) sits above
 // the buttons in both layouts (ShowCueRow).
 // AUD-012: "Switch Source" (after Stop) opens the list of the other available sources.
+import CameraLayer
 import CaptureKit
 import CaptureUI
 import PresentationLifecycle
@@ -114,14 +115,24 @@ struct ControlsOverlay: View {
                     .font(.subheadline)
                     .lineLimit(1)
                     .accessibilityIdentifier("currentVisual")
-                Text(coordinator.showsCameraVisual ? "Rear camera" : coordinator.showsPhotoVisual ? "Your photo"
-                     : coordinator.showsVideoVisual ? "Your video" : "Native visual")   // CAM-001, MED-001, MED-002
+                Text(alternateVisualSubtitle)   // CAM-001, CAM-002, MED-001, MED-002
                     .font(.caption)
                     .lineLimit(1)
             }
         } else {
             presetRow
         }
+    }
+
+    /// The line under the visual's name: which camera (CAM-002), your photo or video, or native.
+    private var alternateVisualSubtitle: String {
+        if coordinator.showsCameraVisual {
+            let front: Bool = coordinator.settings.cameraPosition == .front
+            return front ? "Front camera" : "Rear camera"
+        }
+        if coordinator.showsPhotoVisual { return "Your photo" }
+        if coordinator.showsVideoVisual { return "Your video" }
+        return "Native visual"
     }
 
     private var presetRow: some View {

@@ -18,15 +18,20 @@ public struct CameraFrame {
     public let rotation: CameraRotation
     /// Increases with every stored picture.
     public let sequence: UInt64
+    /// CAM-002 (research CAM-002-D3): the camera the picture came from. The layer draws a picture only
+    /// when this equals the provider's current position, so no picture of the previous camera is drawn
+    /// after a switch.
+    public let position: CameraPosition
     /// Keeps the texture's backing (e.g. a CoreVideo texture) alive while the picture is held.
     let owner: AnyObject?
 
-    public init(texture: MTLTexture, rotation: CameraRotation, sequence: UInt64, owner: AnyObject? = nil) {
+    public init(texture: MTLTexture, rotation: CameraRotation, sequence: UInt64, position: CameraPosition = .back, owner: AnyObject? = nil) {
         self.texture = texture
         width = texture.width
         height = texture.height
         self.rotation = rotation
         self.sequence = sequence
+        self.position = position
         self.owner = owner
     }
 }
@@ -45,6 +50,18 @@ public protocol CameraFrameProvider: AnyObject {
     func stop()
     /// The newest picture; nil before the first, after `stop`, or when the slot is busy this instant.
     func latestFrame() -> CameraFrame?
+    /// CAM-002: the camera the feed uses (main thread).
+    var position: CameraPosition { get }
+    /// CAM-002: chooses the camera (main thread). Idle, denied or restricted: only recorded. Starting
+    /// or running: switches, and no picture of the previous camera is returned afterwards.
+    /// Unavailable, interrupted or failed: starts again with the new camera. Same position: no-op.
+    func select(_ position: CameraPosition)
+}
+
+extension CameraFrameProvider {
+    /// A provider without a front camera (CAM-001's stand-ins) stays on the rear camera.
+    public var position: CameraPosition { .back }
+    public func select(_ position: CameraPosition) {}
 }
 
 /// The newest-picture slot shared by a provider's camera thread and the render thread.
@@ -53,6 +70,7 @@ public final class LatestCameraFrame: @unchecked Sendable {
         var frame: CameraFrame?
         var open = false
         var rotation = CameraRotation.none
+        var position = CameraPosition.back
         var sequence: UInt64 = 0
     }
 
@@ -91,14 +109,21 @@ public final class LatestCameraFrame: @unchecked Sendable {
         lock.withLockUnchecked { $0.rotation = rotation }
     }
 
-    /// Replaces the newest picture; false (and nothing kept) when the slot is closed.
+    /// CAM-002: the position stamped on pictures stored from now on without their own position.
+    public func setPosition(_ position: CameraPosition) {
+        lock.withLockUnchecked { $0.position = position }
+    }
+
+    /// Replaces the newest picture; false (and nothing kept) when the slot is closed. `position` is the
+    /// camera the picture came from (nil: the slot's position).
     @discardableResult
-    public func store(_ texture: MTLTexture, owner: AnyObject? = nil) -> Bool {
+    public func store(_ texture: MTLTexture, owner: AnyObject? = nil, position: CameraPosition? = nil) -> Bool {
         let replaced: (stored: Bool, old: CameraFrame?) = lock.withLockUnchecked { slot in
             guard slot.open else { return (false, nil) }
             slot.sequence &+= 1
             let old = slot.frame
-            slot.frame = CameraFrame(texture: texture, rotation: slot.rotation, sequence: slot.sequence, owner: owner)
+            slot.frame = CameraFrame(texture: texture, rotation: slot.rotation, sequence: slot.sequence,
+                                     position: position ?? slot.position, owner: owner)
             return (true, old)
         }
         return replaced.stored   // the old picture is released here, outside the lock

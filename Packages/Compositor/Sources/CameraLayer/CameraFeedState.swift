@@ -16,7 +16,7 @@ public enum CameraFeedState: Sendable, Equatable {
     case denied
     /// Camera access is restricted (Screen Time, device management).
     case restricted
-    /// No usable rear camera (no permission is asked).
+    /// No usable camera at the chosen position (no permission is asked).
     case unavailable
     /// Another app or the system took the camera.
     case interrupted
@@ -40,6 +40,18 @@ public enum CameraFeedState: Sendable, Equatable {
     /// The notice offers a button that opens the app's page in iOS Settings.
     public var offersSettings: Bool { self == .denied || self == .restricted }
 
+    /// CAM-002-R10: the notice for a camera position; only `unavailable` names the position.
+    public func notice(position: CameraPosition) -> String? {
+        guard self == .unavailable, position == .front else { return notice }
+        return "No front camera is available. Showing the spectrum only."
+    }
+
+    /// CAM-002-R11: VoiceOver's value for a camera position; only `unavailable` names the position.
+    public func accessibilityValue(position: CameraPosition) -> String {
+        guard self == .unavailable, position == .front else { return accessibilityValue }
+        return "No front camera"
+    }
+
     /// VoiceOver's value for the camera visual (CAM-001-R14).
     public var accessibilityValue: String {
         switch self {
@@ -52,6 +64,23 @@ public enum CameraFeedState: Sendable, Equatable {
         case .interrupted, .failed: "Paused by the system"
         }
     }
+}
+
+/// Which camera the Camera visual uses (CAM-002-R1). Stored by the app as the raw value.
+public enum CameraPosition: String, Sendable, Equatable, CaseIterable {
+    case back
+    case front
+
+    /// "Back" or "Front" (the Settings picker).
+    public var title: String {
+        switch self {
+        case .back: "Back"
+        case .front: "Front"
+        }
+    }
+
+    /// CAM-002-R3: the mirror's default, on for the front camera (the selfie convention), off for the rear.
+    public var defaultMirrored: Bool { self == .front }
 }
 
 /// Clockwise rotation that makes a camera picture upright.
@@ -83,6 +112,6 @@ public enum CameraScenario: String, Sendable, CaseIterable {
     case notDeterminedDeny
     case denied
     case restricted
-    /// No rear camera.
+    /// No camera at all (CAM-002: neither position is available).
     case unavailable
 }

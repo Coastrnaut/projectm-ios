@@ -4,6 +4,8 @@
 // caller's (main) thread, and the picture (solid, columns or rows of sRGB-encoded colors) is created
 // once in `start()`. Tests, the iOS Simulator (which has no camera) and DEBUG UI tests
 // (`-uitestCamera <scenario>`) use it; release builds use `AVCameraFrameProvider`.
+// CAM-002: both positions (`select`), a missing front camera (`availablePositions`) and an asymmetric
+// `.marker` picture, so the mirror and the camera switch are testable without a camera.
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import Metal
 
@@ -20,6 +22,8 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
         case columns([Color])
         /// Equal horizontal stripes, top to bottom.
         case rows([Color])
+        /// CAM-002: `marker` in the top-left quarter (x < width/2, y < height/2), `background` elsewhere.
+        case marker(background: Color, marker: Color)
     }
 
     public let scenario: CameraScenario
@@ -29,6 +33,12 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
     public var rotation: CameraRotation {
         didSet { latest.setRotation(rotation) }
     }
+    /// CAM-002: the cameras this stand-in device has (`scenario` `.unavailable` means none at all).
+    public let availablePositions: Set<CameraPosition>
+    /// CAM-002: the chosen camera (main thread).
+    public private(set) var position: CameraPosition
+    /// CAM-002: effective camera switches (tests).
+    public private(set) var selectCount = 0
     private let device: MTLDevice
     private let latest = LatestCameraFrame()
     private var texture: MTLTexture?
@@ -46,14 +56,18 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
     public private(set) var stopCount = 0
 
     public init(device: MTLDevice, scenario: CameraScenario, pattern: Pattern = .solid(Color(red: 188, green: 188, blue: 188)),
-                width: Int = 64, height: Int = 48, rotation: CameraRotation = .none) {
+                width: Int = 64, height: Int = 48, rotation: CameraRotation = .none, position: CameraPosition = .back,
+                availablePositions: Set<CameraPosition> = [.back, .front]) {
         self.device = device
+        self.position = position
+        self.availablePositions = availablePositions
         self.scenario = scenario
         self.pattern = pattern
         self.width = max(width, 1)
         self.height = max(height, 1)
         self.rotation = rotation
         latest.setRotation(rotation)
+        latest.setPosition(position)
     }
 
     /// True while the stand-in camera "runs" (it delivers pictures).
@@ -62,8 +76,15 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
     public func start() {
         guard state != .running, state != .starting, state != .requestingAccess else { return }
         startCount += 1
+        startFeed()
+    }
+
+    /// The scenario's answer for the current position (also a camera switch, without passing through idle).
+    private func startFeed() {
         switch scenario {
         case .unavailable:
+            state = .unavailable
+        case _ where !availablePositions.contains(position):   // CAM-002-R10: no camera here, nothing asked
             state = .unavailable
         case .denied:
             state = .denied
@@ -90,6 +111,23 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
 
     public func latestFrame() -> CameraFrame? { latest.read() }
 
+    /// CAM-002: chooses the camera. The held picture is dropped first, so no picture of the previous
+    /// camera is returned afterwards; a running or broken feed starts again with the new camera.
+    public func select(_ position: CameraPosition) {
+        guard position != self.position else { return }
+        selectCount += 1
+        latest.clear()
+        self.position = position
+        latest.setPosition(position)
+        switch state {
+        case .idle, .denied, .restricted, .requestingAccess:
+            break
+        case .starting, .running, .unavailable, .interrupted, .failed:
+            latest.close()
+            startFeed()   // straight to the new camera: the badge never sees idle (CAM-002-R7, R8)
+        }
+    }
+
     /// Another app or the system takes the camera.
     public func interrupt() {
         guard state == .running else { return }
@@ -101,7 +139,7 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
     public func endInterruption() {
         guard state == .interrupted, let texture else { return }
         state = .running
-        latest.store(texture)
+        latest.store(texture, position: position)
     }
 
     /// A runtime error.
@@ -119,7 +157,7 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
             return
         }
         latest.open()
-        latest.store(texture)
+        latest.store(texture, position: position)
         state = .running
     }
 
@@ -152,6 +190,9 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
         case let .rows(colors):
             guard !colors.isEmpty else { return Color(red: 0, green: 0, blue: 0) }
             return colors[min(y * colors.count / height, colors.count - 1)]
+        case let .marker(background, marker):
+            let inMarker: Bool = x < width / 2 && y < height / 2
+            return inMarker ? marker : background
         }
     }
 }

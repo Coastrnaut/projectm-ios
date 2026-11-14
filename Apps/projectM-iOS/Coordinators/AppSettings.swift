@@ -25,6 +25,10 @@
 // * Camera (CAM-001-R1, R11): `visual` may be `.camera` for the session only. It is never written,
 //   so the key keeps the visual chosen before it, and a stored `camera` (never written by the app)
 //   reads as projectM: the camera starts only from the user's choice in the running session.
+// * Camera position and mirror (CAM-002-R1, R3, R6): `settings.camera.position` (`back`/`front`;
+//   anything else → back), `settings.camera.mirrorFront` (Bool, absent → on) and
+//   `settings.camera.mirrorBack` (Bool, absent → off). Ordinary settings: they never start the camera
+//   (the Camera choice stays session only) and are not recorded in scenes or cues.
 // * Photo (MED-001-R8): `visual` may be `photo`, stored like the spectra (no sensor is involved).
 //   The chosen photo's identifier is `settings.photo.id` (PhotoStore.idKey; absent = no photo); the
 //   copy itself lives in Application Support/Photos.
@@ -39,6 +43,7 @@
 // VIS-001-R11 the two visual keys, FX-001-R11 the four glow keys, VIS-002-R11 the two linear keys,
 // VIS-003-R10 the two oscilloscope keys, ANL-003-R6 the two smoothing keys).
 import AnalysisFeatures
+import CameraLayer
 import Foundation
 import Observation
 import PerformanceControl
@@ -65,6 +70,9 @@ final class AppSettings {
     static let spectrumReleaseKey = "settings.spectrum.release"
     static let oscEnabledKey = "settings.osc.enabled"
     static let oscPortKey = "settings.osc.port"
+    static let cameraPositionKey = "settings.camera.position"       // CAM-002
+    static let cameraMirrorFrontKey = "settings.camera.mirrorFront"
+    static let cameraMirrorBackKey = "settings.camera.mirrorBack"
     /// MED-001: the stored photo's identifier (written by PhotoStore).
     static let photoIDKey = PhotoStore.idKey
     /// MED-002: the stored video's identifier (written by VideoStore).
@@ -74,7 +82,8 @@ final class AppSettings {
     static let allKeys = [performanceOverlayKey, reduceFlashingKey, presetScopeKey, visualKey, circularSpectrumBarsKey,
                           glowKey, glowIntensityKey, glowRadiusKey, glowThresholdKey,
                           linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey, videoIDKey,
-                          textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, spectrumAttackKey, spectrumReleaseKey]
+                          textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, spectrumAttackKey, spectrumReleaseKey,
+                          cameraPositionKey, cameraMirrorFrontKey, cameraMirrorBackKey]
     /// VIS-002-R4: the spacings offered for the linear spectrum.
     static let linearSpectrumSpacingChoices: [(title: String, value: Double)] = [("None", 0), ("Narrow", 0.2), ("Wide", 0.5)]
     static let defaultLinearSpectrumSpacing = 0.2
@@ -112,6 +121,29 @@ final class AppSettings {
     var visualBeforeCamera: VisualChoice {
         let stored = defaults.string(forKey: Self.visualKey).flatMap(VisualChoice.init(rawValue:)) ?? .projectM
         return stored.usesCamera ? .projectM : stored
+    }
+
+    /// CAM-002-R1: which camera the Camera visual uses (back by default). Never starts the camera.
+    var cameraPosition: CameraPosition {
+        didSet { defaults.set(cameraPosition.rawValue, forKey: Self.cameraPositionKey) }
+    }
+
+    /// CAM-002-R3: the front camera's mirror (on by default).
+    var cameraMirrorFront: Bool {
+        didSet { defaults.set(cameraMirrorFront, forKey: Self.cameraMirrorFrontKey) }
+    }
+
+    /// CAM-002-R3: the rear camera's mirror (off by default).
+    var cameraMirrorBack: Bool {
+        didSet { defaults.set(cameraMirrorBack, forKey: Self.cameraMirrorBackKey) }
+    }
+
+    /// CAM-002-R3: the mirror of the chosen camera (each camera keeps its own).
+    var cameraMirrored: Bool {
+        get { cameraPosition == .front ? cameraMirrorFront : cameraMirrorBack }
+        set {
+            if cameraPosition == .front { cameraMirrorFront = newValue } else { cameraMirrorBack = newValue }
+        }
     }
 
     /// Bars of the circular spectrum: 16, 32, 64 or 128.
@@ -251,6 +283,9 @@ final class AppSettings {
         reduceFlashingChoice = defaults.object(forKey: Self.reduceFlashingKey) as? Bool
         let storedVisual = defaults.string(forKey: Self.visualKey).flatMap(VisualChoice.init(rawValue:)) ?? .projectM
         visual = storedVisual.usesCamera ? .projectM : storedVisual   // CAM-001-R11
+        cameraPosition = defaults.string(forKey: Self.cameraPositionKey).flatMap(CameraPosition.init(rawValue:)) ?? .back
+        cameraMirrorFront = defaults.object(forKey: Self.cameraMirrorFrontKey) as? Bool ?? CameraPosition.front.defaultMirrored
+        cameraMirrorBack = defaults.object(forKey: Self.cameraMirrorBackKey) as? Bool ?? CameraPosition.back.defaultMirrored
         let bars = defaults.integer(forKey: Self.circularSpectrumBarsKey)
         circularSpectrumBars = Self.circularSpectrumBarChoices.contains(bars) ? bars : Self.defaultCircularSpectrumBars
         linearSpectrumOrientation = defaults.string(forKey: Self.linearSpectrumOrientationKey)
@@ -304,7 +339,7 @@ enum VisualChoice: String, CaseIterable, Sendable {
     case linearSpectrum
     /// The native waveform oscilloscope (VIS-003).
     case oscilloscope
-    /// The rear camera with the circular spectrum over it (CAM-001; session only).
+    /// The rear or front camera (CAM-002) with the circular spectrum over it (CAM-001; session only).
     case camera
     /// The imported photo with the circular spectrum over it (MED-001; persisted).
     case photo
@@ -332,7 +367,7 @@ enum VisualChoice: String, CaseIterable, Sendable {
     /// Shown instead of projectM (a native spectrum, the camera or the photo visual).
     var replacesProjectM: Bool { self != .projectM }
 
-    /// The camera visual (CAM-001): uses the rear camera while shown.
+    /// The camera visual (CAM-001): uses the chosen camera (CAM-002) while shown.
     var usesCamera: Bool { self == .camera }
 
     /// The photo visual (MED-001).

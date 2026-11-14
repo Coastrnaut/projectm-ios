@@ -61,6 +61,9 @@ final class SettingsTests: XCTestCase {
         settings.spectrumReleaseMilliseconds = 250
         settings.oscEnabled = true             // OSC-001-R15
         settings.oscPort = 8000
+        settings.cameraPosition = .front       // CAM-002-R6
+        settings.cameraMirrorFront = false
+        settings.cameraMirrorBack = true
         let keys = Set(defaults.persistentDomain(forName: suite)?.keys ?? [:].keys)
         // MED-001, MED-002, MED-009: `settings.photo.id`, `settings.video.id` and `settings.text.overlay` are
         // in allKeys (the UI-test reset) but written by PhotoStore, VideoStore and TextOverlayStore only.

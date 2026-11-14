@@ -4,7 +4,8 @@ Effective: before the first App Store release (task T107; FR-063). Updated for t
 library purchase (feature 002 T240; FR-122, FR-123) and for importing your own audio files
 (AUD-001-T30; AUD-001-R22, in app versions that offer "Import Audio…"), for the optional OSC
 receiver (OSC-001-R18, in app versions that offer "OSC receiver" in Settings), and for the Camera
-visual (CAM-001; `specs/033-cam-001-rear-camera-layer`, in app versions that offer it), and for the
+visual (CAM-001; `specs/033-cam-001-rear-camera-layer`, and its front camera, CAM-002;
+`specs/096-cam-002-front-camera-layer`, in app versions that offer them), and for the
 Photo visual (MED-001; `specs/044-med-001-import-photo-layer`, in app versions that offer it), and for
 the Video visual (MED-002; `specs/048-med-002-import-video-layer`, in app versions that offer it), and for
 the Text visual (MED-009; `specs/053-med-009-text-overlay`, in app versions that offer it), and for
@@ -17,8 +18,8 @@ iPhone and iPad published by Robert Pancoast.
 is recorded or sent anywhere. The only audio the app stores is audio files you choose to import,
 which stay on your device until you remove them, and the one photo you may choose for the Photo
 visual and the one video you may choose for the Video visual, which also stay on your device until
-you remove them (a video's own sound is removed and never played or analysed). If you choose the Camera visual, the rear camera's
-picture is shown on screen while that visual is on; it is never recorded, stored, sent or analysed
+you remove them (a video's own sound is removed and never played or analysed). If you choose the Camera visual, the picture of the camera you
+pick (rear or front) is shown on screen while that visual is on; it is never recorded, stored, sent or analysed
 unless you yourself tap Save Frame or Record. Record makes a silent video of the visualization only
 while you record; you then save it to Files, share it or discard it, and the app keeps nothing after
 the session. Share… sends a picture or video only to the app or person you pick in the share sheet. The only network traffic is Apple's own App Store traffic
@@ -50,7 +51,8 @@ the app.
   Settings › Privacy › Microphone." with Open Settings, and the other modes keep working. iOS reports
   a microphone restriction (for example Screen Time) the same way.
 - **Camera**: asked the first time you choose the Camera visual in Settings, and only then, so the
-  app can show the live view from your rear camera behind the visualization. If you decline, or
+  app can show the live view from the front or rear camera you choose behind the visualization (one
+  permission covers both cameras). If you decline, or
   later turn it off in Settings › Privacy & Security › Camera, the visualization keeps running
   without the camera and a short notice explains how to allow it, with Open Settings. If the camera
   is restricted on your device (Screen Time or device management), the notice says so.
@@ -70,14 +72,18 @@ Choosing a video needs none either, for the same reason.
 
 ## The camera picture stays on your screen
 
-When you choose the Camera visual, the rear camera runs only while that visual is on screen and
+When you choose the Camera visual, the camera you pick in Settings (Back or Front) runs only while
+that visual is on screen and
 the app is in the foreground; it stops when you choose another visual, pause, stop, or leave the
 app, and iOS shows its camera indicator whenever it runs. The app also shows its own "Camera on"
-badge while the camera runs, with a Stop camera button that turns the camera off at once and returns
+badge ("Front camera on" for the front camera) while the camera runs, with a Stop camera button that turns the camera off at once and returns
 to the visual you had before (CAM-012). Each picture is held in memory only until
 the next one replaces it and is drawn on your screen. The app never records, saves, sends or
 analyses camera pictures (no face, person or scene detection), and it does not remember the Camera
-choice: after a relaunch the camera starts only when you choose it again.
+choice: after a relaunch the camera starts only when you choose it again. A picture reaches a file
+only when you yourself tap Save Frame or Record, and then exactly as shown on screen, mirrored or
+not (CAM-002). The app remembers which camera you picked and the Mirror setting of each camera with
+your other settings; they hold no picture and never start the camera.
 
 ## A photo you choose
 
@@ -261,8 +267,9 @@ collections):
 - your favorite presets;
 - the last preset you selected;
 - your settings: the performance overlay, Reduce flashing, which preset list Next and Random
-  step through (a search is remembered as "All presets", never the search text), and whether the
-  OSC receiver is on and its port;
+  step through (a search is remembered as "All presets", never the search text), whether the
+  OSC receiver is on and its port, and which camera the Camera visual uses with each camera's
+  Mirror setting (CAM-002);
 - whether you acknowledged the photosensitivity notice;
 - whether the guided first scene is still to be offered, or was finished or skipped (one value; it
   keeps none of the choices you made in it);
@@ -362,6 +369,7 @@ issue in that repository.
 | PRE-007-R17 (`specs/005-pre-007-preset-collections/spec.md`): the user's preset collections | What is stored on your device |
 | OSC-001-R18 (`specs/032-osc-001-osc-receiver/spec.md`, under the FR-068 amendment): the optional local-network OSC receiver, its permission and its two settings | Permissions and why; OSC control on your local network; What is stored on your device; No analytics, tracking or network use |
 | CAM-001-R16 (`specs/033-cam-001-rear-camera-layer/spec.md`): the camera permission and on-device use of camera pictures | Permissions and why; The camera picture stays on your screen |
+| CAM-002-R6, R9 (`specs/096-cam-002-front-camera-layer/spec.md`): the front camera, the mirror, the camera and mirror settings | Summary; Permissions and why; The camera picture stays on your screen; What is stored on your device |
 | MED-001-R17 (`specs/044-med-001-import-photo-layer/spec.md`, amends FR-065): the photo the user chooses, stored on the device without metadata, removable | Summary; Permissions and why; A photo you choose; What is stored on your device |
 | MED-002-R21 (`specs/048-med-002-import-video-layer/spec.md`, amends FR-065): the video the user chooses, stored on the device without soundtrack or metadata, removable | Summary; Permissions and why; A video you choose; What is stored on your device |
 | FILE-001-R16 (`specs/062-file-001-portable-scene-archive/spec.md`): scene archives hold the user's scene and its stored photo and video, are written only on the user's export and leave the device only by the user's action; opening one replaces the stored photo and video only after every check passed | A photo you choose; A video you choose; Scene archives |

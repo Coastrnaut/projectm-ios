@@ -19,6 +19,10 @@
 //   `framesComposited` counts presented frames, so tests can see that the loop never froze.
 // * The provider's state is mirrored in `feedState` and handed to the coordinator, which shows the
 //   non-blocking notice (CAM-001-R5, R6, R8). The view's accessibility value names it (R14).
+// * CAM-002: `cameraPosition` and `mirrored` are forwarded to the provider (`select`) and the camera
+//   layer (`mirrored`). Neither touches the frame loop, the analysis or the audio source; the mirror
+//   lives only in the camera layer, so the screen, Save Frame, Record and the external display (one
+//   composite) agree.
 // * Per frame this file allocates nothing: the band scratch is preallocated and the audio context is
 //   a view of it; Metal's command buffer and drawable are the system's.
 import AudioCore
@@ -77,6 +81,22 @@ final class CameraVisualHost: PresentationBoundResource {
     /// Frames that showed a camera picture (diagnostics, UI tests).
     var framesShown: Int { camera.framesShown }
 
+    /// CAM-002-R1, R7: the camera in use; a change while running switches cameras without a restart.
+    var cameraPosition: CameraPosition {
+        get { camera.provider.position }
+        set {
+            guard newValue != camera.provider.position else { return }
+            camera.provider.select(newValue)
+            updateAccessibility()
+        }
+    }
+
+    /// CAM-002-R3, R5: flip the camera picture left to right, from the next frame.
+    var mirrored: Bool {
+        get { camera.mirrored }
+        set { camera.mirrored = newValue }
+    }
+
     var barCount: SpectrumBarCount {
         get { spectrum.generator.barCount }
         set {
@@ -88,14 +108,20 @@ final class CameraVisualHost: PresentationBoundResource {
     }
 
     /// The camera provider: the stand-in for `-uitestCamera <scenario>` (DEBUG; CAM-001-R13), the
-    /// rear camera otherwise.
+    /// real camera otherwise. CAM-002: `-uitestCameraPattern marker` gives the stand-in a red marker
+    /// in its top-left quarter, and `-uitestNoFrontCamera` removes its front camera.
     static func makeProvider(device: MTLDevice) -> any CameraFrameProvider {
         #if DEBUG
         let arguments = ProcessInfo.processInfo.arguments
         if let i = arguments.firstIndex(of: "-uitestCamera"), i + 1 < arguments.count,
            let scenario = CameraScenario(rawValue: arguments[i + 1]) {
             let orange = StubCameraFrameProvider.Color(red: 230, green: 120, blue: 30)
-            return StubCameraFrameProvider(device: device, scenario: scenario, pattern: .solid(orange), width: 64, height: 48)
+            let red = StubCameraFrameProvider.Color(red: 255, green: 0, blue: 0)
+            let pattern: StubCameraFrameProvider.Pattern = arguments.contains("-uitestCameraPattern")
+                ? .marker(background: orange, marker: red) : .solid(orange)
+            let positions: Set<CameraPosition> = arguments.contains("-uitestNoFrontCamera") ? [.back] : [.back, .front]
+            return StubCameraFrameProvider(device: device, scenario: scenario, pattern: pattern, width: 64, height: 48,
+                                           availablePositions: positions)
         }
         #endif
         #if os(iOS)
@@ -106,6 +132,7 @@ final class CameraVisualHost: PresentationBoundResource {
     /// Throws `VisualGeneratorError`, `LayerStackError` or `CompositorError` when there is no Metal device or a pipeline
     /// cannot be built; the caller falls back to projectM with a notice (spec Edge Cases).
     static func make(device: MTLDevice?, reader: (any NormalizedPCMReader)?, barCount: SpectrumBarCount,
+                     position: CameraPosition = .back, mirrored: Bool = false,
                      provider: ((MTLDevice) -> any CameraFrameProvider)? = nil) throws -> CameraVisualHost {
         guard let device, let queue = device.makeCommandQueue() else { throw VisualGeneratorError.noDevice }
         let transparent = LinearColor(red: 0, green: 0, blue: 0, alpha: 0)
@@ -113,6 +140,8 @@ final class CameraVisualHost: PresentationBoundResource {
                                                       configuration: CircularSpectrumConfiguration(barCount: barCount, background: transparent))
         let spectrum = try SpectrumLayerSource(device: device, generator: generator, name: "spectrum")
         let camera = CameraLayerSource(provider: (provider ?? makeProvider)(device))
+        camera.provider.select(position)   // CAM-002: before any start, so only the chosen camera ever runs
+        camera.mirrored = mirrored
         // CMP-002: the stack, bottom first: the camera (one per stack), then the circular spectrum.
         var stack = LayerStack()
         try stack.add(LayerDescriptor(kind: .camera))
@@ -175,7 +204,7 @@ final class CameraVisualHost: PresentationBoundResource {
     private func updateAccessibility() {
         view.accessibilityLabel = "Camera visualization"
         view.accessibilityIdentifier = "cameraVisual"
-        view.accessibilityValue = feedState.accessibilityValue
+        view.accessibilityValue = feedState.accessibilityValue(position: camera.provider.position)
     }
 
     /// CAM-012-R4: the user's Stop camera. Stops the camera before returning (the provider reports

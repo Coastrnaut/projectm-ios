@@ -870,7 +870,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("-uitestNativeVisualFailure") { device = nil }
             #endif
-            let host = try CameraVisualHost.make(device: device, reader: trimmedAnalysisTap, barCount: circularSpectrumBarCount)
+            let host = try CameraVisualHost.make(device: device, reader: trimmedAnalysisTap, barCount: circularSpectrumBarCount,
+                                                 position: settings.cameraPosition, mirrored: settings.cameraMirrored)   // CAM-002
             host.reduceFlashing = settings.reduceFlashing
             host.onRenderHealthChange = observeRenderHealth(of: "camera")   // PERF-014
             #if DEBUG
@@ -1019,7 +1020,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
 
     /// CAM-012-R1, R2: the in-app camera badge, from the feed state only (hidden off the visualizer).
     var cameraIndicator: CameraIndicator {
-        showsCameraVisual ? CameraIndicator(state: cameraState) : .hidden
+        showsCameraVisual ? CameraIndicator(state: cameraState, position: settings.cameraPosition) : .hidden   // CAM-002-R8
     }
 
     /// CAM-012-R4 to R8: the user's Stop camera. The camera is stopped before anything else (the
@@ -1036,7 +1037,18 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
 
     private func cameraStateChanged(_ state: CameraFeedState) {
         cameraState = state
-        if let notice = state.notice { UIAccessibility.post(notification: .announcement, argument: notice) }   // CAM-001-R14
+        if let notice = state.notice(position: settings.cameraPosition) {   // CAM-001-R14, CAM-002-R10
+            UIAccessibility.post(notification: .announcement, argument: notice)
+        }
+    }
+
+    /// CAM-002-R5, R7: Settings changed the camera or its mirror. Applied to the live Camera visual at
+    /// once: a switch keeps the frame loop and the audio source running; the mirror shows from the next
+    /// frame. Without the visual only the settings change (they never start the camera).
+    func cameraSettingsChanged() {
+        guard let host = cameraVisual else { return }
+        host.cameraPosition = settings.cameraPosition
+        host.mirrored = settings.cameraMirrored
     }
 
     /// Runs whichever visual is shown and keeps the others paused.
