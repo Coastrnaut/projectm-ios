@@ -18,6 +18,10 @@
 // * OSC-009 (specs/041-osc-009-osc-rate-limiter/contracts/osc-rate-limiter.md): token-bucket limits
 //   per source, across sources and per target, on an injected monotonic clock, with latest-value
 //   coalescing and a refresh gate that keeps a flood off the main thread; pure Swift.
+// * MIDI-001 (specs/107-midi-001-midi-endpoint-discovery/contracts/midi-discovery.md): endpoint model, stable
+//   IDs, diffing, coalescing and the discovery lifecycle are pure Swift in `Sources/PerformanceControl/MIDI/`;
+//   the CoreMIDI provider lives in `Sources/PerformanceControl/MIDISystem/` under `#if canImport(CoreMIDI)`
+//   (absent on Linux). Local endpoints only: no network MIDI, no Bluetooth pairing (ADR-0038).
 // Nothing here feeds projectM (Constitution VIII, ADR-0008 decision 5).
 // One library product, so CI's `-scheme PerformanceControl` builds and tests every target.
 import PackageDescription
