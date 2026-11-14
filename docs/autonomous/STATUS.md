@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T19:48:33Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T19:51:08Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,10 +10,10 @@
 | State | Features |
 |---|---|
 | audited | 109 |
-| implementing | 5 |
+| implementing | 4 |
 | built | 4 |
 | unit_passed | 1 |
-| integrated | 206 |
+| integrated | 207 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -21,14 +21,14 @@
 | Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 0 | 84 | 1 |
-| P1 | 30 | 3 | 4 | 1 | 113 | 0 |
-| P2 | 68 | 2 | 0 | 0 | 9 | 0 |
+| P1 | 30 | 3 | 3 | 1 | 114 | 0 |
+| P2 | 68 | 1 | 1 | 0 | 9 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 119 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-015, CAM-003)
+- 118 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-015, CAM-003)
 
 ## Integrated
 
@@ -157,6 +157,7 @@ The physical-device suite may **not** start:
 | MOD-012 | Modulation matrix UI | `d63b2fb9` | `feature/mod-012` |
 | MOD-013 | Modulation serialization | `d08b5103b0ef` | `feature/mod-013` |
 | MOD-014 | Modulation feedback prevention | `3b3a60649025` | `feature/mod-014` |
+| MOD-015 | Envelope follower bank | `17a05dd0` | `feature/mod-015` |
 | OSC-001 | OSC receiver | `13d9883531b9` | `feature/osc-001` |
 | OSC-002 | OSC message parser | `3b3a60649025` | `feature/osc-002` |
 | OSC-003 | OSC parameter routes | `ca21d525` | `feature/osc-003` |
@@ -1593,7 +1594,7 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `a08446ecdde1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-014/20261113T114626/swift-test_VisualGenerators.log`)
 - `post-merge: ParameterGraph xcodebuild test on iPhone 17 sim (66); projectM-iOSTests 172 + AudioFeatureBindingUITests 13.7 s`: pass at `3b3a60649025` (log `.autonomous/logs/integration/mod-014-osc-002/pg-sim.log`)
 
-### MOD-015 Envelope follower bank (unit_passed)
+### MOD-015 Envelope follower bank (integrated)
 - `python3 scripts/check_compliance.py`: pass at `c05f569b6078` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-015/20261114T144306/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `c05f569b6078` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-015/20261114T144306/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `c05f569b6078` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-015/20261114T144306/sim-test_ANGLERendering.log`)
@@ -1607,6 +1608,7 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `c05f569b6078` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-015/20261114T144306/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `c05f569b6078` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-015/20261114T144306/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `c05f569b6078` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-015/20261114T144306/swift-test_VisualGenerators.log`)
+- `post-merge (conflicts with ANL-013 resolved): ParameterGraph 208 + projectM-iOSTests 912`: pass at `17a05dd0` (log `.autonomous/logs/integration/batch48/app-tests.log`)
 
 ### OSC-001 OSC receiver (integrated)
 - `python3 scripts/check_compliance.py`: pass at `6467d622b4bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-001/20261113T113140/compliance.log`)
@@ -2238,6 +2240,14 @@ None.
 - `swift test --package-path Packages/ImportFuzz`: pass at `e25709ae088d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-014/20261114T134421/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/SceneArchive`: pass at `e25709ae088d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-014/20261114T134421/swift-test_SceneArchive.log`)
 - `post-merge: projectM-iOSTests 877 + UI 3 (scene packs, folders, slideshow)`: pass at `cc53b27d` (log `.autonomous/logs/integration/batch39/app-tests.log`)
+
+### SCN-015 Scene lock mode (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `417f54ea354d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-015/20261114T144852/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `417f54ea354d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-015/20261114T144852/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `417f54ea354d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-015/20261114T144852/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `417f54ea354d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-015/20261114T144852/autonomous-tests.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `417f54ea354d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-015/20261114T144852/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `417f54ea354d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-015/20261114T144852/swift-test_LibraryBackup.log`)
 
 ### SHD-001 Procedural material catalog (integrated)
 - `python3 scripts/check_compliance.py`: pass at `67186e7fa06d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-001/20261113T120524/compliance.log`)
