@@ -5,7 +5,7 @@
 //   scene's keys. `plan(_:live:)` replaces it: queued items it no longer names are dropped, the in-flight item
 //   it no longer names is cancelled (its result is released when the load returns), and cached entries it no
 //   longer names that the live scene does not use are released. Items it still names that are cached are kept
-//   (their recency refreshed) and never loaded again.
+//   (their recency refreshed) and never loaded again; items the live scene already shows are never loaded.
 // * Loads run one at a time on the injected executor (default: a serial queue at utility priority), never on
 //   the caller's thread, and start only after the settle delay (injected clock; a newer plan restarts it) and
 //   while no pause reason holds (presentation lost, thermal serious or critical).
@@ -229,7 +229,7 @@ public final class PrewarmScheduler: @unchecked Sendable {
         }
         let previous: Set<PrewarmKey> = Set(queue.map(\.key))
         let next: [PrewarmItem] = requeue ? effective.filter { (i: PrewarmItem) -> Bool in
-            !cache.contains(i.key) && i.key != inFlight?.item.key
+            !cache.contains(i.key) && !live.contains(i.key) && i.key != inFlight?.item.key   // the live scene holds its own
         } : []
         statsValue.dropped += previous.subtracting(Set(next.map(\.key))).count
         queue = next
