@@ -264,6 +264,11 @@ static void PMPresetSwitchFailed(const char *presetFilename, const char *message
     projectm_set_soft_cut_duration(_handle, MAX(0.0, seconds));
 }
 
+- (void)setFrameTime:(double)seconds {
+    PM_ASSERT_RENDER_THREAD();
+    projectm_set_frame_time(_handle, seconds);
+}
+
 - (void)renderFrameToFramebuffer:(uint32_t)fbo {
     PM_ASSERT_RENDER_THREAD();
     try {

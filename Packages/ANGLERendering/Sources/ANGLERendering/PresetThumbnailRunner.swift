@@ -13,6 +13,9 @@
 // * While the app cannot present frames (PERF-011) nothing is drawn; a running drawing stops at its
 //   next frame and answers `unavailable`.
 // * Nothing is kept between drawings: no context, engine or target exists while idle (PERF-006).
+// * PRE-005: the engine clock is pinned to the frame number (frame n at n/60 s), so a preset that moves
+//   with `time` draws the same way every time; `drawSamples` also reads back requested earlier frames
+//   (two extra GPU waits and small read-backs) for the motion score.
 import CANGLE
 import Foundation
 import ProjectMBridge
@@ -39,12 +42,16 @@ final class PresetThumbnailRunner: PresetThumbnailDrawing, @unchecked Sendable {
     /// One drawing: answers exactly once (the thread, the timeout or a suspension).
     private final class Attempt: @unchecked Sendable {
         private let lock = NSLock()
-        private var continuation: CheckedContinuation<PresetThumbnailDrawResult, Never>?
+        private var continuation: CheckedContinuation<PresetThumbnailSampleResult, Never>?
         private var cancelFlag = false
 
-        init(_ continuation: CheckedContinuation<PresetThumbnailDrawResult, Never>) { self.continuation = continuation }
+        init(_ continuation: CheckedContinuation<PresetThumbnailSampleResult, Never>) { self.continuation = continuation }
 
         func finish(_ result: PresetThumbnailDrawResult) {
+            finish(PresetThumbnailSampleResult(picture: result, samples: []))
+        }
+
+        func finish(_ result: PresetThumbnailSampleResult) {
             lock.lock()
             let pending = continuation
             continuation = nil
@@ -68,7 +75,12 @@ final class PresetThumbnailRunner: PresetThumbnailDrawing, @unchecked Sendable {
     // MARK: - PresetThumbnailDrawing
 
     func draw(_ contents: Data, width: Int, height: Int, frames: [[Float]], timeout: Duration) async -> PresetThumbnailDrawResult {
-        await withCheckedContinuation { (continuation: CheckedContinuation<PresetThumbnailDrawResult, Never>) in
+        await drawSamples(contents, width: width, height: height, frames: frames, sampleFrames: [], timeout: timeout).picture
+    }
+
+    func drawSamples(_ contents: Data, width: Int, height: Int, frames: [[Float]], sampleFrames: [Int],
+                     timeout: Duration) async -> PresetThumbnailSampleResult {
+        await withCheckedContinuation { (continuation: CheckedContinuation<PresetThumbnailSampleResult, Never>) in
             let attempt = Attempt(continuation)
             condition.lock()
             if suspended {
@@ -88,7 +100,8 @@ final class PresetThumbnailRunner: PresetThumbnailDrawing, @unchecked Sendable {
             condition.unlock()
 
             let thread = Thread { [self] in
-                let result = work(contents, width: width, height: height, frames: frames, texturePaths: paths, attempt: attempt)
+                let result = work(contents, width: width, height: height, frames: frames, sampleFrames: sampleFrames,
+                                  texturePaths: paths, attempt: attempt)
                 condition.lock()
                 busy = false
                 if current === attempt { current = nil }
@@ -142,20 +155,21 @@ final class PresetThumbnailRunner: PresetThumbnailDrawing, @unchecked Sendable {
 
     // MARK: - The drawing thread
 
-    private func work(_ contents: Data, width: Int, height: Int, frames: [[Float]], texturePaths: [String],
-                      attempt: Attempt) -> PresetThumbnailDrawResult {
-        guard width > 0, height > 0, !frames.isEmpty else { return .failed("Nothing to draw.") }
+    private func work(_ contents: Data, width: Int, height: Int, frames: [[Float]], sampleFrames: [Int], texturePaths: [String],
+                      attempt: Attempt) -> PresetThumbnailSampleResult {
+        let refused: (PresetThumbnailDrawResult) -> PresetThumbnailSampleResult = { PresetThumbnailSampleResult(picture: $0, samples: []) }
+        guard width > 0, height > 0, !frames.isEmpty else { return refused(.failed("Nothing to draw.")) }
         let contextAttributes: [EGLint] = [EGL_CONTEXT_MAJOR_VERSION, 3, EGL_CONTEXT_MINOR_VERSION, 0, EGL_NONE]
         let pbufferAttributes: [EGLint] = [EGL_WIDTH, 1, EGL_HEIGHT, 1, EGL_NONE]
         guard let context = eglCreateContext(display, config, nil, contextAttributes) else {
-            return .unavailable("No drawing context for the thumbnail.")
+            return refused(.unavailable("No drawing context for the thumbnail."))
         }
         guard let pbuffer = eglCreatePbufferSurface(display, config, pbufferAttributes) else {
             eglDestroyContext(display, context)
-            return .unavailable("No drawing surface for the thumbnail.")
+            return refused(.unavailable("No drawing surface for the thumbnail."))
         }
         eglMakeCurrent(display, pbuffer, pbuffer, context)
-        var result = PresetThumbnailDrawResult.unavailable("No engine for the thumbnail.")
+        var result = refused(.unavailable("No engine for the thumbnail."))
         var engine: ProjectMEngine?
         var texture: UInt32 = 0
         var framebuffer: UInt32 = 0
@@ -166,9 +180,9 @@ final class PresetThumbnailRunner: PresetThumbnailDrawing, @unchecked Sendable {
             if framebuffer != 0 {
                 created.setTextureSearchPaths(texturePaths)
                 result = draw(contents, engine: created, framebuffer: framebuffer, width: width, height: height,
-                              frames: frames, attempt: attempt)
+                              frames: frames, sampleFrames: sampleFrames, attempt: attempt)
             } else {
-                result = .unavailable("No drawing target for the thumbnail.")
+                result = refused(.unavailable("No drawing target for the thumbnail."))
             }
         }
         if framebuffer != 0 { PMANGLEDeleteFramebuffer(framebuffer, texture) }
@@ -180,30 +194,51 @@ final class PresetThumbnailRunner: PresetThumbnailDrawing, @unchecked Sendable {
     }
 
     private func draw(_ contents: Data, engine: ProjectMEngine, framebuffer: UInt32, width: Int, height: Int,
-                      frames: [[Float]], attempt: Attempt) -> PresetThumbnailDrawResult {
-        if attempt.isCancelled { return .unavailable("The thumbnail was stopped.") }
+                      frames: [[Float]], sampleFrames: [Int], attempt: Attempt) -> PresetThumbnailSampleResult {
+        let refused: (PresetThumbnailDrawResult) -> PresetThumbnailSampleResult = { PresetThumbnailSampleResult(picture: $0, samples: []) }
+        if attempt.isCancelled { return refused(.unavailable("The thumbnail was stopped.")) }
         do {
             try engine.loadPresetData(contents, smooth: false)
         } catch {
             let message = (error as NSError).localizedDescription
-            return .failed(message.isEmpty ? "The preset could not be loaded" : message)
+            return refused(.failed(message.isEmpty ? "The preset could not be loaded" : message))
         }
         let limit = Int(ProjectMEngine.maxSamplesPerFrame)
-        for block in frames {
-            if attempt.isCancelled { return .unavailable("The thumbnail was stopped.") }
+        let wanted = Set(sampleFrames.filter { $0 >= 0 && $0 < frames.count - 1 })
+        var samples: [Data] = []
+        for (index, block) in frames.enumerated() {
+            if attempt.isCancelled { return refused(.unavailable("The thumbnail was stopped.")) }
             let count = min(block.count / 2, limit)
             if count > 0 {
                 block.withUnsafeBufferPointer { engine.addPCMInterleavedStereo($0.baseAddress!, frames: UInt(count)) }
             }
+            engine.setFrameTime(Double(index) / Self.frameRate)   // PRE-005: a pinned clock
             engine.renderFrame(toFramebuffer: framebuffer)
+            if wanted.contains(index) {
+                guard let sample = readBack(framebuffer, width: width, height: height) else {
+                    return refused(.unavailable("The thumbnail could not be read back."))
+                }
+                samples.append(sample)
+            }
         }
+        guard let picture = readBack(framebuffer, width: width, height: height) else {
+            return refused(.unavailable("The thumbnail could not be read back."))
+        }
+        return PresetThumbnailSampleResult(picture: .pixels(picture), samples: samples)
+    }
+
+    /// The drawing's clock rate: frame n is drawn at n / 60 s (PRE-001's 735 samples at 44.1 kHz).
+    static let frameRate = 60.0
+
+    /// Waits for the GPU and reads the framebuffer back as RGBA rows, top row first.
+    private func readBack(_ framebuffer: UInt32, width: Int, height: Int) -> Data? {
         PMANGLEFinish()
         PMANGLEBindFramebuffer(framebuffer)
         let rowBytes = width * 4
         var pixels = [UInt8](repeating: 0, count: rowBytes * height)
         let error = pixels.withUnsafeMutableBytes { PMANGLEReadPixelsRGBA(0, 0, Int32(width), Int32(height), $0.baseAddress!) }
         PMANGLEBindDefaultFramebuffer()
-        guard error == 0 else { return .unavailable("The thumbnail could not be read back.") }
+        guard error == 0 else { return nil }
         // GL's rows start at the bottom; pictures start at the top.
         var flipped = Data(count: pixels.count)
         flipped.withUnsafeMutableBytes { (out: UnsafeMutableRawBufferPointer) in
@@ -214,6 +249,6 @@ final class PresetThumbnailRunner: PresetThumbnailDrawing, @unchecked Sendable {
                 }
             }
         }
-        return .pixels(flipped)
+        return flipped
     }
 }

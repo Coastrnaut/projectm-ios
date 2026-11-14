@@ -14,6 +14,10 @@
 // * PRE-004: the same detached decode also learns the picture's dominant colours when the preset has
 //   none for this thumbnail ID; they go to a main-actor mirror (`colorEntries`, read by the browser's
 //   colour chips) and to the coalescing `PresetColorStore` (`Library/Caches/PresetColors`).
+// * PRE-005: the drawing also reads back two earlier frames with a pinned clock; their motion score is
+//   written into the PNG (`PresetMotionPNG`). The same decode reads it back when the preset has no score
+//   for this thumbnail ID; it goes to `motionEntries` (the energy chips) and `PresetMotionStore`
+//   (`Library/Caches/PresetMotion`). Pictures without the field (earlier builds) have no score.
 import Foundation
 import ImageIO
 import PresetLibrary
@@ -32,6 +36,12 @@ final class PresetThumbnailModel {
     private(set) var colorEntries: [String: PresetColorIndex.Entry] = [:]
     /// PRE-004: called on the main actor whenever `colorEntries` changes (the coordinator bumps a version).
     var onColorsChanged: () -> Void = {}
+    /// PRE-005: the motion index (nil in tests that do not need it).
+    let motion: PresetMotionStore?
+    /// PRE-005: preset ID → the thumbnail ID its score came from and the score (current ones only).
+    private(set) var motionEntries: [String: PresetMotionIndex.Entry] = [:]
+    /// PRE-005: called on the main actor whenever `motionEntries` changes.
+    var onMotionChanged: () -> Void = {}
     private let contents: ContentsProvider
     private let images = NSCache<NSString, UIImage>()
     /// PRE-002: the stable IDs put in `images`, per preset ID, so a changed preset's pictures can be evicted.
@@ -49,9 +59,16 @@ final class PresetThumbnailModel {
         defaultDirectory().deletingLastPathComponent().appendingPathComponent(PresetColorStore.folderName, isDirectory: true)
     }
 
-    init(cache: PresetThumbnailCache, colors: PresetColorStore? = nil, contents: @escaping ContentsProvider) {
+    /// `Library/Caches/PresetMotion` (PRE-005; FILE-009's Caches root, emptied by Clear Caches).
+    nonisolated static func defaultMotionDirectory() -> URL {
+        defaultDirectory().deletingLastPathComponent().appendingPathComponent(PresetMotionStore.folderName, isDirectory: true)
+    }
+
+    init(cache: PresetThumbnailCache, colors: PresetColorStore? = nil, motion: PresetMotionStore? = nil,
+         contents: @escaping ContentsProvider) {
         self.cache = cache
         self.colors = colors
+        self.motion = motion
         self.contents = contents
         images.countLimit = 300
     }
@@ -72,13 +89,15 @@ final class PresetThumbnailModel {
         let loader: PresetThumbnailCache.ContentsLoader = { @MainActor in try await provider(preset) }
         guard let url = try? await cache.thumbnail(for: key, contents: loader) else { return nil }
         let wantsColors: Bool = colors != nil && colorEntries[preset.id]?.thumbnailID != key.stableID
-        let decoded: (image: UIImage?, colors: [PresetColorFamily]) = await Task.detached(priority: .utility) {
-            () -> (image: UIImage?, colors: [PresetColorFamily]) in
-            guard let data = try? Data(contentsOf: url) else { return (nil, []) }
+        let wantsMotion: Bool = motion != nil && motionEntries[preset.id]?.thumbnailID != key.stableID   // PRE-005
+        let decoded: Decoded = await Task.detached(priority: .utility) { () -> Decoded in
+            guard let data = try? Data(contentsOf: url) else { return Decoded(image: nil, colors: [], score: nil) }
             let families: [PresetColorFamily] = wantsColors ? PresetColorPNG.dominantFamilies(data) : []
-            return (UIImage(data: data)?.preparingForDisplay(), families)
+            let score: Int? = wantsMotion ? PresetMotionPNG.score(in: data) : nil
+            return Decoded(image: UIImage(data: data)?.preparingForDisplay(), colors: families, score: score)
         }.value
         if !decoded.colors.isEmpty { recordColors(decoded.colors, presetID: preset.id, thumbnailID: key.stableID) }
+        if let score = decoded.score { recordMotion(score, presetID: preset.id, thumbnailID: key.stableID) }
         let image: UIImage? = decoded.image
         if let image {
             images.setObject(image, forKey: key.stableID as NSString)
@@ -103,6 +122,18 @@ final class PresetThumbnailModel {
             onColorsChanged()
         }
         await colors?.invalidate(presetID: presetID, keepingThumbnailID: keep)
+        if let entry = motionEntries[presetID], entry.thumbnailID != keep {   // PRE-005-R11
+            motionEntries[presetID] = nil
+            onMotionChanged()
+        }
+        await motion?.invalidate(presetID: presetID, keepingThumbnailID: keep)
+    }
+
+    /// What the detached decode found (PRE-004 colours, PRE-005 score).
+    private struct Decoded: Sendable {
+        let image: UIImage?
+        let colors: [PresetColorFamily]
+        let score: Int?
     }
 
     // MARK: - Colours (PRE-004)
@@ -114,6 +145,29 @@ final class PresetThumbnailModel {
         onColorsChanged()
         guard let colors else { return }
         Task.detached(priority: .utility) { await colors.record(presetID: presetID, thumbnailID: thumbnailID, colors: families) }
+    }
+
+    // MARK: - Motion (PRE-005)
+
+    private func recordMotion(_ score: Int, presetID: String, thumbnailID: String) {
+        let entry = PresetMotionIndex.Entry(thumbnailID: thumbnailID, score: score)
+        guard motionEntries[presetID] != entry else { return }
+        motionEntries[presetID] = entry
+        onMotionChanged()
+        guard let motion else { return }
+        Task.detached(priority: .utility) { await motion.record(presetID: presetID, thumbnailID: thumbnailID, score: score) }
+    }
+
+    /// The launch collection for scores (PRE-005-R11): prunes like the colours, then returns what is left.
+    nonisolated static func loadMotion(_ store: PresetMotionStore, listing: [String: String]) async -> [String: PresetMotionIndex.Entry] {
+        await store.retainOnly(listing)
+        return await store.snapshot()
+    }
+
+    func mergeLoadedMotion(_ loaded: [String: PresetMotionIndex.Entry]) {
+        guard !loaded.isEmpty else { return }
+        for (id, entry) in loaded where motionEntries[id] == nil { motionEntries[id] = entry }
+        onMotionChanged()
     }
 
     /// The launch collection (PRE-004-R10): drops stored colours of presets not listed with their
@@ -154,16 +208,30 @@ struct RendererThumbnailRenderer: PresetThumbnailRendering {
     func render(_ contents: Data, spec: PresetThumbnailSpec) async throws -> Data {
         guard let drawer = await drawing() else { throw PresetThumbnailError.unavailable("No renderer draws thumbnails.") }
         let frames = SyntheticPCM.frames(spec)
-        let result = await drawer.draw(contents, width: spec.width, height: spec.height, frames: frames, timeout: Self.timeout)
-        switch result {
+        let samples: [Int] = PresetMotionScore.sampleFrames.filter { (index: Int) -> Bool in index < frames.count - 1 }
+        let result = await drawer.drawSamples(contents, width: spec.width, height: spec.height, frames: frames,
+                                              sampleFrames: samples, timeout: Self.timeout)
+        switch result.picture {
         case .pixels(let pixels):
             guard let png = PNGThumbnailEncoder.png(rgba: pixels, width: spec.width, height: spec.height) else {
                 throw PresetThumbnailError.failed("The thumbnail could not be encoded.")
             }
-            return png
+            return Self.withMotion(png, samples: result.samples, picture: pixels, spec: spec)
         case .failed(let message): throw PresetThumbnailError.failed(message)
         case .unavailable(let message): throw PresetThumbnailError.unavailable(message)
         }
+    }
+}
+
+extension RendererThumbnailRenderer {
+    /// PRE-005: the PNG with the motion score of the samples and the final picture; unchanged when the
+    /// drawer returned no samples (the picture still works, the preset just has no class).
+    static func withMotion(_ png: Data, samples: [Data], picture: Data, spec: PresetThumbnailSpec) -> Data {
+        guard !samples.isEmpty else { return png }
+        let frames: [[UInt8]] = (samples + [picture]).map { (sample: Data) -> [UInt8] in [UInt8](sample) }
+        guard let score = PresetMotionScore.score(samples: frames, width: spec.width, height: spec.height),
+              let tagged = PresetMotionPNG.embed(score: score, in: png) else { return png }
+        return tagged
     }
 }
 
@@ -206,7 +274,10 @@ struct FixtureThumbnailRenderer: PresetThumbnailRendering {
         guard let png = PNGThumbnailEncoder.png(rgba: pixels, width: spec.width, height: spec.height) else {
             throw PresetThumbnailError.failed("fixture")
         }
-        return png
+        return PresetMotionPNG.embed(score: Self.fixtureScores[Int(seed % 3)], in: png) ?? png   // PRE-005
     }
+
+    /// PRE-005: one score per class, chosen by the preset bytes (Calm, Moderate, Energetic).
+    static let fixtureScores: [Int] = [1_000, 8_000, 30_000]
 }
 #endif
