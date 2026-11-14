@@ -11,8 +11,8 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 89,
-   "implementing": 3,
+   "audited": 88,
+   "implementing": 4,
    "integrated": 57,
    "unit_passed": 2
   },
@@ -27,8 +27,8 @@
   }
  },
  "by_state": {
-  "audited": 174,
-  "implementing": 5,
+  "audited": 173,
+  "implementing": 6,
   "integrated": 143,
   "skipped_existing": 1,
   "unit_passed": 3
@@ -1730,13 +1730,13 @@
   },
   "MOD-005": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/mod-005",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "MOD-006": {
    "attempts": 0,
@@ -4231,5 +4231,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T12:05:34Z"
+ "updated": "2026-11-14T12:06:03Z"
 }
