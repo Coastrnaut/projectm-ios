@@ -535,13 +535,21 @@ struct SceneDecoder {
         // MOD-004: a readable curve is decoded; anything else stays in `extra` verbatim and restore rejects
         // the binding (`unsupportedCurve`), so a newer curve kind is never lost or guessed.
         var curve = MappingCurve.linear
-        var known: Set<String> = ["source", "target", "input", "output", "mix", "envelope", "expression"]
+        var known: Set<String> = ["source", "target", "input", "output", "mix", "envelope", "expression", "enabled"]
+        // MOD-012-R5 (contract modulation-matrix M3): optional; absent means enabled.
+        var enabled = true
+        if let e = o["enabled"] {
+            guard let b = e.boolValue else {
+                throw .malformed(path: ScenePath.key(path, "enabled"), reason: "expected a boolean, found \(e.typeName)")
+            }
+            enabled = b
+        }
         if let stored = o["curve"], let read = self.curve(stored, ScenePath.key(path, "curve")) {
             curve = read
             known.insert("curve")
         }
         return SceneBinding(sourceID: sourceID, target: target, mapping: mapping, mix: mix, envelope: envelope, expression: expression,
-                            curve: curve, extra: o.filter { (key: String, _: SceneJSON) -> Bool in !known.contains(key) })
+                            curve: curve, isEnabled: enabled, extra: o.filter { (key: String, _: SceneJSON) -> Bool in !known.contains(key) })
     }
 
     /// MOD-004's stored curve (contract K8), or nil when this version cannot read it. Unknown fields of a

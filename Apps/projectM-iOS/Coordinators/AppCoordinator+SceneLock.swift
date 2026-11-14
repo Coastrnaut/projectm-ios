@@ -12,6 +12,7 @@ extension AppCoordinator {
     func connectSceneLock() {
         show.sceneLock = sceneLock
         sceneHistory.sceneLock = sceneLock
+        modulationMatrix.sceneLock = sceneLock   // MOD-012
         sceneLock.announce = { [weak self] (text: String) -> Void in self?.announcer.announce(text, kind: .library) }
     }
 }

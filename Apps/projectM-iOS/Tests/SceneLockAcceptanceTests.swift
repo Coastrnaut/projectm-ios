@@ -91,7 +91,7 @@ final class SceneLockAcceptanceTests: XCTestCase {
                 XCTAssertTrue(show.addScene(ShowSceneSnapshot.document(look, id: UUID().uuidString, name: "Scene \(index + 1)"),
                                             label: "Cue \(index + 1)"))
             }
-            autosave.commitNow()
+            autosave.flushSynchronously()
         }
 
         /// Every stored byte the lock protects: the autosaved scene, the show folder, and each settings key's value.
@@ -131,7 +131,7 @@ final class SceneLockAcceptanceTests: XCTestCase {
         h.settings.sceneLock.lock()
         XCTAssertEqual(h.announced.last, "Scene locked")
         XCTAssertFalse(h.history.canUndo, "undo reads as unavailable while locked")
-        h.autosave.commitNow()
+        h.autosave.flushSynchronously()
         let before: [String: Data] = try h.fingerprint()
         let inputs: SceneInputs = h.inputs
         let cues: [ShowCue] = h.show.list.cues
@@ -162,7 +162,7 @@ final class SceneLockAcceptanceTests: XCTestCase {
         XCTAssertEqual(h.announced.last, SceneLock.refusalMessage)
         XCTAssertEqual(h.inputs, inputs, "the live scene is unchanged")
         XCTAssertEqual(h.show.list.cues, cues, "the cues, their order and transitions are unchanged")
-        h.autosave.commitNow()
+        h.autosave.flushSynchronously()
         XCTAssertEqual(try h.fingerprint(), before, "scene document, show file and settings are byte-identical")
 
         // Navigation still works (S2).
@@ -184,6 +184,37 @@ final class SceneLockAcceptanceTests: XCTestCase {
         for _ in 0..<4 { tempo.tap() }
         XCTAssertEqual(tempo.snapshot.bpm, 120, "tap tempo works while locked")
         XCTAssertEqual(h.settings.sceneLock.refusals, 13, "navigation never consults the lock")
+    }
+
+    /// MOD-012 (merged after SCN-015's first pass): a modulation-matrix route edit is refused while locked; the route
+    /// list and the store are untouched, and the same edit works once unlocked.
+    func testLockedSceneRefusesAModulationMatrixEdit() throws {
+        let h = try Harness()
+        defer { h.cleanUp() }
+        let route = AudioFeatureBinding(source: .kick, target: VisualParameterIDs.bloomIntensity, outputStart: 0.2, outputEnd: 0.9,
+                                        mixMode: .replace)
+        var live: [AudioFeatureBinding] = [route]
+        var stores = 0
+        let matrix = ModulationMatrixCoordinator()
+        matrix.live = { () -> [AudioFeatureBinding] in live }
+        matrix.store = { (edit: ModulationRouteEdit) -> Bool in
+            stores += 1
+            guard let next = edit.applied(to: live) else { return false }
+            live = next
+            return true
+        }
+        matrix.sceneLock = h.settings.sceneLock   // AppCoordinator.connectSceneLock
+        matrix.refresh()
+        h.settings.sceneLock.lock()
+        matrix.setEnabled(false, target: VisualParameterIDs.bloomIntensity, layer: 0)
+        XCTAssertEqual(stores, 0, "the edit never reached the live routes")
+        XCTAssertEqual(live, [route])
+        XCTAssertEqual(matrix.routes, [route])
+        XCTAssertEqual(h.settings.sceneLock.refusals, 1)
+        h.settings.sceneLock.unlock()
+        matrix.setEnabled(false, target: VisualParameterIDs.bloomIntensity, layer: 0)
+        XCTAssertEqual(stores, 1)
+        XCTAssertNotEqual(live, [route], "unlocked, the route is turned off")
     }
 
     /// S3 (US3): after unlocking, the same edits work again.

@@ -34,6 +34,10 @@ final class SceneAutosaveCoordinator {
     /// last captured live ones (contract A5).
     var bindings: [AudioFeatureBinding] { carry.bindings }
 
+    /// MOD-012 (research MOD-012-D5): the matrix changed the current scene's routes; a native spectrum created later
+    /// gets these, and the next commit writes them (the matrix mirror in `SceneInputs.bindings` triggers it).
+    func replaceCarriedBindings(_ list: [AudioFeatureBinding]) { carry.bindings = list }
+
     /// MOD-006: the current scene's usable threshold triggers (a native spectrum gets them when it is created).
     var triggerBindings: [ThresholdTriggerBinding] { SceneTriggerEntry.read(carry.triggers ?? []).bindings }
 

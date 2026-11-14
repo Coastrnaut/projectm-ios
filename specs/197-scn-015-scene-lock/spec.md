@@ -6,8 +6,8 @@
 
 **Status**: Implemented 2026-11-14 (SCN-015-T01-T10 verified on the Mac, simulator "SCN15 iPhone 17", iOS 27.2; no
 device claim). SceneLockAcceptanceTests 3 (0.07 s), regression 77 unit tests (1.3 s), SceneLockUITests 1 (15.1 s, 14.4 s),
-ShowCueUITests 2, SceneUndoUITests 1, SceneSnapshotUITests 1; LibraryBackup package 77. Follow-up: MOD-012's matrix
-toggles (not in this tree) need the same `refusesEdit()` guard when they merge.
+ShowCueUITests 2, SceneUndoUITests 1, SceneSnapshotUITests 1; LibraryBackup package 77. MOD-012's matrix edits are
+guarded since the merge of `autonomous/integration` (2026-11-14).
 
 **Input**: Roadmap row SCN-015 (P1, size S, depends on SCN-001, integrated). Observable behavior, verbatim:
 "Prevent accidental editing while in performance mode." Acceptance, verbatim: "Locked scene ignores edit
@@ -29,7 +29,8 @@ OSC-001 (OSC), ACC-004 (announcer lanes).
 | Parameter inspector (UIX-003), Reset | `ParameterInspectorTargets.target(for:settings:).set` | Locked (refused at the target) |
 | Parameter shelf (UIX-004) in the controls and in Settings | the same targets | Locked (refused at the target; strip disabled) |
 | Macros (MOD-010) | `MacroCoordinator.setValue` (rewrites the macro value, then the targets) | Locked (refused in `setValue`) |
-| Modulation matrix (MOD-012) | not in this tree yet (being merged) | Locked by the Settings section rule once present (follow-up noted) |
+| Modulation matrix (MOD-012) | `ModulationMatrixCoordinator.setEnabled/move` | Locked (refused in the coordinator; its Settings link is in the disabled sections) |
+| OSC routes and aliases (OSC-003) | `OSCRoutesCoordinator` (device settings) | Allowed (controller settings, like MIDI mappings) |
 | Snapshots (SCN-008): save, rename, delete, recall | `SceneSnapshotCoordinator` (the scene carry, then the targets) | Locked (refused in the coordinator) |
 | Layers (CMP-015), photo, slideshow, video loop/speed, logo, text, colors, Color grade, Trails, effect chain | Settings sections and their coordinators | Locked (Settings sections disabled) |
 | Show editor (SHOW-001, SCN-003, SCN-007, SCN-011): add, add from template, rename, delete, reorder, duplicate scene, rename scene, transitions | `ShowCoordinator` edit methods | Locked (refused in the coordinator; gestures and menu items removed) |
@@ -64,6 +65,11 @@ local-first option.
 - Q: Do the scene switcher (UIX-002) and Scene Folders' Go count as navigation? → A: Yes. Choosing a scene to show applies it like Go to cue and is allowed; Scene Folders' folder, move and tag edits are refused.
 - Q: Does Settings stay openable while locked? → A: Yes. Only the scene-editing sections are disabled, with the "Scene locked" note at the top; safety, audio, recording, OSC, MIDI, external display, storage and licences stay usable.
 - Q: Is the lock state part of library backups (FILE-005)? → A: No. It is session state on this device: excluded from backups, erased by Settings erase (FILE-011) like other excluded keys.
+
+### Session 2026-11-14 (after MOD-012 and OSC-003 merged)
+
+- Q: Are MOD-012 modulation-matrix edits (turning a route layer on or off, reordering layers) scene edits? → A: Yes. The routes are part of the scene document (its bindings); `ModulationMatrixCoordinator`'s edits call `refusesEdit()` and change nothing while locked. Its Settings link sits in the disabled scene sections. Restoring a list (launch, Reopen, undo state) is not an edit; undo itself is refused.
+- Q: Are OSC-003 route edits (turning an OSC route off, adding or removing an alias) scene edits? → A: No. They are controller settings stored on the device (`settings.osc.disabledRoutes`, `settings.osc.aliases`), outside the scene document, like MIDI mappings; they stay available while locked, and OSC values keep driving parameters as performance input.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -150,5 +156,5 @@ After the show, the performer unlocks with a confirmation and edits again.
 ## Assumptions
 
 - The performer uses one device; the lock is not shared with an external display (the output shows no badge).
-- MOD-012's matrix toggles live in a Settings section; once merged, they follow R6 through the Settings rule and need a coordinator guard (follow-up for the merge).
+- MOD-012's matrix edits are refused in its coordinator (SCN-015-T11) and its Settings link is disabled with the scene sections.
 - Simulator results prove behavior only, not performance on a device.

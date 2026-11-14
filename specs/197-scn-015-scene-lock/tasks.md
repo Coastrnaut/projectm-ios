@@ -31,6 +31,10 @@
 
 - [X] SCN-015-T10 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), privacy manifest and network symbols on the Debug app, Xcode 26 type-check budget, regression of touched suites (snapshots, macros, show, history, inspector, shelf, LibraryBackup package), PosterBoard counts; record results in spec.md Status — Verified 2026-11-14: check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 159 OK (27.5 s); check_privacy_manifest and check_network_symbols OK on the Debug simulator app; no type-check warning over 150 ms in changed lines (three 198-212 ms warnings sit on untouched lines: ControlsOverlay.swift:75, SceneHistoryControls.swift:36, VisualizerView.swift:61); PosterBoard reports 25 before and 25 after
 
+## Phase 7: After the MOD-012 and OSC-003 merge
+
+- [X] SCN-015-T11 [US1] Merge `autonomous/integration`; guard `ModulationMatrixCoordinator` edits (setEnabled, move) with `refusesEdit()` in Apps/projectM-iOS/Coordinators/ModulationMatrixCoordinator.swift, wired in AppCoordinator+SceneLock.swift; OSC-003 route edits stay allowed (spec Clarifications); `testLockedSceneRefusesAModulationMatrixEdit` in Apps/projectM-iOS/Tests/SceneLockAcceptanceTests.swift — Verified 2026-11-14: after the merge, SceneLockAcceptanceTests 4, SettingsTests 9, LibraryBackupAppTests, ModulationMatrixAppTests and OSCRoutesCoordinatorTests (26 tests) pass three times in a row; SceneLockUITests (15.2 s), ModulationMatrixUITests (19.0 s) and OSCRoutesUITests (17.7 s) pass; the acceptance test now waits for the autosave write (`flushSynchronously`), which removed a race with an in-flight `.tmp` file
+
 ## Dependencies
 
 T01 → T02, T03, T04 → T05, T06, T07 → T08, T09 → T10.
@@ -46,5 +50,5 @@ R6 → T05, T09; R7 → T06; R8 → T07; R9 → T01, T02; R10 → T10. S1-S4 →
 (1) the show editor's VoiceOver edit actions (Move Up/Down, Rename…) were not named by any task, so a VoiceOver
 user could still reorder through the UI path (the coordinator would refuse, but the UI would offer it); T05 now
 gates them. (2) "byte-identical settings" was undefined; the spec's S1 now says which values are compared.
-Noted, not tasked: MOD-012's matrix is not in this tree; its coordinator needs the same guard when it merges.
+MOD-012 merged later; its guard is SCN-015-T11.
 No constitution conflicts, no unmapped tasks.
