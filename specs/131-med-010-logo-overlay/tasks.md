@@ -42,16 +42,16 @@ stage and stay open until a person runs them on D1.
 
 **Independent test**: scene archive round trip into a fresh sandbox (S3); backup includes and erase removes the keys (S6).
 
-- [ ] MED-010-T17 [US3] Scene asset `logo` (`SceneAssetKind.logo(storeID:)`, decode/encode, `SceneAsset.logoPlacement`, `SceneDocument.logo`, validation: invalid ID error, missing picture `missingAsset`, never `unusedAsset`; repair title "Logo") in `Packages/SceneFormat/Sources/SceneFormat/SceneLogo.swift` and the switch sites; tests `Packages/SceneFormat/Tests/SceneFormatTests/SceneLogoTests.swift` (contract C5)
+- [ ] MED-010-T17 [US3] Scene asset `logo` (`SceneAssetKind.logo(storeID:)`, decode/encode, `SceneAsset.logoPlacement`, `SceneDocument.logo`, validation: invalid ID error, missing picture `missingAsset`, never `unusedAsset`; repair title "Logo") in `Packages/SceneFormat/Sources/SceneFormat/SceneLogo.swift` and the switch sites; tests `Packages/SceneFormat/Tests/SceneFormatTests/SceneLogoTests.swift`: round trip, lenient placement, validation, and a `SceneRepairReport` entry titled "Logo" for a missing picture (analyze F1; contract C5)
 - [ ] MED-010-T18 [US3] Archive type `logo` (`png`, one, 4 files, photo limit; `mediaAssets`, remapping) in `Packages/SceneArchive/Sources/SceneArchive/SceneArchiveFormat.swift`, `SceneStoreRemapping.swift`, with reader/writer tests in `Packages/SceneArchive/Tests/SceneArchiveTests/` (contract C6)
 - [ ] MED-010-T19 [US3] Backup and erase: `settings.logo.id` and `settings.logo.placement` in `LibrarySettingsPolicy.includedKeys` and erased with `.media` (not `.settings`) in `Packages/LibraryBackup/Sources/LibraryBackup/LibrarySettings.swift`, `LibraryErasePolicy.swift`, with package test assertions (MED-010-R9)
 - [ ] MED-010-T20 [US3] Scene capture and restore: `SceneInputs.logo`, the `logo` asset in `SceneAutosaveCapture.document`, `SceneRestoredValues.logo`, `ShowLook`/`ShowSceneApply` logo, applied at launch restore, Reopen and cues when the picture resolves (not by undo) in `SceneAutosaveCapture.swift`, `ShowSceneSnapshot.swift`, `AppCoordinator.swift`, `AppCoordinator+Show.swift` (MED-010-R10)
 - [ ] MED-010-T21 [US3] `SceneArchiveService`: export the logo file; import stages with a staging `LogoStore`, adopts, makes current with the scene's placement after photo and video; plan lists it (`Apps/projectM-iOS/Coordinators/SceneArchiveService.swift`) (MED-010-R11)
-- [ ] MED-010-T22 [US3] App tests `Apps/projectM-iOS/Tests/LogoArchiveTests.swift`: **the export acceptance** (S3: export with the logo, import into a fresh sandbox, alpha within 1/255, placement equal); importing it twice keeps one payload; a scene capture records the logo and a restore applies it; backup policy includes and erase removes the keys (S6)
+- [ ] MED-010-T22 [US3] App tests `Apps/projectM-iOS/Tests/LogoArchiveTests.swift`: **the export acceptance** (S3: export with the logo, import into a fresh sandbox, alpha within 1/255, placement equal); importing it twice keeps one payload; the FILE-003 dry run lists `assets/logo.png` and an import with the plan succeeds (analyze E2); a scene capture records the logo and a restore applies it; backup policy includes and erase removes the keys (S6)
 
 ## Phase 6: Polish & cross-cutting
 
-- [ ] MED-010-T23 Checks: `check_compliance.py`, `validate_docs.py`, `check_motion_policy.py`, `check_permission_catalog.py`, `check_status_events.py`, `test_scripts.py`, `check_privacy_manifest.py <Debug .app>`; long-body warnings flags on the changed files; Linux shape of Compositor and SceneFormat pure parts
+- [ ] MED-010-T23 Checks: `check_compliance.py`, `validate_docs.py`, `check_motion_policy.py`, `check_permission_catalog.py`, `check_status_events.py` (with `LogoCoordinator.swift` and `LogoSection.swift` added to its checked files, analyze E1), `test_scripts.py`, `check_privacy_manifest.py <Debug .app>`; long-body warnings flags on the changed files; Linux shape of Compositor and SceneFormat pure parts
 - [ ] MED-010-T24 App tests (`projectM-iOSTests`), `PhotoLayerUITests` and `LogoOverlayUITests` on the own simulator; PosterBoard count after; delete the simulator; report `docs/test-reports/logo-overlay.md`; spec status Implemented
 - [ ] MED-010-T25 {device} On D1: a transparent PNG from the real Photos picker and one from Files appear over the Photo visual with clean edges in each corner (MED-010-S8)
 
@@ -69,3 +69,13 @@ stage and stay open until a person runs them on D1.
 
 MVP = Phases 1-3 (the logo imported with alpha and drawn on the compositor visuals). Then placement
 UI (US2), then scenes/archives/backups (US3), then checks and the report.
+
+## Analyze fixes (speckit-analyze, 2026-11-14)
+
+- E1 (MEDIUM, coverage): R12's announcer rule had no automated guard for the new files → T23 adds
+  `LogoCoordinator.swift` and `LogoSection.swift` to `check_status_events.py`.
+- E2 (MEDIUM, coverage): R11's FILE-003 dry-run listing had no test → T22 checks the plan.
+- F1 (MEDIUM, coverage): R10's repair-report entry for a missing logo had no test → T17 checks it.
+- No CRITICAL or HIGH findings; constitution alignment passes (public APIs, no networking, privacy
+  review in the spec, evidence from fixtures, device step tagged `{device}`). Coverage: 14/14
+  requirements and S1-S7 have tasks; S8 is the `{device}` task T25.
