@@ -104,7 +104,7 @@ flagged passes) in the JSON report next to the frame timings.
 - **PERF-002-R7**: The meter MUST be bounded: its state is a fixed set of at most 13 pass flags (6 stages × 2 domains + the frame GPU), it runs off the frame path (once a second with the overlay), and the frame path gains no work.
 - **PERF-002-R8**: The overlay MUST show a budget line (deadline, frame rate, threshold), an estimate line and one highlighted line per flagged pass with its figure and the threshold, while it is on; the text is part of the overlay's accessibility label, so VoiceOver reads it. No spoken announcement is made.
 - **PERF-002-R9**: The diagnostics frame timings MUST gain an optional budget verdict (deadline, threshold and clear shares, estimates, flagged pass names); exports without it are unchanged and stay schema-valid.
-- **PERF-002-R10**: In DEBUG builds a launch argument MUST be able to inject a slow stage into the reported figures (never into rendering) so the flag can be tested in the simulator.
+- **PERF-002-R10**: In DEBUG builds a launch argument (`-uitestSlowStage <stage>:<ms>`) MUST be able to inject a slow stage into the reported figures (never into rendering) so the flag can be tested in the simulator.
 - **PERF-002-R11**: A pass MUST have at least 30 samples in the window before it can be flagged; the verdict is recomputed once per overlay refresh, and the flag state is forgotten on a visual change or when the overlay is turned off.
 
 ### Key Entities
