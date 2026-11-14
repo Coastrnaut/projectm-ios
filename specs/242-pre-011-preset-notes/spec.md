@@ -41,6 +41,16 @@ interaction); each answer is the conservative, local-first option.
 - Q: Does search include notes? → A: Yes: browser search also matches presets whose note contains the text (folded, as tags, PRE-003-R9). It is local, in-memory and the user's own text.
 - Q: What happens to the note of a removed preset? → A: Removing one of the user's presets removes its note (as tags and adjustments). A note naming an ID the library no longer lists is kept but hidden, and PRE-018 reports it as a dangling reference ("Notes", fix "Remove Note").
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: What happens to unsaved text when the editor is closed? → A: Cancel discards it (an explicit choice); swiping the sheet down is disabled while the text differs from the saved note, so text is never lost by accident.
+- Q: What happens when pasted or typed text is longer than 2,000 characters? → A: The editor keeps the first 2,000 characters and the count shows "2,000 of 2,000"; the store still refuses longer text (defence in depth).
+- Q: Does saving or removing a note announce for VoiceOver? → A: Yes, on the shared announcer's library lane: "Note saved for <preset>." and "Note removed from <preset>." (never the note text).
+- Q: Does Fix All Safe remove dangling notes? → A: Yes, like dangling tags and adjustments: the preset the note names no longer exists in the library, and the user sees the issue listed first. A user who re-imports a preset gets a new ID, so the old note could not reattach anyway.
+- Q: How does the FILE-011 erase count notes? → A: One per preset with a note, added to the "Collections, tags, favorites and history" count.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Write a note about a preset (Priority: P1) — MVP
@@ -97,11 +107,11 @@ changes nothing); a library backup round trip restores the notes; erase removes 
 
 - **PRE-011-R1**: A note MUST be linked to a stable preset ID (the IDs used by favorites, tags and collections), hold trimmed text of 1 to 2,000 characters, and at most one note per preset; saving empty text MUST remove the note.
 - **PRE-011-R2**: Notes MUST be saved in `PresetCollections/notes.json`: schema version 1, a migration table keyed by version, a FILE-007 schema check before reading, a newer version leaving notes unavailable and the file untouched, an unreadable file renamed aside, every change saved atomically before it is shown (a failed save changes nothing and reports why). Invalid entries in a readable file are dropped and counted.
-- **PRE-011-R3**: The browser row MUST offer "Note…" (touch-and-hold menu) and a "Note" VoiceOver action, opening an editor with an accessible multi-line text field, a live character count "n of 2,000", Save, Cancel and (when a note exists) Delete Note.
+- **PRE-011-R3**: The browser row MUST offer "Note…" (touch-and-hold menu) and a "Note" VoiceOver action, opening an editor with an accessible multi-line text field limited to 2,000 characters, a live character count "n of 2,000", Save, Cancel and (when a note exists) Delete Note; swipe-to-dismiss is disabled while the text is unsaved. Saving and removing announce on the library lane without the note text.
 - **PRE-011-R4**: A row whose preset has a note MUST show a note symbol, and its VoiceOver label MUST end with ", has note" (the note text itself is not read in the row label).
 - **PRE-011-R5**: Browser search MUST also match presets whose note contains the search text (case and accent folded).
 - **PRE-011-R6**: Notes MUST never be read by, or appear in, any diagnostics output: the PERF-012 performance report, the CaptureLab diagnostics export, `DiagnosticsLog` logs and signposts, and automation reports. Notes MUST NOT be written to UserDefaults, logs or shared exports (preset export, scene and show packs, OSC, MIDI).
-- **PRE-011-R7**: FILE-005 MUST back up notes as `collections/notes.json` and merge them on restore per preset ID by the restore choice; FILE-011's collections erase MUST remove and count them.
+- **PRE-011-R7**: FILE-005 MUST back up notes as `collections/notes.json` and merge them on restore per preset ID by the restore choice; FILE-011's collections erase MUST remove them and count one per preset with a note.
 - **PRE-011-R8**: Removing a user preset MUST remove its note; PRE-018 MUST report a note whose preset ID the library does not list as a dangling reference, with the safe fix "Remove Note".
 - **PRE-011-R9**: The note model, file and store MUST be Foundation-only Swift in `PresetLibrary` that builds on Linux.
 
