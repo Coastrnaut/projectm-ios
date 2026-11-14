@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T22:07:46Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T22:16:01Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,25 +9,25 @@
 
 | State | Features |
 |---|---|
-| audited | 88 |
-| implementing | 3 |
-| unit_passed | 3 |
-| integrated | 231 |
+| audited | 85 |
+| implementing | 5 |
+| built | 1 |
+| integrated | 234 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+| Priority | audited | implementing | built | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 16 | 3 | 1 | 131 | 0 |
-| P2 | 61 | 0 | 2 | 16 | 0 |
+| P1 | 16 | 2 | 1 | 132 | 0 |
+| P2 | 58 | 3 | 0 | 18 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 94 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, CAM-005, CAM-006)
+- 91 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, CAM-005, CAM-006)
 
 ## Integrated
 
@@ -103,6 +103,7 @@ The physical-device suite may **not** start:
 | CMP-006 | Aspect fitting | `53ddd8c4` | `feature/cmp-006` |
 | CMP-007 | Shape masks | `20b9cc8a` | `feature/cmp-007` |
 | CMP-008 | Gradient masks | `4a27c647` | `feature/cmp-008` |
+| CMP-009 | Luma key | `330e71a2` | `feature/cmp-009` |
 | CMP-011 | Layer groups | `e7cc94cc` | `feature/cmp-011` |
 | CMP-012 | Solo and mute | `bc4817f3` | `feature/cmp-012` |
 | CMP-013 | Render caching | `473ebfec` | `feature/cmp-013` |
@@ -231,6 +232,7 @@ The physical-device suite may **not** start:
 | SCN-006 | Scene preview image | `546e69643d04` | `feature/scn-006` |
 | SCN-007 | Scene transition presets | `6024f5271d61` | `feature/scn-007` |
 | SCN-008 | Scene snapshots | `871e7fad` | `feature/scn-008` |
+| SCN-009 | Scene A/B compare | `95142688` | `feature/scn-009` |
 | SCN-010 | Scene undo/redo | `01b155c6c3d0` | `feature/scn-010` |
 | SCN-011 | Scene template gallery | `2a895211` | `feature/scn-011` |
 | SCN-012 | Scene validation | `2a86515` | `feature/scn-012` |
@@ -239,6 +241,7 @@ The physical-device suite may **not** start:
 | SCN-015 | Scene lock mode | `d518a943` | `feature/scn-015` |
 | SHD-001 | Procedural material catalog | `ade4dfec39a5` | `feature/shd-001` |
 | SHD-002 | Node-based generator graph | `e91692538b99` | `feature/shd-002` |
+| SHD-003 | Shader parameter metadata | `510cb12a` | `feature/shd-003` |
 | SHD-009 | Expression mapping DSL | `d84b02f95a85` | `feature/shd-009` |
 | SHD-010 | Expression sandbox budgets | `e906db183292` | `feature/shd-010` |
 | SHD-011 | User-authored shader policy | `26de54ff2c0b` | `feature/shd-011` |
@@ -1048,7 +1051,7 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `305f616dc2b9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-008/20261114T155119/swift-test_ShowControl.log`)
 - `post-merge batch56: Compositor 867, SceneFormat 173, ShowControl 105, Diagnostics 29, LibraryBackup 77, projectM-iOSTests 971 + 9 UI tests`: pass at `611fbf89` (log `.autonomous/logs/integration/batch56/app-tests.log`)
 
-### CMP-009 Luma key (unit_passed)
+### CMP-009 Luma key (integrated)
 - `python3 scripts/check_compliance.py`: pass at `42eaf9affd5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-009/20261114T170246/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `42eaf9affd5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-009/20261114T170246/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `42eaf9affd5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-009/20261114T170246/sim-test_ANGLERendering.log`)
@@ -1059,6 +1062,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `42eaf9affd5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-009/20261114T170246/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `42eaf9affd5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-009/20261114T170246/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `42eaf9affd5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-009/20261114T170246/swift-test_ShowControl.log`)
+- `post-merge batch67: Compositor 931, SceneFormat 178, RenderGoldens 84, projectM-iOSTests 1025, UI 7 (layer inspector 4, material inspector, scene compare, scene snapshot)`: pass at `95142688` (log `.autonomous/logs/integration/batch67/app-tests.log`)
 
 ### CMP-011 Layer groups (integrated)
 - `python3 scripts/check_compliance.py`: pass at `9917ce69ab67` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-011/20261114T021531/compliance.log`)
@@ -2455,9 +2459,10 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `5690755d7217` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-008/20261114T113600/swift-test_ShowControl.log`)
 - `post-merge: projectM-iOSTests 814 + UI 6 (countdown, snapshots, scene undo, macros, glow)`: pass at `871e7fad` (log `.autonomous/logs/integration/batch26/app-tests.log`)
 
-### SCN-009 Scene A/B compare (unit_passed)
+### SCN-009 Scene A/B compare (integrated)
 - `python3 scripts/check_compliance.py`: pass at `6dba7c6b7b2b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-009/20261114T170618/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `6dba7c6b7b2b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-009/20261114T170618/docs.log`)
+- `post-merge batch67: Compositor 931, SceneFormat 178, RenderGoldens 84, projectM-iOSTests 1025, UI 7 (layer inspector 4, material inspector, scene compare, scene snapshot)`: pass at `95142688` (log `.autonomous/logs/integration/batch67/app-tests.log`)
 
 ### SCN-010 Scene undo/redo (integrated)
 - `python3 scripts/check_compliance.py`: pass at `96baa4c3de9b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-010/20261113T180647/compliance.log`)
@@ -2527,7 +2532,7 @@ None.
 - `swift test --package-path Packages/Compositor`: pass at `094e008fa7bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-002/20261113T123540/swift-test_Compositor.log`)
 - `post-merge: Compositor xcodebuild test on iPhone 17 sim (GeneratorGraph 46 with the on-demand bench skipped, ProceduralMaterials 31, Compositor 79); projectM-iOSTests 186`: pass at `e91692538b99` (log `.autonomous/logs/integration/shd-002/compositor-sim.log`)
 
-### SHD-003 Shader parameter metadata (unit_passed)
+### SHD-003 Shader parameter metadata (integrated)
 - `python3 scripts/check_compliance.py`: pass at `ceac322b0101` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-003/20261114T165830/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `ceac322b0101` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-003/20261114T165830/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `ceac322b0101` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-003/20261114T165830/sim-test_ANGLERendering.log`)
@@ -2538,6 +2543,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `ceac322b0101` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-003/20261114T165830/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `ceac322b0101` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-003/20261114T165830/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `ceac322b0101` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-003/20261114T165830/swift-test_ShowControl.log`)
+- `post-merge batch67: Compositor 931, SceneFormat 178, RenderGoldens 84, projectM-iOSTests 1025, UI 7 (layer inspector 4, material inspector, scene compare, scene snapshot)`: pass at `95142688` (log `.autonomous/logs/integration/batch67/app-tests.log`)
 
 ### SHD-009 Expression mapping DSL (integrated)
 - `python3 scripts/check_compliance.py`: pass at `269a293b8d9d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-009/20261113T125934/compliance.log`)

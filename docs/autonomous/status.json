@@ -12,25 +12,25 @@
   },
   "P1": {
    "audited": 16,
-   "implementing": 3,
-   "integrated": 131,
-   "unit_passed": 1
+   "built": 1,
+   "implementing": 2,
+   "integrated": 132
   },
   "P2": {
-   "audited": 61,
-   "integrated": 16,
-   "unit_passed": 2
+   "audited": 58,
+   "implementing": 3,
+   "integrated": 18
   },
   "P3": {
    "audited": 9
   }
  },
  "by_state": {
-  "audited": 88,
-  "implementing": 3,
-  "integrated": 231,
-  "skipped_existing": 1,
-  "unit_passed": 3
+  "audited": 85,
+  "built": 1,
+  "implementing": 5,
+  "integrated": 234,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -47,7 +47,6 @@
    "CAM-009",
    "CAM-010",
    "CAM-011",
-   "CMP-009",
    "CMP-010",
    "FX-005",
    "FX-006",
@@ -96,8 +95,6 @@
    "REC-002",
    "REC-013",
    "REC-016",
-   "SCN-009",
-   "SHD-003",
    "SHD-004",
    "SHD-005",
    "SHD-006",
@@ -135,7 +132,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "94 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, CAM-005, CAM-006)"
+   "91 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, CAM-005, CAM-006)"
   ]
  },
  "features": {
@@ -761,13 +758,13 @@
   },
   "CAM-005": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/cam-005",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "CAM-006": {
    "attempts": 0,
@@ -934,10 +931,10 @@
    "branch": "feature/cmp-009",
    "branch_sha": "42eaf9affd5cd290200dd2d26747c26389ba8fdd",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "330e71a2",
    "priority": "P2",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "CMP-010": {
    "attempts": 0,
@@ -2111,13 +2108,13 @@
   },
   "PERF-009": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/perf-009",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "PERF-010": {
    "attempts": 0,
@@ -2241,13 +2238,13 @@
   },
   "PRE-008": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/pre-008",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "PRE-009": {
    "attempts": 0,
@@ -2714,10 +2711,10 @@
    "branch": "feature/scn-009",
    "branch_sha": "6dba7c6b7b2bf7095621198450798497089d1ed9",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "95142688",
    "priority": "P2",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "SCN-010": {
    "attempts": 0,
@@ -2804,10 +2801,10 @@
    "branch": "feature/shd-003",
    "branch_sha": "ceac322b0101929a207ab81ed475e2bfd7924bb0",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "510cb12a",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "SHD-004": {
    "attempts": 0,
@@ -2932,12 +2929,12 @@
   "SHOW-004": {
    "attempts": 0,
    "branch": "feature/show-004",
-   "branch_sha": null,
+   "branch_sha": "243d150c",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "built"
   },
   "SHOW-005": {
    "attempts": 0,
@@ -3752,6 +3749,11 @@
    "sha": "4a27c647"
   },
   {
+   "branch": "feature/cmp-009",
+   "id": "CMP-009",
+   "sha": "330e71a2"
+  },
+  {
    "branch": "feature/cmp-011",
    "id": "CMP-011",
    "sha": "e7cc94cc"
@@ -4392,6 +4394,11 @@
    "sha": "871e7fad"
   },
   {
+   "branch": "feature/scn-009",
+   "id": "SCN-009",
+   "sha": "95142688"
+  },
+  {
    "branch": "feature/scn-010",
    "id": "SCN-010",
    "sha": "01b155c6c3d0a73e61e8922219c74cd3e92ea0af"
@@ -4430,6 +4437,11 @@
    "branch": "feature/shd-002",
    "id": "SHD-002",
    "sha": "e91692538b993f06e84803ec86a910081cf75e5d"
+  },
+  {
+   "branch": "feature/shd-003",
+   "id": "SHD-003",
+   "sha": "510cb12a"
   },
   {
    "branch": "feature/shd-009",
@@ -4582,5 +4594,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T22:07:46Z"
+ "updated": "2026-11-14T22:16:01Z"
 }
