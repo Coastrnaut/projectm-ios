@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Clarified
+**Status**: Implemented 2026-11-14 (UIX-009-T01-T09 verified on the Mac: ParameterGraph package tests on the host, app unit and UI tests on a private iOS 27.2 simulator; no ADR, no device task; the Linux build of ParameterGraph runs in CI, not on this host)
 
 **Input**: User description: "Implement UIX-009 (Parameter search) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Search editable parameters by name, group and unit." Acceptance, verbatim:

@@ -20,8 +20,8 @@
 
 ## Phase 4: Polish
 
-- [ ] UIX-009-T08 Repo checks (compliance, docs, motion, permission catalog, status events, script tests), privacy manifest and network symbol checks on the Debug app, type-check budget on new files
-- [ ] UIX-009-T09 Mark spec Implemented; final report
+- [X] UIX-009-T08 Repo checks (compliance, docs, motion, permission catalog, status events, script tests), privacy manifest and network symbol checks on the Debug app, type-check budget on new files — Verified 2026-11-14: check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events, qa009_manifest_check exit 0; test_scripts 164 tests OK; check_privacy_manifest and check_network_symbols OK on the Debug simulator app; no -warn-long-function-bodies=300 / expression=150 warnings in the build; LibraryBackupAppTests + ParameterInspectorTests 15/15 pass; ParameterGraph package 177 + 50 tests pass
+- [X] UIX-009-T09 Mark spec Implemented; final report — Verified 2026-11-14: spec Status set to Implemented; no ADR (no default overridden)
 
 ## Dependencies
 
