@@ -14,6 +14,7 @@
 //   MIDI-006 rows). Learn also accepts a CC button press (controller 0–119, value ≥ 64) and real-time Start/Continue/Stop
 //   (not on the hold row); the learned press is registered in the router's press filter so its duplicate copies fire
 //   nothing (research MIDI-008-D7). A CC learned as a button leaves the MIDI-003 list (one action per control, D6).
+// * MIDI-013 (specs/183-midi-013-panic): a `midi.panic` binding's press runs `panic()` (MIDIMappingCoordinator+Panic.swift).
 import Foundation
 import PerformanceControl
 
@@ -155,7 +156,13 @@ extension MIDIMappingCoordinator {
     private func route(_ events: ArraySlice<MIDIEvent>) {
         guard !events.isEmpty, !noteBindings.isEmpty || noteRouter.hasKeysDown else { return }
         let commands: [MIDINoteCommand] = noteRouter.route(Array(events), bindings: noteBindings)
-        if !commands.isEmpty { performNotes(commands) }
+        // MIDI-013-R8: a `midi.panic` press runs the panic after the batch's earlier commands; later ones are dropped.
+        guard let index = commands.firstIndex(where: { (c: MIDINoteCommand) -> Bool in c.target.action == .panic }) else {
+            if !commands.isEmpty { performNotes(commands) }
+            return
+        }
+        if index > 0 { performNotes(Array(commands[..<index])) }
+        panic()
     }
 
     private func bindNote(_ key: MIDIControlKey, to target: MIDINoteTarget) {

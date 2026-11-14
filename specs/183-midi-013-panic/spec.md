@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Planned 2026-11-14 (speckit-analyze: coverage of R5's live values and listening added to MIDI-013-T06)
+**Status**: Implemented 2026-11-14 (MIDI-013-T01-T12 verified on the Mac; device task T13 `{device}` open)
 
 **Input**: User description: "Implement MIDI-013 (MIDI panic) from docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable
 behavior, verbatim: "Release held note states and clear stuck triggers on user command." Acceptance, verbatim: "After
