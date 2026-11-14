@@ -36,6 +36,10 @@
 //   (generation token). Record, Cancel or Escape cancels; a Record tap in the last 0.25 s or the first 0.5 s
 //   of the recording it started is ignored. The 0.25 s check, the background observer and leaving the
 //   visualizer cancel it.
+// * REC-008 (specs/180-rec-008-timed-stop, contract C2, C3): with a length set (Off, 10 s, 30 s, 1 min, 5 min) the
+//   recording's `maxDurationSeconds` is that length, fixed at start; the recorder writes exactly the frames below
+//   it, the tap calls `beginFinish()` on the frame that crossed it (never waits) and reports the stop, which is
+//   `timedStop` with "Recording stopped after 10 seconds.". The indicator reads "0:07 / 0:10".
 // * DEBUG: `-uitestRecordingDirectory <name>` moves the file into `<tmp>/<name>/` instead of showing
 //   the mover, and `probe` reports what AVFoundation reads back ("video hvc1 1178x2556 frames=58
 //   duration=1.93 audio=0").
@@ -80,6 +84,7 @@ final class VideoRecordingTap {
         let outcome = recorder.recordFrame(presentationNanoseconds: presentationNanoseconds, drawableWidth: drawable.width,
                                            drawableHeight: drawable.height, commandBuffer: commandBuffer, encode: encode)
         audioFeed?.pump()   // after the frame: the first frame sets the audio's origin
+        if outcome == .durationReached { recorder.beginFinish() }   // REC-008-R3: after the last audio; never waits
         switch outcome {
         case .sizeChanged: report(.sizeChanged)
         case .durationReached: report(.durationReached)
@@ -149,6 +154,8 @@ final class VideoRecordingCoordinator {
         var frameRateChoice: RecordingFrameRateChoice = .defaultChoice
         /// REC-007: the countdown before a recording starts (Off: at once).
         var countdown: RecordingCountdownLength = .defaultLength
+        /// REC-008: the length after which the recording stops by itself (Off: the 10-minute limit only).
+        var timedStop: RecordingTimedStopLength = .defaultLength
     }
 
     enum State: Equatable, CaseIterable {   // CaseIterable: ACC-011's completeness test
@@ -204,6 +211,8 @@ final class VideoRecordingCoordinator {
     private(set) var lastRecording: RecordedVideo?
     /// REC-007-R6: why the last countdown was cancelled (nil while counting and after a completion or a refusal).
     private(set) var lastCountdownCancel: RecordingCountdownCancel?
+    /// REC-008-R10: the current (or last) recording's length, fixed at its start; nil with Off.
+    private(set) var recordingLength: RecordingTimedStopLength?
     /// REC-007: writers this coordinator has created (tests: a cancelled countdown creates none).
     @ObservationIgnored private(set) var writerCreations = 0
     @ObservationIgnored private let countdownClock: any RecordingCountdownClock
@@ -303,12 +312,24 @@ final class VideoRecordingCoordinator {
     }
 
     /// The indicator's text: "0:05", "1:02:03" never (10-minute limit).
-    static func elapsedText(_ seconds: Double) -> String {
+    nonisolated static func elapsedText(_ seconds: Double) -> String {
         let whole = max(Int(seconds), 0)
         return "\(whole / 60):" + String(format: "%02d", whole % 60)
     }
 
     var elapsedText: String { Self.elapsedText(elapsedSeconds) }
+
+    /// REC-008-R8: the indicator's text, "0:07 / 0:10" with a length, else "0:07".
+    var indicatorText: String {
+        guard let total = recordingLength?.indicatorText else { return elapsedText }
+        return elapsedText + " / " + total
+    }
+
+    /// REC-008-R8: what VoiceOver reads for the indicator's time, "0:07 of 0:10" with a length.
+    var indicatorAccessibilityText: String {
+        guard let total = recordingLength?.indicatorText else { return elapsedText }
+        return elapsedText + " of " + total
+    }
 
     // MARK: - Audio (REC-004)
 
@@ -427,7 +448,9 @@ final class VideoRecordingCoordinator {
             fail(.encoderUnavailable)
             return
         }
-        let settings: RecordingSettings = plan.settings
+        var settings: RecordingSettings = plan.settings
+        let length: RecordingTimedStopLength? = c.timedStop.seconds > 0 ? c.timedStop : nil   // REC-008-R10: fixed now
+        if let length { settings.maxDurationSeconds = min(length.seconds, settings.maxDurationSeconds) }   // media time
         do {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             // REC-015-R1, R3: one free-storage reading before anything is written.
@@ -472,6 +495,7 @@ final class VideoRecordingCoordinator {
         elapsedSeconds = 0
         notice = resolution.notice   // REC-005-R6, REC-006-R7: X9c, nil without a fallback
         recordingProfile = plan.profile
+        recordingLength = length
         lastStopReason = nil
         probe = "recording"
         startTicker()
@@ -657,8 +681,10 @@ final class VideoRecordingCoordinator {
     }
 
     /// Stops the recording and finishes the file off the main thread (idempotent).
-    func stop(_ reason: RecordingStopReason) {
+    func stop(_ requested: RecordingStopReason) {
         guard state == .recording, let recorder else { return }
+        // REC-008-R7: the recorder's duration limit is the user's length when one is set.
+        let reason: RecordingStopReason = requested == .durationReached && recordingLength != nil ? .timedStop : requested
         state = .finishing
         lastStopReason = reason
         ticker?.cancel()
@@ -685,7 +711,7 @@ final class VideoRecordingCoordinator {
             fail(failure)
         case .success(let video):
             lastRecording = video   // REC-006-R4
-            notice = reason.notice
+            notice = reason == .timedStop ? (recordingLength?.stoppedNotice ?? reason.notice) : reason.notice
             if let debugDirectory {
                 moveForTests(video, into: debugDirectory)
             } else {

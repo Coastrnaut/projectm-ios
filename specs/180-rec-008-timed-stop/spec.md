@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (REC-008-T01-T13 verified on the Mac: FrameRecording package fixtures on the host, app unit tests and the UI test on the REC8 iOS 27.2 simulator; device task T14 `{device}` open)
 
 **Input**: User description: "Implement REC-008 (Timed recording stop) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Stop after specified duration without blocking render thread." Acceptance,

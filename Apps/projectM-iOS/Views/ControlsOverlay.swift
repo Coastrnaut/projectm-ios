@@ -334,7 +334,7 @@ struct ControlsOverlay: View {
         if let remaining = recording.state.countdownRemaining { return countdownItem(recording, remaining: remaining) }
         let active = recording.state == .recording
         return Item(id: "record", title: active ? "Stop recording" : "Record", icon: active ? "stop.circle" : "record.circle",
-                    value: active ? "Recording, \(recording.elapsedText)" : (recording.isRecordable ? nil : "Unavailable for projectM"),
+                    value: active ? "Recording, \(recording.indicatorAccessibilityText)" : (recording.isRecordable ? nil : "Unavailable for projectM"),
                     hint: recording.audioStatusText) {   // REC-004-R9: the audio the recording holds
             coordinator.showControls()
             recording.toggle()

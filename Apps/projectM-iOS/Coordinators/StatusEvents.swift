@@ -202,7 +202,7 @@ enum StatusEventCatalog {
         case .user:
             return recording(.finishing)
         case .durationReached, .background, .paused, .blackedOut, .visualChanged, .sizeChanged, .presentationLost,
-             .writerFailed, .lowStorage:
+             .writerFailed, .lowStorage, .timedStop:
             let notice: String = reason.notice ?? ""
             return StatusEvent(id: "X13", kind: .recording, visibleText: notice, announcement: notice, cause: .system)
         }
@@ -222,6 +222,9 @@ enum StatusEventCatalog {
             return StatusEvent(id: "X14a", kind: .recording, visibleText: notice, announcement: notice, cause: .user)
         }
         if notice.hasPrefix(RecordingQualityCatalog.fallbackPrefix) { return recordingQualityFallback(notice) }   // X9c
+        if notice.hasPrefix(RecordingTimedStopLength.stoppedPrefix) {   // REC-008-R7: X13, "Recording stopped after 10 seconds."
+            return StatusEvent(id: "X13", kind: .recording, visibleText: notice, announcement: notice, cause: .system)
+        }
         if let refusal = RecordingRefusal.allCases.first(where: { $0.notice == notice }) {
             return recordingRefusal(refusal)
         }

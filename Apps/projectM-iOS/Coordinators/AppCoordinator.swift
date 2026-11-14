@@ -328,6 +328,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         })
     /// REC-007: the recording countdown (Settings → Recording countdown; Off by default).
     @ObservationIgnored private(set) lazy var recordingCountdown = RecordingCountdownSetting(defaults: defaults)
+    /// REC-008: the recording length (Settings → Stop recording after; Off by default).
+    @ObservationIgnored private(set) lazy var recordingTimedStop = RecordingTimedStopSetting(defaults: defaults)
     /// UIX-004: the favorite parameter shelf (pinned controls in the visualizer's controls).
     let parameterShelf: ParameterShelf
     /// REC-004: reads the microphone permission (never asks for it).
@@ -1415,6 +1417,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                                                  qualityCapabilities: RecordingQualitySetting.deviceCapabilities(),
                                                  frameRateChoice: recordingQuality.frameRate)   // REC-006
         context.countdown = recordingCountdown.length   // REC-007
+        context.timedStop = recordingTimedStop.length   // REC-008
         return context
     }
 
