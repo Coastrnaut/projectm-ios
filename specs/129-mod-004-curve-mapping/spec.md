@@ -32,6 +32,24 @@ The row's gap status is "Gap candidate". The audit finds a full gap: every mappi
 | MIDI | MIDI-003 stores `cc:<channel>:<number>=<parameter ID>` lines and ignores `;`-separated options after the ID, left for MIDI-004. Its CC values are mapped linearly. |
 | Binding UI | None for users. Bindings are created in code and restored from scenes; the only binding screen is the DEBUG `UITestModulationPanel` used by MOD-002's UI test. |
 
+## Clarifications
+
+### Session 2026-11-14
+
+Answered by Claude under the owner's standing approval (owner rules 4 and 9: best judgement, no
+human interaction); each answer is the conservative, local-first option, recommended option first.
+
+- Q: Where in the binding pipeline does the curve apply: before the envelope (shaping the target) or after it (shaping the smoothed signal)? → A: After the envelope, immediately before MOD-003's interpolation: `interpolate(curve(signal))`. The envelope's attack and release times keep their meaning in the source's 0…1 units, the stored signal stays the linear one, and MIDI-004 (no envelope) shapes its normalized CC value the same way. Rejected: before the envelope (the envelope would smooth already-shaped values, so the same attack time would feel different per curve) (MOD-004-R6).
+- Q: Do piecewise curves interpolate linearly or with a smooth monotone cubic (Fritsch–Carlson)? → A: Linear between points. It is exactly monotone under floating-point rounding (each segment is MOD-003's interpolation), simple to validate and to explain, and smooth shapes are covered by the built-in kinds. Rejected: monotone cubic (tangent limiting adds rounding paths that need their own monotonicity proof; can be added later as another kind without breaking stored data) (MOD-004-R1; research MOD-004-D2).
+- Q: Do piecewise points include the ends, and how many are allowed? → A: Interior points only, at most 8, with x strictly inside (0, 1); the ends (0, 0) and (1, 1) are implicit. So f(0) = 0 and f(1) = 1 hold for every curve, and a floor or ceiling is expressed by the binding's output range, as today. An empty piecewise curve is linear. Rejected: user-set ends (would break the universal end guarantee and duplicate the output range) (MOD-004-R1, R5).
+- Q: Are invalid curves repaired or rejected? → A: Rejected at every boundary: binding (a new refusal reason naming the curve) and scene restore (the binding is rejected and kept verbatim, MOD-013's existing outcome). Evaluation of an invalid curve that is used anyway is defensive (parameters limited to the allowed range, unusable points skipped) so it never traps and stays bounded and monotonic, but nothing silently rewrites a stored curve. Rejected: silent repair (a scene would play differently from what was authored without the author seeing why) (MOD-004-R5, R6, R9).
+- Q: What does a non-finite input give? → A: 0, the same as MOD-003's position rule (NaN, −∞ and +∞ all read 0); negative inputs give 0 and inputs above 1 give 1 (MOD-004-R3).
+- Q: How does an unknown curve kind from a newer version behave when a scene opens? → A: Its binding is not applied, is preserved verbatim for re-save (MOD-013 "rejected"), and SCN-012 reports a new warning code `unsupportedCurve` grouped with the other mapping problems in the repair report. Applying it as linear was rejected: a guessed shape could drive a parameter differently from the author's intent, and preserving the unknown curve on a live binding would need extra live state (MOD-004-R9).
+- Q: Does SHD-009 get a curve opcode? → A: No new opcode. The expression language already has `pow` and `smoothstep`; extending its whitelist would change its contract. Instead `ExpressionMapping` accepts a curve applied to the formula's 0…1 position, the natural seam (MOD-004-R8).
+- Q: Is a curve picker added to the UI? → A: No: there is no user-facing binding editor to host it (only the DEBUG modulation test panel). The model, scene persistence and the text form are complete so a future editor or MIDI-004 can add the picker; the row's simulator verification is the app's unit test host on the simulator (MOD-004-S5).
+- Q: What text form will MIDI-004 append to its mapping lines? → A: `;curve=<form>` where the form is `linear`, `easeIn:<p>`, `easeOut:<p>`, `easeInOut:<p>`, `log:<k>`, `exp:<k>` or `piecewise:<x>,<y>/<x>,<y>…`, numbers in their shortest round-trip decimal text. The form never contains `;` or `=`. This row implements and tests the form on the curve type only; MIDI-004 adds it to the MIDI lines (MOD-004-R10).
+- Q: What are the parameter ranges? → A: Exponent 1 < p ≤ 8 (ease-in, ease-out, ease-in-out); strength 0 < k ≤ 1000 (logarithmic, exponential). These span gentle to very steep shapes while keeping every value representable without overflow (MOD-004-R5).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A binding can follow a curve instead of a straight line (Priority: P1)
