@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T11:08:19Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T11:10:43Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,18 +10,19 @@
 | State | Features |
 |---|---|
 | audited | 185 |
-| implementing | 2 |
+| implementing | 1 |
+| unit_passed | 1 |
 | integrated | 138 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 2 | 0 | 84 | 1 |
-| P1 | 97 | 2 | 52 | 0 |
-| P2 | 77 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 84 | 1 |
+| P1 | 97 | 1 | 1 | 52 | 0 |
+| P2 | 77 | 0 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -1016,6 +1017,20 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `281df3269c3f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-004/20261114T052941/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `281df3269c3f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-004/20261114T052941/swift-test_ShowControl.log`)
 - `post-merge: projectM-iOSTests 581 + VideoSpeed/VideoLoop/VideoLayer UI tests 4`: pass at `c61dedd2` (log `.autonomous/logs/integration/med-004/app-tests.log`)
+
+### MED-006 Image slideshow (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `c2f29e10032e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-006/20261114T060820/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `c2f29e10032e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-006/20261114T060820/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `c2f29e10032e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-006/20261114T060820/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `c2f29e10032e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-006/20261114T060820/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `c2f29e10032e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-006/20261114T060820/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `c2f29e10032e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-006/20261114T060820/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `c2f29e10032e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-006/20261114T060820/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `c2f29e10032e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-006/20261114T060820/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `c2f29e10032e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-006/20261114T060820/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `c2f29e10032e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-006/20261114T060820/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `c2f29e10032e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-006/20261114T060820/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `c2f29e10032e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-006/20261114T060820/swift-test_ShowControl.log`)
 
 ### MED-009 Text overlay (integrated)
 - `python3 scripts/check_compliance.py`: pass at `5adba5200543` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-009/20261113T142110/compliance.log`)
