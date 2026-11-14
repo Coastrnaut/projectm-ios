@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (MIDI-004-T01-T15 verified on the Mac with the scripted MIDI system; device task T16 `{device}` open)
 
 **Input**: User description: "Implement MIDI-004 (MIDI CC scaling) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Map 7-bit control changes to parameter ranges with curve and inversion."
