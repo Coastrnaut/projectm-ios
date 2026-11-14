@@ -9,7 +9,9 @@
 //      never makes clicks);
 //   4. earlier than that beyond the window → the overlap is trimmed (never written twice);
 //      later beyond the window → placed at its own time (a gap, never padded with silence);
-//   5. anything before the origin is trimmed.
+//   5. anything before the origin is trimmed;
+//   6. REC-008-R4 (specs/180-rec-008-timed-stop, research REC-008-D3): with `limitSample`, nothing at or after it
+//      is placed; a chunk straddling it is cut at that exact sample.
 // Not thread-safe: the caller serializes.
 
 public struct RecordingAudioTimeline: Sendable, Equatable {
@@ -32,8 +34,12 @@ public struct RecordingAudioTimeline: Sendable, Equatable {
     public private(set) var ended = false
     /// Samples placed so far.
     public private(set) var placedFrames = 0
+    /// REC-008: the first sample position that is never written (the recording's length × 44,100); nil: no limit.
+    public var limitSample: Int64?
 
-    public init() {}
+    public init(limitSample: Int64? = nil) {
+        self.limitSample = limitSample
+    }
 
     /// Sets the origin once (the first video frame's time); later calls are ignored.
     public mutating func setOrigin(nanoseconds: UInt64) {
@@ -66,7 +72,8 @@ public struct RecordingAudioTimeline: Sendable, Equatable {
             skip += -start
             start = 0
         }
-        let remaining = Int64(frames) - skip
+        var remaining = Int64(frames) - skip
+        if let limitSample { remaining = min(remaining, limitSample - start) }   // REC-008-R4: cut at the end
         guard remaining > 0 else { return nil }
         nextSample = start + remaining
         placedFrames += Int(remaining)
