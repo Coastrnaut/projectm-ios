@@ -353,6 +353,7 @@ struct VisualizerView: View {
                          channelSelection: coordinator.channelSelection,   // AUD-009
                          noiseGate: coordinator.noiseGate,   // AUD-011
                          latencyOffset: coordinator.latencyOffset,   // AUD-013
+                         colorGrade: coordinator.colorGrade,   // FX-003
                          midi: coordinator.midi,   // MIDI-001
                          explainers: coordinator.explainers,   // UIX-015
                          cameraStatus: { () -> PermissionState? in coordinator.cameraPermissionStatus },

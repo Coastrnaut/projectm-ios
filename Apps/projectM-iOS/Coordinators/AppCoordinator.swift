@@ -194,6 +194,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let noiseGate: NoiseGateSetting
     /// AUD-013: the per-source visual delay (Settings → Visual Delay; analysis and projectM's feed).
     let latencyOffset: LatencyOffsetSetting
+    /// FX-003: the colour grade (Settings → Color) of the compositor-backed visuals.
+    let colorGrade: ColorGradeSetting
     /// The native spectra (VIS-001 circular, VIS-002 linear), created the first time one is needed.
     private(set) var nativeVisual: NativeSpectrumHost?
     /// The Camera visual (CAM-001), created when Camera is chosen and released when another visual is.
@@ -315,6 +317,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             defaults.removeObject(forKey: NoiseGateSetting.enabledKey)   // AUD-011: off
             defaults.removeObject(forKey: NoiseGateSetting.thresholdKey)   // AUD-011: −50 dBFS
             LatencyOffsetSetting.allKeys.forEach(defaults.removeObject(forKey:))   // AUD-013: 0 ms
+            ColorGradeSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-003: neutral
             try? FileManager.default.removeItem(at: PresetCollectionStore.defaultDirectory())   // PRE-007: UI tests start without collections
             try? FileManager.default.removeItem(at: UserPresetStore.defaultDirectory())         // PRE-012: and without imported presets
             if let photos = try? PhotoStore.defaultDirectory() { try? FileManager.default.removeItem(at: photos) }   // MED-001: no photo
@@ -333,6 +336,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         channelSelection = ChannelSelectionSetting(defaults: defaults)
         noiseGate = NoiseGateSetting(defaults: defaults)
         latencyOffset = LatencyOffsetSetting(defaults: defaults)
+        colorGrade = ColorGradeSetting(defaults: defaults)   // FX-003
         self.externalDisplay.reduceFlashing = settings.effectiveReduceFlashing   // OUT-010-R6, ACC-012-R7
         // PERF-010 (contract C1): decide before the OSC receiver exists, so an abnormal exit never
         // reopens the listener; a pending offer holds the scene instead of restoring it.
@@ -459,6 +463,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         }
         videos.onLoopRegionChange = { [weak self] (region: VideoLoopRegion?) in self?.videoVisual?.loopRegion = region }   // MED-003
         texts.onSpecChange = { [weak self] (spec: TextOverlaySpec) in self?.textVisual?.spec = spec }   // MED-009
+        colorGrade.onChange = { [weak self] (_: ColorGrade) in self?.applyColorGrade() }   // FX-003
         routes.context = { [weak self] in self?.routeContext }   // AUD-007
         // AUD-012-R12: the noise gate's microphone flag changes when a session (or a switch) begins.
         manager.onSessionMode = { [weak self] (mode: AudioSourceMode) in
@@ -835,6 +840,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         externalDisplay.reduceFlashing = reduce // OUT-010-R6: the restore fade's length
         videoVisual?.reduceFlashing = reduce    // MED-002
         textVisual?.reduceFlashing = reduce     // MED-009
+        applyColorGrade()                       // FX-003: the profile's gain cap
     }
 
     /// ACC-012-R4, R5: hands one clamp to every frame resolver (projectM's envelope pass, the native host's
@@ -848,6 +854,16 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         native?.reduceFlashing = clamp.reducesFlashing       // VIS-001-R10
         native?.safetyClamp = clamp                          // glow cap and the generators' envelope
         for compositor in compositors { compositor.flashLimits = limits }
+    }
+
+    /// FX-003-R1: the compositor-backed visuals show the colour grade (the native spectra and projectM are not graded),
+    /// with ACC-012's intensity limit on gain (research FX-003-D10).
+    func applyColorGrade() {
+        let grade: ColorGrade = colorGrade.effectiveGrade(clamp: settings.safetyClamp)
+        cameraVisual?.colorGrade = grade
+        photoVisual?.colorGrade = grade
+        videoVisual?.colorGrade = grade
+        textVisual?.colorGrade = grade
     }
 
     // MARK: - Visual choice (VIS-001)
@@ -952,6 +968,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                                                  crop: settings.cameraCrop)   // CAM-007
             host.reduceFlashing = settings.effectiveReduceFlashing   // ACC-012-R7
             host.compositor.flashLimits = settings.safetyClamp.flashLimitsOverride   // ACC-012-R5
+            host.colorGrade = colorGrade.effectiveGrade(clamp: settings.safetyClamp)   // FX-003, ACC-012 gain cap
             host.onRenderHealthChange = observeRenderHealth(of: "camera")   // PERF-014
             #if DEBUG
             host.compositor.faultInjection = armedRenderFaults
@@ -985,6 +1002,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             let host = try PhotoVisualHost.make(device: device, reader: trimmedAnalysisTap, barCount: circularSpectrumBarCount)
             host.reduceFlashing = settings.effectiveReduceFlashing   // ACC-012-R7
             host.compositor.flashLimits = settings.safetyClamp.flashLimitsOverride   // ACC-012-R5
+            host.colorGrade = colorGrade.effectiveGrade(clamp: settings.safetyClamp)   // FX-003, ACC-012 gain cap
             host.onRenderHealthChange = observeRenderHealth(of: "photo")   // PERF-014
             #if DEBUG
             host.compositor.faultInjection = armedRenderFaults
@@ -1033,6 +1051,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             let host = try VideoVisualHost.make(device: device, reader: trimmedAnalysisTap, barCount: circularSpectrumBarCount)
             host.reduceFlashing = settings.effectiveReduceFlashing   // ACC-012-R7
             host.compositor.flashLimits = settings.safetyClamp.flashLimitsOverride   // ACC-012-R5
+            host.colorGrade = colorGrade.effectiveGrade(clamp: settings.safetyClamp)   // FX-003, ACC-012 gain cap
             host.onRenderHealthChange = observeRenderHealth(of: "video")   // PERF-014
             #if DEBUG
             host.compositor.faultInjection = armedRenderFaults
@@ -1080,6 +1099,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             let host = try TextVisualHost.make(device: device, reader: trimmedAnalysisTap, barCount: circularSpectrumBarCount)
             host.reduceFlashing = settings.effectiveReduceFlashing   // ACC-012-R7
             host.compositor.flashLimits = settings.safetyClamp.flashLimitsOverride   // ACC-012-R5
+            host.colorGrade = colorGrade.effectiveGrade(clamp: settings.safetyClamp)   // FX-003, ACC-012 gain cap
             host.onRenderHealthChange = observeRenderHealth(of: "text")   // PERF-014
             #if DEBUG
             host.compositor.faultInjection = armedRenderFaults

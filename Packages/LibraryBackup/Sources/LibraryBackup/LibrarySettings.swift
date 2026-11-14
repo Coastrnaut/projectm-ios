@@ -78,6 +78,8 @@ public enum LibrarySettingsPolicy {
         "settings.visual.colorBlindSafePalette",   // ACC-003-R13 (integrated alongside FILE-005)
         "settings.sensorySafety.profile", "settings.sensorySafety.flashesPerSecond",   // ACC-012-R8
         "settings.sensorySafety.riseLimit", "settings.sensorySafety.intensityLimit",
+        "settings.colorGrade.temperature", "settings.colorGrade.lift", "settings.colorGrade.gamma",   // FX-003-R8
+        "settings.colorGrade.gain", "settings.colorGrade.saturation",
         "settings.oscilloscope.line", "settings.oscilloscope.window",
         "settings.spectrum.attack", "settings.spectrum.release",
         "settings.camera.position", "settings.camera.mirrorFront", "settings.camera.mirrorBack",

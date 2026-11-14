@@ -4,7 +4,7 @@
 // One compute dispatch per frame, one threadgroup of 16 threads, no CPU read-back:
 //   1. Measure: thread k reads 16 × 16 samples of tile k of the 4 × 4 grid (row 0 at the top, as
 //      FlashZones; CFlashLimiter's sample pattern) of the linear premultiplied composite (= over
-//      black), each through FX-002's output tone map (what the screen shows), and computes the tile's mean WCAG relative luminance and redness max(R − G − B, 0).
+//      black), each through FX-003's grade and FX-002's output tone map (what the screen shows), and computes the tile's mean WCAG relative luminance and redness max(R − G − B, 0).
 //   2. Thread 0: the whole frame is the mean of the tiles; it then runs FlashEnvelope's rule on the
 //      34 tracks (17 areas × 2 signals): advance the ages by the clamped frame time, compute each
 //      ceiling, take the closed-form gain min(ceiling / level) (levels scale linearly with the gain),
@@ -49,13 +49,14 @@ final class CompositeFlashGuard {
 
     constant float windowTolerance = 0.002;   // FlashEnvelope.windowTolerance
 
-    // FX-002 (ADR-0047): the output tone map, so the guard measures the colour the output pass shows.
-    \(CompositorShaders.toneMapSource)
+    // FX-002 (ADR-0047), FX-003: the output grade and tone map, so the guard measures the colour the output pass shows.
+    \(CompositorShaders.displaySource)
 
     kernel void cmp_flash_guard(texture2d<float, access::read> scene [[texture(0)]],
                                 device Track *tracks [[buffer(0)]],
                                 device float *gainOut [[buffer(1)]],
                                 constant GuardParams &p [[buffer(2)]],
+                                constant CMPGrade &grade [[buffer(3)]],
                                 uint tid [[thread_index_in_threadgroup]]) {
         threadgroup float levels[34];
         uint2 size = uint2(scene.get_width(), scene.get_height());
@@ -66,7 +67,7 @@ final class CompositeFlashGuard {
                 for (int i = 0; i < 16; i++) {
                     float2 f = (tile + (float2(float(i), float(j)) + 0.5) / 16.0) / 4.0;
                     uint2 q = min(uint2(f * float2(size)), size - 1);
-                    float3 c = cmp_tone_map(scene.read(q)).rgb;   // FX-002: as shown (0…1, never NaN)
+                    float3 c = cmp_display(scene.read(q), grade).rgb;   // FX-002, FX-003: as shown (0…1, never NaN)
                     y += dot(c, float3(0.2126, 0.7152, 0.0722));
                     r += max(c.r - c.g - c.b, 0.0);
                 }
@@ -172,8 +173,9 @@ final class CompositeFlashGuard {
     func reset() { needsReset = true }
 
     /// Encodes the measurement and envelope for `composite`; the output pass reads `gainBuffer`.
+    /// `grade`: FX-003's block, the same the output pass binds (neutral: the FX-002 measurement unchanged).
     func encode(composite: MTLTexture, commandBuffer: MTLCommandBuffer, frameDuration: Double, reduceFlashing: Bool,
-                flashLimits: FlashEnvelopeConfiguration? = nil) -> Bool {
+                flashLimits: FlashEnvelopeConfiguration? = nil, grade: CompositorShaders.GradeBlock = .neutral) -> Bool {
         guard let encoder = commandBuffer.makeComputeCommandEncoder() else { return false }
         // ACC-012-R5: the sensory safety profile's envelope when set; else today's Reduce flashing choice.
         let c = flashLimits ?? FlashEnvelopeConfiguration.forReduceFlashing(reduceFlashing)
@@ -188,6 +190,8 @@ final class CompositeFlashGuard {
         encoder.setBuffer(stateBuffer, offset: 0, index: 0)
         encoder.setBuffer(gainBuffer, offset: 0, index: 1)
         encoder.setBytes(&parameters, length: MemoryLayout<Parameters>.size, index: 2)
+        var block = grade
+        encoder.setBytes(&block, length: MemoryLayout<CompositorShaders.GradeBlock>.size, index: 3)   // FX-003
         encoder.dispatchThreadgroups(MTLSize(width: 1, height: 1, depth: 1), threadsPerThreadgroup: MTLSize(width: 16, height: 1, depth: 1))
         encoder.endEncoding()
         return true

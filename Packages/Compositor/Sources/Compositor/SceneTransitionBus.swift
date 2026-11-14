@@ -46,6 +46,15 @@ public final class SceneTransitionBus {
     private var lastCommandBuffer: MTLCommandBuffer?
     private var shownTexture: MTLTexture?
     private weak var outputCommandBuffer: MTLCommandBuffer?
+    /// FX-003: the grade's block and the block of the frame last shown (`encodeOutput` repeats it).
+    private var gradeBlock = CompositorShaders.GradeBlock.neutral
+    private var shownGradeBlock = CompositorShaders.GradeBlock.neutral
+
+    /// FX-003 (ADR-0050): the colour grade of the bus's output pass and flash guard (as `Compositor.colorGrade`; the
+    /// scenes' own `colorGrade` is not used here, since the bus runs its own output pass).
+    public var colorGrade: ColorGrade = .neutral {
+        didSet { gradeBlock = CompositorShaders.GradeBlock(colorGrade.coefficients) }
+    }
 
     /// Frames drawn through the mix pass so far (tests, diagnostics).
     public private(set) var blendedFrames = 0
@@ -184,8 +193,9 @@ public final class SceneTransitionBus {
             shown = b
         }
         lastCommandBuffer = commandBuffer
+        shownGradeBlock = gradeBlock
         guard flashGuard.encode(composite: shown, commandBuffer: commandBuffer, frameDuration: frame.frameDuration,
-                                reduceFlashing: reduceFlashing, flashLimits: flashLimits) else { return false }
+                                reduceFlashing: reduceFlashing, flashLimits: flashLimits, grade: shownGradeBlock) else { return false }
         guard encodeOutputPass(shown, into: output, pipeline: pipeline, label: "CMP-014 output", counts: true,
                                commandBuffer: commandBuffer) else {
             return false
@@ -247,6 +257,7 @@ public final class SceneTransitionBus {
         encoder.setFragmentTexture(shown, index: 0)
         encoder.setFragmentBuffer(flashGuard.gainBuffer, offset: 0, index: 0)
         encoder.setFragmentBuffer(counts ? nonFiniteCounter.counter : nonFiniteCounter.sink, offset: 0, index: 1)
+        Compositor.bindGrade(shownGradeBlock, encoder)   // FX-003
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
         encoder.endEncoding()
         return true

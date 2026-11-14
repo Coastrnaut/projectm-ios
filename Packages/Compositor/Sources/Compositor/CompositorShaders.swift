@@ -194,16 +194,18 @@ enum CompositorShaders {
         return o;
     }
 
-    \(toneMapSource)
-    // FX-002 (ADR-0047): the tone-mapped composite times the flash guard's gain (RGB only; never brightens). The
-    // guard measured the same `cmp_tone_map` values, so the gain applies to what it judged. The output's format
-    // does the encoding (sRGB for the screen). `nonFinite` counts composite pixels with a NaN or infinite
-    // channel (the screen pass binds the compositor's counter, recording and capture a sink; FX-002-R7).
+    \(displaySource)
+    // FX-002 (ADR-0047), FX-003: the displayed composite (graded, then tone-mapped; `cmp_display`) times the flash
+    // guard's gain (RGB only; never brightens). The guard measured the same `cmp_display` values with the same grade,
+    // so the gain applies to what it judged. The output's format does the encoding (sRGB for the screen).
+    // `nonFinite` counts composite pixels with a NaN or infinite channel (the screen pass binds the compositor's
+    // counter, recording and capture a sink; FX-002-R7). `grade`: FX-003's coefficients (flags 0 = bypass).
     fragment float4 cmp_output(FullScreenOut in [[stage_in]], texture2d<float, access::read> composite [[texture(0)]],
-                               device const float *gain [[buffer(0)]], device atomic_uint *nonFinite [[buffer(1)]]) {
+                               device const float *gain [[buffer(0)]], device atomic_uint *nonFinite [[buffer(1)]],
+                               constant CMPGrade &grade [[buffer(2)]]) {
         float4 c = composite.read(uint2(in.position.xy));
         if (any(isnan(c) || isinf(c))) atomic_fetch_add_explicit(nonFinite, 1u, memory_order_relaxed);
-        float4 t = cmp_tone_map(c);
+        float4 t = cmp_display(c, grade);
         float g = clamp(gain[0], 0.0, 1.0);
         return float4(t.rgb * g, t.a);
     }
@@ -231,6 +233,57 @@ enum CompositorShaders {
         return float4(clamp(1.0 - k * (m - s.rgb), 0.0, 1.0), s.a);
     }
     """
+
+    /// FX-003 (contracts/color-grade.md in specs/123, research FX-003-D2 to D5): the colour grade, the same steps
+    /// as `ColorGradeCoefficients.apply` (CPU reference), then FX-002's tone map. Spliced into `source` and into the
+    /// composite flash guard's source, so the guard measures exactly what the output pass shows.
+    ///   flags 0 (every control neutral): the pixel is returned untouched, so `cmp_tone_map` sees the ungraded input
+    ///   (bypass, bit for bit); else sanitise (NaN/±Inf → 0, colour ≥ 0, alpha 0…1), then temperature (× balance),
+    ///   lift (max(v·scale + offset, 0)), gamma (v^exponent), gain (× gain), saturation (around Rec. 709 luminance).
+    static let displaySource = """
+    struct CMPGrade { float4 balance; float4 tone; float saturation; uint flags; uint pad0; uint pad1; };
+
+    \(toneMapSource)
+    static float4 cmp_grade(float4 c, constant CMPGrade &g) {
+        if (g.flags == 0u) return c;
+        float4 s = select(c, float4(0.0), isnan(c) || isinf(c));
+        float3 v = max(s.rgb, float3(0.0));
+        float a = clamp(s.a, 0.0, 1.0);
+        if ((g.flags & 1u) != 0u) v *= g.balance.rgb;
+        if ((g.flags & 2u) != 0u) v = max(v * g.tone.x + g.tone.y, float3(0.0));
+        if ((g.flags & 4u) != 0u) v = select(pow(v, float3(g.tone.z)), float3(0.0), v <= 0.0);
+        if ((g.flags & 8u) != 0u) v *= g.tone.w;
+        if ((g.flags & 16u) != 0u) {
+            float y = dot(v, float3(0.2126, 0.7152, 0.0722));
+            v = max(y + g.saturation * (v - y), float3(0.0));
+        }
+        return float4(v, a);
+    }
+
+    static float4 cmp_display(float4 c, constant CMPGrade &g) { return cmp_tone_map(cmp_grade(c, g)); }
+    """
+
+    /// FX-003: `CMPGrade` in the shader (48 bytes, copied by `setFragmentBytes` / `setBytes`; research FX-003-D4).
+    struct GradeBlock: Equatable {
+        var balance: SIMD4<Float>
+        /// (lift scale, lift offset, exponent, gain).
+        var tone: SIMD4<Float>
+        var saturation: Float
+        var flags: UInt32
+        var pad0: UInt32 = 0
+        var pad1: UInt32 = 0
+
+        /// Flags 0: `cmp_grade` returns its input (bypass).
+        static let neutral = GradeBlock(ColorGrade.neutral.coefficients)
+
+        /// The coefficients rounded to `Float`.
+        init(_ k: ColorGradeCoefficients) {
+            balance = SIMD4<Float>(Float(k.balance.x), Float(k.balance.y), Float(k.balance.z), 0)
+            tone = SIMD4<Float>(Float(k.liftScale), Float(k.liftOffset), Float(k.exponent), Float(k.gain))
+            saturation = Float(k.saturation)
+            flags = k.flags
+        }
+    }
 
     /// CMP-007: `CMPMask` in the shader (304 bytes, copied by `setFragmentBytes`; research CMP-007-D3).
     struct MaskBlock {

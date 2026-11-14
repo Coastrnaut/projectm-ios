@@ -369,6 +369,7 @@ final class ToneMapOutputTests: XCTestCase {
             encoder.setFragmentTexture(composite, index: 0)
             encoder.setFragmentBuffer(gain, offset: 0, index: 0)
             encoder.setFragmentBuffer(counter, offset: 0, index: 1)
+            Compositor.bindGrade(.neutral, encoder)   // FX-003: cmp_output's grade block (neutral)
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
             encoder.endEncoding()
             commands.commit()

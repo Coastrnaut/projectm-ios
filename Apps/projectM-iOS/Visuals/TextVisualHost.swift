@@ -50,6 +50,11 @@ final class TextVisualHost: PresentationBoundResource {
     private(set) var metrics = RenderMetrics.zero
     /// FR-072: the app's Reduce flashing setting.
     var reduceFlashing = false
+    /// FX-003: the colour grade of the compositor's output passes (neutral: bypass).
+    var colorGrade: ColorGrade {
+        get { compositor.colorGrade }
+        set { compositor.colorGrade = newValue }
+    }
     /// REC-003: the attached video recording, fed with each composited frame (nil when not recording).
     var videoRecording: VideoRecordingTap?
     /// The text layer's state; `onTextStateChange` reports every change.

@@ -41,8 +41,9 @@ final class OutputPassRig {
 
     /// `cmp_output` from `composite` × `gain` into a new target of `format`; returns the raw channel values:
     /// floats for `rgba16Float`, bytes / 255 (still encoded) for 8-bit formats, RGBA order.
+    /// FX-003: `grade` is bound at fragment buffer 2 (neutral: bypass; a custom library's shader may ignore it).
     func output(_ composite: MTLTexture, format: MTLPixelFormat, gain: Float = 1, shader: String = "cmp_output",
-                library custom: MTLLibrary? = nil) throws -> [SIMD4<Float>] {
+                library custom: MTLLibrary? = nil, grade: ColorGrade = .neutral) throws -> [SIMD4<Float>] {
         let fragment = try CompositorShaders.function(custom ?? library, shader)
         let pipeline = try CompositorShaders.pipeline(device: rig.device, vertex: fullScreen, fragment: fragment, format: format,
                                                       blendOver: false, label: "FX-002 test output")
@@ -61,6 +62,7 @@ final class OutputPassRig {
         var zero: UInt32 = 0
         let counter = try XCTUnwrap(rig.device.makeBuffer(bytes: &zero, length: 4, options: .storageModeShared))
         encoder.setFragmentBuffer(counter, offset: 0, index: 1)
+        Compositor.bindGrade(CompositorShaders.GradeBlock(grade.coefficients), encoder)
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
         encoder.endEncoding()
         commands.commit()

@@ -68,6 +68,8 @@ ALLOWED_KEYS = {"favorites", "lastPresetID", "settings.performanceOverlay", "set
                 "settings.visual.colorBlindSafePalette",   # ACC-003-R13
                 "settings.sensorySafety.profile", "settings.sensorySafety.flashesPerSecond",   # ACC-012-R8
                 "settings.sensorySafety.riseLimit", "settings.sensorySafety.intensityLimit",   # ACC-012-R8
+                "settings.colorGrade.temperature", "settings.colorGrade.lift", "settings.colorGrade.gamma",   # FX-003-R8
+                "settings.colorGrade.gain", "settings.colorGrade.saturation",
                 "settings.circularSpectrum.glow", "settings.circularSpectrum.glowIntensity",
                 "settings.circularSpectrum.glowRadius", "settings.circularSpectrum.glowThreshold",
                 "settings.linearSpectrum.orientation", "settings.linearSpectrum.spacing",   # VIS-002-R11
