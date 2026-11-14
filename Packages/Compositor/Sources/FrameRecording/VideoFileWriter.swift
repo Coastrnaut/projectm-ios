@@ -10,6 +10,19 @@
 import AVFoundation
 import CoreVideo
 import Foundation
+import Synchronization
+
+/// REC-016-R4 (research REC-016-D5): live recorders and writers in this process (a writer owns its pixel-buffer
+/// pool). Diagnostics and tests only; in memory, never stored.
+public enum RecordingResourceLedger {
+    private static let counts = Mutex<(recorders: Int, writers: Int)>((0, 0))
+
+    public static var liveRecorders: Int { counts.withLock { (c: inout (recorders: Int, writers: Int)) -> Int in c.recorders } }
+    public static var liveWriters: Int { counts.withLock { (c: inout (recorders: Int, writers: Int)) -> Int in c.writers } }
+
+    static func recorder(_ delta: Int) { counts.withLock { (c: inout (recorders: Int, writers: Int)) -> Void in c.recorders += delta } }
+    static func writer(_ delta: Int) { counts.withLock { (c: inout (recorders: Int, writers: Int)) -> Void in c.writers += delta } }
+}
 
 /// The result of one append.
 enum RecordingAppendResult: Equatable, Sendable {
@@ -31,11 +44,19 @@ protocol RecordingSampleSink: AnyObject, Sendable {
     var hasAudio: Bool { get }
     /// REC-004: appends interleaved stereo Float32 frames at `startSample` (44.1 kHz from the session start). On `queue`.
     func appendAudio(_ samples: [Float], startSample: Int64) -> RecordingAppendResult
+    /// REC-016-R3 (contract C1.2): after a writer failure, keeps what is usable — a healthy writer is finished at
+    /// `endTick`, a failed one keeps its completed fragments — or deletes the file. Returns the failure to report.
+    func salvage(endTick: Int64) async -> (RecordingSalvageOutcome, RecordingFailure)
 }
 
 extension RecordingSampleSink {
     var hasAudio: Bool { false }
     func appendAudio(_ samples: [Float], startSample: Int64) -> RecordingAppendResult { .failed }
+    /// Sinks without fragments keep nothing (REC-003-R17's behaviour).
+    func salvage(endTick: Int64) async -> (RecordingSalvageOutcome, RecordingFailure) {
+        if case .failure(let failure) = await finish(endTick: endTick, keep: false) { return (.nothing, failure) }
+        return (.nothing, .writerFailed("append failed"))
+    }
 }
 
 /// REC-004-R7: AAC-LC, 44.1 kHz stereo, 128 kb/s; the input is LPCM Float32 interleaved stereo.
@@ -128,6 +149,8 @@ final class VideoFileWriter: RecordingSampleSink, @unchecked Sendable {
     /// REC-004: the AAC input and the LPCM format of its chunks (nil without audio).
     private let audioInput: AVAssetWriterInput?
     private let audioFormat: CMAudioFormatDescription?
+    /// Used only on `queue`: the last appended video time (REC-016 failure injection).
+    private var lastTick: Int64?
 
     var hasAudio: Bool { audioInput != nil }
 
@@ -143,7 +166,10 @@ final class VideoFileWriter: RecordingSampleSink, @unchecked Sendable {
         self.adaptor = adaptor
         self.pool = pool
         self.realTime = realTime
+        RecordingResourceLedger.writer(1)
     }
+
+    deinit { RecordingResourceLedger.writer(-1) }
 
     /// A started writer at `url` (an existing file there is replaced), or `encoderUnavailable`.
     /// `audio` (REC-004): adds the AAC input; without it the file has no audio track.
@@ -179,6 +205,8 @@ final class VideoFileWriter: RecordingSampleSink, @unchecked Sendable {
                 sourcePixelBufferAttributes: RecordingPixelBuffers.attributes(width: geometry.sourceWidth, height: geometry.sourceHeight))
             writer.metadata = []                       // REC-003-R8: no metadata items
             writer.shouldOptimizeForNetworkUse = false
+            // REC-016-R1 (ADR-0061): completed fragments survive a writer failure; a normal finish defragments.
+            writer.movieFragmentInterval = CMTime(seconds: settings.fragmentIntervalSeconds, preferredTimescale: RecordingSettings.timescale)
             guard writer.startWriting() else {
                 writer.cancelWriting()
                 continue
@@ -235,8 +263,11 @@ final class VideoFileWriter: RecordingSampleSink, @unchecked Sendable {
             }
             guard input.isReadyForMoreMediaData else { return writer.status == .writing ? .notReady : .failed }
         }
-        return adaptor.append(buffer, withPresentationTime: CMTime(value: tick, timescale: RecordingSettings.timescale))
-            ? .appended : .failed
+        guard adaptor.append(buffer, withPresentationTime: CMTime(value: tick, timescale: RecordingSettings.timescale)) else {
+            return .failed
+        }
+        lastTick = tick
+        return .appended
     }
 
     /// REC-004: live, a not-ready input drops the chunk (never waits); offline, waits on this queue.
@@ -272,8 +303,12 @@ final class VideoFileWriter: RecordingSampleSink, @unchecked Sendable {
         guard keep, writer.status == .writing else {
             // REC-015-R7: an out-of-space error becomes `storageFull`.
             let failure: RecordingFailure? = writer.status == .failed ? RecordingFailure.fromWriterError(writer.error, fallback: "failed") : nil
+            if keep, let failure, failure != .storageFull {   // REC-016-R3: the caller salvages the fragments
+                done(.failure(failure))
+                return
+            }
             if writer.status == .writing { writer.cancelWriting() }
-            try? FileManager.default.removeItem(at: url)   // REC-003-R17: no partial file is kept
+            try? FileManager.default.removeItem(at: url)   // a cancel, or out of storage: no partial file is kept
             done(failure.map { (f: RecordingFailure) -> Result<Void, RecordingFailure> in .failure(f) } ?? .success(()))
             return
         }
@@ -286,16 +321,82 @@ final class VideoFileWriter: RecordingSampleSink, @unchecked Sendable {
             if finished.status == .completed {
                 done(.success(()))
             } else {
-                try? FileManager.default.removeItem(at: url)
-                done(.failure(RecordingFailure.fromWriterError(finished.error, fallback: "finish failed")))
+                let failure = RecordingFailure.fromWriterError(finished.error, fallback: "finish failed")
+                if failure == .storageFull { try? FileManager.default.removeItem(at: url) }   // else REC-016: salvaged by the caller
+                done(.failure(failure))
             }
+        }
+    }
+
+    // MARK: - REC-016 salvage (contract C1)
+
+    func salvage(endTick: Int64) async -> (RecordingSalvageOutcome, RecordingFailure) {
+        await withCheckedContinuation { (continuation: CheckedContinuation<(RecordingSalvageOutcome, RecordingFailure), Never>) in
+            queue.async {
+                self.salvageOnQueue(endTick: endTick) { (result: (RecordingSalvageOutcome, RecordingFailure)) in
+                    continuation.resume(returning: result)
+                }
+            }
+        }
+    }
+
+    private func salvageOnQueue(endTick: Int64, done: @escaping @Sendable ((RecordingSalvageOutcome, RecordingFailure)) -> Void) {
+        let url = url
+        let failure: RecordingFailure = writer.status == .failed
+            ? RecordingFailure.fromWriterError(writer.error, fallback: "failed") : .writerFailed("append failed")
+        let exists = { () -> Bool in FileManager.default.fileExists(atPath: url.path) }
+        if failure == .storageFull || (writer.status != .writing && writer.status != .failed) {
+            if writer.status == .writing { writer.cancelWriting() }
+            try? FileManager.default.removeItem(at: url)   // REC-016-R9: out of storage keeps REC-015-R7
+            done((.nothing, failure))
+            return
+        }
+        guard writer.status == .writing, lastTick != nil else {   // failed: never cancel (it deletes the fragments)
+            done((writer.status == .failed && exists() ? .partial : .nothing, failure))
+            return
+        }
+        input.markAsFinished()   // healthy: finish at the last appended frame
+        audioInput?.markAsFinished()
+        writer.endSession(atSourceTime: CMTime(value: endTick, timescale: RecordingSettings.timescale))
+        let writer = writer
+        nonisolated(unsafe) let finished = writer
+        writer.finishWriting {
+            done((finished.status == .completed ? .finished : (exists() ? .partial : .nothing), failure))
+        }
+    }
+
+    /// REC-016-R6: cancels a started writer that will never be used (its file is deleted). Any thread but `queue`.
+    func discard() {
+        queue.sync {
+            if writer.status == .writing { writer.cancelWriting() }
+            try? FileManager.default.removeItem(at: url)
+        }
+    }
+
+    /// REC-016-R2 (research REC-016-D3), tests and DEBUG only, on `queue`: drives the real writer to its failed
+    /// state with a duplicate presentation time and waits (at most 2 s) for AVFoundation to report it.
+    func forceFailureOnQueue() {
+        guard writer.status == .writing, let buffer = makePixelBuffer() else { return }
+        let tick = lastTick ?? 0
+        var waited = 0.0
+        for _ in 0..<(lastTick == nil ? 2 : 1) {
+            while !input.isReadyForMoreMediaData && writer.status == .writing && waited < 2 {
+                Thread.sleep(forTimeInterval: 0.002)
+                waited += 0.002
+            }
+            _ = adaptor.append(buffer, withPresentationTime: CMTime(value: tick, timescale: RecordingSettings.timescale))
+        }
+        while writer.status == .writing && waited < 2 {
+            Thread.sleep(forTimeInterval: 0.005)
+            waited += 0.005
         }
     }
 }
 
-/// REC-015-R12 test seam: forwards to the real writer until `fault.afterFrames` frames were appended,
-/// then fails every append; finishing cancels the real writer (its file is deleted) and reports the
-/// injected error as a real writer failure would be reported.
+/// REC-015-R12, REC-016-R2 test seam (tests and DEBUG only). `appendFails`: forwards to the real writer until
+/// `fault.afterFrames` frames were appended, then fails every append (the real writer stays healthy). `writerFails`:
+/// at that point drives the real writer to its failed state. `finishFails`: drives it there when the recording is
+/// finished. Out-of-space errors end as REC-015 did (file deleted).
 final class FaultInjectingSink: RecordingSampleSink, @unchecked Sendable {
     private let inner: any RecordingSampleSink
     private let fault: RecordingWriterFault
@@ -316,8 +417,11 @@ final class FaultInjectingSink: RecordingSampleSink, @unchecked Sendable {
         failed ? .failed : inner.appendAudio(samples, startSample: startSample)
     }
 
+    private var failsAppends: Bool { fault.kind == .appendFails || fault.kind == .writerFails }
+
     func append(_ buffer: CVPixelBuffer, tick: Int64) -> RecordingAppendResult {
-        if failed || appended >= fault.afterFrames {
+        if failed || (failsAppends && appended >= fault.afterFrames) {
+            if !failed, fault.kind == .writerFails { (inner as? VideoFileWriter)?.forceFailureOnQueue() }
             failed = true
             return .failed
         }
@@ -326,13 +430,35 @@ final class FaultInjectingSink: RecordingSampleSink, @unchecked Sendable {
         return result
     }
 
-    func finish(endTick: Int64, keep: Bool) async -> Result<Void, RecordingFailure> {
-        let hasFailed = await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+    private func hasFailed() async -> Bool {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
             queue.async { continuation.resume(returning: self.failed) }
         }
-        guard hasFailed else { return await inner.finish(endTick: endTick, keep: keep) }
+    }
+
+    func finish(endTick: Int64, keep: Bool) async -> Result<Void, RecordingFailure> {
+        if keep, fault.kind == .finishFails, let writer = inner as? VideoFileWriter {
+            await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                queue.async {
+                    writer.forceFailureOnQueue()
+                    continuation.resume()
+                }
+            }
+            return await inner.finish(endTick: endTick, keep: true)
+        }
+        guard await hasFailed() else { return await inner.finish(endTick: endTick, keep: keep) }
         _ = await inner.finish(endTick: endTick, keep: false)
         return .failure(RecordingFailure.fromWriterError(fault.error, fallback: "injected"))
+    }
+
+    func salvage(endTick: Int64) async -> (RecordingSalvageOutcome, RecordingFailure) {
+        let failure = RecordingFailure.fromWriterError(fault.error, fallback: "injected")
+        if failure == .storageFull {   // REC-016-R9: REC-015-R7 unchanged
+            _ = await inner.finish(endTick: endTick, keep: false)
+            return (.nothing, failure)
+        }
+        let (outcome, _) = await inner.salvage(endTick: endTick)
+        return (outcome, failure)
     }
 }
 #endif

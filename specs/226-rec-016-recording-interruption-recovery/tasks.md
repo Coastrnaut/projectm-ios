@@ -9,13 +9,13 @@
 
 ## Phase 2: Foundational
 
-- [ ] REC-016-T02 Plain Swift in Packages/Compositor/Sources/FrameRecording/RecordingRecovery.swift (salvage outcome, thermal level, guard, notices); `RecordingStopReason.thermal`, `RecordingRefusal.thermal`, new writerFailed notice, `RecordedVideo.interruption` in RecordingOutcome.swift; fault kinds in RecordingStorage.swift; `fragmentIntervalSeconds` in RecordingSettings.swift
-- [ ] REC-016-T03 Writer: fragments, `salvage`, `forceFailureForTests`, ledger, fault sink kinds (VideoFileWriter.swift) (contract C1)
-- [ ] REC-016-T04 Recorder: salvage path with read-back, start-failure cleanup, texture-cache flush, ledger (MetalFrameRecorder.swift) (contract C2)
+- [X] REC-016-T02 Plain Swift in Packages/Compositor/Sources/FrameRecording/RecordingRecovery.swift (salvage outcome, thermal level, guard, notices); `RecordingStopReason.thermal`, `RecordingRefusal.thermal`, new writerFailed notice, `RecordedVideo.interruption` in RecordingOutcome.swift; fault kinds in RecordingStorage.swift; `fragmentIntervalSeconds` in RecordingSettings.swift — Verified 2026-11-14: RecordingThermalGuardTests (2 tests: guard rules, notices, DEBUG argument forms); Linux-shape build of Compositor with tests (-DCOMPOSITOR_NO_METAL -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE) OK
+- [X] REC-016-T03 Writer: fragments, `salvage`, `forceFailureForTests`, ledger, fault sink kinds (VideoFileWriter.swift) (contract C1) — Verified 2026-11-14: RecordingRecoveryTests (append/writer/finish kinds through the real writer); mutation without movieFragmentInterval makes the writer and finish tests fail (file unreadable, deleted)
+- [X] REC-016-T04 Recorder: salvage path with read-back, start-failure cleanup, texture-cache flush, ledger (MetalFrameRecorder.swift) (contract C2) — Verified 2026-11-14: RecordingRecoveryTests ledger and framesInFlight asserts; existing FrameRecording suite 150 tests, 0 failures, 1 skip (host, 41.8 s)
 
 ## Phase 3: User Story 1 - A writer failure keeps what was recorded (P1) MVP
 
-- [ ] REC-016-T05 [US1] Package tests RecordingRecoveryTests.swift: append, writer and finish failures in a 2 s 64×48 fixture → ledger at baseline, nothing in flight, kept file read back within one fragment; early writer failure → nothing kept; an out-of-storage fault still deletes the file (REC-016-R9); normal finish has no `moof` and passes QA-008 (REC-016-S1, S5)
+- [X] REC-016-T05 [US1] Package tests RecordingRecoveryTests.swift: append, writer and finish failures in a 2 s 64×48 fixture → ledger at baseline, nothing in flight, kept file read back within one fragment; early writer failure → nothing kept; an out-of-storage fault still deletes the file (REC-016-R9); normal finish has no `moof` and passes QA-008 (REC-016-S1, S5) — Verified 2026-11-14: RecordingRecoveryTests 7/7 on the host (5.8 s): append keeps 30/30, writer and finish keep the completed fragments within one fragment + 0.5 s of 45, early failure and out of storage keep nothing, normal finish has no moof and passes RecordingValidator
 - [ ] REC-016-T06 [US1] Coordinator: kept part offered with the X13 notice; StatusEvents rows (VideoRecordingCoordinator.swift, StatusEvents.swift) (contract C3.1, C4)
 - [ ] REC-016-T07 [US1] App tests RecordingRecoveryAppTests.swift: append failure mid-recording → idle, tap detached, recorder released (ledger), notice, offered file read back with the frames before the failure
 
