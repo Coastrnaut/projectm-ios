@@ -7,17 +7,17 @@ Tests are requested by the roadmap acceptance ("Change requested between beats a
 
 ## Phase 1: Setup
 
-- [ ] MOD-017-T01 Create the private simulator "MOD17 iPhone 17" (iOS 27.2) and count PosterBoard reports before any run
+- [X] MOD-017-T01 Create the private simulator "MOD17 iPhone 17" (iOS 27.2) and count PosterBoard reports before any run — Verified 2026-11-14: simulator A2EDBA08 created on iOS 27.2; PosterBoard reports 25 before
 
 ## Phase 2: Foundational
 
-- [ ] MOD-017-T02 Add `QuantizeMode`, `QuantizeBoundary`, `QueuedChange`, `QuantizeRequestResult`, `TempoSnapshot.nextBoundary(after:beats:)` (strictly after) and `QuantizedChangeQueue` (contract Q1; "at most one per key") in Packages/PerformanceControl/Sources/PerformanceControl/QuantizedChangeQueue.swift
+- [X] MOD-017-T02 Add `QuantizeMode`, `QuantizeBoundary`, `QueuedChange`, `QuantizeRequestResult`, `TempoSnapshot.nextBoundary(after:beats:)` (strictly after) and `QuantizedChangeQueue` (contract Q1; "at most one per key") in Packages/PerformanceControl/Sources/PerformanceControl/QuantizedChangeQueue.swift — Verified 2026-11-14: `swift test --package-path Packages/PerformanceControl` (241 tests pass, 17.5 s)
 
 ## Phase 3: User Story 1 - Switch on the beat (P1) MVP
 
 **Independent test**: synthetic 120 BPM grid, injected times; a mid-beat request is not applied before, exactly once at, and never after the next beat.
 
-- [ ] MOD-017-T03 [US1] Package acceptance and edge tests (Beat not-before/once/never-again over 3 further beats, latest wins of 5 requests, cancel on equal value, request exactly on a beat waits, no tempo / no phase → applyNow(.noTempo), clock jump applies once, request order, boundary helper before/after the anchor) in Packages/PerformanceControl/Tests/PerformanceControlTests/QuantizedChangeQueueTests.swift
+- [X] MOD-017-T03 [US1] Package acceptance and edge tests (Beat not-before/once/never-again over 3 further beats, latest wins of 5 requests, cancel on equal value, request exactly on a beat waits, no tempo / no phase → applyNow(.noTempo), clock jump applies once, request order, boundary helper before/after the anchor) in Packages/PerformanceControl/Tests/PerformanceControlTests/QuantizedChangeQueueTests.swift — Verified 2026-11-14: `swift test --filter QuantizedChangeQueue` (10 tests, 0.006 s), acceptance `testBeatChangeMidBeatAppliesExactlyOnceAtNextBeat`
 - [ ] MOD-017-T04 [US1] `ParameterQuantizer` (mode persisted under `settings.modulation.quantize`, request, tick(at:), wake-up task, announcements, lock check at request and apply) in Apps/projectM-iOS/Coordinators/ParameterQuantizer.swift; `AppSettings.parameterQuantizer` in Apps/projectM-iOS/Coordinators/AppSettings.swift; wiring (tempo snapshot, monotonic clock, `.parameter` lane, apply through `ParameterInspectorTargets.target`) via one call in Apps/projectM-iOS/Coordinators/AppCoordinator.swift
 - [ ] MOD-017-T05 [US1] `ParameterInspectorTargets.quantizedTarget(for:settings:)` (discrete = boolean, enumeration, integer or fixed `choices`) used by Apps/projectM-iOS/Views/ParameterInspectorView.swift, Apps/projectM-iOS/Views/ParameterShelfView.swift and Apps/projectM-iOS/Coordinators/MacroCoordinator.swift
 - [ ] MOD-017-T06 [US1] App acceptance through the real write path (glow on: not before the beat, once at it, not again; lock at the boundary refuses and drops; continuous glow intensity applies at once; no tempo applies at once) in Apps/projectM-iOS/Tests/ParameterQuantizerAcceptanceTests.swift
@@ -26,7 +26,7 @@ Tests are requested by the roadmap acceptance ("Change requested between beats a
 
 **Independent test**: the same with bar boundaries every 4 beats from the anchor and with cue steps.
 
-- [ ] MOD-017-T07 [US2] Bar and Cue package acceptance (bar ignores the beats in between; cueStepped applies once in Cue mode, drops in Beat/Bar; no cues → applyNow(.noCue); setMode/clear drop counts) in Packages/PerformanceControl/Tests/PerformanceControlTests/QuantizedChangeQueueTests.swift
+- [X] MOD-017-T07 [US2] Bar and Cue package acceptance (bar ignores the beats in between; cueStepped applies once in Cue mode, drops in Beat/Bar; no cues → applyNow(.noCue); setMode/clear drop counts) in Packages/PerformanceControl/Tests/PerformanceControlTests/QuantizedChangeQueueTests.swift — Verified 2026-11-14: `swift test --filter QuantizedChangeQueue`: `testBarChangeIgnoresTheBeatsInBetween`, `testCueChangeAppliesOnceAtTheNextCueStep`, `testCueStepInBeatModeAndModeChangeClearTheQueue`
 - [ ] MOD-017-T08 [US2] Cue hook `cueApplied()` after the cue's scene in Apps/projectM-iOS/Coordinators/AppCoordinator+Show.swift, `hasCues` from `ShowCoordinator.hasCues`; app test of a bar boundary and a real cue step (a queued change lands on top of the next cue's scene once) in Apps/projectM-iOS/Tests/ParameterQuantizerAcceptanceTests.swift
 
 ## Phase 5: User Story 3 - Know what is waiting (P2)
