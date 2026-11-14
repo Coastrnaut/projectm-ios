@@ -84,6 +84,8 @@ public struct ShowCueList: Sendable, Hashable {
     public private(set) var position: ShowPosition
     /// SCN-004: the scene folder tree and each scene's folder (logical; scene files never move).
     public internal(set) var folders: SceneFolderTree = SceneFolderTree()
+    /// SCN-005: each scene's tags (by scene ID; scene files never change).
+    public internal(set) var tags: SceneTagMap = SceneTagMap()
 
     /// An empty show at Standby.
     public init(id: UUID = UUID(), name: String = ShowCueList.defaultName) {
@@ -276,6 +278,42 @@ public struct ShowCueList: Sendable, Hashable {
     @discardableResult
     public mutating func deleteFolder(_ id: UUID) throws(SceneFolderError) -> SceneFolderDeletion {
         try folders.deleteFolder(id)
+    }
+
+    // MARK: - Scene tags (SCN-005: never changes cues, their order, the position or a scene ID)
+
+    private func showsScene(_ sceneID: String) -> Bool {
+        cues.contains(where: { (cue: ShowCue) -> Bool in cue.sceneID == sceneID })
+    }
+
+    /// The scene's tags, limited to scenes the cues show (sorted).
+    public func tags(ofScene sceneID: String) -> [String] { showsScene(sceneID) ? tags.tags(ofScene: sceneID) : [] }
+
+    /// The tags of the scenes the cues show, one spelling each, sorted.
+    public var tagVocabulary: [String] {
+        var live = tags
+        live.prune(keepingScenes: Set(sceneIDs))
+        return live.vocabulary
+    }
+
+    /// Adds a tag to a scene the cues show; returns the spelling stored.
+    @discardableResult
+    public mutating func addTag(_ tag: String, toScene sceneID: String) throws(SceneTagError) -> String {
+        guard showsScene(sceneID) else { throw .sceneNotInShow(sceneID) }
+        tags.prune(keepingScenes: Set(sceneIDs))   // tags of scenes that left the show never count
+        return try tags.add(tag, to: sceneID)
+    }
+
+    @discardableResult
+    public mutating func removeTag(_ tag: String, fromScene sceneID: String) throws(SceneTagError) -> String {
+        guard showsScene(sceneID) else { throw .sceneNotInShow(sceneID) }
+        return try tags.remove(tag, from: sceneID)
+    }
+
+    /// Duplicate Scene: the copy gets its source's tags (SCN-005-R9).
+    public mutating func copyTags(fromScene source: String, toScene target: String) throws(SceneTagError) {
+        guard showsScene(target) else { throw .sceneNotInShow(target) }
+        tags.copyTags(from: source, to: target)
     }
 
     // MARK: - Rules

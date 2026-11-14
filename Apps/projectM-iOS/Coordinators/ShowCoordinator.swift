@@ -19,6 +19,8 @@
 // * SCN-004: scene folders are logical (the show index holds the tree and each scene's folder); folder
 //   edits save the show only, never write a scene file, apply anything or move the position, and
 //   announce on the library lane (`announceLibrary`). A duplicate goes into its source's folder.
+// * SCN-005: scene tags live in the show index too; tag edits save the show only, never apply anything,
+//   and announce on the library lane. A duplicate gets its source's tags.
 // Main actor; file I/O is small (≤ 1 MiB per file, typically a few KB) and only on user action.
 import Foundation
 import Observation
@@ -265,6 +267,7 @@ final class ShowCoordinator {
         if let folder = list.folderID(ofScene: cue.sceneID) {   // SCN-004-R12: next to its source
             _ = try? list.moveScene(copy.id, to: folder)
         }
+        try? list.copyTags(fromScene: cue.sceneID, toScene: copy.id)   // SCN-005-R9
         save()
         return inserted
     }
@@ -418,6 +421,51 @@ final class ShowCoordinator {
         } catch {
             refuse(error)
             return nil
+        }
+    }
+
+    // MARK: - Scene tags (SCN-005)
+
+    /// The scene's tags (sorted; empty when none).
+    func tags(ofScene sceneID: String) -> [String] { list.tags(ofScene: sceneID) }
+
+    /// Every tag in the show, one spelling each, sorted.
+    var tagVocabulary: [String] { list.tagVocabulary }
+
+    /// How many of the show's scenes carry the tag (chip values).
+    func sceneCount(withTag tag: String) -> Int {
+        list.sceneIDs.filter { (id: String) -> Bool in list.tags.scene(id, has: tag) }.count
+    }
+
+    /// The scene's display name for messages.
+    func displayName(ofScene sceneID: String) -> String { sceneNames[sceneID] ?? firstCue(ofScene: sceneID)?.label ?? "the scene" }
+
+    /// Adds a tag; false (with a message and an announcement) when refused.
+    @discardableResult
+    func addTag(_ tag: String, toScene sceneID: String) -> Bool {
+        do throws(SceneTagError) {
+            let stored: String = try list.addTag(tag, toScene: sceneID)
+            save()
+            announceLibrary("Tagged \(displayName(ofScene: sceneID)) \(stored).")
+            return true
+        } catch {
+            editorMessage = error.description
+            announceLibrary(error.description)
+            return false
+        }
+    }
+
+    @discardableResult
+    func removeTag(_ tag: String, fromScene sceneID: String) -> Bool {
+        do throws(SceneTagError) {
+            let removed: String = try list.removeTag(tag, fromScene: sceneID)
+            save()
+            announceLibrary("Removed tag \(removed) from \(displayName(ofScene: sceneID)).")
+            return true
+        } catch {
+            editorMessage = error.description
+            announceLibrary(error.description)
+            return false
         }
     }
 

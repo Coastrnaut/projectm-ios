@@ -22,6 +22,7 @@ extension AppCoordinator {
 
     func openSceneSwitcher() {
         guard canOpenSceneSwitcher else { return }
+        sceneSwitcher.pruneTags(vocabulary: show.tagVocabulary)   // SCN-005
         sceneSwitcher.open(entries: sceneSwitcherEntries)
     }
 
@@ -44,6 +45,18 @@ extension AppCoordinator {
         sceneSwitcher.queryChanged(entries: entries)
         let count: Int = sceneSwitcher.results(entries).count
         announcer.announce(AccessibilityAnnouncer.sceneSwitcherCountText(count), kind: .search)
+    }
+
+    /// SCN-005: a tag chip was toggled; same highlight and count announcement as a query change.
+    func toggleSwitcherTag(_ tag: String) {
+        sceneSwitcher.toggleTag(tag, vocabulary: show.tagVocabulary)
+        switcherQueryChanged()
+    }
+
+    /// SCN-005: tags changed in the Tags sheet; drop vanished chips and keep the highlight valid.
+    func switcherTagsEdited() {
+        sceneSwitcher.pruneTags(vocabulary: show.tagVocabulary)
+        sceneSwitcher.queryChanged(entries: sceneSwitcherEntries)
     }
 
     func moveSwitcherHighlight(by offset: Int) {
