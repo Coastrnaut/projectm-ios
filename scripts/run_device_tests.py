@@ -60,7 +60,9 @@ TARGETS = {
 }
 # FR-065 plus FR-123, VIS-001-R11 (the visual and its bar count) and FX-001-R11 (the circular
 # spectrum's glow): everything the app may store in its UserDefaults.
-ALLOWED_KEYS = {"favorites", "lastPresetID", "settings.performanceOverlay", "settings.reduceFlashing",
+ALLOWED_KEYS = {"favorites", "lastPresetID",
+                "recentPresets", "settings.recentPresets.enabled",   # PRE-006-R9 (preset IDs only; ADR-0055)
+                "settings.performanceOverlay", "settings.reduceFlashing",
                 "settings.photo.slideshow",   # MED-006
                 "settings.logo.id",   # MED-010
                 "settings.logo.placement",   # MED-010

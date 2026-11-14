@@ -36,6 +36,8 @@ indicator text, `UIStrings.sourceStatus` (FR-042), e.g. "In-App Playback · Acti
 | X24 | recovery offer shown (PERF-010) | card title and message | "`<title>` `<message>`" (once per launch) | session | S | P | PERF-010-R4 |
 | X25 | last scene reopened (PERF-010) | "Last scene reopened." | same | session | U | C | user-caused |
 | X26 | repair report shown (SCN-012) | sheet | "`<title>`: `<status>`." | session | U | P | SCN-012 |
+| X27 | external display connection settled (OUT-002) | "External display connected" (while a recording holds the visual: "External display connected. It shows the visualization when the recording ends.") | same | display | S | C | OUT-002-R6 |
+| X28 | a settled external display disconnected (OUT-002) | "External display disconnected" | same | display | S | C | OUT-002-R6 |
 
 Not announced (ACC-011-R4): automatic preset changes (ACC-004-R6), the recording's elapsed-time ticks,
 camera starting → running (the same row X16; dropped as identical), the second blackout restoring phase
