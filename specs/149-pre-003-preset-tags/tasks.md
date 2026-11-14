@@ -37,8 +37,8 @@ rule 7): unit tests about 1-2 s, package suites under 1 minute, UI tests under 3
 
 ## Phase 5: User Story 3 — backup, restore, erase (P2)
 
-- [ ] PRE-003-T16 [US3] LibraryBackup: `LibraryFolders.tagsFile`, `LibraryContents.presetTags`, reader, writer and backup reader (`collections/tags.json`), `LibraryRecords` key `preset-tags`, restore section `tags` with per-preset merge and copy-ID remap, installer write, preview line "Tags", erase category title "Collections, tags and favorites" (`Packages/LibraryBackup/Sources/LibraryBackup/*.swift`, `Apps/projectM-iOS/Coordinators/LibraryBackupCoordinator.swift`) (research D6).
-- [ ] PRE-003-T17 [P] [US3] Tests `Packages/LibraryBackup/Tests/LibraryBackupTests/LibraryBackupPresetTagTests.swift`: backup round trip onto an empty library; merge by choice (union capped at 16, replace, skip); erase of the collections category leaves no tags file.
+- [X] PRE-003-T16 [US3] LibraryBackup: `LibraryFolders.tagsFile`, `LibraryContents.presetTags`, reader, writer and backup reader (`collections/tags.json`), `LibraryRecords` key `preset-tags`, restore section `tags` with per-preset merge and copy-ID remap, installer write, preview line "Tags", erase category title "Collections, tags and favorites" (`Packages/LibraryBackup/Sources/LibraryBackup/*.swift`, `Apps/projectM-iOS/Coordinators/LibraryBackupCoordinator.swift`) (research D6). — Verified 2026-11-14: `swift test --package-path Packages/LibraryBackup` 72/72 in 8.9 s (existing erase acceptance updated to map `preset-tags` to the collections category); the app's restore preview gains a "Preset tags" line (built with the app).
+- [X] PRE-003-T17 [P] [US3] Tests `Packages/LibraryBackup/Tests/LibraryBackupTests/LibraryBackupPresetTagTests.swift`: backup round trip onto an empty library; merge by choice (union capped at 16, replace, skip); erase of the collections category leaves no tags file. — Verified 2026-11-14: LibraryBackupPresetTagTests 4/4: round trip (same map and record digest), merge by choice (Keep both union, Replace, Skip), union capped at 16 with fellBack, erase removes tags.json and the inventory counts tagged presets.
 
 ## Phase 6: Polish
 

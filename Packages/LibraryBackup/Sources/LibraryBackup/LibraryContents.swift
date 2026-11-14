@@ -67,6 +67,9 @@ public struct LibraryContents: Sendable, Equatable {
     public var presets: [LibraryPreset]
     /// Nil when there is no collections file.
     public var collections: [PresetCollection]?
+    /// PRE-003: preset ID → tags; nil when there is no tags file (or it could not be read: the store
+    /// sets such a file aside at launch, so a backup leaves it out).
+    public var presetTags: PresetTagMap?
     public var settings: [String: LibrarySettingValue]
     /// File name → bytes.
     public var photos: [String: Data]
@@ -76,7 +79,8 @@ public struct LibraryContents: Sendable, Equatable {
 
     public init(show: Data? = nil, scenes: [String: Data] = [:], currentScene: Data? = nil, presets: [LibraryPreset] = [],
                 collections: [PresetCollection]? = nil, settings: [String: LibrarySettingValue] = [:], photos: [String: Data] = [:],
-                excluded: LibraryExclusions = LibraryExclusions(), otherPresets: [UserPreset] = []) {
+                excluded: LibraryExclusions = LibraryExclusions(), otherPresets: [UserPreset] = [], presetTags: PresetTagMap? = nil) {
+        self.presetTags = presetTags
         self.show = show
         self.scenes = scenes
         self.currentScene = currentScene
@@ -165,6 +169,7 @@ public enum LibraryContentsReader {
         contents.currentScene = canonicalScene(at: folders.currentSceneFile)
         try readPresets(folders, into: &contents)
         try readCollections(folders, into: &contents)
+        try readTags(folders, into: &contents)
         contents.photos = try readPhotos(folders.url(.photos))
         return contents
     }
@@ -231,6 +236,18 @@ public enum LibraryContentsReader {
             throw .collectionsNewerVersion
         } catch {
             throw .collectionsUnreadable
+        }
+    }
+
+    /// PRE-003: lenient like the store (damaged entries dropped); a newer format refuses like collections.
+    private static func readTags(_ folders: LibraryFolders, into contents: inout LibraryContents) throws(LibraryReadError) {
+        guard let data = try? Data(contentsOf: folders.tagsFile) else { return }
+        do {
+            contents.presetTags = try PresetTagsFile.decode(data).map
+        } catch .newerVersion {
+            throw .collectionsNewerVersion
+        } catch {
+            contents.presetTags = nil
         }
     }
 
