@@ -726,6 +726,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             if let path = defaults.string(forKey: "uitestImportPreset") {
                 await userPresets.importPicked(.success(URL(fileURLWithPath: path)))
             }
+            // PresetArchiveImportUITests (FILE-003): previews a fixture archive after the trials ran.
+            if defaults.bool(forKey: "uitestPresetArchiveFixture") { await userPresets.previewFixtureArchive() }
             #endif
         }
     }
@@ -760,6 +762,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                 #endif
                 presets.onScopeChange { UIAccessibility.post(notification: .announcement, argument: $0) }   // FR-124
                 presets.announceFavorite = { [weak self] (text: String) in self?.announcer.announce(text, kind: .favorite) }   // ACC-004
+                userPresets.announceLibrary = { [weak self] (text: String) in self?.announcer.announce(text, kind: .library) }   // FILE-003-R13
                 await presets.setUnlocked(entitlements.isUnlocked)
                 libraryReady = true
                 Task { [weak self] in await self?.entitlements.loadProduct() }

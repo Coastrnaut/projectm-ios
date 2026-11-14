@@ -123,6 +123,8 @@ public actor UserPresetLibrary {
         if store == nil {
             let created = write.map { UserPresetStore(directory: directory, write: $0) } ?? UserPresetStore(directory: directory)
             store = created
+            created.removeLeftoverStaging()   // FILE-003: an archive install the app did not finish
+            if let fault = storeFault { created.fileOperationFault = fault }
             for record in created.leftoverRecords() {
                 guard let preset = created.preset(id: record.presetID) else {
                     created.clearRecord(record.phase)
@@ -603,6 +605,64 @@ public actor UserPresetLibrary {
             return .refused(.saveFailed)
         }
         return .saved(updated)
+    }
+
+    // MARK: - Archive import (FILE-003)
+
+    /// FILE-003 tests: a fault injected before store file operations (see `UserPresetStore`).
+    private var storeFault: (@Sendable (UserPresetStore.FileOperation, URL) throws -> Void)?
+
+    func setStoreFault(_ fault: (@Sendable (UserPresetStore.FileOperation, URL) throws -> Void)?) {
+        storeFault = fault
+        store?.fileOperationFault = fault
+    }
+
+    /// FILE-003-R2-R7 (contract C2): the dry run of an archive against the library as it is now.
+    /// Reads only (the first call loads the record, as every entry point does).
+    public func planArchiveImport(_ data: Data, policy: PresetArchiveConflictPolicy = .keepBoth) -> PresetArchiveImportPlan {
+        guard let store = loaded(), store.availability == .available else {
+            return PresetArchiveImportPlan(archiveSHA256: ContentHash.sha256Hex([UInt8](data)), policy: policy,
+                                           refusal: PresetImportRefusal.libraryUnavailable.message, entries: [])
+        }
+        return PresetArchiveImportPlanner.plan(archive: data, library: store.presets, context: context, policy: policy)
+    }
+
+    /// FILE-003-R8-R10: plans again; a different plan is returned as `.changed` with nothing written.
+    /// Otherwise adds exactly the plan's presets, waiting for their trial, all or nothing. The
+    /// caller runs the trials (`runPendingTrials`).
+    public func installArchive(_ data: Data, plan: PresetArchiveImportPlan) -> PresetArchiveInstallOutcome {
+        let current = planArchiveImport(data, policy: plan.policy)
+        guard current == plan else { return .changed(current) }
+        if let refusal = plan.refusal { return .refused(PresetArchiveText.nothingInstalled(refusal)) }
+        guard plan.canInstall, let store = loaded(), let archive = try? UserPresetArchiveReader.read(data) else {
+            return .refused(PresetArchiveText.nothingToInstall)
+        }
+        var records: [String: ExportedUserPreset] = [:]
+        for record in archive.manifest.presets { records[record.id] = record }
+        let date = now()
+        var items: [(preset: UserPreset, contents: Data)] = []
+        for entry in plan.entries {
+            guard let action = entry.install else { continue }
+            guard let record = records[entry.incomingID], let text = archive.texts[entry.incomingID] else {
+                return .refused(PresetArchiveText.nothingToInstall)
+            }
+            // Research FILE-003-D5: the archive's warnings and licence lines are not trusted.
+            let validation = MilkdropPresetValidator.validate([UInt8](text), knownTextures: context.knownTextures)
+            var preset = record.userPreset(state: .pending)
+            preset.id = action.id
+            preset.name = action.name
+            preset.importedAt = date
+            preset.warnings = validation.warnings
+            preset.license.linesFound = validation.licenseLines
+            preset.license.rightsVerified = false
+            items.append((preset, text))
+        }
+        do {
+            try store.addAll(items)
+        } catch {
+            return .refused(PresetArchiveText.nothingInstalled(PresetArchiveText.saveFailed))
+        }
+        return .installed(items.map(\.preset))
     }
 
     // MARK: - Helpers

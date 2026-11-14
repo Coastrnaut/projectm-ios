@@ -23,6 +23,8 @@ enum AnnouncementKind: String, CaseIterable, Sendable {
     case source, route, background, capture, camera, osc, session
     /// UIX-002: the scene switcher's result count while the user types.
     case search
+    /// FILE-003-R13: the preset archive import preview and install results.
+    case library
 }
 
 struct AnnouncementGate: Sendable, Equatable {

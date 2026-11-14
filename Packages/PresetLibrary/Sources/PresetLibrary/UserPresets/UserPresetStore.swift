@@ -8,6 +8,8 @@
 //   quarantine/<sha256>.milk   copies of quarantined files; nothing that plays presets reads here
 //   trial.json, proving.json   which preset is being tried / first shown (crash-loop protection)
 //   edit.json                  which preset's edited text is being tried (PRE-015-R13)
+//   staging/                   FILE-003: texts of an archive install before they move into files/;
+//                              exists only during `addAll` (a leftover is removed at load)
 //
 // * Stored names come from the content hash only; nothing from the picked file's name or
 //   location is ever used as a path (R4).
@@ -76,6 +78,8 @@ public final class UserPresetStore {
     public static let unreadableFileName = "index.unreadable.json"
     static let filesFolder = "files"
     static let quarantineFolder = "quarantine"
+    /// FILE-003-R9: where `addAll` stages texts (inside `directory`, so the path guard covers it).
+    static let stagingFolder = "staging"
 
     /// `<Application Support>/UserPresets`. Created on the first save.
     public static func defaultDirectory() -> URL {
@@ -94,6 +98,8 @@ public final class UserPresetStore {
     private let write: (Data, URL) throws -> Void
     /// Sees every file operation before it is performed (tests, PRE-015-S3).
     var fileOperationObserver: ((FileOperation, URL) -> Void)?
+    /// FILE-003 tests: may throw before an operation is performed (an injected fault).
+    var fileOperationFault: ((FileOperation, URL) throws -> Void)?
     private var migrationBackup: URL?
     /// An unreadable record could not be moved aside: saving would destroy it.
     private var savingBlocked = false
@@ -161,6 +167,72 @@ public final class UserPresetStore {
             throw StoreError.saveFailed
         }
         presets.append(preset)
+    }
+
+    /// FILE-003-R9 (research FILE-003-D4): adds several waiting or playable presets, all or nothing.
+    /// Every text is staged in `staging/` and read back against its SHA-256, the staged files are
+    /// moved into `files/`, and the record is written once at the end. Any failure removes every
+    /// file and folder this call added, so the directory is byte-for-byte as before, and throws.
+    /// A text whose content-addressed file already exists is not written again (as `add`).
+    public func addAll(_ items: [(preset: UserPreset, contents: Data)]) throws {
+        try requireWritable()
+        guard !items.isEmpty else { return }
+        var ids = Set(presets.map(\.id))
+        var hashes = Set(presets.map(\.sha256))
+        for item in items {
+            guard item.preset.isWellFormed, item.preset.state != .quarantined,
+                  ids.insert(item.preset.id).inserted, hashes.insert(item.preset.sha256).inserted,
+                  item.contents.count == item.preset.byteCount,
+                  ContentHash.sha256Hex([UInt8](item.contents)) == item.preset.sha256 else { throw StoreError.saveFailed }
+        }
+        let files = FileManager.default
+        let directoryExisted = files.fileExists(atPath: directory.path)
+        let filesURL = directory.appendingPathComponent(Self.filesFolder, isDirectory: true)
+        let filesExisted = files.fileExists(atPath: filesURL.path)
+        let staging = directory.appendingPathComponent(Self.stagingFolder, isDirectory: true)
+        var moved: [URL] = []
+        func rollback() {
+            for url in moved.reversed() { try? removeFile(at: url) }
+            if files.fileExists(atPath: staging.path) { try? removeFile(at: staging) }
+            if !filesExisted { removeIfEmpty(filesURL) }
+            if !directoryExisted { removeIfEmpty(directory) }
+        }
+        do {
+            try createDirectory(staging)
+            var staged: [(from: URL, to: URL)] = []
+            for item in items {
+                let target = fileURL(item.preset)
+                if files.fileExists(atPath: target.path) { continue }
+                let file = staging.appendingPathComponent(item.preset.fileName)
+                try writeFile(item.contents, to: file)
+                guard let back = try? Data(contentsOf: file), ContentHash.sha256Hex([UInt8](back)) == item.preset.sha256 else {
+                    throw StoreError.saveFailed
+                }
+                staged.append((file, target))
+            }
+            try createDirectory(filesURL)
+            for step in staged {
+                try moveFile(step.from, to: step.to)
+                moved.append(step.to)
+            }
+            try removeFile(at: staging)
+        } catch {
+            rollback()
+            throw StoreError.saveFailed
+        }
+        let added = items.map(\.preset)
+        guard save(presets + added) else {
+            rollback()
+            throw StoreError.saveFailed
+        }
+        presets += added
+    }
+
+    /// FILE-003: a `staging/` folder left by an install the app did not finish names no preset
+    /// (the record is written last), so it is removed.
+    public func removeLeftoverStaging() {
+        let staging = directory.appendingPathComponent(Self.stagingFolder, isDirectory: true)
+        if FileManager.default.fileExists(atPath: staging.path) { try? removeFile(at: staging) }
     }
 
     /// Changes one record. When the state moves the preset into or out of quarantine, its copy
@@ -364,6 +436,7 @@ public final class UserPresetStore {
         guard contains(url), other.map(contains) ?? true else { throw StoreError.saveFailed }
         fileOperationObserver?(operation, url)
         if let other { fileOperationObserver?(operation, other) }
+        try fileOperationFault?(operation, url)
         try body()
     }
 
