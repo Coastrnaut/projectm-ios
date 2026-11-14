@@ -53,6 +53,8 @@ Answered by Claude under owner rules 4 and 9 (recommended option first).
 - Q: Are pin and unpin announced? → A: No extra announcement: the button's label changes ("Pin to Shelf" / "Remove from Shelf") and VoiceOver reads it. Value changes through a shelf slider use ACC-005's spoken values.
 - Q: Does a shelf edit join the scene history? → A: Yes, as a Settings edit would: it writes the same setting, and a slider drag or each VoiceOver swipe ends one undo step.
 - Q: Does touching the shelf keep the controls up? → A: Yes, every shelf change restarts the controls' auto-hide like any other control.
+- Q: Are the pins part of a saved scene or cue? → A: No. The shelf is a device layout preference, not visual state: scenes, cues and the scene history never record or change it (no scene field is added).
+- Q: What happens to the pins when the user erases Settings (FILE-011)? → A: They are erased with the Settings category, because the erase derives from the backup's included keys; the shelf is then empty.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -115,7 +117,7 @@ the setting.
 - **UIX-004-R7**: Stored entries that are not available (unknown, corrupt, not a string, or without a control) MUST be skipped without a crash, reported as one note with the exact count, logged once per launch, and kept until removed.
 - **UIX-004-R8**: The note's Remove action MUST delete exactly the unavailable entries and keep the available pins in order.
 - **UIX-004-R9**: Every shelf control MUST be one VoiceOver element with its label and spoken value (sliders through `.accessibleParameter`); at accessibility text sizes the shelf stacks instead of scrolling sideways.
-- **UIX-004-R10**: The new key MUST be in the allowed keys list, in the library backup's included keys, and cleared by the UI-test reset.
+- **UIX-004-R10**: The new key MUST be in the allowed keys list, in the library backup's included keys (so the Settings erase clears it), and cleared by the UI-test reset; no scene field is added.
 
 ### Key Entities
 
