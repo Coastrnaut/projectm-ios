@@ -25,6 +25,13 @@
 //   composite) agree.
 // * CAM-007: `crop` is forwarded to the camera layer the same way; the layer recomputes the fit every
 //   frame from the drawable's size and the picture's rotation, so a device rotation keeps it.
+// * CAM-013 (ADR-0017 decisions 11-14): an interruption or a runtime error already clears the picture
+//   (the layer draws only while running). The host keeps a `CameraRecovery` on a monotonic clock:
+//   `retryCamera()` (the notice's Retry) stops and starts the camera at once when the backoff allows,
+//   else holds one pending retry; a media reset is retried once by itself. Any stop of the loop and
+//   Stop camera cancel the pending retry and reset the recovery. Clock and scheduler are injectable
+//   (tests use a fake clock). `stopReason`, `retryPending` and the counts are reported to the
+//   coordinator through `onRecoveryChange`.
 // * Per frame this file allocates nothing: the band scratch is preallocated and the audio context is
 //   a view of it; Metal's command buffer and drawable are the system's.
 import AudioCore
@@ -82,6 +89,30 @@ final class CameraVisualHost: PresentationBoundResource {
 
     /// Frames that showed a camera picture (diagnostics, UI tests).
     var framesShown: Int { camera.framesShown }
+
+    // MARK: CAM-013 recovery state
+
+    /// The retry rules and counts (numbers only).
+    private(set) var recovery = CameraRecovery()
+    /// A Retry waits for the backoff to end.
+    private(set) var retryPending = false
+    /// Why the feed is interrupted or failed (the provider's reason, mirrored on every change).
+    private(set) var stopReason: CameraStopReason?
+    /// Called after `stopReason`, `retryPending` or the counts change.
+    var onRecoveryChange: (() -> Void)?
+    /// Monotonic seconds (tests: a fake clock).
+    var clock: @MainActor () -> Double = { () -> Double in ProcessInfo.processInfo.systemUptime }
+    /// Runs the closure after the delay in seconds on the main actor (tests: a manual scheduler).
+    var scheduler: @MainActor (Double, @escaping @MainActor () -> Void) -> Void = CameraVisualHost.sleepThen
+    private var retryToken: UInt64 = 0
+
+    /// "<state>|<reason or none>|<attempts>|<pending yes/no>|<counts>" (DEBUG readout; numbers only).
+    var recoveryProbe: String {
+        let reason: String = stopReason?.rawValue ?? "none"
+        let pending: String = retryPending ? "yes" : "no"
+        let state: String = "\(feedState)"
+        return "\(state)|\(reason)|\(recovery.attempts)|\(pending)|\(recovery.countsSummary)"
+    }
 
     /// CAM-002-R1, R7: the camera in use; a change while running switches cameras without a restart.
     var cameraPosition: CameraPosition {
@@ -206,8 +237,69 @@ final class CameraVisualHost: PresentationBoundResource {
 
     private func feedStateChanged(_ state: CameraFeedState) {
         feedState = state
+        let reason: CameraStopReason? = state.offersRetry ? camera.provider.stopReason : nil
+        stopReason = reason
+        let now: Double = clock()
+        if state == .running {
+            recovery.noteRunning(now: now)
+        } else if let reason {
+            recovery.noteStop(reason, now: now)
+        }
         updateAccessibility()
         onFeedStateChange?(state)
+        onRecoveryChange?()
+        // CAM-013-R7: one automatic retry after a media reset, through the backoff.
+        // Deferred through the scheduler: never a restart inside the provider's own state callback.
+        if let reason, recovery.claimAutomaticRetry(for: reason) { retryCamera(deferred: true) }
+    }
+
+    // MARK: - CAM-013 Retry
+
+    /// The notice's Retry (CAM-013-R5, R6): runs at once when the backoff allows, else holds one
+    /// pending retry that runs when the wait ends. Ignored unless the loop runs, the user has not
+    /// stopped the camera and the feed offers Retry.
+    func retryCamera(deferred: Bool = false) {
+        guard isRunning, !cameraStoppedByUser, feedState.offersRetry, !retryPending else { return }
+        let delay: Double = recovery.delayBeforeNextAttempt(now: clock())
+        guard delay > 0 || deferred else {
+            performRetry()
+            return
+        }
+        retryPending = true
+        retryToken &+= 1
+        let token: UInt64 = retryToken
+        onRecoveryChange?()
+        scheduler(delay) { [weak self] () -> Void in
+            guard let self, self.retryPending, token == self.retryToken else { return }
+            self.retryPending = false
+            self.onRecoveryChange?()
+            guard self.isRunning, !self.cameraStoppedByUser, self.feedState.offersRetry else { return }
+            self.performRetry()
+        }
+    }
+
+    /// A retry: the camera stops completely (picture dropped, session released) and starts again.
+    private func performRetry() {
+        recovery.recordAttempt(now: clock())
+        camera.stop()
+        camera.start()
+        onRecoveryChange?()
+    }
+
+    /// The camera was stopped by the user or the app: no pending retry, a new run (counts kept).
+    private func cancelRecovery() {
+        retryToken &+= 1
+        retryPending = false
+        recovery.reset()
+        onRecoveryChange?()
+    }
+
+    static func sleepThen(_ seconds: Double, _ action: @escaping @MainActor () -> Void) {
+        let nanoseconds: UInt64 = UInt64(max(seconds, 0) * 1_000_000_000)
+        Task { @MainActor () -> Void in
+            try? await Task.sleep(nanoseconds: nanoseconds)
+            action()
+        }
     }
 
     private func updateAccessibility() {
@@ -222,6 +314,7 @@ final class CameraVisualHost: PresentationBoundResource {
     func stopCamera() {
         cameraStoppedByUser = true
         camera.stop()
+        cancelRecovery()   // CAM-013-R6
     }
 
     // MARK: - Pause (FR-046), presentation (PERF-011), background and scene (CAM-001-R7)
@@ -289,6 +382,7 @@ final class CameraVisualHost: PresentationBoundResource {
             link.invalidate()
             displayLink = nil
             camera.stop()
+            cancelRecovery()   // CAM-013-R6, R11: background, pause, scene or presentation loss
             analyzer.stop()
             meter.reset()
         }

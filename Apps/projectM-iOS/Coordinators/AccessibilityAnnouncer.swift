@@ -18,6 +18,8 @@ import UIKit
 
 enum AnnouncementKind: String, CaseIterable, Sendable {
     case preset, cue, playback, output, recording, favorite
+    /// CAM-013-R12: camera status (ACC-011 adds the same lane with its status kinds).
+    case camera
 }
 
 struct AnnouncementGate: Sendable, Equatable {
