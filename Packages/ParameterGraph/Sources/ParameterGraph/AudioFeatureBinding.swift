@@ -4,8 +4,9 @@
 // A binding maps the feature's position in the input range (0…1, clamped) to the output range
 // with its `LinearMapping` (MOD-003),
 // shaped by its `MappingCurve` (MOD-004; linear by default),
-// optionally smoothed by an attack/release envelope, and combines it with the parameter's manual
-// value by the mix mode. `AudioFeatureModulator.bind` validates it against the registry.
+// optionally smoothed by an attack/release envelope (one-pole time constants, MOD-005), and
+// combines it with the parameter's manual value by the mix mode. `AudioFeatureModulator.bind`
+// validates it against the registry.
 import Foundation
 
 /// Rise and fall time constants of a one-pole envelope, in seconds; 0 means no smoothing

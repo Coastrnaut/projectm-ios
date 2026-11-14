@@ -96,6 +96,10 @@ Damaged groups give `invalidGroup` and are drawn ungrouped
 `input` defaults to 0…1, `envelope` to 0/0, `mix` to `replace`; `source`, `target` and `output`
 are required. Unknown binding keys are kept.
 
+`envelope` (MOD-005, contract E1, E7): `attack` and `release` are one-pole time constants in seconds
+(63.2 % of a step at τ; 0 = instant; each finite and 0…60; each field optional, missing = 0). An
+invalid time rejects the binding (kept for re-save) with `invalidBinding` at `$.bindings[i].envelope`.
+
 `curve` (MOD-004, optional field; no version change): `{"kind": "easeIn" | "easeOut" | "easeInOut",
 "exponent": n}`, `{"kind": "logarithmic" | "exponential", "strength": n}`, `{"kind": "piecewise",
 "points": [{"x": n, "y": n}, …]}` or `{"kind": "linear"}`; written only for non-linear curves. A curve
