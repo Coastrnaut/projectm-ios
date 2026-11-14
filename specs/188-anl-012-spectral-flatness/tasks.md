@@ -21,7 +21,7 @@
 
 ## Phase 4: User Story 2 - Silence and bad input are calm (P1)
 
-- [ ] ANL-012-T05 [US2] Silence, ±1 LSB dither, NaN/inf magnitudes, tone-then-silence reads 0, wrong rate or count leaves the reading unchanged, in SpectralFlatnessTests.swift
+- [ ] ANL-012-T05 [US2] Silence, ±1 LSB dither, NaN/inf magnitudes, tone-then-silence reads 0, wrong rate or count leaves the reading unchanged, a range of one bin reads 1 (spec Edge Cases), in SpectralFlatnessTests.swift
 
 ## Phase 5: User Story 3 - Same input, same reading (P2)
 
