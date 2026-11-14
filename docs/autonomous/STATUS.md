@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T17:30:08Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T17:30:18Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 124 |
 | implementing | 9 |
-| unit_passed | 1 |
-| integrated | 191 |
+| integrated | 192 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 42 | 8 | 1 | 100 | 0 |
-| P2 | 71 | 1 | 0 | 7 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 2 | 0 | 84 | 1 |
+| P1 | 42 | 8 | 101 | 0 |
+| P2 | 71 | 1 | 7 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 134 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-012, ANL-013)
+- 133 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-012, ANL-013)
 
 ## Integrated
 
@@ -164,6 +163,7 @@ The physical-device suite may **not** start:
 | PERF-002 | GPU budget meter | `0c570bb94ccc` | `None` |
 | PERF-003 | Adaptive effect quality | `53c913bd` | `feature/perf-003` |
 | PERF-004 | Texture pool | `ea0ee43e0f04` | `feature/perf-004` |
+| PERF-005 | Preset prewarm scheduler | `0c755b4a5eb2` | `feature/perf-005` |
 | PERF-006 | Memory warning recovery | `b4281645619e` | `feature/perf-006` |
 | PERF-010 | Crash-safe session recovery | `7d64b6b027da` | `feature/perf-010` |
 | PERF-011 | Background resource release | `6d669fcb8576` | `feature/perf-011` |
@@ -1626,7 +1626,7 @@ None.
 - `swift test --package-path Packages/Compositor`: pass at `b32cc31f34e8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-004/20261113T135753/swift-test_Compositor.log`)
 - `post-merge (with VideoVisualHost on the shared pool): Compositor scheme on iPhone 17 sim (Compositor 175 incl. 100-switch plateau, 211 total in the run); projectM-iOSTests incl. TexturePoolAppTests; Video, Photo, Camera UI tests`: pass at `ea0ee43e0f04` (log `.autonomous/logs/integration/perf-004/compositor-sim.log`)
 
-### PERF-005 Preset prewarm scheduler (unit_passed)
+### PERF-005 Preset prewarm scheduler (integrated)
 - `python3 scripts/check_compliance.py`: pass at `71deab68b60f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-005/20261114T122523/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `71deab68b60f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-005/20261114T122523/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `71deab68b60f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-005/20261114T122523/sim-test_ANGLERendering.log`)
