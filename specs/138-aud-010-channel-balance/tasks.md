@@ -21,7 +21,7 @@ Tests are requested by the brief (acceptance, law, availability, persistence, UI
 
 - [ ] AUD-010-T04 [US1] Insert `balanceNode` after the main mixer (tap unchanged) and add `monitorBalance` plus a test-only offline render that returns the output buffer in Packages/CaptureKit/Sources/CaptureKit/InAppPlayback/InAppPlaybackGraph.swift (minimal, commented: REC-004 edits this graph too)
 - [ ] AUD-010-T05 [US1] Add `setMonitorBalance(_:)` to `InAppPlaybackBackend` with a default no-op, `InAppPlaybackSource.monitorBalance`, and keep and apply the value in every graph of Packages/CaptureKit/Sources/CaptureKit/InAppPlayback/AVInAppPlaybackBackend.swift and InAppPlaybackSource.swift
-- [ ] AUD-010-T06 [US1] Acceptance tests in Packages/CaptureKit/Tests/CaptureKitTests/PlaybackBalanceTests.swift: a stereo fixture (440 Hz left, 1 kHz right) at −1, 0, +1 delivers identical sink PCM (within 1e-6) while the output's channel levels follow the law; levels at −0.5 and 0.5; a mid-play change causes no discard and keeps the position; the backend applies the value to its graph; the source forwards validated values to a scripted backend
+- [ ] AUD-010-T06 [US1] Acceptance tests in Packages/CaptureKit/Tests/CaptureKitTests/PlaybackBalanceTests.swift: a stereo fixture (440 Hz left, 1 kHz right) at −1, 0, +1 delivers identical sink PCM (within 1e-6) while the output's channel levels follow the law; levels at −0.5 and 0.5; a mid-play change causes no discard and keeps the position; the balance survives a track change, a seek and a media-services rebuild (R5); the backend applies the value to its graph; the source forwards validated values to a scripted backend
 
 ## Phase 4: User Story 2 - Set, reset and keep the balance (P2)
 
