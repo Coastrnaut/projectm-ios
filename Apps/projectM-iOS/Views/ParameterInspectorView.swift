@@ -199,6 +199,7 @@ struct ParameterInspectorView: View {
 }
 
 /// One label and value; side by side, or stacked when they do not fit (ACC-006-R1). One VoiceOver element.
+/// QA-009 (2026-11-14): the value in the primary colour; in the secondary grey it "nearly passed" the contrast audit.
 private struct ParameterInspectorRow: View {
     let title: String
     let value: String
@@ -210,11 +211,11 @@ private struct ParameterInspectorRow: View {
             HStack(alignment: .firstTextBaseline) {
                 Text(title)
                 Spacer(minLength: 8)
-                Text(value).monospacedDigit().foregroundStyle(.secondary).multilineTextAlignment(.trailing)
+                Text(value).monospacedDigit().multilineTextAlignment(.trailing)
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                Text(value).monospacedDigit().foregroundStyle(.secondary)
+                Text(value).monospacedDigit()
             }
         }
         .accessibilityElement(children: .ignore)
