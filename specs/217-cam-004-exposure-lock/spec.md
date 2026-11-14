@@ -31,6 +31,19 @@ no stored data. This specification extends CAM-001's to CAM-003's review (sectio
 | Settings | Section "Camera": Camera Back/Front, Lens (two or more lenses), Mirror, Crop, Anchor, Zoom. | No exposure row. |
 | Permission | One iOS camera permission covers the camera; the badge and iOS's indicator show while it runs. | Nothing new. |
 
+## Clarifications
+
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the conservative, local-first option.
+
+- Q: Which exposure controls does "lock and release supported exposure controls" cover? → A: The camera's locked exposure mode only: lock holds the current exposure, release returns to continuous automatic exposure (CAM-004-R4). Exposure bias and manual (custom) shutter/ISO are out of scope; they need a slider whose range differs per camera and can follow in a later row. Rejected: a bias slider now (more surface, no acceptance need) and custom exposure (manual shutter speed can strobe; a flashing risk under Constitution's photosensitivity rules).
+- Q: How does an unsupported camera explain its limit? → A: The "Lock exposure" switch stays visible but disabled, with the text "This camera can't lock exposure." under it, read by VoiceOver with the switch (CAM-004-R3, R11). Rejected: hiding the row (CAM-003 hides unavailable lenses, but this row's acceptance explicitly asks for an explanation).
+- Q: What happens to a lock when the lens or camera changes? → A: The lock is released on the previous camera before its input is removed, and the new camera starts in continuous automatic exposure; it is not re-applied (CAM-004-R6). Rejected: re-locking the new camera at once (it would freeze whatever exposure the new camera has in its first instant, usually wrong).
+- Q: Is the lock remembered? → A: No: it is session state of the running camera, released on every stop (Stop camera, another visual, background, failure) and never stored; no new settings key, nothing in backups, scenes or cues (CAM-004-R7, R8). Rejected: a stored preference (a lock only makes sense for the light of the moment).
+- Q: What does the switch show: the user's choice or the camera's state? → A: The camera's state, read back after each change; a refused change (configuration cannot be taken) leaves the switch showing the real state, with no notice (CAM-004-R5). While the camera is not running the switch is off and disabled with "Exposure can be locked while the camera is running." (User Story 2 scenario 2). Rejected: an optimistic switch (it could show "locked" while the camera still adjusts).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Hold the exposure steady (Priority: P1)
