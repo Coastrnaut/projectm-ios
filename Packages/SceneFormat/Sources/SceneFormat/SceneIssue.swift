@@ -65,6 +65,8 @@ public struct SceneIssue: Sendable, Hashable, CustomStringConvertible {
         case invalidValueName
         case unknownLayerKind
         case unsupportedBlendMode
+        /// CMP-006: a fit mode name this version does not draw; kept and drawn as the layer's default.
+        case unsupportedFitMode
         case valueClamped
         case droppedField
         case unknownMaterial
@@ -100,7 +102,7 @@ public struct SceneIssue: Sendable, Hashable, CustomStringConvertible {
         /// never refuses the scene; `invalidModulation` (generator declarations) stays an error.
         public var severity: Severity {
             switch self {
-            case .unknownLayerKind, .unsupportedBlendMode, .valueClamped, .droppedField, .unknownAssetType, .unusedAsset,
+            case .unknownLayerKind, .unsupportedBlendMode, .unsupportedFitMode, .valueClamped, .droppedField, .unknownAssetType, .unusedAsset,
                  .missingAsset, .orphanedParameter, .rejectedParameter, .parameterClamped,
                  .invalidBinding, .duplicateBindingTarget, .invalidExpression, .migratedReference, .retiredReference,
                  .orphanedBinding, .orphanedConnection, .rejectedConnection:

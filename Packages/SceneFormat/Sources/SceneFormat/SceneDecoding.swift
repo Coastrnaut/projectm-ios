@@ -185,7 +185,7 @@ struct SceneDecoder {
 
     private mutating func composite(_ value: SceneJSON, _ path: String) throws(SceneDecodeError) -> SceneComposite {
         let o = try object(value, path)
-        dropUnknown(o, known: ["opacity", "blend", "transform"], path: path)
+        dropUnknown(o, known: ["opacity", "blend", "transform", "fit"], path: path)
         var opacity = 1.0
         if let v = o["opacity"] {
             let raw = try double(v, ScenePath.key(path, "opacity"))
@@ -198,7 +198,24 @@ struct SceneDecoder {
         let transform = try o["transform"].map { (t: SceneJSON) throws(SceneDecodeError) -> LayerTransform in
             try self.transform(t, ScenePath.key(path, "transform"))
         } ?? .identity
-        return SceneComposite(opacity: opacity, blendMode: blend, transform: transform)
+        let fit = try o["fit"].map { (f: SceneJSON) throws(SceneDecodeError) -> SceneFit in
+            try self.fit(f, ScenePath.key(path, "fit"))
+        }
+        return SceneComposite(opacity: opacity, blendMode: blend, transform: transform, fit: fit)
+    }
+
+    /// CMP-006's saved form: `mode` required (any string kept), `anchor` optional (centre), its
+    /// components clamped to 0…1 (one warning per component); other keys dropped.
+    private mutating func fit(_ value: SceneJSON, _ path: String) throws(SceneDecodeError) -> SceneFit {
+        let o = try object(value, path)
+        dropUnknown(o, known: ["mode", "anchor"], path: path)
+        guard let modeValue = o["mode"] else { throw .malformed(path: ScenePath.key(path, "mode"), reason: "the fit mode is required") }
+        let mode = try string(modeValue, ScenePath.key(path, "mode"))
+        let raw = try point(o["anchor"], default: LayerPoint(x: 0.5, y: 0.5), ScenePath.key(path, "anchor"))
+        let stored = LayerFit(mode: .fill, anchor: raw).anchor   // the live clamp (finite values: 0…1)
+        if raw.x != stored.x { clamped(path + ".anchor.x", raw.x, "0.0…1.0", stored.x) }
+        if raw.y != stored.y { clamped(path + ".anchor.y", raw.y, "0.0…1.0", stored.y) }
+        return SceneFit(mode: mode, anchor: stored)
     }
 
     /// CMP-005's saved form: version 1 required, missing fields read identity values, out of range
