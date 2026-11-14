@@ -28,6 +28,54 @@ The row's gap status is "Gap candidate". The audit confirms a full gap: a layer 
 | Layer inspector (CMP-015) | The mask section edits shape (None/Ellipse/Rectangle), size, corner radius, feather and invert, with help, undo and VoiceOver-adjustable sliders. | No gradient editor. |
 | Goldens (QA-002) | Generator-level goldens per platform class (`GeneratorGoldens/<name>/<class>/`). CMP-007 added none. | No mask golden. |
 
+## Clarifications
+
+### Session 2026-11-14
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the recommended, conservative option.
+
+- Q: Is a gradient another kind of the CMP-007 `composite.mask` (beside ellipse, rectangle, polygon),
+  or a separate optional value beside it? → A: **Separate**: `LayerCompositeSettings.gradientMask` and
+  the saved `composite.gradientMask`, so a gradient can fade a layer alone or combine with any shape
+  (alpha = shape coverage × gradient alpha). This replaces CMP-007's assumption that CMP-008 would add
+  a shape kind: a shape kind could not combine with a shape. The compositor still has one coverage
+  term and one mask block per layer (the CMP-007 block gains the gradient's numbers), so no pass and
+  no pipeline is added. Rejected: a `gradient` key inside the shape mask (a gradient would need a shape).
+- Q: In what units are the gradient's geometry and stops given, and where is it evaluated? → A: In
+  **layer space**, at the same layer pixel as CMP-007 (pixel centre = index + 0.5, before the CMP-005
+  transform). Linear: `start` and `end` in layer fractions (each coordinate clamped −10…10); t is the
+  projection of the pixel onto start→end in pixels, divided by the squared length (t = 0 at start,
+  1 at end). Radial: `center` in layer fractions (clamped −10…10) and `radius` in units of the layer's
+  **shorter side** (clamped 0.01…20), so it stays round on any aspect; t = distance / radius. Stops:
+  `position` and `alpha` each clamped 0…1; alpha is a straight multiplier (no sRGB curve). A linear
+  gradient whose start and end are less than 1e-6 apart (layer fractions) is refused by the live model
+  (typed error) and dropped from a file with `droppedField`.
+- Q: How are stops ordered, how many are allowed, and what does a file with bad stops do? → A: 2…8
+  stops (one fixed 8-stop shader block), sorted by position with a **stable** sort (equal positions keep
+  their order and give a hard step). The live model sorts silently; the decoder sorts too and warns
+  `valueClamped` ("stops were sorted") when the file's order differed, so a re-save is canonical. Fewer
+  than 2 or more than 8 stops drop the whole gradient with `droppedField` naming the count (counted
+  before any stop is decoded). Rejected: truncating to 8 (silently a different picture).
+- Q: What does an unknown gradient kind (for example a future "conic") do? → A: The whole
+  `gradientMask` object is kept verbatim (decode, encode, load, capture), validation warns with the
+  existing `unsupportedMaskShape` kind at `…composite.gradientMask.kind` (so SCN-012's repair report
+  lists it as a note with no new issue kind), and the layer is drawn without a gradient (its shape mask,
+  if any, still applies). Missing fields of a known kind read defaults; unknown keys are dropped with
+  `droppedField`; every field is written in full so decode → encode is byte-identical.
+- Q: What does the inspector's gradient editor show, and what are its defaults and undo steps? → A: A
+  "Gradient" section after Mask: a picker (None, Linear, Radial); Linear adds an **Angle** slider
+  (−180…180°, step 5; the gradient keeps its midpoint and length in layer fractions and turns; default
+  0° = left to right, start (0, 0.5), end (1, 0.5)); Radial adds a **Radius** slider (0.1…2, step 0.05;
+  default centre (0.5, 0.5), radius 0.5). Both default to two stops (0, alpha 1) and (1, alpha 0). Each
+  stop has a Position and an Alpha slider (ACC-005 `.accessibleParameter`, step 0.05, identifiers
+  `layerControl.gradientStop<n>.position|alpha`) and a Remove button (disabled at 2 stops); **Add Stop**
+  (disabled at 8) inserts at the middle of the widest gap with the alpha the gradient already has there,
+  so the picture does not change. A drag is one undo step (key `layer.<kind>.gradientStop<n>.<field>`);
+  kind, add and remove are one step each. Moving a stop past a neighbour re-sorts the list. "GPU
+  performance" is an opt-in Mac bench (Release-like timing of a full-screen gradient layer, recorded as
+  not device evidence, never asserted) plus a `{device}` task for D1.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Fade a layer with a gradient (Priority: P1) 🎯 MVP
@@ -106,8 +154,8 @@ and a radial gradient (with and without a shape mask); compare bytes.
 ### Edge Cases
 
 - Two stops at the same position: a hard step at that position (no interpolation across it).
-- A linear gradient whose start equals its end: refused by the live model; in a file, dropped with a
-  warning.
+- A linear gradient whose start equals its end (closer than 1e-6): refused by the live model; in a
+  file, dropped with `droppedField`.
 - A radial radius at its minimum: still finite; everything beyond the last stop keeps its alpha.
 - A gradient on an inverted shape mask: the product of both.
 - A transformed layer (CMP-005): the gradient moves with the layer, as a shape mask does.
@@ -143,6 +191,8 @@ and a radial gradient (with and without a shape mask); compare bytes.
 - **CMP-008-R10**: The layer inspector MUST edit the gradient's kind, direction (linear) or radius
   (radial) and its stops (add, remove, position, alpha) within the limits of R2, with help, VoiceOver
   adjustable controls and one undo step per drag or choice.
+- **CMP-008-R12**: Geometry MUST use layer fractions for points and the layer's shorter side for the
+  radial radius, so a radial gradient stays round on any output aspect.
 - **CMP-008-R11**: A gradient change applied to the stack MUST show from the next frame without
   re-creating the layer or its pictures.
 
@@ -173,8 +223,8 @@ and a radial gradient (with and without a shape mask); compare bytes.
 
 ## Assumptions
 
-- The gradient is a separate optional field beside the shape mask (see Clarifications), not another
-  shape kind, so it can combine with any shape.
+- The gradient is a separate optional field (`composite.gradientMask`) beside the shape mask (see
+  Clarifications), not another shape kind, so it can combine with any shape.
 - Older app versions drop the new field with `droppedField` (format version 1 tolerates unknown
   keys) and draw the layer without a gradient, accepted as for any newer optional value.
 - Polygon masks stay file-only in the inspector, as in CMP-015.
