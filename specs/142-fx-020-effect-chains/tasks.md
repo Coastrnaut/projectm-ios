@@ -24,7 +24,7 @@ Tests are requested by the spec (FX-020-S1…S6). `{device}` marks tasks the Mac
 - [ ] FX-020-T07 [US1] Acceptance `Packages/SceneFormat/Tests/SceneFormatTests/SceneEffectChainRenderTests.swift`: chain Trails→Color with distinct values, reorder to Color→Trails, encode, write a file, read and decode, restore, render 3 frames; equals Color→Trails rendered directly (exact), differs from Trails→Color; restored values equal
 - [ ] FX-020-T08 [US1] App: `ColorGradeSetting.isEnabled` (`settings.colorGrade.enabled`, absent → on; `effectiveGrade` neutral when off) in `Apps/projectM-iOS/Coordinators/ColorGradeSetting.swift`; `EffectChainSetting` (order key `settings.effectChain.order`) in `Apps/projectM-iOS/Coordinators/EffectChainSetting.swift`; `AppCoordinator+EffectChain.swift` (apply order to Camera/Photo/Video/Text compositors, live settings, apply restored settings); one line per visual creation site and the restore sites in `AppCoordinator.swift` and `AppCoordinator+SceneHistory.swift`
 - [ ] FX-020-T09 [US1] Scene capture and restore: `SceneInputs.effects`, carry of the opened scene's list, write rule FX-020-D7, restore → settings, in `Apps/projectM-iOS/Coordinators/SceneAutosaveCapture.swift`
-- [ ] FX-020-T10 [US1] Effect order screen `Apps/projectM-iOS/Views/EffectChainView.swift` (List, `onMove`, `EditButton`, VoiceOver Move up/down, toggles, footer "Always last: Flash safety, then Tone map.") and the Settings row (`settings.effectOrder`) in `SettingsView.mediaSections`
+- [ ] FX-020-T10 [US1] Effect order screen `Apps/projectM-iOS/Views/EffectChainView.swift` (List, `onMove`, `EditButton`, VoiceOver Move up/down, toggles, footer "Always last: Flash safety, then Tone map."; moves and preset applies announced through `AccessibilityAnnouncer`) and the Settings row (`settings.effectOrder`) in `SettingsView.mediaSections`
 - [ ] FX-020-T11 [US1] UI test `Apps/projectM-iOS/UITests/EffectChainUITests.swift` (under 30 s): open Effect order, move Color above Trails, Settings row reads "Color → Trails"
 - [ ] FX-020-T12 [US1] App unit tests `Apps/projectM-iOS/Tests/EffectChainSettingTests.swift`: order persists; Color off gives neutral effective grade; scene capture writes nothing for the default chain and the list otherwise; restore applies order, flags and values
 
@@ -44,7 +44,7 @@ Tests are requested by the spec (FX-020-S1…S6). `{device}` marks tasks the Mac
 
 ## Phase 7: Polish
 
-- [ ] FX-020-T18 Repository checks (compliance, docs, motion policy, permission catalog, status events, script tests, privacy manifest, network symbols), type-check budget, report `docs/test-reports/effect-chain.md`
+- [ ] FX-020-T18 Linux shape of Compositor and SceneFormat (`-DCOMPOSITOR_NO_METAL -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE`, FX-020-R11); repository checks (compliance, docs, motion policy, permission catalog, status events, script tests, privacy manifest, network symbols), type-check budget, report `docs/test-reports/effect-chain.md`
 - [ ] FX-020-T19 {device} D1: compare both orders with Trails and a strong grade on a photo; flash guard still limits a strobing fixture in both orders
 
 ## Dependencies
@@ -59,3 +59,7 @@ T01 → T02 → T03 → (T04, T05) → T06 → T07; T08 → T09 → T10 → T11/
 ## Implementation strategy
 
 MVP = Phases 1-3 (renderer, scene field, acceptance, app wiring). Then US2/US3 hardening, then presets.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Coverage: R1-R12 and S1-S6 each map to at least one task (R1-R3 → T02-T04; R4-R7 → T05-T07, T13-T15; R8 → T08-T09, T12; R9 → T10-T11; R10 → T16-T17; R11 → T18; R12 → T11). Fixes applied: T10 now names the announcements of FX-020-R9; T18 now names the Linux shape check of FX-020-R11. No constitution conflict; no critical or high finding.
