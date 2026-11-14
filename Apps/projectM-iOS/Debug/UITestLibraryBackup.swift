@@ -21,11 +21,13 @@ private struct UITestStorageSheet: ViewModifier {
     @State private var shown = ProcessInfo.processInfo.arguments.contains("-uitestStorageSheet")
 
     func body(content: Content) -> some View {
-        content.sheet(isPresented: $shown) {
-            NavigationStack {
-                StorageUsageView(libraryBackup: coordinator.libraryBackup)
-            }
-        }
+        content.sheet(isPresented: $shown) { storage }
+    }
+
+    /// Split out so the type checker stays well under CI's limit (150 ms was reached).
+    private var storage: some View {
+        let backup: LibraryBackupCoordinator = coordinator.libraryBackup
+        return NavigationStack { StorageUsageView(libraryBackup: backup) }
     }
 }
 #endif

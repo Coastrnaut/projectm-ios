@@ -6,6 +6,7 @@
 // what is kept, then the cleared size and a failure note; the user-data rows never change.
 // FILE-008: a note with the space shared photo and video copies save.
 // FILE-005: the Backup section (LibraryBackupSection: back up the library, restore from a backup).
+// FILE-011: the Erase section and sheet (LibraryEraseSection).
 import LocalPortability
 import SwiftUI
 
@@ -108,9 +109,11 @@ struct StorageUsageView: View {
                 }
             }
             #endif
+            if let libraryBackup { LibraryEraseSection(model: libraryBackup.erase) }   // FILE-011: last (destructive)
         }
         .navigationTitle("Storage")
         .libraryBackupPresentation(libraryBackup)   // FILE-005
+        .libraryErasePresentation(libraryBackup)   // FILE-011
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("Refresh") { model.refresh() }

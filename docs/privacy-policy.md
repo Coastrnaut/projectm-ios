@@ -159,6 +159,16 @@ details and no listening history, and it does not turn on OSC or MIDI on another
   again before they can play. If any check fails, nothing is changed.
 - Nothing is uploaded, downloaded or sent anywhere by the app while backing up or restoring.
 
+## Erasing your data
+
+Erase Data… (Settings → Storage) removes the data you choose from this device: scenes and the show,
+My Presets, collections and favorites, imported photos and videos, imported audio, or settings (back
+to their defaults). You see what each choice holds and confirm by name; the erase happens the next
+time the app opens, and you can cancel it until then. It never removes the app's bundled presets,
+your full library purchase (that stays with your App Store account), caches, your Reduce flashing
+choice or the photosensitivity notice. An erase cannot be undone except from a library backup you
+saved. Nothing is sent anywhere while erasing.
+
 ## Shows
 
 A show (Settings → Show) is your list of cues: each cue's label, and a copy of the visual settings
@@ -407,6 +417,7 @@ issue in that repository.
 | MED-002-R21 (`specs/048-med-002-import-video-layer/spec.md`, amends FR-065): the video the user chooses, stored on the device without soundtrack or metadata, removable | Summary; Permissions and why; A video you choose; What is stored on your device |
 | FILE-001-R16 (`specs/062-file-001-portable-scene-archive/spec.md`): scene archives hold the user's scene and its stored photo and video, are written only on the user's export and leave the device only by the user's action; opening one replaces the stored photo and video only after every check passed | A photo you choose; A video you choose; Scene archives |
 | FILE-005-R13 (`specs/114-file-005-local-library-backup/spec.md`): a library backup holds the show, scenes, the user's presets, collections, favorites, settings and stored photos (no audio, videos, imported audio, full-library copies or purchase record), is written only when the user asks and leaves the device only where the user saves it; a restore changes nothing until confirmed and checked | Library backups |
+| FILE-011-R11 (`specs/120-file-011-local-data-erase/spec.md`): Erase Data… removes only the categories the user confirms, on this device, at the next launch; never the bundled presets, the purchase, caches or safety settings | Erasing your data |
 | SCN-002-R11 (`specs/067-scn-002-scene-autosave/spec.md`): the autosaved current scene (the shown visual's settings, text and stored photo/video identifiers) and one earlier copy, on the device only | What is stored on your device |
 | PERF-010-R13 (`specs/070-perf-010-crash-safe-session-recovery/spec.md`): the session recovery values (session open, launches since a reopen, the visual to reopen); after an unexpected close the OSC receiver is turned off and nothing listens until the user turns it on | OSC control on your local network; What is stored on your device |
 | PRE-012-R30 (`specs/008-pre-012-preset-import-validation/spec.md`, amends FR-065): preset files the user imports, quarantined ones included, and their record; extended by PRE-015-R23 (`specs/010-pre-015-user-preset-duplication/spec.md`): copies of built-in presets, their origin, and edited preset text | What is stored on your device |

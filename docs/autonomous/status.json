@@ -1198,7 +1198,7 @@
    "state": "integrated"
   },
   "FILE-011": {
-   "attempts": 0,
+   "attempts": 1,
    "branch": "feature/file-011",
    "branch_sha": "55d6e2cccb2182294d656c9a0c46ab437039e3ad",
    "error_category": null,
@@ -4185,5 +4185,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T09:56:09Z"
+ "updated": "2026-11-14T09:56:10Z"
 }

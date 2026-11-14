@@ -31,6 +31,23 @@ enum LibrarySettingsBridge {
         }
     }
 
+    /// FILE-011: the named keys that have a value (any key, not only the backup's).
+    static func read(_ defaults: UserDefaults, keys: [String]) -> [String: LibrarySettingValue] {
+        var values: [String: LibrarySettingValue] = [:]
+        for key in keys {
+            guard let object = defaults.object(forKey: key), let value = value(of: object) else { continue }
+            values[key] = value
+        }
+        return values
+    }
+
+    /// FILE-011: removes the keys an erase names (only keys of `LibraryErasePolicy.erasableKeys`), so
+    /// each store reads its default.
+    static func remove(_ keys: [String], from defaults: UserDefaults) {
+        let allowed: Set<String> = Set(LibraryErasePolicy.erasableKeys)
+        for key in keys where allowed.contains(key) { defaults.removeObject(forKey: key) }
+    }
+
     static func value(of object: Any) -> LibrarySettingValue? {
         if let text = object as? String { return .string(text) }
         if let bytes = object as? Data { return .data(bytes) }
