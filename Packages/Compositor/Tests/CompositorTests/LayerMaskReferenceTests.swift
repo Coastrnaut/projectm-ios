@@ -1,6 +1,7 @@
 // CMP-007-T04: the plain-Swift mask reference (CMP-007-R1 to R5, R8, R13; research CMP-007-D1, D4).
 // No GPU; builds and runs on Linux (the Compositor target's CPU part).
 import Compositor
+import Foundation
 import XCTest
 
 final class LayerMaskReferenceTests: XCTestCase {

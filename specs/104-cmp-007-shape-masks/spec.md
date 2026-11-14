@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (CMP-007-T01-T17 verified on the Mac host, the Linux shape and the iOS 27.2 simulator; no device run; report `docs/test-reports/shape-masks.md`)
 
 **Input**: User description: "Implement CMP-007 (Shape masks) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Mask layers with circle, rectangle and polygon shapes." Acceptance,
