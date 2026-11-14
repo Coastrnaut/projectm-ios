@@ -217,7 +217,7 @@ not retried.
   verified any rights to this preset.", warnings in words) reachable from each My Presets row
   (context menu, swipe action and a VoiceOver action). Extend
   `UserPresetsUITests.testImportPlayStepAndRelaunch`: the fixture names an unknown texture and
-  carries a license comment; the information view shows both. Evidence: the UI test passes. — Verified 2026-11-12: `testImportPlayStepAndRelaunch` finds the rights sentence, the missing-texture warning and the license line in the information view.
+  carries a license comment; the information view shows both. Evidence: the UI test passes. — Verified 2026-11-12: `testImportPlayStepAndRelaunch` finds the rights sentence, the missing-texture warning and the license line in the information view. (2026-11-13, owner rule 7: these checks moved to `testImportedPresetShowsWhatWasRecorded` when the test was split to stay under 30 s; nothing was dropped.)
 
 ## Phase 7: Polish and gates
 
