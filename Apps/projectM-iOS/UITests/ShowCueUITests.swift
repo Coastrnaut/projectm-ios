@@ -83,7 +83,9 @@ final class ShowCueUITests: XCTestCase {
     /// row at Standby and Next applies cue 1. Under 30 s: no visual change, one scroll.
     func testTheEditorAddsTheCurrentSceneAsCues() {
         XCUIDevice.shared.orientation = .portrait
-        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-autostart", "inAppPlayback"] + Self.noStore
+        // Settings opens at the Show row: the list grew past `reveal`'s reach (2026-11-14, owner rule 7).
+        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-autostart", "inAppPlayback",
+                               "-uitestSettingsSection", "show"] + Self.noStore
         app.launch()
         XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
         showControls()
