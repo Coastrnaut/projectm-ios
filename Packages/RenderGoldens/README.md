@@ -18,6 +18,15 @@ the text uses the system font. No third-party image, font file or content.
 
 The golden set is about 0.38 MB (budget 2 MB, checked by `GoldenIntegrityTests`).
 
+## Generator goldens (VIS-003)
+
+`GeneratorGoldens/<class>/` holds goldens of a native generator rendered directly, without a scene
+(the oscilloscope is not a scene layer kind yet): `waveform-oscilloscope-sine-<w>x<h>-f1.png`, a 440 Hz
+sine through `OscilloscopeGenerator` (`Tests/RenderGoldensTests/OscilloscopeGoldenTests.swift`). Same
+rule, record switch, CI guard, diff artifacts and integrity check as the scene goldens; record with
+`--filter OscilloscopeGoldenTests` (host) or `-only-testing:RenderGoldensTests/OscilloscopeGoldenTests`
+(simulator).
+
 ## Run
 
 ```bash
