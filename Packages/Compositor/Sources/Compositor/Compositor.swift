@@ -68,6 +68,9 @@
 // at opacity exactly 1 with only normal visible layers it is drawn flattened in the open pass (exact, since
 // "over" is associative); otherwise its layers are drawn onto a cleared pooled group picture (with its own
 // blend-mode partner) and that picture is drawn over the composite × the group's animated opacity.
+// CMP-012 (contracts/solo-and-mute.md in specs/112): a `LayerSoloMute` overlay, kept beside the stack and
+// never in it, is resolved into one flag per record at `apply` and `setSoloMute`. A hidden layer keeps
+// rendering every frame; it is only left out of the composite (and so of its group's isolation decision).
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import FrameCapture
 import Metal
@@ -119,6 +122,8 @@ public final class Compositor {
         var heldError: LayerSourceError?
         /// CMP-011: the layer's group (nil: ungrouped).
         var group: LayerGroupID?
+        /// CMP-012: hidden by the solo/mute overlay (resolved at `apply` and `setSoloMute`).
+        var overlayHidden = false
 
         init(id: LayerInstanceID?, layer: any LayerSource, settings: LayerCompositeSettings, group: LayerGroupID? = nil) {
             self.id = id
@@ -182,6 +187,10 @@ public final class Compositor {
     public private(set) var isolatedGroupDraws = 0
     /// The stack last applied (nil before the first `apply`, and for `init(device:layers:)`).
     public private(set) var appliedStack: LayerStack?
+    /// CMP-012: the solo/mute overlay (never part of `appliedStack`).
+    public private(set) var soloMute = LayerSoloMute()
+    /// CMP-012: layers the overlay left out of the last frame (tests, diagnostics).
+    public private(set) var soloMuteHiddenLayers = 0
     /// REC-001: the handler waiting for the next frame.
     private var pendingCapture: (@Sendable (CapturedPixels?) -> Void)?
     /// REC-003: the command buffer of the last frame whose output pass was encoded.
@@ -280,6 +289,34 @@ public final class Compositor {
     /// The stack ID of layer `index` (nil for a layer given to `init(device:layers:)`).
     public func layerID(at index: Int) -> LayerInstanceID? { records[index].id }
 
+    /// CMP-012: whether the solo/mute overlay hides layer `index` from the next frame.
+    public func isHiddenBySoloMute(layer index: Int) -> Bool { records[index].overlayHidden }
+
+    /// CMP-012-R1, R6, R11: sets the solo/mute overlay between frames, on the compositor's thread. Shown
+    /// from the next frame without a fade; nothing is prepared, created or released, every layer keeps
+    /// rendering, the flash guard's history is kept, and the applied stack is unchanged. A host loading a
+    /// different scene passes `LayerSoloMute()` first (restored scenes reuse their instance IDs).
+    public func setSoloMute(_ overlay: LayerSoloMute) {
+        soloMute = overlay
+        resolveSoloMute()
+    }
+
+    /// One flag per record from the overlay and the applied stack; layers without a stack ID are never hidden.
+    private func resolveSoloMute() {
+        guard let stack = appliedStack, !soloMute.isEmpty else {
+            for i in records.indices { records[i].overlayHidden = false }
+            return
+        }
+        let active = soloMute.isSoloActive(in: stack)
+        for i in records.indices {
+            guard let id = records[i].id, let entry = stack.entry(id) else {
+                records[i].overlayHidden = false
+                continue
+            }
+            records[i].overlayHidden = !soloMute.lets(entry, soloActive: active)
+        }
+    }
+
     /// Applies a new stack between frames (CMP-002-R7 to R11, R14; contracts/layer-stack.md). Call it
     /// on the compositor's thread, never while encoding a frame. An equal stack changes nothing.
     /// Layers whose IDs are still present keep their object, pictures and state at their new index;
@@ -352,6 +389,7 @@ public final class Compositor {
         records = next   // records no longer listed are released here
         groupRecords = nextGroups
         appliedStack = stack
+        resolveSoloMute()   // CMP-012: the overlay against the new stack
         if let descriptor {
             for i in created { allocatePictures(i, descriptor) }
         }
@@ -462,6 +500,12 @@ public final class Compositor {
         blendDraws = 0
         maskedDraws = 0
         isolatedGroupDraws = 0
+        soloMuteHiddenLayers = 0
+        for i in records.indices where records[i].overlayHidden && records[i].shown >= 0 && records[i].opacity.value > 0 {   // CMP-012
+            if let g = records[i].group, let group = groupRecords.first(where: { (r: GroupRecord) -> Bool in r.id == g }),
+               !group.isEnabled || group.opacity.value <= 0 { continue }   // hidden by its group anyway
+            soloMuteHiddenLayers += 1
+        }
         var surface = DrawSurface(texture: composite, partner: compositeAlternate, encoder: over, pipe: .plain,
                                   label: "CMP-001 composite", partnerLabel: "CMP-004 composite")
         defer {   // CMP-004: the two composites may have swapped (kept even when a frame fails half way)
@@ -584,8 +628,8 @@ public final class Compositor {
         let partnerLabel: String
     }
 
-    /// Whether layer `i` has a picture to composite this frame.
-    private func isVisible(_ i: Int) -> Bool { records[i].shown >= 0 && records[i].opacity.value > 0 }
+    /// Whether layer `i` has a picture to composite this frame (CMP-012: and the solo/mute overlay lets it).
+    private func isVisible(_ i: Int) -> Bool { records[i].shown >= 0 && records[i].opacity.value > 0 && !records[i].overlayHidden }
 
     /// CMP-011: the placement layer `i` is drawn with: nil for its own identity (the exact per-pixel paths),
     /// its own matrix while its group (if any) has the identity transform, else G(a)·L(a).

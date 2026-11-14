@@ -5,8 +5,8 @@
 // `Compositor.apply(_:makeLayer:)`, which diffs it by instance ID. Index 0 is the BOTTOM layer;
 // the last index is drawn on top. Every operation either succeeds or throws and leaves the stack
 // unchanged. Opacity (CMP-003), transforms (CMP-005), blend modes (CMP-004) and fits (CMP-006)
-// live in each entry's `LayerCompositeSettings`; masks (CMP-007) too; solo/mute will add
-// fields to the entry. CMP-011 (LayerGroup.swift): `entry.group` and `groups`; every group is one
+// live in each entry's `LayerCompositeSettings`; masks (CMP-007) too. Solo and mute (CMP-012) are
+// NOT in the stack: they are a transient overlay beside it (`LayerSoloMute`). CMP-011 (LayerGroup.swift): `entry.group` and `groups`; every group is one
 // unbroken run, kept so by the membership rule in `add`, `duplicate`, `move` and `remove`. SCN-001 adds `init(restoring:)`: a saved scene's stack is rebuilt with its
 // own instance IDs (specs/059-scn-001-versioned-scene-format, research SCN-001-D7).
 
