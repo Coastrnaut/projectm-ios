@@ -46,6 +46,16 @@ conservative, local-first option that delivers the roadmap row.
 - Q: A preview that fails to load? → A: What was on screen stays on screen (FR-045): the original if this was the first preview, else the previous preview. The bar shows "<name> could not be previewed." and the preset is left out of the session's scopes like any failed preset (FR-118, in memory). The original stays the Cancel target.
 - Q: Announcements? → A: On the shared announcer's library lane: "Previewing <name>." / "Kept <name>." / "Preview cancelled. <original> is back." / "<name> could not be previewed."
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: What do the controls and the visualizer's preset name show during a preview? → A: The committed preset (the original). The preview is a look, not a selection; the audition bar in the browser names what is playing. This keeps Next, Previous and Random walking from the original and keeps every "current" consumer (row checkmark, imported-preset proving) unchanged.
+- Q: Does Cancel keep the browser open? → A: Yes. Cancel only ends the preview; the user may keep browsing or preview another preset. Keep closes the browser like a tap.
+- Q: Is the 3 s recent-history dwell counted for a preview the user then keeps? → A: From the moment of Keep (the commit), not from the start of the preview: history records selections, and a preview is not one until kept.
+- Q: Is the warm-up (`PresetPrewarmer`) run for previews? → A: No. The warm-up is planned from the committed preset; a preview neither plans nor warms. Keep plans and warms as any selection does.
+- Q: Does the failure notice outlive the bar? → A: It stays in the bar area until the next preview, Keep, Cancel or the browser closing; the visualizer's "Preset could not be loaded" banner is not used for previews (the committed preset did not fail).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - I peek at presets and go back (Priority: P1) — MVP
