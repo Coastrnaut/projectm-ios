@@ -53,6 +53,10 @@ Five questions, each answered with the recommended option (owner rules 4 and 9).
 - Q: Can a projectM, Photo, Video or Text cue's values be edited in rehearsal? → A: Yes (the glow and spectrum values are part of every scene), but the picture stays the stored one with the note "Edits show when the cue runs"; Save to Cue works the same.
 - Q: Is the rehearsal panel in the iPad split editor, on the external display or in the performance pad? → A: Only in the device's visualizer status stack (in the split editor's output pane on iPad, as the HUD). Never on the external display; the performance pad does not get a rehearsal control in this feature.
 
+### Session 2026-11-14 (speckit-analyze)
+
+- Consistency pass: R1 → T09, T15; R2 → T03, T04, T09, T10; R3 → T05, T07, T09, T10; R4 → T14; R5 → T12, T14; R6 → T11, T13; R7 → T06, T07, T10; R8 → T07, T09, T10; R9 → T16; R10 → T09, T15. S1-S2 → T14; S3 → T04, T10, T13; S4 → T15. No constitution conflict. Fixes applied: R10 (panel stays with the controls hidden) and R8's announcements had no test (added to T15 and T10); R7's "never in the background" is met by rendering only on load and edit (nothing loads or edits in the background; SHOW-002 holds steps there), tested as "no render while off".
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - See the next cue before it goes live (Priority: P1) — MVP

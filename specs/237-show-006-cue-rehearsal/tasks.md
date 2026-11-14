@@ -24,7 +24,7 @@
 - [ ] SHOW-006-T07 [US1] `CueRehearsalCoordinator` (isOn, target, load, draft from live values overlaid with the scene's values, picture rendered / stored / message, coalesced renders: one in flight, newest wins, ≥ 100 ms between starts via injected sleep; announcements on the cue lane) in Apps/projectM-iOS/Coordinators/CueRehearsalCoordinator.swift
 - [ ] SHOW-006-T08 [US1] Wire `cueRehearsal` in Apps/projectM-iOS/Coordinators/AppCoordinator.swift (one lazy line) and `makeCueRehearsal()` in Apps/projectM-iOS/Coordinators/AppCoordinator+Show.swift
 - [ ] SHOW-006-T09 [US1] Panel view (title, picture with VoiceOver label, previous/next target, close; `.task(id:)` reload on the resolved cue) in Apps/projectM-iOS/Views/CueRehearsalPanel.swift; Rehearse toggle `showRehearse` in Apps/projectM-iOS/Views/ShowControls.swift; one line in `topStatus` of Apps/projectM-iOS/Views/VisualizerView.swift
-- [ ] SHOW-006-T10 [US1] Unit tests (target follows a step, skipped next, end of show, stored picture for projectM, unreadable scene, render coalescing with a fake renderer) in Apps/projectM-iOS/Tests/CueRehearsalTests.swift
+- [ ] SHOW-006-T10 [US1] Unit tests (target follows a step, skipped next, end of show, stored picture for projectM, unreadable scene, render coalescing with a fake renderer, no render while off, cue-lane announcements) in Apps/projectM-iOS/Tests/CueRehearsalTests.swift
 
 ## Phase 4: User Story 2 - Tweak the cue in a sandbox (P1)
 
@@ -37,7 +37,7 @@
 
 ## Phase 5: Polish
 
-- [ ] SHOW-006-T15 UI test (< 30 s): Rehearse shows the panel naming the next cue, the cue status is unchanged, Close hides it, in Apps/projectM-iOS/UITests/CueRehearsalUITests.swift
+- [ ] SHOW-006-T15 UI test (< 30 s): Rehearse shows the panel naming the next cue, the cue status is unchanged, the panel stays when the controls hide (R10), Close hides it, in Apps/projectM-iOS/UITests/CueRehearsalUITests.swift
 - [ ] SHOW-006-T16 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), privacy manifest and network symbols on the Debug app, type-check budget, `LibraryBackupAppTests` (no new keys)
 - [ ] SHOW-006-T17 {device} On D1 with an external display: the projector and a recording do not change while rehearsing and editing; Save to Cue then stepping shows the new values
 
