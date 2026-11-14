@@ -1041,6 +1041,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         case .oscilloscope: .oscilloscope(line: settings.oscilloscopeLine, windowMilliseconds: settings.oscilloscopeWindowMilliseconds)
         case .lissajous: .lissajous(mode: settings.lissajousMode, persistence: settings.lissajousPersistence)   // VIS-004
         case .radialWaveform: .radialWaveform(ring: settings.radialWaveformRing, amplitude: settings.radialWaveformAmplitude)   // VIS-005
+        case .beatRings: .beatRings(life: settings.beatRingsLife)   // VIS-006
         default: .circular
         }
     }
