@@ -2,7 +2,7 @@
 
 ## C1 BeatRingField and BeatRingLayout (CPU, every platform)
 
-- `BeatRingField`: `emit(atNanoseconds:minimumInterval:) -> Bool` (false: inside the rate cap or earlier than the newest birth); full → the oldest slot is replaced; `rings(at:life:into:)` fills live rings oldest first, returns the count (expired rings are pruned); `reset()`.
+- `BeatRingField`: `emit(atNanoseconds:minimumInterval:) -> Bool` (false: inside the rate cap or earlier than the newest birth); full → the oldest slot is replaced; `forEachRing(atNanoseconds:life:_:) -> Int` visits live rings oldest first without allocating and returns the count (expired rings are pruned); `rings(atNanoseconds:life:)` returns them as an array (tests); `reset()`.
 - `BeatRingLayout`: `layout(field:atNanoseconds:width:height:)` builds 64 annulus segments per live ring (R3, R7), colors `palette.color(bar: sequence % 16, of: 16)` with alpha α. `ringCount`, `ring(_:)`, `segmentCount`, `thicknessPixels`; `tessellate(into:capacity:gain:) -> Int`, `meanLevels(gain:transfer:into:)`; conforms to `FlashRegionLayout` (regions = segments). No allocation.
 
 ## C2 BeatRingGenerator (Metal)
