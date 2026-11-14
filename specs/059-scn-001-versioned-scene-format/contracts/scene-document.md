@@ -83,7 +83,8 @@ Damaged groups give `invalidGroup` and are drawn ungrouped
 ### Binding
 
 ```json
-{ "envelope": {"attack": 0.05, "release": 0.3},
+{ "curve": {"kind": "easeIn", "exponent": 2.0},   // optional (MOD-004); omitted for linear
+  "envelope": {"attack": 0.05, "release": 0.3},
   "expression": "band(2) * 2",         // optional (SHD-009 source text)
   "input": {"maximum": 1.0, "minimum": 0.0},
   "mix": "replace",                    // replace | add | multiply
@@ -94,6 +95,14 @@ Damaged groups give `invalidGroup` and are drawn ungrouped
 
 `input` defaults to 0…1, `envelope` to 0/0, `mix` to `replace`; `source`, `target` and `output`
 are required. Unknown binding keys are kept.
+
+`curve` (MOD-004, optional field; no version change): `{"kind": "easeIn" | "easeOut" | "easeInOut",
+"exponent": n}`, `{"kind": "logarithmic" | "exponential", "strength": n}`, `{"kind": "piecewise",
+"points": [{"x": n, "y": n}, …]}` or `{"kind": "linear"}`; written only for non-linear curves. A curve
+this version cannot read (unknown kind, wrong types, missing parameter) is kept verbatim and its binding
+is rejected with `unsupportedCurve`; a readable curve outside the ranges of
+`specs/129-mod-004-curve-mapping/contracts/mapping-curve.md` (K5) rejects its binding with
+`invalidBinding`. Unknown keys inside a readable curve are dropped (`droppedField`).
 
 ### Modulation
 
@@ -181,6 +190,7 @@ order (layers, assets, parameters, bindings, modulation). Errors block `liveStat
 | `invalidBinding` | error | `Binding <i>: <MOD-002 AudioFeatureBindingError message>.` |
 | `duplicateBindingTarget` | error | `Binding <i> targets "<id>", already bound by binding <j>.` |
 | `invalidExpression` | error | `Binding <i> expression: <SHD-009 ExpressionError description>.` |
+| `unsupportedCurve` | warning | `Binding <i> uses a curve this version cannot read; it is kept but not applied.` (MOD-004) |
 | `invalidModulation` | error | `Modulation: <MOD-014 issue message>` (cycles name their path) |
 
 `<value>` texts are Swift's `description` of the number; `<i>`, `<j>` are 0-based indexes.

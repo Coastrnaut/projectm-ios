@@ -88,6 +88,23 @@ final class AudioFeatureModulatorTests: XCTestCase {
         }
     }
 
+    // ANL-008-T07: a Mid transient binding follows the frame's mid transient value (ANL-008-R8).
+    func testMidTransientBindingFollowsTheValue() throws {
+        let registry = try Self.registry()
+        let store = ParameterStore(registry: registry)
+        let modulator = AudioFeatureModulator(registry: registry)
+        try modulator.bind(AudioFeatureBinding(source: .midTransient, target: Self.opacity, outputStart: 0, outputEnd: 1))
+        var time: UInt64 = 1_000
+        let bands: [Float] = [0]
+        for value: Float in [0.75, 0.5, 0.125] {
+            bands.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> Void in
+                modulator.advance(frame: AudioFeatureFrame(bands: buffer, midTransient: value), timeNanoseconds: time)
+            }
+            time += Self.frame
+            XCTAssertEqual(modulator.value(for: Self.opacity, in: store), .continuous(Double(value)))
+        }
+    }
+
     // ANL-007-T09: a Kick binding follows the frame's kick envelope (ANL-007-R11).
     func testKickBindingFollowsTheKickEnvelope() throws {
         let registry = try Self.registry()
