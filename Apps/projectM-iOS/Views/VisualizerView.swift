@@ -68,7 +68,7 @@ struct VisualizerView: View {
             RenderPlaceholderView(shown: coordinator.showsRenderPlaceholder)
             externalDisplayLayer
             pausedLayer
-            tapArea
+            tapLayers
             statusLayers
             keyCommandLayers
             SceneSwitcherLayer(coordinator: coordinator)   // UIX-002: the quick scene switcher
@@ -123,12 +123,20 @@ struct VisualizerView: View {
         }
     }
 
+    /// The tap target and, above it, CAM-005's focus ring and explanation (no touches; one property
+    /// keeps `layers` quick to type-check).
+    @ViewBuilder private var tapLayers: some View {
+        tapArea
+        CameraFocusLayer(coordinator: coordinator)   // CAM-005-R5, R6
+    }
+
     /// A full-screen tap target above the renderer (the renderer's UIView takes no taps).
     private var tapArea: some View {
         Color.clear
             .contentShape(Rectangle())
             .ignoresSafeArea()
             .onTapGesture { () -> Void in coordinator.toggleControls() }
+            .modifier(CameraFocusGesture(coordinator: coordinator))   // CAM-005-R1, R7: double-tap alongside the single tap
             .accessibilityIdentifier("visualizerTapArea")
             .accessibilityLabel("Visualization")
             .accessibilityHint("Shows or hides the controls")
@@ -479,6 +487,7 @@ struct VisualizerView: View {
                      cameraStatus: { () -> PermissionState? in coordinator.cameraPermissionStatus },
                      cameraLens: coordinator.cameraLensChoice,   // CAM-003
                      cameraExposure: coordinator.cameraExposureChoice,   // CAM-004
+                     cameraCanFocus: { () -> Bool in coordinator.cameraFocus.canFocus },   // CAM-005
                      recentPresets: coordinator.presets.recent,   // PRE-006
                      powerProfile: coordinator.powerProfile,   // PERF-008
                      performanceReport: coordinator.performanceReport,   // PERF-012

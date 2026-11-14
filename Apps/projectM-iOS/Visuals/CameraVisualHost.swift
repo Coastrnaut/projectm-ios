@@ -29,6 +29,10 @@
 // * CAM-004: `cameraExposure` mirrors the provider's exposure state (read back from the camera) and
 //   `setCameraExposureLocked` forwards the switch; `-uitestCameraExposureLock <list|none>` (DEBUG) chooses
 //   which stand-in cameras can lock. Exposure never touches the frame loop or the audio source.
+// * CAM-005: `focus(atWindowPoint:)` maps a double-tap through `CameraFocusMapping` (the picture drawn
+//   last, crop, mirror, the view's frame in its window) and forwards the camera point to the provider;
+//   `cameraFocus` mirrors the state read back; `-uitestCameraFocusPoint <list|none>` (DEBUG) chooses
+//   which stand-in cameras can focus on a point. Focusing never touches the frame loop or the audio.
 // * CAM-007: `crop` is forwarded to the camera layer the same way; the layer recomputes the fit every
 //   frame from the drawable's size and the picture's rotation, so a device rotation keeps it.
 // * CAM-013 (ADR-0017 decisions 11-14): an interruption or a runtime error already clears the picture
@@ -53,6 +57,16 @@ import SpectrumLayers
 import UIKit
 import VisualBandFeed
 import VisualGenerators
+
+/// CAM-005: what a focus tap did (contract C4).
+enum CameraFocusTapOutcome: Equatable {
+    case focused(CameraFocusPoint)
+    /// Outside the picture (Fit's bars) or no picture drawn yet: ignored.
+    case outsidePicture
+    /// The camera cannot focus on a point: explained, never configured.
+    case unsupported
+    case notRunning
+}
 
 @MainActor
 final class CameraVisualHost: PresentationBoundResource, CompositorVisualHost {
@@ -165,6 +179,40 @@ final class CameraVisualHost: PresentationBoundResource, CompositorVisualHost {
         camera.provider.setExposureLocked(locked)
     }
 
+    /// CAM-005: the current camera's focus, read back; `onFocusChange` reports every change.
+    var cameraFocus: CameraFocusState { camera.provider.focus }
+    var onFocusChange: ((CameraFocusState) -> Void)?
+
+    /// CAM-005-R1, R2: focuses the running camera at the camera point drawn under `point` (window
+    /// coordinates), mapped against the view's frame in its window (the iPad split editor's scaling
+    /// included), the picture drawn last, the crop and the mirror.
+    func focus(atWindowPoint point: CGPoint) -> CameraFocusTapOutcome {
+        let rect: CGRect = view.window == nil ? view.bounds : view.convert(view.bounds, to: nil)
+        return focus(at: point, pictureRect: rect, picture: camera.drawnPicture)
+    }
+
+    /// CAM-005-R7: focuses at the camera point drawn at the centre of the view.
+    func focusAtCentre() -> CameraFocusTapOutcome {
+        let bounds: CGRect = view.bounds
+        return focus(at: CGPoint(x: bounds.midX, y: bounds.midY), pictureRect: bounds, picture: camera.drawnPicture)
+    }
+
+    /// The mapping and the call (contract C4): not running → nothing; unsupported → no call (R5); no
+    /// picture drawn yet, outside the rect or in Fit's bars → nothing (R2).
+    func focus(at point: CGPoint, pictureRect rect: CGRect, picture: CameraDrawnPicture?) -> CameraFocusTapOutcome {
+        let state: CameraFocusState = camera.provider.focus
+        guard isRunning, feedState == .running, state.isRunning else { return .notRunning }
+        guard state.canFocus else { return .unsupported }
+        guard let picture,
+              let target = CameraFocusMapping.devicePoint(touchX: Double(point.x), touchY: Double(point.y),
+                                                          rectX: Double(rect.minX), rectY: Double(rect.minY),
+                                                          rectWidth: Double(rect.width), rectHeight: Double(rect.height),
+                                                          picture: picture, crop: camera.crop, mirrored: camera.mirrored)
+        else { return .outsidePicture }
+        camera.provider.setFocusPoint(target)
+        return .focused(target)
+    }
+
     /// CAM-002-R3, R5: flip the camera picture left to right, from the next frame.
     var mirrored: Bool {
         get { camera.mirrored }
@@ -222,9 +270,12 @@ final class CameraVisualHost: PresentationBoundResource, CompositorVisualHost {
             let lockable: Set<FakeCameraKey>? = arguments.firstIndex(of: "-uitestCameraExposureLock").map { (i: Int) -> Set<FakeCameraKey> in
                 i + 1 < arguments.count ? FakeCameraKey.list(arguments[i + 1]) : []
             }   // CAM-004: the cameras that can lock exposure (nil: all)
+            let focusable: Set<FakeCameraKey>? = arguments.firstIndex(of: "-uitestCameraFocusPoint").map { (i: Int) -> Set<FakeCameraKey> in
+                i + 1 < arguments.count ? FakeCameraKey.list(arguments[i + 1]) : []
+            }   // CAM-005: the cameras that can focus on a point (nil: all)
             return StubCameraFrameProvider(device: device, scenario: scenario, pattern: pattern, width: 64, height: 48,
                                            availablePositions: positions, lensInventory: lenses, failingLenses: failing,
-                                           exposureLockCameras: lockable)
+                                           exposureLockCameras: lockable, focusPointCameras: focusable)
         }
         #endif
         #if os(iOS)
@@ -284,6 +335,9 @@ final class CameraVisualHost: PresentationBoundResource, CompositorVisualHost {
         }
         camera.provider.onExposureChange = { [weak self] (state: CameraExposureState) -> Void in   // CAM-004
             MainActor.assumeIsolated { self?.onExposureChange?(state) }
+        }
+        camera.provider.onFocusChange = { [weak self] (state: CameraFocusState) -> Void in   // CAM-005
+            MainActor.assumeIsolated { self?.onFocusChange?(state) }
         }
         observeSystem()
         updateAccessibility()

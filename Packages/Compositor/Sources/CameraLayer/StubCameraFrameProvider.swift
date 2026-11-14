@@ -12,6 +12,9 @@
 // CAM-003: a lens inventory (`lensInventory`) and a `FakeCameraCaptureSession` whose input is set
 // up on every start and replaced by `CameraInputSwitch` on a lens switch, exactly as the real
 // provider does; lenses can fail at input creation (`failingLenses`) or be refused by the session.
+// CAM-005: each stand-in camera also has a `FakeCameraFocusDevice` (`focusPointCameras` chooses which
+// can focus on a point); `setFocusPoint` runs `CameraFocusControl` on the running input's device, and
+// every place that releases the exposure lock also resets the focus (R8).
 // CAM-004: each stand-in camera has a `FakeCameraExposureDevice` (`exposureLockCameras` chooses which
 // can lock); `setExposureLocked` runs `CameraExposureControl` on the running input's device, and the
 // session's setup (every start and camera switch), a lens switch, `stop()` and `fail(_:)` release it
@@ -86,6 +89,11 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
         didSet { if exposure != oldValue { onExposureChange?(exposure) } }
     }
     public var onExposureChange: ((CameraExposureState) -> Void)?
+    /// CAM-005: the current camera's focus, read back from its fake device (main thread).
+    public private(set) var focus: CameraFocusState = .notRunning(canFocus: false) {
+        didSet { if focus != oldValue { onFocusChange?(focus) } }
+    }
+    public var onFocusChange: ((CameraFocusState) -> Void)?
     public var onStateChange: ((CameraFeedState) -> Void)?
     /// How many times `start()` asked for access (a real prompt is never shown).
     public private(set) var accessRequests = 0
@@ -97,11 +105,12 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
                 width: Int = 64, height: Int = 48, rotation: CameraRotation = .none, position: CameraPosition = .back,
                 availablePositions: Set<CameraPosition> = [.back, .front],
                 lensInventory: (any CameraLensInventory)? = nil, failingLenses: Set<CameraLens> = [], lens: CameraLens = .wide,
-                exposureLockCameras: Set<FakeCameraKey>? = nil) {
+                exposureLockCameras: Set<FakeCameraKey>? = nil, focusPointCameras: Set<FakeCameraKey>? = nil) {
         let inventory: any CameraLensInventory = lensInventory ?? FixedCameraLensInventory([.wide])
         self.lensInventory = inventory
         self.session = FakeCameraCaptureSession(failingLenses: failingLenses)
         session.exposureLockCameras = exposureLockCameras
+        session.focusPointCameras = focusPointCameras   // CAM-005
         self.lens = inventory.resolve(lens)
         self.device = device
         self.position = position
@@ -291,16 +300,41 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
         refreshExposure()   // R5: read back
     }
 
+    /// Releases the lock and (CAM-005-R8) returns the focus to continuous automatic focus at the centre;
+    /// called before every input removal and on every stop.
     private func releaseExposure() {
         if let device = runningExposureDevice { CameraExposureControl.release(device) }
+        if let focusDevice = runningFocusDevice { CameraFocusControl.reset(focusDevice) }
     }
 
+    /// Reads exposure and (CAM-005-R12) focus back from the running camera, or the chosen camera's capability.
     private func refreshExposure() {
         if state == .running, let device = runningExposureDevice {
             exposure = CameraExposureControl.state(of: device)
         } else {
             exposure = .notRunning(canLock: chosenCameraCanLock)
         }
+        if state == .running, let focusDevice = runningFocusDevice {
+            focus = CameraFocusControl.state(of: focusDevice)
+        } else {
+            focus = .notRunning(canFocus: chosenCameraCanFocus)
+        }
+    }
+
+    // MARK: - Focus (CAM-005)
+
+    private var runningFocusDevice: FakeCameraFocusDevice? { session.configuredInputs.first?.focusDevice }
+
+    /// Whether the chosen camera can focus on a point (known without starting it).
+    private var chosenCameraCanFocus: Bool {
+        guard scenario != .unavailable, availablePositions.contains(position) else { return false }
+        return CameraFocusControl.canFocus(session.focusDevice(lens: position == .back ? lens : .wide, position: position))
+    }
+
+    public func setFocusPoint(_ point: CameraFocusPoint) {
+        guard state == .running, let device = runningFocusDevice, CameraFocusControl.canFocus(device) else { return }   // R5
+        CameraFocusControl.focus(at: point, on: device)
+        refreshExposure()   // R12: read back
     }
 
     private func run() {

@@ -78,6 +78,15 @@ public protocol CameraFrameProvider: AnyObject {
     /// CAM-004-R4: locks (true) or releases (false) the running camera's exposure. Unsupported or not
     /// running: nothing is configured. A lens or position switch and every stop release the lock (R6, R7).
     func setExposureLocked(_ locked: Bool)
+    /// CAM-005 (contracts/focus-point.md C3): the current camera's focus, read back from the camera
+    /// (main thread). `canFocus` is known without starting the camera; `isRunning` only while running.
+    var focus: CameraFocusState { get }
+    /// CAM-005: called on the main thread after every change of `focus`.
+    var onFocusChange: ((CameraFocusState) -> Void)? { get set }
+    /// CAM-005-R1, R4: focuses the running camera at `point` (camera point-of-interest space).
+    /// Unsupported or not running: nothing is configured (R5). A lens or position switch and every stop
+    /// return the camera to continuous automatic focus at the centre (R8).
+    func setFocusPoint(_ point: CameraFocusPoint)
 }
 
 extension CameraFrameProvider {
@@ -97,6 +106,13 @@ extension CameraFrameProvider {
         set {}
     }
     public func setExposureLocked(_ locked: Bool) {}
+    /// CAM-005: a provider without focus controls cannot focus on a point.
+    public var focus: CameraFocusState { .notRunning(canFocus: false) }
+    public var onFocusChange: ((CameraFocusState) -> Void)? {
+        get { nil }
+        set {}
+    }
+    public func setFocusPoint(_ point: CameraFocusPoint) {}
 }
 
 /// The newest-picture slot shared by a provider's camera thread and the render thread.

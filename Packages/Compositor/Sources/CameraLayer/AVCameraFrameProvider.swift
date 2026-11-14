@@ -35,6 +35,9 @@
 // back; every switch releases the previous device before its input is removed, and a stop or a
 // runtime error releases it before `stopRunning`. While not running, `exposure` reports only whether
 // the chosen camera can lock (read from the device, which starts nothing).
+// CAM-005 (contracts/focus-point.md C3): `setFocusPoint(_:)` runs `CameraFocusControl` the same way,
+// and every place that releases the exposure lock also resets the focus to continuous automatic focus
+// at the centre (R8); `focus` is read back with the exposure.
 // A generation number discards callbacks from an earlier start. Thread confinement: state,
 // session reference, observers and generation on the main thread; the cache and the slot on the
 // video queue (the slot is locked). Hence `@unchecked Sendable`.
@@ -70,7 +73,7 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
     public private(set) var state: CameraFeedState = .idle {
         didSet {
             guard state != oldValue else { return }
-            if state == .running { readExposure() } else { exposure = .notRunning(canLock: chosenCameraCanLock) }   // CAM-004
+            if state == .running { readExposure() } else { showChosenCameraCapability() }   // CAM-004
             onStateChange?(state)
         }
     }
@@ -80,12 +83,17 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
         didSet { if exposure != oldValue { onExposureChange?(exposure) } }
     }
     public var onExposureChange: ((CameraExposureState) -> Void)?
+    /// CAM-005: the current camera's focus, read back (main thread).
+    public private(set) var focus: CameraFocusState = .notRunning(canFocus: false) {
+        didSet { if focus != oldValue { onFocusChange?(focus) } }
+    }
+    public var onFocusChange: ((CameraFocusState) -> Void)?
 
     public init(device: MTLDevice, lensInventory: any CameraLensInventory = AVCameraLensInventory()) {
         self.device = device
         self.lensInventory = lensInventory
         super.init()
-        exposure = .notRunning(canLock: chosenCameraCanLock)
+        showChosenCameraCapability()
     }
 
     /// CAM-003: the camera for the chosen position and, at the back, the chosen lens (else the wide lens).
@@ -203,7 +211,7 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
         latest.setPosition(position)
         switch state {
         case .idle, .denied, .restricted, .requestingAccess:
-            exposure = .notRunning(canLock: chosenCameraCanLock)   // CAM-004: the chosen camera's capability
+            showChosenCameraCapability()   // CAM-004: the chosen camera's capability
             return   // recorded; a pending prompt's answer configures the camera chosen last
         case .unavailable, .interrupted, .failed:
             stop()
@@ -269,7 +277,7 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
         guard position == .back else { return }   // R9: recorded; the front camera keeps its wide lens
         switch state {
         case .idle, .denied, .restricted, .requestingAccess:
-            exposure = .notRunning(canLock: chosenCameraCanLock)   // CAM-004
+            showChosenCameraCapability()   // CAM-004
             return
         case .unavailable, .interrupted, .failed:
             stop()
@@ -342,19 +350,38 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
 
     // MARK: - Exposure (CAM-004)
 
-    /// Whether the chosen camera supports locked exposure (reading a device property starts nothing).
-    private var chosenCameraCanLock: Bool {
-        currentCamera()?.supportsExposure(.locked) ?? false
-    }
-
     /// The device of the session's camera input (session queue).
     private static func exposureDevice(in session: AVCaptureSession) -> AVCaptureDevice? {
         session.inputs.lazy.compactMap { (input: AVCaptureInput) -> AVCaptureDevice? in (input as? AVCaptureDeviceInput)?.device }.first
     }
 
-    /// Returns a locked device to continuous automatic exposure (session queue; R6, R7).
+    /// Returns a locked device to continuous automatic exposure (session queue; R6, R7) and (CAM-005-R8)
+    /// its focus to continuous automatic focus at the centre. Runs before every input removal and stop.
     private static func releaseExposure(in session: AVCaptureSession) {
-        if let camera = exposureDevice(in: session) { CameraExposureControl.release(camera) }
+        guard let camera = exposureDevice(in: session) else { return }
+        CameraExposureControl.release(camera)
+        CameraFocusControl.reset(camera)
+    }
+
+    /// While not running: only whether the chosen camera can lock exposure and focus on a point
+    /// (reading device properties starts nothing).
+    private func showChosenCameraCapability() {
+        let camera: AVCaptureDevice? = currentCamera()
+        exposure = .notRunning(canLock: camera?.supportsExposure(.locked) ?? false)
+        focus = .notRunning(canFocus: camera.map { (device: AVCaptureDevice) -> Bool in CameraFocusControl.canFocus(device) } ?? false)
+    }
+
+    // MARK: - Focus (CAM-005)
+
+    /// CAM-005-R1, R4, R5: focuses the running camera at `point` on the session queue; the state read
+    /// back is posted. Unsupported or not running: nothing is configured.
+    public func setFocusPoint(_ point: CameraFocusPoint) {
+        guard state == .running, focus.canFocus, let session else { return }
+        let box = Unchecked(value: session)
+        readExposure { () -> Void in
+            guard let camera = Self.exposureDevice(in: box.value) else { return }
+            CameraFocusControl.focus(at: point, on: camera)
+        }
     }
 
     public func setExposureLocked(_ locked: Bool) {
@@ -374,12 +401,17 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
         let box = Unchecked(value: session)
         sessionQueue.async { [self] in
             change()
-            let read: CameraExposureState? = Self.exposureDevice(in: box.value).map { (camera: AVCaptureDevice) -> CameraExposureState in
+            let camera: AVCaptureDevice? = Self.exposureDevice(in: box.value)
+            let read: CameraExposureState? = camera.map { (camera: AVCaptureDevice) -> CameraExposureState in
                 CameraExposureControl.state(of: camera)
             }
+            let readFocus: CameraFocusState? = camera.map { (camera: AVCaptureDevice) -> CameraFocusState in
+                CameraFocusControl.state(of: camera)   // CAM-005-R12
+            }
             DispatchQueue.main.async { [self] in
-                guard current == generation, state == .running, let read else { return }
+                guard current == generation, state == .running, let read, let readFocus else { return }
                 exposure = read
+                focus = readFocus
             }
         }
     }

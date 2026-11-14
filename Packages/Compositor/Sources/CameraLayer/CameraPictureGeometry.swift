@@ -45,8 +45,19 @@ public struct CameraPictureGeometry: Sendable, Equatable {
     /// aspect fill. Any size ≤ 0 gives the identity with the rotation and mirror.
     public init(pictureWidth: Int, pictureHeight: Int, rotation: CameraRotation, outputWidth: Int, outputHeight: Int,
                 mirrored: Bool = false, crop: CameraCrop = .fill) {
+        self.init(pictureWidth: pictureWidth, pictureHeight: pictureHeight, rotation: rotation,
+                  outputSize: (Double(outputWidth), Double(outputHeight)), mirrored: mirrored, crop: crop)
+    }
+
+    /// The same geometry for an output of any real size (CAM-005-T02): a picture rect on screen in
+    /// points keeps its exact aspect. Any size ≤ 0 or not finite gives the identity with the rotation
+    /// and mirror.
+    public init(pictureWidth: Int, pictureHeight: Int, rotation: CameraRotation, outputSize: (width: Double, height: Double),
+                mirrored: Bool = false, crop: CameraCrop = .fill) {
         self.mirrored = mirrored
-        guard pictureWidth > 0, pictureHeight > 0, outputWidth > 0, outputHeight > 0 else {
+        let outW: Double = outputSize.width
+        let outH: Double = outputSize.height
+        guard pictureWidth > 0, pictureHeight > 0, outW.isFinite, outH.isFinite, outW > 0, outH > 0 else {
             self = .identity
             self.rotation = rotation
             self.mirrored = mirrored
@@ -54,8 +65,6 @@ public struct CameraPictureGeometry: Sendable, Equatable {
         }
         let uprightW: Double = Double(rotation.swapsAxes ? pictureHeight : pictureWidth)
         let uprightH: Double = Double(rotation.swapsAxes ? pictureWidth : pictureHeight)
-        let outW: Double = Double(outputWidth)
-        let outH: Double = Double(outputHeight)
         let scaleX: Double = outW / uprightW
         let scaleY: Double = outH / uprightH
         let base: Double = crop.mode == .fill ? max(scaleX, scaleY) : min(scaleX, scaleY)
