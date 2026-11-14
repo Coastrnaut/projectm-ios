@@ -25,13 +25,13 @@ included. Budgets (owner rule 7): unit test about 1-2 s and at most 10 s, packag
 
 - [ ] CMP-004-T06 [US1] Add `cmp_blend` (backdrop texture(1), identity read or transformed bilinear sample, sanitize, × opacity, contract steps 1-5) and a non-blending pipeline in Packages/Compositor/Sources/Compositor/CompositorShaders.swift
 - [ ] CMP-004-T07 [US1] Compositor: per-record `blendMode`, lazily pooled second composite, ping-pong per non-normal layer, swap, `blendDraws`, recycle on size change and deinit (CMP-004-R6) in Packages/Compositor/Sources/Compositor/Compositor.swift
-- [ ] CMP-004-T08 [US1] GPU tests: a pattern layer (half floats blitted from a buffer) gives a backdrop × source grid (5 encoded levels × 4 alpha pairs, per-channel variation); each mode's composite within 1e-3 of the reference and a `bgra8Unorm_srgb` output within 1/255; acceptance values on 50 % grey; mode over transparent = normal (CMP-004-S1, S2, S3) in Packages/Compositor/Tests/CompositorTests/LayerBlendCompositeTests.swift
+- [ ] CMP-004-T08 [US1] GPU tests: a pattern layer (half floats blitted from a buffer) gives a backdrop × source grid (5 encoded levels × 4 alpha pairs, per-channel variation); each mode's composite within 1e-3 of the reference and a `bgra8Unorm_srgb` output within 1/255; acceptance values on 50 % grey; mode over transparent = normal; NaN and negative source pixels read as 0 like normal (CMP-004-S1, S2, S3) in Packages/Compositor/Tests/CompositorTests/LayerBlendCompositeTests.swift
 
 ## Phase 4: User Story 2 - Modes with opacity, transforms, fades and the stack (P1)
 
 **Goal**: modes compose with CMP-002/003/005. **Independent test**: opacity, transform and apply cases on the GPU.
 
-- [ ] CMP-004-T09 [US2] GPU tests: opacity 0 bit-identical to the stack without the layer and 0.5 matches the reference for every mode; a transformed mode layer matches a transformed normal layer outside the overlap and the reference inside; a mode change at `apply` shows next frame without a new layer or preparation; two mode layers in a row; normal-only stack allocates no second composite (CMP-004-S4, R5, R6) in Packages/Compositor/Tests/CompositorTests/LayerBlendCompositeTests.swift
+- [ ] CMP-004-T09 [US2] GPU tests: opacity 0 bit-identical to the stack without the layer and 0.5 matches the reference for every mode; a transformed mode layer matches a transformed normal layer outside the overlap and the reference inside; a mode change at `apply` shows next frame without a new layer or preparation; two mode layers in a row; normal-only stack allocates no second composite; a REC-001 frame capture with a mode layer equals the output, and a Reduce-flashing frame with mode layers encodes (flash guard on the finished composite) (CMP-004-S4, R5, R6) in Packages/Compositor/Tests/CompositorTests/LayerBlendCompositeTests.swift
 - [ ] CMP-004-T10 [US2] Full Compositor suite unchanged (normal stacks bit-identical): `swift test --package-path Packages/Compositor`; RenderGoldens unchanged: `swift test --package-path Packages/RenderGoldens`
 
 ## Phase 5: User Story 3 - Scenes keep and show modes (P2)
@@ -39,7 +39,7 @@ included. Budgets (owner rule 7): unit test about 1-2 s and at most 10 s, packag
 **Goal**: the scene format draws known names and keeps unknown ones. **Independent test**: validation and round trips.
 
 - [ ] CMP-004-T11 [US3] Validation warns only for names `LayerBlendMode(rawValue:)` rejects; `liveState` maps names and fills `preservedBlendModes`; capture writes `rawValue` or the preserved string while the live mode is `.normal` (CMP-004-R7, R8) in Packages/SceneFormat/Sources/SceneFormat/SceneValidation.swift and SceneLiveState.swift
-- [ ] CMP-004-T12 [US3] Tests: each known name gives no warning and reaches the live stack; capture writes it; "softLight" is warned, listed by `SceneRepairReport` as a note, drawn as normal and written back after load → capture; decode → encode keeps it; existing tests' example unsupported mode becomes "softLight" (CMP-004-S5) in Packages/SceneFormat/Tests/SceneFormatTests/SceneBlendModeTests.swift, SceneValidationTests.swift
+- [ ] CMP-004-T12 [US3] Tests: each known name gives no warning and reaches the live stack; capture writes it; "softLight" is warned, listed by `SceneRepairReport` as a note, drawn as normal and written back after load → capture; decode → encode keeps it; "Screen" (wrong case) is unknown too; existing tests' example unsupported mode becomes "softLight" (CMP-004-S5) in Packages/SceneFormat/Tests/SceneFormatTests/SceneBlendModeTests.swift, SceneValidationTests.swift
 - [ ] CMP-004-T13 [US3] ImportFuzz still passes: `swift test --package-path Packages/ImportFuzz`
 
 ## Phase 6: Polish & cross-cutting
@@ -48,7 +48,7 @@ included. Budgets (owner rule 7): unit test about 1-2 s and at most 10 s, packag
 - [ ] CMP-004-T15 [P] ADR-0037 (blend functions in sRGB-encoded space, coverage linear, add = clamped separable) in docs/adr/0037-blend-mode-colour-space.md and docs/adr/README.md; ADR-0028 consequence and specs/059-scn-001-versioned-scene-format/contracts/scene-document.md list the drawn names
 - [ ] CMP-004-T16 Linux shape: `swift build`/`swift test --filter LayerBlendReference` with `-DCOMPOSITOR_NO_METAL -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE` in Packages/Compositor; SceneFormat builds the same way
 - [ ] CMP-004-T17 iOS simulator run of `CompositorTests/LayerBlendCompositeTests` on a dedicated simulator (deleted afterwards)
-- [ ] CMP-004-T18 Repo checks pass: check_compliance.py, validate_docs.py, check_motion_policy.py, check_permission_catalog.py, test_scripts.py; spec status set to Implemented
+- [ ] CMP-004-T18 Repo checks pass: check_compliance.py, validate_docs.py, check_motion_policy.py, check_permission_catalog.py, test_scripts.py; spec status set to Implemented; CMP-004-R9 (no UI) recorded in the report
 
 ## Dependencies
 
