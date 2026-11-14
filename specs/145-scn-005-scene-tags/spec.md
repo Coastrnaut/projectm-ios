@@ -47,6 +47,16 @@ conservative, local-first option.
 - Q: What happens to tags when a scene leaves the show? → A: They are dropped with it at the next save (as its folder assignment and file are).
 - Q: Do archives and backups carry tags? → A: The full backup carries them (it carries `show.json`) and exact restore keeps them. Merge restore and FILE-004 import keep the existing tags; incoming scenes arrive untagged. A single-scene archive (FILE-001) carries no tags (the scene file is unchanged by this row).
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Do selected tag chips stay selected when the switcher closes or after a scene is chosen? → A: Yes, for as long as the app runs: chips are a visible view setting, not a typed search, so a performer can keep "Set A" selected across many choices. The query keeps UIX-002's behaviour (cleared after a choice). A chip whose tag disappears is dropped. Nothing is stored across launches.
+- Q: How do tag matches rank in the switcher's search? → A: With folder-path matches, after label and scene-name prefix and word-start matches (UIX-002's ranking stays as it is); show order within each group.
+- Q: In what order are a scene's tags kept and shown? → A: Sorted by folded text (then by display text), on every scene, in the file and on screen. A fixed order keeps the file deterministic and the display predictable. Rejected: order added (two equal tag sets would encode differently).
+- Q: Can a tag be renamed or deleted across every scene at once? → A: Not in this row: a tag is removed from a scene in its Tags sheet, and a tag disappears when no scene carries it. Show-wide rename can come later. Tag edits have no undo history and stay out of SCN-010's scene history (as SCN-004 folder edits).
+- Q: How does a keyboard or VoiceOver user edit tags from the switcher? → A: Each switcher row has a separate "Tags for <label>" button after the row (reachable with Tab and Full Keyboard Access), and the row offers the VoiceOver action "Tags". Return in the search field still chooses the highlighted row.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - I tag scenes and filter by tag (Priority: P1) — MVP
@@ -114,14 +124,15 @@ no tags and re-encodes byte for byte; damaged tag data is dropped with a warning
 - **SCN-005-R3**: The tag vocabulary is derived from the assignments and sorted by folded text.
 - **SCN-005-R4**: The user can add and remove a scene's tags; refused additions (invalid, already present, over a limit) change nothing and say why.
 - **SCN-005-R5**: Tag changes never apply a scene, move the show's position or change cue order.
-- **SCN-005-R6**: Tags are stored in the show index as an optional `sceneTags` key; format version stays 1; a show without tags encodes to the bytes it had before this row; encoding is deterministic (tags in a fixed order).
+- **SCN-005-R6**: Tags are stored in the show index as an optional `sceneTags` key; format version stays 1; a show without tags encodes to the bytes it had before this row; encoding is deterministic (each scene's tags sorted by folded text, then display text).
 - **SCN-005-R7**: Damaged tag data never refuses the show: entries for scenes no cue shows, invalid tags, duplicates and tags over the limits are dropped with a warning that counts them.
 - **SCN-005-R8**: The full backup and exact restore carry tags; merge restore and import keep existing tags; single-scene archives carry none.
 - **SCN-005-R9**: Duplicate Scene copies the source's tags; a scene leaving the show loses its tags at the next save.
-- **SCN-005-R10**: The switcher shows a row of tag chips (the vocabulary) when the show has tags; selected chips combine with AND and the search text applies on top; the search text also matches a scene's tags; selection is in memory only.
+- **SCN-005-R10**: The switcher shows a row of tag chips (the vocabulary) when the show has tags; selected chips combine with AND and the search text applies on top; the search text also matches a scene's tags; selection is in memory only and stays while the app runs (closing the switcher or choosing a scene keeps it).
 - **SCN-005-R11**: Each switcher row shows its scene's tags and VoiceOver reads ", tags Intro, Loud"; each chip has a label, the Selected trait when selected and a value with how many scenes carry it.
 - **SCN-005-R12**: A Tags sheet for one scene, opened from the Scene Folders screen (swipe, context menu, VoiceOver action "Tags") and a tag button on each switcher row, lists its tags with Remove (button and VoiceOver action), a field with Add, and suggestions from the show's other tags. Scene Folders rows show their tags.
 - **SCN-005-R13**: Tag additions, removals and refusals are announced through the app's announcer (library lane); a chip change announces the result count (search lane, as a query change).
+- **SCN-005-R15**: Tag edits have no undo history and are not part of SCN-010's scene history; show-wide tag rename is out of scope.
 - **SCN-005-R14**: No networking and no new settings keys; all data stays in the app's local show folder.
 
 ### Key Entities
@@ -143,5 +154,5 @@ no tags and re-encodes byte for byte; damaged tag data is dropped with a warning
 ## Assumptions
 
 - The show's scenes are the saved scenes this row tags (as SCN-004).
-- Tag order on a scene is the order added; the vocabulary is sorted by folded text.
+- A scene's tags and the vocabulary are sorted by folded text, then display text.
 - Simulator and Mac results are not device evidence; this row needs no device-only check.
