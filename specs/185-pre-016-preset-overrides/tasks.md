@@ -33,9 +33,9 @@ Budgets (owner rule 7): unit ≤ 10 s, package suite < 1 min, UI test < 30 s.
 
 ## Phase 5: User Story 3 — Overrides travel with the library (P2)
 
-- [ ] PRE-016-T14 [US3] FILE-005: folders, format path, contents read, archive write/read, records, restore plan (section `overrides`), installer staging in `Packages/LibraryBackup/Sources/LibraryBackup/`
+- [X] PRE-016-T14 [US3] FILE-005: folders, format path, contents read, archive write/read, records, restore plan (section `overrides`), installer staging in `Packages/LibraryBackup/Sources/LibraryBackup/` — Verified 2026-11-14: `swift test --package-path Packages/LibraryBackup`, 77 tests pass (3 new) in 13.6 s
 - [ ] PRE-016-T15 [US3] FILE-011: Collections inventory counts presets with overrides in `Packages/LibraryBackup/Sources/LibraryBackup/LibraryEraseInventory.swift`; restore section label in `Apps/projectM-iOS/Coordinators/LibraryBackupCoordinator.swift`
-- [ ] PRE-016-T16 [US3] Tests: backup round trip, restore choices, erase count in `Packages/LibraryBackup/Tests/LibraryBackupTests/LibraryBackupPresetOverrideTests.swift`
+- [X] PRE-016-T16 [US3] Tests: backup round trip, restore choices, erase count in `Packages/LibraryBackup/Tests/LibraryBackupTests/LibraryBackupPresetOverrideTests.swift` — Verified 2026-11-14: `swift test --package-path Packages/LibraryBackup`, 77 tests pass (3 new) in 13.6 s
 
 ## Phase 6: Polish
 
