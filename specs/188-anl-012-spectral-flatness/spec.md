@@ -51,6 +51,8 @@ human interaction); each answer is the recommended, conservative option.
 - Q: Configuration? → A: `SpectralFlatnessConfiguration`: sample rate, lower/upper frequency, floor dB (defaults 44.1 kHz, 20 Hz, Nyquist, −70 dB). A code/pipeline value like every ANL-0xx parameter: no Settings row and no UserDefaults key (ANL-012-R1, R11).
 - Q: What is the source called, and which opcode? → A: MOD-002 source `audio.flatness`, SHD-009 opcode 33 (permanent; the brief's 20 is `min`, and 33 is the first free value, checked in every worktree), inspector name "Flatness". The analysis frame carries `flatness`; the app's native visual feeds it to its bindings like the rolloff. No new UI (ANL-012-R6 to R8).
 - Q (speckit-clarify pass): Readouts, diagnostics export or stored data beyond a binding's source ID? → A: No. A binding stores only `audio.flatness`, which older builds orphan like any unknown source (MOD-013): no scene version bump, no stored key (ANL-012-R11).
+- Q (speckit-clarify): How tight is the white-noise acceptance, given that one frame's flatness varies? → A: Every seeded noise frame (2,048 points, Hann, at least 8 frames) reads > 0.4, and their mean lies in 0.45…0.65 around e^−γ ≈ 0.561; the sine reads < 0.05 and at least 0.3 below the lowest noise frame. Why: the per-frame spread of a ~1,000-bin estimate is a few hundredths, so these bounds are robust yet still separate tonal from noise-like by a wide margin (ANL-012-S1).
+- Q (speckit-clarify): What per-frame cost is acceptable? → A: One pass for the total (vDSP or portable) plus one Double log pass over the analysed bins (~1,020 bins at 2,048 points), no allocation; the new package tests together add under 1 s on the host (owner rule 7) (ANL-012-R5, S7).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -119,7 +121,7 @@ clearly higher, so a visual can tell a sustained note from a hiss or a cymbal wa
 
 ### Measurable Outcomes
 
-- **ANL-012-S1**: A sine reads < 0.05, seeded white noise > 0.4 (mean near 0.56), and the sine is lower by ≥ 0.3 (the roadmap acceptance).
+- **ANL-012-S1**: A sine reads < 0.05; every seeded white-noise frame reads > 0.4 with a mean in 0.45…0.65; the sine is at least 0.3 below the lowest noise frame (the roadmap acceptance).
 - **ANL-012-S2**: A flat spectrum reads 1 within 10⁻⁹.
 - **ANL-012-S3**: Silence, dither and non-finite input read 0 or a finite value in 0…1.
 - **ANL-012-S4**: Repeats are bit-equal; vDSP and portable agree within 10⁻⁶.

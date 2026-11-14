@@ -31,4 +31,4 @@
 
 ## Notes
 
-- Clarify was answered by Claude under owner rule 4 (eight decisions in the spec's Clarifications).
+- Clarify was answered by Claude under owner rule 4 (ten decisions in the spec's Clarifications, two from the clarify pass).
