@@ -314,7 +314,8 @@ public actor UserPresetLibrary {
         let result = await trial.run(data, timeout: PresetImportLimits.trialTimeout)
         trialInFlight = false
 
-        guard store.preset(id: id)?.state == .pending else {   // removed while it was tried
+        // Removed while it was tried, or (FILE-004 research D7) its text was replaced meanwhile.
+        guard let after = store.preset(id: id), after.state == .pending, after.sha256 == preset.sha256 else {
             store.clearRecord(.trial)
             return
         }
@@ -619,20 +620,26 @@ public actor UserPresetLibrary {
 
     /// FILE-003-R2-R7 (contract C2): the dry run of an archive against the library as it is now.
     /// Reads only (the first call loads the record, as every entry point does).
-    public func planArchiveImport(_ data: Data, policy: PresetArchiveConflictPolicy = .keepBoth) -> PresetArchiveImportPlan {
+    /// FILE-004: `policy` is the default choice ("Apply to all"); `overrides` the per-conflict choices.
+    public func planArchiveImport(_ data: Data, policy: PresetArchiveConflictPolicy = .keepBoth,
+                                  overrides: [String: PresetArchiveConflictPolicy] = [:]) -> PresetArchiveImportPlan {
         guard let store = loaded(), store.availability == .available else {
-            return PresetArchiveImportPlan(archiveSHA256: ContentHash.sha256Hex([UInt8](data)), policy: policy,
+            return PresetArchiveImportPlan(archiveSHA256: ContentHash.sha256Hex([UInt8](data)), policy: policy, overrides: overrides,
                                            refusal: PresetImportRefusal.libraryUnavailable.message, entries: [])
         }
-        return PresetArchiveImportPlanner.plan(archive: data, library: store.presets, context: context, policy: policy)
+        return PresetArchiveImportPlanner.plan(archive: data, library: store.presets, context: context, policy: policy, overrides: overrides)
     }
 
     /// FILE-003-R8-R10: plans again; a different plan is returned as `.changed` with nothing written.
     /// Otherwise adds exactly the plan's presets, waiting for their trial, all or nothing. The
     /// caller runs the trials (`runPendingTrials`).
     public func installArchive(_ data: Data, plan: PresetArchiveImportPlan) -> PresetArchiveInstallOutcome {
-        let current = planArchiveImport(data, policy: plan.policy)
+        let current = planArchiveImport(data, policy: plan.policy, overrides: plan.overrides)
         guard current == plan else { return .changed(current) }
+        // FILE-004 research D6: a held preset keeps a record that would quarantine its new text.
+        if plan.actions.contains(where: { (action: PresetArchiveAction) -> Bool in action.replacesID.map(held.contains) ?? false }) {
+            return .refused(PresetArchiveText.nothingInstalled(PresetArchiveText.heldTarget))
+        }
         if let refusal = plan.refusal { return .refused(PresetArchiveText.nothingInstalled(refusal)) }
         guard plan.canInstall, let store = loaded(), let archive = try? UserPresetArchiveReader.read(data) else {
             return .refused(PresetArchiveText.nothingToInstall)
@@ -641,6 +648,8 @@ public actor UserPresetLibrary {
         for record in archive.manifest.presets { records[record.id] = record }
         let date = now()
         var items: [(preset: UserPreset, contents: Data)] = []
+        var replacements: [(preset: UserPreset, contents: Data)] = []
+        var installed: [UserPreset] = []
         for entry in plan.entries {
             guard let action = entry.install else { continue }
             guard let record = records[entry.incomingID], let text = archive.texts[entry.incomingID] else {
@@ -655,14 +664,15 @@ public actor UserPresetLibrary {
             preset.warnings = validation.warnings
             preset.license.linesFound = validation.licenseLines
             preset.license.rightsVerified = false
-            items.append((preset, text))
+            if action.replacesID != nil { replacements.append((preset, text)) } else { items.append((preset, text)) }
+            installed.append(preset)
         }
         do {
-            try store.addAll(items)
+            try store.commitImport(adding: items, replacing: replacements)
         } catch {
             return .refused(PresetArchiveText.nothingInstalled(PresetArchiveText.saveFailed))
         }
-        return .installed(items.map(\.preset))
+        return .installed(installed)
     }
 
     // MARK: - Helpers
