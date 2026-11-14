@@ -7,7 +7,7 @@
 | `anotherApp` | interrupted | yes | no | "Another app is using the camera. It comes back when the camera is free, or tap Retry." |
 | `multitasking` | interrupted | yes | no | "The camera pauses while apps share the screen. It comes back in full screen, or tap Retry." |
 | `systemPressure` | interrupted | yes | no | "The camera paused because the device is too warm or busy. It comes back when the device recovers, or tap Retry." |
-| `background` | interrupted | yes | no | "The camera paused while the app was in the background." |
+| `background` | interrupted | yes | no | "The camera paused while the app was in the background. It comes back on its own, or tap Retry." |
 | `otherInterruption` | interrupted | yes | no | "The camera is paused by the system. It comes back when the camera is free, or tap Retry." |
 | `mediaServicesReset` | failed | no | once | "The camera stopped after a system reset. Tap Retry to start it again." |
 | `runtimeError` | failed | no | no | "The camera stopped because of an error. Tap Retry to start it again." |
