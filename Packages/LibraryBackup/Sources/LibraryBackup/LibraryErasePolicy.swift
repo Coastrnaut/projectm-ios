@@ -38,6 +38,9 @@ public enum LibraryErasePolicy {
     public static let videosFolderName = "Videos"
     /// `Application Support/AudioLibrary` (AUD-001 `AudioLibrary.defaultDirectory()`).
     public static let audioFolderName = "AudioLibrary"
+    /// `Application Support/MIDIProfiles` (MIDI-012 `MIDIProfilesCoordinator.folderName`): MIDI mapping profiles, erased
+    /// with Settings and never in a library backup (research MIDI-012-D7).
+    public static let midiProfilesFolderName = "MIDIProfiles"
     /// The erase's own work folder (request, journal, trash, last result).
     public static let workFolderName = "LibraryErase"
     /// Photo payload and legacy extensions (MED-001 `PhotoStore.extensions`); videos (`VideoStore.fileExtension`).
@@ -66,7 +69,7 @@ public enum LibraryErasePolicy {
         case .collections: [LibraryFolders.Folder.collections.rawValue]
         case .media: [LibraryFolders.Folder.photos.rawValue, videosFolderName]
         case .importedAudio: [audioFolderName]
-        case .settings: []
+        case .settings: [midiProfilesFolderName]   // MIDI-012-R9
         }
     }
 

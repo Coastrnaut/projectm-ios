@@ -527,6 +527,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         MotionFeedbackSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-009: Trails off
         EffectChainSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-020: standard order, no presets
         defaults.removeObject(forKey: MIDIMappingCoordinator.mappingsKey)   // MIDI-003: no mappings
+        if let profiles = try? MIDIProfilesCoordinator.defaultDirectory() { try? FileManager.default.removeItem(at: profiles) }   // MIDI-012: no profiles
         try? FileManager.default.removeItem(at: PresetCollectionStore.defaultDirectory())   // PRE-007: UI tests start without collections
         try? FileManager.default.removeItem(at: UserPresetStore.defaultDirectory())         // PRE-012: and without imported presets
         if let photos = try? PhotoStore.defaultDirectory() { try? FileManager.default.removeItem(at: photos) }   // MED-001: no photo
@@ -540,6 +541,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
 
     /// The end of init, after every stored property is set: callbacks, observers and the first loads.
     private func connectAfterInit(defaults: UserDefaults) {
+        midiMappings.profiles = MIDIProfilesCoordinator.makeDefault(mappings: midiMappings)   // MIDI-012
         photos.onPhotoChange = { [weak self] (_: StoredPhoto?) in self?.refreshPhotoContent() }   // MED-006: the slideshow wins when on
         connectSlideshow()   // MED-006
         connectLogo()   // MED-010

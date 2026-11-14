@@ -25,6 +25,9 @@
 //   Selecting a scene never saves: only learn, delete, Undo and the mode picker write the mappings (MIDI-007-R3).
 // * MIDI-008 (specs/157-midi-008-transport): trigger bindings may also be CC buttons and real-time sources (`ccbtn:`, `rt:`
 //   lines among the note lines). A CC is either a button or a parameter control: learning one frees the other.
+// * MIDI-012 (specs/171-midi-012-profiles, contract P2): lines no list reads (unknown kinds, unreadable `cc:` lines) are
+//   kept after the known lines (`otherLines`, MIDI-012-R7). `replaceLines` writes a profile's lines verbatim and is one
+//   Undo step; Undo is a snapshot of the stored lines, restored verbatim (research MIDI-012-D6).
 import Foundation
 import Observation
 import ParameterGraph
@@ -108,7 +111,13 @@ final class MIDIMappingCoordinator {
     @ObservationIgnored let scheduler: Scheduler
     @ObservationIgnored private var session = MIDILearnSession<ParameterID>()
     @ObservationIgnored var cancelTimeout: (@MainActor () -> Void)?
-    @ObservationIgnored private var undoList: (cc: MIDIBindingList, notes: MIDINoteBindingList, scenes: MIDISceneBindingList)?
+    /// MIDI-012: the stored lines before the last undoable change (research MIDI-012-D6).
+    @ObservationIgnored private var undoLines: [String]?
+    /// MIDI-012-R7: stored lines no list reads, kept verbatim after the known lines.
+    private(set) var otherLines: [String] = []
+    @ObservationIgnored private let allowedTargets: Set<ParameterID>
+    /// MIDI-012: the Profiles section's coordinator (nil in tests that do not need it).
+    @ObservationIgnored var profiles: MIDIProfilesCoordinator?
     @ObservationIgnored private var isClientRegistered = false
 
     init(registry: ParameterRegistry, applied: Set<ParameterID>, input: MIDIInputCoordinator,
@@ -126,7 +135,9 @@ final class MIDIMappingCoordinator {
         learnable = MIDILearnCatalog.learnable(in: registry, applied: applied)
         let allowed: Set<ParameterID> = Set(learnable.map { (descriptor: ParameterDescriptor) -> ParameterID in descriptor.id })
         let lines: [String] = defaults.stringArray(forKey: Self.mappingsKey) ?? []
+        allowedTargets = allowed
         bindings = MIDIBindingList(storageLines: lines, allowedTargets: allowed)
+        otherLines = Self.unclaimedLines(lines)   // MIDI-012-R7
         noteBindings = MIDINoteBindingList(storageLines: lines)   // MIDI-006-R7
         sceneBindings = MIDISceneBindingList(storageLines: lines)   // MIDI-007-R7
         lastSources = input.listedSources
@@ -208,7 +219,7 @@ final class MIDIMappingCoordinator {
     // MARK: Screen lifecycle
 
     func open() {
-        undoList = nil
+        undoLines = nil
         canUndo = false
         lastMessage = nil
     }
@@ -219,7 +230,7 @@ final class MIDIMappingCoordinator {
         if noteSession.isLearning { _ = noteSession.cancel() }
         if sceneSession.isLearning { _ = sceneSession.cancel() }
         endLearning()
-        undoList = nil
+        undoLines = nil
         canUndo = false
         updateClient()
     }
@@ -342,14 +353,10 @@ final class MIDIMappingCoordinator {
     }
 
     func undo() {
-        guard let previous = undoList else { return }
-        undoList = nil
+        guard let previous = undoLines else { return }
+        undoLines = nil
         canUndo = false
-        releaseNotes(changedFrom: noteBindings, to: previous.notes)
-        bindings = previous.cc
-        noteBindings = previous.notes
-        sceneBindings = previous.scenes
-        listChanged()
+        loadStored(previous)
     }
 
     private func rememberUndo(_ list: MIDIBindingList) {
@@ -361,7 +368,7 @@ final class MIDIMappingCoordinator {
     }
 
     func rememberUndo(cc: MIDIBindingList, notes: MIDINoteBindingList, scenes: MIDISceneBindingList) {
-        undoList = (cc, notes, scenes)
+        undoLines = cc.storageLines + notes.storageLines + scenes.storageLines + otherLines
         canUndo = true
     }
 
@@ -379,11 +386,68 @@ final class MIDIMappingCoordinator {
     /// MIDI-003/004 `cc:` lines unchanged, then MIDI-006 `note:` lines, then MIDI-007 scene lines (kept unreadable ones
     /// included).
     func save() {
-        let lines: [String] = bindings.storageLines + noteBindings.storageLines + sceneBindings.storageLines
+        let lines: [String] = bindings.storageLines + noteBindings.storageLines + sceneBindings.storageLines + otherLines
+        write(lines)
+    }
+
+    private func write(_ lines: [String]) {
         if lines.isEmpty {
             defaults.removeObject(forKey: Self.mappingsKey)
         } else {
             defaults.set(lines, forKey: Self.mappingsKey)
+        }
+    }
+
+    // MARK: Profiles (MIDI-012, contract P2)
+
+    /// The stored mapping lines, verbatim.
+    var storedLines: [String] { defaults.stringArray(forKey: Self.mappingsKey) ?? [] }
+
+    /// Lines no list reads: not a readable `cc:` line, not a trigger line and not a scene line (MIDI-012-R7).
+    static func unclaimedLines(_ lines: [String]) -> [String] {
+        lines.filter { (line: String) -> Bool in
+            MIDIControlBinding(storageLine: line) == nil && !MIDINoteBinding.isTriggerLine(line) && !MIDISceneBinding.isSceneLine(line)
+        }
+    }
+
+    /// Replaces the stored list with `lines` verbatim and in order, as one Undo step (MIDI-012-R6); a learn in progress
+    /// is cancelled. `announcement` is spoken on the `.midi` lane and shown as the status.
+    func replaceLines(_ lines: [String], announcement: String) {
+        if session.isLearning { _ = session.cancel() }
+        if noteSession.isLearning { _ = noteSession.cancel() }
+        if sceneSession.isLearning { _ = sceneSession.cancel() }
+        endLearning()
+        let previous: [String] = storedLines
+        loadStored(lines)
+        undoLines = previous
+        canUndo = true
+        lastMessage = announcement
+        announce(announcement)
+    }
+
+    /// Writes `lines` verbatim and reloads the three lists from them; held keys whose binding changed are released.
+    private func loadStored(_ lines: [String]) {
+        let notes = MIDINoteBindingList(storageLines: lines)
+        releaseNotes(changedFrom: noteBindings, to: notes)
+        bindings = MIDIBindingList(storageLines: lines, allowedTargets: allowedTargets)
+        noteBindings = notes
+        sceneBindings = MIDISceneBindingList(storageLines: lines)
+        otherLines = Self.unclaimedLines(lines)
+        write(lines)
+        let bound: Set<ParameterID> = Set(bindings.bindings.map { (binding: MIDIControlBinding) -> ParameterID in binding.target })
+        let kept: [ParameterID: Double] = liveValues.filter { (entry: (key: ParameterID, value: Double)) -> Bool in bound.contains(entry.key) }
+        if kept != liveValues {
+            liveValues = kept
+            applyValues(kept)
+        }
+        updateClient()
+    }
+
+    /// Listed online inputs with a system unique number (MIDI-012-R8: fallback IDs are never linked), by name.
+    var linkableInputs: [(id: MIDIEndpointID, name: String)] {
+        discovery.list.endpoints.compactMap { (endpoint: MIDIEndpoint) -> (id: MIDIEndpointID, name: String)? in
+            guard endpoint.direction == .source, endpoint.isOnline, !endpoint.id.isFallback else { return nil }
+            return (endpoint.id, endpoint.name)
         }
     }
 
