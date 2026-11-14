@@ -8,6 +8,8 @@
 // out by `ExternalOutputPlacement` (bounds, centre, horizontal scale 1/PAR) from its correction, the
 // device's shape and its screen mode's pixel aspect ratio; the slot's black background shows as the
 // bars and the cover stays above both. The device slot always fills (identity) and reports its size.
+// OUT-012 (spec specs/184-out-012-display-rehearsal, contract C2): a slot with no screen (the
+// rehearsal preview, a test's fake display of a profile) takes a stand-in pixel aspect ratio.
 import PresentationLifecycle
 import SwiftUI
 import UIKit
@@ -84,9 +86,15 @@ final class VisualSlotView: UIView {
         for view in subviews { lay(view) }
     }
 
-    /// OUT-004-D3: the screen's current mode's pixel aspect ratio (nil off screen).
+    /// OUT-012-D3: used instead of the screen mode's ratio when set (a slot standing in for a display).
+    var standInPixelAspect: Double? {
+        didSet { if standInPixelAspect != oldValue { setNeedsLayout() } }
+    }
+
+    /// OUT-004-D3: the screen's current mode's pixel aspect ratio (nil off screen), or the stand-in.
     var screenPixelAspect: Double? {
-        (window?.windowScene?.screen.currentMode?.pixelAspectRatio).map { (r: CGFloat) -> Double in Double(r) }
+        if let standInPixelAspect { return standInPixelAspect }
+        return (window?.windowScene?.screen.currentMode?.pixelAspectRatio).map { (r: CGFloat) -> Double in Double(r) }
     }
 
     @objc private func screenModeChanged(_ notification: Notification) {

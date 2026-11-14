@@ -150,9 +150,17 @@ final class SceneValidationTests: XCTestCase {
                                     "Binding 1: \(AudioFeatureBindingError.outputOutOfRange(VisualParameterIDs.bloomIntensity, .multiply, minimum: 0, maximum: 1).description).")]) {
             $0.bindings[1].mapping.outputStart = 2
         }
-        try check("duplicate target", [(.duplicateBindingTarget, "$.bindings[1].target",
-                                        "Binding 1 targets \"visual.circularSpectrum.gap\", already bound by binding 0.")]) {
+        // MOD-011-R7: a second binding on a parameter is a layer; a fifth, or a later layer's expression, is rejected.
+        try check("second layer", []) { $0.bindings[1].target = VisualParameterIDs.circularSpectrumGap }
+        try check("fifth layer", [(.duplicateBindingTarget, "$.bindings[4].target",
+                                   "Binding 4 targets \"visual.circularSpectrum.gap\", already bound by 4 bindings (the most per parameter).")]) {
             $0.bindings[1].target = VisualParameterIDs.circularSpectrumGap
+            $0.bindings += [$0.bindings[1], $0.bindings[1], $0.bindings[1]]
+        }
+        try check("expression on a later layer", [(.duplicateBindingTarget, "$.bindings[1].expression",
+                                                   "Binding 1 carries an expression for \"visual.circularSpectrum.gap\", already bound by binding 0; only a parameter's first binding may carry one.")]) {
+            $0.bindings[1].target = VisualParameterIDs.circularSpectrumGap
+            $0.bindings[1].expression = "audio.onset"
         }
         var expressionError = ""
         do { _ = try CompiledExpression(source: "audio.onset *") } catch { expressionError = "\(error)" }

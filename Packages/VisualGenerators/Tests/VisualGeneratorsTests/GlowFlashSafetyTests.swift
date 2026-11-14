@@ -47,13 +47,20 @@ final class GlowFlashSafetyTests: XCTestCase {
 
     func testAlternatingFramesWithTheStrongestGlowObeyTheRiseBound() {
         var report: [String] = []
-        // Owner rule 7 (2026-11-13): every palette at the typical 60 Hz frame time, plus the
-        // extreme frame times on one palette, 240 frames each (4 s at 60 Hz, 4 one-second windows),
-        // instead of every palette at every frame time for 600 frames (10.1 s after FX-019).
-        let cases = VisualPalette.allCases.map { ($0, 1.0 / 60) } + frameTimes.map { (VisualPalette.spectrum, $0) }
+        // Owner rule 7: each palette once and each frame time once, 240 frames each (4 s at 60 Hz,
+        // 4 one-second windows); mono, the brightest palette (peak 0.45), at 1/120 s, the worst case
+        // of the full 600-frame sweep (0.049 of the bound on 2026-11-14; every other case
+        // 0.001-0.043).
+        // 2026-11-13 this was every palette at 60 Hz plus every frame time on one palette (8 runs);
+        // before that every palette at every frame time for 600 frames, which
+        // `GLOW_FLASH_BENCH=1` still runs.
+        let bench = ProcessInfo.processInfo.environment["GLOW_FLASH_BENCH"] == "1"
+        let palettes: [VisualPalette] = [.mono, .spectrum, .ice, .colorBlindSafe]
+        XCTAssertEqual(Set(palettes), Set(VisualPalette.allCases), "every palette appears once")
+        let cases = bench ? VisualPalette.allCases.flatMap { p in frameTimes.map { (p, $0) } } : Array(zip(palettes, frameTimes))
         for (palette, dt) in cases {
             do {
-                let r = run(palette: palette, frameTime: dt, frames: 240)
+                let r = run(palette: palette, frameTime: dt, frames: bench ? 600 : 240)
                 XCTAssertLessThanOrEqual(r.rise, 1, "\(palette) dt=\(dt): composited luminance rose too fast")
                 report.append("\(palette) dt=\(String(format: "%.4f", dt)) rise=\(String(format: "%.3f", r.rise)) peak=\(String(format: "%.4f", r.peak))")
             }

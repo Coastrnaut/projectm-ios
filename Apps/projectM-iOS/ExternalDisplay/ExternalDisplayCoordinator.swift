@@ -30,6 +30,9 @@
 //   Display or Device shape; pixel aspect) and the device slot's shape are pushed to every external
 //   slot, which lays the visual out by them. While a recording holds the placement nothing is pushed
 //   (the recording's picture size must not change); the latest values follow when the hold ends.
+// * OUT-012 (spec specs/184-out-012-display-rehearsal, contract C3): the rehearsal flag. Settings'
+//   rehearsal cover is bound to `isRehearsing`; a newly settled real display clears it (the real output
+//   takes over), and it cannot start while one is connected. The rehearsal never touches the visual.
 import OSLog
 import PresentationLifecycle
 import SwiftUI
@@ -103,6 +106,12 @@ final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
     }
     /// The device visualizer's shape (width ÷ height), from the device slot's size; nil until known.
     @ObservationIgnored private(set) var deviceAspect: Double?
+
+    // OUT-012: output rehearsal.
+    /// The rehearsal is open (Settings' full-screen cover is bound to it).
+    private(set) var isRehearsing = false
+    /// A settled real external display is connected.
+    private(set) var hasExternalDisplay = false
 
     /// `connectSettle` 0 (the default): a connect moves the visual inside the call (OUT-001-R6 tests).
     init(connectSettle: Double = 0, scheduleSettle: SettleScheduler? = nil) {
@@ -184,6 +193,11 @@ final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
         routing.apply(.connected(id: id, geometry: geometry, foreground: foreground))
         place()
         guard !known else { return }
+        hasExternalDisplay = true
+        if isRehearsing {   // OUT-012-R6: the real output takes over
+            isRehearsing = false
+            log.info("output rehearsal ended: an external display connected")
+        }
         let held = heldTarget != nil && effectiveTarget != routing.target
         log.info("external display settled\(held ? " (held by a recording)" : "", privacy: .public)")
         onConnectionChange?(.connected(heldByRecording: held))
@@ -208,6 +222,7 @@ final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
         let cancelled = settle.cancel(id: id)
         let known = routing.displays.contains(where: { (d: ExternalDisplay) -> Bool in d.id == id })
         routing.apply(.disconnected(id: id))
+        hasExternalDisplay = !routing.displays.isEmpty
         log.info("external display disconnected\(cancelled ? " before it settled" : "", privacy: .public)")
         if let slot = externalSlots.removeValue(forKey: id)?.slot {
             slot.onGeometryChange = nil
@@ -244,6 +259,20 @@ final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
 
     /// The visual view the coordinator places (tests).
     var currentVisual: UIView? { visual }
+
+    // MARK: - Output rehearsal (OUT-012)
+
+    /// Opens the rehearsal; refused (false) while a real external display is connected.
+    @discardableResult
+    func beginRehearsal() -> Bool {
+        guard !hasExternalDisplay else { return false }
+        isRehearsing = true
+        return true
+    }
+
+    func endRehearsal() {
+        isRehearsing = false
+    }
 
     // MARK: - Output correction (OUT-004)
 

@@ -62,4 +62,29 @@ final class RecordingAudioTimelineTests: XCTestCase {
         timeline.setOrigin(nanoseconds: origin + 1_000_000_000)
         XCTAssertEqual(timeline.originNanoseconds, origin)
     }
+
+    // MARK: - REC-008-T02: the end limit (research REC-008-D3)
+
+    func testAChunkStraddlingTheLimitIsCutAtTheExactSample() {
+        var timeline = RecordingAudioTimeline(limitSample: 441_000)   // 10 s
+        timeline.setOrigin(nanoseconds: origin)
+        XCTAssertEqual(timeline.place(frames: 441, firstSampleNanoseconds: ns(440_559)),
+                       .init(skipFrames: 0, startSample: 440_559, frames: 441), "ends exactly at the limit")
+        XCTAssertNil(timeline.place(frames: 441, firstSampleNanoseconds: ns(441_000)), "nothing at or after the limit")
+        XCTAssertEqual(timeline.nextSample, 441_000)
+    }
+
+    func testAChunkCrossingTheLimitKeepsOnlyItsPartBefore() {
+        var timeline = RecordingAudioTimeline(limitSample: 441_000)
+        timeline.setOrigin(nanoseconds: origin)
+        let placement = timeline.place(frames: 441, firstSampleNanoseconds: ns(440_800))
+        XCTAssertEqual(placement, .init(skipFrames: 0, startSample: 440_800, frames: 200))
+        XCTAssertEqual(timeline.placedFrames, 200)
+    }
+
+    func testNoLimitPlacesEverything() {
+        var timeline = RecordingAudioTimeline()
+        timeline.setOrigin(nanoseconds: origin)
+        XCTAssertEqual(timeline.place(frames: 441, firstSampleNanoseconds: ns(441_000))?.frames, 441)
+    }
 }

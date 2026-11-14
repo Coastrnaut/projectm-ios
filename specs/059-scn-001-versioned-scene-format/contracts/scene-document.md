@@ -237,7 +237,7 @@ order (layers, assets, parameters, bindings, modulation). Errors block `liveStat
 | `rejectedParameter` | warning | `<MOD-001 ParameterStoreError message>; the current value is kept.` |
 | `parameterClamped` | warning | `"<id>" value <value> is outside its range; it is applied as <stored>.` |
 | `invalidBinding` | error | `Binding <i>: <MOD-002 AudioFeatureBindingError message>.` |
-| `duplicateBindingTarget` | error | `Binding <i> targets "<id>", already bound by binding <j>.` |
+| `duplicateBindingTarget` | error | MOD-011 (contract `specs/178-mod-011-mix-modes/contracts/mix-order.md` O3): up to 4 bindings per parameter are layers. A fifth: `Binding <i> targets "<id>", already bound by 4 bindings (the most per parameter).` An expression on a later layer: `Binding <i> carries an expression for "<id>", already bound by binding <j>; only a parameter's first binding may carry one.` |
 | `invalidExpression` | error | `Binding <i> expression: <SHD-009 ExpressionError description>.` |
 | `unsupportedCurve` | warning | `Binding <i> uses a curve this version cannot read; it is kept but not applied.` (MOD-004) |
 | `invalidModulation` | error | `Modulation: <MOD-014 issue message>` (cycles name their path) |

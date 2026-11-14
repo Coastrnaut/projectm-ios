@@ -99,6 +99,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.recording.countdown",   # REC-007-R8 (recording countdown; Off by default)
                 "settings.externalDisplay.fit", "settings.externalDisplay.shape",   # OUT-004-R8 (external output correction)
                 "settings.externalDisplay.pixelAspect",   # OUT-004-R8
+                "settings.recording.timedStop",   # REC-008-R9 (stop recording after a length; Off by default)
                 "settings.latencyOffset.microphone",   # AUD-013-R11 (per-source visual delay)
                 "settings.latencyOffset.inAppPlayback", "settings.latencyOffset.systemAppCapture",   # AUD-013-R11
                 "settings.photo.id", "settings.video.id", "settings.text.overlay",   # MED-001, MED-008, MED-009
