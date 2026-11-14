@@ -13,8 +13,7 @@
   },
   "P1": {
    "audited": 135,
-   "integrated": 15,
-   "unit_passed": 1
+   "integrated": 16
   },
   "P2": {
    "audited": 77,
@@ -27,9 +26,8 @@
  "by_state": {
   "audited": 226,
   "implementing": 1,
-  "integrated": 97,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "integrated": 98,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -46,7 +44,6 @@
    "ACC-010",
    "ACC-011",
    "ACC-012",
-   "ANL-003",
    "ANL-006",
    "ANL-007",
    "ANL-008",
@@ -268,7 +265,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "228 features are not implemented yet (first: ACC-003, ACC-005, ACC-006, ACC-007, ACC-008)"
+   "227 features are not implemented yet (first: ACC-003, ACC-005, ACC-006, ACC-007, ACC-008)"
   ]
  },
  "features": {
@@ -417,10 +414,10 @@
    "branch": "feature/anl-003",
    "branch_sha": "68e2fe502cf53b8851f16fc8fbcce87234bff3be",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "214fa36",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "ANL-004": {
    "attempts": 0,
@@ -627,7 +624,7 @@
    "branch": "feature/aud-008",
    "branch_sha": "c99151006e80ba2658ee9cb1c5d25adb9b65d563",
    "error_category": null,
-   "integrated_sha": "6c90722a4268133fba2baa3537fe1e8a83601bd7",
+   "integrated_sha": "214fa36",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
@@ -3560,6 +3557,11 @@
    "sha": "493269c774625de485c726c55aa7a1b7b8f6eb74"
   },
   {
+   "branch": "feature/anl-003",
+   "id": "ANL-003",
+   "sha": "214fa36"
+  },
+  {
    "branch": "feature/anl-004",
    "id": "ANL-004",
    "sha": "e1ae49c81d348731e7af056c400ae2610f50adf6"
@@ -3612,7 +3614,7 @@
   {
    "branch": "feature/aud-008",
    "id": "AUD-008",
-   "sha": "6c90722a4268133fba2baa3537fe1e8a83601bd7"
+   "sha": "214fa36"
   },
   {
    "branch": "feature/aud-014",
@@ -4045,5 +4047,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T01:08:23Z"
+ "updated": "2026-11-14T01:12:37Z"
 }
