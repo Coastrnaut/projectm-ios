@@ -48,15 +48,7 @@ struct ControlsOverlay: View {
     /// ACC-006: the content's height, so the scroll view at accessibility sizes is no taller than it.
     @State private var contentHeight: CGFloat = 0
 
-    /// QA-009 (2026-11-14): hidden from accessibility while the scene switcher is open. Dimmed behind the switcher's
-    /// backdrop, the controls stayed reachable for VoiceOver and the audit sampled their dimmed text ("Contrast
-    /// failed" on the visual's name); the switcher's Close and Escape lead back to them.
     var body: some View {
-        let switcherOpen: Bool = coordinator.sceneSwitcher.isOpen
-        return overlay.accessibilityHidden(switcherOpen)
-    }
-
-    @ViewBuilder private var overlay: some View {
         // ACC-006-R2: at accessibility sizes the controls can be taller than the screen (AX5 with the
         // transport, a route and a notice above them: audit 2026-11-13). They then scroll inside their
         // backing: one scroll view as tall as the content (measured), at most the height left above the

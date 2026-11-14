@@ -90,10 +90,6 @@ struct SceneSwitcherView: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 12)
             }
-            // QA-009 (2026-11-14): modal for VoiceOver. The visualizer's controls dimmed behind the backdrop stayed
-            // reachable (and the audit sampled their dimmed text: "Contrast failed" on the visual's name).
-            .accessibilityElement(children: .contain)
-            .accessibilityAddTraits(.isModal)
         }
         .sheet(item: $tagging) { (target: SceneTagsTarget) in
             SceneTagsView(show: coordinator.show, sceneID: target.sceneID,
@@ -302,9 +298,11 @@ struct SceneSwitcherView: View {
                     Text(entry.label)
                         .font(.body)
                         .lineLimit(nameLines)
+                    // QA-009 (2026-11-14): on the highlighted row's accent fill the secondary grey failed the
+                    // contrast audit ("Cue 1"); the highlighted row's subtitle uses the primary colour.
                     Text(subtitle)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(isHighlighted ? .primary : .secondary)
                         .lineLimit(nameLines)
                 }
                 Spacer(minLength: 4)

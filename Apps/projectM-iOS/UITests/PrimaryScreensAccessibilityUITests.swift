@@ -105,6 +105,10 @@ final class PrimaryScreensAccessibilityUITests: XCTestCase {
             // picture drew contrast failures without an element that came and went from run to run.
             guard showControls(tag: tag) else { return false }
             blackOut(tag: tag)
+            // Then the controls are hidden, as they are once their auto-hide runs (`-uitestKeepControls` keeps them up):
+            // dimmed behind the switcher's backdrop, their texts were sampled as failing contrast.
+            app.otherElements["visualizerTapArea"].firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3)).tap()
+            _ = controlsOverlay.disappears(within: 3)
             app.typeKey("k", modifierFlags: .command)
             return app.descendants(matching: .any)["sceneSwitcherField"].firstMatch.appears(within: 5)
                 || fail(tag, "⌘K did not open the switcher")
@@ -202,7 +206,10 @@ final class PrimaryScreensAccessibilityUITests: XCTestCase {
         let lane: CGRect = tree.scrollContainer(for: target?.frame) ?? area
         // At 0.88, not the shared `reveal`'s 0.96: on a long list the right margin catches the scroll indicator once it
         // shows, which scrubs the list (the preset browser at AX5 jumped back to its top, as LibraryEraseUITests saw).
-        let start = origin.withOffset(CGVector(dx: lane.minX + lane.width * 0.88, dy: startY))
+        // In the visualizer's controls the 0.96 margin stays: there 0.88 lands on the grid's buttons, which took the drag.
+        let inControls: Bool = target.map { (t: XCUIElementSnapshot) -> Bool in tree.inOverlay(t) } ?? overlay
+        let fraction: CGFloat = inControls ? 0.96 : 0.88
+        let start = origin.withOffset(CGVector(dx: lane.minX + lane.width * fraction, dy: startY))
         let end = start.withOffset(CGVector(dx: 0, dy: towardsTop ? distance : -distance))
         start.press(forDuration: 0.05, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.15)
     }
@@ -270,11 +277,10 @@ final class PrimaryScreensAccessibilityUITests: XCTestCase {
             } + [
             Filter(screen: "storage", type: .dynamicType, element: "storageRefresh", reason: bar),
             Filter(screen: "parameterInspector", type: .dynamicType, element: "parameterInspector.reset", reason: bottom),
-            Filter(screen: "sceneSwitcher", type: .contrast, element: "", elementless: true, limit: 2,
-                   reason: "findings the audit attributes to a bare SwiftUI.AccessibilityNode with no element (one or two "
-                       + "per run): dimmed content behind the switcher's backdrop, over a blacked-out output; the card's own "
-                       + "texts are attributed and pass, and the controls behind are hidden while it is open. Open item; "
-                       + "bounded to two, so a new one fails"),
+            Filter(screen: "sceneSwitcher", type: .contrast, element: "", elementless: true, limit: 6,
+                   reason: "the rows' preview placeholders (five) and the current row's play mark: decorative images hidden "
+                       + "from accessibility (QA-009), which the audit still samples and reports as bare SwiftUI nodes with "
+                       + "no element (grey symbol on the dark thumbnail); bounded to six, one per hidden image"),
             Filter(screen: "sceneSwitcher", type: .contrast, element: "Visual unavailable",
                    reason: "PERF-014's placeholder behind the switcher, caught while fading or behind the live visual "
                        + "(ACC-004's filter for the controls; at full opacity its grey on black is about 6:1)"),
@@ -509,6 +515,9 @@ struct ScreenTree {
         return scrollers.filter { (r: CGRect) -> Bool in r.contains(point) && r.width > 100 }
             .min { (a: CGRect, b: CGRect) -> Bool in a.width < b.width }
     }
+
+    /// True when the element sits in the visualizer's controls (no sheet over them).
+    func inOverlay(_ element: XCUIElementSnapshot) -> Bool { overlayArea(element) != nil }
 
     /// Where a list's rows show: the overlay's scroll area for its controls, else below the bars and above a
     /// bottom search field.
